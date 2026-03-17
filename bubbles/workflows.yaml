@@ -844,27 +844,31 @@ modes:
       defaultTimeBudgetMinutes: 60
       # Per-trigger fix cycles — each trigger agent needs a different
       # sequence of phases to resolve its findings.
-      # chaos: finds runtime bugs → document bug → implement fix → verify
-      # harden: finds spec/coverage gaps → implement code+tests → verify
-      # gaps: finds missing implementations → implement new code → verify
+      # EVERY fix cycle containing `implement` MUST include `bootstrap` before it
+      # to ensure design.md and scopes.md are substantive (Gate G033 enforcement).
+      # The bootstrap phase is conditional — it verifies design readiness and only
+      # invokes design/plan agents if artifacts are missing or insufficient.
+      # chaos: finds runtime bugs → document bug → bootstrap design → implement fix → verify
+      # harden: finds spec/coverage gaps → bootstrap design → implement code+tests → verify
+      # gaps: finds missing implementations → bootstrap design → implement new code → verify
       # simplify: makes cleanup changes itself → only verify nothing broke
-      # stabilize: finds perf/infra/config issues → implement fix → verify
-      # validate: finds regressions/violations → implement fixes → verify
+      # stabilize: finds perf/infra/config issues → bootstrap design → implement fix → verify
+      # validate: finds regressions/violations → bootstrap design → implement fixes → verify
       triggerFixCycles:
-        chaos: [bug, implement, test, validate, audit]
-        harden: [implement, test, validate, audit]
-        gaps: [implement, test, validate, audit]
+        chaos: [bug, bootstrap, implement, test, validate, audit]
+        harden: [bootstrap, implement, test, validate, audit]
+        gaps: [bootstrap, implement, test, validate, audit]
         simplify: [test, validate, audit]
-        stabilize: [implement, test, validate, audit]
-        validate: [implement, test, validate, audit]
+        stabilize: [bootstrap, implement, test, validate, audit]
+        validate: [bootstrap, implement, test, validate, audit]
         # improve trigger: runs full analyst→UX→design→plan pipeline before implementation
         # bubbles.analyst analyzes existing capabilities and proposes improvements,
         # bubbles.ux creates wireframes, bubbles.design updates design.md,
         # bubbles.plan updates scopes.md, then implement carries out the changes
         improve: [analyze, bootstrap, implement, test, validate, audit]
         # security trigger: runs dependency scan + code review + threat modeling,
-        # then implements fixes for any findings
-        security: [implement, test, validate, audit]
+        # then bootstraps design artifacts → implements fixes for any findings
+        security: [bootstrap, implement, test, validate, audit]
       # Shared tail phases after all rounds complete
       tailPhases: [docs, finalize]
       sequentialSpecCompletion: true

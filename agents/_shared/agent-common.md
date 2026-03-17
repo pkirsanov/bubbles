@@ -2688,6 +2688,47 @@ For EACH finding/issue discovered:
 
 ---
 
+## ⚠️ Cross-Artifact Coherence Rule (ABSOLUTE — Applies to ALL Agents)
+
+**When ANY agent modifies ANY spec artifact (spec.md, design.md, scopes.md), ALL related artifacts MUST be updated to maintain coherence. Partial artifact updates create drift — one artifact says one thing, another says something different. Downstream agents (implement, test, validate) cannot work correctly with drifted artifacts.**
+
+### The Rule
+
+**Spec artifacts form a coherent chain: `spec.md` → `design.md` → `scopes.md`. Changes to any link MUST propagate to downstream links.**
+
+| If This Changed | Then These MUST Be Updated | By Whom |
+|-----------------|---------------------------|---------|
+| `spec.md` (new actors, use cases, requirements, improvement proposals) | `design.md` (architecture/API contracts for new requirements) + `scopes.md` (new Gherkin scenarios + DoD) | `bubbles.design` → `bubbles.plan` |
+| `design.md` (new API contracts, architecture changes, new components) | `scopes.md` (implementation plan + DoD items reflecting design) | `bubbles.plan` |
+| `scopes.md` (new findings/scenarios/DoD items added by trigger agents) | `design.md` (ensure design covers the implementation approach for new items) | `bubbles.design` |
+
+### When This Rule Is Enforced
+
+1. **Fix cycle bootstrap phase** — After ANY trigger agent modifies spec artifacts, the bootstrap phase ALWAYS invokes design + plan agents to ensure coherence. This is unconditional in fix cycles. See the Fix Cycle Bootstrap Phase Protocol in the workflow agent.
+
+2. **Sequential phaseOrder bootstrap phase** — Before the implement phase, the orchestrator verifies G033 and invokes design + plan if artifacts are missing or insufficient.
+
+3. **Findings Artifact Update (G031)** — When trigger/analysis agents discover issues, they must update scopes.md. The bootstrap ensures the matching design.md updates happen too.
+
+### Violations (ALL are BLOCKING)
+
+```
+⛔ Analyst enriches spec.md with new use cases but design.md still reflects pre-analysis state → ARTIFACT DRIFT
+⛔ Harden adds new DoD items to scopes.md but design.md doesn't describe how to implement them → ARTIFACT DRIFT
+⛔ Gaps agent finds missing implementations in scopes.md but design.md lacks the API contracts → ARTIFACT DRIFT
+⛔ Bootstrap skips design/plan invocation because design.md "already exists" even though spec.md just changed → SKIPPED COHERENCE
+⛔ Any agent modifies spec.md without the workflow ensuring design.md and scopes.md are updated → ORPHANED CHANGES
+```
+
+### Detection (Orchestrator Responsibility)
+
+The workflow orchestrator (`bubbles.workflow`) MUST verify cross-artifact coherence after every bootstrap phase:
+- If `spec.md` was modified in the current round, confirm `design.md` was updated in the same round
+- If `scopes.md` had new DoD items added, confirm `design.md` covers the implementation approach
+- If `design.md` was updated, confirm `scopes.md` reflects the design changes in Gherkin scenarios
+
+---
+
 ## ⚠️ Quality Work Standards (NON-NEGOTIABLE)
 
 **ALL work produced by Bubbles agents MUST be genuine, high-quality, and production-ready.**

@@ -178,7 +178,7 @@ Supported options:
 | "Discover requirements, design UX, then deliver" | `product-to-delivery` | `done` | **analyze** → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
 | "Requirements + UX + design only (no code)" | `product-discovery` | `specs_hardened` | **analyze** → select → bootstrap → harden → docs → validate → audit → finalize |
 | "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | **analyze** → select → **validate** → harden → gaps → implement → test → validate → audit → chaos → docs → finalize |
-| "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→impl→test→val→audit; simplify→test→val→audit; others→impl→test→val→audit |
+| "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→bootstrap→impl→test→val→audit; simplify→test→val→audit; improve→analyze→bootstrap→impl→test→val→audit; others→bootstrap→impl→test→val→audit |
 | "Priority-driven iterative work execution (N iterations or time-bounded)" | `iterate` | `done` | [N iterations: pick highest-priority work → auto-select mode → execute full delivery cycle] → finalize (per-spec touched) |
 
 ### How to Invoke Workflow Modes
@@ -784,28 +784,31 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 
         | Trigger | Fix Cycle | Rationale |
         |---------|-----------|-----------|
-        | `chaos` | `bug → implement → test → validate → audit` | Chaos finds runtime bugs; bubbles.bug documents the bug with structured artifacts and root cause analysis, then bubbles.implement fixes it |
-        | `harden` | `implement → test → validate → audit` | Harden finds spec/coverage gaps needing code + test additions |
-        | `gaps` | `implement → test → validate → audit` | Gaps finds missing implementations needing new code |
+        | `chaos` | `bug → bootstrap → implement → test → validate → audit` | Chaos finds runtime bugs; bubbles.bug documents the bug, bootstrap ensures design readiness, then bubbles.implement fixes it |
+        | `harden` | `bootstrap → implement → test → validate → audit` | Harden finds spec/coverage gaps; bootstrap ensures design.md and scopes.md are substantive before implementing |
+        | `gaps` | `bootstrap → implement → test → validate → audit` | Gaps finds missing implementations; bootstrap ensures design artifacts are ready before new code |
         | `simplify` | `test → validate → audit` | Simplify makes cleanup changes itself; only verify nothing broke |
-        | `stabilize` | `implement → test → validate → audit` | Stabilize finds perf/infra/config issues needing code fixes |
-        | `validate` | `implement → test → validate → audit` | Validate finds regressions/violations needing code fixes |
+        | `stabilize` | `bootstrap → implement → test → validate → audit` | Stabilize finds perf/infra/config issues; bootstrap ensures design readiness before fixes |
+        | `validate` | `bootstrap → implement → test → validate → audit` | Validate finds regressions/violations; bootstrap ensures design readiness before fixes |
         | `improve` | `analyze → bootstrap → implement → test → validate → audit` | Improve runs full analyst→UX→design→plan pipeline before implementation (see Improve Trigger Protocol below) |
-        | `security` | `implement → test → validate → audit` | Security finds vulnerabilities needing code fixes (auth, injection, secrets) |
+        | `security` | `bootstrap → implement → test → validate → audit` | Security finds vulnerabilities; bootstrap ensures design readiness before code fixes |
 
       #### ⚠️ Fix Cycle Specialist Dispatch Protocol (MANDATORY — EVERY phase MUST invoke specialist via `runSubagent`)
 
       **This protocol is NON-NEGOTIABLE. The workflow agent MUST NOT skip ANY phase in the fix cycle. EVERY phase MUST be a real `runSubagent` call to the correct specialist agent. Doing implementation work directly, skipping validation, or skipping audit is a BLOCKING VIOLATION.**
 
       **Anti-skip rules:**
+      - ❌ FORBIDDEN: Skipping `bootstrap` phase before `implement` — design readiness (G033) MUST be verified
       - ❌ FORBIDDEN: Skipping `test` phase after `implement` — tests MUST run to verify fixes
       - ❌ FORBIDDEN: Skipping `validate` phase — validation MUST verify policy compliance
       - ❌ FORBIDDEN: Skipping `audit` phase — audit MUST verify quality gates
       - ❌ FORBIDDEN: Doing implementation directly without invoking `bubbles.implement` via `runSubagent`
+      - ❌ FORBIDDEN: Going directly to `implement` without checking G033 (design.md exists + substantive, scopes.md has Gherkin + DoD)
       - ❌ FORBIDDEN: Claiming "tests pass" without invoking `bubbles.test` via `runSubagent`
       - ❌ FORBIDDEN: Claiming "validation clean" without invoking `bubbles.validate` via `runSubagent`
       - ❌ FORBIDDEN: Merging multiple fix cycle phases into a single `runSubagent` call
       - ✅ REQUIRED: One `runSubagent` call per fix cycle phase, sequential, with verification between each
+      - ✅ REQUIRED: `bootstrap` phase must verify G033 before proceeding to `implement` (conditional — fast pass-through if design.md and scopes.md are already substantive)
 
       **Execute EACH phase in the fix cycle as a SEPARATE `runSubagent` call, in order, with verification between each:**
 
@@ -841,20 +844,74 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
       Then invoke `bubbles.ux` if feature has UI.
       **Verify:** Confirm spec.md was updated with improvement proposals.
 
-      **Phase: `bootstrap` (improve trigger only)**
+      **Phase: `bootstrap` (ALL triggers except `simplify` — Gate G033 + Cross-Artifact Coherence)**
+
+      **⚠️ UNCONDITIONAL IN FIX CYCLES (NON-NEGOTIABLE):** In a fix cycle context, the `bootstrap` phase MUST ALWAYS invoke design + plan agents — never skip them. The trigger agent just modified spec artifacts (added findings, scenarios, DoD items to scopes.md, enriched spec.md, etc.), so design.md and scopes.md need to be updated to reflect those changes coherently. Checking G033 existence and deciding "already exists, skip" is the root cause of artifacts drifting out of sync.
+
+      **Why unconditional?** Fix cycles only run when the trigger found findings. Findings always modify spec artifacts. Modified spec artifacts always need cross-artifact coherence (spec.md → design.md → scopes.md). Therefore, bootstrap must always invoke design + plan to ensure coherence. The overhead is minimal — design/plan agents are fast when only minor updates are needed.
+
+      #### Cross-Artifact Coherence Rule (ABSOLUTE — applies to ALL fix cycles)
+
+      **When ANY phase modifies ANY spec artifact (spec.md, design.md, scopes.md), ALL related artifacts MUST be updated to maintain coherence:**
+
+      | If This Changed | Then These MUST Be Updated |
+      |-----------------|---------------------------|
+      | `spec.md` (new actors, use cases, requirements, improvement proposals) | `design.md` (architecture/API contracts for new requirements) + `scopes.md` (new Gherkin scenarios + DoD) |
+      | `design.md` (new API contracts, architecture changes) | `scopes.md` (implementation plan + DoD items reflecting design) |
+      | `scopes.md` (new findings, scenarios, DoD items added by trigger) | `design.md` (ensure design covers the new scope items) |
+
+      **Violations:**
+      - ❌ Analyst enriches spec.md with 5 improvement proposals but design.md still reflects pre-analysis state → DRIFT
+      - ❌ Harden adds 3 new DoD items to scopes.md but design.md doesn't describe how to implement them → DRIFT
+      - ❌ Gaps finds missing implementations and updates scopes.md but design.md doesn't have the API contracts → DRIFT
+      - ❌ Bootstrap skips design/plan because "design.md already has >20 lines" even though spec.md just changed → DRIFT
+
+      #### Bootstrap Execution Steps (fix cycle context — UNCONDITIONAL)
+
+      1. **ALWAYS invoke design agent** with findings context:
       ```
       runSubagent(
         agentName: "bubbles.design",
-        description: "Update design for {spec_id}",
-        prompt: "You are bubbles.design. Update design.md for spec {spec_id} based on analyst findings."
-      )
-      runSubagent(
-        agentName: "bubbles.plan",
-        description: "Update scopes for {spec_id}",
-        prompt: "You are bubbles.plan. Update scopes.md for spec {spec_id} with new Gherkin scenarios, test plans, DoD."
+        description: "Update design for {spec_id} after {trigger_name} findings",
+        prompt: "You are bubbles.design. UPDATE design.md for spec {spec_id} to reflect
+                 recent changes made by the {trigger_name} trigger phase.
+                 Feature dir: {FEATURE_DIR}
+                 Trigger findings that need design coverage: {trigger_findings}
+                 IMPORTANT: The trigger agent just modified spec artifacts. Your job is to
+                 ensure design.md is coherent with the current state of spec.md and scopes.md.
+                 - If spec.md has new actors/use-cases/requirements → add architecture coverage
+                 - If scopes.md has new Gherkin scenarios → ensure design covers the implementation approach
+                 - If design.md is already fully coherent with current artifacts → confirm and make no changes
+                 Mode: non-interactive. Do NOT overwrite existing content — MERGE new coverage into existing design.
+                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
       )
       ```
-      **Verify:** Confirm design.md and scopes.md were updated with new scopes/DoD items.
+
+      2. **ALWAYS invoke plan agent** with findings context:
+      ```
+      runSubagent(
+        agentName: "bubbles.plan",
+        description: "Update scopes for {spec_id} after {trigger_name} findings",
+        prompt: "You are bubbles.plan. UPDATE scopes.md for spec {spec_id} to reflect
+                 recent changes made by the {trigger_name} trigger phase and design updates.
+                 Feature dir: {FEATURE_DIR}
+                 Trigger findings that need scope coverage: {trigger_findings}
+                 IMPORTANT: Ensure scopes.md has Gherkin scenarios, Test Plan rows, and DoD items
+                 for ALL findings. Include new `- [ ]` DoD items for each finding that needs implementation.
+                 Cross-check with design.md to ensure implementation plans match the design.
+                 Do NOT overwrite existing content — MERGE new scope items into existing scopes.
+                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+      )
+      ```
+
+      3. **Verify G033 passes:** After design + plan agents complete, verify:
+         - `design.md` exists and has >20 lines of substantive content
+         - `scopes.md` exists and has Gherkin scenarios (`Given/When/Then`) and DoD items (`- [ ]`)
+         - If still failing after 3 iterations → mark spec `blocked` with reason "G033: design artifacts incomplete after bootstrap"
+
+      **For `improve` trigger specifically:** The `bootstrap` phase follows `analyze` — `bubbles.design` auto-detects `from-analysis` mode when analyst+UX sections are present in spec.md, producing contract-grade design.
+
+      **Verify:** Confirm design.md and scopes.md were updated with substantive content reflecting the trigger's findings.
 
       **Phase: `implement`**
       ```
@@ -916,27 +973,30 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 
       **⚠️ POST-FIX-CYCLE VERIFICATION (MANDATORY after ALL fix cycle phases complete):**
       After the entire fix cycle for a round completes, the workflow agent MUST verify:
-      1. **Implementation happened:** at least one file was modified by bubbles.implement (check response for file paths)
-      2. **Tests actually ran:** bubbles.test response contains terminal commands and exit codes
-      3. **Validation actually ran:** bubbles.validate response contains gate pass/fail with evidence
-      4. **Audit actually ran:** bubbles.audit response contains a verdict (✅/⚠️/🛑)
-      5. **Scope artifacts reflect the work:** DoD items added during findings should now be `[x]` with evidence
+      1. **Bootstrap ran and updated artifacts:** design + plan agents were invoked (not skipped). design.md reflects trigger findings. scopes.md has Gherkin + DoD for all findings. Cross-artifact coherence verified (spec.md ↔ design.md ↔ scopes.md consistent)
+      2. **Implementation happened:** at least one file was modified by bubbles.implement (check response for file paths)
+      3. **Tests actually ran:** bubbles.test response contains terminal commands and exit codes
+      4. **Validation actually ran:** bubbles.validate response contains gate pass/fail with evidence
+      5. **Audit actually ran:** bubbles.audit response contains a verdict (✅/⚠️/🛑)
+      6. **Scope artifacts reflect the work:** DoD items added during findings should now be `[x]` with evidence
       If ANY verification fails → log the gap and either re-invoke the missing phase or mark the round as incomplete.
 
-        **Note on simplify trigger:** When `bubbles.simplify` is the trigger, it both identifies AND makes the code changes (refactoring, dead code removal, complexity reduction). No separate implement phase is needed — go directly to `test → validate → audit` to verify the simplification didn't break anything.
+        **Note on simplify trigger:** When `bubbles.simplify` is the trigger, it both identifies AND makes the code changes (refactoring, dead code removal, complexity reduction). No separate implement phase is needed — go directly to `test → validate → audit` to verify the simplification didn't break anything. This is the ONLY trigger without a `bootstrap` phase.
 
-        **Note on stabilize trigger:** When `bubbles.stabilize` is the trigger, it identifies performance, infrastructure, configuration, and reliability issues. Unlike simplify, stabilize reports findings but does NOT make the code changes itself — `bubbles.implement` applies the fixes, then `test → validate → audit` verifies.
+        **Note on stabilize trigger:** When `bubbles.stabilize` is the trigger, it identifies performance, infrastructure, configuration, and reliability issues. Unlike simplify, stabilize reports findings but does NOT make the code changes itself — `bootstrap` ensures design readiness, then `bubbles.implement` applies the fixes, then `test → validate → audit` verifies.
 
-        **Note on chaos trigger:** When `bubbles.chaos` is the trigger and finds runtime failures, invoke `bubbles.bug` first to document the bug with structured artifacts (bug.md, spec.md, design.md, scopes.md) and root cause analysis. `bubbles.bug` does NOT implement the fix — it creates the bug documentation and analysis, then `bubbles.implement` fixes the code.
+        **Note on chaos trigger:** When `bubbles.chaos` is the trigger and finds runtime failures, invoke `bubbles.bug` first to document the bug with structured artifacts (bug.md, spec.md, design.md, scopes.md) and root cause analysis. `bubbles.bug` does NOT implement the fix — it creates the bug documentation and analysis, then `bootstrap` ensures design readiness, then `bubbles.implement` fixes the code.
 
-        **Note on improve trigger (MANDATORY — analyst→UX→design→plan pipeline):** When `improve` is the trigger, the fix cycle is `analyze → bootstrap → implement → test → validate → audit`. This is the ONLY trigger that goes through the full business analysis pipeline:
+        **Note on bootstrap in fix cycles (MANDATORY — UNCONDITIONAL):** ALL fix cycles that include `implement` also include `bootstrap` before it. The `bootstrap` phase ALWAYS invokes design + plan agents in a fix cycle context (never skips). The rationale: fix cycles only run when findings exist; findings always modify spec artifacts; modified spec artifacts always need cross-artifact coherence (spec.md ↔ design.md ↔ scopes.md). The design/plan agents are instructed to MERGE new coverage into existing artifacts, not overwrite. If artifacts are already fully coherent, the agents make no changes — minimal overhead. This prevents the anti-pattern of artifacts drifting out of sync when triggers modify one artifact but not the related ones.
+
+        **Note on improve trigger (MANDATORY — analyst→UX→design→plan pipeline):** When `improve` is the trigger, the fix cycle is `analyze → bootstrap → implement → test → validate → audit`. This is the only trigger that includes the `analyze` phase (business analysis):
         1. `analyze` phase: invoke `bubbles.analyst` to analyze the spec's existing capabilities against competitors/best practices and propose improvements. Then invoke `bubbles.ux` (if feature has UI) to create wireframes for proposed changes. The analyst enriches spec.md with actors, use cases, improvement proposals.
         2. `bootstrap` phase: invoke `bubbles.design` (auto-detects from-analysis mode when analyst+UX sections present) to update design.md with contract-grade technical design for proposed improvements. Then invoke `bubbles.plan` to update scopes.md with new/modified scopes, Gherkin scenarios, test plans, and DoD items for the improvements.
         3. `implement` phase: invoke `bubbles.implement` to carry out the designed improvements according to the updated scopes.
         4. `test → validate → audit`: standard verification chain.
         **The improve trigger MUST NOT skip straight to implement.** If `analyze` or `bootstrap` is bypassed, the agent is doing direct code changes without proper analysis — this defeats the purpose of the improve trigger and is a blocking violation.
 
-        **Extensibility:** Future trigger agents can define their own fix cycle by adding an entry to `triggerFixCycles` in workflows.yaml. The orchestrator looks up the cycle by trigger name and falls back to `[implement, test, validate, audit]` if no entry exists.
+        **Extensibility:** Future trigger agents can define their own fix cycle by adding an entry to `triggerFixCycles` in workflows.yaml. The orchestrator looks up the cycle by trigger name and falls back to `[bootstrap, implement, test, validate, audit]` if no entry exists.
 
       - Apply standard failure routing if any fix cycle phase fails (see Failure Routing Contract)
 
@@ -948,7 +1008,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
       ```
       Round {R}: spec={spec_id}, trigger={trigger_name}, findings={count}, fix_cycle={yes|no}, agents_invoked=[{list}], duration={minutes}
       ```
-      The `agents_invoked` field MUST list EVERY specialist agent that was invoked via `runSubagent` in this round. Example: `agents_invoked=[bubbles.harden, bubbles.implement, bubbles.test, bubbles.validate, bubbles.audit]`. If only `[bubbles.harden]` appears (no fix cycle agents), this means the fix cycle was SKIPPED — which is a VIOLATION if findings existed.
+      The `agents_invoked` field MUST list EVERY specialist agent that was invoked via `runSubagent` in this round. Example: `agents_invoked=[bubbles.harden, bubbles.design, bubbles.plan, bubbles.implement, bubbles.test, bubbles.validate, bubbles.audit]`. If only `[bubbles.harden]` appears (no fix cycle agents), this means the fix cycle was SKIPPED — which is a VIOLATION if findings existed. If `bubbles.implement` appears without `bubbles.design`/`bubbles.plan` preceding it, bootstrap was SKIPPED — also a VIOLATION.
 
 3. **After all rounds complete** (or time budget exhausted):
    - **Per-spec finalization:** For EACH spec that was touched during the sweep:
