@@ -1,7 +1,7 @@
-<!-- governance-version: 2.1.0 -->
+<!-- governance-version: 2.2.0 -->
 # Shared Agent Patterns (Common to all bubbles.* agents)
 
-> **Version:** 2.1.0 | **This file defines shared patterns used by multiple Bubbles agents.**
+> **Version:** 2.2.0 | **This file defines shared patterns used by multiple Bubbles agents.**
 > Reference this file instead of duplicating content.
 > 
 > **Portability:** This file is **project-agnostic**. It contains NO project-specific commands, paths, tools, or language references. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](project-config-contract.md) for the indirection rules.
@@ -20,6 +20,9 @@ This file is ~2,400 lines of comprehensive governance. To reduce context overhea
 | Completion rules | `ABSOLUTE COMPLETION HIERARCHY` (line ~12) |
 | Evidence standards | `Execution Evidence Standard` |
 | Anti-fabrication | `Anti-Fabrication Policy` |
+| Red/green proof | `Rule 6: Red-Green Traceability` |
+| Scope sizing | `Rule 7: Scope Size Discipline` |
+| Micro-fix loops | `Rule 8: Micro-Fix Containment Loops` |
 | Test taxonomy | `Canonical Test Taxonomy` |
 | Mock restrictions | `Real Implementation & No-Mock Testing Reality Policy` |
 | Status transitions | `Status Transition Summary` |
@@ -167,6 +170,64 @@ grep -c 'Status:.*Not Started\|Status:.*In Progress\|Status:.*Blocked' {FEATURE_
 
 **If ANY of these is FALSE → the test-related DoD item stays `[ ]` and the scope stays "In Progress".**
 
+### Rule 6: Red-Green Traceability for New or Fixed Behavior (ABSOLUTE)
+
+**Changed behavior is not proven until the agent shows both the broken state and the fixed state.**
+
+This applies when:
+- fixing a bug
+- adding behavior-specific tests for new functionality
+- adding regression tests for changed behavior
+
+Required sequence:
+1. **RED** — run the targeted test or reproduction step against the pre-fix state and capture failing evidence
+2. **GREEN** — implement the fix and rerun the targeted test or reproduction step until it passes
+3. **REGRESSION SAFETY** — run the broader impacted suite to prove the fix did not break adjacent behavior
+
+Allowed exceptions:
+- docs-only work
+- artifact-only planning/hardening with no behavior change
+- mechanical refactors with zero behavior change and no new behavior-specific tests
+
+Invalid patterns:
+- writing the test after the fix and only showing a passing run
+- claiming the bug was reproduced earlier without current-session evidence
+- treating a broad failing suite as sufficient red evidence when the changed behavior was never isolated
+
+### Rule 7: Scope Size Discipline and Optional Time Budgets (ABSOLUTE)
+
+**Scopes are small, isolated delivery units by default. Time budgets are optional; smallness is not.**
+
+Default expectation:
+- one primary user or system outcome per scope
+- one coherent slice of behavior per scope
+- DoD items small enough to validate individually without batching unrelated work
+
+When optional tags are provided:
+- `maxScopeMinutes` is a planning heuristic ceiling for the total scope
+- `maxDodMinutes` is a planning heuristic ceiling for each DoD item
+
+Scopes MUST be split unless explicitly justified when they contain:
+- multiple unrelated user journeys
+- backend, frontend, and ops work that do not form one vertical slice
+- more than one independent success outcome
+- DoD items that require multiple unrelated validations or manual judgment bundles
+
+### Rule 8: Micro-Fix Containment Loops (ABSOLUTE)
+
+**When a failure is narrow, the repair loop must stay narrow.**
+
+Required behavior:
+- start with the smallest failing command, file, symbol, or scope slice
+- repair the exact failure with focused context
+- rerun only the impacted command first
+- expand to broader validation only after the narrow failure is clean
+
+Forbidden behavior:
+- blindly rerunning the entire workflow for a single compile or lint error
+- escalating to a broad rewrite when the failure is localized
+- moving to a new phase without proving the local failure is resolved
+
 ### Enforcement Summary
 
 ```
@@ -204,6 +265,8 @@ Each agent's completion validation has two tiers:
 | V7 | Implementation-claims match | For each DoD item marked `[x]`: verify the claimed file/feature actually exists and matches what the item describes | Zero false-positive DoD items |
 | V8 | No mocks in production code | `grep -rn "mock\|Mock\|MOCK\|fake\|Fake\|FAKE\|stub\|Stub" [src-files] --include='*.rs' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.go'` (exclude test dirs) | Zero matches in non-test source files |
 | V9 | No defaults/fallbacks in code | `grep -rn "unwrap_or\|unwrap_or_default\|getOrDefault\|?? \"\|\|\| \"" [src-files]` (exclude test dirs) | Zero matches in production code |
+| V10 | Red/green traceability | For changed behavior, verify failing evidence exists before passing evidence | Both RED and GREEN evidence present when applicable |
+| V11 | Scope size discipline | Verify scopes/DoD items stay isolated and respect optional time budgets if declared | No oversized or mixed-purpose scope without justification |
 
 **Tier 2 — Agent-Specific Checks (defined per agent — see individual agent files):**
 

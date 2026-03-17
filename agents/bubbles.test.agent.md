@@ -21,6 +21,7 @@ handoffs:
 - Allow **test-only** runs without a feature/bug target; if fixes are required, stop and request classification
 - Tests validate specs/use cases/design (not the current implementation)
 - No skips/xfails/disabled tests; fix the implementation (or docs when truly wrong)
+- Enforce red→green traceability for changed behavior: targeted tests or reproductions must fail before the fix and pass after the fix
 - **Record test execution evidence from ACTUAL terminal output before marking anything complete** — see Execution Evidence Standard in agent-common.md
 - **Never claim "tests pass" without having run the tests in a terminal and observed the output**
 - **Never write expected output; always copy actual terminal output**
@@ -35,12 +36,13 @@ handoffs:
 - **Evidence MUST be ≥10 lines of raw terminal output.** Shorter blocks are presumed fabricated and will be rejected by artifact lint.
 - **NEVER use narrative summaries as evidence.** Phrases like "all tests pass", "exit code 0", "no failures" are NOT evidence unless accompanied by ≥10 lines of actual command output.
 - **Each test type MUST be executed separately** with its own command and evidence block. Do NOT combine multiple test types into a single evidence claim.
+- **Changed behavior MUST show RED then GREEN.** If the work adds or repairs behavior, capture a failing targeted run before implementation acceptance, then capture the passing run after the fix.
 - **Self-audit before reporting results:** For each test type in the report, ask: "Did I actually run this test command in a terminal during THIS session?" If NO → run it now.
 - **Noop test detection is BLOCKING:** If a test would pass even with a completely broken implementation, it is NOT a valid test. Rewrite with meaningful assertions.
 - **Apply Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) to all test evidence before declaring the test phase complete.
 - **Default/fallback/stub detection is BLOCKING:** If implementation code under test uses defaults, fallbacks, or stubs, the implementation is INVALID regardless of whether tests pass. Run the reality scan (G028+G030) before declaring test phase complete.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
+**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
 **Non-goals:**
 - Implementing new feature scope without a feature folder and required artifacts
@@ -73,6 +75,7 @@ This prompt is for **testing-first hardening**.
 - **Tests validate SPECS/USE CASES/DESIGN** — NOT the current implementation.
   - If tests reveal the implementation diverges from spec/design/use cases, **fix the implementation**.
   - If tests reveal the spec/design/use cases are incomplete/ambiguous/wrong, **update the docs** (spec/design/use cases) and then update tests + implementation to match.
+- **RED before GREEN is mandatory** for changed behavior. Capture the failing targeted test or reproduction first, then the passing proof, then the broader regression suite.
 - **E2E tests (`e2e-api` and/or `e2e-ui`) are MANDATORY** for every scope/bug — they run against a LIVE system with NO mocks.
 - **Live system tests** (integration, e2e-api, e2e-ui, stress, load) MUST use ephemeral/temporary storage or clean up test data after. No residual test data.
 - **Follow ALL repository policies** from `.github/copilot-instructions.md`.

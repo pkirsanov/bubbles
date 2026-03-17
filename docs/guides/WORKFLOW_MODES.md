@@ -4,6 +4,13 @@
 
 Workflow modes define **which phases run** and **in what order** for a given piece of work. Choose the mode that matches what you're doing.
 
+Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
+- `socratic: true` with `socraticQuestions: <1-5>` enables a bounded clarification loop before discovery/bootstrap work.
+- `gitIsolation: true` opts into isolated branch/worktree setup when repo policy allows it.
+- `autoCommit: true` opts into atomic commits after fully validated milestones.
+- `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing.
+- `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
+
 ---
 
 ## Choosing a Mode
@@ -25,7 +32,7 @@ These run the complete pipeline. Use for new features.
 **The standard.** All phases, strict gates, complete coverage.
 
 ```
-analyze → design → plan → implement → test → validate → audit → docs
+select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** New features, standard development work.
@@ -45,7 +52,7 @@ Same as `full-delivery` but with **stricter gates** — chaos testing included, 
 Prioritized delivery. Scores work items by business value, implements in priority order, runs E2E tests in batches.
 
 ```
-select (by value) → plan → implement → test → validate → audit → docs
+discover → select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** Multiple features competing for time. Large backlogs.
@@ -59,7 +66,7 @@ select (by value) → plan → implement → test → validate → audit → doc
 Full product discovery → delivery pipeline.
 
 ```
-analyze → ux → design → plan → implement → test → validate → audit → docs
+analyze → select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** Starting from a product idea, not a technical spec.
@@ -75,7 +82,7 @@ Skip phases you don't need. Move fast without cutting safety.
 Fast bug resolution with proper evidence.
 
 ```
-bug-reproduce → implement-fix → test → validate
+select → implement → test → validate → audit → finalize
 ```
 
 **Use when:** Bug fixes. Get in, fix it, prove it, get out.
@@ -89,7 +96,7 @@ bug-reproduce → implement-fix → test → validate
 Just the planning phases. Sets up artifacts without implementing.
 
 ```
-analyze → design → plan
+select → bootstrap → implement → test → docs → validate → audit → finalize
 ```
 
 **Use when:** You want to plan but not implement yet.
@@ -99,7 +106,7 @@ analyze → design → plan
 Continue scope-by-scope implementation within an existing spec.
 
 ```
-implement → test → validate (repeat per scope)
+[priority pick] → [auto-selected mode] → specialist phases → finalize
 ```
 
 **Use when:** Picking up where you left off.
@@ -119,7 +126,7 @@ Focus on quality without new implementation.
 Hardening → gap analysis → test → documentation. The quality sandwich.
 
 ```
-harden → gaps → test → validate → docs
+select → bootstrap → validate → harden → gaps → implement → test → security → chaos → validate → audit → docs → finalize
 ```
 
 **Use when:** Post-implementation quality sweep.
@@ -129,7 +136,7 @@ harden → gaps → test → validate → docs
 Chaos testing followed by hardening fixes.
 
 ```
-chaos → harden → test → validate
+select → bootstrap → chaos → implement → test → validate → audit → finalize
 ```
 
 **Use when:** Resilience testing and fixing.
@@ -139,7 +146,7 @@ chaos → harden → test → validate
 Tighten specs and scope definitions. No code changes.
 
 ```
-clarify → plan → harden
+select → bootstrap → harden → docs → validate → audit → finalize
 ```
 
 **Use when:** Specs are vague, scopes need tightening.
@@ -149,7 +156,7 @@ clarify → plan → harden
 Random quality checks across the codebase. Like bottle kids — you never know where they'll hit.
 
 ```
-random(harden, gaps, chaos, security, test) → validate → docs
+[N randomized rounds: random spec + random trigger + trigger-specific fix cycle] → docs → finalize
 ```
 
 **Use when:** Periodic maintenance. Trust but verify.

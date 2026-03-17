@@ -1,6 +1,6 @@
 # 🫧 Bubbles Cheat Sheet
 
-> **25 Agents · 33 Gates · 23 Workflow Modes · 17 Phases**
+> **25 Agents · 38 Gates · 23 Workflow Modes · 17 Phases**
 >
 > *"It Ain't Rocket Appliances, But It Works."*
 
@@ -111,9 +111,11 @@
 | `chaos-to-doc` | — | Chaos → test → docs |
 | `reconcile-to-doc` | — | Reconcile conflicts → test → docs |
 
+**Optional execution tags:** `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+
 ---
 
-## 🚪 The 33 Gates
+## 🚪 The 38 Gates
 
 **Phase flow:**
 `analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
@@ -149,9 +151,15 @@
 | G027 | Phase-scope coherence | Completed phases match completed scopes |
 | G028 | Implementation reality | No stubs/fakes/hardcoded data in source |
 | G029 | Integration completeness | All artifacts wired into the system |
-| G030–G033 | Reserved | Future gates |
+| G030 | No defaults/no fallbacks | Production code fails fast instead of masking missing inputs |
+| G031 | Findings artifact update | Findings are recorded in artifacts before verdict |
+| G032 | Business analysis | Actors, use cases, scenarios, wireframes are present when required |
+| G033 | Design readiness | design.md + scopes.md exist before implement |
 | G034 | Security scan | No vulnerabilities in changed code |
 | G035 | Vertical slice | Frontend API calls match backend handlers |
+| G036 | Red→green traceability | Changed behavior shows failing proof before passing proof |
+| G037 | Scope size discipline | Scopes stay small, isolated, and single-outcome |
+| G038 | Micro-fix containment | Failures are repaired in narrow loops before broad reruns |
 
 ---
 

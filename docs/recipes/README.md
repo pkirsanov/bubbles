@@ -4,6 +4,13 @@
 
 Each recipe solves a specific problem — the situation you're in, and exactly what to type.
 
+Optional execution tags you can append to many workflow commands:
+- `socratic: true` for bounded clarification before discovery/bootstrap
+- `gitIsolation: true` for isolated branch/worktree setup when allowed
+- `autoCommit: true` for validated milestone commits
+- `maxScopeMinutes` and `maxDodMinutes` to keep scopes aggressively small
+- `microFixes: true` to keep failures in narrow repair loops
+
 ---
 
 ## Getting Started

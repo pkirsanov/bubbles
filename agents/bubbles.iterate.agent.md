@@ -65,6 +65,9 @@ handoffs:
 - Prepare all required artifacts (spec.md, design.md, scopes.md) if missing — by invoking `bubbles.design` and `bubbles.plan` via `runSubagent`
 - Determine the correct workflow mode for the identified work
 - Dispatch execution to specialist agents following the mode's `phaseOrder` from `.github/bubbles/workflows.yaml`
+- Preserve autonomous behavior by default. Only trigger a Socratic clarification loop when `socratic: true` is explicitly present.
+- Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into specialist invocation prompts.
+- When a failure is narrow and `microFixes` is not false, route through the smallest viable fix loop before escalating to a broader mode rerun.
 - Mark DoD items `[x]` IMMEDIATELY when validated - never batch
 - **Use case testing integrity** — any tests written or run must validate actual user/API consumer scenarios, not internal implementation details (see Use Case Testing Integrity in agent-common.md)
 - **No regression introduction** — after scope changes, verify no previously-passing tests now fail before concluding (see No Regression Introduction in agent-common.md)
@@ -127,6 +130,13 @@ Supported options:
 - `bug: <BUG-### or bug-folder-path>` - Explicitly select an existing bug folder to work on (must already exist)
 - `pick_up_incomplete_bugs: true` - When targeting a feature folder, allow iterate to pick an incomplete bug folder and execute its next incomplete scope
 - `allow_new_feature_dir: true` - Allow creating new feature folder if none exists
+- `socratic: true|false` - Opt into targeted clarification before planning/analysis work
+- `socraticQuestions: <1-5>` - Max Socratic questions when enabled
+- `gitIsolation: true|false` - Opt into isolated branch/worktree setup
+- `autoCommit: true|false` - Opt into atomic validated commits
+- `maxScopeMinutes: <N>` - Planning heuristic for scope size
+- `maxDodMinutes: <N>` - Planning heuristic for DoD item size
+- `microFixes: true|false` - Keep failure recovery in narrow fix loops (default: true)
 
 ---
 

@@ -25,8 +25,9 @@ Each phase is owned by a **specialist agent**. The **workflow orchestrator** dec
 | **Spec** | A feature or bug folder under `specs/` with required artifacts |
 | **Scope** | A unit of work within a spec — has its own DoD, tests, evidence |
 | **DoD** | Definition of Done — checkbox items that must all be `[x]` with evidence |
-| **Gate** | An automatic quality check (33 total) that must pass before completion |
+| **Gate** | An automatic quality check (38 total) that must pass before completion |
 | **Mode** | A workflow configuration defining which phases run and in what order |
+| **Execution Tag** | An optional modifier like `socratic`, `gitIsolation`, `autoCommit`, or `maxScopeMinutes` |
 | **Evidence** | Raw terminal output (≥10 lines) proving something actually happened |
 
 ---
@@ -56,6 +57,12 @@ The brain of the operation. Orchestrates end-to-end delivery by driving phases i
 4. Enforces gate checks between phases
 5. Handles retries and error recovery
 6. Tracks progress in `state.json`
+
+**Execution tags it understands:**
+- `socratic: true` for bounded questioning before discovery/bootstrap
+- `gitIsolation: true` and `autoCommit: true` for opt-in git discipline
+- `maxScopeMinutes` and `maxDodMinutes` for tighter scope sizing
+- `microFixes: true` for narrow error-scoped fix loops
 
 ---
 
@@ -97,6 +104,8 @@ Delivers. Every. Time. Takes a planned scope and implements it to DoD completion
 - DoD items checked immediately with evidence — never batched
 - Tests validate specs, not current implementation
 - Round-trip verification for all state changes
+- New or changed behavior must show red→green proof
+- Narrow failures stay in micro-fix loops before broader reruns
 
 ---
 
@@ -120,6 +129,7 @@ Runs tests, finds gaps, fixes implementations until everything passes. Trusts no
 - No skips, no xfails, no disabled tests
 - Evidence from actual terminal execution only
 - Detects and rewrites "proxy tests" (status-code-only, assertion-free)
+- Requires red→green traceability for changed behavior
 
 ---
 
@@ -185,6 +195,9 @@ Business analysis. Discovers requirements, competitive landscape, actor/use-case
 - Need to understand business requirements before design
 - Competitive analysis needed
 
+**Optional mode:**
+- `socratic: true` turns the analyst into a bounded interviewer that asks only the questions that materially change product direction
+
 **Example:**
 ```
 /bubbles.analyst  Build a real-time portfolio dashboard with P&L tracking
@@ -232,6 +245,11 @@ Scope planning. Takes a spec and design, breaks it into implementable scopes wit
 ```
 /bubbles.plan  Create scopes for feature 042
 ```
+
+**Planning rules:**
+- scopes are small, isolated, and single-outcome by default
+- optional `maxScopeMinutes` and `maxDodMinutes` further tighten the split
+- if a scope mixes unrelated journeys, it gets split before implementation
 
 ---
 

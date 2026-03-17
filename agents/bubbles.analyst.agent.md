@@ -30,6 +30,7 @@ handoffs:
 - Discover edge cases commonly missed (validation, error states, concurrency, accessibility)
 - Ensure state.json exists in the feature folder (create if missing) — see State.json Lifecycle in agent-common.md
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
+- If `socratic: true`, switch into a tightly bounded discovery interview: ask only targeted questions that materially change requirements, architecture direction, or UX outcomes; stop after `socraticQuestions` questions or earlier if ambiguity is resolved
 
 **Non-goals:**
 - Technical architecture or API design (→ bubbles.design)
@@ -70,6 +71,8 @@ Supported options:
 - `domain: hospitality|finance|trading|...` — Domain context hint (auto-detected from project docs if omitted)
 - `focus: <text>` — Free-form focus area (e.g., "booking flow", "search experience")
 - `skip_competitive: true` — Skip competitor web research (offline mode)
+- `socratic: true|false` — Opt into targeted clarification questions before finalizing the analysis
+- `socraticQuestions: <1-5>` — Maximum number of Socratic questions (default: 3)
 
 ---
 
@@ -86,6 +89,8 @@ Unlike `/bubbles.design` (technical architecture), `/bubbles.clarify` (consisten
 - **Discovers missing scenarios** that existing spec/code doesn't address
 
 **PRINCIPLE: Requirements come from understanding users, domain, and competition — not from asking the developer what to build.**
+
+**Socratic exception:** ask questions only when the caller explicitly opts in via `socratic: true`. This preserves autonomous analysis as the default.
 
 ---
 
@@ -128,6 +133,16 @@ Use the Loop Guard from [agent-common.md](_shared/agent-common.md): max 3 reads 
 3. Ensure `state.json` exists (create with `not_started` if missing — see State.json Lifecycle in agent-common.md)
 4. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
 5. Read existing `spec.md` if present → determines mode (greenfield vs improve)
+
+### Phase 0.5: Optional Socratic Discovery Loop
+
+Run this phase only when `socratic: true`.
+
+1. Ask up to `socraticQuestions` highly targeted questions
+2. Prioritize unresolved tradeoffs that materially change scope, UX, or operating model
+3. Prefer concise multiple-choice framing when possible
+4. Stop asking once ambiguity is sufficiently reduced
+5. Fold the answers into `spec.md` assumptions, actors, use cases, and constraints before continuing analysis
 
 ### Phase 1: Codebase Capability Analysis
 

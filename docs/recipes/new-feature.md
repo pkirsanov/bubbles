@@ -16,6 +16,12 @@ You have a feature idea (or a requirement from a stakeholder) and need to take i
 /bubbles.analyst  Build a real-time notification system with email and push support
 ```
 
+If you want Bubbles to stay autonomous, stop there. If you want a bounded clarification loop first, opt in explicitly:
+
+```
+/bubbles.workflow  product-to-delivery for notification-system socratic: true socraticQuestions: 4
+```
+
 **What happens:** The analyst agent researches requirements, identifies actors, creates use cases, and writes `spec.md`.
 
 **You'll get:** A `specs/NNN-notification-system/spec.md` with requirements, acceptance criteria, and use cases.
@@ -60,6 +66,12 @@ If you want the orchestrator to handle the entire flow:
 
 ```
 /bubbles.workflow  full-delivery for notification-system
+```
+
+Optional execution tags:
+
+```
+/bubbles.workflow  full-delivery for notification-system gitIsolation: true autoCommit: true maxScopeMinutes: 20 maxDodMinutes: 8
 ```
 
 This runs all phases automatically: analyze → design → plan → implement → test → validate → audit → docs.

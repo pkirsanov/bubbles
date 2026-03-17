@@ -11,7 +11,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/agents-25-58a6ff?style=flat-square" alt="25 agents">
-  <img src="https://img.shields.io/badge/gates-33-3fb950?style=flat-square" alt="33 gates">
+  <img src="https://img.shields.io/badge/gates-38-3fb950?style=flat-square" alt="38 gates">
   <img src="https://img.shields.io/badge/workflow_modes-23-bc8cff?style=flat-square" alt="23 modes">
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -27,9 +27,10 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>25 specialized agents</strong> — each with a defined role, from implementation to chaos testing</td></tr>
-<tr><td width="64"><img src="icons/lahey-bottle.svg" width="48"></td><td><strong>33 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-bottle.svg" width="48"></td><td><strong>38 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/trinity-notebook.svg" width="48"></td><td><strong>Zero-fabrication policy</strong> — "tests pass" without terminal output? That's greasy, boys.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>23 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
 </table>
 
 ---
@@ -216,7 +217,7 @@ Every agent has a job. Here's who does what.
 
 ## Workflow Modes
 
-Bubbles supports 23 workflow modes. Here are the most common:
+Bubbles supports 23 workflow modes plus optional execution tags. Here are the most common:
 
 | Mode | What It Does | Use When |
 |------|-------------|----------|
@@ -228,6 +229,13 @@ Bubbles supports 23 workflow modes. Here are the most common:
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 23 modes.
+
+Optional execution tags:
+- `socratic: true` turns on a bounded clarification loop before discovery/bootstrap work.
+- `gitIsolation: true` opts into branch/worktree isolation when project policy allows it.
+- `autoCommit: true` opts into atomic commits after validated milestones.
+- `maxScopeMinutes` and `maxDodMinutes` tighten planning so scopes stay small and isolated.
+- `microFixes: true` keeps failure recovery in narrow error-scoped loops.
 
 ---
 

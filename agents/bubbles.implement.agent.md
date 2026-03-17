@@ -24,6 +24,8 @@ handoffs:
 - Treat spec/design/scopes as source of truth
 - Mark DoD checkboxes IMMEDIATELY with evidence - never batch
 - Do not mark scope Done until DoD fully satisfied AND audit clean
+- For new or changed behavior, prove RED before GREEN: capture a failing targeted test or reproduction step before accepting the fix, then capture the passing result after the fix.
+- Keep failure handling inside micro-fix loops: fix the smallest broken command/file/symbol first, rerun that narrow validation, then expand outward.
 - **Use case testing integrity** — all tests must validate actual user/API consumer scenarios; proxy tests (status-code-only, assertion-free, mock-heavy) are gaps, not coverage (see Use Case Testing Integrity in agent-common.md)
 - **No regression introduction** — after implementing scope changes, verify no previously-passing tests now fail; fix regressions before proceeding (see No Regression Introduction in agent-common.md)
 - **Round-trip verification** — for state-changing operations, always verify: create → read back → confirm persisted correctly
@@ -50,7 +52,7 @@ handoffs:
 - No `TODO`, `FIXME`, `HACK`, `STUB`, `unimplemented!()` anywhere in changed code
 - No narrative summaries or template placeholders as evidence
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I4) MUST pass before reporting results.
+**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I4) MUST pass before reporting results.
 
 **Non-goals:**
 - Creating new scopes or planning work (→ bubbles.plan or bubbles.iterate)
@@ -82,6 +84,7 @@ Execution control options:
 - `scopes: 2` - execute only scope 2
 - `scopes: 2,3,5` - execute specific set
 - `stop after: scope 3` - stop after completing scope 3
+- `microFixes: true|false` - keep failures in small repair loops before broader reruns (default: true)
 
 ---
 
@@ -141,9 +144,16 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
 For each scope N:
 - Restate scope's Gherkin scenarios
 - Confirm tests exist that validate scenarios exactly
+- Identify the targeted RED proof for each new or fixed behavior before implementation begins (failing test, failing reproduction, or explicit gap assertion)
 - If UI changes exist, confirm UI scenario matrix is defined and mapped to e2e-ui tests
 - **If scope modifies dashboard/frontend code:** note that Docker Build Freshness Policy applies (see `agent-common.md` → Docker Build Freshness Policy). After implementation, rebuild with `--no-cache` and verify via Gate 9.
 - Update `state.json`: `currentScope`, `currentPhase: implement`
+
+During execution:
+- Capture RED evidence before changing the implementation whenever behavior is being added or repaired.
+- Apply the smallest viable fix.
+- Re-run the impacted command first.
+- Only after the narrow failure is clean, run the broader regression suite.
 
 ### Phases 2-7: Execution
 

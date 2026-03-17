@@ -16,9 +16,11 @@ handoffs:
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Write `scopes.md` as the single source of truth for scope execution.
 - Plan MUST be sequential and scope-gated: scope N cannot start until scope N-1 is fully done.
+- Default to small, well-defined, isolated scopes. A scope should represent one primary outcome, not a grab-bag of unrelated work.
 - Tests MUST be derived from spec/design requirements (spec-first), not from current behavior.
 - **Test plans must specify user-perspective tests** — each scope's test plan must include tests from the user/consumer perspective, not just internal tests. E2E tests must describe what the USER would do and see (see Use Case Testing Integrity in agent-common.md)
 - **Test plans must include round-trip verification** — for state-changing operations, plan tests that verify create → read back → confirm persisted
+- Honor optional sizing hints (`maxScopeMinutes`, `maxDodMinutes`) when provided, but keep scopes small even when no time boundary is given.
 - Follow tiered context loading and loop limits (below) to avoid read loops.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead.
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification.
@@ -89,6 +91,11 @@ $ADDITIONAL_CONTEXT
 
 Use this section to call out priority personas, risk areas, supported clients (admin/mobile/web/cli), or constraints.
 
+Supported planning tags:
+- `maxScopeMinutes: <N>` — Optional heuristic ceiling for how large each scope may be
+- `maxDodMinutes: <N>` — Optional heuristic ceiling for how large each DoD item may be
+- `socratic: true|false` — Indicates analysis was interactive; preserve clarified decisions in the scopes
+
 ---
 
 ## ⚠️ AMBIGUOUS REQUEST HANDLING (CRITICAL)
@@ -139,6 +146,9 @@ Core requirements:
 1) **Create small, well-defined scopes of work**
 - Each scope is a minimal, shippable increment.
 - Scopes must be ordered; do NOT proceed to scope N+1 until scope N is fully done.
+- Default target: one coherent user/system outcome per scope. If a scope mixes unrelated journeys, split it.
+- If `maxScopeMinutes` is supplied, treat it as a hard planning heuristic and split any scope that would obviously exceed it.
+- If `maxDodMinutes` is supplied, split DoD items until each item is individually verifiable within that heuristic.
 
 2) **Each scope must include**
 - One or a few **use cases in Gherkin** (Given/When/Then).
@@ -218,6 +228,12 @@ Rules:
 ### Phase 2: Build Scopes (Small, Sequential, Testable)
 
 Create a sequence of scopes.
+
+Scope sizing rules:
+- Prefer 1–3 Gherkin scenarios per scope; more than that usually means the scope is too broad.
+- Keep cross-surface work in the same scope only when it forms one vertical slice for one outcome.
+- If frontend, backend, and ops changes are unrelated, split them into separate scopes.
+- DoD items must map cleanly to one validation step each; if one item needs multiple unrelated validations, split it.
 
 Each scope must include:
 

@@ -1,4 +1,4 @@
-# governance-version: 2.1.0\nversion: 1
+# governance-version: 2.2.0\nversion: 1
 defaultMode: full-delivery
 
 gates:
@@ -107,6 +107,15 @@ gates:
   G035:
     name: vertical_slice_gate
     description: ABSOLUTE BLOCKING gate. When a scope produces BOTH frontend AND backend code, the vertical slice MUST be complete — every frontend API call MUST map to a .route()-wired backend handler, every backend handler MUST be registered in the service router, gateway/proxy forwarding rules MUST exist for all service endpoints, and E2E tests MUST exercise the full stack (frontend → gateway → service → data store). Applies conditionally — pure-backend or pure-frontend scopes are exempt. When this gate fails, the workflow MUST route to bubbles.implement to complete the vertical wiring before proceeding. Detection: cross-reference frontend fetch/useQuery/dio calls against backend router .route() registrations and gateway forwarding config.
+  G036:
+    name: red_green_traceability_gate
+    description: New or changed behavior MUST show red→green evidence. Agents MUST capture failing targeted test or reproduction evidence before accepting a fix, then capture passing evidence after the change. Docs-only and artifact-only work are exempt.
+  G037:
+    name: scope_size_discipline_gate
+    description: Scopes and DoD items MUST stay small, isolated, and single-outcome by default. Optional time-budget hints like maxScopeMinutes and maxDodMinutes tighten the limit further. Mixed-purpose scopes MUST be split unless explicitly justified.
+  G038:
+    name: micro_fix_containment_gate
+    description: Narrow failures MUST be handled by narrow repair loops first. Compile, lint, validation, and test failures must be fixed with the smallest viable context before broader reruns or escalations are allowed.
 
 failureRouting:
   code: implement
@@ -161,7 +170,13 @@ autoEscalation:
       action: invoke bubbles.gaps → bubbles.implement inline → continue
     testFailures:
       description: Tests fail after implementation
-      action: invoke bubbles.implement (fix) → bubbles.test (verify) inline → continue
+      action: invoke the smallest failing-scope fix loop first (bubbles.implement with only the failing command/file/scope context) → bubbles.test on the impacted tests → continue when clean
+    compileOrLintFailures:
+      description: Compile, type-check, or lint failures occur during implement/test/validate
+      action: invoke a micro-fix loop scoped to the failing file or symbol → rerun only the failing command → continue when resolved
+    validationFailures:
+      description: Validation finds a concrete broken contract, stale artifact, or missing evidence path
+      action: invoke the owning specialist for the precise failure class, repair only that contract/evidence path, rerun impacted validation, then continue
     artifactDrift:
       description: State claims don't match reality (stale completedPhases, wrong status)
       action: reconcile state inline → continue current workflow
@@ -319,6 +334,16 @@ modeDefaults:
     # it MUST handle them inline by invoking specialist agents rather than
     # stopping and suggesting the user run a different mode.
     autoModeEscalation: true
+    # Delivery stays autonomous unless the caller explicitly opts into
+    # an interactive clarification loop.
+    defaultAutonomy: autonomous
+    allowOptionalSocraticDiscovery: true
+    allowGitIsolationFlag: true
+    allowAutoCommitFlag: true
+    requireSmallWellDefinedScopes: true
+    requireRedGreenEvidence: true
+    enableMicroFixLoops: true
+    inheritedRequiredGates: [G036, G037, G038]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #
@@ -351,6 +376,40 @@ batchExecution:
   # specs proceed through per-spec phases without waiting for previous
   # spec's full quality chain. ALL specs must pass ALL gates before
   # ANY spec is marked done.
+
+executionOptions:
+  description: Universal optional workflow tags. These never override the default autonomous behavior unless explicitly enabled.
+  optionalWorkflowTags:
+    socratic:
+      type: boolean
+      default: false
+      meaning: Enable a bounded clarification loop before discovery/bootstrap work.
+    socraticQuestions:
+      type: integer
+      default: 3
+      min: 1
+      max: 5
+      meaning: Maximum number of targeted Socratic questions when socratic=true.
+    gitIsolation:
+      type: boolean
+      default: false
+      meaning: Opt into isolated branch/worktree setup before implementation when repo policy allows it.
+    autoCommit:
+      type: boolean
+      default: false
+      meaning: Opt into atomic commits after fully validated DoD or scope milestones.
+    maxScopeMinutes:
+      type: integer
+      default: null
+      meaning: Optional planning heuristic for maximum intended effort per scope.
+    maxDodMinutes:
+      type: integer
+      default: null
+      meaning: Optional planning heuristic for maximum intended effort per DoD item.
+    microFixes:
+      type: boolean
+      default: true
+      meaning: Keep failure recovery inside narrow error-scoped fix loops before broader retries.
 
 modes:
   value-first-e2e-batch:

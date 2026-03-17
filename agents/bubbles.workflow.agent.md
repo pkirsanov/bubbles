@@ -63,10 +63,17 @@ handoffs:
 **Behavioral Rules:**
 - Load and enforce `.github/bubbles/workflows.yaml` and `.github/docs/BUBBLES_WORKFLOWS.md` first.
 - Orchestrate phases by workflow mode; do not hardcode a single forced flow.
+- Stay autonomous by default. Only enter a Socratic questioning loop when the workflow input explicitly sets `socratic: true`.
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
 - Require gate results before promoting spec status.
+- Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
+- If `socratic: true`, run a targeted discovery loop before bootstrap or implementation work: ask at most `socraticQuestions` high-signal questions, record the answers into artifacts, then resume autonomous execution.
+- If `gitIsolation: true`, prepare isolated branch/worktree setup before implementation when repo policy allows it. If policy or environment forbids it, record that constraint explicitly and continue without pretending isolation occurred.
+- If `autoCommit: true`, allow atomic commits only after a DoD item or scope is fully validated. Never commit speculative or partially validated work.
+- Respect `maxScopeMinutes` and `maxDodMinutes` as planning and execution pressure to keep work slices small; if a slice is too large, route back to `bubbles.plan` or `bubbles.iterate` to split it.
+- Keep failure handling inside micro-fix loops when `microFixes` is not explicitly false.
 - Classify failures (`code|test|docs|compliance|audit|chaos|environment`) and route by registry — routing means actively re-invoking the appropriate specialist agent, not just logging the failure.
 - Respect retry limits — when ALL retries for a phase are exhausted AND auto-escalation cannot resolve the issue, mark the spec `blocked` and continue to the next spec if `continueOnBlocked: true`.
 - Preserve deterministic resume state in `.specify/memory/bubbles.session.json` and per-spec `state.json`.
@@ -121,6 +128,13 @@ Supported options:
 - `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|stochastic-quality-sweep|iterate|resume-only`
 - `continue_on_blocked: true|false` (default: true)
 - `final_global_pass: true|false` (default: true)
+- `socratic: true|false` (default: false)
+- `socraticQuestions: <1-5>` (default: 3)
+- `gitIsolation: true|false` (default: false)
+- `autoCommit: true|false` (default: false)
+- `maxScopeMinutes: <N>` (optional sizing heuristic)
+- `maxDodMinutes: <N>` (optional sizing heuristic)
+- `microFixes: true|false` (default: true)
 - `max_specs: <N>`
 - `minutes: <N>` or `until: <RFC3339>`
 - `run_mode: endless|bounded` (default: bounded)
@@ -214,6 +228,9 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 # Full discovery-to-delivery (analyst → UX → design → implement):
 @bubbles.workflow specs/050-new-feature mode: product-to-delivery
 
+# Same, but force a short Socratic clarification loop first:
+@bubbles.workflow specs/050-new-feature mode: product-to-delivery socratic: true socraticQuestions: 4
+
 # Requirements + UX + design only (no code):
 @bubbles.workflow specs/050-new-feature mode: product-discovery
 
@@ -222,6 +239,9 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 
 # Randomized adversarial quality probing (ALL specs in repo, default pool):
 @bubbles.workflow mode: stochastic-quality-sweep
+
+# Keep work isolated and auto-commit only after validated milestones:
+@bubbles.workflow 042 mode: full-delivery gitIsolation: true autoCommit: true
 
 # Restricted to specific specs (only these specs in the random pool):
 @bubbles.workflow 011-037 mode: stochastic-quality-sweep

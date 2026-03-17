@@ -14,6 +14,12 @@ You have a vague product idea. You need to flesh it out — understand the probl
 /bubbles.workflow  product-discovery for my-idea
 ```
 
+If you want the system to interview you first instead of inferring the missing context autonomously:
+
+```
+/bubbles.workflow  product-discovery for my-idea socratic: true socraticQuestions: 5
+```
+
 **Phases:** analyze → ux
 
 ## Or Step by Step
