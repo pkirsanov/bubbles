@@ -6,60 +6,60 @@
 
 ---
 
-## <img src="../icons/bubbles-glasses.svg" width="24"> Orchestrators
+## <img src="../icons/bubbles-glasses.svg" width="32"> Orchestrators
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees everything through those thick glasses. The real brains. | *"Something's fucky."* |
-| <img src="../icons/julian-glass.svg" width="20"> | `bubbles.iterate` | Julian | Single-iteration scope runner. Cool. Composed. Drink never spills. | *"Boys, we need a plan. A good plan this time."* |
+| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees everything through those thick glasses. The real brains. | *"Something's fucky."* |
+| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.iterate` | Julian | Single-iteration scope runner. Cool. Composed. Drink never spills. | *"Boys, we need a plan. A good plan this time."* |
 
-## <img src="../icons/julian-glass.svg" width="24"> Phase Specialists
-
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/julian-glass.svg" width="20"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
-| <img src="../icons/trinity-notebook.svg" width="20"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
-| <img src="../icons/jroc-mic.svg" width="20"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
-| <img src="../icons/randy-cheeseburger.svg" width="20"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
-| <img src="../icons/lahey-bottle.svg" width="20"> | `bubbles.audit` | Mr. Lahey | "I AM the liquor." I AM the policy. Enforces every. last. rule. | *"The shit winds are coming, Randy."* |
-| <img src="../icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
-
-## <img src="../icons/barb-keys.svg" width="24"> Planning & Design
+## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/ray-lawnchair.svg" width="20"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
-| <img src="../icons/lucy-mirror.svg" width="20"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"Ricky, you can't just— fine."* |
-| <img src="../icons/jacob-hardhat.svg" width="20"> | `bubbles.design` | Jacob | Quietly competent architecture. Does the thinking while others take credit. | *"I can help with that, Mr. Lahey."* |
-| <img src="../icons/barb-keys.svg" width="20"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
-| <img src="../icons/george-green-badge.svg" width="20"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
-| <img src="../icons/conky-puppet.svg" width="20"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
-| <img src="../icons/phil-collins-baam.svg" width="20"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
+| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
+| <img src="../icons/trinity-notebook.svg" width="32"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
+| <img src="../icons/jroc-mic.svg" width="32"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
+| <img src="../icons/randy-cheeseburger.svg" width="32"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
+| <img src="../icons/lahey-bottle.svg" width="32"> | `bubbles.audit` | Mr. Lahey | "I AM the liquor." I AM the policy. Enforces every. last. rule. | *"The shit winds are coming, Randy."* |
+| <img src="../icons/ricky-dynamite.svg" width="32"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
 
-## <img src="../icons/bill-wrench.svg" width="24"> Quality & Ops
-
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/cory-trevor-smokes.svg" width="20"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"Trevor, I think we broke something."* |
-| <img src="../icons/bill-wrench.svg" width="20"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
-| <img src="../icons/cyrus-sunglasses.svg" width="20"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
-| <img src="../icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Have another drink, Ray!"* |
-| <img src="../icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
-
-## <img src="../icons/camera-crew.svg" width="24"> Utilities
+## <img src="../icons/barb-keys.svg" width="32"> Planning & Design
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/camera-crew.svg" width="20"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/trevor-handoff.svg" width="20"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Cory, take this to Julian."* |
-| <img src="../icons/cory-trevor-smokes.svg" width="20"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
-| <img src="../icons/t-cap.svg" width="20"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
-| <img src="../icons/phil-collins-baam.svg" width="20"> | `bubbles.create-skill` | Phil Collins | Creates new things. Big, bold, unmissable. | *"BAAAAM!"* |
-| <img src="../icons/bubbles-glasses.svg" width="20"> | `bubbles.ops` | Bubbles (the super) | Manages the park. Health checks, hooks, upgrades, metrics, gates. | *"Decent! Everything's running smooth."* |
+| <img src="../icons/ray-lawnchair.svg" width="32"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
+| <img src="../icons/lucy-mirror.svg" width="32"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"Ricky, you can't just— fine."* |
+| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.design` | Jacob | Quietly competent architecture. Does the thinking while others take credit. | *"I can help with that, Mr. Lahey."* |
+| <img src="../icons/barb-keys.svg" width="32"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
+| <img src="../icons/george-green-badge.svg" width="32"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
+| <img src="../icons/conky-puppet.svg" width="32"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
+| <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
+
+## <img src="../icons/bill-wrench.svg" width="32"> Quality & Ops
+
+| | Agent | Alias | Role | Quote |
+|---|-------|-------|------|-------|
+| <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"Trevor, I think we broke something."* |
+| <img src="../icons/bill-wrench.svg" width="32"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
+| <img src="../icons/cyrus-sunglasses.svg" width="32"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
+| <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Have another drink, Ray!"* |
+| <img src="../icons/sebastian-guitar.svg" width="32"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
+
+## <img src="../icons/camera-crew.svg" width="32"> Utilities
+
+| | Agent | Alias | Role | Quote |
+|---|-------|-------|------|-------|
+| <img src="../icons/camera-crew.svg" width="32"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
+| <img src="../icons/trevor-handoff.svg" width="32"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Cory, take this to Julian."* |
+| <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
+| <img src="../icons/t-cap.svg" width="32"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
+| <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.create-skill` | Phil Collins | Creates new things. Big, bold, unmissable. | *"BAAAAM!"* |
+| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.ops` | Bubbles (the super) | Manages the park. Health checks, hooks, upgrades, metrics, gates. | *"Decent! Everything's running smooth."* |
 
 ---
 
-## <img src="../icons/ricky-dynamite.svg" width="24"> Command Aliases
+## <img src="../icons/ricky-dynamite.svg" width="32"> Command Aliases
 
 | Alias | Maps To | Quote |
 |-------|---------|-------|
@@ -85,7 +85,7 @@
 
 ---
 
-## <img src="../icons/julian-glass.svg" width="24"> Workflow Modes
+## <img src="../icons/julian-glass.svg" width="32"> Workflow Modes
 
 | Mode | Alias | What It Does |
 |------|-------|-------------|
@@ -117,7 +117,7 @@
 
 ---
 
-## <img src="../icons/lahey-bottle.svg" width="24"> The 39 Gates
+## <img src="../icons/lahey-bottle.svg" width="32"> The 39 Gates
 
 **Phase flow:**
 `analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
@@ -166,7 +166,7 @@
 
 ---
 
-## <img src="../icons/phil-collins-baam.svg" width="24"> Fun Mode Messages (`BUBBLES_FUN_MODE=true`)
+## <img src="../icons/phil-collins-baam.svg" width="32"> Fun Mode Messages (`BUBBLES_FUN_MODE=true`)
 
 | Event | Message |
 |-------|---------|
@@ -191,7 +191,7 @@
 
 ---
 
-## <img src="../icons/trinity-notebook.svg" width="24"> Quick Reference — What To Type When
+## <img src="../icons/trinity-notebook.svg" width="32"> Quick Reference — What To Type When
 
 ### Starting a Job
 
@@ -260,7 +260,7 @@
 
 ---
 
-## <img src="../icons/ricky-dynamite.svg" width="24"> Rickyisms — The Official Glossary
+## <img src="../icons/ricky-dynamite.svg" width="32"> Rickyisms — The Official Glossary
 
 | Rickyism | What He Meant | Bubbles Context |
 |----------|--------------|-----------------|

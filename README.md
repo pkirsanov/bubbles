@@ -275,7 +275,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 
 | Document | What's Inside |
 |----------|--------------|
-| [It's Not Rocket Appliances](docs/its-not-rocket-appliances.html) | Visual agent reference card with icons |
+| [It's Not Rocket Appliances](https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html) | Visual agent reference card — rendered on GitHub Pages |
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
 | [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 23 workflow modes explained |
