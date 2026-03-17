@@ -43,6 +43,8 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 One command. No dependencies beyond `curl` and `bash`.
 
+**Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2. No Windows CMD/PowerShell support.
+
 ```bash
 # Install agents only
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
