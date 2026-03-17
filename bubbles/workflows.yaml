@@ -106,7 +106,17 @@ gates:
     description: Security scan clean — no critical or high severity vulnerabilities. Dependency audit passed, code review found no injection/XSS/SSRF/auth-bypass findings above medium severity. When this gate fails, the workflow MUST route to bubbles.implement to fix security findings before proceeding.
   G035:
     name: vertical_slice_gate
-    description: ABSOLUTE BLOCKING gate. When a scope produces BOTH frontend AND backend code, the vertical slice MUST be complete — every frontend API call MUST map to a .route()-wired backend handler, every backend handler MUST be registered in the service router, gateway/proxy forwarding rules MUST exist for all service endpoints, and E2E tests MUST exercise the full stack (frontend → gateway → service → data store). Applies conditionally — pure-backend or pure-frontend scopes are exempt. When this gate fails, the workflow MUST route to bubbles.implement to complete the vertical wiring before proceeding. Detection: cross-reference frontend fetch/useQuery/dio calls against backend router .route() registrations and gateway forwarding config.
+    description: >-
+      ABSOLUTE BLOCKING gate. When a scope produces BOTH frontend AND backend code,
+      the vertical slice MUST be complete — every frontend API call MUST map to a
+      .route()-wired backend handler, every backend handler MUST be registered in the
+      service router, gateway/proxy forwarding rules MUST exist for all service
+      endpoints, and E2E tests MUST exercise the full stack (frontend → gateway →
+      service → data store). Applies conditionally — pure-backend or pure-frontend
+      scopes are exempt. When this gate fails, the workflow MUST route to
+      bubbles.implement to complete the vertical wiring before proceeding. Detection:
+      cross-reference frontend fetch/useQuery/dio calls against backend router .route()
+      registrations and gateway forwarding config.
   G036:
     name: red_green_traceability_gate
     description: New or changed behavior MUST show red→green evidence. Agents MUST capture failing targeted test or reproduction evidence before accepting a fix, then capture passing evidence after the change. Docs-only and artifact-only work are exempt.
