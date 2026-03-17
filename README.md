@@ -121,6 +121,10 @@ specs/                                   # Feature/bug spec folders
 
 ## The Crew
 
+<p align="center">
+  <img src="pictures/bazaar_v3_distributed.svg" width="900" alt="Bubbles Distributed Agent Network">
+</p>
+
 Every agent has a job. Here's who does what.
 
 ### <img src="icons/bubbles-glasses.svg" width="24"> Orchestrators
