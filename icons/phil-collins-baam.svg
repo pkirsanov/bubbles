@@ -1,0 +1,9 @@
+<!-- icon-name: phil-collins-baam -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 18 12 L 18 24 C 18 44 14 56 14 56 L 50 56 C 50 56 46 44 46 24 L 46 12 L 32 20 Z"/>
+  <path d="M 32 20 L 32 56"/>
+  <path d="M 28 32 L 36 32" stroke-width="1.2"/>
+  <path d="M 28 42 L 36 42" stroke-width="1.2"/>
+  <path d="M 28 52 L 36 52" stroke-width="1.2"/>
+  <path d="M 12 36 C -4 36 -4 60 14 56" stroke-width="1.2" stroke-dasharray="2 4"/>
+</svg>

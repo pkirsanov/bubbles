@@ -1,0 +1,10 @@
+<!-- icon-name: trevor-handoff -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 8 32 L 20 32 C 24 32 26 30 26 28 L 22 26"/>
+  <path d="M 20 32 L 24 36 L 28 34"/>
+  <path d="M 56 36 L 44 36 C 40 36 38 38 38 40 L 42 42"/>
+  <path d="M 44 36 L 40 32 L 36 34"/>
+  <rect x="24" y="24" width="16" height="12" rx="1" transform="rotate(-15 32 30)"/>
+  <path d="M 26 24 L 26 36" stroke-width="1.2" transform="rotate(-15 32 30)"/>
+  <path d="M 38 24 L 38 36" stroke-width="1.2" transform="rotate(-15 32 30)"/>
+</svg>

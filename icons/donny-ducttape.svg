@@ -1,0 +1,8 @@
+<!-- icon-name: donny-ducttape -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <ellipse cx="32" cy="32" rx="20" ry="14"/>
+  <ellipse cx="32" cy="32" rx="12" ry="8"/>
+  <ellipse cx="32" cy="32" rx="10" ry="6" stroke-width="1.2"/>
+  <path d="M 52 32 L 58 40 L 52 44 L 48 38" stroke-width="2"/>
+  <path d="M 58 40 L 56 41 L 57 42 L 55 43 L 52 44" stroke-width="1.2" stroke-linejoin="miter"/>
+</svg>

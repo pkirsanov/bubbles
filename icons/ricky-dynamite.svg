@@ -1,0 +1,9 @@
+<!-- icon-name: ricky-dynamite -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="rotate(15 32 32)">
+    <rect x="24" y="24" width="16" height="32" rx="2"/>
+    <path d="M 24 32 L 40 32 M 24 48 L 40 48" stroke-width="1.2"/>
+    <path d="M 32 24 C 32 14 26 14 26 6"/>
+    <path d="M 26 2 L 26 0 M 22 6 L 20 6 M 30 6 L 32 6 M 23 3 L 21 1 M 29 3 L 31 1" stroke-width="1.2"/>
+  </g>
+</svg>

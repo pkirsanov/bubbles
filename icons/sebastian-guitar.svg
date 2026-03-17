@@ -1,0 +1,14 @@
+<!-- icon-name: sebastian-guitar -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 28 4 L 36 4 L 38 12 L 26 12 Z"/>
+  <circle cx="24" cy="6" r="1"/>
+  <circle cx="40" cy="6" r="1"/>
+  <circle cx="24" cy="10" r="1"/>
+  <circle cx="40" cy="10" r="1"/>
+  <path d="M 28 12 L 28 36 L 36 36 L 36 12"/>
+  <path d="M 28 16 L 36 16 M 28 24 L 36 24 M 28 32 L 36 32" stroke-width="1.2"/>
+  <path d="M 28 36 Q 16 36 16 48 Q 16 60 32 60 Q 48 60 48 48 Q 48 36 36 36"/>
+  <circle cx="32" cy="46" r="4"/>
+  <rect x="26" y="38" width="12" height="2" stroke-width="1.2"/>
+  <path d="M 40 52 L 40 54 M 44 48 L 46 48" stroke-width="1.2"/>
+</svg>

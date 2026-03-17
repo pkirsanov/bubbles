@@ -1,0 +1,965 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🫧 Bubbles Agent System — Sunnyvale Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;900&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --purple: #bc8cff;
+    --orange: #d18616;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 2rem;
+    line-height: 1.6;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%);
+  }
+
+  .header img {
+    width: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .header h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25rem;
+  }
+
+  .header .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .header .tagline {
+    font-style: italic;
+    color: var(--yellow);
+    font-size: 1.1rem;
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-title .emoji { font-size: 1.6rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+  }
+
+  .card .icon {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    background: #21262d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+  }
+
+  .card .icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .card .info { flex: 1; min-width: 0; }
+
+  .card .agent-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+  }
+
+  .card .character {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 1rem;
+    margin-top: 0.1rem;
+  }
+
+  .card .role {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.15rem;
+  }
+
+  .card .quote {
+    font-style: italic;
+    color: var(--yellow);
+    font-size: 0.82rem;
+    margin-top: 0.4rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--yellow);
+  }
+
+  .alias-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+
+  .alias-table th {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    background: #21262d;
+    color: var(--accent);
+    border-bottom: 2px solid var(--border);
+    font-weight: 700;
+  }
+
+  .alias-table td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .alias-table tr:hover td {
+    background: #1c2128;
+  }
+
+  .alias-table .cmd {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .alias-table .maps-to {
+    color: var(--text-muted);
+  }
+
+  .alias-table .quote-col {
+    color: var(--yellow);
+    font-style: italic;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .gate-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .gate-msg {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .gate-msg .status { font-size: 1.1rem; }
+  .gate-msg .msg { color: var(--yellow); font-style: italic; }
+  .gate-msg .context { color: var(--text-muted); font-size: 0.75rem; }
+
+  .workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .workflow-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .workflow-card .wf-name {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .workflow-card .wf-alias {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--purple);
+    font-size: 0.8rem;
+  }
+
+  .workflow-card .wf-desc {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    margin-top: 0.3rem;
+  }
+
+  .workflow-card .wf-quote {
+    color: var(--yellow);
+    font-style: italic;
+    font-size: 0.78rem;
+    margin-top: 0.3rem;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .footer .big-quote {
+    font-size: 1.3rem;
+    color: var(--yellow);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+
+  .phase-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+    margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  .phase-flow .phase {
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    background: #21262d;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .phase-flow .arrow {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .quick-ref {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .quick-ref h3 {
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+
+  .quick-ref .line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #21262d;
+    font-size: 0.85rem;
+  }
+
+  .quick-ref .line .quote-text {
+    color: var(--yellow);
+    font-style: italic;
+    text-align: right;
+    max-width: 55%;
+  }
+
+  .quick-ref .line .situation {
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<div class="header">
+  <img src="icons/bubbles-logo.svg" alt="Bubbles Logo">
+  <h1>BUBBLES</h1>
+  <div class="subtitle">Agent Orchestration System v1.0</div>
+  <div class="subtitle">Sunnyvale Trailer Park Software Division</div>
+  <div class="tagline">"It Ain't Rocket Appliances, But It Works."</div>
+</div>
+
+<!-- ═══════════════════════════════ THE ROSTER ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">🏘️</span> The Sunnyvale Roster — All 25 Agents</div>
+
+<h3 style="color: var(--accent); margin: 1rem 0 0.5rem;">🎯 Orchestrators</h3>
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="icons/bubbles-glasses.svg" alt="Bubbles' Glasses"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.workflow</div>
+      <div class="character">Bubbles</div>
+      <div class="role">Cross-spec orchestrator. Sees everything through those thick glasses. The real brains of the operation.</div>
+      <div class="quote">"Something's fucky." (when gates fail)</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/julian-glass.svg" alt="Julian's Glass"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.iterate</div>
+      <div class="character">Julian</div>
+      <div class="role">Single-iteration scope runner. Cool. Composed. Drink never spills. Scope never fails.</div>
+      <div class="quote">"Boys, we need a plan. A good plan this time."</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="color: var(--accent); margin: 1.5rem 0 0.5rem;">🔨 Phase Specialists</h3>
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="icons/julian-glass.svg" alt="Julian's Glass"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.implement</div>
+      <div class="character">Julian</div>
+      <div class="role">Delivers code. Every. Time. Drink in hand. Zero drops, zero rollbacks.</div>
+      <div class="quote">"I got work to do."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/trinity-notebook.svg" alt="Trinity's Notebook"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.test</div>
+      <div class="character">Trinity</div>
+      <div class="role">Grew up in utter chaos. Learned to verify everything independently. Trust nothing.</div>
+      <div class="quote">"Dad, that's not how that works."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/jroc-mic.svg" alt="J-Roc's Mic"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.docs</div>
+      <div class="character">J-Roc</div>
+      <div class="role">Makes sure everything is narrated, recorded, and documented. Gnome sayin'?</div>
+      <div class="quote">"It could happen to you, 'cause it happened to me. And T."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/randy-cheeseburger.svg" alt="Randy's Cheeseburger"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.validate</div>
+      <div class="character">Randy</div>
+      <div class="role">Always by Lahey's side. Does the grunt work of checking every gate. Takes his shirt off when things get serious.</div>
+      <div class="quote">"Mr. Lahey, the tests aren't passing!"</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/lahey-bottle.svg" alt="Lahey's Bottle"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.audit</div>
+      <div class="character">Mr. Lahey</div>
+      <div class="role">"I AM the liquor." I AM the policy. The trailer park supervisor who enforces every. last. rule.</div>
+      <div class="quote">"The shit winds are coming, Randy."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/ricky-dynamite.svg" alt="Ricky's Dynamite"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.chaos</div>
+      <div class="character">Ricky</div>
+      <div class="role">Breaks things in ways nobody could predict. Grows "vegetables" in unusual places. Worst case Ontario, something catches fire.</div>
+      <div class="quote">"It's not rocket appliances."</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="color: var(--accent); margin: 1.5rem 0 0.5rem;">📐 Planning & Design</h3>
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="icons/ray-lawnchair.svg" alt="Ray's Chair"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.analyst</div>
+      <div class="character">Ray</div>
+      <div class="role">"Way she goes, boys." — except as analyst, he figures out WHY the way she goes. Sees patterns from his chair.</div>
+      <div class="quote">"Sometimes she goes, sometimes she doesn't. She didn't go."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/lucy-mirror.svg" alt="Lucy's Mirror"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.ux</div>
+      <div class="character">Lucy</div>
+      <div class="role">The one who actually cares about how things feel and look. Emotional intelligence of the park.</div>
+      <div class="quote">"Ricky, you can't just— you know what, fine."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/jacob-hardhat.svg" alt="Jacob's Hard Hat"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.design</div>
+      <div class="character">Jacob</div>
+      <div class="role">Quietly competent. Does actual architectural thinking while others take credit. Underrated.</div>
+      <div class="quote">"I can help with that, Mr. Lahey."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/barb-keys.svg" alt="Barb's Keys"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.plan</div>
+      <div class="character">Barb Lahey</div>
+      <div class="role">Actually ran the trailer park's business side. The planner. Defines the scopes. Keeps the books.</div>
+      <div class="quote">"Jim, you need a plan."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/george-green-badge.svg" alt="George Green's Badge"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.clarify</div>
+      <div class="character">George Green</div>
+      <div class="role">Asks obvious questions that somehow reveal important things. Not the sharpest, but the questions matter.</div>
+      <div class="quote">"What in the f— is going on here?"</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/conky-puppet.svg" alt="Conky"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.harden</div>
+      <div class="character">Conky</div>
+      <div class="role">Bubbles' puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. Universally hated.</div>
+      <div class="quote">"Why don't you go pave your cave, you dirty caveman?"</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/phil-collins-baam.svg" alt="Phil Collins"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.gaps</div>
+      <div class="character">Philadelphia Collins</div>
+      <div class="role">BAAAAAM! Finds the gaps nobody else sees. Peanut butter and JAAAAM.</div>
+      <div class="quote">"What are ya lookin' at my gut fer?"</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="color: var(--accent); margin: 1.5rem 0 0.5rem;">🔧 Quality & Ops</h3>
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="icons/cory-trevor-smokes.svg" alt="Smokes"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.bug</div>
+      <div class="character">Cory</div>
+      <div class="role">One of the errand boys who actually finds the problems when sent looking. Reluctant but effective.</div>
+      <div class="quote">"Trevor, I think we broke something."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/bill-wrench.svg" alt="Bill's Wrench"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.stabilize</div>
+      <div class="character">Shitty Bill</div>
+      <div class="role">Quiet. Reliable. Shows up, fixes infrastructure. Doesn't say much. Just... stabilizes things.</div>
+      <div class="quote">"..." (he barely talks — he just fixes)</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/cyrus-sunglasses.svg" alt="Cyrus' Shades"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.security</div>
+      <div class="character">Cyrus</div>
+      <div class="role">"Safety... always off." EXCEPT in our system — safety is ALWAYS ON. Finds threats. Confrontational. Effective.</div>
+      <div class="quote">"F*** off, I got work to do."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/donny-ducttape.svg" alt="Donny's Duct Tape"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.simplify</div>
+      <div class="character">Donny</div>
+      <div class="role">The simplifier. Duct tape fixes everything. Cuts through the noise. Reduces complexity.</div>
+      <div class="quote">"Have another drink, Ray!"</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/sebastian-guitar.svg" alt="Sebastian's Guitar"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.cinematic-designer</div>
+      <div class="character">Sebastian Bach</div>
+      <div class="role">The celebrity guest. Brings premium, over-the-top production value. Rock star UI design.</div>
+      <div class="quote">"I was in Skid Row!"</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="color: var(--accent); margin: 1.5rem 0 0.5rem;">🛠️ Utilities</h3>
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="icons/camera-crew.svg" alt="Camera"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.status</div>
+      <div class="character">The Camera Crew</div>
+      <div class="role">Documentary crew. Observes. Reports. Never interferes. Read-only. No side effects.</div>
+      <div class="quote">(just watches silently)</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/cory-trevor-smokes.svg" alt="Smokes"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.handoff / bubbles.bootstrap</div>
+      <div class="character">Cory & Trevor</div>
+      <div class="role">The errand duo. Set up scaffolding. Carry handoff packages. Do the prep.</div>
+      <div class="quote">"Smokes, let's go."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/t-cap.svg" alt="T's Cap"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.commands</div>
+      <div class="character">T</div>
+      <div class="role">J-Roc's right hand. Makes the command registry. Says very little but is always there.</div>
+      <div class="quote">"True."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="icons/phil-collins-baam.svg" alt="Phil Collins"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.create-skill</div>
+      <div class="character">Philadelphia Collins</div>
+      <div class="role">Creates new things. Big, bold, unmissable. BAAM!</div>
+      <div class="quote">"BAAAAM! Peanut butter and JAAAAM!"</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ COMMAND ALIASES ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">⌨️</span> Sunnyvale Command Aliases</div>
+
+<table class="alias-table">
+  <thead>
+    <tr>
+      <th>Alias</th>
+      <th>Maps To</th>
+      <th>When Ricky Would Say It</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="cmd">sunnyvale pull-the-strings</td>
+      <td class="maps-to">bubbles.workflow</td>
+      <td class="quote-col">"Bubbles is pulling all the strings, boys"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale worst-case-ontario</td>
+      <td class="maps-to">bubbles.chaos</td>
+      <td class="quote-col">"Worst case Ontario, something breaks"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale i-am-the-liquor</td>
+      <td class="maps-to">bubbles.audit --strict</td>
+      <td class="quote-col">"I AM the liquor, Randy"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale shit-winds</td>
+      <td class="maps-to">bubbles.audit</td>
+      <td class="quote-col">"The shit winds are coming"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale get-two-birds-stoned</td>
+      <td class="maps-to">bubbles.implement + bubbles.test</td>
+      <td class="quote-col">"Get two birds stoned at once"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale smokes-lets-go</td>
+      <td class="maps-to">bubbles.bootstrap</td>
+      <td class="quote-col">"Smokes, let's go. C'mon."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale know-what-im-sayin</td>
+      <td class="maps-to">bubbles.docs</td>
+      <td class="quote-col">"Know what I'm sayin'? Gnome sayin'?"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale somethings-fucky</td>
+      <td class="maps-to">bubbles.validate</td>
+      <td class="quote-col">"Something's fucky"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale way-she-goes</td>
+      <td class="maps-to">bubbles.analyst</td>
+      <td class="quote-col">"Way she goes, boys. Way she goes."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale peanut-butter-and-jam</td>
+      <td class="maps-to">bubbles.gaps</td>
+      <td class="quote-col">"BAAAAM! Peanut butter and JAAAAM!"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale safety-always-off</td>
+      <td class="maps-to">bubbles.security</td>
+      <td class="quote-col">"Safety... always off" (ironic: scans FOR safety)</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale decent</td>
+      <td class="maps-to">bubbles.status</td>
+      <td class="quote-col">"DEEEE-CENT!" (Bubbles' approval word)</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale greasy</td>
+      <td class="maps-to">bubbles.harden</td>
+      <td class="quote-col">"That's greasy, boys. Real greasy."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale supply-and-command</td>
+      <td class="maps-to">bubbles.plan</td>
+      <td class="quote-col">"It's supply and command, Julian"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale water-under-the-fridge</td>
+      <td class="maps-to">bubbles.simplify</td>
+      <td class="quote-col">"It's all water under the fridge"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale have-a-good-one</td>
+      <td class="maps-to">bubbles.handoff</td>
+      <td class="quote-col">"Have a good one, boys"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale skid-row</td>
+      <td class="maps-to">bubbles.cinematic-designer</td>
+      <td class="quote-col">"I was in Skid Row!"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale mans-gotta-eat</td>
+      <td class="maps-to">bubbles.validate</td>
+      <td class="quote-col">"A man's gotta eat, Julian"</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════ WORKFLOW MODES ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">🔄</span> Workflow Mode Aliases</div>
+
+<div class="workflow-grid">
+  <div class="workflow-card">
+    <div class="wf-name">value-first-e2e-batch</div>
+    <div class="wf-alias">→ sunnyvale boys-plan</div>
+    <div class="wf-desc">Auto-discover highest-value work, full delivery pipeline. The master plan.</div>
+    <div class="wf-quote">"Boys, I got a plan. And this time it's a good one."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">full-delivery</div>
+    <div class="wf-alias">→ sunnyvale full-send</div>
+    <div class="wf-desc">Standard complete delivery. The default. Get it done.</div>
+    <div class="wf-quote">"Just get 'er done, Julian."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">full-delivery-strict</div>
+    <div class="wf-alias">→ sunnyvale clean-and-sober</div>
+    <div class="wf-desc">Strict enforcement. No blocked continuation. Per-spec commits.</div>
+    <div class="wf-quote">"I'm off the liquor, Randy. For real this time."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">chaos-hardening</div>
+    <div class="wf-alias">→ sunnyvale shit-storm</div>
+    <div class="wf-desc">Iterative chaos + bugfix cycles until clean or limit reached.</div>
+    <div class="wf-quote">"We're in the eye of a shiticane, Randy."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">bugfix-fastlane</div>
+    <div class="wf-alias">→ sunnyvale smash-and-grab</div>
+    <div class="wf-desc">Fast bug closure. In. Fix. Out. Mandatory reproduce-before/verify-after.</div>
+    <div class="wf-quote">"Get in, get out. That's a good plan."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">validate-only</div>
+    <div class="wf-alias">→ sunnyvale randy-put-a-shirt-on</div>
+    <div class="wf-desc">Run validation gates only. Things are about to get serious.</div>
+    <div class="wf-quote">"Randy, put a shirt on. We got company."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">stochastic-quality-sweep</div>
+    <div class="wf-alias">→ sunnyvale bottle-kids</div>
+    <div class="wf-desc">Randomized adversarial probing. You never know where they'll hit.</div>
+    <div class="wf-quote">"BOTTLE KIDS!" *runs for cover*</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">harden-gaps-to-doc</div>
+    <div class="wf-alias">→ sunnyvale conky-says</div>
+    <div class="wf-desc">The most thorough pre-release sweep. Uncomfortable truths revealed.</div>
+    <div class="wf-quote">"Conky says you missed something, Bubbles."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">product-to-delivery</div>
+    <div class="wf-alias">→ sunnyvale freedom-35</div>
+    <div class="wf-desc">Full pipeline: analyst → UX → design → scopes → implement → test → quality.</div>
+    <div class="wf-quote">"Freedom 35, boys! This is the one!"</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">docs-only</div>
+    <div class="wf-alias">→ sunnyvale gnome-sayin</div>
+    <div class="wf-desc">Documentation maintenance only. J-Roc handles the paperwork.</div>
+    <div class="wf-quote">"You're sayin' 'gnome sayin'' too many times — 80, 90 times? That's too many times."</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ FUN MODE LOG MESSAGES ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">💬</span> Fun Mode — Gate Messages (BUBBLES_FUN_MODE=true)</div>
+
+<div class="gate-section">
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Decent!"</span><span class="context">— Gate passed</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Looks good, boys."</span><span class="context">— G002 scope ready</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Something's fucky."</span><span class="context">— Any gate failure</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"That's GREASY, boys. Real greasy."</span><span class="context">— G020 fabrication detected</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Where's your evidence? Shit hawk circling."</span><span class="context">— G025 missing evidence</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Way she goes, boys. Way she goes."</span><span class="context">— All gates passed</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Holy f***, boys."</span><span class="context">— Build failed</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"DEEEE-CENT!"</span><span class="context">— Spec completed</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"The shit winds are coming, Randy."</span><span class="context">— Zero warnings gate failed</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Worst case Ontario... nothing broke."</span><span class="context">— Chaos clean</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Safety... always ON."</span><span class="context">— G034 security vuln found</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Know what I'm sayin'? It's documented."</span><span class="context">— Docs updated</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"You can't just NOT do things, Corey!"</span><span class="context">— Deferral detected</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Have a good one, boys."</span><span class="context">— Handoff complete</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"This is f***ed. BAAAAM!"</span><span class="context">— Gap found by Phil</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"That's a nice f***ing kitty right there."</span><span class="context">— Bug located</span></div>
+  <div class="gate-msg"><span class="status">🔄</span><span class="msg">"Knock knock." "Who's there?" "A passing build."</span><span class="context">— Build succeeds</span></div>
+  <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Freedom 35, boys!"</span><span class="context">— Project milestone reached</span></div>
+</div>
+
+<!-- ═══════════════════════════════ QUICK REFERENCE ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">📋</span> Sunnyvale Quick Reference — What To Say When</div>
+
+<div class="quick-ref">
+  <h3>🚀 Starting A Job</h3>
+  <div class="line">
+    <span class="situation">Starting full orchestration</span>
+    <span class="quote-text">"Alright boys, here's what we're gonna do."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Planning scopes</span>
+    <span class="quote-text">"Julian's got a plan. A good plan this time."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Bootstrapping artifacts</span>
+    <span class="quote-text">"Smokes, let's go."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Analysis phase</span>
+    <span class="quote-text">"Way she goes, boys."</span>
+  </div>
+</div>
+
+<div class="quick-ref">
+  <h3>🔨 During Implementation</h3>
+  <div class="line">
+    <span class="situation">Writing code</span>
+    <span class="quote-text">"I got work to do."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Simplifying complexity</span>
+    <span class="quote-text">"I'm gonna pay you $100 to f*** off." (to complexity)</span>
+  </div>
+  <div class="line">
+    <span class="situation">Explaining the approach</span>
+    <span class="quote-text">"It's not rocket appliances."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Design decisions</span>
+    <span class="quote-text">"It's all about supply and command."</span>
+  </div>
+</div>
+
+<div class="quick-ref">
+  <h3>🧪 Testing & Validation</h3>
+  <div class="line">
+    <span class="situation">test runner starts</span>
+    <span class="quote-text">"Dad, that's not how that works."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Validation gate running</span>
+    <span class="quote-text">"Mr. Lahey, the tests aren't passing!"</span>
+  </div>
+  <div class="line">
+    <span class="situation">Any gate failure</span>
+    <span class="quote-text">"Something's fucky."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Fabrication detected</span>
+    <span class="quote-text">"That's GREASY. That's real greasy."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Audit starts</span>
+    <span class="quote-text">"I AM the liquor."</span>
+  </div>
+</div>
+
+<div class="quick-ref">
+  <h3>🔥 When Things Go Wrong</h3>
+  <div class="line">
+    <span class="situation">Chaos testing started</span>
+    <span class="quote-text">"Worst case Ontario..."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Audit reveals problems</span>
+    <span class="quote-text">"The shit winds are coming, Randy."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Multiple gates failing</span>
+    <span class="quote-text">"Boys, we're in the eye of a shiticane."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Bug discovered</span>
+    <span class="quote-text">"That's a nice f***ing kitty right there."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Security vulnerability found</span>
+    <span class="quote-text">"F*** off, I got vulnerabilities to find."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Stochastic sweep triggered</span>
+    <span class="quote-text">"BOTTLE KIDS!" *ducks*</span>
+  </div>
+</div>
+
+<div class="quick-ref">
+  <h3>🎉 Success</h3>
+  <div class="line">
+    <span class="situation">Gate passed</span>
+    <span class="quote-text">"Decent!"</span>
+  </div>
+  <div class="line">
+    <span class="situation">Spec completed</span>
+    <span class="quote-text">"DEEEE-CENT!"</span>
+  </div>
+  <div class="line">
+    <span class="situation">All gates pass</span>
+    <span class="quote-text">"Way she goes."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Build succeeds</span>
+    <span class="quote-text">"Knock knock." "Who's there?" "A passing build."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Project milestone</span>
+    <span class="quote-text">"Freedom 35, boys!"</span>
+  </div>
+  <div class="line">
+    <span class="situation">Session handoff</span>
+    <span class="quote-text">"Have a good one, boys."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Everything is clean</span>
+    <span class="quote-text">"It's all water under the fridge."</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ RICKYISMS GLOSSARY ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">📚</span> Rickyisms — The Official Glossary</div>
+
+<table class="alias-table">
+  <thead>
+    <tr>
+      <th>Rickyism</th>
+      <th>What He Meant</th>
+      <th>Bubbles Context</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="cmd">"Worst case Ontario"</td><td class="maps-to">Worst case scenario</td><td class="quote-col">Chaos testing fallback</td></tr>
+    <tr><td class="cmd">"Get two birds stoned at once"</td><td class="maps-to">Kill two birds with one stone</td><td class="quote-col">Implement + test combo</td></tr>
+    <tr><td class="cmd">"It's not rocket appliances"</td><td class="maps-to">It's not rocket science</td><td class="quote-col">When someone overcomplicates things</td></tr>
+    <tr><td class="cmd">"Supply and command"</td><td class="maps-to">Supply and demand</td><td class="quote-col">Planning & resource allocation</td></tr>
+    <tr><td class="cmd">"Water under the fridge"</td><td class="maps-to">Water under the bridge</td><td class="quote-col">Simplification complete, move on</td></tr>
+    <tr><td class="cmd">"I toad a so"</td><td class="maps-to">I told you so</td><td class="quote-col">When Conky (harden) was right</td></tr>
+    <tr><td class="cmd">"Make like a tree and f*** off"</td><td class="maps-to">Make like a tree and leave</td><td class="quote-col">Cleaning up dead code</td></tr>
+    <tr><td class="cmd">"Keep your friends close and get your enemies toaster"</td><td class="maps-to">Keep your friends close and your enemies closer</td><td class="quote-col">Dependency management</td></tr>
+    <tr><td class="cmd">"What comes around is all around"</td><td class="maps-to">What goes around comes around</td><td class="quote-col">Circular dependency detected</td></tr>
+    <tr><td class="cmd">"Denial and error"</td><td class="maps-to">Trial and error</td><td class="quote-col">Ignoring failing tests</td></tr>
+    <tr><td class="cmd">"Passed with flying carpets"</td><td class="maps-to">Passed with flying colors</td><td class="quote-col">All gates passed</td></tr>
+    <tr><td class="cmd">"Survival of the fitness, boys"</td><td class="maps-to">Survival of the fittest</td><td class="quote-col">Stochastic quality sweep results</td></tr>
+    <tr><td class="cmd">"Gorilla see, gorilla do"</td><td class="maps-to">Monkey see, monkey do</td><td class="quote-col">Copy-paste code detected</td></tr>
+    <tr><td class="cmd">"It's a doggy-dog world"</td><td class="maps-to">It's a dog-eat-dog world</td><td class="quote-col">Competitive analysis complete</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════ THE 33 GATES ═══════════════════════════════ -->
+<div class="section-title"><span class="emoji">🚪</span> The 33 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
+
+<div class="phase-flow">
+  <span class="phase" style="border-color: var(--purple);">analyze</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--purple);">discover</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--accent);">select</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--accent);">bootstrap</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--yellow);">harden</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--yellow);">gaps</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--orange);">implement</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--green);">test</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--red);">security</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--accent);">docs</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--green);">validate</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--yellow);">audit</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--red);">chaos</span><span class="arrow">→</span>
+  <span class="phase" style="border-color: var(--green);">finalize</span>
+</div>
+
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; font-style: italic;">
+  "33 gates, boys. That's more security than the trailer park has ever had. 
+  Something's fucky? We'll find it. That's greasy? We'll clean it. 
+  Worst case Ontario, we revert and try again. DEEEE-CENT."
+  <br>— Bubbles, probably
+</p>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<div class="footer">
+  <div class="big-quote">"Have a good one, boys."</div>
+  <p>Bubbles Agent System v1.0 — Sunnyvale Trailer Park Software Division</p>
+  <p>33 Gates • 25 Agents • 23 Workflow Modes • 17 Phases • 0 Shit Hawks</p>
+  <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
+  <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>
+</div>
+
+</body>
+</html>

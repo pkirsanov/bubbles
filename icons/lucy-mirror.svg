@@ -1,0 +1,11 @@
+<!-- icon-name: lucy-mirror -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <ellipse cx="32" cy="24" rx="18" ry="12"/>
+  <ellipse cx="32" cy="44" rx="18" ry="12"/>
+  <path d="M 14 24 C 14 34 50 34 50 24"/>
+  <ellipse cx="32" cy="24" rx="14" ry="8" stroke-width="1.2"/>
+  <path d="M 24 24 L 32 18" stroke-width="1.2"/>
+  <ellipse cx="32" cy="44" rx="14" ry="8" stroke-width="1.2" stroke-dasharray="2 4"/>
+  <path d="M 32 56 L 32 58" stroke-width="3"/>
+  <path d="M 12 12 L 14 14 M 16 8 L 14 14 M 10 16 L 14 14" stroke-width="1.2"/>
+</svg>

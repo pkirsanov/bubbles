@@ -1,0 +1,9 @@
+<!-- icon-name: julian-glass -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 16 12 L 18 52 C 18 54 19 56 21 56 L 43 56 C 45 56 46 54 46 52 L 48 12 Z"/>
+  <path d="M 16 12 L 48 12"/>
+  <path d="M 17 28 L 47 28" stroke-dasharray="4 4" stroke-width="1.2"/>
+  <rect x="22" y="38" width="10" height="10" rx="2" stroke-width="1.2"/>
+  <rect x="32" y="32" width="8" height="8" rx="2" stroke-width="1.2"/>
+  <path d="M 38 10 L 30 42" stroke-width="1.2"/>
+</svg>

@@ -1,0 +1,8 @@
+<!-- icon-name: cyrus-sunglasses -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 8 24 L 30 28 L 32 30 L 34 28 L 56 24 L 52 38 L 34 32 L 32 34 L 30 32 L 12 38 Z" fill="#f8f9fa"/>
+  <path d="M 30 28 L 34 28" stroke="#ffffff"/>
+  <path d="M 8 24 L 4 20" stroke-width="2"/>
+  <path d="M 56 24 L 60 20" stroke-width="2"/>
+  <path d="M 12 28 L 20 28" stroke="#ffffff" stroke-width="1.2"/>
+</svg>
