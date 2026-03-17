@@ -81,7 +81,7 @@ It works similarly to `/bubbles.gaps` and `/bubbles.harden`, but with a differen
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -90,7 +90,7 @@ It works similarly to `/bubbles.gaps` and `/bubbles.harden`, but with a differen
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 When stabilization requires mixed specialist execution (bug/test/gaps/docs/hardening) in a single run:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bubbles Spec Progress Dashboard
 # Generic, project-agnostic spec status overview across all specs/ folders.
-# Usage: bash .github/scripts/bubbles-spec-dashboard.sh [specs-dir]
+# Usage: bash .github/bubbles/scripts/spec-dashboard.sh [specs-dir]
 #
 # Output: Summary table of all specs with status, workflow mode, scope counts,
 #         and completion percentage.
@@ -9,7 +9,7 @@
 set -uo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 SPECS_DIR="${1:-specs}"
 

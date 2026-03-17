@@ -42,7 +42,7 @@ handoffs:
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -51,7 +51,7 @@ handoffs:
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md) and scope workflow in [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 When planning must coordinate mixed specialist follow-up (clarify/implement/test/docs/gaps/hardening/bug) in one session:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
@@ -179,7 +179,7 @@ Core requirements:
   - Definition of Done
   - status tracking per scope (Not started / In progress / Done / Blocked)
 
-Template reference: [feature-templates.md](_shared/feature-templates.md)
+Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 
 ---
 

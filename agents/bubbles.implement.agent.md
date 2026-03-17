@@ -52,7 +52,7 @@ handoffs:
 - No `TODO`, `FIXME`, `HACK`, `STUB`, `unimplemented!()` anywhere in changed code
 - No narrative summaries or template placeholders as evidence
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I4) MUST pass before reporting results.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I4) MUST pass before reporting results.
 
 **Non-goals:**
 - Creating new scopes or planning work (→ bubbles.plan or bubbles.iterate)
@@ -90,7 +90,7 @@ Execution control options:
 
 ## ⚠️ Loop Guard: Explicit Read Limits (CRITICAL)
 
-Use the Loop Guard from [agent-common.md](_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus files listed in the scope implementation plan. Do not recursively search the codebase.
+Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus files listed in the scope implementation plan. Do not recursively search the codebase.
 
 ---
 
@@ -128,11 +128,11 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
      - ✅ List available feature folders in `specs/` to help user
 2. Load and validate `{FEATURE_DIR}/scopes.md`
 3. Load `spec.md`, `design.md`
-4. **Run User Validation Gate** (per [_shared/scope-workflow.md](_shared/scope-workflow.md))
+4. **Run User Validation Gate** (per [bubbles_shared/scope-workflow.md](bubbles_shared/scope-workflow.md))
    - Create `uservalidation.md` if missing
    - Check for unchecked items (regressions)
    - If regressions exist: prioritize fixing them first
-5. **Run Bug Check** (per [_shared/agent-common.md](_shared/agent-common.md))
+5. **Run Bug Check** (per [bubbles_shared/agent-common.md](bubbles_shared/agent-common.md))
    - Check `{FEATURE_DIR}/bugs/*/state.json` for incomplete bugs
    - If found: WARN user and recommend completing the bug work in the corresponding bug folder first
    - Proceed only if user acknowledges or no bugs found
@@ -157,7 +157,7 @@ During execution:
 
 ### Phases 2-7: Execution
 
-Follow [scope-workflow.md](_shared/scope-workflow.md) → "Execution Phases" (Phases 2-7), "Phase Exit Gates", and "Audit Failure Routing".
+Follow [scope-workflow.md](bubbles_shared/scope-workflow.md) → "Execution Phases" (Phases 2-7), "Phase Exit Gates", and "Audit Failure Routing".
 
 ---
 
@@ -167,10 +167,10 @@ Before reporting completion, this agent MUST run Tier 1 universal checks (see ag
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| I1 | Reality scan (G028+G030) | `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, or defaults |
+| I1 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, or defaults |
 | I2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | I3 | Scope status | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
-| I4 | State transition guard (G023) | `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
+| I4 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
 
 **If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**
 
@@ -194,7 +194,7 @@ Before reporting completion, this agent MUST run Tier 1 universal checks (see ag
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ---
 

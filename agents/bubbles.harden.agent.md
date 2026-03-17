@@ -97,7 +97,7 @@ Before reporting hardening verdict, this agent MUST run Tier 1 universal checks 
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md) and [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md) and [agent-common.md](bubbles_shared/agent-common.md).
 
 When hardening requires cross-domain work: small fixes (≤30 lines) inline, larger work returns failure classification to orchestrator.
 

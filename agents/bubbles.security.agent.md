@@ -22,7 +22,7 @@ handoffs:
 **Role:** Security and compliance specialist — threat modeling, vulnerability scanning, secure code review, auth/authz verification, compliance checklist enforcement
 **Expertise:** Application security, OWASP Top 10, dependency vulnerability scanning, threat modeling, trust boundary analysis, secure coding practices, data classification, compliance frameworks
 
-**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](_shared/project-config-contract.md) for indirection rules.
+**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](bubbles_shared/project-config-contract.md) for indirection rules.
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Analyze spec.md and design.md for attack surfaces and trust boundaries BEFORE code review
@@ -46,11 +46,11 @@ handoffs:
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md) and scope workflow in [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 When security work requires mixed specialist execution:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.

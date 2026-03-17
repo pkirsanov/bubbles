@@ -71,7 +71,7 @@ PRINCIPLE: **Design/spec/scopes must agree. Anything required must be explicitly
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -80,7 +80,7 @@ PRINCIPLE: **Design/spec/scopes must agree. Anything required must be explicitly
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 If clarification work triggers mixed specialist phases (plan/implement/test/docs/gaps/hardening/bug) within the same run:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
@@ -92,7 +92,7 @@ Agent-specific: This agent focuses on docs, but policy constraints still apply t
 
 ## Loop Guard (MANDATORY)
 
-Use the Loop Guard in [agent-common.md](_shared/agent-common.md) with doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, no duplicate reads, and no hunt loops. If `scopes.md` is missing, recommend `/bubbles.plan` instead of searching.
+Use the Loop Guard in [agent-common.md](bubbles_shared/agent-common.md) with doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, no duplicate reads, and no hunt loops. If `scopes.md` is missing, recommend `/bubbles.plan` instead of searching.
 
 ---
 
@@ -111,7 +111,7 @@ Minimum todo items:
 
 ## Context Loading (Tiered - NOT All At Once)
 
-Follow Tiered Context Loading in [agent-common.md](_shared/agent-common.md):
+Follow Tiered Context Loading in [agent-common.md](bubbles_shared/agent-common.md):
 - **Tier 1 (Governance):** `.specify/memory/agents.md`, `.specify/memory/constitution.md`, `.github/copilot-instructions.md`
 - **Tier 2 (Feature):** `{FEATURE_DIR}/spec.md`, `design.md`, `plan.md`, `scopes.md`, `tasks.md`, `checklists/*.md` (as available)
 - **Tier 3 (Project):** Project docs as discovered via `ls docs/*.md` (architecture, API, development, deployment, operations, testing, etc.)

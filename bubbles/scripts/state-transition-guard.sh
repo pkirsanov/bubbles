@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================================
-# bubbles-state-transition-guard.sh
+# state-transition-guard.sh
 # =============================================================================
 # MANDATORY guard script that MUST be executed BEFORE any state.json status
 # transition to "done". This is the mechanical enforcement layer that prevents
 # agents from fabricating completion status.
 #
 # Usage:
-#   bash .github/scripts/bubbles-state-transition-guard.sh <feature-dir> [--revert-on-fail]
+#   bash .github/bubbles/scripts/state-transition-guard.sh <feature-dir> [--revert-on-fail]
 #
 # Exit codes:
 #   0 = All checks pass, transition to "done" is permitted
@@ -20,7 +20,7 @@
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 feature_dir="${1:-}"
 revert_on_fail="false"
@@ -33,7 +33,7 @@ done
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/scripts/bubbles-state-transition-guard.sh specs/<NNN-feature-name> [--revert-on-fail]"
+  echo "Usage: bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name> [--revert-on-fail]"
   exit 2
 fi
 
@@ -811,7 +811,7 @@ echo ""
 # CHECK 13: Run artifact lint as final cross-check
 # =============================================================================
 echo "--- Check 13: Artifact Lint ---"
-lint_script=".github/scripts/bubbles-artifact-lint.sh"
+lint_script=".github/bubbles/scripts/artifact-lint.sh"
 if [[ -f "$lint_script" ]]; then
   if bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
     pass "Artifact lint passes (exit 0)"
@@ -925,11 +925,11 @@ echo ""
 # =============================================================================
 # CHECK 16: Implementation Reality Scan (Gate G028)
 # =============================================================================
-# Runs bubbles-implementation-reality-scan.sh to detect stub/fake/hardcoded
+# Runs implementation-reality-scan.sh to detect stub/fake/hardcoded
 # data patterns in source files referenced by scope artifacts.
 # =============================================================================
 echo "--- Check 16: Implementation Reality Scan (Gate G028) ---"
-reality_scan_script=".github/scripts/bubbles-implementation-reality-scan.sh"
+reality_scan_script=".github/bubbles/scripts/implementation-reality-scan.sh"
 if [[ -f "$reality_scan_script" ]]; then
   # Only run for modes that involve implementation
   run_reality_scan="false"
@@ -1025,6 +1025,34 @@ if [[ "$failures" -gt 0 ]]; then
     echo "REVERTED: completedScopes → []"
     echo "REVERTED: completedPhases → []"
     echo "ADDED: failure record with timestamp $now_utc"
+  fi
+
+  # ── Run project-defined custom gates (G100+) ───────────────────────
+  PROJECT_CONFIG=".github/bubbles-project.yaml"
+  if [[ -f "$PROJECT_CONFIG" ]]; then
+    echo ""
+    echo "🔍 Running project-defined gates from $PROJECT_CONFIG..."
+    while IFS= read -r line; do
+      script_path=$(echo "$line" | sed 's/.*script:\s*//' | tr -d '[:space:]')
+      [[ -z "$script_path" ]] && continue
+      full_path=".github/$script_path"
+      gate_name=$(grep -B5 "script:.*$script_path" "$PROJECT_CONFIG" | grep -oE '^\s+\S+:$' | tail -1 | tr -d '[:space:]:')
+      if [[ -x "$full_path" ]]; then
+        echo "  Running: $gate_name ($full_path)"
+        if bash "$full_path"; then
+          echo "  ✅ $gate_name passed"
+        else
+          blocking=$(grep -A2 "script:.*$script_path" "$PROJECT_CONFIG" | grep "blocking:" | sed 's/.*blocking:\s*//' | tr -d '[:space:]')
+          if [[ "$blocking" == "true" ]]; then
+            fail "Project gate BLOCKED: $gate_name ($full_path)"
+          else
+            warn "Project gate warning: $gate_name ($full_path)"
+          fi
+        fi
+      else
+        warn "Project gate script not found or not executable: $full_path"
+      fi
+    done < <(grep "script:" "$PROJECT_CONFIG")
   fi
 
   exit 1

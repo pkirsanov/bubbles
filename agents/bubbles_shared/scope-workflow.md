@@ -51,7 +51,7 @@
 
 All agents MUST apply **Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) before claiming completion. The **audit agent** serves as the final verification checkpoint — if fabrication is detected during audit, the spec is blocked.
 
-The **artifact lint script** (`bubbles-artifact-lint.sh`) includes automated detection for:
+The **artifact lint script** (`artifact-lint.sh`) includes automated detection for:
 - DoD items without evidence blocks
 - Unfilled template placeholders
 - Evidence blocks lacking terminal output signals (fabricated content)
@@ -59,7 +59,7 @@ The **artifact lint script** (`bubbles-artifact-lint.sh`) includes automated det
 - Missing specialist phases in `completedPhases`
 - Duplicate evidence blocks
 
-The **implementation reality scan** (`bubbles-implementation-reality-scan.sh`) includes automated detection for:
+The **implementation reality scan** (`implementation-reality-scan.sh`) includes automated detection for:
 - Backend stub patterns (hardcoded vecs, fake/mock/stub functions)
 - Frontend fake data (getSimulationData, import mock modules, hardcoded arrays)
 - Frontend API call absence (hooks/services with zero fetch/axios calls)
@@ -788,13 +788,13 @@ Before marking ANY scope "Done" or setting spec status to "done", the agent MUST
 
 7. **Run state transition guard script (Gate G023 — MECHANICAL ENFORCEMENT):**
    ```bash
-   bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+   bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
    ```
    - **This is the FIRST check to run.** If it exits with code 1, ALL subsequent checks are moot — status MUST remain `in_progress`.
    - The guard script consolidates checks 8-13 below into a single blocking pass, but agents MUST also verify these individually for transparency.
    - **NEVER write `"status": "done"` to state.json without guard script exit code 0.**
 
-8. **Run artifact lint** — `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}` must exit 0
+8. **Run artifact lint** — `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` must exit 0
 9. **Verify ALL DoD items are `[x]`** — for per-scope dirs: `grep -c '^\- \[ \]' {FEATURE_DIR}/scopes/*/scope.md` must be 0; for single-file: `grep -c '^\- \[ \]' {FEATURE_DIR}/scopes.md` must be 0
 10. **Verify ALL scope statuses are Done** — check `_index.md` status column (per-scope dirs) or `scopes.md` (single-file): `grep -c 'Status:.*Not Started\|Status:.*In Progress' {SCOPE_FILES}` must be 0
 11. **Verify evidence legitimacy** — every `[x]` item must have inline evidence containing real terminal output signals (test results, file paths, exit codes, timing, build tool names)
@@ -809,12 +809,12 @@ Before marking ANY scope "Done" or setting spec status to "done", the agent MUST
 16. **Verify per-DoD-item evidence (G025)** — EVERY [x] item has raw terminal output evidence inline with legitimate terminal signals. Manually verify each checked item has an evidence block containing real output (pass/fail counts, file paths, exit codes). Items without evidence or with fabricated prose MUST be reverted to [ ]
 17. **Verify test reality (G025)** — ALL test-related DoD items show tests covering ALL Gherkin scenarios, error paths, boundary conditions, and parameter permutations. Tests MUST use real systems (no internal mocks, real test DBs). 100% business logic coverage required.
 18. **Verify stress coverage** — If scope defines latency SLAs (e.g., "under 50ms"), stress test DoD items MUST exist and pass.
-19. **Verify no defaults/fallbacks (G030)** — `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` covers Scan 5. Zero `unwrap_or()`, `|| default`, `?? fallback`, `os.getenv("K", "default")` in production code. All config MUST fail-fast if missing.
+19. **Verify no defaults/fallbacks (G030)** — `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` covers Scan 5. Zero `unwrap_or()`, `|| default`, `?? fallback`, `os.getenv("K", "default")` in production code. All config MUST fail-fast if missing.
 20. **If ANY check fails** → status MUST remain `in_progress`, NOT be promoted to `done`
 
 **⚠️ STATE TRANSITION SEQUENCE (NON-NEGOTIABLE):**
 ```
-Step 1: Run guard script → bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+Step 1: Run guard script → bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 Step 2: IF exit code 1 → STOP. Status stays "in_progress". Fix ALL failures.
 Step 3: IF exit code 0 → Run artifact lint as confirmation
 Step 4: IF lint passes → Write the resolved status (never exceeding `statusCeiling`) to state.json

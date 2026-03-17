@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# bubbles-implementation-reality-scan.sh
+# implementation-reality-scan.sh
 # =============================================================================
 # Scans implementation source files for stub, fake, hardcoded data, and
 # default/fallback patterns that violate the "Real Implementation" and
@@ -17,20 +17,20 @@
 #   5. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
 #
 # Usage:
-#   bash .github/scripts/bubbles-implementation-reality-scan.sh <feature-dir> [--verbose]
+#   bash .github/bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
 #
 # Exit codes:
 #   0 = No violations found
 #   1 = Violations detected (blocking)
 #   2 = Usage error
 #
-# Called automatically by bubbles-state-transition-guard.sh (Check 15).
+# Called automatically by state-transition-guard.sh (Check 15).
 # Can also be run standalone for pre-completion self-audit.
 # =============================================================================
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 feature_dir="${1:-}"
 verbose="false"
@@ -43,7 +43,7 @@ done
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/scripts/bubbles-implementation-reality-scan.sh specs/<NNN-feature-name> [--verbose]"
+  echo "Usage: bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> [--verbose]"
   exit 2
 fi
 

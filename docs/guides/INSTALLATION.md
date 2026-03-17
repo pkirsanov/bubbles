@@ -1,4 +1,4 @@
-# 🫧 Installing Bubbles in Your Repo
+# <img src="../../icons/bubbles-glasses.svg" width="28"> Installing Bubbles in Your Repo
 
 > *"Smokes, let's go."*
 
@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 This installs:
 - 25 agent definitions → `.github/agents/bubbles.*.agent.md`
 - 25 prompt shims → `.github/prompts/bubbles.*.prompt.md`
-- Shared governance docs → `.github/agents/_shared/`
+- Shared governance docs → `.github/agents/bubbles_shared/`
 - Workflow config → `.github/bubbles/workflows.yaml`
 - Governance scripts → `.github/scripts/bubbles*.sh`
 
@@ -36,8 +36,8 @@ And with `--bootstrap`, also creates:
 - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
 - `.specify/memory/constitution.md` — project governance principles
 - `.specify/memory/agents.md` — command registry for agent resolution
-- `.github/docs/BUBBLES_CROSS_PROJECT_SETUP.md` — setup checklist
-- `.github/docs/BUBBLES_SETUP_SOURCES.md` — bootstrap source registry
+- `.github/bubbles/docs/CROSS_PROJECT_SETUP.md` — setup checklist
+- `.github/bubbles/docs/SETUP_SOURCES.md` — bootstrap source registry
 - `specs/` — directory for feature/bug specs
 
 The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and `--name` to override.
@@ -136,7 +136,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Category | Location | Managed By |
 |----------|----------|:----------:|
 | Agent definitions | `.github/agents/bubbles.*.agent.md` | Bubbles |
-| Shared governance | `.github/agents/_shared/*.md` | Bubbles |
+| Shared governance | `.github/agents/bubbles_shared/*.md` | Bubbles |
 | Prompt shims | `.github/prompts/bubbles.*.prompt.md` | Bubbles |
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/scripts/bubbles*.sh` | Bubbles |

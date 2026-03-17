@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 feature_dir="${1:-}"
 default_scenario_pattern='SCN-[0-9]{3}-[A-Z][0-9]{2}'
@@ -11,8 +11,8 @@ enable_autofix="false"
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/scripts/bubbles-artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
-  echo "Example: bash .github/scripts/bubbles-artifact-lint.sh specs/037-future-enhancements-missing-implementation 'SCN-037-[A-Z][0-9]{2}'"
+  echo "Usage: bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
+  echo "Example: bash .github/bubbles/scripts/artifact-lint.sh specs/037-future-enhancements-missing-implementation 'SCN-037-[A-Z][0-9]{2}'"
   exit 2
 fi
 
@@ -24,7 +24,7 @@ for arg in "$@"; do
     scenario_pattern="$arg"
   else
     echo "ERROR: unsupported argument '$arg'"
-    echo "Usage: bash .github/scripts/bubbles-artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
+    echo "Usage: bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
     exit 2
   fi
 done
@@ -35,7 +35,7 @@ if [[ ! -d "$feature_dir" ]]; then
 fi
 
 if [[ "$enable_autofix" == "true" ]]; then
-  autofix_script=".github/scripts/bubbles-report-section-autofix.sh"
+  autofix_script=".github/bubbles/scripts/report-section-autofix.sh"
   if [[ ! -x "$autofix_script" ]]; then
     echo "ERROR: autofix requested but helper is missing or not executable: $autofix_script"
     exit 2
@@ -916,7 +916,7 @@ if [[ -f "$report_file" ]]; then
     done
   fi
 
-  value_selection_lint_script=".github/scripts/bubbles-value-selection-lint.sh"
+  value_selection_lint_script=".github/bubbles/scripts/value-selection-lint.sh"
   if [[ -x "$value_selection_lint_script" ]]; then
     if grep -Eq 'value-first-e2e-batch|Value-First Selection Cycle' "$report_file"; then
       if value_selection_output="$(bash "$value_selection_lint_script" "$report_file" 2>&1)"; then

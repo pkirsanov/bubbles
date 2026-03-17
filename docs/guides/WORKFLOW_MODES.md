@@ -1,4 +1,4 @@
-# 🫧 Bubbles Workflow Modes
+# <img src="../../icons/bubbles-glasses.svg" width="28"> Bubbles Workflow Modes
 
 > *"Julian's got a plan. A good plan this time."*
 

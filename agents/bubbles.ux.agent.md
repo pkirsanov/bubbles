@@ -19,7 +19,7 @@ handoffs:
 **Role:** UI wireframe design, interaction flow mapping, UX pattern application, competitive UI benchmarking
 **Expertise:** Information architecture, interaction design, accessibility, responsive design, design system compliance, ASCII wireframe authoring
 
-**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](_shared/project-config-contract.md) for indirection rules.
+**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](bubbles_shared/project-config-contract.md) for indirection rules.
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Take business scenarios, actors, and use cases from spec.md (produced by bubbles.analyst or manually written)
@@ -44,11 +44,11 @@ handoffs:
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md) and scope workflow in [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ---
 
@@ -128,7 +128,7 @@ Unlike `/bubbles.analyst` (what to build), `/bubbles.design` (how to build it), 
 
 ## ⚠️ Loop Guard (MANDATORY)
 
-Use the Loop Guard from [agent-common.md](_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution. For competitor research, limit to 5 competitor sites with max 3 pages each (15 fetches total cap).
+Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution. For competitor research, limit to 5 competitor sites with max 3 pages each (15 fetches total cap).
 
 ---
 

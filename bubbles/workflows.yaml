@@ -70,7 +70,7 @@ gates:
     description: ALL specialist agents required by the mode (test, docs, validate, audit, chaos) MUST have executed and returned verifiable results before spec promotion. Missing specialist execution is a BLOCKING failure.
   G023:
     name: state_transition_guard_gate
-    description: MANDATORY mechanical enforcement gate. The bubbles-state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, and artifact lint in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
+    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, and artifact lint in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
   G024:
     name: all_scopes_done_before_spec_done_gate
     description: ABSOLUTE BLOCKING gate. A spec CANNOT be marked "done" in state.json until EVERY scope in scopes.md has status "Done". Zero scopes with "Not Started", "In Progress", or "Blocked" are allowed. This is a hard dependency — no override, no workaround, no exception. Agents MUST verify by running grep for non-Done scope statuses and confirming zero matches before writing "done" to state.json.
@@ -85,13 +85,13 @@ gates:
     description: ABSOLUTE BLOCKING gate. completedPhases claiming implementation phases (implement, test) MUST have matching non-empty completedScopes AND Done scope artifacts. Claiming 6-7 lifecycle phases complete while completedScopes is empty or partial = FABRICATION. Guard script Check 15 enforces mechanically.
   G028:
     name: implementation_reality_scan_gate
-    description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Gateway handlers returning vec![...] with literal data instead of real service calls, frontend hooks calling getSimulationData() or containing zero fetch() calls = BLOCKING. Enforced by bubbles-implementation-reality-scan.sh via guard script Check 16.
+    description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Gateway handlers returning vec![...] with literal data instead of real service calls, frontend hooks calling getSimulationData() or containing zero fetch() calls = BLOCKING. Enforced by implementation-reality-scan.sh via guard script Check 16.
   G029:
     name: integration_completeness_gate
     description: Every implemented artifact (endpoint, library, page, service, migration, proto) MUST be wired into the running system with at least one real consumer. Backend endpoints consumed by frontends or documented external-only. Libraries imported by consumers. Frontend using real APIs (no stubs/mocks/hardcoded data). Verified by grep-based consumer checks.
   G030:
     name: no_defaults_no_fallbacks_gate
-    description: ABSOLUTE BLOCKING gate. Production code MUST NOT contain default/fallback values that mask missing configuration or hide failures. Patterns like unwrap_or(), unwrap_or_default(), || "default", ?? "fallback", os.getenv("K", "default"), ${VAR:-default} are FORBIDDEN. All config MUST fail-fast if missing. Enforced by bubbles-implementation-reality-scan.sh Scan 5.
+    description: ABSOLUTE BLOCKING gate. Production code MUST NOT contain default/fallback values that mask missing configuration or hide failures. Patterns like unwrap_or(), unwrap_or_default(), || "default", ?? "fallback", os.getenv("K", "default"), ${VAR:-default} are FORBIDDEN. All config MUST fail-fast if missing. Enforced by implementation-reality-scan.sh Scan 5.
   G031:
     name: findings_artifact_update_gate
     description: Agent findings recorded in scope artifacts (scopes.md/state.json) before verdict.
@@ -126,6 +126,9 @@ gates:
   G038:
     name: micro_fix_containment_gate
     description: Narrow failures MUST be handled by narrow repair loops first. Compile, lint, validation, and test failures must be fixed with the smallest viable context before broader reruns or escalations are allowed.
+  G039:
+    name: self_healing_containment_gate
+    description: Self-healing fix loops MUST NOT stack. maxDepth=1 — a fix attempt NEVER triggers another fix loop. maxRetries=3 per failure, maxTotalRetries=5 per phase. Context narrows on each retry (full → file → function). If a fix introduces a NEW error, it counts against the same retry budget. No recursion, no nesting.
 
 failureRouting:
   code: implement
@@ -190,6 +193,20 @@ autoEscalation:
     artifactDrift:
       description: State claims don't match reality (stale completedPhases, wrong status)
       action: reconcile state inline → continue current workflow
+  # Self-healing loop configuration (G039)
+  selfHealingLoop:
+    maxDepth: 1          # NEVER nest — a fix attempt cannot trigger another fix attempt
+    maxRetries: 3        # Per failure, max 3 attempts with the same error context
+    maxTotalRetries: 5   # Across ALL failures in one phase, hard cap
+    narrowingRule: |
+      Retry 1: full error context + surrounding code
+      Retry 2: only the failing file + error message
+      Retry 3: only the specific function/block + error message
+      After 3: escalate to next agent or mark blocked
+    antiStackingRule: |
+      A self-healing fix attempt is NEVER allowed to trigger another
+      self-healing loop. If a fix introduces a NEW error, it counts
+      against the same retry budget. No recursion. No nesting.
   # Truly terminal conditions — ONLY these justify stopping the workflow
   terminalStopConditions:
     - all_target_specs_done_or_blocked_after_max_retries
@@ -205,6 +222,35 @@ autoEscalation:
     - gaps_need_closing
     - test_failures_fixable
     - state_drift_detected
+
+# Project-local custom gates (discovered from .github/bubbles-project.yaml)
+# These are NEVER defined in this file — this file is 100% Bubbles-owned.
+# Custom gates are auto-discovered by the state transition guard script.
+# See bubbles.ops agent and bubbles-project.yaml for management.
+customGatesDiscovery:
+  configFile: .github/bubbles-project.yaml
+  idRange: G100+
+  enforcement: auto-discovered by state-transition-guard.sh
+
+# Lessons memory auto-compaction
+lessonsMemory:
+  file: .specify/memory/lessons.md
+  archiveFile: .specify/memory/lessons-archive.md
+  maxLines: 150
+  autoCompactTrigger: workflow_start
+  recencyTiers:
+    recent: 30d       # Full detail
+    aging: 90d        # Problem + fix only
+    archive: 90d+     # Moved to archive file
+  deduplicationThreshold: 3  # Same root cause 3+ times → collapse
+
+# Metrics collection (optional, off by default)
+metrics:
+  enabled: false
+  storageFile: .specify/metrics/events.jsonl
+  configFile: .specify/memory/bubbles.config.json
+  enableCommand: "bubbles.sh metrics enable"
+  disableCommand: "bubbles.sh metrics disable"
 
 priorityScoring:
   model: weighted_sum
@@ -405,9 +451,20 @@ executionOptions:
       default: false
       meaning: Opt into isolated branch/worktree setup before implementation when repo policy allows it.
     autoCommit:
-      type: boolean
-      default: false
-      meaning: Opt into atomic commits after fully validated DoD or scope milestones.
+      type: string
+      default: "off"
+      values:
+        off: No automatic commits
+        scope: Commit after scope reaches Done (recommended)
+        dod: Commit after each validated DoD item (fine-grained)
+      commitMessageTemplate: |
+        bubbles({spec}/{scope}): {scope_name} — {status}
+        
+        Spec: {spec_name}
+        Scope: {scope_id}-{scope_name}
+        DoD: {checked}/{total} checked
+        Agent: {agent_name}
+      meaning: Opt into atomic commits after validated milestones.
     maxScopeMinutes:
       type: integer
       default: null

@@ -76,7 +76,7 @@ Unlike `/bubbles.test` (test-focused verification + coverage gap fixing), `/bubb
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -85,7 +85,7 @@ Unlike `/bubbles.test` (test-focused verification + coverage gap fixing), `/bubb
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 If gap remediation spans multiple specialist phases (implement/test/docs/harden/bug) in one session:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
@@ -97,7 +97,7 @@ Agent-specific: Action-First Mandate applies. If target is a bug directory, enfo
 
 ## ⚠️ Loop Guard: Gap Analysis Read Limits (CRITICAL)
 
-Follow Loop Guard from [agent-common.md](_shared/agent-common.md) with gap-specific limits:
+Follow Loop Guard from [agent-common.md](bubbles_shared/agent-common.md) with gap-specific limits:
 
 ### File Whitelist for Gap Analysis
 

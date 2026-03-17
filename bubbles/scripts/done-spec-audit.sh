@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 usage() {
-  echo "Usage: bash .github/scripts/bubbles-done-spec-audit.sh [--fix]"
+  echo "Usage: bash .github/bubbles/scripts/done-spec-audit.sh [--fix]"
   echo ""
   echo "Scans specs/*/state.json for status=done, runs artifact lint, and reports failures."
   echo "With --fix, failing done specs are downgraded to in_progress."
@@ -33,13 +33,13 @@ done
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo_root"
 
-lint_script=".github/scripts/bubbles-artifact-lint.sh"
+lint_script=".github/bubbles/scripts/artifact-lint.sh"
 if [[ ! -f "$lint_script" ]]; then
   echo "ERROR: missing lint script: $lint_script"
   exit 2
 fi
 
-guard_script=".github/scripts/bubbles-state-transition-guard.sh"
+guard_script=".github/bubbles/scripts/state-transition-guard.sh"
 if [[ ! -f "$guard_script" ]]; then
   echo "WARNING: missing guard script: $guard_script (falling back to lint-only)"
   guard_script=""
@@ -212,7 +212,7 @@ for state_file in specs/*/state.json; do
     fi
 
     if grep -Eq '"notes"[[:space:]]*:' "$state_file"; then
-      sed -i -E 's|"notes"[[:space:]]*:[[:space:]]*"[^"]*"|"notes": "Auto-downgraded by bubbles-done-spec-audit: artifact lint failed for a done spec. Restore done only after gates pass."|' "$state_file"
+      sed -i -E 's|"notes"[[:space:]]*:[[:space:]]*"[^"]*"|"notes": "Auto-downgraded by done-spec-audit: artifact lint failed for a done spec. Restore done only after gates pass."|' "$state_file"
     fi
 
     if grep -Eq '"lastUpdatedAt"[[:space:]]*:' "$state_file"; then

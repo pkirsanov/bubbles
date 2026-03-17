@@ -25,11 +25,11 @@ description: Final system audit for spec compliance, code quality, and security 
   - Check for duplicate/copy-pasted evidence blocks
   - Check for impossible success patterns (all tests pass first try on non-trivial changes)
 - **Verify specialist agent execution** — check `state.json` `completedPhases` against mode-required phases. If any required specialist phase is missing, audit MUST fail.
-- **Run artifact lint** — execute `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}` and include raw output as evidence. If lint fails, audit verdict MUST NOT be clean.
+- **Run artifact lint** — execute `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` and include raw output as evidence. If lint fails, audit verdict MUST NOT be clean.
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates and revert state.json if any fail. Use `bubbles-state-transition-guard.sh --revert-on-fail` to mechanically enforce.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates and revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
 
 **Non-goals:**
 - Ad-hoc fixes outside a feature/bug folder
@@ -44,18 +44,18 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| A1 | State transition guard (G023) | `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
+| A1 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
 | A2 | Independent test execution | Re-run at least unit + E2E tests independently | All pass |
 | A3 | Evidence cross-reference | Verify each [x] DoD item has ≥10 lines real inline evidence, no duplicates | All genuine |
 | A4 | Fabrication heuristics (G021) | Apply all 9 heuristics to report.md and scope files | No heuristic triggered |
-| A5 | Reality scan (G028+G030) | `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
+| A5 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | A6 | Phase-Scope coherence (G027) | Verify completedPhases matches completedScopes | Coherent |
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ## User Input
 
@@ -71,7 +71,7 @@ Ensure `/bubbles.validate` has passed before running this audit.
 
 ## Context Loading
 
-Follow [agent-common.md](_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
+Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
 - Current feature's `data-model.md` (if exists) - Data contracts
 - Current feature's `scopes.md` (if exists) - Scope definitions, Gherkin scenarios, tests, and DoD
 
@@ -82,7 +82,7 @@ Follow [agent-common.md](_shared/agent-common.md) → Context Loading (Tiered). 
 **This check MUST run BEFORE all other audit checks. If it fails, the audit is automatically `🔴 DO_NOT_SHIP`.**
 
 ```bash
-bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 | Check | Status |
@@ -102,7 +102,7 @@ bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
 
 **If ANY check fails:** Verdict = `🔴 DO_NOT_SHIP`. If state.json claims "done", run revert:
 ```bash
-bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
+bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
 ```
 
 Record the full guard script output in report.md under `### Audit Evidence`.
@@ -229,7 +229,7 @@ The purpose of this phase is to verify that the evidence recorded by prior agent
 
 ### 3.6 Test Compliance Review (MANDATORY unless `compliance: off`)
 
-Audit for noop/fake/false-positive tests against current guardrails in `.github/copilot-instructions.md` and `_shared/agent-common.md`.
+Audit for noop/fake/false-positive tests against current guardrails in `.github/copilot-instructions.md` and `bubbles_shared/agent-common.md`.
 
 Modes:
 - `compliance: selected` → audit changed/targeted tests for this audit scope

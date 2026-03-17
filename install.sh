@@ -78,9 +78,9 @@ tar xzf "$TEMP_DIR/bubbles.tar.gz" -C "$TEMP_DIR" --strip-components=1
 
 # ── Install agents ──────────────────────────────────────────────────
 info "Installing agents..."
-mkdir -p "${TARGET}/agents/_shared"
+mkdir -p "${TARGET}/agents/bubbles_shared"
 cp "$TEMP_DIR"/agents/bubbles.*.agent.md "${TARGET}/agents/"
-cp "$TEMP_DIR"/agents/_shared/*.md       "${TARGET}/agents/_shared/"
+cp "$TEMP_DIR"/agents/bubbles_shared/*.md       "${TARGET}/agents/bubbles_shared/"
 ok "$(ls "${TARGET}"/agents/bubbles.*.agent.md | wc -l) agents installed"
 
 # ── Install prompts ─────────────────────────────────────────────────
@@ -97,10 +97,10 @@ ok "workflows.yaml installed"
 
 # ── Install scripts ─────────────────────────────────────────────────
 info "Installing governance scripts..."
-mkdir -p "${TARGET}/scripts"
-cp "$TEMP_DIR"/scripts/bubbles*.sh "${TARGET}/scripts/"
-chmod +x "${TARGET}"/scripts/bubbles*.sh
-ok "$(ls "${TARGET}"/scripts/bubbles*.sh | wc -l) scripts installed"
+mkdir -p "${TARGET}/bubbles/scripts"
+cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
+chmod +x "${TARGET}"/bubbles/scripts/*.sh
+ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
 
 # ── Optional: shared instructions & skills ──────────────────────────
 if [[ "$AGENTS_ONLY" != "true" ]]; then
@@ -187,6 +187,29 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   mkdir -p .specify/memory
   mkdir -p "${TARGET}/instructions"
   mkdir -p "${TARGET}/docs"
+  mkdir -p "${TARGET}/bubbles/docs"
+
+  # ── Migration: rename old paths from pre-v2 installs ──────────────
+  if [[ -d "${TARGET}/agents/_shared" && ! -d "${TARGET}/agents/bubbles_shared" ]]; then
+    mv "${TARGET}/agents/_shared" "${TARGET}/agents/bubbles_shared"
+    info "Migrated: agents/_shared → agents/bubbles_shared"
+  fi
+  # Migrate old script paths (scripts/bubbles*.sh → bubbles/scripts/)
+  for old_script in "${TARGET}"/scripts/bubbles*.sh; do
+    [[ -f "$old_script" ]] || continue
+    base=$(basename "$old_script" | sed 's/^bubbles-//' | sed 's/^bubbles\.sh$/cli.sh/')
+    if [[ -f "${TARGET}/bubbles/scripts/${base}" ]]; then
+      rm "$old_script"
+      info "Migrated: scripts/$(basename "$old_script") → bubbles/scripts/${base}"
+    fi
+  done
+  # Migrate old generated docs
+  for old_doc in BUBBLES_CROSS_PROJECT_SETUP.md BUBBLES_SETUP_SOURCES.md; do
+    if [[ -f "${TARGET}/docs/${old_doc}" ]]; then
+      rm "${TARGET}/docs/${old_doc}"
+      info "Removed old: docs/${old_doc} (regenerated in bubbles/docs/)"
+    fi
+  done
 
   # ── Scaffold: copilot-instructions.md ─────────────────────────────
   if [[ ! -f "${TARGET}/copilot-instructions.md" ]]; then
@@ -237,13 +260,13 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
-  # ── Scaffold: BUBBLES_CROSS_PROJECT_SETUP.md ──────────────────────
-  if [[ ! -f "${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md" ]]; then
-    cat > "${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md" <<'CROSSEOF'
+  # ── Scaffold: bubbles/docs/CROSS_PROJECT_SETUP.md ──────────────────────
+  if [[ ! -f "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" ]]; then
+    cat > "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" <<'CROSSEOF'
 # Bubbles Cross-Project Setup
 
 > Reference doc for applying Bubbles to this project.
-> See `.github/agents/_shared/project-config-contract.md` for the full contract.
+> See `.github/agents/bubbles_shared/project-config-contract.md` for the full contract.
 
 ## Required Configuration Files
 
@@ -263,13 +286,13 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
 - [ ] Add key file locations and code patterns
 - [ ] Update terminal discipline with project-specific forbidden/required commands
 CROSSEOF
-    ok "Created ${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md"
+    ok "Created ${TARGET}/docs/bubbles/docs/CROSS_PROJECT_SETUP.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
   fi
 
-  # ── Scaffold: BUBBLES_SETUP_SOURCES.md ────────────────────────────
-  if [[ ! -f "${TARGET}/docs/BUBBLES_SETUP_SOURCES.md" ]]; then
-    cat > "${TARGET}/docs/BUBBLES_SETUP_SOURCES.md" <<'SRCEOF'
+  # ── Scaffold: bubbles/docs/SETUP_SOURCES.md ────────────────────────────
+  if [[ ! -f "${TARGET}/bubbles/docs/SETUP_SOURCES.md" ]]; then
+    cat > "${TARGET}/bubbles/docs/SETUP_SOURCES.md" <<'SRCEOF'
 # Bubbles Setup Sources Registry
 
 > Single source of truth for what `/bubbles.bootstrap` reviews.
@@ -278,16 +301,16 @@ CROSSEOF
 
 | Source | Path | Purpose |
 |--------|------|---------|
-| Project config contract | `.github/agents/_shared/project-config-contract.md` | Required project configuration |
-| Agent common governance | `.github/agents/_shared/agent-common.md` | Universal agent rules |
-| Scope workflow | `.github/agents/_shared/scope-workflow.md` | Workflow templates |
+| Project config contract | `.github/agents/bubbles_shared/project-config-contract.md` | Required project configuration |
+| Agent common governance | `.github/agents/bubbles_shared/agent-common.md` | Universal agent rules |
+| Scope workflow | `.github/agents/bubbles_shared/scope-workflow.md` | Workflow templates |
 | Workflows config | `.github/bubbles/workflows.yaml` | Workflow mode definitions |
 
 ## External Sources
 
 > Add external libraries, skills, or references reviewed by bootstrap here.
 SRCEOF
-    ok "Created ${TARGET}/docs/BUBBLES_SETUP_SOURCES.md"
+    ok "Created ${TARGET}/docs/bubbles/docs/SETUP_SOURCES.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
   fi
 

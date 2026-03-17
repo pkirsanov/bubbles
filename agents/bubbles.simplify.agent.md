@@ -63,7 +63,7 @@ Use this section to provide specific files to review, known quality concerns, or
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -72,7 +72,7 @@ Use this section to provide specific files to review, known quality concerns, or
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 When simplification requires mixed specialist execution:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
@@ -89,7 +89,7 @@ Key requirements:
 - Maintain session state in `bubbles.session.json` with `agent: bubbles.simplify`
 - Respect loop limits per [BUBBLES_SESSIONS.md](../docs/BUBBLES_SESSIONS.md)
 - Enforce workflow mode and gate requirements per [BUBBLES_WORKFLOWS.md](../docs/BUBBLES_WORKFLOWS.md)
-- Apply anti-fabrication and evidence standards from [agent-common.md](_shared/agent-common.md)
+- Apply anti-fabrication and evidence standards from [agent-common.md](bubbles_shared/agent-common.md)
 
 ---
 
@@ -105,7 +105,7 @@ Run it after implementing a feature or bug fix to clean up your work. It spawns 
 
 ### Phase 0: Context Loading & Changed File Discovery
 
-Follow [agent-common.md](_shared/agent-common.md) → Context Loading (Tiered). Additionally:
+Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally:
 
 1. **Identify the target feature/bug directory** from `$ARGUMENTS`.
 2. **Discover recently changed files** — use git diff or file listing to identify files modified as part of the current feature/bug work:

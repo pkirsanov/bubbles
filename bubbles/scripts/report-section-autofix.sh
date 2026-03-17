@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 feature_dir="${1:-}"
 write_mode="${2:-}"
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/scripts/bubbles-report-section-autofix.sh specs/<NNN-feature-name> [--write]"
+  echo "Usage: bash .github/bubbles/scripts/report-section-autofix.sh specs/<NNN-feature-name> [--write]"
   exit 2
 fi
 

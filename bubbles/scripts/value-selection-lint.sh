@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 target_file="${1:-}"
 
 if [[ -z "$target_file" ]]; then
   echo "ERROR: missing markdown file argument"
-  echo "Usage: bash .github/scripts/bubbles-value-selection-lint.sh <markdown-file>"
+  echo "Usage: bash .github/bubbles/scripts/value-selection-lint.sh <markdown-file>"
   exit 2
 fi
 

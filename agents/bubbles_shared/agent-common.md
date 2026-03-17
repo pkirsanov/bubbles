@@ -256,11 +256,11 @@ Each agent's completion validation has two tiers:
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| V1 | Artifact lint | `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}` | Exit code 0 |
+| V1 | Artifact lint | `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | Exit code 0 |
 | V2 | No TODOs/stubs in changed files | `grep -r "TODO\|FIXME\|HACK\|STUB\|unimplemented!" [changed-files]` | Zero matches |
 | V3 | Fabrication self-audit | Apply Heuristics 1-9 (Gate G021) to own output | No heuristic triggered |
 | V4 | Evidence legitimacy | Every claimed result has raw terminal output with recognizable signals | All evidence legitimate |
-| V5 | Implementation reality scan | `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, defaults, fallbacks |
+| V5 | Implementation reality scan | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, defaults, fallbacks |
 | V6 | Scope/DoD coherence | For each scope: Gherkin scenario count ≥ E2E test plan rows; Test Plan rows == DoD test items; no scope marked "Done" with unchecked DoD | Zero parity mismatches |
 | V7 | Implementation-claims match | For each DoD item marked `[x]`: verify the claimed file/feature actually exists and matches what the item describes | Zero false-positive DoD items |
 | V8 | No mocks in production code | `grep -rn "mock\|Mock\|MOCK\|fake\|Fake\|FAKE\|stub\|Stub" [src-files] --include='*.rs' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.go'` (exclude test dirs) | Zero matches in non-test source files |
@@ -453,6 +453,95 @@ When fabrication/noop behavior is detected:
 2. **Fix adjacent issues** — If you discover a related bug or missing test while working within scope, fix it. Log what you fixed in report.md.
 3. **Strengthen tests** — When writing tests, proactively add edge cases and negative tests beyond the minimum requirement. Weak tests are technical debt.
 4. **Update docs proactively** — When code changes affect documented behavior, update related documentation immediately. Don't defer docs updates.
+
+---
+
+## 🧠 Lessons-Learned Memory (Auto-Maintained)
+
+Agents append structured entries to `.specify/memory/lessons.md` when they encounter and resolve non-trivial problems. This builds a project-specific knowledge base over time.
+
+### Entry Format
+
+```markdown
+## YYYY-MM-DD | <agent> | specs/<NNN>
+**Problem:** <one-line description>
+**Root Cause:** <what actually caused it>
+**Fix:** <what resolved it>
+**Applies To:** <when this lesson is relevant>
+```
+
+### Auto-Compaction
+
+`bubbles.workflow` runs compaction at the start of each invocation when `lessons.md` exceeds 150 lines:
+
+1. **Deduplicate:** Same root cause 3+ times → collapse into one entry with count
+2. **Recency tiering:** Last 30 days: full detail. 30–90 days: problem + fix only. 90+ days: archive to `lessons-archive.md`
+3. **Topic grouping:** Group entries under headings (Routing, Database, Frontend, Testing, etc.)
+4. **Size cap:** Keep under 150 lines. Aggressively summarize oldest grouped entries if needed.
+
+### Agent Loading
+
+`bubbles.workflow` loads the first 50 lines of `lessons.md` (topic headings + recent entries) at run start. Agents reference it for known patterns before investigating from scratch.
+
+---
+
+## 🔄 Self-Healing Loop Protocol (G039 — NON-NEGOTIABLE)
+
+When an agent encounters a build, test, lint, or validation failure, it SHOULD attempt a bounded self-healing loop before escalating.
+
+### Rules
+
+| Property | Value |
+|----------|-------|
+| `maxDepth` | 1 — a fix attempt NEVER triggers another fix loop |
+| `maxRetries` | 3 per failure (same error context) |
+| `maxTotalRetries` | 5 across ALL failures in one phase |
+| Anti-stacking | If a fix introduces a NEW error, it counts against the same retry budget |
+| Narrowing | Each retry narrows context: full → file → function |
+
+### Narrowing Rule
+
+- **Retry 1:** Full error context + surrounding code
+- **Retry 2:** Only the failing file + error message
+- **Retry 3:** Only the specific function/block + error message
+- **After 3:** Escalate to next agent or mark blocked
+
+### Anti-Stacking Rule
+
+A self-healing fix attempt is NEVER allowed to trigger another self-healing loop. If a fix introduces a NEW error, it counts against the same retry budget. No recursion. No nesting. This is enforced by G039 (`self_healing_containment_gate`).
+
+---
+
+## 📝 Atomic Commit Protocol (autoCommit Execution Tag)
+
+When `autoCommit` is set to `scope` or `dod`, agents create structured commits after validated milestones.
+
+### Commit Granularity
+
+| Value | When to commit |
+|-------|----------------|
+| `off` | No automatic commits (default) |
+| `scope` | After a scope reaches Done with all DoD items checked |
+| `dod` | After each individual DoD item is validated with evidence |
+
+### Commit Message Format
+
+```
+bubbles({spec}/{scope}): {scope_name} — Done
+
+Spec: {spec_name}
+Scope: {scope_id}-{scope_name}
+DoD: {checked}/{total} checked
+Agent: {agent_name}
+Mode: {workflow_mode}
+```
+
+### Rules
+
+- Commits are only made AFTER validation passes (never speculative)
+- `git add -A` captures all changes (implementation + tests + docs + artifacts)
+- Agents MUST verify the commit was created (check `git log --oneline -1`)
+- If `gitIsolation: true`, commits go to the isolated branch
 
 ---
 
@@ -1040,7 +1129,7 @@ grep -rn "os\.getenv.*," [python-src-dirs]
 # ANY match in production code = VIOLATION. Fail-fast required.
 
 # Run the comprehensive reality scan (covers stubs, fakes, hardcoded data, defaults)
-bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose
+bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 ```
 
 ### 2. No Caches Anywhere (ABSOLUTE)
@@ -1619,7 +1708,7 @@ Execute this checklist with actual tool calls before status → "done":
 ```
 [ ] grep -r "TODO\|FIXME\|HACK\|STUB" [changed-files] → zero results
 [ ] grep -rn "t\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo\|it\.todo" [changed-test-files] → zero results
-[ ] bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR} → exit code 0
+[ ] bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR} → exit code 0
 [ ] ls -la [every-test-file-in-test-plan] → all exist
 [ ] Test Plan rows = test-related DoD items (count match)
 [ ] All DoD items use checkbox syntax (`- [ ]` / `- [x]`)
@@ -1787,7 +1876,7 @@ done
 | 7 | **100% real scenario coverage** (all Gherkin scenarios, error paths, boundary conditions) | G025 |
 | 8 | **Tests are real** (no mocks of internal code, real test DBs, real assertions) | 3 |
 | 9 | Bug reproduced before/after fix (bugs only) | 0 |
-| 10 | Artifact lint passes (`bubbles-artifact-lint.sh`) | 5 |
+| 10 | Artifact lint passes (`artifact-lint.sh`) | 5 |
 | 11 | Test files exist on disk | 1, 2 |
 | 12 | Gherkin ↔ E2E traceability | 1 |
 | 13 | Evidence contains legitimate terminal output signals per test type | 3 |
@@ -1930,7 +2019,7 @@ This policy prevents the critical failure mode where agents advance to new specs
 | **Previous spec must be `done` or `blocked`** before starting next | Check `state.json` status of previous spec |
 | **ALL DoD items must be `[x]`** in previous spec | Parse active scope file(s) for unchecked `- [ ]` items |
 | **ALL specialist agents must have executed** for previous spec | Check that `completedPhases` in `state.json` includes all mode-required phases |
-| **Artifact lint must pass** for previous spec | Run `bubbles-artifact-lint.sh` on previous spec |
+| **Artifact lint must pass** for previous spec | Run `artifact-lint.sh` on previous spec |
 | **Scope report artifact(s) must have real evidence** for previous spec | Verify `report.md` or per-scope `report.md` files contain evidence sections with legitimate terminal output signals |
 
 ### Verification Procedure (MANDATORY before advancing to next spec)
@@ -1954,7 +2043,7 @@ if [[ "$unchecked" -gt 0 ]]; then
 fi
 
 # 3. Run artifact lint on previous spec
-bash .github/scripts/bubbles-artifact-lint.sh specs/<prev-spec>
+bash .github/bubbles/scripts/artifact-lint.sh specs/<prev-spec>
 # Must exit 0
 
 # 4. Verify evidence depth in scope report artifact(s)
@@ -2203,7 +2292,7 @@ specialists:
 
 ### Enforcement
 
-The guard script (`bubbles-state-transition-guard.sh` Check 15) mechanically enforces this by:
+The guard script (`state-transition-guard.sh` Check 15) mechanically enforces this by:
 1. Extracting `completedPhases` and checking for implementation phase names
 2. Cross-referencing against `completedScopes` count from state.json
 3. Cross-referencing against scope artifact status markers (Done count)
@@ -2240,7 +2329,7 @@ The guard script (`bubbles-state-transition-guard.sh` Check 15) mechanically enf
 
 ### Enforcement
 
-The scan script (`bubbles-implementation-reality-scan.sh`) runs as guard script Check 16 and:
+The scan script (`implementation-reality-scan.sh`) runs as guard script Check 16 and:
 1. Extracts source file paths from scope artifacts (backtick-wrapped paths)
 2. Scans each file against 4 pattern categories
 3. Skips test files (stubs in tests are a separate concern)
@@ -2251,10 +2340,10 @@ The scan script (`bubbles-implementation-reality-scan.sh`) runs as guard script 
 
 ```bash
 # Full scan with verbose context
-bash .github/scripts/bubbles-implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
+bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
 
 # As part of pre-completion self-audit
-bash .github/scripts/bubbles-state-transition-guard.sh specs/<NNN-feature-name>
+bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
 # (Check 16 runs automatically)
 ```
 
@@ -2776,14 +2865,14 @@ Every agent MUST answer these questions HONESTLY before claiming any work is com
 **Before ANY agent writes `"status": "done"` to state.json, it MUST execute the state transition guard script:**
 
 ```bash
-bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 **This is a BLOCKING gate. If the script exits with code 1, the agent MUST NOT set status to "done".**
 
 **Auto-revert mode** (recommended for orchestrators):
 ```bash
-bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
+bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
 ```
 
 When `--revert-on-fail` is specified and checks fail, the script automatically:
@@ -2807,7 +2896,7 @@ When `--revert-on-fail` is specified and checks fail, the script automatically:
 13. Artifact lint passes
 14. No TODO/FIXME/STUB markers in implementation files
 15. **Phase-Scope Coherence (Gate G027)** — completedPhases claiming implementation phases MUST have matching non-empty completedScopes and Done scope artifacts
-16. **Implementation Reality Scan (Gate G028)** — source files referenced in scope artifacts scanned for stub/fake/hardcoded data patterns via `bubbles-implementation-reality-scan.sh`
+16. **Implementation Reality Scan (Gate G028)** — source files referenced in scope artifacts scanned for stub/fake/hardcoded data patterns via `implementation-reality-scan.sh`
 17. **Integration Completeness (Gate G029)** — every implemented artifact (endpoint, library, page, service, migration, proto) is wired into the running system with at least one real consumer
 18. **Findings Artifact Update (Gate G031)** — if harden/gaps phases ran and found issues, scope artifacts (scopes.md Gherkin scenarios, Test Plan rows, DoD items, scope status, state.json) MUST have been updated to reflect findings. Findings that exist only in reports but not in scope artifacts are lost findings.
 
@@ -2820,7 +2909,7 @@ When `--revert-on-fail` is specified and checks fail, the script automatically:
 **Agent Self-Enforcement Rule:**
 Every agent that can modify state.json MUST include this sequence in its finalization:
 ```
-1. Run: bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+1. Run: bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 2. IF exit code 0 → proceed to write "status": "done"
 3. IF exit code 1 → status remains "in_progress", report blocking failures
 ```
@@ -2857,9 +2946,9 @@ Every agent that can modify state.json MUST include this sequence in its finaliz
 3. **Real commands only** — Every `Executed: YES` must have a corresponding `Command:` that was actually run.
 4. **No expected output** — NEVER type what you think the output should be. Copy what it actually was.
 5. **Specialist invocation is mandatory** — Every phase in the workflow MUST be executed by its specialist agent. Skipping phases is fabrication.
-6. **Artifact lint is mandatory** — Run `bubbles-artifact-lint.sh` before claiming completion. If it fails, you are NOT done.
+6. **Artifact lint is mandatory** — Run `artifact-lint.sh` before claiming completion. If it fails, you are NOT done.
 7. **Phase-scope coherence is mandatory** — Do NOT write implementation phase names to `completedPhases` until the corresponding scopes are actually Done with evidence (Gate G027).
-8. **Implementation reality scan is mandatory** — Run `bubbles-implementation-reality-scan.sh` before claiming any implementation is complete. Stubs, hardcoded data, and simulation calls in production code are blocking (Gate G028).
+8. **Implementation reality scan is mandatory** — Run `implementation-reality-scan.sh` before claiming any implementation is complete. Stubs, hardcoded data, and simulation calls in production code are blocking (Gate G028).
 9. **Integration completeness is mandatory** — Every implemented artifact (endpoint, library, page, service, migration, proto) MUST have at least one real consumer. Orphan endpoints, dead libraries, stub UIs, and undeployed services are blocking (Gate G029).
 10. **Findings artifact update is mandatory** — When discovering issues (harden/gaps/validate/audit/chaos/test), update scope artifacts (scopes.md Gherkin, Test Plan, DoD) BEFORE reporting verdict. Findings that exist only in reports are lost findings (Gate G031).
 
@@ -2882,13 +2971,13 @@ Every agent that can modify state.json MUST include this sequence in its finaliz
      → If NO: invoke the missing specialists NOW
 
 □ 4. LINT: Did I run artifact lint and did it pass?
-     → If NO: run `bubbles-artifact-lint.sh` NOW and fix failures
+     → If NO: run `artifact-lint.sh` NOW and fix failures
 
 □ 5. SEQUENTIAL: Is the previous spec/scope fully complete (if applicable)?
      → If NO: go complete it FIRST before finishing this one
 
 □ 6. GUARD SCRIPT: Did I run the state transition guard script and did it pass?
-     → If NO: run `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}` NOW
+     → If NO: run `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` NOW
      → If it exits with code 1: I am NOT done. Fix all failures FIRST.
      → NEVER write "status": "done" without guard script exit code 0.
 
@@ -2910,7 +2999,7 @@ Every agent that can modify state.json MUST include this sequence in its finaliz
      → If completedScopes count doesn't match Done scope count in artifacts: FIX state.json
 
 □ 10. IMPLEMENTATION REALITY (G028): Does source code contain real implementations, not stubs?
-     → Run: bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose
+     → Run: bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
      → If violations found: BLOCKED — replace stubs/hardcoded data with real implementations
      → If gateway handlers return vec![...] with literals: replace with real DB/service queries
      → If frontend hooks have zero fetch() calls: add real API integration

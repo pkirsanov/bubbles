@@ -58,10 +58,10 @@ handoffs:
 **Role:** Mode-aware, multi-spec workflow orchestrator for repeatable execution  
 **Expertise:** Cross-spec sequencing, phase orchestration, gate enforcement, retry routing, resumability
 
-**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. When dispatching specialist agents via `runSubagent`, include the project's `agents.md` path so specialists can resolve commands. See [project-config-contract.md](_shared/project-config-contract.md) for indirection rules.
+**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. When dispatching specialist agents via `runSubagent`, include the project's `agents.md` path so specialists can resolve commands. See [project-config-contract.md](bubbles_shared/project-config-contract.md) for indirection rules.
 
 **Behavioral Rules:**
-- Load and enforce `.github/bubbles/workflows.yaml` and `.github/docs/BUBBLES_WORKFLOWS.md` first.
+- Load and enforce `.github/bubbles/workflows.yaml` and `.github/bubbles/docs/WORKFLOWS.md` first.
 - Orchestrate phases by workflow mode; do not hardcode a single forced flow.
 - Stay autonomous by default. Only enter a Socratic questioning loop when the workflow input explicitly sets `socratic: true`.
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
@@ -93,7 +93,7 @@ handoffs:
 - **ALL specialist agents required by the mode** must have completed for spec N before starting spec N+1.
 - **If spec N is `blocked`**, attempt to unblock it first. Only skip if `continueOnBlocked: true` AND retry limits are exceeded.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). State transition guard (G023) MUST pass before any state.json "done" transition. Per-agent validation delegates validation to each specialist — workflow spot-checks but does not re-run all checks.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). State transition guard (G023) MUST pass before any state.json "done" transition. Per-agent validation delegates validation to each specialist — workflow spot-checks but does not re-run all checks.
 
 **Non-goals:**
 - Implementing feature code directly within this agent's own context (delegate to specialist agents via `runSubagent`)
@@ -105,7 +105,7 @@ handoffs:
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ## User Input
 
@@ -695,8 +695,8 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run `audit` phase via `runSubagent` — audit ALL specs together
    - Run `chaos` phase via `runSubagent` — chaos probes covering ALL specs
    - Run `finalize` phase — for EACH batched spec individually:
-     1. Run state transition guard: `bash .github/scripts/bubbles-state-transition-guard.sh {SPEC_DIR}`
-     2. Run artifact lint: `bash .github/scripts/bubbles-artifact-lint.sh {SPEC_DIR}`
+     1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
+     2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
      3. If both pass AND all DoD items are `[x]` AND all scopes are "Done" → set `state.json` status to `"done"`
      4. Record ALL shared-phase evidence (test/validate/audit/chaos) in the spec's `report.md`
      5. Update `completedPhases` to include ALL phases that executed (validate, harden, gaps, implement, test, docs, audit, chaos as applicable)
@@ -825,7 +825,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  2. Create ALL 6 artifacts: bug.md, spec.md, design.md, scopes.md, report.md, state.json
                  3. Document reproduction steps, root cause analysis, and fix design
                  4. Add new scope with Gherkin scenarios and DoD items for the fix
-                 Read governance: .github/agents/_shared/agent-common.md, .github/agents/_shared/scope-workflow.md"
+                 Read governance: .github/agents/bubbles_shared/agent-common.md, .github/agents/bubbles_shared/scope-workflow.md"
       )
       ```
       **Verify:** Confirm bug folder and artifacts were created. If not → re-invoke.
@@ -883,7 +883,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  - If scopes.md has new Gherkin scenarios → ensure design covers the implementation approach
                  - If design.md is already fully coherent with current artifacts → confirm and make no changes
                  Mode: non-interactive. Do NOT overwrite existing content — MERGE new coverage into existing design.
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
 
@@ -900,7 +900,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  for ALL findings. Include new `- [ ]` DoD items for each finding that needs implementation.
                  Cross-check with design.md to ensure implementation plans match the design.
                  Do NOT overwrite existing content — MERGE new scope items into existing scopes.
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
 
@@ -923,7 +923,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Findings to fix: {trigger_findings}
                  Updated scope artifacts with new DoD items: {new_dod_items}
                  You MUST satisfy each new DoD item. Write code changes, update tests.
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
       **Verify:** Confirm the implement agent's response references specific files changed and mentions the findings. If response only contains narrative claims without file changes → **re-invoke** with explicit instruction.
@@ -938,7 +938,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Recent changes: {files_changed_by_implement}
                  You MUST execute test commands, capture terminal output, and report pass/fail.
                  Run unit, integration, e2e tests as applicable.
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
       **Verify:** Confirm bubbles.test response contains actual terminal output with test commands, exit codes, and pass/fail counts. If response only says "tests pass" without terminal output → **re-invoke** with anti-fabrication instruction.
@@ -952,7 +952,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Feature dir: {FEATURE_DIR}
                  Verify: build succeeds, lint passes, no regressions, policy compliance.
                  You MUST execute validation commands and report gate pass/fail results.
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
       **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence. If validation was skipped or fabricated → **re-invoke**.
@@ -966,7 +966,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Feature dir: {FEATURE_DIR}
                  Verify: all gates pass, evidence exists, DoD items checked, no fabrication.
                  Return audit verdict: ✅ CLEAN / ⚠️ FINDINGS / 🛑 VIOLATIONS
-                 Read governance: .github/copilot-instructions.md, .github/agents/_shared/agent-common.md"
+                 Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
       **Verify:** Confirm audit response contains a clear verdict and references specific gate checks.
@@ -1097,8 +1097,8 @@ When mode is `iterate`, the orchestrator replaces the normal sequential `phaseOr
 
 3. **After all iterations complete** (or time budget exhausted or no work found):
    - **Per-spec finalization:** For EACH spec that was touched during the iterate loop:
-     1. Run state transition guard: `bash .github/scripts/bubbles-state-transition-guard.sh {SPEC_DIR}`
-     2. Run artifact lint: `bash .github/scripts/bubbles-artifact-lint.sh {SPEC_DIR}`
+     1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
+     2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
      3. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
      4. Append `executionHistory` entry to `state.json`
    - **Specs not touched** during the iterate loop retain their current status unchanged
@@ -1144,7 +1144,7 @@ Before beginning work on the NEXT spec in the batch, the orchestrator MUST:
    ```
 3. **Run artifact lint on previous spec** — must exit 0:
    ```bash
-   bash .github/scripts/bubbles-artifact-lint.sh specs/<prev-spec>
+   bash .github/bubbles/scripts/artifact-lint.sh specs/<prev-spec>
    ```
 4. **Verify specialist completion ledger** — all required specialists must show `executed: true` and `exitStatus: pass`
 5. **Verify evidence depth** — all evidence sections in report.md have ≥10 lines of raw output
@@ -1222,7 +1222,7 @@ For each target spec in order:
    - **Phase objective:** What this phase must accomplish (e.g., "Implement all code for Scope 1 and satisfy its DoD checklist")
    - **Required gates:** List gates from `phases[phase].requiredGates` in workflows.yaml that must pass
    - **Mode constraints:** Any mode-specific constraints (e.g., `requireRealExecutionEvidence`, `forbidSyntheticOrNoopTests`)
-   - **Governance references:** "Read and follow: `.github/copilot-instructions.md`, `.github/agents/_shared/agent-common.md`, `.github/agents/_shared/scope-workflow.md`"
+   - **Governance references:** "Read and follow: `.github/copilot-instructions.md`, `.github/agents/bubbles_shared/agent-common.md`, `.github/agents/bubbles_shared/scope-workflow.md`"
    - **Expected output:** "Return: gate pass/fail results, evidence summary (raw terminal output), files created/modified, any failures with classification (`code|test|docs|compliance|audit|chaos|environment`)"
 
    **Step 3b: Invoke `runSubagent`.**
@@ -1301,11 +1301,11 @@ For each target spec in order:
    - Spec status MUST NOT exceed `statusCeiling` — artifact-only modes (`spec-scope-hardening`, `docs-only`, `validate-only`, `audit-only`) set status to their ceiling (`specs_hardened`, `docs_updated`, `validated`), NEVER `done`
    - Spec is `done` only if mode's `statusCeiling` is `done` AND all mode-required gates pass
    - **⚠️ STATE TRANSITION GUARD (Gate G023 — FIRST CHECK BEFORE "done"):**
-     - Run: `bash .github/scripts/bubbles-state-transition-guard.sh <spec-path>`
+     - Run: `bash .github/bubbles/scripts/state-transition-guard.sh <spec-path>`
      - If exit code 1 → spec CANNOT be promoted to "done", status stays "in_progress"
-     - Auto-revert mode: `bash .github/scripts/bubbles-state-transition-guard.sh <spec-path> --revert-on-fail`
+     - Auto-revert mode: `bash .github/bubbles/scripts/state-transition-guard.sh <spec-path> --revert-on-fail`
      - NEVER write `"status": "done"` without guard script exit code 0
-  - Before any promotion, run `bash .github/scripts/bubbles-artifact-lint.sh <spec-path>`; if lint fails, spec status MUST remain `in_progress` or `blocked`
+  - Before any promotion, run `bash .github/bubbles/scripts/artifact-lint.sh <spec-path>`; if lint fails, spec status MUST remain `in_progress` or `blocked`
   - `status: "done"` is forbidden when any DoD checkbox is unchecked or any scope is not "Done"
    - **⛔ COMPLETION HIERARCHY (G024, G025, G027, G028, G030):** See agent-common.md → ABSOLUTE COMPLETION HIERARCHY. ALL gates MUST pass before promotion.
    - **⚠️ SPECIALIST COMPLETION VERIFICATION (Gate G022 — BLOCKING):**
@@ -1437,7 +1437,7 @@ Before reporting workflow results, this agent MUST run Tier 1 universal checks (
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| W1 | State transition guard per spec (G023) | `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}` for each "done" spec | All exit code 0 |
+| W1 | State transition guard per spec (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` for each "done" spec | All exit code 0 |
 | W2 | Specialist completion ledger (G022) | Verify ALL mode-required phases appear in each spec's `completedPhases` | All specialists executed |
 | W3 | Cross-agent output verification (G020) | Verify each specialist's output has real evidence, not fabricated claims | All genuine |
 | W4 | Sequential completion (G019) | Verify no spec N+1 was started before spec N completed | Sequential order maintained |
@@ -1460,6 +1460,6 @@ Return:
 - ✅ "All target specs completed successfully" — no further action needed
 - ⚠️ "N specs completed, M specs blocked after exhausting retries and auto-escalation" — with specific blocked details
 
-When `mode: value-first-e2e-batch`, include one "Value-First Selection Cycle" table per cycle using the template in `.github/docs/BUBBLES_WORKFLOWS.md`.
+When `mode: value-first-e2e-batch`, include one "Value-First Selection Cycle" table per cycle using the template in `.github/bubbles/docs/WORKFLOWS.md`.
 
 ```

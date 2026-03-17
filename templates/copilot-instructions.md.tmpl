@@ -48,8 +48,8 @@ See [terminal-discipline.instructions.md](instructions/terminal-discipline.instr
 **This applies to ALL work, whether initiated via a `bubbles.*` prompt or a regular agent request.**
 
 Full workflow rules, artifact templates, and verification gates are in:
-- [agent-common.md](agents/_shared/agent-common.md) — Anti-Fabrication Policy, Execution Evidence Standard, Canonical Test Taxonomy
-- [scope-workflow.md](agents/_shared/scope-workflow.md) — Scope templates, artifact structure, phase execution flow
+- [agent-common.md](agents/bubbles_shared/agent-common.md) — Anti-Fabrication Policy, Execution Evidence Standard, Canonical Test Taxonomy
+- [scope-workflow.md](agents/bubbles_shared/scope-workflow.md) — Scope templates, artifact structure, phase execution flow
 
 ### Required Artifacts (BLOCKING)
 
@@ -114,8 +114,8 @@ grep -r "TODO\|FIXME\|HACK\|STUB" [changed-files]
 {{CLI_ENTRYPOINT}} test
 
 # 4. Run artifact lint
-bash .github/scripts/bubbles-artifact-lint.sh specs/<NNN-feature-name>
+bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
 
 # 5. Run implementation reality scan
-bash .github/scripts/bubbles-implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
+bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
 ```

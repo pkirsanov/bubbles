@@ -1,4 +1,4 @@
-# 🫧 Bubbles Agent Manual
+# <img src="../../icons/bubbles-glasses.svg" width="28"> Bubbles Agent Manual
 
 > *"Alright boys, here's what we're gonna do."*
 

@@ -61,7 +61,7 @@ Before reporting chaos results, this agent MUST run Tier 1 universal checks (see
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md) and [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md) and [agent-common.md](bubbles_shared/agent-common.md).
 
 When chaos requires cross-domain work: small fixes (≤30 lines) inline, larger work returns failure classification to orchestrator.
 
@@ -494,7 +494,7 @@ The chaos run MUST abort early if any of these conditions are met:
 
 1. **No infinite execution**
    - hard limits for steps, journeys, retries, and total duration (`maxDuration`)
-   - all limits from Operation Timeout Policy in [agent-common.md](_shared/agent-common.md) apply
+   - all limits from Operation Timeout Policy in [agent-common.md](bubbles_shared/agent-common.md) apply
 2. **Timeout mandatory**
    - all commands, network operations, and waits must be bounded per agent-common timeout table
    - individual action timeout: 30 seconds (API), 60 seconds (UI)
@@ -761,7 +761,7 @@ Return a structured chaos report:
 
 ## Evidence Recording (MANDATORY)
 
-All chaos findings MUST be backed by actual execution evidence per the Anti-Fabrication Policy in [agent-common.md](_shared/agent-common.md):
+All chaos findings MUST be backed by actual execution evidence per the Anti-Fabrication Policy in [agent-common.md](bubbles_shared/agent-common.md):
 
 - Raw terminal/tool output (≥10 lines per finding) captured in `{TARGET_DIR}/report.md`
 - Action trace with timestamps for every executed action

@@ -26,7 +26,7 @@ handoffs:
 **⚠️ CRITICAL ANTI-FABRICATION RULES FOR VALIDATION (NON-NEGOTIABLE):**
 - **You MUST actually run every validation command.** Do NOT claim validation passes without executing the commands.
 - **Evidence format:** For each validation check, record: the exact command, the exit code, and ≥10 lines of raw terminal output. Summaries like "validation passes" are NOT evidence.
-- **Run the artifact lint script** as part of validation: `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}`. Record the full output.
+- **Run the artifact lint script** as part of validation: `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}`. Record the full output.
 - **Verify all DoD items have real evidence** — read each `[x]` item and confirm it has an inline evidence block with real terminal output. Flag items without evidence as validation failures.
 - **Self-audit honesty check:** For each validation result you record, answer: "Did I actually run this command and see this output in a terminal?" If the answer is "I assumed" or "I think so" → STOP and run it.
 
@@ -42,7 +42,7 @@ Before reporting validation verdict, this agent MUST run Tier 1 universal checks
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| V1 | ALL governance scripts | Run `bubbles-state-transition-guard.sh`, `bubbles-artifact-lint.sh`, `bubbles-implementation-reality-scan.sh` | All exit code 0 |
+| V1 | ALL governance scripts | Run `state-transition-guard.sh`, `artifact-lint.sh`, `implementation-reality-scan.sh` | All exit code 0 |
 | V2 | Build + lint + test | Run all build/lint/test commands from agents.md | All pass, zero warnings |
 | V3 | Contract verification | Verify API contracts match between backend routes and frontend calls | Zero mismatches |
 | V4 | Docker bundle freshness (UI scopes) | Verify served bundle contains expected feature code | Bundle verified fresh |
@@ -56,7 +56,7 @@ Before reporting validation verdict, this agent MUST run Tier 1 universal checks
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ## User Input
 
@@ -64,7 +64,7 @@ Optional: Specific validation scope (e.g., "unit-only", "security", "full").
 
 ## Context Loading
 
-Follow [agent-common.md](_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
+Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
 - `{FEATURE_DIR}/scopes.md` - Scope DoD and progress
 - `{FEATURE_DIR}/uservalidation.md` - User acceptance checklist
 
@@ -97,11 +97,11 @@ Run ALL validation checks in order using commands from `agents.md`. For test typ
 | 2.8 | E2E UI (`e2e-ui`, if avail) — LIVE, NO mocks | `E2E_UI_TEST_COMMAND` | 100% pass |
 | 2.9 | Stress (`stress`, if avail) — LIVE | `STRESS_TEST_COMMAND` | All scenarios pass |
 | 2.10 | Security (if avail) | `SECURITY_COMMAND` | No known vulnerabilities |
-| 2.11 | State Transition Guard (G023) | `bubbles-state-transition-guard.sh` | Exit 0, 0 blocking failures |
-| 2.12 | Artifact Lint | `bubbles-artifact-lint.sh` | Exit 0, 0 issues |
-| 2.13 | Done-Spec Audit (full mode) | `bubbles-done-spec-audit.sh` | All done specs pass lint |
+| 2.11 | State Transition Guard (G023) | `state-transition-guard.sh` | Exit 0, 0 blocking failures |
+| 2.12 | Artifact Lint | `artifact-lint.sh` | Exit 0, 0 issues |
+| 2.13 | Done-Spec Audit (full mode) | `done-spec-audit.sh` | All done specs pass lint |
 | 2.14 | Phase-Scope Coherence (G027) | Guard script Check 15 | completedPhases matches completedScopes |
-| 2.15 | Implementation Reality Scan (G028) | `bubbles-implementation-reality-scan.sh` | 0 violations |
+| 2.15 | Implementation Reality Scan (G028) | `implementation-reality-scan.sh` | 0 violations |
 
 All commands from `agents.md`. Run each step, record output in validation report.
 
@@ -148,7 +148,7 @@ If the scope includes API endpoint changes, verify response contracts match spec
 For the current feature directory, run the state transition guard:
 
 ```bash
-bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 - If exit code 0 → state transition checks pass
@@ -161,7 +161,7 @@ bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
 Run the artifact lint on the feature directory:
 
 ```bash
-bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}
+bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
 ```
 
 - Must exit 0 for validation to pass when spec claims Done
@@ -172,13 +172,13 @@ bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}
 If running full validation (not scoped to one feature), audit ALL specs claiming "done" status:
 
 ```bash
-bash .github/scripts/bubbles-done-spec-audit.sh
+bash .github/bubbles/scripts/done-spec-audit.sh
 ```
 
 - Reports which done-specs pass/fail artifact lint
 - Use `--fix` to auto-downgrade fabricated done specs to in_progress:
   ```bash
-  bash .github/scripts/bubbles-done-spec-audit.sh --fix
+  bash .github/bubbles/scripts/done-spec-audit.sh --fix
   ```
 - Record the summary (done specs scanned, lint passed, lint failed) in the validation report
 
@@ -187,7 +187,7 @@ bash .github/scripts/bubbles-done-spec-audit.sh
 For implementation modes, run the source code reality scan to detect stub/fake/hardcoded data:
 
 ```bash
-bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose
+bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 ```
 
 - Detects gateway handlers returning hardcoded vec![...] data instead of real service calls
@@ -201,7 +201,7 @@ bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verb
 If the handoff cycle checker exists, run it:
 
 ```bash
-bash .github/scripts/bubbles-handoff-cycle-check.sh {FEATURE_DIR}
+bash .github/bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 ```
 
 - Detects infinite handoff loops between agents
@@ -214,11 +214,11 @@ bash .github/scripts/bubbles-handoff-cycle-check.sh {FEATURE_DIR}
 
 | Script | Command | Exit Code | Status |
 |--------|---------|-----------|--------|
-| State Transition Guard | `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
-| Artifact Lint | `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
-| Done-Spec Audit | `bash .github/scripts/bubbles-done-spec-audit.sh` | [actual] | ✅/❌ |
-| Implementation Reality Scan | `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
-| Handoff Cycle Check | `bash .github/scripts/bubbles-handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
+| State Transition Guard | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
+| Artifact Lint | `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
+| Done-Spec Audit | `bash .github/bubbles/scripts/done-spec-audit.sh` | [actual] | ✅/❌ |
+| Implementation Reality Scan | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
+| Handoff Cycle Check | `bash .github/bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
 ```
 
 **If ANY governance script fails, validation status is FAILED.**
@@ -506,9 +506,9 @@ If NO unchecked items:
 - E2E UI: `[E2E_UI_TEST_COMMAND]`
 - Stress: `[STRESS_TEST_COMMAND]`
 - Security: `[SECURITY_COMMAND]`
-- State Guard: `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}`
-- Artifact Lint: `bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}`
-- Done-Spec Audit: `bash .github/scripts/bubbles-done-spec-audit.sh`
+- State Guard: `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}`
+- Artifact Lint: `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}`
+- Done-Spec Audit: `bash .github/bubbles/scripts/done-spec-audit.sh`
 
 ### User Validation Regressions (if any)
 

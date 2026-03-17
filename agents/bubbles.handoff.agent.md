@@ -17,7 +17,7 @@ description: Create a manual handoff packet for moving a long session into a new
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -26,7 +26,7 @@ description: Create a manual handoff packet for moving a long session into a new
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 ---
 

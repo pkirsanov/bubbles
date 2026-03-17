@@ -45,7 +45,7 @@ Before reporting results, this agent MUST run Tier 1 universal checks (see agent
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 Agent-specific note: `/bubbles.docs` may review project-wide docs, but any *writes* must still be tied to an explicit `specs/...` feature or bug target.
 
@@ -105,13 +105,13 @@ Note: `/bubbles.docs` is an **optional** hardening sweep. Per-scope documentatio
 
 ## Policy Compliance (MANDATORY)
 
-Follow policy compliance in [agent-common.md](_shared/agent-common.md) and `.github/copilot-instructions.md`. This prompt focuses on docs, but it must still enforce policy constraints (no forbidden defaults/hardcoded values in examples).
+Follow policy compliance in [agent-common.md](bubbles_shared/agent-common.md) and `.github/copilot-instructions.md`. This prompt focuses on docs, but it must still enforce policy constraints (no forbidden defaults/hardcoded values in examples).
 
 ---
 
 ## Loop Guard (MANDATORY)
 
-Use the Loop Guard rules in [agent-common.md](_shared/agent-common.md) with these doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, and no duplicate reads. Use `.github/docs/BUBBLES_STANDARD_DOCS.md` as the authoritative inventory and do not hunt for missing files.
+Use the Loop Guard rules in [agent-common.md](bubbles_shared/agent-common.md) with these doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, and no duplicate reads. Use `.github/docs/BUBBLES_STANDARD_DOCS.md` as the authoritative inventory and do not hunt for missing files.
 
 ---
 

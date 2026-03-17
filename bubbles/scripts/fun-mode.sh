@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ────────────────────────────────────────────────────────────────────
-# bubbles-fun-mode.sh — "It ain't rocket appliances."
+# fun-mode.sh — "It ain't rocket appliances."
 # ────────────────────────────────────────────────────────────────────
 # Sourced by all Bubbles governance scripts to add Sunnyvale-flavored
 # commentary when BUBBLES_FUN_MODE=true.
 #
 # Usage (source from another script):
-#   source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+#   source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 #
 # Then call fun_pass, fun_fail, fun_warn after your normal output,
 # or use the event-based fun_message <event> function.

@@ -42,7 +42,7 @@ handoffs:
 - **Apply Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) to all test evidence before declaring the test phase complete.
 - **Default/fallback/stub detection is BLOCKING:** If implementation code under test uses defaults, fallbacks, or stubs, the implementation is INVALID regardless of whether tests pass. Run the reality scan (G028+G030) before declaring test phase complete.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
 **Non-goals:**
 - Implementing new feature scope without a feature folder and required artifacts
@@ -173,8 +173,8 @@ Optional strictness:
 
 Compliance checks MUST validate against the latest source-of-truth guardrails:
 - `.github/copilot-instructions.md`
-- `.github/agents/_shared/agent-common.md` (Canonical Test Taxonomy, Test Type Integrity, Anti-Fabrication Gates 0-8, Use Case Testing Integrity, E2E anti-false-positive rules)
-- `.github/agents/_shared/scope-workflow.md`
+- `.github/agents/bubbles_shared/agent-common.md` (Canonical Test Taxonomy, Test Type Integrity, Anti-Fabrication Gates 0-8, Use Case Testing Integrity, E2E anti-false-positive rules)
+- `.github/agents/bubbles_shared/scope-workflow.md`
 
 Minimum required checks in compliance mode:
 - No skip/only/todo/pending markers in required tests
@@ -195,14 +195,14 @@ Before reporting test verdict, this agent MUST run Tier 1 universal checks (see 
 | T1 | Skip marker scan | `grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo' [test-files]` | Zero matches |
 | T2 | Mock audit | Scan test files for internal code mocks (`jest.fn`, `sinon.stub`, `vi.fn` on internal code) | Zero internal mocks |
 | T3 | Proxy test scan | Check E2E tests for status-code-only or existence-only assertions | Zero proxy tests |
-| T4 | Reality scan (G028+G030) | `bash .github/scripts/bubbles-implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
+| T4 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | T5 | Coverage threshold | Verify 100% line coverage for business logic | Threshold met |
 
 **If ANY check fails → report `🛑 NOT_TESTED` with details. Do NOT mark scope Done.**
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ---
 

@@ -137,6 +137,6 @@ Each repo should provide:
 
 ## Related References
 
-- `.github/agents/_shared/agent-common.md`
-- `.github/agents/_shared/project-config-contract.md`
-- `.github/docs/BUBBLES_WORKFLOWS.md`
+- `.github/agents/bubbles_shared/agent-common.md`
+- `.github/agents/bubbles_shared/project-config-contract.md`
+- `.github/bubbles/docs/WORKFLOWS.md`

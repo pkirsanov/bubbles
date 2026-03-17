@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ────────────────────────────────────────────────────────────────────
-# bubbles-aliases.sh — Sunnyvale alias resolution
+# aliases.sh — Sunnyvale alias resolution
 # ────────────────────────────────────────────────────────────────────
 # Resolves Sunnyvale-themed aliases to canonical Bubbles agent names
 # and workflow modes.
 #
 # Usage (source from another script):
-#   source "$(dirname "${BASH_SOURCE[0]}")/bubbles-aliases.sh"
+#   source "$(dirname "${BASH_SOURCE[0]}")/aliases.sh"
 #   resolve_agent_alias "worst-case-ontario"   → "bubbles.chaos"
 #   resolve_mode_alias "bottle-kids"           → "stochastic-quality-sweep"
 #

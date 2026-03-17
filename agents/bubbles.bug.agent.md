@@ -78,7 +78,7 @@ Use this section to provide:
 
 ## Critical Requirements Compliance (Top Priority)
 
-**MANDATORY:** This agent MUST follow [critical-requirements.md](_shared/critical-requirements.md) as top-priority policy.
+**MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 - Tests MUST validate defined use cases with real behavior checks.
 - No fabrication or hallucinated evidence/results.
 - No TODOs, stubs, fake/sample verification data, defaults, or fallbacks.
@@ -87,7 +87,7 @@ Use this section to provide:
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](_shared/agent-common.md) and scope templates in [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope templates in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 This agent focuses on bug documentation and root cause analysis. When implementation or testing is needed, delegate to specialist agents via `runSubagent` following the `bugfix-fastlane` phaseOrder from `.github/bubbles/workflows.yaml`.
 
@@ -124,12 +124,12 @@ Core requirements:
    - Bug work integrates with feature DoD
 ## Bug Artifact Templates
 
-Use the shared templates in [bug-templates.md](_shared/bug-templates.md) for `bug.md` and `design.md`.
-Feature templates (for reference and consistency): [feature-templates.md](_shared/feature-templates.md).
+Use the shared templates in [bug-templates.md](bubbles_shared/bug-templates.md) for `bug.md` and `design.md`.
+Feature templates (for reference and consistency): [feature-templates.md](bubbles_shared/feature-templates.md).
 
 ### scopes.md Template (Bug Fix)
 
-Uses the same structure as [scope-workflow.md](_shared/scope-workflow.md) scopes.md template with these bug-specific additions:
+Uses the same structure as [scope-workflow.md](bubbles_shared/scope-workflow.md) scopes.md template with these bug-specific additions:
 
 ```markdown
 # Scopes: [BUG-NNN] Short Description
@@ -224,7 +224,7 @@ Before ANY bug work (discovery, analysis, or fixing), ensure the bug folder and 
 
 2. **Create bug folder** if missing: `mkdir -p {BUG_DIR}`
 
-3. **Create required artifacts** using templates from [bug-templates.md](_shared/bug-templates.md):
+3. **Create required artifacts** using templates from [bug-templates.md](bubbles_shared/bug-templates.md):
    - `bug.md` — Full template from bug-templates.md
    - `spec.md` — Expected behavior + acceptance criteria
    - `design.md` — Root cause analysis template (minimal initially)
@@ -388,7 +388,7 @@ After the implementation specialist returns, verify:
    - Follow Docker Build Freshness Policy from `agent-common.md`
    - Include freshness verification in the validate/docs subagent prompts
 
-5. **Record evidence** in report.md using the report template from [scope-workflow.md](_shared/scope-workflow.md) with these bug-specific additions:
+5. **Record evidence** in report.md using the report template from [scope-workflow.md](bubbles_shared/scope-workflow.md) with these bug-specific additions:
    - Summary: bug description, severity, root cause, fix
    - Changes table: files modified
    - Tests added table (per test type, per Canonical Test Taxonomy)
@@ -398,7 +398,7 @@ After the implementation specialist returns, verify:
 ### Phase 7: Finalize
 
 1. **Update bug.md status** to "Verified" or "Closed"
-2. **Update state.json** — resolve the active workflow mode's `statusCeiling` from `.github/bubbles/workflows.yaml` and set `status` to the ceiling value (e.g., `"done"` for `bugfix-fastlane`). Record `workflowMode` in `state.json`. See [scope-workflow.md → Status Ceiling Enforcement](_shared/scope-workflow.md).
+2. **Update state.json** — resolve the active workflow mode's `statusCeiling` from `.github/bubbles/workflows.yaml` and set `status` to the ceiling value (e.g., `"done"` for `bugfix-fastlane`). Record `workflowMode` in `state.json`. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
 3. **Update feature's uservalidation.md** (if applicable):
    - Add entry for the bug fix using the entry template below
    - **Mark entries `[x]` by default** (just validated via audit — checked = working as expected)

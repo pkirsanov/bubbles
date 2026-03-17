@@ -89,7 +89,7 @@ handoffs:
 - **Previous scope MUST be fully complete before starting next scope.** ALL DoD items `[x]`, ALL specialist phases executed, artifact lint passes.
 - **When running multiple iterations:** iteration N MUST be fully complete before starting iteration N+1.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G030). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail` for safety. Per-agent validation (Tier 2 checks IT1-IT5) MUST pass before reporting results.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G030). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail` for safety. Per-agent validation (Tier 2 checks IT1-IT5) MUST pass before reporting results.
 
 **Non-goals:**
 - Implementing code directly (→ bubbles.implement)
@@ -144,7 +144,7 @@ Supported options:
 
 This agent is mode-driven. It MUST load and apply:
 
-- `.github/docs/BUBBLES_WORKFLOWS.md` (human workflow policy)
+- `.github/bubbles/docs/WORKFLOWS.md` (human workflow policy)
 - `.github/bubbles/workflows.yaml` (machine-readable phase/gate registry)
 
 Execution rules:
@@ -166,7 +166,7 @@ If registry and this file conflict, registry phase/gate policy wins and the conf
 
 ## ⚠️ Loop Guard: Explicit Read Limits (CRITICAL)
 
-Use the Loop Guard from [agent-common.md](_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus required metadata. For ambiguous requests, ask for the target feature instead of searching.
+Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus required metadata. For ambiguous requests, ask for the target feature instead of searching.
 
 ## Key Difference from bubbles.implement
 
@@ -449,7 +449,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
 
 0. **Run state transition guard script (FIRST — Gate G023):**
    ```bash
-   bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR}
+   bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
    ```
    - **If exit code 1 → STOP. Iteration is NOT complete. Fix ALL failures before proceeding.**
    - If exit code 0 → continue to confirmation checks below.
@@ -457,7 +457,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
 
 1. **Run artifact lint:**
    ```bash
-   bash .github/scripts/bubbles-artifact-lint.sh {FEATURE_DIR}
+   bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
    ```
    - Must exit 0. If it fails → fix the issues and re-run.
 
@@ -524,7 +524,7 @@ Before reporting iteration completion, this agent MUST run Tier 1 universal chec
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| IT1 | State transition guard (G023) | `bash .github/scripts/bubbles-state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
+| IT1 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
 | IT2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | IT3 | Scope statuses Done | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
 | IT4 | Evidence not fabricated | Re-read each [x] item's evidence — ≥10 lines, real command, no duplicates | All genuine |
@@ -534,7 +534,7 @@ Before reporting iteration completion, this agent MUST run Tier 1 universal chec
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](_shared/critical-requirements.md), [agent-common.md](_shared/agent-common.md), and [scope-workflow.md](_shared/scope-workflow.md).
+**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ---
 
