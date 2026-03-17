@@ -17,6 +17,10 @@
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
 </p>
 
+<p align="center">
+  <a href="https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html"><strong>Visual Cheatsheet</strong></a> · <a href="docs/CHEATSHEET.md">Markdown Cheatsheet</a> · <a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a> · <a href="docs/recipes/">Recipes</a>
+</p>
+
 ---
 
 ## What Is This?
