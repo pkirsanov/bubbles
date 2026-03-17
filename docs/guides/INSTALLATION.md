@@ -12,12 +12,16 @@
 
 ---
 
-## Step 1: Install Bubbles
+## Step 1: Install Bubbles (With Bootstrap)
 
 From your project root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
+# Recommended: install + scaffold everything
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap
+
+# With explicit project name and CLI
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
 ```
 
 This installs:
@@ -27,91 +31,57 @@ This installs:
 - Workflow config → `.github/bubbles/workflows.yaml`
 - Governance scripts → `.github/scripts/bubbles*.sh`
 
+And with `--bootstrap`, also creates:
+- `.github/copilot-instructions.md` — project policies and commands
+- `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
+- `.specify/memory/constitution.md` — project governance principles
+- `.specify/memory/agents.md` — command registry for agent resolution
+- `.github/docs/BUBBLES_CROSS_PROJECT_SETUP.md` — setup checklist
+- `.github/docs/BUBBLES_SETUP_SOURCES.md` — bootstrap source registry
+- `specs/` — directory for feature/bug specs
+
+The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and `--name` to override.
+
+> **Note:** Bootstrap never overwrites existing files. Safe to re-run.
+
+Without `--bootstrap`, you can also install agents only and set up manually:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
+```
+
 ---
 
-## Step 2: Add Project-Specific Configuration
+## Step 2: Customize the Generated Files
 
-Bubbles agents are project-agnostic. They need **your project's context** to work. Create or update these files:
+The bootstrapped files contain `TODO` markers where you need to fill in project-specific details:
 
 ### `.github/copilot-instructions.md`
+- Update the command table with your actual build/test/lint commands
+- Add project-specific test types
+- Fill in Docker configuration (if applicable)
+- Add key file locations
 
-This is the main file VS Code Copilot reads. Include:
+### `.specify/memory/agents.md`
+- Update all `*_COMMAND` entries to match your actual CLI
+- Add code pattern conventions
+- Add documentation paths
 
-```markdown
-# My Project Development Guidelines
-
-## Commands
-| Action | Command |
-|--------|---------|
-| Build | `./myproject.sh build` |
-| Test  | `./myproject.sh test` |
-| Lint  | `./myproject.sh lint` |
-
-## Testing Requirements
-| Test Type | Command |
-|-----------|---------|
-| Unit | `./myproject.sh test unit` |
-| Integration | `./myproject.sh test integration` |
-| E2E | `./myproject.sh test e2e` |
-
-## Bubbles Artifacts & Workflow (MANDATORY for ALL work)
-- Follow the scope workflow, report evidence, and artifact templates in
-  [agents/_shared/scope-workflow.md](agents/_shared/scope-workflow.md)
-- Record test execution evidence in report.md as required by the shared workflow
-
-## Key Locations
-- Source: `src/`
-- Tests: `tests/`
-- Specs: `specs/`
-```
+### `.specify/memory/constitution.md`
+- Add project-specific principles (architecture, language discipline, etc.)
 
 ### `.github/instructions/terminal-discipline.instructions.md`
+- Add project-specific forbidden commands
+- Add project-specific required patterns
 
-Define your repo's CLI rules:
-
-```markdown
----
-applyTo: "**"
----
-# Terminal Discipline
-- Always use `./myproject.sh` for build/test/lint
-- No direct `npm`, `cargo`, `go` commands
-```
+Tip: Use the generated `BUBBLES_CROSS_PROJECT_SETUP.md` checklist to track what's been customized.
 
 ---
 
-## Step 3: Create the Specs Directory
+## Step 3: Commit and Test
 
 ```bash
-mkdir -p specs
-```
-
-Bubbles organizes work under `specs/`:
-```
-specs/
-├── 001-user-auth/
-│   ├── spec.md
-│   ├── design.md
-│   ├── scopes.md
-│   ├── report.md
-│   ├── uservalidation.md
-│   └── state.json
-└── bugs/
-    └── BUG-001-login-failure/
-        ├── bug.md
-        ├── spec.md
-        ├── design.md
-        ├── scopes.md
-        ├── report.md
-        └── state.json
-```
-
----
-
-## Step 4: Commit and Test
-
-```bash
-git add .github/ specs/
+git add .github/ .specify/ specs/
 git commit -m "chore: install Bubbles agent system"
 ```
 
@@ -122,6 +92,26 @@ Open VS Code, start a Copilot Chat, and try:
 ```
 
 If you see the status agent respond, you're good.
+
+---
+
+## Step 3b: Let Agents Refine the Setup (Recommended)
+
+After committing, open VS Code and run these agents in order:
+
+```
+/bubbles.commands
+```
+
+This scans your project — detects tech stack, test frameworks, CLI entrypoint, linters — and regenerates `.specify/memory/agents.md` with real commands instead of placeholders. It also creates missing ignore files (`.gitignore`, `.dockerignore`, etc.).
+
+Then verify the full setup:
+
+```
+/bubbles.bootstrap mode: refresh
+```
+
+This compares your config files against the latest Bubbles requirements and proposes any fixes.
 
 ---
 
@@ -150,8 +140,10 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Prompt shims | `.github/prompts/bubbles.*.prompt.md` | Bubbles |
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/scripts/bubbles*.sh` | Bubbles |
-| Project instructions | `.github/copilot-instructions.md` | **You** |
-| Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** |
+| Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |
+| Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** (bootstrapped) |
+| Command registry | `.specify/memory/agents.md` | **You** (bootstrapped) |
+| Constitution | `.specify/memory/constitution.md` | **You** (bootstrapped) |
 | Repo-specific skills | `.github/skills/your-skill/SKILL.md` | **You** |
 | Spec artifacts | `specs/` | **You** (via agents) |
 
@@ -165,7 +157,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 - Ensure GitHub Copilot Chat extension is up to date
 
 **"Something's fucky" — agents can't find project commands:**
-- Add your commands to `.github/copilot-instructions.md`
+- Run with `--bootstrap` if you haven't: `bash install.sh --bootstrap`
+- Check `.specify/memory/agents.md` has your CLI commands
 - Ensure your repo has a runner script (`./yourproject.sh`)
 
 ---

@@ -39,13 +39,20 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 One command. No dependencies beyond `curl` and `bash`.
 
 ```bash
+# Install agents only
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
+
+# Install + scaffold project config (recommended for new projects)
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap
+
+# Bootstrap with explicit project name and CLI
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
 ```
 
 Pin to a version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.0.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.0.0/install.sh | bash -s -- --bootstrap
 ```
 
 Update:
@@ -55,7 +62,24 @@ Update:
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
 ```
 
-### What Gets Installed
+### What `--bootstrap` Does
+
+With `--bootstrap`, the installer goes beyond agents — it scaffolds a fully working project setup:
+
+1. **Auto-detects** your project name (from git/directory) and CLI entrypoint (`*.sh` in root)
+2. **Creates** all required project-specific config files (if they don't already exist):
+   - `.github/copilot-instructions.md` — project policies, commands, testing config
+   - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
+   - `.specify/memory/constitution.md` — project governance principles
+   - `.specify/memory/agents.md` — command registry (agents resolve all commands from here)
+   - `.github/docs/BUBBLES_CROSS_PROJECT_SETUP.md` — setup checklist
+   - `.github/docs/BUBBLES_SETUP_SOURCES.md` — source registry for bootstrap refresh
+3. **Creates** the `specs/` directory for feature/bug specs
+4. **Never overwrites** existing files — safe to re-run
+
+After bootstrap, update the `TODO` items in the generated files, then start using agents.
+
+### What Gets Installed (agents only)
 
 ```
 .github/
@@ -76,15 +100,21 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
     └── bubbles-*.sh                 # Lint, audit, guard scripts
 ```
 
-### What You Add (Project-Specific)
+### What `--bootstrap` Adds (project-specific)
 
-Bubbles installs the orchestration engine. Your project provides the context:
-
-| File | Purpose | Bubbles Touches It? |
-|------|---------|:---:|
-| `.github/copilot-instructions.md` | Project commands, ports, tech stack | No |
-| `.github/instructions/terminal-discipline.instructions.md` | Your repo's `./yourproject.sh` CLI rules | No |
-| `.specify/memory/constitution.md` | Project principles and policies | No |
+```
+.github/
+├── copilot-instructions.md              # Project policies & commands
+├── instructions/
+│   └── terminal-discipline.instructions.md  # CLI discipline
+└── docs/
+    ├── BUBBLES_CROSS_PROJECT_SETUP.md   # Setup checklist
+    └── BUBBLES_SETUP_SOURCES.md         # Bootstrap source registry
+.specify/memory/
+├── constitution.md                      # Project governance
+└── agents.md                            # Command registry
+specs/                                   # Feature/bug spec folders
+```
 
 ---
 
@@ -145,6 +175,12 @@ Every agent has a job. Here's who does what.
 ---
 
 ## Quick Start
+
+### 0. Bootstrap (after install)
+```
+/bubbles.commands                     — Auto-detect project, generate command registry
+/bubbles.bootstrap mode: refresh      — Verify config completeness
+```
 
 ### 1. Plan a Feature
 ```
@@ -258,6 +294,11 @@ bubbles/
 ├── prompts/                   # 25 prompt shims
 ├── bubbles/                   # Workflow configuration
 │   └── workflows.yaml
+├── templates/                 # Bootstrap templates for project setup
+│   ├── copilot-instructions.md.tmpl
+│   ├── terminal-discipline.instructions.md.tmpl
+│   ├── constitution.md.tmpl
+│   └── agents.md.tmpl
 ├── scripts/                   # Governance scripts
 │   ├── bubbles.sh
 │   └── bubbles-*.sh
@@ -266,7 +307,7 @@ bubbles/
 │   ├── its-not-rocket-appliances.html  # Visual reference card ("It's not rocket appliances")
 │   ├── guides/                # Detailed documentation
 │   └── recipes/               # Problem → solution guides
-├── install.sh                 # One-line installer
+├── install.sh                 # One-line installer (supports --bootstrap)
 └── VERSION
 ```
 

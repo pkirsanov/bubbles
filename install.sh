@@ -1,12 +1,45 @@
 #!/usr/bin/env bash
 # 🫧 Bubbles Installer — "It ain't rocket appliances."
 # Installs or updates the Bubbles agent system into your repo.
+#
+# Usage:
+#   curl -fsSL .../install.sh | bash                    # Install agents only
+#   curl -fsSL .../install.sh | bash -s -- --bootstrap  # Install + scaffold project config
+#   curl -fsSL .../install.sh | bash -s -- v1.0.0       # Pin to version
+#   curl -fsSL .../install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
+#
 set -euo pipefail
+
+# ── Parse arguments ─────────────────────────────────────────────────
+BUBBLES_REF="main"
+DO_BOOTSTRAP=false
+AGENTS_ONLY=false
+CLI_OVERRIDE=""
+NAME_OVERRIDE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --bootstrap)   DO_BOOTSTRAP=true; shift ;;
+    --agents-only) AGENTS_ONLY=true; shift ;;
+    --cli)         CLI_OVERRIDE="$2"; shift 2 ;;
+    --name)        NAME_OVERRIDE="$2"; shift 2 ;;
+    --help|-h)
+      echo "Usage: install.sh [REF] [OPTIONS]"
+      echo ""
+      echo "  REF                Git ref to install (default: main)"
+      echo "  --bootstrap        Scaffold project config files after install"
+      echo "  --cli ./foo.sh     Set CLI entrypoint (auto-detected if omitted)"
+      echo "  --name \"My Proj\"   Set project name (auto-detected if omitted)"
+      echo "  --agents-only      Skip shared instructions and skills"
+      echo ""
+      exit 0
+      ;;
+    *)             BUBBLES_REF="$1"; shift ;;
+  esac
+done
 
 # ── Config ──────────────────────────────────────────────────────────
 BUBBLES_REPO="pkirsanov/bubbles"
-BUBBLES_REF="${1:-main}"
-GITHUB_BASE="https://raw.githubusercontent.com/${BUBBLES_REPO}/${BUBBLES_REF}"
 TARGET=".github"
 
 # ── Colors ──────────────────────────────────────────────────────────
@@ -70,7 +103,7 @@ chmod +x "${TARGET}"/scripts/bubbles*.sh
 ok "$(ls "${TARGET}"/scripts/bubbles*.sh | wc -l) scripts installed"
 
 # ── Optional: shared instructions & skills ──────────────────────────
-if [[ "${2:-}" != "--agents-only" ]]; then
+if [[ "$AGENTS_ONLY" != "true" ]]; then
   if [[ -d "$TEMP_DIR/instructions" ]]; then
     info "Installing shared instructions..."
     mkdir -p "${TARGET}/instructions"
@@ -95,16 +128,215 @@ else
   ok "Bubbles (${BUBBLES_REF}) installed"
 fi
 
+# ── Bootstrap: scaffold project config ──────────────────────────────
+if [[ "$DO_BOOTSTRAP" == "true" ]]; then
+  echo ""
+  info "Bootstrapping project configuration..."
+
+  # ── Auto-detect project name ──────────────────────────────────────
+  if [[ -n "$NAME_OVERRIDE" ]]; then
+    PROJECT_NAME="$NAME_OVERRIDE"
+  else
+    # Try git remote name, fall back to directory name
+    PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+    # Title-case it: my-project → My Project
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | sed 's/[-_]/ /g' | sed 's/\b\(.\)/\u\1/g')
+  fi
+  info "Project name: ${PROJECT_NAME}"
+
+  # ── Auto-detect CLI entrypoint ────────────────────────────────────
+  if [[ -n "$CLI_OVERRIDE" ]]; then
+    CLI_ENTRYPOINT="$CLI_OVERRIDE"
+  else
+    # Look for a *.sh runner script in project root (not install.sh, not hidden)
+    CLI_ENTRYPOINT=""
+    for candidate in ./*.sh; do
+      [[ ! -f "$candidate" ]] && continue
+      base=$(basename "$candidate")
+      # Skip common non-CLI scripts
+      case "$base" in
+        install.sh|setup.sh|uninstall.sh|.*.sh) continue ;;
+      esac
+      CLI_ENTRYPOINT="./$base"
+      break
+    done
+    if [[ -z "$CLI_ENTRYPOINT" ]]; then
+      CLI_ENTRYPOINT="./$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | tr ' ' '-').sh"
+      warn "No CLI script found. Using placeholder: ${CLI_ENTRYPOINT}"
+      warn "Create this file or re-run with: --cli ./yourscript.sh"
+    else
+      info "CLI entrypoint: ${CLI_ENTRYPOINT}"
+    fi
+  fi
+
+  # ── Template substitution helper ──────────────────────────────────
+  apply_template() {
+    local src="$1" dst="$2"
+    sed \
+      -e "s|{{PROJECT_NAME}}|${PROJECT_NAME}|g" \
+      -e "s|{{CLI_ENTRYPOINT}}|${CLI_ENTRYPOINT}|g" \
+      "$src" > "$dst"
+  }
+
+  TEMPLATE_DIR="$TEMP_DIR/templates"
+  CREATED_COUNT=0
+  SKIPPED_COUNT=0
+
+  # ── Create directories ────────────────────────────────────────────
+  mkdir -p specs
+  mkdir -p .specify/memory
+  mkdir -p "${TARGET}/instructions"
+  mkdir -p "${TARGET}/docs"
+
+  # ── Scaffold: copilot-instructions.md ─────────────────────────────
+  if [[ ! -f "${TARGET}/copilot-instructions.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/copilot-instructions.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/copilot-instructions.md.tmpl" "${TARGET}/copilot-instructions.md"
+      ok "Created ${TARGET}/copilot-instructions.md"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped ${TARGET}/copilot-instructions.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  # ── Scaffold: terminal-discipline.instructions.md ─────────────────
+  if [[ ! -f "${TARGET}/instructions/terminal-discipline.instructions.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/terminal-discipline.instructions.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/terminal-discipline.instructions.md.tmpl" \
+        "${TARGET}/instructions/terminal-discipline.instructions.md"
+      ok "Created ${TARGET}/instructions/terminal-discipline.instructions.md"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped ${TARGET}/instructions/terminal-discipline.instructions.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  # ── Scaffold: constitution.md ─────────────────────────────────────
+  if [[ ! -f ".specify/memory/constitution.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/constitution.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/constitution.md.tmpl" ".specify/memory/constitution.md"
+      ok "Created .specify/memory/constitution.md"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/memory/constitution.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  # ── Scaffold: agents.md (command registry) ────────────────────────
+  if [[ ! -f ".specify/memory/agents.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/agents.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/agents.md.tmpl" ".specify/memory/agents.md"
+      ok "Created .specify/memory/agents.md"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/memory/agents.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  # ── Scaffold: BUBBLES_CROSS_PROJECT_SETUP.md ──────────────────────
+  if [[ ! -f "${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md" ]]; then
+    cat > "${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md" <<'CROSSEOF'
+# Bubbles Cross-Project Setup
+
+> Reference doc for applying Bubbles to this project.
+> See `.github/agents/_shared/project-config-contract.md` for the full contract.
+
+## Required Configuration Files
+
+| File | Status |
+|------|--------|
+| `.github/copilot-instructions.md` | ✅ Created by bootstrap |
+| `.github/instructions/terminal-discipline.instructions.md` | ✅ Created by bootstrap |
+| `.specify/memory/constitution.md` | ✅ Created by bootstrap |
+| `.specify/memory/agents.md` | ✅ Created by bootstrap |
+
+## Customization Checklist
+
+- [ ] Update CLI commands in `copilot-instructions.md` and `agents.md`
+- [ ] Add project-specific test types and commands
+- [ ] Add Docker/container configuration (if applicable)
+- [ ] Add project-specific principles to `constitution.md`
+- [ ] Add key file locations and code patterns
+- [ ] Update terminal discipline with project-specific forbidden/required commands
+CROSSEOF
+    ok "Created ${TARGET}/docs/BUBBLES_CROSS_PROJECT_SETUP.md"
+    CREATED_COUNT=$((CREATED_COUNT + 1))
+  fi
+
+  # ── Scaffold: BUBBLES_SETUP_SOURCES.md ────────────────────────────
+  if [[ ! -f "${TARGET}/docs/BUBBLES_SETUP_SOURCES.md" ]]; then
+    cat > "${TARGET}/docs/BUBBLES_SETUP_SOURCES.md" <<'SRCEOF'
+# Bubbles Setup Sources Registry
+
+> Single source of truth for what `/bubbles.bootstrap` reviews.
+
+## Internal Sources
+
+| Source | Path | Purpose |
+|--------|------|---------|
+| Project config contract | `.github/agents/_shared/project-config-contract.md` | Required project configuration |
+| Agent common governance | `.github/agents/_shared/agent-common.md` | Universal agent rules |
+| Scope workflow | `.github/agents/_shared/scope-workflow.md` | Workflow templates |
+| Workflows config | `.github/bubbles/workflows.yaml` | Workflow mode definitions |
+
+## External Sources
+
+> Add external libraries, skills, or references reviewed by bootstrap here.
+SRCEOF
+    ok "Created ${TARGET}/docs/BUBBLES_SETUP_SOURCES.md"
+    CREATED_COUNT=$((CREATED_COUNT + 1))
+  fi
+
+  echo ""
+  ok "Bootstrap complete: ${CREATED_COUNT} files created, ${SKIPPED_COUNT} skipped (already exist)"
+fi
+
 # ── Summary ─────────────────────────────────────────────────────────
 echo ""
 printf "${BOLD}${GREEN}🫧 DEEEE-CENT!${NC}\n"
 echo ""
-echo "Bubbles is installed. Next steps:"
-echo ""
-echo "  1. Add project-specific config to .github/copilot-instructions.md"
-echo "  2. Try:  /bubbles.workflow   — full orchestration"
-echo "  3. Try:  /bubbles.status     — check spec progress"
-echo "  4. Try:  /bubbles.plan       — scope out a feature"
+
+if [[ "$DO_BOOTSTRAP" == "true" ]]; then
+  echo "Bubbles is installed and bootstrapped. Your project is ready."
+  echo ""
+  echo "  📁 Created:"
+  echo "     specs/                                          — Feature/bug specs go here"
+  echo "     .specify/memory/constitution.md                 — Project governance"
+  echo "     .specify/memory/agents.md                       — Command registry"
+  echo "     .github/copilot-instructions.md                 — Project policies"
+  echo "     .github/instructions/terminal-discipline...md   — CLI discipline"
+  echo ""
+  printf "  ${YELLOW}⚠️  Action required:${NC} Update the TODO items in the generated files\n"
+  echo "     to match your project's actual commands, paths, and config."
+  echo ""
+  echo "  Then open VS Code and run these agents in order:"
+  echo ""
+  echo "     /bubbles.commands                   — Auto-detect your project and regenerate agents.md"
+  echo "     /bubbles.bootstrap mode: refresh    — Verify setup is complete"
+  echo "     /bubbles.status                     — Check spec progress"
+  echo "     /bubbles.analyst  <describe feature> — Start new feature work"
+  echo "     /bubbles.workflow full-delivery      — Run the full pipeline"
+else
+  echo "Bubbles is installed. Next steps:"
+  echo ""
+  echo "  Option A — Full bootstrap (recommended for new projects):"
+  echo "     Re-run with --bootstrap to scaffold project config:"
+  printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --bootstrap${NC}\n"
+  echo ""
+  echo "  Option B — Manual setup:"
+  echo "     1. Add project-specific config to .github/copilot-instructions.md"
+  echo "     2. Create .specify/memory/agents.md with your commands"
+  echo "     3. Create .specify/memory/constitution.md with your principles"
+  echo ""
+  echo "  Then try:"
+  echo "     /bubbles.workflow   — full orchestration"
+  echo "     /bubbles.status     — check spec progress"
+  echo "     /bubbles.plan       — scope out a feature"
+fi
 echo ""
 echo "Docs:    https://github.com/${BUBBLES_REPO}"
 echo "Update:  curl -fsSL https://raw.githubusercontent.com/${BUBBLES_REPO}/main/install.sh | bash"
