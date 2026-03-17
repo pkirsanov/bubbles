@@ -1,0 +1,469 @@
+<svg viewBox="0 0 2200 1500" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+    <defs>
+        <!-- Pencil Sketch / Whiteboard Filter for hand-drawn wobble -->
+        <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        
+        <!-- Colored Arrowheads for energetic workflow paths -->
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-orange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-black" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2c3e50" filter="url(#handdrawn)"/>
+        </marker>
+        
+        <!-- Drop Shadow for Objects to pop them from the sketched background -->
+        <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+            <feDropShadow dx="15" dy="15" stdDeviation="5" flood-color="#000000" flood-opacity="0.1"/>
+        </filter>
+    </defs>
+
+    <g font-weight="bold">
+
+        <!-- ========================================== -->
+        <!-- MASSIVE CHAOTIC MULTI-COLORED LINES        -->
+        <!-- ========================================== -->
+        <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+            <!-- Central Spine / Backbone -->
+            <path d="M 1100,250 L 1100,1350" stroke="#2c3e50" stroke-width="12" stroke-dasharray="25,15" marker-end="url(#arrow-black)"/>
+            
+            <!-- Nodes on the central spine -->
+            <circle cx="1100" cy="450" r="15" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+            <circle cx="1100" cy="800" r="15" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+            <circle cx="1100" cy="1150" r="15" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+
+            <!-- Connecting paths to 9 Agent clusters -->
+            <!-- To Analyst (Top Left) -->
+            <path d="M 1100,450 Q 800,400 500,450" stroke="#2980b9" stroke-width="8" marker-end="url(#arrow-blue)"/>
+            <!-- To Workflow (Top Center) is implied by spine -->
+            <!-- To Docs (Top Right) -->
+            <path d="M 1100,450 Q 1400,300 1700,350" stroke="#16a085" stroke-width="6" stroke-dasharray="10,10" marker-end="url(#arrow-green)"/>
+            
+            <!-- To UX (Mid Left) -->
+            <path d="M 1100,800 C 800,900 400,700 280,800" stroke="#9b59b6" stroke-width="8" marker-end="url(#arrow-purple)"/>
+            <!-- To Chaos (Mid Right) -->
+            <path d="M 1100,800 C 1400,900 1600,600 1800,700" stroke="#e74c3c" stroke-width="10" marker-end="url(#arrow-red)"/>
+
+            <!-- To Implementer (Bottom Left) -->
+            <path d="M 1100,1150 C 900,1200 400,900 400,1150" stroke="#27ae60" stroke-width="8" marker-end="url(#arrow-green)"/>
+            <!-- To Stabilize (Bottom Center) -->
+            <path d="M 1100,1150 L 980,1280" stroke="#f39c12" stroke-width="6" marker-end="url(#arrow-orange)"/>
+            <!-- To Tester (Bottom Right) -->
+            <path d="M 1100,1150 Q 1400,1300 1500,1150" stroke="#d35400" stroke-width="8" stroke-dasharray="20,5" marker-end="url(#arrow-orange)"/>
+            <!-- To Security (Far Right Mid-High) -->
+            <path d="M 1100,800 L 1900,400" stroke="#c0392b" stroke-width="6" stroke-dasharray="15,10,5,10" marker-end="url(#arrow-red)"/>
+
+            <!-- Extra loop cycles -->
+            <path d="M 1550,1100 C 1700,1300 1800,800 1900,750" stroke="#8e44ad" stroke-width="6" stroke-dasharray="10,15" marker-end="url(#arrow-purple)"/>
+            <path d="M 280,800 C 200,500 500,200 1000,250" stroke="#e67e22" stroke-width="8" stroke-dasharray="30,10" marker-end="url(#arrow-orange)"/>
+
+            <!-- "Smokes, Let's Go" Bug Fastlane -->
+            <path d="M 500,1150 L 1500,1150" stroke="#c0392b" stroke-width="12" marker-end="url(#arrow-red)"/>
+            <!-- Fastlane trail elements to make it look active -->
+            <path d="M 600,1180 L 1400,1180" stroke="#e74c3c" stroke-width="4" stroke-dasharray="50,20"/>
+            <path d="M 600,1120 L 1400,1120" stroke="#f1c40f" stroke-width="4" stroke-dasharray="40,30"/>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- TITLE (Top Center)                         -->
+        <!-- ========================================== -->
+        <g transform="translate(1100, 100)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Rough Banner -->
+                <polygon points="-450,-60 450,-50 480,40 400,60 -460,50 -490,0" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                <!-- Accents -->
+                <path d="M -440,-50 L 440,-40" fill="none" stroke="#2980b9" stroke-width="4"/>
+                <path d="M -440,-35 L 440,-25" fill="none" stroke="#2980b9" stroke-width="4"/>
+                <path d="M -450,45 L 440,35" fill="none" stroke="#e74c3c" stroke-width="4"/>
+            </g>
+            <!-- Title Text -->
+            <text x="0" y="15" font-size="65" text-anchor="middle" fill="#2c3e50" letter-spacing="4" filter="url(#handdrawn)">BUBBLES AGENT BAZAAR v2.0</text>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- FLOATING NATURAL TEXT (Quotes & Notes)     -->
+        <!-- ========================================== -->
+        
+        <!-- Near Analyst -->
+        <g transform="translate(150, 200) rotate(-6)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="32" fill="#c0392b">"IT'S NOT ROCKET</text>
+            <text x="40" y="40" font-size="32" fill="#c0392b">APPLIANCES"</text>
+            <path d="M -10,15 L 300,15 M 30,55 L 260,55" fill="none" stroke="#f1c40f" stroke-width="5"/>
+        </g>
+
+        <!-- Under Analyst -->
+        <g transform="translate(300, 680) rotate(5)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="28" fill="#8e44ad">SUPPLY &amp; COMMAND</text>
+            <path d="M -20,10 C 150,-20 280,10 200,40 C 100,60 -50,40 -20,10" fill="none" stroke="#8e44ad" stroke-width="3" stroke-dasharray="10,10"/>
+        </g>
+
+        <!-- Near Workflow -->
+        <g transform="translate(1150, 250) rotate(4)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="28" fill="#16a085">A SHIT BLIZZARD</text>
+            <text x="20" y="35" font-size="28" fill="#16a085">IS COMING, BOYS!</text>
+        </g>
+
+        <!-- Near Implementer -->
+        <g transform="translate(150, 1350) rotate(-4)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="35" fill="#2980b9">WORST CASE ONTARIO:</text>
+            <text x="20" y="45" font-size="35" fill="#2980b9">TWO BIRDS STONED</text>
+            <text x="80" y="90" font-size="35" fill="#2980b9">AT ONCE.</text>
+            <!-- Heavy marker underline -->
+            <path d="M 70,110 L 280,100 L 80,120 L 270,110" fill="none" stroke="#e74c3c" stroke-width="6"/>
+        </g>
+
+        <!-- Near Chaos -->
+        <g transform="translate(1700, 920) rotate(8)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="32" fill="#d35400">THE SHIT WINDS</text>
+            <text x="10" y="40" font-size="32" fill="#d35400">ARE BLOWIN'</text>
+            <path d="M -10,-10 L -10,60 M -20,-5 L -20,55" fill="none" stroke="#c0392b" stroke-width="5"/>
+        </g>
+
+        <!-- Near Tester -->
+        <g transform="translate(1450, 1350) rotate(-3)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="40" fill="#2c3e50">DENIAL</text>
+            <text x="20" y="45" font-size="40" fill="#2c3e50">&amp; ERROR</text>
+            <text x="-40" y="40" font-size="50" fill="#27ae60">?</text>
+        </g>
+
+        <!-- Near Big Arrow Fastlane -->
+        <g transform="translate(900, 1120) rotate(-2)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="32" fill="#c0392b">SMOKES, LET'S GO</text>
+            <path d="M -5,10 L 290,10" fill="none" stroke="#2c3e50" stroke-width="3"/>
+        </g>
+
+        <!-- Near Stabilize -->
+        <g transform="translate(680, 1420) rotate(3)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="30" fill="#7f8c8d">WAY OF THE ROAD,</text>
+            <text x="50" y="35" font-size="30" fill="#7f8c8d">BUBS!</text>
+        </g>
+
+        <!-- Near UX / Design -->
+        <g transform="translate(100, 800) rotate(-10)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="28" fill="#e67e22">LOOKS LIKE A TROPICAL</text>
+            <text x="20" y="35" font-size="28" fill="#e67e22">EARTHQUAKE BLEW</text>
+            <text x="60" y="70" font-size="28" fill="#e67e22">THROUGH HERE.</text>
+        </g>
+
+        <!-- Near Docs -->
+        <g transform="translate(1550, 180) rotate(-12)" filter="url(#handdrawn)">
+            <text x="0" y="0" font-size="28" fill="#27ae60">IT'S JUST WATER</text>
+            <text x="20" y="35" font-size="28" fill="#27ae60">UNDER THE FRIDGE.</text>
+        </g>
+
+        <!-- Near Security -->
+        <g transform="translate(2000, 250) rotate(15)" filter="url(#handdrawn)">
+            <text x="-150" y="0" font-size="30" fill="#2980b9">A CATCH-23</text>
+            <text x="-120" y="35" font-size="30" fill="#2980b9">SITUATION</text>
+            <circle cx="-30" cy="15" r="90" fill="none" stroke="#2980b9" stroke-width="4" stroke-dasharray="10,5"/>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- THE AGENT CROWD (9 Detailed Drawings)      -->
+        <!-- ========================================== -->
+
+        <!-- 1. ANALYST AGENT (Top Left) -->
+        <g transform="translate(300, 450) scale(1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Easel / Whiteboard Background -->
+                <rect x="-140" y="-140" width="220" height="260" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                <!-- Easel legs -->
+                <path d="M -100,120 L -120,200 M 40,120 L 60,200 M -30,120 L -30,180" stroke="#2c3e50" stroke-width="8" stroke-linecap="round"/>
+                
+                <!-- Graphs on the board -->
+                <path d="M -120,-20 L -20,-20" stroke="#bdc3c7" stroke-width="4"/>
+                <path d="M -120,40 L -120,-100" stroke="#bdc3c7" stroke-width="4"/>
+                <rect x="-100" y="-10" width="20" height="50" fill="#3498db" stroke="#2c3e50" stroke-width="3" transform="scale(1, -1) translate(0, 20)"/>
+                <rect x="-70" y="-40" width="20" height="80" fill="#2ecc71" stroke="#2c3e50" stroke-width="3" transform="scale(1, -1) translate(0, 20)"/>
+                <rect x="-40" y="-80" width="20" height="120" fill="#e74c3c" stroke="#2c3e50" stroke-width="3" transform="scale(1, -1) translate(0, 20)"/>
+                
+                <!-- Large Pie Chart cutting off the easel -->
+                <circle cx="80" cy="-60" r="60" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+                <path d="M 80,-60 L 80,-120 A 60 60 0 0 1 140,-60 Z" fill="#9b59b6" stroke="#2c3e50" stroke-width="4"/>
+                <path d="M 80,-60 L 140,-60 A 60 60 0 0 1 40,0 Z" fill="#f1c40f" stroke="#2c3e50" stroke-width="4"/>
+                <path d="M 90,-70 L 120,-100 M 110,-40 L 150,-30 M 50,-10 L 20,40" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+
+                <!-- Label pinned to board -->
+                <g transform="translate(-100, -120) rotate(-8)">
+                    <rect x="0" y="0" width="100" height="35" fill="#f39c12" stroke="#2c3e50" stroke-width="3"/>
+                    <circle cx="50" cy="5" r="4" fill="#c0392b"/>
+                    <text x="50" y="25" font-size="18" fill="#2c3e50" text-anchor="middle">ANALYST</text>
+                </g>
+            </g>
+        </g>
+
+        <!-- 2. WORKFLOW AGENT (Top Central-Left) -->
+        <g transform="translate(850, 480) scale(1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Open Map/Binder -->
+                <polygon points="-160,-80 -10,-60 -10,120 -160,100" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                <polygon points="160,-80 10,-60 10,120 160,100" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                
+                <!-- Binder rings -->
+                <circle cx="0" cy="-30" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+                <circle cx="0" cy="20" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+                <circle cx="0" cy="70" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+
+                <!-- Left page Flowchart -->
+                <rect x="-140" y="-30" width="50" height="30" rx="5" fill="#ffffff" stroke="#3498db" stroke-width="4"/>
+                <rect x="-90" y="40" width="60" height="30" rx="5" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+                <path d="M -115,0 L -115,20 L -60,20 L -60,40" fill="none" stroke="#2c3e50" stroke-width="4" marker-end="url(#arrow-black)"/>
+                
+                <!-- Right page Flowchart -->
+                <circle cx="50" cy="-10" r="20" fill="#ffffff" stroke="#27ae60" stroke-width="4"/>
+                <circle cx="110" cy="60" r="25" fill="#ffffff" stroke="#9b59b6" stroke-width="4"/>
+                <path d="M 65,-10 C 90,-10 90,60 110,60" fill="none" stroke="#2c3e50" stroke-width="4" stroke-dasharray="5,5"/>
+
+                <!-- Oversized Glasses -->
+                <g transform="translate(0, 30) rotate(15)">
+                    <circle cx="-50" cy="0" r="35" fill="#ffffff" stroke="#2c3e50" stroke-width="10"/>
+                    <circle cx="50" cy="0" r="35" fill="#ffffff" stroke="#2c3e50" stroke-width="10"/>
+                    <path d="M -15,0 Q 0,-15 15,0" fill="none" stroke="#2c3e50" stroke-width="8"/>
+                    <line x1="-70" y1="15" x2="-30" y2="-15" stroke="#3498db" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="30" y1="15" x2="70" y2="-15" stroke="#3498db" stroke-width="5" stroke-linecap="round"/>
+                </g>
+
+                <rect x="-60" y="130" width="120" height="30" fill="#ffffff" stroke="#2c3e50" stroke-width="4"/>
+                <text x="0" y="152" font-size="16" fill="#2c3e50" text-anchor="middle">WORKFLOW</text>
+            </g>
+        </g>
+
+        <!-- 3. DOCS AGENT (Top Right) -->
+        <g transform="translate(1400, 450) scale(1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Stack of folders / documents -->
+                <path d="M -100,50 L 60,10 L 120,60 L -40,100 Z" fill="#ffffff" stroke="#2c3e50" stroke-width="6" stroke-linejoin="round"/>
+                <!-- Colored Folder Tabs -->
+                <rect x="-80" y="15" width="30" height="15" fill="#f1c40f" stroke="#2c3e50" stroke-width="3" transform="skewX(-45)"/>
+                <path d="M -90,40 L 70,0 L 130,50 L -30,90 Z" fill="#ffffff" stroke="#27ae60" stroke-width="5" stroke-linejoin="round"/>
+                
+                <rect x="-60" y="-5" width="30" height="15" fill="#e74c3c" stroke="#2c3e50" stroke-width="3" transform="skewX(-45)"/>
+                <path d="M -80,30 L 80,-10 L 140,40 L -20,80 Z" fill="#ffffff" stroke="#3498db" stroke-width="5" stroke-linejoin="round"/>
+
+                <!-- Top messy paper -->
+                <polygon points="-75,10 90,-20 120,30 -40,70" fill="#ffffff" stroke="#2c3e50" stroke-width="6" stroke-linejoin="round"/>
+                <path d="M -30,20 L 70,-5 M -20,30 L 80,5 M -10,40 L 50,25" fill="none" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+                
+                <!-- Huge highly-detailed red "APPROVED" stamp -->
+                <g transform="translate(20, 20) rotate(-25)">
+                    <rect x="-65" y="-25" width="130" height="50" fill="#ffffff" stroke="#c0392b" stroke-width="6" rx="5"/>
+                    <rect x="-55" y="-15" width="110" height="30" fill="none" stroke="#c0392b" stroke-width="3"/>
+                    <text x="0" y="8" font-size="22" fill="#c0392b" text-anchor="middle" letter-spacing="4">WATER</text>
+                </g>
+
+                <rect x="-140" y="-60" width="90" height="35" fill="#ffffff" stroke="#16a085" stroke-width="4" transform="rotate(-15)"/>
+                <text x="-95" y="-35" font-size="18" fill="#16a085" text-anchor="middle" transform="rotate(-15)">DOCS</text>
+            </g>
+        </g>
+
+        <!-- 4. UX / DESIGN AGENT (Middle Left) -->
+        <g transform="translate(250, 850) scale(1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Classical Wood Art Palette -->
+                <path d="M -50,60 C -120,10 -150,-80 -60,-100 C 30,-120 100,-80 120,20 C 130,80 50,110 -50,60 Z" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                <!-- Thumb hole -->
+                <circle cx="-70" cy="20" r="18" fill="#fdfcf9" stroke="#2c3e50" stroke-width="6"/>
+                
+                <!-- Paint splotches representing elements -->
+                <!-- Space weed green -->
+                <circle cx="-10" cy="-60" r="20" fill="#2ecc71" stroke="#27ae60" stroke-width="4"/>
+                <!-- Liquor brown -->
+                <circle cx="50" cy="-30" r="22" fill="#d35400" stroke="#e67e22" stroke-width="4"/>
+                <!-- Error red -->
+                <circle cx="80" cy="20" r="18" fill="#e74c3c" stroke="#c0392b" stroke-width="4"/>
+                
+                <!-- Big wet brush resting on top -->
+                <g transform="translate(-10, 40) rotate(-45)">
+                    <!-- Brush handle -->
+                    <path d="M 0,0 L -120,-30 L -120,10 Z" fill="#ffffff" stroke="#2980b9" stroke-width="6"/>
+                    <!-- Ferrule -->
+                    <rect x="-20" y="-12" width="20" height="24" fill="#bdc3c7" stroke="#2c3e50" stroke-width="4"/>
+                    <!-- Bristles -->
+                    <path d="M 0,-12 C 40,-12 50,0 50,5 C 50,10 40,12 0,12 Z" fill="#ffffff" stroke="#e74c3c" stroke-width="5"/>
+                    <path d="M -60,0 L -100,0" stroke="#2c3e50" stroke-width="3"/>
+                </g>
+
+                <rect x="-50" y="100" width="160" height="40" fill="#ffffff" stroke="#8e44ad" stroke-width="5" transform="rotate(5)"/>
+                <text x="30" y="128" font-size="20" fill="#8e44ad" text-anchor="middle" transform="rotate(5)">UX / DESIGN</text>
+            </g>
+        </g>
+        
+        <!-- 5. CHAOS AGENT (Middle Right) -->
+        <g transform="translate(1800, 700) scale(1.1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Background Explosion -->
+                <path d="M 0,-140 L 20,-90 L 80,-100 L 40,-50 L 100,-10 L 50,20 L 90,70 L 30,60 L 0,110 L -30,60 L -90,70 L -50,20 L -100,-10 L -40,-50 L -80,-100 L -20,-90 Z" 
+                      fill="#f39c12" stroke="#e67e22" stroke-width="5" opacity="0.6"/>
+
+                <!-- The Bomb -->
+                <circle cx="0" cy="0" r="80" fill="#ffffff" stroke="#2c3e50" stroke-width="10"/>
+                <path d="M -50,-40 A 50 50 0 0 1 -10,-60" fill="none" stroke="#bdc3c7" stroke-width="8" stroke-linecap="round"/>
+                
+                <!-- Dynamite Cap & Fuse -->
+                <rect x="-20" y="-95" width="40" height="20" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+                <path d="M 0,-95 Q 30,-130 -10,-160 T 30,-200" fill="none" stroke="#7f8c8d" stroke-width="8"/>
+                <circle cx="30" cy="-200" r="15" fill="#e74c3c" stroke="#f1c40f" stroke-width="4"/>
+                <path d="M 10,-200 L -10,-210 M 50,-200 L 70,-210 M 30,-220 L 30,-240 M 30,-180 L 30,-160" stroke="#e74c3c" stroke-width="4" stroke-linecap="round"/>
+
+                <!-- Danger Skull -->
+                <g transform="translate(0, 10)">
+                    <circle cx="-20" cy="-10" r="10" fill="#2c3e50"/>
+                    <circle cx="20" cy="-10" r="10" fill="#2c3e50"/>
+                    <path d="M -15,15 L 15,15 M -10,10 L -10,20 M 0,10 L 0,20 M 10,10 L 10,20" stroke="#2c3e50" stroke-width="4"/>
+                </g>
+
+                <rect x="-65" y="90" width="130" height="35" fill="#ffffff" stroke="#e74c3c" stroke-width="4" transform="rotate(-5)"/>
+                <text x="0" y="115" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(-5)">CHAOS</text>
+            </g>
+        </g>
+
+        <!-- 6. SECURITY AGENT (Top Far-Right Edge) -->
+        <g transform="translate(1950, 400) scale(1.0)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Giant Padlock -->
+                <path d="M -50,-20 V -50 A 50 50 0 0 1 50,-50 V -20" fill="none" stroke="#2c3e50" stroke-width="18" stroke-linecap="round"/>
+                <path d="M -50,-20 V -50 A 50 50 0 0 1 50,-50 V -20" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                
+                <rect x="-80" y="-20" width="160" height="120" rx="15" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                
+                <!-- Keyhole -->
+                <circle cx="0" cy="20" r="15" fill="#2c3e50"/>
+                <path d="M -10,20 L -15,60 H 15 L 10,20 Z" fill="#2c3e50"/>
+                
+                <!-- Siren on Top -->
+                <path d="M -30,-110 C -30,-150 30,-150 30,-110 Z" fill="#ffffff" stroke="#e74c3c" stroke-width="6"/>
+                <!-- Siren lines -->
+                <path d="M -15,-115 V -135 M 0,-110 V -140 M 15,-115 V -135" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
+
+                <!-- Wrapping chains -->
+                <ellipse cx="0" cy="80" rx="100" ry="20" fill="none" stroke="#7f8c8d" stroke-width="8" transform="rotate(15)"/>
+                <ellipse cx="0" cy="50" rx="90" ry="15" fill="none" stroke="#bdc3c7" stroke-width="8" transform="rotate(-15)"/>
+
+                <rect x="-80" y="120" width="160" height="35" fill="#ffffff" stroke="#c0392b" stroke-width="5" transform="rotate(-10)"/>
+                <text x="0" y="145" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(-10)">SECURITY</text>
+            </g>
+        </g>
+
+        <!-- 7. IMPLEMENTER AGENT (Bottom Left) -->
+        <g transform="translate(350, 1150) scale(1.1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Isometric Laptop Base -->
+                <polygon points="-120,40 120,40 160,90 -160,90" fill="#ffffff" stroke="#2c3e50" stroke-width="8" stroke-linejoin="round"/>
+                <!-- Laptop Screen -->
+                <polygon points="-120,40 120,40 100,-100 -100,-100" fill="#ffffff" stroke="#2c3e50" stroke-width="8" stroke-linejoin="round"/>
+                <!-- Inner Screen -->
+                <polygon points="-105,30 105,30 85,-90 -85,-90" fill="#ffffff" stroke="#3498db" stroke-width="4"/>
+                
+                <!-- Code -->
+                <path d="M -80,-70 L -20,-70 M -80,-50 L 50,-50 M -70,-30 L 70,-30 M -80,-10 L 0,-10 M -70,10 L 80,10" fill="none" stroke="#27ae60" stroke-width="5" stroke-linecap="round" stroke-dasharray="15,5,5,10"/>
+                
+                <!-- Keyboard details -->
+                <polygon points="-100,50 100,50 130,75 -130,75" fill="none" stroke="#bdc3c7" stroke-width="3"/>
+                <line x1="-50" y1="50" x2="-65" y2="75" stroke="#bdc3c7" stroke-width="2"/>
+                <line x1="0" y1="50" x2="0" y2="75" stroke="#bdc3c7" stroke-width="2"/>
+                <line x1="50" y1="50" x2="65" y2="75" stroke="#bdc3c7" stroke-width="2"/>
+
+                <!-- Pepperoni Pizza Slice -->
+                <g transform="translate(-100, 50) rotate(20)">
+                    <polygon points="0,0 60,-20 50,40" fill="#ffffff" stroke="#d35400" stroke-width="5" stroke-linejoin="round"/>
+                    <path d="M 60,-20 C 65,0 65,20 50,40" fill="none" stroke="#e67e22" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="20" cy="0" r="6" fill="#c0392b"/>
+                    <circle cx="40" cy="-5" r="5" fill="#c0392b"/>
+                    <circle cx="35" cy="15" r="7" fill="#c0392b"/>
+                </g>
+
+                <polygon points="80,-90 120,-80 110,-40 70,-50" fill="#f1c40f" stroke="#2c3e50" stroke-width="3"/>
+                <path d="M 85,-75 L 105,-70 M 80,-60 L 100,-55" fill="none" stroke="#e74c3c" stroke-width="2"/>
+
+                <rect x="-80" y="110" width="160" height="35" fill="#ffffff" stroke="#2980b9" stroke-width="5"/>
+                <text x="0" y="135" font-size="20" fill="#2980b9" text-anchor="middle">IMPLEMENTER</text>
+            </g>
+        </g>
+
+        <!-- 8. STABILIZE AGENT (Bottom Center) -->
+        <g transform="translate(950, 1300) scale(1.05)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Crossed Tools Background: Wrench and Screwdriver -->
+                <!-- Big Wrench -->
+                <path d="M -90,-80 L 70,80" stroke="#f39c12" stroke-width="25" stroke-linecap="round"/>
+                <circle cx="-80" cy="-70" r="30" fill="#ffffff" stroke="#f39c12" stroke-width="8"/>
+                <path d="M -110,-60 L -60,-100" stroke="#fdfcf9" stroke-width="15" stroke-linecap="round"/>
+                
+                <!-- Roll of Duct Tape holding it all together -->
+                <g transform="translate(0, 0)">
+                    <ellipse cx="0" cy="0" rx="70" ry="40" fill="#ffffff" stroke="#bdc3c7" stroke-width="15"/>
+                    <ellipse cx="0" cy="0" rx="40" ry="20" fill="#fdfcf9" stroke="#7f8c8d" stroke-width="8"/>
+                    <!-- Duct tape texture lines -->
+                    <path d="M -60,0 C -30,20 30,20 60,0" fill="none" stroke="#95a5a6" stroke-width="3" stroke-dasharray="8,4"/>
+                    <path d="M -50,-15 C -20,0 20,0 50,-15" fill="none" stroke="#95a5a6" stroke-width="3" stroke-dasharray="5,5"/>
+                </g>
+
+                <!-- Server Box under tape -->
+                <rect x="-100" y="20" width="200" height="80" rx="10" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                <line x1="-80" y1="40" x2="80" y2="40" stroke="#2980b9" stroke-width="4"/>
+                <line x1="-80" y1="60" x2="80" y2="60" stroke="#2980b9" stroke-width="4"/>
+                <circle cx="-80" cy="80" r="6" fill="#27ae60"/>
+                <circle cx="-60" cy="80" r="6" fill="#e74c3c"/>
+
+                <rect x="-75" y="120" width="150" height="35" fill="#ffffff" stroke="#f39c12" stroke-width="5" transform="rotate(5)"/>
+                <text x="0" y="145" font-size="20" fill="#d35400" text-anchor="middle" transform="rotate(5)">STABILIZE</text>
+            </g>
+        </g>
+
+        <!-- 9. TESTER AGENT (Bottom Right) -->
+        <g transform="translate(1550, 1150) scale(1.1)" filter="url(#shadow)">
+            <g filter="url(#handdrawn-thick)">
+                <!-- Blueprint paper -->
+                <polygon points="-120,-70 60,-100 130,40 -50,70" fill="#ffffff" stroke="#3498db" stroke-width="5" stroke-linejoin="round"/>
+                <!-- Blueprint grid lines -->
+                <path d="M -100,-50 L 100,-20 M -80,-10 L 110,15 M -60,30 L 120,60" stroke="#3498db" stroke-width="2" opacity="0.5"/>
+                <path d="M -90,-60 L -30,40 M -30,-70 L 30,50 M 30,-80 L 90,40" stroke="#3498db" stroke-width="2" opacity="0.5"/>
+                
+                <g transform="translate(10, -20)">
+                    <!-- Actual Bug (Insect) -->
+                    <ellipse cx="0" cy="0" rx="15" ry="25" fill="#ffffff" stroke="#2c3e50" stroke-width="5" transform="rotate(30)"/>
+                    <path d="M -10,-10 L -30,-20 M -15,0 L -35,5 M -10,10 L -20,30" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 10,-20 L 25,-40 M 15,-10 L 40,-15 M 15,5 L 35,15" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Big red X -->
+                    <path d="M -20,-20 L 20,20 M -20,20 L 20,-20" stroke="#e74c3c" stroke-width="6" stroke-linecap="round"/>
+                </g>
+
+                <!-- Magnifying Glass -->
+                <g transform="translate(-40, 20)">
+                    <!-- Handle -->
+                    <path d="M -40,40 L -90,90" stroke="#2c3e50" stroke-width="18" stroke-linecap="round"/>
+                    <path d="M -40,40 L -90,90" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                    <!-- Rim -->
+                    <circle cx="0" cy="0" r="55" fill="#fdfcf9" fill-opacity="0.8" stroke="#2c3e50" stroke-width="10"/>
+                    <circle cx="0" cy="0" r="45" fill="none" stroke="#27ae60" stroke-width="4"/>
+                    <!-- Glass glare -->
+                    <path d="M -30,-30 A 35 35 0 0 1 20,-35" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+                </g>
+
+                <rect x="-50" y="110" width="100" height="35" fill="#ffffff" stroke="#e74c3c" stroke-width="5" transform="rotate(10)"/>
+                <text x="0" y="135" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(10)">TESTER</text>
+            </g>
+        </g>
+
+    </g>
+</svg>
