@@ -19,6 +19,9 @@
 # =============================================================================
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 feature_dir="${1:-}"
 revert_on_fail="false"
 
@@ -45,12 +48,14 @@ warnings=0
 fail() {
   local message="$1"
   echo "🔴 BLOCK: $message"
+  fun_fail
   failures=$((failures + 1))
 }
 
 warn() {
   local message="$1"
   echo "⚠️  WARN: $message"
+  fun_warn
   warnings=$((warnings + 1))
 }
 
@@ -115,6 +120,8 @@ echo "  BUBBLES STATE TRANSITION GUARD"
 echo "  Feature: $feature_dir"
 echo "  Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 echo "============================================================"
+fun_banner
+fun_message guard_start
 echo ""
 
 # =============================================================================
@@ -1026,6 +1033,7 @@ else
     echo "🟡 TRANSITION PERMITTED with $warnings warning(s)"
   else
     echo "🟢 TRANSITION PERMITTED: All checks pass ($failures failures, $warnings warnings)"
+    fun_summary pass
   fi
   echo ""
   case "$state_workflow_mode:$state_status" in

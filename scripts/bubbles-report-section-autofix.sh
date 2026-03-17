@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 feature_dir="${1:-}"
 write_mode="${2:-}"
 

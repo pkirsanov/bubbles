@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 feature_dir="${1:-}"
 default_scenario_pattern='SCN-[0-9]{3}-[A-Z][0-9]{2}'
 scenario_pattern="$default_scenario_pattern"
@@ -50,12 +53,14 @@ dod_unchecked_items=""
 fail() {
   local message="$1"
   echo "❌ $message"
+  fun_fail
   failures=$((failures + 1))
 }
 
 warn() {
   local message="$1"
   echo "⚠️  $message"
+  fun_warn
 }
 
 pass() {
@@ -1237,8 +1242,10 @@ echo "=== End Anti-Fabrication Checks ==="
 if (( failures > 0 )); then
   echo ""
   echo "Artifact lint FAILED with $failures issue(s)."
+  fun_message lint_dirty
   exit 1
 fi
 
 echo ""
 echo "Artifact lint PASSED."
+fun_message lint_clean

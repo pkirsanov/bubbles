@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 usage() {
   echo "Usage: bash .github/scripts/bubbles-done-spec-audit.sh [--fix]"
   echo ""
@@ -223,6 +226,7 @@ done
 
 echo ""
 echo "Done-spec audit summary"
+fun_message audit_start
 echo "- done specs scanned: $total_done"
 echo "- lint passed: $lint_passed"
 echo "- lint failed: $lint_failed"
@@ -238,13 +242,18 @@ fi
 
 if [[ "$apply_fix" == "true" ]]; then
   if [[ $lint_failed -gt 0 ]]; then
+    fun_message audit_dirty
     exit 1
   fi
+  fun_message audit_clean
   exit 0
 fi
 
 if [[ $lint_failed -gt 0 ]]; then
+  fun_message audit_dirty
   exit 1
 fi
+
+fun_message audit_clean
 
 exit 0

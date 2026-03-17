@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 AGENTS_DIR="${1:-.github/agents}"
 
 if [[ ! -d "$AGENTS_DIR" ]]; then
@@ -63,10 +66,12 @@ if tsort "$tmp_edges" >/dev/null 2>&1; then
     exit 1
   fi
   echo "PASS: no cycles detected and all handoff targets exist"
+  fun_message all_gates_pass
   exit 0
 fi
 
 echo "FAIL: cycle detected in handoff graph"
+fun_message gate_failed
 # Re-run without suppression so cycle details are printed
 set +e
 tsort "$tmp_edges"

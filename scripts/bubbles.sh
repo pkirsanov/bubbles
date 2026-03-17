@@ -18,6 +18,8 @@
 #   scan <spec>                   Run implementation reality scan on a spec
 #   audit-done [--fix]            Audit all specs marked done
 #   autofix <spec>                Scaffold missing report sections
+#   sunnyvale <alias>             Resolve a Sunnyvale alias (agent or mode)
+#   aliases                       List all Sunnyvale aliases
 #   help                          Show this help message
 #
 # Spec argument formats:
@@ -27,6 +29,12 @@
 # ────────────────────────────────────────────────────────────────────
 
 set -uo pipefail
+
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
+# Source alias resolution
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-aliases.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -401,6 +409,18 @@ cmd_autofix() {
   bash "$SCRIPT_DIR/bubbles-report-section-autofix.sh" "$spec_dir" --write
 }
 
+cmd_sunnyvale() {
+  [[ $# -lt 1 ]] && { list_all_aliases; return 0; }
+  local alias="$1"
+  if ! sunnyvale_lookup "$alias"; then
+    die "Unknown Sunnyvale alias: $alias\nRun 'bubbles aliases' to see all aliases."
+  fi
+}
+
+cmd_aliases() {
+  list_all_aliases
+}
+
 # ── Main dispatch ───────────────────────────────────────────────────
 
 main() {
@@ -423,6 +443,8 @@ main() {
     scan)               cmd_scan "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;
     autofix)            cmd_autofix "$@" ;;
+    sunnyvale)          cmd_sunnyvale "$@" ;;
+    aliases)            cmd_aliases "$@" ;;
     help|-h|--help)     cmd_help ;;
     *)                  die "Unknown command: $command\nRun 'bubbles help' for usage." ;;
   esac

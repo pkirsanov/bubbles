@@ -29,6 +29,9 @@
 # =============================================================================
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 feature_dir="${1:-}"
 verbose="false"
 
@@ -62,12 +65,14 @@ violation() {
   if [[ "$verbose" == "true" ]]; then
     echo "   Context: $context"
   fi
+  fun_fail
   violations=$((violations + 1))
 }
 
 vwarn() {
   local message="$1"
   echo "⚠️  WARN: $message"
+  fun_warn
   warnings=$((warnings + 1))
 }
 
@@ -533,6 +538,7 @@ echo ""
 
 if [[ "$violations" -gt 0 ]]; then
   echo "🔴 BLOCKED: $violations source code reality violation(s) found"
+  fun_message scan_dirty
   echo ""
   echo "These violations indicate stub, fake, or hardcoded data patterns"
   echo "in implementation files. ALL violations must be resolved before"
@@ -552,6 +558,7 @@ else
     echo "🟡 PASSED with $warnings warning(s) — manual review advised"
   else
     echo "🟢 PASSED: No source code reality violations detected"
+    fun_message scan_clean
   fi
   exit 0
 fi

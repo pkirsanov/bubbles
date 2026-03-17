@@ -8,6 +8,9 @@
 
 set -uo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 SPECS_DIR="${1:-specs}"
 
 if [[ ! -d "$SPECS_DIR" ]]; then
@@ -117,5 +120,10 @@ fi
 if [[ "$total_specs" -gt 0 ]]; then
   pct=$((done_specs * 100 / total_specs))
   printf "  Progress: %d%%\n" "$pct"
+  if [[ "$pct" -eq 100 ]]; then
+    fun_message milestone_reached
+  elif [[ "$pct" -ge 75 ]]; then
+    fun_message scope_ready
+  fi
 fi
 printf "${BLUE}═══════════════════════════════════════════════════════════════════════════${NC}\n\n"

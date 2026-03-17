@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source fun mode support
+source "$(dirname "${BASH_SOURCE[0]}")/bubbles-fun-mode.sh"
+
 target_file="${1:-}"
 
 if [[ -z "$target_file" ]]; then
@@ -20,6 +23,7 @@ cycles_found=0
 fail() {
   local message="$1"
   echo "❌ $message"
+  fun_fail
   failures=$((failures + 1))
 }
 
@@ -77,8 +81,10 @@ fi
 if (( failures > 0 )); then
   echo ""
   echo "Value selection lint FAILED with $failures issue(s)."
+  fun_message lint_dirty
   exit 1
 fi
 
 echo ""
 echo "Value selection lint PASSED."
+fun_message lint_clean
