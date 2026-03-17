@@ -2,9 +2,7 @@ name: Deploy Cheatsheet to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - 'docs/**'
-      - 'icons/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
