@@ -137,13 +137,19 @@ specs/                                   # Feature/bug spec folders
   <img src="pictures/bazaar_v3_distributed.svg" width="900" alt="Bubbles Distributed Agent Network">
 </p>
 
-Every agent has a job. Here's who does what.
+Every agent has a job. Start with the super when you need help, then hand off to the right specialist.
+
+### <img src="icons/lahey-bottle.svg" width="24"> Start Here
+
+| Agent | Role | When to Use |
+|-------|------|-------------|
+| <img src="icons/lahey-bottle.svg" width="20"> `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
 
 ### <img src="icons/bubbles-glasses.svg" width="24"> Orchestrators
 
 | Agent | Role | When to Use |
 |-------|------|-------------|
-| <img src="icons/julian-glass.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Field captain for the whole operation. Runs mode-driven phases with deterministic gates, retries, and resume. | Starting any multi-phase work |
+| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
 | <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time. | Continuing scope-by-scope work |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
@@ -154,7 +160,7 @@ Every agent has a job. Here's who does what.
 | <img src="icons/trinity-notebook.svg" width="20"> `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
 | <img src="icons/jroc-mic.svg" width="20"> `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
 | <img src="icons/randy-cheeseburger.svg" width="20"> `bubbles.validate` | **Gate checker.** Does the grunt work of checking every gate. | Pre-merge validation |
-| <img src="icons/lahey-bottle.svg" width="20"> `bubbles.audit` | **Policy enforcer.** Obsessive, thorough. The last line of defense. | Final compliance audit |
+| <img src="icons/ted-badge.svg" width="20"> `bubbles.audit` | **Policy enforcer.** Obsessive, thorough. The last line of defense. | Final compliance audit |
 | <img src="icons/ricky-dynamite.svg" width="20"> `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
 
 ### <img src="icons/barb-keys.svg" width="24"> Planning & Design
@@ -163,7 +169,7 @@ Every agent has a job. Here's who does what.
 |-------|------|-------------|
 | <img src="icons/ray-lawnchair.svg" width="20"> `bubbles.analyst` | **Business analyst.** Figures out the *why* behind requirements. | Starting new features |
 | <img src="icons/lucy-mirror.svg" width="20"> `bubbles.ux` | **UX designer.** Cares about how things feel and look. | UI/UX design work |
-| <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.design` | **Architect.** Quietly competent technical design. | System design |
+| <img src="icons/sarah-clipboard.svg" width="20"> `bubbles.design` | **Architect.** Turns loose ideas into a crisp technical shape. | System design |
 | <img src="icons/barb-keys.svg" width="20"> `bubbles.plan` | **Scope planner.** Defines the scopes, keeps the books. | Breaking work into scopes |
 | <img src="icons/george-green-badge.svg" width="20"> `bubbles.clarify` | **Requirements clarifier.** Asks the obvious but important questions. | Resolving ambiguity |
 | <img src="icons/conky-puppet.svg" width="20"> `bubbles.harden` | **Hardener.** Says the uncomfortable truths. Confrontational. Necessary. | Hardening passes |
@@ -173,6 +179,7 @@ Every agent has a job. Here's who does what.
 
 | Agent | Role | When to Use |
 |-------|------|-------------|
+| <img src="icons/cory-cap.svg" width="20"> `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
 | <img src="icons/cory-trevor-smokes.svg" width="20"> `bubbles.bootstrap` | **Scaffolder.** Sets up workspace and artifacts. | New feature/bug setup |
 | <img src="icons/bill-wrench.svg" width="20"> `bubbles.stabilize` | **Stabilizer.** Quiet. Reliable. Just fixes infrastructure. | Stability issues |
 | <img src="icons/cyrus-sunglasses.svg" width="20"> `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
@@ -186,9 +193,7 @@ Every agent has a job. Here's who does what.
 | <img src="icons/camera-crew.svg" width="20"> `bubbles.status` | **Observer.** Reports state. Never interferes. Read-only. | Checking progress |
 | <img src="icons/trevor-handoff.svg" width="20"> `bubbles.handoff` | **Session handoff.** Packages context for the next session. | End of session |
 | <img src="icons/t-cap.svg" width="20"> `bubbles.commands` | **Command registry.** Manages the project command reference. | Updating command docs |
-| <img src="icons/cory-trevor-smokes.svg" width="20"> `bubbles.create-skill` | **Skill creator.** Creates new repo-local skills. | Adding new skills |
-| <img src="icons/ricky-dynamite.svg" width="20"> `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
-| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.super` | **First-touch assistant.** Ask Bubbles first for the right command, workflow, framework action, or next move. | When you're unsure what to do, or need framework management |
+| <img src="icons/sam-binoculars.svg" width="20"> `bubbles.create-skill` | **Skill creator.** Packages know-how into reusable tools and playbooks. | Adding new skills |
 
 ---
 
@@ -196,7 +201,7 @@ Every agent has a job. Here's who does what.
 
 ### 0. Bootstrap (after install)
 ```
-/bubbles.super                       — Ask Bubbles first for the best first step, or run framework ops
+/bubbles.super                       — Ask the super first for help, the right command, or a framework fix
 /bubbles.commands                     — Auto-detect project, generate command registry
 /bubbles.bootstrap mode: refresh      — Verify config completeness
 ```
@@ -307,7 +312,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Harden the code quality | `/bubbles.harden` |
 | Break things on purpose | `/bubbles.chaos` |
 | Hand off to next session | `/bubbles.handoff` |
-| Ask what to do first | `/bubbles.super  help me get this repo ready` |
+| Ask the super for help | `/bubbles.super  help me get this repo ready` |
 | Check project health | `/bubbles.super  doctor` |
 | Install git hooks | `/bubbles.super  install hooks` |
 | Upgrade bubbles | `/bubbles.super  upgrade` |

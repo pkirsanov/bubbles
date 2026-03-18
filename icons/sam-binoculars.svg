@@ -1,0 +1,9 @@
+<!-- icon-name: sam-binoculars -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="24" cy="34" r="10"/>
+  <circle cx="40" cy="34" r="10"/>
+  <path d="M 18 20 L 24 26 L 30 20"/>
+  <path d="M 34 20 L 40 26 L 46 20"/>
+  <path d="M 24 24 L 32 16 L 40 24"/>
+  <path d="M 24 44 Q 32 50 40 44" stroke-width="1.2"/>
+</svg>

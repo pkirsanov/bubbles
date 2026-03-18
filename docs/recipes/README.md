@@ -13,6 +13,14 @@ Optional execution tags you can append to many workflow commands:
 
 ---
 
+## Start Here
+
+| Recipe | Problem → Solution |
+|--------|-------------------|
+| [Ask the Super First](ask-the-super-first.md) | "I don't know the right command, agent, workflow mode, or recovery step" |
+
+> **💡 Tip:** The super is the help desk for Bubbles itself: prompts, workflow choices, troubleshooting, and framework guidance in plain English.
+
 ## Getting Started
 
 | Recipe | Problem → Solution |
@@ -22,7 +30,7 @@ Optional execution tags you can append to many workflow commands:
 | [Fix a Bug](fix-a-bug.md) | "Something's broken and I need to fix it properly" |
 | [Resume Work](resume-work.md) | "I was working on something yesterday, need to pick up where I left off" |
 
-> **💡 Tip:** Not sure which recipe? Ask Bubbles first: `/bubbles.super  help me <describe what you want to do>` — the super agent will recommend the right agent, mode, and steps.
+> **💡 Tip:** Not sure which recipe? Ask the super first: `/bubbles.super  help me <describe what you want to do>` — the super agent will recommend the right agent, mode, and steps.
 
 ## Quality & Maintenance
 

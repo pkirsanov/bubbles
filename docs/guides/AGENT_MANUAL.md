@@ -4,6 +4,35 @@
 
 This manual covers every agent in the Bubbles system — what it does, when to use it, and how it fits into the overall workflow.
 
+## <img src="../../icons/lahey-bottle.svg" width="28"> Start Here First
+
+### bubbles.super — *"I'm the trailer park supervisor. Start here and I'll tell you the next move."*
+
+The front desk, help desk, and framework assistant for the whole system. If the user does not know which agent to use, which mode fits, why Bubbles behaved a certain way, or what command to type next, this is the default starting point.
+
+**Use when:**
+- You need the exact prompt or slash command
+- You want the framework to be explained in plain English
+- You need help solving a Bubbles workflow problem, not just a product-code problem
+- You want a recovery sequence after a failed phase, gate, or setup step
+- You want one small next move instead of reading the docs end-to-end
+
+**Examples:**
+```
+/bubbles.super  help me get this project ready
+/bubbles.super  what should I do before shipping feature 042?
+/bubbles.super  turn this bug report into the right Bubbles prompts
+/bubbles.super  why did my workflow stop after validate?
+/bubbles.super  I want to improve this feature but I don't know which mode fits
+```
+
+**What it does best:**
+1. Turns vague goals into exact prompts
+2. Recommends the right agent, mode, or sequence
+3. Explains framework behavior in plain English
+4. Solves Bubbles-specific setup, hook, gate, and workflow problems
+5. Keeps the answer short, concrete, and immediately usable
+
 ---
 
 ## How It Works
@@ -36,7 +65,7 @@ Each phase is owned by a **specialist agent**. The **workflow orchestrator** dec
 
 ### bubbles.workflow — *"Boys, I got a plan. And this time it's a good one."*
 
-The field captain of the operation. Orchestrates end-to-end delivery by driving phases in the order defined by the selected workflow mode.
+Bubbles is the field captain of the operation. Orchestrates end-to-end delivery by driving phases in the order defined by the selected workflow mode.
 
 **Use when:**
 - Starting a new feature from scratch
@@ -216,7 +245,7 @@ UX design. Creates wireframes, user flows, interaction patterns. Cares about how
 
 ---
 
-### bubbles.design — *"I can help with that."*
+### bubbles.design — *"Let's get this organized before anybody breaks it."*
 
 Technical architecture. Data models, API contracts, service boundaries, system design.
 
@@ -376,44 +405,6 @@ Packages session context for the next session. Creates a handoff document with w
 
 ---
 
-### bubbles.super — *"Decent. Let's figure out the right move before we make a mess of this."*
-
-The first-touch Bubbles assistant. The front door to the whole system. Framework superintendent, command strategist, workflow guide, and behind-the-scenes platform guru. Manages project health, hooks, gates, metrics, upgrades — AND helps you figure out what to do, which agent to use, and what to type next.
-
-**Use when:**
-- Managing Bubbles framework (health, hooks, gates, upgrades, metrics)
-- **Not sure which agent or mode to use** — ask super for guidance
-- **Need a multi-step plan** — super generates the correct sequence of prompts
-- **Want to generate a precise command** — describe your goal in plain English
-- **Need a default starting point** — ask super first, then follow the recommendation
-
-**Examples (framework ops):**
-```
-/bubbles.super  check project health
-/bubbles.super  install hooks
-/bubbles.super  upgrade bubbles
-/bubbles.super  show lessons learned
-```
-
-**Examples (command assistant):**
-```
-/bubbles.super  I want to build a new search feature, what do I do?
-/bubbles.super  which workflow mode should I use for improving an existing feature?
-/bubbles.super  help me write a command for chaos testing everything for 2 hours
-/bubbles.super  what's the best way to fix a bug properly?
-/bubbles.super  plan the steps to get a feature from idea to production
-/bubbles.super  generate a command to harden specs 11 through 37
-```
-
-**What the command assistant does:**
-1. Identifies the right agent(s) for your goal
-2. Generates the exact prompt/command to type
-3. For complex goals, creates a multi-step sequence with explanations
-4. Recommends the best workflow mode based on your situation
-5. Keeps the answer small and actionable unless deeper explanation is necessary
-
----
-
 ### bubbles.commands
 
 Command registry manager. Keeps the project's command reference up to date.
@@ -483,6 +474,7 @@ If you don't know which agent handles your situation, just ask `bubbles.super`. 
 - Recommend the right agent
 - Generate the exact command with correct parameters
 - Suggest a multi-step plan if your goal requires multiple agents
+- Help you recover when the framework itself is the thing giving you trouble
 
 ---
 

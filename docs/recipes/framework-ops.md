@@ -1,8 +1,8 @@
 # Recipe: Framework Operations
 
-> *"Ask Bubbles first. We'll figure out the right move before we make a mess of this."*
+> *"Ask the super first. We'll figure out the right move before we make a mess of this."*
 
-Use `bubbles.super` as the front door to Bubbles. It handles framework management, but more importantly it tells you the right command, agent, workflow mode, or sequence when you do not already know the system.
+Use `bubbles.super` when the problem is about the Bubbles framework itself: health, hooks, gates, metrics, upgrades, or recovering from a framework-level problem. If you need broader prompt help first, use the dedicated [Ask the Super First](ask-the-super-first.md) recipe.
 
 ## Check Project Health
 
@@ -73,45 +73,46 @@ Lessons are auto-compacted when the file exceeds 150 lines.
 
 ---
 
-## Platform Assistant (Primary Entry Point)
+## Solve Framework Problems
 
-Use `bubbles.super` when you're not sure which agent, mode, or command to use. Just describe your goal in plain English.
+Use `bubbles.super` when something in the framework itself is confused, blocked, or behaving in a way you do not understand.
 
-### Get a Single Command
-
-```
-/bubbles.super  I want to improve the booking feature
-→ Responds with: /bubbles.workflow  specs/008-booking mode: improve-existing
-
-/bubbles.super  generate a command for chaos testing everything
-→ Responds with: /bubbles.workflow  mode: stochastic-quality-sweep
-
-/bubbles.super  how do I harden specs 11 through 37?
-→ Responds with: /bubbles.workflow  011-037 mode: harden-to-doc
-```
-
-### Get a Multi-Step Plan
+### Diagnose Why Something Stopped
 
 ```
-/bubbles.super  I have a new feature idea for notifications, plan the steps
+/bubbles.super  why did my workflow stop after validate?
+→ Responds with: a short explanation of the likely gate or status ceiling issue, plus the next recovery command
+
+/bubbles.super  why didn't my resume command pick up where I expected?
+→ Responds with: the likely state issue, what file to check, and the next command to run
+```
+
+### Turn a Framework Problem Into Commands
+
+```
+/bubbles.super  fix my hooks setup and tell me how to verify it
+→ Responds with: the framework action, then the follow-up verification command
+
+/bubbles.super  I think my custom gate is blocking the workflow, what do I do?
+→ Responds with: the diagnostic step, the project-gate command, and the recommended repair sequence
+```
+
+### Recovery Sequence Examples
+
+```
+/bubbles.super  recover me from a failed upgrade
 → Responds with:
-  1. /bubbles.analyst  Build a notification system with email and push support
-  2. /bubbles.ux  specs/NNN-notification-system
-  3. /bubbles.workflow  specs/NNN-notification-system mode: product-to-delivery
+  1. /bubbles.super  upgrade --dry-run
+  2. /bubbles.super  doctor
+  3. /bubbles.super  install hooks
 
-/bubbles.super  what should I do before shipping?
+/bubbles.super  help me check whether this repo is Bubbles-ready
 → Responds with:
-  1. /bubbles.workflow  <feature> mode: harden-gaps-to-doc
-  2. /bubbles.security  <feature>
-  3. /bubbles.audit  <feature>
+  1. /bubbles.super  doctor --heal
+  2. /bubbles.commands
+  3. /bubbles.super  install hooks
 ```
 
-### Get Workflow Mode Advice
+### Still Not Sure?
 
-```
-/bubbles.super  which mode should I use for improving an existing feature?
-→ Responds with: improve-existing — runs analysis, gap detection, implementation, and full quality chain
-
-/bubbles.super  what's the difference between harden-to-doc and gaps-to-doc?
-→ Explains each mode and recommends based on your situation
-```
+If you are not sure whether you have a framework problem, a feature problem, or just need the right prompts, go to [Ask the Super First](ask-the-super-first.md).

@@ -6,11 +6,17 @@
 
 ---
 
+## <img src="../icons/lahey-bottle.svg" width="32"> Start Here
+
+| | Agent | Alias | Role | Quote |
+|---|-------|-------|------|-------|
+| <img src="../icons/lahey-bottle.svg" width="32"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
+
 ## <img src="../icons/bubbles-glasses.svg" width="32"> Orchestrators
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.workflow` | Julian | Cross-spec orchestrator. Calls the play, keeps the phases moving, and runs the whole job. | *"Boys, I got a plan. And this time it's a good one."* |
+| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
 | <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving without drama. | *"I can help with that."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
@@ -21,7 +27,7 @@
 | <img src="../icons/trinity-notebook.svg" width="32"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
 | <img src="../icons/jroc-mic.svg" width="32"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
 | <img src="../icons/randy-cheeseburger.svg" width="32"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
-| <img src="../icons/lahey-bottle.svg" width="32"> | `bubbles.audit` | Mr. Lahey | "I AM the liquor." I AM the policy. Enforces every. last. rule. | *"The shit winds are coming, Randy."* |
+| <img src="../icons/ted-badge.svg" width="32"> | `bubbles.audit` | Ted Johnson | Official, procedural, and impossible to sweet-talk. The final compliance cop. | *"This is an official audit now."* |
 | <img src="../icons/ricky-dynamite.svg" width="32"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
 
 ## <img src="../icons/barb-keys.svg" width="32"> Planning & Design
@@ -30,7 +36,7 @@
 |---|-------|-------|------|-------|
 | <img src="../icons/ray-lawnchair.svg" width="32"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
 | <img src="../icons/lucy-mirror.svg" width="32"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"Ricky, you can't just— fine."* |
-| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.design` | Jacob | Quietly competent architecture. Does the thinking while others take credit. | *"I can help with that, Mr. Lahey."* |
+| <img src="../icons/sarah-clipboard.svg" width="32"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
 | <img src="../icons/barb-keys.svg" width="32"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
 | <img src="../icons/george-green-badge.svg" width="32"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
 | <img src="../icons/conky-puppet.svg" width="32"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
@@ -40,7 +46,7 @@
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"Trevor, I think we broke something."* |
+| <img src="../icons/cory-cap.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I found the thing that's busted."* |
 | <img src="../icons/bill-wrench.svg" width="32"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
 | <img src="../icons/cyrus-sunglasses.svg" width="32"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
 | <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Have another drink, Ray!"* |
@@ -54,8 +60,7 @@
 | <img src="../icons/trevor-handoff.svg" width="32"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Cory, take this to Julian."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="32"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
-| <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.create-skill` | Phil Collins | Creates new things. Big, bold, unmissable. | *"BAAAAM!"* |
-| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.super` | Bubbles (the super) | First-touch assistant. Ask Bubbles first for the right command, workflow, setup action, or next move. | *"Decent. Let's figure out the right move before we make a mess of this."* |
+| <img src="../icons/sam-binoculars.svg" width="32"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"You need a specialty for this one."* |
 
 ---
 
@@ -63,10 +68,10 @@
 
 | Alias | Maps To | Quote |
 |-------|---------|-------|
-| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Julian's running point, boys."* |
+| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
-| `sunnyvale i-am-the-liquor` | `bubbles.audit --strict` | *"I AM the liquor, Randy"* |
-| `sunnyvale shit-winds` | `bubbles.audit` | *"The shit winds are coming"* |
+| `sunnyvale by-the-book` | `bubbles.audit --strict` | *"This is by the book now."* |
+| `sunnyvale open-and-shut` | `bubbles.audit` | *"Open and shut case."* |
 | `sunnyvale get-two-birds-stoned` | `bubbles.implement` + `bubbles.test` | *"Get two birds stoned at once"* |
 | `sunnyvale smokes-lets-go` | `bubbles.bootstrap` | *"Smokes, let's go."* |
 | `sunnyvale know-what-im-sayin` | `bubbles.docs` | *"Know what I'm sayin'?"* |
@@ -74,14 +79,14 @@
 | `sunnyvale way-she-goes` | `bubbles.analyst` | *"Way she goes, boys."* |
 | `sunnyvale peanut-butter-and-jam` | `bubbles.gaps` | *"BAAAAM! Peanut butter and JAAAAM!"* |
 | `sunnyvale safety-always-off` | `bubbles.security` | *"Safety... always off"* |
-| `sunnyvale decent` | `bubbles.status` | *"DEEEE-CENT!"* |
+| `sunnyvale roll-camera` | `bubbles.status` | *(camera keeps rolling)* |
 | `sunnyvale greasy` | `bubbles.harden` | *"That's greasy, boys."* |
 | `sunnyvale supply-and-command` | `bubbles.plan` | *"It's supply and command, Julian"* |
 | `sunnyvale water-under-the-fridge` | `bubbles.simplify` | *"It's all water under the fridge"* |
 | `sunnyvale have-a-good-one` | `bubbles.handoff` | *"Have a good one, boys"* |
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
 | `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
-| `sunnyvale the-super` | `bubbles.super` | *"Ask Bubbles first."* |
+| `sunnyvale the-super` | `bubbles.super` | *"Ask the super first."* |
 
 ---
 
@@ -220,17 +225,19 @@ All agents accept natural language. You don't need to know the exact mode or par
 | `/bubbles.chaos  break the search feature` | scope: search |
 | `/bubbles.super  what's the best way to fix a bug?` | Platform Assistant: recommend bugfix sequence |
 
-### Using Super as Your Platform Assistant
+### Using The Super as Your Assistant
 
-When you're not sure which agent to use, ask `bubbles.super`:
+When you're not sure which agent to use, ask `bubbles.super` first:
 
-| You Ask | Ops Responds With |
+| You Ask | The Super Responds With |
 |---------|-------------------|
 | `/bubbles.super  I have a new feature idea for search` | Recommended sequence: analyst → ux → workflow product-to-delivery |
 | `/bubbles.super  I want to make the booking feature better` | `/bubbles.workflow  <booking-spec> mode: improve-existing` |
 | `/bubbles.super  which mode should I use?` | Decision tree based on your situation |
 | `/bubbles.super  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
 | `/bubbles.super  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |
+| `/bubbles.super  why did my workflow stop after validate?` | Short diagnosis + the next command to recover or continue |
+| `/bubbles.super  turn this problem into the right Bubbles prompts` | A command sequence with brief reasons for each step |
 
 ### During Implementation
 
