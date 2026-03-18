@@ -10,8 +10,8 @@
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees everything through those thick glasses. The real brains. | *"Something's fucky."* |
-| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.iterate` | Julian | Single-iteration scope runner. Cool. Composed. Drink never spills. | *"Boys, we need a plan. A good plan this time."* |
+| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.workflow` | Julian | Cross-spec orchestrator. Calls the play, keeps the phases moving, and runs the whole job. | *"Boys, I got a plan. And this time it's a good one."* |
+| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving without drama. | *"I can help with that."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 
@@ -55,7 +55,7 @@
 | <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="32"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
 | <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.create-skill` | Phil Collins | Creates new things. Big, bold, unmissable. | *"BAAAAM!"* |
-| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.ops` | Bubbles (the super) | Manages the park. Health checks, hooks, upgrades, metrics, gates. | *"Decent! Everything's running smooth."* |
+| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.super` | Bubbles (the super) | First-touch assistant. Ask Bubbles first for the right command, workflow, setup action, or next move. | *"Decent. Let's figure out the right move before we make a mess of this."* |
 
 ---
 
@@ -63,7 +63,7 @@
 
 | Alias | Maps To | Quote |
 |-------|---------|-------|
-| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling all the strings, boys"* |
+| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Julian's running point, boys."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale i-am-the-liquor` | `bubbles.audit --strict` | *"I AM the liquor, Randy"* |
 | `sunnyvale shit-winds` | `bubbles.audit` | *"The shit winds are coming"* |
@@ -81,7 +81,7 @@
 | `sunnyvale have-a-good-one` | `bubbles.handoff` | *"Have a good one, boys"* |
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
 | `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
-| `sunnyvale the-super` | `bubbles.ops` | *"I'm the park supervisor."* |
+| `sunnyvale the-super` | `bubbles.super` | *"Ask Bubbles first."* |
 
 ---
 
@@ -202,7 +202,7 @@
 | Full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
 | Bootstrap artifacts | `/bubbles.bootstrap  create feature for <name>` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
-| **Don't know what to do?** | **`/bubbles.ops  help me <describe goal>`** |
+| **Don't know what to do?** | **`/bubbles.super  help me <describe goal>`** |
 
 ### Natural Language — Just Say What You Want
 
@@ -218,19 +218,19 @@ All agents accept natural language. You don't need to know the exact mode or par
 | `/bubbles.analyst  how does our booking compare to competitors?` | mode: improve, competitive research on |
 | `/bubbles.security  scan for hardcoded secrets` | focus: secrets |
 | `/bubbles.chaos  break the search feature` | scope: search |
-| `/bubbles.ops  what's the best way to fix a bug?` | Command Assistant: recommend bugfix sequence |
+| `/bubbles.super  what's the best way to fix a bug?` | Platform Assistant: recommend bugfix sequence |
 
-### Using Ops as Your Command Assistant
+### Using Super as Your Platform Assistant
 
-When you're not sure which agent to use, ask `bubbles.ops`:
+When you're not sure which agent to use, ask `bubbles.super`:
 
 | You Ask | Ops Responds With |
 |---------|-------------------|
-| `/bubbles.ops  I have a new feature idea for search` | Recommended sequence: analyst → ux → workflow product-to-delivery |
-| `/bubbles.ops  I want to make the booking feature better` | `/bubbles.workflow  <booking-spec> mode: improve-existing` |
-| `/bubbles.ops  which mode should I use?` | Decision tree based on your situation |
-| `/bubbles.ops  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
-| `/bubbles.ops  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |
+| `/bubbles.super  I have a new feature idea for search` | Recommended sequence: analyst → ux → workflow product-to-delivery |
+| `/bubbles.super  I want to make the booking feature better` | `/bubbles.workflow  <booking-spec> mode: improve-existing` |
+| `/bubbles.super  which mode should I use?` | Decision tree based on your situation |
+| `/bubbles.super  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
+| `/bubbles.super  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |
 
 ### During Implementation
 
@@ -270,26 +270,26 @@ When you're not sure which agent to use, ask `bubbles.ops`:
 | End of session | `/bubbles.handoff` |
 | Resume tomorrow | `/bubbles.workflow  resume` |
 
-### Framework Operations — `bubbles.ops` or CLI
+### Framework Operations — `bubbles.super` or CLI
 
 | Situation | Agent | CLI |
 |-----------|-------|-----|
-| Check project health | `/bubbles.ops doctor` | `bubbles doctor` |
-| Auto-fix health issues | `/bubbles.ops doctor --heal` | `bubbles doctor --heal` |
-| Install git hooks | `/bubbles.ops install hooks` | `bubbles hooks install --all` |
-| Show available hooks | `/bubbles.ops list hook catalog` | `bubbles hooks catalog` |
-| Add custom hook | `/bubbles.ops add pre-push hook for license` | `bubbles hooks add pre-push script.sh --name my-hook` |
-| Add custom gate | `/bubbles.ops add license gate` | `bubbles project gates add name --script path` |
-| Show scope dependencies | `/bubbles.ops show dag for 042` | `bubbles dag 042` |
-| Enable metrics | `/bubbles.ops enable metrics` | `bubbles metrics enable` |
-| View lessons learned | `/bubbles.ops show lessons` | `bubbles lessons` |
-| Compact old lessons | `/bubbles.ops compact lessons` | `bubbles lessons compact` |
-| Upgrade Bubbles | `/bubbles.ops upgrade` | `bubbles upgrade` |
-| Upgrade (dry run) | `/bubbles.ops upgrade --dry-run` | `bubbles upgrade --dry-run` |
-| **Help me choose an agent** | **`/bubbles.ops help me <goal>`** | — |
-| **Generate a command** | **`/bubbles.ops what command for <task>`** | — |
-| **Recommend workflow** | **`/bubbles.ops which mode for <situation>`** | — |
-| **Multi-step plan** | **`/bubbles.ops plan steps for <goal>`** | — |
+| Check project health | `/bubbles.super doctor` | `bubbles doctor` |
+| Auto-fix health issues | `/bubbles.super doctor --heal` | `bubbles doctor --heal` |
+| Install git hooks | `/bubbles.super install hooks` | `bubbles hooks install --all` |
+| Show available hooks | `/bubbles.super list hook catalog` | `bubbles hooks catalog` |
+| Add custom hook | `/bubbles.super add pre-push hook for license` | `bubbles hooks add pre-push script.sh --name my-hook` |
+| Add custom gate | `/bubbles.super add license gate` | `bubbles project gates add name --script path` |
+| Show scope dependencies | `/bubbles.super show dag for 042` | `bubbles dag 042` |
+| Enable metrics | `/bubbles.super enable metrics` | `bubbles metrics enable` |
+| View lessons learned | `/bubbles.super show lessons` | `bubbles lessons` |
+| Compact old lessons | `/bubbles.super compact lessons` | `bubbles lessons compact` |
+| Upgrade Bubbles | `/bubbles.super upgrade` | `bubbles upgrade` |
+| Upgrade (dry run) | `/bubbles.super upgrade --dry-run` | `bubbles upgrade --dry-run` |
+| **Help me choose an agent** | **`/bubbles.super help me <goal>`** | — |
+| **Generate a command** | **`/bubbles.super what command for <task>`** | — |
+| **Recommend workflow** | **`/bubbles.super which mode for <situation>`** | — |
+| **Multi-step plan** | **`/bubbles.super plan steps for <goal>`** | — |
 
 ---
 

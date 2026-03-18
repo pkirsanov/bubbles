@@ -32,7 +32,7 @@ If you don't specify a mode, `full-delivery` is the default.
 
 The workflow agent infers the correct mode and parameters from your description. See the **Natural Language Mode Resolution** section in the workflow agent for the complete intent-to-mode mapping.
 
-**Not sure which mode?** Ask ops: `/bubbles.ops  which mode should I use for <your situation>`
+**Not sure which mode?** Ask super: `/bubbles.super  which mode should I use for <your situation>`
 
 ---
 

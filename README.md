@@ -93,7 +93,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── agents/
 │   ├── bubbles.workflow.agent.md    # 26 agent definitions
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.ops.agent.md         # NEW: framework operations
+│   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
 │   └── bubbles_shared/              # Shared governance docs
 │       ├── agent-common.md
@@ -143,8 +143,8 @@ Every agent has a job. Here's who does what.
 
 | Agent | Role | When to Use |
 |-------|------|-------------|
-| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Runs mode-driven phases with deterministic gates, retries, and resume. | Starting any multi-phase work |
-| <img src="icons/julian-glass.svg" width="20"> `bubbles.iterate` | **Scope executor.** Cool, composed. Executes one scope at a time. | Continuing scope-by-scope work |
+| <img src="icons/julian-glass.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Field captain for the whole operation. Runs mode-driven phases with deterministic gates, retries, and resume. | Starting any multi-phase work |
+| <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time. | Continuing scope-by-scope work |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
 
@@ -188,7 +188,7 @@ Every agent has a job. Here's who does what.
 | <img src="icons/t-cap.svg" width="20"> `bubbles.commands` | **Command registry.** Manages the project command reference. | Updating command docs |
 | <img src="icons/cory-trevor-smokes.svg" width="20"> `bubbles.create-skill` | **Skill creator.** Creates new repo-local skills. | Adding new skills |
 | <img src="icons/ricky-dynamite.svg" width="20"> `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
-| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.ops` | **Ops manager.** Health checks, hooks, upgrades, metrics, custom gates. The super. | Framework management |
+| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.super` | **First-touch assistant.** Ask Bubbles first for the right command, workflow, framework action, or next move. | When you're unsure what to do, or need framework management |
 
 ---
 
@@ -196,6 +196,7 @@ Every agent has a job. Here's who does what.
 
 ### 0. Bootstrap (after install)
 ```
+/bubbles.super                       — Ask Bubbles first for the best first step, or run framework ops
 /bubbles.commands                     — Auto-detect project, generate command registry
 /bubbles.bootstrap mode: refresh      — Verify config completeness
 ```
@@ -306,12 +307,13 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Harden the code quality | `/bubbles.harden` |
 | Break things on purpose | `/bubbles.chaos` |
 | Hand off to next session | `/bubbles.handoff` |
-| Check project health | `/bubbles.ops  doctor` |
-| Install git hooks | `/bubbles.ops  install hooks` |
-| Upgrade bubbles | `/bubbles.ops  upgrade` |
-| Add a custom quality gate | `/bubbles.ops  add a pre-push gate for license checking` |
-| View scope dependencies | `/bubbles.ops  show dag for 042` |
-| Enable metrics collection | `/bubbles.ops  enable metrics` |
+| Ask what to do first | `/bubbles.super  help me get this repo ready` |
+| Check project health | `/bubbles.super  doctor` |
+| Install git hooks | `/bubbles.super  install hooks` |
+| Upgrade bubbles | `/bubbles.super  upgrade` |
+| Add a custom quality gate | `/bubbles.super  add a pre-push gate for license checking` |
+| View scope dependencies | `/bubbles.super  show dag for 042` |
+| Enable metrics collection | `/bubbles.super  enable metrics` |
 
 See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 
@@ -325,7 +327,7 @@ bubbles/
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.ops.agent.md   # NEW: framework operations
+│   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
 ├── prompts/                   # 26 prompt shims
 ├── bubbles/                   # Workflow config + scripts + generated docs

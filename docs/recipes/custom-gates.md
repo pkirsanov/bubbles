@@ -7,7 +7,7 @@ Add project-specific quality checks that run alongside Bubbles' built-in 39 gate
 ## Add a Gate via Agent
 
 ```
-/bubbles.ops  add a pre-push gate that checks license compliance using scripts/license-check.sh
+/bubbles.super  add a pre-push gate that checks license compliance using scripts/license-check.sh
 ```
 
 The agent creates the gate script and registers it in `.github/bubbles-project.yaml`.

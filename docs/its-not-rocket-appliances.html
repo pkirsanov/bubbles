@@ -338,24 +338,24 @@
 <!-- ═══════════════════════════════ THE ROSTER ═══════════════════════════════ -->
 <div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Sunnyvale Roster — All 26 Agents</div>
 
-<h3 style="color: var(--accent); margin: 1rem 0 0.5rem;"><img src="../icons/bubbles-glasses.svg" width="20" style="vertical-align: middle;"> Orchestrators</h3>
+<h3 style="color: var(--accent); margin: 1rem 0 0.5rem;"><img src="../icons/julian-glass.svg" width="20" style="vertical-align: middle;"> Orchestrators</h3>
 <div class="grid">
-  <div class="card">
-    <div class="icon"><img src="../icons/bubbles-glasses.svg" alt="Bubbles' Glasses"></div>
-    <div class="info">
-      <div class="agent-name">bubbles.workflow</div>
-      <div class="character">Bubbles</div>
-      <div class="role">Cross-spec orchestrator. Sees everything through those thick glasses. The real brains of the operation.</div>
-      <div class="quote">"Something's fucky." (when gates fail)</div>
-    </div>
-  </div>
   <div class="card">
     <div class="icon"><img src="../icons/julian-glass.svg" alt="Julian's Glass"></div>
     <div class="info">
-      <div class="agent-name">bubbles.iterate</div>
+      <div class="agent-name">bubbles.workflow</div>
       <div class="character">Julian</div>
-      <div class="role">Single-iteration scope runner. Cool. Composed. Drink never spills. Scope never fails.</div>
-      <div class="quote">"Boys, we need a plan. A good plan this time."</div>
+      <div class="role">Cross-spec orchestrator. Calls the play, keeps the phases moving, and runs the whole job.</div>
+      <div class="quote">"Boys, I got a plan. And this time it's a good one."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/jacob-hardhat.svg" alt="Jacob's Hard Hat"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.iterate</div>
+      <div class="character">Jacob</div>
+      <div class="role">Single-iteration scope runner. Quietly keeps the next scope moving without drama.</div>
+      <div class="quote">"I can help with that, Mr. Lahey."</div>
     </div>
   </div>
 </div>
@@ -572,6 +572,15 @@
       <div class="quote">"BAAAAM! Peanut butter and JAAAAM!"</div>
     </div>
   </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/bubbles-glasses.svg" alt="Bubbles' Glasses"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.super</div>
+      <div class="character">Bubbles</div>
+      <div class="role">First-touch assistant. Park supervisor, command guru, workflow guide, and framework operator.</div>
+      <div class="quote">"Decent. Let's figure out the right move before we make a mess of this."</div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════ COMMAND ALIASES ═══════════════════════════════ -->
@@ -589,7 +598,7 @@
     <tr>
       <td class="cmd">sunnyvale pull-the-strings</td>
       <td class="maps-to">bubbles.workflow</td>
-      <td class="quote-col">"Bubbles is pulling all the strings, boys"</td>
+      <td class="quote-col">"Julian's running point, boys"</td>
     </tr>
     <tr>
       <td class="cmd">sunnyvale worst-case-ontario</td>
@@ -675,6 +684,11 @@
       <td class="cmd">sunnyvale mans-gotta-eat</td>
       <td class="maps-to">bubbles.validate</td>
       <td class="quote-col">"A man's gotta eat, Julian"</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale the-super</td>
+      <td class="maps-to">bubbles.super</td>
+      <td class="quote-col">"I'm the park supervisor."</td>
     </tr>
   </tbody>
 </table>

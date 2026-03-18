@@ -16,8 +16,8 @@ You have a feature idea (or a requirement from a stakeholder) and need to take i
 # Easiest — one command does everything:
 /bubbles.workflow  Build a real-time notification system with email and push support mode: product-to-delivery
 
-# Or ask ops for guidance first:
-/bubbles.ops  I want to build a notification system, what should I do?
+# Or ask super for guidance first:
+/bubbles.super  I want to build a notification system, what should I do?
 ```
 
 ## The Steps (Manual Control)

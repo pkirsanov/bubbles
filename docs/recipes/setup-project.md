@@ -15,7 +15,7 @@ This installs agents, scripts, prompts, and scaffolds your project config.
 ## Step 2: Check Health
 
 ```
-/bubbles.ops  check my project health
+/bubbles.super  check my project health
 ```
 
 Or:
@@ -25,7 +25,7 @@ bash .github/bubbles/scripts/cli.sh doctor
 
 Fix any issues:
 ```
-/bubbles.ops  doctor --heal
+/bubbles.super  doctor --heal
 ```
 
 ## Step 3: Fill In Your Config
@@ -47,7 +47,7 @@ This auto-detects your project and fills in the command registry.
 ## Step 5: Install Git Hooks
 
 ```
-/bubbles.ops  install hooks
+/bubbles.super  install hooks
 ```
 
 ## Step 6: Start Your First Feature

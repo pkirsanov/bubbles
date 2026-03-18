@@ -226,7 +226,7 @@ autoEscalation:
 # Project-local custom gates (discovered from .github/bubbles-project.yaml)
 # These are NEVER defined in this file — this file is 100% Bubbles-owned.
 # Custom gates are auto-discovered by the state transition guard script.
-# See bubbles.ops agent and bubbles-project.yaml for management.
+# See bubbles.super agent and bubbles-project.yaml for management.
 customGatesDiscovery:
   configFile: .github/bubbles-project.yaml
   idRange: G100+

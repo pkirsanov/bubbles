@@ -187,88 +187,88 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 
 **Syntax:**
 ```
-@bubbles.workflow <spec-targets> mode: <mode-name>
+/bubbles.workflow <spec-targets> mode: <mode-name>
 ```
 
 **Examples:**
 ```
 # Harden existing specs and fix all findings:
-@bubbles.workflow 011-037 mode: harden-to-doc
+/bubbles.workflow 011-037 mode: harden-to-doc
 
 # Close design-vs-code gaps and fix:
-@bubbles.workflow 027 mode: gaps-to-doc
+/bubbles.workflow 027 mode: gaps-to-doc
 
 # Full quality sweep (most thorough):
-@bubbles.workflow 011,012,019 mode: harden-gaps-to-doc
+/bubbles.workflow 011,012,019 mode: harden-gaps-to-doc
 
 # Reconcile stale artifacts/state, then deliver:
-@bubbles.workflow 027 mode: reconcile-to-doc
+/bubbles.workflow 027 mode: reconcile-to-doc
 
 # Multiple specs — auto-batches (per-spec implement, ONE shared quality chain):
-@bubbles.workflow 011-037 mode: improve-existing
+/bubbles.workflow 011-037 mode: improve-existing
 
 # Force batch off for multiple specs (sequential per-spec):
-@bubbles.workflow 011-037 mode: harden-to-doc batch: false
+/bubbles.workflow 011-037 mode: harden-to-doc batch: false
 
 # Full delivery from scratch:
-@bubbles.workflow 042 mode: full-delivery
+/bubbles.workflow 042 mode: full-delivery
 
 # Strict delivery with per-spec commits:
-@bubbles.workflow 011-037 mode: full-delivery-strict
+/bubbles.workflow 011-037 mode: full-delivery-strict
 
 # Auto-discover highest-value work:
-@bubbles.workflow mode: value-first-e2e-batch
+/bubbles.workflow mode: value-first-e2e-batch
 
 # Harden specs only (no code):
-@bubbles.workflow 011-037 mode: spec-scope-hardening
+/bubbles.workflow 011-037 mode: spec-scope-hardening
 
 # Quick bug fix:
-@bubbles.workflow specs/027-feature/bugs/BUG-001 mode: bugfix-fastlane
+/bubbles.workflow specs/027-feature/bugs/BUG-001 mode: bugfix-fastlane
 
 # Full discovery-to-delivery (analyst → UX → design → implement):
-@bubbles.workflow specs/050-new-feature mode: product-to-delivery
+/bubbles.workflow specs/050-new-feature mode: product-to-delivery
 
 # Same, but force a short Socratic clarification loop first:
-@bubbles.workflow specs/050-new-feature mode: product-to-delivery socratic: true socraticQuestions: 4
+/bubbles.workflow specs/050-new-feature mode: product-to-delivery socratic: true socraticQuestions: 4
 
 # Requirements + UX + design only (no code):
-@bubbles.workflow specs/050-new-feature mode: product-discovery
+/bubbles.workflow specs/050-new-feature mode: product-discovery
 
 # Analyze existing feature for competitive improvements:
-@bubbles.workflow specs/019-visual-page-builder mode: improve-existing
+/bubbles.workflow specs/019-visual-page-builder mode: improve-existing
 
 # Randomized adversarial quality probing (ALL specs in repo, default pool):
-@bubbles.workflow mode: stochastic-quality-sweep
+/bubbles.workflow mode: stochastic-quality-sweep
 
 # Keep work isolated and auto-commit only after validated milestones:
-@bubbles.workflow 042 mode: full-delivery gitIsolation: true autoCommit: true
+/bubbles.workflow 042 mode: full-delivery gitIsolation: true autoCommit: true
 
 # Restricted to specific specs (only these specs in the random pool):
-@bubbles.workflow 011-037 mode: stochastic-quality-sweep
+/bubbles.workflow 011-037 mode: stochastic-quality-sweep
 
 # Time-boxed quality sweep (1 hour, chaos+validate only, all specs):
-@bubbles.workflow mode: stochastic-quality-sweep minutes: 60 triggerAgents: chaos,validate
+/bubbles.workflow mode: stochastic-quality-sweep minutes: 60 triggerAgents: chaos,validate
 
 # Limited rounds with specific trigger agents across specific specs:
-@bubbles.workflow 011,027,037 mode: stochastic-quality-sweep maxRounds: 5 triggerAgents: harden,gaps,simplify
+/bubbles.workflow 011,027,037 mode: stochastic-quality-sweep maxRounds: 5 triggerAgents: harden,gaps,simplify
 
 # Priority-driven iterate — pick next highest-priority work and deliver (1 iteration):
-@bubbles.workflow mode: iterate
+/bubbles.workflow mode: iterate
 
 # Run 5 iterations, each picking the next priority work:
-@bubbles.workflow mode: iterate iterations: 5
+/bubbles.workflow mode: iterate iterations: 5
 
 # Time-bounded iterate (2 hours, keep picking next work until time runs out):
-@bubbles.workflow mode: iterate minutes: 120
+/bubbles.workflow mode: iterate minutes: 120
 
 # Iterate with type filter — only pick improvement work:
-@bubbles.workflow mode: iterate type: improve
+/bubbles.workflow mode: iterate type: improve
 
 # Iterate with type filter — only chaos probing work:
-@bubbles.workflow mode: iterate type: chaos
+/bubbles.workflow mode: iterate type: chaos
 
 # Iterate scoped to specific specs (only pick work from these specs):
-@bubbles.workflow 011-037 mode: iterate iterations: 10
+/bubbles.workflow 011-037 mode: iterate iterations: 10
 ```
 
 ### Natural Language Mode Resolution (MANDATORY when no explicit `mode:` provided)

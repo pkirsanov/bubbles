@@ -14,7 +14,7 @@ Major reorganization and new features. Prefix-based file ownership, per-scope gi
 
 ### New Features
 
-- **`bubbles.ops` agent** (26th agent) — framework operations: health checks, hooks, upgrades, metrics, custom gates, lessons, diagnostics
+- **`bubbles.super` agent** (26th agent) — first-touch assistant for framework operations, commands, prompts, setup, upgrades, metrics, custom gates, lessons, and diagnostics
 - **Self-healing loop protocol (G039)** — bounded, non-stacking fix loops with maxDepth=1, context narrowing, retry budgets
 - **Atomic git commits** — `autoCommit: scope|dod` creates structured commits after validated milestones
 - **Lessons-learned memory** — `.specify/memory/lessons.md` with auto-compaction at workflow start when >150 lines
@@ -33,7 +33,7 @@ Major reorganization and new features. Prefix-based file ownership, per-scope gi
 - Install.sh migration logic for pre-v2 → v2 path transitions
 - `bubbles-project.yaml` for project-local extensions (custom gates) without modifying workflows.yaml
 - `hooks.json` for hook registry management
-- Fun mode aliases for new ops agent
+- Fun mode aliases for new super agent
 
 ## v1.0.0 — 2026-03-17
 
