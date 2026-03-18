@@ -133,9 +133,9 @@ Supported options:
 - `socratic: true|false` - Opt into targeted clarification before planning/analysis work
 - `socraticQuestions: <1-5>` - Max Socratic questions when enabled
 - `gitIsolation: true|false` - Opt into isolated branch/worktree setup
-- `autoCommit: true|false` - Opt into atomic validated commits
-- `maxScopeMinutes: <N>` - Planning heuristic for scope size
-- `maxDodMinutes: <N>` - Planning heuristic for DoD item size
+- `autoCommit: off|scope|dod` - Opt into atomic validated commits (off by default)
+- `maxScopeMinutes: <N>` - Planning heuristic for scope size (recommended 60-120)
+- `maxDodMinutes: <N>` - Planning heuristic for DoD item size (recommended 15-45)
 - `microFixes: true|false` - Keep failure recovery in narrow fix loops (default: true)
 
 ### Natural Language Input Resolution (MANDATORY when no structured options provided)

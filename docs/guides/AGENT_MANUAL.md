@@ -4,7 +4,7 @@
 
 This manual covers every agent in the Bubbles system — what it does, when to use it, and how it fits into the overall workflow.
 
-## <img src="../../icons/lahey-bottle.svg" width="28"> Start Here First
+## <img src="../../icons/lahey-badge.svg" width="28"> Start Here First
 
 ### bubbles.super — *"I'm the trailer park supervisor. Start here and I'll tell you the next move."*
 
@@ -89,8 +89,8 @@ Bubbles is the field captain of the operation. Orchestrates end-to-end delivery 
 
 **Execution tags it understands:**
 - `socratic: true` for bounded questioning before discovery/bootstrap
-- `gitIsolation: true` and `autoCommit: true` for opt-in git discipline
-- `maxScopeMinutes` and `maxDodMinutes` for tighter scope sizing
+- `gitIsolation: true` and `autoCommit: scope|dod` for opt-in git discipline
+- `maxScopeMinutes` and `maxDodMinutes` for tighter scope sizing (recommended: scope 60-120, DoD 15-45)
 - `microFixes: true` for narrow error-scoped fix loops
 
 ---

@@ -7,8 +7,8 @@ Workflow modes define **which phases run** and **in what order** for a given pie
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
 - `socratic: true` with `socraticQuestions: <1-5>` enables a bounded clarification loop before discovery/bootstrap work.
 - `gitIsolation: true` opts into isolated branch/worktree setup when repo policy allows it.
-- `autoCommit: true` opts into atomic commits after fully validated milestones.
-- `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing.
+- `autoCommit: scope|dod` opts into atomic commits after fully validated milestones (`off` is default).
+- `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing (recommended: scope 60-120, DoD 15-45).
 - `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
 
 ---
@@ -210,7 +210,7 @@ validate
 
 **Use when:** Quick gate check without full audit.
 
-### <img src="../../icons/lahey-bottle.svg" width="20"> audit-only
+### <img src="../../icons/lahey-badge.svg" width="20"> audit-only
 
 Run the audit phase only.
 

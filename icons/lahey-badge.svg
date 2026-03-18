@@ -1,0 +1,10 @@
+<!-- icon-name: lahey-badge -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Shield / badge shape -->
+  <path d="M 32 6 L 52 16 L 52 34 C 52 46 42 56 32 60 C 22 56 12 46 12 34 L 12 16 Z"/>
+  <!-- Star in the center -->
+  <polygon points="32,18 35,26 44,27 38,33 39,42 32,38 25,42 26,33 20,27 29,26" stroke-width="1.5"/>
+  <!-- SUPER text line -->
+  <line x1="24" y1="48" x2="40" y2="48" stroke-width="1.5"/>
+  <line x1="26" y1="51" x2="38" y2="51" stroke-width="1"/>
+</svg>

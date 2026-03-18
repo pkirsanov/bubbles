@@ -31,7 +31,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>26 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-bottle.svg" width="48"></td><td><strong>39 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>39 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/trinity-notebook.svg" width="48"></td><td><strong>Zero-fabrication policy</strong> — "tests pass" without terminal output? That's greasy, boys.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>23 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
@@ -139,11 +139,11 @@ specs/                                   # Feature/bug spec folders
 
 Every agent has a job. Start with the super when you need help, then hand off to the right specialist.
 
-### <img src="icons/lahey-bottle.svg" width="24"> Start Here
+### <img src="icons/lahey-badge.svg" width="24"> Start Here
 
 | Agent | Role | When to Use |
 |-------|------|-------------|
-| <img src="icons/lahey-bottle.svg" width="20"> `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
+| <img src="icons/lahey-badge.svg" width="20"> `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
 
 ### <img src="icons/bubbles-glasses.svg" width="24"> Orchestrators
 

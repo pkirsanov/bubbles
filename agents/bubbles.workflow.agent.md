@@ -71,7 +71,7 @@ handoffs:
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
 - If `socratic: true`, run a targeted discovery loop before bootstrap or implementation work: ask at most `socraticQuestions` high-signal questions, record the answers into artifacts, then resume autonomous execution.
 - If `gitIsolation: true`, prepare isolated branch/worktree setup before implementation when repo policy allows it. If policy or environment forbids it, record that constraint explicitly and continue without pretending isolation occurred.
-- If `autoCommit: true`, allow atomic commits only after a DoD item or scope is fully validated. Never commit speculative or partially validated work.
+- If `autoCommit` is set to `scope` or `dod`, allow atomic commits only after the corresponding validated milestone. Never commit speculative or partially validated work.
 - Respect `maxScopeMinutes` and `maxDodMinutes` as planning and execution pressure to keep work slices small; if a slice is too large, route back to `bubbles.plan` or `bubbles.iterate` to split it.
 - Keep failure handling inside micro-fix loops when `microFixes` is not explicitly false.
 - Classify failures (`code|test|docs|compliance|audit|chaos|environment`) and route by registry — routing means actively re-invoking the appropriate specialist agent, not just logging the failure.
@@ -131,9 +131,9 @@ Supported options:
 - `socratic: true|false` (default: false)
 - `socraticQuestions: <1-5>` (default: 3)
 - `gitIsolation: true|false` (default: false)
-- `autoCommit: true|false` (default: false)
-- `maxScopeMinutes: <N>` (optional sizing heuristic)
-- `maxDodMinutes: <N>` (optional sizing heuristic)
+- `autoCommit: off|scope|dod` (default: off)
+- `maxScopeMinutes: <N>` (optional sizing heuristic; recommended 60-120)
+- `maxDodMinutes: <N>` (optional sizing heuristic; recommended 15-45)
 - `microFixes: true|false` (default: true)
 - `max_specs: <N>`
 - `minutes: <N>` or `until: <RFC3339>`
@@ -241,7 +241,7 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 /bubbles.workflow mode: stochastic-quality-sweep
 
 # Keep work isolated and auto-commit only after validated milestones:
-/bubbles.workflow 042 mode: full-delivery gitIsolation: true autoCommit: true
+/bubbles.workflow 042 mode: full-delivery gitIsolation: true autoCommit: scope
 
 # Restricted to specific specs (only these specs in the random pool):
 /bubbles.workflow 011-037 mode: stochastic-quality-sweep

@@ -964,6 +964,36 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 17: Strict mode commit enforcement (commit-per-spec)
+# =============================================================================
+echo "--- Check 17: Strict Mode Commit Enforcement ---"
+if [[ "$state_workflow_mode" == "full-delivery-strict" ]] && [[ "$state_status" == "done" ]]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    spec_basename="$(basename "$feature_dir")"
+    spec_id="${spec_basename%%-*}"
+
+    feature_commit_count="$(git log --oneline -- "$feature_dir" 2>/dev/null | wc -l | tr -d ' ')"
+    if [[ "$feature_commit_count" -eq 0 ]]; then
+      fail "full-delivery-strict requires at least one commit touching $feature_dir (none found)"
+    else
+      pass "Found $feature_commit_count commit(s) touching $feature_dir"
+    fi
+
+    structured_commit_count="$(git log --format='%s' -- "$feature_dir" 2>/dev/null | grep -Ec "^spec\(${spec_id}\)|^bubbles\(${spec_id}/" || true)"
+    if [[ "$structured_commit_count" -eq 0 ]]; then
+      fail "full-delivery-strict requires at least one structured commit message for spec $spec_id (expected prefix: spec(${spec_id}) or bubbles(${spec_id}/...)"
+    else
+      pass "Found $structured_commit_count structured commit(s) for spec $spec_id"
+    fi
+  else
+    fail "full-delivery-strict commit enforcement requires execution inside a git worktree"
+  fi
+else
+  info "Strict-mode commit enforcement not required for workflowMode '$state_workflow_mode' with status '$state_status'"
+fi
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"

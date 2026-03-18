@@ -207,6 +207,15 @@ When optional tags are provided:
 - `maxScopeMinutes` is a planning heuristic ceiling for the total scope
 - `maxDodMinutes` is a planning heuristic ceiling for each DoD item
 
+Recommended planning bands (when not explicitly provided):
+- target ~60-120 minutes per scope
+- target ~15-45 minutes per DoD item
+
+Practical split trigger:
+- if a scope cannot be completed and fully evidenced in one focused session, split it
+- if a DoD item requires more than one unrelated command/evidence path, split it
+- if a scope has more than one independent acceptance outcome, split it
+
 Scopes MUST be split unless explicitly justified when they contain:
 - multiple unrelated user journeys
 - backend, frontend, and ops work that do not form one vertical slice
@@ -222,6 +231,7 @@ Required behavior:
 - repair the exact failure with focused context
 - rerun only the impacted command first
 - expand to broader validation only after the narrow failure is clean
+- keep retries bounded and narrowing (full context → file context → function/symbol context)
 
 Forbidden behavior:
 - blindly rerunning the entire workflow for a single compile or lint error

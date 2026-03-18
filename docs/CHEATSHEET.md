@@ -6,11 +6,11 @@
 
 ---
 
-## <img src="../icons/lahey-bottle.svg" width="32"> Start Here
+## <img src="../icons/lahey-badge.svg" width="32"> Start Here
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/lahey-bottle.svg" width="32"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
+| <img src="../icons/lahey-badge.svg" width="32"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
 
 ## <img src="../icons/bubbles-glasses.svg" width="32"> Orchestrators
 
@@ -122,7 +122,7 @@
 
 ---
 
-## <img src="../icons/lahey-bottle.svg" width="32"> The 39 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 39 Gates
 
 **Phase flow:**
 `analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
