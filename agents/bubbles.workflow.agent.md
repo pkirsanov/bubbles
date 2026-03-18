@@ -647,6 +647,13 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
 **Execution model:**
 
 1. **Batch phase — Analysis + Implementation (sequential per-spec, NO builds):**
+
+   **⚠️ BATCH STATUS PROMOTION LOCK (NON-NEGOTIABLE — Gate G036):**
+   During batch per-spec phases, **NO specialist agent may set `state.json` status to `"done"`**. Status promotion to `"done"` is exclusively handled by the `finalize` phase (step 2 below). When dispatching ANY specialist agent via `runSubagent` during batch per-spec phases, include this directive in the prompt:
+   > "You are running as part of a batch workflow. DO NOT set state.json status to 'done'. DO NOT run the state transition guard for promotion purposes. Only update artifacts (scopes.md, report.md, design.md) and record findings. Status promotion is handled exclusively by the finalize phase."
+   
+   After each specialist agent returns, **verify status was not changed**: read `state.json` and if `status` was changed to `"done"`, immediately revert it to `"in_progress"` and remove `"finalize"` from `completedPhases`.
+
    For each target spec in order:
    - If mode includes `analyze`: Run `analyze` phase for THIS spec — invoke `runSubagent` with bubbles.analyst role for this spec's `{FEATURE_DIR}` only (per-spec analysis, NOT batch-scoped). Then invoke bubbles.ux for this spec if it has UI. Each spec gets its OWN analysis written to its OWN spec.md. Apply G032 per-spec before continuing.
    - Run `select` phase via `runSubagent` (resolve scope, load artifacts)
@@ -686,6 +693,15 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Record per-spec implementation evidence and track which specs were implemented
    - Move to next spec
 
+   **⚠️ POST-PER-SPEC STATUS INTEGRITY SWEEP (MANDATORY before shared phases):**
+   After ALL specs have completed their per-spec phases and BEFORE entering the shared phase:
+   - For EACH batched spec, read `state.json` and verify `status` is `"in_progress"` (NOT `"done"`)
+   - If ANY spec's status was changed to `"done"` during per-spec phases (by a specialist agent violating G036):
+     - Revert `status` to `"in_progress"`
+     - Remove `"finalize"` from `completedPhases` if present
+     - Log: "⚠️ G036 violation detected: spec {ID} was prematurely promoted to done during per-spec phases. Status reverted."
+   - This sweep is the MECHANICAL ENFORCEMENT of the Batch Status Promotion Lock. Even if a specialist ignores the directive, this sweep catches and corrects the violation.
+
 2. **Shared phase — Build + Test + Quality (ONE pass covering ALL specs):**
    After ALL specs have been implemented:
    - Run ONE build covering all changes (no per-spec rebuilds)
@@ -697,7 +713,9 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run `finalize` phase — for EACH batched spec individually:
      1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
      2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
-     3. If both pass AND all DoD items are `[x]` AND all scopes are "Done" → set `state.json` status to `"done"`
+     3. **Current-run phase coherence check (Gate G036-finalize):** Verify that `completedPhases` in `state.json` includes ALL phases from the current mode's `phaseOrder` (not just phases from a prior workflow run). If the current batch run added phases (e.g., harden, gaps, implement in improve-existing), the finalize check MUST confirm those phases produced real work in the current session. Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases.
+     4. **Scope-status vs DoD integrity check:** For each scope in `scopes.md`, verify that if scope status is "Done", ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says "Done", revert scope status to "In Progress" and FAIL the finalize gate for this spec (status stays `"in_progress"`).
+     5. If checks 1-4 ALL pass AND all DoD items are `[x]` AND all scopes are "Done" → set `state.json` status to `"done"`
      4. Record ALL shared-phase evidence (test/validate/audit/chaos) in the spec's `report.md`
      5. Update `completedPhases` to include ALL phases that executed (validate, harden, gaps, implement, test, docs, audit, chaos as applicable)
      6. Append an `executionHistory` entry to `state.json` with agent=`bubbles.workflow`, mode, phases executed, scopes completed, and status transition (see Execution History Schema in scope-workflow.md)
