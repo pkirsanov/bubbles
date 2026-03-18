@@ -59,6 +59,21 @@ $ADDITIONAL_CONTEXT
 
 Use this section to provide specific files to review, known quality concerns, or areas to prioritize.
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "simplify the booking code" | scope: booking feature |
+| "remove dead code" | focus: dead code removal |
+| "reduce duplication" | focus: code reuse |
+| "this function is too complex" | focus: code quality |
+| "clean up after the last implementation" | (default: recently changed files) |
+| "make the API handlers more efficient" | focus: efficiency |
+| "refactor the auth middleware" | focus: specific files (auth middleware) |
+| "cut unnecessary abstractions" | focus: code quality (over-engineering) |
+
 ---
 
 ## Critical Requirements Compliance (Top Priority)

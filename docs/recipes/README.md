@@ -22,6 +22,8 @@ Optional execution tags you can append to many workflow commands:
 | [Fix a Bug](fix-a-bug.md) | "Something's broken and I need to fix it properly" |
 | [Resume Work](resume-work.md) | "I was working on something yesterday, need to pick up where I left off" |
 
+> **💡 Tip:** Not sure which recipe? Just ask: `/bubbles.ops  help me <describe what you want to do>` — the ops agent will recommend the right agent, mode, and steps.
+
 ## Quality & Maintenance
 
 | Recipe | Problem → Solution |

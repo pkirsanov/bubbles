@@ -74,6 +74,21 @@ Use this section to provide:
 - `feature: NNN-feature-name` - Associate with specific feature
 - Stack traces, reproduction steps, affected areas
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `mode:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "fix the login error" | mode: fix |
+| "document the calendar crash" | mode: document |
+| "there's a bug where bookings disappear" | mode: fix (default) |
+| "log this issue for later" | mode: document |
+| "investigate why search returns wrong results" | mode: fix |
+| "the page builder is broken on mobile" | mode: fix, (extract feature from context) |
+| "find bugs in the auth flow" | mode: fix, focus: auth |
+| "just document this, don't fix yet" | mode: document |
+
 ---
 
 ## Critical Requirements Compliance (Top Priority)

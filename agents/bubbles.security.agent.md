@@ -77,6 +77,23 @@ Supported options:
 - `severity: critical|high|medium|all` — Minimum severity to report (default: `all`)
 - `focus: auth|injection|secrets|dependencies|compliance` — Focus area
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "scan for vulnerabilities" | scope: full |
+| "check dependencies for CVEs" | scope: deps-only |
+| "review auth implementation" | focus: auth |
+| "look for injection risks" | focus: injection |
+| "scan for hardcoded secrets" | focus: secrets |
+| "threat model the API" | scope: threat-model-only |
+| "only report critical issues" | severity: critical |
+| "full security review of the booking feature" | scope: full |
+| "check for OWASP top 10 issues" | scope: code-only |
+| "compliance check" | focus: compliance |
+
 ---
 
 ## Execution Flow

@@ -69,6 +69,21 @@ Examples:
 - `sources: {FEATURE_DIR}/spec.md,{FEATURE_DIR}/scopes.md,docs/design/foo.md` (explicit source docs)
 - `scope: feature` (default) / `scope: project` (review all standard docs)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "update docs for the booking feature" | scope: feature (booking) |
+| "sync all documentation" | review: all |
+| "update API docs" | review: api |
+| "fix the architecture docs" | review: architecture |
+| "remove outdated documentation" | action: cleanup |
+| "update testing guide" | review: testing |
+| "make sure docs match the code" | action: drift-check |
+| "update all project docs" | scope: project |
+
 ---
 
 ## ⚠️ DOCUMENTATION MANDATE

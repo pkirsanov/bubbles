@@ -14,6 +14,11 @@ Implementation is done but you want a thorough quality check — find gaps, hard
 /bubbles.workflow  harden-gaps-to-doc for 042-catalog-assistant
 ```
 
+Or just use natural language:
+```
+/bubbles.workflow  do a full quality sweep on the catalog feature
+```
+
 **Phases:** harden → gaps → test → validate → docs
 
 ## What Each Phase Does

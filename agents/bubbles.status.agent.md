@@ -42,6 +42,21 @@ Supported modes:
 - `mode: report` (default) — read-only status report from artifacts
 - `mode: live` — run actual tests to verify reported status matches reality
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `mode:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "what's the status?" | mode: report |
+| "show me progress" | mode: report |
+| "is the booking feature done?" | scope: booking, mode: report |
+| "actually run the tests to check" | mode: live |
+| "verify status is real" | mode: live |
+| "how far along is spec 042?" | scope: 042, mode: report |
+| "give me a summary" | mode: report |
+| "are the reported results accurate?" | mode: live |
+
 ### Live Mode (`mode: live`)
 
 When `mode: live` is specified, bubbles.status goes beyond reading artifacts:

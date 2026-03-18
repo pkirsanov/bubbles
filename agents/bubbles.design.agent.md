@@ -86,6 +86,21 @@ Examples:
 - `surfaces: web,api,mobile,cli` (adapt to project)
 - `constraints: no-new-deps, maintain API v2`
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `mode:` or `design:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "design the notification system" | design: from-scratch, mode: non-interactive |
+| "update the design for auth" | design: update |
+| "create a design from the analyst output" | mode: from-analysis |
+| "help me design this, ask questions" | mode: interactive |
+| "redesign the booking architecture" | design: update, mode: interactive |
+| "create technical design for the new API" | design: from-scratch |
+| "design for web and mobile" | surfaces: web,mobile |
+| "design without adding new dependencies" | constraints: no-new-deps |
+
 ---
 
 ## ⚠️ DESIGN MANDATE

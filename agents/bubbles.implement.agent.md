@@ -86,6 +86,22 @@ Execution control options:
 - `stop after: scope 3` - stop after completing scope 3
 - `microFixes: true|false` - keep failures in small repair loops before broader reruns (default: true)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `mode:` or `scopes:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "implement the next scope" | mode: next |
+| "do scope 3" | scopes: 3 |
+| "finish scopes 2 through 5" | scopes: 2,3,4,5 |
+| "implement everything" | mode: continuous |
+| "just the first scope" | scopes: 1 |
+| "do scope 2 and 4" | scopes: 2,4 |
+| "implement up to scope 3" | stop after: scope 3 |
+| "continue from where we left off" | mode: continuous (picks first incomplete) |
+| "implement the booking flow scope" | (match scope name against scopes.md, resolve number) |
+
 ---
 
 ## ⚠️ Loop Guard: Explicit Read Limits (CRITICAL)

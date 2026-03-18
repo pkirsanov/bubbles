@@ -64,6 +64,22 @@ $ADDITIONAL_CONTEXT
 
 Use this section to specify scope, test types, coverage targets, and compliance review mode.
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "run all tests for the booking feature" | scope: booking feature, types: all |
+| "fix failing integration tests" | focus: integration, action: fix |
+| "check test coverage for auth" | scope: auth, action: coverage |
+| "run unit tests only" | types: unit |
+| "run e2e tests" | types: e2e-api, e2e-ui |
+| "why are tests failing?" | action: triage |
+| "add missing test coverage" | action: gap-fill |
+| "verify the calendar fix works" | scope: calendar, action: verify-fix (red→green) |
+| "stress test the API" | types: stress |
+
 ---
 
 ## ⚠️ TESTING MANDATE

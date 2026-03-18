@@ -202,6 +202,35 @@
 | Full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
 | Bootstrap artifacts | `/bubbles.bootstrap  create feature for <name>` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
+| **Don't know what to do?** | **`/bubbles.ops  help me <describe goal>`** |
+
+### Natural Language — Just Say What You Want
+
+All agents accept natural language. You don't need to know the exact mode or parameters — just describe what you want:
+
+| You Type | Agent Understands |
+|----------|-------------------|
+| `/bubbles.workflow  improve the booking feature to be competitive` | mode: improve-existing, spec: booking |
+| `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
+| `/bubbles.iterate  fix tests for the page builder` | type: tests, feature: page-builder |
+| `/bubbles.implement  do the next scope` | mode: next |
+| `/bubbles.test  why are integration tests failing?` | action: triage, types: integration |
+| `/bubbles.analyst  how does our booking compare to competitors?` | mode: improve, competitive research on |
+| `/bubbles.security  scan for hardcoded secrets` | focus: secrets |
+| `/bubbles.chaos  break the search feature` | scope: search |
+| `/bubbles.ops  what's the best way to fix a bug?` | Command Assistant: recommend bugfix sequence |
+
+### Using Ops as Your Command Assistant
+
+When you're not sure which agent to use, ask `bubbles.ops`:
+
+| You Ask | Ops Responds With |
+|---------|-------------------|
+| `/bubbles.ops  I have a new feature idea for search` | Recommended sequence: analyst → ux → workflow product-to-delivery |
+| `/bubbles.ops  I want to make the booking feature better` | `/bubbles.workflow  <booking-spec> mode: improve-existing` |
+| `/bubbles.ops  which mode should I use?` | Decision tree based on your situation |
+| `/bubbles.ops  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
+| `/bubbles.ops  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |
 
 ### During Implementation
 
@@ -257,6 +286,10 @@
 | Compact old lessons | `/bubbles.ops compact lessons` | `bubbles lessons compact` |
 | Upgrade Bubbles | `/bubbles.ops upgrade` | `bubbles upgrade` |
 | Upgrade (dry run) | `/bubbles.ops upgrade --dry-run` | `bubbles upgrade --dry-run` |
+| **Help me choose an agent** | **`/bubbles.ops help me <goal>`** | — |
+| **Generate a command** | **`/bubbles.ops what command for <task>`** | — |
+| **Recommend workflow** | **`/bubbles.ops which mode for <situation>`** | — |
+| **Multi-step plan** | **`/bubbles.ops plan steps for <goal>`** | — |
 
 ---
 

@@ -57,6 +57,20 @@ Supported options (optional):
 - `compliance: off|selected|all-tests` (default: `selected` for hardening)
 - `complianceFix: report-only|enforce` (default: `enforce`)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "harden the booking feature" | scope: booking |
+| "make sure everything is bulletproof" | compliance: all-tests |
+| "just report issues, don't fix" | complianceFix: report-only |
+| "deep quality check on auth" | scope: auth, compliance: all-tests |
+| "verify all tasks are really done" | focus: task verification |
+| "check code quality without running tests" | compliance: off |
+| "full hardening pass" | compliance: all-tests, complianceFix: enforce |
+
 ---
 
 ## ⚠️ HARDENING MANDATE

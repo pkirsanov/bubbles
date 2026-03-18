@@ -74,6 +74,22 @@ Supported options:
 - `socratic: true|false` — Opt into targeted clarification questions before finalizing the analysis
 - `socraticQuestions: <1-5>` — Maximum number of Socratic questions (default: 3)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `mode:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "build a new notification system" | mode: greenfield |
+| "analyze the booking feature" | mode: improve |
+| "improve the search experience" | mode: improve, focus: search |
+| "create requirements for a dashboard" | mode: greenfield |
+| "what should we build for real-time alerts?" | mode: greenfield |
+| "how does our booking compare to competitors?" | mode: improve, (enable competitive research) |
+| "analyze this feature offline" | mode: improve, skip_competitive: true |
+| "research Airbnb and VRBO for inspiration" | competitors: airbnb.com, vrbo.com |
+| "help me figure out what to build, ask me questions" | mode: greenfield, socratic: true |
+
 ---
 
 ## ⚠️ ANALYSIS MANDATE

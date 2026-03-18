@@ -58,6 +58,23 @@ $ADDITIONAL_CONTEXT
 
 Use this section to provide known performance bottlenecks, stability incidents, SLO targets, deployment environment constraints, or specific subsystems to prioritize.
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "fix flaky tests" | focus: reliability |
+| "improve API latency" | focus: performance |
+| "Docker containers keep crashing" | focus: infrastructure |
+| "database queries are slow" | focus: performance (DB) |
+| "fix the build system" | focus: build/CI |
+| "optimize memory usage" | focus: resource usage |
+| "deployment keeps failing" | focus: infrastructure/deployment |
+| "configuration is a mess" | focus: configuration |
+| "make startup faster" | focus: performance (startup) |
+| "stabilize the whole system" | (full stabilization pass) |
+
 ---
 
 ## Stabilization Mandate

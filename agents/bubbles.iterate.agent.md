@@ -138,6 +138,35 @@ Supported options:
 - `maxDodMinutes: <N>` - Planning heuristic for DoD item size
 - `microFixes: true|false` - Keep failure recovery in narrow fix loops (default: true)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT explicit `type:` or `mode:` parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "continue working on the booking feature" | feature: booking, type: implement |
+| "fix tests for the page builder" | feature: page-builder, type: tests |
+| "improve this feature" | type: improve |
+| "find what's missing in auth" | feature: auth, type: gaps |
+| "harden the API" | type: harden |
+| "pick up the calendar bug" | type: bugfix, pick_up_incomplete_bugs: true |
+| "keep working for 2 hours" | minutes: 120, run_mode: endless |
+| "do 3 rounds of work" | iterations: 3 |
+| "work on whatever needs attention" | (auto-detect, no type filter) |
+| "focus on documentation" | type: docs |
+| "make this more stable" | type: stabilize |
+| "simplify the code" | type: refactor |
+| "chaos test the whole system" | type: chaos |
+| "security review on auth" | feature: auth, type: security |
+| "analyze the search experience" | feature: search, type: analyze |
+
+**Resolution steps:**
+1. Extract feature/spec target from request (spec numbers, feature names, bug references)
+2. Match work type keywords → `type` parameter
+3. Extract time/iteration bounds → `minutes`, `iterations`, `run_mode`
+4. Extract focus area → `focus` parameter
+5. Confirm resolved parameters before starting
+
 ---
 
 ## Workflow Mode Engine (MANDATORY)

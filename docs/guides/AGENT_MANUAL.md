@@ -376,6 +376,42 @@ Packages session context for the next session. Creates a handoff document with w
 
 ---
 
+### bubbles.ops — *"Decent! Everything's running smooth."*
+
+Framework operations manager AND interactive command assistant. Manages project health, hooks, gates, metrics, upgrades — AND helps you figure out what to do and which agent to use.
+
+**Use when:**
+- Managing Bubbles framework (health, hooks, gates, upgrades, metrics)
+- **Not sure which agent or mode to use** — ask ops for guidance
+- **Need a multi-step plan** — ops generates the correct sequence of prompts
+- **Want to generate a precise command** — describe your goal in plain English
+
+**Examples (framework ops):**
+```
+/bubbles.ops  check project health
+/bubbles.ops  install hooks
+/bubbles.ops  upgrade bubbles
+/bubbles.ops  show lessons learned
+```
+
+**Examples (command assistant):**
+```
+/bubbles.ops  I want to build a new search feature, what do I do?
+/bubbles.ops  which workflow mode should I use for improving an existing feature?
+/bubbles.ops  help me write a command for chaos testing everything for 2 hours
+/bubbles.ops  what's the best way to fix a bug properly?
+/bubbles.ops  plan the steps to get a feature from idea to production
+/bubbles.ops  generate a command to harden specs 11 through 37
+```
+
+**What the command assistant does:**
+1. Identifies the right agent(s) for your goal
+2. Generates the exact prompt/command to type
+3. For complex goals, creates a multi-step sequence with explanations
+4. Recommends the best workflow mode based on your situation
+
+---
+
 ### bubbles.commands
 
 Command registry manager. Keeps the project's command reference up to date.
@@ -404,6 +440,47 @@ Bug investigation and fixing. Full workflow: reproduction → root cause → fix
 ```
 /bubbles.bug  Users can't log in when password contains special characters
 ```
+
+---
+
+## Natural Language Input — All Agents
+
+**Every agent in Bubbles accepts natural language input.** You don't need to memorize modes, parameters, or structured syntax. Just describe what you want, and the agent infers the correct settings.
+
+### How It Works
+
+Each agent has a **Natural Language Input Resolution** system that:
+1. **Extracts the target** — feature names, spec numbers, bug references from your text
+2. **Matches intent keywords** — maps your phrases to the agent's specific modes/options
+3. **Confirms resolution** — briefly states what it understood before starting
+
+### Examples Across Agents
+
+| Agent | Natural Language | What It Resolves To |
+|-------|-----------------|---------------------|
+| `bubbles.workflow` | "improve the booking feature" | mode: improve-existing, spec: booking |
+| `bubbles.iterate` | "keep working for 2 hours" | minutes: 120, run_mode: endless |
+| `bubbles.implement` | "implement the next scope" | mode: next |
+| `bubbles.test` | "fix failing integration tests" | focus: integration, action: fix |
+| `bubbles.design` | "design the notification system" | design: from-scratch |
+| `bubbles.analyst` | "how does our search compare?" | mode: improve, competitive research |
+| `bubbles.bug` | "the calendar is broken on mobile" | mode: fix, (auto-detect feature) |
+| `bubbles.harden` | "make sure everything is bulletproof" | compliance: all-tests |
+| `bubbles.gaps` | "what's missing from the implementation?" | full gap audit |
+| `bubbles.security` | "scan for hardcoded secrets" | focus: secrets |
+| `bubbles.chaos` | "break the search feature" | scope: search |
+| `bubbles.stabilize` | "Docker containers keep crashing" | focus: infrastructure |
+| `bubbles.simplify` | "remove dead code" | focus: dead code removal |
+| `bubbles.docs` | "update API docs" | review: api |
+| `bubbles.status` | "is the booking feature done?" | scope: booking, mode: report |
+| `bubbles.ops` | "which mode for improving a feature?" | Command Assistant: recommend improve-existing |
+
+### Pro Tip: Use `bubbles.ops` When Uncertain
+
+If you don't know which agent handles your situation, just ask `bubbles.ops`. It will:
+- Recommend the right agent
+- Generate the exact command with correct parameters
+- Suggest a multi-step plan if your goal requires multiple agents
 
 ---
 

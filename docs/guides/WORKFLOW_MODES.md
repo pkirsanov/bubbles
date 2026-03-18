@@ -21,6 +21,19 @@ Optional execution tags apply across modes when you need more control without ch
 
 If you don't specify a mode, `full-delivery` is the default.
 
+**Natural language works too** — just describe what you want:
+
+```
+/bubbles.workflow  improve the booking feature to be competitive
+/bubbles.workflow  fix the calendar bug
+/bubbles.workflow  spend 2 hours working on whatever needs attention
+/bubbles.workflow  harden specs 11 through 37
+```
+
+The workflow agent infers the correct mode and parameters from your description. See the **Natural Language Mode Resolution** section in the workflow agent for the complete intent-to-mode mapping.
+
+**Not sure which mode?** Ask ops: `/bubbles.ops  which mode should I use for <your situation>`
+
 ---
 
 ## Full Delivery Modes

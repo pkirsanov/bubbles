@@ -47,6 +47,19 @@ Use this section to paste:
 - non-functional requirements
 - explicit supported surfaces (admin/mobile/web/monitoring/cli/scripts)
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer intent:
+
+| User Says | Resolved Action |
+|-----------|-----------------|
+| "clarify the booking spec" | scope: booking, action: consistency check |
+| "what's unclear in the auth design?" | scope: auth, action: ambiguity detection |
+| "are there missing edge cases?" | action: edge-case discovery |
+| "check if specs and code agree" | action: consistency check |
+| "what questions should we answer before building?" | action: open question discovery |
+| "tighten the requirements for search" | scope: search, action: requirements refinement |
+
 ---
 
 ## ⚠️ CLARIFICATION MANDATE

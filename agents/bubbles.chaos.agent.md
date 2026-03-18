@@ -71,6 +71,21 @@ When chaos requires cross-domain work: small fixes (≤30 lines) inline, larger 
 
 Create and maintain a todo list via `manage_todo_list` covering: target resolution, scenario generation, single-action probes, journey scenarios, findings recording, chaos report, and cleanup.
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "break the booking flow" | scope: booking, focus: UI journey |
+| "chaos test the whole system" | scope: all features |
+| "stress test the API" | focus: API probes |
+| "test random user behavior" | focus: stochastic UI probes |
+| "find race conditions" | focus: concurrent access patterns |
+| "test with malformed inputs" | focus: input validation/fuzzing |
+| "break the search feature" | scope: search, focus: UI + API |
+| "chaos test for 30 minutes" | time_budget: 30 minutes |
+
 ---
 
 ## ⚠️ EPHEMERAL TEST DATABASE ONLY (NON-NEGOTIABLE)

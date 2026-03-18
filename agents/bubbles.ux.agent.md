@@ -73,6 +73,21 @@ Supported options:
 - `skip_competitive: true` — Skip competitor web research
 - `redesign: true` — Focus on improving existing UI rather than new screens
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "design the booking form UI" | focus: booking form |
+| "wireframe the dashboard" | focus: dashboard |
+| "redesign the search page" | redesign: true, focus: search page |
+| "design for mobile and web" | surfaces: web,mobile |
+| "look at how Airbnb does it" | competitors: airbnb.com |
+| "just design for admin" | surfaces: admin |
+| "create wireframes without competitor research" | skip_competitive: true |
+| "improve the user flow for checkout" | redesign: true, focus: checkout flow |
+
 ---
 
 ## ⚠️ UX DESIGN MANDATE

@@ -55,6 +55,20 @@ $ADDITIONAL_CONTEXT
 
 Use this section to provide specific design documents, requirement files, or focus areas to compare against implementation.
 
+### Natural Language Input Resolution (MANDATORY when no structured options provided)
+
+When the user provides free-text input WITHOUT structured parameters, infer them:
+
+| User Says | Resolved Parameters |
+|-----------|---------------------|
+| "find gaps in the booking feature" | scope: booking |
+| "what's missing from the implementation?" | action: full gap audit |
+| "check if the API matches the design" | focus: API contract fidelity |
+| "find undocumented endpoints" | focus: documentation gaps |
+| "are all the spec requirements implemented?" | focus: requirements tracing |
+| "what tests are missing?" | focus: test coverage gaps |
+| "check design vs code drift" | focus: design fidelity |
+
 ---
 
 ## ⚠️ GAP ANALYSIS MANDATE
