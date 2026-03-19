@@ -64,7 +64,7 @@ handoffs:
 - Pick ONE highest-priority work item per iteration
 - Prepare all required artifacts (spec.md, design.md, scopes.md) if missing — by invoking `bubbles.design` and `bubbles.plan` via `runSubagent`
 - Determine the correct workflow mode for the identified work
-- Dispatch execution to specialist agents following the mode's `phaseOrder` from `.github/bubbles/workflows.yaml`
+- Dispatch execution to specialist agents following the mode's `phaseOrder` from `bubbles/workflows.yaml`
 - Preserve autonomous behavior by default. Only trigger a Socratic clarification loop when `socratic: true` is explicitly present.
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into specialist invocation prompts.
 - When a failure is narrow and `microFixes` is not false, route through the smallest viable fix loop before escalating to a broader mode rerun.
@@ -163,8 +163,7 @@ When the user provides free-text input WITHOUT explicit `type:` or `mode:` param
 
 This agent is mode-driven. It MUST load and apply:
 
-- `.github/bubbles/docs/WORKFLOWS.md` (human workflow policy)
-- `.github/bubbles/workflows.yaml` (machine-readable phase/gate registry)
+- `bubbles/workflows.yaml` (machine-readable phase/gate registry)
 
 Execution rules:
 
@@ -399,7 +398,7 @@ If no suitable feature folder exists and `allow_new_feature_dir: true`:
 
 ### Phase 2: Workflow Dispatch (DELEGATE to specialist agents)
 
-Execute the selected mode's `phaseOrder` from `.github/bubbles/workflows.yaml` by invoking specialist agents via `runSubagent`. This agent acts as the orchestrator for a single-spec workflow.
+Execute the selected mode's `phaseOrder` from `bubbles/workflows.yaml` by invoking specialist agents via `runSubagent`. This agent acts as the orchestrator for a single-spec workflow.
 
 **Phase-to-Agent Dispatch:**
 
@@ -468,7 +467,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
 
 0. **Run state transition guard script (FIRST — Gate G023):**
    ```bash
-   bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+  bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
    ```
    - **If exit code 1 → STOP. Iteration is NOT complete. Fix ALL failures before proceeding.**
    - If exit code 0 → continue to confirmation checks below.
@@ -476,7 +475,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
 
 1. **Run artifact lint:**
    ```bash
-   bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
+  bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
    ```
    - Must exit 0. If it fails → fix the issues and re-run.
 
@@ -561,7 +560,7 @@ Before reporting iteration completion, this agent MUST run Tier 1 universal chec
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| IT1 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
+| IT1 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
 | IT2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | IT3 | Scope statuses Done | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
 | IT3A | Scope statuses canonical (G041) | Verify all `**Status:**` lines contain only `Not Started`, `In Progress`, `Done`, `Blocked` | Zero invented statuses |

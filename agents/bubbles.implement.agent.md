@@ -167,10 +167,10 @@ Before reporting completion, this agent MUST run Tier 1 universal checks (see ag
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| I1 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, or defaults |
+| I1 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, or defaults |
 | I2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | I3 | Scope status | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
-| I4 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
+| I4 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
 | I5 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits — NEVER write deferral language into scope artifacts |
 
 **If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**

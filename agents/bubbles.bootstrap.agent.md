@@ -77,17 +77,17 @@ If the user does not approve, do not modify files.
 
 Before proposing anything, read:
 
-1. `.github/bubbles/docs/SETUP_SOURCES.md` (source registry)
-2. `.github/docs/BUBBLES_PROMPTS.md` (current Bubbles workflow)
-3. `.github/bubbles/docs/CROSS_PROJECT_SETUP.md` (latest cross-project policy requirements)
+1. `bubbles/docs/SETUP_SOURCES.md` if present (source registry)
+2. `docs/CHEATSHEET.md` (current in-repo Bubbles reference)
+3. `bubbles/docs/CROSS_PROJECT_SETUP.md` if present (latest cross-project policy requirements)
 4. `.github/copilot-instructions.md` (repo-local policy file to refresh)
 5. `.specify/memory/constitution.md` (governance)
 6. `.specify/memory/agents.md` (canonical repo commands)
 
-`.github/bubbles/docs/SETUP_SOURCES.md` is the **single source of truth** for what `/bubbles.bootstrap` reviews.
+If `bubbles/docs/SETUP_SOURCES.md` exists, it is the **single source of truth** for what `/bubbles.bootstrap` reviews.
 
-If sources change over time (new sources added, links updated, sources removed, integration rules refined), `/bubbles.bootstrap` MUST maintain this registry via the same governance gate:
-- Proposal phase: include registry edits as `Modify: .github/bubbles/docs/SETUP_SOURCES.md`
+If a source registry exists and sources change over time (new sources added, links updated, sources removed, integration rules refined), `/bubbles.bootstrap` MUST maintain that registry via the same governance gate:
+- Proposal phase: include registry edits as `Modify: bubbles/docs/SETUP_SOURCES.md`
 - Apply phase: update the registry only if explicitly approved by the user
 
 Then inventory current `.github/`:
@@ -102,7 +102,7 @@ When `.github/` already contains Bubbles assets, treat `/bubbles.bootstrap` as a
 
 Refresh requirements:
 - Detect already-installed Bubbles assets and produce a drift report (`current` vs `latest expected`) before proposing changes.
-- Compare repo-local `.github/copilot-instructions.md` against requirements documented in `.github/bubbles/docs/CROSS_PROJECT_SETUP.md`.
+- If `bubbles/docs/CROSS_PROJECT_SETUP.md` exists, compare repo-local `.github/copilot-instructions.md` against its requirements.
 - Propose explicit `Modify: .github/copilot-instructions.md` edits for any missing or stale Bubbles policy requirements.
 - Preserve project-specific commands/paths while updating governance requirements (do not overwrite local command tables unless user requests).
 - Refresh local Bubbles docs/instructions references when cross-project guidance introduces new mandatory gates/rules.
@@ -115,11 +115,11 @@ If no drift is detected, report `No refresh changes required` and stop.
 
 ## External Source Review (from registry)
 
-Use the links listed in `.github/bubbles/docs/SETUP_SOURCES.md`.
+Use the links listed in `bubbles/docs/SETUP_SOURCES.md` when that registry exists.
 
 ### Registry Maintenance (MANDATORY)
 
-While reviewing sources, keep `.github/bubbles/docs/SETUP_SOURCES.md` current (via **PROPOSE → WAIT → APPLY**):
+While reviewing sources, keep `bubbles/docs/SETUP_SOURCES.md` current when it exists (via **PROPOSE → WAIT → APPLY**):
 
 - If the user provides a new library URL to consider, propose adding it to the registry.
 - If a registry link is dead/redirected or a better canonical link exists, propose updating it.
@@ -179,7 +179,7 @@ First response must be a proposal summary.
 - `Reference only:` N items
 
 If the source registry needs updates, include this explicitly in the counts and detail:
-- `Modify: .github/bubbles/docs/SETUP_SOURCES.md`
+- `Modify: bubbles/docs/SETUP_SOURCES.md`
 
 ### 2) Detailed Plan
 
@@ -216,7 +216,7 @@ Then STOP.
 If approved:
 
 0) Update the source registry (when applicable):
-- Apply ONLY the approved edits to `.github/bubbles/docs/SETUP_SOURCES.md`.
+- Apply ONLY the approved edits to `bubbles/docs/SETUP_SOURCES.md`.
 
 1) Add/copy selected artifacts into appropriate locations:
 - Agents → `.github/agents/`
@@ -228,7 +228,7 @@ If approved:
 - Ensure prompts are shims routing to agents.
 - Ensure all behavior lives in agents.
 - Ensure all new assets respect repo policies and do not introduce forbidden defaults or local endpoints.
-- If running refresh mode, apply approved copilot-instructions sync edits from `.github/bubbles/docs/CROSS_PROJECT_SETUP.md` to `.github/copilot-instructions.md` while preserving project-specific command/runtime values.
+- If running refresh mode and `bubbles/docs/CROSS_PROJECT_SETUP.md` exists, apply approved copilot-instructions sync edits from that guide to `.github/copilot-instructions.md` while preserving project-specific command/runtime values.
 
 3) Cleanup:
 - Delete only the explicitly approved files.

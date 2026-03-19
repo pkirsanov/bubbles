@@ -143,7 +143,7 @@ If the scope includes API endpoint changes, verify response contracts match spec
 For the current feature directory, run the state transition guard:
 
 ```bash
-bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 - If exit code 0 → state transition checks pass
@@ -156,7 +156,7 @@ bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 Run the artifact lint on the feature directory:
 
 ```bash
-bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
+bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
 ```
 
 - Must exit 0 for validation to pass when spec claims Done
@@ -167,13 +167,13 @@ bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}
 If running full validation (not scoped to one feature), audit ALL specs claiming "done" status:
 
 ```bash
-bash .github/bubbles/scripts/done-spec-audit.sh
+bash bubbles/scripts/done-spec-audit.sh
 ```
 
 - Reports which done-specs pass/fail artifact lint
 - Use `--fix` to auto-downgrade fabricated done specs to in_progress:
   ```bash
-  bash .github/bubbles/scripts/done-spec-audit.sh --fix
+   bash bubbles/scripts/done-spec-audit.sh --fix
   ```
 - Record the summary (done specs scanned, lint passed, lint failed) in the validation report
 
@@ -182,7 +182,7 @@ bash .github/bubbles/scripts/done-spec-audit.sh
 For implementation modes, run the source code reality scan to detect stub/fake/hardcoded data:
 
 ```bash
-bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 ```
 
 - Detects gateway handlers returning hardcoded vec![...] data instead of real service calls
@@ -196,7 +196,7 @@ bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verb
 If the handoff cycle checker exists, run it:
 
 ```bash
-bash .github/bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
+bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 ```
 
 - Detects infinite handoff loops between agents
@@ -209,11 +209,11 @@ bash .github/bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 
 | Script | Command | Exit Code | Status |
 |--------|---------|-----------|--------|
-| State Transition Guard | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
-| Artifact Lint | `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
-| Done-Spec Audit | `bash .github/bubbles/scripts/done-spec-audit.sh` | [actual] | ✅/❌ |
-| Implementation Reality Scan | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
-| Handoff Cycle Check | `bash .github/bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
+| State Transition Guard | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
+| Artifact Lint | `bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
+| Done-Spec Audit | `bash bubbles/scripts/done-spec-audit.sh` | [actual] | ✅/❌ |
+| Implementation Reality Scan | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
+| Handoff Cycle Check | `bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
 ```
 
 **If ANY governance script fails, validation status is FAILED.**
@@ -503,9 +503,9 @@ If NO unchecked items:
 - E2E UI: `[E2E_UI_TEST_COMMAND]`
 - Stress: `[STRESS_TEST_COMMAND]`
 - Security: `[SECURITY_COMMAND]`
-- State Guard: `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}`
-- Artifact Lint: `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}`
-- Done-Spec Audit: `bash .github/bubbles/scripts/done-spec-audit.sh`
+- State Guard: `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}`
+- Artifact Lint: `bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}`
+- Done-Spec Audit: `bash bubbles/scripts/done-spec-audit.sh`
 
 ### User Validation Regressions (if any)
 

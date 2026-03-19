@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Bubbles Spec Progress Dashboard
 # Generic, project-agnostic spec status overview across all specs/ folders.
-# Usage: bash .github/bubbles/scripts/spec-dashboard.sh [specs-dir]
+# Usage: bash bubbles/scripts/spec-dashboard.sh [specs-dir]
 #
 # Output: Summary table of all specs with status, workflow mode, scope counts,
 #         and completion percentage.

@@ -300,11 +300,11 @@ Each agent's completion validation has two tiers:
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| V1 | Artifact lint | `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | Exit code 0 |
+| V1 | Artifact lint | `bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` | Exit code 0 |
 | V2 | No TODOs/stubs in changed files | `grep -r "TODO\|FIXME\|HACK\|STUB\|unimplemented!" [changed-files]` | Zero matches |
 | V3 | Fabrication self-audit | Apply Heuristics 1-9 (Gate G021) to own output | No heuristic triggered |
 | V4 | Evidence legitimacy | Every claimed result has raw terminal output with recognizable signals | All evidence legitimate |
-| V5 | Implementation reality scan | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, defaults, fallbacks |
+| V5 | Implementation reality scan | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, defaults, fallbacks |
 | V6 | Scope/DoD coherence | For each scope: Gherkin scenario count ≥ E2E test plan rows; Test Plan rows == DoD test items; no scope marked "Done" with unchecked DoD | Zero parity mismatches |
 | V7 | Implementation-claims match | For each DoD item marked `[x]`: verify the claimed file/feature actually exists and matches what the item describes | Zero false-positive DoD items |
 | V8 | No mocks in production code | `grep -rn "mock\|Mock\|MOCK\|fake\|Fake\|FAKE\|stub\|Stub" [src-files] --include='*.rs' --include='*.py' --include='*.ts' --include='*.tsx' --include='*.go'` (exclude test dirs) | Zero matches in non-test source files |
@@ -1173,7 +1173,7 @@ grep -rn "os\.getenv.*," [python-src-dirs]
 # ANY match in production code = VIOLATION. Fail-fast required.
 
 # Run the comprehensive reality scan (covers stubs, fakes, hardcoded data, defaults)
-bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 ```
 
 ### 2. No Caches Anywhere (ABSOLUTE)
@@ -1763,7 +1763,7 @@ Execute this checklist with actual tool calls before status → "done":
 ```
 [ ] grep -r "TODO\|FIXME\|HACK\|STUB" [changed-files] → zero results
 [ ] grep -rn "t\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo\|it\.todo" [changed-test-files] → zero results
-[ ] bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR} → exit code 0
+[ ] bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR} → exit code 0
 [ ] ls -la [every-test-file-in-test-plan] → all exist
 [ ] Test Plan rows = test-related DoD items (count match)
 [ ] All DoD items use checkbox syntax (`- [ ]` / `- [x]`)
@@ -1960,7 +1960,7 @@ done
 - Every test covers real scenarios through the real stack
 ### ⚠️ Status Ceiling Enforcement (NON-NEGOTIABLE)
 
-**The workflow mode's `statusCeiling` (from `.github/bubbles/workflows.yaml`) is the MAXIMUM status that may be set in `state.json`. No agent may exceed it.**
+**The workflow mode's `statusCeiling` (from `bubbles/workflows.yaml`) is the MAXIMUM status that may be set in `state.json`. No agent may exceed it.**
 
 **Modes that do NOT include `implement` + `test` phases MUST NOT set `status: "done"`.** These modes produce artifact improvements (specs, docs, validation reports) but do not constitute completed implementation work.
 
@@ -1974,7 +1974,7 @@ done
 | Resume modes (`resume-only`) | `in_progress`, `blocked` | `done` |
 
 **Enforcement rules:**
-1. Before setting status in `state.json`, resolve the active mode's `statusCeiling` from `.github/bubbles/workflows.yaml`
+1. Before setting status in `state.json`, resolve the active mode's `statusCeiling` from `bubbles/workflows.yaml`
 2. If the intended status exceeds the ceiling, cap it at the ceiling value
 3. Record `workflowMode` in `state.json` so downstream agents can verify the ceiling was respected
 4. The `completedPhases` array is informational — it records which phases ran, NOT whether implementation is complete
@@ -2099,7 +2099,7 @@ if [[ "$unchecked" -gt 0 ]]; then
 fi
 
 # 3. Run artifact lint on previous spec
-bash .github/bubbles/scripts/artifact-lint.sh specs/<prev-spec>
+bash bubbles/scripts/artifact-lint.sh specs/<prev-spec>
 # Must exit 0
 
 # 4. Verify evidence depth in scope report artifact(s)
@@ -2396,10 +2396,10 @@ The scan script (`implementation-reality-scan.sh`) runs as guard script Check 16
 
 ```bash
 # Full scan with verbose context
-bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
+bash bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
 
 # As part of pre-completion self-audit
-bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
+bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
 # (Check 16 runs automatically)
 ```
 
@@ -2921,14 +2921,14 @@ Every agent MUST answer these questions HONESTLY before claiming any work is com
 **Before ANY agent writes `"status": "done"` to state.json, it MUST execute the state transition guard script:**
 
 ```bash
-bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 **This is a BLOCKING gate. If the script exits with code 1, the agent MUST NOT set status to "done".**
 
 **Auto-revert mode** (recommended for orchestrators):
 ```bash
-bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
 ```
 
 When `--revert-on-fail` is specified and checks fail, the script automatically:
@@ -2965,7 +2965,7 @@ When `--revert-on-fail` is specified and checks fail, the script automatically:
 **Agent Self-Enforcement Rule:**
 Every agent that can modify state.json MUST include this sequence in its finalization:
 ```
-1. Run: bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+1. Run: bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 2. IF exit code 0 → proceed to write "status": "done"
 3. IF exit code 1 → status remains "in_progress", report blocking failures
 ```
@@ -3033,7 +3033,7 @@ Every agent that can modify state.json MUST include this sequence in its finaliz
      → If NO: go complete it FIRST before finishing this one
 
 □ 6. GUARD SCRIPT: Did I run the state transition guard script and did it pass?
-     → If NO: run `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` NOW
+    → If NO: run `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` NOW
      → If it exits with code 1: I am NOT done. Fix all failures FIRST.
      → NEVER write "status": "done" without guard script exit code 0.
 
@@ -3055,7 +3055,7 @@ Every agent that can modify state.json MUST include this sequence in its finaliz
      → If completedScopes count doesn't match Done scope count in artifacts: FIX state.json
 
 □ 10. IMPLEMENTATION REALITY (G028): Does source code contain real implementations, not stubs?
-     → Run: bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+    → Run: bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
      → If violations found: BLOCKED — replace stubs/hardcoded data with real implementations
      → If gateway handlers return vec![...] with literals: replace with real DB/service queries
      → If frontend hooks have zero fetch() calls: add real API integration

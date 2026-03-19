@@ -61,7 +61,7 @@ handoffs:
 **Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. When dispatching specialist agents via `runSubagent`, include the project's `agents.md` path so specialists can resolve commands. See [project-config-contract.md](bubbles_shared/project-config-contract.md) for indirection rules.
 
 **Behavioral Rules:**
-- Load and enforce `.github/bubbles/workflows.yaml` and `.github/bubbles/docs/WORKFLOWS.md` first.
+- Load and enforce `bubbles/workflows.yaml` first.
 - Orchestrate phases by workflow mode; do not hardcode a single forced flow.
 - Stay autonomous by default. Only enter a Socratic questioning loop when the workflow input explicitly sets `socratic: true`.
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
@@ -446,7 +446,7 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
      - **SKIP Phase 0.3, Phase 0.5, Phase 0.6, Phase 0.7 — go directly to Phase 0.8**
      - Phase 0.8 handles analyze, select, harden, gaps, implement per-spec internally
    - When batch is false: continue to Phase 0.3 → Phase 1 normally
-5. Load retry/routing/gate policy from `.github/bubbles/workflows.yaml`.
+5. Load retry/routing/gate policy from `bubbles/workflows.yaml`.
 6. If `mode: full-delivery-strict` OR `strict_execution_profile: true`, apply strict overrides:
   - `continue_on_blocked: false`
   - `final_global_pass: true`
@@ -538,7 +538,7 @@ Before per-spec execution, discover and prioritize the most valuable next work i
 - design/spec/scope missing for planned work
 - new feature work not yet designed/spec'd
 
-Selection policy is deterministic and must use `.github/bubbles/workflows.yaml` `priorityScoring`.
+Selection policy is deterministic and must use `bubbles/workflows.yaml` `priorityScoring`.
 
 Score each candidate across:
 
@@ -722,15 +722,15 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run `audit` phase via `runSubagent` — audit ALL specs together
    - Run `chaos` phase via `runSubagent` — chaos probes covering ALL specs
    - Run `finalize` phase — for EACH batched spec individually:
-     1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
-     2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
-     3. **Current-run phase coherence check (Gate G036-finalize):** Verify that `completedPhases` in `state.json` includes ALL phases from the current mode's `phaseOrder` (not just phases from a prior workflow run). If the current batch run added phases (e.g., harden, gaps, implement in improve-existing), the finalize check MUST confirm those phases produced real work in the current session. Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases.
-     4. **Scope-status vs DoD integrity check:** For each scope in `scopes.md`, verify that if scope status is "Done", ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says "Done", revert scope status to "In Progress" and FAIL the finalize gate for this spec (status stays `"in_progress"`). Also verify: (a) ALL scope statuses are canonical (`Not Started`, `In Progress`, `Done`, `Blocked` — no invented statuses like "Deferred"); (b) ALL DoD items use checkbox format (`- [ ]` or `- [x]`) — no reformatted items like `- (deferred)` or `- ~~text~~`; (c) DoD sections are not empty (items were not deleted to pass validation). If any of (a), (b), or (c) fail, this is **structural fabrication (Gate G041)** — revert scope status and FAIL.
-     5. If checks 1-4 ALL pass AND all DoD items are `[x]` AND all scopes are "Done" → set `state.json` status to `"done"`
-     4. Record ALL shared-phase evidence (test/validate/audit/chaos) in the spec's `report.md`
-     5. Update `completedPhases` to include ALL phases that executed (validate, harden, gaps, implement, test, docs, audit, chaos as applicable)
-     6. Append an `executionHistory` entry to `state.json` with agent=`bubbles.workflow`, mode, phases executed, scopes completed, and status transition (see Execution History Schema in scope-workflow.md)
-     7. If any gate fails → status stays `"in_progress"`, spec is marked blocked with reason (still append `executionHistory` with `statusAfter: "in_progress"` or `"blocked"`)
+   1. Write the current-run shared evidence into the spec's `report.md` and scope evidence blocks before any promotion decision.
+   2. Derive `completedScopes` from scope artifacts that are actually `Done` in this spec's files. Never trust stale `completedScopes` from prior runs.
+   3. Update `completedPhases` to include ONLY phases that actually executed in this run, then append an `executionHistory` entry with `statusAfter` still set to `in_progress` or `blocked` until final promotion succeeds.
+   4. Run state transition guard: `bash bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
+   5. Run artifact lint: `bash bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
+   6. **Current-run phase coherence check (Gate G036-finalize):** Verify that `completedPhases` in `state.json` includes ALL phases from the current mode's `phaseOrder` that actually ran in this batch (not just phases from a prior workflow run). Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases for this spec.
+   7. **Scope-status vs DoD integrity check:** For each resolved scope artifact, verify that if scope status is `Done`, ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says `Done`, revert scope status to `In Progress` and FAIL the finalize gate for this spec (status stays `in_progress`). Also verify: (a) ALL scope statuses are canonical (`Not Started`, `In Progress`, `Done`, `Blocked`); (b) ALL DoD items use checkbox format (`- [ ]` or `- [x]`); (c) DoD sections are not empty. Any failure here is structural fabrication (Gate G041).
+   8. Only if steps 1-7 ALL pass AND all DoD items are `[x]` AND all scopes are `Done` → update the just-appended `executionHistory` entry's `statusAfter` to `done`, then set `state.json` status to `done` as the LAST write of finalize.
+   9. If any gate fails → status stays `in_progress`, spec is marked blocked with reason, and the `executionHistory` entry remains `statusAfter: "in_progress"` or `"blocked"`
 
 3. **Failure routing within batch:**
    - If the shared build fails → identify which spec's changes caused the failure → re-invoke `bubbles.implement` for that spec only → rebuild
@@ -739,7 +739,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
 
 4. **Evidence and DoD completion:**
    - Test/build evidence from shared phases is attributed to EACH spec's report.md and scopes.md DoD items
-   - Each spec's DoD items are checked `[x]` with evidence from the shared test run
+   - Each spec's DoD items are checked `[x]` only after the shared run evidence has been copied into that spec's own scope/report artifacts
    - Each spec gets its own state transition guard (G023) and artifact lint check
    - ALL specs must independently pass all completion gates before any spec is marked `done`
 
@@ -748,7 +748,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Specs with complex inter-dependencies where spec B's design depends on spec A's runtime behavior
    - Single-spec delivery (use `full-delivery` or `harden-to-doc` — no batching benefit)
 
-**⚠️ G019 Relaxation:** The `sequentialSpecCompletion` constraint from G019 is relaxed when `batch` is enabled. Within the batch, specs proceed through their per-spec phases without waiting for the previous spec's full quality chain. However, ALL specs must pass ALL gates before ANY spec is marked `done`.
+**⚠️ G019 Relaxation:** The `sequentialSpecCompletion` constraint from G019 is relaxed when `batch` is enabled for pre-finalize work only. Within the batch, specs may proceed through per-spec phases without waiting for the previous spec's full quality chain. However, ALL specs must still pass per-spec finalize gates, and no spec may be marked `done` until its own artifacts, evidence, guard, and lint pass.
 
 ---
 
@@ -1126,8 +1126,8 @@ When mode is `iterate`, the orchestrator replaces the normal sequential `phaseOr
 
 3. **After all iterations complete** (or time budget exhausted or no work found):
    - **Per-spec finalization:** For EACH spec that was touched during the iterate loop:
-     1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
-     2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
+   1. Run state transition guard: `bash bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
+   2. Run artifact lint: `bash bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
      3. Verify no DoD format manipulation (Gate G041): all DoD items are `- [ ]` or `- [x]`, all scope statuses are canonical
      4. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
      4. Append `executionHistory` entry to `state.json`
@@ -1174,7 +1174,7 @@ Before beginning work on the NEXT spec in the batch, the orchestrator MUST:
    ```
 3. **Run artifact lint on previous spec** — must exit 0:
    ```bash
-   bash .github/bubbles/scripts/artifact-lint.sh specs/<prev-spec>
+   bash bubbles/scripts/artifact-lint.sh specs/<prev-spec>
    ```
 4. **Verify specialist completion ledger** — all required specialists must show `executed: true` and `exitStatus: pass`
 5. **Verify evidence depth** — all evidence sections in report.md have ≥10 lines of raw output
@@ -1327,15 +1327,15 @@ For each target spec in order:
    Each `runSubagent` call is a BLOCKING call — wait for the result before proceeding to the next phase. The specialist agent does the actual work (writes code, runs tests, updates docs, etc.).
 
 5. Promotion rules:
-   - Resolve the mode's `statusCeiling` from `.github/bubbles/workflows.yaml`
+   - Resolve the mode's `statusCeiling` from `bubbles/workflows.yaml`
    - Spec status MUST NOT exceed `statusCeiling` — artifact-only modes (`spec-scope-hardening`, `docs-only`, `validate-only`, `audit-only`) set status to their ceiling (`specs_hardened`, `docs_updated`, `validated`), NEVER `done`
    - Spec is `done` only if mode's `statusCeiling` is `done` AND all mode-required gates pass
    - **⚠️ STATE TRANSITION GUARD (Gate G023 — FIRST CHECK BEFORE "done"):**
-     - Run: `bash .github/bubbles/scripts/state-transition-guard.sh <spec-path>`
-     - If exit code 1 → spec CANNOT be promoted to "done", status stays "in_progress"
-     - Auto-revert mode: `bash .github/bubbles/scripts/state-transition-guard.sh <spec-path> --revert-on-fail`
+   - Run: `bash bubbles/scripts/state-transition-guard.sh <spec-path>`
+   - If exit code 1 → spec CANNOT be promoted to `done`, status stays `in_progress`
+   - Auto-revert mode: `bash bubbles/scripts/state-transition-guard.sh <spec-path> --revert-on-fail`
      - NEVER write `"status": "done"` without guard script exit code 0
-  - Before any promotion, run `bash .github/bubbles/scripts/artifact-lint.sh <spec-path>`; if lint fails, spec status MUST remain `in_progress` or `blocked`
+   - Before any promotion, run `bash bubbles/scripts/artifact-lint.sh <spec-path>`; if lint fails, spec status MUST remain `in_progress` or `blocked`
   - `status: "done"` is forbidden when any DoD checkbox is unchecked or any scope is not "Done"
    - **⛔ COMPLETION HIERARCHY (G024, G025, G027, G028, G030):** See agent-common.md → ABSOLUTE COMPLETION HIERARCHY. ALL gates MUST pass before promotion.
    - **⚠️ SPECIALIST COMPLETION VERIFICATION (Gate G022 — BLOCKING):**
@@ -1429,7 +1429,7 @@ Output summary table:
 
 ## Failure Routing Contract
 
-Use `.github/bubbles/workflows.yaml` `failureRouting` as source of truth. When a phase fails, **actively re-invoke** the routed specialist agent via `runSubagent`:
+Use `bubbles/workflows.yaml` `failureRouting` as source of truth. When a phase fails, **actively re-invoke** the routed specialist agent via `runSubagent`:
 
 | Failure Class | Route To | Action |
 |---------------|----------|--------|
@@ -1478,7 +1478,7 @@ Before reporting workflow results, this agent MUST run Tier 1 universal checks (
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| W1 | State transition guard per spec (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` for each "done" spec | All exit code 0 |
+| W1 | State transition guard per spec (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` for each `done` spec | All exit code 0 |
 | W2 | Specialist completion ledger (G022) | Verify ALL mode-required phases appear in each spec's `completedPhases` | All specialists executed |
 | W3 | Cross-agent output verification (G020) | Verify each specialist's output has real evidence, not fabricated claims | All genuine |
 | W4 | Sequential completion (G019) | Verify no spec N+1 was started before spec N completed | Sequential order maintained |
@@ -1502,6 +1502,6 @@ Return:
 - ✅ "All target specs completed successfully" — no further action needed
 - ⚠️ "N specs completed, M specs blocked after exhausting retries and auto-escalation" — with specific blocked details
 
-When `mode: value-first-e2e-batch`, include one "Value-First Selection Cycle" table per cycle using the template in `.github/bubbles/docs/WORKFLOWS.md`.
+When `mode: value-first-e2e-batch`, include one `Value-First Selection Cycle` table per cycle in the workflow output.
 
 ```

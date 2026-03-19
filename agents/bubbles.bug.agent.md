@@ -104,7 +104,7 @@ When the user provides free-text input WITHOUT explicit `mode:` parameters, infe
 
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope templates in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
-This agent focuses on bug documentation and root cause analysis. When implementation or testing is needed, delegate to specialist agents via `runSubagent` following the `bugfix-fastlane` phaseOrder from `.github/bubbles/workflows.yaml`.
+This agent focuses on bug documentation and root cause analysis. When implementation or testing is needed, delegate to specialist agents via `runSubagent` following the `bugfix-fastlane` phaseOrder from `bubbles/workflows.yaml`.
 
 Agent-specific context: Action-First Mandate applies → take ONE bug-related action after loading Tier 1 + relevant feature context.
 
@@ -413,7 +413,7 @@ After the implementation specialist returns, verify:
 ### Phase 7: Finalize
 
 1. **Update bug.md status** to "Verified" or "Closed"
-2. **Update state.json** — resolve the active workflow mode's `statusCeiling` from `.github/bubbles/workflows.yaml` and set `status` to the ceiling value (e.g., `"done"` for `bugfix-fastlane`). Record `workflowMode` in `state.json`. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
+2. **Update state.json** — resolve the active workflow mode's `statusCeiling` from `bubbles/workflows.yaml` and set `status` to the ceiling value (e.g., `"done"` for `bugfix-fastlane`). Record `workflowMode` in `state.json`. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
 3. **Update feature's uservalidation.md** (if applicable):
    - Add entry for the bug fix using the entry template below
    - **Mark entries `[x]` by default** (just validated via audit — checked = working as expected)

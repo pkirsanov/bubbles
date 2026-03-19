@@ -236,8 +236,8 @@ When a user asks "which mode should I use?" or describes a situation, recommend 
 **What it does:** Validates the Bubbles installation is complete and correct.
 
 ```bash
-bash .github/bubbles/scripts/cli.sh doctor
-bash .github/bubbles/scripts/cli.sh doctor --heal
+bash bubbles/scripts/cli.sh doctor
+bash bubbles/scripts/cli.sh doctor --heal
 ```
 
 **Checks:**
@@ -254,66 +254,66 @@ When `--heal` is used, auto-fixes what it can.
 ### 4. Git Hooks Management
 
 ```bash
-bash .github/bubbles/scripts/cli.sh hooks catalog
-bash .github/bubbles/scripts/cli.sh hooks list
-bash .github/bubbles/scripts/cli.sh hooks install --all
-bash .github/bubbles/scripts/cli.sh hooks install artifact-lint
-bash .github/bubbles/scripts/cli.sh hooks add pre-push <script> --name <name>
-bash .github/bubbles/scripts/cli.sh hooks remove <name>
-bash .github/bubbles/scripts/cli.sh hooks run pre-push
-bash .github/bubbles/scripts/cli.sh hooks status
+bash bubbles/scripts/cli.sh hooks catalog
+bash bubbles/scripts/cli.sh hooks list
+bash bubbles/scripts/cli.sh hooks install --all
+bash bubbles/scripts/cli.sh hooks install artifact-lint
+bash bubbles/scripts/cli.sh hooks add pre-push <script> --name <name>
+bash bubbles/scripts/cli.sh hooks remove <name>
+bash bubbles/scripts/cli.sh hooks run pre-push
+bash bubbles/scripts/cli.sh hooks status
 ```
 
 ### 5. Custom Gates (Project Extensions)
 
 ```bash
-bash .github/bubbles/scripts/cli.sh project
-bash .github/bubbles/scripts/cli.sh project gates
-bash .github/bubbles/scripts/cli.sh project gates add <name> --script <path> --blocking --description "<desc>"
-bash .github/bubbles/scripts/cli.sh project gates remove <name>
-bash .github/bubbles/scripts/cli.sh project gates test <name>
+bash bubbles/scripts/cli.sh project
+bash bubbles/scripts/cli.sh project gates
+bash bubbles/scripts/cli.sh project gates add <name> --script <path> --blocking --description "<desc>"
+bash bubbles/scripts/cli.sh project gates remove <name>
+bash bubbles/scripts/cli.sh project gates test <name>
 ```
 
 ### 6. Upgrade
 
 ```bash
-bash .github/bubbles/scripts/cli.sh upgrade
-bash .github/bubbles/scripts/cli.sh upgrade v1.1.0
-bash .github/bubbles/scripts/cli.sh upgrade --dry-run
+bash bubbles/scripts/cli.sh upgrade
+bash bubbles/scripts/cli.sh upgrade v1.1.0
+bash bubbles/scripts/cli.sh upgrade --dry-run
 ```
 
 ### 7. Metrics Dashboard
 
 ```bash
-bash .github/bubbles/scripts/cli.sh metrics enable
-bash .github/bubbles/scripts/cli.sh metrics disable
-bash .github/bubbles/scripts/cli.sh metrics status
-bash .github/bubbles/scripts/cli.sh metrics summary
-bash .github/bubbles/scripts/cli.sh metrics gates
-bash .github/bubbles/scripts/cli.sh metrics agents
+bash bubbles/scripts/cli.sh metrics enable
+bash bubbles/scripts/cli.sh metrics disable
+bash bubbles/scripts/cli.sh metrics status
+bash bubbles/scripts/cli.sh metrics summary
+bash bubbles/scripts/cli.sh metrics gates
+bash bubbles/scripts/cli.sh metrics agents
 ```
 
 ### 8. Lessons Memory
 
 ```bash
-bash .github/bubbles/scripts/cli.sh lessons
-bash .github/bubbles/scripts/cli.sh lessons --all
-bash .github/bubbles/scripts/cli.sh lessons compact
+bash bubbles/scripts/cli.sh lessons
+bash bubbles/scripts/cli.sh lessons --all
+bash bubbles/scripts/cli.sh lessons compact
 ```
 
 ### 9. Scope Dependency Visualization
 
 ```bash
-bash .github/bubbles/scripts/cli.sh dag <spec>
+bash bubbles/scripts/cli.sh dag <spec>
 ```
 
 ### 10. Spec Progress
 
 ```bash
-bash .github/bubbles/scripts/cli.sh status
-bash .github/bubbles/scripts/cli.sh specs
-bash .github/bubbles/scripts/cli.sh blocked
-bash .github/bubbles/scripts/cli.sh dod <spec>
+bash bubbles/scripts/cli.sh status
+bash bubbles/scripts/cli.sh specs
+bash bubbles/scripts/cli.sh blocked
+bash bubbles/scripts/cli.sh dod <spec>
 ```
 
 ---
@@ -331,7 +331,7 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 #### Intent Resolution Examples
 
 ```
-"check health" -> bash .github/bubbles/scripts/cli.sh doctor
+"check health" -> bash bubbles/scripts/cli.sh doctor
 "install hooks and then tell me how to fix a bug" -> (1) hooks install --all, (2) recommend bugfix-fastlane sequence
 "what's the best workflow for improving an existing feature?" -> recommend improve-existing mode with explanation
 "give me a command to chaos test everything for 2 hours" -> /bubbles.workflow mode: stochastic-quality-sweep minutes: 120 triggerAgents: chaos

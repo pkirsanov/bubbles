@@ -2,10 +2,10 @@
 # ────────────────────────────────────────────────────────────────────
 # bubbles — Lightweight CLI for Bubbles governance queries and script dispatch
 # ────────────────────────────────────────────────────────────────────
-# Project-agnostic. Works in any repo with specs/ and .github/scripts/.
+# Project-agnostic. Works in any repo with specs/ and bubbles/scripts/.
 #
 # Usage:
-#   bash .github/bubbles/scripts/cli.sh <command> [args...]
+#   bash bubbles/scripts/cli.sh <command> [args...]
 #
 # Commands:
 #   status                        Show all specs with status, mode, scope counts
@@ -508,7 +508,7 @@ cmd_doctor() {
 
   # Check 1: Core agents
   local agent_count
-  agent_count=$(ls "$REPO_ROOT/.github/agents/bubbles."*.agent.md 2>/dev/null | wc -l)
+  agent_count=$(ls "$REPO_ROOT/agents/bubbles."*.agent.md 2>/dev/null | wc -l)
   if [[ "$agent_count" -ge 25 ]]; then
     echo -e "  ${GREEN}✅${NC} Core agents installed (${agent_count})"
     passed=$((passed + 1))
@@ -519,7 +519,7 @@ cmd_doctor() {
 
   # Check 2: Governance scripts
   local script_count
-  script_count=$(ls "$REPO_ROOT/.github/bubbles/scripts/"*.sh 2>/dev/null | wc -l)
+  script_count=$(ls "$REPO_ROOT/bubbles/scripts/"*.sh 2>/dev/null | wc -l)
   if [[ "$script_count" -ge 10 ]]; then
     echo -e "  ${GREEN}✅${NC} Governance scripts installed (${script_count})"
     passed=$((passed + 1))
@@ -529,7 +529,7 @@ cmd_doctor() {
   fi
 
   # Check 3: workflows.yaml
-  if [[ -f "$REPO_ROOT/.github/bubbles/workflows.yaml" ]]; then
+  if [[ -f "$REPO_ROOT/bubbles/workflows.yaml" ]]; then
     echo -e "  ${GREEN}✅${NC} Workflow config present"
     passed=$((passed + 1))
   else
@@ -569,7 +569,7 @@ cmd_doctor() {
 
   # Check 6: Script permissions
   local unexec=0
-  for s in "$REPO_ROOT/.github/bubbles/scripts/"*.sh; do
+  for s in "$REPO_ROOT/bubbles/scripts/"*.sh; do
     [[ -f "$s" && ! -x "$s" ]] && unexec=$((unexec + 1))
   done
   if [[ "$unexec" -eq 0 ]]; then
@@ -578,7 +578,7 @@ cmd_doctor() {
   else
     echo -e "  ${RED}❌${NC} $unexec scripts not executable"
     if [[ "$heal" == "true" ]]; then
-      chmod +x "$REPO_ROOT/.github/bubbles/scripts/"*.sh
+      chmod +x "$REPO_ROOT/bubbles/scripts/"*.sh
       echo -e "  ${GREEN}🔧${NC} Fixed: chmod +x on all scripts"
       healed=$((healed + 1))
     fi
@@ -600,9 +600,9 @@ cmd_doctor() {
   fi
 
   # Check 8: Version stamp
-  if [[ -f "$REPO_ROOT/.github/bubbles/.version" ]]; then
+  if [[ -f "$REPO_ROOT/bubbles/.version" ]]; then
     local ver
-    ver=$(cat "$REPO_ROOT/.github/bubbles/.version")
+    ver=$(cat "$REPO_ROOT/bubbles/.version")
     echo -e "  ${GREEN}✅${NC} Bubbles version: $ver"
     passed=$((passed + 1))
   else
@@ -643,7 +643,7 @@ cmd_hooks() {
   local subcmd="${1:-status}"
   shift 2>/dev/null || true
 
-  local hooks_json="$REPO_ROOT/.github/bubbles/hooks.json"
+  local hooks_json="$REPO_ROOT/bubbles/hooks.json"
   local git_hooks_dir
   git_hooks_dir="$(cd "$REPO_ROOT" && git rev-parse --git-dir 2>/dev/null)/hooks"
 
@@ -749,7 +749,11 @@ if git diff --cached --name-only | grep -q '^specs/'; then
   echo "🫧 Bubbles pre-commit: artifact lint on staged specs..."
   for spec_dir in $(git diff --cached --name-only | grep '^specs/' | sed 's|/[^/]*$||' | sort -u); do
     if [[ -d "$spec_dir" && -f "$spec_dir/state.json" ]]; then
-      bash .github/bubbles/scripts/artifact-lint.sh "$spec_dir" --quick || failed=1
+      bash bubbles/scripts/artifact-lint.sh "$spec_dir" --quick || failed=1
+      status=$(grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$spec_dir/state.json" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+      if [[ "$status" == "done" ]]; then
+        bash bubbles/scripts/state-transition-guard.sh "$spec_dir" || failed=1
+      fi
     fi
   done
 fi
@@ -769,7 +773,7 @@ for state_file in $(find specs -maxdepth 2 -name "state.json" -not -path "*/bugs
   status=$(grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$state_file" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
   if [[ "$status" == "done" ]]; then
     spec_dir=$(dirname "$state_file")
-    bash .github/bubbles/scripts/state-transition-guard.sh "$spec_dir" || failed=1
+    bash bubbles/scripts/state-transition-guard.sh "$spec_dir" || failed=1
   fi
 done
 [[ $failed -ne 0 ]] && { echo "❌ Pre-push blocked."; exit 1; }

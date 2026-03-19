@@ -25,7 +25,7 @@ description: Final system audit for spec compliance, code quality, and security 
   - Check for duplicate/copy-pasted evidence blocks
   - Check for impossible success patterns (all tests pass first try on non-trivial changes)
 - **Verify specialist agent execution** — check `state.json` `completedPhases` against mode-required phases. If any required specialist phase is missing, audit MUST fail.
-- **Run artifact lint** — execute `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` and include raw output as evidence. If lint fails, audit verdict MUST NOT be clean.
+- **Run artifact lint** — execute `bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` and include raw output as evidence. If lint fails, audit verdict MUST NOT be clean.
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
 
@@ -44,11 +44,11 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 
 | # | Check | Command / Action | Pass Criteria |
 |---|-------|-----------------|---------------|
-| A1 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
+| A1 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
 | A2 | Independent test execution | Re-run at least unit + E2E tests independently | All pass |
 | A3 | Evidence cross-reference | Verify each [x] DoD item has ≥10 lines real inline evidence, no duplicates | All genuine |
 | A4 | Fabrication heuristics (G021) | Apply all 9 heuristics to report.md and scope files | No heuristic triggered |
-| A5 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
+| A5 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | A6 | Phase-Scope coherence (G027) | Verify completedPhases matches completedScopes | Coherent |
 | A7 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work blocks completion |
 | A8 | DoD format integrity (G041) | Verify all DoD items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, unformatted items in DoD sections | Zero format manipulations |
@@ -85,7 +85,7 @@ Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Ti
 **This check MUST run BEFORE all other audit checks. If it fails, the audit is automatically `🔴 DO_NOT_SHIP`.**
 
 ```bash
-bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 ```
 
 | Check | Status |
@@ -107,7 +107,7 @@ bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 
 **If ANY check fails:** Verdict = `🔴 DO_NOT_SHIP`. If state.json claims "done", run revert:
 ```bash
-bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail
 ```
 
 Record the full guard script output in report.md under `### Audit Evidence`.

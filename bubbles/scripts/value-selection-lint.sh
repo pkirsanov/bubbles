@@ -8,7 +8,7 @@ target_file="${1:-}"
 
 if [[ -z "$target_file" ]]; then
   echo "ERROR: missing markdown file argument"
-  echo "Usage: bash .github/bubbles/scripts/value-selection-lint.sh <markdown-file>"
+  echo "Usage: bash bubbles/scripts/value-selection-lint.sh <markdown-file>"
   exit 2
 fi
 

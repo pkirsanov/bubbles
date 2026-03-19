@@ -17,7 +17,7 @@
 #   5. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
 #
 # Usage:
-#   bash .github/bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
+#   bash bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
 #
 # Exit codes:
 #   0 = No violations found
@@ -43,7 +43,7 @@ done
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> [--verbose]"
+  echo "Usage: bash bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> [--verbose]"
   exit 2
 fi
 

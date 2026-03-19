@@ -137,9 +137,9 @@ Bubbles agents use placeholders (`<frontend-container>`, `<static-root>`) in the
 ```
 1. `.specify/memory/constitution.md` — Highest authority (project governance)
 2. `.github/copilot-instructions.md` — Project-specific rules
-3. `.github/agents/bubbles_shared/agent-common.md` — Universal agent governance
-4. `.github/agents/bubbles_shared/scope-workflow.md` — Universal workflow governance
-5. `.github/bubbles/workflows.yaml` — Workflow orchestration config
+3. `agents/bubbles_shared/agent-common.md` — Universal agent governance
+4. `agents/bubbles_shared/scope-workflow.md` — Universal workflow governance
+5. `bubbles/workflows.yaml` — Workflow orchestration config
 ```
 
 When policies conflict, higher-priority files win.
@@ -161,12 +161,12 @@ When adopting Bubbles for a new project, populate these files:
 - [ ] `.specify/memory/agents.md` — Fill in CLI entrypoint, all commands, file organization, naming
 - [ ] `.specify/memory/constitution.md` — Adapt principles for your project's domain (keep universal ones, add domain-specific ones)
 - [ ] `.github/copilot-instructions.md` — Fill in testing requirements, Docker config, language rules, framework-specific rules
-- [ ] `.github/bubbles/workflows.yaml` — Copy as-is (project-agnostic) or customize modes
-- [ ] `.github/agents/` — Copy all `bubbles.*.agent.md` files as-is (project-agnostic)
-- [ ] `.github/agents/bubbles_shared/` — Copy all shared files as-is (project-agnostic)
-- [ ] `.github/scripts/bubbles-*.sh` — Copy governance scripts as-is (project-agnostic)
+- [ ] `bubbles/workflows.yaml` — Copy as-is (project-agnostic) or customize modes
+- [ ] `agents/` — Copy all `bubbles.*.agent.md` files as-is (project-agnostic)
+- [ ] `agents/bubbles_shared/` — Copy all shared files as-is (project-agnostic)
+- [ ] `bubbles/scripts/` — Copy governance scripts as-is (project-agnostic)
 
-**The Bubbles agent files (`.github/agents/`) and shared governance (`.github/agents/bubbles_shared/`) MUST NOT be modified per-project.** They are universal. Only the three configuration files listed above are project-specific.
+**The Bubbles agent files (`agents/`) and shared governance (`agents/bubbles_shared/`) MUST NOT be modified per-project.** They are universal. Only the three configuration files listed above are project-specific.
 
 ---
 
@@ -176,21 +176,19 @@ When adopting Bubbles for a new project, populate these files:
 
 | Path | Content | Why Portable |
 |------|---------|--------------|
-| `.github/agents/bubbles.*.agent.md` | All 24 Bubbles agent definitions | Contain zero project-specific commands/paths/tools |
-| `.github/agents/speckit.*.agent.md` | All 9 SpecKit agent definitions | Specification-focused, project-agnostic |
-| `.github/agents/bubbles_shared/agent-common.md` | Universal governance: anti-fabrication (G019-G030), evidence standards, test taxonomy, quality work standards | Uses `[cmd]` placeholders and indirection references |
-| `.github/agents/bubbles_shared/critical-requirements.md` | Top-priority non-negotiable policy set (no fabrication, no stubs/TODOs/fallbacks/defaults, full implementation and validation) | Project-agnostic governance, no project-specific values |
-| `.github/agents/bubbles_shared/scope-workflow.md` | Universal workflow: DoD templates, phase exit gates, artifact templates, status ceiling, state.json canonical schema | Uses `[cmd]` placeholders |
-| `.github/agents/bubbles_shared/project-config-contract.md` | This file — the cross-project interface contract | Describes the interface, not the implementation |
-| `.github/agents/bubbles_shared/feature-templates.md` | Feature artifact templates | Structure-only, no project references |
-| `.github/agents/bubbles_shared/bug-templates.md` | Bug artifact templates | Structure-only, no project references |
-| `.github/agents/bubbles_shared/docker-lifecycle-governance.md` | Docker lifecycle governance (freshness, cleanup, labeling) | Universal Docker patterns, no project references |
-| `.github/bubbles/workflows.yaml` | Workflow modes (24), gates (G001-G032), phases (13), retry policy, priority scoring | Orchestration config, no project references |
-| `.github/scripts/bubbles-*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, etc.) | Validate artifact structure, not project-specific content |
-| `.github/instructions/agents.instructions.md` | Agent authoring guidelines | Project-agnostic agent format and rules |
-| `.github/instructions/skills.instructions.md` | Skill authoring guidelines | Project-agnostic skill format and rules |
-| `.github/docs/BUBBLES_*.md` | Bubbles documentation (workflows, examples, cheatsheet, sessions, prompts, etc.) | Project-agnostic reference docs |
-| `.github/prompts/bubbles.*.prompt.md` | Prompt shims routing to agents | Minimal routing files, no project content |
+| `agents/bubbles.*.agent.md` | All 24 Bubbles agent definitions | Contain zero project-specific commands/paths/tools |
+| `agents/speckit.*.agent.md` | All 9 SpecKit agent definitions | Specification-focused, project-agnostic |
+| `agents/bubbles_shared/agent-common.md` | Universal governance: anti-fabrication (G019-G030), evidence standards, test taxonomy, quality work standards | Uses `[cmd]` placeholders and indirection references |
+| `agents/bubbles_shared/critical-requirements.md` | Top-priority non-negotiable policy set (no fabrication, no stubs/TODOs/fallbacks/defaults, full implementation and validation) | Project-agnostic governance, no project-specific values |
+| `agents/bubbles_shared/scope-workflow.md` | Universal workflow: DoD templates, phase exit gates, artifact templates, status ceiling, state.json canonical schema | Uses `[cmd]` placeholders |
+| `agents/bubbles_shared/project-config-contract.md` | This file — the cross-project interface contract | Describes the interface, not the implementation |
+| `agents/bubbles_shared/feature-templates.md` | Feature artifact templates | Structure-only, no project references |
+| `agents/bubbles_shared/bug-templates.md` | Bug artifact templates | Structure-only, no project references |
+| `agents/bubbles_shared/docker-lifecycle-governance.md` | Docker lifecycle governance (freshness, cleanup, labeling) | Universal Docker patterns, no project references |
+| `bubbles/workflows.yaml` | Workflow modes (24), gates (G001-G032), phases (13), retry policy, priority scoring | Orchestration config, no project references |
+| `bubbles/scripts/*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, etc.) | Validate artifact structure, not project-specific content |
+| `docs/*.md` | Bubbles documentation (examples, cheatsheet, sessions, prompts, etc.) | Project-agnostic reference docs |
+| `prompts/bubbles.*.prompt.md` | Prompt shims routing to agents | Minimal routing files, no project content |
 
 ### Project-Specific (Customize Per Project)
 
@@ -240,13 +238,13 @@ Add the guard script to the project's pre-completion self-audit and status trans
 Before marking any task "done", execute these checks:
 
 # 0. RUN STATE TRANSITION GUARD (FIRST — MANDATORY Gate G023)
-bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
+bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
 # If exit code 1 → STOP. You are NOT done. Fix ALL failures.
 
 # ... project-specific build/test/lint commands ...
 
 # N. Run artifact lint
-bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
+bash bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
 ```
 
 #### 2. Status Transition Rules Table
@@ -256,7 +254,7 @@ The status transition table MUST include Gate G023 as the FIRST requirement:
 ```markdown
 | Gate | Requirement |
 |------|-------------|
-| ✅ **State Transition Guard (Gate G023)** | `bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN>` exits 0. |
+| ✅ **State Transition Guard (Gate G023)** | `bash bubbles/scripts/state-transition-guard.sh specs/<NNN>` exits 0. |
 | ✅ **Status Ceiling** | Workflow mode's statusCeiling allows "done". |
 | ✅ **All Scopes Done** | ALL scope statuses are "Done" (zero "Not Started"). |
 | ... | (remaining gates from agent-common.md) |
@@ -328,16 +326,16 @@ After updating `copilot-instructions.md`, verify the integration:
 
 ```bash
 # 1. Guard script exists and is executable
-ls -la .github/bubbles/scripts/state-transition-guard.sh
+ls -la bubbles/scripts/state-transition-guard.sh
 
 # 2. Artifact lint exists and is executable
-ls -la .github/bubbles/scripts/artifact-lint.sh
+ls -la bubbles/scripts/artifact-lint.sh
 
 # 3. Done-spec audit works
-bash .github/bubbles/scripts/done-spec-audit.sh
+bash bubbles/scripts/done-spec-audit.sh
 
 # 4. Guard script runs against a spec (should show checks)
-bash .github/bubbles/scripts/state-transition-guard.sh specs/<any-spec>
+bash bubbles/scripts/state-transition-guard.sh specs/<any-spec>
 ```
 
 ---

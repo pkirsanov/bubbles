@@ -72,7 +72,7 @@ These scans enforce policies 4-8 mechanically. Agents MUST run the implementatio
 
 ```bash
 # Run the comprehensive reality scan (covers stubs, fakes, hardcoded data, defaults, fallbacks)
-bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 # Exit code 0 = pass, Exit code 1 = BLOCKED
 ```
 

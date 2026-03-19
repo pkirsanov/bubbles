@@ -9,7 +9,7 @@ write_mode="${2:-}"
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/bubbles/scripts/report-section-autofix.sh specs/<NNN-feature-name> [--write]"
+  echo "Usage: bash bubbles/scripts/report-section-autofix.sh specs/<NNN-feature-name> [--write]"
   exit 2
 fi
 

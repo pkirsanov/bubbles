@@ -204,7 +204,7 @@ Rules:
 
 **Status values:** `not_started`, `in_progress`, `blocked`, `specs_hardened`, `docs_updated`, `validated`, `done`.  
 **`workflowMode`:** Records which workflow mode last set the status.  
-Only modes with `statusCeiling: done` (in `.github/bubbles/workflows.yaml`) may set `status: "done"`.  
+Only modes with `statusCeiling: done` (in `bubbles/workflows.yaml`) may set `status: "done"`.
 Artifact-only modes set their ceiling status (e.g., `specs_hardened` for `spec-scope-hardening`).
 **`scopeLayout`:** `single-file` uses `scopes.md` + `report.md`; `per-scope-directory` uses `scopes/_index.md` plus `scopes/NN-name/scope.md` and `scopes/NN-name/report.md`.  
 **`scopeProgress`:** Machine-readable scope registry for dependency pickup, status sync, and evidence location.

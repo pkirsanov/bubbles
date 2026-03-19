@@ -7,7 +7,7 @@
 # agents from fabricating completion status.
 #
 # Usage:
-#   bash .github/bubbles/scripts/state-transition-guard.sh <feature-dir> [--revert-on-fail]
+#   bash bubbles/scripts/state-transition-guard.sh <feature-dir> [--revert-on-fail]
 #
 # Exit codes:
 #   0 = All checks pass, transition to "done" is permitted
@@ -19,8 +19,10 @@
 # =============================================================================
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
+source "$SCRIPT_DIR/fun-mode.sh"
 
 feature_dir="${1:-}"
 revert_on_fail="false"
@@ -33,7 +35,7 @@ done
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name> [--revert-on-fail]"
+  echo "Usage: bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name> [--revert-on-fail]"
   exit 2
 fi
 
@@ -91,6 +93,16 @@ detect_scope_layout() {
   fi
 }
 
+combined_scopes_tmp=""
+
+cleanup_tmp_artifacts() {
+  if [[ -n "$combined_scopes_tmp" ]] && [[ -f "$combined_scopes_tmp" ]]; then
+    rm -f "$combined_scopes_tmp"
+  fi
+}
+
+trap cleanup_tmp_artifacts EXIT
+
 scope_layout="$(detect_scope_layout)"
 scope_index_file="$feature_dir/scopes/_index.md"
 scope_files=()
@@ -109,11 +121,26 @@ else
   report_files+=("$feature_dir/report.md")
 fi
 
-scopes_file="${scope_files[0]:-}"
-report_file=""
-if [[ ${#report_files[@]} -gt 0 ]]; then
-  report_file="${report_files[0]}"
+scopes_file=""
+if [[ ${#scope_files[@]} -gt 0 ]]; then
+  if [[ ${#scope_files[@]} -eq 1 ]]; then
+    scopes_file="${scope_files[0]}"
+  else
+    combined_scopes_tmp="$(mktemp)"
+    for scope_path in "${scope_files[@]}"; do
+      printf '%%%% %s %%%%\n' "$scope_path" >> "$combined_scopes_tmp"
+      cat "$scope_path" >> "$combined_scopes_tmp"
+      printf '\n' >> "$combined_scopes_tmp"
+    done
+    scopes_file="$combined_scopes_tmp"
+  fi
 fi
+scope_file="$scopes_file"
+
+relative_artifact_path() {
+  local artifact_path="$1"
+  echo "${artifact_path#$feature_dir/}"
+}
 
 echo "============================================================"
 echo "  BUBBLES STATE TRANSITION GUARD"
@@ -695,33 +722,32 @@ echo ""
 # CHECK 8: Test file existence — verify Test Plan files exist on disk
 # =============================================================================
 echo "--- Check 8: Test File Existence ---"
-if [[ -f "$scopes_file" ]]; then
-  # Extract test file paths from Test Plan tables
-  test_files_in_plan=()
+test_files_in_plan=()
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   while IFS= read -r line; do
-    # Extract paths from markdown table cells (backtick-wrapped)
     path="$(echo "$line" | grep -oE '`[^`]+\.(spec|test|rs|ts|tsx|js|jsx)\b[^`]*`' | sed 's/`//g' | head -1 || true)"
     if [[ -n "$path" ]] && [[ "$path" != "[path]" ]] && [[ ! "$path" =~ ^\[ ]]; then
       test_files_in_plan+=("$path")
     fi
-  done < <(grep -E '^\|.*\|.*\|.*\|' "$scopes_file" 2>/dev/null || true)
+  done < <(grep -E '^\|.*\|.*\|.*\|' "$scope_path" 2>/dev/null || true)
+done
 
-  missing_test_files=0
-  if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
-    for test_path in "${test_files_in_plan[@]}"; do
-      if [[ -f "$test_path" ]]; then
-        pass "Test file exists: $test_path"
-      else
-        fail "Test Plan references non-existent file: $test_path"
-        missing_test_files=$((missing_test_files + 1))
-      fi
-    done
-    if [[ "$missing_test_files" -gt 0 ]]; then
-      fail "$missing_test_files of ${#test_files_in_plan[@]} test files from Test Plan DO NOT EXIST"
+missing_test_files=0
+if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
+  for test_path in "${test_files_in_plan[@]}"; do
+    if [[ -f "$test_path" ]]; then
+      pass "Test file exists: $test_path"
+    else
+      fail "Test Plan references non-existent file: $test_path"
+      missing_test_files=$((missing_test_files + 1))
     fi
-  else
-    warn "No concrete test file paths found in Test Plan (all may be placeholders)"
+  done
+  if [[ "$missing_test_files" -gt 0 ]]; then
+    fail "$missing_test_files of ${#test_files_in_plan[@]} test files from Test Plan DO NOT EXIST"
   fi
+else
+  warn "No concrete test file paths found in Test Plan across resolved scope files (all may be placeholders)"
 fi
 echo ""
 
@@ -729,29 +755,30 @@ echo ""
 # CHECK 9: Evidence depth — DoD [x] items must have evidence blocks
 # =============================================================================
 echo "--- Check 9: DoD Evidence Presence ---"
-if [[ -f "$scopes_file" ]]; then
-  checked_without_evidence=0
-  checked_with_evidence=0
+checked_without_evidence=0
+checked_with_evidence=0
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   while IFS= read -r line; do
-    item_line_num="$({ grep -nF -- "$line" "$scopes_file" | head -1 | cut -d: -f1; } || true)"
+    item_line_num="$({ grep -nF -- "$line" "$scope_path" | head -1 | cut -d: -f1; } || true)"
     if [[ -n "$item_line_num" ]]; then
-      next_lines="$({ sed -n "$((item_line_num+1)),$((item_line_num+15))p" "$scopes_file"; } || true)"
-        if echo "$line" | grep -qiE '(→[[:space:]]*Evidence:|Evidence:)'; then
-          checked_with_evidence=$((checked_with_evidence + 1))
-        elif echo "$next_lines" | grep -qE '(Executed:|Command:|Evidence|```|Exit Code:|Raw Output)'; then
+      next_lines="$({ sed -n "$((item_line_num+1)),$((item_line_num+15))p" "$scope_path"; } || true)"
+      if echo "$line" | grep -qiE '(→[[:space:]]*Evidence:|Evidence:)'; then
+        checked_with_evidence=$((checked_with_evidence + 1))
+      elif echo "$next_lines" | grep -qE '(Executed:|Command:|Evidence|```|Exit Code:|Raw Output)'; then
         checked_with_evidence=$((checked_with_evidence + 1))
       else
         checked_without_evidence=$((checked_without_evidence + 1))
-        fail "DoD item [x] has NO evidence block: $(echo "$line" | head -c 80)"
+        fail "DoD item [x] has NO evidence block in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
       fi
     fi
-  done < <(grep -E '^\- \[x\] ' "$scopes_file" 2>/dev/null || true)
+  done < <(grep -E '^\- \[x\] ' "$scope_path" 2>/dev/null || true)
+done
 
-  if [[ "$checked_without_evidence" -eq 0 ]] && [[ "$checked_with_evidence" -gt 0 ]]; then
-    pass "All $checked_with_evidence checked DoD items have evidence blocks"
-  elif [[ "$checked_with_evidence" -eq 0 ]] && [[ "$total_checked" -gt 0 ]]; then
-    fail "ALL checked DoD items lack evidence blocks — BULK FABRICATION DETECTED"
-  fi
+if [[ "$checked_without_evidence" -eq 0 ]] && [[ "$checked_with_evidence" -gt 0 ]]; then
+  pass "All $checked_with_evidence checked DoD items across resolved scope files have evidence blocks"
+elif [[ "$checked_with_evidence" -eq 0 ]] && [[ "$total_checked" -gt 0 ]]; then
+  fail "ALL checked DoD items across resolved scope files lack evidence blocks — BULK FABRICATION DETECTED"
 fi
 echo ""
 
@@ -759,44 +786,50 @@ echo ""
 # CHECK 10: Template placeholder detection
 # =============================================================================
 echo "--- Check 10: Template Placeholder Detection ---"
-if [[ -f "$scopes_file" ]]; then
-  template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[cmd\]|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$scopes_file"; } || true)"
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+  template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[cmd\]|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$scope_path"; } || true)"
   if [[ "$template_hits" -gt 0 ]]; then
-    fail "scopes.md contains $template_hits unfilled template placeholders — FABRICATION"
+    fail "$(relative_artifact_path "$scope_path") contains $template_hits unfilled template placeholders — FABRICATION"
   else
-    pass "No template placeholders in scopes.md"
+    pass "No template placeholders in $(relative_artifact_path "$scope_path")"
   fi
-fi
+done
 
-if [[ ! -f "$report_file" && ${#report_files[@]} -gt 0 ]]; then
-  report_file="${report_files[0]}"
-fi
-if [[ -f "$report_file" ]]; then
-  report_template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$report_file"; } || true)"
+for report_path in "${report_files[@]}"; do
+  [[ -f "$report_path" ]] || continue
+  report_template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$report_path"; } || true)"
   if [[ "$report_template_hits" -gt 0 ]]; then
-    fail "report.md contains $report_template_hits unfilled template placeholders — FABRICATION"
+    fail "$(relative_artifact_path "$report_path") contains $report_template_hits unfilled template placeholders — FABRICATION"
   else
-    pass "No template placeholders in report.md"
+    pass "No template placeholders in $(relative_artifact_path "$report_path")"
   fi
-fi
+done
 echo ""
 
 # =============================================================================
 # CHECK 11: Report.md required sections
 # =============================================================================
 echo "--- Check 11: Report.md Required Sections ---"
-if [[ -f "$report_file" ]]; then
+if [[ ${#report_files[@]} -eq 0 ]]; then
+  fail "No report.md files were resolved for this feature"
+fi
+
+for report_path in "${report_files[@]}"; do
+  if [[ ! -f "$report_path" ]]; then
+    fail "Missing report file: $(relative_artifact_path "$report_path")"
+    continue
+  fi
+
   required_headers=("### Summary" "### Completion Statement" "### Test Evidence")
   for header in "${required_headers[@]}"; do
-    if grep -qE "^${header}" "$report_file"; then
-      pass "report.md has section: $header"
+    if grep -qE "^${header}" "$report_path"; then
+      pass "$(relative_artifact_path "$report_path") has section: $header"
     else
-      fail "report.md missing required section: $header"
+      fail "$(relative_artifact_path "$report_path") missing required section: $header"
     fi
   done
 
-  # Check evidence legitimacy in report.md (content-based, not just line count)
-  # Looks for terminal output signals: test results, file paths, exit codes, timing, commands
   illegitimate_blocks=0
   total_blocks=0
   in_block=0
@@ -814,23 +847,14 @@ if [[ -f "$report_file" ]]; then
       if [[ "$block_lines" -lt 3 ]]; then
         illegitimate_blocks=$((illegitimate_blocks + 1))
       else
-        # Count terminal output signals
         signals=0
-        # Test runner patterns
         echo "$block_content" | grep -qiE '(passed|failed|ok$| PASS | FAIL |test result:|Tests:.*suites|✓|✗|PASSED|FAILED)' && signals=$((signals + 1))
-        # Exit/compiler/log patterns
         echo "$block_content" | grep -qiE '(exit code|Exit Code:|error\[|warning\[|Compiling |Finished |error:|warning:|WARN |ERROR |INFO )' && signals=$((signals + 1))
-        # File paths with extensions
         echo "$block_content" | grep -qE '([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|go|sh|sql|toml|yaml|json|proto|md)|\./)' && signals=$((signals + 1))
-        # Timing/duration patterns
         echo "$block_content" | grep -qiE '(in [0-9]+(\.[0-9]+)?(s|ms|m)|elapsed|finished in|Duration|[0-9]+\.[0-9]+s$)' && signals=$((signals + 1))
-        # Build tool / test framework names
         echo "$block_content" | grep -qiE '(cargo |npm |pytest|go test|jest |playwright|vitest|running [0-9]+ test|test result:)' && signals=$((signals + 1))
-        # Count patterns
         echo "$block_content" | grep -qE '[0-9]+ (passed|failed|errors?|warnings?|skipped|ignored|tests?)' && signals=$((signals + 1))
-        # HTTP/curl patterns
         echo "$block_content" | grep -qiE '(HTTP/|status.*[0-9]{3}|curl |GET /|POST /|PUT /|DELETE /|Content-Type)' && signals=$((signals + 1))
-        # grep/ls/filesystem output
         echo "$block_content" | grep -qE '(^[dl-][rwx-]{9} |^[0-9]+:|^\$ |^> )' && signals=$((signals + 1))
 
         if [[ "$signals" -lt 2 ]]; then
@@ -841,43 +865,37 @@ if [[ -f "$report_file" ]]; then
       block_lines=$((block_lines + 1))
       block_content="${block_content}${line}"$'\n'
     fi
-  done < "$report_file"
+  done < "$report_path"
 
   if [[ "$total_blocks" -eq 0 ]]; then
-    fail "report.md has ZERO evidence code blocks — no execution evidence exists"
+    fail "$(relative_artifact_path "$report_path") has ZERO evidence code blocks — no execution evidence exists"
   elif [[ "$illegitimate_blocks" -gt 0 ]]; then
-    warn "report.md has $illegitimate_blocks of $total_blocks evidence blocks that lack terminal output signals (potentially fabricated)"
+    warn "$(relative_artifact_path "$report_path") has $illegitimate_blocks of $total_blocks evidence blocks that lack terminal output signals (potentially fabricated)"
   else
-    pass "All $total_blocks evidence blocks in report.md contain legitimate terminal output"
+    pass "All $total_blocks evidence blocks in $(relative_artifact_path "$report_path") contain legitimate terminal output"
   fi
 
-  # Check for narrative summary phrases (fabrication indicator)
-  narrative_hits="$({
-    grep -ciE '(all tests pass|everything works|no issues found|verified successfully|confirmed working|tests are green|builds successfully|all checks pass)' "$report_file" || true
-  } || true)"
-  # Exclude matches inside code blocks
   narrative_outside_blocks="$({
     awk '
       /^```/ {in_block = !in_block; next}
       !in_block && tolower($0) ~ /(all tests pass|everything works|no issues found|verified successfully|confirmed working|tests are green|builds successfully|all checks pass)/ {count++}
       END {print count+0}
-    ' "$report_file"
+    ' "$report_path"
   } || true)"
   if [[ "$narrative_outside_blocks" -gt 0 ]]; then
-    warn "report.md has $narrative_outside_blocks narrative summary phrases outside code blocks (fabrication indicator)"
+    warn "$(relative_artifact_path "$report_path") has $narrative_outside_blocks narrative summary phrases outside code blocks (fabrication indicator)"
   else
-    pass "No narrative summary phrases detected outside code blocks"
+    pass "No narrative summary phrases detected outside code blocks in $(relative_artifact_path "$report_path")"
   fi
-else
-  fail "report.md does not exist"
-fi
+done
 echo ""
 
 # =============================================================================
 # CHECK 12: Duplicate evidence detection
 # =============================================================================
 echo "--- Check 12: Duplicate Evidence Detection ---"
-if [[ -f "$scopes_file" ]]; then
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   evidence_hashes=()
   in_evidence=0
   current_evidence=""
@@ -892,7 +910,7 @@ if [[ -f "$scopes_file" ]]; then
         evidence_hash="$(echo "$current_evidence" | md5sum | cut -d' ' -f1)"
         for prev_hash in "${evidence_hashes[@]}"; do
           if [[ "$evidence_hash" == "$prev_hash" ]]; then
-            fail "Duplicate evidence blocks detected in scopes.md — COPY-PASTE FABRICATION"
+            fail "Duplicate evidence blocks detected in $(relative_artifact_path "$scope_path") — COPY-PASTE FABRICATION"
             duplicate_found="true"
             break 2
           fi
@@ -902,27 +920,27 @@ if [[ -f "$scopes_file" ]]; then
     elif [[ "$in_evidence" -eq 1 ]]; then
       current_evidence="${current_evidence}${line}"
     fi
-  done < "$scopes_file"
+  done < "$scope_path"
 
   if [[ "$duplicate_found" == "false" ]]; then
-    pass "No duplicate evidence blocks in scopes.md"
+    pass "No duplicate evidence blocks in $(relative_artifact_path "$scope_path")"
   fi
-fi
+done
 echo ""
 
 # =============================================================================
 # CHECK 13: Run artifact lint as final cross-check
 # =============================================================================
 echo "--- Check 13: Artifact Lint ---"
-lint_script=".github/bubbles/scripts/artifact-lint.sh"
+lint_script="$SCRIPT_DIR/artifact-lint.sh"
 if [[ -f "$lint_script" ]]; then
   if bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
     pass "Artifact lint passes (exit 0)"
   else
-    fail "Artifact lint FAILED — run 'bash $lint_script $feature_dir' for details"
+    fail "Artifact lint FAILED — run 'bash bubbles/scripts/artifact-lint.sh $feature_dir' for details"
   fi
 else
-  warn "Artifact lint script not found at $lint_script"
+  fail "Artifact lint script not found at $lint_script"
 fi
 echo ""
 
@@ -930,33 +948,33 @@ echo ""
 # CHECK 14: TODO/FIXME/STUB markers in implementation files
 # =============================================================================
 echo "--- Check 14: Implementation Completeness ---"
-if [[ -f "$scopes_file" ]]; then
-  # Extract implementation file paths from implementation plan sections
-  impl_files=()
+impl_files=()
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   while IFS= read -r line; do
-    # Look for file paths in backticks that look like source files
     path="$(echo "$line" | grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java)\b[^`]*`' | sed 's/`//g' | head -1 || true)"
     if [[ -n "$path" ]] && [[ -f "$path" ]]; then
       impl_files+=("$path")
     fi
-  done < "$scopes_file"
+  done < "$scope_path"
+done
 
-  if [[ ${#impl_files[@]} -gt 0 ]]; then
-    todo_hits=0
-    for impl_file in "${impl_files[@]}"; do
-      file_todos="$({ grep -cnE 'TODO|FIXME|HACK|STUB|unimplemented!|NotImplementedError' "$impl_file"; } || true)"
-      if [[ "$file_todos" -gt 0 ]]; then
-        fail "Implementation file has $file_todos TODO/STUB markers: $impl_file"
-        todo_hits=$((todo_hits + file_todos))
-      fi
-    done
-    if [[ "$todo_hits" -eq 0 ]]; then
-      pass "No TODO/FIXME/STUB markers in referenced implementation files"
+if [[ ${#impl_files[@]} -gt 0 ]]; then
+  todo_hits=0
+  for impl_file in "${impl_files[@]}"; do
+    file_todos="$({ grep -cnE 'TODO|FIXME|HACK|STUB|unimplemented!|NotImplementedError' "$impl_file"; } || true)"
+    if [[ "$file_todos" -gt 0 ]]; then
+      fail "Implementation file has $file_todos TODO/STUB markers: $impl_file"
+      todo_hits=$((todo_hits + file_todos))
     fi
-  else
-    info "No implementation file paths extracted from scopes.md (manual check advised)"
+  done
+  if [[ "$todo_hits" -eq 0 ]]; then
+    pass "No TODO/FIXME/STUB markers in referenced implementation files"
   fi
+else
+  info "No implementation file paths extracted from resolved scope files (manual check advised)"
 fi
+echo ""
 echo ""
 
 # =============================================================================
@@ -1032,7 +1050,7 @@ echo ""
 # data patterns in source files referenced by scope artifacts.
 # =============================================================================
 echo "--- Check 16: Implementation Reality Scan (Gate G028) ---"
-reality_scan_script=".github/bubbles/scripts/implementation-reality-scan.sh"
+reality_scan_script="$SCRIPT_DIR/implementation-reality-scan.sh"
 if [[ -f "$reality_scan_script" ]]; then
   # Only run for modes that involve implementation
   run_reality_scan="false"
@@ -1062,7 +1080,7 @@ if [[ -f "$reality_scan_script" ]]; then
     info "Workflow mode '$state_workflow_mode' does not require implementation reality scan"
   fi
 else
-  warn "Implementation reality scan script not found at $reality_scan_script — cannot enforce Gate G028"
+  fail "Implementation reality scan script not found at $reality_scan_script — cannot enforce Gate G028"
 fi
 echo ""
 

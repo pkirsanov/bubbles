@@ -4,8 +4,10 @@ set -euo pipefail
 # Source fun mode support
 source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
-  echo "Usage: bash .github/bubbles/scripts/done-spec-audit.sh [--fix]"
+  echo "Usage: bash bubbles/scripts/done-spec-audit.sh [--fix]"
   echo ""
   echo "Scans specs/*/state.json for status=done, runs artifact lint, and reports failures."
   echo "With --fix, failing done specs are downgraded to in_progress."
@@ -33,16 +35,16 @@ done
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$repo_root"
 
-lint_script=".github/bubbles/scripts/artifact-lint.sh"
+lint_script="$SCRIPT_DIR/artifact-lint.sh"
 if [[ ! -f "$lint_script" ]]; then
   echo "ERROR: missing lint script: $lint_script"
   exit 2
 fi
 
-guard_script=".github/bubbles/scripts/state-transition-guard.sh"
+guard_script="$SCRIPT_DIR/state-transition-guard.sh"
 if [[ ! -f "$guard_script" ]]; then
-  echo "WARNING: missing guard script: $guard_script (falling back to lint-only)"
-  guard_script=""
+  echo "ERROR: missing guard script: $guard_script"
+  exit 2
 fi
 
 total_done=0

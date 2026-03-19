@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Source fun mode support
-source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
+source "$SCRIPT_DIR/fun-mode.sh"
 
 feature_dir="${1:-}"
 default_scenario_pattern='SCN-[0-9]{3}-[A-Z][0-9]{2}'
@@ -11,8 +13,8 @@ enable_autofix="false"
 
 if [[ -z "$feature_dir" ]]; then
   echo "ERROR: missing feature directory argument"
-  echo "Usage: bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
-  echo "Example: bash .github/bubbles/scripts/artifact-lint.sh specs/037-future-enhancements-missing-implementation 'SCN-037-[A-Z][0-9]{2}'"
+  echo "Usage: bash bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
+  echo "Example: bash bubbles/scripts/artifact-lint.sh specs/037-future-enhancements-missing-implementation 'SCN-037-[A-Z][0-9]{2}'"
   exit 2
 fi
 
@@ -24,7 +26,7 @@ for arg in "$@"; do
     scenario_pattern="$arg"
   else
     echo "ERROR: unsupported argument '$arg'"
-    echo "Usage: bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
+    echo "Usage: bash bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name> [scenario-regex] [--autofix]"
     exit 2
   fi
 done
@@ -35,7 +37,7 @@ if [[ ! -d "$feature_dir" ]]; then
 fi
 
 if [[ "$enable_autofix" == "true" ]]; then
-  autofix_script=".github/bubbles/scripts/report-section-autofix.sh"
+  autofix_script="$SCRIPT_DIR/report-section-autofix.sh"
   if [[ ! -x "$autofix_script" ]]; then
     echo "ERROR: autofix requested but helper is missing or not executable: $autofix_script"
     exit 2
@@ -90,6 +92,16 @@ detect_scope_layout() {
   fi
 }
 
+combined_scopes_tmp=""
+
+cleanup_tmp_artifacts() {
+  if [[ -n "$combined_scopes_tmp" ]] && [[ -f "$combined_scopes_tmp" ]]; then
+    rm -f "$combined_scopes_tmp"
+  fi
+}
+
+trap cleanup_tmp_artifacts EXIT
+
 scope_layout="$(detect_scope_layout)"
 scope_index_file="$feature_dir/scopes/_index.md"
 scope_files=()
@@ -108,11 +120,29 @@ else
   report_files+=("$feature_dir/report.md")
 fi
 
-scopes_file="${scope_files[0]:-}"
+scopes_file=""
+if [[ ${#scope_files[@]} -gt 0 ]]; then
+  if [[ ${#scope_files[@]} -eq 1 ]]; then
+    scopes_file="${scope_files[0]}"
+  else
+    combined_scopes_tmp="$(mktemp)"
+    for scope_path in "${scope_files[@]}"; do
+      printf '%%%% %s %%%%\n' "$scope_path" >> "$combined_scopes_tmp"
+      cat "$scope_path" >> "$combined_scopes_tmp"
+      printf '\n' >> "$combined_scopes_tmp"
+    done
+    scopes_file="$combined_scopes_tmp"
+  fi
+fi
 report_file=""
 if [[ ${#report_files[@]} -gt 0 ]]; then
   report_file="${report_files[0]}"
 fi
+
+relative_artifact_path() {
+  local artifact_path="$1"
+  echo "${artifact_path#$feature_dir/}"
+}
 
 required_files=(
   "spec.md"
@@ -802,9 +832,7 @@ if [[ -f "$state_file" ]]; then
   fi
 fi
 
-if [[ ! -f "$report_file" && ${#report_files[@]} -gt 0 ]]; then
-  report_file="${report_files[0]}"
-fi
+for report_file in "${report_files[@]}"; do
 if [[ -f "$report_file" ]]; then
   required_report_headers=(
     '^### Summary'
@@ -916,7 +944,7 @@ if [[ -f "$report_file" ]]; then
     done
   fi
 
-  value_selection_lint_script=".github/bubbles/scripts/value-selection-lint.sh"
+  value_selection_lint_script="$SCRIPT_DIR/value-selection-lint.sh"
   if [[ -x "$value_selection_lint_script" ]]; then
     if grep -Eq 'value-first-e2e-batch|Value-First Selection Cycle' "$report_file"; then
       if value_selection_output="$(bash "$value_selection_lint_script" "$report_file" 2>&1)"; then
@@ -993,6 +1021,8 @@ if [[ -f "$report_file" ]]; then
   fi
 fi
 
+done
+
 # ============================================================
 # Anti-Fabrication Evidence Checks (Gates G020, G021)
 # ============================================================
@@ -1001,54 +1031,53 @@ echo ""
 echo "=== Anti-Fabrication Evidence Checks ==="
 
 # Check 1: DoD evidence presence — each [x] item must have evidence block below it
-if [[ -f "$scopes_file" ]]; then
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   checked_items_without_evidence=0
   while IFS= read -r line; do
-    # Accept either inline evidence on the same DoD line or a structured evidence
-    # block immediately after it. Older artifacts often use "→ Evidence:" inline.
     if echo "$line" | grep -qiE '(→[[:space:]]*Evidence:|Evidence:)'; then
       continue
     fi
 
-    # Use -- to prevent grep from interpreting the line content as options.
-    item_line_num="$({ grep -nF -- "$line" "$scopes_file" | head -1 | cut -d: -f1; } || true)"
+    item_line_num="$({ grep -nF -- "$line" "$scope_path" | head -1 | cut -d: -f1; } || true)"
     if [[ -n "$item_line_num" ]]; then
-      # Look for evidence structure within the next 15 lines.
-      next_lines="$({ sed -n "$((item_line_num+1)),$((item_line_num+15))p" "$scopes_file"; } || true)"
+      next_lines="$({ sed -n "$((item_line_num+1)),$((item_line_num+15))p" "$scope_path"; } || true)"
       if echo "$next_lines" | grep -qiE '(Executed:|Command:|Evidence|```|Exit Code:)'; then
         :
       else
         checked_items_without_evidence=$((checked_items_without_evidence + 1))
-        fail "DoD item marked [x] has no evidence block: $(echo "$line" | head -c 80)"
+        fail "DoD item marked [x] has no evidence block in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
       fi
     fi
-  done < <(grep -E '^- \[x\] ' "$scopes_file" 2>/dev/null || true)
+  done < <(grep -E '^- \[x\] ' "$scope_path" 2>/dev/null || true)
 
   if [[ "$checked_items_without_evidence" -eq 0 ]]; then
-    pass "All checked DoD items have evidence blocks"
+    pass "All checked DoD items in $(relative_artifact_path "$scope_path") have evidence blocks"
   fi
-fi
+done
 
 # Check 2: Evidence template detection — detect unfilled template placeholders
-if [[ -f "$scopes_file" ]]; then
-  template_placeholders="$({ grep -nE '\[ACTUAL terminal output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$scopes_file"; } || true)"
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+  template_placeholders="$({ grep -nE '\[ACTUAL terminal output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$scope_path"; } || true)"
   if [[ -n "$template_placeholders" ]]; then
-    fail "scopes.md contains unfilled evidence template placeholders (fabrication detected)"
+    fail "$(relative_artifact_path "$scope_path") contains unfilled evidence template placeholders (fabrication detected)"
     echo "$template_placeholders" | head -5 | sed 's/^/   -> /'
   else
-    pass "No unfilled evidence template placeholders in scopes.md"
+    pass "No unfilled evidence template placeholders in $(relative_artifact_path "$scope_path")"
   fi
-fi
+done
 
-if [[ -f "$report_file" ]]; then
-  report_template_placeholders="$({ grep -nE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$report_file"; } || true)"
+for current_report_file in "${report_files[@]}"; do
+  [[ -f "$current_report_file" ]] || continue
+  report_template_placeholders="$({ grep -nE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$current_report_file"; } || true)"
   if [[ -n "$report_template_placeholders" ]]; then
-    fail "report.md contains unfilled evidence template placeholders (fabrication detected)"
+    fail "$(relative_artifact_path "$current_report_file") contains unfilled evidence template placeholders (fabrication detected)"
     echo "$report_template_placeholders" | head -5 | sed 's/^/   -> /'
   else
-    pass "No unfilled evidence template placeholders in report.md"
+    pass "No unfilled evidence template placeholders in $(relative_artifact_path "$current_report_file")"
   fi
-fi
+done
 
 # Check 3: Evidence legitimacy — code fence blocks must contain real terminal output
 # Instead of just counting lines, check for signals that the content is genuine
@@ -1064,7 +1093,8 @@ fi
 #   - HTTP patterns: "HTTP/", "200", "404", "curl", "GET ", "POST ", "Content-Type"
 #   - Count patterns: "\d+ passed", "\d+ failed", "0 errors", "0 warnings"
 #   - grep/ls output: file listings, permission strings (drwx, -rw-), line-number prefixed output
-if [[ -f "$report_file" ]] && [[ "$state_status" == "done" ]]; then
+for current_report_file in "${report_files[@]}"; do
+if [[ -f "$current_report_file" ]] && [[ "$state_status" == "done" ]]; then
   evidence_sections_checked=0
   illegitimate_evidence=0
   in_code_block=0
@@ -1140,18 +1170,20 @@ if [[ -f "$report_file" ]] && [[ "$state_status" == "done" ]]; then
       code_block_content="${code_block_content}${line}"$'\n'
     fi
     prev_line="$line"
-  done < "$report_file"
+  done < "$current_report_file"
 
   if [[ "$illegitimate_evidence" -eq 0 ]] && [[ "$evidence_sections_checked" -gt 0 ]]; then
-    pass "All $evidence_sections_checked evidence blocks in report.md contain legitimate terminal output"
+    pass "All $evidence_sections_checked evidence blocks in $(relative_artifact_path "$current_report_file") contain legitimate terminal output"
   elif [[ "$evidence_sections_checked" -eq 0 ]]; then
-    fail "report.md has no evidence code blocks (status is 'done' but no evidence exists)"
+    fail "$(relative_artifact_path "$current_report_file") has no evidence code blocks (status is 'done' but no evidence exists)"
   fi
 fi
+done
 
 # Check 4: Summary language detection — detect narrative claims without terminal output
 # Must track code block state to avoid false positives on genuine terminal output inside ``` blocks
-if [[ -f "$report_file" ]] && [[ "$state_status" == "done" ]]; then
+for current_report_file in "${report_files[@]}"; do
+if [[ -f "$current_report_file" ]] && [[ "$state_status" == "done" ]]; then
   summary_phrases=""
   in_code=0
   while IFS= read -r line; do
@@ -1168,15 +1200,16 @@ if [[ -f "$report_file" ]] && [[ "$state_status" == "done" ]]; then
     if echo "$line" | grep -iqE '(all tests pass|everything works|no issues found|verified successfully|confirmed working|tests are green|builds successfully|all checks pass)'; then
       summary_phrases+="   -> ${line}"$'\n'
     fi
-  done < "$report_file"
+  done < "$current_report_file"
   summary_phrases="${summary_phrases%$'\n'}"
   if [[ -n "$summary_phrases" ]]; then
-    fail "report.md contains narrative summary phrases instead of raw evidence (fabrication indicator)"
+    fail "$(relative_artifact_path "$current_report_file") contains narrative summary phrases instead of raw evidence (fabrication indicator)"
     echo "$summary_phrases" | head -5
   else
-    pass "No narrative summary phrases detected in report.md"
+    pass "No narrative summary phrases detected in $(relative_artifact_path "$current_report_file")"
   fi
 fi
+done
 
 # Check 5: Specialist completion tracking — all required specialists must be in completedPhases
 if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_workflow_mode" ]]; then
@@ -1211,7 +1244,8 @@ if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_wo
 fi
 
 # Check 6: Duplicate evidence detection — same text in multiple DoD items
-if [[ -f "$scopes_file" ]]; then
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
   evidence_blocks=()
   in_evidence=0
   current_evidence=""
@@ -1224,7 +1258,7 @@ if [[ -f "$scopes_file" ]]; then
       if [[ -n "$current_evidence" ]]; then
         for prev_evidence in "${evidence_blocks[@]}"; do
           if [[ "$current_evidence" == "$prev_evidence" ]]; then
-            fail "Duplicate evidence blocks detected in scopes.md DoD (copy-paste fabrication)"
+            fail "Duplicate evidence blocks detected in $(relative_artifact_path "$scope_path") DoD (copy-paste fabrication)"
             break 2
           fi
         done
@@ -1233,8 +1267,8 @@ if [[ -f "$scopes_file" ]]; then
     elif [[ "$in_evidence" -eq 1 ]]; then
       current_evidence="${current_evidence}${line}"
     fi
-  done < "$scopes_file"
-fi
+  done < "$scope_path"
+done
 
 echo ""
 echo "=== End Anti-Fabrication Checks ==="

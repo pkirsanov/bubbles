@@ -201,7 +201,7 @@ Before reporting test verdict, this agent MUST run Tier 1 universal checks (see 
 | T1 | Skip marker scan | `grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo' [test-files]` | Zero matches |
 | T2 | Mock audit | Scan test files for internal code mocks (`jest.fn`, `sinon.stub`, `vi.fn` on internal code) | Zero internal mocks |
 | T3 | Proxy test scan | Check E2E tests for status-code-only or existence-only assertions | Zero proxy tests |
-| T4 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
+| T4 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | T5 | Coverage threshold | Verify 100% line coverage for business logic | Threshold met |
 
 **If ANY check fails → report `🛑 NOT_TESTED` with details. Do NOT mark scope Done.**
@@ -454,7 +454,7 @@ Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/sco
 
 If `{FEATURE_DIR}/scopes.md` exists:
 - Only mark a scope `Done` when its Definition of Done is fully satisfied (not just “tests passed”).
-- If DoD is satisfied for a scope during this run, update its status to `Done` — but ONLY if the active workflow mode's `statusCeiling` (from `.github/bubbles/workflows.yaml`) allows `done`. If running under an artifact-only mode (e.g., `spec-scope-hardening`), set the ceiling status instead.
+- If DoD is satisfied for a scope during this run, update its status to `Done` — but ONLY if the active workflow mode's `statusCeiling` (from `bubbles/workflows.yaml`) allows `done`. If running under an artifact-only mode (e.g., `spec-scope-hardening`), set the ceiling status instead.
 - Otherwise, leave scope status unchanged and report what remains.
 
 ````
