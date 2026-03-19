@@ -379,17 +379,7 @@ Before reporting verdict, run Tier 1 universal checks (see agent-common.md) PLUS
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all Tier 1 + Tier 2 validation checks pass**, record phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"security"` is NOT in `completedPhases`, append it
-3. Append `executionHistory` entry with `agent: "bubbles.security"`, `phasesExecuted: ["security"]`, timestamps, summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — workflow records entry
-4. Write updated `state.json` and verify
-
-**Rules:**
-- Do NOT add `"security"` if any check failed
-- Do NOT add other agents' phase names
-- Do NOT pre-populate phases not actually executed (Gate G027)
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"security"`. Agent: `bubbles.security`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
 
 ---
 

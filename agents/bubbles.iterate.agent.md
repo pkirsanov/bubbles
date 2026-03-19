@@ -75,21 +75,11 @@ handoffs:
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
-**⚠️ CRITICAL ANTI-FABRICATION RULES (NON-NEGOTIABLE):**
-- **ALL work must be REAL.** Every test must be executed in a terminal. Every DoD item must have actual terminal output as evidence. Every implementation must compile and be reachable.
-- **NEVER write "tests pass" without running the tests.** NEVER write "implementation complete" without verifying compilation. NEVER mark DoD items `[x]` without individual validation.
-- **Apply Fabrication Detection Heuristics** (Gate G021 from agent-common.md) before marking any DoD item complete:
-  - Evidence must have ≥10 lines of raw terminal output
-  - Evidence must NOT be template placeholder text
-  - Evidence must NOT be narrative summaries ("all tests pass")
-  - Each DoD item must be validated and marked SEPARATELY (no batch checking)
-- **Self-check before completion:** "Did I ACTUALLY run this command and see the output, or am I writing what I think would happen?" If the answer is "I think" → STOP and run the command.
+**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). All work real — every test executed in terminal, every DoD item with actual output, every implementation compilable. Never write results without running commands. Evidence ≥10 lines, no templates/narratives.
 
-**⚠️ CRITICAL SEQUENTIAL COMPLETION (NON-NEGOTIABLE):**
-- **Previous scope MUST be fully complete before starting next scope.** ALL DoD items `[x]`, ALL specialist phases executed, artifact lint passes.
-- **When running multiple iterations:** iteration N MUST be fully complete before starting iteration N+1.
+**⚠️ Sequential Completion:** Previous scope MUST be fully complete before next scope. Each iteration N fully complete before N+1.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G030). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail` for safety. Per-agent validation (Tier 2 checks IT1-IT5) MUST pass before reporting results.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G030). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail`. Tier 2 checks IT1-IT5 MUST pass before reporting.
 
 **Non-goals:**
 - Implementing code directly (→ bubbles.implement)

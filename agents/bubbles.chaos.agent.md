@@ -810,16 +810,4 @@ All chaos findings MUST be backed by actual execution evidence per the Anti-Fabr
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all chaos execution and Definition of Done checks pass**, this agent MUST record its phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"chaos"` is NOT already in the `completedPhases` array, append it
-3. Append an entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.chaos"`, `phasesExecuted: ["chaos"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip the `executionHistory` append — the workflow agent records the entry
-4. Write the updated `state.json`
-5. Verify the write succeeded by re-reading the file
-
-**Rules:**
-- Do NOT add `"chaos"` to `completedPhases` if any P0/P1 findings remain unaddressed — phase recording is the LAST step after verified success
-- Do NOT add other agents' phase names — each agent records ONLY its own phase
-- Do NOT pre-populate phases that have not actually executed — this is fabrication (Gate G027)
-- Use simple string format: `"chaos"` (not object format with timestamps)
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"chaos"`. Agent: `bubbles.chaos`. Record ONLY after all DoD checks pass and no P0/P1 findings remain. Gate G027 applies.

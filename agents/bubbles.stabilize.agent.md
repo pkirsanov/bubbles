@@ -248,18 +248,7 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all Tier 1 + Tier 2 validation checks pass**, this agent MUST record its phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"stabilize"` is NOT already in the `completedPhases` array, append it
-3. Append an entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.stabilize"`, `phasesExecuted: ["stabilize"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip the `executionHistory` append — the workflow agent records the entry
-4. Write the updated `state.json`
-5. Verify the write succeeded by re-reading the file
-
-**Rules:**
-- Do NOT add `"stabilize"` to `completedPhases` if any stability check failed
-- Do NOT add other agents' phase names — each agent records ONLY its own phase
-- Do NOT pre-populate phases that have not actually executed — this is fabrication (Gate G027)
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"stabilize"`. Agent: `bubbles.stabilize`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
 
 ---
 

@@ -23,12 +23,7 @@ handoffs:
 - **Regression detection** — compare test results against pre-change baseline; any new failure is a regression to be fixed, not accepted (see No Regression Introduction in agent-common.md)
 - **Use case test quality check** — when reviewing test results, flag proxy tests (status-code-only, assertion-free, mock-heavy) as gaps requiring remediation (see Use Case Testing Integrity in agent-common.md)
 
-**⚠️ CRITICAL ANTI-FABRICATION RULES FOR VALIDATION (NON-NEGOTIABLE):**
-- **You MUST actually run every validation command.** Do NOT claim validation passes without executing the commands.
-- **Evidence format:** For each validation check, record: the exact command, the exit code, and ≥10 lines of raw terminal output. Summaries like "validation passes" are NOT evidence.
-- **Run the artifact lint script** as part of validation: `bash .github/bubbles/scripts/artifact-lint.sh {FEATURE_DIR}`. Record the full output.
-- **Verify all DoD items have real evidence** — read each `[x]` item and confirm it has an inline evidence block with real terminal output. Flag items without evidence as validation failures.
-- **Self-audit honesty check:** For each validation result you record, answer: "Did I actually run this command and see this output in a terminal?" If the answer is "I assumed" or "I think so" → STOP and run it.
+**⚠️ Anti-Fabrication for Validation (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). Run every validation command. Evidence = exact command + exit code + ≥10 lines raw output. Run artifact lint. Verify all DoD items have real evidence.
 
 **Non-goals:**
 - Inventing ad-hoc commands or bypassing repo workflows
@@ -622,20 +617,7 @@ Record in the validation report:
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all Tier 1 + Tier 2 validation checks pass AND verdict is `✅ ALL VALIDATIONS PASSED`**, this agent MUST record its phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"validate"` is NOT already in the `completedPhases` array, append it
-3. Append an entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.validate"`, `phasesExecuted: ["validate"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip the `executionHistory` append — the workflow agent records the entry
-4. Write the updated `state.json`
-5. Verify the write succeeded by re-reading the file
-
-**Rules:**
-- Do NOT add `"validate"` to `completedPhases` if any validation check failed — phase recording is the LAST step after verified success
-- Do NOT add other agents' phase names — each agent records ONLY its own phase
-- Do NOT pre-populate phases that have not actually executed — this is fabrication (Gate G027)
-- Use simple string format: `"validate"` (not object format with timestamps)
-- Only `full` mode validation can record the phase — `quick` and `unit-only` modes MUST NOT record phase completion
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"validate"`. Agent: `bubbles.validate`. Record ONLY after Tier 1 + Tier 2 pass AND verdict is `✅ ALL VALIDATIONS PASSED`. Only `full` mode can record phase. Gate G027 applies.
 
 ---
 

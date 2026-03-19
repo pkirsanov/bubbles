@@ -81,17 +81,9 @@ handoffs:
 - **⚠️ AUTO-MODE-ESCALATION (NON-NEGOTIABLE):** When this agent discovers that the current phase cannot proceed because a prerequisite is unmet (e.g., specs need hardening, artifacts are missing, bugs block progress), it MUST invoke the appropriate specialist agents inline to resolve the issue and then continue the workflow. It MUST NOT stop and suggest the user run `bubbles.workflow` with a different mode.
 - **⚠️ NEVER SUGGEST COMMANDS TO CONTINUE:** Do not end your output with "run this command to continue" or "suggested next steps" or "resume with". Instead, execute those steps yourself. The workflow is not done until all specs are done or terminally blocked.
 
-**⚠️ CRITICAL ANTI-FABRICATION RULES (NON-NEGOTIABLE):**
-- **NEVER claim specialist work was done without actually invoking the specialist agent via `runSubagent`.** If a phase requires `bubbles.test`, you MUST call `runSubagent` with the test agent's role. Writing "tests pass" without running `runSubagent` for `bubbles.test` is fabrication.
-- **VERIFY every specialist agent's output** before advancing to the next phase. Apply the Fabrication Detection Heuristics from `agent-common.md` (G021).
-- **NEVER batch-advance through phases.** Each phase must be executed, verified, and its gate checked before the next phase begins.
-- **NEVER skip phases** in the mode's `phaseOrder`. Every phase MUST be executed, even if you believe it will pass.
-- **Track a per-spec specialist completion ledger** (G022) and verify ALL required specialists have executed before promotion.
+**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). Never claim specialist work without actually calling `runSubagent`. Verify every specialist's output before advancing. Never batch-advance phases or skip phases in mode's `phaseOrder`. Track per-spec specialist completion ledger (G022).
 
-**⚠️ CRITICAL SEQUENTIAL SPEC COMPLETION RULES (NON-NEGOTIABLE):**
-- **NEVER start work on spec N+1 while spec N has unchecked DoD items.** Verify ALL DoD items in spec N are `[x]` with real evidence before advancing.
-- **ALL specialist agents required by the mode** must have completed for spec N before starting spec N+1.
-- **If spec N is `blocked`**, attempt to unblock it first. Only skip if `continueOnBlocked: true` AND retry limits are exceeded.
+**⚠️ Sequential Spec Completion:** Never start spec N+1 while spec N has unchecked DoD items. All required specialists must complete for spec N before advancing. If spec N is `blocked`, attempt to unblock it first; only skip when `continueOnBlocked: true` and retry limits are exhausted.
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). State transition guard (G023) MUST pass before any state.json "done" transition. Per-agent validation delegates validation to each specialist — workflow spot-checks but does not re-run all checks.
 

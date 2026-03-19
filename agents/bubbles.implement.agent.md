@@ -32,25 +32,9 @@ handoffs:
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
-**⚠️ CRITICAL ANTI-FABRICATION RULES (NON-NEGOTIABLE):**
-- **ALL implementation MUST be real, compilable, reachable code.** No stubs, no `TODO`, no `unimplemented!()`, no placeholder functions, no dead code.
-- **ALL tests MUST be real, executable tests** that verify actual behavior. No noop tests, no tests that always pass, no proxy tests that only check status codes.
-- **ALL DoD items MUST be marked `[x]` ONE AT A TIME** — never batch-check. Each `[x]` must be preceded by actual command execution with real terminal output recorded as inline evidence.
-- **NEVER write expected output.** Run the command, copy the ACTUAL output, paste it as evidence. If you find yourself typing "Exit Code: 0" without having run a command → STOP and run the command.
-- **Self-check for each DoD item:** "Did I actually execute a terminal command for this item and observe real output?" If NO → execute the command now.
-- **Apply Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) to self-audit before claiming completion.
+**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). All code real and compilable. All tests executable with real assertions. All DoD items marked `[x]` one at a time with ≥10-line raw terminal evidence. Run commands; never write expected output.
 
-**⚠️ NO-DEFAULTS / NO-STUBS (implement-specific emphasis — see critical-requirements.md for full policy):**
-- **FORBIDDEN:** `unwrap_or()`, `unwrap_or_default()`, `|| "default"`, `?? "fallback"`, `os.getenv("K", "default")`, `${VAR:-default}`, `todo!()`, `unimplemented!()`, hardcoded data returns from API handlers, `fake_*`/`mock_*`/`stub_*` functions in production code.
-- **REQUIRED:** `?` operator with explicit error, fail-fast on missing config, real data store queries in all handlers.
-- **Self-check:** "Does ANY file I changed contain a default, fallback, stub, or hardcoded response?" If YES → fix before completion. Reality scan (G028+G030) enforces mechanically.
-
-**⚠️ QUALITY WORK STANDARDS (NON-NEGOTIABLE):**
-- Every line of implementation code MUST be tested and reachable
-- Every test MUST fail if the feature it tests is broken (test specificity)
-- Evidence blocks MUST contain ≥10 lines of real terminal output
-- No `TODO`, `FIXME`, `HACK`, `STUB`, `unimplemented!()` anywhere in changed code
-- No narrative summaries or template placeholders as evidence
+**⚠️ No-Defaults / No-Stubs:** See [critical-requirements.md](bubbles_shared/critical-requirements.md). Reality scan (G028+G030) enforces mechanically.
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038, G040). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I5) MUST pass before reporting results. **G040 (zero deferral language) is critical — NEVER write deferral language into scope artifacts and then mark the spec done.**
 
@@ -193,19 +177,7 @@ Before reporting completion, this agent MUST run Tier 1 universal checks (see ag
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all Tier 1 + Tier 2 validation checks pass**, this agent MUST record its phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"implement"` is NOT already in the `completedPhases` array, append it
-3. Append an entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.implement"`, `phasesExecuted: ["implement"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip the `executionHistory` append — the workflow agent records the entry
-4. Write the updated `state.json`
-5. Verify the write succeeded by re-reading the file
-
-**Rules:**
-- Do NOT add `"implement"` to `completedPhases` if validation checks failed — phase recording is the LAST step after verified success
-- Do NOT add other agents' phase names (e.g., `"test"`, `"validate"`) — each agent records ONLY its own phase
-- Do NOT pre-populate phases that have not actually executed — this is fabrication (Gate G027)
-- Use simple string format: `"implement"` (not object format with timestamps)
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"implement"`. Agent: `bubbles.implement`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
 
 ---
 

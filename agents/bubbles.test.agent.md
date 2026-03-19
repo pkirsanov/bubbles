@@ -30,17 +30,7 @@ handoffs:
 - **No regression introduction** — verify changes don't break existing passing tests before concluding (see No Regression Introduction in agent-common.md)
 - **Autonomous operation** — research answers from code/docs/specs instead of asking the user; follow workflow phases in order (see Autonomous Operation in agent-common.md)
 
-**⚠️ CRITICAL ANTI-FABRICATION RULES FOR TESTING (NON-NEGOTIABLE):**
-- **You MUST actually run test commands in a terminal.** Every test claim MUST have corresponding terminal execution evidence. If you did not run a command, you CANNOT claim it passes.
-- **Evidence MUST be real terminal output, not what you think the output would be.** Run the command → capture output → paste output as evidence. NEVER type expected output.
-- **Evidence MUST be ≥10 lines of raw terminal output.** Shorter blocks are presumed fabricated and will be rejected by artifact lint.
-- **NEVER use narrative summaries as evidence.** Phrases like "all tests pass", "exit code 0", "no failures" are NOT evidence unless accompanied by ≥10 lines of actual command output.
-- **Each test type MUST be executed separately** with its own command and evidence block. Do NOT combine multiple test types into a single evidence claim.
-- **Changed behavior MUST show RED then GREEN.** If the work adds or repairs behavior, capture a failing targeted run before implementation acceptance, then capture the passing run after the fix.
-- **Self-audit before reporting results:** For each test type in the report, ask: "Did I actually run this test command in a terminal during THIS session?" If NO → run it now.
-- **Noop test detection is BLOCKING:** If a test would pass even with a completely broken implementation, it is NOT a valid test. Rewrite with meaningful assertions.
-- **Apply Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) to all test evidence before declaring the test phase complete.
-- **Default/fallback/stub detection is BLOCKING:** If implementation code under test uses defaults, fallbacks, or stubs, the implementation is INVALID regardless of whether tests pass. Run the reality scan (G028+G030) before declaring test phase complete.
+**⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). You MUST run test commands in terminal. Evidence = real output (≥10 lines), not narratives. Each test type executed separately with own evidence. Noop tests are BLOCKING. Changed behavior must show RED then GREEN. Reality scan (G028+G030) must pass.
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
@@ -460,19 +450,7 @@ Verdicts:
 
 ## Phase Completion Recording (MANDATORY)
 
-**After all Tier 1 + Tier 2 validation checks pass AND verdict is `✅ TESTED`**, this agent MUST record its phase in `state.json`:
-
-1. Read `{FEATURE_DIR}/state.json`
-2. If `"test"` is NOT already in the `completedPhases` array, append it
-3. Append an entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.test"`, `phasesExecuted: ["test"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip the `executionHistory` append — the workflow agent records the entry
-4. Write the updated `state.json`
-5. Verify the write succeeded by re-reading the file
-
-**Rules:**
-- Do NOT add `"test"` to `completedPhases` if any test failed or was skipped — phase recording is the LAST step after verified success
-- Do NOT add other agents' phase names — each agent records ONLY its own phase
-- Do NOT pre-populate phases that have not actually executed — this is fabrication (Gate G027)
-- Use simple string format: `"test"` (not object format with timestamps)
+Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"test"`. Agent: `bubbles.test`. Record ONLY after Tier 1 + Tier 2 pass AND verdict is `✅ TESTED`. Gate G027 applies.
 
 If `{FEATURE_DIR}/scopes.md` exists:
 - Only mark a scope `Done` when its Definition of Done is fully satisfied (not just “tests passed”).
