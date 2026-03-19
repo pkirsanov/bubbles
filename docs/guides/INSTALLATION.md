@@ -28,8 +28,10 @@ This installs:
 - 25 agent definitions → `.github/agents/bubbles.*.agent.md`
 - 25 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
+- Shared portable instructions → `.github/instructions/*.instructions.md`
+- Shared portable governance skills → `.github/skills/*/SKILL.md`
 - Workflow config → `.github/bubbles/workflows.yaml`
-- Governance scripts → `.github/scripts/bubbles*.sh`
+- Governance scripts → `.github/bubbles/scripts/*.sh`
 
 And with `--bootstrap`, also creates:
 - `.github/copilot-instructions.md` — project policies and commands
@@ -44,10 +46,16 @@ The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and
 
 > **Note:** Bootstrap never overwrites existing files. Safe to re-run.
 
-Without `--bootstrap`, you can also install agents only and set up manually:
+Without `--bootstrap`, you can install the shared Bubbles framework files and set up project config manually:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
+```
+
+If you want to skip the portable instructions and governance skills, use:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --agents-only
 ```
 
 ---
@@ -138,8 +146,10 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Agent definitions | `.github/agents/bubbles.*.agent.md` | Bubbles |
 | Shared governance | `.github/agents/bubbles_shared/*.md` | Bubbles |
 | Prompt shims | `.github/prompts/bubbles.*.prompt.md` | Bubbles |
+| Shared instructions | `.github/instructions/*.instructions.md` | Bubbles |
+| Shared governance skills | `.github/skills/<skill>/SKILL.md` | Bubbles |
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
-| Governance scripts | `.github/scripts/bubbles*.sh` | Bubbles |
+| Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |
 | Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** (bootstrapped) |
 | Command registry | `.specify/memory/agents.md` | **You** (bootstrapped) |

@@ -49,8 +49,11 @@ One command. No dependencies beyond `curl` and `bash`.
 **Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2. No Windows CMD/PowerShell support.
 
 ```bash
-# Install agents only
+# Install shared Bubbles framework files
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash
+
+# Install agents only (skip shared instructions and skills)
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --agents-only
 
 # Install + scaffold project config (recommended for new projects)
 curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap
@@ -74,7 +77,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 
 ### What `--bootstrap` Does
 
-With `--bootstrap`, the installer goes beyond agents — it scaffolds a fully working project setup:
+With `--bootstrap`, the installer goes beyond the shared framework files and scaffolds a fully working project setup:
 
 1. **Auto-detects** your project name (from git/directory) and CLI entrypoint (`*.sh` in root)
 2. **Creates** all required project-specific config files (if they don't already exist):
@@ -89,7 +92,7 @@ With `--bootstrap`, the installer goes beyond agents — it scaffolds a fully wo
 
 After bootstrap, update the `TODO` items in the generated files, then start using agents.
 
-### What Gets Installed (agents only)
+### What Gets Installed (default shared install)
 
 ```
 .github/
@@ -105,6 +108,15 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       └── ...
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 27 prompt shims
+├── instructions/
+│   ├── agents.instructions.md       # Portable agent authoring guidance
+│   ├── skills.instructions.md       # Portable skill authoring guidance
+│   └── docker-lifecycle-governance.instructions.md
+├── skills/
+│   ├── skill-authoring/             # Portable governance skill
+│   ├── docker-port-standards/
+│   ├── spec-template-bdd/
+│   └── docker-lifecycle-governance/
 ├── bubbles/
 │   ├── workflows.yaml               # 24 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
@@ -117,6 +129,8 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
     └── bubbles.sh                   # CLI shim (dispatches to bubbles/scripts/cli.sh)
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_END -->
 ```
+
+Use `--agents-only` if you want to skip the portable shared instructions and governance skills.
 
 ### What `--bootstrap` Adds (project-specific)
 

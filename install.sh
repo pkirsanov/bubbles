@@ -3,7 +3,8 @@
 # Installs or updates the Bubbles agent system into your repo.
 #
 # Usage:
-#   curl -fsSL .../install.sh | bash                    # Install agents only
+#   curl -fsSL .../install.sh | bash                    # Install shared framework files
+#   curl -fsSL .../install.sh | bash -s -- --agents-only  # Install agents/workflows/scripts only
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap  # Install + scaffold project config
 #   curl -fsSL .../install.sh | bash -s -- v1.0.0       # Pin to version
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
@@ -108,6 +109,7 @@ if [[ "$AGENTS_ONLY" != "true" ]]; then
     info "Installing shared instructions..."
     mkdir -p "${TARGET}/instructions"
     cp "$TEMP_DIR"/instructions/*.md "${TARGET}/instructions/" 2>/dev/null || true
+    ok "$(ls "${TARGET}"/instructions/*.md 2>/dev/null | wc -l) shared instructions installed"
   fi
   if [[ -d "$TEMP_DIR/skills" ]]; then
     info "Installing shared skills..."
@@ -116,6 +118,7 @@ if [[ "$AGENTS_ONLY" != "true" ]]; then
       mkdir -p "${TARGET}/skills/${skill_name}"
       cp -r "${skill_dir}"* "${TARGET}/skills/${skill_name}/" 2>/dev/null || true
     done
+    ok "$(find "${TARGET}/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l) shared skills installed"
   fi
 fi
 
@@ -286,7 +289,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
 - [ ] Add key file locations and code patterns
 - [ ] Update terminal discipline with project-specific forbidden/required commands
 CROSSEOF
-    ok "Created ${TARGET}/docs/bubbles/docs/CROSS_PROJECT_SETUP.md"
+  ok "Created ${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
   fi
 
@@ -310,7 +313,7 @@ CROSSEOF
 
 > Add external libraries, skills, or references reviewed by bootstrap here.
 SRCEOF
-    ok "Created ${TARGET}/docs/bubbles/docs/SETUP_SOURCES.md"
+  ok "Created ${TARGET}/bubbles/docs/SETUP_SOURCES.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
   fi
 
@@ -350,7 +353,11 @@ else
   echo "     Re-run with --bootstrap to scaffold project config:"
   printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --bootstrap${NC}\n"
   echo ""
-  echo "  Option B — Manual setup:"
+  echo "  Option B — Agents only install:"
+  echo "     Re-run with --agents-only if you want to skip shared instructions and skills:"
+  printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --agents-only${NC}\n"
+  echo ""
+  echo "  Option C — Manual project setup on top of the shared install:"
   echo "     1. Add project-specific config to .github/copilot-instructions.md"
   echo "     2. Create .specify/memory/agents.md with your commands"
   echo "     3. Create .specify/memory/constitution.md with your principles"
