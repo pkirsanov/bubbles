@@ -1321,7 +1321,7 @@ For each target spec in order:
    Phase 6: validate   → runSubagent("Execute validate for 027",   bubbles.validate role + context)
    Phase 7: audit      → runSubagent("Execute audit for 027",      bubbles.audit role + context)
    Phase 8: chaos      → runSubagent("Execute chaos for 027",      bubbles.chaos role + context)
-   Phase 9: finalize   → bubbles.workflow (self) — run state transition guard, artifact lint, update state.json, commit
+   Phase 9: finalize   → bubbles.workflow (self) — run state transition guard, artifact lint, update state.json, stage spec-scoped changes, verify staged files, commit, verify commit SHA
    ```
 
    Each `runSubagent` call is a BLOCKING call — wait for the result before proceeding to the next phase. The specialist agent does the actual work (writes code, runs tests, updates docs, etc.).
@@ -1360,8 +1360,19 @@ For each target spec in order:
        - `### Chaos Evidence` contains `**Phase Agent:** bubbles.chaos`
      - each strict section includes `**Executed:** YES` and at least one `**Command:**` entry
    - Record `workflowMode` in per-spec `state.json` so resume can verify ceiling compliance
-  - If `commit_per_spec: true`, perform one commit per spec using `commit_message_template` tokens (`{spec_id}`, `{spec_slug}`); with `commit_on_done_only: true`, commit only after spec status is `done`
-  - If commit fails, mark spec `blocked` and include commit failure details in the blocked ledger
+   - **⚠️ PER-SPEC COMMIT TRANSACTION (BLOCKING WHEN `commit_per_spec: true`):**
+      - Resolve the commit message from `commit_message_template` by substituting `{spec_id}` and `{spec_slug}`
+      - With `commit_on_done_only: true`, DO NOT attempt the commit until after the spec status has been written to the mode-allowed terminal value (`done` for `full-delivery-strict`)
+      - Stage ONLY the files attributable to the just-completed spec plus any shared files changed to deliver that spec; NEVER silently include unrelated dirty worktree files
+      - Run a non-interactive commit transaction in this order:
+         1. `git add <spec-scoped-files-and-required-shared-files>`
+         2. `git diff --cached --name-only`
+         3. `git commit -m "<resolved commit message>"`
+         4. `git rev-parse HEAD`
+      - Treat the commit as complete ONLY if `git commit` exits 0 AND a new HEAD SHA is observed
+      - Record the commit SHA and commit message in `state.json.executionHistory[*].summary` or adjacent summary text for that finalize run
+      - If there are no staged changes when a commit is required, or if unrelated dirty files prevent a clean per-spec commit, mark the spec `blocked` rather than skipping the commit
+   - If commit fails, produces no new SHA, or is skipped despite being required, mark spec `blocked` and include commit failure details in the blocked ledger
    - **⚠️ EXECUTION HISTORY (MANDATORY):** After each spec's finalize phase, append an entry to `state.json.executionHistory`:
      ```json
      {
