@@ -11,7 +11,7 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-26-58a6ff?style=flat-square" alt="26 agents">
+  <img src="https://img.shields.io/badge/agents-27-58a6ff?style=flat-square" alt="27 agents">
   <img src="https://img.shields.io/badge/gates-41-3fb950?style=flat-square" alt="41 gates">
   <img src="https://img.shields.io/badge/workflow_modes-24-bc8cff?style=flat-square" alt="24 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
@@ -33,7 +33,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>26 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>27 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>41 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>24 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
@@ -95,7 +95,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 26 agent definitions
+│   ├── bubbles.workflow.agent.md    # 27 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -104,7 +104,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 26 prompt shims
+│   └── bubbles.*.prompt.md          # 27 prompt shims
 ├── bubbles/
 │   ├── workflows.yaml               # 24 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
@@ -156,6 +156,7 @@ Every agent has a job. Start with the super when you need help, then hand off to
 |-------|------|-------------|
 | <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
 | <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time. | Continuing scope-by-scope work |
+| <img src="icons/green-bastard-mask.svg" width="20"> `bubbles.review` | **Code-first reviewer.** Runs a lightweight multi-lens review on a repo slice or full codebase and produces a normalized summary, with optional spec promotion. | Reviewing code directly before deciding what to fix or spec |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
 
@@ -236,7 +237,12 @@ Every agent has a job. Start with the super when you need help, then hand off to
 /bubbles.test     Run all tests for the auth feature
 ```
 
-### 6. Ship It
+### 6. Review Code Directly
+```
+/bubbles.review   profile: engineering-sweep scope: feature:auth output: summary-doc
+```
+
+### 7. Ship It
 ```
 /bubbles.workflow  full-delivery for auth feature
 ```
@@ -261,6 +267,8 @@ Bubbles supports 24 workflow modes plus optional execution tags. Here are the mo
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
 See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 24 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
+
+For code-first review work that should not enter the spec workflow, use `bubbles.review` with a review profile from `bubbles/review.yaml`.
 
 Optional execution tags:
 - `socratic: true` turns on a bounded clarification loop before discovery/bootstrap work.
@@ -319,6 +327,8 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Start a new feature from scratch | `/bubbles.analyst  <describe feature>` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
 | Run the full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
+| Review code directly and get priorities | `/bubbles.review  scope: full-repo output: summary-only` |
+| Review a slice and turn findings into specs | `/bubbles.review  profile: engineering-sweep scope: component:<name> output: create-specs` |
 | Check what's going on | `/bubbles.status` |
 | Something's not right, validate it | `/bubbles.validate` |
 | Find gaps in my implementation | `/bubbles.gaps` |
@@ -342,13 +352,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 26 agent definitions
+├── agents/                    # 27 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 26 prompt shims
+├── prompts/                   # 27 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

@@ -22,6 +22,9 @@ Use this recipe when any of these are true:
 
 /bubbles.super  what's the right command to harden specs 11 through 37?
 → /bubbles.workflow  011-037 mode: harden-to-doc
+
+/bubbles.super  review this repo before we decide what to spec
+→ /bubbles.review  scope: full-repo output: summary-doc
 ```
 
 ## Ask For A Prompt Sequence

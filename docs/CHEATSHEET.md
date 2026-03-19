@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **26 Agents · 41 Gates · 24 Workflow Modes · 17 Phases**
+> **27 Agents · 41 Gates · 24 Workflow Modes · 17 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -20,6 +20,7 @@
 |---|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
 | <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving without drama. | *"I can help with that."* |
+| <img src="../icons/green-bastard-mask.svg" width="32"> | `bubbles.review` | Green Bastard | Lightweight code-first reviewer. Multi-lens assessment for a repo slice or full codebase, with optional spec promotion. | *"From parts unknown, I can smell what's broken and what's worth building."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 
@@ -89,6 +90,7 @@
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
 | `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
 | `sunnyvale the-super` | `bubbles.super` | *"Ask the super first."* |
+| `sunnyvale parts-unknown` | `bubbles.review` | *"From parts unknown, the review sees all."* |
 
 ---
 
@@ -227,6 +229,7 @@ All agents accept natural language. You don't need to know the exact mode or par
 | You Type | Agent Understands |
 |----------|-------------------|
 | `/bubbles.workflow  improve the booking feature to be competitive` | mode: improve-existing, spec: booking |
+| `/bubbles.review  do an engineering sweep on the dashboard` | profile: engineering-sweep, scope: component:dashboard |
 | `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
 | `/bubbles.iterate  fix tests for the page builder` | type: tests, feature: page-builder |
 | `/bubbles.implement  do the next scope` | mode: next |
@@ -244,6 +247,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 |---------|-------------------|
 | `/bubbles.super  I have a new feature idea for search` | Recommended sequence: analyst → ux → workflow product-to-delivery |
 | `/bubbles.super  I want to make the booking feature better` | `/bubbles.workflow  <booking-spec> mode: improve-existing` |
+| `/bubbles.super  review this repo before we decide what to spec` | `/bubbles.review  scope: full-repo output: summary-doc` |
 | `/bubbles.super  which mode should I use?` | Decision tree based on your situation |
 | `/bubbles.super  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
 | `/bubbles.super  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |

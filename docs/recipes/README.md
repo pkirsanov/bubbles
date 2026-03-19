@@ -36,6 +36,7 @@ Optional execution tags you can append to many workflow commands:
 
 | Recipe | Problem → Solution |
 |--------|-------------------|
+| [Review Code Directly](review-code-directly.md) | "I want a lightweight multi-lens review before deciding what to fix or spec" |
 | [Quality Sweep](quality-sweep.md) | "I want to improve code quality across a feature" |
 | [Chaos Testing](chaos-testing.md) | "I need to break things to find weaknesses" |
 | [Security Review](security-review.md) | "I need to check for security vulnerabilities" |

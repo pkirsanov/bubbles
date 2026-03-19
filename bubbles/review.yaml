@@ -1,0 +1,83 @@
+version: 1
+defaultProfile: engineering-sweep
+defaultDepth: standard
+defaultOutput: summary-only
+defaultLenses:
+  - executive
+  - gaps
+  - simplify
+  - stabilize
+  - security
+  - validate
+  - tests
+  - docs
+dispatch:
+  executive:
+    primaryAgent: bubbles.analyst
+    purpose: Business impact, priorities, gaps, opportunities
+  gaps:
+    primaryAgent: bubbles.gaps
+    purpose: Design drift, missing implementation, spec mismatch
+  harden:
+    primaryAgent: bubbles.harden
+    purpose: Robustness, reliability, quality gaps
+  simplify:
+    primaryAgent: bubbles.simplify
+    purpose: Complexity reduction, duplication, dead code
+  stabilize:
+    primaryAgent: bubbles.stabilize
+    purpose: Performance, infra, config, reliability
+  security:
+    primaryAgent: bubbles.security
+    purpose: Security, compliance, auth, dependencies
+  validate:
+    primaryAgent: bubbles.validate
+    purpose: Contract alignment, validation evidence, implementation-vs-spec checks
+  tests:
+    primaryAgent: bubbles.test
+    purpose: Coverage quality, realism, taxonomy, mocks/stubs review
+  docs:
+    primaryAgent: bubbles.docs
+    purpose: Documentation drift, missing docs, stale docs
+profiles:
+  executive-sweep:
+    description: Business and product-first review for leadership prioritization
+    lenses: [executive, gaps, stabilize, security, docs]
+    top: 10
+  engineering-sweep:
+    description: Balanced technical review across code quality, drift, stability, tests, and docs
+    lenses: [executive, gaps, simplify, stabilize, security, validate, tests, docs]
+    top: 12
+  release-readiness:
+    description: Shipping-focused review for quality, risk, and correctness
+    lenses: [gaps, harden, stabilize, security, validate, tests, docs]
+    top: 15
+  security-first:
+    description: Focused security and compliance review
+    lenses: [security, validate, tests, docs]
+    top: 10
+  test-quality:
+    description: Focused test realism and coverage review
+    lenses: [tests, validate, gaps, docs]
+    top: 12
+  docs-and-drift:
+    description: Focused review of implementation/spec/doc alignment
+    lenses: [gaps, validate, docs]
+    top: 10
+promotionRules:
+  createSpecWhen:
+    - Cross-cutting change requires new behavior, architecture, or operating model
+    - Multiple files/components require coordinated implementation
+    - User explicitly requests spec creation
+  updateSpecWhen:
+    - Existing spec exists and findings materially change scope, scenarios, or DoD
+    - Docs and code drift from an active feature folder
+    - User explicitly requests spec update
+  summaryOnlyWhen:
+    - User requests assessment, prioritization, or discovery only
+    - Findings are isolated cleanup items or backlog candidates
+  followUpTags:
+    directFix: Ready for implementation without new spec
+    promoteToSpec: Should be converted into spec/design/scope work
+    documentOnly: Docs/process update only
+    monitor: Track but do not act immediately

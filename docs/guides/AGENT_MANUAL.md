@@ -111,6 +111,49 @@ Executes scopes one at a time within a spec. Picks the next available scope (res
 
 ---
 
+### bubbles.review — *"From parts unknown, I can smell what's broken and what's worth building."*
+
+Lightweight code-first review orchestrator. This is the review path for people who want to assess code directly without forcing everything through the spec-delivery lifecycle first.
+
+**Character:** Green Bastard
+
+**Use when:**
+- You want a repo-slice or full-repo review before deciding what to fix
+- You want findings normalized across business, quality, stability, security, tests, docs, and spec alignment
+- You want a summary document first, then a later decision about what should become specs
+- You want to promote only selected findings into specs instead of bootstrapping an entire delivery workflow
+
+**Example:**
+```
+/bubbles.review  profile: engineering-sweep scope: component:dashboard output: summary-doc
+/bubbles.review  scope: full-repo output: summary-only
+/bubbles.review  scope: feature:auth output: create-specs
+```
+
+**What it does:**
+1. Resolves the review slice or full codebase target
+2. Loads `bubbles/review.yaml`
+3. Applies a named review profile or explicit lens set
+4. Dispatches review lenses to the closest specialist agents
+5. Normalizes all findings into one consistent review structure
+6. Optionally promotes selected findings into spec/design/scope artifacts
+
+**Profiles:**
+- `executive-sweep`
+- `engineering-sweep`
+- `release-readiness`
+- `security-first`
+- `test-quality`
+- `docs-and-drift`
+
+**Key difference from bubbles.workflow:**
+- `bubbles.workflow` is spec-driven and gate-driven
+- `bubbles.review` is code-driven and output-driven
+- Use `bubbles.review` when the question is "what should we improve here?"
+- Use `bubbles.workflow` when the question is "deliver this spec to completion"
+
+---
+
 ## <img src="../../icons/julian-glass.svg" width="28"> Specialists
 
 ### bubbles.implement — *"I got work to do."*

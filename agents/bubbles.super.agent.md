@@ -152,6 +152,9 @@ User: "check if my feature is ready to ship"
 User: "break things and find weaknesses"
 -> /bubbles.workflow  mode: chaos-hardening
 
+User: "review this codebase and tell me what matters"
+-> /bubbles.review  scope: full-repo output: summary-only
+
 User: "why did my workflow stop after validate?"
 -> Brief diagnosis + the exact recovery command
 ```
@@ -163,6 +166,7 @@ User: "why did my workflow stop after validate?"
 | "Build a new feature from idea to shipped code" | 1. `/bubbles.analyst <describe feature>` - Discover requirements, actors, use cases<br>2. `/bubbles.ux <feature>` - Create UI wireframes and flows<br>3. `/bubbles.design <feature>` - Technical architecture<br>4. `/bubbles.plan <feature>` - Break into scopes<br>5. `/bubbles.workflow <feature> mode: full-delivery` - Deliver all scopes |
 | "Fix a bug properly" | 1. `/bubbles.bug <describe bug>` - Document, reproduce, root-cause<br>2. `/bubbles.workflow <bug-folder> mode: bugfix-fastlane` - Fix, test, verify |
 | "Make an existing feature better" | 1. `/bubbles.workflow <feature> mode: improve-existing` - Full analyze -> reconcile -> improve -> test -> ship pipeline |
+| "Review code directly before deciding what to spec" | 1. `/bubbles.review <slice> output: summary-doc` - Produce a normalized code-first review<br>2. `/bubbles.review <slice> output: create-specs` - Promote selected findings into specs when ready |
 | "Ship-readiness check" | 1. `/bubbles.validate <feature>` - Run validation gates<br>2. `/bubbles.audit <feature>` - Final compliance audit<br>3. `/bubbles.chaos <feature>` - Chaos testing for resilience |
 | "Quality sweep before release" | 1. `/bubbles.workflow <feature> mode: harden-gaps-to-doc` - Comprehensive quality sweep |
 | "Explore a vague product idea" | 1. `/bubbles.analyst <describe idea>` - Business analysis<br>2. `/bubbles.ux <feature>` - UX wireframes<br>3. `/bubbles.workflow <feature> mode: product-discovery` - Full planning without code |
@@ -188,6 +192,7 @@ User: "why did my workflow stop after validate?"
 | "plan", "scope", "break down" | `bubbles.plan` | Scope decomposition |
 | "design", "architecture", "data model" | `bubbles.design` | Technical design |
 | "analyze", "requirements", "competitors" | `bubbles.analyst` | Business analysis |
+| "review codebase", "assess code", "what should we improve", "prioritize code issues" | `bubbles.review` | Lightweight code-first assessment without full workflow gates |
 | "wireframe", "UI flow", "user experience" | `bubbles.ux` | UX design |
 | "status", "progress", "what's done" | `bubbles.status` | Read-only report |
 | "handoff", "end of day", "context" | `bubbles.handoff` | Session handoff |
