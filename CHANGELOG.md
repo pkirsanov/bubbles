@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.1.0 — 2026-03-19
+
+### New Gate: G040 — Zero Deferral Language
+
+Agents were writing deferral language ("deferred to future scope", "out of scope", "will address later") into DoD items and then marking specs as "done". This is now mechanically blocked.
+
+- **Gate G040** (`zero_deferral_language_gate`) — state-transition-guard.sh Check 18 scans scope and report artifacts for deferral language patterns and BLOCKS promotion to "done" if found
+- Added to `inheritedRequiredGates` (applies to ALL delivery modes)
+- Deferral scan added to Tier 2 validation tables in: `bubbles.implement` (I5), `bubbles.iterate` (IT6), `bubbles.workflow` (W5), `bubbles.audit` (A7), `bubbles.harden` (H10)
+- Rule 2 (Scope Cannot Be Done) and Rule 3 (Spec Cannot Be Done) in agent-common.md updated to explicitly block on deferral language
+- Zero Deferral Policy expanded with FABRICATED COMPLETION declaration
+- critical-requirements.md "No TODO Debt" expanded with deferral pattern list
+- scope-workflow.md Status Transition Gate and Spec Completion sections updated
+- 40 gates total (up from 39)
+
+---
+
 ## v2.0.0 — 2026-03-17
 
 Major reorganization and new features. Prefix-based file ownership, per-scope git commits, self-healing loops, framework operations agent, and more.

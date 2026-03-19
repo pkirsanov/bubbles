@@ -1459,6 +1459,7 @@ Before reporting workflow results, this agent MUST run Tier 1 universal checks (
 | W2 | Specialist completion ledger (G022) | Verify ALL mode-required phases appear in each spec's `completedPhases` | All specialists executed |
 | W3 | Cross-agent output verification (G020) | Verify each specialist's output has real evidence, not fabricated claims | All genuine |
 | W4 | Sequential completion (G019) | Verify no spec N+1 was started before spec N completed | Sequential order maintained |
+| W5 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on each spec's scope files | Zero hits per spec |
 
 **If ANY check fails → report blocked specs, do NOT claim workflow complete.**
 

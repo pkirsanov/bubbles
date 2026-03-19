@@ -1,4 +1,4 @@
-<!-- governance-version: 2.1.0 -->
+<!-- governance-version: 2.2.0 -->
 # Bubbles Critical Requirements (Project-Agnostic)
 
 > **Purpose:** Define hard, universal, non-negotiable implementation and testing requirements for all `bubbles.*` agents.
@@ -24,9 +24,13 @@
    - Never fabricate test status, output, evidence, files, commands, or completion claims.
    - Never claim pass/fail or completion without current-session execution evidence.
 
-4. **No TODO Debt**
+4. **No TODO Debt / No Deferral Language**
    - Never leave `TODO`, `FIXME`, placeholders, or deferred implementation markers.
    - If full implementation cannot be completed, do not mark the work complete.
+   - **NEVER write deferral language** into DoD items, scope files, or report files:
+     - FORBIDDEN: "deferred", "future scope", "follow-up", "out of scope", "will address later", "separate ticket", "punt", "postpone", "skip for now", "not implemented yet", "placeholder", "temporary workaround"
+   - Deferral language in artifacts = spec CANNOT be marked "done" (mechanically enforced by state-transition-guard Gate G040).
+   - If a DoD item cannot be completed: fix the issue NOW, remove the item with justification, or leave status as "In Progress".
 
 5. **No Stubs**
    - Stub implementations are forbidden in production and completion-bound test code.

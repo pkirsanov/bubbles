@@ -29,7 +29,7 @@ description: Final system audit for spec compliance, code quality, and security 
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates and revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language) and revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
 
 **Non-goals:**
 - Ad-hoc fixes outside a feature/bug folder
@@ -50,6 +50,7 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 | A4 | Fabrication heuristics (G021) | Apply all 9 heuristics to report.md and scope files | No heuristic triggered |
 | A5 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | A6 | Phase-Scope coherence (G027) | Verify completedPhases matches completedScopes | Coherent |
+| A7 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work blocks completion |
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 

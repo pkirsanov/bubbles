@@ -106,6 +106,7 @@ Before reporting hardening verdict, this agent MUST run Tier 1 universal checks 
 | H7 | Scope artifact coherence | Every Gherkin scenario has matching Test Plan row AND DoD item; counts match | Zero orphan scenarios, zero parity mismatches |
 | H8 | State coherence | `state.json` status, `completedScopes`, `completedPhases` reflect actual scope statuses | No stale "done" with unchecked DoD |
 | H9 | Findings artifact update (G031) | Every finding (⚠️ PARTIAL / ❌ FAILED) has a corresponding new Gherkin scenario + Test Plan row + DoD item in scopes.md | Zero findings without artifact updates |
+| H10 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work is incomplete work |
 
 **Verdicts:** `🔒 HARDENED` / `⚠️ PARTIALLY_HARDENED` / `🛑 NOT_HARDENED`
 

@@ -502,22 +502,29 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
    ```
    - Must be 0. If any scope is not Done → it was not completed.
 
-4. **Verify evidence is not fabricated — self-audit:**
+4. **Verify ZERO deferral language in scope artifacts (Gate G036):**
+   ```bash
+   grep -ciE 'deferred|defer to|future scope|future work|follow-up|followup|out of scope|not in scope|will address later|address later|revisit later|separate ticket|separate issue|punt|punted|postpone|postponed|skip for now|not implemented yet|not yet implemented|placeholder|temporary workaround' {FEATURE_DIR}/scopes.md
+   ```
+   - Must be 0. If deferral language is present → the work is NOT complete. Either complete the deferred work or remove the DoD item with documented justification.
+   - **⚠️ THIS IS THE #1 CAUSE OF INVALID COMPLETION: agents write "deferred to future scope" in a DoD item and then mark the spec "done". This is FABRICATED COMPLETION and is mechanically blocked by the state-transition-guard.**
+
+5. **Verify evidence is not fabricated — self-audit:**
    - Re-read each `[x]` DoD item's evidence block
    - Confirm each has ≥10 lines of raw terminal output
    - Confirm each has a real command and real exit code
    - Confirm no template placeholders remain
    - Confirm no two evidence blocks are identical
 
-5. **Verify all specialist phases executed:**
+6. **Verify all specialist phases executed:**
    - Check `state.json` `completedPhases` includes all mode-required phases
    - If any phase is missing → it was NOT executed → execute it now
 
-6. **Final gate check:**
+7. **Final gate check:**
    - Apply ALL gates from the mode's `requiredGates` in `workflows.yaml`
    - If ANY gate fails → iteration is NOT complete
 
-7. **Append `executionHistory` entry** to `state.json` (see Execution History Schema in scope-workflow.md):
+8. **Append `executionHistory` entry** to `state.json` (see Execution History Schema in scope-workflow.md):
    - `agent`: `"bubbles.iterate"`
    - `workflowMode`: the mode used for this iteration
    - `startedAt`: `runStartedAt` captured in Phase 0
@@ -558,6 +565,7 @@ Before reporting iteration completion, this agent MUST run Tier 1 universal chec
 | IT3 | Scope statuses Done | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
 | IT4 | Evidence not fabricated | Re-read each [x] item's evidence — ≥10 lines, real command, no duplicates | All genuine |
 | IT5 | Specialist phases complete | Check `state.json` `completedPhases` vs mode requirements | All phases present |
+| IT6 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits |
 
 **If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**
 

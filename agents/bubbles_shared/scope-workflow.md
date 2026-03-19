@@ -213,7 +213,8 @@ Use these rules for every scope status change.
    - Scope DoD items in its `scope.md` (or `scopes.md`) are all checked `[x]`
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
    - Scope entry in `state.json` is updated in `scopeProgress` and `completedScopes`
-3. If evidence is missing, contradictory, or a required test type is absent, scope status must remain `In Progress`.
+   - **Zero deferral language exists in scope artifacts** (Gate G040 — "deferred", "future scope", "follow-up", "out of scope", "will address later", "punt", "postpone", "skip for now", "not implemented yet", "placeholder", "temporary workaround" are ALL blocking)
+3. If evidence is missing, contradictory, a required test type is absent, or deferral language is present, scope status must remain `In Progress`.
 4. Spec status cannot move to `done` until ALL scopes are `Done` and `completedScopes` contains all scope IDs.
 
 **Status sync requirements:**
@@ -257,7 +258,7 @@ An agent picks the **lowest-numbered eligible** scope (all deps done, status = N
 
 ## Spec Completion
 
-Spec status CANNOT be `done` until ALL scopes in this table are `Done`.
+Spec status CANNOT be `done` until ALL scopes in this table are `Done` AND zero deferral language exists in any scope artifact (Gate G040). Deferred work = spec stays `in_progress`.
 ```
 
 ### 1b. Per-Scope `scope.md` (Per-Scope Directory Mode)

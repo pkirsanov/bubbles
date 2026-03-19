@@ -1,7 +1,7 @@
-<!-- governance-version: 2.2.0 -->
+<!-- governance-version: 2.3.0 -->
 # Shared Agent Patterns (Common to all bubbles.* agents)
 
-> **Version:** 2.2.0 | **This file defines shared patterns used by multiple Bubbles agents.**
+> **Version:** 2.3.0 | **This file defines shared patterns used by multiple Bubbles agents.**
 > Reference this file instead of duplicating content.
 > 
 > **Portability:** This file is **project-agnostic**. It contains NO project-specific commands, paths, tools, or language references. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](project-config-contract.md) for the indirection rules.
@@ -91,13 +91,46 @@ FOR EACH DoD item in the active scope definition file (`scopes.md` or `scopes/NN
 - ANY required test type has not been executed
 - ANY required test is skipped, ignored, or conditionally bypassed
 - Scope defines latency SLAs but no stress test DoD item exists
+- ANY DoD item or scope artifact contains deferral language (see below)
 
-**Verification command (MUST be run before marking scope Done):**
+**⛔ DEFERRAL LANGUAGE = SCOPE NOT DONE (ABSOLUTE)**
+
+If ANY DoD item, implementation plan, or scope narrative contains deferral language, the scope is NOT Done regardless of checkbox state. Agents MUST NOT mark a scope "Done" while deferral language is present anywhere in the scope file.
+
+**Deferral language patterns (ALL are BLOCKING — case-insensitive):**
+- `deferred`, `defer to`, `deferred to`
+- `future scope`, `future work`, `future iteration`
+- `follow-up`, `follow up`, `followup`
+- `out of scope`, `not in scope`, `beyond scope`
+- `will address later`, `address later`, `revisit later`
+- `separate ticket`, `separate issue`, `separate PR`
+- `TODO`, `FIXME`, `HACK`, `STUB`
+- `tracked separately`, `handled separately`
+- `punt`, `punted`, `postpone`, `postponed`
+- `skip for now`, `skipped for now`
+- `not implemented yet`, `not yet implemented`
+- `placeholder`, `temporary workaround`
+
+**If deferral language is found → the work is NOT complete. Either:**
+1. Complete the deferred work NOW, or
+2. Remove the DoD item entirely if it's no longer needed (with justification)
+
+**NEVER mark a scope "Done" with deferred items. NEVER mark a spec "done" with deferred items. This is ABSOLUTE.**
+
+**Verification commands (MUST ALL return 0 before marking scope Done):**
 ```bash
+# Check 1: Zero unchecked DoD items
 # Per-scope directory mode:
 grep -c '^\- \[ \]' {FEATURE_DIR}/scopes/{NN}-*/scope.md
 # Single-file mode:
 grep -c '^\- \[ \]' {FEATURE_DIR}/scopes.md
+# Result MUST be 0
+
+# Check 2: Zero deferral language in scope artifacts
+# Per-scope directory mode:
+grep -ciE 'deferred|defer to|future scope|future work|follow-up|followup|out of scope|not in scope|will address later|address later|revisit later|separate ticket|separate issue|punt|punted|postpone|postponed|skip for now|not implemented yet|not yet implemented|placeholder|temporary workaround' {FEATURE_DIR}/scopes/{NN}-*/scope.md
+# Single-file mode:
+grep -ciE 'deferred|defer to|future scope|future work|follow-up|followup|out of scope|not in scope|will address later|address later|revisit later|separate ticket|separate issue|punt|punted|postpone|postponed|skip for now|not implemented yet|not yet implemented|placeholder|temporary workaround' {FEATURE_DIR}/scopes.md
 # Result MUST be 0
 ```
 
@@ -108,6 +141,7 @@ grep -c '^\- \[ \]' {FEATURE_DIR}/scopes.md
 - ANY scope has status "In Progress"
 - ANY scope has status "Blocked" (must be unblocked first)
 - ANY scope has unchecked DoD items
+- ANY scope artifact contains deferral language (deferred, future scope, follow-up, out of scope, etc. — see Rule 2 deferral patterns)
 
 **Verification command (MUST be run before marking spec done):**
 ```bash
@@ -1430,6 +1464,17 @@ If a bug is discovered: document in `specs/[feature]/bugs/BUG-NNN-desc/bug.md`, 
 - "Out of scope" → Expand scope to include the fix
 - If you encounter a 500, 404, error, or unexpected behavior → FIX THE ROOT CAUSE
 
+**⛔ DEFERRAL LANGUAGE IN ARTIFACTS = SPEC CANNOT BE DONE (ABSOLUTE)**
+
+Writing deferral language ("deferred", "future scope", "follow-up", "out of scope", "will address later", "separate ticket", "punt", "postpone", "skip for now", "not implemented yet", "placeholder", "temporary workaround") into DoD items, scope files, or report files is a GOVERNANCE VIOLATION. Any agent that writes deferral language into artifacts and then marks the spec "done" is producing FABRICATED completion.
+
+**The state-transition-guard script (Gate G023) mechanically scans for deferral language and BLOCKS promotion to "done" if found (Check 18 / Gate G040).** This is not advisory — it is enforced by tooling.
+
+**If you cannot complete a DoD item:**
+1. Fix the underlying issue NOW, or
+2. Remove the DoD item with documented justification (not deferral), or
+3. Leave the scope as "In Progress" — NEVER mark it "Done" with outstanding work
+
 ### Zero Warnings Policy (NON-NEGOTIABLE)
 
 **ALL code MUST produce ZERO warnings in build, lint, tests, and runtime.**
@@ -1893,7 +1938,7 @@ done
 | 14 | Test Plan ↔ DoD parity | 1 |
 | 15 | Self-audit passes | 5 |
 | 16 | Session-bound evidence only | (Execution Evidence Standard) |
-| 17 | Zero deferral (no issues skipped/deferred) | (Zero Deferral Policy) |
+| 17 | **Zero deferral language in artifacts** (no deferred/future-scope/follow-up/out-of-scope language in scope files — mechanically enforced by state-transition-guard) | G040 |
 | 18 | Zero warnings (build + lint + tests + runtime) | (Zero Warnings Policy) |
 | 19 | Skip markers clean | 6 |
 | 20 | E2E tests verify actual behavior | 7 |
@@ -1906,6 +1951,7 @@ done
 | 27 | **Findings artifact updates complete** (all discovered issues have corresponding Gherkin/TestPlan/DoD entries in scopes.md) | G031 |
 | 28 | **Design readiness verified** (design.md and scopes.md exist with substantive content before implementation started; auto-escalation to bubbles.design + bubbles.plan if missing) | G033 |
 | 29 | **Vertical slice complete** (cross-layer scopes: every frontend API call maps to a .route()-wired backend handler, gateway forwards all service routes, E2E tests exercise full stack; pure-frontend or pure-backend scopes exempt) | G035 |
+| 30 | **Zero deferral language in scope artifacts** (state-transition-guard mechanically scans for deferred/future-scope/follow-up/out-of-scope/punt/postpone language and BLOCKS promotion) | G040 |
 
 **Items 2, 3, 4, 5, 6, 7, and 8 are the CORE COMPLETION CHAIN. They enforce that:**
 - Every DoD item is individually validated with raw evidence

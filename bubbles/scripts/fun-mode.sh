@@ -35,6 +35,7 @@ declare -A _FUN_MESSAGES=(
   [security_vuln]="Safety... always ON."
   [docs_updated]="Know what I'm sayin'? It's documented."
   [deferral_detected]="You can't just NOT do things, Corey!"
+  [deferral_blocks_done]="That's NOT gettin' two birds stoned — that's just sayin' you WILL."
   [handoff_complete]="Have a good one, boys."
   [gap_found]="This is f***ed. BAAAAM!"
   [bug_located]="That's a nice f***ing kitty right there."

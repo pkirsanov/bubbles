@@ -52,7 +52,7 @@ handoffs:
 - No `TODO`, `FIXME`, `HACK`, `STUB`, `unimplemented!()` anywhere in changed code
 - No narrative summaries or template placeholders as evidence
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I4) MUST pass before reporting results.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038, G040). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I5) MUST pass before reporting results. **G040 (zero deferral language) is critical — NEVER write deferral language into scope artifacts and then mark the spec done.**
 
 **Non-goals:**
 - Creating new scopes or planning work (→ bubbles.plan or bubbles.iterate)
@@ -187,6 +187,7 @@ Before reporting completion, this agent MUST run Tier 1 universal checks (see ag
 | I2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | I3 | Scope status | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
 | I4 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
+| I5 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits — NEVER write deferral language into scope artifacts |
 
 **If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**
 

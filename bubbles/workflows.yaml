@@ -129,6 +129,18 @@ gates:
   G039:
     name: self_healing_containment_gate
     description: Self-healing fix loops MUST NOT stack. maxDepth=1 — a fix attempt NEVER triggers another fix loop. maxRetries=3 per failure, maxTotalRetries=5 per phase. Context narrows on each retry (full → file → function). If a fix introduces a NEW error, it counts against the same retry budget. No recursion, no nesting.
+  G040:
+    name: zero_deferral_language_gate
+    description: >-
+      ABSOLUTE BLOCKING gate. Scope artifacts (scopes.md or scopes/*/scope.md) and
+      report files MUST NOT contain deferral language indicating incomplete work.
+      Patterns detected: deferred, defer to, future scope, future work, follow-up,
+      followup, out of scope, not in scope, will address later, revisit later,
+      separate ticket, separate issue, punt, punted, postpone, postponed, skip for now,
+      not implemented yet, not yet implemented, placeholder, temporary workaround.
+      Mechanically enforced by state-transition-guard.sh Check 18. When this gate fails,
+      the agent MUST either complete the deferred work NOW or remove the DoD item with
+      justification — NEVER mark the spec done with outstanding deferred work.
 
 failureRouting:
   code: implement
@@ -399,7 +411,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [G036, G037, G038]
+    inheritedRequiredGates: [G036, G037, G038, G040]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #
@@ -483,7 +495,7 @@ modes:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.
     statusCeiling: done
     phaseOrder: [discover, select, bootstrap, implement, test, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040]
     maxChaosRounds: 5
     constraints:
       valueFirstSelection: true

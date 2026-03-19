@@ -1,6 +1,6 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
-> **26 Agents · 39 Gates · 23 Workflow Modes · 17 Phases**
+> **26 Agents · 40 Gates · 23 Workflow Modes · 17 Phases**
 >
 > *"It Ain't Rocket Appliances, But It Works."*
 
@@ -122,7 +122,7 @@
 
 ---
 
-## <img src="../icons/lahey-badge.svg" width="32"> The 39 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 40 Gates
 
 **Phase flow:**
 `analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
@@ -168,6 +168,7 @@
 | G037 | Scope size discipline | Scopes stay small, isolated, and single-outcome |
 | G038 | Micro-fix containment | Failures are repaired in narrow loops before broad reruns |
 | G039 | Self-healing containment | Fix loops never stack; maxDepth=1, maxRetries=3, narrowing context |
+| G040 | Zero deferral language | Scope artifacts scanned for "deferred", "future scope", "out of scope", etc. — can't mark done with outstanding work |
 
 ---
 
@@ -188,6 +189,7 @@
 | ❌ Security vuln | *"Safety... always ON."* |
 | ✅ Docs updated | *"Know what I'm sayin'? It's documented."* |
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
+| ❌ Deferral blocks done | *"That's NOT gettin' two birds stoned — that's just sayin' you WILL."* |
 | ✅ Handoff complete | *"Have a good one, boys."* |
 | ❌ Gap found | *"This is f\*\*\*ed. BAAAAM!"* |
 | ✅ Bug located | *"That's a nice f\*\*\*ing kitty right there."* |
@@ -317,6 +319,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | "Survival of the fitness, boys" | Survival of the fittest | Stochastic sweep results |
 | "Gorilla see, gorilla do" | Monkey see, monkey do | Copy-paste code detected |
 | "It's a doggy-dog world" | Dog-eat-dog world | Competitive analysis |
+| "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) |
 
 ---
 

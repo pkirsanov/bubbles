@@ -994,6 +994,71 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 18: Deferral Language Scan (Gate G036)
+# =============================================================================
+# Scans scope artifacts for deferral language that indicates incomplete work.
+# Agents that write deferral language and then mark specs "done" produce
+# fabricated completion. This is the mechanical enforcement layer.
+# =============================================================================
+echo "--- Check 18: Deferral Language Scan (Gate G036) ---"
+deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|placeholder|temporary workaround'
+total_deferral_hits=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  # Count deferral language hits (case-insensitive), excluding inside code fence blocks
+  # We scan outside code blocks only to avoid false positives from test descriptions or docs
+  deferral_hits="$({
+    awk '
+      /^```/ || /^    ```/ {in_block = !in_block; next}
+      !in_block {print}
+    ' "$scope_path" | grep -ciE "$deferral_pattern" || true
+  } || true)"
+
+  if [[ "$deferral_hits" -gt 0 ]]; then
+    fail "Scope artifact contains $deferral_hits deferral language hit(s): ${scope_path#$feature_dir/} — SPEC CANNOT BE DONE WITH DEFERRED WORK (Gate G040)"
+    fun_message deferral_blocks_done
+    total_deferral_hits=$((total_deferral_hits + deferral_hits))
+
+    # Show first 5 matching lines for visibility
+    shown_lines=0
+    while IFS= read -r deferral_line; do
+      [[ -n "$deferral_line" ]] || continue
+      echo "   → $deferral_line"
+      shown_lines=$((shown_lines + 1))
+      if [[ "$shown_lines" -ge 5 ]]; then
+        break
+      fi
+    done < <(awk '
+      /^```/ || /^    ```/ {in_block = !in_block; next}
+      !in_block {print}
+    ' "$scope_path" | grep -iE "$deferral_pattern" || true)
+  fi
+done
+
+# Also scan report files for deferral language
+for rpt_path in "${report_files[@]}"; do
+  [[ -f "$rpt_path" ]] || continue
+  report_deferral_hits="$({
+    awk '
+      /^```/ || /^    ```/ {in_block = !in_block; next}
+      !in_block {print}
+    ' "$rpt_path" | grep -ciE "$deferral_pattern" || true
+  } || true)"
+
+  if [[ "$report_deferral_hits" -gt 0 ]]; then
+    fail "Report artifact contains $report_deferral_hits deferral language hit(s): ${rpt_path#$feature_dir/} — evidence of deferred work (Gate G040)"
+    total_deferral_hits=$((total_deferral_hits + report_deferral_hits))
+  fi
+done
+
+if [[ "$total_deferral_hits" -eq 0 ]]; then
+  pass "Zero deferral language found in scope and report artifacts (Gate G040)"
+fi
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"
