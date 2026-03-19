@@ -20,7 +20,7 @@
 |---|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
 | <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving without drama. | *"I can help with that."* |
-| <img src="../icons/green-bastard-mask.svg" width="32"> | `bubbles.review` | Green Bastard | Lightweight code-first reviewer. Multi-lens assessment for a repo slice or full codebase, with optional spec promotion. | *"From parts unknown, I can smell what's broken and what's worth building."* |
+| <img src="../icons/green-bastard-outline.svg" width="32"> | `bubbles.review` | Green Bastard | Lightweight code-first reviewer. Multi-lens assessment for a repo slice or full codebase, with optional spec promotion. | *"From parts unknown, I can smell what's broken and what's worth building."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 

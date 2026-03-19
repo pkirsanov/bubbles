@@ -156,7 +156,7 @@ Every agent has a job. Start with the super when you need help, then hand off to
 |-------|------|-------------|
 | <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
 | <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time. | Continuing scope-by-scope work |
-| <img src="icons/green-bastard-mask.svg" width="20"> `bubbles.review` | **Code-first reviewer.** Runs a lightweight multi-lens review on a repo slice or full codebase and produces a normalized summary, with optional spec promotion. | Reviewing code directly before deciding what to fix or spec |
+| <img src="icons/green-bastard-outline.svg" width="20"> `bubbles.review` | **Code-first reviewer.** Runs a lightweight multi-lens review on a repo slice or full codebase and produces a normalized summary, with optional spec promotion. | Reviewing code directly before deciding what to fix or spec |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
 
