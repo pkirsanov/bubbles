@@ -1,6 +1,8 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
-> **26 Agents · 40 Gates · 23 Workflow Modes · 17 Phases**
+<!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
+> **26 Agents · 41 Gates · 24 Workflow Modes · 17 Phases**
+<!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
 
@@ -117,15 +119,18 @@
 | `gaps-to-doc` | — | Gap analysis → test → docs |
 | `chaos-to-doc` | — | Chaos → test → docs |
 | `reconcile-to-doc` | — | Reconcile conflicts → test → docs |
+| `validate-to-doc` | — | Validate + audit + docs |
 
 **Optional execution tags:** `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
 
 ---
 
-## <img src="../icons/lahey-badge.svg" width="32"> The 40 Gates
+<!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
+## <img src="../icons/lahey-badge.svg" width="32"> The 41 Gates
+<!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
-`analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
+`analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
 
 | Gate | Name | What It Checks |
 |------|------|---------------|
@@ -169,6 +174,7 @@
 | G038 | Micro-fix containment | Failures are repaired in narrow loops before broad reruns |
 | G039 | Self-healing containment | Fix loops never stack; maxDepth=1, maxRetries=3, narrowing context |
 | G040 | Zero deferral language | Scope artifacts scanned for "deferred", "future scope", "out of scope", etc. — can't mark done with outstanding work |
+| G041 | DoD format integrity | Prevents agents from bypassing guards by reformatting checkboxes (`- (deferred)`) or inventing scope statuses (`Deferred — Planned Improvement`) |
 
 ---
 
@@ -190,6 +196,9 @@
 | ✅ Docs updated | *"Know what I'm sayin'? It's documented."* |
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
 | ❌ Deferral blocks done | *"That's NOT gettin' two birds stoned — that's just sayin' you WILL."* |
+| ❌ Manipulation detected | *"That's GREASY, boys. You can't just cross things out and say they're done!"* |
+| ❌ Format bypass | *"You can't just erase the checkboxes and call it a day, Ricky!"* |
+| ❌ Invented status | *"'Deferred — Planned Improvement'?! That's not even a real thing, Julian!"* |
 | ✅ Handoff complete | *"Have a good one, boys."* |
 | ❌ Gap found | *"This is f\*\*\*ed. BAAAAM!"* |
 | ✅ Bug located | *"That's a nice f\*\*\*ing kitty right there."* |

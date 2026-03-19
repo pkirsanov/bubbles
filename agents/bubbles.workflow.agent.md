@@ -95,6 +95,23 @@ handoffs:
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030). State transition guard (G023) MUST pass before any state.json "done" transition. Per-agent validation delegates validation to each specialist — workflow spot-checks but does not re-run all checks.
 
+**⛔ ANTI-MANIPULATION POLICY (Gate G041 — NON-NEGOTIABLE):**
+
+Agents MUST NOT bypass completion gates by manipulating artifact format. The following are **structural fabrication** and are mechanically detected by the state transition guard:
+
+| Manipulation | What It Does | Why It's Blocked |
+|-------------|-------------|-----------------|
+| Converting `- [ ] Item` to `- (deferred) Item` | Removes item from checkbox count | Check 4A detects non-checkbox list items in DoD sections |
+| Converting `- [ ] Item` to `- ~~Item~~` or `- *Item*` | Removes item from checkbox count | Check 4A detects non-checkbox list items in DoD sections |
+| Deleting `- [ ] Item` lines entirely | Reduces total DoD count to 0 unchecked | Check 4 fails if total DoD = 0 |
+| Inventing scope statuses like "Deferred — Planned Improvement" | Bypasses canonical status checks | Check 4B rejects non-canonical statuses |
+| Setting scope status to "Skipped" or "N/A" | Reduces scope count, avoids "Not Started" detection | Check 4B rejects non-canonical statuses |
+| Marking scope "Done" with unchecked `- [ ]` DoD items | Claims completion without evidence | Check 4 + finalize step 4 both catch this |
+
+**The ONLY valid response to incomplete DoD items is:** implement the work, check items `[x]` with real evidence, then legitimately complete the scope. If a DoD item is genuinely not applicable, it MUST be removed with documented justification in the same edit — NOT reformatted to a non-checkbox format.
+
+**The ONLY valid scope statuses are:** `Not Started`, `In Progress`, `Done`, `Blocked`. No other status string is permitted.
+
 **Non-goals:**
 - Implementing feature code directly within this agent's own context (delegate to specialist agents via `runSubagent`)
 - Overriding policy gates from shared governance
@@ -505,6 +522,8 @@ Required behavior after the baseline `validate` phase:
   - spec marked `done` while scopes are incomplete
   - stale `completedScopes` / `completedPhases`
   - unchecked DoD items hidden behind stale status
+  - DoD items reformatted to non-checkbox format (e.g., `- (deferred)` instead of `- [ ]`) — Gate G041 violation
+  - Non-canonical scope statuses (e.g., "Deferred — Planned Improvement") — Gate G041 violation
   - missing or fabricated evidence blocks
   - report/spec/state incoherence
 2. If drift is detected, reconcile artifacts BEFORE implementation:
@@ -714,7 +733,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
      1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
      2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
      3. **Current-run phase coherence check (Gate G036-finalize):** Verify that `completedPhases` in `state.json` includes ALL phases from the current mode's `phaseOrder` (not just phases from a prior workflow run). If the current batch run added phases (e.g., harden, gaps, implement in improve-existing), the finalize check MUST confirm those phases produced real work in the current session. Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases.
-     4. **Scope-status vs DoD integrity check:** For each scope in `scopes.md`, verify that if scope status is "Done", ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says "Done", revert scope status to "In Progress" and FAIL the finalize gate for this spec (status stays `"in_progress"`).
+     4. **Scope-status vs DoD integrity check:** For each scope in `scopes.md`, verify that if scope status is "Done", ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says "Done", revert scope status to "In Progress" and FAIL the finalize gate for this spec (status stays `"in_progress"`). Also verify: (a) ALL scope statuses are canonical (`Not Started`, `In Progress`, `Done`, `Blocked` — no invented statuses like "Deferred"); (b) ALL DoD items use checkbox format (`- [ ]` or `- [x]`) — no reformatted items like `- (deferred)` or `- ~~text~~`; (c) DoD sections are not empty (items were not deleted to pass validation). If any of (a), (b), or (c) fail, this is **structural fabrication (Gate G041)** — revert scope status and FAIL.
      5. If checks 1-4 ALL pass AND all DoD items are `[x]` AND all scopes are "Done" → set `state.json` status to `"done"`
      4. Record ALL shared-phase evidence (test/validate/audit/chaos) in the spec's `report.md`
      5. Update `completedPhases` to include ALL phases that executed (validate, harden, gaps, implement, test, docs, audit, chaos as applicable)
@@ -1031,8 +1050,8 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 3. **After all rounds complete** (or time budget exhausted):
    - **Per-spec finalization:** For EACH spec that was touched during the sweep:
      1. Run `docs` phase via `runSubagent` — sync documentation for changes made to this spec
-     2. Run `finalize` phase — state transition guard, artifact lint, DoD verification
-     3. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
+     2. Run `finalize` phase — state transition guard, artifact lint, DoD verification, Gate G041 format integrity
+     3. If all DoD items `[x]` (no reformatted/deleted items) and all scopes "Done" (canonical status only) → set `state.json` status to `"done"`
      4. Append `executionHistory` entry to `state.json`
    - **Specs not touched** during the sweep (no round selected them) retain their current status unchanged
    - Record sweep summary in each touched spec's report.md AND as a workflow output:
@@ -1117,7 +1136,8 @@ When mode is `iterate`, the orchestrator replaces the normal sequential `phaseOr
    - **Per-spec finalization:** For EACH spec that was touched during the iterate loop:
      1. Run state transition guard: `bash .github/bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
      2. Run artifact lint: `bash .github/bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
-     3. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
+     3. Verify no DoD format manipulation (Gate G041): all DoD items are `- [ ]` or `- [x]`, all scope statuses are canonical
+     4. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
      4. Append `executionHistory` entry to `state.json`
    - **Specs not touched** during the iterate loop retain their current status unchanged
    - Record iterate summary in each touched spec's report.md AND as a workflow output:

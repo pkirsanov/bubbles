@@ -54,7 +54,7 @@ Each phase is owned by a **specialist agent**. The **workflow orchestrator** dec
 | **Spec** | A feature or bug folder under `specs/` with required artifacts |
 | **Scope** | A unit of work within a spec — has its own DoD, tests, evidence |
 | **DoD** | Definition of Done — checkbox items that must all be `[x]` with evidence |
-| **Gate** | An automatic quality check (40 total) that must pass before completion |
+| **Gate** | An automatic quality check (41 total) that must pass before completion |
 | **Mode** | A workflow configuration defining which phases run and in what order |
 | **Execution Tag** | An optional modifier like `socratic`, `gitIsolation`, `autoCommit`, or `maxScopeMinutes` |
 | **Evidence** | Raw terminal output (≥10 lines) proving something actually happened |

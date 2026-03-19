@@ -10,9 +10,11 @@
 </p>
 
 <p align="center">
+  <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-26-58a6ff?style=flat-square" alt="26 agents">
-  <img src="https://img.shields.io/badge/gates-39-3fb950?style=flat-square" alt="39 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-23-bc8cff?style=flat-square" alt="23 modes">
+  <img src="https://img.shields.io/badge/gates-41-3fb950?style=flat-square" alt="41 gates">
+  <img src="https://img.shields.io/badge/workflow_modes-24-bc8cff?style=flat-square" alt="24 modes">
+  <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
 </p>
@@ -30,10 +32,11 @@ Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot C
 Think of it as a trailer park supervisor for your codebase. Except this one actually works.
 
 <table>
+<!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>26 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>39 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/trinity-notebook.svg" width="48"></td><td><strong>Zero-fabrication policy</strong> — "tests pass" without terminal output? That's greasy, boys.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>23 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>41 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>24 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
 </table>
 
@@ -91,6 +94,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ```
 .github/
 ├── agents/
+<!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
 │   ├── bubbles.workflow.agent.md    # 26 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
@@ -102,7 +106,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 26 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 23 workflow mode definitions
+│   ├── workflows.yaml               # 24 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -111,6 +115,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │   └── docs/                        # Generated docs
 └── scripts/
     └── bubbles.sh                   # CLI shim (dispatches to bubbles/scripts/cli.sh)
+<!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_END -->
 ```
 
 ### What `--bootstrap` Adds (project-specific)
@@ -240,7 +245,9 @@ Every agent has a job. Start with the super when you need help, then hand off to
 
 ## Workflow Modes
 
-Bubbles supports 23 workflow modes plus optional execution tags. Here are the most common:
+<!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
+Bubbles supports 24 workflow modes plus optional execution tags. Here are the most common:
+<!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
 |------|-------------|----------|
@@ -251,7 +258,9 @@ Bubbles supports 23 workflow modes plus optional execution tags. Here are the mo
 | `harden-gaps-to-doc` | Harden → gaps → test → docs | Quality sweeps |
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 23 modes.
+<!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 24 modes.
+<!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 Optional execution tags:
 - `socratic: true` turns on a bounded clarification loop before discovery/bootstrap work.
@@ -269,7 +278,9 @@ Bubbles enforces a strict quality system. This isn't optional.
 ### Zero-Fabrication Policy
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
-### 39 Quality Gates
+<!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
+### 41 Quality Gates
+<!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
 ### Self-Healing Loops (G039)
@@ -290,7 +301,9 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [It's Not Rocket Appliances](https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html) | Visual agent reference card — rendered on GitHub Pages |
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 23 workflow modes explained |
+<!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 24 workflow modes explained |
+<!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Recipes](docs/recipes/) | Common problems → solutions |
 | [Installing in Your Repo](docs/guides/INSTALLATION.md) | Step-by-step setup guide |
 | [Spec Examples](docs/examples/) | Annotated reference examples for common patterns |
@@ -328,6 +341,7 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 
 ```
 bubbles/
+<!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
 ├── agents/                    # 26 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
@@ -335,6 +349,7 @@ bubbles/
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
 ├── prompts/                   # 26 prompt shims
+<!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml
 │   ├── scripts/               # Governance scripts (artifact-lint, guard, etc.)

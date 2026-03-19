@@ -275,20 +275,20 @@ echo ""
 echo "--- Check 3: Status Ceiling Enforcement ---"
 if [[ -n "$state_workflow_mode" ]]; then
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
       if [[ "$state_status" == "done" ]]; then
         pass "Workflow mode '$state_workflow_mode' allows status 'done'"
       else
         info "Workflow mode '$state_workflow_mode' allows status 'done'; current status is '$state_status'"
       fi
       ;;
-    spec-scope-hardening)
+    spec-scope-hardening|product-discovery)
       if [[ "$state_status" == "done" ]]; then
-        fail "Workflow mode 'spec-scope-hardening' ceiling is 'specs_hardened', NOT 'done'"
+        fail "Workflow mode '$state_workflow_mode' ceiling is 'specs_hardened', NOT 'done'"
       elif [[ "$state_status" == "specs_hardened" ]]; then
-        pass "Workflow mode 'spec-scope-hardening' correctly stops at status 'specs_hardened'"
+        pass "Workflow mode '$state_workflow_mode' correctly stops at status 'specs_hardened'"
       else
-        info "Workflow mode 'spec-scope-hardening' ceiling is 'specs_hardened'; current status is '$state_status'"
+        info "Workflow mode '$state_workflow_mode' ceiling is 'specs_hardened'; current status is '$state_status'"
       fi
       ;;
     docs-only)
@@ -358,6 +358,103 @@ elif [[ "$total_unchecked" -gt 0 ]]; then
   done
 else
   pass "All $total_checked DoD items are checked [x]"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 4A: DoD format manipulation detection (Gate G041)
+# =============================================================================
+# Detects agents that bypass Check 4 by reformatting DoD checkboxes into
+# non-checkbox formats (e.g., "- (deferred) Item", "- ~~Item~~", "- *Item*",
+# "- Item" without checkbox). Only `- [ ] ` and `- [x] ` are valid DoD
+# item formats. Any other `- ` prefixed items inside a "Definition of Done"
+# section are format manipulation.
+# =============================================================================
+echo "--- Check 4A: DoD Format Manipulation Detection (Gate G041) ---"
+total_manipulated=0
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  # Extract lines inside DoD sections and check for non-checkbox list items
+  in_dod=0
+  line_num=0
+  while IFS= read -r line; do
+    line_num=$((line_num + 1))
+
+    # Detect DoD section headers
+    if echo "$line" | grep -qiE '^#{1,4}.*Definition of Done|^#{1,4}.*DoD'; then
+      in_dod=1
+      continue
+    fi
+
+    # Exit DoD section on next heading or scope boundary
+    if [[ "$in_dod" -eq 1 ]] && echo "$line" | grep -qE '^#{1,4} '; then
+      in_dod=0
+      continue
+    fi
+
+    # While inside DoD section, check list items
+    if [[ "$in_dod" -eq 1 ]]; then
+      # Valid formats: "- [ ] " or "- [x] "
+      # Invalid: "- (deferred)", "- ~~text~~", "- *text*", "- text" (no checkbox)
+      if echo "$line" | grep -qE '^\- ' && ! echo "$line" | grep -qE '^\- \[(x| )\] '; then
+        fail "DoD format manipulation detected in ${scope_path#$feature_dir/} line $line_num: $(echo "$line" | head -c 100)"
+        fun_message format_bypass
+        total_manipulated=$((total_manipulated + 1))
+      fi
+    fi
+  done < "$scope_path"
+done
+
+if [[ "$total_manipulated" -gt 0 ]]; then
+  fail "$total_manipulated DoD item(s) have been reformatted to bypass checkbox validation — MANIPULATION DETECTED (Gate G041)"
+  fun_message manipulation_detected
+  info "Valid DoD format is ONLY: '- [ ] Description' or '- [x] Description'"
+  info "Patterns like '- (deferred) ...', '- ~~...~~', '- Item without checkbox' are FORBIDDEN"
+else
+  pass "No DoD format manipulation detected — all DoD items use checkbox format"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 4B: Non-canonical scope status detection (Gate G041)
+# =============================================================================
+# Only four scope statuses are valid: "Not Started", "In Progress", "Done",
+# "Blocked". Any other status string (e.g., "Deferred", "Deferred — Planned
+# Improvement", "Skipped", "N/A") is an invented status used to bypass the
+# guard's scope status checks.
+# =============================================================================
+echo "--- Check 4B: Scope Status Canonicality (Gate G041) ---"
+non_canonical_statuses=0
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  # Find all **Status:** lines
+  while IFS= read -r status_line; do
+    [[ -n "$status_line" ]] || continue
+    # Extract the status value after "**Status:**"
+    status_value="$(echo "$status_line" | sed -E 's/.*\*\*Status:\*\*[[:space:]]*//' | sed -E 's/[[:space:]]*$//')"
+
+    # Check against canonical values
+    case "$status_value" in
+      "Not Started"|"In Progress"|"Done"|"Blocked")
+        # Valid canonical status
+        ;;
+      *)
+        fail "Non-canonical scope status detected in ${scope_path#$feature_dir/}: '$status_value' — ONLY 'Not Started', 'In Progress', 'Done', 'Blocked' are valid"
+        fun_message invented_status
+        non_canonical_statuses=$((non_canonical_statuses + 1))
+        ;;
+    esac
+  done < <(grep -E '\*\*Status:\*\*' "$scope_path" || true)
+done
+
+if [[ "$non_canonical_statuses" -gt 0 ]]; then
+  fail "$non_canonical_statuses scope(s) have invented/non-canonical status values — MANIPULATION DETECTED (Gate G041)"
+  info "Canonical scope statuses are ONLY: 'Not Started', 'In Progress', 'Done', 'Blocked'"
+  info "Invented statuses like 'Deferred', 'Skipped', 'N/A', 'Deferred — Planned Improvement' are FORBIDDEN"
+else
+  pass "All scope statuses are canonical (Not Started / In Progress / Done / Blocked)"
 fi
 echo ""
 
@@ -498,6 +595,12 @@ if [[ -n "$state_workflow_mode" ]]; then
       ;;
     improve-existing)
       required_specialists=("validate" "harden" "gaps" "implement" "test" "audit" "chaos" "docs")
+      ;;
+    stabilize-to-doc)
+      required_specialists=("stabilize" "implement" "test" "chaos" "validate" "audit" "docs")
+      ;;
+    product-discovery)
+      required_specialists=("harden" "docs" "validate" "audit")
       ;;
     validate-to-doc)
       required_specialists=("validate" "audit" "docs")

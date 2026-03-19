@@ -141,6 +141,23 @@ gates:
       Mechanically enforced by state-transition-guard.sh Check 18. When this gate fails,
       the agent MUST either complete the deferred work NOW or remove the DoD item with
       justification — NEVER mark the spec done with outstanding deferred work.
+  G041:
+    name: dod_format_integrity_gate
+    description: >-
+      ABSOLUTE BLOCKING gate. Prevents agents from bypassing DoD completion checks by
+      reformatting checkbox items or inventing non-canonical scope statuses.
+      THREE enforcement layers:
+      (1) DoD FORMAT — Only '- [ ] ' and '- [x] ' are valid DoD item formats inside
+      Definition of Done sections. Patterns like '- (deferred) ...', '- ~~...~~',
+      '- *deferred* ...', or '- Text without checkbox' are FORBIDDEN manipulations.
+      (2) SCOPE STATUS — Only four canonical statuses are valid: 'Not Started',
+      'In Progress', 'Done', 'Blocked'. Invented statuses like 'Deferred',
+      'Deferred — Planned Improvement', 'Skipped', 'N/A' are FORBIDDEN.
+      (3) DoD ITEM DELETION — Removing DoD items to pass checkbox validation is
+      structural fabrication. If a prior workflow phase added DoD items, they MUST
+      remain as checkboxes until legitimately completed with evidence or explicitly
+      removed with documented justification in the same commit.
+      Mechanically enforced by state-transition-guard.sh Checks 4A and 4B.
 
 failureRouting:
   code: implement

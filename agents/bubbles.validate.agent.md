@@ -319,6 +319,8 @@ Verify `state.json` reflects reality:
 2. **completedScopes matches reality:** Every scope listed in `completedScopes` MUST actually have status "Done" in scope files.
 3. **completedPhases coherent:** If `completedPhases` includes `"implement"` or `"test"`, `completedScopes` MUST NOT be empty.
 4. **No stale done:** If any scope has unchecked DoD items, spec status MUST NOT be `"done"`.
+5. **DoD format integrity (G041):** ALL DoD items MUST use checkbox format (`- [ ]` or `- [x]`). If any item uses `- (deferred)`, `- ~~text~~`, or unformatted list items inside a DoD section, it is format manipulation — report as a **CRITICAL finding**.
+6. **Scope status canonicality (G041):** ALL scope statuses MUST be one of: `Not Started`, `In Progress`, `Done`, `Blocked`. Invented statuses (e.g., "Deferred", "Deferred — Planned Improvement", "Skipped") are manipulation — report as a **CRITICAL finding**.
 
 **If any state incoherence → validation FAILS.**
 

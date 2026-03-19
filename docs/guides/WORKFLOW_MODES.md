@@ -240,6 +240,66 @@ harden → simplify → test → validate → docs
 
 **Use when:** Refactoring, simplification, code quality work.
 
+### <img src="../../icons/conky-puppet.svg" width="20"> harden-to-doc
+
+Harden specs, then fix and test the issues found.
+
+```
+bootstrap → validate → harden → implement → test → chaos → validate → audit → docs
+```
+
+**Use when:** Code has weak spots that need tightening before shipping.
+
+### <img src="../../icons/phil-collins-baam.svg" width="20"> gaps-to-doc
+
+Find implementation gaps, then fix and test.
+
+```
+bootstrap → validate → gaps → implement → test → chaos → validate → audit → docs
+```
+
+**Use when:** Implementation may be incomplete or missing edge cases.
+
+### <img src="../../icons/ricky-dynamite.svg" width="20"> chaos-to-doc
+
+Run chaos probes, then document findings.
+
+```
+chaos → validate → audit → docs
+```
+
+**Use when:** Chaos testing without implementation fixes.
+
+### <img src="../../icons/randy-cheeseburger.svg" width="20"> reconcile-to-doc
+
+Reconcile stale artifact state with implementation reality.
+
+```
+bootstrap → validate → implement → test → validate → audit → chaos → docs
+```
+
+**Use when:** Specs claim "done" but implementation has drifted or is incomplete.
+
+### <img src="../../icons/randy-cheeseburger.svg" width="20"> validate-to-doc
+
+Validate + audit + docs without implementation.
+
+```
+validate → audit → docs
+```
+
+**Use when:** Quick check that everything passes gates, then update docs.
+
+### <img src="../../icons/conky-puppet.svg" width="20"> spec-scope-hardening
+
+Tighten spec and scope artifacts only — no code changes.
+
+```
+select → bootstrap → harden → docs → validate → audit
+```
+
+**Use when:** Specs need better Gherkin scenarios, stronger DoD, or clearer design. Status ceiling: `specs_hardened`.
+
 ---
 
 ## Resume & Discovery
@@ -274,22 +334,30 @@ analyze → ux
 
 | Mode | Phases | Best For |
 |------|--------|----------|
-| `full-delivery` | All 8 | Standard features |
-| `full-delivery-strict` | All 8 + chaos | Critical features |
+| `full-delivery` | All phases | Standard features |
+| `full-delivery-strict` | All phases + strict chaos | Critical features |
 | `value-first-e2e-batch` | Prioritized + batched | Large backlogs |
 | `product-to-delivery` | Discovery → delivery | Product ideas |
+| `product-discovery` | Analysis only | Early exploration |
 | `bugfix-fastlane` | Bug → fix → test | Bug fixes |
 | `feature-bootstrap` | Analyze → design → plan | Planning only |
 | `iterate` | Implement → test loop | Continuing work |
+| `harden-to-doc` | Harden → fix → test → docs | Code quality |
+| `gaps-to-doc` | Gaps → fix → test → docs | Gap closure |
 | `harden-gaps-to-doc` | Quality sweep | Post-implementation |
+| `stabilize-to-doc` | Stability → test → docs | Infrastructure |
 | `chaos-hardening` | Chaos → fix | Resilience |
+| `chaos-to-doc` | Chaos → validate → docs | Chaos auditing |
+| `reconcile-to-doc` | Reconcile → test → docs | Stale state cleanup |
+| `improve-existing` | Analyze → harden → gaps → fix | Code improvement |
 | `stochastic-quality-sweep` | Random quality | Maintenance |
 | `test-to-doc` | Test → docs | Test/doc focus |
+| `validate-to-doc` | Validate → audit → docs | Validation + docs |
+| `spec-scope-hardening` | Harden specs only | Spec quality |
 | `docs-only` | Docs only | Pure docs |
 | `validate-only` | Validate only | Quick gate check |
 | `audit-only` | Audit only | Compliance |
 | `resume-only` | Resume state | Picking up work |
-| `product-discovery` | Analysis only | Early exploration |
 
 ---
 

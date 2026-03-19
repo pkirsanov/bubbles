@@ -502,6 +502,17 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
    ```
    - Must be 0. If any scope is not Done → it was not completed.
 
+3A. **Verify ALL scope statuses are canonical (Gate G041):**
+   ```bash
+   grep '\*\*Status:\*\*' {FEATURE_DIR}/scopes.md
+   ```
+   - Every `**Status:**` line MUST contain EXACTLY one of: `Not Started`, `In Progress`, `Done`, `Blocked`.
+   - If ANY scope has an invented status (e.g., "Deferred", "Deferred — Planned Improvement", "Skipped", "N/A") → the scope was manipulated to bypass the guard. Revert to `Not Started` or `In Progress` and implement the work.
+
+3B. **Verify NO DoD format manipulation (Gate G041):**
+   - Inside every `Definition of Done` section, ALL list items MUST use checkbox format: `- [ ] Description` or `- [x] Description`.
+   - If ANY line uses `- (deferred) ...`, `- ~~...~~`, `- *text*`, or `- Text without checkbox` → this is format manipulation to bypass Check 4. Restore the checkbox format and implement the work.
+
 4. **Verify ZERO deferral language in scope artifacts (Gate G036):**
    ```bash
    grep -ciE 'deferred|defer to|future scope|future work|follow-up|followup|out of scope|not in scope|will address later|address later|revisit later|separate ticket|separate issue|punt|punted|postpone|postponed|skip for now|not implemented yet|not yet implemented|placeholder|temporary workaround' {FEATURE_DIR}/scopes.md
@@ -563,6 +574,8 @@ Before reporting iteration completion, this agent MUST run Tier 1 universal chec
 | IT1 | State transition guard (G023) | `bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
 | IT2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
 | IT3 | Scope statuses Done | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
+| IT3A | Scope statuses canonical (G041) | Verify all `**Status:**` lines contain only `Not Started`, `In Progress`, `Done`, `Blocked` | Zero invented statuses |
+| IT3B | DoD format integrity (G041) | Verify all DoD list items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, etc. | Zero format manipulations |
 | IT4 | Evidence not fabricated | Re-read each [x] item's evidence — ≥10 lines, real command, no duplicates | All genuine |
 | IT5 | Specialist phases complete | Check `state.json` `completedPhases` vs mode requirements | All phases present |
 | IT6 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits |

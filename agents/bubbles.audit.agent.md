@@ -51,6 +51,8 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 | A5 | Reality scan (G028+G030) | `bash .github/bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
 | A6 | Phase-Scope coherence (G027) | Verify completedPhases matches completedScopes | Coherent |
 | A7 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work blocks completion |
+| A8 | DoD format integrity (G041) | Verify all DoD items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, unformatted items in DoD sections | Zero format manipulations |
+| A9 | Scope status canonicality (G041) | Verify all `**Status:**` values are exactly `Not Started`, `In Progress`, `Done`, or `Blocked` — no invented statuses | Zero invented statuses |
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 
@@ -91,6 +93,8 @@ bash .github/bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 | Guard script executed | ✅/❌ |
 | Guard script exit code 0 | ✅/❌ |
 | All DoD items checked [x] in scopes.md | ✅/❌ |
+| All DoD items use checkbox format — no format manipulation (G041) | ✅/❌ |
+| All scope statuses canonical: Not Started / In Progress / Done / Blocked (G041) | ✅/❌ |
 | All scope statuses "Done" in scopes.md (no "Not Started") | ✅/❌ |
 | All required specialist phases in completedPhases | ✅/❌ |
 | Timestamp plausibility (no uniform spacing) | ✅/❌ |
