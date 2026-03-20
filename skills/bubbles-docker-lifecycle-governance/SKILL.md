@@ -1,5 +1,5 @@
 ---
-name: docker-lifecycle-governance
+name: bubbles-docker-lifecycle-governance
 description: Use when designing or modifying Docker build, cleanup, compose, or validation workflows that need correct freshness, low disk usage, persistent-store protection, disposable test storage, and predictable stack grouping.
 ---
 
@@ -48,4 +48,4 @@ Keep Docker workflows fast, fresh, safe, and clean.
 ## References
 - `.github/agents/bubbles_shared/docker-lifecycle-governance.md`
 - `.github/agents/bubbles_shared/agent-common.md`
-- `.github/instructions/docker-lifecycle-governance.instructions.md`
+- `.github/instructions/bubbles-docker-lifecycle-governance.instructions.md`

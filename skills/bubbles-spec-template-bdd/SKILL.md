@@ -1,5 +1,5 @@
 ---
-name: spec-template-bdd
+name: bubbles-spec-template-bdd
 description: Enforce spec.md adherence to .specify/templates/spec-template.md with Gherkin-style BDD scenarios and tech-agnostic requirements.
 ---
 

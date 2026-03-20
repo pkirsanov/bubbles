@@ -28,8 +28,8 @@ This installs:
 - 25 agent definitions → `.github/agents/bubbles.*.agent.md`
 - 25 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
-- Shared portable instructions → `.github/instructions/*.instructions.md`
-- Shared portable governance skills → `.github/skills/*/SKILL.md`
+- Shared portable instructions → `.github/instructions/bubbles-*.instructions.md`
+- Shared portable governance skills → `.github/skills/bubbles-*/SKILL.md`
 - Workflow config → `.github/bubbles/workflows.yaml`
 - Governance scripts → `.github/bubbles/scripts/*.sh`
 
@@ -146,8 +146,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Agent definitions | `.github/agents/bubbles.*.agent.md` | Bubbles |
 | Shared governance | `.github/agents/bubbles_shared/*.md` | Bubbles |
 | Prompt shims | `.github/prompts/bubbles.*.prompt.md` | Bubbles |
-| Shared instructions | `.github/instructions/*.instructions.md` | Bubbles |
-| Shared governance skills | `.github/skills/<skill>/SKILL.md` | Bubbles |
+| Shared instructions | `.github/instructions/bubbles-*.instructions.md` | Bubbles |
+| Shared governance skills | `.github/skills/bubbles-*/SKILL.md` | Bubbles |
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |

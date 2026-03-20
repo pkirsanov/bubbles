@@ -60,7 +60,7 @@ handoffs:
 
 When spec.md must be created or completed, load the spec-template-bdd skill:
 
-<skill>spec-template-bdd</skill>
+<skill>bubbles-spec-template-bdd</skill>
 
 ## User Input
 

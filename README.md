@@ -109,14 +109,14 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 27 prompt shims
 ├── instructions/
-│   ├── agents.instructions.md       # Portable agent authoring guidance
-│   ├── skills.instructions.md       # Portable skill authoring guidance
-│   └── docker-lifecycle-governance.instructions.md
+│   ├── bubbles-agents.instructions.md       # Portable agent authoring guidance
+│   ├── bubbles-skills.instructions.md       # Portable skill authoring guidance
+│   └── bubbles-docker-lifecycle-governance.instructions.md
 ├── skills/
-│   ├── skill-authoring/             # Portable governance skill
-│   ├── docker-port-standards/
-│   ├── spec-template-bdd/
-│   └── docker-lifecycle-governance/
+│   ├── bubbles-skill-authoring/             # Portable governance skill
+│   ├── bubbles-docker-port-standards/
+│   ├── bubbles-spec-template-bdd/
+│   └── bubbles-docker-lifecycle-governance/
 ├── bubbles/
 │   ├── workflows.yaml               # 24 workflow mode definitions
 │   ├── scripts/                     # Governance scripts

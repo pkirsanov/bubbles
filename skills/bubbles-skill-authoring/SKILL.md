@@ -1,5 +1,5 @@
 ---
-name: skill-authoring
+name: bubbles-skill-authoring
 description: Guidance for creating or updating repo-local skills under .github/skills. Use when adding procedural workflows, checklists, or reusable resources that must follow repository governance.
 ---
 
@@ -53,6 +53,6 @@ A skill is done when:
 - It improves repeatability.
 
 ## References
-- `.github/instructions/skills.instructions.md`
+- `.github/instructions/bubbles-skills.instructions.md`
 - `.github/agents/bubbles_shared/project-config-contract.md`
 - `.github/agents/bubbles_shared/agent-common.md`

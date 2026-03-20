@@ -1,5 +1,5 @@
 ---
-name: docker-port-standards
+name: bubbles-docker-port-standards
 description: Enforce workspace-wide standards for Docker configuration, port allocation (the 10k Rule), and URL binding (Dual-URL Standard). Use when generating or modifying docker-compose.yml or service configurations.
 ---
 

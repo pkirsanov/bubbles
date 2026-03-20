@@ -103,6 +103,47 @@ cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
 
+# ── Migration: rename legacy shared instruction filenames ──────────
+for legacy_pair in \
+  "agents.instructions.md:bubbles-agents.instructions.md" \
+  "skills.instructions.md:bubbles-skills.instructions.md" \
+  "docker-lifecycle-governance.instructions.md:bubbles-docker-lifecycle-governance.instructions.md"; do
+  legacy_name=${legacy_pair%%:*}
+  namespaced_name=${legacy_pair##*:}
+  legacy_path="${TARGET}/instructions/${legacy_name}"
+  namespaced_path="${TARGET}/instructions/${namespaced_name}"
+  if [[ -f "${legacy_path}" ]]; then
+    if [[ ! -f "${namespaced_path}" ]]; then
+      mv "${legacy_path}" "${namespaced_path}"
+      info "Migrated: instructions/${legacy_name} → instructions/${namespaced_name}"
+    else
+      rm "${legacy_path}"
+      info "Removed legacy instruction: instructions/${legacy_name}"
+    fi
+  fi
+done
+
+# ── Migration: rename legacy shared skill directories ──────────────
+for legacy_pair in \
+  "skill-authoring:bubbles-skill-authoring" \
+  "docker-port-standards:bubbles-docker-port-standards" \
+  "spec-template-bdd:bubbles-spec-template-bdd" \
+  "docker-lifecycle-governance:bubbles-docker-lifecycle-governance"; do
+  legacy_name=${legacy_pair%%:*}
+  namespaced_name=${legacy_pair##*:}
+  legacy_path="${TARGET}/skills/${legacy_name}"
+  namespaced_path="${TARGET}/skills/${namespaced_name}"
+  if [[ -d "${legacy_path}" ]]; then
+    if [[ ! -d "${namespaced_path}" ]]; then
+      mv "${legacy_path}" "${namespaced_path}"
+      info "Migrated: skills/${legacy_name} → skills/${namespaced_name}"
+    else
+      rm -rf "${legacy_path}"
+      info "Removed legacy skill directory: skills/${legacy_name}"
+    fi
+  fi
+done
+
 # ── Optional: shared instructions & skills ──────────────────────────
 if [[ "$AGENTS_ONLY" != "true" ]]; then
   if [[ -d "$TEMP_DIR/instructions" ]]; then
@@ -197,6 +238,43 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     mv "${TARGET}/agents/_shared" "${TARGET}/agents/bubbles_shared"
     info "Migrated: agents/_shared → agents/bubbles_shared"
   fi
+  for legacy_pair in \
+    "agents.instructions.md:bubbles-agents.instructions.md" \
+    "skills.instructions.md:bubbles-skills.instructions.md" \
+    "docker-lifecycle-governance.instructions.md:bubbles-docker-lifecycle-governance.instructions.md"; do
+    legacy_name=${legacy_pair%%:*}
+    namespaced_name=${legacy_pair##*:}
+    legacy_path="${TARGET}/instructions/${legacy_name}"
+    namespaced_path="${TARGET}/instructions/${namespaced_name}"
+    if [[ -f "${legacy_path}" ]]; then
+      if [[ ! -f "${namespaced_path}" ]]; then
+        mv "${legacy_path}" "${namespaced_path}"
+        info "Migrated: instructions/${legacy_name} → instructions/${namespaced_name}"
+      else
+        rm "${legacy_path}"
+        info "Removed legacy instruction: instructions/${legacy_name}"
+      fi
+    fi
+  done
+  for legacy_pair in \
+    "skill-authoring:bubbles-skill-authoring" \
+    "docker-port-standards:bubbles-docker-port-standards" \
+    "spec-template-bdd:bubbles-spec-template-bdd" \
+    "docker-lifecycle-governance:bubbles-docker-lifecycle-governance"; do
+    legacy_name=${legacy_pair%%:*}
+    namespaced_name=${legacy_pair##*:}
+    legacy_path="${TARGET}/skills/${legacy_name}"
+    namespaced_path="${TARGET}/skills/${namespaced_name}"
+    if [[ -d "${legacy_path}" ]]; then
+      if [[ ! -d "${namespaced_path}" ]]; then
+        mv "${legacy_path}" "${namespaced_path}"
+        info "Migrated: skills/${legacy_name} → skills/${namespaced_name}"
+      else
+        rm -rf "${legacy_path}"
+        info "Removed legacy skill directory: skills/${legacy_name}"
+      fi
+    fi
+  done
   # Migrate old script paths (scripts/bubbles*.sh → bubbles/scripts/)
   for old_script in "${TARGET}"/scripts/bubbles*.sh; do
     [[ -f "$old_script" ]] || continue

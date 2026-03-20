@@ -187,6 +187,8 @@ When adopting Bubbles for a new project, populate these files:
 | `agents/bubbles_shared/docker-lifecycle-governance.md` | Docker lifecycle governance (freshness, cleanup, labeling) | Universal Docker patterns, no project references |
 | `bubbles/workflows.yaml` | Workflow modes (24), gates (G001-G032), phases (13), retry policy, priority scoring | Orchestration config, no project references |
 | `bubbles/scripts/*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, etc.) | Validate artifact structure, not project-specific content |
+| `instructions/bubbles-*.instructions.md` | Namespaced portable instruction files | Clearly Bubbles-owned while remaining project-agnostic |
+| `skills/bubbles-*/SKILL.md` | Namespaced portable governance skills | Clearly Bubbles-owned while remaining project-agnostic |
 | `docs/*.md` | Bubbles documentation (examples, cheatsheet, sessions, prompts, etc.) | Project-agnostic reference docs |
 | `prompts/bubbles.*.prompt.md` | Prompt shims routing to agents | Minimal routing files, no project content |
 
@@ -215,7 +217,7 @@ Skills in `.github/skills/` may be either portable or project-specific. Use this
 
 | Classification | Rule | Examples |
 |---------------|------|---------|
-| **Portable** | Uses `agents.md` indirection for commands; no project-specific paths/tools hardcoded | `skill-authoring/`, `docker-lifecycle-governance/`, `docker-port-standards/`, `spec-template-bdd/`, `bug-fix-testing/` |
+| **Portable** | Uses `agents.md` indirection for commands; no project-specific paths/tools hardcoded | `bubbles-skill-authoring/`, `bubbles-docker-lifecycle-governance/`, `bubbles-docker-port-standards/`, `bubbles-spec-template-bdd/`, `bug-fix-testing/` |
 | **Project-specific** | References project CLI, project-specific services, or domain-specific patterns | `wanderaide-operations/`, `protobuf-only/`, `chaos-execution/`, `web-ui/`, `testing-prepush/` |
 
 Project-specific skills should remain in `.github/skills/` (co-located with governance) but MUST NOT be assumed to exist in other repos adopting Bubbles.
@@ -346,8 +348,8 @@ bash bubbles/scripts/state-transition-guard.sh specs/<any-spec>
 
 | Type | Portable? | Rule |
 |------|-----------|------|
-| `agents.instructions.md` | **YES** — copy unchanged | Contains universal agent authoring guidelines. Uses `CLI_ENTRYPOINT from agents.md` indirection. |
-| `skills.instructions.md` | **YES** — copy unchanged | Contains universal skill authoring guidelines. References `agent-common.md` for policies. |
+| `bubbles-agents.instructions.md` | **YES** — copy unchanged | Contains universal agent authoring guidelines. Uses `CLI_ENTRYPOINT from agents.md` indirection. |
+| `bubbles-skills.instructions.md` | **YES** — copy unchanged | Contains universal skill authoring guidelines. References `agent-common.md` for policies. |
 | Project-specific instructions (e.g., `ui-design.instructions.md`, `docker-ports.instructions.md`) | **NO** — project-specific | Create per project. These contain project-specific patterns, tools, and conventions. |
 
 **When creating project-specific instruction files:**
@@ -361,7 +363,7 @@ Skills can be **either** portable or project-specific:
 
 | Skill Type | Portable? | Examples |
 |------------|-----------|---------|
-| **Governance skills** (enforce universal rules) | **YES** — copy unchanged | `skill-authoring/` (meta-skill for creating skills) |
+| **Governance skills** (enforce universal rules) | **YES** — copy unchanged | `bubbles-skill-authoring/` (meta-skill for creating skills) |
 | **Domain skills** (project-specific workflows) | **NO** — project-specific | `protobuf-only/`, `chaos-execution/`, `build-deploy-validation/` |
 
 **Portable skill rules:**
