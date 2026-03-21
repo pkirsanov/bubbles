@@ -12,7 +12,7 @@
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-27-58a6ff?style=flat-square" alt="27 agents">
-  <img src="https://img.shields.io/badge/gates-41-3fb950?style=flat-square" alt="41 gates">
+  <img src="https://img.shields.io/badge/gates-42-3fb950?style=flat-square" alt="42 gates">
   <img src="https://img.shields.io/badge/workflow_modes-24-bc8cff?style=flat-square" alt="24 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
@@ -34,7 +34,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>27 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>41 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>42 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>24 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
@@ -153,6 +153,18 @@ specs/                                   # Feature/bug spec folders
 
 Every agent has a job. Start with the super when you need help, then hand off to the right specialist.
 
+### Artifact Ownership
+
+Bubbles now enforces hard artifact ownership:
+
+- `bubbles.analyst` owns business requirements in `spec.md`
+- `bubbles.ux` owns UX sections inside `spec.md`
+- `bubbles.design` owns `design.md`
+- `bubbles.plan` owns `scopes.md`, `report.md` structure, and `uservalidation.md`
+- Diagnostic agents like `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, and `bubbles.review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
+
+This is enforced by the agent ownership contract in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
+
 ### <img src="icons/lahey-badge.svg" width="24"> Start Here
 
 | Agent | Role | When to Use |
@@ -231,10 +243,14 @@ Every agent has a job. Start with the super when you need help, then hand off to
 /bubbles.design   Create the technical design for auth
 ```
 
+`bubbles.design` no longer backfills missing business requirements itself. If `spec.md` is incomplete, it routes that work to `bubbles.analyst` first.
+
 ### 3. Break Into Scopes
 ```
 /bubbles.plan     Create scopes for the auth feature
 ```
+
+`bubbles.plan` is the only planning owner. If validation, hardening, security, or gap analysis discovers missing Gherkin scenarios, Test Plan rows, DoD items, or `uservalidation.md`, those agents route the change back to `bubbles.plan`.
 
 ### 4. Implement
 ```
@@ -296,9 +312,12 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 41 Quality Gates
+### 42 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
+
+### Artifact Ownership Gate (G042)
+Cross-authoring is blocked. If a diagnostic or downstream specialist finds that a foreign-owned artifact must change, it must route that work to the owning specialist instead of rewriting the artifact directly.
 
 ### Self-Healing Loops (G039)
 When agents hit failures, they attempt bounded self-repair: narrow context, retry up to 3 times, never stack. No infinite loops.

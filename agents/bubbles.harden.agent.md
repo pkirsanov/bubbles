@@ -29,9 +29,9 @@ handoffs:
 - **Anti-proxy test detection** — during test review, identify and flag/rewrite proxy tests that don't test real use cases (E2E tests checking only status codes, UI tests checking only element existence, integration tests with mocked dependencies) — see Use Case Testing Integrity in agent-common.md
 - **No regression introduction** — hardening changes must not introduce new failures; verify by running impacted tests after each change (see No Regression Introduction in agent-common.md)
 - **Strengthen weak tests** — when reviewing tests, proactively add missing edge cases, negative tests, and round-trip verifications
-- **Scope artifact coherence (NON-NEGOTIABLE)** — when adding or modifying Gherkin scenarios in scopes, you MUST also update the Test Plan table with corresponding rows AND the Definition of Done with corresponding checkbox items. Gherkin scenarios, Test Plan rows, and DoD items are a triple that MUST stay in sync. If any scope has new/changed Gherkin scenarios without matching Test Plan and DoD updates, the scope is INCOHERENT and must be fixed before proceeding.
-- **State coherence** — when scope artifacts are modified (new Gherkin scenarios, new DoD items, status changes), update `state.json` to reflect reality. If a scope was previously "Done" but now has new unchecked DoD items, reset its status to "In Progress" in both `scopes.md` and `state.json`.
-- **Findings artifact update (MANDATORY — Gate G031)** — when hardening discovers issues (⚠️ PARTIAL or ❌ FAILED tasks, policy violations, missing tests, code quality gaps), you MUST update scope artifacts (`scopes.md` Gherkin scenarios, Test Plan table, and DoD checklist) BEFORE reporting your verdict. Findings that exist only in the hardening report but are NOT reflected in scope artifacts are LOST FINDINGS — downstream agents cannot act on them. See agent-common.md → Findings Artifact Update Protocol (G031).
+- **Planning artifacts are foreign-owned** — when hardening finds missing scenarios, tests, or DoD structure, invoke `bubbles.plan` via `runSubagent` rather than editing `scopes.md` directly.
+- **State coherence** — if routed planning changes reopen a completed scope, require `bubbles.plan` to reset scope/state artifacts; do not rewrite them here.
+- **Findings routing (MANDATORY)** — when hardening discovers issues (⚠️ PARTIAL or ❌ FAILED tasks, policy violations, missing tests, code quality gaps), route the required artifact changes to the owner before reporting closure.
 
 **Non-goals:**
 - Ad-hoc refactors/changes outside feature/bug classification
@@ -306,48 +306,9 @@ For every verified task that fixed a bug:
 
 ---
 
-### Phase 1.5: Scope Artifact Coherence (MANDATORY)
+### Phase 1.5: Scope Artifact Routing (MANDATORY)
 
-**When hardening adds or modifies Gherkin scenarios, ALL scope artifacts MUST be updated to stay in sync. Gherkin scenarios that exist without matching Test Plan rows and DoD items are a governance violation.**
-
-For EACH scope in `scopes.md` (or `scopes/*/scope.md`):
-
-#### 1.5.1 Gherkin → Test Plan Sync
-
-For every Gherkin scenario in the scope:
-- Verify a corresponding Test Plan row exists with the correct test type (`e2e-api`, `e2e-ui`, `unit`, `integration`, etc.)
-- If a Gherkin scenario has NO matching Test Plan row → **ADD the row** with:
-  - Test Type: appropriate for the scenario (E2E for user flows, unit for logic, integration for service interactions)
-  - Category: per Canonical Test Taxonomy
-  - File/Location: planned test file path
-  - Description: references the specific Gherkin scenario
-  - Command: repo-standard test command
-  - Live System Required: Yes for e2e/integration/stress, No for unit
-
-#### 1.5.2 Gherkin → DoD Sync
-
-For every Gherkin scenario in the scope:
-- Verify a corresponding DoD checkbox item exists
-- If a Gherkin scenario has NO matching DoD item → **ADD the DoD item** as an unchecked `- [ ]` checkbox with:
-  - Clear description referencing the scenario
-  - Evidence template block (inline raw output placeholder)
-  - Proper test type classification
-
-#### 1.5.3 Test Plan ↔ DoD Parity Check
-
-```
-test_plan_rows = count of Test Plan table rows
-dod_test_items = count of test-related DoD checkbox items
-IF test_plan_rows != dod_test_items THEN scope is INCOHERENT → FIX
-```
-
-#### 1.5.4 Scope Status Reset
-
-If hardening added new unchecked DoD items (`- [ ]`) to a scope that was previously marked "Done":
-- Reset scope status to **"In Progress"** in `scopes.md` (or `scope.md`)
-- Update `state.json`:
-  - Set spec status to `"in_progress"` if it was `"done"`
-  - Remove the scope from `completedScopes` if it was listed
+When hardening discovers missing Gherkin scenarios, Test Plan rows, DoD items, or scope-state resets, do not edit `scopes.md` directly. Invoke `bubbles.plan` via `runSubagent` with the exact findings that require planning updates, then continue only after the planning owner completes those changes.
   - Remove `"implement"` from `completedPhases` if scope DoD is now incomplete
 - This ensures downstream agents (test, validate, audit) re-process the scope
 

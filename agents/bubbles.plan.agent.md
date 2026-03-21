@@ -190,7 +190,7 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 - Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (or auto-detect).
 - **Verify design-phase prerequisites exist:**
   - `spec.md` — REQUIRED. If missing, STOP and instruct user to run `/bubbles.design` first.
-  - `design.md` — REQUIRED. If missing or stale, run `/bubbles.design` with `mode: non-interactive` before planning.
+  - `design.md` — REQUIRED. If missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive` before planning.
   - `state.json` — Should exist. Create with `{"status": "not_started"}` if missing.
 - **Create plan-phase template artifacts if missing:**
   - `report.md` — Create with initial template headers (Summary, Test Evidence, Completion Statement).
@@ -205,7 +205,7 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
   - Monitoring/observability
   - Scripts/CLI (if present and relevant)
 
-If `design.md` is missing or stale, run `/bubbles.design` with `mode: non-interactive` before planning.
+If `design.md` is missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive` before planning.
 
 Output a short summary:
 

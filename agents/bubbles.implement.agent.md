@@ -106,7 +106,7 @@ Before execution, validate:
 2. **Planning artifacts exist**
    - `{FEATURE_DIR}/spec.md` (required)
    - `{FEATURE_DIR}/design.md` (required for implementation)
-   - If `design.md` is missing or stale: run `/bubbles.design` with `mode: non-interactive`
+   - If `design.md` is missing or stale: invoke `bubbles.design` via `runSubagent` with `mode: non-interactive`, then continue only after design ownership is satisfied
 
 If pre-requisites fail after non-interactive design attempt: produce validation report and STOP.
 
@@ -129,7 +129,7 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
 2. Load and validate `{FEATURE_DIR}/scopes.md`
 3. Load `spec.md`, `design.md`
 4. **Run User Validation Gate** (per [bubbles_shared/scope-workflow.md](bubbles_shared/scope-workflow.md))
-   - Create `uservalidation.md` if missing
+   - If `uservalidation.md` is missing, invoke `bubbles.plan` via `runSubagent` to create missing planning artifacts
    - Check for unchecked items (regressions)
    - If regressions exist: prioritize fixing them first
 5. **Run Bug Check** (per [bubbles_shared/agent-common.md](bubbles_shared/agent-common.md))

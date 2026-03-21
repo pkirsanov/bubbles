@@ -55,7 +55,7 @@ handoffs:
 **Behavioral Rules:**
 - Work directly on codebase slices, not just `specs/...` targets
 - Default to review-only behavior with lightweight evidence gathering
-- Reuse existing specialists via `runSubagent` when their lens is relevant
+- Dispatch requested specialist lenses via `runSubagent` when their lens is relevant
 - Do NOT invoke `bubbles.workflow` for this review flow; keep orchestration lightweight and code-first
 - Do NOT require workflow gates, spec state transitions, or DoD completion to produce findings
 - Keep output structure consistent every time using the Standard Output Format below
@@ -216,7 +216,7 @@ If a requested lens finds nothing material, keep the section and state `No mater
 ### Phase 2: Run Review Lenses
 
 For each requested lens:
-1. Reuse the nearest existing specialist behavior directly or via `runSubagent`
+1. Invoke the mapped specialist via `runSubagent`; do not emulate that specialist directly
 2. Convert raw findings into the Standard Output Format
 3. Remove workflow-only noise (gates, done-state language, spec lifecycle chatter)
 4. Keep only code-review-relevant findings and recommendations

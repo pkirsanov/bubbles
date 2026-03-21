@@ -32,9 +32,12 @@ handoffs:
 - Ensure state.json exists (create if missing) — see State.json Lifecycle in agent-common.md
 
 **Artifact Ownership (this agent creates ONLY these):**
-- `spec.md` — Feature specification (created or completed using spec-template-bdd skill)
 - `design.md` — Comprehensive design document
 - `state.json` — Initial state tracking (with `status: "not_started"`)
+
+**Upstream prerequisites owned by other agents:**
+- `spec.md` business requirements are owned by `bubbles.analyst`
+- UX sections in `spec.md` are owned by `bubbles.ux`
 
 **NOT owned by this agent (created later by /bubbles.plan):**
 - `scopes.md` — Created by /bubbles.plan from spec + design
@@ -58,9 +61,7 @@ handoffs:
 
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
-When spec.md must be created or completed, load the spec-template-bdd skill:
-
-<skill>bubbles-spec-template-bdd</skill>
+If business requirements are missing or incomplete, invoke `bubbles.analyst` via `runSubagent` before continuing. Do NOT author or backfill analyst-owned sections yourself.
 
 ## User Input
 
@@ -108,9 +109,9 @@ When the user provides free-text input WITHOUT explicit `mode:` or `design:` par
 This agent creates or updates **design.md** as a comprehensive design artifact.
 
 Core requirements:
-1) **Works with or without spec.md**
-   - If spec.md exists, use it as primary requirements input.
-   - If spec.md is missing or incomplete, create or complete it using the spec template and BDD requirements from the spec-template-bdd skill before drafting design.md.
+1) **Works only from owned or delegated inputs**
+  - If spec.md exists with sufficient business requirements, use it as primary requirements input.
+  - If spec.md is missing or incomplete, invoke `bubbles.analyst` via `runSubagent`, then resume design once analyst-owned sections exist.
 
 2) **Comprehensive design coverage**
    - Architecture overview and goals
@@ -175,7 +176,7 @@ Core requirements:
 - Create `{FEATURE_DIR}` directory if it does not exist.
 - Run **Design-Phase Artifacts Gate**: ensure `spec.md`, `design.md`, and `state.json` exist.
   - Create `state.json` with `{"status": "not_started"}` if missing.
-  - If `spec.md` is missing or incomplete, create or complete it first using the spec-template-bdd skill.
+  - If `spec.md` is missing or incomplete, invoke `bubbles.analyst` via `runSubagent`, then continue only after analyst-owned sections exist.
   - If `design.md` is missing, it will be created as the primary output of this agent.
 - Do NOT create `scopes.md`, `report.md`, or `uservalidation.md` — those are created by `/bubbles.plan`.
 - Determine whether to create design.md from scratch or update existing.

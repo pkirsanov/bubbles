@@ -158,6 +158,17 @@ gates:
       remain as checkboxes until legitimately completed with evidence or explicitly
       removed with documented justification in the same commit.
       Mechanically enforced by state-transition-guard.sh Checks 4A and 4B.
+  G042:
+    name: agent_ownership_gate
+    description: >-
+      ABSOLUTE BLOCKING gate. Agents MUST respect artifact ownership boundaries.
+      Business requirements in spec.md belong to bubbles.analyst, UX sections of
+      spec.md belong to bubbles.ux, design.md belongs to bubbles.design, and
+      scopes.md/report.md/uservalidation.md planning structure belongs to
+      bubbles.plan. Diagnostic agents such as bubbles.validate, bubbles.harden,
+      bubbles.gaps, bubbles.stabilize, bubbles.security, and bubbles.review MUST
+      route required artifact changes to the owning specialist instead of editing
+      foreign-owned artifacts directly. Enforced by agent-ownership-lint.sh.
 
 failureRouting:
   code: implement

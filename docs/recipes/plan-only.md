@@ -14,7 +14,7 @@ You want to think through a feature — requirements, design, scope breakdown �
 /bubbles.workflow  feature-bootstrap for my-new-feature
 ```
 
-**Phases:** analyze → design → plan
+**Phases:** analyst → design → plan
 
 ## Or Step by Step
 
@@ -35,6 +35,8 @@ You want to think through a feature — requirements, design, scope breakdown �
 ```
 /bubbles.plan  create scopes for <feature>
 ```
+
+Planning ownership is strict: if later validation or hardening finds missing Gherkin, Test Plan, DoD, or `uservalidation.md` structure, those agents route the changes back to `bubbles.plan` instead of editing planning artifacts directly.
 
 ## What You Get
 

@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **27 Agents · 41 Gates · 24 Workflow Modes · 17 Phases**
+> **27 Agents · 42 Gates · 24 Workflow Modes · 17 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -44,6 +44,15 @@
 | <img src="../icons/george-green-badge.svg" width="32"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
 | <img src="../icons/conky-puppet.svg" width="32"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
 | <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
+
+### Ownership Quick Reference
+
+| Artifact | Owner | Notes |
+|----------|-------|-------|
+| `spec.md` business requirements | `bubbles.analyst` | `bubbles.ux` may update UX sections only |
+| `design.md` | `bubbles.design` | Technical design owner |
+| `scopes.md` / planning structure | `bubbles.plan` | Gherkin, Test Plan, DoD, `uservalidation.md` |
+| Findings from validate/harden/gaps/security/stabilize/review | owner via `runSubagent` | Diagnostic agents route, they do not self-author foreign artifacts |
 
 ## <img src="../icons/bill-wrench.svg" width="32"> Quality & Ops
 
@@ -128,7 +137,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 41 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 42 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -177,6 +186,7 @@
 | G039 | Self-healing containment | Fix loops never stack; maxDepth=1, maxRetries=3, narrowing context |
 | G040 | Zero deferral language | Scope artifacts scanned for "deferred", "future scope", "out of scope", etc. — can't mark done with outstanding work |
 | G041 | DoD format integrity | Prevents agents from bypassing guards by reformatting checkboxes (`- (deferred)`) or inventing scope statuses (`Deferred — Planned Improvement`) |
+| G042 | Agent ownership | Foreign-owned artifacts must be routed to the owning specialist; no cross-authoring by diagnostic agents |
 
 ---
 

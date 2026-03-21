@@ -66,6 +66,7 @@ handoffs:
 - Stay autonomous by default. Only enter a Socratic questioning loop when the workflow input explicitly sets `socratic: true`.
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
+- **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
 - Require gate results before promoting spec status.
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
@@ -693,7 +694,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
         - New Test Plan rows exist for each new scenario
         - New DoD items (`- [ ]`) exist for each new test/fix
         - Scope status was reset to "In Progress" if new unchecked DoD items were added
-      - **If artifacts were NOT updated:** Re-invoke the harden/gaps/stabilize/security agent with explicit instruction: "You found issues but did not update scope artifacts. Update scopes.md with new Gherkin scenarios, Test Plan rows, and DoD items for each finding."
+      - **If planning artifacts were NOT updated:** Invoke `bubbles.plan` via `runSubagent` with the findings and explicit instruction to add the required Gherkin scenarios, Test Plan rows, DoD items, and any needed scope-status resets.
       - **Invoke implement:** Run `implement` phase via `runSubagent` with instruction: **"Fix ALL issues identified by harden/gaps/stabilize/security phases. The scope artifacts have been updated with new DoD items — satisfy each one. Write code changes only, do NOT trigger builds."**
       - **Verify implement addressed findings:** Check that the implement agent’s response references the specific findings and that code changes were made.
 
@@ -799,7 +800,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
         - New Gherkin scenarios exist for each discovered issue
         - New Test Plan rows exist for each new scenario
         - Scope status was reset to "In Progress" if new unchecked DoD items were added
-        If artifacts were NOT updated → **re-invoke the trigger agent** with explicit instruction: "You found issues but did NOT update scope artifacts. You MUST add new Gherkin scenarios, Test Plan rows, and DoD items (`- [ ]`) to scopes.md for EACH finding. Reset affected scope status to 'In Progress'."
+      If planning artifacts were NOT updated → **invoke `bubbles.plan` via `runSubagent`** with the trigger findings and explicit instruction to add the required Gherkin scenarios, Test Plan rows, DoD items (`- [ ]`), and any needed scope-status resets.
         **DO NOT proceed to the fix cycle until scope artifacts are confirmed updated.**
 
       - **Create bug artifacts (MANDATORY for `chaos` trigger when runtime bugs found):**
@@ -1286,7 +1287,7 @@ For each target spec in order:
    b. **If findings exist** (verdict is NOT clean):
       - **Revert spec status:** If `state.json` status was `"done"`, set it to `"in_progress"`. Remove stale phases from `completedPhases`.
       - **Verify scope artifacts were updated:** Read `scopes.md` and confirm new Gherkin scenarios, Test Plan rows, and DoD items (`- [ ]`) were added for each finding. Scope status must be reset to "In Progress" if new unchecked items exist.
-      - **If artifacts were NOT updated:** Re-invoke the harden/gaps/stabilize/security agent with explicit instruction to update scope artifacts with findings.
+      - **If planning artifacts were NOT updated:** Invoke `bubbles.plan` via `runSubagent` with the findings and explicit instruction to update planning artifacts before continuing.
       - **Advance to implement phase:** The next phase (`implement`) will address all findings. Include the findings summary in the implement prompt.
 
    c. **If clean:** Advance normally. The implement phase may still run (to fix minor code-level improvements) or be skipped if no changes needed.

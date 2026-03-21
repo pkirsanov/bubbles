@@ -31,7 +31,7 @@ handoffs:
 - Verify every endpoint has correct auth middleware and role/scope enforcement
 - Scan for hardcoded secrets, credentials in logs, environment variable leakage
 - Map findings to OWASP Top 10 categories for structured reporting
-- Update scope artifacts with new DoD items for each finding
+- Route required planning changes to `bubbles.plan` via `runSubagent`; do not edit `scopes.md` directly
 - **Evidence-driven** — every finding must have a file path, line reference, and reproduction/proof
 - **No regression introduction** — security fixes must not break existing tests (see agent-common.md)
 - Non-interactive by default: document open questions instead of asking
@@ -255,14 +255,8 @@ Map all findings to OWASP Top 10 (2021) categories:
 For each finding:
 
 1. **Small fixes (≤30 lines):** Fix inline — add input validation, parameterize queries, add auth check
-2. **Larger fixes:** Update scope artifacts with new DoD items for bubbles.implement to handle
-3. **Add security test cases:** Add security-focused test scenarios to Test Plan
-
-**Update scope artifacts:**
-- Add new Gherkin scenarios for security behaviors
-- Add Test Plan rows for security tests
-- Add DoD items (`- [ ]`) for each finding requiring implementation
-- Reset scope status to "In Progress" if new unchecked DoD items added
+2. **Larger fixes:** Invoke `bubbles.plan` via `runSubagent` to update planning artifacts for `bubbles.implement`
+3. **Add security test cases:** Route required Test Plan and DoD changes through `bubbles.plan`
 
 ### Phase 6: Report & Verdict
 

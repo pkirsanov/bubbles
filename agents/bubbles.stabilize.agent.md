@@ -166,7 +166,7 @@ Conclude with a stability report structured for orchestrator parsing:
 - Tests/validation executed + outcomes
 - Remaining risks (if any) + recommended follow-ups
 
-**Update scope artifacts:** For each finding, add new Gherkin scenarios, Test Plan rows, and DoD items to the target spec's `scopes.md`. Reset scope status to "In Progress" if new unchecked DoD items were added. This ensures the orchestrator and downstream agents (implement, test, audit) can track and verify the stabilization work.
+**Route planning changes:** If a finding requires new Gherkin scenarios, Test Plan rows, DoD items, or scope-status resets, invoke `bubbles.plan` via `runSubagent`. Do not edit `scopes.md` directly from `bubbles.stabilize`.
 
 ---
 

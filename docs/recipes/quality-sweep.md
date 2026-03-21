@@ -33,7 +33,9 @@ Finds what nobody noticed — missing test types, undocumented endpoints, spec c
 Runs all test suites, verifies coverage, fixes any new failures from hardening.
 
 ### Validate
-Checks all 33 quality gates, verifies evidence integrity.
+Checks all 42 quality gates, verifies evidence integrity, and enforces artifact ownership routing.
+
+If validate, harden, gaps, stabilize, or security finds missing planning or design content, those agents route the change to `bubbles.plan`, `bubbles.design`, or `bubbles.analyst` instead of patching foreign-owned artifacts themselves.
 
 ### Docs
 Updates documentation to match the hardened state.

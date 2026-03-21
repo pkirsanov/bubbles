@@ -28,6 +28,7 @@ handoffs:
 **Non-goals:**
 - Inventing ad-hoc commands or bypassing repo workflows
 - Making code/doc changes without explicit feature/bug classification
+- Editing `spec.md`, `design.md`, `scopes.md`, or `uservalidation.md` directly; those changes belong to the owning specialist
 
 ---
 
@@ -530,90 +531,44 @@ If NO unchecked items:
 - Re-run /bubbles.validate after fixes
 ```
 
-### Step 7: Guardrail Feedback Loop (MANDATORY when issues found)
+### Step 7: Ownership Routing Loop (MANDATORY when issues found)
 
-**When validation discovers issues, the validate agent MUST strengthen the governance artifacts to prevent the same class of issue from recurring in future implementation phases. Validation is not just detection — it is prevention.**
+When validation finds missing scenarios, missing tests, contract ambiguity, stale DoD, or user regressions, the validate agent MUST route those changes to the owning specialist instead of editing foreign-owned artifacts directly.
 
-#### 7.1 When to Trigger
+#### 7.1 Routing rules
 
-This step is MANDATORY whenever ANY of the following are found during Steps 2–6:
-- Test failures (unit, integration, e2e, stress)
-- Contract mismatches (API response vs spec)
-- Implementation reality violations (stubs, hardcoded data, missing API calls)
-- Integration completeness violations (orphan endpoints, dead libraries, stub UIs)
-- User validation regressions (unchecked items in uservalidation.md)
-- Missing test coverage for a behavior described in the spec
-- DoD items that were checked [x] but lacked substance (proxy tests, shallow assertions)
+| Issue Category | Owner To Invoke | Required Action |
+|---------------|-----------------|-----------------|
+| Missing or unclear business requirement in `spec.md` | `bubbles.analyst` | Clarify business requirement, actors, or use-case intent |
+| Missing UX section in `spec.md` | `bubbles.ux` | Add or repair UX-owned sections |
+| Technical contract mismatch needing design change | `bubbles.design` | Update API/data/auth design contract |
+| Missing Gherkin, Test Plan, DoD, or uservalidation structure | `bubbles.plan` | Update planning artifacts |
+| Implementation or test failure | `bubbles.implement` and/or `bubbles.test` | Fix code and tests, then rerun validation |
+| Documentation drift outside planning artifacts | `bubbles.docs` | Sync standard docs |
 
-#### 7.2 What to Update (Per Issue Category)
+#### 7.2 Direct specialist behavior
 
-For EACH issue found, update the relevant governance artifact:
+If `bubbles.validate` is invoked directly and a foreign-owned artifact must change:
+1. Invoke the owning specialist via `runSubagent`
+2. Wait for the specialist to finish
+3. Re-run the impacted validation checks
+4. Report both the routed action and the re-validation result
 
-| Issue Category | Artifact to Update | What to Add |
-|---------------|-------------------|-------------|
-| **Test failure revealing untested path** | `scopes.md` → Test Plan table | Add missing test row(s) covering the failure scenario (with exact test type, file path, description) |
-| **Missing error/boundary test** | `scopes.md` → Test Plan table + DoD | Add test row for the error path; add DoD checkbox for the specific error scenario test |
-| **Contract mismatch** | `spec.md` or `design.md` → API contract section | Clarify the exact expected response shape, field names, and HTTP status codes; add contract verification test to Test Plan |
-| **Stub/hardcoded data in implementation** | `scopes.md` → DoD | Add explicit DoD item: "No hardcoded/stub data in [file/module] — verified via implementation reality scan" |
-| **Orphan endpoint (no frontend caller)** | `scopes.md` → DoD + Implementation Plan | Add DoD item: "Endpoint X called by frontend Y" with grep verification command; add implementation task for frontend integration |
-| **Frontend using mock data** | `scopes.md` → DoD + Gherkin scenarios | Add Gherkin scenario: "Given user navigates to X, When page loads, Then data is fetched from backend API Y"; add e2e-ui test verifying real API call |
-| **Feature not reachable via navigation** | `scopes.md` → DoD + Gherkin scenarios | Add Gherkin scenario for navigation path; add DoD item: "Feature accessible via [route/menu]" |
-| **User regression (unchecked validation)** | `scopes.md` → Gherkin scenarios + Test Plan + DoD | Add regression Gherkin scenario matching the user's failed verification steps; add e2e test row; add DoD checkbox |
-| **Proxy/shallow test (status-code-only)** | `scopes.md` → Test Plan | Replace proxy test description with substantive assertion description ("verifies response contains X fields with correct values" not "returns 200") |
-| **Missing integration test** | `scopes.md` → Test Plan + DoD | Add integration test row testing the specific cross-component interaction that failed |
-| **Warning in build/lint** | `scopes.md` → DoD | Add DoD item: "Zero warnings in build/lint output" if not already present |
+#### 7.3 Workflow behavior
 
-#### 7.3 Update Format
+If `bubbles.validate` is invoked by `bubbles.workflow` or `bubbles.iterate`, it MUST return a route-required failure classification with the owning specialist and exact reason. The orchestrator must then invoke that owner before validation can pass.
 
-For each artifact update, record what was changed and why:
+#### 7.4 Routing evidence
+
+Record routed follow-ups in the validation report:
 
 ```markdown
-### Guardrail Updates (from validation findings)
+### Ownership Routing Summary
 
-| Finding | Artifact Updated | Change Made | Prevents |
-|---------|-----------------|-------------|----------|
-| [Issue description] | [scopes.md / spec.md / design.md] | [What was added/modified] | [What class of issue this prevents] |
-| E2E test only checked HTTP 200, didn't verify response body | scopes.md → Test Plan | Changed test description to require field-level response validation | Proxy tests that pass even when feature is broken |
-| `/api/v1/reports` endpoint had no frontend caller | scopes.md → DoD | Added: "Reports endpoint called by dashboard ReportsPage" + grep verification | Orphan endpoints deployed but unreachable by users |
-| Dashboard page rendered hardcoded sample data | scopes.md → Gherkin + DoD | Added scenario: "Given user opens Reports, When page loads, Then data is fetched from /api/v1/reports"; Added e2e-ui test row | Frontend pages that look functional but serve fake data |
+| Finding | Owner Invoked Or Required | Reason | Re-validation Needed |
+|---------|---------------------------|--------|----------------------|
+| [issue] | [bubbles.plan / bubbles.design / bubbles.analyst / ...] | [why foreign artifact must change] | yes/no |
 ```
-
-#### 7.4 Scope Artifact Integrity Rules
-
-When updating scope artifacts:
-- **Test Plan rows MUST still equal DoD test-related items** — if you add a Test Plan row, add a matching DoD checkbox
-- **New Gherkin scenarios MUST have corresponding tests** — add both the scenario AND the test row
-- **DoD items MUST be markdown checkboxes** (`- [ ]`) — never plain text
-- **New items start unchecked** (`- [ ]`) — they represent work that needs to be done in the next implementation pass
-- **Never remove existing passing items** — only add new guardrails
-- **Annotate new items** with `(added by validation: [issue reference])` so implementers understand the origin
-
-#### 7.5 Scope Status After Updates
-
-If guardrail updates add new unchecked DoD items to a scope that was previously "Done":
-- **Scope status MUST revert to "In Progress"** — it has new unchecked items
-- Update `state.json` → `completedScopes` to remove this scope
-- The next `/bubbles.implement` invocation will pick up the new DoD items
-
-If guardrail updates only add to scopes that are already "In Progress" or "Not Started":
-- No status change needed — the items will be addressed in the next implementation pass
-
-#### 7.6 Evidence of Guardrail Updates
-
-Record in the validation report:
-
-```markdown
-### Guardrail Feedback Summary
-
-- **Issues found:** [count]
-- **Artifacts updated:** [list of files modified]
-- **New DoD items added:** [count]
-- **New Test Plan rows added:** [count]
-- **New Gherkin scenarios added:** [count]
-- **Scopes reverted to In Progress:** [list, if any]
-```
-
-**If issues were found but NO guardrail updates were made, validation is INCOMPLETE.** The validate agent MUST explain why no updates were necessary (e.g., "existing guardrails already cover this case — issue was implementation error, not spec gap").
 
 ## Phase Completion Recording (MANDATORY)
 

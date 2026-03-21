@@ -1,0 +1,59 @@
+version: 1
+
+artifacts:
+  spec.md:
+    owner:
+      - bubbles.analyst
+    delegatedSections:
+      bubbles.ux:
+        - UI Wireframes
+        - User Flows
+        - Screen Inventory
+        - Interaction Notes
+    readOnlyFor:
+      - bubbles.design
+      - bubbles.plan
+      - bubbles.validate
+      - bubbles.harden
+      - bubbles.gaps
+      - bubbles.stabilize
+      - bubbles.security
+      - bubbles.review
+  design.md:
+    owner:
+      - bubbles.design
+  scopes.md:
+    owner:
+      - bubbles.plan
+    executionUpdatesAllowed:
+      - bubbles.implement
+  report.md:
+    owner:
+      - bubbles.plan
+    evidenceUpdatesAllowed:
+      - bubbles.implement
+      - bubbles.test
+      - bubbles.validate
+      - bubbles.audit
+      - bubbles.chaos
+      - bubbles.harden
+      - bubbles.gaps
+      - bubbles.stabilize
+      - bubbles.security
+  uservalidation.md:
+    owner:
+      - bubbles.plan
+
+diagnosticAgents:
+  - bubbles.validate
+  - bubbles.harden
+  - bubbles.gaps
+  - bubbles.stabilize
+  - bubbles.security
+  - bubbles.review
+
+routingRules:
+  missingBusinessRequirements: bubbles.analyst
+  missingUxSections: bubbles.ux
+  missingTechnicalDesign: bubbles.design
+  missingPlanningArtifacts: bubbles.plan

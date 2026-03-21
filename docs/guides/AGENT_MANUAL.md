@@ -47,6 +47,19 @@ Bubbles is a **spec-driven orchestration system**. Work flows through phases:
 
 Each phase is owned by a **specialist agent**. The **workflow orchestrator** decides which phases run, in what order, based on the selected **workflow mode**.
 
+### Artifact Ownership Contract
+
+Planning and design artifacts have strict owners:
+
+| Artifact | Owner |
+|---------|-------|
+| `spec.md` business requirements | `bubbles.analyst` |
+| `spec.md` UX sections | `bubbles.ux` |
+| `design.md` | `bubbles.design` |
+| `scopes.md`, `report.md` structure, `uservalidation.md` | `bubbles.plan` |
+
+Diagnostic agents such as `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, and `bubbles.review` do not directly rewrite those foreign-owned artifacts. They route required changes to the owning specialist via `runSubagent` or through the workflow orchestrator.
+
 ### Key Concepts
 
 | Concept | What It Is |
@@ -83,7 +96,7 @@ Bubbles is the field captain of the operation. Orchestrates end-to-end delivery 
 1. Loads the workflow mode definition from `workflows.yaml`
 2. Determines which phases to execute and in what order
 3. Delegates each phase to the specialist agent
-4. Enforces gate checks between phases
+4. Enforces gate checks between phases, including artifact ownership routing
 5. Handles retries and error recovery
 6. Tracks progress in `state.json`
 
@@ -134,7 +147,7 @@ Lightweight code-first review orchestrator. This is the review path for people w
 1. Resolves the review slice or full codebase target
 2. Loads `bubbles/review.yaml`
 3. Applies a named review profile or explicit lens set
-4. Dispatches review lenses to the closest specialist agents
+4. Dispatches review lenses to the mapped specialist agents instead of emulating them directly
 5. Normalizes all findings into one consistent review structure
 6. Optionally promotes selected findings into spec/design/scope artifacts
 
@@ -225,6 +238,8 @@ Runs the full validation suite. Checks every gate, verifies every DoD item, ensu
 - Something seems off and needs systematic verification
 - After `bubbles.implement` or `bubbles.test` complete
 
+**Important:** If validation finds missing business requirements, design contracts, or planning artifacts, `bubbles.validate` routes that work to `bubbles.analyst`, `bubbles.design`, or `bubbles.plan`. It does not directly rewrite those artifacts itself.
+
 ---
 
 ### bubbles.audit — *"The shit winds are coming."* (pre-audit)
@@ -286,6 +301,8 @@ UX design. Creates wireframes, user flows, interaction patterns. Cares about how
 - User flows need to be designed
 - Interaction patterns need defining
 
+**Ownership note:** `bubbles.ux` owns only UX sections inside `spec.md`. If the business actors or scenarios are missing, it first routes to `bubbles.analyst`.
+
 ---
 
 ### bubbles.design — *"Let's get this organized before anybody breaks it."*
@@ -296,6 +313,8 @@ Technical architecture. Data models, API contracts, service boundaries, system d
 - Creating `design.md` for a feature
 - System architecture decisions
 - Database schema design
+
+**Ownership note:** `bubbles.design` owns `design.md`, not `spec.md`. If business requirements are missing, it routes to `bubbles.analyst` before proceeding.
 
 **Example:**
 ```
@@ -312,6 +331,8 @@ Scope planning. Takes a spec and design, breaks it into implementable scopes wit
 - Breaking a feature into scopes
 - Creating or repairing scope definitions
 - After design is complete, before implementation
+
+**Ownership note:** `bubbles.plan` owns planning structure: Gherkin scenarios, Test Plan rows, DoD items, `report.md` scaffolding, and `uservalidation.md`.
 
 **Example:**
 ```

@@ -38,6 +38,8 @@ If you want Bubbles to stay autonomous, stop there. If you want a bounded clarif
 
 **You'll get:** A `specs/NNN-notification-system/spec.md` with requirements, acceptance criteria, and use cases.
 
+If UX sections are needed, run `bubbles.ux` after analyst work. If you skip that and later run `bubbles.design`, design will route back to analyst or UX instead of inventing missing sections itself.
+
 ### Step 2: Design the System
 
 ```
@@ -86,7 +88,9 @@ Optional execution tags:
 /bubbles.workflow  full-delivery for notification-system gitIsolation: true autoCommit: true maxScopeMinutes: 20 maxDodMinutes: 8
 ```
 
-This runs all phases automatically: analyze → design → plan → implement → test → validate → audit → docs.
+This runs all phases automatically, routing artifact changes to the correct owner when needed: analyze → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize.
+
+If validation, hardening, gap analysis, stability review, or security review discovers missing planning or design artifacts, the workflow routes those changes back to `bubbles.plan`, `bubbles.design`, or `bubbles.analyst` instead of letting the diagnostic phase rewrite those files directly.
 
 ---
 

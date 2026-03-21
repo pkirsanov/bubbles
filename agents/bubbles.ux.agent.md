@@ -154,7 +154,7 @@ Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3
 1. Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (ONE attempt, fail fast if not found)
 2. Ensure `state.json` exists (create if missing — see State.json Lifecycle in agent-common.md)
 3. Read `spec.md` — MUST have actors and scenarios (from analyst or manual)
-4. If spec.md lacks `## Actors` or `## Business Scenarios`: recommend running `/bubbles.analyst` first, but proceed with available requirements
+4. If spec.md lacks `## Actors` or `## Business Scenarios`: invoke `bubbles.analyst` via `runSubagent` and continue only after analyst-owned sections exist
 5. Read existing UI code structure to understand current screen inventory
 6. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
 

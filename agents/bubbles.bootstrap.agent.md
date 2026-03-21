@@ -245,6 +245,7 @@ If approved:
 | **YAML frontmatter** | Parse each new/modified `.agent.md` file's YAML header | Valid YAML, `description` field present, `handoffs` targets are valid agent names |
 | **Handoff target existence** | For each `handoffs[].agent` value, verify `.github/agents/{agent}.agent.md` exists | All referenced agents exist as files |
 | **Circular handoff detection** | Build directed graph of all agent handoffs, check for cycles | No cycles (A→B→C→A is FORBIDDEN) |
+| **Agent ownership lint** | Run `agent-ownership-lint.sh` against the Bubbles agent set | Zero ownership violations |
 | **Description length** | Check each agent's `description` field | ≤ 200 characters (VS Code truncates longer descriptions) |
 | **Shared pattern reference** | Verify each agent contains `Follow all patterns in [agent-common.md]` | Present in every `.agent.md` |
 | **Policy file integrity** | Verify `agent-common.md` and `scope-workflow.md` exist and are non-empty | Both files exist and have content |

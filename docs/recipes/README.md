@@ -57,4 +57,4 @@ Optional execution tags you can append to many workflow commands:
 | [Update Docs](update-docs.md) | "Code changed, docs need updating" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
-| [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in 39" |
+| [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in 42" |

@@ -109,10 +109,12 @@ select → implement → test → validate → audit → finalize
 Just the planning phases. Sets up artifacts without implementing.
 
 ```
-select → bootstrap → implement → test → docs → validate → audit → finalize
+select → bootstrap → finalize
 ```
 
 **Use when:** You want to plan but not implement yet.
+
+**Ownership behavior:** bootstrap and downstream specialists must respect artifact ownership. Missing business requirements route to `bubbles.analyst`, missing design routes to `bubbles.design`, and missing planning artifacts route to `bubbles.plan`.
 
 ### <img src="../../icons/julian-glass.svg" width="20"> iterate
 
@@ -340,7 +342,7 @@ analyze → ux
 | `product-to-delivery` | Discovery → delivery | Product ideas |
 | `product-discovery` | Analysis only | Early exploration |
 | `bugfix-fastlane` | Bug → fix → test | Bug fixes |
-| `feature-bootstrap` | Analyze → design → plan | Planning only |
+| `feature-bootstrap` | Select → bootstrap → finalize | Create required artifacts without implementation |
 | `iterate` | Implement → test loop | Continuing work |
 | `harden-to-doc` | Harden → fix → test → docs | Code quality |
 | `gaps-to-doc` | Gaps → fix → test → docs | Gap closure |

@@ -30,9 +30,9 @@ handoffs:
 - **Never claim fixes are verified without running commands and observing output** — see Execution Evidence Standard in agent-common.md
 - **Proxy test gap detection** — identify tests that exist but are proxies (don't actually validate user/consumer use cases): status-code-only E2E, element-existence-only UI, mock-heavy integration tests (see Use Case Testing Integrity in agent-common.md)
 - **No regression introduction** — gap remediation must not break existing passing tests (see No Regression Introduction in agent-common.md)
-- **Scope artifact coherence (NON-NEGOTIABLE)** — when adding, modifying, or creating Gherkin scenarios during gap remediation, you MUST also add/update the corresponding Test Plan rows AND Definition of Done checkbox items. Gherkin scenarios, Test Plan rows, and DoD items are a triple that MUST stay in sync. Orphan scenarios (Gherkin without matching Test Plan/DoD) are a governance violation.
-- **State coherence** — when scope artifacts are modified (new scenarios, new DoD items, scope status changes), update `state.json` to reflect reality. If a scope was previously "Done" but now has new unchecked DoD items, reset its status to "In Progress" in both the scope file and `state.json`.
-- **Findings artifact update (MANDATORY — Gate G031)** — when gap analysis discovers issues (🟡 PARTIAL, 🔴 MISSING, 🟣 DIVERGENT, 🔵 UNDOCUMENTED, 🟠 PATH_MISMATCH, ⬛ UNTESTED), you MUST update scope artifacts (`scopes.md` Gherkin scenarios, Test Plan table, and DoD checklist) BEFORE reporting your verdict. Findings that exist only in the gap report but are NOT reflected in scope artifacts are LOST FINDINGS — downstream agents cannot act on them. See agent-common.md → Findings Artifact Update Protocol (G031).
+- **Planning artifacts are foreign-owned** — when gap analysis discovers missing scenarios, tests, or DoD structure, invoke `bubbles.plan` via `runSubagent` instead of editing `scopes.md` directly.
+- **State coherence** — if routed planning changes reopen a completed scope, require `bubbles.plan` to reset scope/state artifacts; do not rewrite them here.
+- **Findings routing (MANDATORY)** — when gap analysis discovers issues (🟡 PARTIAL, 🔴 MISSING, 🟣 DIVERGENT, 🔵 UNDOCUMENTED, 🟠 PATH_MISMATCH, ⬛ UNTESTED), route the required artifact changes to the owner before reporting closure.
 
 **Non-goals:**
 - Ad-hoc changes outside `specs/...` feature/bug classification
@@ -279,30 +279,9 @@ If `{FEATURE_DIR}/scopes.md` exists:
    - Update `spec.md` if the divergent code is actually currently correct/desired (documentation drift).
    - **MISSING SPECS**: If code exists (Ghost Feature) but is valid/needed, **add it to the spec**.
 
-### Phase 3.5: Scope Artifact Coherence (MANDATORY after Phase 3 modifications)
+### Phase 3.5: Scope Artifact Routing (MANDATORY after Phase 3 findings)
 
-**When gap analysis modifies scope artifacts (adds scenarios, changes requirements, creates missing tasks), ALL scope sections MUST stay coherent.**
-
-For EACH scope that was modified in Phase 2/3:
-
-1. **Gherkin → Test Plan Sync:** Every Gherkin scenario MUST have a matching Test Plan row. If a scenario was added or modified, add/update the corresponding Test Plan row with correct test type, file location, command, and live-system flag.
-
-2. **Gherkin → DoD Sync:** Every Gherkin scenario MUST have a matching DoD checkbox item. If a scenario was added, add an unchecked `- [ ]` DoD item with evidence template.
-
-3. **Test Plan ↔ DoD Parity:** Count of Test Plan rows MUST equal count of test-related DoD items. Fix any mismatch.
-
-4. **Scope Status Reset:** If new unchecked DoD items were added to a scope previously marked "Done":
-   - Reset scope status to **"In Progress"** in scopes.md/scope.md
-   - Update `state.json`: set spec status to `"in_progress"`, remove scope from `completedScopes`, remove `"implement"` from `completedPhases`
-
-5. **Verification:** After coherence fixes, verify:
-   ```
-   Gherkin scenario count ≥ E2E Test Plan row count
-   Test Plan row count == DoD test item count
-   No scope marked "Done" has unchecked DoD items
-   ```
-
-**STOP if any scope is incoherent after gap remediation. Fix before proceeding to Phase 4.**
+When gap analysis discovers missing Gherkin scenarios, Test Plan rows, DoD items, or scope-state resets, do not edit `scopes.md` directly. Invoke `bubbles.plan` via `runSubagent` with the exact findings that require planning updates, then continue only after the planning owner completes those changes.
 
 ### Phase 4: Remediation Plan
 

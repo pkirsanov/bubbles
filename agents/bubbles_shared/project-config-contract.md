@@ -185,8 +185,9 @@ When adopting Bubbles for a new project, populate these files:
 | `agents/bubbles_shared/feature-templates.md` | Feature artifact templates | Structure-only, no project references |
 | `agents/bubbles_shared/bug-templates.md` | Bug artifact templates | Structure-only, no project references |
 | `agents/bubbles_shared/docker-lifecycle-governance.md` | Docker lifecycle governance (freshness, cleanup, labeling) | Universal Docker patterns, no project references |
+| `bubbles/agent-ownership.yaml` | Canonical artifact ownership map for specialist delegation | Portable governance data |
 | `bubbles/workflows.yaml` | Workflow modes (24), gates (G001-G032), phases (13), retry policy, priority scoring | Orchestration config, no project references |
-| `bubbles/scripts/*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, etc.) | Validate artifact structure, not project-specific content |
+| `bubbles/scripts/*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, agent ownership lint, etc.) | Validate artifact structure, not project-specific content |
 | `instructions/bubbles-*.instructions.md` | Namespaced portable instruction files | Clearly Bubbles-owned while remaining project-agnostic |
 | `skills/bubbles-*/SKILL.md` | Namespaced portable governance skills | Clearly Bubbles-owned while remaining project-agnostic |
 | `docs/*.md` | Bubbles documentation (examples, cheatsheet, sessions, prompts, etc.) | Project-agnostic reference docs |
