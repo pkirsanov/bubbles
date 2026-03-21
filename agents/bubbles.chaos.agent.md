@@ -47,6 +47,27 @@ handoffs:
 - Ad-hoc code/doc changes outside feature/bug classification
 - Running against the persistent development database (MUST use ephemeral test DB)
 
+## ⚠️ FIXTURE OWNERSHIP AND PROTECTED STATE (NON-NEGOTIABLE)
+
+Chaos MUST isolate its mutations.
+
+| Rule | Description |
+|---|---|
+| **Owned fixtures only for writes** | Create or claim dedicated fixtures with a unique run prefix before performing write-path chaos. |
+| **No `first existing` write targets** | Do NOT pick the first listed property, tenant, page config, or other existing entity for mutation unless the scenario is strictly read-only. |
+| **Protected baseline state** | Host defaults, inherited configs, global settings, and other cross-scenario baseline records are protected; mutate them only with an explicit baseline snapshot and verified restore step. |
+| **Restore before completion** | If chaos mutates reusable state, it MUST restore that state before the round can be considered complete. |
+| **Cleanup failure is blocking** | If cleanup or restore fails, stop and report a blocking failure. Do not leave the environment in a degraded state. |
+
+## ⚠️ FINDINGS MUST END IN RESTORE OR FIX (NON-NEGOTIABLE)
+
+When chaos exposes a blocking runtime issue through the state it created or mutated, report-only is insufficient while that broken state still exists.
+
+- Restore the pre-run baseline immediately, or
+- Trigger the required bug → fix cycle and leave the work in progress until the system is repaired.
+
+Chaos may discover bugs. It must not leave durable breakage behind.
+
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting chaos results)
 
 Before reporting chaos results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Chaos profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).

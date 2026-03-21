@@ -63,6 +63,19 @@ Specs and scopes complete in order. Do not advance later required work while ear
 
 When one agent depends on another agent’s result, the downstream agent must verify the result rather than trust an unverified claim.
 
+## Live-State Fixture Ownership
+
+- Any agent that writes to a live stack must provision or identify dedicated owned fixtures before mutation.
+- Listing existing entities and mutating the first result is a blocking shared-state violation for write paths.
+- Shared defaults, inherited configs, host/global settings, and other baseline records must be treated as protected state.
+- Protected-state mutations require baseline capture plus verified restore or explicit isolated fixture scoping.
+
+## Mutation Remediation Gate
+
+- Exploratory or stochastic runs cannot stop at report-only while the runtime state they mutated remains broken.
+- If an agent-created or agent-mutated state exposes a blocking failure, the agent must either restore the pre-run baseline or route the issue into the required fix cycle and leave status in progress.
+- Cleanup or restore failures are blocking validation failures, not informational notes.
+
 ## Specialist Completion Chain
 
 Modes that require specialist phases are not complete until all required specialist phases have actually executed and their outputs satisfy the required gates.
