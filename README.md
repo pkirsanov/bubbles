@@ -163,7 +163,7 @@ Bubbles now enforces hard artifact ownership:
 - `bubbles.plan` owns `scopes.md`, `report.md` structure, and `uservalidation.md`
 - Diagnostic agents like `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, and `bubbles.review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
 
-This is enforced by the agent ownership contract in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
+This is enforced by the artifact ownership contract in `.github/agents/bubbles_shared/artifact-ownership.md`, the shared governance index in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
 
 ### <img src="icons/lahey-badge.svg" width="24"> Start Here
 
