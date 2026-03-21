@@ -69,6 +69,8 @@ handoffs:
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into specialist invocation prompts.
 - When a failure is narrow and `microFixes` is not false, route through the smallest viable fix loop before escalating to a broader mode rerun.
 - Mark DoD items `[x]` IMMEDIATELY when validated - never batch
+- Do not accept a failing test change until it has been reconciled against `spec.md`, `design.md`, `scopes.md`, and DoD; fix code to plan unless the plan is corrected first
+- Treat renamed/removed routes, paths, contracts, identifiers, or UI targets as dependency-chain work: require a consumer impact sweep and block completion until stale consumer references are eliminated
 - **Use case testing integrity** — any tests written or run must validate actual user/API consumer scenarios, not internal implementation details (see Use Case Testing Integrity in agent-common.md)
 - **No regression introduction** — after scope changes, verify no previously-passing tests now fail before concluding (see No Regression Introduction in agent-common.md)
 - **Anti-proxy test detection** — flag and rewrite tests that only check status codes, exist-checks, or internal state without verifying user-visible behavior
@@ -515,6 +517,16 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
    - Confirm each has a real command and real exit code
    - Confirm no template placeholders remain
    - Confirm no two evidence blocks are identical
+
+5A. **Verify regression E2E permanence:**
+  - Confirm the scope's Test Plan includes explicit `Regression:` E2E rows for each new/changed/fixed behavior
+  - Confirm the DoD includes scenario-specific regression E2E completion plus a broader regression suite pass
+  - If either is missing, the iteration is NOT complete
+
+5B. **Verify consumer-trace completeness for renames/removals:**
+  - If the scope renames/removes any route, path, contract, identifier, or UI target, confirm the scope includes a `Consumer Impact Sweep`
+  - Confirm consumer-facing regression coverage exists for affected navigation, breadcrumb, redirect, API client, and stale-reference-scan flows
+  - If stale-reference coverage is missing, the iteration is NOT complete
 
 6. **Verify all specialist phases executed:**
    - Check `state.json` `completedPhases` includes all mode-required phases

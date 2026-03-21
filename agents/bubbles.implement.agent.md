@@ -24,6 +24,9 @@ handoffs:
 - Treat spec/design/scopes as source of truth
 - Mark DoD checkboxes IMMEDIATELY with evidence - never batch
 - Do not mark scope Done until DoD fully satisfied AND audit clean
+- Before changing a failing test, reconcile it against `spec.md`, `design.md`, `scopes.md`, and DoD; if the test matches the plan, fix the code instead of weakening the test
+- If planned behavior is wrong or incomplete, route the owning artifact update first and only then align test + implementation
+- For any renamed/removed route, path, contract, identifier, symbol, or UI target, trace and update every consumer before claiming completion; stale references in navigation, breadcrumbs, redirects, API clients, generated code, docs, config, or tests are blocking
 - For new or changed behavior, prove RED before GREEN: capture a failing targeted test or reproduction step before accepting the fix, then capture the passing result after the fix.
 - Keep failure handling inside micro-fix loops: fix the smallest broken command/file/symbol first, rerun that narrow validation, then expand outward.
 - **Use case testing integrity** — all tests must validate actual user/API consumer scenarios; proxy tests (status-code-only, assertion-free, mock-heavy) are gaps, not coverage (see Use Case Testing Integrity in agent-common.md)
@@ -144,6 +147,8 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
 For each scope N:
 - Restate scope's Gherkin scenarios
 - Confirm tests exist that validate scenarios exactly
+- Confirm the scope includes a scenario-specific persistent E2E regression test entry for every new/changed/fixed behavior; if missing, route the planning update before claiming completion
+- If the scope renames/removes any route, path, contract, identifier, or UI target, confirm a Consumer Impact Sweep exists and enumerate every affected consumer flow before implementation starts
 - Identify the targeted RED proof for each new or fixed behavior before implementation begins (failing test, failing reproduction, or explicit gap assertion)
 - If UI changes exist, confirm UI scenario matrix is defined and mapped to e2e-ui tests
 - **If scope modifies dashboard/frontend code:** note that Docker Build Freshness Policy applies (see `agent-common.md` → Docker Build Freshness Policy). After implementation, rebuild with `--no-cache` and verify via Gate 9.

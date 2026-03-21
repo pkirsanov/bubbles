@@ -188,6 +188,9 @@ Delivers. Every. Time. Takes a planned scope and implements it to DoD completion
 - One scope at a time
 - DoD items checked immediately with evidence — never batched
 - Tests validate specs, not current implementation
+- Never weaken a failing test to match broken behavior; reconcile against spec/design/scopes/DoD first and fix code to plan unless the plan is corrected first
+- Every feature/fix/change needs scenario-specific persistent E2E regression coverage plus a broader regression suite pass
+- Renames/removals require a Consumer Impact Sweep so stale navigation, breadcrumb, redirect, API client, and old-path references are treated as blocking
 - Round-trip verification for all state changes
 - New or changed behavior must show red→green proof
 - Narrow failures stay in micro-fix loops before broader reruns
@@ -211,6 +214,8 @@ Runs tests, finds gaps, fixes implementations until everything passes. Trusts no
 
 **Rules:**
 - Tests validate specs/use cases, not implementation details
+- Failing tests are compared against planned behavior first; fix implementation rather than drifting tests toward broken code
+- Renames/removals must be tested from the consumer side too — stale first-party references are blocking, not cleanup work
 - No skips, no xfails, no disabled tests
 - Evidence from actual terminal execution only
 - Detects and rewrites "proxy tests" (status-code-only, assertion-free)

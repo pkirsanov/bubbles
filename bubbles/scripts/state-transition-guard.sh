@@ -753,6 +753,82 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
 else
   warn "No concrete test file paths found in Test Plan across resolved scope files (all may be placeholders)"
 fi
+
+# CHECK 8A: Scenario-specific regression E2E coverage is planned
+# =============================================================================
+echo "--- Check 8A: Scenario-Specific Regression E2E Coverage ---"
+missing_regression_e2e=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  if grep -Eiq '^\- \[(x| )\] Scenario-specific E2E regression tests? for (EVERY|every) new/changed/fixed behavior' "$scope_path"; then
+    pass "Scope DoD includes scenario-specific regression E2E requirement: ${scope_path#$feature_dir/}"
+  else
+    fail "Scope is missing DoD item for scenario-specific regression E2E coverage: ${scope_path#$feature_dir/}"
+    missing_regression_e2e=$((missing_regression_e2e + 1))
+  fi
+
+  if grep -Eiq '^\- \[(x| )\] Broader E2E regression suite passes' "$scope_path"; then
+    pass "Scope DoD includes broader E2E regression suite requirement: ${scope_path#$feature_dir/}"
+  else
+    fail "Scope is missing DoD item for broader E2E regression suite coverage: ${scope_path#$feature_dir/}"
+    missing_regression_e2e=$((missing_regression_e2e + 1))
+  fi
+
+  if grep -Eiq '^\|.*Regression E2E' "$scope_path" || grep -Eiq '^\|.*e2e-(api|ui).*(\||`).*Regression:' "$scope_path"; then
+    pass "Scope Test Plan includes explicit regression E2E row(s): ${scope_path#$feature_dir/}"
+  else
+    fail "Scope Test Plan is missing explicit scenario-specific regression E2E row(s): ${scope_path#$feature_dir/}"
+    missing_regression_e2e=$((missing_regression_e2e + 1))
+  fi
+done
+
+if [[ "$missing_regression_e2e" -gt 0 ]]; then
+  fail "$missing_regression_e2e regression E2E planning requirement(s) missing — every feature/fix/change needs persistent scenario-specific E2E regression coverage"
+fi
+echo ""
+
+# CHECK 8B: Consumer trace planning for renames/removals
+# =============================================================================
+echo "--- Check 8B: Consumer Trace Planning For Renames/Removals ---"
+rename_scope_hits=0
+missing_consumer_trace=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  if grep -Eiq '\b(rename|renamed|remove|removed|move|moved|replace|replaced|deprecat(e|ed)|migration)\b.*\b(route|path|endpoint|contract|api|url|slug|identifier|symbol|link|breadcrumb|navigation|redirect)\b|\b(route|path|endpoint|contract|api|url|slug|identifier|symbol|link|breadcrumb|navigation|redirect)\b.*\b(rename|renamed|remove|removed|move|moved|replace|replaced|deprecat(e|ed)|migration)\b' "$scope_path"; then
+    rename_scope_hits=$((rename_scope_hits + 1))
+
+    if grep -Eiq 'Consumer Impact Sweep' "$scope_path"; then
+      pass "Scope includes Consumer Impact Sweep section: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope renames/removes interfaces but has no Consumer Impact Sweep section: ${scope_path#$feature_dir/}"
+      missing_consumer_trace=$((missing_consumer_trace + 1))
+    fi
+
+    if grep -Eiq '^\- \[(x| )\] .*consumer impact sweep.*zero stale first-party references remain' "$scope_path"; then
+      pass "Scope DoD includes consumer impact sweep completion item: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope renames/removes interfaces but is missing DoD item for consumer impact sweep: ${scope_path#$feature_dir/}"
+      missing_consumer_trace=$((missing_consumer_trace + 1))
+    fi
+
+    if grep -Eiq 'navigation|breadcrumb|redirect|API client|generated client|deep link|stale-reference' "$scope_path"; then
+      pass "Scope lists affected consumer surfaces for rename/removal work: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope renames/removes interfaces but does not enumerate affected consumer surfaces: ${scope_path#$feature_dir/}"
+      missing_consumer_trace=$((missing_consumer_trace + 1))
+    fi
+  fi
+done
+
+if [[ "$rename_scope_hits" -eq 0 ]]; then
+  info "No rename/removal scope patterns detected — consumer trace planning check not applicable"
+elif [[ "$missing_consumer_trace" -gt 0 ]]; then
+  fail "$missing_consumer_trace consumer-trace planning requirement(s) missing for rename/removal scope(s)"
+fi
 echo ""
 
 # =============================================================================

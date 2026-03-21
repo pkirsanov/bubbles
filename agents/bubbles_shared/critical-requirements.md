@@ -15,16 +15,30 @@
    - All tests MUST validate defined use cases and required behavior exactly as specified.
    - Tests that do not validate required outcomes are invalid for completion.
 
-2. **Real Code Execution in Tests**
+2. **Planned Behavior Is The Source Of Truth**
+   - When a test fails, agents MUST compare the behavior against `spec.md`, `design.md`, `scopes.md`, and DoD before changing the test.
+   - Agents MUST NOT weaken, delete, or rewrite tests to match the currently broken implementation.
+   - If the planned behavior is genuinely wrong or incomplete, the owning planning artifact MUST be corrected first; only then may tests and implementation be updated together.
+
+3. **Persistent Regression E2E Coverage**
+   - Every feature, fix, or behavior change MUST add or update at least one scenario-specific E2E regression test tied to the planned behavior it protects.
+   - Regression E2E coverage MUST live with the feature/component it verifies, not in a generic catch-all bucket.
+
+4. **Consumer Trace For Renames And Removals**
+   - Renaming, removing, moving, or deprecating any route, path, contract, identifier, symbol, link target, or UI target MUST include a complete consumer inventory before completion.
+   - First-party consumers such as navigation links, breadcrumbs, redirects, API clients, generated clients, docs, config, and tests MUST be updated together.
+   - Stale references to removed or renamed targets are blocking failures unless an explicit compatibility shim is documented.
+
+5. **Real Code Execution in Tests**
    - Tests MUST execute actual production code paths.
    - Mocks are allowed only for true external dependencies (third-party APIs, external services, non-owned infrastructure boundaries).
    - Internal business logic, internal modules, and owned service boundaries MUST NOT be mocked when validating integration or end-to-end behavior.
 
-3. **Zero Fabrication / Zero Hallucination**
+6. **Zero Fabrication / Zero Hallucination**
    - Never fabricate test status, output, evidence, files, commands, or completion claims.
    - Never claim pass/fail or completion without current-session execution evidence.
 
-4. **No TODO Debt / No Deferral Language**
+7. **No TODO Debt / No Deferral Language**
    - Never leave `TODO`, `FIXME`, placeholders, or deferred implementation markers.
    - If full implementation cannot be completed, do not mark the work complete.
    - **NEVER write deferral language** into DoD items, scope files, or report files:
@@ -32,27 +46,27 @@
    - Deferral language in artifacts = spec CANNOT be marked "done" (mechanically enforced by state-transition-guard Gate G040).
    - If a DoD item cannot be completed: fix the issue NOW, remove the item with justification, or leave status as "In Progress".
 
-5. **No Stubs**
+8. **No Stubs**
    - Stub implementations are forbidden in production and completion-bound test code.
    - Replace all stubs with full, working implementations before completion.
 
-6. **No Fake/Sample Data in Verification**
+9. **No Fake/Sample Data in Verification**
    - Do not use fake/sample/demo/placeholder data as proof of real behavior in required validation.
    - Required tests must use realistic, representative data sources appropriate to the test category.
 
-7. **No Defaults**
+10. **No Defaults**
    - Do not hide missing configuration or required inputs using defaults.
    - Missing required values must fail explicitly.
 
-8. **No Fallbacks — Fail Fast**
+11. **No Fallbacks — Fail Fast**
    - Do not mask failures with fallback branches that simulate success.
    - Surface errors immediately with explicit failure paths.
 
-9. **Full-Fidelity Implementation Required**
+12. **Full-Fidelity Implementation Required**
    - Do not simplify away required behavior, edge cases, error handling, or domain constraints.
    - Implement complete feature behavior with production-quality robustness.
 
-10. **No Shortcuts**
+13. **No Shortcuts**
     - No partial implementation presented as complete.
     - No reduced-scope tests presented as full validation.
     - No incomplete docs for completed work; documentation must match shipped behavior.
@@ -95,9 +109,12 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 Before reporting completion, all answers must be **YES**:
 
 1. Did tests validate the defined use cases and required outcomes?
-2. Did required tests execute real code paths (with mocks only for true external dependencies)?
-3. Are all claims backed by actual current-session execution evidence?
-4. Are there zero TODOs, stubs, fake/sample verification artifacts, defaults, and fallbacks masking failures?
-5. Is the implementation full-featured, edge-case complete, high-quality, and documented without shortcuts?
+2. Did any test edits remain faithful to `spec.md`, `design.md`, `scopes.md`, and DoD instead of drifting toward current broken behavior?
+3. Does every feature/fix/change have scenario-specific persistent E2E regression coverage?
+4. If any route/path/contract/identifier/UI target was renamed or removed, were all consumers traced and stale references eliminated?
+5. Did required tests execute real code paths (with mocks only for true external dependencies)?
+6. Are all claims backed by actual current-session execution evidence?
+7. Are there zero TODOs, stubs, fake/sample verification artifacts, defaults, and fallbacks masking failures?
+8. Is the implementation full-featured, edge-case complete, high-quality, and documented without shortcuts?
 
 If any answer is **NO**, completion is prohibited.

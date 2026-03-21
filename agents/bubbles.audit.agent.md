@@ -14,6 +14,9 @@ description: Final system audit for spec compliance, code quality, and security 
 - When issues are found, route fixes to the correct phase/agent and require evidence (tests/validation)
 - **Proxy test detection** — audit MUST flag proxy tests as quality gaps: E2E tests that only check status codes, integration tests that mock the component under test, UI tests that only check element existence without content/state assertions (see Use Case Testing Integrity in agent-common.md)
 - **Evidence integrity** — verify that evidence in report.md comes from actual terminal execution, not fabricated output
+- **Planned-behavior fidelity** — audit MUST fail if tests were weakened or rewritten to match current implementation instead of `spec.md`, `design.md`, `scopes.md`, and DoD
+- **Regression permanence** — audit MUST verify each feature/fix/change has scenario-specific persistent E2E regression coverage, not just a broad rerun of existing suites
+- **Consumer-trace fidelity** — audit MUST fail when renamed/removed routes, paths, contracts, identifiers, or UI targets leave stale first-party consumers in navigation, breadcrumbs, redirects, API clients, generated code, docs, config, or tests
 
 **⚠️ CRITICAL ANTI-FABRICATION AUDIT RESPONSIBILITIES (NON-NEGOTIABLE):**
 - **The audit agent is the LAST LINE OF DEFENSE against fabricated work.** It MUST rigorously verify that ALL evidence is real.
@@ -53,6 +56,8 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent
 | A7 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work blocks completion |
 | A8 | DoD format integrity (G041) | Verify all DoD items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, unformatted items in DoD sections | Zero format manipulations |
 | A9 | Scope status canonicality (G041) | Verify all `**Status:**` values are exactly `Not Started`, `In Progress`, `Done`, or `Blocked` — no invented statuses | Zero invented statuses |
+| A10 | Planned-behavior regression fidelity | Verify failing-test edits still match spec/design/scopes/DoD and that scenario-specific regression E2E rows/DoD items exist for changed behavior | Fully traceable |
+| A11 | Consumer-trace completeness | Verify renamed/removed interfaces have Consumer Impact Sweep coverage and zero stale first-party references remain | Fully traced |
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 

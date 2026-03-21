@@ -49,10 +49,10 @@ gates:
     description: Spec/design/scopes contain detailed user stories and Gherkin scenarios covering declared use cases/models/algorithms.
   G016:
     name: gherkin_e2e_traceability_gate
-    description: Every required Gherkin scenario maps to specific E2E tests and expected assertions.
+    description: Every required Gherkin scenario maps to specific E2E tests and expected assertions, and every new/changed/fixed behavior has scenario-specific persistent E2E regression coverage tied to the planned behavior.
   G017:
     name: dod_e2e_expansion_gate
-    description: DoD explicitly includes high-quality E2E items aligned with scenario/use-case coverage.
+    description: DoD explicitly includes high-quality E2E items aligned with scenario/use-case coverage, including scenario-specific regression E2E items for each changed behavior plus a broader regression suite pass.
   G018:
     name: dod_completion_gate
     description: A spec cannot be promoted to done while any DoD checkbox remains unchecked.
@@ -88,7 +88,7 @@ gates:
     description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Public handlers/endpoints/workflows returning literal collections, status-only payloads, or placeholder success without real delegation are BLOCKING. Frontend hooks calling getSimulationData() or containing zero fetch() calls are BLOCKING. Live-system tests using request interception are BLOCKING unless reclassified out of live categories. Enforced by implementation-reality-scan.sh via guard script Check 16.
   G029:
     name: integration_completeness_gate
-    description: Every implemented artifact (endpoint, library, page, service, migration, proto) MUST be wired into the running system with at least one real consumer. Backend endpoints consumed by frontends or documented external-only. Libraries imported by consumers. Frontend using real APIs (no stubs/mocks/hardcoded data). Verified by grep-based consumer checks.
+    description: Every implemented artifact (endpoint, library, page, service, migration, proto) MUST be wired into the running system with at least one real consumer. Backend endpoints consumed by frontends or documented external-only. Libraries imported by consumers. Frontend using real APIs (no stubs/mocks/hardcoded data). Renamed/removed interfaces must leave zero stale first-party consumers behind. Verified by grep-based consumer checks.
   G030:
     name: no_defaults_no_fallbacks_gate
     description: ABSOLUTE BLOCKING gate. Production code MUST NOT contain default/fallback values that mask missing configuration or hide failures. Patterns like unwrap_or(), unwrap_or_default(), || "default", ?? "fallback", os.getenv("K", "default"), ${VAR:-default} are FORBIDDEN. All config MUST fail-fast if missing. Enforced by implementation-reality-scan.sh Scan 5.
@@ -169,6 +169,16 @@ gates:
       bubbles.gaps, bubbles.stabilize, bubbles.security, and bubbles.review MUST
       route required artifact changes to the owning specialist instead of editing
       foreign-owned artifacts directly. Enforced by agent-ownership-lint.sh.
+  G043:
+    name: consumer_trace_gate
+    description: >-
+      ABSOLUTE BLOCKING gate. When routes, paths, endpoints, contracts,
+      identifiers, symbols, links, breadcrumbs, redirects, or UI targets are
+      renamed, removed, moved, replaced, or deprecated, agents MUST inventory
+      and update every first-party consumer and prove zero stale references
+      remain across navigation, breadcrumbs, redirects, API clients, generated
+      clients, docs, config, deep links, and tests. Planning artifacts MUST
+      include a Consumer Impact Sweep plus consumer-facing regression coverage.
 
 failureRouting:
   code: implement

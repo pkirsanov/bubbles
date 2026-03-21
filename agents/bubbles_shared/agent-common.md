@@ -213,7 +213,9 @@ grep -c 'Status:.*Not Started\|Status:.*In Progress\|Status:.*Blocked' {FEATURE_
 - [ ] Unit tests pass with 100% line coverage (`unit`)
 - [ ] Integration tests pass against live system (`integration`)  
 - [ ] E2E tests for ALL Gherkin scenarios pass (`e2e-api`/`e2e-ui`)
-- [ ] E2E regression tests pass (existing workflows unbroken)
+- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated and pass
+- [ ] Broader E2E regression suite passes (existing workflows unbroken)
+- [ ] If the scope renames/removes any route, path, contract, identifier, or UI target, consumer impact sweep passes and zero stale first-party references remain
 - [ ] Stress tests pass for performance-sensitive paths (`stress`)
 - [ ] ALL error/boundary/negative scenarios tested
 - [ ] ALL parameter permutations tested
@@ -262,6 +264,41 @@ Invalid patterns:
 - writing the test after the fix and only showing a passing run
 - claiming the bug was reproduced earlier without current-session evidence
 - treating a broad failing suite as sufficient red evidence when the changed behavior was never isolated
+
+### Rule 6A: Planned Behavior Overrides Current Implementation (ABSOLUTE)
+
+When tests fail or regressions are discovered, the source of truth is the planned behavior in `spec.md`, `design.md`, `scopes.md`, and DoD.
+
+Required behavior:
+1. Compare the failing test against the planned functionality before editing either code or test.
+2. If the test correctly encodes the plan, fix the implementation.
+3. If the plan is genuinely wrong or incomplete, route the owning artifact update first, then update tests and implementation together.
+
+Forbidden behavior:
+- weakening assertions to match the current broken implementation
+- deleting a failing assertion because the code no longer does what the plan requires
+- rewriting scenario expectations without first reconciling the planning artifacts
+- treating "the implementation currently behaves this way" as a reason to change a regression test
+
+If a test change cannot be traced back to planned behavior, it is a policy failure and the work stays `in_progress`.
+
+### Rule 6B: Consumer Trace For Renamed Or Removed Interfaces (ABSOLUTE)
+
+When work renames, removes, moves, replaces, or deprecates any route, path, endpoint, contract, identifier, symbol, link target, or UI navigation target, completion requires a full consumer trace.
+
+Required behavior:
+1. Inventory every producer and consumer before claiming the refactor complete.
+2. Update all first-party consumers, including navigation links, breadcrumbs, redirects, deep links, API clients, generated clients, docs, config, and tests.
+3. Search for the old identifier/path/contract and prove no stale first-party references remain, except explicitly documented compatibility shims.
+4. Add or update consumer-facing regression coverage for the affected flows instead of testing only the renamed producer surface.
+
+Forbidden behavior:
+- changing a route/path/contract name and assuming the direct caller list is complete
+- updating the producer but leaving breadcrumbs, navigation links, redirects, or API consumers on the removed target
+- closing the work without a stale-reference search for the old identifier or path
+- treating spot-checks of one screen or one component as sufficient proof for a rename/removal refactor
+
+If a rename/removal cannot show a complete consumer trace, the work stays `in_progress`.
 
 ### Rule 7: Scope Size Discipline and Optional Time Budgets (ABSOLUTE)
 
@@ -870,7 +907,17 @@ Any violation is a **blocking failure** and the scope/bug status MUST remain `in
     ```
     [PASTE VERBATIM terminal output here]
     ```
-- [ ] E2E regression tests pass (existing workflows unbroken)
+- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated and pass
+  - Raw output evidence (inline):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] Broader E2E regression suite passes (existing workflows unbroken)
+  - Raw output evidence (inline):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] If the scope renames/removes any route, path, contract, identifier, or UI target, consumer impact sweep passes and zero stale first-party references remain
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM terminal output here]
@@ -879,12 +926,17 @@ Any violation is a **blocking failure** and the scope/bug status MUST remain `in
 
 **Every bug fix MUST have E2E regression tests:**
 ```markdown
-- [ ] E2E regression test for bug scenario passes
+- [ ] Scenario-specific E2E regression test for the fixed bug behavior is added or updated and passes
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM terminal output here]
     ```
-- [ ] E2E existing tests pass (no new regressions)
+- [ ] Broader E2E regression suite passes (no new regressions)
+  - Raw output evidence (inline):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] If the bug fix renames/removes any route, path, contract, identifier, or UI target, consumer impact sweep passes and zero stale first-party references remain
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM terminal output here]
@@ -919,6 +971,10 @@ Example of REQUIRED (specific):
 ### Regression Test Placement Policy (MANDATORY)
 
 Regression tests are previously missing tests and MUST live with the feature/component they verify.
+
+Every new feature, fix, or changed behavior MUST add or update at least one persistent, scenario-specific E2E regression test that proves the planned behavior remains intact over time.
+
+When a change renames/removes an interface or navigation target, the regression plan MUST also cover the affected consumers and include a stale-reference search for the old identifier/path.
 
 - Do NOT create catch-all regression buckets/files that mix unrelated features.
 - Add missed scenarios to the existing feature/component test files (or create feature-specific files only when none exist).

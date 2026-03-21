@@ -101,6 +101,10 @@ Use the Test Plan table from scope-workflow.md and map each Gherkin scenario to 
 
 **E2E rows MUST be scenario-specific:** list the actual test file, actual `test()` title, and specific scenario ID. Generic E2E placeholders are FORBIDDEN — see agent-common.md → "ACTUAL E2E TEST SPECIFICITY".
 
+**Every feature/fix/change MUST include explicit regression E2E planning:** for every new/changed/fixed behavior, add at least one persistent `Regression:` E2E row tied to the exact scenario or bug behavior it protects. A broad "existing E2E suite" row does not satisfy this requirement by itself.
+
+**Renames/removals MUST include a Consumer Impact Sweep:** when a scope renames/removes any route, path, contract, identifier, or UI target, add a subsection enumerating affected navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests, plus explicit regression rows for those consumer flows and a stale-reference-scan row for the old identifier/path.
+
 Regression tests are previously missed tests: add them to feature/component-specific test files (no generic cross-feature regression files).
 
 If the scope declares latency/performance SLAs, add explicit `stress` rows to the Test Plan.
@@ -109,6 +113,12 @@ If the scope declares latency/performance SLAs, add explicit `stress` rows to th
 Use the Tiered DoD template from scope-workflow.md:
 - Core Items: scope-specific implementation and scenario validation items
 - Build Quality Gate: zero warnings, zero deferrals, lint/format clean, artifact lint clean, docs aligned
+
+The Core Items MUST include both:
+- scenario-specific E2E regression coverage for each changed behavior
+- broader E2E regression suite confirmation
+
+If the scope renames/removes any route, path, contract, identifier, or UI target, the Core Items MUST also include a consumer impact sweep item proving zero stale first-party references remain.
 
 All DoD entries MUST be markdown checkboxes (`- [ ]` or `- [x]`). Non-checkbox DoD items are invalid.
 Record raw execution evidence in the matching report file:

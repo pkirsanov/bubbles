@@ -20,6 +20,9 @@ handoffs:
 - Operate within a classified `specs/...` feature or bug target when making code/doc changes (see Work Classification Gate)
 - Allow **test-only** runs without a feature/bug target; if fixes are required, stop and request classification
 - Tests validate specs/use cases/design (not the current implementation)
+- Before editing a failing test, compare it to `spec.md`, `design.md`, `scopes.md`, and DoD; if it matches the plan, fix the implementation instead of weakening the test
+- If the planned behavior is wrong or incomplete, update the owning planning artifact first, then update test + implementation together
+- For renamed/removed routes, paths, contracts, identifiers, or UI targets, run consumer-trace scans for old and new references and fail if stale first-party consumers remain
 - No skips/xfails/disabled tests; fix the implementation (or docs when truly wrong)
 - Enforce red→green traceability for changed behavior: targeted tests or reproductions must fail before the fix and pass after the fix
 - **Record test execution evidence from ACTUAL terminal output before marking anything complete** — see Execution Evidence Standard in agent-common.md
@@ -83,6 +86,8 @@ This prompt is for **testing-first hardening**.
   - If tests reveal the spec/design/use cases are incomplete/ambiguous/wrong, **update the docs** (spec/design/use cases) and then update tests + implementation to match.
 - **RED before GREEN is mandatory** for changed behavior. Capture the failing targeted test or reproduction first, then the passing proof, then the broader regression suite.
 - **E2E tests (`e2e-api` and/or `e2e-ui`) are MANDATORY** for every scope/bug — they run against a LIVE system with NO mocks.
+- **Every feature/fix/change MUST have persistent scenario-specific E2E regression coverage** — add or update at least one regression E2E test tied to each new/changed/fixed behavior, then run the broader regression suite as well.
+- **Renames/removals MUST have consumer-facing regression coverage** — validate affected navigation links, breadcrumbs, redirects, API clients, and stale-reference scans instead of only the renamed producer surface.
 - **Live system tests** (integration, e2e-api, e2e-ui, stress, load) MUST use ephemeral/temporary storage or clean up test data after. No residual test data.
 - **Follow ALL repository policies** from `.github/copilot-instructions.md`.
 - **If UI behavior changes exist:** require a UI scenario matrix, e2e-ui tests per scenario, user-visible assertions, and cache/bundle freshness evidence.

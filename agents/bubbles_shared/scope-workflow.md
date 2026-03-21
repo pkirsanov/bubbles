@@ -213,6 +213,8 @@ Use these rules for every scope status change.
 1. A scope can move to `In Progress` only when all scopes in its `dependsOn` list are `Done` (DAG mode) OR all prior scopes are `Done` (sequential mode).
 2. A scope can move to `Done` only when:
    - Scope DoD items in its `scope.md` (or `scopes.md`) are all checked `[x]`
+  - Scope DoD explicitly includes scenario-specific E2E regression coverage for changed behavior plus a broader regression suite pass
+  - If the scope renames/removes any route, path, contract, identifier, or UI target, the DoD includes a consumer impact sweep item and the affected consumer flows are validated
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
    - Scope entry in `state.json` is updated in `scopeProgress` and `completedScopes`
   - `completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries
@@ -348,7 +350,12 @@ See the Tiered DoD Model section below for format rules.
     `​``
     [PASTE VERBATIM terminal output here — must show test names + pass/fail counts]
     `​``
-- [ ] E2E regression tests pass
+- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated and pass
+  - Raw output evidence (inline, verbatim terminal output only):
+    `​``
+    [PASTE VERBATIM terminal output here]
+    `​``
+- [ ] Broader E2E regression suite passes
   - Raw output evidence (inline, verbatim terminal output only):
     `​``
     [PASTE VERBATIM terminal output here]
@@ -408,6 +415,10 @@ Links: [spec.md](spec.md) | [design.md](design.md) | [report.md](report.md) | [u
 **⚠️ ACTUAL TEST SPECIFICITY REQUIRED (NON-NEGOTIABLE):**
 E2E rows MUST name the **specific Gherkin scenario or UI Scenario ID** they validate. Generic descriptions like `[API workflow]` or `[UI workflow]` are **FORBIDDEN**. Each E2E row must answer: *"Which exact scenario from this scope does this test prove works?"*
 
+Every feature/fix/change MUST also include at least one explicit `Regression:` E2E row for each new/changed/fixed behavior. Re-running a generic existing suite is not sufficient by itself.
+
+If a scope renames/removes any route, path, contract, identifier, symbol, or UI target, add a **Consumer Impact Sweep** subsection that inventories affected navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests. The Test Plan MUST include explicit consumer-facing regression rows and a stale-reference-scan row for the old identifier/path.
+
 | Test Type | Category | File/Location | Description | Command | Live System Required |
 |-----------|----------|---------------|-------------|---------|---------------------|
 | Unit | `unit` | `[path]` | [isolated, mocked deps] | `[cmd]` | No |
@@ -416,7 +427,7 @@ E2E rows MUST name the **specific Gherkin scenario or UI Scenario ID** they vali
 | UI Unit | `ui-unit` | `[path]` | [component test, mocked backend] | `[cmd]` | No |
 | E2E API | `e2e-api` | `[path]` | [API workflow, LIVE system, no mocks] | `[cmd]` | Yes |
 | E2E UI | `e2e-ui` | `[path]` | [UI workflow, LIVE system, no mocks] | `[cmd]` | Yes |
-| E2E Regression | `e2e-api`/`e2e-ui` | `[path]` | [existing workflows still work] | `[cmd]` | Yes |
+| E2E Regression | `e2e-api`/`e2e-ui` | `[path]` | Regression: Scenario [ID] / Bug [ID] remains correct after future changes | `[cmd]` | Yes |
 | Stress | `stress` | `[path]` | [high-concurrency burst] | `[cmd]` | Yes |
 
 **Stress tests REQUIRED when SLA/latency targets exist for this scope's endpoints.**
@@ -445,7 +456,22 @@ E2E rows MUST name the **specific Gherkin scenario or UI Scenario ID** they vali
     ```
     [PASTE VERBATIM terminal output here — must show test names + pass/fail counts]
     ```
-- [ ] E2E regression tests pass
+- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated and pass
+  - Raw output evidence (inline, verbatim terminal output only):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] Broader E2E regression suite passes
+  - Raw output evidence (inline, verbatim terminal output only):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] If the scope renames/removes any route, path, contract, identifier, or UI target, consumer impact sweep passes and zero stale first-party references remain
+  - Raw output evidence (inline, verbatim terminal output only):
+    ```
+    [PASTE VERBATIM terminal output here]
+    ```
+- [ ] If the scope renames/removes any route, path, contract, identifier, or UI target, consumer impact sweep passes and zero stale first-party references remain
   - Raw output evidence (inline, verbatim terminal output only):
     ```
     [PASTE VERBATIM terminal output here]

@@ -251,10 +251,13 @@ Each scope must include:
 - Service discovery/config changes
 - Error handling + authn/authz considerations
 - Observability (logs/metrics/traces)
+- **Consumer Impact Sweep (required when renaming/removing routes, paths, contracts, identifiers, or UI targets):** enumerate every affected consumer and stale-reference search surface: navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests.
 
 4) **Test Plan (Required)**
 - `Gherkin-to-test mapping`: each scenario must map to one or more tests.
 - **E2E test entries MUST be scenario-specific** — list the actual Gherkin scenario ID, the actual test file path, and the actual expected `test()` title. Generic E2E placeholders like `[UI workflow]` or `[API workflow]` are FORBIDDEN.
+- **Every feature/fix/change MUST include persistent regression E2E planning** — for each new/changed/fixed behavior, add at least one explicit `Regression:` E2E row tied to the exact scenario or bug behavior it protects.
+- **Renames/removals require consumer-trace coverage** — when a scope renames/removes any route, path, contract, identifier, or UI target, add explicit consumer-facing rows for the affected navigation, breadcrumb, redirect, API client, and stale-reference-scan flows instead of a generic "update callers" note.
 - Minimum required test types (choose what's needed, defaulting to stronger coverage):
   - Unit tests
   - Integration tests
@@ -265,6 +268,9 @@ Each scope must include:
 5) **Definition of Done (DoD)**
 - All selected tests pass (no skips/ignores)
 - Tests validate spec/use cases/design (not implementation details)
+- Scenario-specific E2E regression tests are added or updated for every changed behavior
+- Broader E2E regression suite passes
+- Consumer impact sweep is completed for every renamed/removed route, path, contract, identifier, or UI target; zero stale first-party references remain
 - Docs updated (spec/design/API/architecture/dev/testing) as required
 - Policies complied with (explicitly list the relevant ones)
 - Services build/run using repo standard commands (see `copilot-instructions.md`)
