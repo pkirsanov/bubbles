@@ -22,18 +22,10 @@ handoffs:
 - Tests validate specs/use cases/design (not the current implementation)
 - Before editing a failing test, compare it to `spec.md`, `design.md`, `scopes.md`, and DoD; if it matches the plan, fix the implementation instead of weakening the test
 - If the planned behavior is wrong or incomplete, update the owning planning artifact first, then update test + implementation together
-- For renamed/removed routes, paths, contracts, identifiers, or UI targets, run consumer-trace scans for old and new references and fail if stale first-party consumers remain
 - No skips/xfails/disabled tests; fix the implementation (or docs when truly wrong)
-- Enforce red→green traceability for changed behavior: targeted tests or reproductions must fail before the fix and pass after the fix
-- **Record test execution evidence from ACTUAL terminal output before marking anything complete** — see Execution Evidence Standard in agent-common.md
-- **Never claim "tests pass" without having run the tests in a terminal and observed the output**
-- **Never write expected output; always copy actual terminal output**
-- **Use Case Testing Integrity** — every test must prove a real user scenario works, not just check internal state (see Use Case Testing Integrity in agent-common.md)
-- **Anti-proxy test enforcement** — detect and rewrite proxy tests: status-code-only E2E checks, assertion-free endpoint hits, mock-heavy integration tests, element-exists-only UI tests
-- **No regression introduction** — verify changes don't break existing passing tests before concluding (see No Regression Introduction in agent-common.md)
-- **Autonomous operation** — research answers from code/docs/specs instead of asking the user; follow workflow phases in order (see Autonomous Operation in agent-common.md)
+- Enforce `test-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 
-**⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). You MUST run test commands in terminal. Evidence = real output (≥10 lines), not narratives. Each test type executed separately with own evidence. Noop tests are BLOCKING. Changed behavior must show RED then GREEN. Reality scan (G028+G030) must pass.
+**⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
@@ -199,21 +191,17 @@ Minimum required checks in compliance mode:
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting test verdict)
 
-Before reporting test verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting test verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Test profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| T1 | Skip marker scan | `grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo' [test-files]` | Zero matches |
-| T2 | Mock audit | Scan test files for internal code mocks (`jest.fn`, `sinon.stub`, `vi.fn` on internal code) | Zero internal mocks |
-| T3 | Proxy test scan | Check E2E tests for status-code-only or existence-only assertions | Zero proxy tests |
-| T4 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
-| T5 | Coverage threshold | Verify 100% line coverage for business logic | Threshold met |
-
-**If ANY check fails → report `🛑 NOT_TESTED` with details. Do NOT mark scope Done.**
+If any required check fails, report `🛑 NOT_TESTED` with details. Do not mark the scope Done.
 
 ## Governance References
 
 **MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
+
+## Context Loading
+
+Follow [test-bootstrap.md](bubbles_shared/test-bootstrap.md). Start with the scopes entrypoint plus only the tests, implementation files, and evidence artifacts relevant to the behavior under test.
 
 ---
 

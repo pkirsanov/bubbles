@@ -97,10 +97,10 @@ Agent-specific: Action-First Mandate applies. If target is a bug directory, enfo
 
 ## Policy & Session Compliance
 
-Follow policy compliance, session tracking, and context loading per [project-config-contract.md](bubbles_shared/project-config-contract.md) and [agent-common.md](bubbles_shared/agent-common.md).
+Follow policy compliance, session tracking, and context loading per [project-config-contract.md](bubbles_shared/project-config-contract.md) and [operating-baseline.md](bubbles_shared/operating-baseline.md).
 
 Key requirements:
-- Load Tier 1 governance docs first (`constitution.md`, `agents.md`, `copilot-instructions.md`)
+- Start from the simplifier loading profile in [operating-baseline.md](bubbles_shared/operating-baseline.md)
 - Maintain session state in `bubbles.session.json` with `agent: bubbles.simplify` when the repo uses a session file
 - Respect loop limits, status ceilings, and workflow mode gate requirements from [workflows.yaml](../bubbles/workflows.yaml)
 - Apply anti-fabrication and evidence standards from [agent-common.md](bubbles_shared/agent-common.md)

@@ -33,19 +33,13 @@ handoffs:
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting docs results)
 
-Before reporting results, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Docs profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| D1 | API doc cross-reference | Verify documented endpoints match `router.go`/route files | Zero mismatches |
-| D2 | No orphaned endpoints in docs | All documented endpoints exist in code | All endpoints real |
-| D3 | Spec-doc consistency | spec.md, design.md, scopes.md consistent with docs/ | No contradictions |
-
-**If ANY check fails → report issues, do NOT claim docs update complete.**
+If any required check fails, report issues and do not claim the docs update is complete.
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
+**MANDATORY:** Start from [docs-bootstrap.md](bubbles_shared/docs-bootstrap.md). Use [scope-workflow.md](bubbles_shared/scope-workflow.md) and targeted sections of [agent-common.md](bubbles_shared/agent-common.md) only when a gate or artifact rule requires them.
 
 Agent-specific note: `/bubbles.docs` may review project-wide docs, but any *writes* must still be tied to an explicit `specs/...` feature or bug target.
 
@@ -124,25 +118,6 @@ Follow policy compliance in [agent-common.md](bubbles_shared/agent-common.md) an
 
 ---
 
-## Loop Guard (MANDATORY)
-
-Use the Loop Guard rules in [agent-common.md](bubbles_shared/agent-common.md) with these doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, and no duplicate reads. Use the repo's actual standard docs inventory (`docs/*.md` plus any existing project governance docs) and do not assume `.github/docs/BUBBLES_*.md` files exist.
-
----
-
-## ✅ REQUIRED: Track Work
-
-The agent MUST track work via `manage_todo_list`.
-
-Minimum todo items:
-1. Resolve `{FEATURE_DIR}` and gather doc inventory
-2. Determine standard docs list (+ any project-specific standard docs)
-3. Build a “doc-to-source” mapping (spec/design/scopes)
-4. Apply edits: add missing info, delete obsolete/duplicate, restructure
-5. Verify consistency and completeness
-
----
-
 ## Standard Docs List (Source of Truth)
 
 Use the repo’s actual standard docs:
@@ -153,33 +128,6 @@ Use the repo’s actual standard docs:
 Rules:
 - Do NOT hardcode a stale `.github/docs/BUBBLES_*.md` inventory file in this agent.
 - If docs drift (added/removed), update the agent references that enumerate standard docs.
-
----
-
-## Context Loading (Tiered - MANDATORY)
-
-### Tier 1 (Governance - Always)
-
-1. `.specify/memory/agents.md`
-2. `.specify/memory/constitution.md`
-3. `.github/copilot-instructions.md`
-
-### Tier 2 (Feature Artifacts - Sources of Truth)
-
-4. `{FEATURE_DIR}/spec.md` (required)
-5. `{FEATURE_DIR}/design.md` (if exists)
-6. `{FEATURE_DIR}/scopes.md` (if exists)
-7. `{FEATURE_DIR}/plan.md` (if exists)
-8. `{FEATURE_DIR}/tasks.md` (if exists)
-
-### Tier 3 (Standard Docs - Targets to Validate/Update)
-
-9. Inventory `docs/*.md` and any project-specific standard docs that actually exist.
-10. Load only the specific doc(s) required for the requested review scope (avoid bulk reads).
-
-### User-provided sources (highest priority)
-
-11. Any docs/paths/text listed in `$ADDITIONAL_CONTEXT`
 
 ---
 

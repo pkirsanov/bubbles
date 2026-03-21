@@ -357,17 +357,9 @@ Fix cycle needed: YES (BLOCKING — must fix before any release)
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting verdict)
 
-Before reporting verdict, run Tier 1 universal checks (see agent-common.md) PLUS:
+Before reporting verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Security profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| SE1 | All OWASP categories scanned | Review Phase 4 mapping | All 10 categories checked |
-| SE2 | Dependency scan executed | Verify scan command ran | Actual terminal output captured |
-| SE3 | Findings have evidence | Each finding has file path + line reference | No speculative findings |
-| SE4 | Scope artifacts updated | New DoD items added for open findings | Artifact lint clean |
-| SE5 | No regression | Run impacted tests after inline fixes | All pass |
-
-**If ANY check fails → do NOT report verdict. Fix the issue first.**
+If any required check fails, do not report a security verdict. Fix the issue first.
 
 ---
 

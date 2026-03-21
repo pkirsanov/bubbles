@@ -26,16 +26,12 @@ handoffs:
 - Do not mark scope Done until DoD fully satisfied AND audit clean
 - Before changing a failing test, reconcile it against `spec.md`, `design.md`, `scopes.md`, and DoD; if the test matches the plan, fix the code instead of weakening the test
 - If planned behavior is wrong or incomplete, route the owning artifact update first and only then align test + implementation
-- For any renamed/removed route, path, contract, identifier, symbol, or UI target, trace and update every consumer before claiming completion; stale references in navigation, breadcrumbs, redirects, API clients, generated code, docs, config, or tests are blocking
-- For new or changed behavior, prove RED before GREEN: capture a failing targeted test or reproduction step before accepting the fix, then capture the passing result after the fix.
 - Keep failure handling inside micro-fix loops: fix the smallest broken command/file/symbol first, rerun that narrow validation, then expand outward.
-- **Use case testing integrity** — all tests must validate actual user/API consumer scenarios; proxy tests (status-code-only, assertion-free, mock-heavy) are gaps, not coverage (see Use Case Testing Integrity in agent-common.md)
-- **No regression introduction** — after implementing scope changes, verify no previously-passing tests now fail; fix regressions before proceeding (see No Regression Introduction in agent-common.md)
-- **Round-trip verification** — for state-changing operations, always verify: create → read back → confirm persisted correctly
+- Enforce `execution-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
-**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). All code real and compilable. All tests executable with real assertions. All DoD items marked `[x]` one at a time with ≥10-line raw terminal evidence. Run commands; never write expected output.
+**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **⚠️ No-Defaults / No-Stubs:** See [critical-requirements.md](bubbles_shared/critical-requirements.md). Reality scan (G028+G030) enforces mechanically.
 
@@ -93,7 +89,7 @@ When the user provides free-text input WITHOUT explicit `mode:` or `scopes:` par
 
 ## ⚠️ Loop Guard: Explicit Read Limits (CRITICAL)
 
-Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus files listed in the scope implementation plan. Do not recursively search the codebase.
+Use [implement-bootstrap.md](bubbles_shared/implement-bootstrap.md) plus the Loop Guard from [state-gates.md](bubbles_shared/state-gates.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus files listed in the scope implementation plan. Do not recursively search the codebase.
 
 ---
 
@@ -168,17 +164,9 @@ Follow [scope-workflow.md](bubbles_shared/scope-workflow.md) → "Execution Phas
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting results)
 
-Before reporting completion, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting completion, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Implement profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| I1 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 — no stubs, fakes, hardcoded data, or defaults |
-| I2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
-| I3 | Scope status | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
-| I4 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | Exit code 0 |
-| I5 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits — NEVER write deferral language into scope artifacts |
-
-**If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**
+If any required check fails, do not update `state.json` or report success. Fix the issue first.
 
 ## Phase Completion Recording (MANDATORY)
 

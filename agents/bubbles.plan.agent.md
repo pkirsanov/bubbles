@@ -18,8 +18,7 @@ handoffs:
 - Plan MUST be sequential and scope-gated: scope N cannot start until scope N-1 is fully done.
 - Default to small, well-defined, isolated scopes. A scope should represent one primary outcome, not a grab-bag of unrelated work.
 - Tests MUST be derived from spec/design requirements (spec-first), not from current behavior.
-- **Test plans must specify user-perspective tests** — each scope's test plan must include tests from the user/consumer perspective, not just internal tests. E2E tests must describe what the USER would do and see (see Use Case Testing Integrity in agent-common.md)
-- **Test plans must include round-trip verification** — for state-changing operations, plan tests that verify create → read back → confirm persisted
+- Enforce `planning-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, and `evidence-rules.md` when writing scope artifacts.
 - Honor optional sizing hints (`maxScopeMinutes`, `maxDodMinutes`) when provided, but keep scopes small even when no time boundary is given.
 - Follow tiered context loading and loop limits (below) to avoid read loops.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead.
@@ -51,29 +50,26 @@ handoffs:
 
 ## Shared Agent Patterns
 
-**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
+**MANDATORY:** Start from [plan-bootstrap.md](bubbles_shared/plan-bootstrap.md), then follow [planning-core.md](bubbles_shared/planning-core.md) and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 When planning must coordinate mixed specialist follow-up (clarify/implement/test/docs/gaps/hardening/bug) in one session:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
 - **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
-Agent-specific: Action-First Mandate applies → take ONE planning action after loading Tier 1 + spec.md.
+Agent-specific: Action-First Mandate applies → take ONE planning action after loading the `planner` profile's minimum initial set.
 
 ### ⚠️ EXPLICIT READ LIMIT FOR BUBBLES.PLAN
 
-```
-read_count = 0
-ALLOWED_READS = ["spec.md", "design.md", "scopes.md"]  # Only these 3 files
-```
+Use [plan-bootstrap.md](bubbles_shared/plan-bootstrap.md). The feature-artifact cap remains strict.
 
 **HARD LIMIT**: Read at most 3 files from the feature directory, then TAKE ACTION:
 1. `spec.md` - Required
 2. `design.md` - If exists
-3. `scopes.md` - If exists (for update scenarios)
+3. Scope entrypoint - `scopes.md` or `scopes/_index.md` for update scenarios
 
 **After reading these 3 files**: IMMEDIATELY write/update `scopes.md` or output clarification request.
 
-**DO NOT READ**: constitution.md, copilot-instructions.md, agents.md, or any other governance docs UNLESS the feature files are insufficient.
+Outside the `planner` profile's minimum Tier 1 subset, do not load extra governance docs unless the feature artifacts are insufficient.
 
 ## User Input
 

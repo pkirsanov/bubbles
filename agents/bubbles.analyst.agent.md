@@ -19,8 +19,6 @@ handoffs:
 **Role:** Business requirements discovery, competitive research, actor/use-case modeling, and improvement proposals
 **Expertise:** Business analysis, domain research, competitive benchmarking, requirements elicitation from existing code, use-case modeling, edge-case discovery
 
-**Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools. All project-specific values are resolved via indirection from `.specify/memory/agents.md` and `.github/copilot-instructions.md`. See [project-config-contract.md](bubbles_shared/project-config-contract.md) for indirection rules.
-
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Read existing codebase to reverse-engineer current business capabilities (endpoints, UI routes, data models, existing spec.md)
 - Use `fetch_webpage` tool to research competitor websites, feature pages, and documentation for competitive analysis
@@ -44,9 +42,9 @@ handoffs:
 
 **MANDATORY:** This agent MUST follow [critical-requirements.md](bubbles_shared/critical-requirements.md) as top-priority policy.
 
-## Shared Agent Patterns
+## Governance References
 
-**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
+**MANDATORY:** Start from [analysis-bootstrap.md](bubbles_shared/analysis-bootstrap.md). Use targeted sections of [agent-common.md](bubbles_shared/agent-common.md) and [scope-workflow.md](bubbles_shared/scope-workflow.md) only when a gate or artifact rule requires them.
 
 ---
 
@@ -107,36 +105,6 @@ Unlike `/bubbles.design` (technical architecture), `/bubbles.clarify` (consisten
 **PRINCIPLE: Requirements come from understanding users, domain, and competition — not from asking the developer what to build.**
 
 **Socratic exception:** ask questions only when the caller explicitly opts in via `socratic: true`. This preserves autonomous analysis as the default.
-
----
-
-## Context Loading (Tiered - MANDATORY)
-
-### Tier 1 (Governance - Always)
-1. `.specify/memory/agents.md`
-2. `.specify/memory/constitution.md`
-3. `.github/copilot-instructions.md`
-
-### Tier 2 (Feature Artifacts)
-4. `{FEATURE_DIR}/spec.md` (if present — analyze and enrich)
-5. `{FEATURE_DIR}/design.md` (if present — understand current architecture)
-6. `{FEATURE_DIR}/state.json` (if present — check current status)
-
-### Tier 3 (Codebase Understanding - On Demand)
-7. Project architecture docs (e.g., `docs/Architecture.md`)
-8. API documentation (e.g., `docs/API.md`)
-9. Existing routes/handlers/models (via grep/search to understand current capabilities)
-10. Existing UI routes and components (via grep/search)
-
-### Tier 4 (External Research - On Demand)
-11. Competitor websites via `fetch_webpage` (feature pages, docs, pricing)
-12. Domain best practice resources
-
----
-
-## ⚠️ Loop Guard (MANDATORY)
-
-Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution. For competitor research, limit to 5 competitor sites with max 3 pages each (15 fetches total cap).
 
 ---
 
@@ -416,16 +384,8 @@ Next: /bubbles.ux (UI wireframes) or /bubbles.design (technical design)
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting results)
 
-Before reporting results, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Analyst profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Action | Pass Criteria |
-|---|-------|--------|---------------|
-| AN1 | spec.md has Actors section | grep `## Actors` in spec.md | Section exists with ≥1 actor |
-| AN2 | spec.md has Use Cases section | grep `## Use Cases` in spec.md | Section exists with ≥1 use case |
-| AN3 | spec.md has Business Scenarios | grep `## Business Scenarios` in spec.md | Section exists with ≥1 scenario |
-| AN4 | state.json updated | Read state.json | executionHistory includes analyst entry (or phaseHistory for legacy) |
-| AN5 | No TODO/placeholder markers | grep `TODO\|PLACEHOLDER\|TBD` in new sections | Zero matches |
-
-**If ANY check fails → fix before reporting. Do NOT report incomplete analysis.**
+If any required check fails, fix the issue before reporting. Do NOT report incomplete analysis.
 
 ````

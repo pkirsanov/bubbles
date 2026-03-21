@@ -232,17 +232,9 @@ Fix cycle needed: YES
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting verdict)
 
-Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Stabilize profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| ST1 | Stability inventory complete | All 6 domains scanned | All domains covered |
-| ST2 | Findings have evidence | Each finding has reproduction steps or log/metric evidence | No speculative findings |
-| ST3 | Fixes verified | Re-run impacted tests after each fix | All pass, no regressions |
-| ST4 | Scope artifacts updated | New DoD items added for findings, Test Plan rows match | Artifact lint clean |
-| ST5 | No regression introduction | Run full test suite after all fixes | Zero new failures |
-
-**If ANY check fails → do NOT report verdict. Fix the issue first.**
+If any required check fails, do not report a stabilize verdict. Fix the issue first.
 
 ---
 

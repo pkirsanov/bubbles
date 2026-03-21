@@ -91,49 +91,15 @@ PRINCIPLE: **Design/spec/scopes must agree. Anything required must be explicitly
 - Implement full feature behavior with edge-case handling and complete documentation.
 - If any critical requirement is unmet, status MUST remain `in_progress`/`blocked`.
 
-## Shared Agent Patterns
+## Governance References
 
-**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
+**MANDATORY:** Start from [clarify-bootstrap.md](bubbles_shared/clarify-bootstrap.md). Use targeted sections of [agent-common.md](bubbles_shared/agent-common.md) and [scope-workflow.md](bubbles_shared/scope-workflow.md) only when a gate or artifact rule requires them.
 
 If clarification work triggers mixed specialist phases (plan/implement/test/docs/gaps/hardening/bug) within the same run:
 - **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
 - **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
 Agent-specific: This agent focuses on docs, but policy constraints still apply to any code snippets or suggested behaviors.
-
----
-
-## Loop Guard (MANDATORY)
-
-Use the Loop Guard in [agent-common.md](bubbles_shared/agent-common.md) with doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, no duplicate reads, and no hunt loops. If `scopes.md` is missing, recommend `/bubbles.plan` instead of searching.
-
----
-
-## REQUIRED: Track Work
-
-The agent MUST track work end-to-end via `manage_todo_list`.
-
-Minimum todo items:
-1. Load documents (spec/design/scopes + provided context)
-2. Build cross-document requirement map
-3. Produce gap report (missing/inconsistent items)
-4. Apply fixes to docs (spec/scopes/design/API/etc.)
-5. Re-check consistency + completeness
-
----
-
-## Context Loading (Tiered - NOT All At Once)
-
-Follow Tiered Context Loading in [agent-common.md](bubbles_shared/agent-common.md):
-- **Tier 1 (Governance):** `.specify/memory/agents.md`, `.specify/memory/constitution.md`, `.github/copilot-instructions.md`
-- **Tier 2 (Feature):** `{FEATURE_DIR}/spec.md`, `design.md`, `plan.md`, `scopes.md`, `tasks.md`, `checklists/*.md` (as available)
-- **Tier 3 (Project):** Project docs as discovered via `ls docs/*.md` (architecture, API, development, deployment, operations, testing, etc.)
-
-### Clarify-Specific Sources
-
-- Any paths/URLs/text provided in `$ADDITIONAL_CONTEXT` are treated as high-priority design/requirement inputs.
-
----
 
 ## What to Clarify (Checklist)
 

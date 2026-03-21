@@ -1475,17 +1475,9 @@ For `full-delivery-strict`, stop is only allowed when all target specs are `done
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting workflow results)
 
-Before reporting workflow results, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting workflow results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Workflow profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| W1 | State transition guard per spec (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` for each `done` spec | All exit code 0 |
-| W2 | Specialist completion ledger (G022) | Verify ALL mode-required phases appear in each spec's `completedPhases` | All specialists executed |
-| W3 | Cross-agent output verification (G020) | Verify each specialist's output has real evidence, not fabricated claims | All genuine |
-| W4 | Sequential completion (G019) | Verify no spec N+1 was started before spec N completed | Sequential order maintained |
-| W5 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on each spec's scope files | Zero hits per spec |
-
-**If ANY check fails → report blocked specs, do NOT claim workflow complete.**
+If any required check fails, report blocked specs and do not claim the workflow is complete.
 
 ---
 

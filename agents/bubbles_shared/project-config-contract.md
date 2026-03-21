@@ -39,7 +39,7 @@ This is the **single source of truth** for all project-specific commands and fil
 ### Required Sections
 
 #### Section I: Context Loading Priority
-Define which files agents should load and in what order.
+Define which files agents should load and in what order. Projects provide the canonical document locations here; Bubbles agents choose a role-focused subset using the loading profiles in [agent-common.md](agent-common.md) rather than loading every governance file for every role.
 
 #### Section II: Design Document References
 Table mapping document names to file paths.
@@ -176,17 +176,44 @@ When adopting Bubbles for a new project, populate these files:
 
 | Path | Content | Why Portable |
 |------|---------|--------------|
-| `agents/bubbles.*.agent.md` | All 24 Bubbles agent definitions | Contain zero project-specific commands/paths/tools |
-| `agents/speckit.*.agent.md` | All 9 SpecKit agent definitions | Specification-focused, project-agnostic |
-| `agents/bubbles_shared/agent-common.md` | Universal governance: anti-fabrication (G019-G030), evidence standards, test taxonomy, quality work standards | Uses `[cmd]` placeholders and indirection references |
+| `agents/bubbles.*.agent.md` | All `bubbles.*` agent definitions | Contain zero project-specific commands/paths/tools |
+| `agents/speckit.*.agent.md` | All `speckit.*` agent definitions | Specification-focused, project-agnostic |
+| `agents/bubbles_shared/agent-common.md` | Top-level governance index and compatibility reference | Routes agents to smaller authoritative modules |
+| `agents/bubbles_shared/artifact-lifecycle.md` | Artifact structure and lifecycle rules | Single source of required artifact and scope lifecycle rules |
+| `agents/bubbles_shared/artifact-ownership.md` | Canonical artifact ownership and routing contract | Single source of ownership boundaries |
+| `agents/bubbles_shared/completion-governance.md` | Completion hierarchy and completion-state rules | Single source of DoD → scope → spec completion rules |
+| `agents/bubbles_shared/execution-ops.md` | Retry, timeout, and auxiliary execution ops | Single source of bounded execution-ops rules |
+| `agents/bubbles_shared/operating-baseline.md` | Shared loading/loop/indirection baseline | Single source of operating behavior |
+| `agents/bubbles_shared/planning-core.md` | Planning-specific shared rules | Small planning-time core |
+| `agents/bubbles_shared/execution-core.md` | Implementation/orchestration shared rules | Small execution-time core |
+| `agents/bubbles_shared/test-core.md` | Testing shared rules | Small test-time core |
+| `agents/bubbles_shared/audit-core.md` | Audit/validation shared rules | Small audit-time core |
+| `agents/bubbles_shared/validation-core.md` | Shared completion-validation baseline | Single source of validation model |
+| `agents/bubbles_shared/validation-profiles.md` | Agent-specific Tier 2 validation checks | Single source of role-specific validation tables |
+| `agents/bubbles_shared/plan-bootstrap.md` | Minimal planning bootstrap | Small mandatory planning load |
+| `agents/bubbles_shared/implement-bootstrap.md` | Minimal implementation bootstrap | Small mandatory execution load |
+| `agents/bubbles_shared/test-bootstrap.md` | Minimal testing bootstrap | Small mandatory test load |
+| `agents/bubbles_shared/audit-bootstrap.md` | Minimal audit/validation bootstrap | Small mandatory audit load |
+| `agents/bubbles_shared/analysis-bootstrap.md` | Minimal analyst bootstrap | Small mandatory analysis load |
+| `agents/bubbles_shared/design-bootstrap.md` | Minimal design bootstrap | Small mandatory design load |
+| `agents/bubbles_shared/docs-bootstrap.md` | Minimal documentation bootstrap | Small mandatory docs load |
+| `agents/bubbles_shared/clarify-bootstrap.md` | Minimal clarification bootstrap | Small mandatory clarify load |
+| `agents/bubbles_shared/ux-bootstrap.md` | Minimal UX bootstrap | Small mandatory UX load |
+| `agents/bubbles_shared/state-gates.md` | Completion, loop, and state-integrity rules | Compact gate reference |
+| `agents/bubbles_shared/test-fidelity.md` | Planned-behavior and use-case testing rules | Reusable policy module |
+| `agents/bubbles_shared/consumer-trace.md` | Rename/removal dependency-chain rules | Reusable policy module |
+| `agents/bubbles_shared/e2e-regression.md` | Persistent E2E regression rules | Reusable policy module |
+| `agents/bubbles_shared/evidence-rules.md` | Execution evidence and anti-fabrication rules | Reusable policy module |
 | `agents/bubbles_shared/critical-requirements.md` | Top-priority non-negotiable policy set (no fabrication, no stubs/TODOs/fallbacks/defaults, full implementation and validation) | Project-agnostic governance, no project-specific values |
+| `agents/bubbles_shared/quality-gates.md` | Test taxonomy, evidence, and anti-fabrication gates | Single source of quality/completion gate rules |
 | `agents/bubbles_shared/scope-workflow.md` | Universal workflow: DoD templates, phase exit gates, artifact templates, status ceiling, state.json canonical schema | Uses `[cmd]` placeholders |
+| `agents/bubbles_shared/scope-templates.md` | Artifact templates and examples | On-demand template reference |
 | `agents/bubbles_shared/project-config-contract.md` | This file — the cross-project interface contract | Describes the interface, not the implementation |
 | `agents/bubbles_shared/feature-templates.md` | Feature artifact templates | Structure-only, no project references |
 | `agents/bubbles_shared/bug-templates.md` | Bug artifact templates | Structure-only, no project references |
 | `agents/bubbles_shared/docker-lifecycle-governance.md` | Docker lifecycle governance (freshness, cleanup, labeling) | Universal Docker patterns, no project references |
 | `bubbles/agent-ownership.yaml` | Canonical artifact ownership map for specialist delegation | Portable governance data |
-| `bubbles/workflows.yaml` | Workflow modes (24), gates (G001-G032), phases (13), retry policy, priority scoring | Orchestration config, no project references |
+| `bubbles/workflows.yaml` | Workflow modes, gates, phases, retry policy, priority scoring | Orchestration config, no project references |
 | `bubbles/scripts/*.sh` | Governance scripts (artifact lint, done-spec audit, state transition guard, implementation reality scan, agent ownership lint, etc.) | Validate artifact structure, not project-specific content |
 | `instructions/bubbles-*.instructions.md` | Namespaced portable instruction files | Clearly Bubbles-owned while remaining project-agnostic |
 | `skills/bubbles-*/SKILL.md` | Namespaced portable governance skills | Clearly Bubbles-owned while remaining project-agnostic |
@@ -206,9 +233,9 @@ When adopting Bubbles for a new project, populate these files:
 
 ### Agent Classification
 
-**All 24 `bubbles.*.agent.md` files are PORTABLE** — they contain zero project-specific content. Copy unchanged to any project adopting Bubbles.
+**All `bubbles.*.agent.md` files are PORTABLE** — they contain zero project-specific content. Copy unchanged to any project adopting Bubbles.
 
-**All 9 `speckit.*.agent.md` files are PORTABLE** — specification-focused agents with no project dependencies.
+**All `speckit.*.agent.md` files are PORTABLE** — specification-focused agents with no project dependencies.
 
 **`push.agent.md` is PROJECT-SPECIFIC** — it references project-specific pre-push validation and CLI commands. Each project should create its own push agent or document its push workflow in `copilot-instructions.md`.
 

@@ -57,9 +57,9 @@ handoffs:
 - Implement full feature behavior with edge-case handling and complete documentation.
 - If any critical requirement is unmet, status MUST remain `in_progress`/`blocked`.
 
-## Shared Agent Patterns
+## Governance References
 
-**MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
+**MANDATORY:** Start from [design-bootstrap.md](bubbles_shared/design-bootstrap.md). Use [scope-workflow.md](bubbles_shared/scope-workflow.md) and targeted sections of [agent-common.md](bubbles_shared/agent-common.md) only when a gate or artifact rule requires them.
 
 If business requirements are missing or incomplete, invoke `bubbles.analyst` via `runSubagent` before continuing. Do NOT author or backfill analyst-owned sections yourself.
 
@@ -145,27 +145,6 @@ Core requirements:
 5) **Design-only document**
    - No task lists, logs, or execution notes in design.md.
    - Implementation tasks belong in scopes.md/tasks.md.
-
----
-
-## Context Loading (Tiered - MANDATORY)
-
-### Tier 1 (Governance - Always)
-1. `.specify/memory/agents.md`
-2. `.specify/memory/constitution.md`
-3. `.github/copilot-instructions.md`
-
-### Tier 2 (Feature Artifacts - Sources of Truth)
-4. `{FEATURE_DIR}/spec.md` (if present)
-5. `{FEATURE_DIR}/design.md` (if present; update only if asked)
-6. `{FEATURE_DIR}/state.json` (if present)
-
-### Tier 3 (Reference Docs - On Demand)
-8. Project architecture docs (e.g., `docs/ARCHITECTURE.md`)
-9. API contract docs (e.g., `docs/API.md`)
-10. Development standards docs
-11. Operations docs
-12. Any user-provided sources in `$ADDITIONAL_CONTEXT`
 
 ---
 

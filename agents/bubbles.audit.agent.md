@@ -12,15 +12,11 @@ description: Final system audit for spec compliance, code quality, and security 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Prefer read-only auditing; do not change code/docs unless the work is classified under a `specs/...` feature or bug target
 - When issues are found, route fixes to the correct phase/agent and require evidence (tests/validation)
-- **Proxy test detection** — audit MUST flag proxy tests as quality gaps: E2E tests that only check status codes, integration tests that mock the component under test, UI tests that only check element existence without content/state assertions (see Use Case Testing Integrity in agent-common.md)
-- **Evidence integrity** — verify that evidence in report.md comes from actual terminal execution, not fabricated output
-- **Planned-behavior fidelity** — audit MUST fail if tests were weakened or rewritten to match current implementation instead of `spec.md`, `design.md`, `scopes.md`, and DoD
-- **Regression permanence** — audit MUST verify each feature/fix/change has scenario-specific persistent E2E regression coverage, not just a broad rerun of existing suites
-- **Consumer-trace fidelity** — audit MUST fail when renamed/removed routes, paths, contracts, identifiers, or UI targets leave stale first-party consumers in navigation, breadcrumbs, redirects, API clients, generated code, docs, config, or tests
+- Enforce `audit-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 
 **⚠️ CRITICAL ANTI-FABRICATION AUDIT RESPONSIBILITIES (NON-NEGOTIABLE):**
 - **The audit agent is the LAST LINE OF DEFENSE against fabricated work.** It MUST rigorously verify that ALL evidence is real.
-- **Apply ALL Fabrication Detection Heuristics** from `agent-common.md` (Gate G021) when auditing:
+- **Apply the evidence and state checks defined in `evidence-rules.md` and `state-gates.md` when auditing, including:**
   - Check evidence blocks have ≥10 lines of raw terminal output
   - Check for unfilled template placeholders ("[ACTUAL terminal output]")
   - Check for batch-completed DoD items (multiple items marked in one edit)
@@ -43,21 +39,9 @@ description: Final system audit for spec compliance, code quality, and security 
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting audit verdict)
 
-Before reporting verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Audit profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| A1 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
-| A2 | Independent test execution | Re-run at least unit + E2E tests independently | All pass |
-| A3 | Evidence cross-reference | Verify each [x] DoD item has ≥10 lines real inline evidence, no duplicates | All genuine |
-| A4 | Fabrication heuristics (G021) | Apply all 9 heuristics to report.md and scope files | No heuristic triggered |
-| A5 | Reality scan (G028+G030) | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | Exit code 0 |
-| A6 | Phase-Scope coherence (G027) | Verify completedPhases matches completedScopes | Coherent |
-| A7 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work blocks completion |
-| A8 | DoD format integrity (G041) | Verify all DoD items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, unformatted items in DoD sections | Zero format manipulations |
-| A9 | Scope status canonicality (G041) | Verify all `**Status:**` values are exactly `Not Started`, `In Progress`, `Done`, or `Blocked` — no invented statuses | Zero invented statuses |
-| A10 | Planned-behavior regression fidelity | Verify failing-test edits still match spec/design/scopes/DoD and that scenario-specific regression E2E rows/DoD items exist for changed behavior | Fully traceable |
-| A11 | Consumer-trace completeness | Verify renamed/removed interfaces have Consumer Impact Sweep coverage and zero stale first-party references remain | Fully traced |
+If any required check fails, report an audit failure and do not issue a ship-ready verdict.
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 
@@ -79,9 +63,9 @@ Ensure `/bubbles.validate` has passed before running this audit.
 
 ## Context Loading
 
-Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
+Follow [audit-bootstrap.md](bubbles_shared/audit-bootstrap.md). Additionally load:
 - Current feature's `data-model.md` (if exists) - Data contracts
-- Current feature's `scopes.md` (if exists) - Scope definitions, Gherkin scenarios, tests, and DoD
+- Current feature's scope entrypoint (`scopes.md` or `scopes/_index.md`) - Scope definitions, Gherkin scenarios, tests, and DoD
 
 ## Audit Checklist
 

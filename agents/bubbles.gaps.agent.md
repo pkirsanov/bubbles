@@ -413,18 +413,9 @@ Fatal mismatch between design and implementation.
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting gap analysis verdict)
 
-Before reporting the gap analysis verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting the gap analysis verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Gaps profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| GA1 | All gaps resolved or classified | Review gap report | Zero unresolved CRITICAL/HIGH gaps |
-| GA2 | Scope artifact coherence | Every Gherkin scenario has matching Test Plan row AND DoD item | Zero orphan scenarios, zero parity mismatches |
-| GA3 | State coherence | `state.json` status, `completedScopes`, `completedPhases` reflect actual scope statuses | No stale "done" with unchecked DoD |
-| GA4 | Test suite passes | Run full test suite after all fixes | Exit code 0, zero failures |
-| GA5 | No regression | Post-fix test count ≥ pre-fix test count | No newly failing tests |
-| GA6 | Findings artifact update (G031) | Every finding (🟡 PARTIAL / 🔴 MISSING / 🟣 DIVERGENT / 🔵 UNDOCUMENTED / 🟠 PATH_MISMATCH / ⬛ UNTESTED) has a corresponding new Gherkin scenario + Test Plan row + DoD item in scopes.md | Zero findings without artifact updates |
-
-**If ANY check fails → do NOT report GAP_FREE. Fix the issue first.**
+If any required check fails, do not report `GAP_FREE`. Fix the issue first.
 
 ---
 

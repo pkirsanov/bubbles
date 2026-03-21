@@ -49,15 +49,9 @@ handoffs:
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting chaos results)
 
-Before reporting chaos results, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting chaos results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Chaos profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| C1 | Playwright execution evidence | All chaos scenarios have real Playwright/curl output | All have ≥10 lines raw output |
-| C2 | Bug artifact completeness | Every created BUG-NNN directory has all 6 required artifacts | All artifacts present |
-| C3 | Chaos report generated | Structured report with findings by severity (P0-P4) | Report exists |
-
-**If ANY check fails → report issues, do NOT claim chaos round complete.**
+If any required check fails, report issues and do not claim the chaos round is complete.
 
 ## Governance References
 
@@ -549,7 +543,7 @@ The chaos run MUST abort early if any of these conditions are met:
 
 1. Parse `$ARGUMENTS` to resolve `{TARGET_DIR}` (feature or bug directory). If not found after ONE search, STOP and list available folders.
 2. Enforce Work Classification Gate. If bug target, enforce Bug Artifacts Gate.
-3. Load Tier 1 governance docs (max 3 before first action).
+3. Load the minimum chaos baseline from [test-bootstrap.md](bubbles_shared/test-bootstrap.md) and [operating-baseline.md](bubbles_shared/operating-baseline.md) before first action.
 4. Load `{TARGET_DIR}/spec.md` and `{TARGET_DIR}/scopes.md`.
 5. Extract repo-standard commands from `.specify/memory/agents.md`:
 

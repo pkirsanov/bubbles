@@ -70,14 +70,11 @@ handoffs:
 - When a failure is narrow and `microFixes` is not false, route through the smallest viable fix loop before escalating to a broader mode rerun.
 - Mark DoD items `[x]` IMMEDIATELY when validated - never batch
 - Do not accept a failing test change until it has been reconciled against `spec.md`, `design.md`, `scopes.md`, and DoD; fix code to plan unless the plan is corrected first
-- Treat renamed/removed routes, paths, contracts, identifiers, or UI targets as dependency-chain work: require a consumer impact sweep and block completion until stale consumer references are eliminated
-- **Use case testing integrity** — any tests written or run must validate actual user/API consumer scenarios, not internal implementation details (see Use Case Testing Integrity in agent-common.md)
-- **No regression introduction** — after scope changes, verify no previously-passing tests now fail before concluding (see No Regression Introduction in agent-common.md)
-- **Anti-proxy test detection** — flag and rewrite tests that only check status codes, exist-checks, or internal state without verifying user-visible behavior
+- Enforce `execution-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md` when dispatching work.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
-**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). All work real — every test executed in terminal, every DoD item with actual output, every implementation compilable. Never write results without running commands. Evidence ≥10 lines, no templates/narratives.
+**⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **⚠️ Sequential Completion:** Previous scope MUST be fully complete before next scope. Each iteration N fully complete before N+1.
 
@@ -186,7 +183,7 @@ If registry and this file conflict, registry phase/gate policy wins and the conf
 
 ## ⚠️ Loop Guard: Explicit Read Limits (CRITICAL)
 
-Use the Loop Guard from [agent-common.md](bubbles_shared/agent-common.md): max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus required metadata. For ambiguous requests, ask for the target feature instead of searching.
+Use `bubbles/workflows.yaml`, [execution-core.md](bubbles_shared/execution-core.md), and [state-gates.md](bubbles_shared/state-gates.md) as the orchestrator baseline: max 3 reads before action, one search attempt for feature resolution, and read only the feature artifacts plus required metadata. For ambiguous requests, ask for the target feature instead of searching.
 
 ## Key Difference from bubbles.implement
 
@@ -568,20 +565,9 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting iteration results)
 
-Before reporting iteration completion, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting iteration completion, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Iterate profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| IT1 | State transition guard (G023) | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR} --revert-on-fail` | Exit code 0 |
-| IT2 | DoD items verified | `grep -c '^\- \[ \]' {SCOPE_FILE}` | Zero unchecked items |
-| IT3 | Scope statuses Done | `grep -cE 'Status:.*(Not Started\|In Progress)' {SCOPE_FILE}` | Zero non-Done scopes |
-| IT3A | Scope statuses canonical (G041) | Verify all `**Status:**` lines contain only `Not Started`, `In Progress`, `Done`, `Blocked` | Zero invented statuses |
-| IT3B | DoD format integrity (G041) | Verify all DoD list items are `- [ ]` or `- [x]` format — no `- (deferred)`, `- ~~...~~`, etc. | Zero format manipulations |
-| IT4 | Evidence not fabricated | Re-read each [x] item's evidence — ≥10 lines, real command, no duplicates | All genuine |
-| IT5 | Specialist phases complete | Check `state.json` `completedPhases` vs mode requirements | All phases present |
-| IT6 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround' {SCOPE_FILE}` | Zero hits |
-
-**If ANY check fails → do NOT update state.json, do NOT report success. Fix the issue first.**
+If any required check fails, do not update `state.json` or report success. Fix the issue first.
 
 ## Governance References
 

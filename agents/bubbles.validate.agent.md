@@ -16,14 +16,10 @@ handoffs:
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Use only repo-approved commands from `.specify/memory/agents.md`
 - If any changes are needed to fix validation failures, they must be made under a classified `specs/...` feature or bug target
-- Record evidence (commands + exit codes + key output) in the appropriate `report.md` — **evidence MUST come from ACTUAL terminal execution in this session, not fabricated**
-- **Every validation check MUST be actually executed in a terminal** — never claim a check passed without running it
-- **Copy actual terminal output into reports** — never write expected output
-- **Self-check before recording any result**: "Did I run this command? Can I point to the terminal output?"
-- **Regression detection** — compare test results against pre-change baseline; any new failure is a regression to be fixed, not accepted (see No Regression Introduction in agent-common.md)
-- **Use case test quality check** — when reviewing test results, flag proxy tests (status-code-only, assertion-free, mock-heavy) as gaps requiring remediation (see Use Case Testing Integrity in agent-common.md)
+- Record evidence in the appropriate `report.md` using the rules in `evidence-rules.md`
+- Enforce `audit-core.md`, `test-fidelity.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md` during validation
 
-**⚠️ Anti-Fabrication for Validation (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). Run every validation command. Evidence = exact command + exit code + ≥10 lines raw output. Run artifact lint. Verify all DoD items have real evidence.
+**⚠️ Anti-Fabrication for Validation (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **Non-goals:**
 - Inventing ad-hoc commands or bypassing repo workflows
@@ -34,25 +30,13 @@ handoffs:
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting validation results)
 
-Before reporting validation verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting validation verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Validate profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| V1 | ALL governance scripts | Run `state-transition-guard.sh`, `artifact-lint.sh`, `implementation-reality-scan.sh` | All exit code 0 |
-| V2 | Build + lint + test | Run all build/lint/test commands from agents.md | All pass, zero warnings |
-| V3 | Contract verification | Verify API contracts match between backend routes and frontend calls | Zero mismatches |
-| V4 | Docker bundle freshness (UI scopes) | Verify served bundle contains expected feature code | Bundle verified fresh |
-| V5 | Scope/DoD coherence (2D.1) | Gherkin → Test Plan → DoD parity per scope | Zero mismatches |
-| V6 | Implementation-claims match (2D.2) | Every `[x]` DoD item verified: file exists, behavior exists, tests have assertions | Zero false positives |
-| V7 | Code hygiene scan (2D.3) | No mocks/fakes/stubs/defaults/hardcoded data in production code | Zero violations in src |
-| V8 | Test quality (2D.4) | No proxy tests, no skipped tests, no mocked internals in live-system tests | Zero violations |
-| V9 | State coherence (2D.5) | state.json status/completedScopes/completedPhases match actual scope states | Zero inconsistencies |
-
-**If ANY check fails → report validation failure with details.**
+If any required check fails, report validation failure with details.
 
 ## Governance References
 
-**MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
+**MANDATORY:** Start from [audit-bootstrap.md](bubbles_shared/audit-bootstrap.md), then follow [audit-core.md](bubbles_shared/audit-core.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 ## User Input
 
@@ -60,8 +44,8 @@ Optional: Specific validation scope (e.g., "unit-only", "security", "full").
 
 ## Context Loading
 
-Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally load:
-- `{FEATURE_DIR}/scopes.md` - Scope DoD and progress
+Follow [audit-bootstrap.md](bubbles_shared/audit-bootstrap.md). Additionally load:
+- Scope entrypoint (`{FEATURE_DIR}/scopes.md` or `{FEATURE_DIR}/scopes/_index.md`) - Scope DoD and progress
 - `{FEATURE_DIR}/uservalidation.md` - User acceptance checklist
 
 ## Execution Flow

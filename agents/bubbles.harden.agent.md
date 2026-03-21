@@ -93,20 +93,9 @@ Unlike `/bubbles.test` (test-first verification + gap fixing), `/bubbles.gaps` (
 
 ## Agent Completion Validation (Tier 2 — run BEFORE reporting harden verdict)
 
-Before reporting hardening verdict, this agent MUST run Tier 1 universal checks (see agent-common.md → Per-Agent Completion Validation Protocol) PLUS these agent-specific checks:
+Before reporting hardening verdict, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Harden profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
-| # | Check | Command / Action | Pass Criteria |
-|---|-------|-----------------|---------------|
-| H1 | Full test suite re-run | Re-run ALL test types | Exit code 0, zero failures, zero skipped |
-| H2 | Skip marker scan | `grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(' [test-files]` | Zero matches |
-| H3 | Warning scan | Review build + lint + test output | Zero warnings |
-| H4 | Round-trip verification | Every save/load feature has write → read-back → assert test | All verified |
-| H5 | E2E substance | Every E2E test verifies actual behavior, not just status codes | All substantive |
-| H6 | Baseline comparison | Post-hardening test counts ≥ pre-hardening | More tests, same/fewer failures |
-| H7 | Scope artifact coherence | Every Gherkin scenario has matching Test Plan row AND DoD item; counts match | Zero orphan scenarios, zero parity mismatches |
-| H8 | State coherence | `state.json` status, `completedScopes`, `completedPhases` reflect actual scope statuses | No stale "done" with unchecked DoD |
-| H9 | Findings artifact update (G031) | Every finding (⚠️ PARTIAL / ❌ FAILED) has a corresponding new Gherkin scenario + Test Plan row + DoD item in scopes.md | Zero findings without artifact updates |
-| H10 | Zero deferral language (G040) | `grep -ciE 'deferred\|defer to\|future scope\|future work\|follow-up\|followup\|out of scope\|not in scope\|will address later\|revisit later\|separate ticket\|punt\|postpone\|skip for now\|not implemented yet\|placeholder\|temporary workaround'` on scope files | Zero hits — deferred work is incomplete work |
+If any required check fails, report the hardening failure and do not claim the target is hardened.
 
 **Verdicts:** `🔒 HARDENED` / `⚠️ PARTIALLY_HARDENED` / `🛑 NOT_HARDENED`
 
