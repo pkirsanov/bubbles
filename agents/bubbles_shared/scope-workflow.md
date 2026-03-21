@@ -65,6 +65,8 @@ The **implementation reality scan** (`implementation-reality-scan.sh`) includes 
 - Frontend API call absence (hooks/services with zero fetch/axios calls)
 - Default/fallback patterns (`unwrap_or`, `unwrap_or_default`, `|| default`, `?? fallback`, `getOrElse`)
 - Prohibited simulation helpers in production code
+- Live-system tests that use request interception or canned backend responses
+- Handler/endpoint files that expose a public surface but show no real delegation or execution depth
 
 ---
 
@@ -213,9 +215,26 @@ Use these rules for every scope status change.
    - Scope DoD items in its `scope.md` (or `scopes.md`) are all checked `[x]`
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
    - Scope entry in `state.json` is updated in `scopeProgress` and `completedScopes`
+  - `completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries
    - **Zero deferral language exists in scope artifacts** (Gate G040 — "deferred", "future scope", "follow-up", "out of scope", "will address later", "punt", "postpone", "skip for now", "not implemented yet", "placeholder", "temporary workaround" are ALL blocking)
 3. If evidence is missing, contradictory, a required test type is absent, or deferral language is present, scope status must remain `In Progress`.
 4. Spec status cannot move to `done` until ALL scopes are `Done` and `completedScopes` contains all scope IDs.
+
+## Live-Stack Test Classification (ABSOLUTE)
+
+Use these rules when writing or reviewing the Test Plan.
+
+1. Rows labeled `integration`, `e2e-api`, `e2e-ui`, or described as live-stack MUST exercise the real running system.
+2. Tests in those categories MUST NOT intercept internal requests or inject canned responses.
+3. If a test uses `route`, `intercept`, `msw`, `nock`, `wiremock`, `responses`, or equivalent request interception, it is MOCKED and MUST be classified as `unit`, `functional`, or `ui-unit` instead.
+4. If reclassification removes the last real test for a required live category, creating the real test becomes blocking scope work.
+5. Scope artifacts and report text MUST describe mocked tests honestly. Never call them live-stack after reclassification.
+
+Recommended verification command:
+
+```bash
+grep -rn 'page\.route\|context\.route\|route(\|intercept(\|cy\.intercept\|msw\|nock\|wiremock\|responses' [live-system-test-files]
+```
 
 **Status sync requirements:**
 

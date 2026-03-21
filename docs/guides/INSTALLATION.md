@@ -82,7 +82,7 @@ The bootstrapped files contain `TODO` markers where you need to fill in project-
 - Add project-specific forbidden commands
 - Add project-specific required patterns
 
-Tip: Use the generated `BUBBLES_CROSS_PROJECT_SETUP.md` checklist to track what's been customized.
+Tip: Track project-specific customization in your repository's standard docs or `.specify/memory/` files.
 
 ---
 

@@ -85,8 +85,6 @@ With `--bootstrap`, the installer goes beyond the shared framework files and sca
    - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
    - `.specify/memory/constitution.md` — project governance principles
    - `.specify/memory/agents.md` — command registry (agents resolve all commands from here)
-   - `.github/docs/BUBBLES_CROSS_PROJECT_SETUP.md` — setup checklist
-   - `.github/docs/BUBBLES_SETUP_SOURCES.md` — source registry for bootstrap refresh
 3. **Creates** the `specs/` directory for feature/bug specs
 4. **Never overwrites** existing files — safe to re-run
 
@@ -139,9 +137,6 @@ Use `--agents-only` if you want to skip the portable shared instructions and gov
 ├── copilot-instructions.md              # Project policies & commands
 ├── instructions/
 │   └── terminal-discipline.instructions.md  # CLI discipline
-└── docs/
-    ├── BUBBLES_CROSS_PROJECT_SETUP.md   # Setup checklist
-    └── BUBBLES_SETUP_SOURCES.md         # Bootstrap source registry
 .specify/memory/
 ├── constitution.md                      # Project governance
 └── agents.md                            # Command registry

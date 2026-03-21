@@ -3,7 +3,7 @@
 
 > **This document defines the interface between the Bubbles agent framework (project-agnostic) and any specific project that uses Bubbles.** Every project MUST supply the values defined here. Bubbles agents MUST read these values via indirection — never hardcode project-specific details.
 >
-> **Companion docs:** [BUBBLES_CROSS_PROJECT_SETUP.md](../../docs/BUBBLES_CROSS_PROJECT_SETUP.md) for full setup guide; [agent-common.md](agent-common.md) for universal governance; [scope-workflow.md](scope-workflow.md) for workflow templates.
+> **Companion docs:** Use repository-specific setup guidance if present; see [agent-common.md](agent-common.md) for universal governance and [scope-workflow.md](scope-workflow.md) for workflow templates.
 
 ---
 

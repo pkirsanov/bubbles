@@ -126,7 +126,7 @@ Follow policy compliance in [agent-common.md](bubbles_shared/agent-common.md) an
 
 ## Loop Guard (MANDATORY)
 
-Use the Loop Guard rules in [agent-common.md](bubbles_shared/agent-common.md) with these doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, and no duplicate reads. Use `.github/docs/BUBBLES_STANDARD_DOCS.md` as the authoritative inventory and do not hunt for missing files.
+Use the Loop Guard rules in [agent-common.md](bubbles_shared/agent-common.md) with these doc-specific limits: max 3 docs per tier, max 2 consecutive reads before action, and no duplicate reads. Use the repo's actual standard docs inventory (`docs/*.md` plus any existing project governance docs) and do not assume `.github/docs/BUBBLES_*.md` files exist.
 
 ---
 
@@ -145,13 +145,14 @@ Minimum todo items:
 
 ## Standard Docs List (Source of Truth)
 
-Use the repo’s authoritative standard docs inventory:
+Use the repo’s actual standard docs:
 
-- `.github/docs/BUBBLES_STANDARD_DOCS.md`
+- top-level `docs/*.md`
+- any project governance docs explicitly referenced by the repo
 
 Rules:
-- Do NOT hardcode `docs/*.md` filenames in this agent.
-- If docs drift (added/removed), update `.github/docs/BUBBLES_STANDARD_DOCS.md` first.
+- Do NOT hardcode a stale `.github/docs/BUBBLES_*.md` inventory file in this agent.
+- If docs drift (added/removed), update the agent references that enumerate standard docs.
 
 ---
 
@@ -173,7 +174,7 @@ Rules:
 
 ### Tier 3 (Standard Docs - Targets to Validate/Update)
 
-9. Use `.github/docs/BUBBLES_STANDARD_DOCS.md` to determine which standard docs exist.
+9. Inventory `docs/*.md` and any project-specific standard docs that actually exist.
 10. Load only the specific doc(s) required for the requested review scope (avoid bulk reads).
 
 ### User-provided sources (highest priority)

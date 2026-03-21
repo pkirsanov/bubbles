@@ -525,6 +525,10 @@ state_completed_scopes_count="$({
 
 if [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
   fail "Resolved scope artifacts report $done_scopes Done scope(s) but state.json completedScopes is EMPTY — state.json integrity failure"
+elif [[ "$done_scopes" -ne "$state_completed_scopes_count" ]]; then
+  fail "completedScopes count ($state_completed_scopes_count) does not match artifact Done scope count ($done_scopes) — state.json integrity failure"
+else
+  pass "completedScopes count matches artifact Done scope count ($done_scopes)"
 fi
 echo ""
 
@@ -1020,7 +1024,7 @@ if [[ -n "$state_workflow_mode" ]]; then
         # Cross-check: completedScopes count should match done_scopes count
         if [[ "$state_completed_scopes_count" -gt 0 ]] && [[ "$done_scopes" -gt 0 ]]; then
           if [[ "$state_completed_scopes_count" -ne "$done_scopes" ]]; then
-            warn "completedScopes count ($state_completed_scopes_count) does not match artifact Done count ($done_scopes)"
+            fail "completedScopes count ($state_completed_scopes_count) does not match artifact Done count ($done_scopes) — PHASE-SCOPE INCOHERENCE (Gate G027)"
           else
             pass "completedScopes ($state_completed_scopes_count) matches artifact Done scopes ($done_scopes)"
           fi
@@ -1123,6 +1127,7 @@ echo ""
 # =============================================================================
 echo "--- Check 18: Deferral Language Scan (Gate G036) ---"
 deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|placeholder|temporary workaround'
+deferral_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred|no issues deferred or skipped'
 total_deferral_hits=0
 
 for scope_path in "${scope_files[@]}"; do
@@ -1134,7 +1139,7 @@ for scope_path in "${scope_files[@]}"; do
     awk '
       /^```/ || /^    ```/ {in_block = !in_block; next}
       !in_block {print}
-    ' "$scope_path" | grep -ciE "$deferral_pattern" || true
+    ' "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
   } || true)"
 
   if [[ "$deferral_hits" -gt 0 ]]; then
@@ -1154,7 +1159,7 @@ for scope_path in "${scope_files[@]}"; do
     done < <(awk '
       /^```/ || /^    ```/ {in_block = !in_block; next}
       !in_block {print}
-    ' "$scope_path" | grep -iE "$deferral_pattern" || true)
+    ' "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" || true)
   fi
 done
 
@@ -1165,7 +1170,7 @@ for rpt_path in "${report_files[@]}"; do
     awk '
       /^```/ || /^    ```/ {in_block = !in_block; next}
       !in_block {print}
-    ' "$rpt_path" | grep -ciE "$deferral_pattern" || true
+    ' "$rpt_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
   } || true)"
 
   if [[ "$report_deferral_hits" -gt 0 ]]; then

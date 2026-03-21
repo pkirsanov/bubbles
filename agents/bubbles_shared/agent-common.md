@@ -23,6 +23,9 @@ This file is ~2,400 lines of comprehensive governance. To reduce context overhea
 | Red/green proof | `Rule 6: Red-Green Traceability` |
 | Scope sizing | `Rule 7: Scope Size Discipline` |
 | Micro-fix loops | `Rule 8: Micro-Fix Containment Loops` |
+| Live-stack test rules | `Rule 9: Live-Stack Test Authenticity` |
+| Handler depth rules | `Rule 10: Execution-Depth Requirement` |
+| State integrity rules | `Rule 11: State Claim Integrity` |
 | Test taxonomy | `Canonical Test Taxonomy` |
 | Mock restrictions | `Real Implementation & No-Mock Testing Reality Policy` |
 | Status transitions | `Status Transition Summary` |
@@ -272,6 +275,57 @@ Forbidden behavior:
 - escalating to a broad rewrite when the failure is localized
 - moving to a new phase without proving the local failure is resolved
 
+### Rule 9: Live-Stack Test Authenticity and Classification (ABSOLUTE)
+
+**A test is only `integration`, `e2e-api`, `e2e-ui`, or otherwise "live-stack" if it talks to the real stack without internal request interception.**
+
+Blocking rules:
+- live-system categories MUST NOT intercept, stub, reroute, or short-circuit internal HTTP/RPC traffic
+- any test using request interception or canned backend responses is MOCKED by definition and MUST be reclassified to a mocked category (`unit`, `functional`, or `ui-unit`)
+- DoD items or report text MUST NOT claim "live stack", "real stack", or equivalent if the corresponding test file uses interception
+- if a required live-system category is reclassified out of existence, the missing real test MUST be created before the scope can be Done
+
+Common interception signals include:
+- `page.route`, `context.route`, `route(`, `intercept(`, `cy.intercept`
+- `msw`, `nock`, `wiremock`, `responses`, `httpretty`
+- inline mock servers or fixtures that replace the system under test rather than external dependencies
+
+Verification heuristic:
+- scan all tests labeled `integration`, `e2e-api`, `e2e-ui`, or described as live-stack
+- if request interception is present, reclassify the test and fill any resulting live-test gap
+
+### Rule 10: Execution-Depth Requirement for Handlers, Endpoints, and Workflows (ABSOLUTE)
+
+**An endpoint, handler, controller, route, RPC method, or workflow step is NOT complete merely because it returns a structured success payload.**
+
+Real implementation requires at least one of these:
+- delegation to domain, service, repository, client, workflow, or execution code
+- a real datastore query or command
+- a real upstream call to the component that owns the computation or side effect
+
+Blocking signals for stubbed implementation:
+- response bodies built from literal arrays, literal objects, or status-only payloads that stand in for real work
+- accepted inputs that are unused, discarded, or underscore-prefixed while the handler still claims success
+- files that expose routes or handlers but contain zero delegation/query/execution signals
+- placeholder status values such as `ready`, `ok`, or `success` standing in for actual computation results
+
+If the public surface exists but the execution depth is fake, the work is NOT implemented. That is a blocking implementation reality failure, not a partial completion.
+
+### Rule 11: State Claim Integrity (ABSOLUTE)
+
+**`state.json` is derived state, never aspirational state.**
+
+Required behavior:
+- `status`, `completedScopes`, and `completedPhases` MUST be derived from the actual scope artifacts in the current session
+- `completedScopes` MUST match the set of scopes that are actually marked `Done`; count mismatches are blocking, not warnings
+- implementation lifecycle claims in `completedPhases` MUST NOT get ahead of actual completed scopes
+- any stale `done` status, stale `completedScopes`, or stale `completedPhases` entry is fabrication once discovered
+
+Required repair behavior:
+- if artifacts and `state.json` disagree, update `state.json` to the lower truth immediately
+- never preserve a higher completion claim "for history"
+- guard-script failures caused by state drift must be fixed before any other promotion step
+
 ### Enforcement Summary
 
 ```
@@ -284,6 +338,9 @@ Forbidden behavior:
 ⛔ Tests only cover happy path → scope stays "In Progress"
 ⛔ Tests mock internal code → scope stays "In Progress"
 ⛔ Tests use fake data stores → scope stays "In Progress"
+⛔ Live-stack tests use request interception → RECLASSIFY + fill the real-test gap
+⛔ Handler returns structured placeholder success without real delegation → scope stays "In Progress"
+⛔ state.json completion claims exceed artifact reality → REVERT state immediately
 ```
 
 ---
@@ -311,6 +368,9 @@ Each agent's completion validation has two tiers:
 | V9 | No defaults/fallbacks in code | `grep -rn "unwrap_or\|unwrap_or_default\|getOrDefault\|?? \"\|\|\| \"" [src-files]` (exclude test dirs) | Zero matches in production code |
 | V10 | Red/green traceability | For changed behavior, verify failing evidence exists before passing evidence | Both RED and GREEN evidence present when applicable |
 | V11 | Scope size discipline | Verify scopes/DoD items stay isolated and respect optional time budgets if declared | No oversized or mixed-purpose scope without justification |
+| V12 | Live-stack test authenticity | Scan live-system tests for interception/stubbing patterns and reconcile labels with reality | Zero mocked tests mislabeled as live-system |
+| V13 | Execution depth | Verify handlers/controllers/routes delegate to real domain/service/store/workflow code | Zero status-only or literal-data stub surfaces |
+| V14 | State claim integrity | Cross-check `status`, `completedScopes`, and `completedPhases` against actual scope artifacts | Zero stale or inflated completion claims |
 
 **Tier 2 — Agent-Specific Checks (defined per agent — see individual agent files):**
 
@@ -2011,7 +2071,7 @@ When tests fail:
 
 **Primary mechanism:** Per-feature `{FEATURE_DIR}/state.json` — used by iterate, implement, and bug agents to track scope progress, current phase, and resume state.
 
-**Cross-session coordination (optional):** Agents may update `.specify/memory/bubbles.session.json` for global session state. See [BUBBLES_SESSIONS.md](../../docs/BUBBLES_SESSIONS.md) for schema.
+**Cross-session coordination (optional):** Agents may update `.specify/memory/bubbles.session.json` for global session state when the repository defines that file and schema.
 
 ---
 

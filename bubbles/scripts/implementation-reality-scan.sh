@@ -11,10 +11,12 @@
 #
 # Scans:
 #   1. Backend stub patterns (hardcoded vecs, fake/mock/stub functions)
-#   2. Frontend fake data (getSimulationData, mock imports, hardcoded arrays)
-#   3. Frontend API call absence (hooks/services with zero fetch/axios calls)
-#   4. Prohibited simulation helpers in production (seeded_pick/seeded_range)
-#   5. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
+#   2. Handler/endpoint execution-depth failures (public surface, no real delegation)
+#   3. Frontend fake data (getSimulationData, mock imports, hardcoded arrays)
+#   4. Frontend API call absence (hooks/services with zero fetch/axios calls)
+#   5. Prohibited simulation helpers in production (seeded_pick/seeded_range)
+#   6. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
+#   7. Live-system tests using request interception/mocked backends
 #
 # Usage:
 #   bash bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
@@ -145,6 +147,17 @@ add_impl_file() {
 }
 
 impl_files=()
+test_files=()
+
+add_test_file() {
+  local path="$1"
+  for existing in "${test_files[@]+"${test_files[@]}"}"; do
+    if [[ "$existing" == "$path" ]]; then
+      return
+    fi
+  done
+  test_files+=("$path")
+}
 
 # Batch-extract all backtick-wrapped file paths from each scope file using
 # a single grep pass per file (avoids per-line subprocess overhead on large
@@ -160,7 +173,35 @@ for scope_file in "${scope_files[@]}"; do
       add_impl_file "$resolved"
     fi
   done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
+
+  while IFS= read -r raw_test_path; do
+    test_path="${raw_test_path//\`/}"
+    test_path="${test_path%%::*}"
+    resolved_test="$(resolve_path "$test_path")"
+    if [[ -n "$resolved_test" ]]; then
+      add_test_file "$resolved_test"
+    fi
+  done < <(grep -oE '`[^`]+(spec|test)[^`]*\.(rs|ts|tsx|js|jsx|py|go|java|dart)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
 done
+
+is_live_system_test_file() {
+  local test_path="$1"
+  local base_name
+  base_name="$(basename "$test_path")"
+
+  for scope_file in "${scope_files[@]}"; do
+    matched_lines="$(grep -F "$test_path" "$scope_file" 2>/dev/null || true)"
+    if [[ -z "$matched_lines" ]]; then
+      matched_lines="$(grep -F "$base_name" "$scope_file" 2>/dev/null || true)"
+    fi
+
+    if echo "$matched_lines" | grep -Eiq 'integration|e2e-api|e2e-ui|live-stack|live stack|live-system|live system|real-stack|real stack'; then
+      return 0
+    fi
+  done
+
+  return 1
+}
 
 # =============================================================================
 # Fallback: If scopes yielded zero files, try design.md
@@ -302,6 +343,55 @@ for impl_file in "${impl_files[@]}"; do
         fi
       done < <(grep -nE 'vec!\[' "$impl_file" 2>/dev/null | grep -vE '^\s*(//|/\*|\*)' | grep -vE 'vec!\[\s*\]' || true)
     fi
+  fi
+done
+echo ""
+
+# =============================================================================
+# SCAN 1B: Handler / Endpoint Execution Depth
+# =============================================================================
+# Detects public handler/endpoint/controller files that return shaped success
+# payloads but show no evidence of real delegation/query/execution.
+# =============================================================================
+echo "--- Scan 1B: Handler / Endpoint Execution Depth ---"
+
+HANDLER_FILE_PATTERNS='handler|handlers|controller|controllers|route|routes|endpoint|endpoints|api|grpc'
+HANDLER_SKIP_PATTERNS='health|metrics|readiness|liveness'
+DELEGATION_PATTERNS='service\.|repo\.|repository\.|client\.|query\(|execute\(|dispatch\(|fetch\(|send\(|call\(|invoke\(|workflow\.|usecase\.|domain\.|storage\.|db\.|sql|grpc|httpClient|apiClient|axios\.|requests\.'
+STATUS_ONLY_PATTERNS='["'"'']status["'"''][[:space:]]*:[[:space:]]*["'"''](ready|ok|success)["'"'']|status[[:space:]]*[:=][[:space:]]*["'"''](ready|ok|success)["'"'']|json!\(|serde_json::json|return[[:space:]]+.*(Ok|Some)\('
+UNUSED_PARAM_PATTERNS='fn[[:space:]].*[(,][[:space:]]*_[A-Za-z0-9_]+|function[[:space:]].*[(,][[:space:]]*_[A-Za-z0-9_]+|def[[:space:]].*[(,][[:space:]]*_[A-Za-z0-9_]+'
+
+for impl_file in "${impl_files[@]}"; do
+  file_ext="${impl_file##*.}"
+
+  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" ]]; then
+    if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__|e2e|playwright)'; then
+      continue
+    fi
+
+    if ! echo "$impl_file" | grep -qiE "$HANDLER_FILE_PATTERNS"; then
+      continue
+    fi
+
+    if echo "$impl_file" | grep -qiE "$HANDLER_SKIP_PATTERNS"; then
+      continue
+    fi
+
+    delegation_count="$(grep -cE "$DELEGATION_PATTERNS" "$impl_file" 2>/dev/null || true)"
+    status_only_count="$(grep -cE "$STATUS_ONLY_PATTERNS" "$impl_file" 2>/dev/null || true)"
+
+    if [[ "$delegation_count" -eq 0 && "$status_only_count" -gt 0 ]]; then
+      violation "$impl_file" "0" "EXECUTION_DEPTH" "Handler-like file exposes success/response construction but shows zero delegation/query/execution signals"
+    fi
+
+    while IFS=: read -r line_num matched_line; do
+      if [[ -z "$line_num" ]]; then
+        continue
+      fi
+      if [[ "$delegation_count" -eq 0 ]] && [[ "$status_only_count" -gt 0 ]]; then
+        violation "$impl_file" "$line_num" "UNUSED_HANDLER_INPUT" "$matched_line"
+      fi
+    done < <(grep -nE "$UNUSED_PARAM_PATTERNS" "$impl_file" 2>/dev/null || true)
   fi
 done
 echo ""
@@ -525,6 +615,56 @@ done
 echo ""
 
 # =============================================================================
+# SCAN 6: Live-System Test Interception Detection
+# =============================================================================
+# Detects tests labeled as integration/e2e/live-stack that intercept requests
+# or inject mocked backend responses, which reclassifies them out of live
+# system categories.
+# =============================================================================
+echo "--- Scan 6: Live-System Test Interception ---"
+
+LIVE_TEST_INTERCEPT_PATTERNS=(
+  'page\.route'
+  'context\.route'
+  'cy\.intercept'
+  'intercept\('
+  'msw'
+  'nock'
+  'wiremock'
+  'responses\.'
+  'httpretty'
+)
+
+live_test_files_found=0
+for test_file in "${test_files[@]}"; do
+  if [[ ! -f "$test_file" ]]; then
+    continue
+  fi
+
+  if ! is_live_system_test_file "$test_file"; then
+    continue
+  fi
+
+  live_test_files_found=$((live_test_files_found + 1))
+  for pattern in "${LIVE_TEST_INTERCEPT_PATTERNS[@]}"; do
+    while IFS=: read -r line_num matched_line; do
+      if [[ -z "$line_num" ]]; then
+        continue
+      fi
+      if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*)'; then
+        continue
+      fi
+      violation "$test_file" "$line_num" "LIVE_TEST_INTERCEPT" "$matched_line"
+    done < <(grep -nE "$pattern" "$test_file" 2>/dev/null || true)
+  done
+done
+
+if [[ "$live_test_files_found" -eq 0 ]]; then
+  info "No live-system test files referenced in scope artifacts for interception scan"
+fi
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"
@@ -546,12 +686,14 @@ if [[ "$violations" -gt 0 ]]; then
   echo ""
   echo "Common fixes:"
   echo "  - Replace hardcoded Vec/array returns with real DB queries"
+  echo "  - Replace status-only handlers with real service/domain/store delegation"
   echo "  - Replace getSimulationData() with real API fetch() calls"
   echo "  - Replace simulate_*() in handlers with real service calls"
   echo "  - Add real fetch/axios/grpc calls to data hooks"
   echo "  - Replace unwrap_or()/unwrap_or_default() with ? and fail-fast"
   echo "  - Replace || 'default' / ?? 'fallback' with explicit missing-config errors"
   echo "  - Replace os.getenv('K', 'default') with fail-fast on missing env"
+  echo "  - Reclassify intercepted tests out of live-stack categories and add real integration/E2E coverage"
   exit 1
 else
   if [[ "$warnings" -gt 0 ]]; then

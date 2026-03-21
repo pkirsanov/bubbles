@@ -40,7 +40,7 @@ gates:
     description: All mode-required gates pass in current session.
   G013:
     name: priority_selection_gate
-    description: Highest-value next work item is selected with explicit rationale. Enforced by bubbles.workflow agent behavior (value-first scoring output), not by script. Agent MUST emit selection rationale per BUBBLES_WORKFLOWS.md template.
+    description: Highest-value next work item is selected with explicit rationale. Enforced by bubbles.workflow agent behavior (value-first scoring output), not by script. Agent MUST emit selection rationale per the bubbles.workflow output requirements.
   G014:
     name: bootstrap_readiness_gate
     description: For new/underspecified work, design/spec/scopes are ready before implementation.
@@ -70,7 +70,7 @@ gates:
     description: ALL specialist agents required by the mode (test, docs, validate, audit, chaos) MUST have executed and returned verifiable results before spec promotion. Missing specialist execution is a BLOCKING failure.
   G023:
     name: state_transition_guard_gate
-    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, and artifact lint in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
+    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, completedScopes/completedPhases integrity, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, and artifact lint in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
   G024:
     name: all_scopes_done_before_spec_done_gate
     description: ABSOLUTE BLOCKING gate. A spec CANNOT be marked "done" in state.json until EVERY scope in scopes.md has status "Done". Zero scopes with "Not Started", "In Progress", or "Blocked" are allowed. This is a hard dependency — no override, no workaround, no exception. Agents MUST verify by running grep for non-Done scope statuses and confirming zero matches before writing "done" to state.json.
@@ -85,7 +85,7 @@ gates:
     description: ABSOLUTE BLOCKING gate. completedPhases claiming implementation phases (implement, test) MUST have matching non-empty completedScopes AND Done scope artifacts. Claiming 6-7 lifecycle phases complete while completedScopes is empty or partial = FABRICATION. Guard script Check 15 enforces mechanically.
   G028:
     name: implementation_reality_scan_gate
-    description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Gateway handlers returning vec![...] with literal data instead of real service calls, frontend hooks calling getSimulationData() or containing zero fetch() calls = BLOCKING. Enforced by implementation-reality-scan.sh via guard script Check 16.
+    description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Public handlers/endpoints/workflows returning literal collections, status-only payloads, or placeholder success without real delegation are BLOCKING. Frontend hooks calling getSimulationData() or containing zero fetch() calls are BLOCKING. Live-system tests using request interception are BLOCKING unless reclassified out of live categories. Enforced by implementation-reality-scan.sh via guard script Check 16.
   G029:
     name: integration_completeness_gate
     description: Every implemented artifact (endpoint, library, page, service, migration, proto) MUST be wired into the running system with at least one real consumer. Backend endpoints consumed by frontends or documented external-only. Libraries imported by consumers. Frontend using real APIs (no stubs/mocks/hardcoded data). Verified by grep-based consumer checks.

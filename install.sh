@@ -284,14 +284,6 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
       info "Migrated: scripts/$(basename "$old_script") → bubbles/scripts/${base}"
     fi
   done
-  # Migrate old generated docs
-  for old_doc in BUBBLES_CROSS_PROJECT_SETUP.md BUBBLES_SETUP_SOURCES.md; do
-    if [[ -f "${TARGET}/docs/${old_doc}" ]]; then
-      rm "${TARGET}/docs/${old_doc}"
-      info "Removed old: docs/${old_doc} (regenerated in bubbles/docs/)"
-    fi
-  done
-
   # ── Scaffold: copilot-instructions.md ─────────────────────────────
   if [[ ! -f "${TARGET}/copilot-instructions.md" ]]; then
     if [[ -f "$TEMPLATE_DIR/copilot-instructions.md.tmpl" ]]; then

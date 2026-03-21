@@ -158,17 +158,15 @@ Thumbs.db
 
 Do not invent defaults/fallback rules. If required governance documents are missing, stop and report the issue.
 
-Standard docs are inventoried in `.github/docs/BUBBLES_STANDARD_DOCS.md` (maintained by this agent).
+Use the repo's actual standard docs (`docs/*.md` and project governance docs that exist in the repo) as the source of truth. Do not rely on `.github/docs/BUBBLES_*.md` inventory files.
 
-### Step 5b: Sync Bubbles Standard Docs (MANDATORY)
+### Step 5b: Sync Standard Doc References (MANDATORY)
 
 When this agent runs, it must also keep the Bubbles command suite aligned with the project’s current standard docs:
 
 1. Inventory the repo’s top-level `docs/*.md` files.
-2. Update `.github/docs/BUBBLES_STANDARD_DOCS.md` to match that inventory (sorted, stable).
-3. Sync Bubbles agents/prompts to reference this authoritative list:
-  - Ensure `.github/docs/BUBBLES_PROMPTS.md` “Core Standard Docs” section reflects the same list (or points to `BUBBLES_STANDARD_DOCS.md`).
-  - Ensure every `.github/agents/bubbles.*.agent.md` that has a “Project References” / “Core standard docs” / similar section is updated to include the current set.
+2. Update Bubbles agents/prompts that enumerate “standard docs” so they reference the actual repo docs or another maintained source of truth that exists.
+3. Remove stale references to non-existent `.github/docs/BUBBLES_*.md` inventory files.
 
 This prevents drift when new standard docs are added to `docs/`.
 
