@@ -166,7 +166,7 @@ gates:
       spec.md belong to bubbles.ux, design.md belongs to bubbles.design, and
       scopes.md/report.md/uservalidation.md planning structure belongs to
       bubbles.plan. Diagnostic agents such as bubbles.validate, bubbles.harden,
-      bubbles.gaps, bubbles.stabilize, bubbles.security, and bubbles.review MUST
+      bubbles.gaps, bubbles.stabilize, bubbles.security, bubbles.code-review, and bubbles.system-review MUST
       route required artifact changes to the owning specialist instead of editing
       foreign-owned artifacts directly. Enforced by agent-ownership-lint.sh.
   G043:

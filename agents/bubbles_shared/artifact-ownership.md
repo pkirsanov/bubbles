@@ -15,7 +15,7 @@ Artifact authorship is a hard boundary, not a suggestion.
 
 ## Read-Only Diagnostic Agents
 
-`bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, and `bubbles.review` are diagnostic and routing agents. They MAY identify missing scenarios, tests, contracts, or DoD items, but they MUST NOT directly author `spec.md`, `design.md`, `scopes.md`, or `uservalidation.md`.
+`bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.code-review`, and `bubbles.system-review` are diagnostic and routing agents. They MAY identify missing scenarios, tests, contracts, or DoD items, but they MUST NOT directly author `spec.md`, `design.md`, `scopes.md`, or `uservalidation.md`.
 
 ## Foreign-Artifact Rule
 

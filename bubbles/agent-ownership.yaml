@@ -18,7 +18,8 @@ artifacts:
       - bubbles.gaps
       - bubbles.stabilize
       - bubbles.security
-      - bubbles.review
+      - bubbles.code-review
+      - bubbles.system-review
   design.md:
     owner:
       - bubbles.design
@@ -50,7 +51,8 @@ diagnosticAgents:
   - bubbles.gaps
   - bubbles.stabilize
   - bubbles.security
-  - bubbles.review
+  - bubbles.code-review
+  - bubbles.system-review
 
 routingRules:
   missingBusinessRequirements: bubbles.analyst

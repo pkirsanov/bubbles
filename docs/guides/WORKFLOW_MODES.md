@@ -4,6 +4,16 @@
 
 Workflow modes define **which phases run** and **in what order** for a given piece of work. Choose the mode that matches what you're doing.
 
+## Review Is Not A Workflow Mode
+
+`bubbles.code-review` and `bubbles.system-review` are intentionally agents, not workflow modes.
+
+Use them when you want diagnosis, prioritization, or assessment without entering the gated delivery lifecycle.
+
+Use workflow modes after review when you already know you want follow-through work such as planning, implementation, testing, validation, audit, or docs synchronization.
+
+Current assessment: **no dedicated new review workflow modes are needed yet**. Existing modes such as `improve-existing`, `stabilize-to-doc`, `harden-gaps-to-doc`, and `product-to-delivery` already cover the execution side once review findings are clear.
+
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
 - `socratic: true` with `socraticQuestions: <1-5>` enables a bounded clarification loop before discovery/bootstrap work.
 - `gitIsolation: true` opts into isolated branch/worktree setup when repo policy allows it.

@@ -42,7 +42,8 @@ Common source modules:
 |------|----------|--------------------|
 | `bubbles.workflow` | run end-to-end spec delivery or resume a workflow | `bubbles/workflows.yaml`, `scope-workflow.md`, `state-gates.md` |
 | `bubbles.iterate` | advance the next eligible scope in an existing spec | `scope-workflow.md`, `completion-governance.md`, `quality-gates.md` |
-| `bubbles.review` | run a code-first review before deciding what to spec or fix | `bubbles/review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
+| `bubbles.code-review` | run an engineering-only code review before deciding what to fix | `bubbles/code-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
+| `bubbles.system-review` | run a holistic feature/component/system review before deciding what to spec, fix, or streamline | `bubbles/system-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
 
 ## Specialists
 

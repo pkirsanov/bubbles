@@ -1,0 +1,10 @@
+<!-- icon-name: private-dancer-spotlight -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Private Dancer spotlight icon">
+  <path d="M12 10h16l-8 10-10 28h20l10-28z" />
+  <path d="M38 24c6-5 11-7 15-7" />
+  <path d="M34 30c7-1 14 1 20 6" />
+  <path d="M29 34c8 3 15 8 19 14" />
+  <circle cx="44" cy="38" r="8" />
+  <path d="M39 38c2-3 8-3 10 0-2 3-8 3-10 0z" />
+  <circle cx="44" cy="38" r="2" fill="#f8f9fa" stroke="none" />
+</svg>

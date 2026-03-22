@@ -24,7 +24,7 @@ Use this recipe when any of these are true:
 → /bubbles.workflow  011-037 mode: harden-to-doc
 
 /bubbles.super  review this repo before we decide what to spec
-→ /bubbles.review  scope: full-repo output: summary-doc
+→ /bubbles.system-review  scope: full-system output: summary-doc
 ```
 
 ## Ask For A Prompt Sequence
