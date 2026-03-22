@@ -31,6 +31,8 @@ See what's in progress, what's done, what's remaining. Then:
 /bubbles.iterate  continue 042-catalog-assistant
 ```
 
+If the next executable action is unclear, `bubbles.iterate` can now run a narrow `bubbles.code-review` or `bubbles.system-review` first, then continue the same iteration with planning or execution.
+
 ## If the Previous Session Saved a Handoff
 
 Check `.specify/memory/bubbles.session.json` — the handoff agent saves context there.

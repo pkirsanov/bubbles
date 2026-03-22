@@ -136,6 +136,8 @@ Continue scope-by-scope implementation within an existing spec.
 
 **Use when:** Picking up where you left off.
 
+If the next executable action is ambiguous, `bubbles.iterate` may run `bubbles.code-review` or `bubbles.system-review` as a narrow diagnostic precursor, then continue into planning or execution. Review is not part of the normal iterate phase chain.
+
 ```
 /bubbles.workflow  iterate for 042-catalog-assistant
 ```

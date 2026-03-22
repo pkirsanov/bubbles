@@ -19,7 +19,7 @@
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
-| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving without drama. | *"I can help with that."* |
+| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I can help with that."* |
 | <img src="../icons/green-bastard-outline.svg" width="32"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
 | <img src="../icons/private-dancer-spotlight.svg" width="32"> | `bubbles.system-review` | Private Dancer | Holistic system reviewer. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"You gotta watch the whole show, boys."* |
 
