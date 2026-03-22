@@ -57,7 +57,9 @@ Use these sections as the single source of truth for agent-specific Tier 2 compl
 | V2 | Build, lint, and tests pass | Zero blocking failures |
 | V3 | Contracts verified | Frontend/backend or spec/runtime contracts match |
 | V4 | Freshness checks pass for UI scopes | Served bundle/build is current |
-| V5 | Scope/DoD coherence verified | Gherkin, Test Plan, DoD, and state align |
+| V5 | Scope/DoD coherence verified | Required artifacts are compliant and Gherkin, Test Plan, DoD, and state align |
+| V6 | Planned-behavior traceability verified | Every spec/Gherkin scenario maps to concrete non-proxy tests and executed evidence |
+| V7 | Routing and re-validation closure enforced | Missing artifacts, tests, or implementation claims are routed to owners and validation does not pass until rerun checks succeed |
 
 ## Audit
 

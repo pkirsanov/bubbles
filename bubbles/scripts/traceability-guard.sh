@@ -1,0 +1,353 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/fun-mode.sh"
+
+feature_dir="${1:-}"
+
+if [[ -z "$feature_dir" ]]; then
+  echo "ERROR: missing feature directory argument"
+  echo "Usage: bash bubbles/scripts/traceability-guard.sh specs/<NNN-feature-name>"
+  exit 2
+fi
+
+detect_repo_root() {
+  if [[ "$SCRIPT_DIR" == */.github/bubbles/scripts ]]; then
+    (cd "$SCRIPT_DIR/../../.." && pwd)
+  else
+    (cd "$SCRIPT_DIR/../.." && pwd)
+  fi
+}
+
+repo_root="$(detect_repo_root)"
+
+if [[ "$feature_dir" != /* ]]; then
+  feature_dir="$repo_root/$feature_dir"
+fi
+
+if [[ ! -d "$feature_dir" ]]; then
+  echo "ERROR: feature directory not found: $feature_dir"
+  exit 2
+fi
+
+failures=0
+warnings=0
+scenario_total=0
+row_total=0
+mapped_total=0
+file_reference_total=0
+report_reference_total=0
+
+fail() {
+  local message="$1"
+  echo "❌ $message"
+  fun_fail
+  failures=$((failures + 1))
+}
+
+warn() {
+  local message="$1"
+  echo "⚠️  $message"
+  fun_warn
+  warnings=$((warnings + 1))
+}
+
+pass() {
+  local message="$1"
+  echo "✅ $message"
+}
+
+info() {
+  local message="$1"
+  echo "ℹ️  $message"
+}
+
+json_first_string() {
+  local key="$1"
+  local file="$2"
+  if [[ ! -f "$file" ]]; then
+    return 0
+  fi
+
+  grep -Eo '"'"$key"'"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" \
+    | head -n 1 \
+    | sed -E 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
+}
+
+detect_scope_layout() {
+  local state_layout=""
+  state_layout="$(json_first_string "scopeLayout" "$feature_dir/state.json" || true)"
+  if [[ "$state_layout" == "per-scope-directory" ]] || [[ -f "$feature_dir/scopes/_index.md" ]]; then
+    echo "per-scope-directory"
+  else
+    echo "single-file"
+  fi
+}
+
+normalize_text() {
+  local value="$1"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
+  printf '%s' "$value"
+}
+
+significant_words() {
+  local text="$1"
+  local normalized
+  local word
+  local output=()
+
+  normalized="$(normalize_text "$text")"
+  for word in $normalized; do
+    if [[ ${#word} -lt 4 ]]; then
+      continue
+    fi
+    case "$word" in
+      given|when|then|with|from|into|onto|that|this|those|these|user|users|system|should|must|have|has|been|were|will|after|before|while|where|their|there|about|only|each)
+        continue
+        ;;
+    esac
+    output+=("$word")
+  done
+
+  printf '%s\n' "${output[@]}"
+}
+
+extract_section() {
+  local file_path="$1"
+  local heading_regex="$2"
+  awk -v heading_regex="$heading_regex" '
+    $0 ~ heading_regex {in_section=1; next}
+    /^### / {if (in_section) exit}
+    in_section {print}
+  ' "$file_path"
+}
+
+extract_test_rows() {
+  local scope_path="$1"
+  local section
+  section="$(extract_section "$scope_path" '^### Test Plan')"
+  printf '%s\n' "$section" \
+    | grep -E '^\|' \
+    | grep -Ev '^\|[[:space:]-:|]+\|$' \
+    | grep -Evi '^\|[[:space:]]*test type[[:space:]]*\|'
+}
+
+extract_scenarios() {
+  local scope_path="$1"
+  grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//'
+}
+
+extract_trace_ids() {
+  local value="$1"
+  printf '%s\n' "$value" | grep -Eo '(SCN|AC|FR|UC)-[A-Za-z0-9_-]+' || true
+}
+
+extract_path_candidates() {
+  local value="$1"
+  printf '%s\n' "$value" | grep -Eo '([A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.[A-Za-z0-9_.-]+' || true
+}
+
+path_exists() {
+  local candidate="$1"
+  local scope_dir="$2"
+
+  if [[ -f "$repo_root/$candidate" ]]; then
+    return 0
+  fi
+
+  if [[ -f "$scope_dir/$candidate" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+report_mentions_path() {
+  local report_path="$1"
+  local candidate="$2"
+
+  if [[ ! -f "$report_path" ]]; then
+    return 1
+  fi
+
+  grep -Fq "$candidate" "$report_path"
+}
+
+scenario_matches_row() {
+  local scenario="$1"
+  local row="$2"
+  local scenario_id
+  local row_id
+  local words
+  local word
+  local row_norm
+  local score=0
+  local threshold=0
+  local word_count=0
+
+  scenario_id="$(extract_trace_ids "$scenario" | head -n 1 || true)"
+  if [[ -n "$scenario_id" ]]; then
+    while IFS= read -r row_id; do
+      if [[ -n "$row_id" ]] && [[ "$row_id" == "$scenario_id" ]]; then
+        return 0
+      fi
+    done < <(extract_trace_ids "$row")
+  fi
+
+  row_norm="$(normalize_text "$row")"
+  words="$(significant_words "$scenario")"
+  if [[ -z "$words" ]]; then
+    [[ "$row_norm" == *"$(normalize_text "$scenario")"* ]]
+    return
+  fi
+
+  while IFS= read -r word; do
+    [[ -n "$word" ]] || continue
+    word_count=$((word_count + 1))
+    if [[ " $row_norm " == *" $word "* ]]; then
+      score=$((score + 1))
+    fi
+  done <<< "$words"
+
+  if [[ "$word_count" -le 1 ]]; then
+    threshold=1
+  else
+    threshold=2
+  fi
+
+  [[ "$score" -ge "$threshold" ]]
+}
+
+scope_layout="$(detect_scope_layout)"
+scope_files=()
+
+if [[ "$scope_layout" == "per-scope-directory" ]]; then
+  while IFS= read -r scope_path; do
+    scope_files+=("$scope_path")
+  done < <(find "$feature_dir/scopes" -mindepth 2 -maxdepth 2 -type f -name 'scope.md' | sort)
+else
+  scope_files+=("$feature_dir/scopes.md")
+fi
+
+echo "============================================================"
+echo "  BUBBLES TRACEABILITY GUARD"
+echo "  Feature: $feature_dir"
+echo "  Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+echo "============================================================"
+fun_banner
+echo ""
+
+for scope_path in "${scope_files[@]}"; do
+  if [[ ! -f "$scope_path" ]]; then
+    fail "Missing scope file: ${scope_path#$feature_dir/}"
+    continue
+  fi
+
+  scope_label="${scope_path#$feature_dir/}"
+  scope_dir="$(dirname "$scope_path")"
+  if [[ "$scope_layout" == "per-scope-directory" ]]; then
+    report_path="$scope_dir/report.md"
+  else
+    report_path="$feature_dir/report.md"
+  fi
+
+  info "Checking traceability for $scope_label"
+
+  scenarios="$(extract_scenarios "$scope_path")"
+  test_rows="$(extract_test_rows "$scope_path")"
+
+  if [[ -z "$scenarios" ]]; then
+    fail "$scope_label has no Gherkin scenarios to trace"
+    continue
+  fi
+
+  if [[ -z "$test_rows" ]]; then
+    fail "$scope_label has no concrete Test Plan rows to trace"
+    continue
+  fi
+
+  scope_scenario_count=0
+  scope_row_count=0
+  while IFS= read -r _row; do
+    [[ -n "$_row" ]] || continue
+    scope_row_count=$((scope_row_count + 1))
+  done <<< "$test_rows"
+
+  row_total=$((row_total + scope_row_count))
+
+  while IFS= read -r scenario; do
+    [[ -n "$scenario" ]] || continue
+    scope_scenario_count=$((scope_scenario_count + 1))
+    scenario_total=$((scenario_total + 1))
+
+    matched_row=""
+    while IFS= read -r row; do
+      [[ -n "$row" ]] || continue
+      if scenario_matches_row "$scenario" "$row"; then
+        matched_row="$row"
+        break
+      fi
+    done <<< "$test_rows"
+
+    if [[ -z "$matched_row" ]]; then
+      fail "$scope_label scenario has no traceable Test Plan row: $scenario"
+      continue
+    fi
+
+    mapped_total=$((mapped_total + 1))
+    pass "$scope_label scenario mapped to Test Plan row: $scenario"
+
+    path_candidates="$(extract_path_candidates "$matched_row")"
+    if [[ -z "$path_candidates" ]]; then
+      fail "$scope_label mapped row has no concrete test file path: $scenario"
+      continue
+    fi
+
+    existing_path=""
+    while IFS= read -r candidate; do
+      [[ -n "$candidate" ]] || continue
+      if path_exists "$candidate" "$scope_dir"; then
+        existing_path="$candidate"
+        break
+      fi
+    done <<< "$path_candidates"
+
+    if [[ -z "$existing_path" ]]; then
+      fail "$scope_label mapped row references no existing concrete test file: $scenario"
+      continue
+    fi
+
+    file_reference_total=$((file_reference_total + 1))
+    pass "$scope_label scenario maps to concrete test file: $existing_path"
+
+    if report_mentions_path "$report_path" "$existing_path"; then
+      report_reference_total=$((report_reference_total + 1))
+      pass "$scope_label report references concrete test evidence: $existing_path"
+    else
+      fail "$scope_label report is missing evidence reference for concrete test file: $existing_path"
+    fi
+  done <<< "$scenarios"
+
+  info "$scope_label summary: scenarios=$scope_scenario_count test_rows=$scope_row_count"
+  echo ""
+done
+
+echo "--- Traceability Summary ---"
+info "Scenarios checked: $scenario_total"
+info "Test rows checked: $row_total"
+info "Scenario-to-row mappings: $mapped_total"
+info "Concrete test file references: $file_reference_total"
+info "Report evidence references: $report_reference_total"
+
+if [[ "$failures" -gt 0 ]]; then
+  echo ""
+  echo "RESULT: FAILED ($failures failures, $warnings warnings)"
+  exit 1
+fi
+
+echo ""
+echo "RESULT: PASSED ($warnings warnings)"
+exit 0
