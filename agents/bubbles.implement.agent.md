@@ -28,6 +28,8 @@ handoffs:
 - If planned behavior is wrong or incomplete, route the owning artifact update first and only then align test + implementation
 - Keep failure handling inside micro-fix loops: fix the smallest broken command/file/symbol first, rerun that narrow validation, then expand outward.
 - Enforce `execution-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
+- Do NOT repair undocumented work ad hoc. If the implementation gap is not already represented in real planning artifacts, route back to the planning owners before changing code.
+- Do NOT relabel TODOs, stubs, placeholders, or fake values as softer wording to satisfy a scope. Either implement the behavior fully or push the owning artifact update first.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
@@ -105,7 +107,9 @@ Before execution, validate:
 2. **Planning artifacts exist**
    - `{FEATURE_DIR}/spec.md` (required)
    - `{FEATURE_DIR}/design.md` (required for implementation)
+   - `{FEATURE_DIR}/scopes.md` must contain substantive scopes, not empty/skeletal placeholders
    - If `design.md` is missing or stale: invoke `bubbles.design` via `runSubagent` with `mode: non-interactive`, then continue only after design ownership is satisfied
+   - If any required artifact is empty, skeletal, or placeholder-only: STOP implementation and invoke the owning planning agent(s) first
 
 If pre-requisites fail after non-interactive design attempt: produce validation report and STOP.
 
@@ -145,6 +149,7 @@ For each scope N:
 - Confirm tests exist that validate scenarios exactly
 - Confirm the scope includes a scenario-specific persistent E2E regression test entry for every new/changed/fixed behavior; if missing, route the planning update before claiming completion
 - If the scope renames/removes any route, path, contract, identifier, or UI target, confirm a Consumer Impact Sweep exists and enumerate every affected consumer flow before implementation starts
+- If discovered code debt or stubbed behavior falls outside the current artifact ownership, stop the code edit path and route to `bubbles.plan`/`bubbles.design`/`bubbles.workflow` as appropriate before proceeding
 - Identify the targeted RED proof for each new or fixed behavior before implementation begins (failing test, failing reproduction, or explicit gap assertion)
 - If UI changes exist, confirm UI scenario matrix is defined and mapped to e2e-ui tests
 - **If scope modifies dashboard/frontend code:** note that Docker Build Freshness Policy applies (see `agent-common.md` → Docker Build Freshness Policy). After implementation, rebuild with `--no-cache` and verify via Gate 9.

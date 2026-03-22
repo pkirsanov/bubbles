@@ -71,7 +71,17 @@
     - No reduced-scope tests presented as full validation.
     - No incomplete docs for completed work; documentation must match shipped behavior.
 
-14. **Fixture Ownership And Shared-State Isolation**
+14. **Planning-First Delivery**
+   - Implementation, bug fixing, hardening, stabilization, and gap-closure work MUST be anchored to real feature or bug artifacts before completion work proceeds.
+   - If `spec.md`, `design.md`, `scopes.md`, or required sibling artifacts are missing, empty, or placeholder-only, agents MUST route to the owning planning agents first instead of improvising implementation.
+   - Empty feature directories, partial artifact sets, or artifact files containing only skeletal headers are workflow failures, not permission to continue unplanned work.
+
+15. **No Cosmetic Relabeling Of Incomplete Work**
+   - Renaming a `TODO`, stub, placeholder, fake value, or incomplete branch to softer language does NOT count as progress.
+   - Rewording incomplete work as `placeholder`, `future improvement`, `deferred`, `follow-up`, `temporary`, `compat shim`, or similar is forbidden unless the work is also moved into real tracked planning artifacts owned by the correct agent.
+   - If incomplete behavior is discovered without owning artifacts, agents MUST create or update the corresponding feature/bug planning instead of disguising the incompleteness.
+
+16. **Fixture Ownership And Shared-State Isolation**
    - Live-system work that creates or mutates state MUST use agent-owned fixtures with unique, traceable ownership.
    - Agents MUST NOT mutate shared baseline data by selecting the first existing resource from a list response.
    - Host-level defaults, inherited configs, global settings, and similar cross-scenario state are protected surfaces; mutate them only with an explicit baseline snapshot and a verified restore path.
@@ -123,5 +133,7 @@ Before reporting completion, all answers must be **YES**:
 7. Are there zero TODOs, stubs, fake/sample verification artifacts, defaults, and fallbacks masking failures?
 8. Is the implementation full-featured, edge-case complete, high-quality, and documented without shortcuts?
 9. Did all live-state mutations stay isolated to owned fixtures or get fully restored before completion?
+10. Was all implementation/hardening work backed by real feature or bug artifacts rather than empty or missing planning files?
+11. Were any TODOs, stubs, or placeholders resolved by real implementation or tracked planning instead of cosmetic relabeling?
 
 If any answer is **NO**, completion is prohibited.

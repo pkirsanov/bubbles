@@ -68,6 +68,8 @@ handoffs:
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
 - **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
+- **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts.
+- **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
 - Require gate results before promoting spec status.
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
 - If `socratic: true`, run a targeted discovery loop before bootstrap or implementation work: ask at most `socraticQuestions` high-signal questions, record the answers into artifacts, then resume autonomous execution.
@@ -157,6 +159,18 @@ Supported options:
 - `triggerAgents: chaos,harden,gaps,simplify,stabilize,validate,improve,security` (stochastic-quality-sweep only, comma-separated subset of trigger pool)
 - `iterations: <N>` (iterate mode only, default: 1)
 - `type: tests|docs|stabilize|simplify|gaps|harden|implement|refactor|feature|bugfix|analyze|improve|security|chaos` (iterate mode only — filter work type)
+
+## Planning-First Recovery Protocol (MANDATORY)
+
+When execution discovers undocumented or improperly documented work, the workflow agent MUST repair the planning layer before continuing:
+
+1. **Missing feature/bug folder:** classify the work item and create the correct feature or bug artifact set via the owning planning agents.
+2. **Existing folder but missing artifacts:** invoke the owner chain to create the missing artifacts instead of letting downstream agents continue on partial docs.
+3. **Existing artifacts but empty/skeletal content:** treat as missing planning, not as valid prerequisites.
+4. **Placeholder/TODO/stub code uncovered during execution:** if the behavior is not already owned by an active feature/bug spec, promote it into one before allowing implementation or hardening to claim progress.
+5. **UI-bearing work:** when the promoted work has user-facing behavior, include `bubbles.ux` in the planning chain before design/plan.
+
+This protocol is mandatory for feature work, bug work, hardening, gaps, stabilize, improve-existing, and iterate-triggered execution. The orchestrator must fix the planning deficit itself rather than stopping with advice to the user.
 
 ---
 
