@@ -174,6 +174,7 @@ User: "why did my workflow stop after validate?"
 | "Set up a brand new project" | 1. `/bubbles.super doctor --heal` - Verify installation<br>2. `/bubbles.super install hooks` - Set up git hooks<br>3. `/bubbles.commands` - Generate command registry |
 | "Resume yesterday's work" | 1. `/bubbles.status` - Check progress<br>2. `/bubbles.workflow mode: resume-only` - Resume from saved state |
 | "Stabilize flaky infrastructure" | 1. `/bubbles.workflow <feature> mode: stabilize-to-doc` - Full stability pipeline |
+| "Run repeated stabilize sweeps" | 1. `/bubbles.workflow stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10` - Randomize spec selection, limit probes to stabilize |
 | "Security review before shipping" | 1. `/bubbles.security <feature>` - Threat modeling + dependency scan + code review<br>2. `/bubbles.workflow <feature> mode: full-delivery` - Fix and ship |
 
 #### Intent-to-Agent Mapping
@@ -200,6 +201,7 @@ User: "why did my workflow stop after validate?"
 | "handoff", "end of day", "context" | `bubbles.handoff` | Session handoff |
 | "security", "vulnerabilities", "OWASP" | `bubbles.security` | Security specialist |
 | "stabilize", "performance", "ops" | `bubbles.stabilize` | Or `bubbles.workflow` with `mode: stabilize-to-doc` |
+| "N rounds of stabilize/harden/gaps/chaos/validate/security/improve" | `bubbles.workflow` with `mode: stochastic-quality-sweep` | Set `triggerAgents` to the named specialist and `maxRounds: N` |
 | "simplify", "cleanup", "complexity" | `bubbles.simplify` | Post-implementation cleanup |
 | "cinematic", "premium UI", "design system" | `bubbles.cinematic-designer` | Premium UI design |
 | "clarify", "ambiguous", "unclear" | `bubbles.clarify` | Spec/design clarification |

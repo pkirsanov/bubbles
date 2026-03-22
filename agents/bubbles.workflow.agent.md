@@ -309,12 +309,14 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
    - If no spec reference found → no spec targets (auto-discover for iterate/stochastic modes, or STOP and ask for single-spec modes)
 
 2. **Match user intent to mode** using the Intent-to-Mode Mapping table below.
-   **⚠️ PRIORITY RULE — Specific Mode Beats Meta-Mode (MANDATORY):**
-   When the user's request contains BOTH a meta-mode keyword ("iterate", "N rounds", "N iterations") AND a specific mode keyword ("improve", "chaos", "harden", "gaps", "simplify", "stabilize", "test", "analyst"), resolve to the SPECIFIC mode — never the `iterate` meta-mode. The iteration/round count becomes the batch count or spec repetition for that specific mode.
-   - "iterate 10 rounds of improve/analyst" → `improve-existing` (batch across specs, NOT `iterate`)
-   - "do 5 iterations of chaos" → `chaos-hardening` (batch, NOT `iterate`)
-   - "3 rounds of harden" → `harden-to-doc` (batch, NOT `iterate`)
+   **⚠️ PRIORITY RULE — Round-Based Specialist Requests Use Stochastic Sweep (MANDATORY):**
+   When the user's request contains BOTH round/iteration language ("iterate", "N rounds", "N iterations") AND a stochastic-sweep trigger keyword ("improve", "analyst", "chaos", "harden", "gaps", "simplify", "stabilize", "validate", "security"), resolve to `stochastic-quality-sweep` with `triggerAgents` limited to that specialist and `maxRounds` set from the request. This preserves true round semantics. Deterministic single-mode workflows (`improve-existing`, `chaos-hardening`, `harden-to-doc`, `gaps-to-doc`, `stabilize-to-doc`) remain the default for non-round requests.
+   - "iterate 10 rounds of improve/analyst" → `stochastic-quality-sweep` (`triggerAgents: improve`, `maxRounds: 10`)
+   - "do 5 iterations of chaos" → `stochastic-quality-sweep` (`triggerAgents: chaos`, `maxRounds: 5`)
+   - "3 rounds of harden" → `stochastic-quality-sweep` (`triggerAgents: harden`, `maxRounds: 3`)
+   - "iterate 10 rounds of stabilize" → `stochastic-quality-sweep` (`triggerAgents: stabilize`, `maxRounds: 10`)
    - "iterate" alone (no specific mode keyword) → `iterate` (meta-mode — picks priority work)
+   - "stabilize this feature" (no rounds language) → `stabilize-to-doc`
    The `iterate` meta-mode is ONLY for "pick whatever is highest priority" with no specific angle.
 
 3. **Extract additional parameters** from the request:
@@ -353,13 +355,15 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
 | "iterate" (ALONE — no specific mode keyword), "keep working", "pick next work", "work on whatever is priority" | `iterate` | auto-discover specs |
 | "work on everything for a while", "spend time improving" (no specific angle) | `iterate` | `minutes: N` from context |
 | "do N iterations" (ALONE — no specific mode keyword), "run N rounds of work" | `iterate` | `iterations: N` |
-| "iterate N rounds of improve/analyst" or "N iterations of improve" | `improve-existing` | batch across specs (see Priority Rule above) |
-| "iterate N rounds of chaos" or "N iterations of chaos testing" | `chaos-hardening` | batch across specs |
-| "iterate N rounds of harden" or "N rounds of hardening" | `harden-to-doc` | batch across specs |
-| "iterate N rounds of gaps" or "find and fix gaps N times" | `gaps-to-doc` | batch across specs |
+| "iterate N rounds of improve/analyst" or "N iterations of improve" | `stochastic-quality-sweep` | `triggerAgents: improve`, `maxRounds: N` |
+| "iterate N rounds of chaos" or "N iterations of chaos testing" | `stochastic-quality-sweep` | `triggerAgents: chaos`, `maxRounds: N` |
+| "iterate N rounds of harden" or "N rounds of hardening" | `stochastic-quality-sweep` | `triggerAgents: harden`, `maxRounds: N` |
+| "iterate N rounds of gaps" or "find and fix gaps N times" | `stochastic-quality-sweep` | `triggerAgents: gaps`, `maxRounds: N` |
 | "iterate N rounds of simplify" or "N passes of cleanup" | `stochastic-quality-sweep` | `triggerAgents: simplify`, `maxRounds: N` |
 | "stabilize", "stability", "performance hardening", "ops hardening" | `stabilize-to-doc` | spec from context |
-| "iterate N rounds of stabilize" or "N passes of stabilization" | `stabilize-to-doc` | batch across specs (see Priority Rule above) |
+| "iterate N rounds of stabilize" or "N passes of stabilization" | `stochastic-quality-sweep` | `triggerAgents: stabilize`, `maxRounds: N` |
+| "iterate N rounds of validate" or "N passes of validation" | `stochastic-quality-sweep` | `triggerAgents: validate`, `maxRounds: N` |
+| "iterate N rounds of security" or "N passes of security review" | `stochastic-quality-sweep` | `triggerAgents: security`, `maxRounds: N` |
 | No clear intent match | `iterate` | `iterations: 1` (safest default — picks highest-priority work) |
 
 #### Compound Intent Resolution
@@ -374,9 +378,9 @@ When the user's request combines multiple intents, resolve to the MOST COMPREHEN
 | "build the feature and test it" | `full-delivery` (includes test phase) |
 | "analyze, design, and implement" | `product-to-delivery` |
 | "keep iterating on chaos and improvements for 2 hours" | `iterate` with `minutes: 120`, `type` not set (iterate picks chaos/improve as needed) |
-| "iterate 10 rounds of improve/analyst on business specs" | `improve-existing` with batch across target specs (Priority Rule — specific mode beats meta-mode) |
-| "run 5 iterations of chaos across all features" | `chaos-hardening` with batch across target specs |
-| "do 3 rounds of hardening on specs 11-37" | `harden-to-doc` with specs 011-037, batch |
+| "iterate 10 rounds of improve/analyst on business specs" | `stochastic-quality-sweep` with `triggerAgents: improve`, `maxRounds: 10`, business-spec filter |
+| "run 5 iterations of chaos across all features" | `stochastic-quality-sweep` with `triggerAgents: chaos`, `maxRounds: 5` |
+| "do 3 rounds of hardening on specs 11-37" | `stochastic-quality-sweep` with `triggerAgents: harden`, `maxRounds: 3`, specs 011-037 |
 | "iterate gaps and improve" | `iterate` with `type` not set (mixed intents, let iterate pick per-round) |
 
 #### Examples of Natural Language Resolution

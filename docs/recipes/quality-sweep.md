@@ -48,6 +48,14 @@ Don't know what to check? Let the system randomly pick:
 /bubbles.workflow  stochastic-quality-sweep
 ```
 
+For repeated passes from one specialist angle, constrain the trigger pool instead of using a deterministic batch mode:
+
+```
+/bubbles.workflow  stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10
+```
+
+Use that pattern for requests like "do 10 rounds of stabilize" or similar single-specialist sweeps. Those are round-based stochastic passes, not `stabilize-to-doc` or other deterministic spec-batch workflows.
+
 Like bottle kids — you never know where they'll hit, but they always find something.
 
 ## Individual Quality Tools

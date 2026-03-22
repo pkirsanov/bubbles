@@ -241,6 +241,7 @@ All agents accept natural language. You don't need to know the exact mode or par
 | You Type | Agent Understands |
 |----------|-------------------|
 | `/bubbles.workflow  improve the booking feature to be competitive` | mode: improve-existing, spec: booking |
+| `/bubbles.workflow  do 10 rounds of stabilize on booking` | mode: stochastic-quality-sweep, triggerAgents: stabilize, maxRounds: 10, spec: booking |
 | `/bubbles.code-review  do an engineering sweep on the gateway` | profile: engineering-sweep, scope: service:gateway |
 | `/bubbles.system-review  review the booking feature as a user` | mode: full, scope: feature:booking |
 | `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |

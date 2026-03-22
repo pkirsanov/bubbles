@@ -188,6 +188,14 @@ Random quality checks across the codebase. Like bottle kids — you never know w
 
 **Use when:** Periodic maintenance. Trust but verify.
 
+When the request is round-based and specialist-specific, keep the round semantics by constraining the sweep instead of switching to a deterministic batch mode.
+
+```
+/bubbles.workflow  stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10
+```
+
+Use that pattern for prompts like "do 10 rounds of stabilize", "5 iterations of chaos", or similar repeated specialist passes.
+
 ---
 
 ## Focused Modes
@@ -243,6 +251,8 @@ stabilize → test → validate → docs
 ```
 
 **Use when:** Infrastructure/stability work.
+
+Use this for direct stability work requests without round language. If the user asks for repeated rounds of stabilize, prefer `stochastic-quality-sweep` with `triggerAgents: stabilize` and `maxRounds: N`.
 
 ### <img src="../../icons/cyrus-sunglasses.svg" width="20"> improve-existing
 
