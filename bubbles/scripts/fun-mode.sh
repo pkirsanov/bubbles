@@ -35,6 +35,7 @@ declare -A _FUN_MESSAGES=(
   [regression_clean]="Steve French is purrin'. No regressions, boys."
   [regression_found]="Something's prowlin' around in the code, boys."
   [spec_conflict]="Steve French found another cougar's territory. Two specs, same route."
+  [recap]="So basically what happened was..."
   [security_vuln]="Safety... always ON."
   [docs_updated]="Know what I'm sayin'? It's documented."
   [deferral_detected]="You can't just NOT do things, Corey!"

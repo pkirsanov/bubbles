@@ -71,6 +71,7 @@
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
+| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Looks at the camera and tells you what just happened this session. | *"So basically what happened was..."* |
 | <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="28"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
@@ -115,6 +116,7 @@
 | `sunnyvale used-to-be-a-vet` | `bubbles.create-skill` | *"I used to be a vet, you know."* |
 | `sunnyvale true` | `bubbles.commands` | *"True."* |
 | `sunnyvale ill-do-whatever` | `bubbles.iterate` | *"I'll do whatever you need, Julian."* |
+| `sunnyvale catch-me-up` | `bubbles.recap` | *"So basically what happened was..."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 
 ---
@@ -326,6 +328,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | Check progress (narrative) | `/bubbles.status --explain` |
 | Quick session recap | `/bubbles.recap` |
 | Update documentation | `/bubbles.docs` |
+| End of session | `/bubbles.handoff` |
 | End of session | `/bubbles.handoff` |
 | Resume tomorrow | `/bubbles.workflow  resume` |
 

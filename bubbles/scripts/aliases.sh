@@ -55,6 +55,7 @@ declare -A _AGENT_ALIASES=(
   [true]="bubbles.commands"
   [ill-do-whatever]="bubbles.iterate"
   [cant-just-slap]="bubbles.ux"
+  [catch-me-up]="bubbles.recap"
 )
 
 declare -A _AGENT_QUOTES=(
@@ -94,6 +95,7 @@ declare -A _AGENT_QUOTES=(
   [true]="True."
   [ill-do-whatever]="I'll do whatever you need, Julian."
   [cant-just-slap]="You can't just slap things together and call it a home, Ricky."
+  [catch-me-up]="So basically what happened was..."
 )
 
 # ── Agent alias notes (special behavior) ────────────────────────────
