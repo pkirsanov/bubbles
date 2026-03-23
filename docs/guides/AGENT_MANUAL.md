@@ -76,6 +76,7 @@ Common source modules:
 | `bubbles.stabilize` | fix flakiness, environment instability, or infrastructure reliability issues | `quality-gates.md`, `execution-ops.md` |
 | `bubbles.security` | run security-oriented findings and follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
 | `bubbles.simplify` | reduce over-engineering and simplify changed code | `implement-bootstrap.md`, `operating-baseline.md` |
+| `bubbles.regression` | detect cross-spec conflicts, test baseline regressions, coverage decreases, and design contradictions | `e2e-regression.md`, `quality-gates.md` |
 | `bubbles.cinematic-designer` | produce premium design-system or high-polish UI output | prompt-specific guidance plus shared governance index |
 
 ## Utilities

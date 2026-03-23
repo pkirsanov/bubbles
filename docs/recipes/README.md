@@ -41,6 +41,8 @@ Optional execution tags you can append to many workflow commands:
 | [Review A Feature Or System](system-review.md) | "I want a holistic review before deciding what to fix, streamline, or spec" |
 | [Review First, Then Improve](review-then-improve.md) | "I want to assess an existing area before choosing the right improvement workflow" |
 | [Quality Sweep](quality-sweep.md) | "I want to improve code quality across a feature" |
+| [Regression Check](regression-check.md) | "I need to make sure new changes didn't break existing features" |
+| [Post-Implementation Hardening](post-impl-hardening.md) | "I want code cleaned up, stable, secure, and regression-free before shipping" |
 | [Chaos Testing](chaos-testing.md) | "I need to break things to find weaknesses" |
 | [Security Review](security-review.md) | "I need to check for security vulnerabilities" |
 

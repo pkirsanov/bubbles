@@ -37,6 +37,7 @@ declare -A _AGENT_ALIASES=(
   [have-a-good-one]="bubbles.handoff"
   [skid-row]="bubbles.cinematic-designer"
   [mans-gotta-eat]="bubbles.validate"
+  [somethings-prowlin]="bubbles.regression"
 )
 
 declare -A _AGENT_QUOTES=(

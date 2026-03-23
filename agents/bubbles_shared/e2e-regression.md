@@ -7,3 +7,20 @@ Purpose: canonical source for regression permanence requirements.
 - A broad rerun of existing suites is not enough by itself.
 - UI changes require user-visible assertions; API changes require consumer-visible behavior checks.
 - Rename/removal work requires consumer-facing regression coverage, not just producer-surface checks.
+
+## Cross-Spec Regression (Gates G044, G045, G046)
+
+The `bubbles.regression` agent (Steve French) enforces cross-feature regression prevention:
+
+- **G044 (regression baseline):** Test baseline snapshot before/after implementation — any previously-passing test that now fails is a REGRESSION.
+- **G045 (cross-spec regression):** Tests from DONE specs must be re-executed after changes to verify no cross-feature interference.
+- **G046 (spec conflict detection):** New specs scanned for route collisions, shared table mutations, contradictory business rules, and API contract conflicts against existing specs.
+
+## Enforcement
+
+The `regression` phase runs after `test` and before `simplify` in all delivery modes:
+```
+implement → test → regression → simplify → stabilize → security → docs → ...
+```
+
+This ensures regressions are caught at the earliest possible point after code is verified.

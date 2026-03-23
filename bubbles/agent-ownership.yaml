@@ -18,6 +18,7 @@ artifacts:
       - bubbles.gaps
       - bubbles.stabilize
       - bubbles.security
+      - bubbles.regression
       - bubbles.code-review
       - bubbles.system-review
   design.md:
@@ -41,6 +42,7 @@ artifacts:
       - bubbles.gaps
       - bubbles.stabilize
       - bubbles.security
+      - bubbles.regression
   uservalidation.md:
     owner:
       - bubbles.plan
@@ -51,6 +53,7 @@ diagnosticAgents:
   - bubbles.gaps
   - bubbles.stabilize
   - bubbles.security
+  - bubbles.regression
   - bubbles.code-review
   - bubbles.system-review
 

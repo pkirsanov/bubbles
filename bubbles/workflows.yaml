@@ -179,6 +179,35 @@ gates:
       remain across navigation, breadcrumbs, redirects, API clients, generated
       clients, docs, config, deep links, and tests. Planning artifacts MUST
       include a Consumer Impact Sweep plus consumer-facing regression coverage.
+  G044:
+    name: regression_baseline_gate
+    description: >-
+      BLOCKING gate. Before implementation starts, a test baseline snapshot
+      (total tests, pass count, fail count, skip count per category) MUST be
+      captured. After implementation + test phases, the FULL test suite MUST
+      be rerun and compared against the baseline. Gate fails if any
+      previously-passing test now fails or total pass count decreased.
+      Evidence: before/after comparison table recorded in report.md.
+      Enforced by regression-baseline-guard.sh.
+  G045:
+    name: cross_spec_regression_gate
+    description: >-
+      BLOCKING gate. After completing a spec/scope, tests belonging to OTHER
+      already-completed specs (state.json status: done) MUST be re-executed.
+      Gate fails if any done-spec's tests now fail due to the current change.
+      The regression agent inventories changed files, finds dependent specs,
+      and runs their tests. This prevents cross-feature interference where
+      spec N breaks already-shipped spec M.
+  G046:
+    name: spec_conflict_detection_gate
+    description: >-
+      BLOCKING gate. Before implementation, the new or changed spec's
+      requirements MUST be scanned against all done/in-progress specs for
+      conflicts. Checks: route/endpoint collisions, overlapping UI routes,
+      contradictory business rules, shared table mutations, breaking API
+      contract changes. If a conflict is detected, it MUST be resolved
+      (design update + plan adjustment) before implementation proceeds.
+      Detected by the regression agent's cross-spec impact scan.
 
 failureRouting:
   code: implement
@@ -398,6 +427,9 @@ phases:
   chaos:
     owner: bubbles.chaos
     requiredGates: [G009]
+  regression:
+    owner: bubbles.regression
+    requiredGates: [G044, G045, G046]
   simplify:
     owner: bubbles.simplify
     requiredGates: [G031]
@@ -532,8 +564,8 @@ modes:
   value-first-e2e-batch:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.
     statusCeiling: done
-    phaseOrder: [discover, select, bootstrap, implement, test, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040]
+    phaseOrder: [discover, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040, G044, G045, G046]
     maxChaosRounds: 5
     constraints:
       valueFirstSelection: true
@@ -572,8 +604,8 @@ modes:
   full-delivery:
     description: Default complete delivery workflow. Includes bootstrap phase to ensure design/scopes exist before implementation.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, implement, test, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035]
+    phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
     maxChaosRounds: 3
     constraints:
       requireDesignBeforeImplement: true
@@ -596,8 +628,8 @@ modes:
   full-delivery-strict:
     description: Strict full delivery with per-spec commits, no blocked continuation, and mandatory per-spec chaos/validation/audit completion. Includes bootstrap phase for design readiness.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, implement, test, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035]
+    phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
     maxChaosRounds: 5
     constraints:
       continueOnBlocked: false
@@ -633,8 +665,8 @@ modes:
   feature-bootstrap:
     description: Create/repair design+scope artifacts before implementation.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, implement, test, docs, validate, audit, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
+    phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, finalize]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G044, G045, G046]
     constraints:
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -648,8 +680,8 @@ modes:
   bugfix-fastlane:
     description: Focused bug loop with mandatory reproduction and verification.
     statusCeiling: done
-    phaseOrder: [select, implement, test, validate, audit, finalize]
-    requiredGates: [G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035]
+    phaseOrder: [select, implement, test, regression, simplify, stabilize, security, validate, audit, finalize]
+    requiredGates: [G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035, G044, G045, G046]
     constraints:
       requireBugReproductionBeforeFix: true
       requireBugVerificationAfterFix: true
@@ -687,8 +719,8 @@ modes:
   chaos-hardening:
     description: Repeat chaos and bugfix cycles until clean or retry limit.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, chaos, implement, test, validate, audit, finalize]
-    requiredGates: [G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
+    phaseOrder: [select, bootstrap, chaos, implement, test, regression, simplify, stabilize, security, validate, audit, finalize]
+    requiredGates: [G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
     maxChaosRounds: 5
     constraints:
       sequentialSpecCompletion: true
@@ -707,7 +739,7 @@ modes:
   harden-to-doc:
     description: Start from validation baseline, then harden, implement fixes, and run full quality chain. For specs with existing implementation that need quality hardening.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, validate, harden, implement, test, security, chaos, validate, audit, docs, finalize]
+    phaseOrder: [select, bootstrap, validate, harden, implement, test, regression, simplify, stabilize, security, chaos, validate, audit, docs, finalize]
     requiredGates: [G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -727,7 +759,7 @@ modes:
   gaps-to-doc:
     description: Start from validation baseline, then close implementation/design gaps, implement fixes, and run full quality chain. For specs needing gap remediation before quality verification.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, validate, gaps, implement, test, security, chaos, validate, audit, docs, finalize]
+    phaseOrder: [select, bootstrap, validate, gaps, implement, test, regression, simplify, stabilize, security, chaos, validate, audit, docs, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -747,7 +779,7 @@ modes:
   harden-gaps-to-doc:
     description: Full quality sweep - validate baseline, harden existing implementation, close design gaps, implement fixes, then run complete quality chain. Most thorough pre-release verification.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, validate, harden, gaps, implement, test, security, chaos, validate, audit, docs, finalize]
+    phaseOrder: [select, bootstrap, validate, harden, gaps, implement, test, regression, simplify, stabilize, security, chaos, validate, audit, docs, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -767,7 +799,7 @@ modes:
   reconcile-to-doc:
     description: Validate claimed completion against actual artifacts and evidence, reconcile stale state and scope status, then implement fixes and run the full quality chain.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, validate, implement, test, validate, audit, chaos, docs, finalize]
+    phaseOrder: [select, bootstrap, validate, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -854,7 +886,7 @@ modes:
   product-to-delivery:
     description: Full pipeline from business analysis through UX, design, scopes, implementation, testing, and quality gates. Analyst/UX phases skippable if spec.md already has their output.
     statusCeiling: done
-    phaseOrder: [analyze, select, bootstrap, implement, test, security, docs, validate, audit, chaos, finalize]
+    phaseOrder: [analyze, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035]
     maxChaosRounds: 5
     constraints:
@@ -877,7 +909,7 @@ modes:
   stabilize-to-doc:
     description: Start from validation baseline, then run stability/ops hardening (performance, infra, config, reliability, security, resource usage), implement fixes, and run full quality chain. For specs with existing implementation that need operational hardening.
     statusCeiling: done
-    phaseOrder: [select, bootstrap, validate, stabilize, implement, test, security, chaos, validate, audit, docs, finalize]
+    phaseOrder: [select, bootstrap, validate, stabilize, implement, test, regression, simplify, security, chaos, validate, audit, docs, finalize]
     requiredGates: [G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -897,7 +929,7 @@ modes:
   improve-existing:
     description: Analyze existing feature against competitors and best practices. Minor improvements update existing spec; sizable changes create new spec folder. Then implement, test, and run full quality chain.
     statusCeiling: done
-    phaseOrder: [analyze, select, validate, harden, gaps, implement, test, security, validate, audit, chaos, docs, finalize]
+    phaseOrder: [analyze, select, validate, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035]
     maxChaosRounds: 3
     constraints:
@@ -922,7 +954,7 @@ modes:
   stochastic-quality-sweep:
     description: Run multiple randomized rounds where each round picks a random spec (from all specs by default, or from a user-provided subset) AND a random trigger agent from a configurable pool, probes that spec, then runs a trigger-specific fix cycle if findings exist. Rounds limited by count or time budget. For adversarial quality hardening across specs via random probe angles.
     statusCeiling: done
-    phaseOrder: [select, chaos, harden, gaps, simplify, stabilize, security, validate, bug, implement, test, validate, audit, docs, finalize]
+    phaseOrder: [select, chaos, harden, gaps, simplify, stabilize, security, regression, validate, bug, implement, test, validate, audit, docs, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G034, G035]
     maxChaosRounds: 5
     constraints:
@@ -943,7 +975,7 @@ modes:
       autoDiscoverAllSpecs: true
       # Default trigger pool — all probing/quality agents
       # User can override with triggerAgents option to limit the pool
-      triggerAgentPool: [chaos, harden, gaps, simplify, stabilize, validate, improve, security]
+      triggerAgentPool: [chaos, harden, gaps, simplify, stabilize, validate, improve, security, regression]
       # Max rounds (overridable via maxRounds user option)
       defaultMaxRounds: 10
       # Time budget in minutes (overridable via minutes user option)
@@ -976,6 +1008,9 @@ modes:
         # security trigger: runs dependency scan + code review + threat modeling,
         # then bootstraps design artifacts → implements fixes for any findings
         security: [bootstrap, implement, test, validate, audit]
+        # regression trigger: runs cross-spec impact scan + baseline comparison,
+        # then bootstraps design artifacts → implements fixes for any regressions found
+        regression: [bootstrap, implement, test, validate, audit]
       # Shared tail phases after all rounds complete
       tailPhases: [docs, finalize]
       sequentialSpecCompletion: true
@@ -996,7 +1031,7 @@ modes:
     statusCeiling: done
     # phaseOrder represents the SUPERSET of all possible phases iterate may use.
     # Each iteration selects a SUBSET based on auto-mode-selection (Work-Type-to-Mode Mapping).
-    phaseOrder: [discover, select, analyze, bootstrap, harden, gaps, simplify, stabilize, security, bug, implement, test, docs, validate, audit, chaos, finalize]
+    phaseOrder: [discover, select, analyze, bootstrap, harden, gaps, simplify, stabilize, security, regression, bug, implement, test, docs, validate, audit, chaos, finalize]
     requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035]
     constraints:
       # Iterate round execution model — priority-driven, NOT random.

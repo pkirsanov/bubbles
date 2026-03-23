@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **28 Agents · 42 Gates · 24 Workflow Modes · 17 Phases**
+> **29 Agents · 45 Gates · 24 Workflow Modes · 18 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -61,6 +61,7 @@
 |---|-------|-------|------|-------|
 | <img src="../icons/cory-cap.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I found the thing that's busted."* |
 | <img src="../icons/bill-wrench.svg" width="32"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
+| <img src="../icons/steve-french-paw.svg" width="32"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
 | <img src="../icons/cyrus-sunglasses.svg" width="32"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
 | <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Have another drink, Ray!"* |
 | <img src="../icons/sebastian-guitar.svg" width="32"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
@@ -92,6 +93,7 @@
 | `sunnyvale way-she-goes` | `bubbles.analyst` | *"Way she goes, boys."* |
 | `sunnyvale peanut-butter-and-jam` | `bubbles.gaps` | *"BAAAAM! Peanut butter and JAAAAM!"* |
 | `sunnyvale safety-always-off` | `bubbles.security` | *"Safety... always off"* |
+| `sunnyvale somethings-prowlin` | `bubbles.regression` | *"Something's prowlin' around in the code, boys."* |
 | `sunnyvale roll-camera` | `bubbles.status` | *(camera keeps rolling)* |
 | `sunnyvale greasy` | `bubbles.harden` | *"That's greasy, boys."* |
 | `sunnyvale supply-and-command` | `bubbles.plan` | *"It's supply and command, Julian"* |
@@ -143,7 +145,7 @@
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
-`analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
+`analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `regression` → `simplify` → `stabilize` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
 
 | Gate | Name | What It Checks |
 |------|------|---------------|
@@ -189,6 +191,10 @@
 | G040 | Zero deferral language | Scope artifacts scanned for "deferred", "future scope", "out of scope", etc. — can't mark done with outstanding work |
 | G041 | DoD format integrity | Prevents agents from bypassing guards by reformatting checkboxes (`- (deferred)`) or inventing scope statuses (`Deferred — Planned Improvement`) |
 | G042 | Agent ownership | Foreign-owned artifacts must be routed to the owning specialist; no cross-authoring by diagnostic agents |
+| G043 | Consumer trace | Renames/removals require zero stale references across all consumers |
+| G044 | Regression baseline | Before/after test count comparison — previously-passing tests must still pass |
+| G045 | Cross-spec regression | Done specs' tests rerun after changes — no cross-feature interference |
+| G046 | Spec conflict detection | Route/table/API collisions scanned against all existing specs |
 
 ---
 
@@ -206,6 +212,9 @@
 | ✅ Spec completed | *"DEEEE-CENT!"* |
 | ❌ Warnings found | *"The shit winds are coming, Randy."* |
 | ✅ Chaos clean | *"Worst case Ontario... nothing broke."* |
+| 🟢 Regression clean | *"Steve French is purrin'. No regressions, boys."* |
+| 🔴 Regression found | *"Something's prowlin' around in the code, boys."* |
+| 🔴 Spec conflict | *"Steve French found another cougar's territory. Two specs, same route."* |
 | ❌ Security vuln | *"Safety... always ON."* |
 | ✅ Docs updated | *"Know what I'm sayin'? It's documented."* |
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
@@ -294,6 +303,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | Find what's missing | `/bubbles.gaps` |
 | Harden weak spots | `/bubbles.harden` |
 | Security scan | `/bubbles.security` |
+| Check for regressions | `/bubbles.regression` |
 | Quality sweep | `/bubbles.workflow  harden-gaps-to-doc` |
 
 ### Success & Wrap-Up
@@ -345,6 +355,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | "Passed with flying carpets" | Passed with flying colors | All gates passed |
 | "Survival of the fitness, boys" | Survival of the fittest | Stochastic sweep results |
 | "Gorilla see, gorilla do" | Monkey see, monkey do | Copy-paste code detected |
+| "Steve French is just a big stoned kitty" | The regression guardian is doing its job | Cross-spec check running |
 | "It's a doggy-dog world" | Dog-eat-dog world | Competitive analysis |
 | "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) |
 

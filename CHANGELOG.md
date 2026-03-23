@@ -1,5 +1,55 @@
 # Changelog
 
+## v2.2.0 — 2026-03-23
+
+### New Agent: `bubbles.regression` (Steve French)
+
+Cross-feature regression guardian. Detects test baseline regressions, cross-spec interference, design contradictions, and coverage decreases after implementation or bug fixes.
+
+- **Character:** Steve French (the mountain lion from Trailer Park Boys)
+- **Signature:** *"Something's prowlin' around in the code, boys."*
+- **Icon:** `steve-french-paw.svg` — a paw print with claw marks (regression scratches)
+- **Phase:** `regression` — runs after `test`, before `simplify`
+- **Role:** Diagnostic agent (read-only for artifacts, routes fixes to specialists)
+
+### New Gates: G044, G045, G046
+
+- **G044** (`regression_baseline_gate`) — Test baseline snapshot before/after implementation. Previously-passing tests must still pass. Enforced by `regression-baseline-guard.sh`.
+- **G045** (`cross_spec_regression_gate`) — Tests from already-done specs re-executed after changes. Catches cross-feature interference (e.g., spec N breaking spec M).
+- **G046** (`spec_conflict_detection_gate`) — Route/endpoint collisions, shared table mutations, contradictory business rules scanned across all specs before implementation.
+
+### Post-Implementation Hardening (Mandatory)
+
+All delivery modes now include a mandatory hardening sequence after `test`:
+
+```
+implement → test → regression → simplify → stabilize → security → docs → ...
+```
+
+**Updated modes:** `full-delivery`, `full-delivery-strict`, `bugfix-fastlane`, `feature-bootstrap`, `value-first-e2e-batch`, `chaos-hardening`, `product-to-delivery`, `harden-to-doc`, `gaps-to-doc`, `harden-gaps-to-doc`, `reconcile-to-doc`, `stabilize-to-doc`, `improve-existing`, `stochastic-quality-sweep`, `iterate`
+
+Previously, `simplify`, `stabilize`, and `security` were only in specialized modes. Now they run on every delivery.
+
+### New Governance Script
+
+- `regression-baseline-guard.sh` — Mechanical enforcement for G044/G045/G046. Checks test baseline existence, cross-spec inventory, and route collision detection.
+
+### New Recipes
+
+- **[Regression Check](docs/recipes/regression-check.md)** — How to verify new changes didn't break existing features
+- **[Post-Implementation Hardening](docs/recipes/post-impl-hardening.md)** — The mandatory hardening sequence explained
+
+### Infrastructure
+
+- `bubbles.regression` added to `agent-ownership.yaml` as diagnostic agent
+- `regression` trigger added to `stochastic-quality-sweep` trigger pool
+- `regression` fix cycle: `bootstrap → implement → test → validate → audit`
+- `e2e-regression.md` expanded with cross-spec regression rules (G044-G046)
+- Fun mode messages for regression events (Steve French purring, prowling)
+- 29 agents, 45 gates, 18 phases total
+
+---
+
 ## v2.1.0 — 2026-03-19
 
 ### New Gate: G040 — Zero Deferral Language
