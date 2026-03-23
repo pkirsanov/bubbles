@@ -324,6 +324,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 |-----------|---------|
 | Check progress | `/bubbles.status` |
 | Check progress (narrative) | `/bubbles.status --explain` |
+| Quick session recap | `/bubbles.recap` |
 | Update documentation | `/bubbles.docs` |
 | End of session | `/bubbles.handoff` |
 | Resume tomorrow | `/bubbles.workflow  resume` |
