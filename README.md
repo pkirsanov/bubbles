@@ -167,62 +167,62 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 
 ### <img src="icons/lahey-badge.svg" width="24"> Start Here
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/lahey-badge.svg" width="20"> `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
 
 ### <img src="icons/bubbles-glasses.svg" width="24"> Orchestrators
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
-| <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time, and can invoke review only when the next executable move is unclear. | Continuing scope-by-scope work |
-| <img src="icons/green-bastard-outline.svg" width="20"> `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
-| <img src="icons/orangie-fishbowl.svg" width="20"> `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
+| <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time. | Continuing scope-by-scope work |
+| <img src="icons/green-bastard-outline.svg" width="20"> | `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
+| <img src="icons/orangie-fishbowl.svg" width="20"> | `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/julian-glass.svg" width="20"> `bubbles.implement` | **The implementer.** Delivers every time. | Implementing planned scopes |
-| <img src="icons/trinity-notebook.svg" width="20"> `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
-| <img src="icons/jroc-mic.svg" width="20"> `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
-| <img src="icons/randy-cheeseburger.svg" width="20"> `bubbles.validate` | **Gate checker.** Does the grunt work of checking every gate. | Pre-merge validation |
-| <img src="icons/ted-badge.svg" width="20"> `bubbles.audit` | **Policy enforcer.** Obsessive, thorough. The last line of defense. | Final compliance audit |
-| <img src="icons/ricky-dynamite.svg" width="20"> `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/julian-glass.svg" width="20"> | `bubbles.implement` | **The implementer.** Delivers every time. | Implementing planned scopes |
+| <img src="icons/trinity-notebook.svg" width="20"> | `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
+| <img src="icons/jroc-mic.svg" width="20"> | `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
+| <img src="icons/randy-cheeseburger.svg" width="20"> | `bubbles.validate` | **Gate checker.** Does the grunt work of checking every gate. | Pre-merge validation |
+| <img src="icons/ted-badge.svg" width="20"> | `bubbles.audit` | **Policy enforcer.** Obsessive, thorough. The last line of defense. | Final compliance audit |
+| <img src="icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
 
 ### <img src="icons/barb-keys.svg" width="24"> Planning & Design
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/ray-lawnchair.svg" width="20"> `bubbles.analyst` | **Business analyst.** Figures out the *why* behind requirements. | Starting new features |
-| <img src="icons/lucy-mirror.svg" width="20"> `bubbles.ux` | **UX designer.** Cares about how things feel and look. | UI/UX design work |
-| <img src="icons/sarah-clipboard.svg" width="20"> `bubbles.design` | **Architect.** Turns loose ideas into a crisp technical shape. | System design |
-| <img src="icons/barb-keys.svg" width="20"> `bubbles.plan` | **Scope planner.** Defines the scopes, keeps the books. | Breaking work into scopes |
-| <img src="icons/george-green-badge.svg" width="20"> `bubbles.clarify` | **Requirements clarifier.** Asks the obvious but important questions. | Resolving ambiguity |
-| <img src="icons/conky-puppet.svg" width="20"> `bubbles.harden` | **Hardener.** Says the uncomfortable truths. Confrontational. Necessary. | Hardening passes |
-| <img src="icons/phil-collins-baam.svg" width="20"> `bubbles.gaps` | **Gap finder.** Finds what nobody else sees. | Gap analysis |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/ray-lawnchair.svg" width="20"> | `bubbles.analyst` | **Business analyst.** Figures out the *why* behind requirements. | Starting new features |
+| <img src="icons/lucy-mirror.svg" width="20"> | `bubbles.ux` | **UX designer.** Cares about how things feel and look. | UI/UX design work |
+| <img src="icons/sarah-clipboard.svg" width="20"> | `bubbles.design` | **Architect.** Turns loose ideas into a crisp technical shape. | System design |
+| <img src="icons/barb-keys.svg" width="20"> | `bubbles.plan` | **Scope planner.** Defines the scopes, keeps the books. | Breaking work into scopes |
+| <img src="icons/george-green-badge.svg" width="20"> | `bubbles.clarify` | **Requirements clarifier.** Asks the obvious but important questions. | Resolving ambiguity |
+| <img src="icons/conky-puppet.svg" width="20"> | `bubbles.harden` | **Hardener.** Says the uncomfortable truths. Confrontational. Necessary. | Hardening passes |
+| <img src="icons/phil-collins-baam.svg" width="20"> | `bubbles.gaps` | **Gap finder.** Finds what nobody else sees. | Gap analysis |
 
 ### <img src="icons/bill-wrench.svg" width="24"> Quality & Ops
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/cory-cap.svg" width="20"> `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
-| <img src="icons/cory-trevor-smokes.svg" width="20"> `bubbles.bootstrap` | **Scaffolder.** Sets up workspace and artifacts. | New feature/bug setup |
-| <img src="icons/bill-wrench.svg" width="20"> `bubbles.stabilize` | **Stabilizer.** Quiet. Reliable. Just fixes infrastructure. | Stability issues |
-| <img src="icons/steve-french-paw.svg" width="20"> `bubbles.regression` | **Regression guardian.** Prowls the codebase catching cross-feature interference. | After implementation/bug fixes |
-| <img src="icons/cyrus-sunglasses.svg" width="20"> `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
-| <img src="icons/donny-ducttape.svg" width="20"> `bubbles.simplify` | **Simplifier.** Cuts through the noise. | Reducing complexity |
-| <img src="icons/sebastian-guitar.svg" width="20"> `bubbles.cinematic-designer` | **Design system creator.** Over-the-top production value. | Premium UI/design systems |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
+| <img src="icons/cory-trevor-smokes.svg" width="20"> | `bubbles.bootstrap` | **Scaffolder.** Sets up workspace and artifacts. | New feature/bug setup |
+| <img src="icons/bill-wrench.svg" width="20"> | `bubbles.stabilize` | **Stabilizer.** Quiet. Reliable. Just fixes infrastructure. | Stability issues |
+| <img src="icons/steve-french-paw.svg" width="20"> | `bubbles.regression` | **Regression guardian.** Prowls the codebase catching cross-feature interference. | After implementation/bug fixes |
+| <img src="icons/cyrus-sunglasses.svg" width="20"> | `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
+| <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise. | Reducing complexity |
+| <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Design system creator.** Over-the-top production value. | Premium UI/design systems |
 
 ### <img src="icons/camera-crew.svg" width="24"> Utilities
 
-| Agent | Role | When to Use |
-|-------|------|-------------|
-| <img src="icons/camera-crew.svg" width="20"> `bubbles.status` | **Observer.** Reports state. Never interferes. Read-only. | Checking progress |
-| <img src="icons/trevor-handoff.svg" width="20"> `bubbles.handoff` | **Session handoff.** Packages context for the next session. | End of session |
-| <img src="icons/t-cap.svg" width="20"> `bubbles.commands` | **Command registry.** Manages the project command reference. | Updating command docs |
-| <img src="icons/sam-binoculars.svg" width="20"> `bubbles.create-skill` | **Skill creator.** Packages know-how into reusable tools and playbooks. | Adding new skills |
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/camera-crew.svg" width="20"> | `bubbles.status` | **Observer.** Reports state. Never interferes. Read-only. | Checking progress |
+| <img src="icons/trevor-handoff.svg" width="20"> | `bubbles.handoff` | **Session handoff.** Packages context for the next session. | End of session |
+| <img src="icons/t-cap.svg" width="20"> | `bubbles.commands` | **Command registry.** Manages the project command reference. | Updating command docs |
+| <img src="icons/sam-binoculars.svg" width="20"> | `bubbles.create-skill` | **Skill creator.** Packages know-how into reusable tools and playbooks. | Adding new skills |
 
 ---
 

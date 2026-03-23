@@ -48,6 +48,32 @@ Previously, `simplify`, `stabilize`, and `security` were only in specialized mod
 - Fun mode messages for regression events (Steve French purring, prowling)
 - 29 agents, 45 gates, 18 phases total
 
+### Character & Quote Improvements
+
+- **system-review:** Private Dancer → **Orangie** (the goldfish who sees everything from the fishbowl)
+  - New icon: `orangie-fishbowl.svg`
+  - Quote: *"Orangie sees everything. He's not dead, he's just... reviewing."*
+- **iterate/Jacob:** *"I'll do whatever you need, Julian."* (was: "I can help with that.")
+- **ux/Lucy:** *"You can't just slap things together and call it a home, Ricky."* (was: generic)
+- **bug/Cory:** *"I didn't wanna find it, but... there it is."* (was: "I found the thing that's busted.")
+- **simplify/Donny:** *"Just tape it up and move on."* (was: "Have another drink, Ray!")
+- **handoff/Trevor:** *"Here, take this. I gotta go."* (was: "Cory, take this to Julian.")
+- **create-skill/Sam:** *"I used to be a vet, you know. I got specialties."* (was: generic)
+
+### Complete Alias Coverage
+
+- 36 agent aliases (every agent has at least one `sunnyvale` alias)
+- 24 workflow mode aliases (every mode has a `sunnyvale` alias)
+- New agent aliases: the-super, i-got-work-to-do, not-how-that-works, lets-get-organized, whats-going-on-here, parts-unknown, whole-show, nice-kitty, just-fixes, pave-your-cave, jim-needs-a-plan, used-to-be-a-vet, true, ill-do-whatever, cant-just-slap
+- New mode aliases: shit-winds-coming, gut-feeling, survival-of-the-fitness, i-toad-a-so, bill-fixes-it, open-and-shut, just-watching, smokes-and-setup, keep-going, resume-the-tape, whats-the-big-idea, harden-up, we-broke-it
+
+### Icon Improvements
+
+- `steve-french-paw.svg` — proper 4-toe cat paw anatomy
+- `lucy-mirror.svg` — simplified to single hand mirror with sparkle
+- `donny-ducttape.svg` — added torn edge zigzag detail
+- `orangie-fishbowl.svg` — new icon for system-review (fishbowl with fish and bubbles)
+
 ---
 
 ## v2.1.0 — 2026-03-19

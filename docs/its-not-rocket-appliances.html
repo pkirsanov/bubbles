@@ -865,6 +865,90 @@
     <div class="wf-desc">Documentation maintenance only. J-Roc handles the paperwork.</div>
     <div class="wf-quote">"You're sayin' 'gnome sayin'' too many times — 80, 90 times? That's too many times."</div>
   </div>
+  <div class="workflow-card">
+    <div class="wf-name">feature-bootstrap</div>
+    <div class="wf-alias">→ sunnyvale smokes-and-setup</div>
+    <div class="wf-desc">Set up design + scope artifacts before implementing. The prep work.</div>
+    <div class="wf-quote">"Smokes, let's go. Set it up."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">iterate</div>
+    <div class="wf-alias">→ sunnyvale keep-going</div>
+    <div class="wf-desc">Priority-driven scope-by-scope execution. Picks the next thing and does it.</div>
+    <div class="wf-quote">"Keep going, boys. Don't stop."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">resume-only</div>
+    <div class="wf-alias">→ sunnyvale resume-the-tape</div>
+    <div class="wf-desc">Resume from saved session state. Pick up where you left off.</div>
+    <div class="wf-quote">"Roll that tape back, boys."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">product-discovery</div>
+    <div class="wf-alias">→ sunnyvale whats-the-big-idea</div>
+    <div class="wf-desc">Business analysis + UX exploration. No implementation — just discovery.</div>
+    <div class="wf-quote">"What's the big idea here, Julian?"</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">test-to-doc</div>
+    <div class="wf-alias">→ sunnyvale quick-dirty</div>
+    <div class="wf-desc">Run tests, fix failures, update docs. Quick verification pass.</div>
+    <div class="wf-quote">"Quick and dirty, boys."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">audit-only</div>
+    <div class="wf-alias">→ sunnyvale open-and-shut</div>
+    <div class="wf-desc">Run audit phase only. Pure compliance check.</div>
+    <div class="wf-quote">"Open and shut case."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">stabilize-to-doc</div>
+    <div class="wf-alias">→ sunnyvale bill-fixes-it</div>
+    <div class="wf-desc">Stability fixes → test → docs. Bill just shows up and fixes things.</div>
+    <div class="wf-quote">"..." (Bill doesn't talk much. He just fixes.)</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">improve-existing</div>
+    <div class="wf-alias">→ sunnyvale survival-of-the-fitness</div>
+    <div class="wf-desc">Analyze, harden, close gaps, improve → test → docs. Evolutionary improvement.</div>
+    <div class="wf-quote">"Survival of the fitness, boys."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">spec-scope-hardening</div>
+    <div class="wf-alias">→ sunnyvale harden-up</div>
+    <div class="wf-desc">Tighten specs and scope definitions. No implementation, just planning quality.</div>
+    <div class="wf-quote">"Harden up, boys. This has gotta be tight."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">harden-to-doc</div>
+    <div class="wf-alias">→ sunnyvale shit-winds-coming</div>
+    <div class="wf-desc">Harden existing code, fix issues, then test and doc. Prepare for the storm.</div>
+    <div class="wf-quote">"The shit winds are coming, Randy. Harden up."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">gaps-to-doc</div>
+    <div class="wf-alias">→ sunnyvale gut-feeling</div>
+    <div class="wf-desc">Gap analysis → implement fixes → test → docs. Find what's missing.</div>
+    <div class="wf-quote">"What are ya lookin' at my gut fer?"</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">chaos-to-doc</div>
+    <div class="wf-alias">→ sunnyvale we-broke-it</div>
+    <div class="wf-desc">Chaos probing → fix → docs. Break it, then document what happened.</div>
+    <div class="wf-quote">"We broke it. Now document what happened."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">reconcile-to-doc</div>
+    <div class="wf-alias">→ sunnyvale i-toad-a-so</div>
+    <div class="wf-desc">Reconcile stale state, fix conflicts → test → docs. Told you so.</div>
+    <div class="wf-quote">"I toad a so. I f***ing toad a so."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">validate-to-doc</div>
+    <div class="wf-alias">→ sunnyvale just-watching</div>
+    <div class="wf-desc">Validate + audit + docs. The camera crew watches and documents.</div>
+    <div class="wf-quote">"(camera crew just watches)"</div>
+  </div>
 </div>
 
 <div class="quick-ref">
@@ -905,10 +989,16 @@
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"DEEEE-CENT!"</span><span class="context">— Spec completed</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"The shit winds are coming, Randy."</span><span class="context">— Zero warnings gate failed</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"Worst case Ontario... nothing broke."</span><span class="context">— Chaos clean</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Steve French is purrin'. No regressions, boys."</span><span class="context">— Regression clean</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Something's prowlin' around in the code, boys."</span><span class="context">— Regression found</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"Steve French found another cougar's territory. Two specs, same route."</span><span class="context">— Spec conflict detected</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"Safety... always ON."</span><span class="context">— G034 security vuln found</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"Know what I'm sayin'? It's documented."</span><span class="context">— Docs updated</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"You can't just NOT do things, Corey!"</span><span class="context">— Deferral detected</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"That's NOT gettin' two birds stoned — that's just sayin' you WILL."</span><span class="context">— G040 deferral blocks done</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"That's GREASY, boys. You can't just cross things out and say they're done!"</span><span class="context">— DoD manipulation detected</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"You can't just erase the checkboxes and call it a day, Ricky!"</span><span class="context">— G041 format bypass</span></div>
+  <div class="gate-msg"><span class="status">❌</span><span class="msg">"'Deferred — Planned Improvement'?! That's not even a real thing, Julian!"</span><span class="context">— G041 invented status</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"Have a good one, boys."</span><span class="context">— Handoff complete</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"This is f***ed. BAAAAM!"</span><span class="context">— Gap found by Phil</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"That's a nice f***ing kitty right there."</span><span class="context">— Bug located</span></div>

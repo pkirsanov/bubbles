@@ -50,7 +50,7 @@ The state transition guard automatically discovers and runs these gates. Blockin
 
 ## Gate IDs
 
-- Built-in gates: G001–G042
+- Built-in gates: G001–G046
 - Custom gates: G100+ (auto-assigned)
 - Custom gates survive Bubbles upgrades — `bubbles-project.yaml` is never overwritten
 

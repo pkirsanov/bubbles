@@ -10,41 +10,41 @@
 
 ## <img src="../icons/lahey-badge.svg" width="32"> Start Here
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/lahey-badge.svg" width="32"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
 
 ## <img src="../icons/bubbles-glasses.svg" width="32"> Orchestrators
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
-| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I'll do whatever you need, Julian."* |
-| <img src="../icons/green-bastard-outline.svg" width="32"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
-| <img src="../icons/orangie-fishbowl.svg" width="32"> | `bubbles.system-review` | Orangie | Holistic system reviewer. Sees everything from the fishbowl. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
+| <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I'll do whatever you need, Julian."* |
+| <img src="../icons/green-bastard-outline.svg" width="28"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
+| <img src="../icons/orangie-fishbowl.svg" width="28"> | `bubbles.system-review` | Orangie | Holistic system reviewer. Sees everything from the fishbowl. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/julian-glass.svg" width="32"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
-| <img src="../icons/trinity-notebook.svg" width="32"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
-| <img src="../icons/jroc-mic.svg" width="32"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
-| <img src="../icons/randy-cheeseburger.svg" width="32"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
-| <img src="../icons/ted-badge.svg" width="32"> | `bubbles.audit` | Ted Johnson | Official, procedural, and impossible to sweet-talk. The final compliance cop. | *"This is an official audit now."* |
-| <img src="../icons/ricky-dynamite.svg" width="32"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/julian-glass.svg" width="28"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
+| <img src="../icons/trinity-notebook.svg" width="28"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
+| <img src="../icons/jroc-mic.svg" width="28"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
+| <img src="../icons/randy-cheeseburger.svg" width="28"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
+| <img src="../icons/ted-badge.svg" width="28"> | `bubbles.audit` | Ted Johnson | Official, procedural, and impossible to sweet-talk. The final compliance cop. | *"This is an official audit now."* |
+| <img src="../icons/ricky-dynamite.svg" width="28"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
 
 ## <img src="../icons/barb-keys.svg" width="32"> Planning & Design
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/ray-lawnchair.svg" width="32"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
-| <img src="../icons/lucy-mirror.svg" width="32"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"You can't just slap things together and call it a home, Ricky."* |
-| <img src="../icons/sarah-clipboard.svg" width="32"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
-| <img src="../icons/barb-keys.svg" width="32"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
-| <img src="../icons/george-green-badge.svg" width="32"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
-| <img src="../icons/conky-puppet.svg" width="32"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
-| <img src="../icons/phil-collins-baam.svg" width="32"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/ray-lawnchair.svg" width="28"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
+| <img src="../icons/lucy-mirror.svg" width="28"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"You can't just slap things together and call it a home, Ricky."* |
+| <img src="../icons/sarah-clipboard.svg" width="28"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
+| <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
+| <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
+| <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
+| <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
 
 ### Ownership Quick Reference
 
@@ -53,28 +53,28 @@
 | `spec.md` business requirements | `bubbles.analyst` | `bubbles.ux` may update UX sections only |
 | `design.md` | `bubbles.design` | Technical design owner |
 | `scopes.md` / planning structure | `bubbles.plan` | Gherkin, Test Plan, DoD, `uservalidation.md` |
-| Findings from validate/harden/gaps/security/stabilize/code-review/system-review | owner via `runSubagent` | Diagnostic agents route, they do not self-author foreign artifacts |
+| Findings from validate/harden/gaps/security/stabilize/regression/code-review/system-review | owner via `runSubagent` | Diagnostic agents route, they do not self-author foreign artifacts |
 
 ## <img src="../icons/bill-wrench.svg" width="32"> Quality & Ops
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/cory-cap.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I didn't wanna find it, but... there it is."* |
-| <img src="../icons/bill-wrench.svg" width="32"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
-| <img src="../icons/steve-french-paw.svg" width="32"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
-| <img src="../icons/cyrus-sunglasses.svg" width="32"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
-| <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
-| <img src="../icons/sebastian-guitar.svg" width="32"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/cory-cap.svg" width="28"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I didn't wanna find it, but... there it is."* |
+| <img src="../icons/bill-wrench.svg" width="28"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
+| <img src="../icons/steve-french-paw.svg" width="28"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
+| <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
+| <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
+| <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
 
 ## <img src="../icons/camera-crew.svg" width="32"> Utilities
 
-| | Agent | Alias | Role | Quote |
-|---|-------|-------|------|-------|
-| <img src="../icons/camera-crew.svg" width="32"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/trevor-handoff.svg" width="32"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
-| <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
-| <img src="../icons/t-cap.svg" width="32"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
-| <img src="../icons/sam-binoculars.svg" width="32"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"I used to be a vet, you know. I got specialties."* |
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
+| <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
+| <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
+| <img src="../icons/t-cap.svg" width="28"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
+| <img src="../icons/sam-binoculars.svg" width="28"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"I used to be a vet, you know. I got specialties."* |
 
 ---
 
@@ -82,8 +82,6 @@
 
 | Alias | Maps To | Quote |
 |-------|---------|-------|
-| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
-| `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale by-the-book` | `bubbles.audit --strict` | *"This is by the book now."* |
