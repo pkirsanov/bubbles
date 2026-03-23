@@ -2,7 +2,7 @@
 
 > *"I AM the liquor, Randy. And now there's more liquor."*
 
-Add project-specific quality checks that run alongside Bubbles' built-in 42 gates.
+Add project-specific quality checks that run alongside Bubbles' built-in 45 gates.
 
 ## Add a Gate via Agent
 
