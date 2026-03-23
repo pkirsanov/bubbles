@@ -178,7 +178,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 | <img src="icons/bubbles-glasses.svg" width="20"> `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase work |
 | <img src="icons/jacob-hardhat.svg" width="20"> `bubbles.iterate` | **Scope executor.** Quietly pushes the next scope forward, one step at a time, and can invoke review only when the next executable move is unclear. | Continuing scope-by-scope work |
 | <img src="icons/green-bastard-outline.svg" width="20"> `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
-| <img src="icons/private-dancer-spotlight.svg" width="20"> `bubbles.system-review` | **Holistic system reviewer.** Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | Reviewing what the system feels like, does, and implies as a whole |
+| <img src="icons/orangie-fishbowl.svg" width="20"> `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
 
 ### <img src="icons/julian-glass.svg" width="24"> Specialists
 

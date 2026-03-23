@@ -1,8 +1,13 @@
 <!-- icon-name: donny-ducttape -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <ellipse cx="32" cy="32" rx="20" ry="14"/>
-  <ellipse cx="32" cy="32" rx="12" ry="8"/>
-  <ellipse cx="32" cy="32" rx="10" ry="6" stroke-width="1.2"/>
-  <path d="M 52 32 L 58 40 L 52 44 L 48 38" stroke-width="2"/>
-  <path d="M 58 40 L 56 41 L 57 42 L 55 43 L 52 44" stroke-width="1.2" stroke-linejoin="miter"/>
+  <!-- Tape roll (outer) -->
+  <ellipse cx="30" cy="30" rx="20" ry="14"/>
+  <!-- Tape roll (inner hole) -->
+  <ellipse cx="30" cy="30" rx="10" ry="7"/>
+  <!-- Surface texture -->
+  <ellipse cx="30" cy="30" rx="15" ry="10.5" stroke-width="1" stroke-dasharray="3 5"/>
+  <!-- Pulled tape strip with torn edge -->
+  <path d="M 50 30 L 56 36 L 54 38 L 58 42 L 52 44 L 56 46 L 50 48" stroke-width="2"/>
+  <!-- Torn edge zigzag -->
+  <path d="M 50 48 L 52 47 L 50 46 L 53 45 L 50 44" stroke-width="1.2"/>
 </svg>

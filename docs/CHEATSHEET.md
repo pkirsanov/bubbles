@@ -19,9 +19,9 @@
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="32"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
-| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I can help with that."* |
+| <img src="../icons/jacob-hardhat.svg" width="32"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I'll do whatever you need, Julian."* |
 | <img src="../icons/green-bastard-outline.svg" width="32"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
-| <img src="../icons/private-dancer-spotlight.svg" width="32"> | `bubbles.system-review` | Private Dancer | Holistic system reviewer. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"You gotta watch the whole show, boys."* |
+| <img src="../icons/orangie-fishbowl.svg" width="32"> | `bubbles.system-review` | Orangie | Holistic system reviewer. Sees everything from the fishbowl. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
 
@@ -39,7 +39,7 @@
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
 | <img src="../icons/ray-lawnchair.svg" width="32"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
-| <img src="../icons/lucy-mirror.svg" width="32"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"Ricky, you can't just— fine."* |
+| <img src="../icons/lucy-mirror.svg" width="32"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"You can't just slap things together and call it a home, Ricky."* |
 | <img src="../icons/sarah-clipboard.svg" width="32"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
 | <img src="../icons/barb-keys.svg" width="32"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
 | <img src="../icons/george-green-badge.svg" width="32"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
@@ -59,11 +59,11 @@
 
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
-| <img src="../icons/cory-cap.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I found the thing that's busted."* |
+| <img src="../icons/cory-cap.svg" width="32"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I didn't wanna find it, but... there it is."* |
 | <img src="../icons/bill-wrench.svg" width="32"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
 | <img src="../icons/steve-french-paw.svg" width="32"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
 | <img src="../icons/cyrus-sunglasses.svg" width="32"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
-| <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Have another drink, Ray!"* |
+| <img src="../icons/donny-ducttape.svg" width="32"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
 | <img src="../icons/sebastian-guitar.svg" width="32"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
 
 ## <img src="../icons/camera-crew.svg" width="32"> Utilities
@@ -71,10 +71,10 @@
 | | Agent | Alias | Role | Quote |
 |---|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="32"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/trevor-handoff.svg" width="32"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Cory, take this to Julian."* |
+| <img src="../icons/trevor-handoff.svg" width="32"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="32"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="32"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
-| <img src="../icons/sam-binoculars.svg" width="32"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"You need a specialty for this one."* |
+| <img src="../icons/sam-binoculars.svg" width="32"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"I used to be a vet, you know. I got specialties."* |
 
 ---
 
@@ -84,26 +84,40 @@
 |-------|---------|-------|
 | `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
+| `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
+| `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale by-the-book` | `bubbles.audit --strict` | *"This is by the book now."* |
-| `sunnyvale open-and-shut` | `bubbles.audit` | *"Open and shut case."* |
+| `sunnyvale i-am-the-liquor` | `bubbles.audit` | *"I AM the liquor."* |
 | `sunnyvale get-two-birds-stoned` | `bubbles.implement` + `bubbles.test` | *"Get two birds stoned at once"* |
+| `sunnyvale i-got-work-to-do` | `bubbles.implement` | *"I got work to do."* |
 | `sunnyvale smokes-lets-go` | `bubbles.bootstrap` | *"Smokes, let's go."* |
 | `sunnyvale know-what-im-sayin` | `bubbles.docs` | *"Know what I'm sayin'?"* |
 | `sunnyvale somethings-fucky` | `bubbles.validate` | *"Something's fucky"* |
+| `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
 | `sunnyvale way-she-goes` | `bubbles.analyst` | *"Way she goes, boys."* |
 | `sunnyvale peanut-butter-and-jam` | `bubbles.gaps` | *"BAAAAM! Peanut butter and JAAAAM!"* |
 | `sunnyvale safety-always-off` | `bubbles.security` | *"Safety... always off"* |
 | `sunnyvale somethings-prowlin` | `bubbles.regression` | *"Something's prowlin' around in the code, boys."* |
 | `sunnyvale roll-camera` | `bubbles.status` | *(camera keeps rolling)* |
 | `sunnyvale greasy` | `bubbles.harden` | *"That's greasy, boys."* |
+| `sunnyvale pave-your-cave` | `bubbles.harden` | *"Why don't you go pave your cave?"* |
 | `sunnyvale supply-and-command` | `bubbles.plan` | *"It's supply and command, Julian"* |
-| `sunnyvale water-under-the-fridge` | `bubbles.simplify` | *"It's all water under the fridge"* |
-| `sunnyvale have-a-good-one` | `bubbles.handoff` | *"Have a good one, boys"* |
+| `sunnyvale jim-needs-a-plan` | `bubbles.plan` | *"Jim, you need a plan."* |
+| `sunnyvale water-under-the-fridge` | `bubbles.simplify` | *"Just tape it up and move on."* |
+| `sunnyvale have-a-good-one` | `bubbles.handoff` | *"Here, take this. I gotta go."* |
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
-| `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
-| `sunnyvale the-super` | `bubbles.super` | *"Ask the super first."* |
-| `sunnyvale parts-unknown` | `bubbles.code-review` | *"From parts unknown, the code review sees all."* |
-| `sunnyvale whole-show` | `bubbles.system-review` | *"You gotta watch the whole show, boys."* |
+| `sunnyvale the-super` | `bubbles.super` | *"I'm the trailer park supervisor."* |
+| `sunnyvale parts-unknown` | `bubbles.code-review` | *"From parts unknown!"* |
+| `sunnyvale whole-show` | `bubbles.system-review` | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
+| `sunnyvale not-how-that-works` | `bubbles.test` | *"Dad, that's not how that works."* |
+| `sunnyvale lets-get-organized` | `bubbles.design` | *"Let's get this organized."* |
+| `sunnyvale whats-going-on-here` | `bubbles.clarify` | *"What in the f— is going on here?"* |
+| `sunnyvale nice-kitty` | `bubbles.bug` | *"That's a nice f\*\*\*ing kitty right there."* |
+| `sunnyvale just-fixes` | `bubbles.stabilize` | *"..." (Bill just fixes things)* |
+| `sunnyvale used-to-be-a-vet` | `bubbles.create-skill` | *"I used to be a vet, you know."* |
+| `sunnyvale true` | `bubbles.commands` | *"True."* |
+| `sunnyvale ill-do-whatever` | `bubbles.iterate` | *"I'll do whatever you need, Julian."* |
+| `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 
 ---
 
@@ -121,20 +135,20 @@
 | `harden-gaps-to-doc` | conky-says | Thorough pre-release sweep |
 | `product-to-delivery` | freedom-35 | Full pipeline: analyst → UX → design → implement → ship |
 | `docs-only` | gnome-sayin | Documentation maintenance only |
-| `feature-bootstrap` | — | Set up artifacts without implementing |
-| `iterate` | — | Continue scope-by-scope implementation |
-| `resume-only` | — | Resume from last session state |
-| `product-discovery` | — | Business analysis + UX exploration only |
-| `test-to-doc` | — | Run tests, fix failures, update docs |
-| `audit-only` | — | Run audit phase only |
-| `stabilize-to-doc` | — | Stability fixes → test → docs |
-| `improve-existing` | — | Harden → simplify → test → docs |
-| `spec-scope-hardening` | — | Tighten specs and scope definitions |
-| `harden-to-doc` | — | Harden → test → docs |
-| `gaps-to-doc` | — | Gap analysis → test → docs |
-| `chaos-to-doc` | — | Chaos → test → docs |
-| `reconcile-to-doc` | — | Reconcile conflicts → test → docs |
-| `validate-to-doc` | — | Validate + audit + docs |
+| `feature-bootstrap` | smokes-and-setup | Set up artifacts without implementing |
+| `iterate` | keep-going | Continue scope-by-scope implementation |
+| `resume-only` | resume-the-tape | Resume from last session state |
+| `product-discovery` | whats-the-big-idea | Business analysis + UX exploration only |
+| `test-to-doc` | quick-dirty | Run tests, fix failures, update docs |
+| `audit-only` | open-and-shut | Run audit phase only |
+| `stabilize-to-doc` | bill-fixes-it | Stability fixes → test → docs |
+| `improve-existing` | survival-of-the-fitness | Analyze, harden, improve → test → docs |
+| `spec-scope-hardening` | harden-up | Tighten specs and scope definitions |
+| `harden-to-doc` | shit-winds-coming | Harden → test → docs |
+| `gaps-to-doc` | gut-feeling | Gap analysis → test → docs |
+| `chaos-to-doc` | we-broke-it | Chaos → test → docs |
+| `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
+| `validate-to-doc` | just-watching | Validate + audit + docs |
 
 **Optional execution tags:** `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
 
