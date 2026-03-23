@@ -11,8 +11,8 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-28-58a6ff?style=flat-square" alt="28 agents">
-  <img src="https://img.shields.io/badge/gates-42-3fb950?style=flat-square" alt="42 gates">
+  <img src="https://img.shields.io/badge/agents-29-58a6ff?style=flat-square" alt="29 agents">
+  <img src="https://img.shields.io/badge/gates-45-3fb950?style=flat-square" alt="45 gates">
   <img src="https://img.shields.io/badge/workflow_modes-24-bc8cff?style=flat-square" alt="24 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
@@ -33,8 +33,8 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>28 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>42 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>29 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>45 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>24 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
@@ -96,7 +96,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 28 agent definitions
+│   ├── bubbles.workflow.agent.md    # 29 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -105,7 +105,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 28 prompt shims
+│   └── bubbles.*.prompt.md          # 29 prompt shims
 ├── instructions/
 │   ├── bubbles-agents.instructions.md       # Portable agent authoring guidance
 │   ├── bubbles-skills.instructions.md       # Portable skill authoring guidance
@@ -161,7 +161,7 @@ Bubbles now enforces hard artifact ownership:
 - `bubbles.ux` owns UX sections inside `spec.md`
 - `bubbles.design` owns `design.md`
 - `bubbles.plan` owns `scopes.md`, `report.md` structure, and `uservalidation.md`
-- Diagnostic agents like `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
+- Diagnostic agents like `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
 
 This is enforced by the artifact ownership contract in `.github/agents/bubbles_shared/artifact-ownership.md`, the shared governance index in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
 
@@ -210,6 +210,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 | <img src="icons/cory-cap.svg" width="20"> `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
 | <img src="icons/cory-trevor-smokes.svg" width="20"> `bubbles.bootstrap` | **Scaffolder.** Sets up workspace and artifacts. | New feature/bug setup |
 | <img src="icons/bill-wrench.svg" width="20"> `bubbles.stabilize` | **Stabilizer.** Quiet. Reliable. Just fixes infrastructure. | Stability issues |
+| <img src="icons/steve-french-paw.svg" width="20"> `bubbles.regression` | **Regression guardian.** Prowls the codebase catching cross-feature interference. | After implementation/bug fixes |
 | <img src="icons/cyrus-sunglasses.svg" width="20"> `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
 | <img src="icons/donny-ducttape.svg" width="20"> `bubbles.simplify` | **Simplifier.** Cuts through the noise. | Reducing complexity |
 | <img src="icons/sebastian-guitar.svg" width="20"> `bubbles.cinematic-designer` | **Design system creator.** Over-the-top production value. | Premium UI/design systems |
@@ -320,7 +321,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 42 Quality Gates
+### 45 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
@@ -368,6 +369,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Check what's going on | `/bubbles.status` |
 | Something's not right, validate it | `/bubbles.validate` |
 | Find gaps in my implementation | `/bubbles.gaps` |
+| Check for regressions | `/bubbles.regression` |
 | Harden the code quality | `/bubbles.harden` |
 | Break things on purpose | `/bubbles.chaos` |
 | Hand off to next session | `/bubbles.handoff` |
@@ -388,13 +390,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 28 agent definitions
+├── agents/                    # 29 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 28 prompt shims
+├── prompts/                   # 29 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

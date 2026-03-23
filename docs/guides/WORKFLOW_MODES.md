@@ -55,7 +55,7 @@ These run the complete pipeline. Use for new features.
 **The standard.** All phases, strict gates, complete coverage.
 
 ```
-select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
+select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** New features, standard development work.
@@ -75,7 +75,7 @@ Same as `full-delivery` but with **stricter gates** — chaos testing included, 
 Prioritized delivery. Scores work items by business value, implements in priority order, runs E2E tests in batches.
 
 ```
-discover → select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
+discover → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** Multiple features competing for time. Large backlogs.
@@ -89,7 +89,7 @@ discover → select → bootstrap → implement → test → security → docs �
 Full product discovery → delivery pipeline.
 
 ```
-analyze → select → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize
+analyze → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** Starting from a product idea, not a technical spec.
@@ -105,7 +105,7 @@ Skip phases you don't need. Move fast without cutting safety.
 Fast bug resolution with proper evidence.
 
 ```
-select → implement → test → validate → audit → finalize
+select → implement → test → regression → simplify → stabilize → security → validate → audit → finalize
 ```
 
 **Use when:** Bug fixes. Get in, fix it, prove it, get out.
@@ -153,7 +153,7 @@ Focus on quality without new implementation.
 Hardening → gap analysis → test → documentation. The quality sandwich.
 
 ```
-select → bootstrap → validate → harden → gaps → implement → test → security → chaos → validate → audit → docs → finalize
+select → bootstrap → validate → harden → gaps → implement → test → regression → simplify → stabilize → security → chaos → validate → audit → docs → finalize
 ```
 
 **Use when:** Post-implementation quality sweep.
@@ -163,7 +163,7 @@ select → bootstrap → validate → harden → gaps → implement → test →
 Chaos testing followed by hardening fixes.
 
 ```
-select → bootstrap → chaos → implement → test → validate → audit → finalize
+select → bootstrap → chaos → implement → test → regression → simplify → stabilize → security → validate → audit → finalize
 ```
 
 **Use when:** Resilience testing and fixing.
