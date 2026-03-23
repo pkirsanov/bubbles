@@ -148,7 +148,7 @@ specs/                                   # Feature/bug spec folders
 ## The Crew
 
 <p align="center">
-  <img src="pictures/bazaar_v3_distributed.svg" width="900" alt="Bubbles Distributed Agent Network">
+  <img src="pictures/bazaar_v5_agent_icons_presentation.svg" width="900" alt="Bubbles Agent Network Presentation Layout">
 </p>
 
 Every agent has a job. Start with the super when you need help, then hand off to the right specialist.

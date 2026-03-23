@@ -1,0 +1,437 @@
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+    <defs>
+        <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+            <feDropShadow dx="14" dy="14" stdDeviation="5" flood-color="#000000" flood-opacity="0.10"/>
+        </filter>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-orange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/>
+        </marker>
+        <marker id="arrow-black" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2c3e50" filter="url(#handdrawn)"/>
+        </marker>
+    </defs>
+
+    <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+    <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#2980b9" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+    <g transform="translate(1300, 98)">
+        <g filter="url(#handdrawn-thick)">
+            <polygon points="-560,-40 520,-28 552,44 468,66 -540,56 -584,6" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+            <path d="M -536,-24 L 506,-12" fill="none" stroke="#2980b9" stroke-width="4"/>
+            <path d="M -530,-8 L 500,4" fill="none" stroke="#2980b9" stroke-width="4"/>
+        </g>
+        <text x="0" y="16" font-size="58" text-anchor="middle" fill="#2c3e50" letter-spacing="3" filter="url(#handdrawn)">BUBBLES AGENT PARK: PRESENTATION LAYOUT</text>
+        <text x="0" y="66" font-size="28" text-anchor="middle" fill="#7f8c8d" filter="url(#handdrawn)">Expanded margins, larger overall scale, cleaner reading distance for slides and posters</text>
+    </g>
+
+    <g filter="url(#handdrawn)">
+        <rect x="120" y="155" width="2360" height="1540" rx="20" fill="#ffffff" fill-opacity="0.55" stroke="#bdc3c7" stroke-width="3"/>
+    </g>
+
+    <g transform="translate(244,145) scale(0.96)">
+        <g font-weight="bold">
+            <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+                <path d="M 395,250 Q 705,150 930,185" stroke="#2980b9" stroke-width="8" stroke-dasharray="15,10" marker-end="url(#arrow-blue)"/>
+                <path d="M 280,370 C 160,470 250,550 250,625" stroke="#9b59b6" stroke-width="6" marker-end="url(#arrow-purple)"/>
+                <path d="M 1085,285 C 1150,390 980,485 940,560" stroke="#e74c3c" stroke-width="8" marker-end="url(#arrow-red)"/>
+                <path d="M 1180,220 C 1405,300 1615,170 1780,240" stroke="#c0392b" stroke-width="6" marker-end="url(#arrow-red)"/>
+                <path d="M 300,790 C 190,945 335,1050 390,1110" stroke="#27ae60" stroke-width="8" marker-end="url(#arrow-green)"/>
+                <path d="M 520,1215 Q 800,1340 980,1185" stroke="#f39c12" stroke-width="8" marker-end="url(#arrow-orange)"/>
+                <path d="M 1165,1075 C 1260,900 1450,920 1560,760" stroke="#3498db" stroke-width="8" stroke-dasharray="25,5" marker-end="url(#arrow-blue)"/>
+                <path d="M 1660,740 Q 1840,920 1835,1050" stroke="#16a085" stroke-width="8" marker-end="url(#arrow-green)"/>
+                <path d="M 980,690 Q 1240,845 1495,690" stroke="#d35400" stroke-width="6" marker-end="url(#arrow-orange)"/>
+                <path d="M 900,760 C 900,900 1010,1040 1045,1100" stroke="#2c3e50" stroke-width="5" stroke-dasharray="10,5" marker-end="url(#arrow-black)"/>
+                <path d="M 1820,355 C 1700,430 1730,545 1655,595" stroke="#8e44ad" stroke-width="8" stroke-dasharray="10,10" marker-end="url(#arrow-purple)"/>
+                <path d="M 1880,1125 C 2120,780 1610,110 1190,165" stroke="#2980b9" stroke-width="5" stroke-dasharray="30,15" marker-end="url(#arrow-blue)"/>
+                <path d="M 345,770 C 760,615 1375,1320 1730,1190" stroke="#c0392b" stroke-width="12" marker-end="url(#arrow-red)"/>
+                <path d="M 405,785 C 835,620 1335,1310 1695,1190" stroke="#f1c40f" stroke-width="4" stroke-dasharray="40,20"/>
+                <path d="M 365,655 C 545,485 770,345 955,255" stroke="#16a085" stroke-width="5" stroke-dasharray="12,8" marker-end="url(#arrow-green)"/>
+                <path d="M 1510,730 C 1270,900 800,1025 505,1175" stroke="#c0392b" stroke-width="5" stroke-dasharray="12,8" marker-end="url(#arrow-red)"/>
+                <path d="M 1745,330 C 1560,520 1405,840 1185,1080" stroke="#2c3e50" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-black)"/>
+                <path d="M 1705,1100 C 1360,940 790,525 400,300" stroke="#27ae60" stroke-width="4" stroke-dasharray="10,14" marker-end="url(#arrow-green)"/>
+            </g>
+
+            <g transform="translate(1100, 68)">
+                <g filter="url(#handdrawn-thick)">
+                    <polygon points="-495,-50 460,-42 490,28 405,52 -470,42 -505,-10" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <path d="M -470,-38 L 450,-28" fill="none" stroke="#2980b9" stroke-width="4"/>
+                    <path d="M -470,-22 L 450,-12" fill="none" stroke="#2980b9" stroke-width="4"/>
+                </g>
+                <text x="0" y="12" font-size="50" text-anchor="middle" fill="#2c3e50" letter-spacing="3" filter="url(#handdrawn)">BUBBLES AGENT PARK: ICON WORKFLOW</text>
+            </g>
+
+            <g transform="translate(25, 0)" filter="url(#handdrawn)">
+                <g transform="translate(55, 88) rotate(-4)">
+                    <rect x="-16" y="-30" width="360" height="116" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#f1c40f" stroke-width="4"/>
+                    <text x="0" y="0" font-size="27" fill="#c0392b">THIS CREW'S GOT MORE</text>
+                    <text x="25" y="33" font-size="27" fill="#c0392b">MOVING PARTS THAN</text>
+                    <text x="58" y="66" font-size="27" fill="#c0392b">A CART-LOT SUMMIT.</text>
+                    <path d="M -10,10 L 320,10 M 20,42 L 275,42 M 54,74 L 330,74" fill="none" stroke="#f1c40f" stroke-width="5"/>
+                </g>
+
+                <g transform="translate(1180, 352) rotate(2)">
+                    <rect x="-18" y="-28" width="385" height="108" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#16a085" stroke-width="4"/>
+                    <text x="0" y="0" font-size="25" fill="#16a085">KEEP THE FLOW TIDY,</text>
+                    <text x="15" y="30" font-size="25" fill="#16a085">OR THIS PARK TURNS</text>
+                    <text x="38" y="60" font-size="25" fill="#16a085">INTO A CLIPBOARD RIOT.</text>
+                </g>
+
+                <g transform="translate(1735, 118) rotate(8)">
+                    <rect x="-18" y="-26" width="356" height="104" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#2980b9" stroke-width="4"/>
+                    <text x="0" y="0" font-size="24" fill="#2980b9">LOCK IT DOWN BEFORE</text>
+                    <text x="18" y="28" font-size="24" fill="#2980b9">THE WHOLE RIG STARTS</text>
+                    <text x="70" y="56" font-size="24" fill="#2980b9">YAPPIN' SECRETS.</text>
+                </g>
+
+                <g transform="translate(32, 474) rotate(2)">
+                    <rect x="-18" y="-28" width="520" height="108" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#8e44ad" stroke-width="4"/>
+                    <text x="0" y="0" font-size="24" fill="#8e44ad">MAKE IT CLEAN, MAKE IT QUICK,</text>
+                    <text x="35" y="29" font-size="24" fill="#8e44ad">DON'T LET THE SCREEN GO</text>
+                    <text x="95" y="58" font-size="24" fill="#8e44ad">FULL SHOPPING-CART RODEO.</text>
+                </g>
+
+                <g transform="translate(18, 1000) rotate(-6)">
+                    <rect x="-18" y="-28" width="498" height="108" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#e67e22" stroke-width="4"/>
+                    <text x="0" y="0" font-size="24" fill="#e67e22">MOCKUPS WENT SIDEWAYS,</text>
+                    <text x="12" y="29" font-size="24" fill="#e67e22">BUT THE LINES STILL GOTTA</text>
+                    <text x="55" y="58" font-size="24" fill="#e67e22">HIT THE DRIVEWAY STRAIGHT.</text>
+                </g>
+
+                <g transform="translate(546, 858) rotate(5)">
+                    <rect x="-18" y="-30" width="448" height="76" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#d35400" stroke-width="4"/>
+                    <text x="0" y="0" font-size="29" fill="#d35400">WHEN CHAOS STARTS YELLIN',</text>
+                    <text x="24" y="34" font-size="29" fill="#d35400">EVERYBODY GRABS A TOOL.</text>
+                </g>
+
+                <g transform="translate(720, 968) rotate(-13)">
+                    <rect x="-18" y="-28" width="360" height="74" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#c0392b" stroke-width="4"/>
+                    <text x="0" y="0" font-size="28" fill="#c0392b">FAST LANE:</text>
+                    <text x="18" y="31" font-size="28" fill="#c0392b">SMOOTH IN, SMOOTH OUT.</text>
+                </g>
+
+                <g transform="translate(1328, 878) rotate(-2)">
+                    <rect x="-18" y="-28" width="438" height="108" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#2c3e50" stroke-width="4"/>
+                    <text x="0" y="0" font-size="29" fill="#2c3e50">IF THE TESTS ONLY PASS</text>
+                    <text x="18" y="34" font-size="29" fill="#2c3e50">WHEN NOBODY'S LOOKIN',</text>
+                    <text x="78" y="68" font-size="29" fill="#2c3e50">THEY AIN'T PASSIN'.</text>
+                </g>
+
+                <g transform="translate(36, 1382) rotate(-2)">
+                    <rect x="-18" y="-28" width="470" height="108" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#2980b9" stroke-width="4"/>
+                    <text x="0" y="0" font-size="27" fill="#2980b9">PATCH IT RIGHT,</text>
+                    <text x="18" y="31" font-size="27" fill="#2980b9">LEAVE THE BREADCRUMBS,</text>
+                    <text x="62" y="62" font-size="27" fill="#2980b9">AND STEP OFF THE KEYBOARD.</text>
+                </g>
+
+                <g transform="translate(990, 1376) rotate(2)">
+                    <rect x="-18" y="-26" width="325" height="72" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#7f8c8d" stroke-width="4"/>
+                    <text x="0" y="0" font-size="25" fill="#7f8c8d">TAPE THE STACK,</text>
+                    <text x="28" y="29" font-size="25" fill="#7f8c8d">RIDE IT TILL MORNING.</text>
+                </g>
+
+                <g transform="translate(1552, 986) rotate(-7)">
+                    <rect x="-18" y="-28" width="408" height="104" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#27ae60" stroke-width="4"/>
+                    <text x="0" y="0" font-size="25" fill="#27ae60">WRITE IT DOWN BEFORE</text>
+                    <text x="15" y="30" font-size="25" fill="#27ae60">THE NEXT PANIC WASHES</text>
+                    <text x="66" y="60" font-size="25" fill="#27ae60">THE MEMORY CLEAN.</text>
+                </g>
+            </g>
+
+            <g transform="translate(300,250)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-94" y="-186" width="188" height="34" rx="8" fill="#ffffff" stroke="#2980b9" stroke-width="4"/>
+                    <circle cx="-70" cy="-169" r="9" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+                    <path d="M -64,-163 L -55,-154" fill="none" stroke="#2980b9" stroke-width="3" stroke-linecap="round"/>
+                    <text x="0" y="-163" font-size="18" fill="#2980b9" text-anchor="middle">ANALYZE + MAP</text>
+                    <rect x="-145" y="-140" width="230" height="260" rx="6" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <path d="M -100,120 L -118,198 M 42,120 L 60,198 M -28,120 L -28,178" stroke="#2c3e50" stroke-width="8" stroke-linecap="round"/>
+                    <path d="M -120,-18 L -20,-18" stroke="#bdc3c7" stroke-width="4"/>
+                    <path d="M -120,40 L -120,-100" stroke="#bdc3c7" stroke-width="4"/>
+                    <rect x="-98" y="-8" width="20" height="48" fill="#3498db" stroke="#2c3e50" stroke-width="3" transform="scale(1,-1) translate(0,24)"/>
+                    <rect x="-68" y="-36" width="20" height="76" fill="#2ecc71" stroke="#2c3e50" stroke-width="3" transform="scale(1,-1) translate(0,24)"/>
+                    <rect x="-38" y="-76" width="20" height="116" fill="#f1c40f" stroke="#2c3e50" stroke-width="3" transform="scale(1,-1) translate(0,24)"/>
+                    <circle cx="76" cy="-58" r="56" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+                    <path d="M 76,-58 L 76,-114 A 56 56 0 0 1 132,-58 Z" fill="#9b59b6" stroke="#2c3e50" stroke-width="4"/>
+                    <path d="M 76,-58 L 132,-58 A 56 56 0 0 1 38,-8 Z" fill="#f39c12" stroke="#2c3e50" stroke-width="4"/>
+                    <rect x="-128" y="130" width="255" height="36" fill="#ffffff" stroke="#2980b9" stroke-width="5"/>
+                    <text x="0" y="154" font-size="20" fill="#2980b9" text-anchor="middle">bubbles.analyst</text>
+                </g>
+            </g>
+
+            <g transform="translate(1050,200)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-132" width="232" height="34" rx="8" fill="#ffffff" stroke="#2c3e50" stroke-width="4"/>
+                    <rect x="-92" y="-176" width="36" height="44" rx="6" fill="#ffffff" stroke="#2c3e50" stroke-width="4"/>
+                    <path d="M -84,-160 L -64,-160 M -84,-148 L -60,-148" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="-70" cy="-137" r="4" fill="#27ae60"/>
+                    <text x="0" y="-109" font-size="18" fill="#2c3e50" text-anchor="middle">ORCHESTRATE FLOW</text>
+                    <polygon points="-160,-84 -10,-62 -10,118 -160,98" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <polygon points="160,-84 10,-62 10,118 160,98" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <circle cx="0" cy="-28" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+                    <circle cx="0" cy="20" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+                    <circle cx="0" cy="68" r="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="5"/>
+                    <rect x="-140" y="-25" width="52" height="30" rx="5" fill="#ffffff" stroke="#3498db" stroke-width="4"/>
+                    <rect x="-90" y="40" width="66" height="30" rx="5" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+                    <path d="M -115,5 L -115,22 L -55,22 L -55,40" fill="none" stroke="#2c3e50" stroke-width="4" marker-end="url(#arrow-black)"/>
+                    <circle cx="56" cy="-8" r="20" fill="#ffffff" stroke="#27ae60" stroke-width="4"/>
+                    <circle cx="112" cy="58" r="25" fill="#ffffff" stroke="#9b59b6" stroke-width="4"/>
+                    <path d="M 72,-8 C 92,-8 92,58 112,58" fill="none" stroke="#2c3e50" stroke-width="4" stroke-dasharray="5,5"/>
+                    <rect x="-152" y="130" width="304" height="36" fill="#ffffff" stroke="#2c3e50" stroke-width="5"/>
+                    <text x="0" y="154" font-size="20" fill="#2c3e50" text-anchor="middle">bubbles.workflow</text>
+                </g>
+            </g>
+
+            <g transform="translate(1850,250)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-116" width="232" height="34" rx="8" fill="#ffffff" stroke="#c0392b" stroke-width="4"/>
+                    <path d="M -92,-170 V -154 A 14 14 0 0 1 -64,-154 V -170" fill="none" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
+                    <rect x="-98" y="-154" width="40" height="26" rx="6" fill="#ffffff" stroke="#2c3e50" stroke-width="4"/>
+                    <circle cx="-78" cy="-143" r="4" fill="#2c3e50"/>
+                    <text x="0" y="-93" font-size="18" fill="#c0392b" text-anchor="middle">GUARDRAILS</text>
+                    <path d="M -50,-22 V -52 A 52 52 0 0 1 52,-52 V -22" fill="none" stroke="#2c3e50" stroke-width="18" stroke-linecap="round"/>
+                    <path d="M -50,-22 V -52 A 52 52 0 0 1 52,-52 V -22" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                    <rect x="-82" y="-22" width="164" height="124" rx="15" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <circle cx="0" cy="20" r="15" fill="#2c3e50"/>
+                    <path d="M -10,20 L -15,60 H 15 L 10,20 Z" fill="#2c3e50"/>
+                    <path d="M 92,-30 L 148,-48 L 168,8 L 126,42 L 84,12 Z" fill="#ffffff" stroke="#c0392b" stroke-width="6" stroke-linejoin="round"/>
+                    <path d="M 126,-24 V 20 M 98,-2 H 152" fill="none" stroke="#2980b9" stroke-width="5" stroke-linecap="round"/>
+                    <rect x="-155" y="130" width="310" height="36" fill="#ffffff" stroke="#c0392b" stroke-width="5" transform="rotate(-7)"/>
+                    <text x="0" y="154" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(-7)">bubbles.security</text>
+                </g>
+            </g>
+
+            <g transform="translate(250,700)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-146" width="232" height="34" rx="8" fill="#ffffff" stroke="#8e44ad" stroke-width="4"/>
+                    <path d="M -98,-130 C -110,-154 -98,-174 -70,-176 C -42,-178 -18,-160 -18,-128 C -18,-112 -38,-104 -60,-112 C -74,-118 -88,-116 -98,-130 Z" fill="#ffffff" stroke="#8e44ad" stroke-width="4"/>
+                    <circle cx="-74" cy="-151" r="4" fill="#2ecc71"/>
+                    <circle cx="-50" cy="-144" r="4" fill="#f39c12"/>
+                    <circle cx="-34" cy="-126" r="4" fill="#e74c3c"/>
+                    <text x="0" y="-123" font-size="18" fill="#8e44ad" text-anchor="middle">DESIGN + SHAPE</text>
+                    <path d="M -56,62 C -130,14 -154,-82 -60,-104 C 34,-126 102,-84 122,20 C 134,84 52,112 -56,62 Z" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <circle cx="-72" cy="18" r="18" fill="#fdfcf9" stroke="#2c3e50" stroke-width="6"/>
+                    <circle cx="-12" cy="-62" r="20" fill="#2ecc71" stroke="#27ae60" stroke-width="4"/>
+                    <circle cx="48" cy="-30" r="22" fill="#d35400" stroke="#e67e22" stroke-width="4"/>
+                    <circle cx="80" cy="20" r="18" fill="#e74c3c" stroke="#c0392b" stroke-width="4"/>
+                    <g transform="translate(92,-18) rotate(-8)">
+                        <rect x="0" y="-70" width="108" height="136" rx="8" fill="#ffffff" stroke="#3498db" stroke-width="5"/>
+                        <path d="M 18,-38 L 84,-48 M 18,-6 L 90,-14 M 18,24 L 80,16" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="28" cy="44" r="8" fill="#2ecc71" stroke="#2c3e50" stroke-width="3"/>
+                        <circle cx="52" cy="36" r="8" fill="#f39c12" stroke="#2c3e50" stroke-width="3"/>
+                        <circle cx="76" cy="48" r="8" fill="#e74c3c" stroke="#2c3e50" stroke-width="3"/>
+                    </g>
+                    <rect x="-112" y="142" width="284" height="36" fill="#ffffff" stroke="#8e44ad" stroke-width="5"/>
+                    <text x="28" y="166" font-size="20" fill="#8e44ad" text-anchor="middle">bubbles.ux</text>
+                </g>
+            </g>
+
+            <g transform="translate(900,650)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-244" width="232" height="34" rx="8" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+                    <circle cx="-78" cy="-268" r="11" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+                    <path d="M -78,-279 Q -66,-292 -74,-310" fill="none" stroke="#f1c40f" stroke-width="4" stroke-linecap="round"/>
+                    <text x="0" y="-221" font-size="18" fill="#c0392b" text-anchor="middle">BREAK ASSUMPTIONS</text>
+                    <path d="M 0,-150 L 24,-92 L 86,-104 L 46,-48 L 108,-12 L 50,22 L 88,80 L 28,62 L 0,122 L -28,62 L -88,80 L -50,22 L -108,-12 L -46,-48 L -86,-104 L -24,-92 Z" fill="#f39c12" stroke="#e67e22" stroke-width="5" opacity="0.62"/>
+                    <circle cx="0" cy="0" r="78" fill="#ffffff" stroke="#2c3e50" stroke-width="10"/>
+                    <path d="M -50,-40 A 50 50 0 0 1 -10,-60" fill="none" stroke="#bdc3c7" stroke-width="8" stroke-linecap="round"/>
+                    <rect x="-20" y="-96" width="40" height="20" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+                    <path d="M 0,-96 Q 30,-132 -10,-160 T 30,-196" fill="none" stroke="#7f8c8d" stroke-width="8"/>
+                    <circle cx="30" cy="-196" r="15" fill="#e74c3c" stroke="#f1c40f" stroke-width="4"/>
+                    <path d="M 10,-196 L -10,-206 M 50,-196 L 70,-206 M 30,-216 L 30,-236" stroke="#e74c3c" stroke-width="4" stroke-linecap="round"/>
+                    <rect x="-150" y="120" width="300" height="36" fill="#ffffff" stroke="#e74c3c" stroke-width="5" transform="rotate(-4)"/>
+                    <text x="0" y="144" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(-4)">bubbles.chaos</text>
+                </g>
+            </g>
+
+            <g transform="translate(1600,650)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-152" width="232" height="34" rx="8" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+                    <circle cx="-82" cy="-136" r="10" fill="#ffffff" stroke="#2c3e50" stroke-width="3"/>
+                    <path d="M -75,-129 L -66,-120" fill="none" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+                    <ellipse cx="-54" cy="-138" rx="8" ry="12" fill="#ffffff" stroke="#e74c3c" stroke-width="3" transform="rotate(18 -54 -138)"/>
+                    <path d="M -58,-146 L -48,-130 M -60,-132 L -48,-144" fill="none" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+                    <text x="0" y="-129" font-size="18" fill="#c0392b" text-anchor="middle">VERIFY + CATCH</text>
+                    <polygon points="-120,-70 60,-100 130,40 -50,70" fill="#ffffff" stroke="#3498db" stroke-width="5" stroke-linejoin="round"/>
+                    <path d="M -100,-50 L 100,-20 M -80,-10 L 110,15 M -60,30 L 120,60" stroke="#3498db" stroke-width="2" opacity="0.5"/>
+                    <g transform="translate(-36,24)">
+                        <path d="M -40,40 L -90,92" stroke="#2c3e50" stroke-width="18" stroke-linecap="round"/>
+                        <path d="M -40,40 L -90,92" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                        <circle cx="0" cy="0" r="54" fill="#fdfcf9" fill-opacity="0.8" stroke="#2c3e50" stroke-width="10"/>
+                        <circle cx="0" cy="0" r="44" fill="none" stroke="#27ae60" stroke-width="4"/>
+                        <ellipse cx="8" cy="-8" rx="14" ry="20" fill="#ffffff" stroke="#2c3e50" stroke-width="4" transform="rotate(25)"/>
+                        <path d="M 0,-20 L -18,-32 M -2,-8 L -28,-10 M 8,6 L -10,24" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 12,-22 L 28,-38 M 16,-8 L 40,-14 M 18,10 L 38,20" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M -8,-20 L 18,10 M -8,10 L 18,-18" stroke="#e74c3c" stroke-width="5" stroke-linecap="round"/>
+                    </g>
+                    <rect x="-145" y="122" width="300" height="36" fill="#ffffff" stroke="#e74c3c" stroke-width="5" transform="rotate(9)"/>
+                    <text x="0" y="146" font-size="20" fill="#c0392b" text-anchor="middle" transform="rotate(9)">bubbles.test</text>
+                </g>
+            </g>
+
+            <g transform="translate(400,1200)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-140" width="232" height="34" rx="8" fill="#ffffff" stroke="#2980b9" stroke-width="4"/>
+                    <rect x="-98" y="-175" width="38" height="26" rx="4" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+                    <path d="M -92,-167 L -68,-167 M -92,-159 L -62,-159" fill="none" stroke="#27ae60" stroke-width="3" stroke-linecap="round"/>
+                    <text x="0" y="-117" font-size="18" fill="#2980b9" text-anchor="middle">BUILD + PATCH</text>
+                    <polygon points="-120,40 120,40 160,90 -160,90" fill="#ffffff" stroke="#2c3e50" stroke-width="8" stroke-linejoin="round"/>
+                    <polygon points="-120,40 120,40 100,-100 -100,-100" fill="#ffffff" stroke="#2c3e50" stroke-width="8" stroke-linejoin="round"/>
+                    <polygon points="-104,30 104,30 86,-88 -86,-88" fill="#ffffff" stroke="#3498db" stroke-width="4"/>
+                    <path d="M -80,-68 L -18,-68 M -80,-46 L 52,-46 M -70,-24 L 72,-24 M -80,-2 L 0,-2 M -70,18 L 84,18" fill="none" stroke="#27ae60" stroke-width="5" stroke-linecap="round" stroke-dasharray="15,5,5,10"/>
+                    <g transform="translate(-106, 50) rotate(18)">
+                        <polygon points="0,0 60,-18 50,40" fill="#ffffff" stroke="#d35400" stroke-width="5" stroke-linejoin="round"/>
+                        <path d="M 60,-18 C 65,0 65,20 50,40" fill="none" stroke="#e67e22" stroke-width="6" stroke-linecap="round"/>
+                        <circle cx="20" cy="0" r="5" fill="#c0392b"/>
+                        <circle cx="40" cy="-5" r="5" fill="#c0392b"/>
+                        <circle cx="35" cy="15" r="6" fill="#c0392b"/>
+                    </g>
+                    <rect x="-160" y="120" width="320" height="36" fill="#ffffff" stroke="#2980b9" stroke-width="5"/>
+                    <text x="0" y="144" font-size="20" fill="#2980b9" text-anchor="middle">bubbles.implement</text>
+                </g>
+            </g>
+
+            <g transform="translate(1100,1150)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-126" width="232" height="34" rx="8" fill="#ffffff" stroke="#f39c12" stroke-width="4"/>
+                    <path d="M -96,-172 L -78,-154" fill="none" stroke="#f39c12" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="-100" cy="-176" r="8" fill="#ffffff" stroke="#f39c12" stroke-width="3"/>
+                    <ellipse cx="-64" cy="-166" rx="18" ry="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="3"/>
+                    <ellipse cx="-64" cy="-166" rx="9" ry="4" fill="#fdfcf9" stroke="#bdc3c7" stroke-width="2"/>
+                    <text x="0" y="-103" font-size="18" fill="#d35400" text-anchor="middle">HARDEN + LAND</text>
+                    <path d="M -105,-60 L 5,44" stroke="#f39c12" stroke-width="22" stroke-linecap="round"/>
+                    <circle cx="-116" cy="-70" r="30" fill="#ffffff" stroke="#f39c12" stroke-width="8"/>
+                    <path d="M -145,-18 L -70,54" stroke="#f39c12" stroke-width="18" stroke-linecap="round"/>
+                    <g transform="translate(6, 16)">
+                        <ellipse cx="0" cy="0" rx="64" ry="36" fill="#ffffff" stroke="#bdc3c7" stroke-width="15"/>
+                        <ellipse cx="0" cy="0" rx="36" ry="18" fill="#fdfcf9" stroke="#7f8c8d" stroke-width="8"/>
+                        <path d="M -54,0 C -26,18 26,18 54,0" fill="none" stroke="#95a5a6" stroke-width="3" stroke-dasharray="8,4"/>
+                    </g>
+                    <rect x="86" y="22" width="182" height="84" rx="10" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+                    <line x1="104" y1="44" x2="250" y2="44" stroke="#2980b9" stroke-width="4"/>
+                    <line x1="104" y1="64" x2="250" y2="64" stroke="#2980b9" stroke-width="4"/>
+                    <circle cx="108" cy="86" r="6" fill="#27ae60"/>
+                    <circle cx="128" cy="86" r="6" fill="#e74c3c"/>
+                    <rect x="-155" y="124" width="360" height="36" fill="#ffffff" stroke="#f39c12" stroke-width="5" transform="rotate(4)"/>
+                    <text x="20" y="148" font-size="20" fill="#d35400" text-anchor="middle" transform="rotate(4)">bubbles.stabilize</text>
+                </g>
+            </g>
+
+            <g transform="translate(1850,1200)" filter="url(#shadow)">
+                <g filter="url(#handdrawn-thick)">
+                    <rect x="-116" y="-90" width="232" height="34" rx="8" fill="#ffffff" stroke="#16a085" stroke-width="4"/>
+                    <rect x="-100" y="-126" width="42" height="24" rx="4" fill="#ffffff" stroke="#16a085" stroke-width="3" transform="rotate(-12 -79 -114)"/>
+                    <text x="-79" y="-108" font-size="10" fill="#c0392b" text-anchor="middle" transform="rotate(-12 -79 -108)">OK</text>
+                    <text x="0" y="-67" font-size="18" fill="#16a085" text-anchor="middle">RECORD + PROVE</text>
+                    <path d="M -110,44 L 50,8 L 110,56 L -50,94 Z" fill="#ffffff" stroke="#2c3e50" stroke-width="6" stroke-linejoin="round"/>
+                    <path d="M -92,34 L 68,0 L 128,48 L -32,86 Z" fill="#ffffff" stroke="#27ae60" stroke-width="5" stroke-linejoin="round"/>
+                    <path d="M -74,24 L 88,-10 L 146,38 L -16,76 Z" fill="#ffffff" stroke="#3498db" stroke-width="5" stroke-linejoin="round"/>
+                    <polygon points="-68,8 96,-24 126,24 -38,62" fill="#ffffff" stroke="#2c3e50" stroke-width="6" stroke-linejoin="round"/>
+                    <path d="M -24,18 L 76,0 M -14,30 L 86,12 M -4,42 L 56,28" fill="none" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+                    <g transform="translate(24, 20) rotate(-24)">
+                        <rect x="-64" y="-22" width="128" height="44" fill="#ffffff" stroke="#c0392b" stroke-width="6" rx="5"/>
+                        <rect x="-54" y="-12" width="108" height="24" fill="none" stroke="#c0392b" stroke-width="3"/>
+                        <text x="0" y="8" font-size="20" fill="#c0392b" text-anchor="middle" letter-spacing="3">PROVED</text>
+                    </g>
+                    <rect x="-160" y="124" width="320" height="36" fill="#ffffff" stroke="#16a085" stroke-width="5" transform="rotate(-7)"/>
+                    <text x="0" y="148" font-size="20" fill="#16a085" text-anchor="middle" transform="rotate(-7)">bubbles.docs</text>
+                </g>
+            </g>
+        </g>
+    </g>
+
+    <g transform="translate(130, 1550)" filter="url(#handdrawn-thick)">
+        <rect x="0" y="0" width="2340" height="148" rx="18" fill="#ffffff" stroke="#2c3e50" stroke-width="6"/>
+
+        <g transform="translate(40, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#2980b9" stroke-width="4"/>
+            <circle cx="28" cy="28" r="10" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+            <path d="M 34,34 L 46,46" fill="none" stroke="#2980b9" stroke-width="3" stroke-linecap="round"/>
+            <text x="114" y="36" font-size="20" fill="#2980b9" text-anchor="middle">bubbles.analyst</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Analyze, map, and frame</text>
+        </g>
+
+        <g transform="translate(290, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#2c3e50" stroke-width="4"/>
+            <rect x="14" y="12" width="26" height="34" rx="5" fill="#ffffff" stroke="#2c3e50" stroke-width="3"/>
+            <path d="M 19,22 L 34,22 M 19,30 L 32,30" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+            <text x="114" y="36" font-size="20" fill="#2c3e50" text-anchor="middle">bubbles.workflow</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Sequence and handoff control</text>
+        </g>
+
+        <g transform="translate(540, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#c0392b" stroke-width="4"/>
+            <path d="M 18,24 V 12 A 8 8 0 0 1 34,12 V 24" fill="none" stroke="#c0392b" stroke-width="3"/>
+            <rect x="14" y="24" width="24" height="18" rx="4" fill="#ffffff" stroke="#2c3e50" stroke-width="3"/>
+            <text x="114" y="36" font-size="20" fill="#c0392b" text-anchor="middle">bubbles.security</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Guardrails and containment</text>
+        </g>
+
+        <g transform="translate(790, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#8e44ad" stroke-width="4"/>
+            <circle cx="22" cy="20" r="4" fill="#2ecc71"/>
+            <circle cx="34" cy="30" r="4" fill="#f39c12"/>
+            <circle cx="18" cy="40" r="4" fill="#e74c3c"/>
+            <text x="114" y="36" font-size="20" fill="#8e44ad" text-anchor="middle">bubbles.ux</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Design, polish, readability</text>
+        </g>
+
+        <g transform="translate(1040, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+            <circle cx="24" cy="32" r="10" fill="#ffffff" stroke="#e74c3c" stroke-width="3"/>
+            <path d="M 24,22 Q 34,12 28,-2" fill="none" stroke="#f1c40f" stroke-width="3"/>
+            <text x="114" y="36" font-size="20" fill="#c0392b" text-anchor="middle">bubbles.chaos</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Stress the assumptions</text>
+        </g>
+
+        <g transform="translate(1290, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#e74c3c" stroke-width="4"/>
+            <circle cx="22" cy="24" r="8" fill="#ffffff" stroke="#2c3e50" stroke-width="3"/>
+            <path d="M 28,30 L 38,40" fill="none" stroke="#2c3e50" stroke-width="3"/>
+            <text x="114" y="36" font-size="20" fill="#c0392b" text-anchor="middle">bubbles.test</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Verify and catch regressions</text>
+        </g>
+
+        <g transform="translate(1540, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#2980b9" stroke-width="4"/>
+            <rect x="14" y="16" width="28" height="18" rx="3" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+            <path d="M 18,24 L 38,24" fill="none" stroke="#27ae60" stroke-width="3"/>
+            <text x="114" y="36" font-size="20" fill="#2980b9" text-anchor="middle">bubbles.implement</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Build and patch delivery</text>
+        </g>
+
+        <g transform="translate(1790, 28)">
+            <rect x="0" y="0" width="228" height="92" rx="12" fill="#ffffff" stroke="#f39c12" stroke-width="4"/>
+            <path d="M 16,18 L 34,36" fill="none" stroke="#f39c12" stroke-width="4" stroke-linecap="round"/>
+            <ellipse cx="36" cy="36" rx="12" ry="6" fill="#ffffff" stroke="#7f8c8d" stroke-width="3"/>
+            <text x="114" y="36" font-size="20" fill="#d35400" text-anchor="middle">bubbles.stabilize</text>
+            <text x="114" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Land, harden, and hold</text>
+        </g>
+
+        <g transform="translate(2040, 28)">
+            <rect x="0" y="0" width="260" height="92" rx="12" fill="#ffffff" stroke="#16a085" stroke-width="4"/>
+            <rect x="14" y="16" width="26" height="16" rx="3" fill="#ffffff" stroke="#16a085" stroke-width="3" transform="rotate(-10 27 24)"/>
+            <text x="130" y="36" font-size="20" fill="#16a085" text-anchor="middle">bubbles.docs</text>
+            <text x="130" y="66" font-size="15" fill="#2c3e50" text-anchor="middle">Record the proof and trail</text>
+        </g>
+    </g>
+</svg>
