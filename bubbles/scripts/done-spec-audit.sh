@@ -6,6 +6,18 @@ source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+resolve_repo_root() {
+  local candidate
+  candidate="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+  if [[ "$(basename "$candidate")" == ".github" ]]; then
+    dirname "$candidate"
+    return 0
+  fi
+
+  echo "$candidate"
+}
+
 usage() {
   echo "Usage: bash bubbles/scripts/done-spec-audit.sh [--fix]"
   echo ""
@@ -32,8 +44,14 @@ for arg in "$@"; do
   esac
 done
 
-repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+repo_root="$(resolve_repo_root)"
 cd "$repo_root"
+
+if [[ ! -d "$repo_root/specs" ]]; then
+  echo "ERROR: specs directory not found under repo root: $repo_root"
+  echo "ERROR: done-spec-audit.sh must run from an installed project repo containing specs/."
+  exit 2
+fi
 
 lint_script="$SCRIPT_DIR/artifact-lint.sh"
 if [[ ! -f "$lint_script" ]]; then
@@ -52,6 +70,7 @@ lint_passed=0
 lint_failed=0
 fixed_count=0
 failed_specs=()
+total_state_files=0
 
 validate_wi_parity() {
   local spec_dir="$1"
@@ -151,6 +170,7 @@ validate_wi_parity() {
 
 for state_file in specs/*/state.json; do
   [[ -f "$state_file" ]] || continue
+  total_state_files=$((total_state_files + 1))
 
   status_line="$(grep -Eo '"status"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" | head -n 1 || true)"
   status_value="$(echo "$status_line" | sed -E 's/.*"status"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/')"
@@ -225,6 +245,13 @@ for state_file in specs/*/state.json; do
     echo "FIXED: downgraded to in_progress -> $spec_dir"
   fi
 done
+
+if [[ "$total_state_files" -gt 0 ]] && [[ "$total_done" -eq 0 ]]; then
+  echo ""
+  echo "ERROR: done-spec audit scanned $total_state_files state files but found zero done specs."
+  echo "ERROR: This is treated as a blocking audit failure to prevent silent no-op scans."
+  exit 1
+fi
 
 echo ""
 echo "Done-spec audit summary"

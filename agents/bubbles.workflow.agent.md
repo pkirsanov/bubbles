@@ -737,8 +737,17 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run ONE build covering all changes (no per-spec rebuilds)
    - Run `test` phase via `runSubagent` — execute ALL test suites, covering test plans from ALL batched specs
    - Run `docs` phase via `runSubagent` — update docs for ALL specs
-   - Run `validate` phase via `runSubagent` — validate ALL specs together
-   - Run `audit` phase via `runSubagent` — audit ALL specs together
+    - Run `validate` phase via `runSubagent` — validate ALL specs together
+    - **MANDATORY validate repair loop before audit/finalize:**
+       1. Parse the `bubbles.validate` response for any `## ROUTE-REQUIRED` section or Ownership Routing Summary.
+       2. If validation reports stale DoD state, placeholder evidence, malformed `uservalidation.md`, missing traceability, missing test substance, or any other routed blocking issue, invoke the owning specialist immediately (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug` as applicable).
+       3. After the owner finishes, rerun `bubbles.validate` for the affected spec(s).
+       4. Do not proceed to `audit` or `finalize` until `bubbles.validate` returns cleanly with no routed blocking issues.
+    - Run `audit` phase via `runSubagent` — audit ALL specs together
+    - **MANDATORY audit repair loop before finalize:**
+       1. Parse the `bubbles.audit` response for any blocking failure or `## ROUTE-REQUIRED` section.
+       2. If audit reports a repairable issue, invoke the owning specialist, rerun the impacted validations/tests, and rerun `bubbles.audit`.
+       3. Finalize is forbidden while audit findings remain open.
    - Run `chaos` phase via `runSubagent` — chaos probes covering ALL specs
    - Run `finalize` phase — for EACH batched spec individually:
    1. Write the current-run shared evidence into the spec's `report.md` and scope evidence blocks before any promotion decision.
@@ -1003,7 +1012,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
-      **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence. If validation was skipped or fabricated → **re-invoke**.
+      **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence and a `## ROUTE-REQUIRED` block. If the block is missing, validation was skipped, or the evidence is fabricated → **re-invoke**. If `ROUTE-REQUIRED` is not `NONE`, invoke the named owner, rerun the required checks, then rerun `bubbles.validate`.
 
       **Phase: `audit`**
       ```
@@ -1017,7 +1026,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
-      **Verify:** Confirm audit response contains a clear verdict and references specific gate checks.
+      **Verify:** Confirm audit response contains a clear verdict, references specific gate checks, and includes a `## ROUTE-REQUIRED` block. If the block is missing, treat audit as malformed and re-invoke it. If routed repair is required, invoke the named owner, rerun the impacted checks, then rerun `bubbles.audit`.
 
       **⚠️ POST-FIX-CYCLE VERIFICATION (MANDATORY after ALL fix cycle phases complete):**
       After the entire fix cycle for a round completes, the workflow agent MUST verify:

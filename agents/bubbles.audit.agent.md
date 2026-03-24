@@ -45,6 +45,32 @@ If any required check fails, report an audit failure and do not issue a ship-rea
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 
+When `bubbles.audit` is invoked by `bubbles.workflow` or `bubbles.iterate` and finds any blocking issue, it MUST emit a machine-readable routing block so the orchestrator can repair before finalize:
+
+```markdown
+## ROUTE-REQUIRED
+
+| Field | Value |
+|-------|-------|
+| Status | blocked |
+| Owner | bubbles.plan |
+| Reason | Artifact compliance failure in scopes.md/report.md |
+| Required Revalidation | yes |
+| Blocking Gates | G023, G025, G041 |
+```
+
+Rules:
+- Emit one `ROUTE-REQUIRED` block per blocking owner/action pair.
+- `Owner` MUST be the concrete repair owner, never a generic phrase.
+- `Reason` MUST identify the exact audit failure class.
+- If no routed repair is needed, emit:
+
+```markdown
+## ROUTE-REQUIRED
+
+NONE
+```
+
 ## Governance References
 
 **MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
@@ -60,6 +86,8 @@ Optional compliance options:
 ## Prerequisites
 
 Ensure `/bubbles.validate` has passed before running this audit.
+
+If validation has not passed cleanly, or validation returned any `ROUTE-REQUIRED` block other than `NONE`, the audit verdict MUST be `🛑 REWORK_REQUIRED` or `🔴 DO_NOT_SHIP`.
 
 ## Context Loading
 

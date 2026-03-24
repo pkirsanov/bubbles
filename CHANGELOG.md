@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added machine-readable `## ROUTE-REQUIRED` orchestration blocks to `bubbles.validate` and `bubbles.audit`, and made `bubbles.workflow` treat missing or unresolved routing blocks as blocking before finalize.
+- Fixed `done-spec-audit.sh` so it resolves installed-project repo roots correctly, rejects running outside repos with `specs/`, and fails closed on suspicious zero-done-spec scans.
 - Added `bubbles/scripts/agnosticity-lint.sh` and a shipped allowlist file so portable Bubbles surfaces are mechanically checked for project-specific and concrete-tool drift.
 - Wired agnosticity checks into the Bubbles CLI, doctor output, generated git hooks, installer payload, and GitHub Actions.
 - Generalized remaining shared prompt, workflow, and governance references that still named concrete projects or browser automation tools.

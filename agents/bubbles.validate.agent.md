@@ -616,6 +616,29 @@ If `bubbles.validate` is invoked directly and a foreign-owned artifact must chan
 
 If `bubbles.validate` is invoked by `bubbles.workflow` or `bubbles.iterate`, it MUST return a route-required failure classification with the owning specialist and exact reason. The orchestrator must then invoke that owner before validation can pass.
 
+**Required machine-readable block for workflow callers:**
+
+When returning any routed failure to `bubbles.workflow` or `bubbles.iterate`, include this exact section in the response:
+
+```markdown
+## ROUTE-REQUIRED
+
+| Field | Value |
+|-------|-------|
+| Status | blocked |
+| Owner | bubbles.plan |
+| Reason | Unchecked DoD items remain in scopes.md |
+| Required Revalidation | yes |
+| Blocking Gates | G018, G023, G025 |
+```
+
+Rules:
+- Emit one `ROUTE-REQUIRED` block per blocking owner/action pair.
+- `Owner` MUST be a single concrete specialist (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug`).
+- `Reason` MUST name the exact blocking condition, not a generic summary.
+- `Required Revalidation` MUST be `yes` for any routed issue that affects artifacts, tests, code, or compliance.
+- Do NOT emit `✅ ALL VALIDATIONS PASSED` while any `ROUTE-REQUIRED` block is present.
+
 #### 7.4 Routing evidence
 
 Record routed follow-ups in the validation report:
@@ -626,6 +649,14 @@ Record routed follow-ups in the validation report:
 | Finding | Owner Invoked Or Required | Reason | Re-validation Needed |
 |---------|---------------------------|--------|----------------------|
 | [issue] | [bubbles.plan / bubbles.design / bubbles.analyst / ...] | [why foreign artifact must change] | yes/no |
+```
+
+When validation is clean, include an explicit no-routing marker for workflow callers:
+
+```markdown
+## ROUTE-REQUIRED
+
+NONE
 ```
 
 ## Phase Completion Recording (MANDATORY)
