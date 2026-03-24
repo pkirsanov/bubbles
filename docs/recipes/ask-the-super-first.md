@@ -25,6 +25,9 @@ Use this recipe when any of these are true:
 
 /bubbles.super  review this repo before we decide what to spec
 → /bubbles.system-review  scope: full-system output: summary-doc
+
+/bubbles.super  give me the safest tdd-first workflow for this bug
+→ /bubbles.workflow  <bug-or-feature> mode: bugfix-fastlane tdd: true
 ```
 
 ## Ask For A Prompt Sequence
@@ -44,6 +47,9 @@ Use this recipe when any of these are true:
 
 /bubbles.super  what's the difference between harden-to-doc and gaps-to-doc?
 → A concise comparison and the recommended choice for your situation
+
+/bubbles.super  should we grill this before we plan it?
+→ A short recommendation plus the exact command, usually `/bubbles.grill ...` or `/bubbles.workflow ... grillFirst: true`
 ```
 
 ## Ask For Framework Help

@@ -23,6 +23,7 @@ handoffs:
 - Before editing a failing test, compare it to `spec.md`, `design.md`, `scopes.md`, and DoD; if it matches the plan, fix the implementation instead of weakening the test
 - If the planned behavior is wrong or incomplete, update the owning planning artifact first, then update test + implementation together
 - No skips/xfails/disabled tests; fix the implementation (or docs when truly wrong)
+- When upstream workflow context includes `tdd: true`, preserve the red → green → broader-regression sequence explicitly: capture the failing targeted proof first, make the smallest change that turns it green, then keep or add persistent regression coverage for the same scenario.
 - Enforce `test-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 
 **⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
@@ -77,6 +78,7 @@ This prompt is for **testing-first hardening**.
   - If tests reveal the implementation diverges from spec/design/use cases, **fix the implementation**.
   - If tests reveal the spec/design/use cases are incomplete/ambiguous/wrong, **update the docs** (spec/design/use cases) and then update tests + implementation to match.
 - **RED before GREEN is mandatory** for changed behavior. Capture the failing targeted test or reproduction first, then the passing proof, then the broader regression suite.
+- **When `tdd: true` is in effect, the failing targeted proof is not optional** — do not skip straight to broader suites or post-hoc regression-only evidence.
 - **E2E tests (`e2e-api` and/or `e2e-ui`) are MANDATORY** for every scope/bug — they run against a LIVE system with NO mocks.
 - **Every feature/fix/change MUST have persistent scenario-specific E2E regression coverage** — add or update at least one regression E2E test tied to each new/changed/fixed behavior, then run the broader regression suite as well.
 - **Renames/removals MUST have consumer-facing regression coverage** — validate affected navigation links, breadcrumbs, redirects, API clients, and stale-reference scans instead of only the renamed producer surface.

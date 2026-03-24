@@ -11,9 +11,9 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-29-58a6ff?style=flat-square" alt="29 agents">
-  <img src="https://img.shields.io/badge/gates-45-3fb950?style=flat-square" alt="45 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-24-bc8cff?style=flat-square" alt="24 modes">
+  <img src="https://img.shields.io/badge/agents-30-58a6ff?style=flat-square" alt="30 agents">
+  <img src="https://img.shields.io/badge/gates-51-3fb950?style=flat-square" alt="51 gates">
+  <img src="https://img.shields.io/badge/workflow_modes-25-bc8cff?style=flat-square" alt="25 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -33,11 +33,11 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>29 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>45 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>24 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>30 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>51 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>25 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
-<tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without losing autonomous defaults</td></tr>
+<tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 </table>
 
 ---
@@ -96,7 +96,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 29 agent definitions
+│   ├── bubbles.workflow.agent.md    # 30 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -105,18 +105,9 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 29 prompt shims
-├── instructions/
-│   ├── bubbles-agents.instructions.md       # Portable agent authoring guidance
-│   ├── bubbles-skills.instructions.md       # Portable skill authoring guidance
-│   └── bubbles-docker-lifecycle-governance.instructions.md
-├── skills/
-│   ├── bubbles-skill-authoring/             # Portable governance skill
-│   ├── bubbles-docker-port-standards/
-│   ├── bubbles-spec-template-bdd/
-│   └── bubbles-docker-lifecycle-governance/
+│   └── bubbles.*.prompt.md          # 30 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 24 workflow mode definitions
+│   ├── workflows.yaml               # 25 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -199,6 +190,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 | <img src="icons/lucy-mirror.svg" width="20"> | `bubbles.ux` | **UX designer.** Cares about how things feel and look. | UI/UX design work |
 | <img src="icons/sarah-clipboard.svg" width="20"> | `bubbles.design` | **Architect.** Turns loose ideas into a crisp technical shape. | System design |
 | <img src="icons/barb-keys.svg" width="20"> | `bubbles.plan` | **Scope planner.** Defines the scopes, keeps the books. | Breaking work into scopes |
+| <img src="icons/private-dancer-lamp.svg" width="20"> | `bubbles.grill` | **Pressure tester.** Interrogates ideas, plans, and assumptions before time gets wasted. | Challenging an idea or workflow choice up front |
 | <img src="icons/george-green-badge.svg" width="20"> | `bubbles.clarify` | **Requirements clarifier.** Asks the obvious but important questions. | Resolving ambiguity |
 | <img src="icons/conky-puppet.svg" width="20"> | `bubbles.harden` | **Hardener.** Says the uncomfortable truths. Confrontational. Necessary. | Hardening passes |
 | <img src="icons/phil-collins-baam.svg" width="20"> | `bubbles.gaps` | **Gap finder.** Finds what nobody else sees. | Gap analysis |
@@ -238,6 +230,12 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 ### 1. Plan a Feature
 ```
 /bubbles.analyst  Build a user authentication system with JWT tokens
+```
+
+If you want the idea challenged before it turns into artifacts:
+
+```
+/bubbles.grill  Build a user authentication system with JWT tokens
 ```
 
 ### 2. Design It
@@ -284,7 +282,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 24 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 25 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -294,10 +292,11 @@ Bubbles supports 24 workflow modes plus optional execution tags. Here are the mo
 | `value-first-e2e-batch` | Prioritized: plan → implement batches → test → validate | Large features |
 | `chaos-hardening` | Chaos → harden → test → validate | Resilience work |
 | `harden-gaps-to-doc` | Harden → gaps → test → docs | Quality sweeps |
+| `simplify-to-doc` | Simplify → test → validate → audit → docs | Safe cleanup of existing implementations |
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 24 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 25 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -305,9 +304,14 @@ For engineering-only code review work that should not enter the spec workflow, u
 For holistic feature, component, journey, or system review, use `bubbles.system-review` with a mode from `bubbles/system-review.yaml`.
 
 Optional execution tags:
+- `grillFirst: true` pressure-tests the direction before planning or implementation starts.
+- `tdd: true` forces a red-green-first execution loop inside the implement/test path after planning readiness is already satisfied.
+- `backlogExport: tasks|issues` makes planning emit copy-ready backlog outputs per scope.
+
+Baseline workflow law already requires coherent spec/design/plan artifacts, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation begins.
 - `socratic: true` turns on a bounded clarification loop before discovery/bootstrap work.
 - `gitIsolation: true` opts into branch/worktree isolation when project policy allows it.
-- `autoCommit: true` opts into atomic commits after validated milestones.
+- `autoCommit: scope|dod` opts into atomic commits after validated milestones.
 - `maxScopeMinutes` and `maxDodMinutes` tighten planning so scopes stay small and isolated.
 - `microFixes: true` keeps failure recovery in narrow error-scoped loops.
 
@@ -321,7 +325,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 45 Quality Gates
+### 51 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
@@ -347,7 +351,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 24 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 25 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Recipes](docs/recipes/) | Common problems → solutions |
 | [Installing in Your Repo](docs/guides/INSTALLATION.md) | Step-by-step setup guide |
@@ -390,13 +394,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 29 agent definitions
+├── agents/                    # 30 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 29 prompt shims
+├── prompts/                   # 30 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

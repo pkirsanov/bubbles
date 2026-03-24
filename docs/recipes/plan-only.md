@@ -12,6 +12,8 @@ You want to think through a feature — requirements, design, scope breakdown �
 
 ```
 /bubbles.workflow  feature-bootstrap for my-new-feature
+
+/bubbles.workflow  feature-bootstrap for my-new-feature grillFirst: true backlogExport: tasks
 ```
 
 **Phases:** analyst → design → plan
@@ -44,5 +46,7 @@ A complete `specs/NNN-feature/` folder with:
 - `spec.md` — requirements and acceptance criteria
 - `design.md` — architecture and data models
 - `scopes.md` — implementable scopes with DoD
+
+If you use `backlogExport: tasks` or `backlogExport: issues`, `bubbles.plan` also emits copy-ready backlog sections derived from the scopes without changing `scopes.md` as the source of truth.
 
 Ready to implement whenever you are.

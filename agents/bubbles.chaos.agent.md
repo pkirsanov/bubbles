@@ -34,6 +34,7 @@ handoffs:
 - Support both single-action probes and multi-step user journeys
 - Keep all random runs reproducible via logged seed + action trace
 - Use bounded execution (timeouts, max steps, max attempts) with fail-fast behavior
+- If upstream workflow context includes `tdd: true`, treat the deterministic red → green proof as a prerequisite, not a substitute: chaos comes after the narrow proof is green and any new chaos finding must be routed back into durable deterministic regression coverage.
 - **Require ACTUAL execution evidence before declaring findings** — see Execution Evidence Standard in agent-common.md
 - **Never claim a scenario passed or failed without having executed it and observed the output**
 - **Copy actual terminal/tool output into reports; never write expected output**
@@ -151,6 +152,8 @@ Chaos runs are a **supplementary discovery mechanism** that may overlap with the
 | `integration` | Journey scenarios exercise multi-component paths — overlaps integration semantics |
 
 **Chaos does NOT replace these types.** It extends them with non-determinism. Deterministic coverage gaps discovered by chaos must be backfilled as canonical tests via `/bubbles.test`.
+
+When work was executed with `tdd: true`, chaos is the follow-on abuse phase after deterministic proof, not an alternative to it. Any chaos-only failure mode that matters must come back out of chaos as targeted deterministic regression coverage via `/bubbles.test` and delta verification via `/bubbles.regression`.
 
 ---
 

@@ -64,6 +64,7 @@ Common source modules:
 | `bubbles.ux` | define wireframes, flows, and UX-specific spec content | `ux-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.design` | create or repair technical design | `design-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.plan` | break work into scopes, tests, and DoD | `plan-bootstrap.md`, `planning-core.md`, `artifact-lifecycle.md`, `scope-templates.md` |
+| `bubbles.grill` | pressure-test ideas, plans, and workflow choices before committing effort | `artifact-ownership.md`, `planning-core.md`, `quality-gates.md` |
 | `bubbles.clarify` | resolve ambiguity before planning or implementation | `clarify-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.harden` | turn findings into stronger scope/test/design follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
 | `bubbles.gaps` | find missing behavior, tests, or scope coverage | `quality-gates.md`, `artifact-lifecycle.md` |

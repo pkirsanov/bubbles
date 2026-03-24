@@ -41,6 +41,7 @@ handoffs:
 - Verify design coherence across the feature portfolio (new design must not contradict existing designs)
 - Check UI flow integrity (existing user journeys must survive new changes)
 - Verify test coverage did not decrease
+- When upstream workflow context includes `tdd: true`, verify the claimed red → green path stayed honest: targeted failing proof existed first, the regression coverage for that scenario remained in place, and broader regression evidence did not replace the narrow proof.
 - **Require ACTUAL execution evidence** — see Execution Evidence Standard in agent-common.md
 - **Never claim "no regressions" without running the full test suite and observing output**
 - **Diagnostic agent** — read-only for foreign-owned artifacts; route required changes to owning specialists via `runSubagent`
@@ -56,6 +57,7 @@ handoffs:
 
 **Relationship to other agents:**
 - **Complements bubbles.test** — test runs tests; regression checks the delta (did passing tests start failing? did coverage drop?)
+- **Strengthens TDD claims** — when work was run with `tdd: true`, regression verifies that the narrow failing-proof scenario survived as durable regression coverage instead of being replaced by looser suite-only evidence
 - **Complements bubbles.chaos** — chaos is stochastic/random probing; regression is deterministic/targeted verification
 - **Complements bubbles.gaps** — gaps finds implementation vs. spec drift; regression finds cross-spec interference
 - **Complements bubbles.validate** — validate checks gates; regression specifically checks for cross-feature breakage

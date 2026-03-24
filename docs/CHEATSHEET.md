@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **29 Agents · 45 Gates · 24 Workflow Modes · 18 Phases**
+> **30 Agents · 51 Gates · 25 Workflow Modes · 18 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -42,6 +42,7 @@
 | <img src="../icons/lucy-mirror.svg" width="28"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"You can't just slap things together and call it a home, Ricky."* |
 | <img src="../icons/sarah-clipboard.svg" width="28"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
 | <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
+| <img src="../icons/private-dancer-lamp.svg" width="28"> | `bubbles.grill` | Leslie Dancer | Pressure-tests ideas, plans, and workflow choices before effort gets burned on weak assumptions. | *"Let's get it under the light and see if it survives."* |
 | <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
 | <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
 | <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
@@ -84,6 +85,8 @@
 | Alias | Maps To | Quote |
 |-------|---------|-------|
 | `sunnyvale pull-the-strings` | `bubbles.workflow` | *"Bubbles is pulling the strings, boys."* |
+| `sunnyvale under-the-light` | `bubbles.grill` | *"Let's get it under the light and see if it survives."* |
+| `sunnyvale private-dancer` | `bubbles.grill` | *"You want answers? Put it under the light."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale by-the-book` | `bubbles.audit --strict` | *"This is by the book now."* |
 | `sunnyvale i-am-the-liquor` | `bubbles.audit` | *"I AM the liquor."* |
@@ -128,6 +131,7 @@
 | `value-first-e2e-batch` | boys-plan | Auto-discover highest-value work, full delivery pipeline |
 | `full-delivery` | full-send | Standard complete delivery — the default |
 | `full-delivery-strict` | clean-and-sober | Strict enforcement, no blocked continuation |
+| `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
 | `chaos-hardening` | shit-storm | Iterative chaos + bugfix cycles until clean |
 | `bugfix-fastlane` | smash-and-grab | Fast bug closure — in, fix, out |
 | `validate-only` | randy-put-a-shirt-on | Run validation gates only |
@@ -150,12 +154,14 @@
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
 
-**Optional execution tags:** `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+**Optional execution tags:** `grillFirst`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+
+**Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 45 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 51 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -209,6 +215,11 @@
 | G044 | Regression baseline | Before/after test count comparison — previously-passing tests must still pass |
 | G045 | Cross-spec regression | Done specs' tests rerun after changes — no cross-feature interference |
 | G046 | Spec conflict detection | Route/table/API collisions scanned against all existing specs |
+| G047 | IDOR/auth bypass | Authorization decisions must use authenticated context, not caller-controlled identity fields |
+| G048 | Silent decode failure | Stored-data decode failures must be surfaced, never silently dropped |
+| G049 | Evidence clone detection | DoD evidence blocks must be unique, not copy-pasted clones |
+| G050 | Gateway route forwarding | Backend endpoints must have matching gateway or proxy forwarding rules |
+| G051 | Test env dependency | Tests must not rely on hidden environment dependencies |
 
 ---
 

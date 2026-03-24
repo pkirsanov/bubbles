@@ -137,6 +137,9 @@ The standard super pattern is:
 User: "I want to improve the booking feature to be competitive"
 -> /bubbles.workflow  specs/008-google-vacation-rentals-integration mode: improve-existing
 
+User: "grill this feature idea before we commit"
+-> /bubbles.grill  <describe feature or spec path>
+
 User: "fix the calendar bug"
 -> /bubbles.workflow  specs/019-visual-page-builder/bugs/BUG-001 mode: bugfix-fastlane
 
@@ -148,6 +151,15 @@ User: "design a notification system"
 
 User: "check if my feature is ready to ship"
 -> /bubbles.audit  specs/042-catalog-assistant
+
+User: "simplify this feature and sync docs"
+-> /bubbles.workflow  specs/<feature> mode: simplify-to-doc
+
+User: "deliver this but stay strict TDD"
+-> /bubbles.workflow  specs/<feature> mode: full-delivery tdd: true
+
+User: "plan this and give me issue seeds"
+-> /bubbles.plan  specs/<feature> backlogExport: issues
 
 User: "break things and find weaknesses"
 -> /bubbles.workflow  mode: chaos-hardening
@@ -163,9 +175,11 @@ User: "why did my workflow stop after validate?"
 
 | User Goal | Recommended Sequence |
 |-----------|----------------------|
+| "Challenge an idea before anyone starts building" | 1. `/bubbles.grill <describe idea>` - Pressure-test the assumptions, rollout risk, and missing proof<br>2. `/bubbles.analyst <idea>` or `/bubbles.workflow <feature> mode: product-discovery grillFirst: true` - Convert the findings into owned artifacts |
 | "Build a new feature from idea to shipped code" | 1. `/bubbles.analyst <describe feature>` - Discover requirements, actors, use cases<br>2. `/bubbles.ux <feature>` - Create UI wireframes and flows<br>3. `/bubbles.design <feature>` - Technical architecture<br>4. `/bubbles.plan <feature>` - Break into scopes<br>5. `/bubbles.workflow <feature> mode: full-delivery` - Deliver all scopes |
 | "Fix a bug properly" | 1. `/bubbles.bug <describe bug>` - Document, reproduce, root-cause<br>2. `/bubbles.workflow <bug-folder> mode: bugfix-fastlane` - Fix, test, verify |
 | "Make an existing feature better" | 1. `/bubbles.workflow <feature> mode: improve-existing` - Full analyze -> reconcile -> improve -> test -> ship pipeline |
+| "Simplify an existing implementation without changing the product story" | 1. `/bubbles.workflow <feature> mode: simplify-to-doc` - Reduce complexity, run tests, validate, audit, sync docs |
 | "Review code directly before deciding what to fix" | 1. `/bubbles.code-review <slice> output: summary-doc` - Produce a normalized engineering code review |
 | "Review a feature or system before deciding what to spec" | 1. `/bubbles.system-review <target> output: summary-doc` - Produce a holistic system review<br>2. `/bubbles.system-review <target> output: create-specs` - Promote selected findings into specs when ready |
 | "Ship-readiness check" | 1. `/bubbles.validate <feature>` - Run validation gates<br>2. `/bubbles.audit <feature>` - Final compliance audit<br>3. `/bubbles.chaos <feature>` - Chaos testing for resilience |
@@ -181,9 +195,11 @@ User: "why did my workflow stop after validate?"
 
 | User Intent (keywords/phrases) | Best Agent | Notes |
 |-------------------------------|------------|-------|
+| "grill", "pressure test", "poke holes", "challenge this plan", "what breaks first" | `bubbles.grill` | Use before committing to a direction or mode |
 | "fix bug", "broken", "not working" | `bubbles.workflow` with `mode: bugfix-fastlane` | Or `bubbles.bug` for documentation-first |
 | "implement", "build", "add feature" | `bubbles.workflow` with `mode: full-delivery` | Or `bubbles.implement` for one planned scope |
 | "improve", "make better", "enhance" | `bubbles.workflow` with `mode: improve-existing` | Includes competitive analysis |
+| "simplify", "cleanup architecture", "reduce complexity", "trim over-engineering" | `bubbles.workflow` with `mode: simplify-to-doc` | Or `bubbles.simplify` standalone for a narrow pass |
 | "harden", "strengthen", "robustness" | `bubbles.workflow` with `mode: harden-to-doc` | Or `bubbles.harden` standalone |
 | "find gaps", "missing", "incomplete" | `bubbles.workflow` with `mode: gaps-to-doc` | Or `bubbles.gaps` standalone |
 | "test", "run tests", "verify" | `bubbles.test` | Or `bubbles.workflow` with `mode: test-to-doc` |
@@ -192,6 +208,7 @@ User: "why did my workflow stop after validate?"
 | "audit", "final check", "ready to ship" | `bubbles.audit` | Final gate enforcement |
 | "docs", "documentation", "update docs" | `bubbles.workflow` with `mode: docs-only` | Or `bubbles.docs` standalone |
 | "plan", "scope", "break down" | `bubbles.plan` | Scope decomposition |
+| "create tasks", "create issues", "backlog", "issue seeds" | `bubbles.plan` | Add `backlogExport: tasks|issues` when asked |
 | "design", "architecture", "data model" | `bubbles.design` | Technical design |
 | "analyze", "requirements", "competitors" | `bubbles.analyst` | Business analysis |
 | "review codebase", "assess code", "prioritize code issues", "engineering review" | `bubbles.code-review` | Lightweight engineering-only code assessment |
@@ -203,6 +220,7 @@ User: "why did my workflow stop after validate?"
 | "stabilize", "performance", "ops" | `bubbles.stabilize` | Or `bubbles.workflow` with `mode: stabilize-to-doc` |
 | "N rounds of stabilize/harden/gaps/chaos/validate/security/improve" | `bubbles.workflow` with `mode: stochastic-quality-sweep` | Set `triggerAgents` to the named specialist and `maxRounds: N` |
 | "simplify", "cleanup", "complexity" | `bubbles.simplify` | Post-implementation cleanup |
+| "TDD", "test first", "red green refactor" | `bubbles.workflow` with a delivery mode plus `tdd: true` | Prefer a real workflow, not a fake top-level mode; `tdd` tightens the inner loop, it does not replace baseline planning/scenario gates |
 | "cinematic", "premium UI", "design system" | `bubbles.cinematic-designer` | Premium UI design |
 | "clarify", "ambiguous", "unclear" | `bubbles.clarify` | Spec/design clarification |
 | "quality sweep", "everything", "full check" | `bubbles.workflow` with `mode: harden-gaps-to-doc` | Most thorough |
@@ -226,14 +244,19 @@ When a user asks "which mode should I use?" or describes a situation, recommend 
 4. **Is there existing code you want to improve?**
    - YES -> `improve-existing`, `harden-to-doc`, or `gaps-to-doc`
    - NO -> continue
-5. **Do you have specs/design but no code yet?**
+5. **Is the goal specifically to reduce complexity without re-scoping the feature?**
+   - YES -> `simplify-to-doc`
+   - NO -> continue
+6. **Do you have specs/design but no code yet?**
    - YES -> `full-delivery` or `feature-bootstrap`
    - NO -> continue
-6. **Do you want randomized adversarial probing?**
+7. **Do you want randomized adversarial probing?**
    - YES -> `stochastic-quality-sweep`
    - NO -> continue
-7. **Do you want the system to pick the best work?**
+8. **Do you want the system to pick the best work?**
    - YES -> `iterate` or `value-first-e2e-batch`
+
+When the user explicitly asks to challenge the plan first, prepend `bubbles.grill` or add `grillFirst: true` to the recommended workflow. When the user asks for test-first execution, add `tdd: true` and remember that baseline workflow law already requires coherent spec/design/plan artifacts, Gherkin scenarios, and scenario-specific test planning before implementation is allowed. When the user asks for copy-ready backlog items, add `backlogExport: tasks|issues` to `bubbles.plan`.
 
 ### 3. Health Check & Auto-Heal
 
@@ -338,6 +361,8 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "check health" -> bash bubbles/scripts/cli.sh doctor
 "install hooks and then tell me how to fix a bug" -> (1) hooks install --all, (2) recommend bugfix-fastlane sequence
 "what's the best workflow for improving an existing feature?" -> recommend improve-existing mode with explanation
+"pressure test this feature and then plan it" -> /bubbles.grill <feature> then /bubbles.plan <feature> backlogExport: tasks
+"deliver this with TDD and grill the assumptions first" -> /bubbles.workflow <feature> mode: full-delivery grillFirst: true tdd: true
 "give me a command to chaos test everything for 2 hours" -> /bubbles.workflow mode: stochastic-quality-sweep minutes: 120 triggerAgents: chaos
 "how do I set up custom gates?" -> explain gates workflow + provide example command
 ```

@@ -15,11 +15,16 @@ Use workflow modes after review when you already know you want follow-through wo
 Current assessment: **no dedicated new review workflow modes are needed yet**. Existing modes such as `improve-existing`, `stabilize-to-doc`, `harden-gaps-to-doc`, and `product-to-delivery` already cover the execution side once review findings are clear.
 
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
+- `grillFirst: true` inserts `bubbles.grill` before analysis, selection, or bootstrap so weak assumptions get challenged early.
+- `tdd: true` forces a red-green-first implementation loop for changed behavior after the normal planning and scenario gates are already satisfied.
+- `backlogExport: tasks|issues` forwards backlog-ready task or issue output preferences to `bubbles.plan`.
 - `socratic: true` with `socraticQuestions: <1-5>` enables a bounded clarification loop before discovery/bootstrap work.
 - `gitIsolation: true` opts into isolated branch/worktree setup when repo policy allows it.
 - `autoCommit: scope|dod` opts into atomic commits after fully validated milestones (`off` is default).
 - `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing (recommended: scope 60-120, DoD 15-45).
 - `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
+
+Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation is allowed to proceed. Those are not optional tags.
 
 ---
 
@@ -256,13 +261,27 @@ Use this for direct stability work requests without round language. If the user 
 
 ### <img src="../../icons/cyrus-sunglasses.svg" width="20"> improve-existing
 
-Improve existing code quality.
+Analyze an existing feature, reconcile stale claims, and improve it competitively.
 
 ```
-harden → simplify → test → validate → docs
+analyze → select → validate → harden → gaps → implement → test → validate → audit → chaos → docs → finalize
 ```
 
-**Use when:** Refactoring, simplification, code quality work.
+**Use when:** The feature exists already and you want a full improvement pass rather than a narrow cleanup.
+
+### <img src="../../icons/donny-ducttape.svg" width="20"> simplify-to-doc
+
+Simplify an existing implementation, prove it still works, then sync docs.
+
+```
+select → simplify → test → validate → audit → docs → finalize
+```
+
+**Use when:** The feature already exists and the main goal is to remove complexity, over-engineering, or noisy abstractions without inventing a new product direction.
+
+```
+/bubbles.workflow  simplify-to-doc for 019-visual-page-builder
+```
 
 ### <img src="../../icons/conky-puppet.svg" width="20"> harden-to-doc
 

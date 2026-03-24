@@ -137,11 +137,14 @@ $ADDITIONAL_CONTEXT
 ```
 
 Supported options:
-- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|stochastic-quality-sweep|iterate|resume-only`
+- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
 - `continue_on_blocked: true|false` (default: true)
 - `final_global_pass: true|false` (default: true)
 - `socratic: true|false` (default: false)
 - `socraticQuestions: <1-5>` (default: 3)
+- `grillFirst: true|false` (default: false; run `bubbles.grill` before analyze/select/bootstrap work)
+- `tdd: true|false` (default: false; enforce red-green-first execution inside implement/test loops after baseline planning/scenario gates are already satisfied)
+- `backlogExport: off|tasks|issues` (default: off; forward copy-ready backlog output preferences to `bubbles.plan`)
 - `gitIsolation: true|false` (default: false)
 - `autoCommit: off|scope|dod` (default: off)
 - `maxScopeMinutes: <N>` (optional sizing heuristic; recommended 60-120)
@@ -202,10 +205,27 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | "Discover requirements, design UX, then deliver" | `product-to-delivery` | `done` | **analyze** → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
 | "Requirements + UX + design only (no code)" | `product-discovery` | `specs_hardened` | **analyze** → select → bootstrap → harden → docs → validate → audit → finalize |
 | "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | **analyze** → select → **validate** → harden → gaps → implement → test → validate → audit → chaos → docs → finalize |
+| "Simplify an existing implementation, prove behavior still works, then sync docs" | `simplify-to-doc` | `done` | select → simplify → test → validate → audit → docs → finalize |
 | "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→bootstrap→impl→test→val→audit; simplify→test→val→audit; improve→analyze→bootstrap→impl→test→val→audit; others→bootstrap→impl→test→val→audit |
 | "Priority-driven iterative work execution (N iterations or time-bounded)" | `iterate` | `done` | [N iterations: pick highest-priority work → auto-select mode → execute full delivery cycle] → finalize (per-spec touched) |
 
 ### How to Invoke Workflow Modes
+
+### Baseline Workflow Law
+
+These behaviors are mandatory baseline workflow rules, not optional tags:
+- implementation MUST NOT start until spec/design/plan artifacts are present and coherent
+- changed behavior MUST map to explicit Gherkin scenarios before coding starts
+- scenario-specific tests MUST be identified in the scope plan before coding starts
+- E2E/integration proof MUST be driven from those planned scenarios
+
+Those requirements are enforced by planning readiness, G033 design readiness, Gherkin/Test Plan/DoD checks, and planning-first recovery. They are not what `tdd: true` turns on.
+
+Optional preflight tags:
+- `grillFirst: true` inserts a `bubbles.grill` pressure pass before analysis, selection, or bootstrap when you want the plan challenged before anyone commits.
+- `tdd: true` only tightens the inner implement/test loop: start with failing targeted proof, then code, then passing proof.
+- When `tdd: true` is present, carry that contract into downstream execution: `bubbles.test` must preserve red-before-green targeted proof plus persistent regression coverage, `bubbles.regression` must verify the delta stayed green without weakened assertions, and `bubbles.chaos` still runs afterward as stochastic abuse rather than as a substitute for deterministic proof.
+- `backlogExport: tasks|issues` forwards backlog export preferences into `bubbles.plan` so scope planning emits copy-ready task or issue derivatives without replacing `scopes.md` as source of truth.
 
 The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invoke it with a mode and spec targets:
 
@@ -255,11 +275,17 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 # Same, but force a short Socratic clarification loop first:
 /bubbles.workflow specs/050-new-feature mode: product-to-delivery socratic: true socraticQuestions: 4
 
+# Same, but grill the assumptions first and stay strict TDD:
+/bubbles.workflow specs/050-new-feature mode: product-to-delivery grillFirst: true tdd: true
+
 # Requirements + UX + design only (no code):
 /bubbles.workflow specs/050-new-feature mode: product-discovery
 
 # Analyze existing feature for competitive improvements:
 /bubbles.workflow specs/019-visual-page-builder mode: improve-existing
+
+# Simplify an existing implementation without changing the product story:
+/bubbles.workflow specs/019-visual-page-builder mode: simplify-to-doc
 
 # Randomized adversarial quality probing (ALL specs in repo, default pool):
 /bubbles.workflow mode: stochastic-quality-sweep
@@ -324,6 +350,9 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
    - Iteration counts: "do 5 rounds", "iterate 3 times" → `iterations: N`
    - Type filters: "focus on tests", "only bugs" → `type: X`
    - Strictness: "strictly", "with commits" → `strict_execution_profile: true`
+   - Pressure-test language: "grill this", "poke holes", "pressure test" → `grillFirst: true` or standalone `bubbles.grill` when no workflow should start yet
+   - Test-first language: "TDD", "test first", "red green refactor" → `tdd: true`
+   - Backlog language: "create tasks", "create issues", "issue seeds", "backlog" → `backlogExport: tasks|issues`
 
 4. **Confirm resolution** by briefly stating the resolved mode and parameters before starting:
    ```
@@ -422,6 +451,9 @@ User: "make sure spec 010 works properly"
 
 User: "update all documentation"
 → mode: docs-only, specs: auto-discover
+
+User: "grill this idea and then ship it with TDD"
+→ mode: full-delivery, specs: inferred, grillFirst: true, tdd: true
 
 User: "027"
 → mode: full-delivery (default), spec: specs/027-*
@@ -672,6 +704,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
 | `gaps-to-doc` | select, validate, gaps, implement | test, chaos, validate, audit, docs, finalize |
 | `harden-gaps-to-doc` | select, validate, harden, gaps, implement | test, chaos, validate, audit, docs, finalize |
 | `improve-existing` | analyze, select, validate, harden, gaps, implement | test, validate, audit, chaos, docs, finalize |
+| `simplify-to-doc` | select, simplify | test, validate, audit, docs, finalize |
 | `reconcile-to-doc` | select, validate, implement | test, validate, audit, chaos, docs, finalize |
 
 **Execution model:**
@@ -1227,6 +1260,7 @@ For each phase in the mode's `phaseOrder`, the workflow agent MUST invoke the co
 
 | Phase | Owner Agent | What it does |
 |-------|-------------|--------------|
+| `grill` | `bubbles.grill` | Pressure-test assumptions, expose missing proof, and recommend sharper next moves before the workflow commits effort |
 | `analyze` | `bubbles.workflow` (self) → delegates to `bubbles.analyst`, `bubbles.ux` | Business analysis, competitive research, UX wireframes |
 | `discover` | `bubbles.workflow` (self) | Discover and prioritize work items |
 | `select` | `bubbles.iterate` | Select next scope, prepare artifacts |
@@ -1257,9 +1291,11 @@ For each target spec in order:
    - `statusBefore` — read current `status` from `state.json` BEFORE making any changes (needed for `executionHistory`)
    - `runStartedAt` — record the current RFC3339 timestamp as run start time
 
-2. Execute mode `phaseOrder` from registry.
+2. If `grillFirst: true`, run a preflight `bubbles.grill` pass before the first `analyze`, `select`, or `bootstrap` action. Carry the findings into the next owning specialist prompt and route resulting artifact changes to `bubbles.analyst`, `bubbles.design`, or `bubbles.plan`.
 
-3. **For each phase, ACTIVELY INVOKE the specialist agent using `runSubagent`:**
+3. Execute mode `phaseOrder` from registry.
+
+4. **For each phase, ACTIVELY INVOKE the specialist agent using `runSubagent`:**
 
    **Step 3a: Build the subagent prompt.** Include ALL of:
 

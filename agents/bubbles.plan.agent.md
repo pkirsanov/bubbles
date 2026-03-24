@@ -91,6 +91,7 @@ Supported planning tags:
 - `maxScopeMinutes: <N>` — Optional heuristic ceiling for how large each scope may be
 - `maxDodMinutes: <N>` — Optional heuristic ceiling for how large each DoD item may be
 - `socratic: true|false` — Indicates analysis was interactive; preserve clarified decisions in the scopes
+- `backlogExport: off|tasks|issues` — Add derived backlog-ready outputs for each scope without replacing scopes.md as source of truth
 
 ---
 
@@ -172,6 +173,7 @@ Core requirements:
   - use cases (Gherkin)
   - implementation plan
   - test plan
+  - an optional backlog export section when `backlogExport: tasks|issues` is requested
   - Definition of Done
   - status tracking per scope (Not started / In progress / Done / Blocked)
 
@@ -258,6 +260,11 @@ Each scope must include:
   - Unit tests
   - Integration tests
   - E2E tests (with specific scenario mapping — not generic)
+
+5) **Backlog Export (Optional, derived from scopes)**
+- If `backlogExport: tasks`, add a short `### Backlog Tasks` subsection under each scope with actionable flat checklist items that mirror the scope's real execution steps.
+- If `backlogExport: issues`, add a short `### Issue Seeds` subsection under each scope with one issue title plus acceptance bullets suitable for copying into GitHub Issues, Azure Boards, or Linear.
+- These exports are derived views. `scopes.md` remains the single source of truth and must not be replaced by backlog text.
   - UI tests (per project config) for any UI
   - Stress/performance tests when risk warrants
 

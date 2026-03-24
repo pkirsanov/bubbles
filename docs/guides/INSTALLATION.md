@@ -25,8 +25,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 ```
 
 This installs:
-- 29 agent definitions → `.github/agents/bubbles.*.agent.md`
-- 29 prompt shims → `.github/prompts/bubbles.*.prompt.md`
+- 30 agent definitions → `.github/agents/bubbles.*.agent.md`
+- 30 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
 - Shared portable instructions → `.github/instructions/bubbles-*.instructions.md`
 - Shared portable governance skills → `.github/skills/bubbles-*/SKILL.md`

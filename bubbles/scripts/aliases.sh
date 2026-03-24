@@ -20,6 +20,8 @@
 
 declare -A _AGENT_ALIASES=(
   [pull-the-strings]="bubbles.workflow"
+  [under-the-light]="bubbles.grill"
+  [private-dancer]="bubbles.grill"
   [worst-case-ontario]="bubbles.chaos"
   [i-am-the-liquor]="bubbles.audit"
   [shit-winds]="bubbles.audit"
@@ -60,6 +62,8 @@ declare -A _AGENT_ALIASES=(
 
 declare -A _AGENT_QUOTES=(
   [pull-the-strings]="Bubbles is pulling all the strings, boys."
+  [under-the-light]="Let's get it under the light and see if it survives."
+  [private-dancer]="You want answers? Put it under the light."
   [worst-case-ontario]="Worst case Ontario, something breaks."
   [i-am-the-liquor]="I AM the liquor, Randy."
   [shit-winds]="The shit winds are coming."
@@ -111,6 +115,7 @@ declare -A _MODE_ALIASES=(
   [boys-plan]="value-first-e2e-batch"
   [full-send]="full-delivery"
   [clean-and-sober]="full-delivery-strict"
+  [strip-it-down]="simplify-to-doc"
   [shit-storm]="chaos-hardening"
   [smash-and-grab]="bugfix-fastlane"
   [randy-put-a-shirt-on]="validate-only"
@@ -138,6 +143,7 @@ declare -A _MODE_QUOTES=(
   [boys-plan]="Julian's got a plan. A good plan this time."
   [full-send]="Full send, boys. No half-measures."
   [clean-and-sober]="We're doing this clean and sober."
+  [strip-it-down]="Cut the nonsense. Keep what actually works."
   [shit-storm]="We're in the eye of a shiticane, Randy."
   [smash-and-grab]="Get in, fix it, get out. Smash and grab."
   [randy-put-a-shirt-on]="Randy, put a shirt on!"

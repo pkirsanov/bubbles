@@ -28,6 +28,8 @@ Something's broken. You need to fix it with proper reproduction, root cause anal
 
 ```
 /bubbles.workflow  bugfix-fastlane for BUG-015
+
+/bubbles.workflow  bugfix-fastlane for BUG-015 tdd: true
 ```
 
 **Phases:** bug-reproduce → implement-fix → test → validate

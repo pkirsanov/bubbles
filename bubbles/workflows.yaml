@@ -593,6 +593,22 @@ executionOptions:
       min: 1
       max: 5
       meaning: Maximum number of targeted Socratic questions when socratic=true.
+    grillFirst:
+      type: boolean
+      default: false
+      meaning: Run a pressure-test pass with bubbles.grill before analyze, select, or bootstrap work.
+    tdd:
+      type: boolean
+      default: false
+      meaning: Enforce red-green-first execution inside implement and test loops.
+    backlogExport:
+      type: string
+      default: "off"
+      values:
+        off: Do not add derived backlog outputs
+        tasks: Add per-scope backlog task checklists
+        issues: Add per-scope issue seeds with acceptance bullets
+      meaning: Forward backlog export preferences to bubbles.plan when scopes are created or refreshed.
     gitIsolation:
       type: boolean
       default: false
@@ -1003,6 +1019,28 @@ modes:
       requireArtifactStateReconciliation: true
       validateClaimsBeforeImplementation: true
       resetStaleStateBeforeImplement: true
+      sequentialSpecCompletion: true
+      crossAgentVerification: true
+      antiFabricationDetection: true
+      requireAllSpecialistsComplete: true
+      requireAllScopesDoneBeforeSpecDone: true
+      requirePerDodItemRawEvidence: true
+      requireTestsForAllRealScenarios: true
+      require100PercentBusinessLogicCoverage: true
+      requirePhaseScopeCoherence: true
+      requireImplementationRealityScan: true
+      requireNoDefaultsNoFallbacks: true
+      requireIntegrationCompleteness: true
+
+  simplify-to-doc:
+    description: Simplify an existing implementation, prove the behavior still works, then sync docs and evidence.
+    statusCeiling: done
+    phaseOrder: [select, simplify, test, validate, audit, docs, finalize]
+    requiredGates: [G001, G003, G004, G005, G006, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G027, G028, G029, G030, G035, G036, G044, G045]
+    constraints:
+      requireExistingImplementation: true
+      preferSmallChangedSurface: true
+      requireRedGreenProofWhenBehaviorChanges: true
       sequentialSpecCompletion: true
       crossAgentVerification: true
       antiFabricationDetection: true

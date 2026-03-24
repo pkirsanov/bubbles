@@ -5,11 +5,16 @@
 Each recipe solves a specific problem — the situation you're in, and exactly what to type.
 
 Optional execution tags you can append to many workflow commands:
+- `grillFirst: true` to pressure-test the direction before planning or implementation starts
+- `tdd: true` to force a red-green-first execution loop inside the already-approved implement/test path
+- `backlogExport: tasks|issues` to make `bubbles.plan` emit copy-ready backlog outputs per scope
 - `socratic: true` for bounded clarification before discovery/bootstrap
 - `gitIsolation: true` for isolated branch/worktree setup when allowed
 - `autoCommit: scope` or `autoCommit: dod` for validated milestone commits
 - `maxScopeMinutes` and `maxDodMinutes` to keep scopes aggressively small
 - `microFixes: true` to keep failures in narrow repair loops
+
+Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, and scenario-specific test planning before implementation starts.
 
 ---
 
@@ -52,6 +57,14 @@ Optional execution tags you can append to many workflow commands:
 |--------|-------------------|
 | [Plan Only](plan-only.md) | "I want to plan and scope a feature without implementing" |
 | [Explore an Idea](explore-idea.md) | "I have a vague product idea and need to flesh it out" |
+| [Grill an Idea](grill-an-idea.md) | "I want hard questions before we commit to this direction" |
+| [TDD First Execution](tdd-first-execution.md) | "I want the workflow to stay red-green-first instead of drifting into implementation-first" |
+
+## Refactoring & Simplification
+
+| Recipe | Problem → Solution |
+|--------|-------------------|
+| [Simplify Existing Code](simplify-existing-code.md) | "This works, but it's too complicated and I want to reduce the noise safely" |
 
 ## Day-to-Day
 
@@ -62,4 +75,4 @@ Optional execution tags you can append to many workflow commands:
 | [Update Docs](update-docs.md) | "Code changed, docs need updating" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
-| [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in 42" |
+| [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in framework gates" |

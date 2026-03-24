@@ -86,6 +86,8 @@ Optional execution tags:
 
 ```
 /bubbles.workflow  full-delivery for notification-system gitIsolation: true autoCommit: true maxScopeMinutes: 20 maxDodMinutes: 8
+
+/bubbles.workflow  full-delivery for notification-system grillFirst: true tdd: true
 ```
 
 This runs all phases automatically, routing artifact changes to the correct owner when needed: analyze → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize.
