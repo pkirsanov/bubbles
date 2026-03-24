@@ -37,7 +37,7 @@ handoffs:
 - **Require ACTUAL execution evidence before declaring findings** — see Execution Evidence Standard in agent-common.md
 - **Never claim a scenario passed or failed without having executed it and observed the output**
 - **Copy actual terminal/tool output into reports; never write expected output**
-- **⚠️ ANTI-FABRICATION:** Chaos execution MUST produce real Playwright test output or real HTTP probe output. Claiming "chaos passed" or "no issues found" without having created and executed actual Playwright test files is fabrication. Every chaos round MUST have: (1) the actual test file created, (2) the actual command executed, (3) ≥10 lines of raw terminal output from the execution.
+- **⚠️ ANTI-FABRICATION:** Chaos execution MUST produce real browser automation test output or real HTTP probe output. Claiming "chaos passed" or "no issues found" without having created and executed actual test files is fabrication. Every chaos round MUST have: (1) the actual test file created, (2) the actual command executed, (3) ≥10 lines of raw terminal output from the execution.
 
 **Non-goals:**
 - Replacing deterministic unit/integration/E2E suites (→ bubbles.test)
@@ -145,7 +145,7 @@ Chaos runs are a **supplementary discovery mechanism** that may overlap with the
 
 | Canonical Type | Chaos Relationship |
 |---|---|
-| `e2e-ui` | UI chaos actions are live-browser Playwright interactions — same execution surface, stochastic ordering |
+| `e2e-ui` | UI chaos actions are live-browser interactions via the project's browser automation framework — same execution surface, stochastic ordering |
 | `e2e-api` | API chaos actions are live HTTP calls — same execution surface, randomized parameters/sequencing |
 | `stress` | Random-stress bucket uses high entropy + rapid context changes — overlaps stress semantics |
 | `integration` | Journey scenarios exercise multi-component paths — overlaps integration semantics |
@@ -190,11 +190,11 @@ Supported options:
 
 | FORBIDDEN | Why | What To Do Instead |
 |-----------|-----|---------------------|
-| Any `LINT_COMMAND` from `agents.md` | Lint is not chaos | Write and run Playwright scenarios |
-| Any `*_TEST_*` command from `agents.md` | Running existing tests is not chaos | Generate stochastic Playwright interactions |
-| Re-running existing E2E suites | Existing tests are deterministic, not stochastic | Write NEW ad-hoc Playwright scripts with random behavior |
+| Any `LINT_COMMAND` from `agents.md` | Lint is not chaos | Write and run browser automation scenarios |
+| Any `*_TEST_*` command from `agents.md` | Running existing tests is not chaos | Generate stochastic browser interactions |
+| Re-running existing E2E suites | Existing tests are deterministic, not stochastic | Write NEW ad-hoc automation scripts with random behavior |
 
-**Chaos = generating and executing NEW, random, stochastic user behavior patterns against a live system using Playwright browser automation and/or HTTP client calls. It is NOT re-running existing deterministic test suites.**
+**Chaos = generating and executing NEW, random, stochastic user behavior patterns against a live system using browser automation and/or HTTP client calls. It is NOT re-running existing deterministic test suites.**
 
 ---
 
@@ -204,32 +204,32 @@ Supported options:
 
 **Before generating scenarios, load the `chaos-execution` skill** from `.github/skills/chaos-execution/SKILL.md`. This skill provides project-specific configuration:
 
-- Playwright config file path and run command
-- How to discover app routes, `data-testid` selectors, and API endpoints
+- Browser automation config file path and run command
+- How to discover app routes, selectors, and API endpoints
 - System startup (synthetic data mode)
 - Chaos test file patterns and cleanup commands
-- Code templates for single-action and journey Playwright tests
+- Code templates for single-action and journey automation tests
 
-### How to Execute Chaos Playwright Scenarios
+### How to Execute Chaos Browser Automation Scenarios
 
 The chaos agent MUST:
 
-1. **Load the `chaos-execution` skill** to discover Playwright config, test directory, and run command.
+1. **Load the `chaos-execution` skill** to discover browser automation config, test directory, and run command.
 2. **Discover the app surface** using the skill's route/selector/endpoint discovery commands.
-3. **Create a temporary Playwright test file** at `{CHAOS_TEST_DIR}/chaos-{seed}.spec.ts` (path from skill).
-4. **Write Playwright test code** (using `@playwright/test`) that performs stochastic user interactions using discovered routes and selectors.
+3. **Create a temporary test file** at `{CHAOS_TEST_DIR}/chaos-{seed}.spec.ts` (path from skill).
+4. **Write browser automation test code** using the project's configured framework so it performs stochastic user interactions using discovered routes and selectors.
 5. **Run the file** using the `CHAOS_RUN_COMMAND` from the skill.
 6. **Capture the full terminal output** (raw, ≥10 lines) as evidence.
 7. **Delete the temporary test file** after the run (cleanup command from skill).
 
 ### API Chaos Execution
 
-For API-mode chaos, use `curl` with `--max-time 30` directly against the backend URL (read from the Playwright integration config or skill):
+For API-mode chaos, use an HTTP client with timeouts against the backend URL (read from the project config or skill):
 
 ```bash
 # Example pattern: random API probe (substitute actual URL from skill discovery)
-curl --max-time 30 -s -w "\nHTTP_STATUS:%{http_code}\n" {BACKEND_URL}/health
-curl --max-time 30 -s -w "\nHTTP_STATUS:%{http_code}\n" {BACKEND_URL}/api/v1/{endpoint}
+[http-client-command with timeout] {BACKEND_URL}/health
+[http-client-command with timeout] {BACKEND_URL}/api/v1/{endpoint}
 ```
 
 Discover available API endpoints using the command from the `chaos-execution` skill.
@@ -241,7 +241,7 @@ Before generating any scenarios, the chaos agent MUST discover the project's int
 1. **Routes**: Use the skill's route discovery command to find all navigable paths.
 2. **Selectors**: Use the skill's selector discovery command to find all `data-testid` interactive elements.
 3. **API endpoints**: Use the skill's endpoint discovery command to find all available HTTP endpoints.
-4. **Ports/URLs**: Read from the Playwright integration config file (path from skill).
+4. **Ports/URLs**: Read from the browser automation config file (path from skill).
 
 This ensures scenarios target real, existing UI elements and API endpoints rather than hardcoded assumptions.
 
@@ -252,67 +252,54 @@ This ensures scenarios target real, existing UI elements and API endpoints rathe
 ### 1) Single-Action Chaos
 
 Execute isolated actions with random parameters and context shifts:
-- random navigation and clicks (UI mode via Playwright)
+- random navigation and clicks (UI mode via browser automation framework)
 - direct endpoint calls with randomized payloads (API mode via HTTP client)
 - malformed-but-valid boundary inputs (max-length strings, special characters, zero/negative values)
 - repeat actions, back/forward loops, double-click/double-submit, quick toggles
 - stale-session operations (expired token, cleared cookies, incognito)
 
-**Concrete Playwright Single-Action Patterns:**
+**Concrete Single-Action Patterns (browser automation pseudocode — adapt to the project's framework):**
 
 Use the routes, selectors, and endpoints discovered from the `chaos-execution` skill.
 
-```typescript
-import { expect, test } from '@playwright/test';
+```text
+SCENARIO chaos-single: random route navigation
+  routes := discovered routes from skill
+  route := seeded-random choice(routes)
+  browser.goto(route)
+  browser.waitForPageReady()
+  assert page body is visible
 
-// Random navigation probe — use discovered routes
-test('chaos-single: random route navigation', async ({ page }) => {
-  const routes = [/* populate from skill route discovery */];
-  const route = routes[Math.floor(Math.random() * routes.length)];
-  await page.goto(route);
-  await page.waitForLoadState('domcontentloaded');
-  await expect(page.locator('body')).toBeVisible();
-});
+SCENARIO chaos-single: rapid toggle stress
+  browser.goto(home route)
+  browser.waitForPageReady()
+  toggle := discovered interactive toggle selector
+  repeat 10 times:
+    browser.click(toggle)
+    browser.wait(100ms)
+  assert page body is visible
 
-// Rapid toggle stress — use discovered toggle selectors
-test('chaos-single: rapid toggle stress', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForLoadState('domcontentloaded');
-  const toggle = page.getByTestId(/* discovered toggle selector */);
-  for (let i = 0; i < 10; i++) {
-    await toggle.click();
-    await page.waitForTimeout(100);
-  }
-  await expect(page.locator('body')).toBeVisible();
-});
+SCENARIO chaos-single: double-click navigation
+  browser.goto(home route)
+  browser.waitForPageReady()
+  link := seeded-random discovered link
+  if link exists:
+    browser.doubleClick(link)
+    browser.waitForPageReady()
+  assert page body is visible
 
-// Double-click on navigation links
-test('chaos-single: double-click navigation', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForLoadState('domcontentloaded');
-  const links = await page.getByRole('link').all();
-  if (links.length > 0) {
-    const link = links[Math.floor(Math.random() * links.length)];
-    await link.dblclick();
-    await page.waitForLoadState('domcontentloaded');
-  }
-  await expect(page.locator('body')).toBeVisible();
-});
-
-// Browser back/forward stress
-test('chaos-single: back-forward navigation stress', async ({ page }) => {
-  const routes = [/* populate from skill route discovery */];
-  await page.goto(routes[0]);
-  await page.waitForLoadState('domcontentloaded');
-  await page.goto(routes[1]);
-  await page.waitForLoadState('domcontentloaded');
-  await page.goBack();
-  await page.goForward();
-  await page.goBack();
-  await page.goBack(); // Beyond history
-  await page.waitForLoadState('domcontentloaded');
-  await expect(page.locator('body')).toBeVisible();
-});
+SCENARIO chaos-single: back-forward navigation stress
+  routes := discovered routes from skill
+  browser.goto(routes[0])
+  browser.waitForPageReady()
+  browser.goto(routes[1])
+  browser.waitForPageReady()
+  browser.back()
+  browser.forward()
+  browser.back()
+  browser.back()  # beyond history boundary
+  browser.waitForPageReady()
+  assert page body is visible
 ```
 
 Goal: detect brittle handlers, unsafe assumptions, and missing input validation.
@@ -332,42 +319,33 @@ Execute chained user flows with stochastic branching:
 | **Settings/config flow** | open settings → change values → preview → save → verify persistence | detours: rapid toggling, save without preview, concurrent changes |
 | **Data exploration** | dashboard → drill into details → apply filters → export → navigate back | detours: rapid filter changes, export during load, refresh mid-analysis |
 
-**Concrete Playwright Journey Pattern:**
+**Concrete Journey Pattern (browser automation pseudocode — adapt to the project's framework):**
 
-```typescript
-test('chaos-journey: cross-feature navigation with detours', async ({ page }) => {
-  const routes = [/* populate from skill route discovery */];
-  const toggleSelectors = [/* populate from skill selector discovery */];
+```text
+SCENARIO chaos-journey: cross-feature navigation with detours
+  routes := discovered routes from skill
+  toggleSelectors := discovered interactive selectors from skill
 
-  for (const route of routes) {
-    await page.goto(route);
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('body')).toBeVisible();
+  for each route in routes:
+    browser.goto(route)
+    browser.waitForPageReady()
+    assert page body is visible
 
-    // Random detour: 30% chance of page refresh
-    if (Math.random() < 0.3) {
-      await page.reload();
-      await page.waitForLoadState('domcontentloaded');
-    }
+    if seeded-random chance(30%):
+      browser.refresh()
+      browser.waitForPageReady()
 
-    // Random detour: 20% chance of toggling a discovered interactive element
-    if (Math.random() < 0.2 && toggleSelectors.length > 0) {
-      const sel = toggleSelectors[Math.floor(Math.random() * toggleSelectors.length)];
-      const el = page.getByTestId(sel);
-      if (await el.isVisible()) {
-        await el.click();
-        await page.waitForTimeout(200);
-      }
-    }
-  }
+    if seeded-random chance(20%) and toggleSelectors not empty:
+      toggle := seeded-random choice(toggleSelectors)
+      if browser.elementIsVisible(toggle):
+        browser.click(toggle)
+        browser.wait(200ms)
 
-  // Final: browser back-button storm
-  for (let i = 0; i < 5; i++) {
-    await page.goBack();
-    await page.waitForLoadState('domcontentloaded');
-  }
-  await expect(page.locator('body')).toBeVisible();
-});
+  repeat 5 times:
+    browser.back()
+    browser.waitForPageReady()
+
+  assert page body is visible
 ```
 
 **Stochastic detour types (injected randomly into journeys):**
@@ -570,7 +548,7 @@ The chaos run MUST abort early if any of these conditions are met:
 
 ```text
 HEALTH_CHECK_COMMAND = [...]
-E2E_TEST_COMMAND = [...]  (for Playwright reference)
+E2E_TEST_COMMAND = [...]  (for browser automation reference)
 ```
 
 6. Parse `$ADDITIONAL_CONTEXT` for options (mode, profile, seed, steps, etc.).
@@ -581,16 +559,16 @@ E2E_TEST_COMMAND = [...]  (for Playwright reference)
 **The chaos agent MUST ensure the live system is running before executing any scenarios.**
 
 1. **Load the `chaos-execution` skill** (`.github/skills/chaos-execution/SKILL.md`) for project-specific startup instructions.
-2. **Read the Playwright integration config** (path from skill) to identify backend/frontend URLs, ports, and startup commands.
+2. **Read the browser automation config** (path from skill) to identify backend/frontend URLs, ports, and startup commands.
 3. **Start the live system** using the skill's startup instructions (synthetic data mode preferred — no external dependencies).
-   - The Playwright integration config typically has `webServer` entries that auto-start both backend and frontend when running tests.
+   - The browser automation config typically has entries that auto-start both backend and frontend when running tests.
    - Alternatively, use the `DEV_ALL_SYNTH_COMMAND` from `.specify/memory/agents.md` to start backend manually.
 4. **Verify the live system is accessible** (bounded: max 30 attempts × 2s):
    ```bash
-   # Read backend URL from Playwright config, then check health
-   curl --max-time 5 -s {BACKEND_URL}/health
-   # Read frontend URL from Playwright config, then check accessibility
-   curl --max-time 5 -s -o /dev/null -w "%{http_code}" {FRONTEND_URL}
+   # Read backend URL from automation config, then check health
+  [http-client-command with timeout] {BACKEND_URL}/health
+   # Read frontend URL from automation config, then check accessibility
+  [http-client-command with timeout] {FRONTEND_URL}
    ```
 5. **Record system readiness proof in report.md** — include the raw command output.
 6. If system is not ready after bounded retries, STOP and report (do not retry indefinitely).
@@ -607,35 +585,34 @@ E2E_TEST_COMMAND = [...]  (for Playwright reference)
 
 ### Phase 3: Single-Action Execution
 
-**Execution method: Create a Playwright test file and run it. Use paths and commands from the `chaos-execution` skill.**
+**Execution method: Create a browser automation test file and run it. Use paths and commands from the `chaos-execution` skill.**
 
 For each single action (bounded by `singleActions` count):
 
 1. Select action from pool using seeded PRNG.
-2. **Write the action as a Playwright test** inside `{CHAOS_TEST_DIR}/chaos-{seed}.spec.ts` (path from skill).
+2. **Write the action as a test** inside `{CHAOS_TEST_DIR}/chaos-{seed}.spec.ts` (path from skill).
 3. **Run the test file** using the `CHAOS_RUN_COMMAND` from the skill.
 4. Record: action ID, surface, input, expected vs actual, duration, status (pass/fail/error).
 5. **Capture the full raw terminal output** (≥10 lines) as evidence.
 6. If P0 finding → trigger circuit breaker.
 7. Clean up action-specific test data if applicable.
 
-**For API-mode single actions, use curl directly:**
+**For API-mode single actions, use an HTTP client directly:**
 ```bash
-# Random API probe — substitute BACKEND_URL from Playwright integration config
-curl --max-time 30 -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}\n" \
-  {BACKEND_URL}/api/v1/{discovered-endpoint}
+# Random API probe — substitute BACKEND_URL from automation config
+[http-client-command with timeout] {BACKEND_URL}/api/v1/{discovered-endpoint}
 ```
 
 ### Phase 4: Journey Execution
 
-**Execution method: Write journey scenarios as Playwright tests and run them. Use paths and commands from the `chaos-execution` skill.**
+**Execution method: Write journey scenarios as browser automation tests and run them. Use paths and commands from the `chaos-execution` skill.**
 
 For each journey (bounded by `journeys` count):
 
 1. Select journey template from pool using seeded PRNG.
 2. Inject stochastic detours at random points.
-3. **Write the journey as a Playwright test** in the same chaos test file (`chaos-{seed}.spec.ts`) or a separate file per journey.
-4. **Run the journey test** using the `CHAOS_RUN_COMMAND` from the skill (append `--grep "chaos-journey"` to filter).
+3. **Write the journey as a test** in the chaos test file (`chaos-{seed}.spec.ts`) or a separate file per journey.
+4. **Run the journey test** using the `CHAOS_RUN_COMMAND` from the skill (filter by journey test name if needed).
 5. Record: journey ID, step trace, detours injected, outcomes per step, total duration.
 6. **Capture the full raw terminal output** (≥10 lines) as evidence.
 7. If P0 finding → trigger circuit breaker.

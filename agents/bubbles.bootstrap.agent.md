@@ -249,6 +249,17 @@ If approved:
 | **Description length** | Check each agent's `description` field | ≤ 200 characters (VS Code truncates longer descriptions) |
 | **Shared pattern reference** | Verify each agent contains `Follow all patterns in [agent-common.md]` | Present in every `.agent.md` |
 | **Policy file integrity** | Verify `agent-common.md` and `scope-workflow.md` exist and are non-empty | Both files exist and have content |
+| **Project scan config** | Check if `.github/bubbles-project.yaml` exists with `scans:` section | Present — if missing, auto-generate via `project-scan-setup.sh --quiet` |
+
+6) Project Scan Setup (AUTOMATIC after first install or refresh):
+
+If `.github/bubbles-project.yaml` does not exist or has no `scans:` section, **auto-run** the setup script:
+
+```bash
+bash .github/bubbles/scripts/project-scan-setup.sh --quiet
+```
+
+This auto-detects the project's languages, auth patterns, serialization formats, and test env dependencies, then generates project-specific patterns for gates G047 (IDOR), G048 (silent decode), and G051 (env deps). The generated file is project-owned and never overwritten by Bubbles upgrades. To force regeneration (e.g., after major project changes), run `bubbles project setup --force`.
 
 If ANY post-apply validation fails:
 - Report the failure with specific file and issue

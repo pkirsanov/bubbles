@@ -304,7 +304,7 @@ If user said "find bugs" or no specific bug:
 **CRITICAL: Write a failing test BEFORE implementing the fix. The failing test proves the bug exists and becomes the regression test after the fix.**
 
 1. **Reproduce the bug manually**:
-   - Follow reproduction steps from bug.md using available tools (curl, browser, terminal, DB query)
+   - Follow reproduction steps from bug.md using available tools (HTTP client, browser or browser automation, terminal, DB query)
    - Capture actual error output in report.md under "## Bug Reproduction — Before Fix"
    - **If the bug CANNOT be reproduced:** STOP. Do NOT proceed with a fix for a bug you cannot reproduce. Document why reproduction failed and investigate further.
 

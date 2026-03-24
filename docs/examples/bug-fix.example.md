@@ -421,7 +421,7 @@ Scenario: URL with query string and special characters preserved
 4. Update `templates/login.html` to pass `returnTo` as hidden form field with HTML escaping
 5. Write unit tests for `is_safe_redirect` (all rejection patterns + valid paths)
 6. Write E2E API tests for every Gherkin scenario
-7. Write E2E UI test for the full browser flow (Playwright)
+7. Write E2E UI test for the full browser flow using the project's browser automation framework
 8. Verify bug is reproduced before fix and fixed after implementation
 
 ### Test Plan
@@ -472,13 +472,13 @@ Scenario: URL with query string and special characters preserved
 - [ ] **Bug reproduced BEFORE fix** (Gate 0 — red evidence): Session timeout redirect loses returnTo
   - Raw output evidence (inline, verbatim terminal output only):
     ```
-    [PASTE VERBATIM terminal output — curl or Playwright showing redirect to /login WITHOUT returnTo parameter]
+    [PASTE VERBATIM terminal output — HTTP client or browser automation output showing redirect to /login WITHOUT returnTo parameter]
     ```
   <!--
     📝 ANNOTATION: This is the "red" test. You run the reproduction steps from
     bug.md and capture proof that the bug exists. Example evidence would show:
     
-    $ curl -v --max-time 5 http://localhost:3000/projects/abc-123 -H "Cookie: session=expired"
+    $ [http-client-command with timeout] {APP_BASE_URL}/projects/abc-123 [auth/session args]
     < HTTP/1.1 302 Found
     < Location: /login
     
@@ -554,7 +554,7 @@ Scenario: URL with query string and special characters preserved
     📝 ANNOTATION: This is the "green" test. Same steps as the red evidence above,
     but now showing the fix works. Example evidence would show:
     
-    $ curl -v --max-time 5 http://localhost:3000/projects/abc-123 -H "Cookie: session=expired"
+    $ [http-client-command with timeout] {APP_BASE_URL}/projects/abc-123 [auth/session args]
     < HTTP/1.1 302 Found
     < Location: /login?returnTo=%2Fprojects%2Fabc-123
     
@@ -570,7 +570,7 @@ Scenario: URL with query string and special characters preserved
 - [ ] E2E UI tests pass — full browser flow (navigate → timeout → login → verify redirect)
   - Raw output evidence (inline, verbatim terminal output only):
     ```
-    [PASTE VERBATIM terminal output — Playwright test runner showing pass with timing]
+    [PASTE VERBATIM terminal output — browser automation test runner showing pass with timing]
     ```
 
 - [ ] Round-trip verification: navigate to deep page → session expires → re-auth → verify URL matches original exactly

@@ -338,7 +338,8 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 |-----------|-------|-----|
 | Check project health | `/bubbles.super doctor` | `bubbles doctor` |
 | Auto-fix health issues | `/bubbles.super doctor --heal` | `bubbles doctor --heal` |
-| Install git hooks | `/bubbles.super install hooks` | `bubbles hooks install --all` |
+| Check portable surface drift | `/bubbles.super agnosticity` | `bubbles agnosticity` |
+| Install framework-repo git hooks | `/bubbles.super install hooks` | `bubbles hooks install --all` |
 | Show available hooks | `/bubbles.super list hook catalog` | `bubbles hooks catalog` |
 | Add custom hook | `/bubbles.super add pre-push hook for license` | `bubbles hooks add pre-push script.sh --name my-hook` |
 | Add custom gate | `/bubbles.super add license gate` | `bubbles project gates add name --script path` |

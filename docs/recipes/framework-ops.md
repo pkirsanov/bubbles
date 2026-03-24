@@ -4,6 +4,8 @@
 
 Use `bubbles.super` when the problem is about the Bubbles framework itself: health, hooks, gates, metrics, upgrades, or recovering from a framework-level problem. If you need broader prompt help first, use the dedicated [Ask the Super First](ask-the-super-first.md) recipe.
 
+**Scope rule:** Bubbles-managed git hooks are for the Bubbles framework repo only. Consumer repos use installed Bubbles files, but they must not install Bubbles-managed `pre-commit` or `pre-push` hooks.
+
 ## Check Project Health
 
 ```
@@ -13,17 +15,18 @@ Use `bubbles.super` when the problem is about the Bubbles framework itself: heal
 Or via CLI:
 ```bash
 bash .github/bubbles/scripts/cli.sh doctor --heal
+bash .github/bubbles/scripts/cli.sh agnosticity
 ```
 
 ## Install Git Hooks
 
 ```
-/bubbles.super  install all git hooks
+/bubbles.super  install all git hooks in the Bubbles framework repo
 ```
 
 This installs:
-- **pre-commit:** Fast artifact lint on staged spec files
-- **pre-push:** State transition guard on specs claiming "done"
+- **pre-commit:** Portable-surface agnosticity lint plus fast artifact lint on staged spec files
+- **pre-push:** Full portable-surface agnosticity lint plus state transition guard on specs claiming "done"
 
 ## Add a Custom Quality Gate
 

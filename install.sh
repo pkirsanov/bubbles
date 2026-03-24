@@ -8,6 +8,7 @@
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap  # Install + scaffold project config
 #   curl -fsSL .../install.sh | bash -s -- v1.0.0       # Pin to version
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
+#   bash /path/to/bubbles/install.sh --local-source /path/to/bubbles   # Install from local checkout
 #
 set -euo pipefail
 
@@ -17,6 +18,7 @@ DO_BOOTSTRAP=false
 AGENTS_ONLY=false
 CLI_OVERRIDE=""
 NAME_OVERRIDE=""
+LOCAL_SOURCE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -24,6 +26,7 @@ while [[ $# -gt 0 ]]; do
     --agents-only) AGENTS_ONLY=true; shift ;;
     --cli)         CLI_OVERRIDE="$2"; shift 2 ;;
     --name)        NAME_OVERRIDE="$2"; shift 2 ;;
+    --local-source) LOCAL_SOURCE="$2"; shift 2 ;;
     --help|-h)
       echo "Usage: install.sh [REF] [OPTIONS]"
       echo ""
@@ -32,6 +35,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --cli ./foo.sh     Set CLI entrypoint (auto-detected if omitted)"
       echo "  --name \"My Proj\"   Set project name (auto-detected if omitted)"
       echo "  --agents-only      Skip shared instructions and skills"
+      echo "  --local-source DIR Install from a local Bubbles checkout instead of GitHub"
       echo ""
       exit 0
       ;;
@@ -57,25 +61,35 @@ warn()  { printf "${YELLOW}⚠️${NC}  %s\n" "$1"; }
 fail()  { printf "${RED}❌${NC} %s\n" "$1"; exit 1; }
 
 # ── Preflight ───────────────────────────────────────────────────────
-command -v curl >/dev/null 2>&1 || fail "curl is required. Install it first."
-command -v tar  >/dev/null 2>&1 || fail "tar is required. Install it first."
+if [[ -z "$LOCAL_SOURCE" ]]; then
+  command -v curl >/dev/null 2>&1 || fail "curl is required. Install it first."
+  command -v tar  >/dev/null 2>&1 || fail "tar is required. Install it first."
+fi
 
 if [[ ! -d ".git" ]]; then
   fail "Not a git repo. Run this from your project root."
 fi
 
-# ── Download ────────────────────────────────────────────────────────
-info "Downloading Bubbles ${BUBBLES_REF}..."
-TEMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TEMP_DIR"' EXIT
+# ── Source acquisition ──────────────────────────────────────────────
+if [[ -n "$LOCAL_SOURCE" ]]; then
+  TEMP_DIR="$LOCAL_SOURCE"
+  info "Installing Bubbles from local source: ${LOCAL_SOURCE}"
+  [[ -d "$TEMP_DIR/agents" ]] || fail "Local source missing agents/: ${LOCAL_SOURCE}"
+  [[ -d "$TEMP_DIR/prompts" ]] || fail "Local source missing prompts/: ${LOCAL_SOURCE}"
+  [[ -d "$TEMP_DIR/bubbles" ]] || fail "Local source missing bubbles/: ${LOCAL_SOURCE}"
+else
+  info "Downloading Bubbles ${BUBBLES_REF}..."
+  TEMP_DIR=$(mktemp -d)
+  trap 'rm -rf "$TEMP_DIR"' EXIT
 
-curl -fsSL "https://github.com/${BUBBLES_REPO}/archive/refs/heads/${BUBBLES_REF}.tar.gz" \
-  -o "$TEMP_DIR/bubbles.tar.gz" 2>/dev/null \
-  || curl -fsSL "https://github.com/${BUBBLES_REPO}/archive/refs/tags/${BUBBLES_REF}.tar.gz" \
+  curl -fsSL "https://github.com/${BUBBLES_REPO}/archive/refs/heads/${BUBBLES_REF}.tar.gz" \
     -o "$TEMP_DIR/bubbles.tar.gz" 2>/dev/null \
-  || fail "Could not download Bubbles ref '${BUBBLES_REF}'. Check the version/branch name."
+    || curl -fsSL "https://github.com/${BUBBLES_REPO}/archive/refs/tags/${BUBBLES_REF}.tar.gz" \
+      -o "$TEMP_DIR/bubbles.tar.gz" 2>/dev/null \
+    || fail "Could not download Bubbles ref '${BUBBLES_REF}'. Check the version/branch name."
 
-tar xzf "$TEMP_DIR/bubbles.tar.gz" -C "$TEMP_DIR" --strip-components=1
+  tar xzf "$TEMP_DIR/bubbles.tar.gz" -C "$TEMP_DIR" --strip-components=1
+fi
 
 # ── Install agents ──────────────────────────────────────────────────
 info "Installing agents..."
@@ -94,6 +108,9 @@ ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
 info "Installing workflow config..."
 mkdir -p "${TARGET}/bubbles"
 cp "$TEMP_DIR"/bubbles/workflows.yaml "${TARGET}/bubbles/"
+if [[ -f "$TEMP_DIR/bubbles/agnosticity-allowlist.txt" ]]; then
+  cp "$TEMP_DIR"/bubbles/agnosticity-allowlist.txt "${TARGET}/bubbles/"
+fi
 ok "workflows.yaml installed"
 
 # ── Install scripts ─────────────────────────────────────────────────
@@ -349,6 +366,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
 | `.github/instructions/terminal-discipline.instructions.md` | ✅ Created by bootstrap |
 | `.specify/memory/constitution.md` | ✅ Created by bootstrap |
 | `.specify/memory/agents.md` | ✅ Created by bootstrap |
+| `.github/bubbles-project.yaml` | ✅ Created by bootstrap (optional, customize scan patterns) |
 
 ## Customization Checklist
 
@@ -387,6 +405,26 @@ SRCEOF
     CREATED_COUNT=$((CREATED_COUNT + 1))
   fi
 
+  # ── Auto-generate: .github/bubbles-project.yaml ───────────────────────
+  if [[ ! -f ".github/bubbles-project.yaml" ]] || ! grep -q '^scans:' ".github/bubbles-project.yaml" 2>/dev/null; then
+    local setup_script=".github/bubbles/scripts/project-scan-setup.sh"
+    if [[ -f "$setup_script" ]]; then
+      info "Auto-detecting project scan patterns..."
+      bash "$setup_script" --quiet 2>/dev/null || true
+      if [[ -f ".github/bubbles-project.yaml" ]]; then
+        ok "Auto-generated .github/bubbles-project.yaml from codebase analysis"
+        CREATED_COUNT=$((CREATED_COUNT + 1))
+      else
+        warn "Could not auto-generate .github/bubbles-project.yaml (will use generic defaults)"
+      fi
+    else
+      warn "Skipped project scan setup (script not found at $setup_script)"
+    fi
+  else
+    warn "Skipped .github/bubbles-project.yaml (already configured — project-owned)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
   echo ""
   ok "Bootstrap complete: ${CREATED_COUNT} files created, ${SKIPPED_COUNT} skipped (already exist)"
 fi
@@ -405,6 +443,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "     .specify/memory/agents.md                       — Command registry"
   echo "     .github/copilot-instructions.md                 — Project policies"
   echo "     .github/instructions/terminal-discipline...md   — CLI discipline"
+  echo "     .github/bubbles-project.yaml                    — Scan patterns (auto-detected)"
   echo ""
   printf "  ${YELLOW}⚠️  Action required:${NC} Update the TODO items in the generated files\n"
   echo "     to match your project's actual commands, paths, and config."

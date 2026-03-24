@@ -212,7 +212,7 @@ Agents MUST avoid command patterns that commonly trigger VS Code Copilot approva
 ### PROHIBITED
 
 - `bash -c '...'` or `sh -c '...'` wrappers for normal repo operations
-- Chained wrapper commands like `source ... && cd ... && go test ...`
+- Chained wrapper commands like `source ... && cd ... && <ecosystem-native test command> ...`
 - Temp-file redirection pipelines for output capture (e.g., `> /tmp/x.txt; cat /tmp/x.txt`)
 
 ### REQUIRED

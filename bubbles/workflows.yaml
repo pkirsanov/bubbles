@@ -208,6 +208,71 @@ gates:
       contract changes. If a conflict is detected, it MUST be resolved
       (design update + plan adjustment) before implementation proceeds.
       Detected by the regression agent's cross-spec impact scan.
+  G047:
+    name: idor_auth_bypass_gate
+    description: >-
+      BLOCKING gate. Handlers/endpoints that perform authorization decisions
+      MUST extract user identity exclusively from authenticated context
+      (auth headers, JWT claims, session middleware) — NEVER from request
+      body, query parameters, or URL path parameters that the caller controls.
+      Detection patterns are project-configurable via .github/bubbles-project.yaml
+      (scans.idor.bodyIdentityPatterns, scans.idor.authContextPatterns,
+      scans.idor.handlerFilePatterns) with sensible generic defaults.
+      This is an IDOR (Insecure Direct Object Reference) vulnerability —
+      OWASP A01 Broken Access Control. Enforced by
+      implementation-reality-scan.sh Scan 7 and bubbles.security Phase 3.2.
+  G048:
+    name: silent_decode_failure_gate
+    description: >-
+      BLOCKING gate. Deserialization/decode operations on stored data
+      (database rows, protobuf messages, serialized blobs) MUST NOT silently
+      discard failures. Detection patterns are project-configurable via
+      .github/bubbles-project.yaml (scans.silentDecode.patterns,
+      scans.silentDecode.errorHandling) with sensible generic defaults
+      covering common anti-patterns across languages. Silent decode
+      failures cause data corruption to go undetected — corrupted rows are
+      silently dropped instead of surfaced. REQUIRED: decode failures MUST
+      be logged with row identifier and error context, OR propagated as
+      errors. Enforced by implementation-reality-scan.sh Scan 8.
+  G049:
+    name: evidence_clone_detection_gate
+    description: >-
+      BLOCKING gate. DoD evidence blocks MUST be unique per item. Detects
+      copy-pasted evidence where identical or near-identical terminal output
+      blocks (≥80% similarity via line-level comparison) appear across
+      multiple DoD items within the same scope. Also detects boilerplate
+      evidence patterns: identical exit codes with identical output across
+      unrelated items, evidence blocks that share >5 identical non-empty
+      lines, and evidence timestamps that are identical across items that
+      should have been executed separately. Strengthens Gate G021
+      (anti_fabrication_gate). Enforced by state-transition-guard.sh
+      Check 12 (enhanced).
+  G050:
+    name: gateway_route_forwarding_gate
+    description: >-
+      BLOCKING gate. Every backend service endpoint referenced in scope
+      artifacts MUST have a corresponding gateway/proxy forwarding rule.
+      Backend endpoints that are implemented but not forwarded by the API
+      gateway are unreachable by clients and represent incomplete vertical
+      wiring. Strengthens Gate G035 (vertical_slice_gate) with explicit
+      gateway route inventory. Detection: cross-reference backend router
+      registrations against gateway/proxy configuration files. When this
+      gate fails, the workflow MUST route to bubbles.implement to add the
+      missing gateway routes.
+  G051:
+    name: test_env_dependency_gate
+    description: >-
+      BLOCKING gate. Test suites MUST NOT have silent dependencies on
+      environment variables that cause failures when those variables are
+      absent. Detection patterns are project-configurable via
+      .github/bubbles-project.yaml (scans.testEnvDependency.patterns)
+      with sensible generic defaults. When pre-existing test failures
+      are caused by environmental dependencies, they MUST be fixed with
+      either (a) proper test setup that provides required env vars, or
+      (b) fail-fast with a clear skip message explaining the missing
+      dependency. Tests that intermittently pass/fail based on environment
+      state are unreliable and BLOCKING. Enforced by state-transition-guard.sh
+      Check 19.
 
 failureRouting:
   code: implement
@@ -411,10 +476,10 @@ phases:
     requiredGates: [G001, G031]
   implement:
     owner: bubbles.implement
-    requiredGates: [G002, G033]
+    requiredGates: [G002, G033, G047, G048, G050]
   test:
     owner: bubbles.test
-    requiredGates: [G003, G004, G005]
+    requiredGates: [G003, G004, G005, G051]
   docs:
     owner: bubbles.docs
     requiredGates: [G006]
@@ -438,7 +503,7 @@ phases:
     requiredGates: [G031]
   security:
     owner: bubbles.security
-    requiredGates: [G034]
+    requiredGates: [G034, G047]
   finalize:
     owner: bubbles.workflow
     requiredGates: [G010, G011, G012]
@@ -481,7 +546,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [G036, G037, G038, G040]
+    inheritedRequiredGates: [G036, G037, G038, G040, G047, G048, G049, G050, G051]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #
@@ -565,7 +630,7 @@ modes:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.
     statusCeiling: done
     phaseOrder: [discover, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040, G044, G045, G046]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040, G044, G045, G046, G047, G048, G049, G050, G051]
     maxChaosRounds: 5
     constraints:
       valueFirstSelection: true
@@ -605,7 +670,7 @@ modes:
     description: Default complete delivery workflow. Includes bootstrap phase to ensure design/scopes exist before implementation.
     statusCeiling: done
     phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051]
     maxChaosRounds: 3
     constraints:
       requireDesignBeforeImplement: true
@@ -629,7 +694,7 @@ modes:
     description: Strict full delivery with per-spec commits, no blocked continuation, and mandatory per-spec chaos/validation/audit completion. Includes bootstrap phase for design readiness.
     statusCeiling: done
     phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051]
     maxChaosRounds: 5
     constraints:
       continueOnBlocked: false
@@ -666,7 +731,7 @@ modes:
     description: Create/repair design+scope artifacts before implementation.
     statusCeiling: done
     phaseOrder: [select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, finalize]
-    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G044, G045, G046]
+    requiredGates: [G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G044, G045, G046, G047, G048, G050, G051]
     constraints:
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -681,7 +746,7 @@ modes:
     description: Focused bug loop with mandatory reproduction and verification.
     statusCeiling: done
     phaseOrder: [select, implement, test, regression, simplify, stabilize, security, validate, audit, finalize]
-    requiredGates: [G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035, G044, G045, G046]
+    requiredGates: [G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035, G044, G045, G046, G047, G048, G050, G051]
     constraints:
       requireBugReproductionBeforeFix: true
       requireBugVerificationAfterFix: true
@@ -720,7 +785,7 @@ modes:
     description: Repeat chaos and bugfix cycles until clean or retry limit.
     statusCeiling: done
     phaseOrder: [select, bootstrap, chaos, implement, test, regression, simplify, stabilize, security, validate, audit, finalize]
-    requiredGates: [G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046]
+    requiredGates: [G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051]
     maxChaosRounds: 5
     constraints:
       sequentialSpecCompletion: true

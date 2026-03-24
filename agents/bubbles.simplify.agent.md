@@ -143,10 +143,10 @@ Audit changed files for duplication and reuse opportunities:
 
 | Check | What to Look For |
 |-------|-----------------|
-| **Cross-file duplication** | Same logic repeated in 2+ files — extract to shared module in `libs/` |
+| **Cross-file duplication** | Same logic repeated in 2+ files — extract to shared module in the project's shared library location |
 | **Intra-file duplication** | Repeated patterns within a single file — extract to helper function |
 | **Missed shared abstractions** | Similar structs/types/interfaces that should share a trait/interface |
-| **Copy-paste from other services** | Code that duplicates existing `libs/rust-common` or shared utilities |
+| **Copy-paste from other services** | Code that duplicates existing shared libraries or utilities |
 | **Reinvented utilities** | Hand-rolled logic that exists in standard library or project dependencies |
 | **Constants duplication** | Magic numbers or repeated string literals — extract to named constants |
 
@@ -223,7 +223,7 @@ When a useful-but-unwired file is found, record it in the appropriate artifact/u
 
 **Rules for fixes:**
 - Fix one concern at a time — do not combine unrelated changes.
-- Extracted shared code goes to `libs/rust-common/` (Rust) or appropriate shared location (TypeScript).
+- Extracted shared code goes to the project's shared library location (per project structure in `agents.md`).
 - Renamed symbols must be updated at all call sites.
 - Deleted dead code must not break any imports or references, and deletion requires the File Deletion Safety Gate above.
 - All fixes must maintain the existing behavior — simplification, not redesign.
@@ -259,7 +259,7 @@ After all fixes are applied:
 
 - Do not introduce new defaults or fallbacks where repo policy forbids them.
 - Do not skip required test types after making changes.
-- Do not refactor code outside the changed file set unless extracting shared code to `libs/`.
+- Do not refactor code outside the changed file set unless extracting shared code to the project's shared library location.
 - Do not change test assertions to match simplified code — tests validate specs, not implementation.
 - Do not delete files based only on missing current references; first validate usefulness and whether an intended reference/integration was simply never added.
 - If a deletion candidate is still useful, add or route a gap for the missing integration instead of deleting the file.

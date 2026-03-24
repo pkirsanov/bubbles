@@ -55,7 +55,7 @@ handoffs:
     prompt: Document a bug with structured artifacts (bug.md, spec.md, design.md, scopes.md).
   - label: Chaos Probes
     agent: bubbles.chaos
-    prompt: Run stochastic Playwright/HTTP probes against live system to discover runtime issues.
+    prompt: Run stochastic browser automation/HTTP probes against live system to discover runtime issues.
 ---
 
 ## Agent Identity
@@ -241,7 +241,7 @@ Use `bubbles/workflows.yaml`, [execution-core.md](bubbles_shared/execution-core.
 | `bugfix` | Pick up an existing bug folder (must already exist) and execute its next incomplete bug scope (enforcing Bug Artifacts Gate + bug-scoped DoD) |
 | `analyze` | Invoke bubbles.analyst to analyze existing feature against competitors/best practices, then bubbles.ux for UI improvements. Creates improvement scopes if analyst proposes changes. Minor improvements update existing spec; sizable changes create new spec folder. |
 | `improve` | Analyze existing feature for competitive improvements, reconcile stale claims, then implement improvements. Combines analyst insights with gap/harden findings. |
-| `chaos` | Run chaos probes (stochastic Playwright/HTTP tests) against live system to discover runtime bugs and fix what breaks. |
+| `chaos` | Run chaos probes (stochastic browser automation/HTTP tests) against live system to discover runtime bugs and fix what breaks. |
 
 **Bug Reproduction (MANDATORY for `type: bugfix`):** When executing a bugfix scope, the agent MUST:
 - Reproduce the bug BEFORE applying the fix (evidence in report.md under "## Bug Reproduction — Before Fix")

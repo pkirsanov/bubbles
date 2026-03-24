@@ -38,12 +38,12 @@ handoffs:
   - label: Chaos Hardening
     agent: bubbles.chaos
     prompt: |
-      Run chaos hardening loops using Playwright browser automation and HTTP API probes against the live system.
-      Load the chaos-execution skill (.github/skills/chaos-execution/SKILL.md) for project-specific Playwright config, routes, selectors, and startup commands.
-      You MUST create temporary Playwright test files with stochastic user scenarios and execute them using the run command from the skill.
+      Run chaos hardening loops using browser automation and HTTP API probes against the live system.
+      Load the chaos-execution skill (.github/skills/chaos-execution/SKILL.md) for project-specific browser automation config, routes, selectors, and startup commands.
+      You MUST create temporary automation test files with stochastic user scenarios and execute them using the run command from the skill.
       You MUST NOT substitute lint, existing test suites, or build commands for chaos execution.
-      Chaos = generating and running NEW random user behavior patterns (navigation, clicks, toggling, interactions, rapid actions, back/forward stress) via Playwright against the live UI and/or HTTP probes against the live API.
-      Report unresolved issues with raw Playwright output as evidence.
+      Chaos = generating and running NEW random user behavior patterns (navigation, clicks, toggling, interactions, rapid actions, back/forward stress) via browser automation against the live UI and/or HTTP probes against the live API.
+      Report unresolved issues with raw test output as evidence.
   - label: Docs Sync
     agent: bubbles.docs
     prompt: Sync docs and artifact consistency for current spec.
@@ -304,7 +304,7 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
 1. **Extract spec targets** from the request. Look for:
    - Spec numbers: "spec 027", "feature 19", "the page builder" (match against `specs/` folder names)
    - Bug references: "BUG-015", "the calendar bug"
-   - Feature names: "booking", "page builder", "hospitable" (fuzzy match against `specs/NNN-*` folder names)
+   - Feature names: user-provided domain terms (fuzzy match against `specs/NNN-*` folder names)
    - "all specs", "everything", "the whole repo" → no spec targets (auto-discover)
    - If no spec reference found → no spec targets (auto-discover for iterate/stochastic modes, or STOP and ask for single-spec modes)
 
@@ -417,8 +417,8 @@ User: "keep working on whatever is priority for 2 hours"
 → mode: iterate, minutes: 120, specs: auto-discover
    (No specific mode keyword → iterate meta-mode is correct)
 
-User: "make sure the hospitable integration works properly"
-→ mode: harden-to-doc, spec: specs/010-hospitable-integration
+User: "make sure spec 010 works properly"
+→ mode: harden-to-doc, spec: specs/010-*
 
 User: "update all documentation"
 → mode: docs-only, specs: auto-discover
@@ -1081,7 +1081,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 
 | Trigger Phase | Agent | What It Probes |
 |---------------|-------|---------------|
-| `chaos` | `bubbles.chaos` | Stochastic Playwright/HTTP probes, random user behavior |
+| `chaos` | `bubbles.chaos` | Stochastic browser automation/HTTP probes, random user behavior |
 | `harden` | `bubbles.harden` | Spec/scope quality, Gherkin coverage, DoD completeness |
 | `gaps` | `bubbles.gaps` | Implementation gaps vs design, missing features |
 | `simplify` | `bubbles.simplify` | Code complexity, unnecessary abstractions, dead code |
@@ -1231,7 +1231,7 @@ For each phase in the mode's `phaseOrder`, the workflow agent MUST invoke the co
 | `docs` | `bubbles.docs` | Sync documentation, update design.md/README |
 | `validate` | `bubbles.validate` | Run validation suite, check regressions |
 | `audit` | `bubbles.audit` | Final compliance audit against gates |
-| `chaos` | `bubbles.chaos` | Stochastic Playwright/HTTP probes against live system |
+| `chaos` | `bubbles.chaos` | Stochastic browser automation/HTTP probes against live system |
 | `finalize` | `bubbles.workflow` (self) | Update state, run transition guard, commit, produce summary |
 
 #### Per-Spec Execution

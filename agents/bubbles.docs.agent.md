@@ -184,7 +184,7 @@ If any API endpoint documentation was updated:
    ```
 3. **Spot-check live responses** (if system is running) — for up to 5 endpoints:
    ```bash
-   curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BACKEND_PORT}/api/...
+   [http-client-command with timeout] <documented-endpoint>
    ```
 4. **Verify field names in docs match actual JSON responses** — camelCase required per repo policy
 5. **Record verification evidence**:

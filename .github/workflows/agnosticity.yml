@@ -1,0 +1,22 @@
+name: agnosticity
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  portable-surfaces:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run agnosticity lint
+        run: bash bubbles/scripts/agnosticity-lint.sh --verbose

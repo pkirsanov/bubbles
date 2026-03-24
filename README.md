@@ -426,6 +426,8 @@ Agent files are Markdown. The system is pure text. No build step. No compilation
 
 **Rule:** All agent files (`bubbles.*.agent.md`) must be project-agnostic. Zero repo-specific paths, commands, or tool references.
 
+**Enforcement:** Run `bubbles agnosticity` for a full portable-surface drift check, `bubbles agnosticity --staged` for pre-commit scope, and `bubbles hooks install --all` to wire those checks into local git hooks.
+
 ---
 
 ## License

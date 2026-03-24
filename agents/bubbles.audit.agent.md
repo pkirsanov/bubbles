@@ -28,7 +28,7 @@ description: Final system audit for spec compliance, code quality, and security 
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language) and revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040, G047, G048, G049, G050, G051). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language), G047 (IDOR/auth bypass), G048 (silent decode failures), G049 (evidence clone detection), G050 (gateway route forwarding), and G051 (test env dependencies). Revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
 
 **Non-goals:**
 - Ad-hoc fixes outside a feature/bug folder
@@ -93,6 +93,11 @@ bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 | Status ceiling respected | ✅/❌ |
 | Phase-scope coherence (G027) | ✅/❌ |
 | Implementation reality scan (G028) | ✅/❌ |
+| No IDOR/auth-bypass patterns (G047) | ✅/❌ |
+| No silent decode failures (G048) | ✅/❌ |
+| No cloned/near-duplicate evidence (G049) | ✅/❌ |
+| Gateway routes complete for all endpoints (G050) | ✅/❌ |
+| No env-dependent test failures (G051) | ✅/❌ |
 
 **If ANY check fails:** Verdict = `🔴 DO_NOT_SHIP`. If state.json claims "done", run revert:
 ```bash
@@ -269,14 +274,22 @@ Blocking rule:
 | No hardcoded credentials in changed files   | ✅/❌  |
 | No secrets in log statements                | ✅/❌  |
 | Auth middleware present on protected routes  | ✅/❌  |
+| No IDOR patterns — user identity from auth context only (G047) | ✅/❌  |
+| No silent decode/deserialize failures — errors logged or propagated (G048) | ✅/❌  |
 
 Quick scans (surface-level — bubbles.security does the deep analysis):
 ```bash
 # Hardcoded secrets (critical only)
-grep -rni 'password\s*=\s*"\|api_key\s*=\s*"\|secret\s*=\s*"' [changed-source-files] --include='*.go' --include='*.ts' --include='*.rs' --include='*.py'
+grep -rni 'password\s*=\s*"\|api_key\s*=\s*"\|secret\s*=\s*"' [changed-source-files]
+# Scope to project's source file extensions (resolve from agents.md or project structure)
 
 # Secrets in logs
 grep -rn 'log.*password\|log.*secret\|log.*token\|console.log.*token' [changed-source-files]
+
+# IDOR + Silent Decode — run the mechanical scan (G047, G048)
+# The implementation-reality-scan.sh Scans 7-8 detect these project-agnostically
+bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+# Check output for IDOR_BODY_IDENTITY and SILENT_DECODE violations
 ```
 
 **If `bubbles.security` has NOT run** (missing from `completedPhases`) and the mode requires it (check mode's `phaseOrder` for `security`):

@@ -95,7 +95,7 @@ Use these sections as the single source of truth for agent-specific Tier 2 compl
 
 | ID | Check | Pass Criteria |
 |----|-------|---------------|
-| C1 | Chaos execution evidence exists | Real Playwright/curl output recorded |
+| C1 | Chaos execution evidence exists | Real browser automation / HTTP probe output recorded |
 | C2 | Bug artifacts complete when created | Every BUG directory has required artifacts |
 | C3 | Findings report produced | Structured findings output exists |
 | C4 | Fixture isolation verified | Mutations used owned fixtures or baseline snapshot-and-restore proof exists |

@@ -110,8 +110,8 @@ If the scope includes API endpoint changes, verify response contracts match spec
 2. **Execute live contract checks** against the running system:
    ```bash
    # For each changed endpoint:
-   curl --max-time 5 -s <endpoint> | jq 'keys'  # Verify field names
-   curl --max-time 5 -s -o /dev/null -w '%{http_code}' <endpoint>  # Verify status code
+   [http-client-command with timeout] <endpoint>  # Verify field names/body
+   [http-client-command with timeout] <endpoint>  # Verify status code
    ```
 
 3. **Compare against spec**:
@@ -124,7 +124,7 @@ If the scope includes API endpoint changes, verify response contracts match spec
    ```
    ### Contract Verification: [endpoint]
    - Spec fields: [list from spec]
-   - Actual fields: [list from curl response]
+   - Actual fields: [list from live response]
    - Match: ✅/❌
    - Missing fields: [list]
    - Extra fields: [list]
@@ -473,7 +473,7 @@ For every `[ ]` item found, perform the following investigation:
 
 1. **Extract the verification steps** from the item's `Steps:` and `Expected:` fields
 2. **Reproduce the issue** — attempt to follow the verification steps:
-   - If API endpoint: run `curl --max-time 5` to test the endpoint
+   - If API endpoint: run an HTTP client with a timeout to test the endpoint
    - If UI behavior: check the component code and related routes
    - If script/command: execute it in a terminal
 3. **Trace the code path** — read the relevant source files to understand:

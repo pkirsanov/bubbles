@@ -14,6 +14,7 @@
 #   dod <spec>                    Show unchecked DoD items for a spec
 #   session                       Show current session state
 #   lint <spec>                   Run artifact lint on a spec
+#   agnosticity [--staged]        Check portable Bubbles surfaces for drift
 #   guard <spec>                  Run state transition guard on a spec
 #   scan <spec>                   Run implementation reality scan on a spec
 #   audit-done [--fix]            Audit all specs marked done
@@ -53,6 +54,16 @@ fi
 # ── Helpers ─────────────────────────────────────────────────────────
 
 die() { echo -e "${RED}Error:${NC} $*" >&2; exit 1; }
+
+is_framework_repo() {
+  [[ "$SCRIPT_DIR" != *"/.github/bubbles/scripts" ]]
+}
+
+require_framework_repo_for_hooks() {
+  if ! is_framework_repo; then
+    die "Bubbles git hooks may only be installed in the Bubbles framework repo. Consumer repos should use Bubbles but must not install Bubbles-managed pre-commit/pre-push hooks."
+  fi
+}
 
 # Resolve a spec identifier to a directory path
 resolve_spec() {
@@ -113,6 +124,7 @@ Commands:
   dod <spec>                    Show unchecked DoD items for a spec
   session                       Show current session state
   lint <spec>                   Run artifact lint on a spec
+  agnosticity [--staged]        Check portable Bubbles surfaces for drift
   guard <spec>                  Run state transition guard on a spec
   scan <spec>                   Run implementation reality scan on a spec
   audit-done [--fix]            Audit all specs marked done
@@ -404,6 +416,10 @@ cmd_lint() {
   bash "$SCRIPT_DIR/artifact-lint.sh" "$spec_dir"
 }
 
+cmd_agnosticity() {
+  bash "$SCRIPT_DIR/agnosticity-lint.sh" "$@"
+}
+
 cmd_guard() {
   [[ $# -lt 1 ]] && die "Usage: bubbles guard <spec>"
   local spec_dir
@@ -610,7 +626,11 @@ cmd_doctor() {
   fi
 
   # Check 9: Custom gate scripts
-  local project_config="$REPO_ROOT/.github/bubbles-project.yaml"
+  local project_config
+  # Resolve project root: cli.sh lives at .github/bubbles/scripts/ — go up 3 levels
+  local proj_root
+  proj_root="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  project_config="$proj_root/.github/bubbles-project.yaml"
   if [[ -f "$project_config" ]]; then
     local gate_ok=true
     while IFS= read -r line; do
@@ -627,6 +647,35 @@ cmd_doctor() {
       echo -e "  ${GREEN}✅${NC} Custom gate scripts present"
       passed=$((passed + 1))
     fi
+  fi
+
+  # Check 10: Project scan config auto-generation
+  if [[ ! -f "$project_config" ]] || ! grep -q '^scans:' "$project_config" 2>/dev/null; then
+    local setup_script="$SCRIPT_DIR/project-scan-setup.sh"
+    if [[ -f "$setup_script" ]]; then
+      echo -e "  ${YELLOW}🔧${NC} Auto-generating project scan config..."
+      (cd "$proj_root" && bash "$setup_script" --quiet 2>/dev/null) || true
+      if [[ -f "$project_config" ]] && grep -q '^scans:' "$project_config" 2>/dev/null; then
+        echo -e "  ${GREEN}✅${NC} Project scan config auto-generated (.github/bubbles-project.yaml)"
+        passed=$((passed + 1))
+        healed=$((healed + 1))
+      else
+        echo -e "  ${YELLOW}⚠️${NC}  Could not auto-generate scan config (will use generic defaults)"
+        passed=$((passed + 1))
+      fi
+    fi
+  else
+    echo -e "  ${GREEN}✅${NC} Project scan config present (.github/bubbles-project.yaml)"
+    passed=$((passed + 1))
+  fi
+
+  # Check 11: Portable Bubbles surfaces remain agnostic
+  if bash "$SCRIPT_DIR/agnosticity-lint.sh" --quiet; then
+    echo -e "  ${GREEN}✅${NC} Portable Bubbles surfaces pass agnosticity lint"
+    passed=$((passed + 1))
+  else
+    echo -e "  ${RED}❌${NC} Portable Bubbles surfaces contain project/tool drift"
+    failed=$((failed + 1))
   fi
 
   echo ""
@@ -651,7 +700,9 @@ cmd_hooks() {
     catalog)
       echo "Built-in hooks available:"
       echo "  artifact-lint       pre-commit   Fast artifact lint on staged spec files"
+      echo "  agnosticity-lint    pre-commit   Portable Bubbles drift check on staged files"
       echo "  guard-done-specs    pre-push     State transition guard on done specs"
+      echo "  agnosticity-full    pre-push     Full portable Bubbles drift check"
       echo "  reality-scan        pre-push     Implementation reality scan on changed specs"
       ;;
 
@@ -665,6 +716,7 @@ cmd_hooks() {
       ;;
 
     install)
+      require_framework_repo_for_hooks
       mkdir -p "$(dirname "$hooks_json")"
       local hook_name="${1:-}"
 
@@ -673,9 +725,11 @@ cmd_hooks() {
         cat > "$hooks_json" << 'HJEOF'
 {
   "pre-commit": [
-    {"name": "artifact-lint", "type": "builtin"}
+    {"name": "artifact-lint", "type": "builtin"},
+    {"name": "agnosticity-lint", "type": "builtin"}
   ],
   "pre-push": [
+    {"name": "agnosticity-full", "type": "builtin"},
     {"name": "guard-done-specs", "type": "builtin"},
     {"name": "reality-scan", "type": "builtin"}
   ]
@@ -685,6 +739,26 @@ HJEOF
         echo "✅ All built-in hooks installed"
       else
         echo "Installing single hook: $hook_name (add to hooks.json manually for now)"
+      fi
+      ;;
+
+    uninstall)
+      require_framework_repo_for_hooks
+      local removed_any="false"
+      for ht in pre-commit pre-push; do
+        if [[ -x "$git_hooks_dir/$ht" ]] && grep -q 'Generated by: bubbles.sh hooks install' "$git_hooks_dir/$ht" 2>/dev/null; then
+          rm -f "$git_hooks_dir/$ht"
+          echo "Removed Bubbles-managed $ht hook"
+          removed_any="true"
+        fi
+      done
+      if [[ -f "$hooks_json" ]]; then
+        rm -f "$hooks_json"
+        echo "Removed $hooks_json"
+        removed_any="true"
+      fi
+      if [[ "$removed_any" == "false" ]]; then
+        echo "No Bubbles-managed hooks found to uninstall."
       fi
       ;;
 
@@ -731,7 +805,7 @@ HJEOF
       done
       ;;
 
-    *) die "Unknown hooks subcommand: $subcmd. Try: catalog, list, install, add, remove, run, status" ;;
+    *) die "Unknown hooks subcommand: $subcmd. Try: catalog, list, install, uninstall, add, remove, run, status" ;;
   esac
 }
 
@@ -745,6 +819,8 @@ _regenerate_hooks() {
 # Generated by: bubbles.sh hooks install
 set -uo pipefail
 failed=0
+echo "🫧 Bubbles pre-commit: checking portable surfaces for drift..."
+bash bubbles/scripts/agnosticity-lint.sh --staged || failed=1
 if git diff --cached --name-only | grep -q '^specs/'; then
   echo "🫧 Bubbles pre-commit: artifact lint on staged specs..."
   for spec_dir in $(git diff --cached --name-only | grep '^specs/' | sed 's|/[^/]*$||' | sort -u); do
@@ -769,6 +845,7 @@ set -uo pipefail
 cat >/dev/null || true
 echo "🫧 Bubbles pre-push: validating done specs..."
 failed=0
+bash bubbles/scripts/agnosticity-lint.sh || failed=1
 for state_file in $(find specs -maxdepth 2 -name "state.json" -not -path "*/bugs/*" 2>/dev/null); do
   status=$(grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$state_file" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
   if [[ "$status" == "done" ]]; then
@@ -845,7 +922,18 @@ GATEEOF
         *) die "Unknown gates subcommand: $gates_subcmd" ;;
       esac
       ;;
-    *) die "Unknown project subcommand: $subcmd. Try: gates" ;;
+    setup)
+      # Analyze project and generate/update bubbles-project.yaml scans section
+      local setup_script="$SCRIPT_DIR/project-scan-setup.sh"
+      local proj_root
+      proj_root="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+      if [[ -f "$setup_script" ]]; then
+        (cd "$proj_root" && bash "$setup_script" "$@")
+      else
+        die "Setup script not found: $setup_script"
+      fi
+      ;;
+    *) die "Unknown project subcommand: $subcmd. Try: gates, setup" ;;
   esac
 }
 
@@ -1022,6 +1110,7 @@ main() {
     dod)                cmd_dod "$@" ;;
     session)            cmd_session "$@" ;;
     lint)               cmd_lint "$@" ;;
+    agnosticity)        cmd_agnosticity "$@" ;;
     guard)              cmd_guard "$@" ;;
     scan)               cmd_scan "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;

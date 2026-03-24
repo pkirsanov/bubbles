@@ -29,6 +29,7 @@ Every project using Bubbles MUST have these files:
 | `.specify/memory/agents.md` | **Command registry** — CLI entrypoint, build/test/lint/format commands, file organization, naming conventions, tech stack declaration | **YES** |
 | `.specify/memory/constitution.md` | **Governance principles** — project-specific principles layered on top of universal governance | **YES** |
 | `.github/copilot-instructions.md` | **Project policies** — project-specific rules, testing requirements, Docker config, port allocation, command tables | **YES** |
+| `.github/bubbles-project.yaml` | **Scan pattern extensions** — project-specific regex patterns for built-in quality gates (IDOR, silent decode, env deps), custom gates (G100+) | **OPTIONAL** |
 
 ---
 
@@ -59,7 +60,7 @@ FORMAT_COMMAND=<format command>
 UNIT_TEST_RUST_COMMAND=<backend unit test command>    # or language-appropriate name
 UNIT_TEST_WEB_COMMAND=<frontend unit test command>    # if project has frontend
 INTEGRATION_AND_E2E_API_COMMAND=<integration + e2e api test command>
-E2E_UI_COMMAND=<e2e ui test command using Playwright or equivalent>
+E2E_UI_COMMAND=<e2e ui test command using browser automation framework>
 DEV_ALL_COMMAND=<start full dev stack command>
 DEV_ALL_SYNTH_COMMAND=<start full dev stack with synthetic data>
 DOWN_COMMAND=<stop all services command>
@@ -117,6 +118,64 @@ Do NOT duplicate these — they are universal governance in `agent-common.md`:
 
 ---
 
+## `.github/bubbles-project.yaml` — Scan Pattern Extensions (OPTIONAL)
+
+This file allows projects to extend or override the detection patterns used by built-in quality gates. The file is **project-owned** and never overwritten by Bubbles upgrades.
+
+### Supported Configuration Sections
+
+```yaml
+# .github/bubbles-project.yaml — Project-specific Bubbles extensions
+
+# Custom quality gates (G100+ range, auto-assigned IDs)
+gates:
+  license-compliance:
+    script: scripts/license-check.sh
+    blocking: true
+    description: Verify all dependencies have approved licenses
+
+# Scan pattern overrides for built-in gates
+scans:
+  # G047: IDOR / Auth Bypass Detection
+  idor:
+    # Regex patterns for identity fields extracted from request body
+    # (overrides generic defaults when provided)
+    bodyIdentityPatterns:
+        - 'body\.user_id\|body\.owner_id\|body\.org_id'
+        - 'req\.body\.userId\|req\.body\.ownerId'
+    # Regex pattern for correct auth context usage
+    authContextPatterns: 'claims\.\|auth_user\|CurrentUser\|FromRequest'
+    # Regex pattern to identify handler/controller files
+    handlerFilePatterns: 'handler|controller|route|api'
+
+  # G048: Silent Decode Failure Detection
+  silentDecode:
+    # Regex patterns for silent decode anti-patterns
+    patterns:
+        - 'if let Ok.*decode\|filter_map.*\.ok()'
+        - 'proto\.Unmarshal.*_\b'
+    # Regex pattern for acceptable error handling nearby
+    errorHandling: 'log::error\|tracing::error\|return Err\('
+
+  # G051: Test Environment Dependency Detection
+  testEnvDependency:
+    # Additional regex patterns for env-dependent test failures
+    # (appended to generic defaults, not replacing them)
+    patterns: 'TRUSTED_PROXY_COUNT\|MY_CUSTOM_ENV_VAR'
+```
+
+### Design Principles
+
+| Principle | Description |
+|-----------|-------------|
+| **Override, not replace** | If a project provides patterns, they replace the generic defaults for that scan |
+| **Append for env deps** | `testEnvDependency.patterns` is appended to generic defaults (both match) |
+| **Never overwritten** | `install.sh` upgrades never touch `bubbles-project.yaml` |
+| **Optional** | If the file does not exist, all scans use sensible generic defaults |
+| **YAML structure** | Simple `key: value` or `key: [list]` format parseable by `sed`/`awk` in bash scripts |
+
+---
+
 ## How Bubbles Agents Resolve Project-Specific Values (Indirection Rules)
 
 ### Rule 1: Command Resolution
@@ -124,7 +183,7 @@ Do NOT duplicate these — they are universal governance in `agent-common.md`:
 Agent needs to run tests → reads `.specify/memory/agents.md` → finds UNIT_TEST_RUST_COMMAND → executes that command
 ```
 
-Bubbles agents MUST NEVER hardcode commands like `cargo test` or `npm test`. They resolve commands from `agents.md`.
+Bubbles agents MUST NEVER hardcode ecosystem-native commands. They resolve commands from `agents.md`.
 
 ### Rule 2: Docker Configuration Resolution
 ```
@@ -246,7 +305,7 @@ Skills in `.github/skills/` may be either portable or project-specific. Use this
 | Classification | Rule | Examples |
 |---------------|------|---------|
 | **Portable** | Uses `agents.md` indirection for commands; no project-specific paths/tools hardcoded | `bubbles-skill-authoring/`, `bubbles-docker-lifecycle-governance/`, `bubbles-docker-port-standards/`, `bubbles-spec-template-bdd/`, `bug-fix-testing/` |
-| **Project-specific** | References project CLI, project-specific services, or domain-specific patterns | `wanderaide-operations/`, `protobuf-only/`, `chaos-execution/`, `web-ui/`, `testing-prepush/` |
+| **Project-specific** | References project CLI, project-specific services, or domain-specific patterns | `project-operations/`, `serialization-policy/`, `live-system-chaos/`, `frontend-ui/`, `prepush-validation/` |
 
 Project-specific skills should remain in `.github/skills/` (co-located with governance) but MUST NOT be assumed to exist in other repos adopting Bubbles.
 
@@ -442,7 +501,7 @@ When an agent cannot resolve a required project-specific value, it MUST:
 3. **INSTRUCT** — tell the user to populate the missing value in the correct file
 
 **PROHIBITED:**
-- ❌ Guessing project commands (e.g., assuming `npm test` because the project has a `package.json`)
+- ❌ Guessing project commands from toolchain artifacts instead of using the repo's documented command registry
 - ❌ Using fallback/default commands when `agents.md` is missing
 - ❌ Hardcoding project-specific values in agent definitions
 - ❌ Skipping test types because no command is defined (report the gap instead)

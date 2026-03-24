@@ -187,7 +187,7 @@ grep -rn 'path.Join.*req\|filepath.Join.*param\|os.Open.*user\|fs.readFile.*req'
 grep -rn 'http.Get.*req\|fetch.*param\|axios.*user\|reqwest.*input' [source-files]
 ```
 
-#### 3.2 Authentication & Authorization
+#### 3.2 Authentication & Authorization (includes IDOR — Gate G047)
 ```bash
 # Missing auth middleware
 grep -rn 'router\.\(GET\|POST\|PUT\|DELETE\|PATCH\)' [router-files]
@@ -195,12 +195,39 @@ grep -rn 'router\.\(GET\|POST\|PUT\|DELETE\|PATCH\)' [router-files]
 
 # Hardcoded role checks vs proper RBAC
 grep -rn 'role.*==.*"admin"\|isAdmin.*=.*true\|role.*===.*"admin"' [source-files]
+
+# IDOR Detection (Gate G047) — MANDATORY for every handler
+# Handlers MUST extract user identity from auth context (JWT claims,
+# session middleware, auth headers) — NEVER from request body fields.
+# If a handler uses body identity fields for authorization decisions,
+# it's an IDOR vulnerability (OWASP A01).
+#
+# The implementation-reality-scan.sh Scan 7 enforces this mechanically.
+# Projects can extend detection patterns via .github/bubbles-project.yaml:
+#   scans.idor.bodyIdentityPatterns   — regex for body identity extraction
+#   scans.idor.authContextPatterns    — regex for correct auth context usage
+#   scans.idor.handlerFilePatterns    — how to identify handler files
+#
+# Generic patterns (apply to any language):
+#   body.<identity_field>, payload.<identity_field>, input.<identity_field>,
+#   req.body.<identity_field>, request.body.<identity_field>,
+#   data["<identity_field>"], request.json["<identity_field>"]
+# Where identity fields include: user_id, owner_id, org_id, tenant_id, manager_id
+
+# Verify auth context is used INSTEAD of body identity:
+grep -rn 'claims\.\|auth_user\|authenticated_user\|ctx\.user\|get_user_id_from_token\|CurrentUser\|AuthUser\|FromRequest\|from_request_parts' [handler-files]
 ```
+
+**IDOR Classification:**
+- Handler uses body identity AND has no auth context extraction → **CRITICAL (A01)**
+- Handler uses body identity AND has auth context → **WARN** (manual review: ensure body ID is NOT used for authz)
+- Handler uses only auth context → **PASS**
 
 #### 3.3 Secret Hygiene
 ```bash
 # Hardcoded secrets
-grep -rni 'password\s*=\s*"\|api_key\s*=\s*"\|secret\s*=\s*"\|token\s*=\s*"' [source-files] --include='*.go' --include='*.ts' --include='*.rs' --include='*.py'
+grep -rni 'password\s*=\s*"\|api_key\s*=\s*"\|secret\s*=\s*"\|token\s*=\s*"' [source-files]
+# Scope to project's source file extensions (resolve from agents.md or project structure)
 
 # Secrets in logs
 grep -rn 'log.*password\|log.*secret\|log.*token\|log.*credential\|fmt.Print.*password\|console.log.*token' [source-files]
@@ -233,21 +260,51 @@ grep -rn 'SELECT.*FROM.*WHERE' [source-files] | grep -v 'LIMIT\|OFFSET\|pagina'
 grep -rn 'body.*parser\|json()\|BodyParser\|actix_web::web::Json' [handler-files]
 ```
 
+#### 3.6 Silent Decode / Deserialization Failures (Gate G048)
+
+Detect code that silently discards decode/deserialization errors.
+Corrupted database rows or malformed messages are silently dropped instead
+of being logged or surfaced. This is OWASP A08 (Software and Data Integrity
+Failures) and A09 (Security Logging and Monitoring Failures).
+
+The `implementation-reality-scan.sh` Scan 8 enforces this mechanically.
+Projects can extend detection patterns via `.github/bubbles-project.yaml`:
+- `scans.silentDecode.patterns` — regex patterns for silent decode detection
+- `scans.silentDecode.errorHandling` — regex for acceptable error handling
+
+**Generic anti-patterns to scan for (any language):**
+- Silent Ok extraction: `if let Ok(x) = decode(...)` without else/error handling
+- Error-dropping iterators: `filter_map(|r| r.ok())`, `flat_map(.ok())`
+- Default substitution: `decode().unwrap_or_default()`
+- Ignored error returns: assigning decode error to `_`
+- Swallowed exceptions: `try { parse() } catch {}`, `except: pass`
+
+```bash
+# Run the mechanical scan (project-agnostic with project-configurable patterns)
+bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
+# Check Scan 8 output for SILENT_DECODE violations
+```
+
+**Silent Decode Classification:**
+- Decode error silently discarded (no logging, no propagation) → **HIGH (A08 + A09)**
+- Decode error logged but swallowed (log + continue) → **MEDIUM** (data loss still possible)
+- Decode error propagated as Result::Err or exception → **PASS**
+
 ### Phase 4: OWASP Top 10 Mapping
 
 Map all findings to OWASP Top 10 (2021) categories:
 
 | Category | ID | What to Check |
 |----------|-----|--------------|
-| Broken Access Control | A01 | Auth bypass, privilege escalation, IDOR, CORS misconfig |
+| Broken Access Control | A01 | Auth bypass, privilege escalation, **IDOR (body identity extraction — Gate G047)**, CORS misconfig |
 | Cryptographic Failures | A02 | Weak hashing, plaintext secrets, insecure TLS config |
 | Injection | A03 | SQL, OS command, LDAP, XSS, template injection |
 | Insecure Design | A04 | Missing threat model, inadequate trust boundaries |
 | Security Misconfiguration | A05 | Default credentials, verbose errors, unnecessary features |
 | Vulnerable Components | A06 | Known CVEs in dependencies, outdated libraries |
 | Auth Failures | A07 | Weak passwords, session fixation, credential stuffing |
-| Data Integrity Failures | A08 | Insecure deserialization, unsigned updates |
-| Logging Failures | A09 | Missing security event logs, log injection |
+| Data Integrity Failures | A08 | Insecure deserialization, unsigned updates, **silent decode failures (Gate G048)** |
+| Logging Failures | A09 | Missing security event logs, log injection, **silently discarded decode errors (Gate G048)** |
 | SSRF | A10 | Server-side request forgery via user-controlled URLs |
 
 ### Phase 5: Remediation & Artifact Updates

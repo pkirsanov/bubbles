@@ -17,6 +17,8 @@
 #   5. Prohibited simulation helpers in production (seeded_pick/seeded_range)
 #   6. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
 #   7. Live-system tests using request interception/mocked backends
+#   8. IDOR / auth bypass — user identity from request body instead of auth context
+#   9. Silent decode failures — deserialization errors silently discarded
 #
 # Usage:
 #   bash bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
@@ -172,7 +174,7 @@ for scope_file in "${scope_files[@]}"; do
     if [[ -n "$resolved" ]]; then
       add_impl_file "$resolved"
     fi
-  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
 
   while IFS= read -r raw_test_path; do
     test_path="${raw_test_path//\`/}"
@@ -181,7 +183,7 @@ for scope_file in "${scope_files[@]}"; do
     if [[ -n "$resolved_test" ]]; then
       add_test_file "$resolved_test"
     fi
-  done < <(grep -oE '`[^`]+(spec|test)[^`]*\.(rs|ts|tsx|js|jsx|py|go|java|dart)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+(spec|test)[^`]*\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
 done
 
 is_live_system_test_file() {
@@ -215,7 +217,7 @@ if [[ ${#impl_files[@]} -eq 0 ]] && [[ -f "$feature_dir/design.md" ]]; then
     if [[ -n "$resolved" ]]; then
       add_impl_file "$resolved"
     fi
-  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart)\b[^`]*`' "$feature_dir/design.md" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$feature_dir/design.md" 2>/dev/null | sort -u || true)
   if [[ ${#impl_files[@]} -gt 0 ]]; then
     vwarn "Resolved ${#impl_files[@]} file(s) from design.md fallback — scopes.md should reference these directly"
   fi
@@ -275,7 +277,7 @@ for impl_file in "${impl_files[@]}"; do
   file_ext="${impl_file##*.}"
 
   # Only scan backend files (rs, go, py, java) for backend stub patterns
-  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" ]]; then
+  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "scala" ]]; then
     # Skip test files — stubs/mocks in test files are a separate concern
     if echo "$impl_file" | grep -qE '(test|spec|_test\.rs|_test\.go|test_)'; then
       continue
@@ -364,7 +366,7 @@ UNUSED_PARAM_PATTERNS='fn[[:space:]].*[(,][[:space:]]*_[A-Za-z0-9_]+|function[[:
 for impl_file in "${impl_files[@]}"; do
   file_ext="${impl_file##*.}"
 
-  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" ]]; then
+  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "scala" || "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" ]]; then
     if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__|e2e|playwright)'; then
       continue
     fi
@@ -498,8 +500,8 @@ echo ""
 # =============================================================================
 # SCAN 4: seeded_pick / seeded_range in production Rust code
 # =============================================================================
-# Project-specific: quantitativeFinance prohibits seeded_pick/seeded_range
-# in production code (allowed in test code only).
+# Some projects prohibit deterministic simulation helpers in production code
+# while still allowing them in test code.
 # This scan is only active if the patterns are found in scope-referenced files.
 # =============================================================================
 echo "--- Scan 4: Prohibited Simulation Helpers in Production ---"
@@ -665,6 +667,190 @@ fi
 echo ""
 
 # =============================================================================
+# SCAN 7: IDOR / Auth Bypass Detection (Gate G047)
+# =============================================================================
+# Detects handlers that extract user/org/tenant identity from request body
+# or query params instead of from authenticated context (auth middleware,
+# JWT claims, session). This is an IDOR vulnerability — callers can
+# impersonate other users by changing the ID in the request body.
+#
+# CORRECT:   userId := ctx.Value("authenticated_user_id")
+# INCORRECT: userId := body.UserId  (caller-controlled!)
+#
+# Patterns are loaded from .github/bubbles-project.yaml if available,
+# otherwise generic defaults are used. Projects can override:
+#   scans.idor.bodyIdentityPatterns   — regex patterns for body identity extraction
+#   scans.idor.authContextPatterns    — regex patterns for correct auth context usage
+#   scans.idor.handlerFilePatterns    — how to identify handler/controller files
+# =============================================================================
+echo "--- Scan 7: IDOR / Auth Bypass Detection (Gate G047) ---"
+
+# Auto-generate project config if missing (just-in-time, fully automatic)
+PROJECT_CONFIG=".github/bubbles-project.yaml"
+SETUP_SCRIPT="$(dirname "${BASH_SOURCE[0]}")/project-scan-setup.sh"
+if [[ ! -f "$PROJECT_CONFIG" ]] || ! grep -q '^scans:' "$PROJECT_CONFIG" 2>/dev/null; then
+  if [[ -f "$SETUP_SCRIPT" ]]; then
+    info "Auto-generating .github/bubbles-project.yaml (first-time project scan setup)..."
+    bash "$SETUP_SCRIPT" --quiet 2>/dev/null || true
+  fi
+fi
+IDOR_BODY_PATTERNS=()
+IDOR_AUTH_PATTERNS=""
+IDOR_HANDLER_FILTER=""
+
+if [[ -f "$PROJECT_CONFIG" ]]; then
+  # Extract bodyIdentityPatterns from YAML (simple line-based parsing)
+  while IFS= read -r pat; do
+    pat="$(echo "$pat" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//' | sed "s/^'//" | sed "s/'$//")"
+    [[ -n "$pat" ]] && IDOR_BODY_PATTERNS+=("$pat")
+  done < <(sed -n '/scans:/,/^[^ ]/{ /idor:/,/^    [^ ]/{/bodyIdentityPatterns:/,/^      [^ ]/{/^        -/p}}}' "$PROJECT_CONFIG" 2>/dev/null || true)
+
+  # Extract authContextPatterns
+  local_auth="$(sed -n '/scans:/,/^[^ ]/{ /idor:/,/^    [^ ]/{/authContextPatterns:/s/.*authContextPatterns:[[:space:]]*//p}}' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  [[ -n "$local_auth" ]] && IDOR_AUTH_PATTERNS="$local_auth"
+
+  # Extract handlerFilePatterns
+  local_handler="$(sed -n '/scans:/,/^[^ ]/{ /idor:/,/^    [^ ]/{/handlerFilePatterns:/s/.*handlerFilePatterns:[[:space:]]*//p}}' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  [[ -n "$local_handler" ]] && IDOR_HANDLER_FILTER="$local_handler"
+fi
+
+# Generic defaults — catch the most common IDOR anti-patterns across languages
+if [[ ${#IDOR_BODY_PATTERNS[@]} -eq 0 ]]; then
+  IDOR_BODY_PATTERNS=(
+    # Generic: identity fields extracted from request body/payload/input structs
+    'body\.\(user_id\|owner_id\|org_id\|tenant_id\|manager_id\|UserID\|OwnerID\|OrgID\|TenantID\|ManagerID\|userId\|ownerId\|orgId\|tenantId\)'
+    'payload\.\(user_id\|owner_id\|org_id\|tenant_id\|UserID\|OwnerID\|OrgID\|TenantID\|userId\|ownerId\|orgId\|tenantId\)'
+    'input\.\(user_id\|owner_id\|org_id\|tenant_id\|UserID\|OwnerID\|OrgID\|TenantID\|userId\|ownerId\|orgId\|tenantId\)'
+    'req\.body\.\(userId\|ownerId\|orgId\|tenantId\|user_id\|owner_id\)'
+    'request\.body\.\(userId\|ownerId\|orgId\|tenantId\|user_id\|owner_id\)'
+    'request\.json\.\(user_id\|owner_id\|org_id\|tenant_id\)'
+    'data\[.user_id.\]\|data\[.owner_id.\]\|data\[.org_id.\]\|data\[.tenant_id.\]'
+  )
+fi
+
+if [[ -z "$IDOR_AUTH_PATTERNS" ]]; then
+  IDOR_AUTH_PATTERNS='auth_user\|authenticated_user\|claims\.\|token\.\|session\.\|ctx\.user\|middleware\.\|get_user_id_from_token\|extract_user_id\|CurrentUser\|AuthUser\|get_authenticated\|FromRequest\|from_request_parts'
+fi
+
+if [[ -z "$IDOR_HANDLER_FILTER" ]]; then
+  IDOR_HANDLER_FILTER='handler|controller|route|endpoint|api|grpc|server'
+fi
+
+for impl_file in "${impl_files[@]}"; do
+  # Skip test files
+  if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__)'; then
+    continue
+  fi
+
+  # Only scan handler/route/controller-like files
+  if ! echo "$impl_file" | grep -qiE "$IDOR_HANDLER_FILTER"; then
+    continue
+  fi
+
+  for pattern in "${IDOR_BODY_PATTERNS[@]}"; do
+    while IFS=: read -r line_num matched_line; do
+      # Skip comment lines (multi-language)
+      if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*|{/\*)'; then continue; fi
+      # Check if auth context is also used in this file
+      auth_usage="$(grep -cE "$IDOR_AUTH_PATTERNS" "$impl_file" 2>/dev/null || true)"
+      if [[ "$auth_usage" -eq 0 ]]; then
+        violation "$impl_file" "$line_num" "IDOR_BODY_IDENTITY" "User/org identity extracted from request body instead of auth context: $matched_line"
+      else
+        vwarn "IDOR risk in $impl_file:$line_num — body identity field present alongside auth context. Manual review: ensure body ID is NOT used for authorization decisions."
+      fi
+    done < <(grep -nE "$pattern" "$impl_file" 2>/dev/null || true)
+  done
+done
+echo ""
+
+# =============================================================================
+# SCAN 8: Silent Decode Failure Detection (Gate G048)
+# =============================================================================
+# Detects code that silently discards deserialization/decode errors instead
+# of logging or propagating them. This allows data corruption to go
+# undetected — corrupted database rows are silently dropped from results.
+#
+# Patterns are loaded from .github/bubbles-project.yaml if available,
+# otherwise generic defaults are used. Projects can override:
+#   scans.silentDecode.patterns       — regex patterns for silent decode detection
+#   scans.silentDecode.errorHandling  — regex patterns for acceptable error handling
+# =============================================================================
+echo "--- Scan 8: Silent Decode Failure Detection (Gate G048) ---"
+
+# Load project-specific patterns or use generic defaults
+SILENT_DECODE_PATTERNS=()
+DECODE_ERROR_HANDLING_PATTERNS=""
+
+if [[ -f "$PROJECT_CONFIG" ]]; then
+  while IFS= read -r pat; do
+    pat="$(echo "$pat" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/^"//' | sed 's/"$//' | sed "s/^'//" | sed "s/'$//")"
+    [[ -n "$pat" ]] && SILENT_DECODE_PATTERNS+=("$pat")
+  done < <(sed -n '/scans:/,/^[^ ]/{ /silentDecode:/,/^    [^ ]/{/patterns:/,/^      [^ ]/{/^        -/p}}}' "$PROJECT_CONFIG" 2>/dev/null || true)
+
+  local_err="$(sed -n '/scans:/,/^[^ ]/{ /silentDecode:/,/^    [^ ]/{/errorHandling:/s/.*errorHandling:[[:space:]]*//p}}' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  [[ -n "$local_err" ]] && DECODE_ERROR_HANDLING_PATTERNS="$local_err"
+fi
+
+if [[ ${#SILENT_DECODE_PATTERNS[@]} -eq 0 ]]; then
+  SILENT_DECODE_PATTERNS=(
+    # Silent Ok extraction on decode/deserialize operations
+    'if let Ok.*decode\|if let Ok.*deserialize\|if let Ok.*from_bytes\|if let Ok.*parse_from'
+    'if let Ok.*prost::Message\|if let Ok.*serde.*from\|if let Ok.*protobuf'
+    # Dropping Err results via filter_map/flat_map
+    'filter_map.*\.ok()\|flat_map.*\.ok()'
+    # unwrap_or_default on decode results
+    'decode.*unwrap_or_default\|deserialize.*unwrap_or_default\|from_bytes.*unwrap_or_default'
+    'parse_from.*unwrap_or_default\|from_slice.*unwrap_or_default'
+    # Go: ignoring decode error
+    'proto\.Unmarshal.*_\b\|json\.Unmarshal.*_\b'
+    # TS/JS: swallowing parse errors
+    'JSON\.parse.*catch\|protobuf.*catch\|decode.*catch'
+    # Python: swallowing decode errors
+    'except.*pass\s*$\|except.*continue\s*$'
+  )
+fi
+
+if [[ -z "$DECODE_ERROR_HANDLING_PATTERNS" ]]; then
+  DECODE_ERROR_HANDLING_PATTERNS='log::error\|tracing::error\|error!\(|warn!\(|eprintln!\(|return Err\(|\.map_err\(|log\.Error\|log\.Warn\|logger\.error\|logger\.warn\|console\.error\|logging\.error'
+fi
+
+for impl_file in "${impl_files[@]}"; do
+  # Skip test files — test code may legitimately test error handling
+  if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__)'; then
+    continue
+  fi
+
+  # Find #[cfg(test)] boundary for Rust files
+  file_ext="${impl_file##*.}"
+  cfg_test_line=999999
+  if [[ "$file_ext" == "rs" ]]; then
+    local_cfg="$(grep -n '#\[cfg(test)\]' "$impl_file" 2>/dev/null | head -1 | cut -d: -f1 || true)"
+    if [[ -n "$local_cfg" ]]; then cfg_test_line=$local_cfg; fi
+  fi
+
+  for pattern in "${SILENT_DECODE_PATTERNS[@]}"; do
+    while IFS=: read -r line_num matched_line; do
+      [[ -z "$line_num" ]] && continue
+      # Skip lines in #[cfg(test)] module
+      if [[ "$line_num" -ge "$cfg_test_line" ]]; then continue; fi
+      # Skip comment lines
+      if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*|{/\*)'; then continue; fi
+      # Check if there's error handling within ±5 lines
+      file_len=$(wc -l < "$impl_file")
+      check_start=$((line_num - 2))
+      if [[ $check_start -lt 1 ]]; then check_start=1; fi
+      check_end=$((line_num + 5))
+      if [[ $check_end -gt $file_len ]]; then check_end=$file_len; fi
+      has_error_handling="$(sed -n "${check_start},${check_end}p" "$impl_file" | grep -cE "$DECODE_ERROR_HANDLING_PATTERNS" || true)"
+      if [[ "$has_error_handling" -eq 0 ]]; then
+        violation "$impl_file" "$line_num" "SILENT_DECODE" "Decode/deserialize error silently discarded — corrupted data will be invisible: $matched_line"
+      fi
+    done < <(grep -nE "$pattern" "$impl_file" 2>/dev/null || true)
+  done
+done
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"
@@ -694,6 +880,9 @@ if [[ "$violations" -gt 0 ]]; then
   echo "  - Replace || 'default' / ?? 'fallback' with explicit missing-config errors"
   echo "  - Replace os.getenv('K', 'default') with fail-fast on missing env"
   echo "  - Reclassify intercepted tests out of live-stack categories and add real integration/E2E coverage"
+  echo "  - Extract user identity from auth context (JWT/session/middleware), NOT from request body (IDOR fix)"
+  echo "  - Replace 'if let Ok(x) = decode()' with match/? and log errors with row ID (silent decode fix)"
+  echo "  - Replace filter_map(|r| r.ok()) on decode results with explicit error logging (silent decode fix)"
   exit 1
 else
   if [[ "$warnings" -gt 0 ]]; then

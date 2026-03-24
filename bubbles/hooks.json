@@ -1,0 +1,11 @@
+{
+  "pre-commit": [
+    {"name": "artifact-lint", "type": "builtin"},
+    {"name": "agnosticity-lint", "type": "builtin"}
+  ],
+  "pre-push": [
+    {"name": "agnosticity-full", "type": "builtin"},
+    {"name": "guard-done-specs", "type": "builtin"},
+    {"name": "reality-scan", "type": "builtin"}
+  ]
+}

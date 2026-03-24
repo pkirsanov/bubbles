@@ -114,7 +114,7 @@ Scan for a project-level CLI entrypoint script that wraps all development comman
    ```
 4. Add a "CLI Entrypoint" section to the generated `agents.md` documenting all available subcommands
 
-**If NO CLI entrypoint is found, use raw tool commands (go test, npm test, etc.).**
+**If NO CLI entrypoint is found, use raw ecosystem-native commands resolved from the detected toolchain.**
 
 **Tech-Specific Patterns:**
 

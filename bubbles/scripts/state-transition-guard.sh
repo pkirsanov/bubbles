@@ -1261,6 +1261,136 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 19: Test Environment Dependency Detection (Gate G051)
+# =============================================================================
+# Scans report.md evidence for test failures caused by missing environment
+# variables. These are pre-existing failures that silently undermine test
+# confidence — tests pass in some environments but fail in others.
+# =============================================================================
+echo "--- Check 19: Test Environment Dependency Detection (Gate G051) ---"
+# Generic env-dependency patterns — projects can extend via bubbles-project.yaml
+env_dep_pattern='missing.*env\|env.*not set\|env.*not found\|required env\|environment variable.*missing\|panicked.*env\|config.*parse.*fail\|connection refused.*localhost\|could not connect\|cannot connect\|missing required.*config'
+
+# Load project-specific env dependency patterns if available
+PROJECT_CONFIG=".github/bubbles-project.yaml"
+if [[ -f "$PROJECT_CONFIG" ]]; then
+  extra_env_pattern="$(sed -n '/scans:/,/^[^ ]/{ /testEnvDependency:/,/^    [^ ]/{/patterns:/s/.*patterns:[[:space:]]*//p}}' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  if [[ -n "$extra_env_pattern" ]]; then
+    env_dep_pattern="${env_dep_pattern}\|${extra_env_pattern}"
+  fi
+fi
+env_dep_hits=0
+
+for rpt_path in "${report_files[@]}"; do
+  [[ -f "$rpt_path" ]] || continue
+  env_hits="$(grep -ciE "$env_dep_pattern" "$rpt_path" 2>/dev/null || true)"
+  if [[ "$env_hits" -gt 0 ]]; then
+    fail "Report contains $env_hits test failure(s) caused by missing env vars/config: ${rpt_path#$feature_dir/} — pre-existing env-dependent test failures MUST be fixed (Gate G051)"
+    env_dep_hits=$((env_dep_hits + env_hits))
+    # Show first 3 matching lines
+    grep -iE "$env_dep_pattern" "$rpt_path" 2>/dev/null | head -3 | while IFS= read -r env_line; do
+      echo "   → $env_line"
+    done
+  fi
+done
+
+# Also scan scope files for evidence blocks mentioning env-dependent failures
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+  env_evidence_hits="$(grep -ciE "$env_dep_pattern" "$scope_path" 2>/dev/null || true)"
+  if [[ "$env_evidence_hits" -gt 0 ]]; then
+    fail "Scope evidence contains $env_evidence_hits env-dependent test failure indicator(s): ${scope_path#$feature_dir/} (Gate G051)"
+    env_dep_hits=$((env_dep_hits + env_evidence_hits))
+  fi
+done
+
+if [[ "$env_dep_hits" -eq 0 ]]; then
+  pass "No env-dependent test failures detected in evidence (Gate G051)"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 20: Enhanced Evidence Similarity Detection (Gate G049)
+# =============================================================================
+# Extends Check 12 by detecting near-duplicate evidence blocks where ≥80%
+# of non-empty lines are shared across different DoD items. This catches
+# copy-paste fabrication where agents change 1-2 lines but keep the bulk
+# of the evidence identical.
+# =============================================================================
+echo "--- Check 20: Evidence Similarity Detection (Gate G049) ---"
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  # Collect all evidence blocks as separate entries
+  evidence_blocks=()
+  in_evidence=0
+  current_block=""
+  while IFS= read -r line; do
+    if [[ "$in_evidence" -eq 0 ]] && echo "$line" | grep -qE '^    ```'; then
+      in_evidence=1
+      current_block=""
+    elif [[ "$in_evidence" -eq 1 ]] && echo "$line" | grep -qE '^    ```$'; then
+      in_evidence=0
+      if [[ -n "$current_block" ]]; then
+        evidence_blocks+=("$current_block")
+      fi
+    elif [[ "$in_evidence" -eq 1 ]]; then
+      # Skip empty lines for comparison
+      trimmed="$(echo "$line" | sed 's/^[[:space:]]*//')"
+      if [[ -n "$trimmed" ]]; then
+        current_block="${current_block}${trimmed}"$'\n'
+      fi
+    fi
+  done < "$scope_path"
+
+  block_count="${#evidence_blocks[@]}"
+  if [[ "$block_count" -lt 2 ]]; then
+    continue
+  fi
+
+  # Compare each pair of blocks for line-level overlap
+  near_dup_found="false"
+  for ((i=0; i<block_count-1; i++)); do
+    for ((j=i+1; j<block_count; j++)); do
+      block_a="${evidence_blocks[$i]}"
+      block_b="${evidence_blocks[$j]}"
+
+      # Count lines in each block
+      lines_a="$(echo "$block_a" | wc -l)"
+      lines_b="$(echo "$block_b" | wc -l)"
+      min_lines=$((lines_a < lines_b ? lines_a : lines_b))
+
+      if [[ "$min_lines" -lt 5 ]]; then
+        continue  # Too small to compare meaningfully
+      fi
+
+      # Count shared lines (exact match)
+      shared_lines=0
+      while IFS= read -r a_line; do
+        [[ -z "$a_line" ]] && continue
+        if echo "$block_b" | grep -qF "$a_line"; then
+          shared_lines=$((shared_lines + 1))
+        fi
+      done <<< "$block_a"
+
+      # Calculate overlap percentage
+      overlap_pct=$((shared_lines * 100 / min_lines))
+
+      if [[ "$overlap_pct" -ge 80 ]]; then
+        fail "Near-duplicate evidence blocks (${overlap_pct}% line overlap) in $(relative_artifact_path "$scope_path") — blocks $((i+1)) and $((j+1)) of $block_count share $shared_lines of $min_lines lines. LIKELY COPY-PASTE FABRICATION (Gate G049)"
+        near_dup_found="true"
+        break 2
+      fi
+    done
+  done
+
+  if [[ "$near_dup_found" == "false" ]]; then
+    pass "No near-duplicate evidence blocks in $(relative_artifact_path "$scope_path") (Gate G049)"
+  fi
+done
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"
