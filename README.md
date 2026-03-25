@@ -357,6 +357,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Recipes](docs/recipes/) | Common problems → solutions |
 | [Installing in Your Repo](docs/guides/INSTALLATION.md) | Step-by-step setup guide |
 | [Spec Examples](docs/examples/) | Annotated reference examples for common patterns |
+| [Shared Skills](skills/) | Portable governance skills installed to every repo |
 
 ---
 

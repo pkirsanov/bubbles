@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added `bubbles-test-integrity` portable skill — Trinity's field manual for making sure tests are real, not greasy shortcuts. Consolidates Gherkin scenario coverage, anti-mock scans, anti-false-positive scans, assertion audits, and Test Plan↔DoD parity checks into one actionable checklist. Activates on any test work.
 - Added artifact-freshness reconciliation as a first-class planning rule: analyst, UX, design, and plan now reconcile stale active content and isolate superseded material instead of leaving conflicting truths active.
 - Added `artifact-freshness-guard.sh` plus Gate `G052` so superseded sections are mechanically isolated from active truth, superseded scope appendices cannot keep executable status/Test Plan/DoD structure, and per-scope directory drift is blocked when `scopes/_index.md`, on-disk `scopes/NN-*`, and `state.json.scopeProgress.scopeDir` fall out of sync.
 - Added explicit existing-feature redesign support: new `redesign-existing` workflow mode, new `same-lot-new-trailer` Sunnyvale alias, and updated docs/recipes for reconcile vs improve vs redesign decisions.

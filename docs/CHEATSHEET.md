@@ -225,6 +225,22 @@
 
 ---
 
+## <img src="../icons/trinity-notebook.svg" width="32"> Shared Skills
+
+> *"Dad, that's not how that works."*
+
+Skills are portable procedural checklists auto-installed to every repo. They activate on specific triggers and give agents a focused playbook instead of making them piece together rules from six governance files.
+
+| Skill | Alias | What It Does | Triggers |
+|-------|-------|-------------|----------|
+| `bubbles-test-integrity` | Trinity's Field Manual | Makes sure tests are real — no fakes, no shortcuts, no greasy workarounds. Gherkin coverage, anti-mock scans, anti-false-positive scans, assertion audits, Test Plan↔DoD parity. | Writing tests, implementing scope test plans, reviewing coverage, marking test DoD items |
+| `bubbles-spec-template-bdd` | The Spec Book | Enforces `spec.md` adherence to template with Gherkin-style BDD scenarios and tech-agnostic requirements. | Creating or validating `spec.md` |
+| `bubbles-docker-lifecycle-governance` | The Lot Rules | Docker build, cleanup, compose, and validation — freshness, disk usage, persistent-store protection, disposable test storage. | Changing Dockerfiles, compose files, cleanup commands |
+| `bubbles-docker-port-standards` | The Port Authority | Workspace-wide Docker port allocation (10k Rule) and URL binding (Dual-URL Standard). | Generating or modifying docker-compose or service configs |
+| `bubbles-skill-authoring` | Sam's Specialties | How to create or update repo-local skills that follow governance without hardcoding project details. | Adding procedural workflows, checklists, or reusable resources |
+
+---
+
 ## <img src="../icons/phil-collins-baam.svg" width="32"> Fun Mode Messages (`BUBBLES_FUN_MODE=true`)
 
 | Event | Message |
