@@ -158,6 +158,36 @@ User: "check if my feature is ready to ship"
 User: "simplify this feature and sync docs"
 -> /bubbles.workflow  specs/<feature> mode: simplify-to-doc
 
+User: "are my specs still valid?"
+-> /bubbles.spec-review  all depth: quick
+
+User: "check if booking spec matches reality"
+-> /bubbles.spec-review  specs/008-booking depth: thorough
+
+User: "prepare maintenance context before simplifying"
+-> /bubbles.spec-review  maintenance: simplify
+
+User: "audit all specs for freshness then report"
+-> /bubbles.workflow  mode: spec-review-to-doc
+
+User: "reconcile stale artifacts for a feature"
+-> /bubbles.workflow  specs/<feature> mode: reconcile-to-doc
+
+User: "this feature needs a full redesign"
+-> /bubbles.workflow  specs/<feature> mode: redesign-existing
+
+User: "run chaos and then fix what breaks"
+-> /bubbles.workflow  specs/<feature> mode: chaos-to-doc
+
+User: "just validate and update docs"
+-> /bubbles.workflow  specs/<feature> mode: validate-to-doc
+
+User: "create a new reusable skill"
+-> /bubbles.create-skill
+
+User: "check for regressions after my changes"
+-> /bubbles.regression  specs/<feature>
+
 User: "deliver this but stay strict TDD"
 -> /bubbles.workflow  specs/<feature> mode: full-delivery tdd: true
 
@@ -193,6 +223,11 @@ User: "why did my workflow stop after validate?"
 | "Stabilize flaky infrastructure" | 1. `/bubbles.workflow <feature> mode: stabilize-to-doc` - Full stability pipeline |
 | "Run repeated stabilize sweeps" | 1. `/bubbles.workflow stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10` - Randomize spec selection, limit probes to stabilize |
 | "Security review before shipping" | 1. `/bubbles.security <feature>` - Threat modeling + dependency scan + code review<br>2. `/bubbles.workflow <feature> mode: full-delivery` - Fix and ship |
+| "Check if specs are still valid before maintenance" | 1. `/bubbles.spec-review all` - Quick freshness audit<br>2. Review trust map output<br>3. Fix stale specs with `/bubbles.design` or `/bubbles.plan` as needed |
+| "Do a safe maintenance pass (simplify/security/stabilize)" | 1. `/bubbles.spec-review maintenance: <agent>` - Get trust context<br>2. `/bubbles.workflow <feature> mode: simplify-to-doc` (or `stabilize-to-doc`, security flow) |
+| "Reconcile stale feature artifacts before fixing" | 1. `/bubbles.workflow <feature> mode: reconcile-to-doc` - Reset stale state + re-validate<br>2. Or use `redesign-existing` if the product story changed |
+| "Check for regressions after shipping changes" | 1. `/bubbles.regression <feature>` - Cross-spec conflict detection<br>2. `/bubbles.test <feature>` - Run impacted tests |
+| "Package a reusable workflow as a skill" | 1. `/bubbles.create-skill` - Interactive scaffolding<br>2. Verify with a Copilot Chat trigger phrase |
 
 #### Intent-to-Agent Mapping
 
@@ -225,6 +260,12 @@ User: "why did my workflow stop after validate?"
 | "simplify", "cleanup", "complexity" | `bubbles.simplify` | Post-implementation cleanup |
 | "TDD", "test first", "red green refactor" | `bubbles.workflow` with a delivery mode plus `tdd: true` | Prefer a real workflow, not a fake top-level mode; `tdd` tightens the inner loop, it does not replace baseline planning/scenario gates |
 | "cinematic", "premium UI", "design system" | `bubbles.cinematic-designer` | Premium UI design |
+| "spec review", "specs still valid", "stale specs", "spec freshness", "trust map" | `bubbles.spec-review` | Standalone or via `spec-review-to-doc` mode |
+| "regression", "cross-spec conflict", "did I break something" | `bubbles.regression` | Post-change interference detection |
+| "iterate", "keep going", "do the next scope", "continue work" | `bubbles.iterate` | Single-iteration scope runner |
+| "create skill", "package workflow", "reusable checklist" | `bubbles.create-skill` | Repo-local skill scaffolding |
+| "reconcile", "stale artifacts", "out of sync" | `bubbles.workflow` with `mode: reconcile-to-doc` | Reconcile drifted state |
+| "redesign", "major rewrite", "start over on this feature" | `bubbles.workflow` with `mode: redesign-existing` | Full reconceptualization |
 | "clarify", "ambiguous", "unclear" | `bubbles.clarify` | Spec/design clarification |
 | "quality sweep", "everything", "full check" | `bubbles.workflow` with `mode: harden-gaps-to-doc` | Most thorough |
 | "random testing", "adversarial" | `bubbles.workflow` with `mode: stochastic-quality-sweep` | Randomized probing |
@@ -250,13 +291,16 @@ When a user asks "which mode should I use?" or describes a situation, recommend 
 5. **Is the goal specifically to reduce complexity without re-scoping the feature?**
    - YES -> `simplify-to-doc`
    - NO -> continue
-6. **Do you have specs/design but no code yet?**
+6. **Do you need to check if specs are still trustworthy before maintenance?**
+   - YES -> `spec-review-to-doc` (standalone audit) or run `bubbles.spec-review` before a maintenance mode
+   - NO -> continue
+7. **Do you have specs/design but no code yet?**
    - YES -> `full-delivery` or `feature-bootstrap`
    - NO -> continue
-7. **Do you want randomized adversarial probing?**
+8. **Do you want randomized adversarial probing?**
    - YES -> `stochastic-quality-sweep`
    - NO -> continue
-8. **Do you want the system to pick the best work?**
+9. **Do you want the system to pick the best work?**
    - YES -> `iterate` or `value-first-e2e-batch`
 
 When the user explicitly asks to challenge the plan first, prepend `bubbles.grill` or add `grillFirst: true` to the recommended workflow. When the user asks for test-first execution, add `tdd: true` and remember that baseline workflow law already requires coherent spec/design/plan artifacts, Gherkin scenarios, and scenario-specific test planning before implementation is allowed. When the user asks for copy-ready backlog items, add `backlogExport: tasks|issues` to `bubbles.plan`.
@@ -384,5 +428,6 @@ When the user's request is ambiguous, use this priority:
 6. If about lessons -> `lessons`
 7. If about dependencies -> `dag`
 8. If about progress -> `status`
-9. If about what to do next / which agent / which mode -> Platform Concierge
+9. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
+10. If about what to do next / which agent / which mode -> Platform Concierge
 10. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly
