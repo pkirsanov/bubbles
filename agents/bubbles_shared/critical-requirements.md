@@ -96,6 +96,13 @@
    - README tables, capability ledgers, feature matrices, and user-facing status claims must be verified against real code paths before they can assert a capability is delivered.
    - Docs-only evidence cannot close runtime work. Delivered-status claims require implementation evidence plus executed proof.
 
+19. **Framework File Immutability**
+   - Agents MUST NEVER create, modify, or delete files in Bubbles framework-managed directories: `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, `.github/prompts/bubbles.*.prompt.md`, `.github/bubbles/workflows.yaml`, `.github/bubbles/hooks.json`, `.github/instructions/bubbles-*.instructions.md`, or `.github/skills/bubbles-*/`.
+   - These files are owned by the Bubbles framework and updated exclusively via `install.sh` upgrades.
+   - If a framework script has a bug or needs enhancement, the change MUST be proposed upstream to the Bubbles repository — not patched locally.
+   - Project-specific scripts belong in `scripts/`. Project-specific quality gates belong in `.github/bubbles-project.yaml`.
+   - The `.github/bubbles/.manifest` file lists all framework-owned files; `agnosticity-lint.sh` detects non-manifested files in managed directories.
+
 ---
 
 ## Enforcement Rules

@@ -119,6 +119,8 @@ Agents MUST NOT bypass completion gates by manipulating artifact format. The fol
 
 **MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md), [agent-common.md](bubbles_shared/agent-common.md), and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
+**⛔ FRAMEWORK FILE IMMUTABILITY (NON-NEGOTIABLE):** NEVER create, modify, or delete files inside `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, `.github/prompts/bubbles.*.prompt.md`, `.github/bubbles/workflows.yaml`, `.github/bubbles/hooks.json`, or `.github/instructions/bubbles-*.instructions.md`. These are framework-managed and updated only via `install.sh`. If a framework script needs a fix, propose it upstream to the Bubbles repository. Project-specific scripts go in `scripts/`, project-specific quality gates go in `.github/bubbles-project.yaml`. See [operating-baseline.md → Framework File Immutability](bubbles_shared/operating-baseline.md).
+
 ## User Input
 
 ```text
