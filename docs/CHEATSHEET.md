@@ -227,17 +227,111 @@
 
 ## <img src="../icons/trinity-notebook.svg" width="32"> Shared Skills
 
-> *"Dad, that's not how that works."*
+> *"Dad, that's not how that works. You can't just say the tests pass."*
 
-Skills are portable procedural checklists auto-installed to every repo. They activate on specific triggers and give agents a focused playbook instead of making them piece together rules from six governance files.
+Skills are portable procedural checklists auto-installed to every repo. They activate on specific triggers and give agents a focused playbook instead of making them piece together rules from six governance files. Think of them as the park bylaws — posted on the community board, enforced by everyone.
 
-| Skill | Alias | What It Does | Triggers |
-|-------|-------|-------------|----------|
-| `bubbles-test-integrity` | Trinity's Field Manual | Makes sure tests are real — no fakes, no shortcuts, no greasy workarounds. Gherkin coverage, anti-mock scans, anti-false-positive scans, assertion audits, Test Plan↔DoD parity. | Writing tests, implementing scope test plans, reviewing coverage, marking test DoD items |
-| `bubbles-spec-template-bdd` | The Spec Book | Enforces `spec.md` adherence to template with Gherkin-style BDD scenarios and tech-agnostic requirements. | Creating or validating `spec.md` |
-| `bubbles-docker-lifecycle-governance` | The Lot Rules | Docker build, cleanup, compose, and validation — freshness, disk usage, persistent-store protection, disposable test storage. | Changing Dockerfiles, compose files, cleanup commands |
-| `bubbles-docker-port-standards` | The Port Authority | Workspace-wide Docker port allocation (10k Rule) and URL binding (Dual-URL Standard). | Generating or modifying docker-compose or service configs |
-| `bubbles-skill-authoring` | Sam's Specialties | How to create or update repo-local skills that follow governance without hardcoding project details. | Adding procedural workflows, checklists, or reusable resources |
+### The Skill Roster
+
+| Icon | Skill | Character | Quote |
+|:----:|-------|-----------|-------|
+| <img src="../icons/trinity-notebook.svg" width="28"> | `bubbles-test-integrity` | Trinity | *"Dad, that's not how that works. You have to actually run them."* |
+| <img src="../icons/ray-lawnchair.svg" width="28"> | `bubbles-spec-template-bdd` | Ray | *"Way she goes? No. Way the SPEC goes."* |
+| <img src="../icons/barb-keys.svg" width="28"> | `bubbles-docker-lifecycle-governance` | Barb Lahey | *"Jim, there are RULES about what stays and what gets cleaned."* |
+| <img src="../icons/ted-badge.svg" width="28"> | `bubbles-docker-port-standards` | Ted Johnson | *"You can't just park wherever you want. There's a system."* |
+| <img src="../icons/sam-binoculars.svg" width="28"> | `bubbles-skill-authoring` | Sam Losco | *"I used to be a vet, you know. I got specialties."* |
+
+### What Each Skill Does
+
+#### <img src="../icons/trinity-notebook.svg" width="24"> Trinity's Field Manual — `bubbles-test-integrity`
+
+*The smartest person in the park grew up watching adults cut corners. She doesn't.*
+
+| | |
+|---|---|
+| **What It Enforces** | Tests are real. No fakes. No shortcuts. No greasy workarounds. Every Gherkin scenario gets a test. Every assertion proves the behavior the spec describes. |
+| **Activates When** | Writing tests, implementing scope test plans, reviewing coverage, marking test DoD items, verifying Gherkin scenario coverage |
+| **5 Quality Gates** | Gherkin coverage · No internal mocks (live categories) · No silent-pass patterns · Real assertions · Test Plan↔DoD parity |
+| **The Decision Tree** | Does it execute real code? Does it assert spec behavior? Does it hit the real stack? Can it fail if the feature is broken? If any answer is no → it ain't a real test. |
+
+**Vocabulary:**
+- *"Greasy test"* — a test that passes when it shouldn't (silent-pass, no assertions, mocked internals)
+- *"Proxy assertion"* — asserting status codes or "defined" checks instead of actual behavior (*"Returns 200 or 404"* is not a test)
+- *"Trinity's checklist"* — the pre-test-writing checklist: read Gherkin, read spec, identify all paths, determine categories, verify test plan
+- *"Red before green"* — changed behavior must show a failing test first, then a fix
+
+#### <img src="../icons/ray-lawnchair.svg" width="24"> The Spec Book — `bubbles-spec-template-bdd`
+
+*Ray sees the pattern from his lawn chair. The spec template is the pattern.*
+
+| | |
+|---|---|
+| **What It Enforces** | `spec.md` follows the repo template. Gherkin-style Given/When/Then scenarios. Tech-agnostic requirements. No implementation details leaking in. |
+| **Activates When** | Creating `spec.md` from scratch, filling or validating content, converting free-form requirements into BDD scenarios |
+| **Rules** | Preserve section order · Replace all placeholders · Scenarios are independent and testable · No languages, frameworks, or databases mentioned |
+
+**Vocabulary:**
+- *"Way the spec goes"* — the spec defines truth; tests validate it; implementation follows it
+- *"Observable behavior"* — what users see and what data changes, not how the code is structured
+- *"Tech leak"* — mentioning Rust, PostgreSQL, React, etc. in a spec (*"That's a tech leak, Ray."*)
+
+#### <img src="../icons/barb-keys.svg" width="24"> The Lot Rules — `bubbles-docker-lifecycle-governance`
+
+*Barb ran the business side of the park. She knows what stays, what goes, and what gets cleaned up.*
+
+| | |
+|---|---|
+| **What It Enforces** | Docker resource classification (persistent / ephemeral / cache), build freshness, cleanup safety, test storage isolation, stack grouping via project names and profiles |
+| **Activates When** | Changing Dockerfiles, compose files, adding cleanup commands, rebuild/deploy verification, deciding persistent vs disposable storage |
+| **Resource Classes** | `persistent` (survives cleanup) · `ephemeral` (test/validation, disposable) · `cache` (safe to prune) · `tooling` (debug, recreatable) · `monitoring` (preserve unless marked disposable) |
+
+**Vocabulary:**
+- *"Persistent volume"* — sacred ground. Never cleaned by default. Like Ray's bottles — you don't throw those out.
+- *"Ephemeral storage"* — test and validation data. Burns clean on restart. Like Ricky's plans — gone by morning.
+- *"Build freshness"* — proving the image you're running was actually built from the code you just changed, not last Tuesday's leftovers
+- *"Label-aware cleanup"* — prune by labels, not `docker system prune -af`. That's burning down the park to fix one trailer.
+
+#### <img src="../icons/ted-badge.svg" width="24"> The Port Authority — `bubbles-docker-port-standards`
+
+*Ted Johnson doesn't care about your feelings. Ports go where the system says they go.*
+
+| | |
+|---|---|
+| **What It Enforces** | The 10k Rule (project port blocks), Dual-URL Standard (internal vs external), no `localhost`, no standard-port host mappings |
+| **Activates When** | Generating or modifying docker-compose, service configs, port assignments |
+| **Rules** | Never map `80`, `5432`, `6379` to host · Always `127.0.0.1` not `localhost` · Internal = `http://<service>:<port>` · External = `http://127.0.0.1:<allocated_port>` |
+
+**Vocabulary:**
+- *"The 10k Rule"* — each project gets a 10,000-port block. Stay in your lot.
+- *"Dual-URL"* — every service has two addresses: one inside Docker, one outside. Like having a lot number AND a mailing address.
+- *"Port squatting"* — mapping `5432:5432` on the host. *"You can't just squat on standard ports, Ricky."*
+- *"Localhost is a lie"* — use `127.0.0.1`. Explicit. No DNS resolution games on WSL or Docker networks.
+
+#### <img src="../icons/sam-binoculars.svg" width="24"> Sam's Specialties — `bubbles-skill-authoring`
+
+*Sam used to be a vet. Now he packages weird but useful specializations into something repeatable.*
+
+| | |
+|---|---|
+| **What It Enforces** | Skills are project-agnostic, short, action-oriented. No hardcoded hosts/ports/URLs. No forbidden defaults. Progressive disclosure (SKILL.md for workflow, references/ for deep docs). |
+| **Activates When** | Adding procedural workflows, checklists, or reusable resources under `.github/skills/` |
+| **Quality Bar** | No conflict with copilot-instructions · No forbidden defaults · Routes execution through repo-standard workflows · Improves repeatability |
+
+**Vocabulary:**
+- *"Specialties"* — Sam's word for skills. Packaged know-how that doesn't expire.
+- *"Progressive disclosure"* — SKILL.md is the field card; references/ are the textbooks. Don't shove the textbook into the field card.
+- *"Project-agnostic"* — no repo names, no port numbers, no CLI commands. Skills travel between parks.
+
+### Sunnyvale Skill Aliases
+
+| Alias | Skill | Quote |
+|-------|-------|-------|
+| `sunnyvale no-greasy-tests` | `bubbles-test-integrity` | *"That test is GREASY, boys."* |
+| `sunnyvale trinity-says` | `bubbles-test-integrity` | *"Dad, that's not how that works."* |
+| `sunnyvale way-the-spec-goes` | `bubbles-spec-template-bdd` | *"Way she goes? No. Way the SPEC goes."* |
+| `sunnyvale lot-rules` | `bubbles-docker-lifecycle-governance` | *"There are RULES about what stays and what gets cleaned."* |
+| `sunnyvale no-port-squatting` | `bubbles-docker-port-standards` | *"You can't just squat on standard ports, Ricky."* |
+| `sunnyvale sams-specialties` | `bubbles-skill-authoring` | *"I used to be a vet, you know."* |
 
 ---
 
