@@ -86,6 +86,7 @@ Use [operating-baseline.md](operating-baseline.md) as the source for:
 - context-loading profiles
 - loop guard behavior
 - indirection rules
+- **framework file immutability** — agents MUST NEVER modify files in `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, or other framework-managed paths
 - action-first execution
 - role baselines
 

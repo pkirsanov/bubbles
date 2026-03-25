@@ -1079,6 +1079,44 @@ for current_report_file in "${report_files[@]}"; do
   fi
 done
 
+# Check 2b: Repo-CLI bypass detection — **Command:** lines must use project CLI, not raw tools
+# Auto-detect the project CLI entrypoint (same heuristic as install.sh)
+_project_cli=""
+for _candidate in ./*.sh; do
+  [[ ! -f "$_candidate" ]] && continue
+  _base=$(basename "$_candidate")
+  case "$_base" in
+    install.sh|setup.sh|uninstall.sh|.*.sh) continue ;;
+  esac
+  _project_cli="./$_base"
+  break
+done
+
+if [[ -n "$_project_cli" ]]; then
+  for current_report_file in "${report_files[@]}"; do
+    [[ -f "$current_report_file" ]] || continue
+    bypass_commands=""
+    while IFS= read -r line; do
+      # Match **Command:** `...` lines and extract the command
+      if echo "$line" | grep -qE '^\*\*Command:\*\*'; then
+        cmd_text="$(echo "$line" | sed -n 's/.*`\(.*\)`.*/\1/p')"
+        [[ -z "$cmd_text" ]] && continue
+        # Check for forbidden direct tool invocations (must use the project CLI)
+        if echo "$cmd_text" | grep -qE '^(go test|go build|go run|cargo test|cargo build|cargo clippy|npm test|npm run|npx jest|npx playwright|node |python |python3 |docker compose|docker-compose)'; then
+          bypass_commands="${bypass_commands}   -> $(basename "$current_report_file"): ${cmd_text}"$'\n'
+        fi
+      fi
+    done < "$current_report_file"
+    bypass_commands="${bypass_commands%$'\n'}"
+    if [[ -n "$bypass_commands" ]]; then
+      fail "Report command bypasses repo-standard workflow in $(relative_artifact_path "$current_report_file") (expected: $_project_cli)"
+      echo "$bypass_commands"
+    else
+      pass "No repo-CLI bypass detected in $(relative_artifact_path "$current_report_file") command evidence"
+    fi
+  done
+fi
+
 # Check 3: Evidence legitimacy — code fence blocks must contain real terminal output
 # Instead of just counting lines, check for signals that the content is genuine
 # terminal/tool output rather than agent-written prose or fabricated summaries.

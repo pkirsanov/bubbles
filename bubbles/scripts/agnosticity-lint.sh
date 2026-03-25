@@ -245,6 +245,27 @@ for file in "${target_files[@]}"; do
   run_rule_on_file "$file"
 done
 
+# ── Framework manifest integrity check ──────────────────────────────
+# If a manifest exists (.github/bubbles/.manifest), check for non-framework
+# files in framework-managed directories (scripts, agents, prompts, etc.)
+MANIFEST_FILE="$REPO_ROOT/bubbles/.manifest"
+if [[ -f "$MANIFEST_FILE" ]] && [[ "$mode" != "staged" ]]; then
+  # Check scripts directory for non-manifested files
+  for script_file in "$REPO_ROOT"/bubbles/scripts/*.sh; do
+    [[ -f "$script_file" ]] || continue
+    entry="bubbles/scripts/$(basename "$script_file")"
+    if ! grep -qxF "$entry" "$MANIFEST_FILE"; then
+      echo "❌ [FRAMEWORK_DRIFT] Non-framework file in managed directory: $entry"
+      echo "   Move project-specific scripts to scripts/ or add upstream to Bubbles"
+      fun_fail
+      failures=$((failures + 1))
+    fi
+  done
+  if [[ "$verbose" == "true" ]]; then
+    info "Framework manifest integrity checked"
+  fi
+fi
+
 if [[ "$verbose" == "true" ]]; then
   info "Scanned files: $scanned"
 fi

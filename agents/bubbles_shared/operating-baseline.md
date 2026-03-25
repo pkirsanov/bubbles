@@ -6,6 +6,48 @@ Use this file for shared operating behavior instead of duplicating the same sess
 
 Agents MUST resolve project-specific commands, ports, paths, and policy details through `.specify/memory/agents.md`, `.specify/memory/constitution.md`, and `.github/copilot-instructions.md`. Do not hardcode project-specific values into portable prompts.
 
+## Framework File Immutability (NON-NEGOTIABLE)
+
+**Agents MUST NEVER create, modify, or delete files inside the Bubbles framework-managed directories.** These directories are owned exclusively by the Bubbles framework and updated only through `install.sh` upgrades.
+
+### Framework-Managed Paths (READ-ONLY for agents)
+
+| Path | Owner | Update Mechanism |
+|------|-------|------------------|
+| `.github/agents/bubbles.*.agent.md` | Bubbles framework | `install.sh` |
+| `.github/agents/bubbles_shared/*.md` | Bubbles framework | `install.sh` |
+| `.github/bubbles/scripts/*.sh` | Bubbles framework | `install.sh` |
+| `.github/bubbles/workflows.yaml` | Bubbles framework | `install.sh` |
+| `.github/bubbles/hooks.json` | Bubbles framework | `install.sh` |
+| `.github/bubbles/agnosticity-allowlist.txt` | Bubbles framework | `install.sh` |
+| `.github/bubbles/*.yaml` (except `bubbles-project.yaml`) | Bubbles framework | `install.sh` |
+| `.github/prompts/bubbles.*.prompt.md` | Bubbles framework | `install.sh` |
+| `.github/instructions/bubbles-*.instructions.md` | Bubbles framework | `install.sh` |
+| `.github/skills/bubbles-*/SKILL.md` | Bubbles framework | `install.sh` |
+
+### Project-Owned Paths (agents MAY modify)
+
+| Path | Owner | Purpose |
+|------|-------|---------|
+| `.github/bubbles-project.yaml` | Project | Custom quality gates and scan patterns |
+| `.github/copilot-instructions.md` | Project | Project-specific policies |
+| `.specify/memory/agents.md` | Project | CLI entrypoint, commands, naming |
+| `.specify/memory/constitution.md` | Project | Project governance principles |
+| `specs/**` | Project | Feature/bug artifacts |
+
+### What To Do Instead
+
+| Need | Action |
+|------|--------|
+| Fix a framework script bug | Propose the change upstream to the Bubbles repository |
+| Add a project-specific quality check | Add to `scripts/` or `.github/bubbles-project.yaml` custom gates |
+| Add project-specific scan patterns | Edit `.github/bubbles-project.yaml` `scans:` section |
+| Extend allowlist for agnosticity lint | Edit `.github/bubbles/agnosticity-allowlist.txt` (project-owned data file) |
+
+### Violation Detection
+
+The `agnosticity-lint.sh --staged` pre-commit check detects project-specific content in framework files. Additionally, `install.sh` upgrades will overwrite local modifications, causing silent regression if agents modify framework files locally.
+
 ## Loop Guard
 
 1. Start with the smallest role bootstrap that fits the job.
