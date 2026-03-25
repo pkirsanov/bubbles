@@ -28,7 +28,7 @@ description: Final system audit for spec compliance, code quality, and security 
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040, G047, G048, G049, G050, G051, G052). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language), G047 (IDOR/auth bypass), G048 (silent decode failures), G049 (evidence clone detection), G050 (gateway route forwarding), G051 (test env dependencies), and G052 (artifact freshness isolation). Revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040, G047, G048, G049, G050, G051, G052, G053). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language), G047 (IDOR/auth bypass), G048 (silent decode failures), G049 (evidence clone detection), G050 (gateway route forwarding), G051 (test env dependencies), G052 (artifact freshness isolation), and G053 (implementation delta evidence). Revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
 
 **Non-goals:**
 - Ad-hoc fixes outside a feature/bug folder
@@ -127,6 +127,7 @@ bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 | Gateway routes complete for all endpoints (G050) | ✅/❌ |
 | No env-dependent test failures (G051) | ✅/❌ |
 | Superseded content isolated and non-executable (G052) | ✅/❌ |
+| Implementation-bearing claims backed by git/code-diff evidence (G053) | ✅/❌ |
 
 **If ANY check fails:** Verdict = `🔴 DO_NOT_SHIP`. If state.json claims "done", run revert:
 ```bash

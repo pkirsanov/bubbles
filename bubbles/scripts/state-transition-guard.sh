@@ -1044,6 +1044,55 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 13B: Implementation delta evidence (Gate G053)
+# =============================================================================
+echo "--- Check 13B: Implementation Delta Evidence (Gate G053) ---"
+requires_impl_delta="false"
+case "$state_workflow_mode" in
+  full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
+    requires_impl_delta="true"
+    ;;
+esac
+
+if [[ "$requires_impl_delta" == "true" ]]; then
+  code_diff_sections=0
+  code_diff_git_signals=0
+  code_diff_runtime_paths=0
+
+  for rpt_path in "${report_files[@]}"; do
+    [[ -f "$rpt_path" ]] || continue
+
+    if grep -qE '^### Code Diff Evidence' "$rpt_path"; then
+      code_diff_sections=$((code_diff_sections + 1))
+    fi
+
+    if grep -qiE '(^|[[:space:]])git (diff|show|log|status)' "$rpt_path"; then
+      code_diff_git_signals=$((code_diff_git_signals + 1))
+    fi
+
+    runtime_path_hits="$({
+      grep -oE '[^[:space:]]+\.(rs|go|py|ts|tsx|js|jsx|dart|java|scala|yaml|yml|proto)' "$rpt_path" \
+        | grep -viE '(^|/)(specs|docs|\.github)/|(^|/)(README|CHANGELOG)\.md$' \
+        | wc -l || true
+    } || true)"
+    code_diff_runtime_paths=$((code_diff_runtime_paths + runtime_path_hits))
+  done
+
+  if [[ "$code_diff_sections" -eq 0 ]]; then
+    fail "Implementation-bearing workflow requires '### Code Diff Evidence' in report artifacts (Gate G053)"
+  elif [[ "$code_diff_git_signals" -eq 0 ]]; then
+    fail "Code Diff Evidence section is missing executed git-backed proof (git diff/show/log/status) in report artifacts (Gate G053)"
+  elif [[ "$code_diff_runtime_paths" -eq 0 ]]; then
+    fail "Code Diff Evidence does not show any non-artifact runtime/source/config file paths — artifact-only delivery proof is insufficient (Gate G053)"
+  else
+    pass "Implementation delta evidence recorded with git-backed proof and non-artifact file paths (Gate G053)"
+  fi
+else
+  info "Workflow mode '$state_workflow_mode' does not require implementation delta evidence"
+fi
+echo ""
+
+# =============================================================================
 # CHECK 14: TODO/FIXME/STUB markers in implementation files
 # =============================================================================
 echo "--- Check 14: Implementation Completeness ---"
@@ -1087,7 +1136,7 @@ echo "--- Check 15: Phase-Scope Coherence (Gate G027) ---"
 if [[ -n "$state_workflow_mode" ]]; then
   # Only check modes that involve implementation
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
       # Check if implement/test phases are claimed
       has_implement="false"
       has_test="false"
@@ -1154,7 +1203,7 @@ if [[ -f "$reality_scan_script" ]]; then
   # Only run for modes that involve implementation
   run_reality_scan="false"
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
       run_reality_scan="true"
       ;;
   esac

@@ -87,6 +87,15 @@
    - Host-level defaults, inherited configs, global settings, and similar cross-scenario state are protected surfaces; mutate them only with an explicit baseline snapshot and a verified restore path.
    - If cleanup or restore fails, the work remains incomplete.
 
+17. **No Sensitive Client Storage For Auth, Session, Or Payment Secrets**
+   - Agents MUST NOT treat browser or client-side storage as an acceptable place for auth tokens, session secrets, refresh tokens, bearer credentials, payment method details, CVV/CVC, or similarly sensitive trust material.
+   - `localStorage`, `sessionStorage`, IndexedDB, AsyncStorage, SharedPreferences, and similar client storage are blocking risks when used for sensitive auth/payment state.
+   - If a security or trust finding is only fixed on the backend while the frontend still reads or writes the risky storage path, the finding remains open.
+
+18. **Documentation Claims Must Match Runtime Reality**
+   - README tables, capability ledgers, feature matrices, and user-facing status claims must be verified against real code paths before they can assert a capability is delivered.
+   - Docs-only evidence cannot close runtime work. Delivered-status claims require implementation evidence plus executed proof.
+
 ---
 
 ## Enforcement Rules
@@ -115,6 +124,8 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 | No Defaults (7) | Scan 5 | `unwrap_or()`, `unwrap_or_default()`, `\\|\\| "default"`, `?? "fallback"`, `os.getenv("K", "default")` |
 | No Fallbacks (8) | Scan 5 | Same as defaults — any pattern that masks missing config with a silent value |
 | Real Implementation (9) | Scan 3 | Data hooks/services with ZERO fetch/axios/API calls — returning hardcoded data |
+| No Sensitive Client Storage (17) | Scan 2B | `localStorage/sessionStorage/IndexedDB/AsyncStorage/SharedPreferences` storing auth/session/payment secrets |
+| No Fake Integrations (18) | Scan 1C + 1D | 501/not-implemented handlers, random/no-op provider adapters with no real upstream call signals |
 
 **If the reality scan exits with code 1, the scope CANNOT be "Done". Fix ALL violations first.**
 

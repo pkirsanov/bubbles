@@ -17,8 +17,9 @@
 #   5. Prohibited simulation helpers in production (seeded_pick/seeded_range)
 #   6. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
 #   7. Live-system tests using request interception/mocked backends
-#   8. IDOR / auth bypass — user identity from request body instead of auth context
-#   9. Silent decode failures — deserialization errors silently discarded
+#   8. Sensitive client storage of auth/session/payment secrets
+#   9. IDOR / auth bypass — user identity from request body instead of auth context
+#   10. Silent decode failures — deserialization errors silently discarded
 #
 # Usage:
 #   bash bubbles/scripts/implementation-reality-scan.sh <feature-dir> [--verbose]
@@ -399,6 +400,115 @@ done
 echo ""
 
 # =============================================================================
+# SCAN 1C: Endpoint Not-Implemented / Placeholder Responses
+# =============================================================================
+# Detects handler-like files that still return 501/not-implemented style
+# placeholders while a scope claims the behavior is delivered.
+# =============================================================================
+echo "--- Scan 1C: Endpoint Not-Implemented / Placeholder Responses ---"
+
+ENDPOINT_NOT_IMPLEMENTED_PATTERNS=(
+  'StatusCode::NOT_IMPLEMENTED'
+  'http\.StatusNotImplemented'
+  'status\.StatusNotImplemented'
+  '501([^0-9]|$)'
+  'Not Implemented'
+  'throw new Error\('
+  'not implemented'
+  'return .*not implemented'
+  'unimplemented!\('
+  'todo!\('
+)
+
+for impl_file in "${impl_files[@]}"; do
+  file_ext="${impl_file##*.}"
+
+  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "scala" || "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" ]]; then
+    if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__|e2e|playwright)'; then
+      continue
+    fi
+
+    if ! echo "$impl_file" | grep -qiE "$HANDLER_FILE_PATTERNS"; then
+      continue
+    fi
+
+    if echo "$impl_file" | grep -qiE "$HANDLER_SKIP_PATTERNS"; then
+      continue
+    fi
+
+    for pattern in "${ENDPOINT_NOT_IMPLEMENTED_PATTERNS[@]}"; do
+      while IFS=: read -r line_num matched_line; do
+        [[ -z "$line_num" ]] && continue
+        if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*)'; then
+          continue
+        fi
+        violation "$impl_file" "$line_num" "ENDPOINT_NOT_IMPLEMENTED" "$matched_line"
+      done < <(grep -nE "$pattern" "$impl_file" 2>/dev/null || true)
+    done
+  fi
+done
+echo ""
+
+# =============================================================================
+# SCAN 1D: External Integration Authenticity
+# =============================================================================
+# Detects provider/adapter/integration files that show suspicious fake/no-op
+# behavior without any sign of real upstream calls or SDK/client delegation.
+# =============================================================================
+echo "--- Scan 1D: External Integration Authenticity ---"
+
+INTEGRATION_FILE_PATTERNS='provider|providers|adapter|adapters|integration|integrations|connector|connectors|client|clients'
+INTEGRATION_EXTERNAL_CALL_PATTERNS='fetch\(|axios\.|requests\.|httpClient|apiClient|client\.|send\(|post\(|get\(|put\(|delete\(|patch\(|request\(|invoke\(|grpc|sdk|smtp|webhook|oauth|mail|email|sms'
+INTEGRATION_SUSPICIOUS_PATTERNS=(
+  'Math\.random'
+  'randomUUID'
+  'uuid4'
+  'rand::'
+  'generate_.*code'
+  'noop'
+  'no-op'
+  'mock'
+  'fake'
+  'sample'
+  'dummy'
+  'return[[:space:]]+Ok\(\(\)\)'
+  'return[[:space:]]+nil'
+  'return[[:space:]]+None'
+  'return[[:space:]]+null'
+  'Promise\.resolve\('
+)
+
+for impl_file in "${impl_files[@]}"; do
+  file_ext="${impl_file##*.}"
+
+  if [[ "$file_ext" == "rs" || "$file_ext" == "go" || "$file_ext" == "py" || "$file_ext" == "java" || "$file_ext" == "scala" || "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" ]]; then
+    if echo "$impl_file" | grep -qE '(test|spec|_test\.|\.test\.|\.spec\.|__tests__|__mocks__|e2e|playwright)'; then
+      continue
+    fi
+
+    if ! echo "$impl_file" | grep -qiE "$INTEGRATION_FILE_PATTERNS"; then
+      continue
+    fi
+
+    external_call_count="$(grep -cE "$INTEGRATION_EXTERNAL_CALL_PATTERNS" "$impl_file" 2>/dev/null || true)"
+    if [[ "$external_call_count" -gt 0 ]]; then
+      continue
+    fi
+
+    for pattern in "${INTEGRATION_SUSPICIOUS_PATTERNS[@]}"; do
+      while IFS=: read -r line_num matched_line; do
+        [[ -z "$line_num" ]] && continue
+        if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*)'; then
+          continue
+        fi
+        violation "$impl_file" "$line_num" "FAKE_INTEGRATION" "$matched_line"
+      done < <(grep -nEi "$pattern" "$impl_file" 2>/dev/null || true)
+    done
+  fi
+done
+echo ""
+
+# =============================================================================
 # SCAN 2: Frontend Hardcoded Data Detection
 # =============================================================================
 # Detects frontend code using hardcoded/simulation data instead of real
@@ -446,6 +556,43 @@ for impl_file in "${impl_files[@]}"; do
         fi
         violation "$impl_file" "$line_num" "FRONTEND_FAKE_DATA" "$matched_line"
       done < <(grep -nE "$pattern" "$impl_file" 2>/dev/null || true)
+    done
+  fi
+done
+echo ""
+
+# =============================================================================
+# SCAN 2B: Sensitive Client Storage
+# =============================================================================
+# Detects auth/session/payment/secret material persisted in client-side storage.
+# =============================================================================
+echo "--- Scan 2B: Sensitive Client Storage ---"
+
+SENSITIVE_CLIENT_STORAGE_PATTERNS=(
+  'localStorage\.(setItem|getItem).*(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|payment|cvv|cvc|ssn)'
+  'sessionStorage\.(setItem|getItem).*(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|payment|cvv|cvc|ssn)'
+  'AsyncStorage\.(setItem|getItem).*(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|payment|cvv|cvc|ssn)'
+  'SharedPreferences.*(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|payment|cvv|cvc|ssn)'
+  'indexedDB.*(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|payment|cvv|cvc|ssn)'
+  '(token|auth|session|jwt|refresh|bearer|secret|api[_-]?key|card|paymentMethod|cvv|cvc|ssn).*(localStorage|sessionStorage|AsyncStorage|SharedPreferences|indexedDB)'
+)
+
+for impl_file in "${impl_files[@]}"; do
+  file_ext="${impl_file##*.}"
+
+  if [[ "$file_ext" == "ts" || "$file_ext" == "tsx" || "$file_ext" == "js" || "$file_ext" == "jsx" || "$file_ext" == "dart" ]]; then
+    if echo "$impl_file" | grep -qE '(\.test\.|\.spec\.|__tests__|__mocks__|e2e|playwright)'; then
+      continue
+    fi
+
+    for pattern in "${SENSITIVE_CLIENT_STORAGE_PATTERNS[@]}"; do
+      while IFS=: read -r line_num matched_line; do
+        [[ -z "$line_num" ]] && continue
+        if echo "$matched_line" | grep -qE '^\s*(//|#|/\*|\*|{/\*)'; then
+          continue
+        fi
+        violation "$impl_file" "$line_num" "SENSITIVE_CLIENT_STORAGE" "$matched_line"
+      done < <(grep -nEi "$pattern" "$impl_file" 2>/dev/null || true)
     done
   fi
 done
@@ -558,17 +705,17 @@ GO_DEFAULT_PATTERNS=(
 )
 
 TS_JS_DEFAULT_PATTERNS=(
-  'process\.env\.\w\+\s*[|][|]\s*['"'"'"]*'
-  'import\.meta\.env\.\w\+\s*[|][|]\s*['"'"'"]*'
-  'import\.meta\.env\.\w\+\s*\?\?\s*['"'"'"]*'
-  'env\.\w\+\s*\?\?\s*['"'"'"]*'
-  'env\.\w\+\s*[|][|]\s*['"'"'"]*'
+  'process\.env\.\w\+\s*[|][|]'
+  'import\.meta\.env\.\w\+\s*[|][|]'
+  'import\.meta\.env\.\w\+\s*\?\?'
+  'env\.\w\+\s*\?\?'
+  'env\.\w\+\s*[|][|]'
 )
 
 PYTHON_DEFAULT_PATTERNS=(
-  'os\.getenv.*,\s*['"'"'"]'
-  'os\.environ\.get.*,\s*['"'"'"]'
-  '\.get(.*,\s*['"'"'"].*default'
+  'os\.getenv.*,\s*[^)]+'
+  'os\.environ\.get.*,\s*[^)]+'
+  '\.get\(.*,\s*.*default'
 )
 
 for impl_file in "${impl_files[@]}"; do
@@ -875,7 +1022,10 @@ if [[ "$violations" -gt 0 ]]; then
   echo "  - Replace status-only handlers with real service/domain/store delegation"
   echo "  - Replace getSimulationData() with real API fetch() calls"
   echo "  - Replace simulate_*() in handlers with real service calls"
+  echo "  - Replace 501/not-implemented handlers with real delegated behavior before claiming delivery"
+  echo "  - Replace random/no-op provider adapters with real upstream/API/SDK integration paths"
   echo "  - Add real fetch/axios/grpc calls to data hooks"
+  echo "  - Remove auth/session/payment secrets from localStorage/sessionStorage/IndexedDB/AsyncStorage/SharedPreferences"
   echo "  - Replace unwrap_or()/unwrap_or_default() with ? and fail-fast"
   echo "  - Replace || 'default' / ?? 'fallback' with explicit missing-config errors"
   echo "  - Replace os.getenv('K', 'default') with fail-fast on missing env"

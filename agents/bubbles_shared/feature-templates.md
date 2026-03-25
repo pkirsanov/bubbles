@@ -142,6 +142,11 @@ Links: [uservalidation.md](uservalidation.md)
 - What changed (files/surfaces)
 - Scenarios validated
 
+### Code Diff Evidence
+- Record executed git-backed evidence for implementation-bearing work.
+- Include the exact git command used, relevant output, and at least one non-artifact runtime/source/config/contract file path.
+- Artifact-only paths such as `spec.md`, `design.md`, docs, or `.github/` files are insufficient when claiming delivered implementation.
+
 ### Test Evidence
 Use the test evidence sections from scope-workflow.md and include raw terminal output.
 

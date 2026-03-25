@@ -21,8 +21,8 @@ resolve_repo_root() {
 usage() {
   echo "Usage: bash bubbles/scripts/done-spec-audit.sh [--fix]"
   echo ""
-  echo "Scans specs/*/state.json for status=done, runs artifact lint, and reports failures."
-  echo "With --fix, failing done specs are downgraded to in_progress."
+  echo "Scans specs/*/state.json for status=done, runs state-transition-guard + artifact lint, and reports failures."
+  echo "With --fix, failing done specs are downgraded to in_progress using the transition guard's auto-revert path."
 }
 
 apply_fix="false"
@@ -225,16 +225,20 @@ for state_file in specs/*/state.json; do
   failed_specs+=("$spec_dir")
 
   if [[ "$apply_fix" == "true" ]]; then
+    bash "$guard_script" "$spec_dir" --revert-on-fail > /dev/null 2>&1 || true
+
     now_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-    sed -i -E 's/"status"[[:space:]]*:[[:space:]]*"done"/"status": "in_progress"/' "$state_file"
+    if grep -Eq '"status"[[:space:]]*:[[:space:]]*"done"' "$state_file"; then
+      sed -i -E 's/"status"[[:space:]]*:[[:space:]]*"done"/"status": "in_progress"/' "$state_file"
+    fi
 
     if grep -Eq '"currentPhase"[[:space:]]*:' "$state_file"; then
       sed -i -E 's/"currentPhase"[[:space:]]*:[[:space:]]*"[^"]+"/"currentPhase": "validate"/' "$state_file"
     fi
 
     if grep -Eq '"notes"[[:space:]]*:' "$state_file"; then
-      sed -i -E 's|"notes"[[:space:]]*:[[:space:]]*"[^"]*"|"notes": "Auto-downgraded by done-spec-audit: artifact lint failed for a done spec. Restore done only after gates pass."|' "$state_file"
+      sed -i -E 's|"notes"[[:space:]]*:[[:space:]]*"[^"]*"|"notes": "Auto-downgraded by done-spec-audit: completion gates failed for a done spec. Restore done only after guard and lint pass."|' "$state_file"
     fi
 
     if grep -Eq '"lastUpdatedAt"[[:space:]]*:' "$state_file"; then

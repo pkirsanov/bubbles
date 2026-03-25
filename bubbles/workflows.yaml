@@ -284,6 +284,15 @@ gates:
       such as status blocks, Test Plan tables, DoD headings, or DoD checkboxes.
       Enforced by artifact-freshness-guard.sh and re-run by
       state-transition-guard.sh Check 13A.
+  G053:
+    name: implementation_delta_evidence_gate
+    description: >-
+      BLOCKING gate. Implementation-bearing workflows MUST prove runtime or
+      integration delivery with git-backed code-diff evidence in report
+      artifacts. The evidence must show at least one non-artifact source,
+      runtime, config, or contract file path. Specs that only changed
+      `spec.md`, `design.md`, or docs cannot be promoted as delivered
+      implementation. Enforced by state-transition-guard.sh Check 13B.
 
 failureRouting:
   code: implement
@@ -560,7 +569,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [G036, G037, G038, G040, G047, G048, G049, G050, G051, G052]
+    inheritedRequiredGates: [G036, G037, G038, G040, G047, G048, G049, G050, G051, G052, G053]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #

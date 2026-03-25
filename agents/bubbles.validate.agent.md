@@ -96,6 +96,7 @@ In `deep`/`full` mode, command green status alone is insufficient. Validation MU
 | 2.15 | Phase-Scope Coherence (G027) | Guard script Check 15 | completedPhases matches completedScopes |
 | 2.16 | Implementation Reality Scan (G028) | `implementation-reality-scan.sh` | 0 violations |
 | 2.17 | Artifact Freshness Guard (G052) | `artifact-freshness-guard.sh` | Superseded content isolated; superseded scopes non-executable |
+| 2.18 | Implementation Delta Evidence (G053) | Guard script Check 13B | Report artifacts include git-backed implementation proof with non-artifact file paths |
 
 All commands from `agents.md`. Run each step, record output in validation report.
 
@@ -216,7 +217,20 @@ bash bubbles/scripts/artifact-freshness-guard.sh {FEATURE_DIR}
 - Verifies superseded scope sections do not retain executable markers such as status blocks, Test Plan tables, DoD headings, or DoD checkboxes
 - Record the full output in the validation report
 
-#### 2C.7: Handoff Cycle Check (if applicable)
+#### 2C.7: Implementation Delta Evidence (Gate G053)
+
+For implementation-bearing workflow modes, verify report artifacts include code-diff evidence:
+
+```bash
+bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
+```
+
+- Check 13B enforces the implementation-delta requirement
+- Report evidence must include a `### Code Diff Evidence` section
+- That section must contain executed git-backed proof and at least one non-artifact runtime/source/config/contract file path
+- Docs-only or artifact-only deltas cannot satisfy delivered implementation claims
+
+#### 2C.8: Handoff Cycle Check (if applicable)
 
 If the handoff cycle checker exists, run it:
 
@@ -240,6 +254,7 @@ bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 | Done-Spec Audit | `bash bubbles/scripts/done-spec-audit.sh` | [actual] | ✅/❌ |
 | Implementation Reality Scan | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
 | Artifact Freshness Guard | `bash bubbles/scripts/artifact-freshness-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
+| Implementation Delta Evidence | `bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
 | Handoff Cycle Check | `bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
 ```
 

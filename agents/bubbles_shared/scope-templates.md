@@ -90,6 +90,8 @@ Scenario: [scenario name]
 
 ### Completion Statement (MANDATORY)
 
+### Code Diff Evidence (Required for implementation-bearing work)
+
 ### Test Evidence (ALL TYPES REQUIRED)
 
 ### Coverage Report

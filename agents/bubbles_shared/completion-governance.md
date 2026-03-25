@@ -43,6 +43,8 @@ A spec cannot be `done` when any scope is:
 
 `state.json` must reflect the lower truth immediately when artifacts and status disagree.
 
+Implementation-bearing specs also cannot be `done` when report artifacts lack code-diff evidence showing real non-artifact runtime, config, contract, or source files in the delivery delta.
+
 ## Deferral Is Incomplete Work
 
 The following are blocking completion signals in scope artifacts:
@@ -57,6 +59,21 @@ The following are blocking completion signals in scope artifacts:
 - `temporary workaround`
 
 If deferred work is still required, the scope stays in progress.
+
+## Partial Stack Fixes Do Not Close Full Findings
+
+If a finding affects both backend and consumer surfaces, completion requires the full stack to participate.
+
+- Backend-only fixes do not close findings while frontend/mobile/admin clients still use the broken path.
+- Security/trust fixes stay open until risky client storage, stale routes, or old contracts are removed from real consumers.
+- Integration fixes stay open until the delivered consumer path exercises the real integrated behavior.
+
+## Documentation Claims Require Delivery Proof
+
+README tables, ledgers, and status matrices cannot claim a feature is delivered based only on artifact edits.
+
+- Delivered status requires implementation evidence plus executed proof.
+- Docs may describe planned or partial work only if the status is explicit and non-delivered.
 
 ## Red-Green Traceability
 
