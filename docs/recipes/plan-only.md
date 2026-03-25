@@ -8,15 +8,21 @@
 
 You want to think through a feature — requirements, design, scope breakdown — without writing code yet.
 
+This also applies when an existing feature's active planning artifacts are stale and need reconciliation before implementation resumes.
+
 ## The Command
 
 ```
 /bubbles.workflow  feature-bootstrap for my-new-feature
 
 /bubbles.workflow  feature-bootstrap for my-new-feature grillFirst: true backlogExport: tasks
+
+/bubbles.workflow  redesign-existing for booking-page backlogExport: tasks
 ```
 
-**Phases:** analyst → design → plan
+**Phases:**
+- New feature: analyst → design → plan
+- Existing stale feature: reconcile analyst/UX/design → refresh scopes
 
 ## Or Step by Step
 

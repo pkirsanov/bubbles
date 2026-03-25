@@ -302,7 +302,7 @@ echo ""
 echo "--- Check 3: Status Ceiling Enforcement ---"
 if [[ -n "$state_workflow_mode" ]]; then
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
       if [[ "$state_status" == "done" ]]; then
         pass "Workflow mode '$state_workflow_mode' allows status 'done'"
       else
@@ -626,6 +626,9 @@ if [[ -n "$state_workflow_mode" ]]; then
       ;;
     improve-existing)
       required_specialists=("validate" "harden" "gaps" "implement" "test" "audit" "chaos" "docs")
+      ;;
+    redesign-existing)
+      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
       ;;
     stabilize-to-doc)
       required_specialists=("stabilize" "implement" "test" "chaos" "validate" "audit" "docs")
@@ -1021,6 +1024,22 @@ if [[ -f "$lint_script" ]]; then
   fi
 else
   fail "Artifact lint script not found at $lint_script"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 13A: Artifact freshness isolation (Gate G052)
+# =============================================================================
+echo "--- Check 13A: Artifact Freshness Isolation (Gate G052) ---"
+freshness_guard_script="$SCRIPT_DIR/artifact-freshness-guard.sh"
+if [[ -f "$freshness_guard_script" ]]; then
+  if bash "$freshness_guard_script" "$feature_dir" > /dev/null 2>&1; then
+    pass "Artifact freshness guard passes (exit 0)"
+  else
+    fail "Artifact freshness guard FAILED — run 'bash bubbles/scripts/artifact-freshness-guard.sh $feature_dir' for details"
+  fi
+else
+  fail "Artifact freshness guard script not found at $freshness_guard_script"
 fi
 echo ""
 

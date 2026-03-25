@@ -28,6 +28,7 @@ handoffs:
 - Map every business scenario to a screen flow
 - Ensure accessibility (WCAG), responsive design, and design system compliance
 - Reference project design system from ui-design instructions or equivalent
+- Reconcile stale wireframes, screen inventories, and flows before adding new UX truth
 - Ensure state.json exists (create if missing) — see State.json Lifecycle in agent-common.md
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 
@@ -69,7 +70,8 @@ Supported options:
 - `focus: <text>` — Specific screens or flows to focus on (e.g., "booking form", "dashboard redesign")
 - `competitors: url1, url2` — Competitor UIs to research for inspiration
 - `skip_competitive: true` — Skip competitor web research
-- `redesign: true` — Focus on improving existing UI rather than new screens
+- `mode: reconcile|redesign|replace` — Reconcile existing UX, rework it heavily, or fully supersede it
+- `redesign: true` — Compatibility shorthand for `mode: redesign`
 
 ### Natural Language Input Resolution (MANDATORY when no structured options provided)
 
@@ -79,12 +81,14 @@ When the user provides free-text input WITHOUT structured parameters, infer them
 |-----------|---------------------|
 | "design the booking form UI" | focus: booking form |
 | "wireframe the dashboard" | focus: dashboard |
-| "redesign the search page" | redesign: true, focus: search page |
+| "redesign the search page" | mode: redesign, focus: search page |
 | "design for mobile and web" | surfaces: web,mobile |
 | "look at how Airbnb does it" | competitors: airbnb.com |
 | "just design for admin" | surfaces: admin |
 | "create wireframes without competitor research" | skip_competitive: true |
-| "improve the user flow for checkout" | redesign: true, focus: checkout flow |
+| "improve the user flow for checkout" | mode: reconcile, focus: checkout flow |
+| "reconcile the checkout UX" | mode: reconcile, focus: checkout |
+| "replace the current onboarding UX" | mode: replace, focus: onboarding |
 
 ---
 
@@ -127,6 +131,8 @@ Unlike `/bubbles.analyst` (what to build), `/bubbles.design` (how to build it), 
 5. Read existing UI code structure to understand current screen inventory
 6. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
 
+Compatibility: if `redesign: true` is present, treat it as `mode: redesign`.
+
 ### Phase 1: Screen Inventory
 
 **Goal:** Map all screens needed for the business scenarios.
@@ -134,7 +140,8 @@ Unlike `/bubbles.analyst` (what to build), `/bubbles.design` (how to build it), 
 1. **Extract all actor-screen relationships** from spec.md use cases and scenarios
 2. **Inventory existing screens** from codebase (grep for route definitions, page components)
 3. **Identify new screens needed** vs existing screens needing modification
-4. **Build screen inventory:**
+4. **Identify screens/flows that are no longer valid** and must be superseded or removed from active UX sections
+5. **Build screen inventory:**
 
 ```markdown
 ### Screen Inventory
@@ -266,11 +273,14 @@ Add/update UI sections in `spec.md`. Preserve all existing sections. Add:
 [from Phase 4, if applicable]
 ```
 
+Within UX-owned sections, reconcile instead of blindly appending. Remove invalidated wireframes and flows from active UX sections. If history matters, preserve them under clearly labeled superseded UX headings.
+
 ### Phase 6: Update State & Report
 
 1. Update `state.json`: append entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.ux"`, `phasesExecuted: ["analyze"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — the workflow agent records the entry
 2. Report summary:
    - Screens designed (new vs modified)
+  - Screens or flows superseded
    - User flows mapped
    - Accessibility considerations
    - Responsive adaptations
@@ -286,7 +296,7 @@ Add/update UI sections in `spec.md`. Preserve all existing sections. Add:
 
 ```
 Designed: {FEATURE_DIR}/spec.md
-Screens: N new, M modified | Flows: N diagrams
+Screens: N new, M modified, K superseded | Flows: N diagrams
 Surfaces: web, mobile, admin (as applicable)
 Next: /bubbles.design (technical design from enriched spec)
 ```

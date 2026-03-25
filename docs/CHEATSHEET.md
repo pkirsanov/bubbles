@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **30 Agents · 51 Gates · 25 Workflow Modes · 18 Phases**
+> **30 Agents · 52 Gates · 26 Workflow Modes · 18 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -121,6 +121,7 @@
 | `sunnyvale ill-do-whatever` | `bubbles.iterate` | *"I'll do whatever you need, Julian."* |
 | `sunnyvale catch-me-up` | `bubbles.recap` | *"So basically what happened was..."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
+| `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
 
 ---
 
@@ -147,6 +148,7 @@
 | `audit-only` | open-and-shut | Run audit phase only |
 | `stabilize-to-doc` | bill-fixes-it | Stability fixes → test → docs |
 | `improve-existing` | survival-of-the-fitness | Analyze, harden, improve → test → docs |
+| `redesign-existing` | same-lot-new-trailer | Reconcile stale artifacts, redesign an existing feature, then deliver |
 | `spec-scope-hardening` | harden-up | Tighten specs and scope definitions |
 | `harden-to-doc` | shit-winds-coming | Harden → test → docs |
 | `gaps-to-doc` | gut-feeling | Gap analysis → test → docs |
@@ -161,7 +163,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 51 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 52 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**

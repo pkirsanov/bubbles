@@ -5,6 +5,7 @@ Always load:
 - Feature `spec.md`
 - Feature `state.json`
 - Project UI design instructions when they exist
+- `artifact-freshness.md` when reconciling existing UX sections
 
 Load on demand:
 - Existing routes, screens, and shared UI components only for the affected surfaces

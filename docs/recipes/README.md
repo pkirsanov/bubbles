@@ -57,6 +57,7 @@ Baseline workflow law already requires spec/design/plan coherence, explicit Gher
 |--------|-------------------|
 | [Plan Only](plan-only.md) | "I want to plan and scope a feature without implementing" |
 | [Explore an Idea](explore-idea.md) | "I have a vague product idea and need to flesh it out" |
+| [Reconcile Or Redesign An Existing Feature](reconcile-redesign-existing-feature.md) | "The feature exists, but the current spec/design/scopes are stale or need a major rewrite" |
 | [Grill an Idea](grill-an-idea.md) | "I want hard questions before we commit to this direction" |
 | [TDD First Execution](tdd-first-execution.md) | "I want the workflow to stay red-green-first instead of drifting into implementation-first" |
 

@@ -3,6 +3,7 @@
 Always load:
 - `critical-requirements.md`
 - Feature `spec.md` and `state.json` when they already exist
+- `artifact-freshness.md` when updating an existing feature artifact
 
 Load on demand:
 - Project architecture/API docs only when they materially affect the feature analysis

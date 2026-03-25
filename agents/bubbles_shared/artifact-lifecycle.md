@@ -86,6 +86,23 @@ Artifacts must cross-reference each other so a reviewer can move between:
 
 Use the templates in `scope-templates.md` as the single source of truth for artifact shapes.
 
+## Artifact Freshness And Supersession
+
+Existing artifacts must be reconciled when current truth changes.
+
+- `spec.md`, `design.md`, and planning artifacts may preserve history, but they must expose only one active truth.
+- Invalid legacy content must be removed from active sections immediately.
+- If history matters, preserve it under clearly labeled superseded or suppressed sections.
+- Default behavior for existing artifacts is `reconcile`; use `redesign` for major behavioral or structural changes and `replace` when most of the prior artifact is no longer valid.
+
+### Active Scope Inventory Rule
+
+When requirements or design changes invalidate scopes:
+
+- stale scopes must be removed from the active execution inventory
+- stale scopes may be preserved only in a clearly marked superseded appendix
+- stale scopes must not remain executable, eligible, or status-bearing
+
 ## Documentation Ownership Boundary
 
 Artifact ownership remains defined in `artifact-ownership.md`. Diagnostic agents may identify required changes, but they do not directly rewrite foreign-owned planning or design artifacts except through the execution-only exception.

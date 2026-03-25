@@ -21,6 +21,7 @@ handoffs:
 - Enforce `planning-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, and `evidence-rules.md` when writing scope artifacts.
 - Honor optional sizing hints (`maxScopeMinutes`, `maxDodMinutes`) when provided, but keep scopes small even when no time boundary is given.
 - Follow tiered context loading and loop limits (below) to avoid read loops.
+- Reconcile stale scopes before writing new ones; active scopes must match current `spec.md` and `design.md`
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead.
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification.
 
@@ -88,6 +89,7 @@ $ADDITIONAL_CONTEXT
 Use this section to call out priority personas, risk areas, supported clients (admin/mobile/web/cli), or constraints.
 
 Supported planning tags:
+- `mode: create|add|refine|reorder|regenerate|reconcile|redesign|replace` — Planning action to take on existing scopes
 - `maxScopeMinutes: <N>` — Optional heuristic ceiling for how large each scope may be
 - `maxDodMinutes: <N>` — Optional heuristic ceiling for how large each DoD item may be
 - `socratic: true|false` — Indicates analysis was interactive; preserve clarified decisions in the scopes
@@ -116,6 +118,9 @@ To proceed, please specify:
 3. "refine <scope N>" - Improve specific scope's detail/tests/DoD
 4. "reorder" - Change scope sequence
 5. "regenerate" - Replace existing scopes.md entirely
+6. "reconcile" - Invalidate stale scopes and align planning to current spec/design
+7. "redesign" - Rebuild scopes for a major flow/behavior redesign
+8. "replace" - Supersede most existing scopes and write a new active plan
 
 Example: "refine scope 3 with more detailed Gherkin scenarios"
 ```
@@ -131,6 +136,9 @@ Example: "refine scope 3 with more detailed Gherkin scenarios"
 | "add scope for X" | Append new scope to existing scopes.md |
 | "refine scope N" | Update specific scope |
 | "regenerate all scopes" | Replace scopes.md entirely |
+| "reconcile the scopes" | Reconcile stale scopes against current spec/design |
+| "redesign the scopes" | Rebuild active scopes for a major redesign |
+| "replace the scopes" | Supersede current active scopes and write a fresh plan |
 
 ---
 
@@ -177,6 +185,11 @@ Core requirements:
   - Definition of Done
   - status tracking per scope (Not started / In progress / Done / Blocked)
 
+6) **Scope freshness**
+- Any scope that no longer matches current spec/design must be removed from the active execution inventory.
+- If historical context matters, preserve it only under a clearly labeled superseded appendix such as `## Superseded Scopes (Do Not Execute)`.
+- Stale scopes MUST NOT remain active with executable status fields.
+
 Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 
 ---
@@ -188,7 +201,7 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 - Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (or auto-detect).
 - **Verify design-phase prerequisites exist:**
   - `spec.md` — REQUIRED. If missing, STOP and instruct user to run `/bubbles.design` first.
-  - `design.md` — REQUIRED. If missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive` before planning.
+  - `design.md` — REQUIRED. If missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive design: reconcile` before planning.
   - `state.json` — Should exist. Create with `{"status": "not_started"}` if missing.
 - **Create plan-phase template artifacts if missing:**
   - `report.md` — Create with initial template headers (Summary, Test Evidence, Completion Statement).
@@ -203,7 +216,7 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
   - Monitoring/observability
   - Scripts/CLI (if present and relevant)
 
-If `design.md` is missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive` before planning.
+If `design.md` is missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive design: reconcile` before planning.
 
 Output a short summary:
 
@@ -216,6 +229,7 @@ ASSUMPTIONS: ...
 ### Phase 1: Extract Use Cases and Requirements
 
 - Extract user journeys, requirements, and constraints from spec/design.
+- Identify any existing active scopes that are now invalid under the current spec/design.
 - Normalize into a list of candidate use cases.
 - Write each use case in **Gherkin**.
 
@@ -286,6 +300,7 @@ Must include:
 - Overview + scope ordering rationale
 - A table of scopes (Name, Surfaces, Tests, DoD summary, Status)
 - Full details per scope (as defined above)
+- If prior scopes were invalidated, move them out of the active inventory and preserve them only in a clearly labeled superseded appendix when needed
 
 ### Phase 4: Planning Output Quality Gate
 
@@ -313,6 +328,12 @@ Next: /bubbles.implement
 ```
 
 ---
+
+## Agent Completion Validation (Tier 2 — run BEFORE reporting results)
+
+Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Plan profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
+
+If any required check fails, fix the issue before reporting. Do NOT report stale active scopes.
 
 
 

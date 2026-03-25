@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added artifact-freshness reconciliation as a first-class planning rule: analyst, UX, design, and plan now reconcile stale active content and isolate superseded material instead of leaving conflicting truths active.
+- Added `artifact-freshness-guard.sh` plus Gate `G052` so superseded sections are mechanically isolated from active truth, superseded scope appendices cannot keep executable status/Test Plan/DoD structure, and per-scope directory drift is blocked when `scopes/_index.md`, on-disk `scopes/NN-*`, and `state.json.scopeProgress.scopeDir` fall out of sync.
+- Added explicit existing-feature redesign support: new `redesign-existing` workflow mode, new `same-lot-new-trailer` Sunnyvale alias, and updated docs/recipes for reconcile vs improve vs redesign decisions.
+- Strengthened planning validation profiles to check active-requirement, active-UX, active-design, and active-scope reconciliation.
 - Added machine-readable `## ROUTE-REQUIRED` orchestration blocks to `bubbles.validate` and `bubbles.audit`, and made `bubbles.workflow` treat missing or unresolved routing blocks as blocking before finalize.
 - Fixed `done-spec-audit.sh` so it resolves installed-project repo roots correctly, rejects running outside repos with `specs/`, and fails closed on suspicious zero-done-spec scans.
 - Added `bubbles/scripts/agnosticity-lint.sh` and a shipped allowlist file so portable Bubbles surfaces are mechanically checked for project-specific and concrete-tool drift.

@@ -29,6 +29,7 @@ handoffs:
 - **Design testable behaviors** — every design decision must produce behavior that can be tested from the user/consumer perspective. If a behavior can't be tested as a user scenario, redesign it.
 - **Include testing strategy** — design.md must describe how each major feature will be validated (which test types, what user scenarios)
 - **Auto-detect analysis depth** — if spec.md contains `## Actors & Personas` and `## UI Wireframes` sections (analyst + UX output), automatically use `from-analysis` depth to produce contract-grade design.md
+- Reconcile stale design sections before adding new architecture, contract, or rollout decisions; active design must expose one current truth
 - Ensure state.json exists (create if missing) — see State.json Lifecycle in agent-common.md
 
 **Artifact Ownership (this agent creates ONLY these):**
@@ -82,7 +83,10 @@ Examples:
 - `mode: interactive` (ask targeted questions for unresolved areas)
 - `mode: from-analysis` (spec.md enriched by bubbles.analyst + bubbles.ux — produce contract-grade design)
 - `design: from-scratch`
-- `design: update`
+- `design: update` (compatibility alias for `design: reconcile`)
+- `design: reconcile`
+- `design: redesign`
+- `design: replace`
 - `sources: {FEATURE_DIR}/spec.md,docs/ARCHITECTURE.md`
 - `surfaces: web,api,mobile,cli` (adapt to project)
 - `constraints: no-new-deps, maintain API v2`
@@ -94,10 +98,12 @@ When the user provides free-text input WITHOUT explicit `mode:` or `design:` par
 | User Says | Resolved Parameters |
 |-----------|---------------------|
 | "design the notification system" | design: from-scratch, mode: non-interactive |
-| "update the design for auth" | design: update |
+| "update the design for auth" | design: reconcile |
 | "create a design from the analyst output" | mode: from-analysis |
 | "help me design this, ask questions" | mode: interactive |
-| "redesign the booking architecture" | design: update, mode: interactive |
+| "redesign the booking architecture" | design: redesign, mode: interactive |
+| "reconcile the booking design" | design: reconcile |
+| "replace the booking architecture" | design: replace |
 | "create technical design for the new API" | design: from-scratch |
 | "design for web and mobile" | surfaces: web,mobile |
 | "design without adding new dependencies" | constraints: no-new-deps |
@@ -158,7 +164,7 @@ Core requirements:
   - If `spec.md` is missing or incomplete, invoke `bubbles.analyst` via `runSubagent`, then continue only after analyst-owned sections exist.
   - If `design.md` is missing, it will be created as the primary output of this agent.
 - Do NOT create `scopes.md`, `report.md`, or `uservalidation.md` — those are created by `/bubbles.plan`.
-- Determine whether to create design.md from scratch or update existing.
+- Determine whether to create design.md from scratch or reconcile/redesign/replace an existing design.
 - If key inputs are missing, ask clarification questions immediately.
 
 ### Phase 0.5: Detect Analysis Depth
@@ -172,6 +178,12 @@ Core requirements:
 - If from-analysis: extract actors, use cases, business scenarios, wireframes, competitive analysis from spec.md
 - Identify impacted surfaces (per project: e.g., API, web, mobile, CLI, ops, docs).
 - Capture constraints from repo policies and existing architecture.
+
+### Phase 1.25: Design Freshness Reconciliation
+- Compare the existing `design.md` against current `spec.md`.
+- Classify existing design content as keep, update, supersede, or remove.
+- If history matters, move invalidated content into clearly labeled sections such as `## Superseded Design Decisions`.
+- Do NOT leave obsolete contracts, models, or flow descriptions inside active design sections.
 
 ### Phase 1.5: Contract Elaboration (from-analysis mode only)
 - **API Contracts:** For each use case / business scenario, define exact endpoint:
@@ -222,6 +234,7 @@ Create a structured design.md with sections:
 ### Phase 4: Finalize
 - Ensure design.md is comprehensive and policy-compliant.
 - Ensure references align with repo design principles and architecture.
+- Ensure active design sections contain only current truth; superseded material must be isolated or removed.
 - Provide a concise summary and list any open questions.
 
 ---
@@ -235,6 +248,7 @@ Create a structured design.md with sections:
 
 - Created/updated file(s)
 - Key design decisions
+- Reconciled or superseded design sections
 - Open questions (if any)
 - Next recommended command: `/bubbles.plan` to generate scopes, report template, and user validation
 
@@ -245,6 +259,12 @@ Next: /bubbles.plan (creates scopes.md, report.md, uservalidation.md)
 ```
 
 ---
+
+## Agent Completion Validation (Tier 2 — run BEFORE reporting results)
+
+Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Design profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
+
+If any required check fails, fix the issue before reporting. Do NOT report incomplete or stale design reconciliation.
 
 
 

@@ -95,6 +95,7 @@ In `deep`/`full` mode, command green status alone is insufficient. Validation MU
 | 2.14 | Done-Spec Audit (full mode) | `done-spec-audit.sh` | All done specs pass lint |
 | 2.15 | Phase-Scope Coherence (G027) | Guard script Check 15 | completedPhases matches completedScopes |
 | 2.16 | Implementation Reality Scan (G028) | `implementation-reality-scan.sh` | 0 violations |
+| 2.17 | Artifact Freshness Guard (G052) | `artifact-freshness-guard.sh` | Superseded content isolated; superseded scopes non-executable |
 
 All commands from `agents.md`. Run each step, record output in validation report.
 
@@ -203,7 +204,19 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 - If violations found → validation FAILS for implementation completeness
 - Record the full output in the validation report
 
-#### 2C.6: Handoff Cycle Check (if applicable)
+#### 2C.6: Artifact Freshness Guard (Gate G052)
+
+Run the freshness guard on the feature directory:
+
+```bash
+bash bubbles/scripts/artifact-freshness-guard.sh {FEATURE_DIR}
+```
+
+- Verifies superseded or suppressed content stays isolated from active spec/design truth
+- Verifies superseded scope sections do not retain executable markers such as status blocks, Test Plan tables, DoD headings, or DoD checkboxes
+- Record the full output in the validation report
+
+#### 2C.7: Handoff Cycle Check (if applicable)
 
 If the handoff cycle checker exists, run it:
 
@@ -226,6 +239,7 @@ bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 | Traceability Guard | `bash bubbles/scripts/traceability-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
 | Done-Spec Audit | `bash bubbles/scripts/done-spec-audit.sh` | [actual] | ✅/❌ |
 | Implementation Reality Scan | `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` | [actual] | ✅/❌ |
+| Artifact Freshness Guard | `bash bubbles/scripts/artifact-freshness-guard.sh {FEATURE_DIR}` | [actual] | ✅/❌ |
 | Handoff Cycle Check | `bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}` | [actual] | ✅/❌/⚪ |
 ```
 

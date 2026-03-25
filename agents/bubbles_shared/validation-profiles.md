@@ -9,6 +9,15 @@ Use these sections as the single source of truth for agent-specific Tier 2 compl
 | AN1 | Business scenarios documented | `spec.md` contains actor/use-case/scenario output |
 | AN2 | Capability map grounded in code or sources | No speculative capability claims |
 | AN3 | State updated when owned | `state.json` reflects analysis execution when applicable |
+| AN4 | Active requirements reconciled | Invalidated requirement/scenario content is removed from active sections or explicitly marked superseded |
+
+## Design
+
+| ID | Check | Pass Criteria |
+|----|-------|---------------|
+| DE1 | Active design reconciled | `design.md` presents one active architecture/contract truth |
+| DE2 | Spec-design coherence maintained | Active contracts, data models, and flows match current `spec.md` |
+| DE3 | Superseded decisions isolated | Legacy design decisions are clearly marked superseded or removed from active sections |
 
 ## Docs
 
@@ -28,6 +37,15 @@ Use these sections as the single source of truth for agent-specific Tier 2 compl
 | UX4 | Responsive behavior recorded | Every wireframe includes responsive notes |
 | UX5 | Accessibility recorded | Every wireframe includes accessibility notes |
 | UX6 | State updated when owned | `state.json` includes UX execution when applicable |
+| UX7 | Active UX reconciled | Stale wireframes, screens, or flows are removed from active UX sections or explicitly marked superseded |
+
+## Plan
+
+| ID | Check | Pass Criteria |
+|----|-------|---------------|
+| P1 | Active scopes match current truth | Active scope inventory reflects current `spec.md` and `design.md` |
+| P2 | Stale scopes invalidated | Invalid scopes are removed from active execution and preserved only as superseded history if needed |
+| P3 | Reconciled scope/test/DoD parity | Rewritten scopes maintain Gherkin, Test Plan, and DoD coherence after reconciliation |
 
 ## Implement
 

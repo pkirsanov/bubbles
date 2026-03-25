@@ -30,6 +30,18 @@ If the findings point to code quality, drift, or simplification work inside an e
 /bubbles.workflow  improve-existing for booking
 ```
 
+If the findings show stale state or stale planning that must be reconciled before the existing work can be trusted again:
+
+```
+/bubbles.workflow  reconcile-to-doc for booking
+```
+
+If the findings show the existing feature needs a substantial rewrite rather than incremental improvement:
+
+```
+/bubbles.workflow  redesign-existing for booking
+```
+
 If the findings point to operational or reliability hardening:
 
 ```
@@ -48,7 +60,7 @@ If the review produced cross-cutting product changes that need new planning arti
 /bubbles.system-review  mode: full scope: feature:booking output: create-specs
 ```
 
-Then continue with the appropriate workflow after the promoted specs exist.
+Then continue with `reconcile-to-doc`, `redesign-existing`, or `improve-existing` once the promoted specs exist.
 
 ## Why No Dedicated Review Workflow?
 

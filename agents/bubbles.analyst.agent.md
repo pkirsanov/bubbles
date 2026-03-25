@@ -26,6 +26,7 @@ handoffs:
 - Create business-level scenarios (pre-BDD — higher level than Gherkin technical scenarios)
 - Propose improvements ranked by business impact with competitive edge rationale
 - Discover edge cases commonly missed (validation, error states, concurrency, accessibility)
+- Reconcile stale analyst-owned sections before writing new ones; do not leave invalidated requirements active beside current truth
 - Ensure state.json exists in the feature folder (create if missing) — see State.json Lifecycle in agent-common.md
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 - If `socratic: true`, switch into a tightly bounded discovery interview: ask only targeted questions that materially change requirements, architecture direction, or UX outcomes; stop after `socraticQuestions` questions or earlier if ambiguity is resolved
@@ -64,7 +65,10 @@ $ADDITIONAL_CONTEXT
 
 Supported options:
 - `mode: greenfield` — Create spec.md from scratch via codebase + domain analysis
-- `mode: improve` — Analyze existing feature and propose improvements (default if spec.md exists)
+- `mode: reconcile` — Reconcile existing requirements so only one active truth remains (default if spec.md exists)
+- `mode: improve` — Analyze existing feature and propose competitive improvements after reconciliation
+- `mode: redesign` — Rework major flows, actors, or requirements while preserving feature identity
+- `mode: replace` — Most prior requirements are invalid; supersede and rewrite the artifact
 - `competitors: url1, url2, ...` — Explicit competitor URLs to research
 - `domain: hospitality|finance|trading|...` — Domain context hint (auto-detected from project docs if omitted)
 - `focus: <text>` — Free-form focus area (e.g., "booking flow", "search experience")
@@ -79,12 +83,15 @@ When the user provides free-text input WITHOUT explicit `mode:` parameters, infe
 | User Says | Resolved Parameters |
 |-----------|---------------------|
 | "build a new notification system" | mode: greenfield |
-| "analyze the booking feature" | mode: improve |
+| "analyze the booking feature" | mode: reconcile |
 | "improve the search experience" | mode: improve, focus: search |
 | "create requirements for a dashboard" | mode: greenfield |
 | "what should we build for real-time alerts?" | mode: greenfield |
 | "how does our booking compare to competitors?" | mode: improve, (enable competitive research) |
-| "analyze this feature offline" | mode: improve, skip_competitive: true |
+| "analyze this feature offline" | mode: reconcile, skip_competitive: true |
+| "reconcile the booking requirements" | mode: reconcile |
+| "redesign the booking flow requirements" | mode: redesign |
+| "replace the current booking requirements" | mode: replace |
 | "research Airbnb and VRBO for inspiration" | competitors: airbnb.com, vrbo.com |
 | "help me figure out what to build, ask me questions" | mode: greenfield, socratic: true |
 
@@ -116,7 +123,7 @@ Unlike `/bubbles.design` (technical architecture), `/bubbles.clarify` (consisten
 2. Create `{FEATURE_DIR}` directory if it does not exist
 3. Ensure `state.json` exists (create with `not_started` if missing — see State.json Lifecycle in agent-common.md)
 4. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
-5. Read existing `spec.md` if present → determines mode (greenfield vs improve)
+5. Read existing `spec.md` if present → determines mode (greenfield vs reconcile unless explicitly overridden)
 
 ### Phase 0.5: Optional Socratic Discovery Loop
 
@@ -290,6 +297,21 @@ Cap: max 5 additional fetches for trend research (beyond competitor research cap
 
 Document the decision and rationale in the output.
 
+### Phase 7.5: Artifact Freshness Reconciliation
+
+**Goal:** Ensure `spec.md` has one active business truth.
+
+1. Compare existing analyst-owned sections against the newly derived requirements
+2. Classify prior content as:
+   - Keep active
+   - Update in place
+   - Move to superseded section
+   - Remove entirely
+3. When preserving history, use clearly labeled sections such as:
+   - `## Superseded Requirements`
+   - `## Superseded Business Scenarios`
+4. Do NOT leave invalidated actors, use cases, or scenarios mixed into active sections
+
 ### Phase 8: Write spec.md
 
 Write or enrich `spec.md` with all analysis output:
@@ -346,6 +368,7 @@ Then [business outcome]
 ```
 
 Preserve any existing spec.md sections not owned by this agent. Merge, don't overwrite.
+Within analyst-owned sections, reconcile instead of blindly appending. Active sections must reflect only the current truth.
 
 ### Phase 9: Update State & Report
 
@@ -354,6 +377,7 @@ Preserve any existing spec.md sections not owned by this agent. Merge, don't ove
    - Actors discovered
    - Use cases defined
    - Business scenarios created
+   - Analyst sections reconciled or superseded
    - Competitive gaps identified
    - Improvement proposals with priority
    - Change magnitude decision (if improve mode)
@@ -375,6 +399,7 @@ Preserve any existing spec.md sections not owned by this agent. Merge, don't ove
 ```
 Analyzed: {FEATURE_DIR}/spec.md
 Actors: N | Use Cases: N | Business Scenarios: N
+Reconciled/Superseded Analyst Sections: N
 Competitive Gaps: N | Improvement Proposals: N
 Change Magnitude: minor/sizable (rationale)
 Next: /bubbles.ux (UI wireframes) or /bubbles.design (technical design)

@@ -12,8 +12,8 @@
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-30-58a6ff?style=flat-square" alt="30 agents">
-  <img src="https://img.shields.io/badge/gates-51-3fb950?style=flat-square" alt="51 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-25-bc8cff?style=flat-square" alt="25 modes">
+  <img src="https://img.shields.io/badge/gates-52-3fb950?style=flat-square" alt="52 gates">
+  <img src="https://img.shields.io/badge/workflow_modes-26-bc8cff?style=flat-square" alt="26 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -34,8 +34,8 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>30 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>51 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>25 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>52 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>26 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 </table>
@@ -107,9 +107,10 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 30 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 25 workflow mode definitions
+│   ├── workflows.yaml               # 26 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
+│   │   ├── artifact-freshness-guard.sh
 │   │   ├── artifact-lint.sh
 │   │   ├── state-transition-guard.sh
 │   │   └── ...
@@ -282,7 +283,7 @@ If you want the idea challenged before it turns into artifacts:
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 25 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 26 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -296,7 +297,7 @@ Bubbles supports 25 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 25 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 26 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -325,7 +326,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 51 Quality Gates
+### 52 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
@@ -351,7 +352,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 25 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 26 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Recipes](docs/recipes/) | Common problems → solutions |
 | [Installing in Your Repo](docs/guides/INSTALLATION.md) | Step-by-step setup guide |
@@ -366,6 +367,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | I Want To... | Run This |
 |-------------|----------|
 | Start a new feature from scratch | `/bubbles.analyst  <describe feature>` |
+| Reconcile and redesign an existing feature | `/bubbles.workflow  redesign-existing for <feature>` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
 | Run the full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
 | Review code directly and get engineering priorities | `/bubbles.code-review  scope: full-repo output: summary-only` |

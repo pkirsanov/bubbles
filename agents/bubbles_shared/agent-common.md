@@ -16,6 +16,7 @@ Load the smallest authoritative module set that matches the role and current pha
 | Hard non-negotiables | `critical-requirements.md` |
 | Operating baseline | `operating-baseline.md`, `execution-ops.md` |
 | Artifact ownership | `artifact-ownership.md` |
+| Artifact freshness and supersession | `artifact-freshness.md` |
 | Completion chain and state integrity | `completion-governance.md` |
 | Validation model | `validation-core.md`, `validation-profiles.md` |
 | Test, evidence, and quality gates | `quality-gates.md` |
@@ -41,6 +42,7 @@ Load the smallest authoritative module set that matches the role and current pha
 | Question | Authoritative Source |
 |----------|----------------------|
 | Who owns this artifact? | `artifact-ownership.md` |
+| How do I invalidate stale spec/design/scopes safely? | `artifact-freshness.md` |
 | Can this scope/spec be marked complete? | `completion-governance.md` |
 | What Tier 2 checks apply to this agent? | `validation-profiles.md` |
 | What test categories and evidence rules apply? | `quality-gates.md`, `evidence-rules.md`, `test-fidelity.md` |
@@ -52,6 +54,10 @@ Load the smallest authoritative module set that matches the role and current pha
 ## Artifact Ownership And Delegation Contract
 
 Use [artifact-ownership.md](artifact-ownership.md) as the single source of truth for ownership boundaries and foreign-artifact routing.
+
+## Artifact Freshness And Supersession
+
+Use [artifact-freshness.md](artifact-freshness.md) when requirements, UX, design, or planning artifacts drift from current truth.
 
 ## Absolute Completion Hierarchy
 

@@ -12,7 +12,7 @@ Use them when you want diagnosis, prioritization, or assessment without entering
 
 Use workflow modes after review when you already know you want follow-through work such as planning, implementation, testing, validation, audit, or docs synchronization.
 
-Current assessment: **no dedicated new review workflow modes are needed yet**. Existing modes such as `improve-existing`, `stabilize-to-doc`, `harden-gaps-to-doc`, and `product-to-delivery` already cover the execution side once review findings are clear.
+Current assessment: review still does not need its own separate workflow family, but existing-feature work now splits more clearly: use `improve-existing` for evolutionary improvements, `reconcile-to-doc` for stale state cleanup, and `redesign-existing` when requirements, UX, design, and scopes all need reconciliation before a major rewrite.
 
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
 - `grillFirst: true` inserts `bubbles.grill` before analysis, selection, or bootstrap so weak assumptions get challenged early.
@@ -269,6 +269,20 @@ analyze → select → validate → harden → gaps → implement → test → v
 
 **Use when:** The feature exists already and you want a full improvement pass rather than a narrow cleanup.
 
+### <img src="../../icons/lucy-mirror.svg" width="20"> redesign-existing
+
+Reconcile stale requirements, UX, design, and scopes for an existing feature, then redesign and deliver it.
+
+```
+analyze → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
+```
+
+**Use when:** The feature exists, but active artifacts no longer match the intended behavior and a major redesign is required before implementation can proceed safely.
+
+```
+/bubbles.workflow  redesign-existing for 019-visual-page-builder
+```
+
 ### <img src="../../icons/donny-ducttape.svg" width="20"> simplify-to-doc
 
 Simplify an existing implementation, prove it still works, then sync docs.
@@ -392,6 +406,7 @@ analyze → ux
 | `chaos-hardening` | Chaos → fix | Resilience |
 | `chaos-to-doc` | Chaos → validate → docs | Chaos auditing |
 | `reconcile-to-doc` | Reconcile → test → docs | Stale state cleanup |
+| `redesign-existing` | Reconcile → redesign → deliver | Major existing-feature rewrite |
 | `improve-existing` | Analyze → harden → gaps → fix | Code improvement |
 | `stochastic-quality-sweep` | Random quality | Maintenance |
 | `test-to-doc` | Test → docs | Test/doc focus |

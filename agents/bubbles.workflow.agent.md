@@ -137,7 +137,7 @@ $ADDITIONAL_CONTEXT
 ```
 
 Supported options:
-- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
+- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|redesign-existing|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
 - `continue_on_blocked: true|false` (default: true)
 - `final_global_pass: true|false` (default: true)
 - `socratic: true|false` (default: false)
@@ -173,7 +173,7 @@ When execution discovers undocumented or improperly documented work, the workflo
 4. **Placeholder/TODO/stub code uncovered during execution:** if the behavior is not already owned by an active feature/bug spec, promote it into one before allowing implementation or hardening to claim progress.
 5. **UI-bearing work:** when the promoted work has user-facing behavior, include `bubbles.ux` in the planning chain before design/plan.
 
-This protocol is mandatory for feature work, bug work, hardening, gaps, stabilize, improve-existing, and iterate-triggered execution. The orchestrator must fix the planning deficit itself rather than stopping with advice to the user.
+This protocol is mandatory for feature work, bug work, hardening, gaps, stabilize, improve-existing, redesign-existing, and iterate-triggered execution. The orchestrator must fix the planning deficit itself rather than stopping with advice to the user.
 
 ---
 
@@ -197,6 +197,7 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | "Run tests, then quality chain" | `test-to-doc` | `done` | select → **bootstrap** → test → validate → audit → docs → finalize |
 | "Run chaos, then quality chain" | `chaos-to-doc` | `done` | select → chaos → validate → audit → docs → finalize |
 | "Validate claims, reconcile stale state, then deliver" | `reconcile-to-doc` | `done` | select → **bootstrap** → **validate** → implement → test → validate → audit → chaos → docs → finalize |
+| "Reconcile stale requirements/design/scopes, redesign the existing feature, then deliver" | `redesign-existing` | `done` | **analyze** → select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
 | "Update docs only (no code changes)" | `docs-only` | `docs_updated` | select → docs → validate → audit → finalize |
 | "Validate only" | `validate-only` | `validated` | select → validate → finalize |
 | "Audit only" | `audit-only` | `validated` | select → audit → finalize |
@@ -284,6 +285,9 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 # Analyze existing feature for competitive improvements:
 /bubbles.workflow specs/019-visual-page-builder mode: improve-existing
 
+# Reconcile stale product/design/planning artifacts and redesign the feature:
+/bubbles.workflow specs/019-visual-page-builder mode: redesign-existing
+
 # Simplify an existing implementation without changing the product story:
 /bubbles.workflow specs/019-visual-page-builder mode: simplify-to-doc
 
@@ -338,6 +342,8 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
    **⚠️ PRIORITY RULE — Round-Based Specialist Requests Use Stochastic Sweep (MANDATORY):**
    When the user's request contains BOTH round/iteration language ("iterate", "N rounds", "N iterations") AND a stochastic-sweep trigger keyword ("improve", "analyst", "chaos", "harden", "gaps", "simplify", "stabilize", "validate", "security"), resolve to `stochastic-quality-sweep` with `triggerAgents` limited to that specialist and `maxRounds` set from the request. This preserves true round semantics. Deterministic single-mode workflows (`improve-existing`, `chaos-hardening`, `harden-to-doc`, `gaps-to-doc`, `stabilize-to-doc`) remain the default for non-round requests.
    - "iterate 10 rounds of improve/analyst" → `stochastic-quality-sweep` (`triggerAgents: improve`, `maxRounds: 10`)
+
+   **Artifact freshness rule:** when the request says "reconcile", "redesign", "rewrite", or "replace" and the existing feature's requirements, UX, design, or scopes are no longer valid, prefer `redesign-existing` over narrower implementation-only modes.
    - "do 5 iterations of chaos" → `stochastic-quality-sweep` (`triggerAgents: chaos`, `maxRounds: 5`)
    - "3 rounds of harden" → `stochastic-quality-sweep` (`triggerAgents: harden`, `maxRounds: 3`)
    - "iterate 10 rounds of stabilize" → `stochastic-quality-sweep` (`triggerAgents: stabilize`, `maxRounds: 10`)
