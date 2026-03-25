@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Post-implementation code simplification — reviews recently changed files for code reuse, quality, and efficiency issues, then fixes them. Run after implementing a feature or bug fix to clean up your work.
 handoffs:
@@ -14,6 +13,9 @@ handoffs:
   - label: Deep Gap Analysis
     agent: bubbles.gaps
     prompt: If simplification uncovers design/spec drift, run a full gap audit.
+  - label: Check Spec Freshness
+    agent: bubbles.spec-review
+    prompt: Before simplifying, check whether the spec is still current — stale specs lead to wrong simplification decisions.
 ---
 
 ## Agent Identity
@@ -267,5 +269,3 @@ After all fixes are applied:
 - If a simplification would change observable behavior, stop and flag it instead of applying.
 - Prefer evidence-driven changes over stylistic preferences.
 - If simplification reveals a design issue, recommend `/bubbles.clarify` or `/bubbles.design` instead of redesigning inline.
-
-````

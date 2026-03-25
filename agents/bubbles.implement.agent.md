@@ -1,4 +1,3 @@
-```chatagent
 ---
 description: Execute scopes from bubbles.plan - load spec/design, implement scopes sequentially to strict DoD with tests, validation, audit, and docs updates
 handoffs:
@@ -195,4 +194,3 @@ At completion, report:
 - Next recommended scope (if partial execution)
 
 Do NOT claim completion if any required test was not run and passing.
-```

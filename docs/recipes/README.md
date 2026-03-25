@@ -49,8 +49,7 @@ Baseline workflow law already requires spec/design/plan coherence, explicit Gher
 | [Regression Check](regression-check.md) | "I need to make sure new changes didn't break existing features" |
 | [Post-Implementation Hardening](post-impl-hardening.md) | "I want code cleaned up, stable, secure, and regression-free before shipping" |
 | [Chaos Testing](chaos-testing.md) | "I need to break things to find weaknesses" |
-| [Security Review](security-review.md) | "I need to check for security vulnerabilities" |
-
+| [Security Review](security-review.md) | "I need to check for security vulnerabilities" || [Spec Freshness Review](spec-freshness-review.md) | \"I need to check if my specs are still valid before running maintenance\" |
 ## Planning & Design
 
 | Recipe | Problem → Solution |

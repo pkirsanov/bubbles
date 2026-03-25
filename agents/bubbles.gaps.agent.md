@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Deep gap analysis & remediation - identify and fix ALL implementation gaps against design/requirements, validate specs/tasks, and ensure strict policy compliance.
 handoffs:
@@ -452,7 +451,3 @@ This is NOT optional. Reporting a verdict (even ⚠️ MINOR_GAPS or 🛑 CRITIC
 ## Phase Completion Recording (MANDATORY)
 
 Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"gaps"`. Agent: `bubbles.gaps`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
-
-
-
-````

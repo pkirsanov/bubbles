@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Regression guardian - detect cross-spec conflicts, baseline test regressions, coverage decreases, design contradictions, and UI flow breakage after implementation or bug fixes
 handoffs:
@@ -356,4 +355,3 @@ Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/sco
 - Do not introduce new code — regression is a diagnostic agent that detects and routes.
 - Do not skip cross-spec scanning — even if the current spec seems isolated, file-level analysis may reveal hidden couplings.
 - Do not accept "no baseline available" as a reason to skip baseline comparison — if no baseline exists, establish one now.
-````

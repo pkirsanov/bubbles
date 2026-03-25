@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Pressure-test an idea, spec, plan, design, or workflow choice with sharp questions, exposed assumptions, and concrete next moves
 handoffs:
@@ -127,4 +126,3 @@ User: `pressure test this design before implementation`
 User: `challenge these scopes and give me backlog tasks`
 - Return scope-level problems
 - Recommend `bubbles.plan ... backlogExport: tasks`
-````

@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Bootstrap and refresh .github Bubbles automation assets by reviewing external and canonical sources; propose a safe adoption plan, wait for approval, then apply changes.
 handoffs:
@@ -272,5 +271,3 @@ If ANY post-apply validation fails:
 
 - This command is intentionally scope-limited to `.github/` maintenance and recommendations.
 - It must not make changes in production code unless explicitly requested in a separate command.
-
-````

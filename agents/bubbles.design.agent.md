@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Create or update a comprehensive design.md for an existing or new feature, iterating with unlimited clarification as needed and adhering to repo design principles.
 handoffs:
@@ -265,7 +264,3 @@ Next: /bubbles.plan (creates scopes.md, report.md, uservalidation.md)
 Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Design profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
 If any required check fails, fix the issue before reporting. Do NOT report incomplete or stale design reconciliation.
-
-
-
-````

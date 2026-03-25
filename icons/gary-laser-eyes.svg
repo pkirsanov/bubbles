@@ -1,0 +1,25 @@
+<!-- icon-name: gary-laser-eyes -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Cat head outline -->
+  <path d="M 14 42 C 14 28 22 18 32 18 C 42 18 50 28 50 42 C 50 50 42 54 32 54 C 22 54 14 50 14 42 Z"/>
+  <!-- Left ear -->
+  <path d="M 14 32 L 8 12 L 22 24"/>
+  <!-- Right ear -->
+  <path d="M 50 32 L 56 12 L 42 24"/>
+  <!-- Left eye -->
+  <ellipse cx="24" cy="36" rx="5" ry="4"/>
+  <!-- Right eye -->
+  <ellipse cx="40" cy="36" rx="5" ry="4"/>
+  <!-- Left pupil slit -->
+  <line x1="24" y1="33" x2="24" y2="39" stroke-width="1.5"/>
+  <!-- Right pupil slit -->
+  <line x1="40" y1="33" x2="40" y2="39" stroke-width="1.5"/>
+  <!-- Left laser beam -->
+  <line x1="19" y1="36" x2="4" y2="36" stroke-width="1" stroke-dasharray="2 2"/>
+  <!-- Right laser beam -->
+  <line x1="45" y1="36" x2="60" y2="36" stroke-width="1" stroke-dasharray="2 2"/>
+  <!-- Nose -->
+  <path d="M 30 44 L 32 46 L 34 44" stroke-width="1.5"/>
+  <!-- Mouth -->
+  <path d="M 28 48 Q 32 50 36 48" stroke-width="1"/>
+</svg>

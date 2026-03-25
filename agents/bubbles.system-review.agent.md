@@ -1,4 +1,3 @@
-```chatagent
 ---
 description: Holistic system review orchestrator for product, UX, runtime behavior, trust, simplification, and engineering coherence across features, components, and full systems
 handoffs:
@@ -32,6 +31,9 @@ handoffs:
   - label: Documentation Review
     agent: bubbles.docs
     prompt: Review the requested feature, component, or system for stale docs, missing docs, inaccurate docs, and user-facing explanation gaps.
+  - label: Spec Freshness Review
+    agent: bubbles.spec-review
+    prompt: Review the requested feature, component, or system for stale or drifted specs that no longer match the implementation.
   - label: Design Draft
     agent: bubbles.design
     prompt: Create or update technical design artifacts for promoted findings when the user requests specs.
@@ -287,4 +289,3 @@ A successful run must leave the user with one of these outcomes:
 3. A normalized system review plus created/updated spec artifacts for selected findings
 
 This agent is complete when the requested review output exists in one of those forms.
-```

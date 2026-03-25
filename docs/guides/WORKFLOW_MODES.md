@@ -297,6 +297,20 @@ select → simplify → test → validate → audit → docs → finalize
 /bubbles.workflow  simplify-to-doc for 019-visual-page-builder
 ```
 
+### <img src="../../icons/gary-laser-eyes.svg" width="20"> spec-review-to-doc
+
+Audit specs for freshness, classify trust levels, and produce a maintenance context report. Read-only — no code changes.
+
+```
+select → spec-review → docs → finalize
+```
+
+**Use when:** You need to know which specs are still trustworthy before running maintenance agents (simplify, security, stabilize) or when specs haven't been updated after significant code changes.
+
+```
+/bubbles.workflow  spec-review-to-doc for all
+```
+
 ### <img src="../../icons/conky-puppet.svg" width="20"> harden-to-doc
 
 Harden specs, then fix and test the issues found.
@@ -403,6 +417,8 @@ analyze → ux
 | `gaps-to-doc` | Gaps → fix → test → docs | Gap closure |
 | `harden-gaps-to-doc` | Quality sweep | Post-implementation |
 | `stabilize-to-doc` | Stability → test → docs | Infrastructure |
+| `simplify-to-doc` | Simplify → test → docs | Code simplification |
+| `spec-review-to-doc` | Spec audit → docs | Spec freshness check |
 | `chaos-hardening` | Chaos → fix | Resilience |
 | `chaos-to-doc` | Chaos → validate → docs | Chaos auditing |
 | `reconcile-to-doc` | Reconcile → test → docs | Stale state cleanup |

@@ -1,6 +1,5 @@
-````chatagent
 ---
-description: Documentation hardening - define standard docs, validate they’re current with spec/design/scopes, remove obsolete/duplicate content, and update docs thoroughly (no tasks/logs in design)
+description: Documentation hardening - define standard docs, validate they're current with spec/design/scopes, remove obsolete/duplicate content, and update docs thoroughly (no tasks/logs in design)
 handoffs:
   - label: Run Scope-Aware Tests
     agent: bubbles.test
@@ -87,8 +86,8 @@ This prompt performs **documentation hardening**.
 Required outcomes:
 
 1) **Define and use a standard docs list**
-- Establish a list of “Core Standard Docs” that are always considered.
-- Detect and include any project-specific “standard docs” (additional docs consistently used by the repo).
+- Establish a list of "Core Standard Docs" that are always considered.
+- Detect and include any project-specific "standard docs" (additional docs consistently used by the repo).
 
 2) **Validate docs are up-to-date**
 - Confirm standard docs reflect current requirements/design/scopes.
@@ -108,7 +107,7 @@ Required outcomes:
 
 PRINCIPLE: **Docs must match requirements/design and be maintainable: accurate, non-duplicative, and readable.**
 
-Note: `/bubbles.docs` is an **optional** hardening sweep. Per-scope documentation obligations should be defined and satisfied **inside each scope’s DoD** in `{FEATURE_DIR}/scopes.md`.
+Note: `/bubbles.docs` is an **optional** hardening sweep. Per-scope documentation obligations should be defined and satisfied **inside each scope's DoD** in `{FEATURE_DIR}/scopes.md`.
 
 ---
 
@@ -120,7 +119,7 @@ Follow policy compliance in [agent-common.md](bubbles_shared/agent-common.md) an
 
 ## Standard Docs List (Source of Truth)
 
-Use the repo’s actual standard docs:
+Use the repo's actual standard docs:
 
 - top-level `docs/*.md`
 - any project governance docs explicitly referenced by the repo
@@ -211,7 +210,3 @@ Provide:
 Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"docs"`. Agent: `bubbles.docs`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
 
 ---
-
-
-
-````

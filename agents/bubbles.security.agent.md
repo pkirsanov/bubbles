@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Security & compliance specialist - threat modeling, dependency scanning, code security review, auth verification, compliance checks
 handoffs:
@@ -14,6 +13,9 @@ handoffs:
   - label: Final Audit
     agent: bubbles.audit
     prompt: Perform final compliance audit after security work.
+  - label: Check Spec Freshness
+    agent: bubbles.spec-review
+    prompt: Before security review, check whether the spec describes current auth/security architecture — stale specs lead to wrong threat models.
 ---
 
 ## Agent Identity
@@ -433,5 +435,3 @@ Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/sco
 - Prefer evidence-driven findings (code references, scan output) over speculative concerns
 - If a security fix implies a design change (e.g., adding auth layer), escalate to bubbles.design
 - When in doubt about severity, classify UP (medium → high), not down
-
-````

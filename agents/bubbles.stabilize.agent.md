@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Stability & ops hardening - find and fix performance, infrastructure, configuration, deployment, build, reliability, and resource-usage issues using code + logs/artifacts
 handoffs:
@@ -17,6 +16,9 @@ handoffs:
   - label: Deep Gap Analysis
     agent: bubbles.gaps
     prompt: If stabilization uncovers design/spec drift, run a full design/requirements-vs-code gap audit.
+  - label: Check Spec Freshness
+    agent: bubbles.spec-review
+    prompt: Before stabilization, check whether the spec describes current infrastructure/deployment architecture — stale specs lead to wrong stability assumptions.
 ---
 
 ## Agent Identity
@@ -250,5 +252,3 @@ Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/sco
 - Do not skip required test types.
 - Prefer evidence-driven changes (logs, metrics, reproduction) over speculative tuning.
 - If a stability fix implies a design change, stop and recommend `/bubbles.clarify`.
-
-````

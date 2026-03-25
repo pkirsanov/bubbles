@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Deep implementation hardening - validate ALL tasks complete, ALL tests pass, ALL policies followed with zero exceptions
 handoffs:
@@ -588,7 +587,3 @@ This is NOT optional. Reporting a verdict (even ⚠️ PARTIALLY_HARDENED or �
 Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"harden"`. Agent: `bubbles.harden`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
 
 ---
-
-
-
-````

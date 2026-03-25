@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Final system audit for spec compliance, code quality, and security before merge
 ---
@@ -473,7 +472,3 @@ When `/bubbles.audit` is executed as the final gate for a scope (e.g., from `/bu
 If the audit fails:
 - Provide an actionable failure list suitable for copy/paste into `report.md`.
 - Route back to the correct phase (implement/tests/docs/validate) and require re-audit after remediation.
-
-
-
-````

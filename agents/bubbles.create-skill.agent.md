@@ -85,4 +85,3 @@ After scaffolding, explain how to verify it loads:
 - The skill is active when `.github/skills/<skill-name>/SKILL.md` exists.
 - If Copilot doesn’t pick it up immediately, reload the VS Code window.
 - Test by starting a Copilot Chat message that includes one of the trigger phrases; confirm behavior matches the workflow.
-`````chatagent

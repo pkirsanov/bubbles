@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Scope/spec/design clarification - find and fix missing/ambiguous/inconsistent requirements, edge cases, technical details, tests, and doc obligations; update spec.md, scopes.md, and design docs accordingly
 handoffs:
@@ -240,7 +239,3 @@ Before finalizing clarification outputs, verify claims against the actual codeba
 ```
 
 ---
-
-
-
-````

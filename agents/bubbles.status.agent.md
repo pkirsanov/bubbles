@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Report current status of Bubbles progress including task/scope completion and any active errors
 ---
@@ -273,9 +272,3 @@ Docs hardening (recommended when specs/scopes change):
 ```
 
 ---
-
-
-
-```
-
-````

@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Test-focused verification + gap fixing - run required tests (scoped or full), identify coverage gaps, fix implementation/spec/docs until ALL tests pass with zero skips
 handoffs:
@@ -451,5 +450,3 @@ If `{FEATURE_DIR}/scopes.md` exists:
 - Only mark a scope `Done` when its Definition of Done is fully satisfied (not just “tests passed”).
 - If DoD is satisfied for a scope during this run, update its status to `Done` — but ONLY if the active workflow mode's `statusCeiling` (from `bubbles/workflows.yaml`) allows `done`. If running under an artifact-only mode (e.g., `spec-scope-hardening`), set the ceiling status instead.
 - Otherwise, leave scope status unchanged and report what remains.
-
-````

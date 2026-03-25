@@ -7,6 +7,9 @@ handoffs:
   - label: Bootstrap project
     agent: bubbles.bootstrap
     prompt: Scaffold or refresh project configuration and artifacts.
+  - label: Review spec freshness
+    agent: bubbles.spec-review
+    prompt: Audit specs for staleness and classify trust levels so maintenance agents know what to rely on.
 ---
 
 ## Agent Identity

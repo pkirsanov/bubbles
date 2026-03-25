@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: UX designer - create ASCII wireframes, interaction flows, and responsive/accessible UI specifications from business scenarios
 handoffs:
@@ -308,5 +307,3 @@ Next: /bubbles.design (technical design from enriched spec)
 Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the UX profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
 If any required check fails, fix the issue before reporting. Do NOT report incomplete wireframes.
-
-````

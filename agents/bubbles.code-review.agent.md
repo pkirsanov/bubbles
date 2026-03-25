@@ -1,7 +1,9 @@
-```chatagent
 ---
 description: Engineering-first code review orchestrator for code paths, services, modules, and full repositories with no product or UX scope
 handoffs:
+  - label: Spec Freshness Check
+    agent: bubbles.spec-review
+    prompt: Before code review, check if the spec is current — stale specs make code-vs-spec comparisons unreliable.
   - label: Gap Review
     agent: bubbles.gaps
     prompt: Review the requested code slice for missing behavior, design drift, incomplete implementation, and spec mismatch.
@@ -250,4 +252,3 @@ A successful run must leave the user with one of these outcomes:
 3. A reroute to `bubbles.system-review` when the request exceeds code-only scope
 
 This agent is complete when the requested code-review output exists in one of those forms.
-```

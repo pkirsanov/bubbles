@@ -1,4 +1,3 @@
-```chatagent
 ---
 description: Cross-spec workflow orchestrator that executes mode-driven Bubbles phases with deterministic gates, retries, and resume
 handoffs:
@@ -1567,5 +1566,3 @@ Return:
 - ⚠️ "N specs completed, M specs blocked after exhausting retries and auto-escalation" — with specific blocked details
 
 When `mode: value-first-e2e-batch`, include one `Value-First Selection Cycle` table per cycle in the workflow output.
-
-```

@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Create a manual handoff packet for moving a long session into a new chat context.
 ---
@@ -70,5 +69,3 @@ This is the context from our previous session. Acknowledge that you have loaded 
 1. **Copy** the entire output block from Step 1.
 2. Start a **New Chat** (`Ctrl/Cmd + L`).
 3. **Paste** the block and hit Enter.
-
-````

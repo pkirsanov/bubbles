@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Business analyst - discover requirements from code/domain/competitors, define actors/use-cases/scenarios, propose competitive-edge improvements
 handoffs:
@@ -412,5 +411,3 @@ Next: /bubbles.ux (UI wireframes) or /bubbles.design (technical design)
 Before reporting results, this agent MUST run Tier 1 universal checks from [validation-core.md](bubbles_shared/validation-core.md) plus the Analyst profile in [validation-profiles.md](bubbles_shared/validation-profiles.md).
 
 If any required check fails, fix the issue before reporting. Do NOT report incomplete analysis.
-
-````

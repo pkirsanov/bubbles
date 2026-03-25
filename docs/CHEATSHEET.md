@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **30 Agents · 52 Gates · 26 Workflow Modes · 18 Phases**
+> **31 Agents · 52 Gates · 27 Workflow Modes · 19 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -65,6 +65,7 @@
 | <img src="../icons/steve-french-paw.svg" width="28"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
 | <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
 | <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
+| <img src="../icons/gary-laser-eyes.svg" width="28"> | `bubbles.spec-review` | Gary Laser Eyes | Sees right through stale specs. Checks if artifacts still match reality. | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
 | <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
 
 ## <img src="../icons/camera-crew.svg" width="32"> Utilities
@@ -106,6 +107,7 @@
 | `sunnyvale supply-and-command` | `bubbles.plan` | *"It's supply and command, Julian"* |
 | `sunnyvale jim-needs-a-plan` | `bubbles.plan` | *"Jim, you need a plan."* |
 | `sunnyvale water-under-the-fridge` | `bubbles.simplify` | *"Just tape it up and move on."* |
+| `sunnyvale laser-eyes` | `bubbles.spec-review` | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
 | `sunnyvale have-a-good-one` | `bubbles.handoff` | *"Here, take this. I gotta go."* |
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
 | `sunnyvale the-super` | `bubbles.super` | *"I'm the trailer park supervisor."* |
@@ -133,6 +135,7 @@
 | `full-delivery` | full-send | Standard complete delivery — the default |
 | `full-delivery-strict` | clean-and-sober | Strict enforcement, no blocked continuation |
 | `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
+| `spec-review-to-doc` | laser-eyes-sweep | Audit specs for freshness, classify trust levels, produce maintenance report |
 | `chaos-hardening` | shit-storm | Iterative chaos + bugfix cycles until clean |
 | `bugfix-fastlane` | smash-and-grab | Fast bug closure — in, fix, out |
 | `validate-only` | randy-put-a-shirt-on | Run validation gates only |
@@ -167,7 +170,7 @@
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
-`analyze` → `discover` → `select` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `regression` → `simplify` → `stabilize` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
+`analyze` → `discover` → `select` → `spec-review` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `regression` → `simplify` → `stabilize` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
 
 | Gate | Name | What It Checks |
 |------|------|---------------|
@@ -351,7 +354,8 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | ✅ Chaos clean | *"Worst case Ontario... nothing broke."* |
 | 🟢 Regression clean | *"Steve French is purrin'. No regressions, boys."* |
 | 🔴 Regression found | *"Something's prowlin' around in the code, boys."* |
-| 🔴 Spec conflict | *"Steve French found another cougar's territory. Two specs, same route."* |
+| � Spec stale | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
+| �🔴 Spec conflict | *"Steve French found another cougar's territory. Two specs, same route."* |
 | ❌ Security vuln | *"Safety... always ON."* |
 | ✅ Docs updated | *"Know what I'm sayin'? It's documented."* |
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
@@ -396,6 +400,7 @@ All agents accept natural language. You don't need to know the exact mode or par
 | `/bubbles.test  why are integration tests failing?` | action: triage, types: integration |
 | `/bubbles.analyst  how does our booking compare to competitors?` | mode: improve, competitive research on |
 | `/bubbles.security  scan for hardcoded secrets` | focus: secrets |
+| `/bubbles.spec-review  are the booking specs still valid?` | scope: booking, depth: thorough |
 | `/bubbles.chaos  break the search feature` | scope: search |
 | `/bubbles.super  what's the best way to fix a bug?` | Platform Assistant: recommend bugfix sequence |
 
@@ -438,6 +443,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 |-----------|---------|
 | Something seems off | `/bubbles.validate` |
 | Find what's missing | `/bubbles.gaps` |
+| Check if specs are still valid | `/bubbles.spec-review  all` |
 | Harden weak spots | `/bubbles.harden` |
 | Security scan | `/bubbles.security` |
 | Check for regressions | `/bubbles.regression` |
@@ -497,8 +503,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | "Gorilla see, gorilla do" | Monkey see, monkey do | Copy-paste code detected |
 | "Steve French is just a big stoned kitty" | The regression guardian is doing its job | Cross-spec check running |
 | "It's a doggy-dog world" | Dog-eat-dog world | Competitive analysis |
-| "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) |
-
+| "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) || \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
 ---
 
 <p align="center">

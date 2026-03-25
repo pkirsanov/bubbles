@@ -1,4 +1,3 @@
-```chatagent
 ---
 description: Work picker and workflow dispatcher - identify next high-priority work (by type if specified), prepare artifacts if needed, then execute the correct workflow mode via specialist agents
 handoffs:
@@ -613,4 +612,3 @@ If any required check fails, do not update `state.json` or report success. Fix t
 ## Output Requirements
 
 At completion, report: iterations completed, feature folder path, scope(s) completed, workflow mode used, specialist agents invoked + status, test suites executed + status, validation check results (Tier 1 + Tier 2), coverage percentage vs threshold.
-```

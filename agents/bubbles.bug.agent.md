@@ -1,4 +1,3 @@
-```chatagent
 ---
 description: Bug discovery, documentation, and root cause analysis - identify bugs, create structured bug artifacts, analyze root cause, then delegate fixing to specialist agents via the bugfix-fastlane workflow
 handoffs:
@@ -514,6 +513,4 @@ Severity: [X] | To fix later: resume in bug folder
 ### 🔄 BUG_IN_PROGRESS / ❌ BUG_BLOCKED
 ```
 🔄/❌ [BUG-NNN] | Phase: [current] | Completed: [list] | Remaining/Blocker: [list]
-```
-
 ```

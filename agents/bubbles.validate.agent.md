@@ -1,4 +1,3 @@
-````chatagent
 ---
 description: Run comprehensive system validation using project-specific commands from agents.md
 handoffs:
@@ -713,7 +712,3 @@ If user specifies a mode:
 - Agents MUST NOT run `quick` mode and then report the scope as "validated" without caveats
 
 ---
-
-
-
-````
