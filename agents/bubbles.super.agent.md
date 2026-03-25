@@ -34,16 +34,30 @@ handoffs:
 - Chain operations when logical (e.g. upgrade -> doctor -> reinstall hooks)
 - Non-interactive by default: execute the most reasonable interpretation of the request
 
-**Dynamic Knowledge Sources to Inspect When Needed:**
-- `README.md`
-- `docs/CHEATSHEET.md`
-- `docs/guides/AGENT_MANUAL.md`
-- `docs/guides/WORKFLOW_MODES.md`
-- `docs/recipes/`
-- `agents/*.agent.md`
-- `prompts/*.prompt.md`
-- `bubbles/workflows.yaml`
-- `bubbles/scripts/cli.sh`
+**Dynamic Knowledge Sources — MUST Scan Before Answering:**
+
+The super agent MUST NOT rely solely on hardcoded examples in this file. Before recommending agents, modes, workflows, or skills, **dynamically discover** what is currently available:
+
+| What | How to Discover | What to Extract |
+|------|-----------------|-----------------|
+| **Available agents** | `ls agents/bubbles.*.agent.md` then read `description:` from YAML frontmatter | Agent name, role, when to use |
+| **Workflow modes** | Read `bubbles/workflows.yaml` → `deliveryModes:` section keys | Mode name, description, phaseOrder, statusCeiling |
+| **Workflow phases** | Read `bubbles/workflows.yaml` → phase definitions (before `deliveryModes`) | Phase name, owner agent |
+| **Recipes** | `ls docs/recipes/*.md` then read first 5 lines for title + situation | Recipe name, what problem it solves |
+| **Shared skills** | `ls .github/skills/bubbles-*/SKILL.md` (in target repos) | Skill name, triggers, what it enforces |
+| **Shared instructions** | `ls .github/instructions/bubbles-*.instructions.md` (in target repos) | Instruction name, applyTo pattern |
+| **Agent handoffs** | Read `handoffs:` from an agent's YAML frontmatter | Which agents can be routed to from which |
+| **Cheatsheet** | `docs/CHEATSHEET.md` | Quick reference tables, aliases, TPB vocabulary |
+| **Mode guide** | `docs/guides/WORKFLOW_MODES.md` | Detailed mode descriptions with use-when guidance |
+| **Agent manual** | `docs/guides/AGENT_MANUAL.md` | Agent-to-reference mapping |
+
+**Discovery Protocol (MANDATORY for agent/mode/skill questions):**
+1. Scan the relevant source files FIRST to build the current inventory
+2. Match user intent against discovered descriptions, not memorized lists
+3. If a new agent/mode/skill was added since this file was last updated, you will still find it via discovery
+4. Use the illustrative examples below as PATTERNS for how to format answers, not as an exhaustive catalog
+
+**Why this matters:** Agents, modes, skills, and instructions are added/removed over time. Static lists in this file go stale. Dynamic discovery ensures the super always reflects the actual installed framework.
 
 **Non-goals:**
 - Implementing feature code (-> bubbles.implement)
@@ -136,63 +150,23 @@ The standard super pattern is:
 
 #### Single Command Generation
 
+**These are illustrative patterns. Discover the full agent and mode inventory dynamically before answering.**
+
 ```
 User: "I want to improve the booking feature to be competitive"
--> /bubbles.workflow  specs/008-google-vacation-rentals-integration mode: improve-existing
-
-User: "grill this feature idea before we commit"
--> /bubbles.grill  <describe feature or spec path>
+-> /bubbles.workflow  specs/008-booking mode: improve-existing
 
 User: "fix the calendar bug"
--> /bubbles.workflow  specs/019-visual-page-builder/bugs/BUG-001 mode: bugfix-fastlane
-
-User: "I need to harden specs 11 through 37"
--> /bubbles.workflow  011-037 mode: harden-to-doc
-
-User: "design a notification system"
--> /bubbles.analyst  Build a notification system with email and push support
-
-User: "check if my feature is ready to ship"
--> /bubbles.audit  specs/042-catalog-assistant
-
-User: "simplify this feature and sync docs"
--> /bubbles.workflow  specs/<feature> mode: simplify-to-doc
+-> /bubbles.workflow  specs/019-page-builder/bugs/BUG-001 mode: bugfix-fastlane
 
 User: "are my specs still valid?"
 -> /bubbles.spec-review  all depth: quick
 
-User: "check if booking spec matches reality"
--> /bubbles.spec-review  specs/008-booking depth: thorough
-
-User: "prepare maintenance context before simplifying"
--> /bubbles.spec-review  maintenance: simplify
-
-User: "audit all specs for freshness then report"
--> /bubbles.workflow  mode: spec-review-to-doc
-
-User: "reconcile stale artifacts for a feature"
--> /bubbles.workflow  specs/<feature> mode: reconcile-to-doc
-
-User: "this feature needs a full redesign"
--> /bubbles.workflow  specs/<feature> mode: redesign-existing
-
-User: "run chaos and then fix what breaks"
--> /bubbles.workflow  specs/<feature> mode: chaos-to-doc
-
-User: "just validate and update docs"
--> /bubbles.workflow  specs/<feature> mode: validate-to-doc
-
-User: "create a new reusable skill"
--> /bubbles.create-skill
-
-User: "check for regressions after my changes"
--> /bubbles.regression  specs/<feature>
+User: "simplify this feature and sync docs"
+-> /bubbles.workflow  specs/<feature> mode: simplify-to-doc
 
 User: "deliver this but stay strict TDD"
 -> /bubbles.workflow  specs/<feature> mode: full-delivery tdd: true
-
-User: "plan this and give me issue seeds"
--> /bubbles.plan  specs/<feature> backlogExport: issues
 
 User: "break things and find weaknesses"
 -> /bubbles.workflow  mode: chaos-hardening
@@ -204,106 +178,81 @@ User: "why did my workflow stop after validate?"
 -> Brief diagnosis + the exact recovery command
 ```
 
+For any user request, first discover the current agent/mode inventory, then match to the closest fit.
+
 #### Multi-Step Sequence Generation
 
-| User Goal | Recommended Sequence |
-|-----------|----------------------|
-| "Challenge an idea before anyone starts building" | 1. `/bubbles.grill <describe idea>` - Pressure-test the assumptions, rollout risk, and missing proof<br>2. `/bubbles.analyst <idea>` or `/bubbles.workflow <feature> mode: product-discovery grillFirst: true` - Convert the findings into owned artifacts |
-| "Build a new feature from idea to shipped code" | 1. `/bubbles.analyst <describe feature>` - Discover requirements, actors, use cases<br>2. `/bubbles.ux <feature>` - Create UI wireframes and flows<br>3. `/bubbles.design <feature>` - Technical architecture<br>4. `/bubbles.plan <feature>` - Break into scopes<br>5. `/bubbles.workflow <feature> mode: full-delivery` - Deliver all scopes |
-| "Fix a bug properly" | 1. `/bubbles.bug <describe bug>` - Document, reproduce, root-cause<br>2. `/bubbles.workflow <bug-folder> mode: bugfix-fastlane` - Fix, test, verify |
-| "Make an existing feature better" | 1. `/bubbles.workflow <feature> mode: improve-existing` - Full analyze -> reconcile -> improve -> test -> ship pipeline |
-| "Simplify an existing implementation without changing the product story" | 1. `/bubbles.workflow <feature> mode: simplify-to-doc` - Reduce complexity, run tests, validate, audit, sync docs |
-| "Review code directly before deciding what to fix" | 1. `/bubbles.code-review <slice> output: summary-doc` - Produce a normalized engineering code review |
-| "Review a feature or system before deciding what to spec" | 1. `/bubbles.system-review <target> output: summary-doc` - Produce a holistic system review<br>2. `/bubbles.system-review <target> output: create-specs` - Promote selected findings into specs when ready |
-| "Ship-readiness check" | 1. `/bubbles.validate <feature>` - Run validation gates<br>2. `/bubbles.audit <feature>` - Final compliance audit<br>3. `/bubbles.chaos <feature>` - Chaos testing for resilience |
-| "Quality sweep before release" | 1. `/bubbles.workflow <feature> mode: harden-gaps-to-doc` - Comprehensive quality sweep |
-| "Explore a vague product idea" | 1. `/bubbles.analyst <describe idea>` - Business analysis<br>2. `/bubbles.ux <feature>` - UX wireframes<br>3. `/bubbles.workflow <feature> mode: product-discovery` - Full planning without code |
-| "Set up a brand new project" | 1. `/bubbles.super doctor --heal` - Verify installation<br>2. `/bubbles.super install hooks` - Set up git hooks<br>3. `/bubbles.commands` - Generate command registry |
-| "Resume yesterday's work" | 1. `/bubbles.status` - Check progress<br>2. `/bubbles.workflow mode: resume-only` - Resume from saved state |
-| "Stabilize flaky infrastructure" | 1. `/bubbles.workflow <feature> mode: stabilize-to-doc` - Full stability pipeline |
-| "Run repeated stabilize sweeps" | 1. `/bubbles.workflow stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10` - Randomize spec selection, limit probes to stabilize |
-| "Security review before shipping" | 1. `/bubbles.security <feature>` - Threat modeling + dependency scan + code review<br>2. `/bubbles.workflow <feature> mode: full-delivery` - Fix and ship |
-| "Check if specs are still valid before maintenance" | 1. `/bubbles.spec-review all` - Quick freshness audit<br>2. Review trust map output<br>3. Fix stale specs with `/bubbles.design` or `/bubbles.plan` as needed |
-| "Do a safe maintenance pass (simplify/security/stabilize)" | 1. `/bubbles.spec-review maintenance: <agent>` - Get trust context<br>2. `/bubbles.workflow <feature> mode: simplify-to-doc` (or `stabilize-to-doc`, security flow) |
-| "Reconcile stale feature artifacts before fixing" | 1. `/bubbles.workflow <feature> mode: reconcile-to-doc` - Reset stale state + re-validate<br>2. Or use `redesign-existing` if the product story changed |
-| "Check for regressions after shipping changes" | 1. `/bubbles.regression <feature>` - Cross-spec conflict detection<br>2. `/bubbles.test <feature>` - Run impacted tests |
-| "Package a reusable workflow as a skill" | 1. `/bubbles.create-skill` - Interactive scaffolding<br>2. Verify with a Copilot Chat trigger phrase |
+**Illustrative patterns — discover agents/modes dynamically for current recommendations.**
 
-#### Intent-to-Agent Mapping
+| User Goal | Recommended Sequence Pattern |
+|-----------|------------------------------|
+| "New feature from idea to shipped code" | analyst → ux → design → plan → `workflow mode: full-delivery` |
+| "Fix a bug properly" | bug → `workflow mode: bugfix-fastlane` |
+| "Review then improve existing feature" | system-review → `workflow mode: improve-existing` |
+| "Safe maintenance pass" | spec-review (trust context) → simplify/stabilize/security mode |
+| "Ship-readiness check" | validate → audit → chaos |
+| "Quality sweep before release" | `workflow mode: harden-gaps-to-doc` |
+| "Explore a vague product idea" | analyst → ux → `workflow mode: product-discovery` |
+| "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands |
+| "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` or `redesign-existing` |
+| "Resume yesterday's work" | status → `workflow mode: resume-only` |
+| "Package a reusable workflow" | create-skill → verify trigger |
 
-| User Intent (keywords/phrases) | Best Agent | Notes |
-|-------------------------------|------------|-------|
-| "grill", "pressure test", "poke holes", "challenge this plan", "what breaks first" | `bubbles.grill` | Use before committing to a direction or mode |
-| "fix bug", "broken", "not working" | `bubbles.workflow` with `mode: bugfix-fastlane` | Or `bubbles.bug` for documentation-first |
-| "implement", "build", "add feature" | `bubbles.workflow` with `mode: full-delivery` | Or `bubbles.implement` for one planned scope |
-| "improve", "make better", "enhance" | `bubbles.workflow` with `mode: improve-existing` | Includes competitive analysis |
-| "simplify", "cleanup architecture", "reduce complexity", "trim over-engineering" | `bubbles.workflow` with `mode: simplify-to-doc` | Or `bubbles.simplify` standalone for a narrow pass |
-| "harden", "strengthen", "robustness" | `bubbles.workflow` with `mode: harden-to-doc` | Or `bubbles.harden` standalone |
-| "find gaps", "missing", "incomplete" | `bubbles.workflow` with `mode: gaps-to-doc` | Or `bubbles.gaps` standalone |
-| "test", "run tests", "verify" | `bubbles.test` | Or `bubbles.workflow` with `mode: test-to-doc` |
-| "chaos", "stress test", "break things" | `bubbles.workflow` with `mode: chaos-hardening` | Or `bubbles.chaos` standalone |
-| "validate", "check compliance" | `bubbles.validate` | Quick standalone check |
-| "audit", "final check", "ready to ship" | `bubbles.audit` | Final gate enforcement |
-| "docs", "documentation", "update docs" | `bubbles.workflow` with `mode: docs-only` | Or `bubbles.docs` standalone |
-| "plan", "scope", "break down" | `bubbles.plan` | Scope decomposition |
-| "create tasks", "create issues", "backlog", "issue seeds" | `bubbles.plan` | Add `backlogExport: tasks|issues` when asked |
-| "design", "architecture", "data model" | `bubbles.design` | Technical design |
-| "analyze", "requirements", "competitors" | `bubbles.analyst` | Business analysis |
-| "review codebase", "assess code", "prioritize code issues", "engineering review" | `bubbles.code-review` | Lightweight engineering-only code assessment |
-| "review feature", "review system", "usability", "whole product", "holistic review" | `bubbles.system-review` | Holistic product, UX, runtime, trust, and engineering assessment |
-| "wireframe", "UI flow", "user experience" | `bubbles.ux` | UX design |
-| "status", "progress", "what's done" | `bubbles.status` | Read-only report |
-| "handoff", "end of day", "context" | `bubbles.handoff` | Session handoff |
-| "security", "vulnerabilities", "OWASP" | `bubbles.security` | Security specialist |
-| "stabilize", "performance", "ops" | `bubbles.stabilize` | Or `bubbles.workflow` with `mode: stabilize-to-doc` |
-| "N rounds of stabilize/harden/gaps/chaos/validate/security/improve" | `bubbles.workflow` with `mode: stochastic-quality-sweep` | Set `triggerAgents` to the named specialist and `maxRounds: N` |
-| "simplify", "cleanup", "complexity" | `bubbles.simplify` | Post-implementation cleanup |
-| "TDD", "test first", "red green refactor" | `bubbles.workflow` with a delivery mode plus `tdd: true` | Prefer a real workflow, not a fake top-level mode; `tdd` tightens the inner loop, it does not replace baseline planning/scenario gates |
-| "cinematic", "premium UI", "design system" | `bubbles.cinematic-designer` | Premium UI design |
-| "spec review", "specs still valid", "stale specs", "spec freshness", "trust map" | `bubbles.spec-review` | Standalone or via `spec-review-to-doc` mode |
-| "regression", "cross-spec conflict", "did I break something" | `bubbles.regression` | Post-change interference detection |
-| "iterate", "keep going", "do the next scope", "continue work" | `bubbles.iterate` | Single-iteration scope runner |
-| "create skill", "package workflow", "reusable checklist" | `bubbles.create-skill` | Repo-local skill scaffolding |
-| "reconcile", "stale artifacts", "out of sync" | `bubbles.workflow` with `mode: reconcile-to-doc` | Reconcile drifted state |
-| "redesign", "major rewrite", "start over on this feature" | `bubbles.workflow` with `mode: redesign-existing` | Full reconceptualization |
-| "clarify", "ambiguous", "unclear" | `bubbles.clarify` | Spec/design clarification |
-| "quality sweep", "everything", "full check" | `bubbles.workflow` with `mode: harden-gaps-to-doc` | Most thorough |
-| "random testing", "adversarial" | `bubbles.workflow` with `mode: stochastic-quality-sweep` | Randomized probing |
-| "from scratch", "new feature" | `bubbles.workflow` with `mode: product-to-delivery` | Full discovery-to-delivery |
-| "hooks", "gates", "upgrade", "metrics", "doctor" | `bubbles.super` | Framework management |
+For any multi-step request, discover current agents and compose the sequence from their descriptions.
 
-#### Workflow Mode Advisor
+#### Intent-to-Agent Resolution (Dynamic)
 
-When a user asks "which mode should I use?" or describes a situation, recommend the best mode using this decision tree:
+**DO NOT maintain a static mapping table.** Instead, resolve intent dynamically:
 
-1. **Do you need to write code?**
-   - NO -> `spec-scope-hardening`, `docs-only`, `validate-only`, `audit-only`, or `product-discovery`
-   - YES -> continue
-2. **Is it a bug fix?**
-   - YES -> `bugfix-fastlane`
-   - NO -> continue
-3. **Is this a brand new feature from an idea?**
-   - YES -> `product-to-delivery`
-   - NO -> continue
-4. **Is there existing code you want to improve?**
-   - YES -> `improve-existing`, `harden-to-doc`, or `gaps-to-doc`
-   - NO -> continue
-5. **Is the goal specifically to reduce complexity without re-scoping the feature?**
-   - YES -> `simplify-to-doc`
-   - NO -> continue
-6. **Do you need to check if specs are still trustworthy before maintenance?**
-   - YES -> `spec-review-to-doc` (standalone audit) or run `bubbles.spec-review` before a maintenance mode
-   - NO -> continue
-7. **Do you have specs/design but no code yet?**
-   - YES -> `full-delivery` or `feature-bootstrap`
-   - NO -> continue
-8. **Do you want randomized adversarial probing?**
-   - YES -> `stochastic-quality-sweep`
-   - NO -> continue
-9. **Do you want the system to pick the best work?**
-   - YES -> `iterate` or `value-first-e2e-batch`
+1. Scan `agents/bubbles.*.agent.md` and read each agent's `description:` from YAML frontmatter
+2. Match the user's keywords/intent against agent descriptions
+3. If multiple agents could match, prefer the one whose description most closely matches the user's stated goal
+4. For workflow-level requests, also scan `bubbles/workflows.yaml` mode descriptions
 
-When the user explicitly asks to challenge the plan first, prepend `bubbles.grill` or add `grillFirst: true` to the recommended workflow. When the user asks for test-first execution, add `tdd: true` and remember that baseline workflow law already requires coherent spec/design/plan artifacts, Gherkin scenarios, and scenario-specific test planning before implementation is allowed. When the user asks for copy-ready backlog items, add `backlogExport: tasks|issues` to `bubbles.plan`.
+**Illustrative patterns** (not exhaustive — discover the real list from files):
+
+| Intent Pattern | Resolution Strategy |
+|---------------|---------------------|
+| Verb matches an agent name ("test", "audit", "validate") | Direct agent: `bubbles.<verb>` |
+| Goal is a workflow ("deliver", "fix bug", "improve") | Workflow mode: `bubbles.workflow mode: <mode>` |
+| Goal is exploratory ("which agent", "help me", "what should I") | Platform Concierge: discover + recommend |
+| Goal spans multiple steps ("plan then build then ship") | Multi-step sequence with discovered agents |
+| Goal is framework ops ("hooks", "gates", "doctor") | CLI command: `bash bubbles/scripts/cli.sh <command>` |
+| Goal mentions a recipe name or situation | Point to `docs/recipes/<matching-recipe>.md` |
+
+#### Workflow Mode Advisor (Dynamic)
+
+When a user asks "which mode should I use?" or describes a situation:
+
+1. **Read `bubbles/workflows.yaml`** → scan all mode definitions under `deliveryModes:` (or the mode keys at the top level)
+2. **Match the user's goal** against each mode's `description:` field
+3. **Consider the mode's constraints** (e.g., `requireExistingImplementation`, `readOnlyAudit`, `noCodeChanges`) to filter candidates
+4. **Present the best match** with a brief explanation of why it fits
+
+**Decision heuristics** (use after dynamic discovery):
+
+| Situation | Likely Mode |
+|-----------|-------------|
+| No code changes needed | Modes with `statusCeiling: docs_updated` or `validated` |
+| Bug fix | Mode with "bugfix" or "fastlane" in name |
+| New feature from scratch | Mode with "product" or "discovery" in name/description |
+| Existing code improvement | Mode with "improve" or "existing" in name |
+| Reduce complexity only | Mode with "simplify" in name |
+| Check spec freshness | Mode with "spec-review" in name |
+| Stale artifacts / out of sync | Mode with "reconcile" in name |
+| Full rewrite | Mode with "redesign" in name |
+| Adversarial / random probing | Mode with "stochastic" or "chaos" in name |
+| Continuing work | Mode with "iterate" or "resume" in name |
+
+**Optional tags** that can be appended to most workflow commands:
+- `grillFirst: true` — pressure-test direction before planning
+- `tdd: true` — enforce red-green-first inner loop
+- `backlogExport: tasks|issues` — emit copy-ready backlog items from `bubbles.plan`
+- `socratic: true` — bounded clarification before discovery
+- `gitIsolation: true` — isolated branch/worktree
+- `autoCommit: scope|dod` — validated milestone commits
+- `maxScopeMinutes` / `maxDodMinutes` — keep scopes small
+- `microFixes: true` — narrow repair loops for failures
 
 ### 3. Health Check & Auto-Heal
 
