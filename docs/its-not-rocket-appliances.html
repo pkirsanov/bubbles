@@ -1019,6 +1019,98 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════ SHARED SKILLS ═══════════════════════════════ -->
+<div class="section-title"><img src="../icons/trinity-notebook.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Park Bylaws — Shared Skills</div>
+
+<div style="color: var(--yellow); font-style: italic; margin: 0.5rem 0 1rem 0; font-size: 0.9rem;">"Dad, that's not how that works. You have to actually run them."</div>
+
+<div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Portable procedural checklists auto-installed to every repo. Think of them as the park bylaws — posted on the community board, enforced by everyone.</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="icon"><img src="../icons/trinity-notebook.svg" alt="Trinity"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-test-integrity</div>
+      <div class="character">Trinity's Field Manual</div>
+      <div class="role">Tests are real. No fakes. No shortcuts. No greasy workarounds. Gherkin coverage, anti-mock scans, anti-false-positive scans, assertion audits, Test Plan↔DoD parity.</div>
+      <div class="quote">"Dad, that's not how that works. You have to actually run them."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/ray-lawnchair.svg" alt="Ray"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-spec-template-bdd</div>
+      <div class="character">The Spec Book</div>
+      <div class="role">Enforces spec.md adherence to template. Gherkin-style BDD scenarios. Tech-agnostic requirements. No implementation details leaking in.</div>
+      <div class="quote">"Way she goes? No. Way the SPEC goes."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/barb-keys.svg" alt="Barb"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-docker-lifecycle-governance</div>
+      <div class="character">The Lot Rules</div>
+      <div class="role">Docker resource classification, build freshness, cleanup safety, test storage isolation, stack grouping. Knows what stays and what gets cleaned.</div>
+      <div class="quote">"Jim, there are RULES about what stays and what gets cleaned."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/ted-badge.svg" alt="Ted"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-docker-port-standards</div>
+      <div class="character">The Port Authority</div>
+      <div class="role">The 10k Rule for port allocation. Dual-URL Standard. No localhost. No standard-port host mappings. You can't just park wherever you want.</div>
+      <div class="quote">"You can't just park wherever you want. There's a system."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/sam-binoculars.svg" alt="Sam"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-skill-authoring</div>
+      <div class="character">Sam's Specialties</div>
+      <div class="role">How to create or update repo-local skills. Project-agnostic. Progressive disclosure. No hardcoded hosts, ports, or URLs.</div>
+      <div class="quote">"I used to be a vet, you know. I got specialties."</div>
+    </div>
+  </div>
+</div>
+
+<!-- SKILL VOCABULARY -->
+<div style="margin-top: 1.5rem;">
+  <div style="color: var(--accent); font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem;">🗣️ Skill Vocabulary — Sunnyvale Dictionary</div>
+  <div class="gate-section">
+    <div class="gate-msg"><span class="status">🧪</span><span class="msg">"Greasy test"</span><span class="context">— passes when it shouldn't (no assertions, mocked internals, silent-pass)</span></div>
+    <div class="gate-msg"><span class="status">🧪</span><span class="msg">"Proxy assertion"</span><span class="context">— asserting status codes instead of actual behavior</span></div>
+    <div class="gate-msg"><span class="status">🧪</span><span class="msg">"Red before green"</span><span class="context">— changed behavior must show a failing test first</span></div>
+    <div class="gate-msg"><span class="status">🧪</span><span class="msg">"Trinity's checklist"</span><span class="context">— read Gherkin, read spec, identify all paths, then write tests</span></div>
+    <div class="gate-msg"><span class="status">📋</span><span class="msg">"Tech leak"</span><span class="context">— mentioning Rust, PostgreSQL, React in a spec</span></div>
+    <div class="gate-msg"><span class="status">📋</span><span class="msg">"Way the spec goes"</span><span class="context">— spec defines truth; tests validate it; implementation follows</span></div>
+    <div class="gate-msg"><span class="status">📋</span><span class="msg">"Observable behavior"</span><span class="context">— what users see, not how code is structured</span></div>
+    <div class="gate-msg"><span class="status">🐳</span><span class="msg">"Persistent volume"</span><span class="context">— sacred ground, like Ray's bottles — never cleaned by default</span></div>
+    <div class="gate-msg"><span class="status">🐳</span><span class="msg">"Ephemeral storage"</span><span class="context">— gone by morning, like Ricky's plans</span></div>
+    <div class="gate-msg"><span class="status">🐳</span><span class="msg">"Build freshness"</span><span class="context">— proving the image was built from current code, not last Tuesday</span></div>
+    <div class="gate-msg"><span class="status">🐳</span><span class="msg">"Label-aware cleanup"</span><span class="context">— prune by labels, not burning down the park</span></div>
+    <div class="gate-msg"><span class="status">🔌</span><span class="msg">"The 10k Rule"</span><span class="context">— each project gets a 10,000-port block. Stay in your lot.</span></div>
+    <div class="gate-msg"><span class="status">🔌</span><span class="msg">"Dual-URL"</span><span class="context">— lot number (internal) AND mailing address (external)</span></div>
+    <div class="gate-msg"><span class="status">🔌</span><span class="msg">"Port squatting"</span><span class="context">— mapping 5432:5432 on the host. Not allowed.</span></div>
+    <div class="gate-msg"><span class="status">🔌</span><span class="msg">"Localhost is a lie"</span><span class="context">— use 127.0.0.1, no DNS games</span></div>
+    <div class="gate-msg"><span class="status">📦</span><span class="msg">"Progressive disclosure"</span><span class="context">— SKILL.md is the field card, references/ are the textbooks</span></div>
+    <div class="gate-msg"><span class="status">📦</span><span class="msg">"Project-agnostic"</span><span class="context">— no repo names, no ports, no CLI commands. Skills travel.</span></div>
+  </div>
+</div>
+
+<!-- SKILL ALIASES -->
+<div style="margin-top: 1.5rem;">
+<table class="alias-table">
+  <tr><th>Sunnyvale Alias</th><th>Skill</th><th>Quote</th></tr>
+  <tr><td class="cmd">sunnyvale no-greasy-tests</td><td class="maps-to">bubbles-test-integrity</td><td class="quote-col">"That test is GREASY, boys."</td></tr>
+  <tr><td class="cmd">sunnyvale trinity-says</td><td class="maps-to">bubbles-test-integrity</td><td class="quote-col">"Dad, that's not how that works."</td></tr>
+  <tr><td class="cmd">sunnyvale way-the-spec-goes</td><td class="maps-to">bubbles-spec-template-bdd</td><td class="quote-col">"Way she goes? No. Way the SPEC goes."</td></tr>
+  <tr><td class="cmd">sunnyvale lot-rules</td><td class="maps-to">bubbles-docker-lifecycle-governance</td><td class="quote-col">"There are RULES about what stays."</td></tr>
+  <tr><td class="cmd">sunnyvale no-port-squatting</td><td class="maps-to">bubbles-docker-port-standards</td><td class="quote-col">"You can't just squat on standard ports."</td></tr>
+  <tr><td class="cmd">sunnyvale sams-specialties</td><td class="maps-to">bubbles-skill-authoring</td><td class="quote-col">"I used to be a vet, you know."</td></tr>
+</table>
+</div>
+
 <!-- ═══════════════════════════════ FUN MODE LOG MESSAGES ═══════════════════════════════ -->
 <div class="section-title"><img src="../icons/phil-collins-baam.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> Fun Mode — Gate Messages (BUBBLES_FUN_MODE=true)</div>
 
