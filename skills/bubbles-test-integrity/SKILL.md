@@ -21,6 +21,7 @@ Ensure every test is real, validates planned behavior from specifications, cover
 2. **Tests must be real** — every test must execute real code paths against real systems (for live categories) or real logic (for unit categories). No stubs, no fakes, no canned responses.
 3. **No shortcuts** — no partial coverage presented as complete, no reduced-scope tests presented as full validation, no proxy assertions substituting for real behavior checks.
 4. **Every Gherkin scenario must have a test** — each Given/When/Then scenario in scope artifacts maps to at least one executable test. No scenario left untested.
+5. **Scenario contracts are durable** — when `scenario-manifest.json` exists, tests must preserve the linked `SCN-*` contracts unless the scenario has been explicitly invalidated and replaced.
 
 ---
 
@@ -41,6 +42,8 @@ Before writing any test:
 ### Gate 1: Gherkin Coverage
 
 Every Gherkin scenario in scope artifacts MUST map to at least one test.
+
+When `scenario-manifest.json` exists, every `SCN-*` entry marked `regressionRequired: true` MUST map to at least one live-system test and evidence reference.
 
 **Verification:**
 ```
@@ -182,3 +185,5 @@ Does the test execute real production code?
 - `agents/bubbles_shared/critical-requirements.md`
 - `agents/bubbles_shared/evidence-rules.md`
 - `agents/bubbles_shared/scope-workflow.md`
+- `agents/bubbles_shared/feature-templates.md`
+- `docs/guides/CONTROL_PLANE_SCHEMAS.md`

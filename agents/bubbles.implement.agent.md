@@ -140,6 +140,9 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
    - Proceed only if user acknowledges or no bugs found
 6. Determine scopes to execute based on `$ADDITIONAL_CONTEXT`
 7. Create/update `{FEATURE_DIR}/state.json`
+   - Use the version 3 state model from `feature-templates.md`
+   - Maintain `policySnapshot` coherence for the effective grill/TDD/lockdown/regression/validation defaults
+   - Never write `certification.*`, `certification.status`, or final `status: "done"` from this agent
 
 ### Phase 1: Scope Preparation
 
@@ -152,7 +155,9 @@ For each scope N:
 - Identify the targeted RED proof for each new or fixed behavior before implementation begins (failing test, failing reproduction, or explicit gap assertion)
 - If UI changes exist, confirm UI scenario matrix is defined and mapped to e2e-ui tests
 - **If scope modifies dashboard/frontend code:** note that Docker Build Freshness Policy applies (see `agent-common.md` → Docker Build Freshness Policy). After implementation, rebuild with `--no-cache` and verify via Gate 9.
-- Update `state.json`: `currentScope`, `currentPhase: implement`
+- Update `state.json.execution`: `currentScope`, `currentPhase: implement`
+- If behavior changes, ensure the matching entries in `scenario-manifest.json` exist before claiming the scope is ready for validation
+- If validation routes work back, consume `reworkQueue` / transition packet context instead of silently clearing findings
 
 During execution:
 - Capture RED evidence before changing the implementation whenever behavior is being added or repaired.
@@ -175,6 +180,8 @@ If any required check fails, do not update `state.json` or report success. Fix t
 ## Phase Completion Recording (MANDATORY)
 
 Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/scope-workflow.md). Phase name: `"implement"`. Agent: `bubbles.implement`. Record ONLY after Tier 1 + Tier 2 pass. Gate G027 applies.
+
+Record implementation as an execution claim (`execution.completedPhaseClaims`) or via workflow-owned orchestration history. Do NOT self-certify the phase inside `certification.certifiedCompletedPhases`.
 
 ---
 

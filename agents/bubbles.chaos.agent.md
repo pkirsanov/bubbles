@@ -400,7 +400,7 @@ For each finding at P0, P1, or P2 severity:
 | `scopes.md` | Single scope for the fix with DoD checklist (see Failing Test Traceability below) |
 | `report.md` | Raw chaos execution evidence (terminal output, action trace, request/response) |
 | `uservalidation.md` | Default checked items for user to verify post-fix |
-| `state.json` | `{"status": "open", "priority": "P{N}", "source": "bubbles.chaos", "seed": {seed}, "created": "{timestamp}"}` |
+| `state.json` | Version 3 control-plane state with `workflowMode: "chaos-hardening"`, `status: "in_progress"`, `certification.status: "in_progress"`, `execution.activeAgent: "bubbles.chaos"`, `execution.currentPhase: "chaos"`, plus `priority`, `source`, `seed`, `createdAt`, and empty transition/rework queues |
 
 ### Failing Test Traceability (MANDATORY in every bug scopes.md)
 

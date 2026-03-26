@@ -92,7 +92,7 @@ In `deep`/`full` mode, command green status alone is insufficient. Validation MU
 | 2.12 | Artifact Lint | `artifact-lint.sh` | Exit 0, 0 issues |
 | 2.13 | Traceability Guard | `traceability-guard.sh` | Every planned scenario maps to concrete tests and report evidence |
 | 2.14 | Done-Spec Audit (full mode) | `done-spec-audit.sh` | All done specs pass lint |
-| 2.15 | Phase-Scope Coherence (G027) | Guard script Check 15 | completedPhases matches completedScopes |
+| 2.15 | Phase-Scope Coherence (G027) | Guard script Check 15 | execution claims / certified phases match certified completed scopes |
 | 2.16 | Implementation Reality Scan (G028) | `implementation-reality-scan.sh` | 0 violations |
 | 2.17 | Artifact Freshness Guard (G052) | `artifact-freshness-guard.sh` | Superseded content isolated; superseded scopes non-executable |
 | 2.18 | Implementation Delta Evidence (G053) | Guard script Check 13B | Report artifacts include git-backed implementation proof with non-artifact file paths |
@@ -392,11 +392,14 @@ done
 Verify `state.json` reflects reality:
 
 1. **Status matches scopes:** If state.json says `"done"`, ALL scopes MUST be "Done" with ALL DoD items `[x]`.
-2. **completedScopes matches reality:** Every scope listed in `completedScopes` MUST actually have status "Done" in scope files.
-3. **completedPhases coherent:** If `completedPhases` includes `"implement"` or `"test"`, `completedScopes` MUST NOT be empty.
-4. **No stale done:** If any scope has unchecked DoD items, spec status MUST NOT be `"done"`.
-5. **DoD format integrity (G041):** ALL DoD items MUST use checkbox format (`- [ ]` or `- [x]`). If any item uses `- (deferred)`, `- ~~text~~`, or unformatted list items inside a DoD section, it is format manipulation — report as a **CRITICAL finding**.
-6. **Scope status canonicality (G041):** ALL scope statuses MUST be one of: `Not Started`, `In Progress`, `Done`, `Blocked`. Invented statuses (e.g., "Deferred", "Deferred — Planned Improvement", "Skipped") are manipulation — report as a **CRITICAL finding**.
+2. **Certification owns completion:** `certification.status`, `certification.completedScopes`, and `certification.certifiedCompletedPhases` are the authoritative fields. The top-level compatibility `status` must mirror `certification.status`, not contradict it.
+3. **Certified scopes match reality:** Every scope listed in `certification.completedScopes` MUST actually have status "Done" in scope files.
+4. **Execution/certification phases coherent:** If `execution.completedPhaseClaims` or `certification.certifiedCompletedPhases` includes `"implement"` or `"test"`, `certification.completedScopes` MUST NOT be empty.
+5. **Policy provenance present:** `policySnapshot` must exist and record effective grill/TDD/auto-commit/lockdown/regression/validation values with provenance.
+6. **Scenario contract state present:** `scenario-manifest.json` must exist for scoped Gherkin behavior, and `transitionRequests`/`reworkQueue` must be closed before validate certifies completion.
+7. **No stale done:** If any scope has unchecked DoD items, spec status MUST NOT be `"done"`.
+8. **DoD format integrity (G041):** ALL DoD items MUST use checkbox format (`- [ ]` or `- [x]`). If any item uses `- (deferred)`, `- ~~text~~`, or unformatted list items inside a DoD section, it is format manipulation — report as a **CRITICAL finding**.
+9. **Scope status canonicality (G041):** ALL scope statuses MUST be one of: `Not Started`, `In Progress`, `Done`, `Blocked`. Invented statuses (e.g., "Deferred", "Deferred — Planned Improvement", "Skipped") are manipulation — report as a **CRITICAL finding**.
 
 **If any state incoherence → validation FAILS.**
 
@@ -563,7 +566,7 @@ If NO unchecked items:
 | Artifact Lint | ✅/❌ | [Lint exit code + issue count] |
 | Traceability Guard | ✅/❌ | [scenario → row → test file → report evidence status] |
 | Done-Spec Audit | ✅/❌/⚪ | [done specs pass/fail count — or N/A if single-feature] |
-| Phase-Scope Coherence (G027) | ✅/❌ | [completedPhases matches completedScopes — from guard Check 15] |
+| Phase-Scope Coherence (G027) | ✅/❌ | [execution claims / certified phases match certified completed scopes — from guard Check 15] |
 | Implementation Reality (G028) | ✅/❌ | [reality scan violations — 0 required] |
 | Scopes | ✅/❌/⚪ | [if scopes.md exists: X/Y scopes Done; else N/A] |
 | User Validation | ✅/❌/⚪ | [X/Y items checked; unchecked = user-reported regressions] |

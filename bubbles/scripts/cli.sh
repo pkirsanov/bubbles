@@ -12,6 +12,7 @@
 #   specs [--range M-N] [--cat X] List/filter specs (categories: business, infra, all)
 #   blocked                       Show only blocked specs with reasons
 #   dod <spec>                    Show unchecked DoD items for a spec
+#   policy <subcommand>           Manage control-plane defaults and provenance
 #   session                       Show current session state
 #   lint <spec>                   Run artifact lint on a spec
 #   agnosticity [--staged]        Check portable Bubbles surfaces for drift
@@ -41,6 +42,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SPECS_DIR="$REPO_ROOT/specs"
 SESSION_FILE="$REPO_ROOT/.specify/memory/bubbles.session.json"
+CONTROL_PLANE_CONFIG="$REPO_ROOT/.specify/memory/bubbles.config.json"
+CONTROL_PLANE_METRICS_DIR="$REPO_ROOT/.specify/metrics"
+CONTROL_PLANE_METRICS_FILE="$CONTROL_PLANE_METRICS_DIR/events.jsonl"
 
 # ── Colors ──────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
@@ -94,6 +98,339 @@ json_field() {
     | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || true
 }
 
+default_control_plane_config() {
+  cat << 'EOF'
+{
+  "version": 2,
+  "defaults": {
+    "grill": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "defaultForModes": ["bugfix-fastlane", "chaos-hardening"],
+      "source": "repo-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "lockdown": {
+      "default": false,
+      "requireGrillForInvalidation": true,
+      "source": "repo-default"
+    },
+    "regression": {
+      "immutability": "protected-scenarios",
+      "source": "repo-default"
+    },
+    "validation": {
+      "certificationRequired": true,
+      "source": "repo-default"
+    }
+  },
+  "modeOverrides": {
+    "bugfix-fastlane": {
+      "tdd": {
+        "mode": "scenario-first",
+        "source": "workflow-forced"
+      }
+    },
+    "chaos-hardening": {
+      "tdd": {
+        "mode": "scenario-first",
+        "source": "workflow-forced"
+      }
+    }
+  },
+  "metrics": {
+    "enabled": false
+  }
+}
+EOF
+}
+
+ensure_control_plane_config() {
+  mkdir -p "$(dirname "$CONTROL_PLANE_CONFIG")" "$CONTROL_PLANE_METRICS_DIR"
+  if [[ ! -f "$CONTROL_PLANE_CONFIG" ]]; then
+    default_control_plane_config > "$CONTROL_PLANE_CONFIG"
+  fi
+}
+
+config_string_value() {
+  local section="$1"
+  local key="$2"
+  local default_value="$3"
+  local file="$4"
+  local value
+
+  value="$({
+    grep -A8 "\"$section\"" "$file" 2>/dev/null \
+      | grep -m1 "\"$key\"" \
+      | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/'
+  } || true)"
+
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' "$default_value"
+  fi
+}
+
+config_bool_value() {
+  local section="$1"
+  local key="$2"
+  local default_value="$3"
+  local file="$4"
+  local value
+
+  value="$({
+    grep -A8 "\"$section\"" "$file" 2>/dev/null \
+      | grep -m1 "\"$key\"" \
+      | sed -E 's/.*:[[:space:]]*(true|false).*/\1/'
+  } || true)"
+
+  if [[ "$value" == "true" || "$value" == "false" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' "$default_value"
+  fi
+}
+
+config_metrics_enabled_value() {
+  local file="$1"
+  local legacy_value
+  local value
+
+  legacy_value="$({
+    grep -m1 -E '"metrics"[[:space:]]*:[[:space:]]*(true|false)' "$file" 2>/dev/null \
+      | sed -E 's/.*:[[:space:]]*(true|false).*/\1/'
+  } || true)"
+  if [[ "$legacy_value" == "true" || "$legacy_value" == "false" ]]; then
+    printf '%s' "$legacy_value"
+    return 0
+  fi
+
+  value="$({
+    grep -A3 '"metrics"' "$file" 2>/dev/null \
+      | grep -m1 '"enabled"' \
+      | sed -E 's/.*:[[:space:]]*(true|false).*/\1/'
+  } || true)"
+  if [[ "$value" == "true" || "$value" == "false" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' 'false'
+  fi
+}
+
+load_control_plane_config() {
+  ensure_control_plane_config
+
+  CFG_GRILL_MODE="$(config_string_value grill mode off "$CONTROL_PLANE_CONFIG")"
+  CFG_GRILL_SOURCE="$(config_string_value grill source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_TDD_MODE="$(config_string_value tdd mode scenario-first "$CONTROL_PLANE_CONFIG")"
+  CFG_TDD_SOURCE="$(config_string_value tdd source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_AUTOCOMMIT_MODE="$(config_string_value autoCommit mode off "$CONTROL_PLANE_CONFIG")"
+  CFG_AUTOCOMMIT_SOURCE="$(config_string_value autoCommit source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_LOCKDOWN_DEFAULT="$(config_bool_value lockdown default false "$CONTROL_PLANE_CONFIG")"
+  CFG_LOCKDOWN_REQUIRE_GRILL="$(config_bool_value lockdown requireGrillForInvalidation true "$CONTROL_PLANE_CONFIG")"
+  CFG_LOCKDOWN_SOURCE="$(config_string_value lockdown source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_REGRESSION_IMMUTABILITY="$(config_string_value regression immutability protected-scenarios "$CONTROL_PLANE_CONFIG")"
+  CFG_REGRESSION_SOURCE="$(config_string_value regression source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_VALIDATION_CERT_REQUIRED="$(config_bool_value validation certificationRequired true "$CONTROL_PLANE_CONFIG")"
+  CFG_VALIDATION_SOURCE="$(config_string_value validation source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_METRICS_ENABLED="$(config_metrics_enabled_value "$CONTROL_PLANE_CONFIG")"
+}
+
+save_control_plane_config() {
+  local tmp_file="$CONTROL_PLANE_CONFIG.tmp"
+
+  mkdir -p "$(dirname "$CONTROL_PLANE_CONFIG")" "$CONTROL_PLANE_METRICS_DIR"
+  cat > "$tmp_file" << EOF
+{
+  "version": 2,
+  "defaults": {
+    "grill": {
+      "mode": "$CFG_GRILL_MODE",
+      "source": "$CFG_GRILL_SOURCE"
+    },
+    "tdd": {
+      "mode": "$CFG_TDD_MODE",
+      "defaultForModes": ["bugfix-fastlane", "chaos-hardening"],
+      "source": "$CFG_TDD_SOURCE"
+    },
+    "autoCommit": {
+      "mode": "$CFG_AUTOCOMMIT_MODE",
+      "source": "$CFG_AUTOCOMMIT_SOURCE"
+    },
+    "lockdown": {
+      "default": $CFG_LOCKDOWN_DEFAULT,
+      "requireGrillForInvalidation": $CFG_LOCKDOWN_REQUIRE_GRILL,
+      "source": "$CFG_LOCKDOWN_SOURCE"
+    },
+    "regression": {
+      "immutability": "$CFG_REGRESSION_IMMUTABILITY",
+      "source": "$CFG_REGRESSION_SOURCE"
+    },
+    "validation": {
+      "certificationRequired": $CFG_VALIDATION_CERT_REQUIRED,
+      "source": "$CFG_VALIDATION_SOURCE"
+    }
+  },
+  "modeOverrides": {
+    "bugfix-fastlane": {
+      "tdd": {
+        "mode": "scenario-first",
+        "source": "workflow-forced"
+      }
+    },
+    "chaos-hardening": {
+      "tdd": {
+        "mode": "scenario-first",
+        "source": "workflow-forced"
+      }
+    }
+  },
+  "metrics": {
+    "enabled": $CFG_METRICS_ENABLED
+  }
+}
+EOF
+  mv "$tmp_file" "$CONTROL_PLANE_CONFIG"
+}
+
+default_value_for_policy_path() {
+  local path="$1"
+
+  case "$path" in
+    grill.mode) printf '%s' 'off' ;;
+    grill.source) printf '%s' 'repo-default' ;;
+    tdd.mode) printf '%s' 'scenario-first' ;;
+    tdd.source) printf '%s' 'repo-default' ;;
+    autoCommit.mode) printf '%s' 'off' ;;
+    autoCommit.source) printf '%s' 'repo-default' ;;
+    lockdown.default) printf '%s' 'false' ;;
+    lockdown.requireGrillForInvalidation) printf '%s' 'true' ;;
+    lockdown.source) printf '%s' 'repo-default' ;;
+    regression.immutability) printf '%s' 'protected-scenarios' ;;
+    regression.source) printf '%s' 'repo-default' ;;
+    validation.certificationRequired) printf '%s' 'true' ;;
+    validation.source) printf '%s' 'repo-default' ;;
+    metrics.enabled) printf '%s' 'false' ;;
+    bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode) printf '%s' 'scenario-first' ;;
+    bugfix-fastlane.tdd.source|chaos-hardening.tdd.source) printf '%s' 'workflow-forced' ;;
+    *) return 1 ;;
+  esac
+}
+
+read_control_plane_setting() {
+  local path="$1"
+
+  case "$path" in
+    grill.mode) printf '%s' "$CFG_GRILL_MODE" ;;
+    grill.source) printf '%s' "$CFG_GRILL_SOURCE" ;;
+    tdd.mode) printf '%s' "$CFG_TDD_MODE" ;;
+    tdd.source) printf '%s' "$CFG_TDD_SOURCE" ;;
+    autoCommit.mode) printf '%s' "$CFG_AUTOCOMMIT_MODE" ;;
+    autoCommit.source) printf '%s' "$CFG_AUTOCOMMIT_SOURCE" ;;
+    lockdown.default) printf '%s' "$CFG_LOCKDOWN_DEFAULT" ;;
+    lockdown.requireGrillForInvalidation) printf '%s' "$CFG_LOCKDOWN_REQUIRE_GRILL" ;;
+    lockdown.source) printf '%s' "$CFG_LOCKDOWN_SOURCE" ;;
+    regression.immutability) printf '%s' "$CFG_REGRESSION_IMMUTABILITY" ;;
+    regression.source) printf '%s' "$CFG_REGRESSION_SOURCE" ;;
+    validation.certificationRequired) printf '%s' "$CFG_VALIDATION_CERT_REQUIRED" ;;
+    validation.source) printf '%s' "$CFG_VALIDATION_SOURCE" ;;
+    metrics.enabled) printf '%s' "$CFG_METRICS_ENABLED" ;;
+    bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode) printf '%s' 'scenario-first' ;;
+    bugfix-fastlane.tdd.source|chaos-hardening.tdd.source) printf '%s' 'workflow-forced' ;;
+    *) return 1 ;;
+  esac
+}
+
+validate_policy_source() {
+  local source="$1"
+  case "$source" in
+    user-request|repo-default|workflow-forced|spec-lockdown) return 0 ;;
+    *) die "Invalid policy source: $source. Allowed: user-request, repo-default, workflow-forced, spec-lockdown" ;;
+  esac
+}
+
+validate_boolean_literal() {
+  local value="$1"
+  case "$value" in
+    true|false) return 0 ;;
+    *) die "Invalid boolean value: $value. Use true or false." ;;
+  esac
+}
+
+validate_policy_value() {
+  local path="$1"
+  local value="$2"
+
+  case "$path" in
+    grill.mode)
+      case "$value" in
+        off|on-demand|required-on-ambiguity|required-for-lockdown) ;;
+        *) die "Invalid grill.mode: $value" ;;
+      esac
+      ;;
+    tdd.mode)
+      case "$value" in
+        scenario-first|off) ;;
+        *) die "Invalid tdd.mode: $value" ;;
+      esac
+      ;;
+    autoCommit.mode)
+      case "$value" in
+        off|scope|dod) ;;
+        *) die "Invalid autoCommit.mode: $value" ;;
+      esac
+      ;;
+    lockdown.default|lockdown.requireGrillForInvalidation|validation.certificationRequired|metrics.enabled)
+      validate_boolean_literal "$value"
+      ;;
+    regression.immutability)
+      case "$value" in
+        protected-scenarios|mutable-by-spec-change) ;;
+        *) die "Invalid regression.immutability: $value" ;;
+      esac
+      ;;
+    grill.source|tdd.source|autoCommit.source|lockdown.source|regression.source|validation.source)
+      validate_policy_source "$value"
+      ;;
+    bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode|bugfix-fastlane.tdd.source|chaos-hardening.tdd.source)
+      die "Mode overrides are workflow-forced and read-only: $path"
+      ;;
+    *)
+      die "Unknown policy path: $path"
+      ;;
+  esac
+}
+
+write_control_plane_setting() {
+  local path="$1"
+  local value="$2"
+
+  case "$path" in
+    grill.mode) CFG_GRILL_MODE="$value" ;;
+    grill.source) CFG_GRILL_SOURCE="$value" ;;
+    tdd.mode) CFG_TDD_MODE="$value" ;;
+    tdd.source) CFG_TDD_SOURCE="$value" ;;
+    autoCommit.mode) CFG_AUTOCOMMIT_MODE="$value" ;;
+    autoCommit.source) CFG_AUTOCOMMIT_SOURCE="$value" ;;
+    lockdown.default) CFG_LOCKDOWN_DEFAULT="$value" ;;
+    lockdown.requireGrillForInvalidation) CFG_LOCKDOWN_REQUIRE_GRILL="$value" ;;
+    lockdown.source) CFG_LOCKDOWN_SOURCE="$value" ;;
+    regression.immutability) CFG_REGRESSION_IMMUTABILITY="$value" ;;
+    regression.source) CFG_REGRESSION_SOURCE="$value" ;;
+    validation.certificationRequired) CFG_VALIDATION_CERT_REQUIRED="$value" ;;
+    validation.source) CFG_VALIDATION_SOURCE="$value" ;;
+    metrics.enabled) CFG_METRICS_ENABLED="$value" ;;
+    *) die "Unknown policy path: $path" ;;
+  esac
+}
+
 # Classify a spec as business or infra by reading spec.md title/first lines
 classify_spec() {
   local spec_dir="$1"
@@ -122,6 +459,7 @@ Commands:
   specs [--range M-N] [--cat X] List/filter specs
   blocked                       Show only blocked specs with reasons
   dod <spec>                    Show unchecked DoD items for a spec
+  policy <subcommand>           Manage control-plane defaults (status|get|set|reset)
   session                       Show current session state
   lint <spec>                   Run artifact lint on a spec
   agnosticity [--staged]        Check portable Bubbles surfaces for drift
@@ -937,53 +1275,150 @@ GATEEOF
   esac
 }
 
+cmd_policy() {
+  local subcmd="${1:-status}"
+  shift || true
+
+  load_control_plane_config
+
+  case "$subcmd" in
+    status)
+      echo "Control-plane policy registry: $CONTROL_PLANE_CONFIG"
+      echo ""
+      echo "Defaults:"
+      echo "  grill.mode = $CFG_GRILL_MODE (source=$CFG_GRILL_SOURCE)"
+      echo "  tdd.mode = $CFG_TDD_MODE (source=$CFG_TDD_SOURCE)"
+      echo "  autoCommit.mode = $CFG_AUTOCOMMIT_MODE (source=$CFG_AUTOCOMMIT_SOURCE)"
+      echo "  lockdown.default = $CFG_LOCKDOWN_DEFAULT (source=$CFG_LOCKDOWN_SOURCE)"
+      echo "  lockdown.requireGrillForInvalidation = $CFG_LOCKDOWN_REQUIRE_GRILL"
+      echo "  regression.immutability = $CFG_REGRESSION_IMMUTABILITY (source=$CFG_REGRESSION_SOURCE)"
+      echo "  validation.certificationRequired = $CFG_VALIDATION_CERT_REQUIRED (source=$CFG_VALIDATION_SOURCE)"
+      echo ""
+      echo "Workflow-forced overrides:"
+      echo "  bugfix-fastlane.tdd.mode = scenario-first (source=workflow-forced)"
+      echo "  chaos-hardening.tdd.mode = scenario-first (source=workflow-forced)"
+      echo ""
+      echo "Auxiliary settings:"
+      echo "  metrics.enabled = $CFG_METRICS_ENABLED"
+      ;;
+    get)
+      local path="${1:-}"
+      [[ -n "$path" ]] || die "Usage: bubbles policy get <path>"
+      if ! read_control_plane_setting "$path"; then
+        die "Unknown policy path: $path"
+      fi
+      echo ""
+      ;;
+    set)
+      local path="${1:-}"
+      local value="${2:-}"
+      local source="repo-default"
+
+      [[ -n "$path" && -n "$value" ]] || die "Usage: bubbles policy set <path> <value> [--source <provenance>]"
+      shift 2
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --source)
+            shift
+            [[ $# -gt 0 ]] || die "Missing value after --source"
+            source="$1"
+            ;;
+          *) die "Unknown option for bubbles policy set: $1" ;;
+        esac
+        shift
+      done
+
+      validate_policy_value "$path" "$value"
+      validate_policy_source "$source"
+
+      write_control_plane_setting "$path" "$value"
+      case "$path" in
+        grill.mode) CFG_GRILL_SOURCE="$source" ;;
+        tdd.mode) CFG_TDD_SOURCE="$source" ;;
+        autoCommit.mode) CFG_AUTOCOMMIT_SOURCE="$source" ;;
+        lockdown.default|lockdown.requireGrillForInvalidation) CFG_LOCKDOWN_SOURCE="$source" ;;
+        regression.immutability) CFG_REGRESSION_SOURCE="$source" ;;
+        validation.certificationRequired) CFG_VALIDATION_SOURCE="$source" ;;
+      esac
+      save_control_plane_config
+      echo "✅ Updated $path = $value"
+      ;;
+    reset)
+      local path="${1:-}"
+
+      if [[ -z "$path" ]]; then
+        ensure_control_plane_config
+        default_control_plane_config > "$CONTROL_PLANE_CONFIG"
+        echo "✅ Reset control-plane policy registry to defaults"
+        return 0
+      fi
+
+      default_value="$(default_value_for_policy_path "$path" || true)"
+      [[ -n "$default_value" ]] || die "Unknown policy path: $path"
+
+      validate_policy_value "$path" "$default_value"
+      write_control_plane_setting "$path" "$default_value"
+      case "$path" in
+        grill.mode|grill.source) CFG_GRILL_SOURCE="repo-default" ;;
+        tdd.mode|tdd.source) CFG_TDD_SOURCE="repo-default" ;;
+        autoCommit.mode|autoCommit.source) CFG_AUTOCOMMIT_SOURCE="repo-default" ;;
+        lockdown.default|lockdown.requireGrillForInvalidation|lockdown.source) CFG_LOCKDOWN_SOURCE="repo-default" ;;
+        regression.immutability|regression.source) CFG_REGRESSION_SOURCE="repo-default" ;;
+        validation.certificationRequired|validation.source) CFG_VALIDATION_SOURCE="repo-default" ;;
+      esac
+      save_control_plane_config
+      echo "✅ Reset $path to $(read_control_plane_setting "$path")"
+      ;;
+    *)
+      die "Unknown policy subcommand: $subcmd. Try: status, get, set, reset"
+      ;;
+  esac
+}
+
 cmd_metrics() {
   local subcmd="${1:-status}"
-  local config_file="$REPO_ROOT/.specify/memory/bubbles.config.json"
-  local metrics_dir="$REPO_ROOT/.specify/metrics"
-  local metrics_file="$metrics_dir/events.jsonl"
+  load_control_plane_config
 
   case "$subcmd" in
     enable)
-      mkdir -p "$metrics_dir" "$(dirname "$config_file")"
-      echo '{"metrics": true}' > "$config_file"
-      echo "✅ Metrics enabled. Events will be logged to $metrics_file"
+      CFG_METRICS_ENABLED="true"
+      save_control_plane_config
+      echo "✅ Metrics enabled. Events will be logged to $CONTROL_PLANE_METRICS_FILE"
       ;;
     disable)
-      if [[ -f "$config_file" ]]; then
-        echo '{"metrics": false}' > "$config_file"
-      fi
+      CFG_METRICS_ENABLED="false"
+      save_control_plane_config
       echo "✅ Metrics disabled. Existing data preserved."
       ;;
     status)
-      if [[ -f "$config_file" ]] && grep -q '"metrics".*true' "$config_file" 2>/dev/null; then
+      if [[ "$CFG_METRICS_ENABLED" == "true" ]]; then
         local count=0
-        [[ -f "$metrics_file" ]] && count=$(wc -l < "$metrics_file")
+        [[ -f "$CONTROL_PLANE_METRICS_FILE" ]] && count=$(wc -l < "$CONTROL_PLANE_METRICS_FILE")
         echo "Metrics: ENABLED ($count events collected)"
       else
         echo "Metrics: DISABLED (run: bubbles metrics enable)"
       fi
       ;;
     summary)
-      if [[ ! -f "$metrics_file" ]]; then
+      if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then
         echo "No metrics data. Enable with: bubbles metrics enable"
         return
       fi
       echo "Metrics Summary:"
-      echo "  Total events: $(wc -l < "$metrics_file")"
-      echo "  Gate checks: $(grep -c '"type":"gate_check"' "$metrics_file" 2>/dev/null || echo 0)"
-      echo "  Phase completions: $(grep -c '"type":"phase_complete"' "$metrics_file" 2>/dev/null || echo 0)"
+      echo "  Total events: $(wc -l < "$CONTROL_PLANE_METRICS_FILE")"
+      echo "  Gate checks: $(grep -c '"type":"gate_check"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || echo 0)"
+      echo "  Phase completions: $(grep -c '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || echo 0)"
       ;;
     gates)
-      if [[ ! -f "$metrics_file" ]]; then echo "No data."; return; fi
+      if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
       echo "Gate failure frequency:"
-      grep '"type":"gate_check".*"result":"fail"' "$metrics_file" 2>/dev/null \
+      grep '"type":"gate_check".*"result":"fail"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null \
         | grep -oE '"gate":"[^"]*"' | sort | uniq -c | sort -rn || echo "  No failures recorded"
       ;;
     agents)
-      if [[ ! -f "$metrics_file" ]]; then echo "No data."; return; fi
+      if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
       echo "Agent invocations:"
-      grep '"type":"phase_complete"' "$metrics_file" 2>/dev/null \
+      grep '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null \
         | grep -oE '"agent":"[^"]*"' | sort | uniq -c | sort -rn || echo "  No invocations recorded"
       ;;
     *) die "Unknown metrics subcommand: $subcmd. Try: enable, disable, status, summary, gates, agents" ;;
@@ -1108,6 +1543,7 @@ main() {
     specs|list)         cmd_specs "$@" ;;
     blocked)            cmd_blocked "$@" ;;
     dod)                cmd_dod "$@" ;;
+    policy)             cmd_policy "$@" ;;
     session)            cmd_session "$@" ;;
     lint)               cmd_lint "$@" ;;
     agnosticity)        cmd_agnosticity "$@" ;;

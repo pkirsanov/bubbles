@@ -15,7 +15,7 @@ Use workflow modes after review when you already know you want follow-through wo
 Current assessment: review still does not need its own separate workflow family, but existing-feature work now splits more clearly: use `improve-existing` for evolutionary improvements, `reconcile-to-doc` for stale state cleanup, and `redesign-existing` when requirements, UX, design, and scopes all need reconciliation before a major rewrite.
 
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
-- `grillFirst: true` inserts `bubbles.grill` before analysis, selection, or bootstrap so weak assumptions get challenged early.
+- `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` inserts or requires `bubbles.grill` before analysis, selection, bootstrap, or locked-behavior invalidation so weak assumptions get challenged early.
 - `tdd: true` forces a red-green-first implementation loop for changed behavior after the normal planning and scenario gates are already satisfied.
 - `backlogExport: tasks|issues` forwards backlog-ready task or issue output preferences to `bubbles.plan`.
 - `socratic: true` with `socraticQuestions: <1-5>` enables a bounded clarification loop before discovery/bootstrap work.

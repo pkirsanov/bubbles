@@ -133,7 +133,19 @@ Real implementation requires real delegation, query, command, or upstream execut
 `state.json` is derived state, never aspirational state.
 
 - `status` must match artifact reality
-- `completedScopes` must match actual done scopes
-- `completedPhases` must not get ahead of actual completed work
+- `certification.completedScopes` must match actual done scopes
+- `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases` must not get ahead of actual completed work
+- `policySnapshot` must record the effective grill, TDD, lockdown, regression, and validation settings with source provenance
+- `transitionRequests` and `reworkQueue` must be closed before validate certifies completion
+- `scenario-manifest.json` must cover stable `SCN-*` IDs for changed user-visible behavior
 
 If state is stale, lower it immediately.
+
+## Validate-Owned Certification
+
+Only `bubbles.validate` may certify completion state. Other agents submit execution claims and transition requests.
+
+- Only `bubbles.validate` may write `certification.status`, `certification.completedScopes`, `certification.certifiedCompletedPhases`, `certification.scopeProgress`, or `certification.lockdownState`
+- Other agents may write `execution.*` fields (current phase, active agent, execution claims)
+- The top-level `status` field mirrors `certification.status` and must not contradict it
+- Agents MUST NOT self-promote to `done`; they route the promotion request through validate

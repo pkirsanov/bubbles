@@ -47,8 +47,15 @@ for state_file in $(find "$SPECS_DIR" -maxdepth 2 -name "state.json" -not -path 
   spec_dir="$(dirname "$state_file")"
   spec_name="$(basename "$spec_dir")"
 
-  # Extract status
-  status="$(grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || echo "unknown")"
+  # Extract status (prefer certification.status when present)
+  status="$({
+    grep -A12 '"certification"' "$state_file" 2>/dev/null \
+      | grep -m1 '"status"' \
+      | sed -E 's/.*"status"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
+  } || true)"
+  if [[ -z "$status" ]]; then
+    status="$(grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || echo "unknown")"
+  fi
 
   # Extract workflow mode
   mode="$(grep -oE '"workflowMode"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || true)"
@@ -56,11 +63,18 @@ for state_file in $(find "$SPECS_DIR" -maxdepth 2 -name "state.json" -not -path 
     mode="$(grep -oE '"mode"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || echo "-")"
   fi
 
-  # Count completed scopes
-  completed_scopes="$(grep -oE '"completedScopes"[[:space:]]*:[[:space:]]*\[' "$state_file" 2>/dev/null | head -1 || true)"
-  if [[ -n "$completed_scopes" ]]; then
-    done_count="$(awk '/"completedScopes"/{capture=1} capture{print} capture && /\]/{exit}' "$state_file" | grep -c '"' || echo "0")"
-    done_count=$((done_count / 2))  # Each string has opening and closing quote pair
+  # Count completed scopes (prefer certification.completedScopes when present)
+  completed_scopes_block="$({
+    grep -A40 '"certification"' "$state_file" 2>/dev/null \
+      | awk '/"completedScopes"/{capture=1} capture{print} capture && /\]/{exit}'
+  } || true)"
+  if [[ -z "$completed_scopes_block" ]]; then
+    completed_scopes_block="$({
+      awk '/"completedScopes"/{capture=1} capture{print} capture && /\]/{exit}' "$state_file"
+    } || true)"
+  fi
+  if [[ -n "$completed_scopes_block" ]]; then
+    done_count="$(echo "$completed_scopes_block" | grep -cE '"[^"]+"' || echo "0")"
   else
     done_count=0
   fi

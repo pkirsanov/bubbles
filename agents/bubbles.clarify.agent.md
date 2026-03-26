@@ -63,7 +63,7 @@ When the user provides free-text input WITHOUT structured parameters, infer inte
 
 ## ⚠️ CLARIFICATION MANDATE
 
-This prompt performs a **Spec/Design/Scopes consistency clarification pass**, similar in intent to `/speckit.clarify`, but specifically aimed at **scope-driven delivery** (`{FEATURE_DIR}/scopes.md`).
+This prompt performs a **Spec/Design/Scopes consistency clarification pass** aimed at **scope-driven delivery** (`{FEATURE_DIR}/scopes.md`).
 
 Goals:
 - Identify **missing specs implied by design**

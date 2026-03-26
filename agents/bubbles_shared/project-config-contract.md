@@ -1,4 +1,4 @@
-<!-- governance-version: 2.1.0 -->
+<!-- governance-version: 3.0.0 -->
 # Project Configuration Contract (Cross-Project)
 
 > **This document defines the interface between the Bubbles agent framework (project-agnostic) and any specific project that uses Bubbles.** Every project MUST supply the values defined here. Bubbles agents MUST read these values via indirection — never hardcode project-specific details.
@@ -358,8 +358,8 @@ Add these items to the project's anti-fabrication checklist:
 [ ] ALL scope statuses in scopes.md or scopes/*/scope.md are "Done"
 [ ] ALL DoD items in scopes.md or scopes/*/scope.md are checked [x]
 [ ] Artifact lint passes → exits 0
-[ ] completedPhases in state.json includes ALL mode-required phases
-[ ] completedScopes in state.json matches scopes marked Done
+[ ] execution.completedPhaseClaims / certification.certifiedCompletedPhases in state.json include ALL mode-required phases
+[ ] certification.completedScopes in state.json matches scopes marked Done
 ```
 
 #### 4. Docker Bundle Freshness Configuration (if project has frontend)

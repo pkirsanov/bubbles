@@ -82,6 +82,32 @@ json_first_string() {
     | sed -E 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
 }
 
+json_first_number() {
+  local key="$1"
+  local file="$2"
+  if [[ ! -f "$file" ]]; then
+    return 0
+  fi
+
+  grep -Eo '"'"$key"'"[[:space:]]*:[[:space:]]*[0-9]+' "$file" \
+    | head -n 1 \
+    | sed -E 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*([0-9]+)/\1/'
+}
+
+extract_array_block() {
+  local array_key="$1"
+  local file="$2"
+  awk '/"'"$array_key"'"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$file"
+}
+
+extract_nested_array_block() {
+  local parent_key="$1"
+  local array_key="$2"
+  local file="$3"
+  grep -A60 '"'"$parent_key"'"' "$file" 2>/dev/null \
+    | awk '/"'"$array_key"'"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
+}
+
 detect_scope_layout() {
   local state_layout=""
   state_layout="$(json_first_string "scopeLayout" "$feature_dir/state.json" || true)"
@@ -288,9 +314,14 @@ if [[ -f "$uservalidation_file" ]]; then
 fi
 
 state_file="$feature_dir/state.json"
+state_version=""
 state_status=""
+state_certification_status=""
 state_workflow_mode=""
 state_completed_phases_block=""
+state_execution_phase_claims_block=""
+state_certified_completed_phases_block=""
+state_completed_scopes_block=""
 wi_parity_present="false"
 wi_canonical_count=""
 wi_provisional_count=""
@@ -299,9 +330,16 @@ wi_migration_status=""
 wi_migration_source=""
 wi_trace_matrix=""
 if [[ -f "$state_file" ]]; then
+  state_version="$(json_first_number "version" "$state_file" || true)"
   state_status="$({
     grep -Eo '"status"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" \
       | head -n 1 \
+      | sed -E 's/.*"status"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
+  } || true)"
+
+  state_certification_status="$({
+    grep -A12 '"certification"' "$state_file" 2>/dev/null \
+      | grep -m1 '"status"' \
       | sed -E 's/.*"status"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
   } || true)"
 
@@ -311,13 +349,21 @@ if [[ -f "$state_file" ]]; then
       | sed -E 's/.*"workflowMode"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
   } || true)"
 
-  state_completed_phases_block="$({
-    awk '
-      /"completedPhases"[[:space:]]*:/ {capture=1}
-      capture {print}
-      capture && /\]/ {exit}
-    ' "$state_file"
-  } || true)"
+  state_execution_phase_claims_block="$(extract_nested_array_block "execution" "completedPhaseClaims" "$state_file" || true)"
+  state_certified_completed_phases_block="$(extract_nested_array_block "certification" "certifiedCompletedPhases" "$state_file" || true)"
+  state_completed_scopes_block="$(extract_nested_array_block "certification" "completedScopes" "$state_file" || true)"
+
+  if [[ -z "$state_completed_scopes_block" ]]; then
+    state_completed_scopes_block="$(extract_array_block "completedScopes" "$state_file" || true)"
+  fi
+
+  if [[ -n "$state_certified_completed_phases_block" ]]; then
+    state_completed_phases_block="$state_certified_completed_phases_block"
+  elif [[ -n "$state_execution_phase_claims_block" ]]; then
+    state_completed_phases_block="$state_execution_phase_claims_block"
+  else
+    state_completed_phases_block="$(extract_array_block "completedPhases" "$state_file" || true)"
+  fi
 
   if [[ -z "$state_status" ]]; then
     fail "Unable to determine state.json status field"
@@ -342,16 +388,41 @@ if [[ -f "$state_file" ]]; then
     pass "Detected state.json workflowMode: $state_workflow_mode"
 
     # ============================================================
-    # STATE.JSON SCHEMA VALIDATION (v2 canonical schema)
+    # STATE.JSON SCHEMA VALIDATION (legacy v2 + v3 control plane)
     # ============================================================
-    # Check for required fields
-    for req_field in "status" "completedPhases" "completedScopes" "lastUpdatedAt"; do
-      if grep -q "\"$req_field\"" "$state_file"; then
-        pass "state.json has required field: $req_field"
+    if [[ -n "$state_version" && "$state_version" -ge 3 ]]; then
+      for req_field in "status" "execution" "certification" "policySnapshot"; do
+        if grep -q "\"$req_field\"" "$state_file"; then
+          pass "state.json v3 has required field: $req_field"
+        else
+          fail "state.json v3 missing required field: $req_field"
+        fi
+      done
+      for recommended_field in "transitionRequests" "reworkQueue" "executionHistory"; do
+        if grep -q "\"$recommended_field\"" "$state_file"; then
+          pass "state.json v3 has recommended field: $recommended_field"
+        else
+          warn "state.json v3 missing recommended field: $recommended_field"
+        fi
+      done
+      if [[ -n "$state_certification_status" ]]; then
+        if [[ "$state_certification_status" == "$state_status" ]]; then
+          pass "Top-level status matches certification.status"
+        else
+          fail "Top-level status '$state_status' does not match certification.status '$state_certification_status'"
+        fi
       else
-        warn "state.json missing recommended field: $req_field"
+        fail "state.json v3 missing certification.status"
       fi
-    done
+    else
+      for req_field in "status" "completedPhases" "completedScopes" "lastUpdatedAt"; do
+        if grep -q "\"$req_field\"" "$state_file"; then
+          pass "state.json has required field: $req_field"
+        else
+          warn "state.json missing recommended field: $req_field"
+        fi
+      done
+    fi
 
     # Check for deprecated field usage
     for dep_field in "featureId" "featureFile" "selectedScopeName" "scopeProgress" "statusDiscipline" "scopeLayout"; do
@@ -361,16 +432,16 @@ if [[ -f "$state_file" ]]; then
     done
 
     # Check completedScopes is array of strings (not numbers)
-    if grep -q '"completedScopes"' "$state_file"; then
-      if grep -A 5 '"completedScopes"' "$state_file" | grep -Eq '\[[[:space:]]*[0-9]'; then
-        warn "state.json completedScopes contains numbers — canonical schema v2 requires strings (scope names)"
+    if [[ -n "$state_completed_scopes_block" ]]; then
+      if echo "$state_completed_scopes_block" | grep -Eq '\[[[:space:]]*[0-9]'; then
+        warn "state.json completedScopes contains numbers — canonical schema requires string scope identifiers"
       fi
     fi
 
-    # Check completedPhases is array of strings (not objects)
-    if grep -q '"completedPhases"' "$state_file"; then
-      if grep -A 5 '"completedPhases"' "$state_file" | grep -q '"completedAt"'; then
-          warn "state.json completedPhases uses legacy object format — supported for compatibility; prefer simple string entries in new state files"
+    # Check completed phases / claims are array of strings (not objects)
+    if [[ -n "$state_completed_phases_block" ]]; then
+      if echo "$state_completed_phases_block" | grep -q '"completedAt"'; then
+        warn "state.json completion phase block uses legacy object format — supported for compatibility; prefer simple string entries in new state files"
       fi
     fi
 
@@ -434,9 +505,7 @@ if [[ -f "$state_file" ]]; then
       fi
 
       # Cross-check completedScopes array in state.json
-      state_completed_scopes="$({
-        awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file"
-      } || true)"
+      state_completed_scopes="$state_completed_scopes_block"
       state_completed_scopes_empty="$({ echo "$state_completed_scopes" | grep -cE '^\s*\[\s*\]\s*$|"completedScopes"[[:space:]]*:[[:space:]]*\[\s*\]'; } || true)"
 
       if [[ "$done_scopes" -gt 0 ]] && echo "$state_completed_scopes" | grep -qE '\[\s*\]'; then
@@ -486,9 +555,9 @@ if [[ -f "$state_file" ]]; then
         missing_specialist_count=0
         for sp in "${mode_required_specialists[@]}"; do
           if echo "$state_completed_phases_block" | grep -qE "\"$sp\""; then
-            pass "Required specialist phase '$sp' found in completedPhases"
+            pass "Required specialist phase '$sp' found in execution/certification phase records"
           else
-            fail "Required specialist phase '$sp' missing from completedPhases (Gate G022 — FABRICATION)"
+            fail "Required specialist phase '$sp' missing from execution/certification phase records (Gate G022 — FABRICATION)"
             missing_specialist_count=$((missing_specialist_count + 1))
           fi
         done
@@ -535,7 +604,7 @@ if [[ -f "$state_file" ]]; then
             fi
           done
           if [[ "$all_identical" == "true" ]]; then
-            fail "completedPhases timestamps are uniformly spaced (${first_interval}s apart) — FABRICATION INDICATOR"
+            fail "Completion timestamps are uniformly spaced (${first_interval}s apart) — FABRICATION INDICATOR"
           else
             pass "Phase timestamps have variable intervals (plausible)"
           fi
@@ -574,23 +643,23 @@ if [[ -f "$state_file" ]]; then
       if [[ "$has_implement_phase" == "true" || "$has_test_phase" == "true" ]]; then
         # Extract completedScopes count
         lint_completed_scopes_count="$({
-          awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file" \
+          echo "$state_completed_scopes_block" \
           | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
           | grep -cE '"[^"]+"' || true
         } || true)"
 
         if [[ "$lint_completed_scopes_count" -eq 0 ]]; then
-          fail "completedPhases claims implement/test but completedScopes is EMPTY — PHASE-SCOPE INCOHERENCE (Gate G027)"
+          fail "Execution/certified phases claim implement/test but completedScopes is EMPTY — PHASE-SCOPE INCOHERENCE (Gate G027)"
         fi
 
         if [[ "$done_scopes" -eq 0 ]]; then
-          fail "completedPhases claims implement/test but ZERO scopes are marked Done — FABRICATION (Gate G027)"
+          fail "Execution/certified phases claim implement/test but ZERO scopes are marked Done — FABRICATION (Gate G027)"
         fi
 
         # Check for full pipeline claim with partial scope completion
         claimed_lifecycle_count="$(echo "$state_completed_phases_block" | grep -cE '"(implement|test|docs|validate|audit|chaos)"' || true)"
         if [[ "$claimed_lifecycle_count" -ge 5 ]] && [[ "$done_scopes" -lt "$total_scopes" ]] && [[ "$total_scopes" -gt 0 ]]; then
-          fail "completedPhases claims $claimed_lifecycle_count lifecycle phases but only $done_scopes of $total_scopes scopes are Done — INCOHERENCE (Gate G027)"
+          fail "Execution/certified phases claim $claimed_lifecycle_count lifecycle phases but only $done_scopes of $total_scopes scopes are Done — INCOHERENCE (Gate G027)"
         fi
 
         if [[ "$lint_completed_scopes_count" -gt 0 ]] && [[ "$done_scopes" -gt 0 ]]; then
@@ -1249,7 +1318,7 @@ if [[ -f "$current_report_file" ]] && [[ "$state_status" == "done" ]]; then
 fi
 done
 
-# Check 5: Specialist completion tracking — all required specialists must be in completedPhases
+# Check 5: Specialist completion tracking — all required specialists must be in execution/certification phase records
 if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_workflow_mode" ]]; then
   required_specialists=()
   case "$state_workflow_mode" in
@@ -1273,9 +1342,9 @@ if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_wo
   if [[ ${#required_specialists[@]} -gt 0 ]]; then
     for specialist_phase in "${required_specialists[@]}"; do
       if echo "$state_completed_phases_block" | grep -qE "\"$specialist_phase\""; then
-        pass "Required specialist phase '$specialist_phase' recorded in completedPhases"
+        pass "Required specialist phase '$specialist_phase' recorded in execution/certification phase records"
       else
-        fail "Required specialist phase '$specialist_phase' NOT in completedPhases (Gate G022 violation)"
+        fail "Required specialist phase '$specialist_phase' NOT in execution/certification phase records (Gate G022 violation)"
       fi
     done
   fi

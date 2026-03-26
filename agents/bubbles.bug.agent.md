@@ -1,24 +1,23 @@
----
 description: Bug discovery, documentation, and root cause analysis - identify bugs, create structured bug artifacts, analyze root cause, then delegate fixing to specialist agents via the bugfix-fastlane workflow
 handoffs:
    - label: Draft/Update Bug Design (Non-Interactive)
       agent: bubbles.design
       prompt: Create or update bug design.md without user interaction (mode: non-interactive).
-  - label: Validate Fix
-    agent: bubbles.validate
-    prompt: Run full system validation after bug fix is complete.
-  - label: Audit Fix
-    agent: bubbles.audit
-    prompt: Run compliance/security audit on the bug fix.
-  - label: Clarify Bug
-    agent: bubbles.clarify
-    prompt: Clarify ambiguous bug requirements or expected behavior.
-  - label: Implement Fix
-    agent: bubbles.implement
-    prompt: Implement the bug fix based on root cause analysis in design.md.
-  - label: Run Tests
-    agent: bubbles.test
-    prompt: Run regression tests and full test suite to verify the fix.
+   - label: Validate Fix
+      agent: bubbles.validate
+      prompt: Run full system validation after bug fix is complete.
+   - label: Audit Fix
+      agent: bubbles.audit
+      prompt: Run compliance/security audit on the bug fix.
+   - label: Clarify Bug
+      agent: bubbles.clarify
+      prompt: Clarify ambiguous bug requirements or expected behavior.
+   - label: Implement Fix
+      agent: bubbles.implement
+      prompt: Implement the bug fix based on root cause analysis in design.md.
+   - label: Run Tests
+      agent: bubbles.test
+      prompt: Run regression tests and full test suite to verify the fix.
 ---
 
 ## Agent Identity
@@ -244,7 +243,7 @@ Before ANY bug work (discovery, analysis, or fixing), ensure the bug folder and 
    - `design.md` — Root cause analysis template (minimal initially)
    - `scopes.md` — Fix scope(s) with DoD (use scopes.md template above)
    - `report.md` — Header + links only initially
-   - `state.json` — `{"version":1,"bugDir":"{BUG_DIR}","bugId":"BUG-NNN","status":"in_progress","currentPhase":"discovery","mode":"fix","createdAt":"RFC3339","lastUpdatedAt":"RFC3339"}`
+   - `state.json` — initialize the version 3 control-plane state model with `workflowMode: "bugfix-fastlane"`, `execution.activeAgent: "bubbles.bug"`, `execution.currentPhase: "discovery"`, `status: "in_progress"`, `certification.status: "in_progress"`, empty `transitionRequests` / `reworkQueue`, and timestamps
 
 4. **Verify ALL 6 artifacts exist** — BLOCKING. Do NOT proceed to Phase 1 until all exist.
 
@@ -254,7 +253,7 @@ If user said "find bugs" or no specific bug:
 
 1. **Check for interrupted bug work**:
    - Scan `specs/*/bugs/*/state.json` for `status: "in_progress"`
-   - Scan `specs/*/bugs/*/state.json` for `status: "deferred"` bugs user may want fixed
+   - Scan `specs/*/bugs/*/state.json` for `status: "blocked"` bugs user may want fixed from the backlog queue
    - If found, ask user: "Found [N] incomplete bugs. Continue with [BUG-XXX]?"
 
 2. **Check for test failures**:
@@ -292,10 +291,11 @@ If user said "find bugs" or no specific bug:
    - Add acceptance criteria
 
 3. **Update state.json**:
-   - Set `currentPhase: "documentation"`
+   - Set `execution.currentPhase: "documentation"`
 
 4. **If mode: document → STOP here**:
-   - Set state.json `status: "deferred"`
+   - Set state.json `status: "blocked"` and `certification.status: "blocked"`
+   - Add a note that the bug is documented backlog work awaiting explicit activation
    - Report: "Bug documented for later. Resume by running bug work in this bug folder."
 
 ### Phase 3: Root Cause Analysis (Reproduction-First — MANDATORY)
@@ -333,7 +333,7 @@ If user said "find bugs" or no specific bug:
    - Plan additional regression tests
 
 5. **Update state.json**:
-   - Set `currentPhase: "analysis"`
+   - Set `execution.currentPhase: "analysis"`
 
 ### Phase 4: Define Fix Scopes
  
@@ -345,7 +345,8 @@ If user said "find bugs" or no specific bug:
  
 2. **Update state.json**:
    - `status: "in_progress"`
-   - `currentPhase: "implement"`
+   - `certification.status: "in_progress"`
+   - `execution.currentPhase: "implement"`
  
 ### Phase 5: Dispatch Fix Implementation
 
@@ -412,7 +413,7 @@ After the implementation specialist returns, verify:
 ### Phase 7: Finalize
 
 1. **Update bug.md status** to "Verified" or "Closed"
-2. **Update state.json** — resolve the active workflow mode's `statusCeiling` from `bubbles/workflows.yaml` and set `status` to the ceiling value (e.g., `"done"` for `bugfix-fastlane`). Record `workflowMode` in `state.json`. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
+2. **Route final bug closure through validate-owned certification** — do NOT self-certify `done`. Update execution metadata, then invoke `bubbles.validate` so it writes the authoritative `certification.status`, `certification.completedScopes`, and top-level compatibility status if promotion is allowed. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
 3. **Update feature's uservalidation.md** (if applicable):
    - Add entry for the bug fix using the entry template below
    - **Mark entries `[x]` by default** (just validated via audit — checked = working as expected)
@@ -441,7 +442,7 @@ After the implementation specialist returns, verify:
 
 ## Feature-Scoped Backlog Bug Activation
 
-When user asks to fix a backlog bug (status `deferred`) in a feature bug folder:
+When user asks to fix a backlog bug (status `blocked`) in a feature bug folder:
 
 1. **Identify target feature**:
    - Ask user or infer from bug context
@@ -450,7 +451,8 @@ When user asks to fix a backlog bug (status `deferred`) in a feature bug folder:
    - Path: `specs/[feature]/bugs/BUG-NNN-desc/`
 
 3. **Update state.json**:
-   - Change `status: "deferred"` → `status: "in_progress"`
+   - Change `status: "blocked"` → `status: "in_progress"`
+   - Change `certification.status: "blocked"` → `certification.status: "in_progress"`
 
 4. **Continue from Phase 3** (Root Cause Analysis)
 
@@ -475,7 +477,7 @@ Before starting new scope work, check:
 
 Include bug status in status reports:
 - Active bugs in progress
-- Feature-scoped backlog bugs awaiting fix (`status: "deferred"`)
+- Feature-scoped backlog bugs awaiting fix (`status: "blocked"`)
 - Recently fixed bugs
 
 ---

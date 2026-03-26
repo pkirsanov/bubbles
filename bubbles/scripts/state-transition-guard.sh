@@ -15,7 +15,9 @@
 #   2 = Usage error / missing arguments
 #
 # When --revert-on-fail is specified and checks fail, the script automatically
-# reverts state.json status to "in_progress" and clears completedScopes/completedPhases.
+# reverts the top-level and certification status to "in_progress" and clears
+# stale completion arrays (`completedScopes`, `certifiedCompletedPhases`,
+# `completedPhaseClaims`, and legacy `completedPhases`).
 # =============================================================================
 set -euo pipefail
 
@@ -107,6 +109,11 @@ scope_layout="$(detect_scope_layout)"
 scope_index_file="$feature_dir/scopes/_index.md"
 scope_files=()
 report_files=()
+scenario_manifest_file="$feature_dir/scenario-manifest.json"
+lockdown_approvals_file="$feature_dir/lockdown-approvals.json"
+invalidation_ledger_file="$feature_dir/invalidation-ledger.json"
+transition_requests_file="$feature_dir/transition-requests.json"
+rework_queue_file="$feature_dir/rework-queue.json"
 
 if [[ "$scope_layout" == "per-scope-directory" ]]; then
   while IFS= read -r scope_path; do
@@ -140,6 +147,16 @@ scope_file="$scopes_file"
 relative_artifact_path() {
   local artifact_path="$1"
   echo "${artifact_path#$feature_dir/}"
+}
+
+count_gherkin_scenarios() {
+  local total=0
+  local scope_path=""
+  for scope_path in "${scope_files[@]}"; do
+    [[ -f "$scope_path" ]] || continue
+    total=$((total + $(grep -cE '^[[:space:]]*Scenario( Outline)?:' "$scope_path" || true)))
+  done
+  echo "$total"
 }
 
 echo "============================================================"
@@ -355,6 +372,265 @@ echo ""
 # =============================================================================
 # CHECK 4: ALL DoD items must be checked [x] — ZERO unchecked allowed
 # =============================================================================
+echo "--- Check 3A: Policy Snapshot Provenance (Gate G055) ---"
+if grep -qE '"policySnapshot"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
+  pass "state.json contains policySnapshot"
+
+  missing_policy_entries=0
+  for policy_name in grill tdd autoCommit lockdown regression validation; do
+    if grep -qE "\"$policy_name\"[[:space:]]*:[[:space:]]*\{" "$state_file"; then
+      pass "policySnapshot records $policy_name"
+    else
+      fail "policySnapshot missing $policy_name entry (Gate G055)"
+      missing_policy_entries=$((missing_policy_entries + 1))
+    fi
+  done
+
+  source_hits="$(grep -cE '"source"[[:space:]]*:[[:space:]]*"(user-request|repo-default|workflow-forced|spec-lockdown)"' "$state_file" || true)"
+  if [[ "$source_hits" -ge 3 ]]; then
+    pass "policySnapshot records allowed provenance values"
+  else
+    fail "policySnapshot does not record enough valid provenance fields (Gate G055)"
+  fi
+
+  if [[ "$missing_policy_entries" -eq 0 ]]; then
+    pass "policySnapshot covers the control-plane defaults required for this run"
+  fi
+else
+  fail "state.json missing policySnapshot — control-plane provenance cannot be verified (Gate G055)"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3B: Validate-owned certification state (Gate G056)
+# =============================================================================
+echo "--- Check 3B: Validate Certification State (Gate G056) ---"
+if grep -qE '"certification"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
+  pass "state.json contains certification block"
+
+  certification_status="$({
+    grep -A10 '"certification"' "$state_file" 2>/dev/null \
+      | grep -m1 '"status"' \
+      | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/'
+  } || true)"
+
+  if [[ -n "$certification_status" ]]; then
+    if [[ -n "$state_status" && "$certification_status" != "$state_status" ]]; then
+      fail "Top-level status ('$state_status') does not match certification.status ('$certification_status') (Gate G056)"
+    else
+      pass "Top-level status matches certification.status ($certification_status)"
+    fi
+  else
+    fail "certification block is missing status field (Gate G056)"
+  fi
+
+  if grep -qE '"certifiedCompletedPhases"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
+    pass "certification block records certifiedCompletedPhases"
+  else
+    fail "certification block missing certifiedCompletedPhases (Gate G056)"
+  fi
+
+  if grep -qE '"scopeProgress"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
+    pass "certification block records scopeProgress"
+  else
+    fail "certification block missing scopeProgress (Gate G056)"
+  fi
+
+  if grep -qE '"lockdownState"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
+    pass "certification block records lockdownState"
+  else
+    fail "certification block missing lockdownState (Gate G056)"
+  fi
+else
+  fail "state.json missing certification block — validate-owned promotion state cannot be verified (Gate G056)"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3C: Scenario contract manifest (Gate G057)
+# =============================================================================
+echo "--- Check 3C: Scenario Manifest Integrity (Gate G057) ---"
+gherkin_scenario_count="$(count_gherkin_scenarios)"
+if [[ "$gherkin_scenario_count" -gt 0 ]]; then
+  if [[ -f "$scenario_manifest_file" ]]; then
+    pass "Scenario manifest exists: $(relative_artifact_path "$scenario_manifest_file")"
+
+    manifest_scenario_count="$(grep -cE '"scenarioId"[[:space:]]*:' "$scenario_manifest_file" || true)"
+    manifest_test_type_count="$(grep -cE '"requiredTestType"[[:space:]]*:' "$scenario_manifest_file" || true)"
+    manifest_linked_test_count="$(grep -cE '"linkedTests"[[:space:]]*:' "$scenario_manifest_file" || true)"
+    manifest_evidence_count="$(grep -cE '"evidenceRefs"[[:space:]]*:' "$scenario_manifest_file" || true)"
+
+    if [[ "$manifest_scenario_count" -lt "$gherkin_scenario_count" ]]; then
+      fail "scenario-manifest.json only tracks $manifest_scenario_count scenarios but resolved scopes define $gherkin_scenario_count Gherkin scenarios (Gate G057)"
+    else
+      pass "scenario-manifest.json covers at least as many scenarios as the scope artifacts ($manifest_scenario_count >= $gherkin_scenario_count)"
+    fi
+
+    if [[ "$manifest_test_type_count" -lt "$gherkin_scenario_count" ]]; then
+      fail "scenario-manifest.json is missing requiredTestType entries for one or more scenarios (Gate G057)"
+    else
+      pass "scenario-manifest.json records required live test types"
+    fi
+
+    if [[ "$manifest_linked_test_count" -eq 0 ]]; then
+      fail "scenario-manifest.json is missing linkedTests entries (Gate G057)"
+    else
+      pass "scenario-manifest.json records linkedTests"
+    fi
+
+    if [[ "$manifest_evidence_count" -eq 0 ]]; then
+      fail "scenario-manifest.json is missing evidenceRefs entries (Gate G057)"
+    else
+      pass "scenario-manifest.json records evidenceRefs"
+    fi
+  else
+    fail "Resolved scopes define Gherkin scenarios but scenario-manifest.json is missing (Gate G057)"
+  fi
+else
+  info "No Gherkin scenarios found in resolved scope artifacts — scenario manifest check skipped"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3D: Lockdown and regression contract protection (G058/G059)
+# =============================================================================
+echo "--- Check 3D: Lockdown And Regression Contracts (G058/G059) ---"
+locked_scenario_count=0
+changed_contract_count=0
+if [[ -f "$scenario_manifest_file" ]]; then
+  locked_scenario_count="$(grep -cE '"lockdown"[[:space:]]*:[[:space:]]*true' "$scenario_manifest_file" || true)"
+  changed_contract_count="$(grep -cE '"changeType"[[:space:]]*:[[:space:]]*"(changed|replacement|removed)"' "$scenario_manifest_file" || true)"
+  regression_required_count="$(grep -cE '"regressionRequired"[[:space:]]*:[[:space:]]*true' "$scenario_manifest_file" || true)"
+
+  if [[ "$regression_required_count" -gt 0 ]]; then
+    pass "scenario-manifest.json marks $regression_required_count regression-protected scenario contract(s)"
+  else
+    info "No regression-protected scenarios marked in scenario-manifest.json"
+  fi
+
+  if [[ "$locked_scenario_count" -gt 0 && "$changed_contract_count" -gt 0 ]]; then
+    if [[ -f "$lockdown_approvals_file" ]]; then
+      pass "Lockdown approvals artifact exists: $(relative_artifact_path "$lockdown_approvals_file")"
+    else
+      fail "Locked scenario changes require lockdown-approvals.json (Gate G058)"
+    fi
+
+    if [[ -f "$invalidation_ledger_file" ]]; then
+      pass "Invalidation ledger exists: $(relative_artifact_path "$invalidation_ledger_file")"
+    else
+      fail "Locked scenario changes require invalidation-ledger.json (Gate G058)"
+    fi
+
+    if [[ -f "$lockdown_approvals_file" ]]; then
+      if grep -qE '"approvedVia"[[:space:]]*:[[:space:]]*"bubbles\.grill"' "$lockdown_approvals_file"; then
+        pass "Lockdown approval was captured through bubbles.grill"
+      else
+        fail "lockdown-approvals.json is missing approvedVia=bubbles.grill (Gate G058)"
+      fi
+    fi
+
+    if [[ -f "$invalidation_ledger_file" ]]; then
+      if grep -qE '"invalidatedBy"[[:space:]]*:[[:space:]]*"bubbles\.validate"' "$invalidation_ledger_file"; then
+        pass "Invalidation ledger records validate-owned invalidation"
+      else
+        fail "invalidation-ledger.json is missing invalidatedBy=bubbles.validate (Gate G058/G059)"
+      fi
+    fi
+  else
+    info "No locked scenario replacements detected — lockdown approval and invalidation artifacts not required"
+  fi
+else
+  info "Scenario manifest not present — lockdown/regression contract checks depend on Gate G057"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3E: Scenario-first TDD evidence (Gate G060)
+# =============================================================================
+echo "--- Check 3E: Scenario-first TDD Evidence (Gate G060) ---"
+effective_tdd_mode="$({
+  grep -A6 '"tdd"' "$state_file" 2>/dev/null \
+    | grep -m1 '"mode"' \
+    | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/'
+} || true)"
+
+if [[ -z "$effective_tdd_mode" && ( "$state_workflow_mode" == "bugfix-fastlane" || "$state_workflow_mode" == "chaos-hardening" ) ]]; then
+  effective_tdd_mode="scenario-first"
+fi
+
+if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
+  tdd_evidence_found="false"
+  for artifact_path in "${scope_files[@]}" "${report_files[@]}"; do
+    [[ -f "$artifact_path" ]] || continue
+    if grep -qiE 'red[[:space:]-]*green|failing targeted|red evidence|green evidence|scenario-first|tdd' "$artifact_path"; then
+      tdd_evidence_found="true"
+      break
+    fi
+  done
+
+  if [[ "$tdd_evidence_found" == "true" ]]; then
+    pass "Scenario-first TDD evidence is recorded in the scope/report artifacts"
+  else
+    fail "Effective TDD mode is scenario-first but no red→green evidence markers were found in scope/report artifacts (Gate G060)"
+  fi
+else
+  info "Effective TDD mode is '${effective_tdd_mode:-off}' — scenario-first evidence check not required"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3F: Transition and rework packet closure (Gate G061)
+# =============================================================================
+echo "--- Check 3F: Transition And Rework Packets (Gate G061) ---"
+pending_transition_failures=0
+
+if grep -A6 '"transitionRequests"' "$state_file" | grep -qE '"TR-|"transitionRequestId"'; then
+  fail "state.json still contains non-empty transitionRequests — validation routing is not complete (Gate G061)"
+  pending_transition_failures=$((pending_transition_failures + 1))
+else
+  pass "state.json transitionRequests queue is empty"
+fi
+
+if grep -A6 '"reworkQueue"' "$state_file" | grep -qE '"RW-|"reworkId"|"status"'; then
+  fail "state.json still contains non-empty reworkQueue entries — open rework remains (Gate G061)"
+  pending_transition_failures=$((pending_transition_failures + 1))
+else
+  pass "state.json reworkQueue is empty"
+fi
+
+if [[ -f "$transition_requests_file" ]]; then
+  if grep -qE '"status"[[:space:]]*:[[:space:]]*"(pending-validation|route_required|blocked|open)"' "$transition_requests_file"; then
+    fail "transition-requests.json contains unresolved transition packets (Gate G061)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "transition-requests.json contains no unresolved packets"
+  fi
+
+  if grep -qE '"evidenceRefs"[[:space:]]*:[[:space:]]*\[[[:space:]]*\]' "$transition_requests_file"; then
+    fail "transition-requests.json contains a packet without evidenceRefs (Gate G061)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "transition packets include evidenceRefs"
+  fi
+fi
+
+if [[ -f "$rework_queue_file" ]]; then
+  if grep -qE '"status"[[:space:]]*:[[:space:]]*"(open|pending|route_required|blocked)"' "$rework_queue_file"; then
+    fail "rework-queue.json contains unresolved rework packets (Gate G061)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "rework-queue.json contains no unresolved rework packets"
+  fi
+fi
+
+if [[ "$pending_transition_failures" -eq 0 ]]; then
+  pass "Transition and rework routing is closed"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 4: ALL DoD items must be checked [x] — ZERO unchecked allowed
+# =============================================================================
 echo "--- Check 4: DoD Completion (Zero Unchecked) ---"
 total_checked=0
 total_unchecked=0
@@ -518,9 +794,20 @@ else
 fi
 
 state_completed_scopes_count="$({
-  awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file" \
-  | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
-  | grep -cE '"[^"]+"' || true
+  certification_scopes_block="$({
+    grep -A40 '"certification"' "$state_file" 2>/dev/null \
+      | awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
+  } || true)"
+
+  if [[ -n "$certification_scopes_block" ]]; then
+    echo "$certification_scopes_block" \
+      | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
+      | grep -cE '"[^"]+"' || true
+  else
+    awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file" \
+      | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
+      | grep -cE '"[^"]+"' || true
+  fi
 } || true)"
 
 if [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
@@ -560,11 +847,26 @@ echo ""
 # =============================================================================
 echo "--- Check 6: Specialist Phase Completion ---"
 state_completed_phases_block="$({
-  awk '
-    /"completedPhases"[[:space:]]*:/ {capture=1}
-    capture {print}
-    capture && /\]/ {exit}
-  ' "$state_file"
+  certification_phases_block="$({
+    grep -A40 '"certification"' "$state_file" 2>/dev/null \
+      | awk '/"certifiedCompletedPhases"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
+  } || true)"
+  execution_phase_claims_block="$({
+    grep -A40 '"execution"' "$state_file" 2>/dev/null \
+      | awk '/"completedPhaseClaims"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
+  } || true)"
+
+  if [[ -n "$certification_phases_block" ]]; then
+    echo "$certification_phases_block"
+  elif [[ -n "$execution_phase_claims_block" ]]; then
+    echo "$execution_phase_claims_block"
+  else
+    awk '
+      /"completedPhases"[[:space:]]*:/ {capture=1}
+      capture {print}
+      capture && /\]/ {exit}
+    ' "$state_file"
+  fi
 } || true)"
 
 if [[ -n "$state_workflow_mode" ]]; then
@@ -645,9 +947,9 @@ if [[ -n "$state_workflow_mode" ]]; then
     missing_phases=0
     for specialist_phase in "${required_specialists[@]}"; do
       if echo "$state_completed_phases_block" | grep -qE "\"$specialist_phase\""; then
-        pass "Required phase '$specialist_phase' recorded in completedPhases"
+        pass "Required phase '$specialist_phase' recorded in execution/certification phase records"
       else
-        fail "Required phase '$specialist_phase' NOT in completedPhases (Gate G022 violation)"
+        fail "Required phase '$specialist_phase' NOT in execution/certification phase records (Gate G022 violation)"
         missing_phases=$((missing_phases + 1))
       fi
     done
@@ -698,7 +1000,7 @@ if [[ ${#timestamps[@]} -ge 3 ]]; then
     done
 
     if [[ "$all_identical" == "true" ]]; then
-      fail "All completedPhases timestamps have identical intervals (${first_interval}s apart) — FABRICATION INDICATOR"
+      fail "All completion timestamps have identical intervals (${first_interval}s apart) — FABRICATION INDICATOR"
       info "Timestamps: ${timestamps[*]}"
     else
       pass "Timestamp intervals are variable (not uniformly fabricated)"
@@ -1128,9 +1430,9 @@ echo ""
 # =============================================================================
 # CHECK 15: Phase-Scope Coherence (Gate G027)
 # =============================================================================
-# Detects fabricated completedPhases by cross-referencing against
-# completedScopes. If implementation phases (implement, test) are claimed
-# but completedScopes is empty or partial, it's fabrication.
+# Detects fabricated execution/certification phase claims by cross-referencing
+# against completedScopes. If implementation phases (implement, test) are
+# claimed but completedScopes is empty or partial, it's fabrication.
 # =============================================================================
 echo "--- Check 15: Phase-Scope Coherence (Gate G027) ---"
 if [[ -n "$state_workflow_mode" ]]; then
@@ -1150,19 +1452,19 @@ if [[ -n "$state_workflow_mode" ]]; then
       if [[ "$has_implement" == "true" || "$has_test" == "true" ]]; then
         # Implementation phases claimed — completedScopes MUST be non-empty
         if [[ "$state_completed_scopes_count" -eq 0 ]]; then
-          fail "completedPhases claims implement/test phases but completedScopes is EMPTY — FABRICATION (Gate G027)"
+          fail "Execution/certification phases claim implement/test phases but completedScopes is EMPTY — FABRICATION (Gate G027)"
           info "This means phases were recorded without any scope actually completing"
         fi
 
         # Implementation phases claimed — scope artifact statuses must show work done
         if [[ "$done_scopes" -eq 0 ]]; then
-          fail "completedPhases claims implement/test phases but ZERO scopes are marked 'Done' — FABRICATION (Gate G027)"
+          fail "Execution/certification phases claim implement/test phases but ZERO scopes are marked 'Done' — FABRICATION (Gate G027)"
         fi
 
         # If ALL phases claimed but scopes are partial, that's suspicious
         claimed_phase_count="$(echo "$state_completed_phases_block" | grep -cE '"(implement|test|docs|validate|audit|chaos)"' || true)"
         if [[ "$claimed_phase_count" -ge 5 ]] && [[ "$done_scopes" -lt "$total_scopes" ]] && [[ "$total_scopes" -gt 0 ]]; then
-          fail "completedPhases claims $claimed_phase_count lifecycle phases but only $done_scopes of $total_scopes scopes are Done — PHASE-SCOPE INCOHERENCE (Gate G027)"
+          fail "Execution/certification phases claim $claimed_phase_count lifecycle phases but only $done_scopes of $total_scopes scopes are Done — PHASE-SCOPE INCOHERENCE (Gate G027)"
         fi
 
         # Cross-check: completedScopes count should match done_scopes count
@@ -1177,7 +1479,7 @@ if [[ -n "$state_workflow_mode" ]]; then
 
       # If completedScopes > 0 but implement phase not claimed, that's also incoherent
       if [[ "$state_completed_scopes_count" -gt 0 ]] && [[ "$has_implement" == "false" ]]; then
-        warn "completedScopes has $state_completed_scopes_count entries but 'implement' phase not in completedPhases"
+        warn "completedScopes has $state_completed_scopes_count entries but 'implement' phase is missing from execution/certification phase records"
       fi
 
       if [[ "$has_implement" == "true" ]] && [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -gt 0 ]]; then
@@ -1477,21 +1779,23 @@ if [[ "$failures" -gt 0 ]]; then
     echo "--- Auto-Reverting state.json (--revert-on-fail) ---"
     now_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-    # Revert status to in_progress
-    sed -i -E 's/"status"[[:space:]]*:[[:space:]]*"done"/"status": "in_progress"/' "$state_file"
+    clear_array_key() {
+      local array_key="$1"
 
-    # Clear completedScopes if it contains items
-    if grep -qE '"completedScopes"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
-      # Replace completedScopes array with empty array (single-line case)
-      sed -i -E 's/"completedScopes"[[:space:]]*:[[:space:]]*\[[^]]*\]/"completedScopes": []/' "$state_file"
-    fi
+      if ! grep -qE '"'"$array_key"'"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
+        return 0
+      fi
 
-    # Clear completedPhases if it contains items
-    if grep -qE '"completedPhases"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
-      # For multi-line completedPhases, use awk
-      awk '
-        /"completedPhases"[[:space:]]*:/ {
-          print "  \"completedPhases\": [],"
+      sed -i -E 's/"'"$array_key"'"[[:space:]]*:[[:space:]]*\[[^]]*\]/"'"$array_key"'": []/' "$state_file"
+
+      awk -v key="$array_key" '
+        $0 ~ "\"" key "\"[[:space:]]*:[[:space:]]*\\[" {
+          if ($0 ~ /\[[^]]*\]/) {
+            print
+            next
+          }
+          sub(/"[^"]+"[[:space:]]*:[[:space:]]*.*/, "\"" key "\": [],", $0)
+          print
           in_array = 1
           next
         }
@@ -1502,7 +1806,35 @@ if [[ "$failures" -gt 0 ]]; then
         in_array { next }
         { print }
       ' "$state_file" > "${state_file}.tmp" && mv "${state_file}.tmp" "$state_file"
-    fi
+    }
+
+    # Revert status to in_progress
+    sed -i -E 's/"status"[[:space:]]*:[[:space:]]*"done"/"status": "in_progress"/' "$state_file"
+
+    # Revert certification.status to in_progress if present
+    awk '
+      /"certification"[[:space:]]*:/ {
+        print
+        in_cert = 1
+        next
+      }
+      in_cert && /"status"[[:space:]]*:[[:space:]]*"done"/ {
+        sub(/"done"/, "\"in_progress\"", $0)
+        print
+        next
+      }
+      in_cert && /^[[:space:]]*}/ {
+        in_cert = 0
+        print
+        next
+      }
+      { print }
+    ' "$state_file" > "${state_file}.tmp" && mv "${state_file}.tmp" "$state_file"
+
+    clear_array_key "completedScopes"
+    clear_array_key "certifiedCompletedPhases"
+    clear_array_key "completedPhaseClaims"
+    clear_array_key "completedPhases"
 
     # Update lastUpdatedAt
     sed -i -E 's/"lastUpdatedAt"[[:space:]]*:[[:space:]]*"[^"]+"/"lastUpdatedAt": "'"$now_utc"'"/' "$state_file"
@@ -1517,8 +1849,8 @@ if [[ "$failures" -gt 0 ]]; then
     fi
 
     echo "REVERTED: state.json status → 'in_progress'"
-    echo "REVERTED: completedScopes → []"
-    echo "REVERTED: completedPhases → []"
+    echo "REVERTED: certification.status → 'in_progress' (if present)"
+    echo "REVERTED: completedScopes / certifiedCompletedPhases / completedPhaseClaims / completedPhases → []"
     echo "ADDED: failure record with timestamp $now_utc"
   fi
 

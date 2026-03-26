@@ -82,7 +82,7 @@ Modes that require specialist phases are not complete until all required special
 
 ## Phase-Scope Coherence
 
-`completedPhases` and `completedScopes` must agree with the actual scope files and the actual work performed.
+`execution.completedPhaseClaims`, `certification.certifiedCompletedPhases`, and `certification.completedScopes` must agree with the actual scope files and the actual work performed.
 
 ## Implementation Reality Scan
 

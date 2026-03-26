@@ -22,7 +22,7 @@ description: Final system audit for spec compliance, code quality, and security 
   - Check for narrative summaries masquerading as evidence
   - Check for duplicate/copy-pasted evidence blocks
   - Check for impossible success patterns (all tests pass first try on non-trivial changes)
-- **Verify specialist agent execution** — check `state.json` `completedPhases` against mode-required phases. If any required specialist phase is missing, audit MUST fail.
+- **Verify specialist agent execution** — check `state.json.execution.completedPhaseClaims` and `state.json.certification.certifiedCompletedPhases` against mode-required phases. If any required specialist phase is missing from the effective execution/certification record, audit MUST fail.
 - **Run artifact lint** — execute `bash bubbles/scripts/artifact-lint.sh {FEATURE_DIR}` and include raw output as evidence. If lint fails, audit verdict MUST NOT be clean.
 - **Cross-reference DoD items with report.md** — every checked `[x]` DoD item must have corresponding evidence in report.md with real command execution.
 - **If fabrication is detected:** Immediately fail the audit, mark the spec as `in_progress` or `blocked`, and document EXACTLY what was fabricated and what needs to be re-executed.
@@ -112,7 +112,7 @@ bash bubbles/scripts/state-transition-guard.sh {FEATURE_DIR}
 | All DoD items use checkbox format — no format manipulation (G041) | ✅/❌ |
 | All scope statuses canonical: Not Started / In Progress / Done / Blocked (G041) | ✅/❌ |
 | All scope statuses "Done" in scopes.md (no "Not Started") | ✅/❌ |
-| All required specialist phases in completedPhases | ✅/❌ |
+| All required specialist phases recorded in execution claims / certified phases | ✅/❌ |
 | Timestamp plausibility (no uniform spacing) | ✅/❌ |
 | Test Plan files exist on disk | ✅/❌ |
 | Evidence blocks present for all [x] items | ✅/❌ |
@@ -299,7 +299,7 @@ Blocking rule:
 
 | Check                                       | Status |
 | ------------------------------------------- | ------ |
-| Security phase executed (check `completedPhases` for `"security"`) | ✅/❌/⚪ |
+| Security phase executed (check execution claims / certified phases for `"security"`) | ✅/❌/⚪ |
 | No hardcoded credentials in changed files   | ✅/❌  |
 | No secrets in log statements                | ✅/❌  |
 | Auth middleware present on protected routes  | ✅/❌  |
@@ -321,7 +321,7 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 # Check output for IDOR_BODY_IDENTITY and SILENT_DECODE violations
 ```
 
-**If `bubbles.security` has NOT run** (missing from `completedPhases`) and the mode requires it (check mode's `phaseOrder` for `security`):
+**If `bubbles.security` has NOT run** (missing from `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases`) and the mode requires it (check mode's `phaseOrder` for `security`):
 - Mark as `⚠️` with note: "Security phase not executed — recommend running bubbles.security"
 - This is NOT a blocking audit failure unless security findings exist from other sources
 

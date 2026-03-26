@@ -124,6 +124,7 @@ Skills MUST:
 5. **Require execution evidence** - Any skill that involves verification (testing, validation, health checks) MUST mandate actual tool/terminal execution and recording of real output
 6. **Reference `agent-common.md`** for anti-fabrication gates (G019-G022), evidence standards, and quality work standards
 7. **State portability status** - Whether the skill is portable (governance) or project-specific (domain)
+8. **Acknowledge the control plane when relevant** - Skills that guide spec/design/test/workflow work must point readers to the version 3 `state.json` template, `scenario-manifest.json`, validate-owned certification, and policy provenance surfaces instead of teaching legacy completion semantics
 
 ## Execution Evidence Policy (MANDATORY for Verification Skills)
 
@@ -202,6 +203,8 @@ Before submitting a skill:
 - [agent-common.md](../agents/bubbles_shared/agent-common.md)
 - [scope-workflow.md](../agents/bubbles_shared/scope-workflow.md)
 - [project-config-contract.md](../agents/bubbles_shared/project-config-contract.md)
+- [feature-templates.md](../agents/bubbles_shared/feature-templates.md)
+- [CONTROL_PLANE_DESIGN.md](../docs/guides/CONTROL_PLANE_DESIGN.md)
 - [bubbles-skill-authoring](../skills/bubbles-skill-authoring/SKILL.md)
 - [bubbles-agents.instructions.md](bubbles-agents.instructions.md)
 - Repository `copilot-instructions.md`

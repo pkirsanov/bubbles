@@ -25,7 +25,7 @@ If you want the simplification to stay test-first:
 If you want assumptions challenged before the cleanup begins:
 
 ```text
-/bubbles.workflow  <feature> mode: simplify-to-doc grillFirst: true
+/bubbles.workflow  <feature> mode: simplify-to-doc grillMode: required-on-ambiguity
 ```
 
 ## What This Mode Does

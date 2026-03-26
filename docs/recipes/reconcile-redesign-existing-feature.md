@@ -46,7 +46,7 @@ Use this when requirements, UX, design, and scopes all need reconciliation befor
 Optional tags:
 
 ```text
-/bubbles.workflow  redesign-existing for booking grillFirst: true socratic: true socraticQuestions: 4 backlogExport: tasks
+/bubbles.workflow  redesign-existing for booking grillMode: required-on-ambiguity socratic: true socraticQuestions: 4 backlogExport: tasks
 ```
 
 ---

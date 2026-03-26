@@ -49,7 +49,7 @@ Use this recipe when any of these are true:
 → A concise comparison and the recommended choice for your situation
 
 /bubbles.super  should we grill this before we plan it?
-→ A short recommendation plus the exact command, usually `/bubbles.grill ...` or `/bubbles.workflow ... grillFirst: true`
+→ A short recommendation plus the exact command, usually `/bubbles.grill ...` or `/bubbles.workflow ... grillMode: required-on-ambiguity`
 ```
 
 ## Ask For Framework Help

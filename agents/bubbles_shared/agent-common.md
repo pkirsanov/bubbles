@@ -1,4 +1,4 @@
-<!-- governance-version: 2.4.0 -->
+<!-- governance-version: 3.0.0 -->
 # Shared Agent Patterns (Common to all bubbles.* agents)
 
 This file is the governance index for the Bubbles framework. It exists to route agents and reviewers to the smallest authoritative module set that fits the task.
@@ -50,6 +50,9 @@ Load the smallest authoritative module set that matches the role and current pha
 | What is the role loading baseline? | `operating-baseline.md` |
 | What happens on retries, timeouts, or auto-commit? | `execution-ops.md` |
 | How do workflow phases and state transitions work? | `scope-workflow.md`, `state-gates.md` |
+| How does the v3 control plane work (execution vs certification, policy defaults, scenario contracts)? | `feature-templates.md`, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md), [CONTROL_PLANE_SCHEMAS.md](../../docs/guides/CONTROL_PLANE_SCHEMAS.md) |
+| What are gates G054–G061 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
+| Who owns state.json certification vs execution claims? | `agent-ownership.yaml`, `agent-capabilities.yaml`, `scope-workflow.md` |
 
 ## Artifact Ownership And Delegation Contract
 

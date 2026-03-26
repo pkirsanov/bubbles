@@ -82,22 +82,23 @@ When `mode: live` is specified, bubbles.status goes beyond reading artifacts:
 
 Read the following files:
 
-1. Current feature's `tasks.md` - Task list and status
+1. Current feature's `state.json` - Execution and certification state (v3 control plane: `execution.currentPhase`, `certification.status`, `certification.completedScopes`)
 2. Current feature's `scopes.md` (if exists) - Scope-by-scope progress (from `/bubbles.plan`)
 3. `.specify/memory/fix.log` - Current error (if exists)
 4. `.specify/memory/agents.md` - Project configuration
 
 ## Execution Flow
 
-### Step 1: Parse tasks.md
+### Step 1: Parse state.json and scopes.md
 
-Extract:
+From `state.json` (if exists), extract:
 
-- Total tasks count
-- Completed tasks (`[x]`)
-- In-progress tasks (`[~]`)
-- Not started tasks (`[ ]`)
-- Blocked/escalated tasks (`[!]`)
+- `certification.status` (authoritative completion state)
+- `execution.currentPhase` and `execution.activeAgent`
+- `certification.completedScopes` count
+- `execution.completedPhaseClaims`
+- `workflowMode`
+- `policySnapshot` summary (effective grill, TDD, lockdown modes)
 
 If `scopes.md` exists, also extract:
 
@@ -204,13 +205,11 @@ Based on current state, provide specific actionable recommendations:
 
 | Condition | Recommended Action |
 |-----------|-------------------|
-| No tasks.md exists | Run `/speckit.tasks` to generate task list |
 | No scopes.md exists (but spec/design exists) | Run `/bubbles.plan` to generate `{FEATURE_DIR}/scopes.md` |
 | Scopes exist and incomplete | Run `/bubbles.implement` (default continuous, or `mode: next`) |
 | No agents.md exists | Run `/bubbles.commands` to configure project |
-| Checklists incomplete | Complete checklists or run `/speckit.checklist` |
 | Docs drift suspected (spec/design/scopes changed) | Run `/bubbles.docs` to update standard docs (delete obsolete/duplicate) |
-| Tasks/scopes pending, no errors | Run `/bubbles.implement` (preferred; scopes-first). If `scopes.md` is missing, run `/bubbles.plan` first. |
+| Scopes pending, no errors | Run `/bubbles.implement` (preferred; scopes-first). If `scopes.md` is missing, run `/bubbles.plan` first. |
 | Error in fix.log, iteration < 3 | Review error, fix root cause, then continue with `/bubbles.implement` |
 | Error in fix.log, iteration = 3 | 🔴 Human intervention needed - see fix.log |
 | All scopes/tasks complete | Run `/bubbles.test` (scope-aware), then `/bubbles.validate`, then `/bubbles.audit` |
@@ -224,9 +223,8 @@ Based on current state, provide specific actionable recommendations:
 
 1. ✅ **Immediate:** Run `/bubbles.implement` to continue implementation
    - Scopes pending, no blockers detected
-2. ⚠️ **Before merge:** Run `/speckit.analyze` to verify spec consistency
-
-   - Ensures no drift between spec and implementation
+2. ⚠️ **Before merge:** Run `/bubbles.validate` to verify completion readiness
+   - Ensures certification and evidence are current
 
 3. 📋 **Checklist:** 2 items incomplete in `checklists/security.md`
    - Complete before final validation
@@ -247,22 +245,20 @@ Based on current state, provide specific actionable recommendations:
 
 ## Pre-Implementation Checklist
 
-Before starting implementation, verify Spec-Kit artifacts are ready:
+Before starting implementation, verify Bubbles artifacts are ready:
 
 | Check               | Command if Missing               |
 | ------------------- | -------------------------------- |
-| spec.md exists      | `/speckit.specify`               |
-| plan.md exists      | `/speckit.plan`                  |
-| tasks.md exists     | `/speckit.tasks`                 |
-| scopes.md exists    | `/bubbles.plan`                    |
-| Spec analyzed       | `/speckit.analyze` (recommended) |
-| Checklists complete | `/speckit.checklist`             |
-| agents.md exists    | `/bubbles.commands`               |
+| spec.md exists      | `/bubbles.analyst` or `/bubbles.design` |
+| design.md exists    | `/bubbles.design`                |
+| scopes.md exists    | `/bubbles.plan`                  |
+| state.json exists   | `/bubbles.design` (creates v3 template) |
+| agents.md exists    | `/bubbles.commands`              |
 
 **Ideal workflow:**
 
 ```
-/speckit.specify → /speckit.clarify → /speckit.plan → /speckit.tasks → /speckit.analyze → /bubbles.plan → /bubbles.implement → /bubbles.test → /bubbles.validate → /bubbles.audit
+/bubbles.analyst → /bubbles.design → /bubbles.plan → /bubbles.implement → /bubbles.test → /bubbles.validate → /bubbles.audit
 ```
 
 Docs hardening (recommended when specs/scopes change):

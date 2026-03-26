@@ -105,13 +105,19 @@ cp "$TEMP_DIR"/prompts/bubbles.*.prompt.md "${TARGET}/prompts/"
 ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
 
 # ── Install workflows ───────────────────────────────────────────────
-info "Installing workflow config..."
+info "Installing workflow config and registries..."
 mkdir -p "${TARGET}/bubbles"
 cp "$TEMP_DIR"/bubbles/workflows.yaml "${TARGET}/bubbles/"
+if [[ -f "$TEMP_DIR/bubbles/agent-ownership.yaml" ]]; then
+  cp "$TEMP_DIR"/bubbles/agent-ownership.yaml "${TARGET}/bubbles/"
+fi
+if [[ -f "$TEMP_DIR/bubbles/agent-capabilities.yaml" ]]; then
+  cp "$TEMP_DIR"/bubbles/agent-capabilities.yaml "${TARGET}/bubbles/"
+fi
 if [[ -f "$TEMP_DIR/bubbles/agnosticity-allowlist.txt" ]]; then
   cp "$TEMP_DIR"/bubbles/agnosticity-allowlist.txt "${TARGET}/bubbles/"
 fi
-ok "workflows.yaml installed"
+ok "workflows.yaml + registries installed"
 
 # ── Install scripts ─────────────────────────────────────────────────
 info "Installing governance scripts..."
@@ -447,6 +453,18 @@ CROSSEOF
 SRCEOF
   ok "Created ${TARGET}/bubbles/docs/SETUP_SOURCES.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
+  fi
+
+  # ── Scaffold: bubbles.config.json (control-plane policy registry) ─
+  if [[ ! -f ".specify/memory/bubbles.config.json" ]]; then
+    if [[ -f "$TEMP_DIR/.specify/memory/bubbles.config.json" ]]; then
+      cp "$TEMP_DIR/.specify/memory/bubbles.config.json" ".specify/memory/bubbles.config.json"
+      ok "Created .specify/memory/bubbles.config.json (control-plane defaults)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/memory/bubbles.config.json (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
   # ── Auto-generate: .github/bubbles-project.yaml ───────────────────────

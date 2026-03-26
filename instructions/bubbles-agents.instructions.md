@@ -104,6 +104,17 @@ Key governance references (authoritative sources — do NOT duplicate inline):
 - [scope-workflow.md](../agents/bubbles_shared/scope-workflow.md) — DoD templates, phase exit gates, artifact templates, and status ceiling enforcement
 - [project-config-contract.md](../agents/bubbles_shared/project-config-contract.md) — What projects must provide, indirection rules, portability inventory, and skills/instructions governance
 - [workflows.yaml](../bubbles/workflows.yaml) — Gates, modes, phases, retry policy, and priority scoring
+- [feature-templates.md](../agents/bubbles_shared/feature-templates.md) — Version 3 `state.json`, `scenario-manifest.json`, and control-plane artifact templates
+- [CONTROL_PLANE_DESIGN.md](../docs/guides/CONTROL_PLANE_DESIGN.md) — Registry-driven delegation, policy defaults, certification ownership, lockdown, and scenario contracts
+
+## Control Plane Requirements (MANDATORY for updated bubbles.* agents)
+
+When creating or updating a `bubbles.*` agent:
+- Reference the validate-owned control plane instead of legacy self-promotion language.
+- Treat `state.json.execution.*` as execution-claim space and `state.json.certification.*` as validate-owned authoritative completion state.
+- If the agent touches user-visible or externally observable behavior planning, reference `scenario-manifest.json` and stable `SCN-*` IDs where appropriate.
+- If the agent needs repo-default execution behavior, reference the policy registry in `.specify/memory/bubbles.config.json` and `policySnapshot` provenance instead of inventing local defaults.
+- Keep prompt shims and agent definitions in sync so every registered agent has a current prompt surface.
 
 ## ⚠️ Universal Anti-Fabrication Contract (MANDATORY for ALL agents)
 

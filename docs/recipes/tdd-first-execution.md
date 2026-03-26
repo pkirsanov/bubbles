@@ -26,7 +26,7 @@ For existing code or bugs:
 If the direction itself still feels shaky, combine it with a pressure pass first:
 
 ```
-/bubbles.workflow  <feature-or-bug> mode: product-to-delivery grillFirst: true tdd: true
+/bubbles.workflow  <feature-or-bug> mode: product-to-delivery grillMode: required-on-ambiguity tdd: true
 ```
 
 ## What The Tag Changes
@@ -53,5 +53,5 @@ Use this when:
 ## Pair It With
 
 - `/bubbles.grill ...` when the direction still needs sharper questions
-- `grillFirst: true` when you want workflow-level pressure before planning or implementation
+- `grillMode: required-on-ambiguity` when you want workflow-level pressure before planning or implementation
 - `backlogExport: tasks|issues` when planning should also emit copy-ready execution items

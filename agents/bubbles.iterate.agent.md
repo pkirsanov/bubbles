@@ -409,7 +409,7 @@ If no suitable feature folder exists and `allow_new_feature_dir: true`:
    - If not provided: search for active feature or offer to create new
 2. Load existing artifacts (spec.md, design.md, scopes.md, state.json)
 3. Check for resume (incomplete state.json)
-4. **Capture `statusBefore`** — read current `status` from `state.json` and record it plus the current RFC3339 timestamp as `runStartedAt` (needed for `executionHistory`)
+4. **Capture `statusBefore`** — read current top-level `status` plus `certification.status` from `state.json` and record them with the current RFC3339 timestamp as `runStartedAt` (needed for `executionHistory`)
 5. **Run User Validation Gate** (per shared workflow)
 6. Run Pre-Flight subagent research
 
@@ -427,7 +427,7 @@ If no suitable feature folder exists and `allow_new_feature_dir: true`:
    - If missing or stale: invoke `bubbles.design` via `runSubagent` with `mode: non-interactive`
    - Add scope with Gherkin scenarios, implementation plan, test plan, DoD
 4. **Determine workflow mode** from Work-Type-to-Mode Mapping (or use explicit `mode:` from user input)
-5. Update `state.json`: `currentScope`, `currentPhase: implement`
+5. Update `state.json.execution`: `currentScope`, `currentPhase: implement`. Do NOT mutate `certification.*` or promote `status`; certification remains validate-owned.
 
 ### Phase 2: Workflow Dispatch (DELEGATE to specialist agents)
 
@@ -560,7 +560,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
   - If stale-reference coverage is missing, the iteration is NOT complete
 
 6. **Verify all specialist phases executed:**
-   - Check `state.json` `completedPhases` includes all mode-required phases
+  - Check `state.json.execution.completedPhaseClaims` and `state.json.certification.certifiedCompletedPhases` include the mode-required phases that actually ran and were certified
    - If any phase is missing → it was NOT executed → execute it now
 
 7. **Final gate check:**
@@ -573,7 +573,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
    - `startedAt`: `runStartedAt` captured in Phase 0
    - `completedAt`: current RFC3339 timestamp
    - `statusBefore`: captured in Phase 0
-   - `statusAfter`: the final status written to state.json
+  - `statusAfter`: the final execution status after this iteration. Do NOT write `done` here unless `bubbles.validate` has already certified the promotion.
    - `phasesExecuted`: all phases that ran during this iteration
    - `scopesCompleted`: scopes that reached "Done" during this iteration
    - `summary`: brief description of work accomplished

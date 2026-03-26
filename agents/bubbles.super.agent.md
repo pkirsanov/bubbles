@@ -244,9 +244,9 @@ When a user asks "which mode should I use?" or describes a situation:
 | Adversarial / random probing | Mode with "stochastic" or "chaos" in name |
 | Continuing work | Mode with "iterate" or "resume" in name |
 
-**Optional tags** that can be appended to most workflow commands:
-- `grillFirst: true` — pressure-test direction before planning
-- `tdd: true` — enforce red-green-first inner loop
+**Optional control-plane tags** that can be appended to most workflow commands:
+- `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` — resolve whether `bubbles.grill` must interrogate assumptions before planning or invalidation
+- `tdd: true` — elevate the effective TDD policy for this run when scenario-first red→green proof is required
 - `backlogExport: tasks|issues` — emit copy-ready backlog items from `bubbles.plan`
 - `socratic: true` — bounded clarification before discovery
 - `gitIsolation: true` — isolated branch/worktree
@@ -358,7 +358,7 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "install hooks and then tell me how to fix a bug" -> (1) hooks install --all, (2) recommend bugfix-fastlane sequence
 "what's the best workflow for improving an existing feature?" -> recommend improve-existing mode with explanation
 "pressure test this feature and then plan it" -> /bubbles.grill <feature> then /bubbles.plan <feature> backlogExport: tasks
-"deliver this with TDD and grill the assumptions first" -> /bubbles.workflow <feature> mode: full-delivery grillFirst: true tdd: true
+"deliver this with TDD and grill the assumptions first" -> /bubbles.workflow <feature> mode: full-delivery grillMode: required-on-ambiguity tdd: true
 "give me a command to chaos test everything for 2 hours" -> /bubbles.workflow mode: stochastic-quality-sweep minutes: 120 triggerAgents: chaos
 "how do I set up custom gates?" -> explain gates workflow + provide example command
 ```

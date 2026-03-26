@@ -87,6 +87,7 @@ Links: [spec.md](spec.md) | [design.md](design.md) | [uservalidation.md](userval
 ### Gherkin Scenarios
 - Given/When/Then scenarios
 - Each scenario must map to a test in the Test Plan and a DoD evidence item
+- Each scenario must receive a stable `SCN-...` contract entry in `scenario-manifest.json`
 
 ### UI Scenario Matrix (Required when UI changes exist)
 | Scenario | Preconditions | Steps | Expected | Test Type | Evidence |
@@ -150,6 +151,8 @@ Links: [uservalidation.md](uservalidation.md)
 ### Test Evidence
 Use the test evidence sections from scope-workflow.md and include raw terminal output.
 
+When `policySnapshot.tdd.mode` is `scenario-first`, include explicit red-stage and green-stage evidence for the changed scenario contracts.
+
 All required tests must pass with zero skipped required tests.
 
 Claims of completion/success must be evidence-linked; if any required evidence is missing or unknowns remain unresolved, status must be `blocked`.
@@ -172,19 +175,111 @@ Rules:
 - Entries created by agents after validation/audit MUST default to checked `[x]`.
 - Empty checklist or non-checkbox bullets are template violations.
 
+## scenario-manifest.json Template
+
+```json
+{
+  "version": 1,
+  "featureDir": "specs/NNN-feature-name",
+  "generatedAt": "YYYY-MM-DDTHH:MM:SSZ",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-NNN-001",
+      "scope": "01-scope-name",
+      "title": "User-visible or externally observable behavior",
+      "gherkin": {
+        "given": "precondition",
+        "when": "action",
+        "then": "result"
+      },
+      "gherkinHash": "sha256:...",
+      "behaviorClass": "ui | api",
+      "changeType": "new | changed | regression | bugfix | replacement",
+      "requiredTestType": "e2e-ui | e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "path/to/live-system-test.spec.ts",
+          "testId": "exact-test-name"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-scn-nnn-001"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    }
+  ]
+}
+```
+
 ## state.json Template
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "featureDir": "specs/NNN-feature-name",
   "featureName": "Feature Name",
-  "currentScope": null,
   "status": "not_started",
   "workflowMode": "full-delivery | spec-scope-hardening | docs-only | validate-only | audit-only | resume-only",
-  "currentPhase": "context | plan | implement | tests | validate | docs | audit | finalize",
-  "completedScopes": [],
-  "completedPhases": [],
+  "execution": {
+    "activeAgent": "bubbles.workflow",
+    "currentPhase": "context | discover | bootstrap | implement | test | regression | docs | validate | audit | chaos | finalize",
+    "currentScope": null,
+    "runStartedAt": "YYYY-MM-DDTHH:MM:SSZ",
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": []
+  },
+  "certification": {
+    "status": "not_started",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Scope Name",
+        "status": "not_started",
+        "dependsOn": [],
+        "scopeDir": "scopes/01-scope-name",
+        "evidenceFile": "scopes/01-scope-name/report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "source": "repo-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "lockdown": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "regression": {
+      "mode": "protected-scenarios",
+      "source": "repo-default"
+    },
+    "validation": {
+      "mode": "certification-required",
+      "source": "repo-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
@@ -195,24 +290,19 @@ Rules:
     "design": "design.md",
     "scopes": "scopes.md | scopes/_index.md",
     "report": "report.md | scopes/NN-name/report.md",
-    "uservalidation": "uservalidation.md"
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "lockdownApprovals": "lockdown-approvals.json",
+    "invalidationLedger": "invalidation-ledger.json",
+    "transitionRequests": "transition-requests.json",
+    "reworkQueue": "rework-queue.json"
   },
   "statusDiscipline": {
     "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
     "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
-    "scopeDoneGates": ["G020", "G021", "G022", "G023", "G024", "G025"],
-    "specDoneRequires": "All scopes done. completedScopes contains all scope IDs."
+    "scopeDoneGates": ["G020", "G021", "G022", "G023", "G024", "G025", "G055", "G056", "G057", "G058", "G059", "G060", "G061"],
+    "specDoneRequires": "All scopes done. certification.completedScopes contains all scope IDs and bubbles.validate has certified promotion."
   },
-  "scopeProgress": [
-    {
-      "scope": 1,
-      "name": "Scope Name",
-      "status": "not_started",
-      "dependsOn": [],
-      "scopeDir": "scopes/01-scope-name",
-      "evidenceFile": "scopes/01-scope-name/report.md"
-    }
-  ],
   "notes": "Initialized."
 }
 ```
@@ -221,6 +311,8 @@ Rules:
 **`workflowMode`:** Records which workflow mode last set the status.  
 Only modes with `statusCeiling: done` (in `bubbles/workflows.yaml`) may set `status: "done"`.
 Artifact-only modes set their ceiling status (e.g., `specs_hardened` for `spec-scope-hardening`).
+**`execution` vs `certification`:** execution records runtime claims; certification is the validate-owned authoritative state that must match top-level `status` before promotion.
+**`policySnapshot`:** records the effective grill/TDD/auto-commit/lockdown/regression/validation settings together with provenance.
 **`scopeLayout`:** `single-file` uses `scopes.md` + `report.md`; `per-scope-directory` uses `scopes/_index.md` plus `scopes/NN-name/scope.md` and `scopes/NN-name/report.md`.  
-**`scopeProgress`:** Machine-readable scope registry for dependency pickup, status sync, and evidence location.
+**`certification.scopeProgress`:** Machine-readable scope registry for dependency pickup, status sync, and evidence location.
 ```

@@ -25,12 +25,13 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 ```
 
 This installs:
-- 30 agent definitions → `.github/agents/bubbles.*.agent.md`
-- 30 prompt shims → `.github/prompts/bubbles.*.prompt.md`
+- 32 agent definitions → `.github/agents/bubbles.*.agent.md`
+- 32 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
 - Shared portable instructions → `.github/instructions/bubbles-*.instructions.md`
 - Shared portable governance skills → `.github/skills/bubbles-*/SKILL.md`
 - Workflow config → `.github/bubbles/workflows.yaml`
+- Agent registries → `.github/bubbles/agent-ownership.yaml`, `.github/bubbles/agent-capabilities.yaml`
 - Governance scripts → `.github/bubbles/scripts/*.sh`
 
 And with `--bootstrap`, also creates:
@@ -38,6 +39,7 @@ And with `--bootstrap`, also creates:
 - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
 - `.specify/memory/constitution.md` — project governance principles
 - `.specify/memory/agents.md` — command registry for agent resolution
+- `.specify/memory/bubbles.config.json` — control-plane policy registry (grill, TDD, lockdown defaults)
 - `.github/bubbles/docs/CROSS_PROJECT_SETUP.md` — setup checklist
 - `.github/bubbles/docs/SETUP_SOURCES.md` — bootstrap source registry
 - `specs/` — directory for feature/bug specs

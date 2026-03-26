@@ -330,14 +330,14 @@
 <div class="header">
   <img src="../icons/bubbles-logo.svg" alt="Bubbles Logo">
   <h1>BUBBLES</h1>
-  <div class="subtitle">Agent Orchestration System v2.0</div>
+  <div class="subtitle">Agent Orchestration System v3.0</div>
   <div class="subtitle">Sunnyvale Trailer Park Software Division</div>
   <div class="tagline">"It Ain't Rocket Appliances, But It Works."</div>
 </div>
 
 <!-- ═══════════════════════════════ THE ROSTER ═══════════════════════════════ -->
 <!-- GENERATED:FRAMEWORK_STATS_ROSTER_START -->
-<div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Sunnyvale Roster — All 30 Agents</div>
+<div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Sunnyvale Roster — All 32 Agents</div>
 <!-- GENERATED:FRAMEWORK_STATS_ROSTER_END -->
 
 <h3 style="color: var(--accent); margin: 1rem 0 0.5rem;"><img src="../icons/lahey-badge.svg" width="20" style="vertical-align: middle;"> Start Here</h3>
@@ -427,7 +427,7 @@
     <div class="info">
       <div class="agent-name">bubbles.validate</div>
       <div class="character">Randy</div>
-      <div class="role">Always by Lahey's side. Does the grunt work of checking every gate. Takes his shirt off when things get serious.</div>
+      <div class="role">Always by Lahey's side. Checks every gate, owns certification, and is the only one allowed to bless completion state when the evidence is real.</div>
       <div class="quote">"Mr. Lahey, the tests aren't passing!"</div>
     </div>
   </div>
@@ -494,7 +494,7 @@
     <div class="info">
       <div class="agent-name">bubbles.grill</div>
       <div class="character">Leslie Dancer</div>
-      <div class="role">The drill-sergeant pressure pass. Exposes weak assumptions, thin plans, and bad workflow calls before time gets burned.</div>
+      <div class="role">The drill-sergeant pressure pass. Exposes weak assumptions, handles approval grilling for locked behavior, and stops bad workflow calls before time gets burned.</div>
       <div class="quote">"Let's get it under the light and see if it survives."</div>
     </div>
   </div>
@@ -1012,8 +1012,20 @@
 <div class="quick-ref">
   <h3>🧩 Optional Execution Tags</h3>
   <div class="line">
+    <span class="situation">Pressure-test assumptions or locked behavior</span>
+    <span class="quote-text"><code>grillMode</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Scenario-first red→green proof</span>
+    <span class="quote-text"><code>tdd</code></span>
+  </div>
+  <div class="line">
     <span class="situation">Bounded clarification loop</span>
     <span class="quote-text"><code>socratic</code> + <code>socraticQuestions</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Backlog export from planning</span>
+    <span class="quote-text"><code>backlogExport</code></span>
   </div>
   <div class="line">
     <span class="situation">Isolated worktree or branch</span>
@@ -1030,6 +1042,26 @@
   <div class="line">
     <span class="situation">Repair the smallest failure first</span>
     <span class="quote-text"><code>microFixes</code></span>
+  </div>
+</div>
+
+<div class="quick-ref">
+  <h3>🧠 Control Plane Quick Rules</h3>
+  <div class="line">
+    <span class="situation">Runtime claims</span>
+    <span class="quote-text"><code>state.json.execution.*</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Validate-owned authority</span>
+    <span class="quote-text"><code>state.json.certification.*</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Default mode provenance</span>
+    <span class="quote-text"><code>policySnapshot</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Behavior contract registry</span>
+    <span class="quote-text"><code>scenario-manifest.json</code> + <code>SCN-*</code></span>
   </div>
 </div>
 
@@ -1315,8 +1347,8 @@
 </table>
 
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_START -->
-<!-- ═══════════════════════════════ THE 52 GATES ═══════════════════════════════ -->
-<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 52 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
+<!-- ═══════════════════════════════ THE 61 GATES ═══════════════════════════════ -->
+<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 61 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_END -->
 
 <div class="phase-flow">
@@ -1341,7 +1373,7 @@
 
 <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; font-style: italic;">
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_START -->
-  "52 gates, boys. That's more security than the trailer park has ever had. 
+  "61 gates, boys. That's more security than the trailer park has ever had. 
   Something's fucky? We'll find it. That's greasy? We'll clean it. 
   Red first, green after. Small scopes. Tiny fix loops.
   Can't defer things either — you can't just NOT do things, Corey!
@@ -1353,9 +1385,9 @@
 <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
 <div class="footer">
   <div class="big-quote">"Have a good one, boys."</div>
-  <p>Bubbles Agent System v2.1 — Sunnyvale Trailer Park Software Division</p>
+  <p>Bubbles Agent System v3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>52 Gates • 30 Agents • 26 Workflow Modes • 18 Phases • 0 Shit Hawks</p>
+  <p>61 Gates • 32 Agents • 27 Workflow Modes • 19 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

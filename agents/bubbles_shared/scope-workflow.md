@@ -1,4 +1,4 @@
-<!-- governance-version: 2.1.0 -->
+<!-- governance-version: 3.0.0 -->
 # Shared Scope Workflow (Common to iterate & implement)
 
 > **This file defines scope-specific workflow for `bubbles.iterate` and `bubbles.implement`.**
@@ -56,7 +56,7 @@ The **artifact lint script** (`artifact-lint.sh`) includes automated detection f
 - Unfilled template placeholders
 - Evidence blocks lacking terminal output signals (fabricated content)
 - Narrative summary language
-- Missing specialist phases in `completedPhases`
+- Missing specialist phases in `execution.completedPhaseClaims` / `certification.certifiedCompletedPhases`
 - Duplicate evidence blocks
 
 The **implementation reality scan** (`implementation-reality-scan.sh`) includes automated detection for:
@@ -216,11 +216,14 @@ Use these rules for every scope status change.
   - Scope DoD explicitly includes scenario-specific E2E regression coverage for changed behavior plus a broader regression suite pass
   - If the scope renames/removes any route, path, contract, identifier, or UI target, the DoD includes a consumer impact sweep item and the affected consumer flows are validated
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
-   - Scope entry in `state.json` is updated in `scopeProgress` and `completedScopes`
-  - `completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries
+  - Scope entry in `state.json` is updated in `certification.scopeProgress` and `certification.completedScopes`
+  - `certification.completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries
+  - `policySnapshot` is present with effective values and provenance for grill, TDD, auto-commit, lockdown, regression, and validation
+  - `scenario-manifest.json` exists, contains stable scenario contracts for the scope's Gherkin scenarios, and links them to live-system tests plus evidence refs
+  - `transitionRequests` and `reworkQueue` are closed before certification
    - **Zero deferral language exists in scope artifacts** (Gate G040 — "deferred", "future scope", "follow-up", "out of scope", "will address later", "punt", "postpone", "skip for now", "not implemented yet", "placeholder", "temporary workaround" are ALL blocking)
 3. If evidence is missing, contradictory, a required test type is absent, or deferral language is present, scope status must remain `In Progress`.
-4. Spec status cannot move to `done` until ALL scopes are `Done` and `completedScopes` contains all scope IDs.
+4. Spec status cannot move to `done` until ALL scopes are `Done`, `certification.completedScopes` contains all scope IDs, and `bubbles.validate` certifies the transition.
 
 ## Live-Stack Test Classification (ABSOLUTE)
 
@@ -244,7 +247,7 @@ grep -rn 'page\.route\|context\.route\|route(\|intercept(\|cy\.intercept\|msw\|n
 |-------------|-----------------|----------------|----------------|
 | Single-file | `scopes.md` | `report.md` | `state.json` |
 | Per-scope dirs | `scopes/NN-name/scope.md` | `scopes/NN-name/report.md` | `state.json` |
-| Both modes | `scopes/_index.md` status column (if exists) | — | `state.json` is authoritative |
+| Both modes | `scopes/_index.md` status column (if exists) | — | `state.json` top-level status mirrors `certification.status`; certification is authoritative |
 
 ---
 
@@ -353,7 +356,7 @@ Both iterate and implement follow these phases:
 2. **Mark items `[x]` by default** (just validated via audit)
 3. **Resolve effective status from workflow mode `statusCeiling`** (see Status Ceiling Enforcement below)
 4. Mark scope status in the active scope definition file (`scope.md` or `scopes.md`) according to resolved status, and sync `_index.md` if present
-5. Update `state.json` status to the resolved status
+5. Route the resolved status through `bubbles.validate`, which writes the authoritative `certification.status` and mirrors the top-level compatibility status when promotion is allowed
 6. Record `workflowMode` in `state.json` so resume and downstream agents know what was executed
 
 **⛔ COMPLETION CHAIN ENFORCEMENT (ABSOLUTE — from agent-common.md):**
@@ -387,7 +390,7 @@ Before marking ANY scope "Done" or setting spec status to "done", the agent MUST
     - No narrative summaries as evidence
     - No duplicate evidence blocks
     - No batch-checked items
-13. **Verify specialist completion** — `state.json` `completedPhases` includes ALL mode-required phases (Gate G022)
+13. **Verify specialist completion** — `state.json.execution.completedPhaseClaims` and `state.json.certification.certifiedCompletedPhases` include ALL mode-required phases (Gate G022)
 14. **Verify no TODOs/stubs** — `grep -r "TODO\|FIXME\|HACK\|STUB\|unimplemented!" [changed-files]` must return 0 results
 15. **Verify completion chain (G024)** — ALL scopes are "Done" before spec can be "done"
 16. **Verify per-DoD-item evidence (G025)** — EVERY [x] item has raw terminal output evidence inline with legitimate terminal signals. Manually verify each checked item has an evidence block containing real output (pass/fail counts, file paths, exit codes). Items without evidence or with fabricated prose MUST be reverted to [ ]
@@ -427,18 +430,26 @@ Step 5: IF lint fails → STOP. Status stays "in_progress". Fix failures.
 **Rules:**
 - If the mode's `statusCeiling` is NOT `done`, the finalize phase MUST NOT set `status: "done"` in `state.json` or mark scopes as `Done` in `scopes.md`
 - Artifact-only modes (`spec-scope-hardening`, `docs-only`, `validate-only`, `audit-only`) produce planning/quality improvements but do NOT constitute completed implementation work
-- The `completedPhases` array records which phases ran in this session — it is informational but MUST be coherent with `completedScopes` (Gate G027: claiming implementation phases with empty completedScopes = fabrication)
-- **Phase Recording Responsibility (MANDATORY):** Each specialist agent is responsible for appending its OWN phase name to `completedPhases` in `state.json` AFTER its Tier 1 + Tier 2 validation checks pass. Agents MUST NOT add other agents' phase names. Pre-populating phases that have not actually executed is fabrication (Gate G027). The recording happens as the agent's LAST step — never before validation succeeds.
-- **Execution History Ownership (MANDATORY):** `executionHistory` is the audit trail for agent/workflow runs. Standalone specialist runs MUST append their own `executionHistory` entry. When a specialist is invoked by the workflow/orchestrator via `runSubagent`, the specialist MUST skip appending `executionHistory`; the workflow/orchestrator records the authoritative entry for that run to avoid duplicate history rows. This exception does NOT change the specialist's responsibility to append its own phase name to `completedPhases`.
+- `execution.completedPhaseClaims` records which phases ran in this session, while `certification.certifiedCompletedPhases` records which of those phases were validate-certified. Both must remain coherent with `certification.completedScopes` (Gate G027: claiming implementation phases with empty certified scope completion is fabrication).
+- **Phase Recording Responsibility (MANDATORY):** Each specialist agent may append only its OWN phase name to `execution.completedPhaseClaims` in `state.json` AFTER its Tier 1 + Tier 2 validation checks pass. Agents MUST NOT add other agents' phase names and MUST NOT write `certification.certifiedCompletedPhases`; certification is validate-owned. Pre-populating phases that have not actually executed is fabrication (Gate G027). The recording happens as the agent's LAST step — never before validation succeeds.
+- **Execution History Ownership (MANDATORY):** `executionHistory` is the audit trail for agent/workflow runs. Standalone specialist runs MUST append their own `executionHistory` entry. When a specialist is invoked by the workflow/orchestrator via `runSubagent`, the specialist MUST skip appending `executionHistory`; the workflow/orchestrator records the authoritative entry for that run to avoid duplicate history rows. This exception does NOT change the specialist's responsibility to append its own execution claim.
 - **Phase name mapping:** `bubbles.implement` → `"implement"`, `bubbles.test` → `"test"`, `bubbles.docs` → `"docs"`, `bubbles.validate` → `"validate"`, `bubbles.audit` → `"audit"`, `bubbles.chaos` → `"chaos"`
 - A subsequent `full-delivery` or `feature-bootstrap` run is required to advance status to `done`
 
 **Example state.json after `spec-scope-hardening`:**
 ```json
 {
+  "version": 3,
   "status": "specs_hardened",
   "workflowMode": "spec-scope-hardening",
-  "completedPhases": ["select", "bootstrap", "harden", "docs", "validate", "audit", "finalize"],
+  "execution": {
+    "completedPhaseClaims": ["select", "bootstrap", "harden", "docs", "validate", "audit", "finalize"]
+  },
+  "certification": {
+    "status": "specs_hardened",
+    "completedScopes": [],
+    "certifiedCompletedPhases": ["validate", "audit"]
+  },
   "notes": "Specs/scopes hardened. Implementation not started — run full-delivery to advance to done."
 }
 ```
@@ -446,9 +457,17 @@ Step 5: IF lint fails → STOP. Status stays "in_progress". Fix failures.
 **Example state.json after `full-delivery`:**
 ```json
 {
+  "version": 3,
   "status": "done",
   "workflowMode": "full-delivery",
-  "completedPhases": ["select", "implement", "test", "docs", "validate", "audit", "chaos", "finalize"]
+  "execution": {
+    "completedPhaseClaims": ["select", "implement", "test", "docs", "validate", "audit", "chaos", "finalize"]
+  },
+  "certification": {
+    "status": "done",
+    "completedScopes": ["01-core-scope", "02-follow-up-scope"],
+    "certifiedCompletedPhases": ["validate", "audit", "chaos", "finalize"]
+  }
 }
 ```
 

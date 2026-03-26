@@ -24,6 +24,7 @@ Ensure `spec.md` follows the repository spec template and captures behavior usin
 - Each scenario describes system behavior, not implementation.
 - Keep scenarios independent and testable.
 - Avoid long chained steps.
+- When the spec will enter Bubbles workflow execution, ensure each accepted scenario can later receive a stable `SCN-*` contract entry in `scenario-manifest.json`.
 
 ## Tech-Agnostic Rules
 - Do not mention languages, frameworks, databases, services, or tools.
@@ -35,7 +36,10 @@ Ensure `spec.md` follows the repository spec template and captures behavior usin
 - Edge cases are concrete and behavior-focused.
 - Functional requirements are testable and implementation-free.
 - Success criteria are measurable and technology-agnostic.
+- Scenario names are stable enough to support later `scenario-manifest.json` mapping and protected regression coverage.
 
 ## References
 - `.specify/templates/spec-template.md`
 - `.github/copilot-instructions.md`
+- `.github/agents/bubbles_shared/feature-templates.md`
+- `docs/guides/CONTROL_PLANE_SCHEMAS.md`

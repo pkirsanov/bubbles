@@ -448,5 +448,5 @@ Follow [scope-workflow.md → Phase Recording Responsibility](bubbles_shared/sco
 
 If `{FEATURE_DIR}/scopes.md` exists:
 - Only mark a scope `Done` when its Definition of Done is fully satisfied (not just “tests passed”).
-- If DoD is satisfied for a scope during this run, update its status to `Done` — but ONLY if the active workflow mode's `statusCeiling` (from `bubbles/workflows.yaml`) allows `done`. If running under an artifact-only mode (e.g., `spec-scope-hardening`), set the ceiling status instead.
+- If DoD is satisfied for a scope during this run, update the scope artifacts and route the completion request through validate-owned certification. Do not self-certify `done`; only `bubbles.validate` may finalize `certification.status`, `certification.completedScopes`, and the top-level compatibility status when the mode's `statusCeiling` allows promotion.
 - Otherwise, leave scope status unchanged and report what remains.

@@ -16,6 +16,7 @@ This is a portable governance skill. Keep it free of project-specific commands, 
 - Do not invent defaults or fallbacks that hide missing configuration.
 - Do not prescribe ad-hoc build or run commands. Resolve command execution through `.specify/memory/agents.md` and repository policy docs.
 - Avoid embedding opaque scripting blobs inside shell scripts unless the target repository explicitly allows it.
+- When a skill touches spec/workflow/test guidance, reference the control-plane artifacts (`policySnapshot`, `scenario-manifest.json`, validate-owned `certification.*`) instead of teaching legacy completion/state semantics.
 
 ## Skill Structure
 A skill is a folder under `.github/skills/<skill-name>/`.
@@ -56,3 +57,5 @@ A skill is done when:
 - `.github/instructions/bubbles-skills.instructions.md`
 - `.github/agents/bubbles_shared/project-config-contract.md`
 - `.github/agents/bubbles_shared/agent-common.md`
+- `.github/agents/bubbles_shared/feature-templates.md`
+- `docs/guides/CONTROL_PLANE_DESIGN.md`

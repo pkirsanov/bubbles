@@ -26,7 +26,8 @@ handoffs:
 - Propose improvements ranked by business impact with competitive edge rationale
 - Discover edge cases commonly missed (validation, error states, concurrency, accessibility)
 - Reconcile stale analyst-owned sections before writing new ones; do not leave invalidated requirements active beside current truth
-- Ensure state.json exists in the feature folder (create if missing) — see State.json Lifecycle in agent-common.md
+- Ensure state.json exists in the feature folder using the version 3 control-plane template from feature-templates.md if missing
+- Write execution metadata only; never mutate `certification.*` or promote final `status: "done"`
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 - If `socratic: true`, switch into a tightly bounded discovery interview: ask only targeted questions that materially change requirements, architecture direction, or UX outcomes; stop after `socraticQuestions` questions or earlier if ambiguity is resolved
 
@@ -120,8 +121,8 @@ Unlike `/bubbles.design` (technical architecture), `/bubbles.clarify` (consisten
 
 1. Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (ONE attempt, fail fast if not found)
 2. Create `{FEATURE_DIR}` directory if it does not exist
-3. Ensure `state.json` exists (create with `not_started` if missing — see State.json Lifecycle in agent-common.md)
-4. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
+3. Ensure `state.json` exists (create from the version 3 template in feature-templates.md if missing)
+4. Update `state.json.execution`: set `activeAgent: "bubbles.analyst"`, `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`, and keep `policySnapshot` intact
 5. Read existing `spec.md` if present → determines mode (greenfield vs reconcile unless explicitly overridden)
 
 ### Phase 0.5: Optional Socratic Discovery Loop
@@ -371,7 +372,7 @@ Within analyst-owned sections, reconcile instead of blindly appending. Active se
 
 ### Phase 9: Update State & Report
 
-1. Update `state.json`: set `currentPhase`, append entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.analyst"`, `phasesExecuted: ["analyze"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — the workflow agent records the entry
+1. Update `state.json.execution` and append an `executionHistory` entry (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.analyst"`, `phasesExecuted: ["analyze"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — the workflow agent records the entry. Do NOT write `certification.*`.
 2. Provide summary:
    - Actors discovered
    - Use cases defined

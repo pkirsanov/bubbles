@@ -29,11 +29,12 @@ handoffs:
 - **Include testing strategy** — design.md must describe how each major feature will be validated (which test types, what user scenarios)
 - **Auto-detect analysis depth** — if spec.md contains `## Actors & Personas` and `## UI Wireframes` sections (analyst + UX output), automatically use `from-analysis` depth to produce contract-grade design.md
 - Reconcile stale design sections before adding new architecture, contract, or rollout decisions; active design must expose one current truth
-- Ensure state.json exists (create if missing) — see State.json Lifecycle in agent-common.md
+- Ensure state.json exists using the version 3 control-plane template from feature-templates.md if missing
+- Write execution metadata only; never mutate `certification.*` or promote final `status: "done"`
 
 **Artifact Ownership (this agent creates ONLY these):**
 - `design.md` — Comprehensive design document
-- `state.json` — Initial state tracking (with `status: "not_started"`)
+- `state.json` — Only when missing, initialize the version 3 execution-state template so downstream agents have control-plane fields available
 
 **Upstream prerequisites owned by other agents:**
 - `spec.md` business requirements are owned by `bubbles.analyst`
@@ -140,7 +141,7 @@ Core requirements:
 
 3) **Adhere to repository design principles**
    - Follow repo governance and policy documents.
-   - For UI, reference and comply with [ui-design.instructions.md](.github/instructions/ui-design.instructions.md).
+  - For UI, reference and comply with repository UI design instructions when the repo provides them.
    - Do NOT introduce defaults/fallbacks or hardcoded values that violate policy.
 
 4) **Iterative clarification without limits**
@@ -159,7 +160,7 @@ Core requirements:
 - Resolve `{FEATURE_DIR}` from `$ARGUMENTS` or branch.
 - Create `{FEATURE_DIR}` directory if it does not exist.
 - Run **Design-Phase Artifacts Gate**: ensure `spec.md`, `design.md`, and `state.json` exist.
-  - Create `state.json` with `{"status": "not_started"}` if missing.
+  - Create `state.json` from the version 3 template in feature-templates.md if missing.
   - If `spec.md` is missing or incomplete, invoke `bubbles.analyst` via `runSubagent`, then continue only after analyst-owned sections exist.
   - If `design.md` is missing, it will be created as the primary output of this agent.
 - Do NOT create `scopes.md`, `report.md`, or `uservalidation.md` — those are created by `/bubbles.plan`.
@@ -242,7 +243,7 @@ Create a structured design.md with sections:
 
 1) Create or update `{FEATURE_DIR}/design.md`.
 2) Create or complete `{FEATURE_DIR}/spec.md` if it was missing/incomplete.
-3) Create `{FEATURE_DIR}/state.json` if it was missing.
+3) Create `{FEATURE_DIR}/state.json` from the version 3 template if it was missing.
 4) Provide a short summary:
 
 - Created/updated file(s)
@@ -252,7 +253,7 @@ Create a structured design.md with sections:
 - Next recommended command: `/bubbles.plan` to generate scopes, report template, and user validation
 
 ```
-Created/updated: {FEATURE_DIR}/spec.md, {FEATURE_DIR}/design.md, {FEATURE_DIR}/state.json
+Created/updated: {FEATURE_DIR}/spec.md, {FEATURE_DIR}/design.md, {FEATURE_DIR}/state.json (v3 template only if missing)
 Open questions: N
 Next: /bubbles.plan (creates scopes.md, report.md, uservalidation.md)
 ```

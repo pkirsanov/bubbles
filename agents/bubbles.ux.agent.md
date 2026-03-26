@@ -28,7 +28,8 @@ handoffs:
 - Ensure accessibility (WCAG), responsive design, and design system compliance
 - Reference project design system from ui-design instructions or equivalent
 - Reconcile stale wireframes, screen inventories, and flows before adding new UX truth
-- Ensure state.json exists (create if missing) — see State.json Lifecycle in agent-common.md
+- Ensure state.json exists using the version 3 control-plane template from feature-templates.md if missing
+- Write execution metadata only; never mutate `certification.*` or promote final `status: "done"`
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 
 **Non-goals:**
@@ -124,11 +125,11 @@ Unlike `/bubbles.analyst` (what to build), `/bubbles.design` (how to build it), 
 ### Phase 0: Resolve Feature + Inputs
 
 1. Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (ONE attempt, fail fast if not found)
-2. Ensure `state.json` exists (create if missing — see State.json Lifecycle in agent-common.md)
+2. Ensure `state.json` exists (create from the version 3 template in feature-templates.md if missing)
 3. Read `spec.md` — MUST have actors and scenarios (from analyst or manual)
 4. If spec.md lacks `## Actors` or `## Business Scenarios`: invoke `bubbles.analyst` via `runSubagent` and continue only after analyst-owned sections exist
 5. Read existing UI code structure to understand current screen inventory
-6. Update state.json: set `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`
+6. Update `state.json.execution`: set `activeAgent: "bubbles.ux"`, `currentPhase: "analyze"`, capture `statusBefore` and `runStartedAt` for `executionHistory`, and keep `policySnapshot` intact
 
 Compatibility: if `redesign: true` is present, treat it as `mode: redesign`.
 
@@ -276,7 +277,7 @@ Within UX-owned sections, reconcile instead of blindly appending. Remove invalid
 
 ### Phase 6: Update State & Report
 
-1. Update `state.json`: append entry to `executionHistory` (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.ux"`, `phasesExecuted: ["analyze"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — the workflow agent records the entry
+1. Update `state.json.execution` and append an `executionHistory` entry (see Execution History Schema in scope-workflow.md) with `agent: "bubbles.ux"`, `phasesExecuted: ["analyze"]`, `statusBefore`, `statusAfter`, timestamps, and summary. If invoked by `bubbles.workflow` via `runSubagent`, skip — the workflow agent records the entry. Do NOT write `certification.*`.
 2. Report summary:
    - Screens designed (new vs modified)
   - Screens or flows superseded

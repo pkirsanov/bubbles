@@ -29,6 +29,8 @@ Scenario: [scenario name]
   When [action]
   Then [outcome]
 
+Every scenario listed here must be mirrored into `scenario-manifest.json` with a stable `SCN-...` identifier, live-system test linkage, and evidence refs.
+
 ### UI Scenario Matrix (Required when UI changes exist)
 
 | Scenario | Preconditions | Steps | Expected | Test Type |
@@ -94,6 +96,8 @@ Scenario: [scenario name]
 
 ### Test Evidence (ALL TYPES REQUIRED)
 
+### Scenario Contract Evidence (Required when behavior changes)
+
 ### Coverage Report
 
 ### Lint/Quality
@@ -116,9 +120,24 @@ Scenario: [scenario name]
 ```json
 {
   "status": "not_started",
-  "currentPhase": null,
-  "completedScopes": [],
-  "completedPhases": [],
-  "scopeProgress": []
+  "execution": {
+    "currentPhase": null,
+    "currentScope": null,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": []
+  },
+  "certification": {
+    "status": "not_started",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {},
+  "transitionRequests": [],
+  "reworkQueue": []
 }
 ```

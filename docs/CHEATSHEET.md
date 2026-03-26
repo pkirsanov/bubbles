@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **31 Agents · 52 Gates · 27 Workflow Modes · 19 Phases**
+> **32 Agents · 61 Gates · 27 Workflow Modes · 19 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -159,14 +159,16 @@
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
 
-**Optional execution tags:** `grillFirst`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+**Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
 
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
+
+**Control-plane law:** `state.json.execution.*` records runtime claims, `state.json.certification.*` is validate-owned authority, `policySnapshot` records effective defaults with provenance, and changed behavior should flow through `scenario-manifest.json` with stable `SCN-*` contracts.
 
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 52 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 61 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -225,6 +227,16 @@
 | G049 | Evidence clone detection | DoD evidence blocks must be unique, not copy-pasted clones |
 | G050 | Gateway route forwarding | Backend endpoints must have matching gateway or proxy forwarding rules |
 | G051 | Test env dependency | Tests must not rely on hidden environment dependencies |
+| G052 | Artifact freshness | Superseded content must be isolated from active truth; stale scope appendices cannot keep executable structure |
+| G053 | Implementation delta evidence | Implementation-bearing workflows must prove runtime delivery with git-backed code-diff evidence |
+| G054 | Capability delegation | Foreign-owned work must route through the registered specialist; agents must not perform cross-owner actions inline |
+| G055 | Policy provenance | Active execution modes (grill, TDD, lockdown, etc.) must record value plus source in policySnapshot |
+| G056 | Validate certification | Only bubbles.validate may certify completion state; other agents submit execution claims and transition requests |
+| G057 | Scenario manifest | Every changed user-visible behavior must map to stable scenario IDs in scenario-manifest.json with live-system BDD coverage |
+| G058 | Lockdown | Locked scenarios cannot change without grill approval plus validate-certified invalidation or replacement |
+| G059 | Regression contract | Scenario-linked regression tests cannot drift, weaken, or be removed until the owning scenario contract is invalidated |
+| G060 | Scenario TDD | When TDD is active, targeted failing proof must exist before the implementation is accepted as green |
+| G061 | Rework packet | Route-required findings must produce structured transition or rework packets tied to scenarios, DoD items, and owning specialists |
 
 ---
 

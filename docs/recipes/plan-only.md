@@ -15,7 +15,7 @@ This also applies when an existing feature's active planning artifacts are stale
 ```
 /bubbles.workflow  feature-bootstrap for my-new-feature
 
-/bubbles.workflow  feature-bootstrap for my-new-feature grillFirst: true backlogExport: tasks
+/bubbles.workflow  feature-bootstrap for my-new-feature grillMode: required-on-ambiguity backlogExport: tasks
 
 /bubbles.workflow  redesign-existing for booking-page backlogExport: tasks
 ```

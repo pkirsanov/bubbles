@@ -431,7 +431,7 @@ This is NOT optional. Reporting a verdict (even ⚠️ MINOR_GAPS or 🛑 CRITIC
 3. **Count new DoD items:** How many new `- [ ]` checkbox items were added to scopes.md this session?
 4. **Parity check:** New Gherkin scenarios ≥ finding count. New DoD items ≥ new Gherkin scenarios.
 5. **Scope status check:** Any scope that had new `- [ ]` items added but was previously "Done" → status MUST now be "In Progress"
-6. **state.json check:** `state.json` reflects any scope status resets (status, completedScopes, completedPhases updated)
+6. **state.json check:** `state.json` reflects any scope status resets (top-level compatibility status, `certification.completedScopes`, `certification.certifiedCompletedPhases`, and `execution.completedPhaseClaims` updated coherently)
 
 **If ANY check fails → STOP. Update the missing artifacts NOW, then generate the verdict.**
 

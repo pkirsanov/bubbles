@@ -39,6 +39,8 @@ row_total=0
 mapped_total=0
 file_reference_total=0
 report_reference_total=0
+scenario_manifest_total=0
+scenario_manifest_file="$feature_dir/scenario-manifest.json"
 
 fail() {
   local message="$1"
@@ -238,6 +240,50 @@ echo "  Feature: $feature_dir"
 echo "  Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 echo "============================================================"
 fun_banner
+echo ""
+
+echo "--- Scenario Manifest Cross-Check (G057/G059) ---"
+scope_defined_scenarios=0
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+  scope_defined_scenarios=$((scope_defined_scenarios + $(grep -cE '^[[:space:]]*Scenario( Outline)?:' "$scope_path" || true)))
+done
+
+if [[ "$scope_defined_scenarios" -gt 0 ]]; then
+  if [[ ! -f "$scenario_manifest_file" ]]; then
+    fail "Resolved scopes define $scope_defined_scenarios Gherkin scenarios but scenario-manifest.json is missing"
+  else
+    scenario_manifest_total="$(grep -cE '"scenarioId"[[:space:]]*:' "$scenario_manifest_file" || true)"
+    if [[ "$scenario_manifest_total" -lt "$scope_defined_scenarios" ]]; then
+      fail "scenario-manifest.json covers only $scenario_manifest_total scenarios but scopes define $scope_defined_scenarios"
+    else
+      pass "scenario-manifest.json covers $scenario_manifest_total scenario contract(s)"
+    fi
+
+    manifest_missing_files=0
+    while IFS= read -r manifest_test_file; do
+      [[ -n "$manifest_test_file" ]] || continue
+      if path_exists "$manifest_test_file" "$feature_dir"; then
+        pass "scenario-manifest.json linked test exists: $manifest_test_file"
+      else
+        fail "scenario-manifest.json references missing linked test file: $manifest_test_file"
+        manifest_missing_files=$((manifest_missing_files + 1))
+      fi
+    done < <(grep -Eo '"file"[[:space:]]*:[[:space:]]*"[^"]+"' "$scenario_manifest_file" 2>/dev/null | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/' || true)
+
+    if grep -qE '"evidenceRefs"[[:space:]]*:[[:space:]]*\[' "$scenario_manifest_file"; then
+      pass "scenario-manifest.json records evidenceRefs"
+    else
+      fail "scenario-manifest.json is missing evidenceRefs entries"
+    fi
+
+    if [[ "$manifest_missing_files" -eq 0 ]]; then
+      pass "All linked tests from scenario-manifest.json exist"
+    fi
+  fi
+else
+  info "No scope-defined Gherkin scenarios found — scenario manifest cross-check skipped"
+fi
 echo ""
 
 for scope_path in "${scope_files[@]}"; do

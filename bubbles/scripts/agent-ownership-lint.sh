@@ -15,6 +15,7 @@ else
   shared_dir="$agents_dir/bubbles_shared"
   workflows_file="$root_dir/bubbles/workflows.yaml"
   ownership_file="$root_dir/bubbles/agent-ownership.yaml"
+  capabilities_file="$root_dir/bubbles/agent-capabilities.yaml"
 fi
 
 errors=0
@@ -40,8 +41,14 @@ check_has_match() {
 }
 
 check_has_match "$ownership_file" '^version:' 'agent ownership manifest missing version header'
+check_has_match "$capabilities_file" '^version:' 'agent capabilities manifest missing version header'
 check_has_match "$shared_dir/agent-common.md" '^## Artifact Ownership And Delegation Contract$' 'agent-common.md missing ownership contract section'
 check_has_match "$workflows_file" 'name: agent_ownership_gate' 'workflows.yaml missing agent ownership gate'
+check_has_match "$workflows_file" 'name: capability_delegation_gate' 'workflows.yaml missing capability delegation gate'
+check_has_match "$ownership_file" '^  state\.json:' 'agent ownership manifest missing state.json ownership block'
+check_has_match "$ownership_file" '^  scenario-manifest\.json:' 'agent ownership manifest missing scenario-manifest ownership block'
+check_has_match "$capabilities_file" '^  bubbles\.validate:' 'agent capabilities manifest missing bubbles.validate entry'
+check_has_match "$capabilities_file" 'certificationWriter: bubbles\.validate' 'agent capabilities manifest must declare bubbles.validate as certification writer'
 
 check_no_match "$agents_dir/bubbles.design.agent.md" '^- `spec\.md` — Feature specification|create or complete it using the spec template' 'bubbles.design must not own or create spec.md'
 check_no_match "$agents_dir/bubbles.validate.agent.md" '^#### 7\.2 What to Update \(Per Issue Category\)|Artifact to Update \| What to Add' 'bubbles.validate must route artifact changes instead of editing spec/design/scopes directly'

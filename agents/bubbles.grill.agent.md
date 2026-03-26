@@ -117,11 +117,11 @@ Strong matches include:
 
 User: `grill this feature idea before we spec it`
 - Return a Grill Report
-- Usually route to `bubbles.analyst` or `bubbles.workflow ... mode: product-discovery grillFirst: true`
+- Usually route to `bubbles.analyst` or `bubbles.workflow ... mode: product-discovery grillMode: required-on-ambiguity`
 
 User: `pressure test this design before implementation`
 - Return the weakest technical assumptions
-- Usually route to `bubbles.design` or `bubbles.workflow ... grillFirst: true`
+- Usually route to `bubbles.design` or `bubbles.workflow ... grillMode: required-on-ambiguity`
 
 User: `challenge these scopes and give me backlog tasks`
 - Return scope-level problems

@@ -104,8 +104,8 @@ When the user provides free-text input WITHOUT structured parameters, infer them
 
 1. Load `.specify/memory/agents.md` for repo-approved commands
 2. Resolve `{FEATURE_DIR}` from `$ARGUMENTS` (ONE attempt, fail fast)
-3. Ensure `state.json` exists (create if missing)
-4. Capture `statusBefore` and `runStartedAt` for `executionHistory`
+3. Ensure `state.json` exists (create from the version 3 template in feature-templates.md if missing)
+4. Capture `statusBefore` and `runStartedAt` for `executionHistory`, update `state.json.execution.activeAgent/currentPhase`, and do NOT mutate `certification.*`
 5. Read `spec.md`, `design.md`, `scopes.md` for the feature
 
 ### Phase 1: Threat Modeling

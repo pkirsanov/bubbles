@@ -14,6 +14,11 @@ Primary references:
 - `bubbles/workflows.yaml`
 - `agents/bubbles_shared/agent-common.md`
 
+Framework evolution packet:
+- [Control Plane Design](CONTROL_PLANE_DESIGN.md)
+- [Control Plane Rollout](CONTROL_PLANE_ROLLOUT.md)
+- [Control Plane Schemas](CONTROL_PLANE_SCHEMAS.md)
+
 ## Ownership And Shared References
 
 Artifact ownership:

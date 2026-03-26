@@ -5,7 +5,7 @@
 Each recipe solves a specific problem — the situation you're in, and exactly what to type.
 
 Optional execution tags you can append to many workflow commands:
-- `grillFirst: true` to pressure-test the direction before planning or implementation starts
+- `grillMode: required-on-ambiguity` to pressure-test the direction before planning or implementation starts
 - `tdd: true` to force a red-green-first execution loop inside the already-approved implement/test path
 - `backlogExport: tasks|issues` to make `bubbles.plan` emit copy-ready backlog outputs per scope
 - `socratic: true` for bounded clarification before discovery/bootstrap

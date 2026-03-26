@@ -201,10 +201,11 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 - **Verify design-phase prerequisites exist:**
   - `spec.md` — REQUIRED. If missing, STOP and instruct user to run `/bubbles.design` first.
   - `design.md` — REQUIRED. If missing or stale, invoke `bubbles.design` via `runSubagent` with `mode: non-interactive design: reconcile` before planning.
-  - `state.json` — Should exist. Create with `{"status": "not_started"}` if missing.
+  - `state.json` — Should exist. Create using the version 3 template from `feature-templates.md` if missing.
 - **Create plan-phase template artifacts if missing:**
   - `report.md` — Create with initial template headers (Summary, Test Evidence, Completion Statement).
   - `uservalidation.md` — Create with checked-by-default baseline template (`- [x]` items).
+  - `scenario-manifest.json` — Create/update so every planned Gherkin scenario has a stable `SCN-...` contract entry with live test expectations.
 - Run User Validation Gate on `uservalidation.md` (check for unchecked regressions).
 - Determine impacted surfaces by reading spec/design and scanning the repo structure:
   - Backend services (Rust/Python)

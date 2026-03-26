@@ -143,7 +143,7 @@ Supported options:
 - `final_global_pass: true|false` (default: true)
 - `socratic: true|false` (default: false)
 - `socraticQuestions: <1-5>` (default: 3)
-- `grillFirst: true|false` (default: false; run `bubbles.grill` before analyze/select/bootstrap work)
+- `grillMode: inherit|off|on-demand|required-on-ambiguity|required-for-lockdown` (default: inherit; resolve whether `bubbles.grill` must run before analyze/select/bootstrap or locked-behavior invalidation)
 - `tdd: true|false` (default: false; enforce red-green-first execution inside implement/test loops after baseline planning/scenario gates are already satisfied)
 - `backlogExport: off|tasks|issues` (default: off; forward copy-ready backlog output preferences to `bubbles.plan`)
 - `gitIsolation: true|false` (default: false)
@@ -224,7 +224,7 @@ These behaviors are mandatory baseline workflow rules, not optional tags:
 Those requirements are enforced by planning readiness, G033 design readiness, Gherkin/Test Plan/DoD checks, and planning-first recovery. They are not what `tdd: true` turns on.
 
 Optional preflight tags:
-- `grillFirst: true` inserts a `bubbles.grill` pressure pass before analysis, selection, or bootstrap when you want the plan challenged before anyone commits.
+- `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` inserts or requires a `bubbles.grill` pressure pass before analysis, selection, bootstrap, or locked-behavior invalidation when you want the plan challenged before anyone commits.
 - `tdd: true` only tightens the inner implement/test loop: start with failing targeted proof, then code, then passing proof.
 - When `tdd: true` is present, carry that contract into downstream execution: `bubbles.test` must preserve red-before-green targeted proof plus persistent regression coverage, `bubbles.regression` must verify the delta stayed green without weakened assertions, and `bubbles.chaos` still runs afterward as stochastic abuse rather than as a substitute for deterministic proof.
 - `backlogExport: tasks|issues` forwards backlog export preferences into `bubbles.plan` so scope planning emits copy-ready task or issue derivatives without replacing `scopes.md` as source of truth.
@@ -278,7 +278,7 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 /bubbles.workflow specs/050-new-feature mode: product-to-delivery socratic: true socraticQuestions: 4
 
 # Same, but grill the assumptions first and stay strict TDD:
-/bubbles.workflow specs/050-new-feature mode: product-to-delivery grillFirst: true tdd: true
+/bubbles.workflow specs/050-new-feature mode: product-to-delivery grillMode: required-on-ambiguity tdd: true
 
 # Requirements + UX + design only (no code):
 /bubbles.workflow specs/050-new-feature mode: product-discovery
@@ -357,7 +357,7 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
    - Iteration counts: "do 5 rounds", "iterate 3 times" → `iterations: N`
    - Type filters: "focus on tests", "only bugs" → `type: X`
    - Strictness: "strictly", "with commits" → `strict_execution_profile: true`
-   - Pressure-test language: "grill this", "poke holes", "pressure test" → `grillFirst: true` or standalone `bubbles.grill` when no workflow should start yet
+   - Pressure-test language: "grill this", "poke holes", "pressure test" → `grillMode: required-on-ambiguity` or standalone `bubbles.grill` when no workflow should start yet
    - Test-first language: "TDD", "test first", "red green refactor" → `tdd: true`
    - Backlog language: "create tasks", "create issues", "issue seeds", "backlog" → `backlogExport: tasks|issues`
 
@@ -460,7 +460,7 @@ User: "update all documentation"
 → mode: docs-only, specs: auto-discover
 
 User: "grill this idea and then ship it with TDD"
-→ mode: full-delivery, specs: inferred, grillFirst: true, tdd: true
+→ mode: full-delivery, specs: inferred, grillMode: required-on-ambiguity, tdd: true
 
 User: "027"
 → mode: full-delivery (default), spec: specs/027-*
@@ -528,7 +528,7 @@ If no specs resolve, STOP with explicit examples. **Exception:** `stochastic-qua
 When mode includes `analyze` in phaseOrder AND batch is false, run the upstream business analysis and UX pipeline using `runSubagent` for the **single target spec**:
 
 1. **Business Analysis** → invoke `runSubagent` with bubbles.analyst role:
-   - Ensure state.json exists (create if missing — see State.json Lifecycle in agent-common.md)
+   - Ensure state.json exists (create from the version 3 template in feature-templates.md if missing)
    - If spec.md exists: analyze current capabilities, propose improvements
    - If spec.md doesn't exist: create from codebase analysis + user intent
    - Use `fetch_webpage` for competitor research (3-5 competitors, max 3 pages each)
@@ -570,7 +570,7 @@ Required behavior after the baseline `validate` phase:
 
 1. Parse validation findings for stale completion claims:
   - spec marked `done` while scopes are incomplete
-  - stale `completedScopes` / `completedPhases`
+   - stale completion state in `certification.completedScopes`, `execution.completedPhaseClaims`, or `certification.certifiedCompletedPhases`
   - unchecked DoD items hidden behind stale status
   - DoD items reformatted to non-checkbox format (e.g., `- (deferred)` instead of `- [ ]`) — Gate G041 violation
   - Non-canonical scope statuses (e.g., "Deferred — Planned Improvement") — Gate G041 violation
@@ -578,8 +578,8 @@ Required behavior after the baseline `validate` phase:
   - report/spec/state incoherence
 2. If drift is detected, reconcile artifacts BEFORE implementation:
   - set `state.json.status` to `in_progress`
-  - remove stale entries from `completedScopes`
-  - remove stale lifecycle phase names from `completedPhases`
+   - remove stale entries from `certification.completedScopes`
+   - remove stale lifecycle phase names from `certification.certifiedCompletedPhases` (and stale execution claims from `execution.completedPhaseClaims` if present)
   - reset affected scope statuses to `In Progress`
   - ensure `scopes.md` reflects the real DoD/evidence state
 3. Pass the reconciled finding bundle into downstream `implement`, `harden`, and `gaps` phases so the next agent fixes the actual open work rather than inheriting a false `done` state.
@@ -719,10 +719,10 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
 1. **Batch phase — Analysis + Implementation (sequential per-spec, NO builds):**
 
    **⚠️ BATCH STATUS PROMOTION LOCK (NON-NEGOTIABLE — Gate G036):**
-   During batch per-spec phases, **NO specialist agent may set `state.json` status to `"done"`**. Status promotion to `"done"` is exclusively handled by the `finalize` phase (step 2 below). When dispatching ANY specialist agent via `runSubagent` during batch per-spec phases, include this directive in the prompt:
-   > "You are running as part of a batch workflow. DO NOT set state.json status to 'done'. DO NOT run the state transition guard for promotion purposes. Only update artifacts (scopes.md, report.md, design.md) and record findings. Status promotion is handled exclusively by the finalize phase."
+   During batch per-spec phases, **NO specialist agent may self-certify `state.json` as `"done"`**. Final promotion is validate-owned and only occurs from finalize after `bubbles.validate` certifies the result. When dispatching ANY specialist agent via `runSubagent` during batch per-spec phases, include this directive in the prompt:
+   > "You are running as part of a batch workflow. DO NOT self-certify completion or set state.json to 'done'. Do not mutate certification-owned fields. Only update owned artifacts, execution claims, and findings. Final promotion is handled through bubbles.validate in finalize."
    
-   After each specialist agent returns, **verify status was not changed**: read `state.json` and if `status` was changed to `"done"`, immediately revert it to `"in_progress"` and remove `"finalize"` from `completedPhases`.
+   After each specialist agent returns, **verify certification was not changed illegally**: read `state.json` and if top-level `status` or `certification.status` was changed to `"done"`, immediately revert it to `"in_progress"`, clear stale finalize claims from `execution.completedPhaseClaims`, and clear stale finalize certification from `certification.certifiedCompletedPhases`.
 
    For each target spec in order:
    - If mode includes `analyze`: Run `analyze` phase for THIS spec — invoke `runSubagent` with bubbles.analyst role for this spec's `{FEATURE_DIR}` only (per-spec analysis, NOT batch-scoped). Then invoke bubbles.ux for this spec if it has UI. Each spec gets its OWN analysis written to its OWN spec.md. Apply G032 per-spec before continuing.
@@ -746,7 +746,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
       - security: 🔒 SECURE / ⚠️ FINDINGS / 🛑 VULNERABLE
 
    b. **If findings exist** (verdict is NOT clean):
-      - **Revert spec status:** If `state.json` status was `"done"`, set it to `"in_progress"`. Remove stale phases from `completedPhases`.
+      - **Revert spec status:** If `state.json` or `certification.status` was `"done"`, set it back to `"in_progress"`. Remove stale finalize entries from `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases`.
       - **Verify scope artifacts were updated:** Read `scopes.md` and confirm:
         - New Gherkin scenarios were added for discovered issues
         - New Test Plan rows exist for each new scenario
@@ -768,7 +768,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - For EACH batched spec, read `state.json` and verify `status` is `"in_progress"` (NOT `"done"`)
    - If ANY spec's status was changed to `"done"` during per-spec phases (by a specialist agent violating G036):
      - Revert `status` to `"in_progress"`
-     - Remove `"finalize"` from `completedPhases` if present
+   - Remove stale `"finalize"` entries from `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases` if present
      - Log: "⚠️ G036 violation detected: spec {ID} was prematurely promoted to done during per-spec phases. Status reverted."
    - This sweep is the MECHANICAL ENFORCEMENT of the Batch Status Promotion Lock. Even if a specialist ignores the directive, this sweep catches and corrects the violation.
 
@@ -791,13 +791,13 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run `chaos` phase via `runSubagent` — chaos probes covering ALL specs
    - Run `finalize` phase — for EACH batched spec individually:
    1. Write the current-run shared evidence into the spec's `report.md` and scope evidence blocks before any promotion decision.
-   2. Derive `completedScopes` from scope artifacts that are actually `Done` in this spec's files. Never trust stale `completedScopes` from prior runs.
-   3. Update `completedPhases` to include ONLY phases that actually executed in this run, then append an `executionHistory` entry with `statusAfter` still set to `in_progress` or `blocked` until final promotion succeeds.
+   2. Derive `certification.completedScopes` from scope artifacts that are actually `Done` in this spec's files. Never trust stale completion state from prior runs. Update `execution.completedPhaseClaims` for what ran in this batch and keep `policySnapshot`, `transitionRequests`, and `reworkQueue` coherent.
+   3. Append an `executionHistory` entry with `statusAfter` still set to `in_progress` or `blocked` until final certification succeeds.
    4. Run state transition guard: `bash bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
    5. Run artifact lint: `bash bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
-   6. **Current-run phase coherence check (Gate G036-finalize):** Verify that `completedPhases` in `state.json` includes ALL phases from the current mode's `phaseOrder` that actually ran in this batch (not just phases from a prior workflow run). Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases for this spec.
+   6. **Current-run phase coherence check (Gate G036-finalize):** Verify that `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases` in `state.json` include the phases that actually ran and were certified in this batch (not just phases from a prior workflow run). Compare `executionHistory` entries — the latest entry's `phasesExecuted` must cover the current mode's required phases for this spec.
    7. **Scope-status vs DoD integrity check:** For each resolved scope artifact, verify that if scope status is `Done`, ALL DoD items are `[x]`. If ANY DoD item is `[ ]` but scope says `Done`, revert scope status to `In Progress` and FAIL the finalize gate for this spec (status stays `in_progress`). Also verify: (a) ALL scope statuses are canonical (`Not Started`, `In Progress`, `Done`, `Blocked`); (b) ALL DoD items use checkbox format (`- [ ]` or `- [x]`); (c) DoD sections are not empty. Any failure here is structural fabrication (Gate G041).
-   8. Only if steps 1-7 ALL pass AND all DoD items are `[x]` AND all scopes are `Done` → update the just-appended `executionHistory` entry's `statusAfter` to `done`, then set `state.json` status to `done` as the LAST write of finalize.
+   8. Only if steps 1-7 ALL pass AND all DoD items are `[x]` AND all scopes are `Done` → invoke `bubbles.validate` for final certification. Only `bubbles.validate` may write `certification.status = done` and the authoritative completion fields; the workflow may then mirror the validated result into the top-level compatibility status field if needed.
    9. If any gate fails → status stays `in_progress`, spec is marked blocked with reason, and the `executionHistory` entry remains `statusAfter: "in_progress"` or `"blocked"`
 
 3. **Failure routing within batch:**
@@ -1111,8 +1111,8 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
    - **Per-spec finalization:** For EACH spec that was touched during the sweep:
      1. Run `docs` phase via `runSubagent` — sync documentation for changes made to this spec
      2. Run `finalize` phase — state transition guard, artifact lint, DoD verification, Gate G041 format integrity
-     3. If all DoD items `[x]` (no reformatted/deleted items) and all scopes "Done" (canonical status only) → set `state.json` status to `"done"`
-     4. Append `executionHistory` entry to `state.json`
+       3. If all DoD items `[x]` (no reformatted/deleted items) and all scopes "Done" (canonical status only) → route final certification through `bubbles.validate` and let validate write the authoritative `certification.status`
+       4. Append `executionHistory` entry to `state.json`
    - **Specs not touched** during the sweep (no round selected them) retain their current status unchanged
    - Record sweep summary in each touched spec's report.md AND as a workflow output:
      ```
@@ -1197,8 +1197,8 @@ When mode is `iterate`, the orchestrator replaces the normal sequential `phaseOr
    1. Run state transition guard: `bash bubbles/scripts/state-transition-guard.sh {SPEC_DIR}`
    2. Run artifact lint: `bash bubbles/scripts/artifact-lint.sh {SPEC_DIR}`
      3. Verify no DoD format manipulation (Gate G041): all DoD items are `- [ ]` or `- [x]`, all scope statuses are canonical
-     4. If all DoD items `[x]` and all scopes "Done" → set `state.json` status to `"done"`
-     4. Append `executionHistory` entry to `state.json`
+       4. If all DoD items `[x]` and all scopes "Done" → route final certification through `bubbles.validate`; do not self-certify `done` inside the workflow loop
+       5. Append `executionHistory` entry to `state.json`
    - **Specs not touched** during the iterate loop retain their current status unchanged
    - Record iterate summary in each touched spec's report.md AND as a workflow output:
      ```
@@ -1298,7 +1298,7 @@ For each target spec in order:
    - `statusBefore` — read current `status` from `state.json` BEFORE making any changes (needed for `executionHistory`)
    - `runStartedAt` — record the current RFC3339 timestamp as run start time
 
-2. If `grillFirst: true`, run a preflight `bubbles.grill` pass before the first `analyze`, `select`, or `bootstrap` action. Carry the findings into the next owning specialist prompt and route resulting artifact changes to `bubbles.analyst`, `bubbles.design`, or `bubbles.plan`.
+2. If the effective grill policy resolves to `on-demand`, `required-on-ambiguity`, or `required-for-lockdown`, run a preflight `bubbles.grill` pass before the first `analyze`, `select`, or `bootstrap` action when the request warrants it. Carry the findings into the next owning specialist prompt and route resulting artifact changes to `bubbles.analyst`, `bubbles.design`, or `bubbles.plan`.
 
 3. Execute mode `phaseOrder` from registry.
 
@@ -1355,7 +1355,7 @@ For each target spec in order:
       - security: 🔒 SECURE / ⚠️ FINDINGS / 🛑 VULNERABLE
 
    b. **If findings exist** (verdict is NOT clean):
-      - **Revert spec status:** If `state.json` status was `"done"`, set it to `"in_progress"`. Remove stale phases from `completedPhases`.
+      - **Revert spec status:** If `state.json` or `certification.status` was `"done"`, set it to `"in_progress"`. Remove stale finalize entries from `execution.completedPhaseClaims` and `certification.certifiedCompletedPhases`.
       - **Verify scope artifacts were updated:** Read `scopes.md` and confirm new Gherkin scenarios, Test Plan rows, and DoD items (`- [ ]`) were added for each finding. Scope status must be reset to "In Progress" if new unchecked items exist.
       - **If planning artifacts were NOT updated:** Invoke `bubbles.plan` via `runSubagent` with the findings and explicit instruction to update planning artifacts before continuing.
       - **Advance to implement phase:** The next phase (`implement`) will address all findings. Include the findings summary in the implement prompt.
@@ -1371,7 +1371,7 @@ For each target spec in order:
       - Weak scenarios/DoD → `runSubagent(bubbles.harden)`
       - Implementation gaps → `runSubagent(bubbles.gaps)` then `runSubagent(bubbles.implement)`
       - Bug blocking progress → `runSubagent(bubbles.bug)` (document + analyze) then `runSubagent(bubbles.implement)` (fix)
-      - State drift → reconcile inline (fix state.json, reset stale completedPhases)
+      - State drift → reconcile inline (fix state.json, reset stale execution claims / certified phases)
       - Test failures after implementation → `runSubagent(bubbles.implement)` with fix context, then `runSubagent(bubbles.test)`
    3. **After inline resolution, resume the original phase** — do NOT restart the entire workflow.
    4. **If inline resolution also fails after its own retry limits** → THEN mark spec `blocked`.
@@ -1424,7 +1424,7 @@ For each target spec in order:
      - Check for: shallow evidence (<10 lines), template placeholders, batch-checked DoD items, narrative summaries without raw output, duplicate evidence blocks
      - If ANY heuristic triggers → spec CANNOT be promoted to `done`
    - For `full-delivery-strict`, `status: "done"` additionally requires:
-     - `state.json.completedPhases` includes `validate`, `audit`, and `chaos`
+   - `state.json.certification.certifiedCompletedPhases` includes `validate`, `audit`, and `chaos`
      - `report.md` has phase-evidence markers in each section:
        - `### Validation Evidence` contains `**Phase Agent:** bubbles.validate`
        - `### Audit Evidence` contains `**Phase Agent:** bubbles.audit`

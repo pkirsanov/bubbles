@@ -19,13 +19,13 @@ Start with the dedicated pressure-test agent:
 If you already know you want a workflow after the grilling pass, carry the pressure-test into the workflow itself:
 
 ```text
-/bubbles.workflow  <feature> mode: product-discovery grillFirst: true
+/bubbles.workflow  <feature> mode: product-discovery grillMode: required-on-ambiguity
 ```
 
 Or for direct delivery:
 
 ```text
-/bubbles.workflow  <feature> mode: full-delivery grillFirst: true
+/bubbles.workflow  <feature> mode: full-delivery grillMode: required-on-ambiguity
 ```
 
 ## When It Helps Most

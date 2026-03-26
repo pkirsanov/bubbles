@@ -70,7 +70,7 @@ gates:
     description: ALL specialist agents required by the mode (test, docs, validate, audit, chaos) MUST have executed and returned verifiable results before spec promotion. Missing specialist execution is a BLOCKING failure.
   G023:
     name: state_transition_guard_gate
-    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, completedScopes/completedPhases integrity, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, artifact lint, and artifact freshness isolation in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
+    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, certification/execution phase coherence, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, policy provenance, scenario manifest integrity, transition/rework packet closure, artifact lint, and artifact freshness isolation in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
   G024:
     name: all_scopes_done_before_spec_done_gate
     description: ABSOLUTE BLOCKING gate. A spec CANNOT be marked "done" in state.json until EVERY scope in scopes.md has status "Done". Zero scopes with "Not Started", "In Progress", or "Blocked" are allowed. This is a hard dependency — no override, no workaround, no exception. Agents MUST verify by running grep for non-Done scope statuses and confirming zero matches before writing "done" to state.json.
@@ -82,7 +82,7 @@ gates:
     description: Scopes defining latency SLAs (p95, p99, response time targets) MUST have stress tests in the Test Plan and DoD, executed and passing with evidence.
   G027:
     name: phase_scope_coherence_gate
-    description: ABSOLUTE BLOCKING gate. completedPhases claiming implementation phases (implement, test) MUST have matching non-empty completedScopes AND Done scope artifacts. Claiming 6-7 lifecycle phases complete while completedScopes is empty or partial = FABRICATION. Guard script Check 15 enforces mechanically.
+    description: ABSOLUTE BLOCKING gate. Execution and certification phase records claiming implementation phases (implement, test) MUST have matching non-empty completedScopes AND Done scope artifacts. Claiming 6-7 lifecycle phases complete while completedScopes is empty or partial = FABRICATION. Guard script Check 15 enforces mechanically.
   G028:
     name: implementation_reality_scan_gate
     description: ABSOLUTE BLOCKING gate. Source files referenced in scope artifacts MUST NOT contain stub/fake/hardcoded data patterns. Public handlers/endpoints/workflows returning literal collections, status-only payloads, or placeholder success without real delegation are BLOCKING. Frontend hooks calling getSimulationData() or containing zero fetch() calls are BLOCKING. Live-system tests using request interception are BLOCKING unless reclassified out of live categories. Enforced by implementation-reality-scan.sh via guard script Check 16.
@@ -176,6 +176,38 @@ gates:
     name: implementation_delta_evidence_gate
     description: >-
       BLOCKING gate. Implementation-bearing workflows MUST prove runtime or integration delivery with git-backed code-diff evidence in report artifacts. The evidence must show at least one non-artifact source, runtime, config, or contract file path. Specs that only changed `spec.md`, `design.md`, or docs cannot be promoted as delivered implementation. Enforced by state-transition-guard.sh Check 13B.
+  G054:
+    name: capability_delegation_gate
+    description: >-
+      BLOCKING gate. When work crosses a registered ownership boundary, the active agent MUST delegate to the owning specialist declared in bubbles/agent-capabilities.yaml or bubbles/agent-ownership.yaml. Agents MUST NOT perform foreign-owned artifact or certification work inline.
+  G055:
+    name: policy_provenance_gate
+    description: >-
+      BLOCKING gate for control-plane-aware workflows. Active execution modes such as grill, tdd, autoCommit, lockdown, and regression strictness MUST be recorded together with provenance (`user-request`, `repo-default`, `workflow-forced`, or `spec-lockdown`) in state metadata.
+  G056:
+    name: validate_certification_gate
+    description: >-
+      BLOCKING gate. Completion certification state belongs exclusively to bubbles.validate. Other agents may submit execution claims or transition requests but MUST NOT directly certify scope/spec completion, invalidation, or lockdown state.
+  G057:
+    name: scenario_manifest_gate
+    description: >-
+      BLOCKING gate for scenario-contract-aware specs. Every changed user-visible or externally observable behavior MUST map to stable scenario IDs in scenario-manifest.json, and each scenario MUST map to real live-system BDD coverage plus report evidence.
+  G058:
+    name: lockdown_gate
+    description: >-
+      BLOCKING gate. Locked scenarios MUST NOT change without an approval record routed through bubbles.grill plus a validate-certified invalidation or replacement path.
+  G059:
+    name: regression_contract_gate
+    description: >-
+      BLOCKING gate. Scenario-linked regression tests for non-invalidated behavior are protected contracts. They MUST NOT be weakened, removed, or repointed to new behavior until the owning scenario contract has been invalidated and replaced.
+  G060:
+    name: scenario_tdd_gate
+    description: >-
+      BLOCKING gate whenever TDD is active. For changed scenarios, targeted failing proof MUST exist before the implementation is accepted as green. Broader suites are not a substitute for the narrow red-to-green path.
+  G061:
+    name: rework_packet_gate
+    description: >-
+      BLOCKING gate for route-required findings. Diagnostic or certification phases that reopen work MUST emit structured transition or rework packets tied to concrete scenarios, DoD items, and owning specialists instead of narrative-only handoff text.
 
 failureRouting:
   code: implement
@@ -491,6 +523,10 @@ batchExecution:
 
 executionOptions:
   description: Universal optional workflow tags. These never override the default autonomous behavior unless explicitly enabled.
+  policyRegistry:
+    configFile: .specify/memory/bubbles.config.json
+    requiredStateField: policySnapshot
+    provenanceValues: [ user-request, repo-default, workflow-forced, spec-lockdown ]
   optionalWorkflowTags:
     socratic:
       type: boolean
@@ -505,11 +541,30 @@ executionOptions:
     grillFirst:
       type: boolean
       default: false
-      meaning: Run a pressure-test pass with bubbles.grill before analyze, select, or bootstrap work.
+      meaning: Deprecated compatibility alias for enabling a preflight grill pass. Prefer `grillMode` for new workflow invocations.
+    grillMode:
+      type: string
+      default: inherit
+      values:
+        inherit: Resolve grill behavior from the policy registry
+        off: Do not interrogate the user unless explicitly requested
+        on-demand: Allow explicit grill invocation without forcing it
+        required-on-ambiguity: Require bubbles.grill when ambiguity blocks safe execution
+        required-for-lockdown: Require bubbles.grill for locked-behavior changes
+      meaning: Override or elevate the effective grill policy for this workflow run.
     tdd:
       type: boolean
       default: false
       meaning: Enforce red-green-first execution inside implement and test loops.
+    lockdown:
+      type: string
+      default: inherit
+      values:
+        inherit: Resolve lockdown behavior from the policy registry
+        off: Do not enforce scenario lockdown rules for this run
+        protect-existing-scenarios: Treat existing linked scenarios as protected behavior contracts
+        require-approval: Require grill approval plus invalidation for locked scenario changes
+      meaning: Override or elevate the effective lockdown policy for this workflow run.
     backlogExport:
       type: string
       default: "off"
@@ -550,12 +605,19 @@ executionOptions:
       default: true
       meaning: Keep failure recovery inside narrow error-scoped fix loops before broader retries.
 
+  defaultPolicyBehavior:
+    scenarioTddDefault: scenario-first
+    grillDefault: off
+    lockdownDefault: false
+    validateCertificationRequired: true
+    protectedRegressionContracts: true
+
 modes:
   value-first-e2e-batch:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.
     statusCeiling: done
     phaseOrder: [ discover, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040, G044, G045, G046, G047, G048, G049, G050, G051 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G040, G044, G045, G046, G047, G048, G049, G050, G051, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 5
     constraints:
       valueFirstSelection: true
@@ -595,7 +657,7 @@ modes:
     description: Default complete delivery workflow. Includes bootstrap phase to ensure design/scopes exist before implementation.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       requireDesignBeforeImplement: true
@@ -619,7 +681,7 @@ modes:
     description: Strict full delivery with per-spec commits, no blocked continuation, and mandatory per-spec chaos/validation/audit completion. Includes bootstrap phase for design readiness.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 5
     constraints:
       continueOnBlocked: false
@@ -656,7 +718,7 @@ modes:
     description: Create/repair design+scope artifacts before implementation.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G044, G045, G046, G047, G048, G050, G051 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G044, G045, G046, G047, G048, G050, G051, G054, G055, G056, G057, G061 ]
     constraints:
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -671,10 +733,12 @@ modes:
     description: Focused bug loop with mandatory reproduction and verification.
     statusCeiling: done
     phaseOrder: [ select, implement, test, regression, simplify, stabilize, security, validate, audit, finalize ]
-    requiredGates: [ G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035, G044, G045, G046, G047, G048, G050, G051 ]
+    requiredGates: [ G001, G003, G004, G005, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G035, G044, G045, G046, G047, G048, G050, G051, G054, G055, G056, G057, G059, G060, G061 ]
     constraints:
       requireBugReproductionBeforeFix: true
       requireBugVerificationAfterFix: true
+      forceTddMode: scenario-first
+      requireProtectedRegressionContracts: true
       sequentialSpecCompletion: true
       crossAgentVerification: true
       antiFabricationDetection: true
@@ -710,9 +774,12 @@ modes:
     description: Repeat chaos and bugfix cycles until clean or retry limit.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, chaos, implement, test, regression, simplify, stabilize, security, validate, audit, finalize ]
-    requiredGates: [ G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051 ]
+    requiredGates: [ G001, G003, G004, G005, G007, G008, G009, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G044, G045, G046, G047, G048, G049, G050, G051, G054, G055, G056, G057, G058, G059, G060, G061 ]
     maxChaosRounds: 5
     constraints:
+      forceTddMode: scenario-first
+      lockdownAware: true
+      requireProtectedRegressionContracts: true
       sequentialSpecCompletion: true
       crossAgentVerification: true
       antiFabricationDetection: true
@@ -730,7 +797,7 @@ modes:
     description: Start from validation baseline, then harden, implement fixes, and run full quality chain. For specs with existing implementation that need quality hardening.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, validate, harden, implement, test, regression, simplify, stabilize, security, chaos, validate, audit, docs, finalize ]
-    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035 ]
+    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       sequentialSpecCompletion: true
@@ -750,7 +817,7 @@ modes:
     description: Start from validation baseline, then close implementation/design gaps, implement fixes, and run full quality chain. For specs needing gap remediation before quality verification.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, validate, gaps, implement, test, regression, simplify, stabilize, security, chaos, validate, audit, docs, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       sequentialSpecCompletion: true
@@ -790,7 +857,7 @@ modes:
     description: Validate claimed completion against actual artifacts and evidence, reconcile stale state and scope status, then implement fixes and run the full quality chain.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, validate, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       requireArtifactStateReconciliation: true
@@ -814,7 +881,7 @@ modes:
     description: Run tests, then quality chain (validate, audit, docs). For specs with complete implementation needing test verification and quality sign-off.
     statusCeiling: done
     phaseOrder: [ select, bootstrap, test, validate, audit, docs, finalize ]
-    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035 ]
+    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G010, G011, G012, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G054, G055, G056, G057, G059, G061 ]
     constraints:
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -833,7 +900,7 @@ modes:
     description: Run chaos probes, then quality chain (validate, audit, docs). For specs needing chaos hardening and quality verification.
     statusCeiling: done
     phaseOrder: [ select, chaos, validate, audit, docs, finalize ]
-    requiredGates: [ G001, G006, G007, G008, G009, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G027, G028, G029, G030, G035 ]
+    requiredGates: [ G001, G006, G007, G008, G009, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G027, G028, G029, G030, G035, G054, G055, G056, G057, G061 ]
     maxChaosRounds: 3
     constraints:
       sequentialSpecCompletion: true
@@ -879,7 +946,7 @@ modes:
     description: Full pipeline from business analysis through UX, design, scopes, implementation, testing, and quality gates. Analyst/UX phases skippable if spec.md already has their output.
     statusCeiling: done
     phaseOrder: [ analyze, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 5
     constraints:
       requireBusinessAnalysis: true
@@ -923,7 +990,7 @@ modes:
     description: Analyze existing feature against competitors and best practices. Minor improvements update existing spec; sizable changes create new spec folder. Then implement, test, and run full quality chain.
     statusCeiling: done
     phaseOrder: [ analyze, select, spec-review, validate, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       requireExistingImplementation: true
@@ -949,7 +1016,7 @@ modes:
     description: Reconcile stale requirements, UX, design, and scopes for an existing feature, then redesign and deliver the updated implementation through the full quality chain.
     statusCeiling: done
     phaseOrder: [ analyze, select, spec-review, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
       requireExistingImplementation: true
@@ -1011,7 +1078,7 @@ modes:
     description: Run multiple randomized rounds where each round picks a random spec (from all specs by default, or from a user-provided subset) AND a random trigger agent from a configurable pool, probes that spec, then runs a trigger-specific fix cycle if findings exist. Rounds limited by count or time budget. For adversarial quality hardening across specs via random probe angles.
     statusCeiling: done
     phaseOrder: [ select, chaos, harden, gaps, simplify, stabilize, security, regression, validate, bug, implement, test, validate, audit, docs, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G034, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G034, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 5
     constraints:
       # Stochastic round execution model — NOT sequential phaseOrder.
@@ -1088,7 +1155,7 @@ modes:
     # phaseOrder represents the SUPERSET of all possible phases iterate may use.
     # Each iteration selects a SUBSET based on auto-mode-selection (Work-Type-to-Mode Mapping).
     phaseOrder: [ discover, select, analyze, bootstrap, harden, gaps, simplify, stabilize, security, regression, bug, implement, test, docs, validate, audit, chaos, finalize ]
-    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035 ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G035, G054, G055, G056, G057, G059, G061 ]
     constraints:
       # Iterate round execution model — priority-driven, NOT random.
       # Each round:

@@ -297,7 +297,7 @@ For every verified task that fixed a bug:
 ### Phase 1.5: Scope Artifact Routing (MANDATORY)
 
 When hardening discovers missing Gherkin scenarios, Test Plan rows, DoD items, or scope-state resets, do not edit `scopes.md` directly. Invoke `bubbles.plan` via `runSubagent` with the exact findings that require planning updates, then continue only after the planning owner completes those changes.
-  - Remove `"implement"` from `completedPhases` if scope DoD is now incomplete
+  - If a previously certified scope is reopened, remove stale implementation claims from `execution.completedPhaseClaims`, ensure the authoritative `certification.*` fields are downgraded by `bubbles.validate`, and route the reopened work through a transition or rework packet instead of silently leaving stale completion state
 - This ensures downstream agents (test, validate, audit) re-process the scope
 
 #### 1.5.5 Coherence Verification
@@ -566,7 +566,7 @@ This is NOT optional. Reporting a verdict (even ⚠️ PARTIALLY_HARDENED or �
 3. **Count new DoD items:** How many new `- [ ]` checkbox items were added to scopes.md this session?
 4. **Parity check:** New Gherkin scenarios ≥ finding count. New DoD items ≥ new Gherkin scenarios.
 5. **Scope status check:** Any scope that had new `- [ ]` items added but was previously "Done" → status MUST now be "In Progress"
-6. **state.json check:** `state.json` reflects any scope status resets (status, completedScopes, completedPhases updated)
+6. **state.json check:** `state.json` reflects any scope status resets (top-level compatibility status, `certification.completedScopes`, `certification.certifiedCompletedPhases`, and `execution.completedPhaseClaims` updated coherently)
 
 **If ANY check fails → STOP. Update the missing artifacts NOW, then generate the verdict.**
 
