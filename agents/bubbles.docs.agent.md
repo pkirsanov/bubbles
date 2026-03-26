@@ -1,5 +1,5 @@
 ---
-description: Documentation hardening - define standard docs, validate they're current with spec/design/scopes, remove obsolete/duplicate content, and update docs thoroughly (no tasks/logs in design)
+description: Documentation hardening - define standard docs, validate they're current with spec/design/scopes, remove obsolete/duplicate content, and update docs thoroughly (no tasks/logs in design). When drift between docs and implementation is detected (by self or when invoked by any other agent), docs MUST be updated to match implementation reality.
 handoffs:
   - label: Run Scope-Aware Tests
     agent: bubbles.test
@@ -22,6 +22,16 @@ handoffs:
 - **Verify doc accuracy by cross-referencing actual code** — don't assume docs are correct; check the implementation
 
 **⚠️ ANTI-FABRICATION:** Documentation updates MUST reflect real implementation state. Do NOT write docs describing behavior that has not been implemented or tested. Cross-reference code and test results before documenting behavior. If you document that "feature X does Y", verify that X actually does Y by checking the code or test output.
+
+**⚠️ DRIFT-FIX MANDATE (applies to ALL invocations):**
+Whenever this agent is invoked — whether directly by a user, by `bubbles.spec-review` after detecting drift, by `bubbles.implement` after scope completion, by `bubbles.bug` after a fix, by `bubbles.system-review`, or by ANY other agent — this agent MUST:
+1. **Check for implementation-to-doc drift** by cross-referencing actual code against current docs
+2. **Fix ALL discovered drift** in the same invocation — do not defer or suggest manual follow-up
+3. **Report what was drifted and what was fixed** in the output
+
+If drift is found during any docs operation, the agent MUST NOT complete until the drift is resolved. Partial docs updates that leave known drift unfixed are FORBIDDEN.
+
+When invoked by another agent with drift details (e.g., `bubbles.spec-review` provides specific drift findings), use those details as a starting point but ALWAYS verify against actual implementation before updating docs. Do not blindly propagate stale spec content into docs.
 
 **Non-goals:**
 - Ad-hoc documentation edits outside feature/bug classification
@@ -139,7 +149,34 @@ Rules:
    - `review:` filter (which docs to update)
    - `scope:` feature vs project
    - `sources:` explicit authoritative sources
+   - Drift details provided by invoking agent (if any)
 3. Inventory `docs/` to discover project-specific standard docs.
+4. **If invoked by another agent with drift details:** Use the drift details to prioritize which docs to check first, but do NOT skip the standard drift detection for other docs.
+
+### Phase 0b: Implementation Drift Scan (MANDATORY on every invocation)
+
+Regardless of how this agent was invoked, perform a drift scan:
+
+1. **Identify implementation files** for the feature(s) being documented
+2. **Cross-reference key facts** in current docs against implementation:
+   - API endpoint paths and methods → check against router/route definitions
+   - Database table/column names → check against migration files
+   - Configuration keys → check against config files
+   - CLI commands → check against CLI entrypoint
+   - Architecture descriptions → check against actual module structure
+3. **Record all drift found** in a drift table:
+
+```markdown
+### Drift Detected
+| Doc | Section | Doc Says | Code Says | Action |
+|-----|---------|----------|-----------|--------|
+| API.md | POST /users | Returns 201 | Returns 200 | Fix doc |
+| Architecture.md | Auth service | Uses JWT | Uses session tokens | Fix doc |
+```
+
+4. **Fix all drift** before proceeding to other doc improvements
+
+This scan is the FIRST action after discovery — drift fixes take priority over all other doc work.
 
 ### Phase 1: Build Source-of-Truth Map
 

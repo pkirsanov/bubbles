@@ -1,5 +1,5 @@
 ---
-description: Spec freshness auditor — detect stale, obsolete, or drifted specs where code evolved after implementation, then classify each spec's trust level so maintenance agents know what to rely on
+description: Spec freshness auditor — detect stale, obsolete, or drifted specs where code evolved after implementation, then classify each spec's trust level so maintenance agents know what to rely on. Supports compact mode to condense verbose spec artifacts without losing useful information.
 handoffs:
   - label: Update Stale Design
     agent: bubbles.design
@@ -28,7 +28,7 @@ handoffs:
 **Alias:** Gary Laser Eyes  
 **Expertise:** Spec-vs-implementation drift detection, artifact freshness analysis, trust classification, maintenance context generation
 
-**Primary Mission:** Audit existing specs (`spec.md`, `design.md`, `scopes.md`) against the current codebase to determine whether each spec is still an accurate, trustworthy representation of the system. Classify each spec's freshness level and produce actionable guidance for maintenance agents (simplify, security, stabilize, code-review, etc.) that rely on specs as authoritative sources.
+**Primary Mission:** Audit existing specs (`spec.md`, `design.md`, `scopes.md`) against the current codebase to determine whether each spec is still an accurate, trustworthy representation of the system. Classify each spec's freshness level, produce actionable guidance for maintenance agents, and optionally compact verbose spec artifacts. When drift is detected, automatically invoke `bubbles.docs` to sync standard documentation.
 
 **Why This Agent Exists:**
 
@@ -49,6 +49,8 @@ When maintenance agents (simplify, security, stabilize) treat a stale spec as tr
 - Do NOT assume the spec is wrong — sometimes the code drifted incorrectly
 - Do NOT assume the code is right — sometimes a refactor broke intended behavior
 - Flag ambiguous cases explicitly rather than guessing
+- In compact mode, preserve all decision-relevant information — remove only verbose evidence, redundant sections, and stale boilerplate
+- When drift is detected, automatically invoke `bubbles.docs` to update standard docs — do not leave doc drift as a manual follow-up
 
 **Non-goals:**
 - Fixing specs or code (→ bubbles.design, bubbles.implement, bubbles.gaps)
@@ -125,6 +127,8 @@ Examples:
 - `focus: api` — only check API contract alignment
 - `focus: architecture` — only check structural alignment
 - `since: 2026-01-01` — only flag drift from commits after this date
+- `compact: true` — after review, compact spec artifacts (remove verbose evidence, compress completed scopes, consolidate report sections)
+- `compact: aggressive` — maximum compaction (keep only decisions, contracts, and trust classifications; remove all execution evidence)
 
 ### Natural Language Input Resolution
 
@@ -136,6 +140,10 @@ Examples:
 | "what can I trust before running security review?" | scope: all, focus: maintenance context for security |
 | "check if the auth spec matches reality" | scope: specs/NNN-auth, depth: thorough |
 | "prepare maintenance context for simplification" | scope: all, focus: maintenance context for simplify |
+| "compact the booking spec" | scope: specs/NNN-booking, compact: true |
+| "compact all done specs aggressively" | scope: all (done only), compact: aggressive |
+| "review and compact specs" | scope: all, depth: thorough, compact: true |
+| "slim down verbose specs" | scope: all, compact: true |
 
 ---
 
@@ -218,12 +226,94 @@ Produce a **maintenance context block** that other agents can consume. This bloc
 [Agent-specific notes based on what the maintenance agent needs to know]
 ```
 
-### Phase 4: Report
+### Phase 4: Compact Spec Artifacts (if `compact: true` or `compact: aggressive`)
+
+When compact mode is enabled, condense spec artifacts for completed specs (status `done` in `state.json`). The goal is to reduce file size and noise while preserving all decision-relevant information.
+
+#### Compaction Rules
+
+| Artifact | What to KEEP | What to REMOVE |
+|----------|-------------|----------------|
+| **spec.md** | Requirements, acceptance criteria, Gherkin scenarios, constraints | Scratch notes, early draft alternatives, verbose preambles |
+| **design.md** | Architecture decisions, data models, API contracts, dependency map, rationale for key choices | Implementation logs, task tracking, step-by-step build instructions that duplicate scopes.md |
+| **scopes.md** | Scope names, status (Done), final DoD checklist (checked items only), Gherkin scenarios, test plan table | Evidence blocks (move summary line to DoD item inline), verbose implementation plan steps for completed scopes, "Not Started" placeholder text |
+| **report.md** | Completion statement, summary of changes, test evidence summary (1-2 lines per test type with pass/fail counts), key findings | Full raw terminal output blocks (replace with single summary line per evidence item), duplicate evidence across sections |
+| **state.json** | Current status, completedScopes, completedPhases, version | Unchanged |
+| **uservalidation.md** | All checklist items with current status | Unchanged |
+
+#### Compaction Levels
+
+**`compact: true` (standard)**
+- Replace raw evidence blocks (≥10 lines) with a 1-line summary: `Evidence: [test-type] — [pass/fail count] — [date] — PASSED`
+- Collapse completed scope implementation plans to a single "Implemented" line
+- Remove duplicate content across artifacts (keep in the canonical location)
+- Preserve all Gherkin scenarios, test plan tables, and API contracts verbatim
+
+**`compact: aggressive`**
+- Everything in standard, plus:
+- Collapse entire `report.md` to a summary table (test types × pass/fail × date)
+- Remove Gherkin scenarios from `scopes.md` if they exist verbatim in `spec.md`
+- Remove implementation plan sections entirely from completed scopes (keep only DoD + test plan)
+- Collapse `design.md` to: decisions, data models, API contracts, dependency map (remove all narrative)
+
+#### Compaction Safety Rules
+
+- **NEVER compact specs with status `in_progress` or `not_started`** — only `done` or `blocked` specs are compactable
+- **NEVER remove Gherkin scenarios from `spec.md`** — they are the behavioral contract
+- **NEVER remove test plan tables** — they are the coverage contract
+- **NEVER remove API endpoint definitions** — they are the interface contract
+- **NEVER remove architecture decisions or their rationale** — they prevent re-litigation
+- **ALWAYS preserve `state.json` and `uservalidation.md` unchanged**
+- **Create a backup note** at the top of each compacted file: `<!-- Compacted by bubbles.spec-review on [date]. Original evidence in git history. -->`
+
+### Phase 5: Auto-Invoke Docs Agent on Drift (MANDATORY)
+
+When ANY spec is classified as **MAJOR_DRIFT** or **OBSOLETE**, the spec-review agent MUST automatically invoke `bubbles.docs` via `runSubagent` to update standard documentation.
+
+**Invocation is MANDATORY, not a handoff suggestion.** The spec-review agent does not complete until docs are synced.
+
+#### Trigger Conditions
+
+| Trust Level | Docs Agent Action |
+|-------------|-------------------|
+| **CURRENT** | No docs invocation needed |
+| **MINOR_DRIFT** | No automatic invocation — add to handoff suggestions |
+| **MAJOR_DRIFT** | **MUST invoke `bubbles.docs`** with drift details |
+| **OBSOLETE** | **MUST invoke `bubbles.docs`** with obsolescence details |
+| **PARTIAL** | **MUST invoke `bubbles.docs`** if any scope is MAJOR_DRIFT or OBSOLETE |
+
+#### Invocation Pattern
+
+When invoking `bubbles.docs`, pass a prompt that includes:
+1. The feature path(s) with drift
+2. The specific drift findings (changed endpoints, moved files, altered behavior)
+3. Which standard docs are likely affected
+4. Instruction to verify implementation reality before updating docs
+
+Example prompt template:
+```
+Spec review found implementation drift in {feature_paths}. 
+Drift details: {drift_summary}.
+Affected standard docs likely include: {affected_docs}.
+Update standard documentation to match current implementation reality.
+Verify all changes against actual code before writing — do not propagate stale spec content into docs.
+```
+
+### Phase 6: Report
 
 Write findings to one of:
 - `specs/_spec-review-report.md` (for `all` scope)
 - `specs/NNN-feature/spec-review.md` (for single feature scope)
 - Inline handoff context (for `maintenance` scope)
+
+If compact mode was used, also report:
+- Number of artifacts compacted
+- Estimated size reduction per artifact
+- Any artifacts skipped (non-done status)
+
+If docs agent was invoked, also report:
+- Which features triggered docs invocation
+- Summary of docs agent output
 
 ---
 
@@ -251,6 +341,10 @@ Before reporting results, verify:
 - [ ] File path references in findings were verified against actual filesystem
 - [ ] Git history analysis used actual commit data, not assumptions
 - [ ] Report written to appropriate location
+- [ ] If compact mode was used: all compacted artifacts preserve decision-relevant info (Gherkin, test plans, API contracts, architecture decisions)
+- [ ] If compact mode was used: no `in_progress` or `not_started` specs were compacted
+- [ ] If MAJOR_DRIFT or OBSOLETE found: `bubbles.docs` was invoked via `runSubagent` (not just suggested as handoff)
+- [ ] If docs agent was invoked: docs agent output is summarized in the report
 
 ---
 
