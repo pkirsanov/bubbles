@@ -307,6 +307,9 @@ If user said "find bugs" or no specific bug:
 
 ### Phase 3: Root Cause Analysis (Reproduction-First — MANDATORY)
 
+**⛔ PHASE GATE: Phase 3 MUST produce a failing regression test before Phase 5 can begin.**
+If you reach Phase 5 without having written and executed a failing test, STOP — you have skipped a mandatory phase. Go back to Phase 3 step 2.
+
 **CRITICAL: Write a failing test BEFORE implementing the fix. The failing test proves the bug exists and becomes the regression test after the fix.**
 
 1. **Reproduce the bug manually**:
@@ -357,6 +360,12 @@ If user said "find bugs" or no specific bug:
  
 ### Phase 5: Dispatch Fix Implementation
 
+**⛔ PHASE GATE: Before dispatching implementation, verify ALL of these are true:**
+- [ ] Phase 3 produced a failing regression test (test file exists, failure output recorded in report.md)
+- [ ] Phase 4 defined fix scope with DoD in scopes.md
+- [ ] Bug.md, spec.md, design.md, scopes.md all exist and are populated
+If ANY is false, go back to the missing phase. Do NOT proceed to implementation.
+
 **Delegate fix implementation and testing to specialist agents following the `bugfix-fastlane` phaseOrder.**
 
 1. **Invoke `bubbles.implement` via `runSubagent`** with context:
@@ -400,6 +409,13 @@ After the implementation specialist returns, verify:
  
 ### Phase 6: Validation & Documentation (Dispatch)
 
+**⛔ PHASE GATE: Before validation/docs dispatch, verify ALL of these are true:**
+- [ ] Phase 5 specialist (`bubbles.implement`) was invoked via `runSubagent` and returned real output
+- [ ] Phase 5 specialist (`bubbles.test`) was invoked via `runSubagent` and returned real output
+- [ ] Regression test that was FAILING in Phase 3 now PASSES
+- [ ] No collateral regressions in test output
+If ANY is false, go back to Phase 5 and re-invoke the specialist. Do NOT skip to Phase 7.
+
 1. **Update bug.md**: Set status to "Fixed", add root cause section
 
 2. **Invoke `bubbles.validate` via `runSubagent`**: Run full system validation, all must pass
@@ -418,6 +434,13 @@ After the implementation specialist returns, verify:
    - All standard evidence sections from specialist agent outputs
 
 ### Phase 7: Finalize
+
+**⛔ PHASE GATE: Before finalization, verify ALL of these are true:**
+- [ ] Phase 6 step 2 — `bubbles.validate` was invoked via `runSubagent` and returned passing results
+- [ ] Phase 6 step 3 — `bubbles.docs` was invoked via `runSubagent` and documentation was synced
+- [ ] All DoD items in scopes.md are checked `[x]` with inline evidence
+- [ ] report.md contains pre-fix failure proof AND post-fix success proof
+If ANY is false, go back to the missing phase. Do NOT emit BUG_FIXED.
 
 1. **Update bug.md status** to "Verified" or "Closed"
 2. **Route final bug closure through validate-owned certification** — do NOT self-certify `done`. Update execution metadata, then invoke `bubbles.validate` so it writes the authoritative `certification.status`, `certification.completedScopes`, and top-level compatibility status if promotion is allowed. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
@@ -506,6 +529,22 @@ Include bug status in status reports:
 ---
 
 ## Verdicts
+
+**⛔ MANDATORY SELF-AUDIT (run before emitting ANY verdict):**
+Before choosing a verdict, answer each question. If ANY answer is NO for BUG_FIXED, emit BUG_IN_PROGRESS instead.
+
+| # | Question | Required for BUG_FIXED |
+|---|----------|------------------------|
+| 1 | Did Phase 3 produce a failing regression test with recorded failure output? | YES |
+| 2 | Was `bubbles.implement` invoked via `runSubagent` in Phase 5? | YES |
+| 3 | Was `bubbles.test` invoked via `runSubagent` in Phase 5? | YES |
+| 4 | Does the regression test that failed in Phase 3 now pass? | YES |
+| 5 | Was `bubbles.validate` invoked via `runSubagent` in Phase 6? | YES |
+| 6 | Was `bubbles.docs` invoked via `runSubagent` in Phase 6? | YES |
+| 7 | Are all DoD items in scopes.md checked `[x]` with inline evidence? | YES |
+| 8 | Does report.md contain pre-fix failure proof AND post-fix success proof? | YES |
+
+If you answered NO to any question above, the correct verdict is `🔄 BUG_IN_PROGRESS`, not `✅ BUG_FIXED`. Go back to the phase that was skipped.
 
 ### ✅ BUG_FIXED
 ```

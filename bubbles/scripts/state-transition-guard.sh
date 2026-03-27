@@ -2006,7 +2006,7 @@ if [[ "$failures" -gt 0 ]]; then
       else
         warn "Project gate script not found or not executable: $full_path"
       fi
-    done < <(grep "script:" "$PROJECT_CONFIG")
+    done < <(grep -E '^[[:space:]]*script:' "$PROJECT_CONFIG")
   fi
 
   exit 1

@@ -41,8 +41,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/aliases.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$(basename "$(dirname "$SCRIPT_DIR")")" == "bubbles" && "$(basename "$(dirname "$(dirname "$SCRIPT_DIR")")")" == ".github" ]]; then
   REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  FRAMEWORK_DIR="$REPO_ROOT/.github/bubbles"
+  AGENTS_DIR="$REPO_ROOT/.github/agents"
 else
   REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  FRAMEWORK_DIR="$REPO_ROOT/bubbles"
+  AGENTS_DIR="$REPO_ROOT/agents"
 fi
 SPECS_DIR="$REPO_ROOT/specs"
 SESSION_FILE="$REPO_ROOT/.specify/memory/bubbles.session.json"
@@ -871,7 +875,7 @@ cmd_doctor() {
 
   # Check 1: Core agents
   local agent_count
-  agent_count=$(ls "$REPO_ROOT/agents/bubbles."*.agent.md 2>/dev/null | wc -l)
+  agent_count=$(ls "$AGENTS_DIR/bubbles."*.agent.md 2>/dev/null | wc -l)
   if [[ "$agent_count" -ge 25 ]]; then
     echo -e "  ${GREEN}✅${NC} Core agents installed (${agent_count})"
     passed=$((passed + 1))
@@ -882,7 +886,7 @@ cmd_doctor() {
 
   # Check 2: Governance scripts
   local script_count
-  script_count=$(ls "$REPO_ROOT/bubbles/scripts/"*.sh 2>/dev/null | wc -l)
+  script_count=$(ls "$FRAMEWORK_DIR/scripts/"*.sh 2>/dev/null | wc -l)
   if [[ "$script_count" -ge 10 ]]; then
     echo -e "  ${GREEN}✅${NC} Governance scripts installed (${script_count})"
     passed=$((passed + 1))
@@ -892,7 +896,7 @@ cmd_doctor() {
   fi
 
   # Check 3: workflows.yaml
-  if [[ -f "$REPO_ROOT/bubbles/workflows.yaml" ]]; then
+  if [[ -f "$FRAMEWORK_DIR/workflows.yaml" ]]; then
     echo -e "  ${GREEN}✅${NC} Workflow config present"
     passed=$((passed + 1))
   else
@@ -944,7 +948,7 @@ cmd_doctor() {
 
   # Check 6: Script permissions
   local unexec=0
-  for s in "$REPO_ROOT/bubbles/scripts/"*.sh; do
+  for s in "$FRAMEWORK_DIR/scripts/"*.sh; do
     [[ -f "$s" && ! -x "$s" ]] && unexec=$((unexec + 1))
   done
   if [[ "$unexec" -eq 0 ]]; then
@@ -953,7 +957,7 @@ cmd_doctor() {
   else
     echo -e "  ${RED}❌${NC} $unexec scripts not executable"
     if [[ "$heal" == "true" ]]; then
-      chmod +x "$REPO_ROOT/bubbles/scripts/"*.sh
+      chmod +x "$FRAMEWORK_DIR/scripts/"*.sh
       echo -e "  ${GREEN}🔧${NC} Fixed: chmod +x on all scripts"
       healed=$((healed + 1))
     fi
@@ -975,9 +979,9 @@ cmd_doctor() {
   fi
 
   # Check 8: Version stamp
-  if [[ -f "$REPO_ROOT/bubbles/.version" ]]; then
+  if [[ -f "$FRAMEWORK_DIR/.version" ]]; then
     local ver
-    ver=$(cat "$REPO_ROOT/bubbles/.version")
+    ver=$(cat "$FRAMEWORK_DIR/.version")
     echo -e "  ${GREEN}✅${NC} Bubbles version: $ver"
     passed=$((passed + 1))
   else
@@ -992,17 +996,22 @@ cmd_doctor() {
   project_config="$proj_root/.github/bubbles-project.yaml"
   if [[ -f "$project_config" ]]; then
     local gate_ok=true
+    local active_gate_count=0
     while IFS= read -r line; do
       local spath
       spath=$(echo "$line" | sed 's/.*script:\s*//' | tr -d '[:space:]')
       [[ -z "$spath" ]] && continue
+      active_gate_count=$((active_gate_count + 1))
       if [[ ! -x "$REPO_ROOT/.github/$spath" ]]; then
         echo -e "  ${RED}❌${NC} Custom gate script missing/not executable: .github/$spath"
         gate_ok=false
         failed=$((failed + 1))
       fi
-    done < <(grep "script:" "$project_config")
-    if [[ "$gate_ok" == "true" ]]; then
+    done < <(grep -E '^[[:space:]]*script:' "$project_config")
+    if [[ "$active_gate_count" -eq 0 ]]; then
+      echo -e "  ${GREEN}✅${NC} No custom gate scripts defined"
+      passed=$((passed + 1))
+    elif [[ "$gate_ok" == "true" ]]; then
       echo -e "  ${GREEN}✅${NC} Custom gate scripts present"
       passed=$((passed + 1))
     fi
@@ -1051,7 +1060,7 @@ cmd_hooks() {
   local subcmd="${1:-status}"
   shift 2>/dev/null || true
 
-  local hooks_json="$REPO_ROOT/bubbles/hooks.json"
+  local hooks_json="$FRAMEWORK_DIR/hooks.json"
   local git_hooks_dir
   git_hooks_dir="$(cd "$REPO_ROOT" && git rev-parse --git-dir 2>/dev/null)/hooks"
 

@@ -165,6 +165,8 @@ If pre-requisites fail after non-interactive design attempt: produce validation 
 
 ### Phase 1: Scope Preparation
 
+**⛔ PHASE GATE: Phase 1 MUST be satisfied before writing any implementation code.**\nIf you reach implementation without confirming the items below, STOP — you are skipping a mandatory gate.
+
 For each scope N:
 - Restate scope's Gherkin scenarios
 - Confirm tests exist that validate scenarios exactly
@@ -187,6 +189,14 @@ During execution:
 ### Phases 2-7: Execution
 
 Follow [scope-workflow.md](bubbles_shared/scope-workflow.md) → "Execution Phases" (Phases 2-7), "Phase Exit Gates", and "Audit Failure Routing".
+
+**⛔ PHASE GATE: Before reporting completion, verify ALL of these are true:**
+- [ ] RED proof (failing test or reproduction) was captured BEFORE implementation
+- [ ] GREEN proof (passing test) was captured AFTER implementation
+- [ ] Regression suite ran with zero collateral failures
+- [ ] All DoD items are checked `[x]` with inline evidence containing `**Phase:** implement`
+- [ ] No foreign-owned artifacts were modified (spec.md, design.md, scopes.md planning content, uservalidation.md)
+If ANY is false, fix the gap before reporting results.
 
 ---
 
