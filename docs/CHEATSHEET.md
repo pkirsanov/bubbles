@@ -47,25 +47,12 @@
 | <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Calls out ambiguity and routes the correct owner instead of patching foreign artifacts himself. | *"What in the f— is going on here?"* |
 | <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Finds the weak spots and packets the follow-up work. | *"Why don't you go pave your cave?"* |
 | <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | Finds missing behavior, evidence, and coverage, then routes the repair. | *"What are ya lookin' at my gut fer?"* |
-| <img src="../icons/bill-wrench.svg" width="28"> | `bubbles.stabilize` | Shitty Bill | Quietly surfaces reliability issues and pushes them to the right owner. | *"..."* |
+| <img src="../icons/bill-wrench.svg" width="28"> | `bubbles.stabilize` | Shitty Bill | Surfaces reliability issues and routes the correct owner. Does not fix inline. | *"..."* |
 | <img src="../icons/steve-french-paw.svg" width="28"> | `bubbles.regression` | Steve French | Guards the existing territory against regressions and cross-spec collisions. | *"Something's prowlin' around in the code, boys."* |
 | <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | Finds threats, packets the fixes, and refuses greasy shortcuts. | *"F*** off, I got work to do."* |
 | <img src="../icons/green-bastard-outline.svg" width="28"> | `bubbles.code-review` | Green Bastard | Engineering-only review surface. Detects problems and priorities without pretending to be the owner. | *"From parts unknown, I can smell what's broken in the code."* |
 | <img src="../icons/orangie-fishbowl.svg" width="28"> | `bubbles.system-review` | Orangie | Holistic product/runtime/trust reviewer. Finds what needs attention, then routes it. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
 | <img src="../icons/gary-laser-eyes.svg" width="28"> | `bubbles.spec-review` | Gary Laser Eyes | Audits artifact trust and freshness before maintenance work relies on stale truth. | *"Gary can see right through it, boys."* |
-
-## <img src="../icons/barb-keys.svg" width="32"> Planning & Design
-
-| Icon | Agent | Alias | Role | Quote |
-|:----:|-------|-------|------|-------|
-| <img src="../icons/ray-lawnchair.svg" width="28"> | `bubbles.analyst` | Ray | Figures out WHY the way she goes. Sees patterns from his chair. | *"Sometimes she goes, sometimes she doesn't."* |
-| <img src="../icons/lucy-mirror.svg" width="28"> | `bubbles.ux` | Lucy | Cares about how things feel and look. Emotional intelligence. | *"You can't just slap things together and call it a home, Ricky."* |
-| <img src="../icons/sarah-clipboard.svg" width="28"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
-| <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
-| <img src="../icons/private-dancer-lamp.svg" width="28"> | `bubbles.grill` | Leslie Dancer | Pressure-tests ideas, plans, and workflow choices before effort gets burned on weak assumptions. | *"Let's get it under the light and see if it survives."* |
-| <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Calls out what is unclear and tells you which owner needs to fix it. | *"What in the f— is going on here?"* |
-| <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
-| <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
 
 ### Ownership Quick Reference
 
