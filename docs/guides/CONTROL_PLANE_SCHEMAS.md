@@ -10,16 +10,17 @@ These schemas are proposals for framework evolution. They are not active runtime
 
 ## Schema Set
 
-The control plane needs eight concrete schema surfaces:
+The control plane needs nine concrete schema surfaces:
 
 1. Agent capability registry
 2. Execution policy registry
 3. Scenario contract manifest
 4. `state.json` version 3
-5. Transition request packet
-6. Rework packet
-7. Lockdown approval record
-8. Invalidation ledger entry
+5. Specialist result envelope
+6. Transition request packet
+7. Rework packet
+8. Lockdown approval record
+9. Invalidation ledger entry
 
 ## 1. Agent Capability Registry
 
@@ -34,6 +35,8 @@ generatedFrom:
 agents:
   bubbles.workflow:
     class: orchestrator
+    canInvokeChildWorkflows: true
+    maxChildWorkflowDepth: 1
     ownsPhases:
       - finalize
     delegatesPhases:
@@ -59,6 +62,7 @@ agents:
       certification: []
   bubbles.validate:
     class: certification
+    canInvokeChildWorkflows: false
     ownsPhases:
       - validate
       - certify-state
@@ -81,6 +85,7 @@ agents:
       testCoverage: bubbles.test
   bubbles.grill:
     class: interactive-gate
+    canInvokeChildWorkflows: false
     ownsPhases:
       - interrogate
     canAskUserDirectly: true
@@ -94,8 +99,11 @@ agents:
 
 - generated file only; do not hand-edit
 - every workflow phase must resolve to exactly one owning agent or explicit owner chain
+- agents must resolve into one primary class; hybrids are not allowed
 - certification fields may only be owned by `bubbles.validate`
 - `canAskUserDirectly` must be explicit for every agent
+- only orchestrators may invoke child workflows
+- child workflow depth must be bounded by registry policy
 
 ## 2. Execution Policy Registry
 
@@ -277,7 +285,41 @@ Proposed file: `specs/<feature>/state.json`
 - only `bubbles.validate` may mutate `certification`
 - promotion to `done` is impossible without validate certification
 
-## 5. Transition Request Packet
+## 5. Specialist Result Envelope
+
+Proposed payload: returned by every agent or child workflow invocation.
+
+```json
+{
+  "resultId": "RES-042-001",
+  "agent": "bubbles.gaps",
+  "roleClass": "diagnostic",
+  "outcome": "route_required",
+  "featureDir": "specs/042-catalog-assistant",
+  "scopeIds": ["02-search-flow"],
+  "dodItems": ["DOD-02-04"],
+  "scenarioIds": ["SCN-042-002"],
+  "artifactsCreated": [],
+  "artifactsUpdated": ["report.md"],
+  "evidenceRefs": [
+    "report.md#gap-finding-scn-042-002"
+  ],
+  "nextRequiredOwner": "bubbles.implement",
+  "packetRef": "RW-042-001",
+  "blockedReason": null
+}
+```
+
+### Invariants
+
+- every agent invocation must return exactly one result envelope
+- valid outcomes are `completed_owned`, `completed_diagnostic`, `route_required`, and `blocked`
+- only owners or execution specialists may return `completed_owned`
+- diagnostic and certification agents may return `completed_diagnostic`, `route_required`, or `blocked`
+- `route_required` must reference a concrete packet or embedded packet payload
+- `blocked` must carry a concrete reason plus evidence references
+
+## 6. Transition Request Packet
 
 Proposed file: embedded in state or stored under `specs/<feature>/transitions/`
 
@@ -308,7 +350,7 @@ Proposed file: embedded in state or stored under `specs/<feature>/transitions/`
 - only validate may resolve the request as approved or rejected
 - a request without evidence refs is invalid
 
-## 6. Rework Packet
+## 7. Rework Packet
 
 Proposed file: embedded in state or stored under `specs/<feature>/rework/`
 
@@ -327,6 +369,12 @@ Proposed file: embedded in state or stored under `specs/<feature>/rework/`
     "link the test to SCN-042-002",
     "re-run validation"
   ],
+  "narrowExecutionContext": {
+    "files": ["dashboard/e2e/tests/catalog-search.spec.ts"],
+    "functions": [],
+    "commands": ["E2E_UI_TEST_COMMAND"],
+    "workflowMode": null
+  },
   "status": "open"
 }
 ```
@@ -336,8 +384,9 @@ Proposed file: embedded in state or stored under `specs/<feature>/rework/`
 - validate never reopens work without a concrete packet
 - route-required outcomes must include an owner and scenario or DoD references
 - workflow must not report phase success while open rework packets remain
+- diagnostic agents use narrow execution context instead of fixing inline
 
-## 7. Lockdown Approval Record
+## 8. Lockdown Approval Record
 
 Proposed file: `specs/<feature>/lockdown-approvals.json`
 
@@ -359,7 +408,7 @@ Proposed file: `specs/<feature>/lockdown-approvals.json`
 - only locked scenarios require this record
 - approval alone is not enough; it must pair with invalidation and replacement planning
 
-## 8. Invalidation Ledger Entry
+## 9. Invalidation Ledger Entry
 
 Proposed file: `specs/<feature>/invalidation-ledger.json`
 
@@ -388,24 +437,28 @@ Proposed file: `specs/<feature>/invalidation-ledger.json`
 
 The schemas work together in this order:
 
-1. capability registry decides ownership and delegation
+1. capability registry decides ownership, role class, and child-workflow privileges
 2. policy registry resolves defaults and provenance
 3. scenario manifest defines behavior contracts
-4. execution agents write transition requests
-5. validate certifies or rejects through state version 3
-6. rejected transitions create rework packets
-7. lockdown approvals and invalidation entries govern protected scenario changes
+4. every agent returns a specialist result envelope
+5. execution agents write transition requests
+6. validate certifies or rejects through state version 3
+7. rejected transitions create rework packets
+8. lockdown approvals and invalidation entries govern protected scenario changes
 
 ## Minimum Mechanical Enforcement Needed
 
 These schemas become meaningful only when paired with mechanical enforcement:
 
 - capability registry lint
+- role-class and no-hybrid guard
 - policy provenance guard
 - scenario manifest guard
+- result-envelope completeness guard
 - validate-only certification guard
 - lockdown guard
 - regression immutability guard
 - rework packet completeness guard
+- child-workflow-depth guard
 
 Without those guards, the schemas would remain descriptive instead of authoritative.

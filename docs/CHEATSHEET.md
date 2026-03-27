@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **32 Agents · 61 Gates · 27 Workflow Modes · 19 Phases**
+> **32 Agents · 64 Gates · 27 Workflow Modes · 19 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -20,19 +20,39 @@
 |:----:|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
 | <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration work picker. Chooses the next executable slice and runs the right specialist chain. | *"I'll do whatever you need, Julian."* |
-| <img src="../icons/green-bastard-outline.svg" width="28"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
-| <img src="../icons/orangie-fishbowl.svg" width="28"> | `bubbles.system-review` | Orangie | Holistic system reviewer. Sees everything from the fishbowl. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
+| <img src="../icons/cory-cap.svg" width="28"> | `bubbles.bug` | Cory | Bug orchestrator. Reproduces the issue, packets the work, dispatches the right owners, and keeps going until the bug is actually closed. | *"I didn't wanna find it, but... there it is."* |
 
-## <img src="../icons/julian-glass.svg" width="32"> Phase Specialists
+## <img src="../icons/julian-glass.svg" width="32"> Owners & Executors
 
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
+| <img src="../icons/ray-lawnchair.svg" width="28"> | `bubbles.analyst` | Ray | Defines business requirements and the observable truth the rest of the system must satisfy. | *"Sometimes she goes, sometimes she doesn't."* |
+| <img src="../icons/lucy-mirror.svg" width="28"> | `bubbles.ux` | Lucy | Owns UX sections and interaction design when the feature needs them. | *"You can't just slap things together and call it done."* |
+| <img src="../icons/sarah-clipboard.svg" width="28"> | `bubbles.design` | Sarah | Turns loose requirements into a technical shape that can actually survive implementation. | *"Let's get this organized before anybody breaks it."* |
+| <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Owns scopes, DoD, Test Plan structure, and scenario contracts. | *"Jim, you need a plan."* |
 | <img src="../icons/julian-glass.svg" width="28"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
 | <img src="../icons/trinity-notebook.svg" width="28"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
 | <img src="../icons/jroc-mic.svg" width="28"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
-| <img src="../icons/randy-cheeseburger.svg" width="28"> | `bubbles.validate` | Randy | Does the grunt work of checking every gate. Shirt comes off when it's serious. | *"Mr. Lahey, the tests aren't passing!"* |
-| <img src="../icons/ted-badge.svg" width="28"> | `bubbles.audit` | Ted Johnson | Official, procedural, and impossible to sweet-talk. The final compliance cop. | *"This is an official audit now."* |
 | <img src="../icons/ricky-dynamite.svg" width="28"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
+| <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Reduces needless complexity without weakening the behavior contract. | *"Just tape it up and move on."* |
+| <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Premium UI implementation when the surface needs flagship treatment, not default sludge. | *"I was in Skid Row!"* |
+
+## <img src="../icons/ted-badge.svg" width="32"> Diagnostic & Certification Routing
+
+| Icon | Agent | Alias | Role | Quote |
+|:----:|-------|-------|------|-------|
+| <img src="../icons/randy-cheeseburger.svg" width="28"> | `bubbles.validate` | Randy | Owns certification state, checks gates, and can reopen work only through concrete packets and evidence. | *"Mr. Lahey, the tests aren't passing!"* |
+| <img src="../icons/ted-badge.svg" width="28"> | `bubbles.audit` | Ted Johnson | Final compliance cop. Certifies, routes rework, and does not implement fixes. | *"This is an official audit now."* |
+| <img src="../icons/private-dancer-lamp.svg" width="28"> | `bubbles.grill` | Leslie Dancer | Pressure-tests ideas and approval paths before the wrong work starts. | *"Let's get it under the light and see if it survives."* |
+| <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Calls out ambiguity and routes the correct owner instead of patching foreign artifacts himself. | *"What in the f— is going on here?"* |
+| <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Finds the weak spots and packets the follow-up work. | *"Why don't you go pave your cave?"* |
+| <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | Finds missing behavior, evidence, and coverage, then routes the repair. | *"What are ya lookin' at my gut fer?"* |
+| <img src="../icons/bill-wrench.svg" width="28"> | `bubbles.stabilize` | Shitty Bill | Quietly surfaces reliability issues and pushes them to the right owner. | *"..."* |
+| <img src="../icons/steve-french-paw.svg" width="28"> | `bubbles.regression` | Steve French | Guards the existing territory against regressions and cross-spec collisions. | *"Something's prowlin' around in the code, boys."* |
+| <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | Finds threats, packets the fixes, and refuses greasy shortcuts. | *"F*** off, I got work to do."* |
+| <img src="../icons/green-bastard-outline.svg" width="28"> | `bubbles.code-review` | Green Bastard | Engineering-only review surface. Detects problems and priorities without pretending to be the owner. | *"From parts unknown, I can smell what's broken in the code."* |
+| <img src="../icons/orangie-fishbowl.svg" width="28"> | `bubbles.system-review` | Orangie | Holistic product/runtime/trust reviewer. Finds what needs attention, then routes it. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
+| <img src="../icons/gary-laser-eyes.svg" width="28"> | `bubbles.spec-review` | Gary Laser Eyes | Audits artifact trust and freshness before maintenance work relies on stale truth. | *"Gary can see right through it, boys."* |
 
 ## <img src="../icons/barb-keys.svg" width="32"> Planning & Design
 
@@ -53,20 +73,9 @@
 |----------|-------|-------|
 | `spec.md` business requirements | `bubbles.analyst` | `bubbles.ux` may update UX sections only |
 | `design.md` | `bubbles.design` | Technical design owner |
-| `scopes.md` / planning structure | `bubbles.plan` | Gherkin, Test Plan, DoD, `uservalidation.md` |
-| Findings from validate/harden/gaps/security/stabilize/regression/code-review/system-review | owner via `runSubagent` | Diagnostic agents route, they do not self-author foreign artifacts |
-
-## <img src="../icons/bill-wrench.svg" width="32"> Quality & Ops
-
-| Icon | Agent | Alias | Role | Quote |
-|:----:|-------|-------|------|-------|
-| <img src="../icons/cory-cap.svg" width="28"> | `bubbles.bug` | Cory | Finds the problems when sent looking. Reluctant but effective. | *"I didn't wanna find it, but... there it is."* |
-| <img src="../icons/bill-wrench.svg" width="28"> | `bubbles.stabilize` | Shitty Bill | Quiet. Reliable. Shows up, fixes infrastructure. Just... stabilizes. | *"..."* |
-| <img src="../icons/steve-french-paw.svg" width="28"> | `bubbles.regression` | Steve French | Prowls the codebase. Catches cross-feature interference. Territorial guardian. | *"Something's prowlin' around in the code, boys."* |
-| <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
-| <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
-| <img src="../icons/gary-laser-eyes.svg" width="28"> | `bubbles.spec-review` | Gary Laser Eyes | Sees right through stale specs. Checks if artifacts still match reality. | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
-| <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI implementation. | *"I was in Skid Row!"* |
+| `scopes.md` / planning structure | `bubbles.plan` | Gherkin, Test Plan, DoD, `uservalidation.md`, `scenario-manifest.json` |
+| `state.json.certification.*` | `bubbles.validate` | Validate-owned authority only |
+| Route-required findings | owning specialist | Diagnostic and certification agents packetize; they do not self-author foreign artifacts |
 
 ## <img src="../icons/camera-crew.svg" width="32"> Utilities
 
@@ -163,12 +172,12 @@
 
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
-**Control-plane law:** `state.json.execution.*` records runtime claims, `state.json.certification.*` is validate-owned authority, `policySnapshot` records effective defaults with provenance, and changed behavior should flow through `scenario-manifest.json` with stable `SCN-*` contracts.
+**Control-plane law:** `state.json.execution.*` records runtime claims, `state.json.certification.*` is validate-owned authority, `policySnapshot` records effective defaults with provenance, changed behavior should flow through `scenario-manifest.json` with stable `SCN-*` contracts, diagnostics and certification route foreign-owned work instead of fixing inline, and every invocation ends with a concrete result envelope.
 
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 61 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 64 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -237,6 +246,9 @@
 | G059 | Regression contract | Scenario-linked regression tests cannot drift, weaken, or be removed until the owning scenario contract is invalidated |
 | G060 | Scenario TDD | When TDD is active, targeted failing proof must exist before the implementation is accepted as green |
 | G061 | Rework packet | Route-required findings must produce structured transition or rework packets tied to scenarios, DoD items, and owning specialists |
+| G062 | Owner-only remediation | Only owning planning or execution specialists may remediate owned surfaces; diagnostics and certification must route |
+| G063 | Concrete result | Every agent or child-workflow invocation must end with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked` |
+| G064 | Child workflow depth | Only orchestrators may invoke child workflows, and nesting depth must stay bounded |
 
 ---
 

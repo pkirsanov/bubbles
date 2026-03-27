@@ -17,6 +17,8 @@ Optional execution tags you can append to many workflow commands:
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, and scenario-specific test planning before implementation starts.
 
+Control-plane law also requires owner-only remediation and concrete result envelopes: orchestrators dispatch, owners execute, diagnostics and certification route via packets, and every invocation ends with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`.
+
 ---
 
 ## Start Here

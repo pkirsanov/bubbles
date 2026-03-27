@@ -95,8 +95,9 @@ When the user provides free-text input WITHOUT structured parameters, infer them
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 When simplification requires mixed specialist execution:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Hand off to the appropriate specialist via handoffs above.
+- **Owned simplification only:** Simplify code and owned execution surfaces within this agent's execution context.
+- **Any foreign-owned follow-up:** Hand off to the appropriate specialist via handoffs above and finish with `route_required`.
+- End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when simplification changes and verification were completed, `route_required` when another owner must continue the work, or `blocked` when a concrete blocker prevents safe simplification.
 
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 

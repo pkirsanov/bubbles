@@ -36,51 +36,68 @@ stateModel:
   - bubbles.audit
   certificationWriter: bubbles.validate
 
+childWorkflowPolicy:
+  defaultAllowed: false
+  maxDepth: 1
+  callers:
+  - bubbles.workflow
+  - bubbles.iterate
+  - bubbles.bug
+
+resultPolicy:
+  allowedOutcomes:
+  - completed_owned
+  - completed_diagnostic
+  - route_required
+  - blocked
+
 agents:
   bubbles.super:
-    class: concierge
+    class: utility
     canAskUserDirectly: true
     delegatesRequired: true
     ownsArtifacts: []
     ownsPhases: []
   bubbles.workflow:
     class: orchestrator
+    canInvokeChildWorkflows: true
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: []
     ownsPhases: [ finalize ]
   bubbles.iterate:
     class: orchestrator
+    canInvokeChildWorkflows: true
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: []
     ownsPhases: [ select ]
   bubbles.analyst:
-    class: planning
+    class: planning-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ spec.md ]
     ownsPhases: [ analyze ]
   bubbles.ux:
-    class: planning
+    class: planning-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ spec.md ]
     ownsPhases: [ analyze ]
   bubbles.design:
-    class: planning
+    class: planning-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ design.md ]
     ownsPhases: [ bootstrap ]
   bubbles.plan:
-    class: planning
+    class: planning-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ scopes.md, report.md, uservalidation.md, scenario-manifest.json ]
     ownsPhases: [ bootstrap ]
   bubbles.clarify:
-    class: planning
+    class: diagnostic
     canAskUserDirectly: true
     delegatesRequired: true
     ownsArtifacts: []
@@ -92,25 +109,25 @@ agents:
     ownsArtifacts: [ lockdown-approvals.json ]
     ownsPhases: [ interrogate ]
   bubbles.implement:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ product-code ]
     ownsPhases: [ implement ]
   bubbles.test:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ tests ]
     ownsPhases: [ test ]
   bubbles.docs:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ runtime-docs ]
     ownsPhases: [ docs ]
   bubbles.chaos:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: []
@@ -207,18 +224,19 @@ agents:
     ownsPhases: []
   bubbles.bug:
     class: orchestrator
+    canInvokeChildWorkflows: true
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ bug-artifacts ]
     ownsPhases: [ bug-discovery ]
   bubbles.simplify:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ product-code ]
     ownsPhases: [ simplify ]
   bubbles.cinematic-designer:
-    class: execution
+    class: execution-owner
     canAskUserDirectly: false
     delegatesRequired: true
     ownsArtifacts: [ product-code ]

@@ -1,18 +1,5 @@
 ---
 description: Deep gap analysis & remediation - identify and fix ALL implementation gaps against design/requirements, validate specs/tasks, and ensure strict policy compliance.
-handoffs:
-   - label: Draft/Update Design (Non-Interactive)
-      agent: bubbles.design
-      prompt: Create or update design.md without user interaction (mode: non-interactive).
-   - label: Clarify Specs/Scopes
-      agent: bubbles.clarify
-      prompt: Resolve spec/design/scopes gaps discovered during audit.
-   - label: Implement Missing Work
-      agent: bubbles.implement
-      prompt: Implement the missing/partial scope work to satisfy spec and DoD.
-   - label: Run Scope-Aware Tests
-      agent: bubbles.test
-      prompt: Prove fixes with tests and close coverage gaps.
 ---
 
 ## Agent Identity
@@ -101,8 +88,8 @@ Unlike `/bubbles.test` (test-focused verification + coverage gap fixing), `/bubb
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 If gap remediation spans multiple specialist phases (implement/test/docs/harden/bug) in one session:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
+- **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If no routed work is needed, end with `completed_diagnostic`.
+- **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 

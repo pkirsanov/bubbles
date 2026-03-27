@@ -44,25 +44,34 @@ If any required check fails, report an audit failure and do not issue a ship-rea
 
 **Verdicts:** `🚀 SHIP_IT` (all pass) / `⚠️ SHIP_WITH_NOTES` (minor) / `🛑 REWORK_REQUIRED` (fixable) / `🔴 DO_NOT_SHIP` (fabrication or critical failure)
 
-When `bubbles.audit` is invoked by `bubbles.workflow` or `bubbles.iterate` and finds any blocking issue, it MUST emit a machine-readable routing block so the orchestrator can repair before finalize:
+When `bubbles.audit` is invoked by `bubbles.workflow` or `bubbles.iterate`, it MUST finish with a concrete result envelope so the orchestrator can repair before finalize when needed.
 
-```markdown
-## ROUTE-REQUIRED
+## RESULT-ENVELOPE
 
-| Field | Value |
-|-------|-------|
-| Status | blocked |
-| Owner | bubbles.plan |
-| Reason | Artifact compliance failure in scopes.md/report.md |
-| Required Revalidation | yes |
-| Blocking Gates | G023, G025, G041 |
+```json
+{
+  "agent": "bubbles.audit",
+  "roleClass": "certification",
+  "outcome": "route_required",
+  "featureDir": "specs/042-catalog-assistant",
+  "scopeIds": ["02-search-flow"],
+  "dodItems": ["DOD-02-04"],
+  "scenarioIds": ["SCN-042-002"],
+  "artifactsCreated": [],
+  "artifactsUpdated": ["report.md"],
+  "evidenceRefs": ["report.md#audit-finding-scn-042-002"],
+  "nextRequiredOwner": "bubbles.plan",
+  "packetRef": "RW-042-001",
+  "blockedReason": null
+}
 ```
 
 Rules:
-- Emit one `ROUTE-REQUIRED` block per blocking owner/action pair.
-- `Owner` MUST be the concrete repair owner, never a generic phrase.
-- `Reason` MUST identify the exact audit failure class.
-- If no routed repair is needed, emit:
+- Emit exactly one `## RESULT-ENVELOPE` block per invocation.
+- Valid outcomes for `bubbles.audit` are `completed_diagnostic`, `route_required`, or `blocked`.
+- `nextRequiredOwner` MUST be the concrete repair owner, never a generic phrase.
+- `blockedReason` MUST identify the exact audit failure class when outcome is `blocked`.
+- For compatibility during migration, if `outcome` is `route_required`, also emit a legacy `## ROUTE-REQUIRED` block carrying the same owner and reason. If no routed repair is needed, the legacy compatibility block may be:
 
 ```markdown
 ## ROUTE-REQUIRED
@@ -86,7 +95,7 @@ Optional compliance options:
 
 Ensure `/bubbles.validate` has passed before running this audit.
 
-If validation has not passed cleanly, or validation returned any `ROUTE-REQUIRED` block other than `NONE`, the audit verdict MUST be `🛑 REWORK_REQUIRED` or `🔴 DO_NOT_SHIP`.
+If validation has not passed cleanly, or validation returned a result envelope with outcome `route_required` or `blocked` (or a legacy `ROUTE-REQUIRED` block other than `NONE`), the audit verdict MUST be `🛑 REWORK_REQUIRED` or `🔴 DO_NOT_SHIP`.
 
 ## Context Loading
 

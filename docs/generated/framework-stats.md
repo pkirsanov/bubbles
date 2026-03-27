@@ -1,7 +1,7 @@
 # Framework Stats
 
-- Agents: 31
-- Gates: 52
+- Agents: 32
+- Gates: 64
 - Workflow modes: 27
 - Phases: 19
-- Generated at: 2026-03-25T12:00:00Z
+- Generated at: 2026-03-27T06:49:03Z

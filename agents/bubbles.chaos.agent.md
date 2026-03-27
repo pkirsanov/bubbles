@@ -78,7 +78,7 @@ If any required check fails, report issues and do not claim the chaos round is c
 
 **MANDATORY:** Follow [critical-requirements.md](bubbles_shared/critical-requirements.md) and [agent-common.md](bubbles_shared/agent-common.md).
 
-When chaos requires cross-domain work: small fixes (≤30 lines) inline, larger work returns failure classification to orchestrator.
+When chaos requires cross-domain work: do NOT fix inline. Emit a concrete route packet with the owning specialist and the narrowest execution context, return failure classification to the orchestrator, and end the response with a `## RESULT-ENVELOPE` using `route_required`. If the chaos pass completed without routed follow-up, return a `## RESULT-ENVELOPE` with `completed_owned`.
 
 ---
 

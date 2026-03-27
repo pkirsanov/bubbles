@@ -66,6 +66,7 @@ handoffs:
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
 - **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
+- **Require a concrete result envelope from every specialist invocation** — each `runSubagent` response must end with a machine-readable `## RESULT-ENVELOPE` section carrying the agent, role class, outcome, affected scope/DoD/scenario references, evidence refs, and routing payload when follow-up work is required. Legacy `## ROUTE-REQUIRED` blocks may be consumed only as a compatibility fallback while prompts finish migrating.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
 - **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts. Invoke `bubbles.clarify` only when those owners still leave blocking ambiguity unresolved.
 - **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
@@ -779,15 +780,17 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
    - Run `docs` phase via `runSubagent` — update docs for ALL specs
     - Run `validate` phase via `runSubagent` — validate ALL specs together
     - **MANDATORY validate repair loop before audit/finalize:**
-       1. Parse the `bubbles.validate` response for any `## ROUTE-REQUIRED` section or Ownership Routing Summary.
-       2. If validation reports stale DoD state, placeholder evidence, malformed `uservalidation.md`, missing traceability, missing test substance, or any other routed blocking issue, invoke the owning specialist immediately (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug` as applicable).
-       3. After the owner finishes, rerun `bubbles.validate` for the affected spec(s).
-       4. Do not proceed to `audit` or `finalize` until `bubbles.validate` returns cleanly with no routed blocking issues.
+       1. Parse the `bubbles.validate` response for a `## RESULT-ENVELOPE` section first. Accept legacy `## ROUTE-REQUIRED` or Ownership Routing Summary output only as a temporary fallback if the envelope is missing.
+       2. If the envelope outcome is `route_required`, invoke `nextRequiredOwner` immediately (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug` as applicable) using the packet or embedded routing payload.
+       3. If the envelope outcome is `blocked`, record the concrete blocker and only continue when auto-escalation rules resolve it or the spec is terminally blocked under retry policy.
+       4. After the owner finishes, rerun `bubbles.validate` for the affected spec(s).
+       5. Do not proceed to `audit` or `finalize` until `bubbles.validate` returns `completed_diagnostic` with no routed blocking issues.
     - Run `audit` phase via `runSubagent` — audit ALL specs together
     - **MANDATORY audit repair loop before finalize:**
-       1. Parse the `bubbles.audit` response for any blocking failure or `## ROUTE-REQUIRED` section.
-       2. If audit reports a repairable issue, invoke the owning specialist, rerun the impacted validations/tests, and rerun `bubbles.audit`.
-       3. Finalize is forbidden while audit findings remain open.
+       1. Parse the `bubbles.audit` response for a `## RESULT-ENVELOPE` section first. Accept legacy `## ROUTE-REQUIRED` output only as a temporary fallback.
+       2. If the audit envelope outcome is `route_required`, invoke the owning specialist, rerun the impacted validations/tests, and rerun `bubbles.audit`.
+       3. If the audit envelope outcome is `blocked`, record the blocker and treat finalize as forbidden until the blocker is cleared or the spec is terminally blocked.
+       4. Finalize is forbidden while audit findings remain open.
    - Run `chaos` phase via `runSubagent` — chaos probes covering ALL specs
    - Run `finalize` phase — for EACH batched spec individually:
    1. Write the current-run shared evidence into the spec's `report.md` and scope evidence blocks before any promotion decision.
@@ -1052,7 +1055,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
-      **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence and a `## ROUTE-REQUIRED` block. If the block is missing, validation was skipped, or the evidence is fabricated → **re-invoke**. If `ROUTE-REQUIRED` is not `NONE`, invoke the named owner, rerun the required checks, then rerun `bubbles.validate`.
+      **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence and a `## RESULT-ENVELOPE` section. If the envelope is missing, validation was skipped, or the evidence is fabricated → **re-invoke**. If the envelope outcome is `route_required`, invoke `nextRequiredOwner`, rerun the required checks, then rerun `bubbles.validate`. Accept legacy `## ROUTE-REQUIRED` output only as a compatibility fallback.
 
       **Phase: `audit`**
       ```
@@ -1066,7 +1069,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
                  Read governance: .github/copilot-instructions.md, .github/agents/bubbles_shared/agent-common.md"
       )
       ```
-      **Verify:** Confirm audit response contains a clear verdict, references specific gate checks, and includes a `## ROUTE-REQUIRED` block. If the block is missing, treat audit as malformed and re-invoke it. If routed repair is required, invoke the named owner, rerun the impacted checks, then rerun `bubbles.audit`.
+      **Verify:** Confirm audit response contains a clear verdict, references specific gate checks, and includes a `## RESULT-ENVELOPE` section. If the envelope is missing, treat audit as malformed and re-invoke it. If the envelope outcome is `route_required`, invoke `nextRequiredOwner`, rerun the impacted checks, then rerun `bubbles.audit`. Accept legacy `## ROUTE-REQUIRED` output only as a compatibility fallback.
 
       **⚠️ POST-FIX-CYCLE VERIFICATION (MANDATORY after ALL fix cycle phases complete):**
       After the entire fix cycle for a round completes, the workflow agent MUST verify:

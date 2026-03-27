@@ -12,7 +12,7 @@
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-32-58a6ff?style=flat-square" alt="32 agents">
-  <img src="https://img.shields.io/badge/gates-61-3fb950?style=flat-square" alt="61 gates">
+  <img src="https://img.shields.io/badge/gates-64-3fb950?style=flat-square" alt="64 gates">
   <img src="https://img.shields.io/badge/workflow_modes-27-bc8cff?style=flat-square" alt="27 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
@@ -34,7 +34,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>32 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>61 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>64 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>27 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
@@ -110,7 +110,6 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │   ├── workflows.yaml               # 27 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
-│   │   ├── artifact-freshness-guard.sh
 │   │   ├── artifact-lint.sh
 │   │   ├── state-transition-guard.sh
 │   │   └── ...
@@ -152,8 +151,15 @@ Bubbles now enforces hard artifact ownership:
 - `bubbles.analyst` owns business requirements in `spec.md`
 - `bubbles.ux` owns UX sections inside `spec.md`
 - `bubbles.design` owns `design.md`
-- `bubbles.plan` owns `scopes.md`, `report.md` structure, and `uservalidation.md`
-- Diagnostic agents like `bubbles.validate`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
+- `bubbles.plan` owns `scopes.md`, `report.md` structure, `uservalidation.md`, and `scenario-manifest.json`
+- `bubbles.validate` owns certification state in `state.json`
+- Diagnostic and certification agents like `bubbles.validate`, `bubbles.audit`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression`, `bubbles.clarify`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
+
+Control-plane law:
+- Orchestrators dispatch work and keep it moving; they do not implement fixes directly.
+- Only orchestrators may invoke child workflows.
+- Owners and execution specialists produce concrete code, test, doc, or artifact deltas.
+- Diagnostic and certification agents finish with concrete result envelopes and owner-targeted packets instead of inline remediation.
 
 This is enforced by the artifact ownership contract in `.github/agents/bubbles_shared/artifact-ownership.md`, the shared governance index in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
 
@@ -169,43 +175,39 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 |:----:|-------|------|-------------|
 | <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase or multi-spec workflow |
 | <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration through the right specialists. | Continuing existing spec work without choosing phases by hand |
-| <img src="icons/green-bastard-outline.svg" width="20"> | `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
-| <img src="icons/orangie-fishbowl.svg" width="20"> | `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
+| <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug orchestrator.** Reproduces, packets, routes, and drives the fix workflow until the defect is actually closed. | Investigating and routing bug work end to end |
 
-### <img src="icons/julian-glass.svg" width="24"> Specialists
-
-| Icon | Agent | Role | When to Use |
-|:----:|-------|------|-------------|
-| <img src="icons/julian-glass.svg" width="20"> | `bubbles.implement` | **The implementer.** Delivers every time. | Implementing planned scopes |
-| <img src="icons/trinity-notebook.svg" width="20"> | `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
-| <img src="icons/jroc-mic.svg" width="20"> | `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
-| <img src="icons/randy-cheeseburger.svg" width="20"> | `bubbles.validate` | **Gate checker.** Does the grunt work of checking every gate. | Pre-merge validation |
-| <img src="icons/ted-badge.svg" width="20"> | `bubbles.audit` | **Policy enforcer.** Obsessive, thorough. The last line of defense. | Final compliance audit |
-| <img src="icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
-
-### <img src="icons/barb-keys.svg" width="24"> Planning & Design
+### <img src="icons/julian-glass.svg" width="24"> Owners And Executors
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
 | <img src="icons/ray-lawnchair.svg" width="20"> | `bubbles.analyst` | **Business analyst.** Figures out the *why* behind requirements. | Starting new features |
 | <img src="icons/lucy-mirror.svg" width="20"> | `bubbles.ux` | **UX designer.** Cares about how things feel and look. | UI/UX design work |
 | <img src="icons/sarah-clipboard.svg" width="20"> | `bubbles.design` | **Architect.** Turns loose ideas into a crisp technical shape. | System design |
-| <img src="icons/barb-keys.svg" width="20"> | `bubbles.plan` | **Scope planner.** Defines the scopes, keeps the books. | Breaking work into scopes |
+| <img src="icons/barb-keys.svg" width="20"> | `bubbles.plan` | **Scope planner.** Defines the scopes, owns planning artifacts, and keeps the books. | Breaking work into scopes |
+| <img src="icons/julian-glass.svg" width="20"> | `bubbles.implement` | **The implementer.** Delivers every time. | Implementing planned scopes |
+| <img src="icons/trinity-notebook.svg" width="20"> | `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
+| <img src="icons/jroc-mic.svg" width="20"> | `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
+| <img src="icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
+| <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise without weakening behavior or ownership boundaries. | Reducing complexity after implementation |
+| <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Premium UI implementer.** Over-the-top production value, real frontend output. | Cinematic or flagship UI implementation |
+
+### <img src="icons/ted-badge.svg" width="24"> Diagnostic And Certification Routing
+
+| Icon | Agent | Role | When to Use |
+|:----:|-------|------|-------------|
+| <img src="icons/randy-cheeseburger.svg" width="20"> | `bubbles.validate` | **Certification owner.** Checks the gates, owns certification state, and can reopen work with concrete packets. | Pre-merge validation and promotion gating |
+| <img src="icons/ted-badge.svg" width="20"> | `bubbles.audit` | **Policy enforcer.** Final compliance pass that certifies or routes rework, not implementation. | Final compliance audit |
 | <img src="icons/private-dancer-lamp.svg" width="20"> | `bubbles.grill` | **Pressure tester.** Interrogates ideas, plans, and assumptions before time gets wasted. | Challenging an idea or workflow choice up front |
 | <img src="icons/george-green-badge.svg" width="20"> | `bubbles.clarify` | **Ambiguity router.** Identifies what is unclear, what is contradictory, and which owning agent must update the artifacts. | Resolving planning ambiguity without crossing ownership boundaries |
 | <img src="icons/conky-puppet.svg" width="20"> | `bubbles.harden` | **Hardener.** Says the uncomfortable truths. Confrontational. Necessary. | Hardening passes |
 | <img src="icons/phil-collins-baam.svg" width="20"> | `bubbles.gaps` | **Gap finder.** Finds what nobody else sees. | Gap analysis |
-
-### <img src="icons/bill-wrench.svg" width="24"> Quality & Ops
-
-| Icon | Agent | Role | When to Use |
-|:----:|-------|------|-------------|
-| <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug hunter.** Finds and fixes bugs with reproduction evidence. | Bug investigation |
 | <img src="icons/bill-wrench.svg" width="20"> | `bubbles.stabilize` | **Stabilizer.** Quiet. Reliable. Just fixes infrastructure. | Stability issues |
 | <img src="icons/steve-french-paw.svg" width="20"> | `bubbles.regression` | **Regression guardian.** Prowls the codebase catching cross-feature interference. | After implementation/bug fixes |
 | <img src="icons/cyrus-sunglasses.svg" width="20"> | `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
-| <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise. | Reducing complexity |
-| <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Premium UI implementer.** Over-the-top production value, real frontend output. | Cinematic or flagship UI implementation |
+| <img src="icons/green-bastard-outline.svg" width="20"> | `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
+| <img src="icons/orangie-fishbowl.svg" width="20"> | `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
+| <img src="icons/gary-laser-eyes.svg" width="20"> | `bubbles.spec-review` | **Spec freshness auditor.** Checks whether artifacts still deserve trust before maintenance or execution. | Auditing stale or drifted specs |
 
 ### <img src="icons/camera-crew.svg" width="24"> Utilities
 
@@ -317,6 +319,12 @@ Baseline workflow law already requires coherent spec/design/plan artifacts, expl
 - `maxScopeMinutes` and `maxDodMinutes` tighten planning so scopes stay small and isolated.
 - `microFixes: true` keeps failure recovery in narrow error-scoped loops.
 
+Control-plane rules:
+- Every specialist invocation ends with a concrete result envelope: `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`.
+- Route-required outcomes carry owner-targeted packets with scope, scenario, or DoD references.
+- Diagnostic and certification phases route foreign-owned follow-up; they do not perform inline remediation.
+- Child workflows are orchestrator-only and bounded in depth.
+
 ---
 
 ## The Rules
@@ -327,7 +335,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 61 Quality Gates
+### 64 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 

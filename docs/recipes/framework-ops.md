@@ -24,7 +24,10 @@ Or via CLI:
 ```bash
 bash .github/bubbles/scripts/cli.sh doctor --heal
 bash .github/bubbles/scripts/cli.sh agnosticity
+bash .github/bubbles/scripts/cli.sh guard-selftest
 ```
+
+`guard-selftest` exercises the framework's promotion guard with temporary fixtures so you can verify the concrete-result and child-workflow enforcement paths without mutating real specs.
 
 ## Install Git Hooks
 
@@ -103,6 +106,9 @@ Use `bubbles.super` when something in the framework itself is confused, blocked,
 ```
 /bubbles.super  fix my hooks setup and tell me how to verify it
 → Responds with: the framework action, then the follow-up verification command
+
+/bubbles.super  explain why a result envelope or rework packet failed guard checks
+→ Responds with: the likely failing gate, the exact file surface, and the next verification command
 
 /bubbles.super  I think my custom gate is blocking the workflow, what do I do?
 → Responds with: the diagnostic step, the project-gate command, and the recommended repair sequence

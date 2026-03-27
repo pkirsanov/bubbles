@@ -68,6 +68,28 @@ The registry is not just documentation. It becomes the runtime source for:
 - super-agent routing recommendations
 - handoff-cycle validation
 
+### 1.5. No-Hybrid Role Model
+
+The current agent surface is easiest to reason about when every agent fits one primary operating class.
+
+The control plane should adopt a strict no-hybrid model:
+
+- orchestrators pick work, dispatch specialists, consume packets, and continue execution
+- owners update only their owned artifacts or owned execution surfaces
+- diagnostics detect, classify, and packetize findings, but do not remediate foreign-owned work inline
+- certification agents certify, reopen, invalidate, and route, but do not implement fixes
+
+Recommended classes:
+
+- `orchestrator`: `bubbles.workflow`, `bubbles.iterate`, `bubbles.bug`
+- `planning-owner`: `bubbles.analyst`, `bubbles.ux`, `bubbles.design`, `bubbles.plan`
+- `execution-owner`: `bubbles.implement`, `bubbles.test`, `bubbles.docs`, `bubbles.chaos`, `bubbles.simplify`
+- `diagnostic`: `bubbles.gaps`, `bubbles.harden`, `bubbles.stabilize`, `bubbles.regression`, `bubbles.security`, `bubbles.code-review`, `bubbles.system-review`, `bubbles.spec-review`
+- `certification`: `bubbles.validate`, `bubbles.audit`
+- `utility`: `bubbles.super`, `bubbles.status`, `bubbles.handoff`, `bubbles.commands`, `bubbles.create-skill`, `bubbles.setup`, `bubbles.recap`
+
+This removes the ambiguous "small inline fix" loophole from diagnostic agents. If a tiny fix is warranted, the orchestrator should dispatch a narrow packet to the owning execution or planning agent instead of letting the diagnostic agent perform the repair itself.
+
 ### 2. Execution Policy Registry
 
 Bubbles already uses `.specify/memory/bubbles.config.json` for metrics toggles. That file should become the central mutable execution policy store for repo-local defaults.
@@ -143,10 +165,19 @@ This makes the following enforceable:
 
 Subagent interactions must stop being purely narrative when they surface failed DoD, missing scenarios, or invalid state transitions.
 
-Every specialist should return one of three structured outcomes:
-- `completed`
+Every specialist should return one of four structured outcomes:
+- `completed_owned`
+- `completed_diagnostic`
 - `route_required`
 - `blocked`
+
+Rules:
+
+- owners and execution agents return `completed_owned` when they changed their owned surface and produced concrete evidence
+- diagnostic and certification agents return `completed_diagnostic` when they completed their inspection/certification responsibility without opening new work
+- diagnostics MUST NOT silently repair foreign-owned artifacts and then return `completed_owned`
+- `route_required` is mandatory whenever the next action belongs to another owner or executor
+- `blocked` is valid only when the agent updated the relevant blocked state or packet with a concrete reason and evidence
 
 If `route_required`, the result must include a machine-readable packet containing:
 - target scope and DoD item
@@ -154,8 +185,11 @@ If `route_required`, the result must include a machine-readable packet containin
 - owning specialist
 - required files or artifacts to touch
 - required gates before the work can re-enter validation
+- narrow execution hints when the fix can be isolated to a specific file, function, route, or test
 
 If `bubbles.validate` reopens work, it should never just uncheck a box and stop. It must emit a rework packet tied to concrete scenarios, tests, and scope items. The workflow then routes the packet to the right owner and keeps running.
+
+If a diagnostic agent finds a tiny, obvious fix, it should still emit a narrow packet. The orchestrator may then immediately dispatch that packet to the correct owner with tightly scoped context. This preserves micro-fix speed without creating hybrid agents.
 
 ### 6. Grill Mode As An Interactive Ambiguity Gate
 
@@ -192,6 +226,14 @@ The control plane should enforce these framework laws.
 
 If work crosses a registered ownership boundary, the current agent must delegate to the owning specialist. It may not quietly perform the foreign-owned action itself.
 
+### Owner-Only Remediation Law
+
+Only the owning planning or execution specialist may modify its owned surface.
+
+- diagnostic agents do not repair code, tests, planning artifacts, docs, or state directly
+- certification agents do not implement fixes
+- orchestrators do not implement fixes directly; they dispatch the correct owner
+
 ### Certification Law
 
 Only `bubbles.validate` may certify completion state transitions such as:
@@ -223,6 +265,28 @@ When TDD is active, the required order is:
 
 For bug and chaos flows, this should become the default rather than an opt-in.
 
+### Micro-Fix Dispatch Law
+
+Tiny fixes remain allowed, but only through orchestrator dispatch.
+
+Required pattern:
+
+1. a diagnostic agent emits a narrow route packet
+2. the orchestrator immediately invokes the correct owner with that packet
+3. the owner performs the change and returns owned evidence
+4. validation or audit resumes from the packet context
+
+This keeps the loop fast while preserving strict ownership.
+
+### Child Workflow Law
+
+Only orchestrators may invoke child workflows, and child workflow depth must be bounded.
+
+- allowed callers: `bubbles.workflow`, `bubbles.iterate`, `bubbles.bug`
+- non-orchestrator agents may emit packets but may not spawn workflows directly
+- child workflow depth should be limited to 1
+- child workflows inherit policy snapshot, target context, and packet references from the parent orchestrator
+
 ## Mapping The Requested Changes To The Design
 
 | Requested Change | Design Response |
@@ -238,10 +302,12 @@ For bug and chaos flows, this should become the default rather than an opt-in.
 | 9. TDD main mode for bug/chaos | Mode-level forced TDD defaults for `bugfix-fastlane` and chaos follow-up |
 | 10. Regression tests cannot drift without spec change | Scenario-linked regression contract protection |
 | 11. All behavior changes need Gherkin and BDD E2E | Scenario law plus certification guard |
+| 12. No hybrid agents | Owner-only remediation plus orchestrator-driven micro-fix dispatch |
+| 13. Child workflows only where safe | Orchestrator-only child workflow invocation with bounded depth |
 
 ## Proposed New Gates
 
-The current gate registry ends at G053. This design would add the following framework gates:
+The current gate registry ends at G061. This design would add the following framework gates:
 
 - `G054 capability_delegation_gate` — foreign-owned work must route through the registered specialist
 - `G055 policy_provenance_gate` — active modes must record value plus source
@@ -251,6 +317,9 @@ The current gate registry ends at G053. This design would add the following fram
 - `G059 regression_contract_gate` — protected regression tests cannot drift without scenario invalidation
 - `G060 scenario_tdd_gate` — when TDD is active, targeted red evidence must exist before green certification
 - `G061 rework_packet_gate` — route-required findings must produce structured packets, not narrative-only handoffs
+- `G062 owner_only_remediation_gate` — only owning planning/execution specialists may modify their surfaces; diagnostics must route
+- `G063 concrete_result_gate` — every agent invocation must end with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked` plus the required concrete payload
+- `G064 child_workflow_depth_gate` — only orchestrators may invoke child workflows and nesting depth may not exceed 1
 
 ## Tradeoffs And Guardrails
 
@@ -261,6 +330,7 @@ The current gate registry ends at G053. This design would add the following fram
 - Stronger auditability of why a mode was active
 - Better preservation of approved behavior contracts
 - Stronger regression discipline
+- Cleaner separation between diagnosis, execution, and certification
 
 ### What Gets More Expensive
 
@@ -268,6 +338,7 @@ The current gate registry ends at G053. This design would add the following fram
 - More state-management complexity
 - More explicit invalidation workflow for approved behavior changes
 - Some additional friction when teams want to intentionally change locked behavior quickly
+- More orchestrator logic because micro-fix speed now flows through packet dispatch instead of inline diagnostic edits
 
 ### Required Guardrail
 
@@ -277,11 +348,13 @@ Do not move everything into validate. Validate should certify promotion state an
 
 Bubbles should operate as a policy-driven, registry-backed workflow system with these properties:
 - specialist delegation is enforced
+- hybrid remediators are eliminated in favor of owner-only remediation
 - workflow defaults are centrally managed
 - scenario contracts are durable and machine-readable
 - validate certifies completion and reopening
 - lockdown protects approved behavior from silent drift
 - bug and chaos default to scenario-first TDD
 - regression suites act as spec-backed behavior contracts
+- tiny-fix speed is preserved through narrow orchestrator dispatch rather than diagnostic inline edits
 
 That architecture satisfies the full requested direction without collapsing the current specialist model.

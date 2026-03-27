@@ -55,8 +55,8 @@ handoffs:
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md) and scope workflow in [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 When security work requires mixed specialist execution:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Return a failure classification to the orchestrator, which routes to `bubbles.implement` via `runSubagent`.
+- **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If security review completed without routed follow-up, end with `completed_diagnostic`.
+- **Cross-domain work:** Return a failure classification to the orchestrator, which routes to the appropriate owner via `runSubagent`.
 
 ---
 
@@ -313,8 +313,8 @@ Map all findings to OWASP Top 10 (2021) categories:
 
 For each finding:
 
-1. **Small fixes (≤30 lines):** Fix inline — add input validation, parameterize queries, add auth check
-2. **Larger fixes:** Invoke `bubbles.plan` via `runSubagent` to update planning artifacts for `bubbles.implement`
+1. **Do NOT fix inline:** Emit a concrete route packet for the owning specialist — usually `bubbles.implement`, `bubbles.plan`, or `bubbles.test` — and end the response with a `## RESULT-ENVELOPE` using `route_required`
+2. **Planning fixes:** Invoke `bubbles.plan` via `runSubagent` to update planning artifacts for follow-up execution
 3. **Add security test cases:** Route required Test Plan and DoD changes through `bubbles.plan`
 
 ### Phase 6: Report & Verdict

@@ -42,9 +42,14 @@ check_has_match() {
 
 check_has_match "$ownership_file" '^version:' 'agent ownership manifest missing version header'
 check_has_match "$capabilities_file" '^version:' 'agent capabilities manifest missing version header'
+check_has_match "$capabilities_file" '^childWorkflowPolicy:' 'agent capabilities manifest missing child workflow policy block'
+check_has_match "$capabilities_file" '^resultPolicy:' 'agent capabilities manifest missing result policy block'
 check_has_match "$shared_dir/agent-common.md" '^## Artifact Ownership And Delegation Contract$' 'agent-common.md missing ownership contract section'
 check_has_match "$workflows_file" 'name: agent_ownership_gate' 'workflows.yaml missing agent ownership gate'
 check_has_match "$workflows_file" 'name: capability_delegation_gate' 'workflows.yaml missing capability delegation gate'
+check_has_match "$workflows_file" 'name: owner_only_remediation_gate' 'workflows.yaml missing G062 owner-only remediation gate'
+check_has_match "$workflows_file" 'name: concrete_result_gate' 'workflows.yaml missing G063 concrete result gate'
+check_has_match "$workflows_file" 'name: child_workflow_depth_gate' 'workflows.yaml missing G064 child workflow depth gate'
 check_has_match "$ownership_file" '^  state\.json:' 'agent ownership manifest missing state.json ownership block'
 check_has_match "$ownership_file" '^  scenario-manifest\.json:' 'agent ownership manifest missing scenario-manifest ownership block'
 check_has_match "$capabilities_file" '^  bubbles\.validate:' 'agent capabilities manifest missing bubbles.validate entry'
@@ -60,6 +65,40 @@ check_no_match "$agents_dir/bubbles.security.agent.md" 'Update scope artifacts w
 check_no_match "$agents_dir/bubbles.stabilize.agent.md" 'Update scope artifacts:' 'bubbles.stabilize must route planning changes to bubbles.plan'
 check_no_match "$agents_dir/bubbles.gaps.agent.md" 'Findings artifact update \(MANDATORY — Gate G031\).*update scope artifacts|Gherkin → Test Plan Sync:|Gherkin → DoD Sync:' 'bubbles.gaps must route planning changes to bubbles.plan'
 check_no_match "$agents_dir/bubbles.harden.agent.md" 'Findings artifact update \(MANDATORY — Gate G031\).*update scope artifacts|Gherkin → Test Plan Sync|Gherkin → DoD Sync' 'bubbles.harden must route planning changes to bubbles.plan'
+check_no_match "$agents_dir/bubbles.clarify.agent.md" 'Small fixes \(≤30 lines\):.*Fix inline within this agent' 'bubbles.clarify must not perform inline remediation'
+check_no_match "$agents_dir/bubbles.regression.agent.md" 'Small fixes \(≤30 lines\):.*Fix inline within this agent|All fixes:.*directly fix' 'bubbles.regression must route follow-up work instead of fixing inline'
+check_no_match "$agents_dir/bubbles.validate.agent.md" 'Do NOT emit `✅ ALL VALIDATIONS PASSED` while any `ROUTE-REQUIRED` block is present' 'bubbles.validate should rely on RESULT-ENVELOPE as the primary workflow contract'
+
+unexpected_child_callers="$({ awk '
+  /^  bubbles\./ { agent=$1; sub(":", "", agent) }
+  /canInvokeChildWorkflows:[[:space:]]*true/ { print agent }
+' "$capabilities_file" | grep -vE '^bubbles\.(workflow|iterate|bug)$'; } || true)"
+
+if [[ -n "$unexpected_child_callers" ]]; then
+  echo "ERROR: only orchestrators may enable child workflows; found unexpected callers:"
+  echo "$unexpected_child_callers"
+  errors=1
+fi
+
+for result_agent in \
+  bubbles.workflow \
+  bubbles.validate \
+  bubbles.audit \
+  bubbles.plan \
+  bubbles.gaps \
+  bubbles.clarify \
+  bubbles.stabilize \
+  bubbles.chaos \
+  bubbles.harden \
+  bubbles.security \
+  bubbles.regression \
+  bubbles.implement \
+  bubbles.test \
+  bubbles.docs \
+  bubbles.simplify
+do
+  check_has_match "$agents_dir/${result_agent}.agent.md" 'RESULT-ENVELOPE' "$result_agent must declare RESULT-ENVELOPE completion output"
+done
 
 if [[ "$errors" -ne 0 ]]; then
   exit 1

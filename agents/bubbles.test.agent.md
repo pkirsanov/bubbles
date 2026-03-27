@@ -24,6 +24,7 @@ handoffs:
 - No skips/xfails/disabled tests; fix the implementation (or docs when truly wrong)
 - When upstream workflow context includes `tdd: true`, preserve the red → green → broader-regression sequence explicitly: capture the failing targeted proof first, make the smallest change that turns it green, then keep or add persistent regression coverage for the same scenario.
 - Enforce `test-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
+- End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when test/code changes and evidence were produced under this agent's execution surface, `route_required` when planning/docs/implementation follow-up is required, or `blocked` when a concrete blocker prevents clean test completion.
 
 **⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 

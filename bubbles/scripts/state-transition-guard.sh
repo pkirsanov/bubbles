@@ -114,6 +114,7 @@ lockdown_approvals_file="$feature_dir/lockdown-approvals.json"
 invalidation_ledger_file="$feature_dir/invalidation-ledger.json"
 transition_requests_file="$feature_dir/transition-requests.json"
 rework_queue_file="$feature_dir/rework-queue.json"
+framework_ownership_lint_script="$SCRIPT_DIR/agent-ownership-lint.sh"
 
 if [[ "$scope_layout" == "per-scope-directory" ]]; then
   while IFS= read -r scope_path; do
@@ -621,10 +622,51 @@ if [[ -f "$rework_queue_file" ]]; then
   else
     pass "rework-queue.json contains no unresolved rework packets"
   fi
+
+  if ! grep -qE '"owner"[[:space:]]*:[[:space:]]*"bubbles\.[A-Za-z0-9.-]+"' "$rework_queue_file"; then
+    fail "rework-queue.json is missing a concrete owning specialist for one or more packets (Gate G063)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "rework packets record a concrete owning specialist"
+  fi
+
+  if ! grep -qE '"reason"[[:space:]]*:[[:space:]]*"[^"]+"' "$rework_queue_file"; then
+    fail "rework-queue.json is missing packet reasons (Gate G063)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "rework packets record concrete reasons"
+  fi
+
+  if ! grep -qE '"(scenarioIds|dodItems)"[[:space:]]*:[[:space:]]*\[' "$rework_queue_file"; then
+    fail "rework-queue.json is missing scenarioIds or dodItems references (Gate G063)"
+    pending_transition_failures=$((pending_transition_failures + 1))
+  else
+    pass "rework packets record scenario or DoD references"
+  fi
 fi
 
 if [[ "$pending_transition_failures" -eq 0 ]]; then
   pass "Transition and rework routing is closed"
+fi
+echo ""
+
+# =============================================================================
+# CHECK 3G: Framework ownership/result contract integrity (G062/G063/G064)
+# =============================================================================
+echo "--- Check 3G: Framework Ownership And Result Contract (G062/G063/G064) ---"
+if [[ -x "$framework_ownership_lint_script" || -f "$framework_ownership_lint_script" ]]; then
+  if bash "$framework_ownership_lint_script" >/tmp/bubbles-agent-ownership-lint.$$ 2>&1; then
+    pass "Framework ownership lint passed — owner-only remediation, concrete result contract, and child workflow policy are internally consistent"
+  else
+    fail "Framework ownership lint failed — G062/G063/G064 cannot be certified during state transition"
+    while IFS= read -r lint_line; do
+      [[ -n "$lint_line" ]] || continue
+      echo "   → $lint_line"
+    done < /tmp/bubbles-agent-ownership-lint.$$
+  fi
+  rm -f /tmp/bubbles-agent-ownership-lint.$$
+else
+  fail "Framework ownership lint script not found at $framework_ownership_lint_script — cannot enforce G062/G063/G064"
 fi
 echo ""
 

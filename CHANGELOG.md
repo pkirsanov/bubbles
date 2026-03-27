@@ -11,7 +11,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `bubbles/agent-ownership.yaml` v2 — Extended with `state.json` ownership (validate-owned), `scenario-manifest.json`, `lockdown-approvals.json`, `invalidation-ledger.json`, `transition-requests.json`, `rework-queue.json` ownership blocks, certified field declarations, and expanded routing rules.
 - `.specify/memory/bubbles.config.json` v2 — Central execution policy registry with defaults for grill, TDD, auto-commit, lockdown, regression immutability, and validation certification. Mode overrides for `bugfix-fastlane` and `chaos-hardening`. Managed by `bubbles policy` CLI.
 
-**New gates (G054–G061):**
+**New gates (G054–G064):**
 - `G054 capability_delegation_gate` — Foreign-owned work must route through registered specialist.
 - `G055 policy_provenance_gate` — Active modes must record value plus source provenance.
 - `G056 validate_certification_gate` — Only validate may certify promotion state.
@@ -20,6 +20,9 @@ Major architectural evolution implementing the unified control-plane design acro
 - `G059 regression_contract_gate` — Protected regression tests cannot drift without scenario invalidation.
 - `G060 scenario_tdd_gate` — Targeted failing proof required before green certification when TDD active.
 - `G061 rework_packet_gate` — Route-required findings must produce structured packets.
+- `G062 owner_only_remediation_gate` — Only owning planning/execution specialists may remediate owned surfaces; diagnostics and certification must route.
+- `G063 concrete_result_gate` — Every agent invocation must finish with a concrete result shape rather than narrative-only findings.
+- `G064 child_workflow_depth_gate` — Only orchestrators may invoke child workflows, and workflow nesting depth is bounded.
 
 **State model v3:**
 - `state.json` version 3 with `execution.*` (runtime claims) and `certification.*` (validate-owned authority) split. Top-level `status` mirrors `certification.status`.
@@ -28,11 +31,12 @@ Major architectural evolution implementing the unified control-plane design acro
 - `scenario-manifest.json` template with stable `SCN-*` IDs, Gherkin hashes, linked tests, evidence refs, lockdown/regression flags.
 
 **Guard script updates:**
-- `state-transition-guard.sh` — New checks: 3A (policy provenance G055), 3B (certification state G056), 3C (scenario manifest G057), 3D (lockdown/regression G058/G059), 3E (TDD evidence G060), 3F (transition/rework closure G061). Revert logic clears `certifiedCompletedPhases`, `completedPhaseClaims`, and legacy `completedPhases`.
+- `state-transition-guard.sh` — New checks: 3A (policy provenance G055), 3B (certification state G056), 3C (scenario manifest G057), 3D (lockdown/regression G058/G059), 3E (TDD evidence G060), 3F (transition/rework closure G061), 3G (framework ownership/result contract integrity G062/G063/G064). Revert logic clears `certifiedCompletedPhases`, `completedPhaseClaims`, and legacy `completedPhases`.
+- `state-transition-guard-selftest.sh` — Creates temporary docs-only fixtures to exercise the real promotion guard, including a positive path, a negative packet-field path for G063, and an illegal child-workflow caller path for G064.
 - `artifact-lint.sh` — v3 schema validation with `execution`/`certification`/`policySnapshot` required fields. Backward-compatible v2 fallback. Nested array extraction for certification-scoped `completedScopes` and `certifiedCompletedPhases`.
 - `spec-dashboard.sh` — Prefers `certification.status` and `certification.completedScopes` when present.
 - `traceability-guard.sh` — Scenario manifest cross-check (G057/G059): verifies scope-defined Gherkin scenarios map to manifest entries with linked tests and evidence refs.
-- `agent-ownership-lint.sh` — Extended to validate `agent-capabilities.yaml`, `state.json` ownership, `scenario-manifest.json` ownership, and `certificationWriter` declaration.
+- `agent-ownership-lint.sh` — Extended to validate `agent-capabilities.yaml`, `state.json` ownership, `scenario-manifest.json` ownership, `certificationWriter`, orchestrator-only child workflows, and RESULT-ENVELOPE coverage across primary prompt surfaces.
 
 **CLI:**
 - `bubbles policy status|get|set|reset` — Manage control-plane defaults and provenance from the CLI.
@@ -53,7 +57,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `grillFirst` tag deprecated in favor of `grillMode` with `inherit` default.
 - New `lockdown` optional tag with values: `inherit|off|protect-existing-scenarios|require-approval`.
 - `defaultPolicyBehavior` and `policyRegistry` sections added to `executionOptions`.
-- G054–G061 wired into all delivery modes that accept `statusCeiling: done`.
+- G054–G064 wired into delivery enforcement, with G062/G063/G064 enforced by framework lint and promotion-time guard checks.
 
 **Shared governance docs:**
 - `feature-templates.md` — v3 state.json template, scenario-manifest.json template, policySnapshot structure.
@@ -73,8 +77,8 @@ Major architectural evolution implementing the unified control-plane design acro
 - `docs/guides/CONTROL_PLANE_DESIGN.md` — Full architecture design document.
 - `docs/guides/CONTROL_PLANE_ROLLOUT.md` — Phased rollout plan mapping all 11 requested changes.
 - `docs/guides/CONTROL_PLANE_SCHEMAS.md` — Schema definitions for all 8 control-plane surfaces.
-- `docs/CHEATSHEET.md` — Updated to 61 gates, control-plane law summary.
-- `docs/its-not-rocket-appliances.html` — v3.0, 32 agents, 61 gates, 27 modes, 19 phases. Control Plane Quick Rules block added.
+- `docs/CHEATSHEET.md` — Updated to 64 gates, no-hybrid control-plane law summary, and public-facing owner/executor vs diagnostic/certification taxonomy.
+- `docs/its-not-rocket-appliances.html` — v3.0, 32 agents, 64 gates, 27 modes, 19 phases. Control Plane Quick Rules, public taxonomy, and Sunnyvale vocabulary updated.
 - All recipes updated from `grillFirst` to `grillMode`.
 
 **Install system:**
@@ -87,7 +91,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - Added `artifact-freshness-guard.sh` plus Gate `G052` so superseded sections are mechanically isolated from active truth, superseded scope appendices cannot keep executable status/Test Plan/DoD structure, and per-scope directory drift is blocked when `scopes/_index.md`, on-disk `scopes/NN-*`, and `state.json.scopeProgress.scopeDir` fall out of sync.
 - Added explicit existing-feature redesign support: new `redesign-existing` workflow mode, new `same-lot-new-trailer` Sunnyvale alias, and updated docs/recipes for reconcile vs improve vs redesign decisions.
 - Strengthened planning validation profiles to check active-requirement, active-UX, active-design, and active-scope reconciliation.
-- Added machine-readable `## ROUTE-REQUIRED` orchestration blocks to `bubbles.validate` and `bubbles.audit`, and made `bubbles.workflow` treat missing or unresolved routing blocks as blocking before finalize.
+- Added machine-readable `## ROUTE-REQUIRED` orchestration blocks to `bubbles.validate` and `bubbles.audit`, then promoted `## RESULT-ENVELOPE` to the primary workflow contract and kept the legacy block as compatibility fallback during migration.
 - Fixed `done-spec-audit.sh` so it resolves installed-project repo roots correctly, rejects running outside repos with `specs/`, and fails closed on suspicious zero-done-spec scans.
 - Added `bubbles/scripts/agnosticity-lint.sh` and a shipped allowlist file so portable Bubbles surfaces are mechanically checked for project-specific and concrete-tool drift.
 - Wired agnosticity checks into the Bubbles CLI, doctor output, generated git hooks, installer payload, and GitHub Actions.

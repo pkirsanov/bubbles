@@ -100,8 +100,8 @@ PRINCIPLE: **Design/spec/scopes must agree. Anything required must be explicitly
 **MANDATORY:** Start from [clarify-bootstrap.md](bubbles_shared/clarify-bootstrap.md). Use targeted sections of [agent-common.md](bubbles_shared/agent-common.md) and [scope-workflow.md](bubbles_shared/scope-workflow.md) only when a gate or artifact rule requires them.
 
 If clarification work triggers mixed specialist phases (plan/implement/test/docs/gaps/hardening/bug) within the same run:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
+- **Do NOT fix inline:** Emit a concrete routing decision with the owning specialist, blocked ambiguity, and the affected artifact/scope/scenario references, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If ambiguity was resolved without foreign-owned follow-up, end with `completed_diagnostic`.
+- **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
 Agent-specific: This agent is primarily a routing and clarification gate. It may surface proposed wording or decision candidates, but the owning specialist must make durable artifact changes.
 

@@ -18,14 +18,15 @@ Implementation principle:
 
 ## Workstreams
 
-The rollout covers all proposed changes through six workstreams:
+The rollout covers all proposed changes through seven workstreams:
 
-1. Specialist delegation and capability discovery
+1. Specialist delegation, capability discovery, and no-hybrid role enforcement
 2. Central default policy and mode provenance
 3. Validate-owned certification state
-4. Scenario contract, BDD enforcement, and regression immutability
-5. Grill mode and lockdown behavior governance
-6. TDD-default workflow behavior for bug, chaos, and then broader delivery modes
+4. Result envelope, transition packet, and rework packet enforcement
+5. Scenario contract, BDD enforcement, and regression immutability
+6. Grill mode and lockdown behavior governance
+7. TDD-default workflow behavior for bug, chaos, and then broader delivery modes
 
 ## Phase 0: Baseline And Inventory
 
@@ -69,8 +70,10 @@ Replace delegation-by-prose with delegation-by-registry.
 - add `G054 capability_delegation_gate`
 - extend ownership lint to validate:
   - every workflow phase has an owning agent
-  - every specialist declares whether it is execution, planning, diagnostic, certification, or utility
+  - every specialist declares exactly one primary class: orchestrator, planning-owner, execution-owner, diagnostic, certification, or utility
   - every foreign-owned artifact route has a target owner
+  - only orchestrators may invoke child workflows
+  - diagnostic agents are not allowed to advertise inline remediation rights
 
 ### Files Likely Touched
 
@@ -87,6 +90,7 @@ Replace delegation-by-prose with delegation-by-registry.
 - workflow and iterate reject illegal foreign-owner execution
 - super recommendations come from registry lookup, not only free-form prompt heuristics
 - handoff-cycle and ownership lint include capability validation
+- no-hybrid role classification is mechanically enforced
 
 ## Phase 2: Execution Policy Registry And CLI Surface
 
@@ -153,7 +157,33 @@ Maintain backward readers temporarily so existing scripts can read legacy state 
 - validate certifies done, reopened, invalidated, and locked states
 - state-transition-guard reads certification state, not just raw execution claims
 
-## Phase 4: Scenario Contract Manifest And BDD Enforcement
+## Phase 4: Result Envelope And Packet Enforcement
+
+### Goal
+
+Make every agent invocation return a concrete machine-readable outcome and remove narrative-only handoffs.
+
+### Build
+
+- add a specialist result envelope schema shared by agents and child workflows
+- normalize allowed outcomes:
+  - `completed_owned`
+  - `completed_diagnostic`
+  - `route_required`
+  - `blocked`
+- upgrade existing `ROUTE-REQUIRED` output into the canonical packet contract
+- teach orchestrators to consume envelopes and continue automatically
+- implement orchestrator-owned micro-fix dispatch: diagnostics emit narrow packets, orchestrators immediately invoke the correct owner
+- add `G062 owner_only_remediation_gate`, `G063 concrete_result_gate`, and `G064 child_workflow_depth_gate`
+
+### Exit Criteria
+
+- every specialist and child workflow returns a concrete result envelope
+- diagnostics never fix foreign-owned work inline
+- orchestrators can preserve tiny-fix speed by dispatching narrow packets immediately
+- child workflow invocation is limited to orchestrators and bounded depth
+
+## Phase 5: Scenario Contract Manifest And BDD Enforcement
 
 ### Goal
 
@@ -186,7 +216,7 @@ Make Gherkin scenarios durable machine-readable contracts.
 - live-system BDD evidence is required for changed or new user-visible behavior
 - non-scenario behavior changes fail validation
 
-## Phase 5: Regression Immutability And Bug/Chaos TDD Default
+## Phase 6: Regression Immutability And Bug/Chaos TDD Default
 
 ### Goal
 
@@ -214,7 +244,7 @@ Make scenario-linked regression tests durable contracts and force safer red-to-g
 - regression test drift without invalidation is blocked
 - validate and regression share the same scenario contract source
 
-## Phase 6: Grill Mode And Lockdown Approval Flow
+## Phase 7: Grill Mode And Lockdown Approval Flow
 
 ### Goal
 
@@ -250,7 +280,7 @@ For locked behavior:
 - grill is the explicit approval gate for locked or ambiguous behavior changes
 - replacement behavior requires invalidation plus new scenario-linked BDD evidence
 
-## Phase 7: Default Expansion Across Delivery Modes
+## Phase 8: Default Expansion Across Delivery Modes
 
 ### Goal
 

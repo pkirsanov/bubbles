@@ -220,7 +220,7 @@ When regression detection requires mixed specialist execution:
   - UX flow breaks → `bubbles.ux` to verify and fix
   - Cross-spec interference → `bubbles.gaps` to assess full impact
 - **Small inline analysis (≤10 lines):** May inspect files and report findings directly
-- **All fixes:** Route to appropriate specialist via `runSubagent` or return failure classification to orchestrator
+- **All fixes:** Route to appropriate specialist via `runSubagent` or return failure classification to orchestrator, and end the response with a `## RESULT-ENVELOPE` using `route_required` when follow-up work remains or `completed_diagnostic` when regression review is clean
 
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 

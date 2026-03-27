@@ -90,7 +90,7 @@ Optional execution tags:
 /bubbles.workflow  full-delivery for notification-system grillMode: required-on-ambiguity tdd: true
 ```
 
-This runs all phases automatically, routing artifact changes to the correct owner when needed: analyze → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize.
+This runs all phases automatically, routing artifact changes to the correct owner when needed and consuming concrete result envelopes between phases: analyze → bootstrap → implement → test → security → docs → validate → audit → chaos → finalize.
 
 If validation, hardening, gap analysis, stability review, or security review discovers missing planning or design artifacts, the workflow routes those changes back to `bubbles.plan`, `bubbles.design`, or `bubbles.analyst` instead of letting the diagnostic phase rewrite those files directly.
 

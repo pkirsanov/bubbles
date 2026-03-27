@@ -464,6 +464,7 @@ Commands:
   lint <spec>                   Run artifact lint on a spec
   agnosticity [--staged]        Check portable Bubbles surfaces for drift
   guard <spec>                  Run state transition guard on a spec
+  guard-selftest                Run the transition guard selftest suite
   scan <spec>                   Run implementation reality scan on a spec
   audit-done [--fix]            Audit all specs marked done
   autofix <spec>                Scaffold missing report sections
@@ -763,6 +764,10 @@ cmd_guard() {
   local spec_dir
   spec_dir="$(resolve_spec "$1")"
   bash "$SCRIPT_DIR/state-transition-guard.sh" "$spec_dir"
+}
+
+cmd_guard_selftest() {
+  bash "$SCRIPT_DIR/state-transition-guard-selftest.sh"
 }
 
 cmd_scan() {
@@ -1548,6 +1553,7 @@ main() {
     lint)               cmd_lint "$@" ;;
     agnosticity)        cmd_agnosticity "$@" ;;
     guard)              cmd_guard "$@" ;;
+    guard-selftest)     cmd_guard_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;
     autofix)            cmd_autofix "$@" ;;

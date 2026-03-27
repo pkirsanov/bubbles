@@ -31,6 +31,7 @@ handoffs:
 - Do NOT relabel TODOs, stubs, placeholders, or fake values as softer wording to satisfy a scope. Either implement the behavior fully or push the owning artifact update first.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
+- End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when implementation changes and owned evidence were produced, `route_required` when foreign-owned follow-up is required, or `blocked` when a concrete blocker prevents completion.
 
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 

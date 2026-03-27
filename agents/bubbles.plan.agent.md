@@ -53,8 +53,8 @@ handoffs:
 **MANDATORY:** Start from [plan-bootstrap.md](bubbles_shared/plan-bootstrap.md), then follow [planning-core.md](bubbles_shared/planning-core.md) and [scope-workflow.md](bubbles_shared/scope-workflow.md).
 
 When planning must coordinate mixed specialist follow-up (clarify/implement/test/docs/gaps/hardening/bug) in one session:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
+- **Owned planning changes only:** Update `scopes.md`, `report.md`, `uservalidation.md`, and `scenario-manifest.json` within this agent's execution context.
+- **Any foreign-owned work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) and route packet to the orchestrator (`bubbles.workflow`), which dispatches the appropriate specialist via `runSubagent`. End every invocation with a `## RESULT-ENVELOPE` using `completed_owned` for owned planning-only changes or `route_required` when foreign-owned follow-up is required.
 
 Agent-specific: Action-First Mandate applies → take ONE planning action after loading the `planner` profile's minimum initial set.
 

@@ -645,30 +645,37 @@ If `bubbles.validate` is invoked directly and a foreign-owned artifact must chan
 
 #### 7.3 Workflow behavior
 
-If `bubbles.validate` is invoked by `bubbles.workflow` or `bubbles.iterate`, it MUST return a route-required failure classification with the owning specialist and exact reason. The orchestrator must then invoke that owner before validation can pass.
+If `bubbles.validate` is invoked by `bubbles.workflow` or `bubbles.iterate`, it MUST finish with a concrete result envelope. The orchestrator must consume that envelope and invoke the next owner before validation can pass.
 
-**Required machine-readable block for workflow callers:**
+**Required machine-readable result envelope for workflow callers:**
 
-When returning any routed failure to `bubbles.workflow` or `bubbles.iterate`, include this exact section in the response:
+## RESULT-ENVELOPE
 
-```markdown
-## ROUTE-REQUIRED
-
-| Field | Value |
-|-------|-------|
-| Status | blocked |
-| Owner | bubbles.plan |
-| Reason | Unchecked DoD items remain in scopes.md |
-| Required Revalidation | yes |
-| Blocking Gates | G018, G023, G025 |
+```json
+{
+   "agent": "bubbles.validate",
+   "roleClass": "certification",
+   "outcome": "completed_diagnostic",
+   "featureDir": "specs/042-catalog-assistant",
+   "scopeIds": ["02-search-flow"],
+   "dodItems": ["DOD-02-04"],
+   "scenarioIds": ["SCN-042-002"],
+   "artifactsCreated": [],
+   "artifactsUpdated": ["report.md"],
+   "evidenceRefs": ["report.md#validation-scn-042-002"],
+   "nextRequiredOwner": null,
+   "packetRef": null,
+   "blockedReason": null
+}
 ```
 
 Rules:
-- Emit one `ROUTE-REQUIRED` block per blocking owner/action pair.
-- `Owner` MUST be a single concrete specialist (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug`).
-- `Reason` MUST name the exact blocking condition, not a generic summary.
-- `Required Revalidation` MUST be `yes` for any routed issue that affects artifacts, tests, code, or compliance.
-- Do NOT emit `✅ ALL VALIDATIONS PASSED` while any `ROUTE-REQUIRED` block is present.
+- Emit exactly one `## RESULT-ENVELOPE` block per invocation.
+- Valid outcomes for `bubbles.validate` are `completed_diagnostic`, `route_required`, or `blocked`.
+- If `outcome` is `route_required`, `nextRequiredOwner` MUST be a single concrete specialist (`bubbles.plan`, `bubbles.test`, `bubbles.implement`, `bubbles.docs`, `bubbles.design`, `bubbles.analyst`, `bubbles.ux`, or `bubbles.bug`) and `packetRef` or an embedded packet payload MUST identify the concrete follow-up work.
+- If `outcome` is `blocked`, `blockedReason` MUST contain the exact blocker and `evidenceRefs` MUST point to real evidence.
+- Do NOT emit `✅ ALL VALIDATIONS PASSED` while the envelope outcome is `route_required` or `blocked`.
+- For compatibility during migration, if `outcome` is `route_required`, also emit a legacy `## ROUTE-REQUIRED` block that mirrors the same owner and reason. If validation is clean, the legacy compatibility block may be `NONE`.
 
 #### 7.4 Routing evidence
 
@@ -682,7 +689,7 @@ Record routed follow-ups in the validation report:
 | [issue] | [bubbles.plan / bubbles.design / bubbles.analyst / ...] | [why foreign artifact must change] | yes/no |
 ```
 
-When validation is clean, include an explicit no-routing marker for workflow callers:
+When validation is clean, include an explicit no-routing marker for workflow callers during the migration period:
 
 ```markdown
 ## ROUTE-REQUIRED

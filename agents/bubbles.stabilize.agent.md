@@ -112,8 +112,8 @@ It works similarly to `/bubbles.gaps` and `/bubbles.harden`, but with a differen
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
 When stabilization requires mixed specialist execution (bug/test/gaps/docs/hardening) in a single run:
-- **Small fixes (≤30 lines):** Fix inline within this agent's execution context.
-- **Larger cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
+- **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If stabilization completed without routed work, end with `completed_diagnostic`.
+- **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 

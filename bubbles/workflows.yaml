@@ -70,7 +70,7 @@ gates:
     description: ALL specialist agents required by the mode (test, docs, validate, audit, chaos) MUST have executed and returned verifiable results before spec promotion. Missing specialist execution is a BLOCKING failure.
   G023:
     name: state_transition_guard_gate
-    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, certification/execution phase coherence, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, policy provenance, scenario manifest integrity, transition/rework packet closure, artifact lint, and artifact freshness isolation in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
+    description: MANDATORY mechanical enforcement gate. The state-transition-guard.sh script MUST be executed and exit with code 0 before ANY state.json status transition to "done". This gate verifies DoD completion, scope status consistency, certification/execution phase coherence, specialist phases, timestamp plausibility, test file existence, evidence depth, template placeholders, policy provenance, scenario manifest integrity, transition/rework packet closure, framework ownership/result contract integrity, artifact lint, and artifact freshness isolation in one blocking pass. Agents MUST NOT write "status":"done" without this gate passing.
   G024:
     name: all_scopes_done_before_spec_done_gate
     description: ABSOLUTE BLOCKING gate. A spec CANNOT be marked "done" in state.json until EVERY scope in scopes.md has status "Done". Zero scopes with "Not Started", "In Progress", or "Blocked" are allowed. This is a hard dependency — no override, no workaround, no exception. Agents MUST verify by running grep for non-Done scope statuses and confirming zero matches before writing "done" to state.json.
@@ -208,6 +208,18 @@ gates:
     name: rework_packet_gate
     description: >-
       BLOCKING gate for route-required findings. Diagnostic or certification phases that reopen work MUST emit structured transition or rework packets tied to concrete scenarios, DoD items, and owning specialists instead of narrative-only handoff text.
+  G062:
+    name: owner_only_remediation_gate
+    description: >-
+      BLOCKING gate. Only owning planning or execution specialists may modify their owned surfaces. Diagnostic, certification, and routing agents MUST NOT perform foreign-owned remediation inline. Tiny fixes remain allowed only through orchestrator dispatch to the correct owner using a narrow packet.
+  G063:
+    name: concrete_result_gate
+    description: >-
+      BLOCKING gate. Every agent or child-workflow invocation MUST end with a concrete result shape: completed_owned, completed_diagnostic, route_required, or blocked. Narrative-only findings or generic advice are invalid. Route-required and blocked outcomes MUST include owner, reason, and scope/scenario/DoD references.
+  G064:
+    name: child_workflow_depth_gate
+    description: >-
+      BLOCKING gate. Only orchestrators may invoke child workflows, and workflow nesting depth MUST NOT exceed 1. Non-orchestrator agents may emit packets but may not recursively spawn workflow execution.
 
 failureRouting:
   code: implement
@@ -487,7 +499,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [ G036, G037, G038, G040, G047, G048, G049, G050, G051, G052, G053 ]
+    inheritedRequiredGates: [ G036, G037, G038, G040, G047, G048, G049, G050, G051, G052, G053, G062, G063, G064 ]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #

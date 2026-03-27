@@ -51,7 +51,7 @@ Load the smallest authoritative module set that matches the role and current pha
 | What happens on retries, timeouts, or auto-commit? | `execution-ops.md` |
 | How do workflow phases and state transitions work? | `scope-workflow.md`, `state-gates.md` |
 | How does the v3 control plane work (execution vs certification, policy defaults, scenario contracts)? | `feature-templates.md`, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md), [CONTROL_PLANE_SCHEMAS.md](../../docs/guides/CONTROL_PLANE_SCHEMAS.md) |
-| What are gates G054–G061 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
+| What are gates G054–G064 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets, owner-only remediation, concrete results, child-workflow depth)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
 | Who owns state.json certification vs execution claims? | `agent-ownership.yaml`, `agent-capabilities.yaml`, `scope-workflow.md` |
 
 ## Artifact Ownership And Delegation Contract

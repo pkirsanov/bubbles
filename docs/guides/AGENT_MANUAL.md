@@ -25,7 +25,8 @@ Artifact ownership:
 - business requirements in `spec.md`: `bubbles.analyst`
 - UX sections in `spec.md`: `bubbles.ux`
 - `design.md`: `bubbles.design`
-- planning structure in scopes/report/uservalidation: `bubbles.plan`
+- planning structure in scopes/report/uservalidation/scenario manifest: `bubbles.plan`
+- certification state in `state.json`: `bubbles.validate`
 
 Shared governance index:
 - `agents/bubbles_shared/agent-common.md`
@@ -47,43 +48,58 @@ Common source modules:
 |------|----------|--------------------|
 | `bubbles.workflow` | run end-to-end spec delivery or resume a workflow | `bubbles/workflows.yaml`, `scope-workflow.md`, `state-gates.md` |
 | `bubbles.iterate` | pick the highest-priority next work slice inside an existing spec and drive one iteration through the right specialists | `scope-workflow.md`, `completion-governance.md`, `quality-gates.md` |
-| `bubbles.code-review` | run an engineering-only code review before deciding what to fix | `bubbles/code-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
-| `bubbles.system-review` | run a holistic feature/component/system review before deciding what to spec, fix, or streamline | `bubbles/system-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
+| `bubbles.bug` | investigate a bug, create bug artifacts, and dispatch the required fix workflow | `artifact-lifecycle.md`, `completion-governance.md`, `quality-gates.md` |
 
-## Specialists
+Orchestrator rule:
+- orchestrators pick work and dispatch specialists or child workflows
+- orchestrators do not implement fixes directly
+- only orchestrators may invoke child workflows
 
-| Agent | Use When | Primary References |
-|------|----------|--------------------|
-| `bubbles.implement` | implement a planned scope | `implement-bootstrap.md`, `execution-core.md`, `completion-governance.md`, `quality-gates.md` |
-| `bubbles.test` | execute tests, close test gaps, and prove changed behavior | `test-bootstrap.md`, `test-core.md`, `quality-gates.md`, `test-fidelity.md` |
-| `bubbles.docs` | update docs for changed behavior | `docs-bootstrap.md`, `artifact-lifecycle.md` |
-| `bubbles.validate` | run validation and gate checks | `audit-bootstrap.md`, `quality-gates.md`, `state-gates.md` |
-| `bubbles.audit` | run final compliance and evidence review | `audit-bootstrap.md`, `audit-core.md`, `quality-gates.md`, `completion-governance.md` |
-| `bubbles.chaos` | run resilience and breakage probes | `test-bootstrap.md`, `quality-gates.md` |
-
-## Planning And Design
+## Owners And Executors
 
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
 | `bubbles.analyst` | define or improve business requirements and scenarios | `analysis-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.ux` | define wireframes, flows, and UX-specific spec content | `ux-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.design` | create or repair technical design | `design-bootstrap.md`, `artifact-ownership.md` |
-| `bubbles.plan` | break work into scopes, tests, and DoD | `plan-bootstrap.md`, `planning-core.md`, `artifact-lifecycle.md`, `scope-templates.md` |
+| `bubbles.plan` | break work into scopes, tests, DoD, and scenario contracts | `plan-bootstrap.md`, `planning-core.md`, `artifact-lifecycle.md`, `scope-templates.md` |
+| `bubbles.implement` | implement a planned scope | `implement-bootstrap.md`, `execution-core.md`, `completion-governance.md`, `quality-gates.md` |
+| `bubbles.test` | execute tests, close test gaps, and prove changed behavior | `test-bootstrap.md`, `test-core.md`, `quality-gates.md`, `test-fidelity.md` |
+| `bubbles.docs` | update docs for changed behavior | `docs-bootstrap.md`, `artifact-lifecycle.md` |
+| `bubbles.chaos` | run resilience and breakage probes | `test-bootstrap.md`, `quality-gates.md` |
+| `bubbles.simplify` | reduce over-engineering and simplify changed code | `implement-bootstrap.md`, `operating-baseline.md` |
+
+Owner/executor rule:
+- only owners and execution specialists may modify their owned surfaces
+- a finished run must leave behind owned artifact/code/test/evidence deltas or an explicit blocked state
+
+## Diagnostic And Certification Routing
+
+| Agent | Use When | Primary References |
+|------|----------|--------------------|
+| `bubbles.validate` | run validation, certify state transitions, reopen work with packets, and gate completion | `audit-bootstrap.md`, `quality-gates.md`, `state-gates.md` |
+| `bubbles.audit` | run final compliance and evidence review and emit rework routing when needed | `audit-bootstrap.md`, `audit-core.md`, `quality-gates.md`, `completion-governance.md` |
 | `bubbles.grill` | pressure-test ideas, plans, and workflow choices before committing effort | `artifact-ownership.md`, `planning-core.md`, `quality-gates.md` |
 | `bubbles.clarify` | classify ambiguity, identify contradictions, and route artifact changes to the owning specialist | `clarify-bootstrap.md`, `artifact-ownership.md` |
-| `bubbles.harden` | turn findings into stronger scope/test/design follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
-| `bubbles.gaps` | find missing behavior, tests, or scope coverage | `quality-gates.md`, `artifact-lifecycle.md` |
+| `bubbles.gaps` | find missing behavior, tests, or scope coverage and emit owner-targeted packets | `quality-gates.md`, `artifact-lifecycle.md` |
+| `bubbles.harden` | detect hardening issues and route stronger follow-up work | `quality-gates.md`, `artifact-lifecycle.md` |
+| `bubbles.stabilize` | detect flakiness, environment instability, or reliability issues and route the correct owner | `quality-gates.md`, `execution-ops.md` |
+| `bubbles.security` | run security-oriented findings and route secure follow-up work | `quality-gates.md`, `artifact-lifecycle.md` |
+| `bubbles.regression` | detect cross-spec conflicts, test baseline regressions, coverage decreases, and design contradictions | `e2e-regression.md`, `quality-gates.md` |
+| `bubbles.code-review` | run an engineering-only code review before deciding what to fix | `bubbles/code-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
+| `bubbles.system-review` | run a holistic feature/component/system review before deciding what to spec, fix, or streamline | `bubbles/system-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
+| `bubbles.spec-review` | audit specs for freshness and trust level without changing foreign-owned artifacts | read-only audit, trust classification |
+
+Diagnostic/certification rule:
+- these agents do not implement fixes directly
+- they finish with `completed_diagnostic`, `route_required`, or `blocked`
+- tiny fixes stay fast by going through orchestrator dispatch, not inline diagnostic edits
 
 ## Quality And Operations
 
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
 | `bubbles.setup` | set up or refresh framework-owned `.github` assets and project config guidance | `scope-templates.md`, `artifact-lifecycle.md` |
-| `bubbles.stabilize` | fix flakiness, environment instability, or infrastructure reliability issues | `quality-gates.md`, `execution-ops.md` |
-| `bubbles.security` | run security-oriented findings and follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
-| `bubbles.simplify` | reduce over-engineering and simplify changed code | `implement-bootstrap.md`, `operating-baseline.md` |
-| `bubbles.spec-review` | audit specs for freshness — check if artifacts still match code reality | read-only audit, trust classification |
-| `bubbles.regression` | detect cross-spec conflicts, test baseline regressions, coverage decreases, and design contradictions | `e2e-regression.md`, `quality-gates.md` |
 | `bubbles.cinematic-designer` | implement premium, high-polish UI output in real frontend code | prompt-specific guidance plus shared governance index |
 
 ## Utilities
@@ -94,7 +110,7 @@ Common source modules:
 | `bubbles.handoff` | package session context for the next run | prompt-specific handoff format plus shared governance index |
 | `bubbles.commands` | maintain command inventories and related framework command references | project-config and command docs |
 | `bubbles.create-skill` | scaffold or update repo-local skills | skills guidance plus shared governance index |
-| `bubbles.bug` | investigate and fix a bug through reproduction, root cause, and verification | bug artifacts, `completion-governance.md`, `quality-gates.md` |
+| `bubbles.recap` | summarize current work, active state, and likely next steps without changing artifacts | prompt-specific recap guidance |
 
 ## Natural Language Input
 
