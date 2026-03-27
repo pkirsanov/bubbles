@@ -5,6 +5,8 @@ Always load:
 - `audit-core.md`
 - `state-gates.md`
 - `evidence-rules.md`
+- `artifact-ownership.md`
+- `completion-governance.md`
 - Scope entrypoint, `report.md`, `state.json`, and `uservalidation.md`
 
 Load on demand:

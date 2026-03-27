@@ -52,3 +52,9 @@ The ownership contract is enforced at three levels:
 1. **Prompt-level** — each agent declares an explicit `**Artifact Ownership**` block listing what it owns and what is foreign. This declaration is cross-checked against `agent-ownership.yaml`.
 2. **Lint-level** — `agent-ownership-lint.sh` verifies that diagnostic agents do not contain language permitting foreign-artifact edits, and that every agent's declared ownership matches the YAML registry.
 3. **Guard-level** — `state-transition-guard.sh` verifies artifact authorship coherence before allowing `done` transitions (Gate G062).
+
+## Related Modules
+
+- [evidence-rules.md](evidence-rules.md) — evidence attribution is an ownership rule (agents may only write evidence for their own phase)
+- [completion-governance.md](completion-governance.md) — the completion chain that artifact ownership supports
+- [state-gates.md](state-gates.md) — mechanical gate definitions including G062 (owner-only remediation) and G066 (phase-claim provenance)

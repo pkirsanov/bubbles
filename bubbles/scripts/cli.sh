@@ -39,7 +39,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/aliases.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [[ "$(basename "$(dirname "$SCRIPT_DIR")")" == "bubbles" && "$(basename "$(dirname "$(dirname "$SCRIPT_DIR")")")" == ".github" ]]; then
+  REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
 SPECS_DIR="$REPO_ROOT/specs"
 SESSION_FILE="$REPO_ROOT/.specify/memory/bubbles.session.json"
 CONTROL_PLANE_CONFIG="$REPO_ROOT/.specify/memory/bubbles.config.json"
@@ -908,6 +912,18 @@ cmd_doctor() {
   if [[ "$config_ok" == "true" ]]; then
     echo -e "  ${GREEN}✅${NC} Project config files exist"
     passed=$((passed + 1))
+  fi
+
+  # Check 4b: Control-plane bootstrap registry
+  if [[ -f "$CONTROL_PLANE_CONFIG" ]]; then
+    echo -e "  ${GREEN}✅${NC} Control-plane policy registry present (.specify/memory/bubbles.config.json)"
+    passed=$((passed + 1))
+  else
+    echo -e "  ${RED}❌${NC} Missing control-plane policy registry: .specify/memory/bubbles.config.json"
+    echo -e "     ${DIM}Bootstrap-owned artifact. Do not create it manually.${NC}"
+    echo -e "     ${DIM}Remediation: rerun install.sh with --bootstrap from the Bubbles repo.${NC}"
+    echo -e "     ${DIM}Use /bubbles.setup mode: refresh for .github drift after bootstrap.${NC}"
+    failed=$((failed + 1))
   fi
 
   # Check 5: TODO markers

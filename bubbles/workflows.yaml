@@ -220,6 +220,14 @@ gates:
     name: child_workflow_depth_gate
     description: >-
       BLOCKING gate. Only orchestrators may invoke child workflows, and workflow nesting depth MUST NOT exceed 1. Non-orchestrator agents may emit packets but may not recursively spawn workflow execution.
+  G065:
+    name: pseudo_completion_language_gate
+    description: >-
+      BLOCKING gate. Scope and report artifacts must not contain unresolved pseudo-completion language (Next Steps headings, Recommended routing/resolution, Ready for /bubbles., Re-run /bubbles.validate, Commit the fix, Record DoD evidence, Run full E2E suite, [PENDING]) when transitioning to done. Enforced by artifact-lint.sh and state-transition-guard.sh.
+  G066:
+    name: phase_claim_provenance_gate
+    description: >-
+      BLOCKING gate. Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory. An agent may only record its own phase name; cross-phase impersonation is fabrication. Enforced by state-transition-guard.sh Check 6B.
 
 failureRouting:
   code: implement
@@ -499,7 +507,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [ G036, G037, G038, G040, G047, G048, G049, G050, G051, G052, G053, G062, G063, G064 ]
+    inheritedRequiredGates: [ G036, G037, G038, G040, G047, G048, G049, G050, G051, G052, G053, G062, G063, G064, G065, G066 ]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #

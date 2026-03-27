@@ -154,4 +154,11 @@ Only `bubbles.validate` may certify completion state. Other agents submit execut
 - Only `bubbles.validate` may write `certification.status`, `certification.completedScopes`, `certification.certifiedCompletedPhases`, `certification.scopeProgress`, or `certification.lockdownState`
 - Other agents may write `execution.*` fields (current phase, active agent, execution claims)
 - The top-level `status` field mirrors `certification.status` and must not contradict it
+
+## Related Modules
+
+- [evidence-rules.md](evidence-rules.md) — evidence format, attribution, and anti-fabrication requirements
+- [artifact-ownership.md](artifact-ownership.md) — which agents own which artifacts
+- [state-gates.md](state-gates.md) — mechanical gate definitions and script enforcement
+- [quality-gates.md](quality-gates.md) — test taxonomy, evidence standard, and anti-fabrication rules
 - Agents MUST NOT self-promote to `done`; they route the promotion request through validate

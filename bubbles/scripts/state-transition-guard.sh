@@ -914,32 +914,29 @@ state_completed_phases_block="$({
 if [[ -n "$state_workflow_mode" ]]; then
   required_specialists=()
   case "$state_workflow_mode" in
-    full-delivery|value-first-e2e-batch)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
-      ;;
-    full-delivery-strict)
+    full-delivery|full-delivery-strict|value-first-e2e-batch)
       required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     feature-bootstrap)
-      required_specialists=("implement" "test" "docs" "validate" "audit")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit")
       ;;
     bugfix-fastlane)
-      required_specialists=("implement" "test" "validate" "audit")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit")
       ;;
     chaos-hardening)
-      required_specialists=("chaos" "implement" "test" "validate" "audit")
+      required_specialists=("chaos" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit")
       ;;
     harden-to-doc)
-      required_specialists=("harden" "implement" "test" "chaos" "validate" "audit" "docs")
+      required_specialists=("harden" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
       ;;
     gaps-to-doc)
-      required_specialists=("gaps" "implement" "test" "chaos" "validate" "audit" "docs")
+      required_specialists=("gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
       ;;
     harden-gaps-to-doc)
-      required_specialists=("harden" "gaps" "implement" "test" "chaos" "validate" "audit" "docs")
+      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
       ;;
     reconcile-to-doc)
-      required_specialists=("validate" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     test-to-doc)
       required_specialists=("test" "validate" "audit" "docs")
@@ -948,40 +945,40 @@ if [[ -n "$state_workflow_mode" ]]; then
       required_specialists=("chaos" "validate" "audit" "docs")
       ;;
     batch-implement)
-      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     batch-harden)
-      required_specialists=("validate" "harden" "implement" "test" "regression" "audit" "chaos" "docs")
+      required_specialists=("harden" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     batch-gaps)
-      required_specialists=("validate" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
+      required_specialists=("gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     batch-harden-gaps)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
+      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     batch-improve-existing)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
+      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     batch-reconcile-to-doc)
-      required_specialists=("validate" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("implement" "test" "validate" "audit" "chaos" "docs")
       ;;
     product-to-delivery)
-      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     improve-existing)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
+      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     redesign-existing)
-      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     stabilize-to-doc)
-      required_specialists=("stabilize" "implement" "test" "chaos" "validate" "audit" "docs")
+      required_specialists=("stabilize" "implement" "test" "regression" "simplify" "security" "chaos" "validate" "audit" "docs")
       ;;
     simplify-to-doc)
-      required_specialists=("simplify" "implement" "test" "validate" "audit" "docs")
+      required_specialists=("simplify" "test" "validate" "audit" "docs")
       ;;
     iterate)
-      required_specialists=("implement" "test" "validate" "audit")
+      required_specialists=("validate" "audit")
       ;;
     stochastic-quality-sweep)
       required_specialists=("validate" "audit")

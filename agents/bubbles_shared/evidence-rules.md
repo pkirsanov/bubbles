@@ -29,3 +29,9 @@ Each evidence block recorded under a DoD item in `scopes.md` MUST include a `**P
 - `bubbles.validate` may write evidence tagged `**Phase:** validate`
 
 An agent MUST NOT write evidence tagged with another agent's phase name. Cross-phase evidence writing is fabrication.
+
+## Related Modules
+
+- [artifact-ownership.md](artifact-ownership.md) — who may write to which artifacts (evidence blocks follow the same ownership)
+- [completion-governance.md](completion-governance.md) — what "complete" means and what deferral language blocks it
+- [state-gates.md](state-gates.md) — mechanical gate definitions including G065 (pseudo-completion language) and G066 (phase-claim provenance)

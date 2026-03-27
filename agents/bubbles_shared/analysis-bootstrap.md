@@ -2,6 +2,7 @@
 
 Always load:
 - `critical-requirements.md`
+- `artifact-ownership.md`
 - Feature `spec.md` and `state.json` when they already exist
 - `artifact-freshness.md` when updating an existing feature artifact
 

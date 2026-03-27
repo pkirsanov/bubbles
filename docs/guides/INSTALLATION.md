@@ -44,6 +44,12 @@ And with `--bootstrap`, also creates:
 - `.github/bubbles/docs/SETUP_SOURCES.md` — bootstrap source registry
 - `specs/` — directory for feature/bug specs
 
+Bootstrap-owned Bubbles artifacts must come from one of these two paths only:
+- installer/bootstrap from the Bubbles repo
+- framework refresh through `bubbles.setup` for `.github` assets
+
+Do not hand-create or hand-copy Bubbles bootstrap artifacts in downstream repos. If `.specify/memory/bubbles.config.json` is missing, rerun the installer with `--bootstrap` instead of adding the file manually.
+
 The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and `--name` to override.
 
 > **Note:** Bootstrap never overwrites existing files. Safe to re-run.
@@ -152,6 +158,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Shared governance skills | `.github/skills/bubbles-*/SKILL.md` | Bubbles |
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
+| Control-plane policy registry | `.specify/memory/bubbles.config.json` | Bubbles bootstrap |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |
 | Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** (bootstrapped) |
 | Command registry | `.specify/memory/agents.md` | **You** (bootstrapped) |
@@ -172,6 +179,11 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 - Run with `--bootstrap` if you haven't: `bash install.sh --bootstrap`
 - Check `.specify/memory/agents.md` has your CLI commands
 - Ensure your repo has a runner script (`./yourproject.sh`)
+
+**Doctor says `.specify/memory/bubbles.config.json` is missing:**
+- Do not create the file manually
+- Rerun Bubbles install with `--bootstrap`
+- Then run `/bubbles.setup mode: refresh` to reconcile `.github` framework assets
 
 ---
 

@@ -22,9 +22,13 @@ The control plane is not just a greenfield template system. Existing repos need 
 
 1. Refresh framework-managed assets freely.
 2. Never blanket-overwrite repo-owned artifacts such as `constitution.md`, `agents.md`, feature specs, or project docs.
-3. Add missing control-plane bootstrap surfaces first.
+3. Add missing control-plane bootstrap surfaces first, but only through the Bubbles installer/bootstrap path or framework refresh workflow.
 4. Migrate only active specs immediately; untouched historical specs can convert later.
 5. Downgrade stale certification before claiming progress.
+
+Bootstrap provenance rule:
+- `.specify/memory/bubbles.config.json` is a Bubbles bootstrap artifact and must be created by install/bootstrap, not by hand.
+- `.github` framework drift should be reconciled through `bubbles.setup`, not ad hoc edits in downstream repos.
 
 ## Phase A: Framework Baseline
 
@@ -40,6 +44,7 @@ Expected outcome:
 
 Checklist:
 - Ensure `.specify/memory/bubbles.config.json` exists.
+- If it is missing, rerun install/bootstrap from the Bubbles repo instead of creating the file manually.
 - Ensure repo-default grill, TDD, lockdown, regression, auto-commit, and certification behavior live there.
 - Ensure the first control-plane-aware workflow run records `policySnapshot` provenance in `state.json`.
 

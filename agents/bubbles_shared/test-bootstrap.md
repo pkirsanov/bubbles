@@ -5,6 +5,8 @@ Always load:
 - `test-core.md`
 - `test-fidelity.md`
 - `evidence-rules.md`
+- `artifact-ownership.md`
+- `completion-governance.md`
 - Active scope entrypoint and relevant tests/implementation under test
 
 Load on demand:

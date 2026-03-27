@@ -2,6 +2,7 @@
 
 Always load:
 - `critical-requirements.md`
+- `artifact-ownership.md`
 - Feature `spec.md`
 - Feature `design.md` and `scopes.md` when they exist
 - Only the standard docs targeted by the requested review scope
