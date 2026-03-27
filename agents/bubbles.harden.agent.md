@@ -32,6 +32,13 @@ handoffs:
 - **State coherence** — if routed planning changes reopen a completed scope, require `bubbles.plan` to reset scope/state artifacts; do not rewrite them here.
 - **Findings routing (MANDATORY)** — when hardening discovers issues (⚠️ PARTIAL or ❌ FAILED tasks, policy violations, missing tests, code quality gaps), route the required artifact changes to the owner before reporting closure.
 
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It may append findings to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When hardening discovers missing scenarios, tests, or DoD items, invoke `bubbles.plan` via `runSubagent`.
+- When hardening discovers code/test defects, invoke `bubbles.implement` or `bubbles.test` via `runSubagent`.
+
 **Non-goals:**
 - Ad-hoc refactors/changes outside feature/bug classification
 - Skipping required workflows, gates, or evidence requirements

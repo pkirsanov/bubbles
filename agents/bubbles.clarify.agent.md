@@ -25,6 +25,11 @@ handoffs:
 - **Ensure test plans cover actual user scenarios** — when reviewing scope test plans, verify tests describe what users DO and SEE, not internal mechanics
 - When the user explicitly wants an interactive clarification session, ask only the minimum questions needed to remove blocking ambiguity
 
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When clarification resolves ambiguity requiring artifact updates, invoke the owning agent (`bubbles.analyst` for spec, `bubbles.design` for design, `bubbles.plan` for scopes).
+
 **Non-goals:**
 - Implementing code changes (→ bubbles.implement)
 - Editing `spec.md`, `design.md`, or `scopes.md` inline when those artifacts are owned by another agent

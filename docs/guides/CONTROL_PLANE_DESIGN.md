@@ -34,6 +34,7 @@ The target architecture must satisfy all of the following:
 9. Bug and chaos follow-up flows default to TDD and persistent regression coverage.
 10. Regression tests become protected behavior contracts that cannot drift without spec invalidation.
 11. Every user-visible or externally observable behavior change must have explicit Gherkin and passing live-system BDD evidence.
+12. Existing repos and active specs can adopt the control plane incrementally without blind rewrites or mixed authoritative state.
 
 ## Non-Goals
 
@@ -218,6 +219,74 @@ A locked scenario means:
 
 This gives Bubbles a safe way to protect already-approved product behavior.
 
+### 8. Existing-Spec Adoption Model
+
+The control plane is only useful if existing repos can adopt it without corrupting in-flight work. The framework therefore needs an explicit adoption model for active specs, not just greenfield templates.
+
+The adoption model has four required behaviors.
+
+#### 8.1. Validate-Owned Certification Migration
+
+Existing specs frequently carry stale or inflated completion claims because execution agents and manual edits both touched the same completion fields.
+
+The migration rule is:
+
+- legacy completion claims move into `execution.completedPhaseClaims` only when they describe work that actually ran
+- authoritative completion moves into `certification.*` and is written only by `bubbles.validate`
+- the top-level compatibility `status` mirrors `certification.status` and is never treated as an independent source of truth
+- if a previously "done" scope or spec fails freshness, scenario, or evidence checks, validate downgrades certification first and only then routes rework
+
+This makes reopen and invalidate behavior deterministic. Execution agents may still record what they did, but only validate decides what is actually complete.
+
+#### 8.2. Scenario Contracts For Changed Behavior
+
+Existing repos already contain Gherkin in `scopes.md`, but that is not enough for durable regression protection. The adoption rule is that every changed user-visible or externally observable behavior in an active scope receives a stable `SCN-*` entry in `scenario-manifest.json` before the work can be certified.
+
+Each adopted scenario contract must define:
+
+- a stable scenario ID that survives implementation churn until invalidated
+- the owning scope and current Gherkin hash
+- whether the scenario is new, changed, regression, bugfix, or lockdown-protected
+- the required live test class (`e2e-ui` or `e2e-api`)
+- the linked live tests and evidence references
+
+For existing features, adoption should be selective rather than bulk-generated. Only active or newly changed behavior must be lifted into scenario contracts immediately. Historical untouched behavior can remain prose-only until a workflow reopens it.
+
+#### 8.3. Repo-Default Policy Registry As The Sole Runtime Default Source
+
+The framework must stop encoding repo-default grill, TDD, lockdown, regression, or certification behavior in prompt prose. Prompts may describe how policies behave, but they must not invent effective defaults.
+
+The design rule is:
+
+- `.specify/memory/bubbles.config.json` is the only repo-local source for mutable execution defaults
+- `bubbles/workflows.yaml` defines framework capabilities and forced overrides, not repo-local preferences
+- every workflow run records a `policySnapshot` with both the effective value and provenance for grill, TDD, auto-commit, lockdown, regression, and validation certification
+- workflow selection, validate checks, and downstream status reporting all read from the same recorded snapshot rather than re-deriving defaults from prompts
+
+This gives repos one place to raise discipline gradually without forking framework prompts.
+
+#### 8.4. Artifact Freshness And Redesign Triage
+
+Existing repos are more likely to fail because stale requirements, UX, design, and planning artifacts remain mixed into active truth than because code is missing outright. The control plane therefore needs freshness-aware workflow selection, not just stronger validation.
+
+The design rule is:
+
+- if active artifacts disagree but the feature direction is still fundamentally the same, use `reconcile-to-doc` or `improve-existing`
+- if active artifacts no longer describe the intended feature and major flow, UX, or architecture changes are required, use `redesign-existing`
+- stale active sections must be lowered into clearly marked superseded sections before new active truth is written
+- stale scopes must be removed from executable scope inventories and may survive only as archival prose, never as active Test Plan or DoD structures
+
+This turns artifact freshness from a passive lint concern into an explicit planning and workflow-selection discipline.
+
+#### 8.5. Adoption Boundary For Dirty Repos
+
+Because many downstream repos will already have unrelated local changes, the adoption design must be non-destructive:
+
+- framework-managed assets may be refreshed in place
+- repo-owned artifacts such as `constitution.md`, `agents.md`, existing specs, and feature docs require targeted migration, not blanket overwrite
+- missing control-plane bootstrap surfaces such as `.specify/memory/bubbles.config.json` may be added safely
+- migration work should prefer additive introduction of `policySnapshot`, `scenario-manifest.json`, and validate-owned certification over wholesale artifact regeneration unless `redesign-existing` is chosen
+
 ## Behavioral Laws
 
 The control plane should enforce these framework laws.
@@ -304,6 +373,7 @@ Only orchestrators may invoke child workflows, and child workflow depth must be 
 | 11. All behavior changes need Gherkin and BDD E2E | Scenario law plus certification guard |
 | 12. No hybrid agents | Owner-only remediation plus orchestrator-driven micro-fix dispatch |
 | 13. Child workflows only where safe | Orchestrator-only child workflow invocation with bounded depth |
+| 14. Existing active specs adopt safely | Existing-spec adoption model with selective scenario lift, repo-default policy registry, and freshness triage |
 
 ## Proposed New Gates
 

@@ -45,6 +45,18 @@ handoffs:
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038, G040). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I5) MUST pass before reporting results. **G040 (zero deferral language) is critical — NEVER write deferral language into scope artifacts and then mark the spec done.**
 
+**Artifact Ownership (this agent creates/modifies ONLY these):**
+- Product code and test code — implementation and test files
+- `scopes.md` — execution-progress updates ONLY (inline evidence, DoD checkbox `[x]`, scope status). MUST NOT add new Gherkin scenarios, Test Plan rows, or DoD items — those belong to `bubbles.plan`.
+- `report.md` — append execution evidence to existing sections
+
+**Foreign artifacts (MUST invoke the owner, never edit directly):**
+- `spec.md` → invoke `bubbles.analyst`
+- `design.md` → invoke `bubbles.design`
+- `scopes.md` planning content (new scenarios/DoD/Test Plan) → invoke `bubbles.plan`
+- `uservalidation.md` → invoke `bubbles.plan`
+- `state.json` certification fields → route to `bubbles.validate`
+
 **Non-goals:**
 - Creating new scopes or planning work (→ bubbles.plan or bubbles.iterate)
 - Deep end-to-end hardening beyond scope (→ bubbles.harden)

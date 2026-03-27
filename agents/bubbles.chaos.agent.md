@@ -39,6 +39,10 @@ handoffs:
 - **Copy actual terminal/tool output into reports; never write expected output**
 - **⚠️ ANTI-FABRICATION:** Chaos execution MUST produce real browser automation test output or real HTTP probe output. Claiming "chaos passed" or "no issues found" without having created and executed actual test files is fabrication. Every chaos round MUST have: (1) the actual test file created, (2) the actual command executed, (3) ≥10 lines of raw terminal output from the execution.
 
+**Artifact Ownership: this agent may create owned chaos test files and append chaos findings to `report.md`.**
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When chaos discovers bugs, invoke `bubbles.bug` for documentation and `bubbles.implement` for fixes.
+
 **Non-goals:**
 - Replacing deterministic unit/integration/E2E suites (→ bubbles.test)
 - Declaring feature completion solely from chaos runs (chaos feeds into bubbles.bug / bubbles.test / bubbles.stabilize)

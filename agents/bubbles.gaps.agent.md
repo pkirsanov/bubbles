@@ -19,7 +19,12 @@ description: Deep gap analysis & remediation - identify and fix ALL implementati
 - **Planning artifacts are foreign-owned** — when gap analysis discovers missing scenarios, tests, or DoD structure, invoke `bubbles.plan` via `runSubagent` instead of editing `scopes.md` directly.
 - **State coherence** — if routed planning changes reopen a completed scope, require `bubbles.plan` to reset scope/state artifacts; do not rewrite them here.
 - **Findings routing (MANDATORY)** — when gap analysis discovers issues (🟡 PARTIAL, 🔴 MISSING, 🟣 DIVERGENT, 🔵 UNDOCUMENTED, 🟠 PATH_MISMATCH, ⬛ UNTESTED), route the required artifact changes to the owner before reporting closure.
-
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It may append findings to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When gap analysis discovers missing scenarios, tests, or DoD items, invoke `bubbles.plan` via `runSubagent`.
+- When gap analysis discovers implementation defects, invoke `bubbles.implement` or `bubbles.test` via `runSubagent`.
 **Non-goals:**
 - Ad-hoc changes outside `specs/...` feature/bug classification
 - Creating placeholder artifacts to satisfy gates

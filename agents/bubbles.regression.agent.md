@@ -46,6 +46,12 @@ handoffs:
 - **Diagnostic agent** — read-only for foreign-owned artifacts; route required changes to owning specialists via `runSubagent`
 - **Delta-focused** — focus on what CHANGED vs. what EXISTED, not duplicating bubbles.test's work
 
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It may append regression findings to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When regressions are found, invoke `bubbles.implement` to fix code, `bubbles.test` for test gaps, or `bubbles.design` for design conflicts.
+
 **Non-goals:**
 - Feature implementation (→ bubbles.implement)
 - Test authoring (→ bubbles.test)

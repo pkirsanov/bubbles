@@ -127,6 +127,37 @@ Move runtime defaults out of scattered prompt defaults and into one mutable repo
 - every run records active mode provenance
 - no specialist relies on hardcoded repo-level defaults for grill, TDD, or auto-commit
 
+## Phase 2.5: Existing-Repo Bootstrap And Safe Adoption
+
+### Goal
+
+Bring already-active repos onto the control plane without blind rewrites, mixed authority, or blanket regeneration of project-owned artifacts.
+
+### Build
+
+- require `.specify/memory/bubbles.config.json` in every adopted repo before control-plane-aware workflow execution
+- add bootstrap checks that distinguish framework-managed surfaces from repo-owned artifacts
+- document selective adoption rules for active specs:
+  - add `policySnapshot` on first control-plane-aware run
+  - create `scenario-manifest.json` only for changed or active behavior, not for untouched historical scope inventory
+  - migrate completion authority to validate-owned `certification.*` before allowing new promotion
+- teach workflow mode selection to prefer:
+  - `improve-existing` when the feature is directionally correct and needs enhancement
+  - `reconcile-to-doc` when stale truth must be cleaned up before further execution
+  - `redesign-existing` when active requirements, UX, design, and scopes all need reconciliation before delivery
+
+### Enforcement Changes
+
+- dirty repos may receive additive control-plane bootstrap surfaces, but repo-owned artifacts must not be overwritten implicitly
+- validate must downgrade stale completion claims before recertifying migrated specs
+- artifact-freshness checks run before certification for migrated active specs so stale scopes cannot remain executable
+
+### Exit Criteria
+
+- repos can adopt the control plane by adding missing bootstrap surfaces instead of rerendering all local artifacts
+- workflow mode selection reflects freshness and redesign intent instead of treating all existing-feature work as ordinary implementation
+- migrated active specs no longer mix execution claims and authoritative completion state
+
 ## Phase 3: Validate-Owned Certification State
 
 ### Goal
@@ -321,9 +352,9 @@ Once enforcement is real, move from opt-in modes to safer defaults.
 | Requested Change | Phase Coverage |
 |---|---|
 | 1. Specialist delegation | Phases 1 and 3 |
-| 2. Finish work through structured handoffs | Phase 3 |
-| 3. Central defaults and reporting | Phase 2 |
-| 4. Only validate certifies state | Phase 3 |
+| 2. Finish work through structured handoffs | Phases 3 and 4 |
+| 3. Central defaults and reporting | Phases 2 and 2.5 |
+| 4. Only validate certifies state | Phases 2.5 and 3 |
 | 5. Grill mode | Phase 6 |
 | 6. Strict Gherkin and live BDD E2E | Phase 4 |
 | 7. Lockdown mode | Phase 6 |
@@ -331,6 +362,7 @@ Once enforcement is real, move from opt-in modes to safer defaults.
 | 9. TDD for bug and chaos | Phase 5 |
 | 10. Regression immutability | Phase 5 |
 | 11. Every behavior change gets scenarios and live BDD | Phase 4 |
+| 12. Safe adoption for active specs and redesign triage | Phase 2.5 |
 
 ## Recommended Delivery Sequence
 
@@ -338,11 +370,12 @@ Deliver the phases in this order:
 
 1. Phase 0 and Phase 1 together
 2. Phase 2
-3. Phase 3
-4. Phase 4
-5. Phase 5
-6. Phase 6
-7. Phase 7
+3. Phase 2.5
+4. Phase 3
+5. Phase 4
+6. Phase 5
+7. Phase 6
+8. Phase 7
 
 Do not flip repo defaults before the corresponding gates exist. For example, do not make TDD the default everywhere until scenario manifests and protected regression enforcement are already in place.
 
@@ -352,11 +385,13 @@ The rollout is complete when all of the following are true:
 
 - delegation is resolved through a registry
 - defaults are managed centrally by CLI and super
+- existing repos can adopt missing control-plane surfaces without blanket rewrite of repo-owned artifacts
 - validate alone certifies promotion state
 - changed behavior is represented as stable scenario contracts
 - live BDD evidence is mandatory for changed observable behavior
 - bug and chaos flows are scenario-first by default
 - locked scenarios cannot change without approval and invalidation
 - regression tests for approved behavior are immutable until the spec changes
+- workflow selection uses freshness-aware triage between reconcile, improve, and redesign for existing features
 
 At that point, the requested DNA change is real rather than aspirational.

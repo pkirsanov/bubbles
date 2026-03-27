@@ -40,6 +40,18 @@ If drift is found during any docs operation, the agent MUST NOT complete until t
 
 When invoked by another agent with drift details (e.g., `bubbles.spec-review` provides specific drift findings), use those details as a starting point but ALWAYS verify against actual implementation before updating docs. Do not blindly propagate stale spec content into docs.
 
+**Artifact Ownership (this agent creates/modifies ONLY these):**
+- Standard docs (`docs/`) — architecture, API, development, testing, deployment, operations guides
+- `report.md` — append documentation verification evidence
+
+**Foreign artifacts (MUST invoke the owner, never edit directly):**
+- `spec.md` → invoke `bubbles.analyst`
+- `design.md` → invoke `bubbles.design`
+- `scopes.md` → invoke `bubbles.plan`
+- `uservalidation.md` → invoke `bubbles.plan`
+- `state.json` certification fields → route to `bubbles.validate`
+- Product code / test code → invoke `bubbles.implement` / `bubbles.test`
+
 **Non-goals:**
 - Ad-hoc documentation edits outside feature/bug classification
 - Writing placeholders/TODOs to satisfy required artifacts

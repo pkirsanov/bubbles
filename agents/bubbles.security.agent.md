@@ -38,6 +38,13 @@ handoffs:
 - **No regression introduction** — security fixes must not break existing tests (see agent-common.md)
 - Non-interactive by default: document open questions instead of asking
 
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It may append security findings to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When security review discovers missing scenarios or DoD items, invoke `bubbles.plan` via `runSubagent`.
+- When security review discovers code defects, invoke `bubbles.implement` via `runSubagent`.
+
 **Non-goals:**
 - Performance/infrastructure hardening (→ bubbles.stabilize)
 - General code quality or spec compliance (→ bubbles.audit)

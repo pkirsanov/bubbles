@@ -24,6 +24,19 @@ handoffs:
 
 **⚠️ Anti-Fabrication for Validation (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
+**Artifact Ownership (this agent creates/modifies ONLY these):**
+- `state.json` certification fields — `certification.*`, promotion state, reopen/invalidate
+- `report.md` — append validation evidence to existing sections
+- `scenario-manifest.json` — update evidence links only
+
+**Foreign artifacts (MUST invoke the owner, never edit directly):**
+- `spec.md` → invoke `bubbles.analyst`
+- `design.md` → invoke `bubbles.design`
+- `scopes.md` → invoke `bubbles.plan`
+- `uservalidation.md` → invoke `bubbles.plan`
+- Product code / test code → invoke `bubbles.implement` / `bubbles.test`
+- Standard docs → invoke `bubbles.docs`
+
 **Non-goals:**
 - Inventing ad-hoc commands or bypassing repo workflows
 - Making code/doc changes without explicit feature/bug classification

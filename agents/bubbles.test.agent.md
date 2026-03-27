@@ -36,6 +36,19 @@ handoffs:
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
+**Artifact Ownership (this agent creates/modifies ONLY these):**
+- Test code — test files across all required test types
+- `report.md` — append test execution evidence to existing sections
+- `scenario-manifest.json` — update evidence links only
+
+**Foreign artifacts (MUST invoke the owner, never edit directly):**
+- `spec.md` → invoke `bubbles.analyst`
+- `design.md` → invoke `bubbles.design`
+- `scopes.md` planning content → invoke `bubbles.plan`
+- `uservalidation.md` → invoke `bubbles.plan`
+- `state.json` certification fields → route to `bubbles.validate`
+- Production code (non-test) → invoke `bubbles.implement`
+
 **Non-goals:**
 - Implementing new feature scope without a feature folder and required artifacts
 - Silencing failing tests without addressing root cause

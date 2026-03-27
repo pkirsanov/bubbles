@@ -36,6 +36,12 @@ handoffs:
 - **Test stability fixes with real user scenarios** — verify improvements using actual user workflows (E2E tests, API calls) not just internal benchmarks (see Use Case Testing Integrity in agent-common.md)
 - Escalate design drift to bubbles.gaps for audit
 
+**Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
+- It may read all artifacts for analysis.
+- It may append stability findings to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When stabilization discovers missing planning, invoke `bubbles.plan`. When it discovers code/test defects, invoke `bubbles.implement` or `bubbles.test`.
+
 **Non-goals:**
 - Feature implementation (→ bubbles.implement)
 - Test authoring (→ bubbles.test)

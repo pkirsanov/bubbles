@@ -37,6 +37,11 @@ handoffs:
 - Re-review every file deletion after edits land to confirm no broken references, hidden consumers, or missed artifact responsibilities remain
 - If simplification implies an architectural change, stop and recommend `/bubbles.clarify` or `/bubbles.design`
 
+**Artifact Ownership: this agent may simplify product code within its execution surface.**
+- It may append simplification evidence to `report.md`.
+- It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
+- When simplification implies design changes, invoke `bubbles.design`. When it implies planning changes, invoke `bubbles.plan`.
+
 **Non-goals:**
 - Feature implementation (→ bubbles.implement)
 - New test authoring beyond verifying simplifications (→ bubbles.test)

@@ -104,6 +104,56 @@ do
   check_has_match "$agents_dir/${result_agent}.agent.md" 'RESULT-ENVELOPE' "$result_agent must declare RESULT-ENVELOPE completion output"
 done
 
+# G062 enforcement: diagnostic agents must NOT contain language that permits foreign-artifact edits
+for diagnostic_agent in \
+  bubbles.validate \
+  bubbles.audit \
+  bubbles.harden \
+  bubbles.gaps \
+  bubbles.stabilize \
+  bubbles.security \
+  bubbles.code-review \
+  bubbles.system-review \
+  bubbles.regression \
+  bubbles.clarify
+do
+  check_no_match "$agents_dir/${diagnostic_agent}.agent.md" \
+    'update scopes\.md.*directly\b|edit scopes\.md\b|write.*scopes\.md\b|modify.*scopes\.md\b' \
+    "$diagnostic_agent MUST NOT claim to directly edit scopes.md (foreign-owned by bubbles.plan)"
+  check_no_match "$agents_dir/${diagnostic_agent}.agent.md" \
+    'update spec\.md.*directly\b|edit spec\.md\b|write.*spec\.md\b|modify.*spec\.md\b' \
+    "$diagnostic_agent MUST NOT claim to directly edit spec.md (foreign-owned by bubbles.analyst)"
+  check_no_match "$agents_dir/${diagnostic_agent}.agent.md" \
+    'update design\.md.*directly\b|edit design\.md\b|write.*design\.md\b|modify.*design\.md\b' \
+    "$diagnostic_agent MUST NOT claim to directly edit design.md (foreign-owned by bubbles.design)"
+  check_no_match "$agents_dir/${diagnostic_agent}.agent.md" \
+    'create uservalidation\.md\b|write.*uservalidation\.md\b' \
+    "$diagnostic_agent MUST NOT claim to create uservalidation.md (foreign-owned by bubbles.plan)"
+done
+
+# Execution agents must not claim ownership of planning artifacts
+check_no_match "$agents_dir/bubbles.implement.agent.md" \
+  'Create `uservalidation\.md`|create uservalidation\.md' \
+  "bubbles.implement must not create uservalidation.md (foreign-owned by bubbles.plan)"
+check_no_match "$agents_dir/bubbles.test.agent.md" \
+  'update spec\.md\b|edit spec\.md\b|modify spec\.md\b|update design\.md\b|edit design\.md\b' \
+  "bubbles.test must not claim to edit spec.md or design.md (foreign-owned)"
+
+# Verify diagnostic agents reference artifact-ownership.md or declare foreign-artifact routing
+for diagnostic_agent in \
+  bubbles.validate \
+  bubbles.harden \
+  bubbles.gaps \
+  bubbles.stabilize \
+  bubbles.security \
+  bubbles.regression \
+  bubbles.clarify
+do
+  check_has_match "$agents_dir/${diagnostic_agent}.agent.md" \
+    'foreign-owned|artifact-ownership|route.*to.*owner|MUST NOT.*edit.*foreign|route_required' \
+    "$diagnostic_agent must reference foreign-artifact routing or artifact-ownership rules"
+done
+
 if [[ "$errors" -ne 0 ]]; then
   exit 1
 fi
