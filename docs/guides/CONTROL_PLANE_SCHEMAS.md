@@ -5,6 +5,7 @@ This document defines the proposed schema surfaces for the control-plane redesig
 Related documents:
 - [Control Plane Design](CONTROL_PLANE_DESIGN.md)
 - [Control Plane Rollout](CONTROL_PLANE_ROLLOUT.md)
+- [Existing Repo Adoption](CONTROL_PLANE_ADOPTION.md)
 
 These schemas are proposals for framework evolution. They are not active runtime contracts yet.
 
@@ -174,6 +175,54 @@ bubbles policy reset grill.mode
 - every effective policy value must preserve provenance
 - workflow may override defaults, but the override must be recorded
 
+### Adoption Example: First Control-Plane Run In An Existing Repo
+
+When a repo already has Bubbles framework files but no repo-local policy registry yet, the bootstrap step should add the file without rewriting existing constitutions, command registries, or feature specs.
+
+```json
+{
+  "version": 2,
+  "defaults": {
+    "grill": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "defaultForModes": ["bugfix-fastlane", "chaos-hardening"],
+      "source": "repo-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "lockdown": {
+      "default": false,
+      "requireGrillForInvalidation": true,
+      "source": "repo-default"
+    },
+    "regression": {
+      "immutability": "protected-scenarios",
+      "source": "repo-default"
+    },
+    "validation": {
+      "certificationRequired": true,
+      "source": "repo-default"
+    }
+  },
+  "modeOverrides": {},
+  "metrics": {
+    "enabled": false
+  }
+}
+```
+
+Adoption rule:
+
+- adding this file is safe and additive
+- repo defaults belong here even when prompts describe the same modes conceptually
+- the first control-plane-aware workflow run records the effective values into `state.json.policySnapshot`
+
 ## 3. Scenario Contract Manifest
 
 Proposed file: `specs/<feature>/scenario-manifest.json`
@@ -220,6 +269,53 @@ Proposed file: `specs/<feature>/scenario-manifest.json`
 - scenario IDs are stable across implementation churn until the behavior contract is explicitly invalidated
 - every changed user-visible or external behavior must appear here
 - every scenario must point to live-system tests when its behavior class requires it
+
+### Adoption Example: Selective Scenario Lift For An Active Existing Scope
+
+Existing features do not need an all-or-nothing manifest migration. If only one scope is actively changing, only the changed behavior in that scope needs to be lifted into `scenario-manifest.json` immediately.
+
+```json
+{
+  "version": 1,
+  "featureDir": "specs/019-visual-page-builder",
+  "generatedAt": "2026-03-27T10:30:00Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-019-014",
+      "scope": "03-layout-persistence",
+      "title": "Host sees the updated section order after reload",
+      "gherkin": {
+        "given": "a host has reordered page sections",
+        "when": "the host reloads the page builder",
+        "then": "the saved section order remains visible"
+      },
+      "gherkinHash": "sha256:...",
+      "behaviorClass": "ui",
+      "changeType": "changed",
+      "requiredTestType": "e2e-ui",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "dashboard/e2e/tests/page-builder.spec.ts",
+          "testId": "host-reload-persists-section-order"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-scn-019-014"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    }
+  ]
+}
+```
+
+Adoption rule:
+
+- do not bulk-invent scenario IDs for untouched historical behavior just to satisfy the new schema
+- do lift every active changed user-visible or externally observable behavior into the manifest before certification
+- untouched prose scenarios may remain in markdown until that behavior is reopened by a later workflow
 
 ## 4. `state.json` Version 3
 
@@ -284,6 +380,81 @@ Proposed file: `specs/<feature>/state.json`
 - `certification` records authoritative state
 - only `bubbles.validate` may mutate `certification`
 - promotion to `done` is impossible without validate certification
+
+### Adoption Example: Legacy State To Version 3 Migration
+
+Many active specs already have a legacy state shape where a single top-level status and ad hoc completed phase lists act as both execution trace and completion authority. The migration must separate those concerns.
+
+Legacy example:
+
+```json
+{
+  "status": "done",
+  "completedPhases": ["implement", "test", "docs"],
+  "completedScopes": ["01-api", "02-ui"]
+}
+```
+
+Migrated version 3 example:
+
+```json
+{
+  "version": 3,
+  "workflowMode": "full-delivery",
+  "execution": {
+    "activeAgent": "bubbles.workflow",
+    "currentPhase": "validate",
+    "currentScope": null,
+    "runStartedAt": "2026-03-27T11:00:00Z",
+    "completedPhaseClaims": ["implement", "test", "docs"],
+    "pendingTransitionRequests": []
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": ["01-api"],
+    "certifiedCompletedPhases": ["implement", "test"],
+    "scopeProgress": [
+      {
+        "scope": "01-api",
+        "status": "done",
+        "certifiedAt": "2026-03-27T10:55:00Z"
+      },
+      {
+        "scope": "02-ui",
+        "status": "in_progress",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "source": "repo-default"
+    },
+    "validation": {
+      "certificationRequired": true,
+      "source": "repo-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": []
+}
+```
+
+Migration rule:
+
+- move claims of work performed into `execution.completedPhaseClaims`
+- let `bubbles.validate` decide what survives into `certification.*`
+- if old `done` state is not fully defensible, the migrated `certification.status` must reopen to `in_progress` or `blocked` rather than preserving a false green state
 
 ## 5. Specialist Result Envelope
 
@@ -445,6 +616,18 @@ The schemas work together in this order:
 6. validate certifies or rejects through state version 3
 7. rejected transitions create rework packets
 8. lockdown approvals and invalidation entries govern protected scenario changes
+
+## Adoption Bundle For Existing Repos
+
+An existing repo becomes control-plane-ready when the following schema bundle is present or intentionally introduced during the first migration pass:
+
+1. `.specify/memory/bubbles.config.json` exists
+2. active migrated specs use `state.json` version 3 with separate `execution` and `certification`
+3. active changed behavior is represented in `scenario-manifest.json`
+4. `policySnapshot` is recorded on each control-plane-aware run
+5. transition and rework packets are used instead of narrative-only reopen instructions
+
+This bundle is intentionally incremental. Historical untouched specs do not need immediate full conversion, but any spec being actively changed must enter this schema set before it can be certified complete.
 
 ## Minimum Mechanical Enforcement Needed
 

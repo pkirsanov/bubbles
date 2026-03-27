@@ -65,6 +65,8 @@ if [[ ! -f "$guard_script" ]]; then
   exit 2
 fi
 
+traceability_script="$SCRIPT_DIR/traceability-guard.sh"
+
 total_done=0
 lint_passed=0
 lint_failed=0
@@ -214,6 +216,17 @@ for state_file in specs/*/state.json; do
   else
     echo "Lint: FAILED"
     spec_failed="true"
+  fi
+
+  # Run traceability guard (scenario-to-test mapping)
+  if [[ -f "$traceability_script" ]]; then
+    echo "--- Running traceability guard ---"
+    if bash "$traceability_script" "$spec_dir" > /dev/null 2>&1; then
+      echo "Traceability: PASS"
+    else
+      echo "Traceability: FAILED (scenario-to-test mapping gaps detected)"
+      spec_failed="true"
+    fi
   fi
 
   if [[ "$spec_failed" == "false" ]]; then

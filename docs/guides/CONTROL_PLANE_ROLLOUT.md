@@ -5,6 +5,7 @@ This document turns the control-plane design into an executable rollout plan.
 Related documents:
 - [Control Plane Design](CONTROL_PLANE_DESIGN.md)
 - [Control Plane Schemas](CONTROL_PLANE_SCHEMAS.md)
+- [Existing Repo Adoption](CONTROL_PLANE_ADOPTION.md)
 
 ## Rollout Strategy
 
@@ -27,6 +28,95 @@ The rollout covers all proposed changes through seven workstreams:
 5. Scenario contract, BDD enforcement, and regression immutability
 6. Grill mode and lockdown behavior governance
 7. TDD-default workflow behavior for bug, chaos, and then broader delivery modes
+
+## Implementation Surface Matrix
+
+The rollout phases describe sequencing. The matrix below translates the design into concrete implementation surfaces so the work can be scheduled and reviewed by file family.
+
+### CLI And Bootstrap Surfaces
+
+Primary files:
+- `bubbles/scripts/cli.sh`
+- `install.sh`
+- `docs/guides/INSTALLATION.md`
+
+Tasks:
+- add `bubbles policy status|get|set|reset` support
+- add bootstrap checks for missing `.specify/memory/bubbles.config.json`
+- distinguish framework-managed refresh from repo-owned artifact migration
+- expose a doctor/status path that reports missing policy registry, missing version 3 state, and missing `scenario-manifest.json` for active changed specs
+
+### Guard And Lint Surfaces
+
+Primary files:
+- `bubbles/scripts/state-transition-guard.sh`
+- `bubbles/scripts/traceability-guard.sh`
+- `bubbles/scripts/artifact-freshness-guard.sh`
+- `bubbles/scripts/agent-ownership-lint.sh`
+
+Tasks:
+- enforce validate-owned certification as the sole promotion authority
+- fail migrated specs that still mix legacy completion authority with version 3 certification
+- require `policySnapshot` provenance on control-plane-aware runs
+- require stable `SCN-*` entries plus linked live tests for active changed behavior
+- block stale scopes from remaining executable after freshness reconciliation
+
+### Orchestrator Prompt Surfaces
+
+Primary files:
+- `agents/bubbles.workflow.agent.md`
+- `agents/bubbles.iterate.agent.md`
+- `agents/bubbles.super.agent.md`
+- `agents/bubbles.bug.agent.md`
+
+Tasks:
+- teach workflow selection to route existing-feature work through `reconcile-to-doc`, `improve-existing`, or `redesign-existing` based on freshness and redesign intent
+- make `bubbles.super` surface repo-default policy registry values rather than prompt-implied defaults
+- require orchestrators to seed `policySnapshot` on the first migrated run
+- require orchestrators to treat missing `scenario-manifest.json` for active changed behavior as bootstrap debt, not optional follow-up
+
+### Planning And Certification Prompt Surfaces
+
+Primary files:
+- `agents/bubbles.plan.agent.md`
+- `agents/bubbles.validate.agent.md`
+- `agents/bubbles.audit.agent.md`
+- `agents/bubbles.regression.agent.md`
+
+Tasks:
+- make `bubbles.plan` perform selective scenario lift for active changed scopes instead of bulk scenario generation
+- make `bubbles.validate` downgrade stale certification before recertifying migrated specs
+- make audit/regression consume the same scenario contract source and freshness rules
+- make validate reject any active migrated spec whose `certification.*` state is not coherent with actual scope status and evidence
+
+### Shared Templates And Governance Surfaces
+
+Primary files:
+- `agents/bubbles_shared/feature-templates.md`
+- `agents/bubbles_shared/scope-workflow.md`
+- `agents/bubbles_shared/artifact-freshness.md`
+- `agents/bubbles_shared/completion-governance.md`
+
+Tasks:
+- add explicit migration recipes for legacy state to version 3
+- document selective adoption of `scenario-manifest.json`
+- document when additive bootstrap is sufficient versus when redesign workflow is required
+- keep certification, freshness, and scenario-contract rules aligned across templates and guard docs
+
+### Documentation Surfaces
+
+Primary files:
+- `docs/guides/CONTROL_PLANE_DESIGN.md`
+- `docs/guides/CONTROL_PLANE_SCHEMAS.md`
+- `docs/guides/CONTROL_PLANE_ADOPTION.md`
+- `docs/guides/WORKFLOW_MODES.md`
+- `docs/guides/AGENT_MANUAL.md`
+
+Tasks:
+- keep design, rollout, schema, and adoption guidance aligned
+- document the no-destructive migration rule for dirty downstream repos
+- document the difference between framework refresh and project-owned artifact migration
+- document freshness-aware workflow selection for existing features
 
 ## Phase 0: Baseline And Inventory
 

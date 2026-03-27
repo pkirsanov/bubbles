@@ -320,7 +320,7 @@ echo ""
 echo "--- Check 3: Status Ceiling Enforcement ---"
 if [[ -n "$state_workflow_mode" ]]; then
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       if [[ "$state_status" == "done" ]]; then
         pass "Workflow mode '$state_workflow_mode' allows status 'done'"
       else
@@ -336,7 +336,7 @@ if [[ -n "$state_workflow_mode" ]]; then
         info "Workflow mode '$state_workflow_mode' ceiling is 'specs_hardened'; current status is '$state_status'"
       fi
       ;;
-    docs-only)
+    docs-only|spec-review-to-doc)
       if [[ "$state_status" == "done" ]]; then
         fail "Workflow mode 'docs-only' ceiling is 'docs_updated', NOT 'done'"
       elif [[ "$state_status" == "docs_updated" ]]; then
@@ -915,10 +915,10 @@ if [[ -n "$state_workflow_mode" ]]; then
   required_specialists=()
   case "$state_workflow_mode" in
     full-delivery|value-first-e2e-batch)
-      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     full-delivery-strict)
-      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
     feature-bootstrap)
       required_specialists=("implement" "test" "docs" "validate" "audit")
@@ -948,34 +948,43 @@ if [[ -n "$state_workflow_mode" ]]; then
       required_specialists=("chaos" "validate" "audit" "docs")
       ;;
     batch-implement)
-      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
       ;;
     batch-harden)
-      required_specialists=("validate" "harden" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("validate" "harden" "implement" "test" "regression" "audit" "chaos" "docs")
       ;;
     batch-gaps)
-      required_specialists=("validate" "gaps" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("validate" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
       ;;
     batch-harden-gaps)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
       ;;
     batch-improve-existing)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
       ;;
     batch-reconcile-to-doc)
       required_specialists=("validate" "implement" "test" "audit" "chaos" "docs")
       ;;
     product-to-delivery)
-      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
       ;;
     improve-existing)
-      required_specialists=("validate" "harden" "gaps" "implement" "test" "audit" "chaos" "docs")
+      required_specialists=("validate" "harden" "gaps" "implement" "test" "regression" "audit" "chaos" "docs")
       ;;
     redesign-existing)
-      required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
+      required_specialists=("implement" "test" "regression" "docs" "validate" "audit" "chaos")
       ;;
     stabilize-to-doc)
       required_specialists=("stabilize" "implement" "test" "chaos" "validate" "audit" "docs")
+      ;;
+    simplify-to-doc)
+      required_specialists=("simplify" "implement" "test" "validate" "audit" "docs")
+      ;;
+    iterate)
+      required_specialists=("implement" "test" "validate" "audit")
+      ;;
+    stochastic-quality-sweep)
+      required_specialists=("validate" "audit")
       ;;
     product-discovery)
       required_specialists=("harden" "docs" "validate" "audit")
@@ -998,6 +1007,70 @@ if [[ -n "$state_workflow_mode" ]]; then
     if [[ "$missing_phases" -gt 0 ]]; then
       fail "$missing_phases specialist phase(s) missing — work was NOT executed through the full pipeline"
     fi
+  fi
+fi
+echo ""
+
+# =============================================================================
+# CHECK 6B: Phase-claim provenance — cross-reference completedPhaseClaims
+# against executionHistory agent identity (Gate G022 extension)
+# =============================================================================
+echo "--- Check 6B: Phase-Claim Provenance (Gate G022 extension) ---"
+if [[ -n "$state_workflow_mode" ]]; then
+  # Extract executionHistory block (array of entries with agent + phasesExecuted)
+  execution_history_block="$({
+    python3 -c "
+import json, sys
+with open('$state_file') as f:
+    data = json.load(f)
+history = data.get('execution', {}).get('executionHistory', data.get('executionHistory', []))
+for entry in history:
+    agent = entry.get('agent', '')
+    phases = entry.get('phasesExecuted', [])
+    for p in phases:
+        print(f'{agent}:{p}')
+" 2>/dev/null
+  } || true)"
+
+  if [[ -n "$execution_history_block" ]]; then
+    # Check that each claimed phase has a matching executionHistory provenance
+    claimed_phases="$({
+      python3 -c "
+import json
+with open('$state_file') as f:
+    data = json.load(f)
+claims = data.get('execution', {}).get('completedPhaseClaims', [])
+certified = data.get('certification', {}).get('certifiedCompletedPhases', [])
+for p in set(claims + certified):
+    print(p)
+" 2>/dev/null
+    } || true)"
+
+    if [[ -n "$claimed_phases" ]]; then
+      provenance_failures=0
+      while IFS= read -r claimed_phase; do
+        [[ -z "$claimed_phase" ]] && continue
+        expected_agent="bubbles.${claimed_phase}"
+        if echo "$execution_history_block" | grep -qE "^${expected_agent}:${claimed_phase}$"; then
+          pass "Phase '$claimed_phase' has provenance from $expected_agent in executionHistory"
+        else
+          # Allow bubbles.bug to claim implement/test phases via delegation
+          if [[ "$claimed_phase" == "implement" || "$claimed_phase" == "test" ]] && echo "$execution_history_block" | grep -qE "^bubbles\.bug:${claimed_phase}$"; then
+            pass "Phase '$claimed_phase' has delegated provenance from bubbles.bug in executionHistory"
+          else
+            fail "Phase '$claimed_phase' is in completedPhaseClaims but no executionHistory entry from $expected_agent — possible impersonation (Gate G022)"
+            provenance_failures=$((provenance_failures + 1))
+          fi
+        fi
+      done <<< "$claimed_phases"
+      if [[ "$provenance_failures" -gt 0 ]]; then
+        fail "$provenance_failures phase claim(s) lack proper agent provenance — phase impersonation detected"
+      fi
+    else
+      info "No phase claims to verify provenance for"
+    fi
+  else
+    info "No executionHistory found — phase provenance check skipped (state.json may be legacy format)"
   fi
 fi
 echo ""
@@ -1408,7 +1481,7 @@ echo ""
 echo "--- Check 13B: Implementation Delta Evidence (Gate G053) ---"
 requires_impl_delta="false"
 case "$state_workflow_mode" in
-  full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
+  full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
     requires_impl_delta="true"
     ;;
 esac
@@ -1495,7 +1568,7 @@ echo "--- Check 15: Phase-Scope Coherence (Gate G027) ---"
 if [[ -n "$state_workflow_mode" ]]; then
   # Only check modes that involve implementation
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       # Check if implement/test phases are claimed
       has_implement="false"
       has_test="false"
@@ -1562,7 +1635,7 @@ if [[ -f "$reality_scan_script" ]]; then
   # Only run for modes that involve implementation
   run_reality_scan="false"
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing)
+    full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       run_reality_scan="true"
       ;;
   esac
