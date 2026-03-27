@@ -45,6 +45,8 @@ Block completion when any of these occur:
 - placeholder or template evidence
 - fake green status from skipped or noop tests
 - stale state claiming more completion than artifacts support
+- narrative completion claims without a structured RESULT-ENVELOPE (equivalent to fabrication for tracking purposes)
+- unresolved pseudo-completion language in report or scope artifacts (see Gate G065 in state-gates.md)
 
 ## Test Execution Gate
 

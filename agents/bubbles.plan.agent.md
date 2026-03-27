@@ -56,6 +56,12 @@ When planning must coordinate mixed specialist follow-up (clarify/implement/test
 - **Owned planning changes only:** Update `scopes.md`, `report.md`, `uservalidation.md`, and `scenario-manifest.json` within this agent's execution context.
 - **Any foreign-owned work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) and route packet to the orchestrator (`bubbles.workflow`), which dispatches the appropriate specialist via `runSubagent`. End every invocation with a `## RESULT-ENVELOPE` using `completed_owned` for owned planning-only changes or `route_required` when foreign-owned follow-up is required.
 
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when planning-only artifacts (`scopes.md`, `report.md`, `uservalidation.md`, `scenario-manifest.json`) were updated within this agent's owned surface.
+- Use `route_required` when code, tests, docs, clarify, compliance, audit, or chaos follow-up owned by another specialist is required.
+- Use `blocked` when a concrete blocker prevents producing a valid plan.
+
 Agent-specific: Action-First Mandate applies → take ONE planning action after loading the `planner` profile's minimum initial set.
 
 ### ⚠️ EXPLICIT READ LIMIT FOR BUBBLES.PLAN

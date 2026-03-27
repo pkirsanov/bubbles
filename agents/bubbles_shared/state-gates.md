@@ -32,3 +32,18 @@ Purpose: compact state/completion rules that must remain authoritative for all a
 - `artifact-freshness-guard.sh` — superseded content isolation (G052)
 - `traceability-guard.sh` — Gherkin-to-test-to-evidence linkage, scenario manifest cross-check (G057/G059)
 - `agent-ownership-lint.sh` — ownership/capability registry validation plus owner-only remediation, result-envelope, and child-workflow policy checks (G054/G062/G063/G064)
+
+## Pseudo-Completion Language Gate (G065)
+
+Scope and report artifacts must not contain unresolved pseudo-completion language when the spec/bug status is `done` or transitioning to `done`.
+
+Blocking phrases (outside quoted historical evidence blocks):
+- `Next Steps` (as heading or bullet leader)
+- `Recommended routing:` / `Recommended resolution:`
+- `Ready for /bubbles.` / `Re-run /bubbles.validate`
+- `Commit the fix` / `Record DoD evidence` / `Run full E2E suite`
+- `[PENDING` / `header only initially`
+
+Enforced by: `artifact-lint.sh` (report.md scan) and `state-transition-guard.sh` (report.md scan).
+
+If any match is found, the transition to `done` is blocked.

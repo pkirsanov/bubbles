@@ -85,6 +85,7 @@ for result_agent in \
   bubbles.workflow \
   bubbles.validate \
   bubbles.audit \
+  bubbles.design \
   bubbles.plan \
   bubbles.gaps \
   bubbles.clarify \
@@ -93,10 +94,12 @@ for result_agent in \
   bubbles.harden \
   bubbles.security \
   bubbles.regression \
+  bubbles.code-review \
   bubbles.implement \
   bubbles.test \
   bubbles.docs \
-  bubbles.simplify
+  bubbles.simplify \
+  bubbles.system-review
 do
   check_has_match "$agents_dir/${result_agent}.agent.md" 'RESULT-ENVELOPE' "$result_agent must declare RESULT-ENVELOPE completion output"
 done

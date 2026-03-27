@@ -33,6 +33,12 @@ handoffs:
  - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 - End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when implementation changes and owned evidence were produced, `route_required` when foreign-owned follow-up is required, or `blocked` when a concrete blocker prevents completion.
 
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when implementation changes and owned evidence were produced under this agent's execution surface.
+- Use `route_required` when planning, docs, validation, audit, or any other foreign-owned follow-up is still required.
+- Use `blocked` when a concrete blocker prevents verified implementation progress.
+
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **⚠️ No-Defaults / No-Stubs:** See [critical-requirements.md](bubbles_shared/critical-requirements.md). Reality scan (G028+G030) enforces mechanically.

@@ -167,7 +167,7 @@ Every run MUST produce the same structure, in this order:
 - Overall assessment
 - Strongest parts of the system
 - Top systemic issues
-- Recommended next move
+- System assessment
 
 ## 3. Findings by Lens
 ### Product / Capability
@@ -291,3 +291,10 @@ A successful run must leave the user with one of these outcomes:
 3. A normalized system review plus created/updated spec artifacts for selected findings
 
 This agent is complete when the requested review output exists in one of those forms.
+
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when the requested system review was produced in the response or written to a summary doc.
+- Use `completed_owned` when this agent also created or updated promoted spec artifacts within its owned execution surface.
+- Use `route_required` when a narrower specialist or a downstream planning/design surface must continue the work beyond the delivered review.
+- Use `blocked` when a concrete blocker prevents producing an evidence-backed review of the requested target.

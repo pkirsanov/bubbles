@@ -197,9 +197,11 @@ From agents.md:
 - Lint: `[LINT_COMMAND]`
 - Tests: `[TEST_COMMAND]`
 
-### Recommended Next Actions
+### Available Actions
 
 Based on current state, provide specific actionable recommendations:
+
+These recommendations are informational only. They do not certify completion, do not replace `bubbles.validate`, and must not be copied into `report.md` or state artifacts as if they were unresolved required work.
 
 **Decision Tree:**
 
@@ -219,7 +221,7 @@ Based on current state, provide specific actionable recommendations:
 
 ```
 
-### Recommended Next Actions
+### Available Actions
 
 1. ✅ **Immediate:** Run `/bubbles.implement` to continue implementation
    - Scopes pending, no blockers detected

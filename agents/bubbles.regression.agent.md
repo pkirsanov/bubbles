@@ -222,6 +222,12 @@ When regression detection requires mixed specialist execution:
 - **Small inline analysis (≤10 lines):** May inspect files and report findings directly
 - **All fixes:** Route to appropriate specialist via `runSubagent` or return failure classification to orchestrator, and end the response with a `## RESULT-ENVELOPE` using `route_required` when follow-up work remains or `completed_diagnostic` when regression review is clean
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when regression review is clean and no routed follow-up is required.
+- Use `route_required` when regressions, coverage gaps, design conflicts, UX flow breaks, or other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents credible regression analysis.
+
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 
 ---
@@ -292,7 +298,7 @@ Cross-spec conflicts: {count}
 Design contradictions: {count}
 
 Fix cycle needed: YES
-Recommended routing:
+Required routing:
 - {test_name} → bubbles.implement (fix route collision in router.go)
 - Coverage gap → bubbles.test (add tests for {module})
 ```
@@ -311,7 +317,7 @@ Conflicts:
 2. [ROUTE_COLLISION] Both spec {A} and spec {B} claim {route}
 3. [DATA_MODEL] Spec {A} stores {entity} as {type_A}, spec {B} expects {type_B}
 
-Recommended resolution:
+Required resolution:
 - Invoke bubbles.design for spec {A} to resolve conflict
 - Invoke bubbles.plan to update scopes after design resolution
 - Re-run regression after resolution

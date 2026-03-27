@@ -58,6 +58,12 @@ When security work requires mixed specialist execution:
 - **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If security review completed without routed follow-up, end with `completed_diagnostic`.
 - **Cross-domain work:** Return a failure classification to the orchestrator, which routes to the appropriate owner via `runSubagent`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when security review completed cleanly without requiring routed follow-up.
+- Use `route_required` when implementation, planning, tests, docs, or other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents evidence-backed security review.
+
 ---
 
 ## User Input

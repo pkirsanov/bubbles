@@ -115,6 +115,12 @@ When stabilization requires mixed specialist execution (bug/test/gaps/docs/harde
 - **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If stabilization completed without routed work, end with `completed_diagnostic`.
 - **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when stabilization analysis completed cleanly without requiring routed follow-up.
+- Use `route_required` when bug, test, gaps, docs, hardening, or other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents evidence-backed stabilization analysis.
+
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 
 ## Stabilization Execution Flow

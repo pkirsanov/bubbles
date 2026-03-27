@@ -80,6 +80,12 @@ If any required check fails, report issues and do not claim the chaos round is c
 
 When chaos requires cross-domain work: do NOT fix inline. Emit a concrete route packet with the owning specialist and the narrowest execution context, return failure classification to the orchestrator, and end the response with a `## RESULT-ENVELOPE` using `route_required`. If the chaos pass completed without routed follow-up, return a `## RESULT-ENVELOPE` with `completed_owned`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when the chaos pass completed with owned execution, cleanup, and findings recording.
+- Use `route_required` when bug, test, stabilization, docs, or other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents safe or credible chaos execution.
+
 ---
 
 ## ✅ Track Work (Todo List)

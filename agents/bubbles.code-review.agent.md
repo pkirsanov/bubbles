@@ -156,7 +156,7 @@ Every run MUST produce the same structure, in this order:
 - Overall code health assessment
 - Top engineering priorities
 - Key code risks
-- Recommended next move
+- Engineering assessment
 
 ## 3. Findings by Lens
 ### Gaps / Spec Alignment
@@ -254,3 +254,9 @@ A successful run must leave the user with one of these outcomes:
 3. A reroute to `bubbles.system-review` when the request exceeds code-only scope
 
 This agent is complete when the requested code-review output exists in one of those forms.
+
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when the requested code review was produced in the response or written to a summary doc.
+- Use `route_required` when the request exceeded code-only scope and was rerouted to `bubbles.system-review`.
+- Use `blocked` when a concrete blocker prevents producing an evidence-backed review of the requested slice.

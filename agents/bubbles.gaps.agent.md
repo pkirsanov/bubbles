@@ -91,6 +91,12 @@ If gap remediation spans multiple specialist phases (implement/test/docs/harden/
 - **Do NOT fix inline:** Emit a concrete route packet with the owning specialist, impacted scope/DoD/scenario references, and the narrowest execution context available, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If no routed work is needed, end with `completed_diagnostic`.
 - **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when the gap analysis completed cleanly without requiring routed follow-up.
+- Use `route_required` when implementation, tests, docs, hardening, bug work, or any other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents credible gap analysis.
+
 Agent-specific: Action-First Mandate applies. If target is a bug directory, enforce Bug Artifacts Gate. If feature directory, do not perform implicit bug work.
 
 ---

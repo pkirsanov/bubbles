@@ -104,6 +104,12 @@ If any required check fails, report the hardening failure and do not claim the t
 
 When hardening requires cross-domain work: do NOT fix inline. Emit a concrete route packet with the owning specialist and the narrowest execution context, return failure classification to the orchestrator, and end the response with a `## RESULT-ENVELOPE` using `route_required`. If hardening completed without routed follow-up, end with `completed_diagnostic`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when hardening review completed without requiring routed follow-up.
+- Use `route_required` when implementation, tests, docs, or other foreign-owned remediation is still required.
+- Use `blocked` when a concrete blocker prevents a credible hardening verdict.
+
 ---
 
 ## Hardening Execution Flow

@@ -250,13 +250,19 @@ Create a structured design.md with sections:
 - Key design decisions
 - Reconciled or superseded design sections
 - Open questions (if any)
-- Next recommended command: `/bubbles.plan` to generate scopes, report template, and user validation
+
+See RESULT-ENVELOPE section below for structured outcome reporting.
 
 ```
 Created/updated: {FEATURE_DIR}/spec.md, {FEATURE_DIR}/design.md, {FEATURE_DIR}/state.json (v3 template only if missing)
 Open questions: N
-Next: /bubbles.plan (creates scopes.md, report.md, uservalidation.md)
 ```
+
+## RESULT-ENVELOPE
+
+- If design.md was written without blocking open questions: `completed_owned`
+- If upstream inputs from analyst or UX are missing and required: `route_required` (specify target agent)
+- If critical ambiguity prevents completing the design: `blocked`
 
 ---
 

@@ -22,6 +22,12 @@ handoffs:
 - **Verify doc accuracy by cross-referencing actual code** — don't assume docs are correct; check the implementation
 - End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when documentation updates were applied with supporting verification, `route_required` when foreign-owned follow-up is required, or `blocked` when a concrete blocker prevents accurate documentation alignment.
 
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when documentation updates were applied with supporting verification.
+- Use `route_required` when code, tests, planning, or validation work owned by another specialist must continue before docs can be truthful.
+- Use `blocked` when a concrete blocker prevents accurate documentation alignment.
+
 **⚠️ ANTI-FABRICATION:** Documentation updates MUST reflect real implementation state. Do NOT write docs describing behavior that has not been implemented or tested. Cross-reference code and test results before documenting behavior. If you document that "feature X does Y", verify that X actually does Y by checking the code or test output.
 
 **⚠️ DRIFT-FIX MANDATE (applies to ALL invocations):**

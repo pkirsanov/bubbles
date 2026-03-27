@@ -57,8 +57,14 @@ The following are blocking completion signals in scope artifacts:
 - `separate ticket`
 - `placeholder`
 - `temporary workaround`
+- `Next Steps` (as heading or bullet leader — indicates unfinished routed work)
+- `Recommended routing:` / `Recommended resolution:` (indicates unresolved findings)
+- `Ready for /bubbles.` / `Re-run /bubbles.validate` (indicates uncompleted specialist phase)
+- `Commit the fix` / `Record DoD evidence` / `Run full E2E suite` (indicates unfinished mechanical work)
 
 If deferred work is still required, the scope stays in progress.
+
+**Detection rule:** `artifact-lint.sh` and `state-transition-guard.sh` scan for these phrases. Any match in report.md or scope artifacts blocks the `done` transition.
 
 ## Partial Stack Fixes Do Not Close Full Findings
 

@@ -103,6 +103,12 @@ If clarification work triggers mixed specialist phases (plan/implement/test/docs
 - **Do NOT fix inline:** Emit a concrete routing decision with the owning specialist, blocked ambiguity, and the affected artifact/scope/scenario references, then end the response with a `## RESULT-ENVELOPE` using `route_required`. If ambiguity was resolved without foreign-owned follow-up, end with `completed_diagnostic`.
 - **Cross-domain work:** Return a failure classification (`code|test|docs|compliance|audit|chaos|environment`) to the orchestrator (`bubbles.workflow`), which routes to the appropriate specialist via `runSubagent`.
 
+## RESULT-ENVELOPE
+
+- Use `completed_diagnostic` when the ambiguity was resolved without requiring foreign-owned follow-up.
+- Use `route_required` when plan, implement, test, docs, gaps, hardening, bug, or other specialist work must continue.
+- Use `blocked` when the ambiguity cannot be resolved from available evidence.
+
 Agent-specific: This agent is primarily a routing and clarification gate. It may surface proposed wording or decision candidates, but the owning specialist must make durable artifact changes.
 
 ## What to Clarify (Checklist)

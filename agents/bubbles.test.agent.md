@@ -26,6 +26,12 @@ handoffs:
 - Enforce `test-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 - End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when test/code changes and evidence were produced under this agent's execution surface, `route_required` when planning/docs/implementation follow-up is required, or `blocked` when a concrete blocker prevents clean test completion.
 
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when tests and any owned code/test fixes were completed with real evidence.
+- Use `route_required` when planning, docs, or implementation follow-up owned by another specialist is still required.
+- Use `blocked` when a concrete blocker prevents clean test completion.
+
 **⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.

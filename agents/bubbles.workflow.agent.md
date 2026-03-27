@@ -67,6 +67,7 @@ handoffs:
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
 - **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
 - **Require a concrete result envelope from every specialist invocation** — each `runSubagent` response must end with a machine-readable `## RESULT-ENVELOPE` section carrying the agent, role class, outcome, affected scope/DoD/scenario references, evidence refs, and routing payload when follow-up work is required. Legacy `## ROUTE-REQUIRED` blocks may be consumed only as a compatibility fallback while prompts finish migrating.
+- **This workflow agent itself must also emit a structured result envelope** — its own response must end with a `## RESULT-ENVELOPE` so orchestrators, audits, and future tooling can distinguish completed orchestration from routed or blocked orchestration.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
 - **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts. Invoke `bubbles.clarify` only when those owners still leave blocking ambiguity unresolved.
 - **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
@@ -84,6 +85,12 @@ handoffs:
 - **⚠️ AUTO-MODE-ESCALATION (NON-NEGOTIABLE):** When this agent discovers that the current phase cannot proceed because a prerequisite is unmet (e.g., specs need hardening, artifacts are missing, bugs block progress), it MUST invoke the appropriate specialist agents inline to resolve the issue and then continue the workflow. It MUST NOT stop and suggest the user run `bubbles.workflow` with a different mode.
 - **⚠️ NEVER SUGGEST COMMANDS TO CONTINUE:** Do not end your output with "run this command to continue" or "suggested next steps" or "resume with". Instead, execute those steps yourself. The workflow is not done until all specs are done or terminally blocked.
 - **⚠️ CHILD OUTPUTS WITH MANUAL FOLLOW-UPS ARE NOT SUCCESS:** If any specialist returns narrative continuation items such as `Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, or `Re-run /bubbles.validate`, treat that output as malformed or incomplete unless the result envelope is `completed_diagnostic`/`completed_owned` and the referenced work is already evidenced as complete.
+
+## RESULT-ENVELOPE
+
+- Use `completed_owned` when the workflow executed its required phases, routed validation-owned certification correctly, and no follow-up work remains for the targeted specs.
+- Use `route_required` when orchestration determined that another owner or specialist workflow must continue before the target can be considered complete.
+- Use `blocked` when retry limits, policy constraints, or concrete environment blockers prevent the workflow from progressing.
 
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). Never claim specialist work without actually calling `runSubagent`. Verify every specialist's output before advancing. Never batch-advance phases or skip phases in mode's `phaseOrder`. Track per-spec specialist completion ledger (G022).
 

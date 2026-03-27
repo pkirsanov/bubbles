@@ -928,7 +928,7 @@ if [[ -f "$report_file" ]]; then
     fi
   done
 
-  pending_placeholders="$({ grep -nE '\[PENDING[^]]*\]|header only initially|Ready for /bubbles\.|Re-run /bubbles\.validate|Commit the fix|Record DoD evidence|Run full E2E suite' "$report_file"; } || true)"
+  pending_placeholders="$({ grep -nE '\[PENDING[^]]*\]|header only initially|Ready for /bubbles\.|Re-run /bubbles\.validate|Commit the fix|Record DoD evidence|Run full E2E suite|^#{1,4}[[:space:]]+Next Steps|^-[[:space:]]+Next Steps|Recommended routing:|Recommended resolution:|Recommended next move' "$report_file"; } || true)"
   if [[ -n "$pending_placeholders" ]]; then
     fail "report.md contains unresolved placeholder or manual follow-up language"
     echo "$pending_placeholders" | sed 's/^/   -> /'
