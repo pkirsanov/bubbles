@@ -692,9 +692,12 @@ cmd_dod() {
   total=0; checked=0; unchecked_count=0
   for f in $(find "$spec_dir" -name "scopes.md" -o -name "scope.md" | grep -v node_modules); do
     local t c u
-    t="$(grep -c '^\- \[' "$f" 2>/dev/null || echo 0)"
-    c="$(grep -c '^\- \[x\]' "$f" 2>/dev/null || echo 0)"
-    u="$(grep -c '^\- \[ \]' "$f" 2>/dev/null || echo 0)"
+    t="$(grep -c '^\- \[' "$f" 2>/dev/null || true)"
+    c="$(grep -c '^\- \[x\]' "$f" 2>/dev/null || true)"
+    u="$(grep -c '^\- \[ \]' "$f" 2>/dev/null || true)"
+    t="${t:-0}"
+    c="${c:-0}"
+    u="${u:-0}"
     total=$((total + t))
     checked=$((checked + c))
     unchecked_count=$((unchecked_count + u))
@@ -935,7 +938,8 @@ cmd_doctor() {
   for cfg in .github/copilot-instructions.md .specify/memory/agents.md; do
     if [[ -f "$REPO_ROOT/$cfg" ]]; then
       local c
-      c=$(grep -c 'TODO' "$REPO_ROOT/$cfg" 2>/dev/null || echo 0)
+      c=$(grep -c 'TODO' "$REPO_ROOT/$cfg" 2>/dev/null || true)
+      c=${c:-0}
       todo_count=$((todo_count + c))
     fi
   done
@@ -1436,8 +1440,13 @@ cmd_metrics() {
       fi
       echo "Metrics Summary:"
       echo "  Total events: $(wc -l < "$CONTROL_PLANE_METRICS_FILE")"
-      echo "  Gate checks: $(grep -c '"type":"gate_check"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || echo 0)"
-      echo "  Phase completions: $(grep -c '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || echo 0)"
+      local gate_checks phase_completions
+      gate_checks="$(grep -c '"type":"gate_check"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || true)"
+      phase_completions="$(grep -c '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || true)"
+      gate_checks="${gate_checks:-0}"
+      phase_completions="${phase_completions:-0}"
+      echo "  Gate checks: $gate_checks"
+      echo "  Phase completions: $phase_completions"
       ;;
     gates)
       if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
@@ -1531,7 +1540,8 @@ cmd_upgrade() {
   local recs=0
   if [[ -f "$REPO_ROOT/.github/copilot-instructions.md" ]]; then
     local t
-    t=$(grep -c 'TODO' "$REPO_ROOT/.github/copilot-instructions.md" 2>/dev/null || echo 0)
+    t=$(grep -c 'TODO' "$REPO_ROOT/.github/copilot-instructions.md" 2>/dev/null || true)
+    t=${t:-0}
     if [[ "$t" -gt 0 ]]; then
       echo "  ⚠️  copilot-instructions.md has $t unfilled TODO items"
       recs=$((recs + 1))
@@ -1539,7 +1549,8 @@ cmd_upgrade() {
   fi
   if [[ -f "$REPO_ROOT/.specify/memory/agents.md" ]]; then
     local t
-    t=$(grep -c 'TODO' "$REPO_ROOT/.specify/memory/agents.md" 2>/dev/null || echo 0)
+    t=$(grep -c 'TODO' "$REPO_ROOT/.specify/memory/agents.md" 2>/dev/null || true)
+    t=${t:-0}
     if [[ "$t" -gt 0 ]]; then
       echo "  ⚠️  agents.md has $t unfilled TODO items"
       recs=$((recs + 1))
