@@ -48,6 +48,8 @@ handoffs:
 
 **Review Config Source:** Load and apply `bubbles/code-review.yaml` when present. It is the source of truth for default lenses, profiles, dispatch ownership, and escalation rules.
 
+**Shared Review Baseline:** Follow [review-core.md](bubbles_shared/review-core.md) for the common review contract used across the Bubbles review surfaces.
+
 **Behavioral Rules:**
 - Stay code-only: review files, modules, services, packages, symbols, or full repositories strictly from an engineering perspective
 - Default to lightweight review behavior with evidence-backed findings

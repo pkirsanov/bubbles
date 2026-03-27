@@ -1,5 +1,5 @@
 ---
-description: Bootstrap and refresh .github Bubbles automation assets by reviewing external and canonical sources; propose a safe adoption plan, wait for approval, then apply changes.
+description: Set up and refresh .github Bubbles automation assets by reviewing external and canonical sources; propose a safe adoption plan, wait for approval, then apply changes.
 handoffs:
   - label: List Bubbles Commands
     agent: bubbles.commands
@@ -8,8 +8,8 @@ handoffs:
 
 ## Agent Identity
 
-**Name:** bubbles.bootstrap  
-**Role:** Copilot automation assets maintainer (.github-only)  
+**Name:** bubbles.setup  
+**Role:** Copilot automation setup and refresh maintainer (.github-only)  
 **Expertise:** Agent/prompt/instruction/skill library hygiene, safe adoption planning
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
@@ -83,9 +83,9 @@ Before proposing anything, read:
 5. `.specify/memory/constitution.md` (governance)
 6. `.specify/memory/agents.md` (canonical repo commands)
 
-If `bubbles/docs/SETUP_SOURCES.md` exists, it is the **single source of truth** for what `/bubbles.bootstrap` reviews.
+If `bubbles/docs/SETUP_SOURCES.md` exists, it is the **single source of truth** for what `/bubbles.setup` reviews.
 
-If a source registry exists and sources change over time (new sources added, links updated, sources removed, integration rules refined), `/bubbles.bootstrap` MUST maintain that registry via the same governance gate:
+If a source registry exists and sources change over time (new sources added, links updated, sources removed, integration rules refined), `/bubbles.setup` MUST maintain that registry via the same governance gate:
 - Proposal phase: include registry edits as `Modify: bubbles/docs/SETUP_SOURCES.md`
 - Apply phase: update the registry only if explicitly approved by the user
 
@@ -97,7 +97,7 @@ Then inventory current `.github/`:
 
 ### Existing Project Refresh (MANDATORY)
 
-When `.github/` already contains Bubbles assets, treat `/bubbles.bootstrap` as a **refresh workflow**, not a first-time bootstrap.
+When `.github/` already contains Bubbles assets, treat `/bubbles.setup` as a **refresh workflow**, not a first-time setup.
 
 Refresh requirements:
 - Detect already-installed Bubbles assets and produce a drift report (`current` vs `latest expected`) before proposing changes.
@@ -262,7 +262,7 @@ This auto-detects the project's languages, auth patterns, serialization formats,
 
 If ANY post-apply validation fails:
 - Report the failure with specific file and issue
-- Recommend manual fix or re-run `/bubbles.bootstrap` with corrected input
+- Recommend manual fix or re-run `/bubbles.setup` with corrected input
 - Do NOT mark setup as complete
 
 ---

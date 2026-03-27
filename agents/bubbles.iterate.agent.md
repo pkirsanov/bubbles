@@ -79,7 +79,7 @@ handoffs:
 - Do not accept a failing test change until it has been reconciled against `spec.md`, `design.md`, `scopes.md`, and DoD; fix code to plan unless the plan is corrected first
 - Enforce `execution-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md` when dispatching work.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
-- Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
+- Only invoke `/bubbles.clarify` directly when the user explicitly requests interactive clarification; internal routing passes are allowed when planning owners still leave blocking ambiguity
 
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
@@ -480,7 +480,8 @@ When the selected mode's `phaseOrder` includes `analyze` (e.g., `improve-existin
 When the selected mode's `phaseOrder` includes `bootstrap`:
 1. Invoke `bubbles.design` via `runSubagent` with `mode: non-interactive` to create/update design.md
 2. Invoke `bubbles.plan` via `runSubagent` to create/update scopes.md with Gherkin scenarios, test plans, DoD
-3. Verify Gate G033 (design readiness) passes before proceeding to implement
+3. If ambiguity remains after those owners run, invoke `bubbles.clarify` as a routing step, then immediately dispatch the owning specialist it identifies
+4. Verify Gate G033 (design readiness) passes before proceeding to implement
 
 **For each phase in the mode's phaseOrder:**
 

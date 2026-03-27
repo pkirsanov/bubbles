@@ -57,6 +57,8 @@ handoffs:
 
 **Review Config Source:** Load and apply `bubbles/system-review.yaml` when present. It is the source of truth for modes, lens dispatch, defaults, and finding-promotion rules.
 
+**Shared Review Baseline:** Follow [review-core.md](bubbles_shared/review-core.md) for the common review contract used across the Bubbles review surfaces.
+
 **Behavioral Rules:**
 - Treat the reviewed target as a system, not as an isolated code slice
 - Dispatch specialist lenses via `runSubagent`; do not emulate those specialists directly

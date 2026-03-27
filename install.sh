@@ -436,7 +436,7 @@ CROSSEOF
     cat > "${TARGET}/bubbles/docs/SETUP_SOURCES.md" <<'SRCEOF'
 # Bubbles Setup Sources Registry
 
-> Single source of truth for what `/bubbles.bootstrap` reviews.
+> Single source of truth for what `/bubbles.setup` reviews.
 
 ## Internal Sources
 
@@ -449,7 +449,7 @@ CROSSEOF
 
 ## External Sources
 
-> Add external libraries, skills, or references reviewed by bootstrap here.
+> Add external libraries, skills, or references reviewed by setup here.
 SRCEOF
   ok "Created ${TARGET}/bubbles/docs/SETUP_SOURCES.md"
     CREATED_COUNT=$((CREATED_COUNT + 1))
@@ -513,7 +513,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "  Then open VS Code and run these agents in order:"
   echo ""
   echo "     /bubbles.commands                   — Auto-detect your project and regenerate agents.md"
-  echo "     /bubbles.bootstrap mode: refresh    — Verify setup is complete"
+  echo "     /bubbles.setup mode: refresh        — Verify setup is complete"
   echo "     /bubbles.status                     — Check spec progress"
   echo "     /bubbles.analyst  <describe feature> — Start new feature work"
   echo "     /bubbles.workflow full-delivery      — Run the full pipeline"

@@ -30,6 +30,8 @@ handoffs:
 
 **Primary Mission:** Audit existing specs (`spec.md`, `design.md`, `scopes.md`) against the current codebase to determine whether each spec is still an accurate, trustworthy representation of the system. Classify each spec's freshness level, produce actionable guidance for maintenance agents, and optionally compact verbose spec artifacts. When drift is detected, automatically invoke `bubbles.docs` to sync standard documentation.
 
+**Shared Review Baseline:** Follow [review-core.md](bubbles_shared/review-core.md) for the common review contract used across the Bubbles review surfaces.
+
 **Why This Agent Exists:**
 
 Bubbles treats specs as the source of truth. But code evolves after specs are implemented:

@@ -118,7 +118,7 @@ This scans your project — detects tech stack, test frameworks, CLI entrypoint,
 Then verify the full setup:
 
 ```
-/bubbles.bootstrap mode: refresh
+/bubbles.setup mode: refresh
 ```
 
 This compares your config files against the latest Bubbles requirements and proposes any fixes.

@@ -33,3 +33,9 @@ Or:
 ```
 
 Then pick up wherever you left off.
+
+If you just want the fast talking-head summary before diving back in:
+
+```
+/bubbles.recap
+```

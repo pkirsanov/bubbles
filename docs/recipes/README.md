@@ -9,6 +9,7 @@ Optional execution tags you can append to many workflow commands:
 - `tdd: true` to force a red-green-first execution loop inside the already-approved implement/test path
 - `backlogExport: tasks|issues` to make `bubbles.plan` emit copy-ready backlog outputs per scope
 - `socratic: true` for bounded clarification before discovery/bootstrap
+- `bubbles.clarify` is different: use it when you explicitly want ambiguity classified and routed to the owning planning agent
 - `gitIsolation: true` for isolated branch/worktree setup when allowed
 - `autoCommit: scope` or `autoCommit: dod` for validated milestone commits
 - `maxScopeMinutes` and `maxDodMinutes` to keep scopes aggressively small
@@ -49,7 +50,8 @@ Baseline workflow law already requires spec/design/plan coherence, explicit Gher
 | [Regression Check](regression-check.md) | "I need to make sure new changes didn't break existing features" |
 | [Post-Implementation Hardening](post-impl-hardening.md) | "I want code cleaned up, stable, secure, and regression-free before shipping" |
 | [Chaos Testing](chaos-testing.md) | "I need to break things to find weaknesses" |
-| [Security Review](security-review.md) | "I need to check for security vulnerabilities" || [Spec Freshness Review](spec-freshness-review.md) | \"I need to check if my specs are still valid before running maintenance\" |
+| [Security Review](security-review.md) | "I need to check for security vulnerabilities" |
+| [Spec Freshness Review](spec-freshness-review.md) | "I need to check if my specs are still valid before running maintenance" |
 ## Planning & Design
 
 | Recipe | Problem → Solution |

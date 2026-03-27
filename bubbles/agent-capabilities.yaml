@@ -181,7 +181,7 @@ agents:
     delegatesRequired: false
     ownsArtifacts: []
     ownsPhases: []
-  bubbles.bootstrap:
+  bubbles.setup:
     class: utility
     canAskUserDirectly: false
     delegatesRequired: true
@@ -218,10 +218,10 @@ agents:
     ownsArtifacts: [ product-code ]
     ownsPhases: [ simplify ]
   bubbles.cinematic-designer:
-    class: planning
+    class: execution
     canAskUserDirectly: false
     delegatesRequired: true
-    ownsArtifacts: []
+    ownsArtifacts: [ product-code ]
     ownsPhases: []
   bubbles.recap:
     class: utility

@@ -14,6 +14,14 @@ This installs agents, scripts, prompts, and scaffolds your project config.
 
 ## Step 2: Check Health
 
+First verify the framework setup itself:
+
+```
+/bubbles.setup  mode: refresh
+```
+
+Then check overall project health:
+
 ```
 /bubbles.super  check my project health
 ```
@@ -43,6 +51,12 @@ The bootstrap created files with `TODO` markers. Update them:
 ```
 
 This auto-detects your project and fills in the command registry.
+
+If you change framework files or install additional Bubbles assets later, rerun:
+
+```
+/bubbles.setup  mode: refresh
+```
 
 ## Step 5: Install Git Hooks
 

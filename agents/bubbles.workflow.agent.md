@@ -67,7 +67,7 @@ handoffs:
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
 - **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
 - **Never mark a spec as blocked due to "zero implementation code"** — that means the implement phase has not been invoked yet. Invoke `bubbles.implement` via `runSubagent` to do the work.
-- **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts.
+- **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts. Invoke `bubbles.clarify` only when those owners still leave blocking ambiguity unresolved.
 - **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
 - Require gate results before promoting spec status.
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
@@ -628,7 +628,7 @@ If selected work is new or underspecified (missing robust design/spec/scopes), r
 
 1. **Design** → invoke `runSubagent` with bubbles.design role: create/refine design.md for the feature
    - bubbles.design auto-detects from-analysis depth when analyst+UX sections are present in spec.md
-2. **Clarify** → invoke `runSubagent` with bubbles.clarify role: resolve ambiguity in spec/design
+2. **Clarify (only if ambiguity remains)** → invoke `runSubagent` with bubbles.clarify role: classify ambiguity and identify the owning specialist
 3. **Plan** → invoke `runSubagent` with bubbles.plan role: create scopes.md with scenarios/tests/DoD
 
 Repeat until ready. Exit criteria:
@@ -665,7 +665,7 @@ Before invoking `bubbles.implement` via `runSubagent`, the orchestrator MUST ver
 
 1. **Auto-escalate** by invoking the bootstrap agents inline:
    - `runSubagent(bubbles.design)` with instruction: "Create or complete design.md for this feature based on spec.md"
-   - `runSubagent(bubbles.clarify)` with instruction: "Resolve ambiguities between spec.md and design.md"
+   - `runSubagent(bubbles.clarify)` with instruction: "Classify ambiguities between spec.md and design.md and identify the owning specialist"
    - `runSubagent(bubbles.plan)` with instruction: "Create or complete scopes.md with Gherkin scenarios, Test Plan, and DoD"
 2. **Re-verify** the readiness checks after bootstrap agents complete.
 3. **If still failing after 3 bootstrap iterations** → mark spec `blocked` with reason: "G033: design artifacts could not be created — manual design input required."
@@ -1271,7 +1271,7 @@ For each phase in the mode's `phaseOrder`, the workflow agent MUST invoke the co
 | `analyze` | `bubbles.workflow` (self) → delegates to `bubbles.analyst`, `bubbles.ux` | Business analysis, competitive research, UX wireframes |
 | `discover` | `bubbles.workflow` (self) | Discover and prioritize work items |
 | `select` | `bubbles.iterate` | Select next scope, prepare artifacts |
-| `bootstrap` | `bubbles.workflow` (self) → delegates to `bubbles.design`, `bubbles.clarify`, `bubbles.plan` | Create missing spec/design/scopes |
+| `bootstrap` | `bubbles.workflow` (self) → delegates to `bubbles.design`, `bubbles.plan` | Create missing spec/design/scopes |
 | `harden` | `bubbles.harden` | Deep spec/scope hardening, Gherkin-to-E2E coverage |
 | `gaps` | `bubbles.gaps` | Identify and fix implementation/design/spec gaps |
 | `bug` | `bubbles.bug` | Discover, document, and analyze bugs with structured artifacts; delegate fix to bubbles.implement |
@@ -1312,7 +1312,7 @@ For each target spec in order:
    2. Check `scopes.md` exists and has Gherkin scenarios (`Given/When/Then`) and DoD items (`- [ ]`)
    3. If either check fails → **DO NOT proceed to implement.** Instead:
       - Invoke `runSubagent(bubbles.design)` with: "Create or complete design.md for {spec_id} based on spec.md"
-      - Invoke `runSubagent(bubbles.clarify)` with: "Resolve ambiguities in spec.md and design.md for {spec_id}"
+      - Invoke `runSubagent(bubbles.clarify)` only if ambiguity remains after the owning planning agents run
       - Invoke `runSubagent(bubbles.plan)` with: "Create or complete scopes.md with Gherkin scenarios, Test Plan, and DoD for {spec_id}"
       - Re-verify readiness. If still failing after 3 iterations → mark spec `blocked` with reason "G033: design artifacts incomplete"
    4. **Exempt:** `bugfix-fastlane` mode skips this check (bug.md + spec.md suffice).
@@ -1385,7 +1385,7 @@ For each target spec in order:
 
    ```
    Phase 1: select     → runSubagent("Execute select for 027",     bubbles.iterate role + context)
-   Phase 2: bootstrap  → runSubagent("Execute bootstrap for 027",  bubbles.design + bubbles.clarify + bubbles.plan — creates/verifies design.md + scopes.md)
+   Phase 2: bootstrap  → runSubagent("Execute bootstrap for 027",  bubbles.design + bubbles.plan — creates/verifies design.md + scopes.md)
    Phase 3: implement  → runSubagent("Execute implement for 027",  bubbles.implement role + context) [G033 verified]
    Phase 4: test       → runSubagent("Execute test for 027",       bubbles.test role + context)
    Phase 5: docs       → runSubagent("Execute docs for 027",       bubbles.docs role + context)

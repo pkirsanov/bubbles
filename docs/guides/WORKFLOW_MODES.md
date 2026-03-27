@@ -133,7 +133,7 @@ select → bootstrap → finalize
 
 ### <img src="../../icons/julian-glass.svg" width="20"> iterate
 
-Continue scope-by-scope implementation within an existing spec.
+Pick the highest-priority next slice inside an existing spec and run one iteration through the right specialists.
 
 ```
 [priority pick] → [auto-selected mode] → specialist phases → finalize

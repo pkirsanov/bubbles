@@ -46,7 +46,7 @@ Common source modules:
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
 | `bubbles.workflow` | run end-to-end spec delivery or resume a workflow | `bubbles/workflows.yaml`, `scope-workflow.md`, `state-gates.md` |
-| `bubbles.iterate` | advance the next eligible scope in an existing spec, with narrow review fallback when the next action is ambiguous | `scope-workflow.md`, `completion-governance.md`, `quality-gates.md` |
+| `bubbles.iterate` | pick the highest-priority next work slice inside an existing spec and drive one iteration through the right specialists | `scope-workflow.md`, `completion-governance.md`, `quality-gates.md` |
 | `bubbles.code-review` | run an engineering-only code review before deciding what to fix | `bubbles/code-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
 | `bubbles.system-review` | run a holistic feature/component/system review before deciding what to spec, fix, or streamline | `bubbles/system-review.yaml`, `artifact-ownership.md`, `quality-gates.md` |
 
@@ -70,7 +70,7 @@ Common source modules:
 | `bubbles.design` | create or repair technical design | `design-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.plan` | break work into scopes, tests, and DoD | `plan-bootstrap.md`, `planning-core.md`, `artifact-lifecycle.md`, `scope-templates.md` |
 | `bubbles.grill` | pressure-test ideas, plans, and workflow choices before committing effort | `artifact-ownership.md`, `planning-core.md`, `quality-gates.md` |
-| `bubbles.clarify` | resolve ambiguity before planning or implementation | `clarify-bootstrap.md`, `artifact-ownership.md` |
+| `bubbles.clarify` | classify ambiguity, identify contradictions, and route artifact changes to the owning specialist | `clarify-bootstrap.md`, `artifact-ownership.md` |
 | `bubbles.harden` | turn findings into stronger scope/test/design follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
 | `bubbles.gaps` | find missing behavior, tests, or scope coverage | `quality-gates.md`, `artifact-lifecycle.md` |
 
@@ -78,13 +78,13 @@ Common source modules:
 
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
-| `bubbles.bootstrap` | create missing feature or bug artifact skeletons | `scope-templates.md`, `artifact-lifecycle.md` |
+| `bubbles.setup` | set up or refresh framework-owned `.github` assets and project config guidance | `scope-templates.md`, `artifact-lifecycle.md` |
 | `bubbles.stabilize` | fix flakiness, environment instability, or infrastructure reliability issues | `quality-gates.md`, `execution-ops.md` |
 | `bubbles.security` | run security-oriented findings and follow-up | `quality-gates.md`, `artifact-lifecycle.md` |
 | `bubbles.simplify` | reduce over-engineering and simplify changed code | `implement-bootstrap.md`, `operating-baseline.md` |
 | `bubbles.spec-review` | audit specs for freshness — check if artifacts still match code reality | read-only audit, trust classification |
 | `bubbles.regression` | detect cross-spec conflicts, test baseline regressions, coverage decreases, and design contradictions | `e2e-regression.md`, `quality-gates.md` |
-| `bubbles.cinematic-designer` | produce premium design-system or high-polish UI output | prompt-specific guidance plus shared governance index |
+| `bubbles.cinematic-designer` | implement premium, high-polish UI output in real frontend code | prompt-specific guidance plus shared governance index |
 
 ## Utilities
 

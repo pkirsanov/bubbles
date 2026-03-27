@@ -19,7 +19,7 @@
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
-| <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration scope runner. Quietly keeps the next scope moving and only falls back to review when the next executable action is unclear. | *"I'll do whatever you need, Julian."* |
+| <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration work picker. Chooses the next executable slice and runs the right specialist chain. | *"I'll do whatever you need, Julian."* |
 | <img src="../icons/green-bastard-outline.svg" width="28"> | `bubbles.code-review` | Green Bastard | Engineering-first code reviewer. Reviews repos, services, packages, modules, and paths strictly from a code perspective. | *"From parts unknown, I can smell what's broken in the code."* |
 | <img src="../icons/orangie-fishbowl.svg" width="28"> | `bubbles.system-review` | Orangie | Holistic system reviewer. Sees everything from the fishbowl. Reviews features, components, journeys, and full systems across product, UX, runtime, trust, simplification, and engineering lenses. | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
 
@@ -43,7 +43,7 @@
 | <img src="../icons/sarah-clipboard.svg" width="28"> | `bubbles.design` | Sarah | Turns loose ideas into a clean architecture and keeps the details from falling apart. | *"Let's get this organized before anybody breaks it."* |
 | <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Ran the trailer park's business side. Defines scopes. Keeps the books. | *"Jim, you need a plan."* |
 | <img src="../icons/private-dancer-lamp.svg" width="28"> | `bubbles.grill` | Leslie Dancer | Pressure-tests ideas, plans, and workflow choices before effort gets burned on weak assumptions. | *"Let's get it under the light and see if it survives."* |
-| <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Asks obvious questions that somehow reveal important things. | *"What in the f— is going on here?"* |
+| <img src="../icons/george-green-badge.svg" width="28"> | `bubbles.clarify` | George Green | Calls out what is unclear and tells you which owner needs to fix it. | *"What in the f— is going on here?"* |
 | <img src="../icons/conky-puppet.svg" width="28"> | `bubbles.harden` | Conky | Puppet alter-ego. Says uncomfortable truths. Confrontational. Necessary. | *"Why don't you go pave your cave?"* |
 | <img src="../icons/phil-collins-baam.svg" width="28"> | `bubbles.gaps` | Phil Collins | BAAAAAM! Finds the gaps nobody else sees. | *"What are ya lookin' at my gut fer?"* |
 
@@ -66,16 +66,16 @@
 | <img src="../icons/cyrus-sunglasses.svg" width="28"> | `bubbles.security` | Cyrus | In our system — safety is ALWAYS ON. Finds threats. Confrontational. | *"F*** off, I got work to do."* |
 | <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Duct tape fixes everything. Cuts through the noise. | *"Just tape it up and move on."* |
 | <img src="../icons/gary-laser-eyes.svg" width="28"> | `bubbles.spec-review` | Gary Laser Eyes | Sees right through stale specs. Checks if artifacts still match reality. | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
-| <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI. | *"I was in Skid Row!"* |
+| <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Celebrity guest. Over-the-top production value. Rock star UI implementation. | *"I was in Skid Row!"* |
 
 ## <img src="../icons/camera-crew.svg" width="32"> Utilities
 
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Looks at the camera and tells you what just happened this session. | *"So basically what happened was..."* |
+| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and what comes next. | *"So basically what happened was..."* |
 | <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
-| <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.bootstrap` | Cory & Trevor | The errand duo. Set up scaffolding. Do the prep. | *"Smokes, let's go."* |
+| <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.setup` | Cory & Trevor | The errand duo. Set up or refresh the framework layer. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="28"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
 | <img src="../icons/sam-binoculars.svg" width="28"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"I used to be a vet, you know. I got specialties."* |
 
@@ -93,7 +93,7 @@
 | `sunnyvale i-am-the-liquor` | `bubbles.audit` | *"I AM the liquor."* |
 | `sunnyvale get-two-birds-stoned` | `bubbles.implement` + `bubbles.test` | *"Get two birds stoned at once"* |
 | `sunnyvale i-got-work-to-do` | `bubbles.implement` | *"I got work to do."* |
-| `sunnyvale smokes-lets-go` | `bubbles.bootstrap` | *"Smokes, let's go."* |
+| `sunnyvale smokes-lets-go` | `bubbles.setup` | *"Smokes, let's go."* |
 | `sunnyvale know-what-im-sayin` | `bubbles.docs` | *"Know what I'm sayin'?"* |
 | `sunnyvale somethings-fucky` | `bubbles.validate` | *"Something's fucky"* |
 | `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
@@ -392,7 +392,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | New feature from scratch | `/bubbles.analyst  <describe feature>` |
 | Plan and scope a feature | `/bubbles.plan  <feature>` |
 | Full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
-| Bootstrap artifacts | `/bubbles.bootstrap  create feature for <name>` |
+| Refresh framework setup | `/bubbles.setup  mode: refresh` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
 | **Don't know what to do?** | **`/bubbles.super  help me <describe goal>`** |
 

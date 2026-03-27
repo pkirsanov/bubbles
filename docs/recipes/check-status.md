@@ -26,6 +26,14 @@ Shows:
 /bubbles.status  show status of 042-catalog-assistant
 ```
 
+## If You Want The Narrative Version
+
+Use `bubbles.recap` when you want the quick human summary instead of the structured state report.
+
+```
+/bubbles.recap
+```
+
 ## What Status Reports
 
 - **Spec status:** not_started / in_progress / done / blocked

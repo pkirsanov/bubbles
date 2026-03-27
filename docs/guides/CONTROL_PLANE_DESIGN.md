@@ -161,7 +161,7 @@ If `bubbles.validate` reopens work, it should never just uncheck a box and stop.
 
 `bubbles.grill` should remain distinct from `bubbles.clarify`.
 
-- `bubbles.clarify` repairs ambiguity inside artifacts.
+- `bubbles.clarify` classifies ambiguity, identifies the blocked decision, and routes the artifact change to the owning specialist.
 - `bubbles.grill` pressure-tests assumptions and, when enabled, interrogates the user before irreversible design or behavior moves.
 
 The control plane should support these grill modes:

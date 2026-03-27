@@ -250,7 +250,7 @@ autoEscalation:
       action: invoke bubbles.design → bubbles.plan → continue current workflow
     missingDesignBeforeImplement:
       description: implement phase reached but design.md or scopes.md are missing/stubs (G033 failure)
-      action: invoke bubbles.design → bubbles.clarify → bubbles.plan inline → then proceed to implement
+      action: invoke bubbles.design → bubbles.plan inline → then proceed to implement
     specsNeedHardening:
       description: Specs/scopes are underspecified, missing Gherkin, weak DoD
       action: invoke bubbles.harden inline → continue current workflow
@@ -622,7 +622,7 @@ modes:
     constraints:
       valueFirstSelection: true
       allowBootstrapIterations: true
-      bootstrapAgents: [ bubbles.design, bubbles.clarify, bubbles.plan ]
+      bootstrapAgents: [ bubbles.design, bubbles.plan ]
       bootstrapLoopExit: design_spec_scopes_ready
       executionWorkflowMode: full-delivery
       usePriorityScoring: true
@@ -662,7 +662,7 @@ modes:
     constraints:
       requireDesignBeforeImplement: true
       allowBootstrapIterations: true
-      bootstrapAgents: [ bubbles.design, bubbles.clarify, bubbles.plan ]
+      bootstrapAgents: [ bubbles.design, bubbles.plan ]
       bootstrapLoopExit: design_spec_scopes_ready
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -690,7 +690,7 @@ modes:
       commitOnDoneOnlyRequired: true
       requireDesignBeforeImplement: true
       allowBootstrapIterations: true
-      bootstrapAgents: [ bubbles.design, bubbles.clarify, bubbles.plan ]
+      bootstrapAgents: [ bubbles.design, bubbles.plan ]
       bootstrapLoopExit: design_spec_scopes_ready
       requirePerSpecPhaseCompletion: [ validate, audit, chaos ]
       requireAllDodItemsCheckedForDone: true

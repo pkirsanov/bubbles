@@ -4,9 +4,9 @@ handoffs:
   - label: Check framework health
     agent: bubbles.status
     prompt: Show current spec/scope progress across all specs.
-  - label: Bootstrap project
-    agent: bubbles.bootstrap
-    prompt: Scaffold or refresh project configuration and artifacts.
+  - label: Setup project
+    agent: bubbles.setup
+    prompt: Set up or refresh project configuration and framework artifacts.
   - label: Review spec freshness
     agent: bubbles.spec-review
     prompt: Audit specs for staleness and classify trust levels so maintenance agents know what to rely on.
@@ -379,4 +379,4 @@ When the user's request is ambiguous, use this priority:
 8. If about progress -> `status`
 9. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
 10. If about what to do next / which agent / which mode -> Platform Concierge
-10. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly
+11. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

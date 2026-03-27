@@ -15,3 +15,4 @@ Constraints:
 - Track work with `manage_todo_list`
 - One feature-resolution attempt, then fail fast if the target is still ambiguous
 - No redundant rereads without a new reason
+- Do not directly edit foreign-owned planning artifacts during clarification; route the required changes to the owning agent

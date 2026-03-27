@@ -8,6 +8,14 @@ Use `bubbles.super` when the problem is about the Bubbles framework itself: heal
 
 ## Check Project Health
 
+Refresh the framework-owned setup first when you have just installed or upgraded Bubbles:
+
+```
+/bubbles.setup  mode: refresh
+```
+
+Then run the broader health checks:
+
 ```
 /bubbles.super  check my project health and fix any issues
 ```
@@ -111,9 +119,10 @@ Use `bubbles.super` when something in the framework itself is confused, blocked,
 
 /bubbles.super  help me check whether this repo is Bubbles-ready
 → Responds with:
-  1. /bubbles.super  doctor --heal
-  2. /bubbles.commands
-  3. /bubbles.super  install hooks
+  1. /bubbles.setup  mode: refresh
+  2. /bubbles.super  doctor --heal
+  3. /bubbles.commands
+  4. /bubbles.super  install hooks
 ```
 
 ### Still Not Sure?
