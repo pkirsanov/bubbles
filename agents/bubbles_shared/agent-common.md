@@ -54,6 +54,10 @@ Load the smallest authoritative module set that matches the role and current pha
 | What are gates G054–G064 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets, owner-only remediation, concrete results, child-workflow depth)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
 | Who owns state.json certification vs execution claims? | `agent-ownership.yaml`, `agent-capabilities.yaml`, `scope-workflow.md` |
 
+## Command Prefix Convention
+
+When any agent emits a command recommendation, prompt example, or next-step instruction that references a Bubbles agent, it MUST use the `/` slash prefix: `/bubbles.workflow`, `/bubbles.validate`, `/bubbles.test`. The `@` prefix is NEVER correct for Bubbles agent invocations — `@bubbles.*` references are wrong and must not appear in agent output.
+
 ## Artifact Ownership And Delegation Contract
 
 Use [artifact-ownership.md](artifact-ownership.md) as the single source of truth for ownership boundaries and foreign-artifact routing.

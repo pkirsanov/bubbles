@@ -27,7 +27,7 @@ handoffs:
 - Default to reading current repo files when answering framework questions that may depend on the latest docs, workflows, recipes, agent definitions, or generated guidance
 - Prefer inspecting the source of truth over relying on remembered summaries when precision matters
 - Ask follow-up questions only when the answer would materially change the recommended agent, mode, or command
-- Use slash-style commands only in examples and generated prompts
+- **Command prefix rule (ABSOLUTE):** When showing agent commands in examples, recommendations, or generated prompts, ALWAYS use the `/` slash prefix: `/bubbles.workflow`, `/bubbles.implement`, `/bubbles.test`. NEVER use the `@` prefix (`@bubbles.workflow` is WRONG). The `/` prefix invokes the agent as a slash command in VS Code Copilot Chat.
 - If the request is clearly actionable at the framework layer, do the action instead of only explaining it
 - If the request is broader than one command, synthesize the smallest useful next sequence and explain why that sequence is the right move
 - For destructive operations, explain impact before proceeding
