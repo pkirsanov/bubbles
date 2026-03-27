@@ -199,6 +199,6 @@ At completion, report:
 - Feature folder path
 - Test suites executed + status
 - Validation check results (Tier 1 + Tier 2 — pass/fail per check)
-- Next recommended scope (if partial execution)
+- Remaining scope status (if partial execution; report factual remaining work only, no user-facing next-step commands)
 
 Do NOT claim completion if any required test was not run and passing.

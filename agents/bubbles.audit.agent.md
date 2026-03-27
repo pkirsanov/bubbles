@@ -402,7 +402,7 @@ All checks pass, no issues found:
 🚀 SHIP_IT
 
 All audit checks passed.
-Feature is ready for review and merge.
+Audit is clean and no routed repair work remains.
 
 Commands verified:
 - Build: [BUILD_COMMAND] ✅
@@ -438,10 +438,9 @@ Blocking Issues:
 1. [HIGH] [issue] - Must be fixed
 2. [HIGH] [issue] - Must be fixed
 
-Action Required:
-- Fix the listed issues
-- Re-run /bubbles.validate
-- Re-run /bubbles.audit
+Disposition:
+- Emit `route_required` or `blocked` with the owning specialist and concrete blocker/fix packet.
+- Do NOT tell the user to rerun validation or audit manually.
 ```
 
 ### 🔴 DO_NOT_SHIP

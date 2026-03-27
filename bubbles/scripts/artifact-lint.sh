@@ -309,7 +309,18 @@ if [[ -f "$uservalidation_file" ]]; then
       pass "All checklist bullet items use checkbox syntax"
     fi
   else
-    fail "uservalidation.md is missing '## Checklist' section"
+    legacy_checklist_section="$({
+      awk '
+        /^# / {next}
+        {print}
+      ' "$uservalidation_file"
+    } || true)"
+    legacy_checkbox_lines="$({ echo "$legacy_checklist_section" | grep -E '^- \[(x| )\] '; } || true)"
+    if [[ -n "$legacy_checkbox_lines" ]]; then
+      warn "uservalidation.md is using legacy checklist layout without '## Checklist' section"
+    else
+      fail "uservalidation.md is missing '## Checklist' section"
+    fi
   fi
 fi
 
@@ -904,18 +915,24 @@ fi
 for report_file in "${report_files[@]}"; do
 if [[ -f "$report_file" ]]; then
   required_report_headers=(
-    '^### Summary'
-    '^### Completion Statement'
-    '^### Test Evidence'
+    '^###[[:space:]]+Summary|^##[[:space:]]+Summary'
+    '^###[[:space:]]+Completion Statement|^##[[:space:]]+Completion Statement'
+    '^###[[:space:]]+Test Evidence|^##[[:space:]]+Test Evidence'
   )
 
   for required_header in "${required_report_headers[@]}"; do
     if grep -Eq "$required_header" "$report_file"; then
-      pass "report.md contains section: ${required_header#^}"
+      pass "report.md contains section matching: ${required_header#^}"
     else
-      fail "report.md missing required section: ${required_header#^}"
+      fail "report.md missing required section matching: ${required_header#^}"
     fi
   done
+
+  pending_placeholders="$({ grep -nE '\[PENDING[^]]*\]|header only initially|Ready for /bubbles\.|Re-run /bubbles\.validate|Commit the fix|Record DoD evidence|Run full E2E suite' "$report_file"; } || true)"
+  if [[ -n "$pending_placeholders" ]]; then
+    fail "report.md contains unresolved placeholder or manual follow-up language"
+    echo "$pending_placeholders" | sed 's/^/   -> /'
+  fi
 
   should_enforce_mode_gates="false"
   case "$state_status" in

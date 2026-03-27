@@ -9,6 +9,7 @@ if [[ "$script_dir" == *"/.github/bubbles/scripts" ]]; then
   shared_dir="$agents_dir/bubbles_shared"
   workflows_file="$root_dir/.github/bubbles/workflows.yaml"
   ownership_file="$root_dir/.github/bubbles/agent-ownership.yaml"
+  capabilities_file="$root_dir/.github/bubbles/agent-capabilities.yaml"
 else
   root_dir="${script_dir%/bubbles/scripts}"
   agents_dir="$root_dir/agents"

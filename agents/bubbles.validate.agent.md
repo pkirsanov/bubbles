@@ -18,6 +18,9 @@ handoffs:
 - If any changes are needed to fix validation failures, they must be made under a classified `specs/...` feature or bug target
 - Record evidence in the appropriate `report.md` using the rules in `evidence-rules.md`
 - Enforce `audit-core.md`, `test-fidelity.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md` during validation
+- Treat any unresolved manual continuation language as a validation failure, not as an acceptable handoff. Phrases like `Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, or `Re-run /bubbles.validate` indicate unfinished routed work unless they appear inside historical evidence blocks.
+- Never return a narrative checklist of follow-up actions for the user. Either complete the routed work inline, return `route_required` with a concrete owner packet, or return `blocked` with a concrete blocker.
+- Never certify or describe a spec/bug as complete when guard/lint output is missing, non-zero, or contradicted by unchecked DoD items, placeholder evidence, missing workflow metadata, or unresolved routed work.
 
 **⚠️ Anti-Fabrication for Validation (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
@@ -600,20 +603,10 @@ If NO unchecked items:
 |------|-----------|----------|----------------|
 | [item description] | [root cause found] | [severity] | [recommendation] |
 
-### Next Steps
+### Completion Disposition
 
-[If all passed:]
-- Ready for /bubbles.audit (final compliance check)
-- Ready for PR/merge
-
-[If user validation regressions found:]
-- Fix regressions with `/bubbles.bug` (for isolated bugs) or `/bubbles.implement` (for feature fixes)
-- Re-run /bubbles.validate after fixes
-- User regressions are BLOCKING — do not proceed to audit/merge
-
-[If other checks failed:]
-- Fix failing checks (often with `/bubbles.test` for test/coverage issues, or `/bubbles.gaps` for spec/design drift)
-- Re-run /bubbles.validate after fixes
+- If all checks passed: record the clean validation result, emit `completed_diagnostic`, and stop. Do NOT append user-facing continuation steps.
+- If user validation regressions or any other checks failed: either route the owning specialist inline or emit `route_required`/`blocked` with the concrete owner and reason. Do NOT tell the user to rerun validation manually.
 ```
 
 ### Step 7: Ownership Routing Loop (MANDATORY when issues found)

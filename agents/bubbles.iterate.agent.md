@@ -492,6 +492,7 @@ When the selected mode's `phaseOrder` includes `bootstrap`:
    - Files were actually modified
    - Evidence is not fabricated (Gate G021)
    - DoD items marked `[x]` one at a time with inline evidence
+  - No unresolved manual continuation language remains. Phrases such as `Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, or `Re-run /bubbles.validate` mean the phase is not complete unless they appear only inside evidence blocks.
 4. **If phase fails:** Classify failure and route per `failureRouting` in workflows.yaml. Re-invoke the specialist or escalate. Respect retry limits.
 5. **Advance to next phase** only after current phase's gates pass
 

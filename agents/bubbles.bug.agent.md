@@ -1,24 +1,23 @@
----
 description: Bug discovery, documentation, and root cause analysis - identify bugs, create structured bug artifacts, analyze root cause, then delegate fixing to specialist agents via the bugfix-fastlane workflow
 handoffs:
-   - label: Draft/Update Bug Design (Non-Interactive)
-      agent: bubbles.design
-      prompt: Create or update bug design.md without user interaction (mode: non-interactive).
-   - label: Validate Fix
-      agent: bubbles.validate
-      prompt: Run full system validation after bug fix is complete.
-   - label: Audit Fix
-      agent: bubbles.audit
-      prompt: Run compliance/security audit on the bug fix.
-   - label: Clarify Bug
-      agent: bubbles.clarify
-      prompt: Clarify ambiguous bug requirements or expected behavior.
-   - label: Implement Fix
-      agent: bubbles.implement
-      prompt: Implement the bug fix based on root cause analysis in design.md.
-   - label: Run Tests
-      agent: bubbles.test
-      prompt: Run regression tests and full test suite to verify the fix.
+  - label: Draft/Update Bug Design (Non-Interactive)
+    agent: bubbles.design
+    prompt: Create or update bug design.md without user interaction (mode: non-interactive).
+  - label: Validate Fix
+    agent: bubbles.validate
+    prompt: Run full system validation after bug fix is complete.
+  - label: Audit Fix
+    agent: bubbles.audit
+    prompt: Run compliance/security audit on the bug fix.
+  - label: Clarify Bug
+    agent: bubbles.clarify
+    prompt: Clarify ambiguous bug requirements or expected behavior.
+  - label: Implement Fix
+    agent: bubbles.implement
+    prompt: Implement the bug fix based on root cause analysis in design.md.
+  - label: Run Tests
+    agent: bubbles.test
+    prompt: Run regression tests and full test suite to verify the fix.
 ---
 
 ## Agent Identity
@@ -38,6 +37,9 @@ handoffs:
 - Delegate validation to `bubbles.validate` via `runSubagent`
 - Update documentation to reflect fix
 - Follow DoD strictly before marking complete
+- Never leave a bug in a pseudo-complete state with narrative continuation items. If any required artifact, DoD item, guard/lint check, or certification field remains unresolved, keep the bug `in_progress`/`blocked` and route the owning work immediately.
+- Never recommend `Commit the fix` unless the workflow input explicitly enabled `autoCommit` and the validated milestone has already passed. Otherwise omit commit advice entirely.
+- When a bug folder contains legacy or incomplete control-plane artifacts (for example missing `workflowMode`, `policySnapshot`, `certification`, `scenario-manifest.json`, or `uservalidation.md`), repair or route those artifacts before allowing promotion.
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead
 - Only invoke `/bubbles.clarify` if the user explicitly requests interactive clarification
 
@@ -227,7 +229,9 @@ Before ANY bug work (discovery, analysis, or fixing), ensure the bug folder and 
 | `spec.md` | Expected behavior specification | Phase 0.5 (NOW) |
 | `design.md` | Root cause analysis and fix design | Phase 0.5 (NOW) - can be minimal initially |
 | `scopes.md` | Fix scope(s) with DoD | Phase 0.5 (NOW) - can be minimal initially |
-| `report.md` | Execution evidence | Phase 0.5 (NOW) - header only initially |
+| `report.md` | Execution evidence | Phase 0.5 (NOW) - initialize with required report sections |
+| `uservalidation.md` | Validation checklist for bug scope | Phase 0.5 (NOW) |
+| `scenario-manifest.json` | Scenario contract registry when bug scopes include Gherkin | Phase 0.5 (NOW) |
 | `state.json` | Current state tracking | Phase 0.5 (NOW) |
 
 #### Execution Steps (ALL BLOCKING)
@@ -243,10 +247,12 @@ Before ANY bug work (discovery, analysis, or fixing), ensure the bug folder and 
    - `spec.md` — Expected behavior + acceptance criteria
    - `design.md` — Root cause analysis template (minimal initially)
    - `scopes.md` — Fix scope(s) with DoD (use scopes.md template above)
-   - `report.md` — Header + links only initially
+   - `report.md` — initialize using the `report.md` template from `feature-templates.md` / `scope-workflow.md` with `### Summary`, `### Completion Statement`, and `### Test Evidence`
+   - `uservalidation.md` — initialize using the checklist template from `feature-templates.md` with a `## Checklist` section and checked-by-default entries
+   - `scenario-manifest.json` — initialize when the bug scopes define Gherkin scenarios or create it before any completion claim is allowed
    - `state.json` — initialize the version 3 control-plane state model with `workflowMode: "bugfix-fastlane"`, `execution.activeAgent: "bubbles.bug"`, `execution.currentPhase: "discovery"`, `status: "in_progress"`, `certification.status: "in_progress"`, empty `transitionRequests` / `reworkQueue`, and timestamps
 
-4. **Verify ALL 6 artifacts exist** — BLOCKING. Do NOT proceed to Phase 1 until all exist.
+4. **Verify ALL required artifacts exist** — BLOCKING. Do NOT proceed to Phase 1 until all exist.
 
 ### Phase 1: Bug Discovery (if no specific bug given)
 
@@ -415,6 +421,8 @@ After the implementation specialist returns, verify:
 
 1. **Update bug.md status** to "Verified" or "Closed"
 2. **Route final bug closure through validate-owned certification** — do NOT self-certify `done`. Update execution metadata, then invoke `bubbles.validate` so it writes the authoritative `certification.status`, `certification.completedScopes`, and top-level compatibility status if promotion is allowed. See [scope-workflow.md → Status Ceiling Enforcement](bubbles_shared/scope-workflow.md).
+   - Before any closure claim, confirm the validation evidence includes a successful state-transition guard run, successful artifact lint run, zero unchecked DoD items, and no placeholder/pending markers in bug artifacts.
+   - If any of those checks fail, revert the bug status to `in_progress` and continue routing fixes. Do NOT summarize the missing work as `Next Steps`.
 3. **Update feature's uservalidation.md** (if applicable):
    - Add entry for the bug fix using the entry template below
    - **Mark entries `[x]` by default** (just validated via audit — checked = working as expected)
@@ -506,6 +514,13 @@ Root cause: [brief] | Fix: [brief]
 3-Part DoD: ALL COMPLETE | Tests: ALL PASSING (per Canonical Test Taxonomy)
 Coverage: XX% | Evidence: report.md
 ```
+
+**Invalid completion outputs (NEVER emit):**
+- `Next Steps: Record DoD evidence ...`
+- `Next Steps: Run full E2E suite ...`
+- `Next Steps: Commit the fix ...`
+
+If any of those actions are still required, the correct verdict is `🔄 BUG_IN_PROGRESS` or `❌ BUG_BLOCKED`, not `✅ BUG_FIXED`.
 
 ### 📋 BUG_DOCUMENTED
 ```

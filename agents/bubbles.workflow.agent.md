@@ -83,6 +83,7 @@ handoffs:
 - **⚠️ RUN-TO-COMPLETION (NON-NEGOTIABLE):** This agent MUST complete the entire workflow for ALL target specs. It MUST NOT stop mid-workflow to suggest commands or recommend the user run a different mode. If different actions are needed (hardening, gap closure, bug fixes, artifact repair), handle them inline via the Auto-Escalation Protocol below. The ONLY acceptable stop reasons are the terminal conditions defined in `autoEscalation.terminalStopConditions` in workflows.yaml.
 - **⚠️ AUTO-MODE-ESCALATION (NON-NEGOTIABLE):** When this agent discovers that the current phase cannot proceed because a prerequisite is unmet (e.g., specs need hardening, artifacts are missing, bugs block progress), it MUST invoke the appropriate specialist agents inline to resolve the issue and then continue the workflow. It MUST NOT stop and suggest the user run `bubbles.workflow` with a different mode.
 - **⚠️ NEVER SUGGEST COMMANDS TO CONTINUE:** Do not end your output with "run this command to continue" or "suggested next steps" or "resume with". Instead, execute those steps yourself. The workflow is not done until all specs are done or terminally blocked.
+- **⚠️ CHILD OUTPUTS WITH MANUAL FOLLOW-UPS ARE NOT SUCCESS:** If any specialist returns narrative continuation items such as `Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, or `Re-run /bubbles.validate`, treat that output as malformed or incomplete unless the result envelope is `completed_diagnostic`/`completed_owned` and the referenced work is already evidenced as complete.
 
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** See [agent-common.md → Gate G021](bubbles_shared/agent-common.md). Never claim specialist work without actually calling `runSubagent`. Verify every specialist's output before advancing. Never batch-advance phases or skip phases in mode's `phaseOrder`. Track per-spec specialist completion ledger (G022).
 
@@ -1056,6 +1057,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
       )
       ```
       **Verify:** Confirm bubbles.validate response contains gate results with actual execution evidence and a `## RESULT-ENVELOPE` section. If the envelope is missing, validation was skipped, or the evidence is fabricated → **re-invoke**. If the envelope outcome is `route_required`, invoke `nextRequiredOwner`, rerun the required checks, then rerun `bubbles.validate`. Accept legacy `## ROUTE-REQUIRED` output only as a compatibility fallback.
+      **Reject malformed success claims:** If the response still includes unresolved continuation bullets (`Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, `Re-run /bubbles.validate`) outside evidence blocks, treat validation as incomplete even if the prose sounds positive. Re-route or re-invoke instead of advancing.
 
       **Phase: `audit`**
       ```
@@ -1070,6 +1072,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
       )
       ```
       **Verify:** Confirm audit response contains a clear verdict, references specific gate checks, and includes a `## RESULT-ENVELOPE` section. If the envelope is missing, treat audit as malformed and re-invoke it. If the envelope outcome is `route_required`, invoke `nextRequiredOwner`, rerun the impacted checks, then rerun `bubbles.audit`. Accept legacy `## ROUTE-REQUIRED` output only as a compatibility fallback.
+      **Reject malformed success claims:** If audit claims clean status while also listing unresolved manual follow-ups, treat the response as malformed and continue the repair loop.
 
       **⚠️ POST-FIX-CYCLE VERIFICATION (MANDATORY after ALL fix cycle phases complete):**
       After the entire fix cycle for a round completes, the workflow agent MUST verify:

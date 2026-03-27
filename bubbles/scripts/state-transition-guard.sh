@@ -1089,6 +1089,15 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
   for test_path in "${test_files_in_plan[@]}"; do
     if [[ -f "$test_path" ]]; then
       pass "Test file exists: $test_path"
+    elif [[ "$test_path" != */* ]]; then
+      unique_match="$({ find "$feature_dir/../.." -type f -name "$test_path" 2>/dev/null; } || true)"
+      unique_match_count="$({ printf '%s\n' "$unique_match" | grep -c .; } || true)"
+      if [[ "$unique_match_count" -eq 1 ]]; then
+        warn "Test Plan uses basename-only path '$test_path'; uniquely resolved to $(echo "$unique_match" | sed "s#^$feature_dir/../..##")"
+      else
+        fail "Test Plan references non-existent or non-resolvable file: $test_path"
+        missing_test_files=$((missing_test_files + 1))
+      fi
     else
       fail "Test Plan references non-existent file: $test_path"
       missing_test_files=$((missing_test_files + 1))
@@ -1248,14 +1257,20 @@ for report_path in "${report_files[@]}"; do
     continue
   fi
 
-  required_headers=("### Summary" "### Completion Statement" "### Test Evidence")
+  required_headers=("^###[[:space:]]+Summary|^##[[:space:]]+Summary" "^###[[:space:]]+Completion Statement|^##[[:space:]]+Completion Statement" "^###[[:space:]]+Test Evidence|^##[[:space:]]+Test Evidence")
   for header in "${required_headers[@]}"; do
-    if grep -qE "^${header}" "$report_path"; then
-      pass "$(relative_artifact_path "$report_path") has section: $header"
+    if grep -qE "$header" "$report_path"; then
+      pass "$(relative_artifact_path "$report_path") has required report section"
     else
-      fail "$(relative_artifact_path "$report_path") missing required section: $header"
+      fail "$(relative_artifact_path "$report_path") missing required report section"
     fi
   done
+
+  pending_placeholders="$({ grep -nE '\[PENDING[^]]*\]|header only initially|Ready for /bubbles\.|Re-run /bubbles\.validate|Commit the fix|Record DoD evidence|Run full E2E suite' "$report_path"; } || true)"
+  if [[ -n "$pending_placeholders" ]]; then
+    fail "$(relative_artifact_path "$report_path") contains unresolved placeholder or manual follow-up language"
+    echo "$pending_placeholders" | sed 's/^/   -> /'
+  fi
 
   illegitimate_blocks=0
   total_blocks=0

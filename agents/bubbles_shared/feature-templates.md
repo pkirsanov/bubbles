@@ -163,6 +163,8 @@ Claims of completion/success must be evidence-linked; if any required evidence i
 ```markdown
 # User Validation Checklist
 
+## Checklist
+
 - [x] Baseline checklist initialized for this feature
 - [x] [Scenario or flow validated]
 - [x] [Another validated flow]
@@ -174,6 +176,7 @@ Rules:
 - Checklist items MUST use markdown checkbox syntax.
 - Entries created by agents after validation/audit MUST default to checked `[x]`.
 - Empty checklist or non-checkbox bullets are template violations.
+- The canonical checklist section heading is `## Checklist`. Legacy files that omit it should be upgraded before completion claims.
 
 ## scenario-manifest.json Template
 
