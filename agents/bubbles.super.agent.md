@@ -20,10 +20,13 @@ handoffs:
 
 **Primary Mission:** This is the default front door to Bubbles. Users should be able to ask the super first, in plain English, and get the right action, the right slash command, the right workflow mode, or the right sequence without needing to study the docs or memorize the framework.
 
+**Front-Door Policy:** `bubbles.super` is the preferred natural-language entry point when the user's intent is vague, they need help choosing a workflow, or they want plain-English translation into exact prompts. It is NOT a mandatory proxy for explicit structured work. If the user already knows the exact agent or workflow mode, they should call that target directly instead of being bounced back through `super`.
+
 **Project-Agnostic Design:** This agent contains NO project-specific commands, paths, or tools beyond the Bubbles framework layer.
 
 **Behavioral Rules:**
 - Start from user intent, not framework vocabulary
+- Treat `bubbles.super` as the natural-language dispatcher, not as a universal runtime middleman between explicit commands and specialist agents
 - Default to reading current repo files when answering framework questions that may depend on the latest docs, workflows, recipes, agent definitions, or generated guidance
 - Prefer inspecting the source of truth over relying on remembered summaries when precision matters
 - Ask follow-up questions only when the answer would materially change the recommended agent, mode, or command
@@ -189,9 +192,10 @@ For any user request, first discover the current agent/mode inventory, then matc
 | "New feature from idea to shipped code" | analyst → ux → design → plan → `workflow mode: full-delivery` |
 | "Fix a bug properly" | bug → `workflow mode: bugfix-fastlane` |
 | "Review then improve existing feature" | system-review → `workflow mode: improve-existing` |
+| "Check stale or redundant specs before we touch legacy code" | spec-review or `workflow mode: improve-existing specReview: once-before-implement` |
 | "Safe maintenance pass" | spec-review (trust context) → simplify/stabilize/security mode |
-| "Ship-readiness check" | validate → audit → chaos |
-| "Quality sweep before release" | `workflow mode: harden-gaps-to-doc` |
+| "Ship-readiness check" | `workflow mode: delivery-lockdown` |
+| "Quality sweep before release" | `workflow mode: delivery-lockdown` |
 | "Explore a vague product idea" | analyst → ux → `workflow mode: product-discovery` |
 | "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands |
 | "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` or `redesign-existing` |
@@ -237,6 +241,7 @@ When a user asks "which mode should I use?" or describes a situation:
 | Bug fix | Mode with "bugfix" or "fastlane" in name |
 | New feature from scratch | Mode with "product" or "discovery" in name/description |
 | Existing code improvement | Mode with "improve" or "existing" in name |
+| Release candidate or "keep going until all green" | `delivery-lockdown` |
 | Reduce complexity only | Mode with "simplify" in name |
 | Check spec freshness | Mode with "spec-review" in name |
 | Stale artifacts / out of sync | Mode with "reconcile" in name |
@@ -248,6 +253,7 @@ When a user asks "which mode should I use?" or describes a situation:
 - `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` — resolve whether `bubbles.grill` must interrogate assumptions before planning or invalidation
 - `tdd: true` — elevate the effective TDD policy for this run when scenario-first red→green proof is required
 - `backlogExport: tasks|issues` — emit copy-ready backlog items from `bubbles.plan`
+- `specReview: once-before-implement` — insert a one-shot `bubbles.spec-review` pass before legacy improvement or implementation work starts
 - `socratic: true` — bounded clarification before discovery
 - `gitIsolation: true` — isolated branch/worktree
 - `autoCommit: scope|dod` — validated milestone commits
@@ -357,8 +363,10 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "check health" -> bash bubbles/scripts/cli.sh doctor
 "install hooks and then tell me how to fix a bug" -> (1) hooks install --all, (2) recommend bugfix-fastlane sequence
 "what's the best workflow for improving an existing feature?" -> recommend improve-existing mode with explanation
+"before we improve this, run a stale-spec check once and then continue" -> /bubbles.workflow <feature> mode: improve-existing specReview: once-before-implement
 "pressure test this feature and then plan it" -> /bubbles.grill <feature> then /bubbles.plan <feature> backlogExport: tasks
 "deliver this with TDD and grill the assumptions first" -> /bubbles.workflow <feature> mode: full-delivery grillMode: required-on-ambiguity tdd: true
+"I need the no-loose-ends release workflow" -> /bubbles.workflow <feature> mode: delivery-lockdown
 "give me a command to chaos test everything for 2 hours" -> /bubbles.workflow mode: stochastic-quality-sweep minutes: 120 triggerAgents: chaos
 "how do I set up custom gates?" -> explain gates workflow + provide example command
 ```
@@ -378,5 +386,6 @@ When the user's request is ambiguous, use this priority:
 7. If about dependencies -> `dag`
 8. If about progress -> `status`
 9. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
-10. If about what to do next / which agent / which mode -> Platform Concierge
-11. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly
+10. If about translating vague requests into exact prompts -> prefer `super`; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
+11. If about what to do next / which agent / which mode -> Platform Concierge
+12. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

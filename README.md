@@ -13,7 +13,7 @@
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-32-58a6ff?style=flat-square" alt="32 agents">
   <img src="https://img.shields.io/badge/gates-64-3fb950?style=flat-square" alt="64 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-27-bc8cff?style=flat-square" alt="27 modes">
+  <img src="https://img.shields.io/badge/workflow_modes-28-bc8cff?style=flat-square" alt="28 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -35,7 +35,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>32 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>64 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>27 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>28 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 </table>
@@ -107,7 +107,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 32 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 27 workflow mode definitions
+│   ├── workflows.yaml               # 28 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -286,12 +286,13 @@ If you want the idea challenged before it turns into artifacts:
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 27 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 28 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
 |------|-------------|----------|
 | `full-delivery` | All phases: analyze → design → plan → implement → test → validate → audit → docs | New features |
+| `delivery-lockdown` | Repeat the full improvement + certification chain until validate can certify done | Release-candidate or legacy hardening delivery |
 | `bugfix-fastlane` | Fast: reproduce → fix → test → validate | Bug fixes |
 | `value-first-e2e-batch` | Prioritized: plan → implement batches → test → validate | Large features |
 | `chaos-hardening` | Chaos → harden → test → validate | Resilience work |
@@ -300,7 +301,7 @@ Bubbles supports 27 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 27 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 28 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -311,6 +312,9 @@ Optional execution tags:
 - `grillMode: required-on-ambiguity` pressure-tests the direction before planning or implementation starts.
 - `tdd: true` forces a red-green-first execution loop inside the implement/test path after planning readiness is already satisfied.
 - `backlogExport: tasks|issues` makes planning emit copy-ready backlog outputs per scope.
+- `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` turns on delivery-lockdown pre-round planning passes.
+- `improvementPreludeRounds: N` limits how many delivery-lockdown rounds may run that prelude.
+- `specReview: once-before-implement` runs one freshness/redundancy audit before legacy improvement or implementation work starts so stale active specs are reconciled once, not rediscovered every retry round.
 
 Baseline workflow law already requires coherent spec/design/plan artifacts, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation begins.
 - `socratic: true` turns on a bounded clarification loop before discovery/bootstrap work.
@@ -324,6 +328,8 @@ Control-plane rules:
 - Route-required outcomes carry owner-targeted packets with scope, scenario, or DoD references.
 - Diagnostic and certification phases route foreign-owned follow-up; they do not perform inline remediation.
 - Child workflows are orchestrator-only and bounded in depth.
+
+Use `bubbles.super` as the default natural-language front door when you need help translating goals into the right agent, workflow mode, or command sequence. If you already know the exact specialist or mode, call it directly instead of adding an unnecessary `super` hop.
 
 ---
 
@@ -361,7 +367,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 27 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 28 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
 | [Control Plane Rollout](docs/guides/CONTROL_PLANE_ROLLOUT.md) | Phased implementation plan for the control-plane redesign across all requested changes |

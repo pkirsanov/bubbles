@@ -593,6 +593,25 @@ executionOptions:
         tasks: Add per-scope backlog task checklists
         issues: Add per-scope issue seeds with acceptance bullets
       meaning: Forward backlog export preferences to bubbles.plan when scopes are created or refreshed.
+    improvementPrelude:
+      type: string
+      default: off
+      values:
+        off: Do not run a planning prelude before lockdown rounds
+        analyze-design-plan: Run analyst → design → plan before each eligible lockdown round
+        analyze-ux-design-plan: Run analyst → ux → design → plan before each eligible lockdown round
+      meaning: Delivery-lockdown only. Optional planning prelude to run before each implementation round.
+    improvementPreludeRounds:
+      type: integer
+      default: null
+      meaning: Delivery-lockdown only. Maximum number of rounds that may include the improvementPrelude. Null means every round until completion.
+    specReview:
+      type: string
+      default: off
+      values:
+        off: Do not run a one-shot spec freshness and redundancy review inside the workflow
+        once-before-implement: Run bubbles.spec-review once per target spec before the first implementation-capable stage in this workflow
+      meaning: Optional one-shot spec-review hook. If the mode includes analyze, run after analyze; otherwise run before the first improvement or implementation-capable stage. Never repeats on later rounds unless explicitly invoked again.
     gitIsolation:
       type: boolean
       default: false
@@ -629,6 +648,7 @@ executionOptions:
     scenarioTddDefault: scenario-first
     grillDefault: off
     lockdownDefault: false
+    specReviewDefault: off
     validateCertificationRequired: true
     protectedRegressionContracts: true
 
@@ -718,6 +738,64 @@ modes:
       forbidSyntheticOrNoopTests: true
       requireDirectFileWrites: true
       forbidPipeOperations: true
+      runUntilAllSpecsDone: true
+      sequentialSpecCompletion: true
+      crossAgentVerification: true
+      antiFabricationDetection: true
+      requireAllSpecialistsComplete: true
+      requirePhaseEvidenceBeforeAdvance: true
+      blockOnMissingSpecialistExecution: true
+      requireAllScopesDoneBeforeSpecDone: true
+      requirePerDodItemRawEvidence: true
+      requireTestsForAllRealScenarios: true
+      require100PercentBusinessLogicCoverage: true
+      requirePhaseScopeCoherence: true
+      requireImplementationRealityScan: true
+      requireNoDefaultsNoFallbacks: true
+      requireIntegrationCompleteness: true
+
+  delivery-lockdown:
+    description: Maximum-assurance delivery loop. Runs the full improvement and certification chain repeatedly until validate certifies done or returns a documented blocked verdict. Optional improvement preludes can front-load analyst/UX/design/plan passes for a bounded number of rounds.
+    statusCeiling: done
+    phaseOrder: [ select, bootstrap, implement, test, regression, simplify, gaps, harden, stabilize, security, validate, audit, chaos, docs, finalize ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G033, G034, G035, G040, G044, G045, G046, G047, G048, G049, G050, G051, G054, G055, G056, G057, G059, G061 ]
+    maxChaosRounds: 5
+    constraints:
+      continueOnBlocked: false
+      finalGlobalPassRequired: true
+      requireDesignBeforeImplement: true
+      allowBootstrapIterations: true
+      bootstrapAgents: [ bubbles.design, bubbles.plan ]
+      bootstrapLoopExit: design_spec_scopes_ready
+      forceSequentialPerSpec: true
+      requirePerSpecPhaseCompletion: [ simplify, gaps, harden, stabilize, security, validate, audit, chaos, docs ]
+      requireQualityLoopUntilCertifiedDone: true
+      restartLoopAtPhase: implement
+      allowImprovementPrelude: true
+      improvementPreludeDefault: off
+      improvementPreludeRoundLimitDefault: null
+      specReviewDefault: once-before-implement
+      useChildWorkflows: true
+      childWorkflowBundles:
+        testVerification: test-to-doc
+        qualitySweep: harden-gaps-to-doc
+        validationCertification: validate-to-doc
+        bugClosure: bugfix-fastlane
+      improvementPreludeProfiles:
+        analyze-design-plan: [ bubbles.analyst, bubbles.design, bubbles.plan ]
+        analyze-ux-design-plan: [ bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
+      blockedOnlyWhenValidateBlocked: true
+      requireImplementedVsClaimedReconciliation: true
+      requireNoSkippedTests: true
+      requireNoPreexistingFailingTests: true
+      requireNoInternalMocksExceptExternalDeps: true
+      requireGherkinE2eCoverage: true
+      requireCoveragePolicyCompliance: true
+      requireChaosInQualitySweep: true
+      requireIssuePromotionToScenarioOrBug: true
+      requireScenarioExpansionTests: true
+      requireRegressionTestsForNewBugs: true
+      requireAllDiscoveredBugsClosedInRun: true
       runUntilAllSpecsDone: true
       sequentialSpecCompletion: true
       crossAgentVerification: true
@@ -882,6 +960,7 @@ modes:
     constraints:
       requireArtifactStateReconciliation: true
       requireArtifactFreshnessReconciliation: true
+      specReviewDefault: once-before-implement
       validateClaimsBeforeImplementation: true
       resetStaleStateBeforeImplement: true
       sequentialSpecCompletion: true
@@ -1009,7 +1088,7 @@ modes:
   improve-existing:
     description: Analyze existing feature against competitors and best practices. Minor improvements update existing spec; sizable changes create new spec folder. Then implement, test, and run full quality chain.
     statusCeiling: done
-    phaseOrder: [ analyze, select, spec-review, validate, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize ]
+    phaseOrder: [ analyze, select, validate, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, chaos, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
@@ -1017,6 +1096,7 @@ modes:
       requireCompetitiveAnalysis: true
       requireArtifactStateReconciliation: true
       requireArtifactFreshnessReconciliation: true
+      specReviewDefault: once-before-implement
       validateClaimsBeforeImplementation: true
       resetStaleStateBeforeImplement: true
       sequentialSpecCompletion: true
@@ -1035,7 +1115,7 @@ modes:
   redesign-existing:
     description: Reconcile stale requirements, UX, design, and scopes for an existing feature, then redesign and deliver the updated implementation through the full quality chain.
     statusCeiling: done
-    phaseOrder: [ analyze, select, spec-review, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
+    phaseOrder: [ analyze, select, bootstrap, implement, test, regression, simplify, stabilize, security, docs, validate, audit, chaos, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G017, G018, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G032, G033, G035, G054, G055, G056, G057, G059, G061 ]
     maxChaosRounds: 3
     constraints:
@@ -1045,6 +1125,7 @@ modes:
       requireDesignBeforeImplement: true
       requireArtifactStateReconciliation: true
       requireArtifactFreshnessReconciliation: true
+      specReviewDefault: once-before-implement
       validateClaimsBeforeImplementation: true
       resetStaleStateBeforeImplement: true
       sequentialSpecCompletion: true

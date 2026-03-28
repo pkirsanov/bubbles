@@ -6,7 +6,7 @@
 
 ## The Situation
 
-Implementation and tests pass, but you want the code cleaned up, stable, secure, and regression-free before shipping.
+Implementation and tests pass, but you want the code cleaned up, stable, secure, regression-free, and certified clean before shipping.
 
 ## What Happens Automatically
 
@@ -43,6 +43,16 @@ If you want to run just the hardening sequence on existing code:
 /bubbles.workflow  stochastic-quality-sweep triggerAgents: regression,simplify,stabilize,security maxRounds: 8
 ```
 
+## Zero-Loose-Ends Release Path
+
+If the requirement is not just "run the hardening agents" but "keep going until the whole feature is actually green," use:
+
+```
+/bubbles.workflow  delivery-lockdown for <feature>
+```
+
+That parent workflow runs reusable child workflows for test verification, deterministic quality sweep, and final certification. New supported scenarios must update planning artifacts plus tests; true defects must be recorded as tracked bugs with regression tests and fixed inline before the run can finish.
+
 ## Pre-Ship Checklist
 
 Before shipping a major feature, run all hardening agents in sequence:
@@ -51,6 +61,6 @@ Before shipping a major feature, run all hardening agents in sequence:
 /bubbles.workflow  harden-gaps-to-doc for <feature>
 ```
 
-This runs: `harden → gaps → implement → test → regression → simplify → stabilize → security → chaos → validate → audit → docs`
+This runs the deterministic quality sweep child workflow: `harden → gaps → implement → test → regression → simplify → stabilize → security → chaos → validate → audit → docs`
 
 The most thorough pre-release verification available. Like Lahey inspecting every trailer before park open.

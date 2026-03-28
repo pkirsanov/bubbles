@@ -65,6 +65,7 @@ handoffs:
 - Stay autonomous by default. Only enter a Socratic questioning loop when the workflow input explicitly sets `socratic: true`.
 - **This agent is a DRIVER, not an observer.** It MUST actively invoke specialist agents for every phase via `runSubagent`. It does NOT passively analyze state and report blockers — it executes work by delegating to specialists.
 - **Execute each phase autonomously using `runSubagent`** — embed the specialist agent's role, full context, and governance references in the subagent prompt. Do NOT rely on handoffs for phase execution; handoffs are for escalation only.
+- **Prefer reusable child workflows when the registry defines them.** When a mode bundles repeatable work such as quality sweeps, test verification, validation, or bug closure via child workflows, invoke those child workflows from this orchestrator instead of re-encoding the whole sequence inline.
 - **Enforce artifact ownership strictly** — when a phase requires updates to a foreign-owned artifact, invoke the owner mapped by the artifact ownership contract. Do NOT let a specialist substitute for the owner just because it can describe the change.
 - **Require a concrete result envelope from every specialist invocation** — each `runSubagent` response must end with a machine-readable `## RESULT-ENVELOPE` section carrying the agent, role class, outcome, affected scope/DoD/scenario references, evidence refs, and routing payload when follow-up work is required. Legacy `## ROUTE-REQUIRED` blocks may be consumed only as a compatibility fallback while prompts finish migrating.
 - **This workflow agent itself must also emit a structured result envelope** — its own response must end with a `## RESULT-ENVELOPE` so orchestrators, audits, and future tooling can distinguish completed orchestration from routed or blocked orchestration.
@@ -72,7 +73,7 @@ handoffs:
 - **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts. Invoke `bubbles.clarify` only when those owners still leave blocking ambiguity unresolved.
 - **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
 - Require gate results before promoting spec status.
-- Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`) into every specialist prompt that can act on them.
+- Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `specReview`) into every specialist prompt that can act on them.
 - If `socratic: true`, run a targeted discovery loop before bootstrap or implementation work: ask at most `socraticQuestions` high-signal questions, record the answers into artifacts, then resume autonomous execution.
 - If `gitIsolation: true`, prepare isolated branch/worktree setup before implementation when repo policy allows it. If policy or environment forbids it, record that constraint explicitly and continue without pretending isolation occurred.
 - If `autoCommit` is set to `scope` or `dod`, allow atomic commits only after the corresponding validated milestone. Never commit speculative or partially validated work.
@@ -147,7 +148,7 @@ $ADDITIONAL_CONTEXT
 ```
 
 Supported options:
-- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|redesign-existing|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
+- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|delivery-lockdown|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|redesign-existing|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
 - `continue_on_blocked: true|false` (default: true)
 - `final_global_pass: true|false` (default: true)
 - `socratic: true|false` (default: false)
@@ -160,6 +161,7 @@ Supported options:
 - `maxScopeMinutes: <N>` (optional sizing heuristic; recommended 60-120)
 - `maxDodMinutes: <N>` (optional sizing heuristic; recommended 15-45)
 - `microFixes: true|false` (default: true)
+- `specReview: off|once-before-implement` (default: off unless the mode sets a stronger default; runs bubbles.spec-review once per target spec after analyze or before the first implementation-capable stage)
 - `max_specs: <N>`
 - `minutes: <N>` or `until: <RFC3339>`
 - `run_mode: endless|bounded` (default: bounded)
@@ -167,6 +169,8 @@ Supported options:
 - `commit_on_done_only: true|false` (default: true)
 - `commit_message_template: <string>` (default: `spec({spec_id}): complete {spec_slug}`)
 - `strict_execution_profile: true|false` (default: false)
+- `improvementPrelude: off|analyze-design-plan|analyze-ux-design-plan` (delivery-lockdown only, default: off)
+- `improvementPreludeRounds: <N>` (delivery-lockdown only, default: unlimited)
 - `batch: true|false` (default: auto-detect — true when multiple specs targeted, false for single spec). When enabled, splits phases at the last `implement`: per-spec phases run for each spec, then ONE shared quality chain.
 - `maxRounds: <N>` (stochastic-quality-sweep only, default: 10)
 - `triggerAgents: chaos,harden,gaps,simplify,stabilize,validate,improve,security` (stochastic-quality-sweep only, comma-separated subset of trigger pool)
@@ -200,14 +204,15 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | "Full quality sweep (harden + gaps + fix + test)" | `harden-gaps-to-doc` | `done` | select → **bootstrap** → **validate** → harden → gaps → **implement** → test → chaos → validate → audit → docs → finalize |
 | "Full end-to-end delivery from scratch" | `full-delivery` | `done` | select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
 | "Strictest delivery with per-spec commits" | `full-delivery-strict` | `done` | select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
+| "Maximum-assurance delivery until everything is truly green" | `delivery-lockdown` | `done` | [repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → security → validate → audit → chaos → docs] → finalize |
 | "Find highest-value work and deliver it" | `value-first-e2e-batch` | `done` | discover → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
 | "Create missing spec/design/scopes then implement" | `feature-bootstrap` | `done` | select → docs → implement → test → docs → validate → audit → finalize |
 | "Fix a specific bug" | `bugfix-fastlane` | `done` | select → implement → test → validate → audit → finalize |
 | "Run chaos probes and fix what breaks" | `chaos-hardening` | `done` | select → **bootstrap** → chaos → implement → test → validate → audit → finalize |
 | "Run tests, then quality chain" | `test-to-doc` | `done` | select → **bootstrap** → test → validate → audit → docs → finalize |
 | "Run chaos, then quality chain" | `chaos-to-doc` | `done` | select → chaos → validate → audit → docs → finalize |
-| "Validate claims, reconcile stale state, then deliver" | `reconcile-to-doc` | `done` | select → **bootstrap** → **validate** → implement → test → validate → audit → chaos → docs → finalize |
-| "Reconcile stale requirements/design/scopes, redesign the existing feature, then deliver" | `redesign-existing` | `done` | **analyze** → select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
+| "Validate claims, reconcile stale state, then deliver" | `reconcile-to-doc` | `done` | [one-shot spec-review default] → select → **bootstrap** → **validate** → implement → test → validate → audit → chaos → docs → finalize |
+| "Reconcile stale requirements/design/scopes, redesign the existing feature, then deliver" | `redesign-existing` | `done` | **analyze** → [one-shot spec-review default] → select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
 | "Update docs only (no code changes)" | `docs-only` | `docs_updated` | select → docs → validate → audit → finalize |
 | "Validate only" | `validate-only` | `validated` | select → validate → finalize |
 | "Audit only" | `audit-only` | `validated` | select → audit → finalize |
@@ -215,7 +220,7 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | "Resume from saved state" | `resume-only` | `in_progress` | select → finalize |
 | "Discover requirements, design UX, then deliver" | `product-to-delivery` | `done` | **analyze** → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
 | "Requirements + UX + design only (no code)" | `product-discovery` | `specs_hardened` | **analyze** → select → bootstrap → harden → docs → validate → audit → finalize |
-| "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | **analyze** → select → **validate** → harden → gaps → implement → test → validate → audit → chaos → docs → finalize |
+| "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | **analyze** → [one-shot spec-review default] → select → **validate** → harden → gaps → implement → test → validate → audit → chaos → docs → finalize |
 | "Simplify an existing implementation, prove behavior still works, then sync docs" | `simplify-to-doc` | `done` | select → simplify → test → validate → audit → docs → finalize |
 | "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→bootstrap→impl→test→val→audit; simplify→test→val→audit; improve→analyze→bootstrap→impl→test→val→audit; others→bootstrap→impl→test→val→audit |
 | "Priority-driven iterative work execution (N iterations or time-bounded)" | `iterate` | `done` | [N iterations: pick highest-priority work → auto-select mode → execute full delivery cycle] → finalize (per-spec touched) |
@@ -237,6 +242,7 @@ Optional preflight tags:
 - `tdd: true` only tightens the inner implement/test loop: start with failing targeted proof, then code, then passing proof.
 - When `tdd: true` is present, carry that contract into downstream execution: `bubbles.test` must preserve red-before-green targeted proof plus persistent regression coverage, `bubbles.regression` must verify the delta stayed green without weakened assertions, and `bubbles.chaos` still runs afterward as stochastic abuse rather than as a substitute for deterministic proof.
 - `backlogExport: tasks|issues` forwards backlog export preferences into `bubbles.plan` so scope planning emits copy-ready task or issue derivatives without replacing `scopes.md` as source of truth.
+- `specReview: once-before-implement` inserts a one-shot `bubbles.spec-review` pass to catch stale, redundant, or superseded active specs before legacy improvement or implementation work starts. It runs once per spec per workflow run, not on every retry round.
 
 The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invoke it with a mode and spec targets:
 
@@ -270,6 +276,12 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 
 # Strict delivery with per-spec commits:
 /bubbles.workflow 011-037 mode: full-delivery-strict
+
+# Maximum-assurance delivery that keeps looping until validate certifies done:
+/bubbles.workflow 042 mode: delivery-lockdown improvementPrelude: analyze-ux-design-plan improvementPreludeRounds: 2
+
+# Improve an existing feature, but force a one-shot spec freshness/redundancy pass before code changes:
+/bubbles.workflow 042 mode: improve-existing specReview: once-before-implement
 
 # Auto-discover highest-value work:
 /bubbles.workflow mode: value-first-e2e-batch
@@ -382,6 +394,7 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
 |-------------------------------|---------------|------------|
 | "fix bug", "there's a bug", "broken", "not working", "regression" | `bugfix-fastlane` | spec from context |
 | "implement", "build", "create", "add feature", "develop" | `full-delivery` | spec from context |
+| "super strict", "maximum assurance", "until all green", "until done", "lock it down", "no loose ends" | `delivery-lockdown` | spec from context |
 | "improve", "make better", "enhance", "competitive", "analyze and improve" | `improve-existing` | spec from context |
 | "harden", "strengthen", "make robust", "quality check code" | `harden-to-doc` | spec from context |
 | "find gaps", "close gaps", "missing implementation" | `gaps-to-doc` | spec from context |
@@ -485,7 +498,7 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
   - Proceed only after acknowledgment or mode override.
 
 - Modes that **cannot reach `done`**: `spec-scope-hardening` (`specs_hardened`), `product-discovery` (`specs_hardened`), `docs-only` (`docs_updated`), `validate-only` (`validated`), `audit-only` (`validated`), `validate-to-doc` (`validated`), `resume-only` (`in_progress`)
-- Modes that **can reach `done`**: All others (`full-delivery`, `full-delivery-strict`, `harden-to-doc`, `gaps-to-doc`, `harden-gaps-to-doc`, `reconcile-to-doc`, `value-first-e2e-batch`, `feature-bootstrap`, `bugfix-fastlane`, `chaos-hardening`, `test-to-doc`, `chaos-to-doc`, `product-to-delivery`, `improve-existing`, `stochastic-quality-sweep`, `iterate`)
+- Modes that **can reach `done`**: All others (`full-delivery`, `full-delivery-strict`, `delivery-lockdown`, `harden-to-doc`, `gaps-to-doc`, `harden-gaps-to-doc`, `reconcile-to-doc`, `value-first-e2e-batch`, `feature-bootstrap`, `bugfix-fastlane`, `chaos-hardening`, `test-to-doc`, `chaos-to-doc`, `product-to-delivery`, `improve-existing`, `stochastic-quality-sweep`, `iterate`)
 
 ---
 
@@ -502,9 +515,10 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
    - **Always confirm the resolved mode** before starting execution
 4. **Resolve batch execution (MANDATORY — do NOT skip):**
    - Count the number of resolved target specs
+   - If `mode: delivery-lockdown` → **force `batch = false`**. This mode requires per-spec certification loops and does not permit shared post-implement phases across specs.
    - If `batch: true` is set explicitly → enable batch execution
    - If `batch: false` is set explicitly → disable batch execution
-   - If `batch` is NOT specified → **auto-detect**:
+   - Else if `batch` is NOT specified → **auto-detect**:
      - **1 spec → `batch = false`** (sequential execution via Phase 1)
      - **2+ specs → `batch = true`** (batch execution via Phase 0.8)
    - **⚠️ ROUTING DECISION (BINDING):** When batch is true:
@@ -524,9 +538,31 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
   - require real execution evidence; no fake/noop tests
   - continue iterating until all target specs are `done` or an explicit `blocked` stop condition is reached
 
+7. If `mode: delivery-lockdown`, apply lockdown overrides:
+   - inherit all strict delivery safeguards EXCEPT commit-per-spec enforcement
+   - `continue_on_blocked: false`
+   - `final_global_pass: true`
+   - force per-spec sequential execution only
+   - require the full improvement chain: `test`, `regression`, `simplify`, `gaps`, `harden`, `stabilize`, `security`, `validate`, `audit`, `chaos`, `docs`
+   - loop back to `implement` after any non-clean round until `bubbles.validate` certifies the spec `done`
+   - only allow terminal `blocked` when `bubbles.validate` reports a genuine blocked condition after retry budgets are exhausted and the blocker is documented
+   - if `improvementPrelude` is set, run that prelude before each round until `improvementPreludeRounds` is exhausted
+
+8. Resolve the effective spec-review policy:
+   - `effectiveSpecReview =` explicit `specReview` option if provided
+   - else mode constraint `specReviewDefault` if present
+   - else global default policy `specReviewDefault`
+   - else `off`
+   - This hook is one-shot per spec per workflow run. It MUST NOT rerun automatically on later retries, later lockdown rounds, or child workflow invocations.
+   - If mode is `spec-review-to-doc`, ignore this tag because spec review is already the primary workflow.
+   - For modes with `analyze`, the one-shot review runs after analyze so it can judge the refreshed intent against current active artifacts.
+   - For modes without `analyze`, the one-shot review runs before the first improvement or implementation-capable phase.
+
 If no specs resolve, STOP with explicit examples. **Exception:** `stochastic-quality-sweep` and `iterate` modes do NOT require spec targets — they auto-discover all spec folders under `specs/` when none are provided (see Phase 0.9 and Phase 0.10 respectively).
 
 **⚠️ ITERATE MODE ROUTING:** If `mode: iterate`, **SKIP Phase 0.3 through Phase 1 — go directly to Phase 0.10.** The iterate loop handles all work selection, mode determination, and specialist dispatch internally.
+
+**⚠️ DELIVERY-LOCKDOWN ROUTING:** If `mode: delivery-lockdown`, **SKIP Phase 0.3 through Phase 1 — go directly to Phase 0.95.** Delivery-lockdown runs a dedicated per-spec certification loop instead of the one-pass sequential phase runner.
 
 ### Phase 0.3: Analysis Loop (ONLY when batch is false AND mode includes `analyze`)
 
@@ -565,6 +601,32 @@ When mode includes `analyze` in phaseOrder AND batch is false, run the upstream 
 - `batch` is true → skip Phase 0.3 entirely (analyze runs per-spec in Phase 0.8)
 
 **Gate:** G032 (business_analysis_gate) must pass before proceeding to bootstrap.
+
+**Next step when `effectiveSpecReview != off`:** enter Phase 0.35 before any implementation-capable work starts.
+
+### Phase 0.35: One-Shot Spec Review Hook (when `specReview` is active)
+
+When `effectiveSpecReview != off`, the orchestrator MUST run a one-shot `bubbles.spec-review` pass for each target spec before the workflow begins implementation-capable legacy work.
+
+Required behavior:
+
+1. Run `bubbles.spec-review` exactly once per target spec for the current workflow invocation.
+2. If the mode includes `analyze`, invoke the review AFTER Phase 0.3 analysis finishes for that spec.
+3. If the mode does not include `analyze`, invoke the review after `select`/`bootstrap` readiness but BEFORE the first `validate`, `harden`, `gaps`, `stabilize`, or `implement` phase that would act on stale assumptions.
+4. In batch execution, Phase 0.8 performs this hook per spec before that spec enters its first implementation-capable step.
+5. In `delivery-lockdown`, Phase 0.95 performs this hook only before round 1 for a spec, after any configured first-round improvement prelude.
+
+Prompt contract for the review:
+- Ask `bubbles.spec-review` to audit freshness, redundancy, and superseded active truth for the target spec.
+- The review should classify whether the active artifacts are CURRENT, MINOR_DRIFT, PARTIAL, MAJOR_DRIFT, or OBSOLETE, and call out redundant or superseded active sections that should not remain executable truth.
+
+Routing rules:
+- If the review returns CURRENT or MINOR_DRIFT without route-required work, continue the selected workflow.
+- If the review reports PARTIAL, MAJOR_DRIFT, OBSOLETE, or `route_required`, route to the owning planning path before further implementation-capable work:
+   - use `reconcile-to-doc` when the feature direction is still valid but claims/state/scopes are stale
+   - use `redesign-existing` when requirements, UX, or design intent are fundamentally obsolete
+   - use the planning owners (`bubbles.design`, `bubbles.plan`, `bubbles.clarify`) when the repair is narrower than a full workflow reroute
+- Do NOT keep coding against stale or redundant active artifacts after the one-shot review says they are not trustworthy.
 
 ### Phase 0.65: Validation Reconciliation Loop (for validate-first delivery modes)
 
@@ -735,6 +797,7 @@ When `batch` is true, the orchestrator changes the execution model to avoid redu
 
    For each target spec in order:
    - If mode includes `analyze`: Run `analyze` phase for THIS spec — invoke `runSubagent` with bubbles.analyst role for this spec's `{FEATURE_DIR}` only (per-spec analysis, NOT batch-scoped). Then invoke bubbles.ux for this spec if it has UI. Each spec gets its OWN analysis written to its OWN spec.md. Apply G032 per-spec before continuing.
+   - If `effectiveSpecReview != off`: run the one-shot `bubbles.spec-review` pass for THIS spec before its first `validate`, `harden`, `gaps`, `stabilize`, or `implement` phase. If the review returns route-required work, resolve that per spec before continuing.
    - Run `select` phase via `runSubagent` (resolve scope, load artifacts)
    - If mode includes baseline `validate`: Run `validate` phase via `runSubagent` — establish baseline state
    - If the mode enables validate-first reconciliation: apply the **Validation Reconciliation Loop** above before harden/gaps/implement continue
@@ -1159,6 +1222,81 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 
 ---
 
+### Phase 0.95: Delivery Lockdown Loop (for `mode: delivery-lockdown`)
+
+When mode is `delivery-lockdown`, the orchestrator replaces the normal one-pass sequential execution with a per-spec certification loop that keeps cycling until the validate-owned certification state is truly `done` or `bubbles.validate` returns an explicit blocked verdict.
+
+**Delivery-lockdown is a workflow-of-workflows.** The parent orchestrator owns round control, packet routing, and final certification. Reusable child workflows own the test, quality, validation, and bug-fix bundles so future quality-step additions are inherited automatically instead of duplicated here.
+
+**Execution model:**
+
+1. **Resolve loop parameters:**
+   - `improvementPrelude` = user-provided value OR `off`
+   - `improvementPreludeRounds` = user-provided value OR unlimited
+   - `restartPhase` = `implement`
+   - `testWorkflow` = `test-to-doc`
+   - `qualityWorkflow` = `harden-gaps-to-doc`
+   - `validationWorkflow` = `validate-to-doc`
+   - `bugWorkflow` = `bugfix-fastlane`
+   - `specReviewCompleted` = false for each spec unless effective policy is `off`
+   - `round` starts at 1 for each spec
+   - `batch` is forced to `false`
+
+2. **For each target spec, run certification rounds sequentially:**
+   - Read current `state.json`, `spec.md`, `design.md`, `scopes.md`, `report.md`
+   - If design/scopes are missing or stale, run `bootstrap` before round 1
+   - While the spec is not validate-certified `done`:
+
+   a. **Optional improvement prelude**
+      - If `improvementPrelude != off` and the prelude round budget is still available:
+        - `analyze-design-plan` → invoke `bubbles.analyst`, then `bubbles.design`, then `bubbles.plan`
+        - `analyze-ux-design-plan` → invoke `bubbles.analyst`, then `bubbles.ux`, then `bubbles.design`, then `bubbles.plan`
+      - The prelude may add new scenarios, tests, DoD items, or implementation work. If it does, keep the spec `in_progress` and continue into the round.
+
+    a.5. **One-shot spec review (round 1 only when enabled)**
+         - If `effectiveSpecReview != off` and `specReviewCompleted == false` for this spec:
+            - invoke `bubbles.spec-review` after any configured first-round prelude and before the first implementation-capable work
+            - if the review reports redundant, superseded, or untrustworthy active artifacts, route to `reconcile-to-doc`, `redesign-existing`, or the owning planning agents before continuing
+            - once the required remediation path has been applied for this workflow run, set `specReviewCompleted = true`
+         - Do NOT rerun this review automatically on later lockdown rounds.
+
+   b. **Execute the lockdown round as parent + child workflows:**
+      - `select` (round 1 only, or when scopes changed materially)
+      - `bootstrap` (round 1, or whenever planning artifacts need refresh)
+      - `implement` (direct specialist execution for the current routed work)
+      - Child workflow: `test-to-doc` for test verification and initial quality proof
+      - Child workflow: `harden-gaps-to-doc` for the full deterministic quality sweep, including chaos
+      - Child workflow: `validate-to-doc` for final certification, audit, and docs synchronization
+
+      Each child workflow MUST return a concrete `## RESULT-ENVELOPE` outcome (`completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`). The parent workflow uses that envelope, not narrative prose, to decide whether to continue, route work, restart the round, or stop as blocked.
+
+   c. **Route new findings into the correct owned workflow immediately:**
+      - If a child workflow or specialist returns `route_required` for planning-owned work because the implementation now supports, or should support, a newly discovered legitimate scenario, update `spec.md`/`design.md`/`scopes.md` through the owning planning agents and add new scenario-specific tests before continuing.
+      - If the finding is a defect rather than a sanctioned new scenario, create or repair a tracked bug under the owning feature's `bugs/` folder, add the regression test that encodes the exact failing scenario, and run the `bugfix-fastlane` child workflow immediately.
+      - Bugs discovered by chaos, tests, validation, audit, gaps, hardening, stabilization, or security are not backlog fodder in this mode. They must be resolved inside the same delivery-lockdown run unless `bubbles.validate` later certifies a genuine documented blocker.
+
+   d. **Round verdict handling:**
+      - If `test-to-doc`, `harden-gaps-to-doc`, `validate-to-doc`, or any direct specialist phase returns findings that require more implementation, planning, tests, docs, or bug closure, DO NOT finalize. Route to the owning specialist or child workflow, keep the spec `in_progress`, increment `round`, and restart at `implement`.
+      - If `bubbles.validate` reports claims-vs-implementation drift, reset stale state/certification inline before the next round.
+      - If `bubbles.validate` reports `blocked` after retry budgets are exhausted, document the blocker in artifacts/state, mark the spec `blocked`, and stop working that spec.
+      - Only permit finalize when the final certification bundle returns clean validation/audit/docs status, the quality sweep bundle is clean, all in-run bugs are closed, documentation is synchronized, and all round-required evidence is present.
+
+3. **Finalize per spec only after a clean lockdown round:**
+   - Run `bash bubbles/scripts/state-transition-guard.sh <spec-path>`
+   - Run `bash bubbles/scripts/artifact-lint.sh <spec-path>`
+   - Verify all scopes are `Done`, all DoD items have inline evidence, and status can legally reach `done`
+   - Append an executionHistory entry summarizing the total number of lockdown rounds and the final clean round
+
+4. **Workflow output requirements:**
+   - For each spec, report:
+     - total rounds executed
+     - whether improvement preludes ran and how many times
+   - which child workflows or direct phases produced findings across rounds
+     - final certification result (`done` or `blocked`)
+     - if blocked, the validate-owned blocker summary
+
+---
+
 ### Phase 0.10: Iterate Loop (for `mode: iterate`)
 
 When mode is `iterate`, the orchestrator replaces the normal sequential `phaseOrder` with a priority-driven iteration loop where each iteration picks the highest-priority work item, auto-selects the correct sub-mode, and executes a full delivery cycle.
@@ -1410,6 +1548,19 @@ For each target spec in order:
 
    Each `runSubagent` call is a BLOCKING call — wait for the result before proceeding to the next phase. The specialist agent does the actual work (writes code, runs tests, updates docs, etc.).
 
+   **Example: `delivery-lockdown` mode invocation sequence for ONE spec:**
+
+   ```
+   Round 1 prelude  → optional runSubagent("Improve planning for 027", bubbles.analyst / bubbles.ux / bubbles.design / bubbles.plan)
+   Round 1 spec rev → optional runSubagent("Run one-shot spec freshness/redundancy review for 027", bubbles.spec-review)
+   Round 1 impl     → runSubagent("Execute implement for 027",  bubbles.implement)
+   Round 1 test wf  → runSubagent("Run child workflow test-to-doc for 027 and return its result envelope", bubbles.workflow)
+   Round 1 qual wf  → runSubagent("Run child workflow harden-gaps-to-doc for 027 and return its result envelope", bubbles.workflow)
+   Round 1 cert wf  → runSubagent("Run child workflow validate-to-doc for 027 and return its result envelope", bubbles.workflow)
+   Routed bug       → if a child workflow identifies a real defect, create bug artifacts + regression test, then run child workflow bugfix-fastlane for that bug
+   Round 1 verdict  → if findings remain, restart at implement; if validate blocks, mark blocked; if all clean, finalize
+   ```
+
 5. Promotion rules:
    - Resolve the mode's `statusCeiling` from `bubbles/workflows.yaml`
    - Spec status MUST NOT exceed `statusCeiling` — artifact-only modes (`spec-scope-hardening`, `docs-only`, `validate-only`, `audit-only`) set status to their ceiling (`specs_hardened`, `docs_updated`, `validated`), NEVER `done`
@@ -1443,6 +1594,10 @@ For each target spec in order:
        - `### Audit Evidence` contains `**Phase Agent:** bubbles.audit`
        - `### Chaos Evidence` contains `**Phase Agent:** bubbles.chaos`
      - each strict section includes `**Executed:** YES` and at least one `**Command:**` entry
+    - For `delivery-lockdown`, `status: "done"` additionally requires:
+       - at least one completed round containing clean evidence from `simplify`, `gaps`, `harden`, `stabilize`, `security`, `validate`, `audit`, `chaos`, and `docs`
+       - the final validate result is the authority for promotion; if validate is not explicitly clean, the spec remains `in_progress`
+       - the final workflow summary reports total rounds executed and whether any improvement prelude rounds ran
    - Record `workflowMode` in per-spec `state.json` so resume can verify ceiling compliance
    - **⚠️ PER-SPEC COMMIT TRANSACTION (BLOCKING WHEN `commit_per_spec: true`):**
       - Resolve the commit message from `commit_message_template` by substituting `{spec_id}` and `{spec_slug}`
@@ -1550,7 +1705,7 @@ When routed, return to phase owner and re-run downstream phases required by mode
 - ❌ "State drift detected" → reconcile inline, then continue
 - ❌ "Retry limit for one phase exceeded" → attempt auto-escalation (different specialist, different approach) before marking blocked
 
-For `full-delivery-strict`, stop is only allowed when all target specs are `done` or a terminal `blocked` condition occurs under strict policy.
+For `full-delivery-strict` and `delivery-lockdown`, stop is only allowed when all target specs are `done` or a terminal `blocked` condition occurs under the mode's strict policy.
 
 **On stop, emit resume commands ONLY for genuinely blocked specs (those that exhausted all retries AND auto-escalation). Do NOT emit resume commands as a routine workflow ending pattern.**
 

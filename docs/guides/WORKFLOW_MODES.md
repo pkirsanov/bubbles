@@ -23,6 +23,7 @@ Optional execution tags apply across modes when you need more control without ch
 - `autoCommit: scope|dod` opts into atomic commits after fully validated milestones (`off` is default).
 - `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing (recommended: scope 60-120, DoD 15-45).
 - `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
+- `specReview: once-before-implement` runs a one-shot `bubbles.spec-review` pass before legacy improvement or implementation-capable work begins. If the mode includes `analyze`, that review runs after analysis so it sees the refreshed intent. It does not repeat on retries or later rounds.
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation is allowed to proceed. Those are not optional tags.
 
@@ -74,6 +75,33 @@ select → bootstrap → implement → test → regression → simplify → stab
 Same as `full-delivery` but with **stricter gates** — chaos testing included, tighter evidence requirements.
 
 **Use when:** Critical features, production-facing changes.
+
+### <img src="../../icons/lahey-badge.svg" width="20"> delivery-lockdown
+
+Maximum-assurance delivery. This mode does not stop at a single pass. It keeps running the improvement and certification chain until `bubbles.validate` can legitimately certify `done`, or it records an explicit validate-owned blocker.
+
+```
+[repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → security → validate → audit → chaos → docs] → finalize
+```
+
+Optional tags:
+- `improvementPrelude: analyze-design-plan` runs analyst → design → plan before each round.
+- `improvementPrelude: analyze-ux-design-plan` runs analyst → ux → design → plan before each round.
+- `improvementPreludeRounds: N` caps how many rounds may include that prelude.
+
+The parent loop reuses child workflows instead of hardcoding every quality bundle:
+- `test-to-doc` handles required tests and initial verification.
+- `harden-gaps-to-doc` handles the deterministic quality sweep and includes chaos.
+- `validate-to-doc` handles final validation, audit, and docs synchronization.
+- `bugfix-fastlane` closes any real defects discovered by tests, chaos, validation, or the quality sweep.
+
+New findings must be classified, not hand-waved:
+- A legitimate new supported scenario means planning artifacts are updated and new tests are added before the next round.
+- A defect means a tracked bug plus a regression test, followed by inline bug closure during the same workflow run.
+
+This mode also defaults `specReview: once-before-implement` so stale or redundant legacy specs get audited once before round 1 starts touching code.
+
+**Use when:** Release-candidate work, difficult legacy features, multi-round hardening where one more pass must happen automatically until the spec is truly green.
 
 ### <img src="../../icons/bubbles-glasses.svg" width="20"> value-first-e2e-batch
 
@@ -267,7 +295,9 @@ Analyze an existing feature, reconcile stale claims, and improve it competitivel
 analyze → select → validate → harden → gaps → implement → test → validate → audit → chaos → docs → finalize
 ```
 
-**Use when:** The feature exists already and you want a full improvement pass rather than a narrow cleanup.
+This mode now defaults `specReview: once-before-implement`, so a one-shot `bubbles.spec-review` audit catches stale or redundant active specs before the workflow starts changing code.
+
+**Use when:** The feature exists already and you want a full improvement pass rather than a narrow cleanup, but you want one freshness/redundancy check before implementation-capable work begins.
 
 ### <img src="../../icons/lucy-mirror.svg" width="20"> redesign-existing
 
@@ -276,6 +306,8 @@ Reconcile stale requirements, UX, design, and scopes for an existing feature, th
 ```
 analyze → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
 ```
+
+This mode also defaults `specReview: once-before-implement` so stale or duplicated active truth is reviewed once before the redesign path starts rewriting implementation.
 
 **Use when:** The feature exists, but active artifacts no longer match the intended behavior and a major redesign is required before implementation can proceed safely.
 
@@ -407,6 +439,7 @@ analyze → ux
 |------|--------|----------|
 | `full-delivery` | All phases | Standard features |
 | `full-delivery-strict` | All phases + strict chaos | Critical features |
+| `delivery-lockdown` | Repeated full improvement/certification rounds | Release-candidate or zero-loose-ends delivery |
 | `value-first-e2e-batch` | Prioritized + batched | Large backlogs |
 | `product-to-delivery` | Discovery → delivery | Product ideas |
 | `product-discovery` | Analysis only | Early exploration |

@@ -30,6 +30,14 @@ If the findings point to code quality, drift, or simplification work inside an e
 /bubbles.workflow  improve-existing for booking
 ```
 
+If you want that improvement workflow to audit stale or redundant active specs once before it starts changing code:
+
+```
+/bubbles.workflow  improve-existing for booking specReview: once-before-implement
+```
+
+That one-shot review runs before implementation-capable work starts, routes stale-truth problems into reconciliation or redesign if needed, and does not repeat on every retry round.
+
 If the findings show stale state or stale planning that must be reconciled before the existing work can be trusted again:
 
 ```

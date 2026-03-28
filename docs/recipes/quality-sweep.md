@@ -6,20 +6,27 @@
 
 ## The Situation
 
-Implementation is done but you want a thorough quality check — find gaps, harden weak spots, ensure nothing slipped through.
+Implementation is done but you want a thorough quality check — find gaps, harden weak spots, ensure nothing slipped through, and keep looping until certification is genuinely clean.
 
 ## The Command
 
 ```
-/bubbles.workflow  harden-gaps-to-doc for 042-catalog-assistant
+/bubbles.workflow  delivery-lockdown for 042-catalog-assistant
 ```
 
 Or just use natural language:
 ```
-/bubbles.workflow  do a full quality sweep on the catalog feature
+/bubbles.workflow  do a full quality sweep on the catalog feature until everything is green
 ```
 
-**Phases:** harden → gaps → test → validate → docs
+**Parent workflow:** delivery-lockdown
+
+**Built-in child workflows:**
+- `test-to-doc` for full required test execution and initial verification
+- `harden-gaps-to-doc` for the deterministic quality sweep, including chaos
+- `validate-to-doc` for final validation, audit, and docs sync
+
+If those child workflows discover a legitimate new supported scenario, planning artifacts and tests must be updated before the run continues. If they discover a defect, the workflow creates or updates a tracked bug and adds the regression test before running `bugfix-fastlane` inline.
 
 ## What Each Phase Does
 
@@ -39,6 +46,14 @@ If validate, harden, gaps, stabilize, or security finds missing planning or desi
 
 ### Docs
 Updates documentation to match the hardened state.
+
+## Alternative: Deterministic Sweep Only
+
+If you want the standalone quality bundle without the full no-loose-ends certification loop:
+
+```
+/bubbles.workflow  harden-gaps-to-doc for 042-catalog-assistant
+```
 
 ## Alternative: Stochastic Sweep
 

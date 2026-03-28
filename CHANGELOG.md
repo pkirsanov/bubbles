@@ -50,8 +50,11 @@ Major architectural evolution implementing the unified control-plane design acro
 - `bubbles.audit` references execution/certification phase records.
 - `bubbles.grill` updated for `grillMode` (off/on-demand/required-on-ambiguity/required-for-lockdown).
 - `bubbles.super` updated with `grillMode`/`tdd`/`backlogExport` control-plane tags.
+- `bubbles.super` front-door policy is now explicit: use it for vague intent and prompt translation, but bypass it when the exact specialist or workflow mode is already known.
 
 **Workflow mode updates:**
+- Added `delivery-lockdown` — a new maximum-assurance workflow mode that repeats the full improvement and certification chain until validate can legitimately certify `done` or records an explicit blocker. Supports optional `improvementPrelude` and `improvementPreludeRounds` tags for bounded analyst/UX/design/plan refresh passes ahead of implementation rounds.
+- Added `specReview: once-before-implement` — a one-shot execution tag that runs `bubbles.spec-review` before legacy implementation/improvement work so stale or redundant active specs are reconciled once instead of rediscovered every retry round. `improve-existing`, `reconcile-to-doc`, `redesign-existing`, and `delivery-lockdown` now default this hook on.
 - `bugfix-fastlane` and `chaos-hardening` now force `scenario-first` TDD by default (`forceTddMode: scenario-first`).
 - `chaos-hardening` now lockdown-aware with `requireProtectedRegressionContracts`.
 - `grillFirst` tag deprecated in favor of `grillMode` with `inherit` default.

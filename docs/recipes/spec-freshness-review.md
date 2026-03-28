@@ -48,6 +48,14 @@ Before running simplify, security, or stabilize on a feature, check spec freshne
 
 This produces a maintenance context block telling the security agent which specs to trust and which to ignore.
 
+If you want a delivery workflow to perform that audit once automatically before it starts changing legacy code, append the one-shot execution tag:
+
+```text
+/bubbles.workflow  specs/005-booking mode: improve-existing specReview: once-before-implement
+```
+
+That uses `bubbles.spec-review` as a pre-implementation hook, then continues the workflow only after stale or redundant active artifacts are reconciled.
+
 ---
 
 ## Full Workflow — Audit All Specs Then Report

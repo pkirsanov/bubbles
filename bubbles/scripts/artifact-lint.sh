@@ -456,13 +456,13 @@ if [[ -f "$state_file" ]]; then
       fi
     fi
 
-    if [[ "$state_workflow_mode" == "full-delivery-strict" ]] && [[ "$state_status" == "done" ]]; then
+    if [[ "$state_workflow_mode" == "full-delivery-strict" || "$state_workflow_mode" == "delivery-lockdown" ]] && [[ "$state_status" == "done" ]]; then
       strict_required_phases=("validate" "audit" "chaos")
       for strict_phase in "${strict_required_phases[@]}"; do
         if echo "$state_completed_phases_block" | grep -Eq "\"$strict_phase\""; then
           pass "Strict mode completedPhases includes '$strict_phase'"
         else
-          fail "full-delivery-strict done status requires completedPhases to include '$strict_phase'"
+          fail "$state_workflow_mode done status requires completedPhases to include '$strict_phase'"
         fi
       done
     fi
@@ -472,7 +472,7 @@ if [[ -f "$state_file" ]]; then
     # ============================================================
     if [[ "$state_status" == "done" ]]; then
       case "$state_workflow_mode" in
-          full-delivery|full-delivery-strict|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+          full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
           pass "Workflow mode '$state_workflow_mode' allows status 'done'"
           ;;
         spec-scope-hardening)
@@ -536,6 +536,9 @@ if [[ -f "$state_file" ]]; then
         full-delivery-strict)
           mode_required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
           ;;
+        delivery-lockdown)
+          mode_required_specialists=("implement" "test" "regression" "simplify" "gaps" "harden" "stabilize" "security" "docs" "validate" "audit" "chaos")
+          ;;
         feature-bootstrap)
           mode_required_specialists=("implement" "test" "docs" "validate" "audit")
           ;;
@@ -574,6 +577,20 @@ if [[ -f "$state_file" ]]; then
         done
         if [[ "$missing_specialist_count" -gt 0 ]]; then
           fail "$missing_specialist_count of ${#mode_required_specialists[@]} required specialist phases are MISSING"
+        fi
+      fi
+    fi
+
+    # ============================================================
+    # SPEC REVIEW ENFORCEMENT FOR LEGACY-IMPROVEMENT MODES
+    # ============================================================
+    if [[ "$state_status" == "done" ]]; then
+      spec_review_required_modes="improve-existing|reconcile-to-doc|redesign-existing|delivery-lockdown"
+      if echo "$state_workflow_mode" | grep -qE "^($spec_review_required_modes)$"; then
+        if echo "$state_completed_phases_block" | grep -qE '"spec-review"'; then
+          pass "Spec-review phase recorded for legacy-improvement mode '$state_workflow_mode'"
+        else
+          fail "Legacy-improvement mode '$state_workflow_mode' requires spec-review phase but 'spec-review' is NOT in completed phases"
         fi
       fi
     fi
@@ -948,7 +965,7 @@ if [[ -f "$report_file" ]]; then
   mode_required_evidence_headers=()
   if [[ "$should_enforce_mode_gates" == "true" ]] && [[ -n "$state_workflow_mode" ]]; then
     case "$state_workflow_mode" in
-      full-delivery|full-delivery-strict|value-first-e2e-batch|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+      full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
         mode_required_evidence_headers=(
           '^### Validation Evidence'
           '^### Audit Evidence'
@@ -991,7 +1008,7 @@ if [[ -f "$report_file" ]]; then
     pass "Mode-specific report gates skipped (status not in promotion set)"
   fi
 
-  if [[ "$state_workflow_mode" == "full-delivery-strict" ]] && [[ "$state_status" == "done" ]]; then
+  if [[ "$state_workflow_mode" == "full-delivery-strict" || "$state_workflow_mode" == "delivery-lockdown" ]] && [[ "$state_status" == "done" ]]; then
     strict_sections=("Validation Evidence|bubbles.validate" "Audit Evidence|bubbles.audit" "Chaos Evidence|bubbles.chaos")
     for strict_entry in "${strict_sections[@]}"; do
       strict_section="${strict_entry%%|*}"
@@ -1006,26 +1023,26 @@ if [[ -f "$report_file" ]]; then
       } || true)"
 
       if [[ -z "$strict_section_content" ]]; then
-        fail "full-delivery-strict done status requires populated section: ### $strict_section"
+        fail "$state_workflow_mode done status requires populated section: ### $strict_section"
         continue
       fi
 
       if echo "$strict_section_content" | grep -Eq '^\*\*Executed:\*\* YES'; then
         pass "Strict section '$strict_section' includes Executed: YES"
       else
-        fail "full-delivery-strict done status requires '**Executed:** YES' in section '$strict_section'"
+        fail "$state_workflow_mode done status requires '**Executed:** YES' in section '$strict_section'"
       fi
 
       if echo "$strict_section_content" | grep -Eq '^\*\*Command:\*\* '; then
         pass "Strict section '$strict_section' includes command evidence"
       else
-        fail "full-delivery-strict done status requires '**Command:**' evidence in section '$strict_section'"
+        fail "$state_workflow_mode done status requires '**Command:**' evidence in section '$strict_section'"
       fi
 
       if echo "$strict_section_content" | grep -Eq "^\*\*Phase Agent:\*\* .*${strict_agent}"; then
         pass "Strict section '$strict_section' includes phase agent marker '${strict_agent}'"
       else
-        fail "full-delivery-strict done status requires '**Phase Agent:** ${strict_agent}' marker in section '$strict_section'"
+        fail "$state_workflow_mode done status requires '**Phase Agent:** ${strict_agent}' marker in section '$strict_section'"
       fi
     done
   fi
@@ -1342,6 +1359,9 @@ if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_wo
     full-delivery|value-first-e2e-batch)
       required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
       ;;
+    delivery-lockdown)
+      required_specialists=("implement" "test" "regression" "simplify" "gaps" "harden" "stabilize" "security" "docs" "validate" "audit" "chaos")
+      ;;
     full-delivery-strict)
       required_specialists=("implement" "test" "docs" "validate" "audit" "chaos")
       ;;
@@ -1364,6 +1384,18 @@ if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_wo
         fail "Required specialist phase '$specialist_phase' NOT in execution/certification phase records (Gate G022 violation)"
       fi
     done
+  fi
+fi
+
+# Check 5B: Spec review enforcement for legacy-improvement modes
+if [[ -f "$state_file" ]] && [[ "$state_status" == "done" ]] && [[ -n "$state_workflow_mode" ]]; then
+  spec_review_required="improve-existing|reconcile-to-doc|redesign-existing|delivery-lockdown"
+  if echo "$state_workflow_mode" | grep -qE "^($spec_review_required)$"; then
+    if echo "$state_completed_phases_block" | grep -qE '"spec-review"'; then
+      pass "Spec-review phase recorded for '$state_workflow_mode' (specReview enforcement)"
+    else
+      fail "'$state_workflow_mode' done status requires spec-review phase but 'spec-review' NOT in completed phases"
+    fi
   fi
 fi
 

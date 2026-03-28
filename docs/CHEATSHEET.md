@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **32 Agents · 64 Gates · 27 Workflow Modes · 19 Phases**
+> **32 Agents · 64 Gates · 28 Workflow Modes · 19 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -130,6 +130,7 @@
 | `value-first-e2e-batch` | boys-plan | Auto-discover highest-value work, full delivery pipeline |
 | `full-delivery` | full-send | Standard complete delivery — the default |
 | `full-delivery-strict` | clean-and-sober | Strict enforcement, no blocked continuation |
+| `delivery-lockdown` | no-loose-ends | Keep looping through tests, quality sweep, validation, and bug closure until truly green |
 | `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
 | `spec-review-to-doc` | laser-eyes-sweep | Audit specs for freshness, classify trust levels, produce maintenance report |
 | `chaos-hardening` | shit-storm | Iterative chaos + bugfix cycles until clean |
@@ -155,7 +156,7 @@
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
 
-**Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+**Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
 
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
@@ -391,6 +392,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | New feature from scratch | `/bubbles.analyst  <describe feature>` |
 | Plan and scope a feature | `/bubbles.plan  <feature>` |
 | Full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
+| Improve legacy feature with one stale-spec pass first | `/bubbles.workflow  improve-existing for <feature> specReview: once-before-implement` |
 | Refresh framework setup | `/bubbles.setup  mode: refresh` |
 | Fix a bug | `/bubbles.bug  <describe bug>` |
 | **Don't know what to do?** | **`/bubbles.super  help me <describe goal>`** |
@@ -426,7 +428,10 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | `/bubbles.super  review this repo before we decide what to spec` | `/bubbles.system-review  scope: full-system output: summary-doc` |
 | `/bubbles.super  which mode should I use?` | Decision tree based on your situation |
 | `/bubbles.super  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
-| `/bubbles.super  what should I do before shipping?` | Ship-readiness sequence: harden → chaos → security → audit |
+| `/bubbles.super  before we improve booking, do one stale-spec check and then continue` | `/bubbles.workflow  <booking-spec> mode: improve-existing specReview: once-before-implement` |
+| `/bubbles.super  give me the no-loose-ends release workflow for booking` | `/bubbles.workflow  <booking-spec> mode: delivery-lockdown` |
+| `/bubbles.super  what should I do before shipping?` | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| `/bubbles.super  should I start here or call the agent directly?` | Policy answer: use `super` for vague intent; go direct when the target is already known |
 | `/bubbles.super  why did my workflow stop after validate?` | Short diagnosis + the next command to recover or continue |
 | `/bubbles.super  turn this problem into the right Bubbles prompts` | A command sequence with brief reasons for each step |
 
@@ -459,6 +464,7 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | Security scan | `/bubbles.security` |
 | Check for regressions | `/bubbles.regression` |
 | Quality sweep | `/bubbles.workflow  harden-gaps-to-doc` |
+| Release lockdown | `/bubbles.workflow  delivery-lockdown` |
 
 ### Success & Wrap-Up
 

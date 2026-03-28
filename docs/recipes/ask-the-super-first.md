@@ -4,6 +4,8 @@
 
 Use `bubbles.super` as the default help and assistant agent for Bubbles. This is the recipe for turning vague goals, messy problems, or framework confusion into the exact next prompt or command.
 
+Use direct specialist or workflow commands when you already know the exact target. `bubbles.super` is the front door for ambiguity, not a mandatory hop in front of explicit commands.
+
 ## When To Use It
 
 Use this recipe when any of these are true:
@@ -22,6 +24,12 @@ Use this recipe when any of these are true:
 
 /bubbles.super  what's the right command to harden specs 11 through 37?
 → /bubbles.workflow  011-037 mode: harden-to-doc
+
+/bubbles.super  before we improve booking, run one stale-spec pass so old duplicated scopes don't mislead the workflow
+→ /bubbles.workflow  <booking-spec> mode: improve-existing specReview: once-before-implement
+
+/bubbles.super  I need the no-loose-ends release workflow for booking
+→ /bubbles.workflow  <booking-spec> mode: delivery-lockdown
 
 /bubbles.super  review this repo before we decide what to spec
 → /bubbles.system-review  scope: full-system output: summary-doc
@@ -45,11 +53,17 @@ Use this recipe when any of these are true:
 /bubbles.super  which mode should I use for improving an existing feature?
 → A short recommendation plus the exact command
 
+/bubbles.super  what should I run before release if it has to keep going until everything is green?
+→ A short recommendation plus `/bubbles.workflow  <feature> mode: delivery-lockdown`
+
 /bubbles.super  what's the difference between harden-to-doc and gaps-to-doc?
 → A concise comparison and the recommended choice for your situation
 
 /bubbles.super  should we grill this before we plan it?
 → A short recommendation plus the exact command, usually `/bubbles.grill ...` or `/bubbles.workflow ... grillMode: required-on-ambiguity`
+
+/bubbles.super  should we ask the super first or call the agent directly?
+→ A short policy note: use `super` for vague intent and translation; call the specialist directly when you already know the exact target
 ```
 
 ## Ask For Framework Help

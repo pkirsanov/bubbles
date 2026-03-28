@@ -14,6 +14,9 @@ Optional execution tags you can append to many workflow commands:
 - `autoCommit: scope` or `autoCommit: dod` for validated milestone commits
 - `maxScopeMinutes` and `maxDodMinutes` to keep scopes aggressively small
 - `microFixes: true` to keep failures in narrow repair loops
+- `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` to make `delivery-lockdown` refresh planning before early rounds
+- `improvementPreludeRounds: N` to cap how many delivery-lockdown rounds include that prelude
+- `specReview: once-before-implement` to run a one-shot stale/redundant spec audit before legacy improvement or implementation work starts
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, and scenario-specific test planning before implementation starts.
 
@@ -28,6 +31,10 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Ask the Super First](ask-the-super-first.md) | "I don't know the right command, agent, workflow mode, or recovery step" |
 
 > **💡 Tip:** The super is the help desk for Bubbles itself: prompts, workflow choices, troubleshooting, and framework guidance in plain English.
+
+> **💡 Tip:** `bubbles.super` should be your natural-language front door, not a mandatory middleman. Use it when you need translation or guidance. If you already know the exact agent or mode, call it directly.
+
+> **💡 Tip:** For release-candidate or "no loose ends" work, ask for `delivery-lockdown` rather than a one-pass sweep. It reuses the test, quality, validation, and bug workflows until certification is actually clean.
 
 ## Getting Started
 
