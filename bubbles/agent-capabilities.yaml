@@ -25,12 +25,14 @@ stateModel:
   - bubbles.plan
   - bubbles.implement
   - bubbles.test
+  - bubbles.devops
   - bubbles.docs
   - bubbles.chaos
   - bubbles.regression
   - bubbles.harden
   - bubbles.gaps
   - bubbles.stabilize
+  - bubbles.devops
   - bubbles.security
   - bubbles.simplify
   - bubbles.audit
@@ -168,6 +170,12 @@ agents:
     delegatesRequired: true
     ownsArtifacts: []
     ownsPhases: [ stabilize ]
+  bubbles.devops:
+    class: execution-owner
+    canAskUserDirectly: false
+    delegatesRequired: true
+    ownsArtifacts: [ infra-code, ci-cd-config, deploy-config, observability-config ]
+    ownsPhases: [ devops ]
   bubbles.security:
     class: diagnostic
     canAskUserDirectly: false

@@ -35,6 +35,7 @@ artifacts:
     evidenceUpdatesAllowed:
     - bubbles.implement
     - bubbles.test
+    - bubbles.devops
     - bubbles.validate
     - bubbles.audit
     - bubbles.chaos
@@ -60,6 +61,7 @@ artifacts:
     - bubbles.plan
     - bubbles.implement
     - bubbles.test
+    - bubbles.devops
     - bubbles.docs
     - bubbles.chaos
     - bubbles.regression
@@ -104,6 +106,18 @@ artifacts:
   rework-queue.json:
     owner:
     - bubbles.validate
+  infra-code:
+    owner:
+    - bubbles.devops
+  ci-cd-config:
+    owner:
+    - bubbles.devops
+  deploy-config:
+    owner:
+    - bubbles.devops
+  observability-config:
+    owner:
+    - bubbles.devops
 
 diagnosticAgents:
 - bubbles.validate
@@ -121,6 +135,7 @@ routingRules:
   missingTechnicalDesign: bubbles.design
   missingPlanningStructure: bubbles.plan
   missingScenarioContracts: bubbles.plan
+  operationalRemediation: bubbles.devops
   stateCertification: bubbles.validate
   lockedBehaviorChangeApproval: bubbles.grill
   protectedRegressionContractChange: bubbles.validate

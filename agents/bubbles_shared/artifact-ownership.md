@@ -10,14 +10,17 @@ Artifact authorship is a hard boundary, not a suggestion. Violations are blockin
 | `design.md` | `bubbles.design` | Technical design only |
 | `scopes.md` / `scopes/*/scope.md` planning content | `bubbles.plan` | Gherkin, Test Plan, DoD, execution structure |
 | `report.md` template structure | `bubbles.plan` | Execution evidence is appended by execution agents |
-| `report.md` evidence content | `bubbles.implement`, `bubbles.test`, `bubbles.validate`, `bubbles.audit`, `bubbles.chaos`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression` | Append-only to their own sections |
+| `report.md` evidence content | `bubbles.implement`, `bubbles.test`, `bubbles.devops`, `bubbles.validate`, `bubbles.audit`, `bubbles.chaos`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression` | Append-only to their own sections |
 | `uservalidation.md` | `bubbles.plan` | Acceptance checklist/template |
 | `bug.md` | `bubbles.bug` | Bug description, reproduction, severity |
+| `objective.md` in `specs/_ops/OPS-*` | `bubbles.devops` | Operational objective, scope, and success conditions for cross-cutting ops work |
+| `runbook.md` in `specs/_ops/OPS-*` | `bubbles.devops` | Operational procedures, rollback steps, and verification guidance |
 | `state.json` certification state | `bubbles.validate` | `certification.*`, promotion state, and reopen/invalidate certification only |
 | `state.json` execution claims | All execution agents | `execution.*` fields only — never `certification.*` |
 | `scenario-manifest.json` | `bubbles.plan` | `bubbles.test`, `bubbles.validate`, `bubbles.regression` may update evidence links only |
 | Product code / tests | `bubbles.implement`, `bubbles.test` | Per their phase ownership |
-| Standard docs (`docs/`) | `bubbles.docs` | Must reflect real implementation state |
+| Operational code / CI/CD / deploy / monitoring surfaces | `bubbles.devops` | Pipelines, build/release automation, deployment config, dashboards, alerts, observability wiring |
+| Managed docs (declared in `bubbles/docs-registry.yaml`) | `bubbles.docs` | Must reflect real implementation state |
 
 ## Read-Only Diagnostic And Certification Agents
 

@@ -16,8 +16,8 @@ handoffs:
 **Expertise:** All test types (unit, functional, integration, ui-unit, e2e-api, e2e-ui, stress, load) execution, coverage analysis, spec-driven test authoring, failure triage
 
 **Behavioral Rules:**
-- Operate within a classified `specs/...` feature or bug target when making code/doc changes (see Work Classification Gate)
-- Allow **test-only** runs without a feature/bug target; if fixes are required, stop and request classification
+- Operate within a classified `specs/...` feature, bug, or ops target when making code/doc changes (see Work Classification Gate)
+- Allow **test-only** runs without a classified work target; if fixes are required, stop and request classification
 - Tests validate specs/use cases/design (not the current implementation)
 - Before editing a failing test, compare it to `spec.md`, `design.md`, `scopes.md`, and DoD; if it matches the plan, fix the implementation instead of weakening the test
 - If the planned behavior is wrong or incomplete, update the owning planning artifact first, then update test + implementation together
@@ -137,7 +137,7 @@ The agent MUST track work end-to-end.
 ### A) Scope
 
 Default behavior (no additional requests):
-- If a feature/bug target is provided: **run ALL tests in scope of the provided feature/spec/design**.
+- If a classified work target is provided: **run ALL tests in scope of the provided feature/spec/design or ops packet**.
    - Scope = code + services + clients actually affected by the feature.
 - If no target is provided: **run general test suite** (repo-standard commands) in **test-only** mode.
 
@@ -193,7 +193,7 @@ Supported values:
 
 Optional strictness:
 - `complianceFix: report-only` (default in test-only mode)
-- `complianceFix: enforce` (rewrite/add tests and fix classification issues when inside a classified feature/bug target)
+- `complianceFix: enforce` (rewrite/add tests and fix classification issues when inside a classified feature/bug/ops target)
 
 Compliance checks MUST validate against the latest source-of-truth guardrails:
 - `.github/copilot-instructions.md`
@@ -310,7 +310,7 @@ Classification rule:
 
 Mode behavior:
 - `report-only`: do not edit tests/code; return actionable violations list.
-- `enforce`: if in classified feature/bug mode, fix violations (tests first, then implementation/docs if required), then re-run impacted suites.
+- `enforce`: if in classified feature/bug/ops mode, fix violations (tests first, then implementation/docs if required), then re-run impacted suites.
 
 Deliverable:
 
@@ -378,7 +378,7 @@ Requirements:
 
 **If in test-only mode:**
 - Do NOT change code/docs.
-- Report failures and request a feature/bug target before making fixes.
+- Report failures and request a classified feature/bug/ops target before making fixes.
 
 ### Phase 3b: Mock Audit (MANDATORY for integration/e2e tests)
 

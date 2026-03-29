@@ -39,7 +39,7 @@ Optional arguments:
 - `mode: auto-detect` — when `$ADDITIONAL_CONTEXT` provides sufficient answers to all 3 interview questions (skill intent, triggers, and outputs), skip the interview and proceed directly to scaffolding. If any answer is missing or ambiguous, fall back to `mode: interview` for the incomplete questions only.
 
 Required additional context for any write:
-- `target:` an explicit feature or bug directory (e.g., `specs/NNN-feature-name` or `specs/NNN-feature-name/bugs/BUG-001-...`)
+- `target:` an explicit classified work directory (e.g., `specs/NNN-feature-name`, `specs/NNN-feature-name/bugs/BUG-001-...`, or `specs/_ops/OPS-001-...`)
 
 ## Output Location + Format
 

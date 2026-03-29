@@ -3,9 +3,11 @@
 Always load:
 - `critical-requirements.md`
 - `artifact-ownership.md`
+- `managed-docs.md`
+- `bubbles/docs-registry.yaml`
 - Feature `spec.md`
 - Feature `design.md` and `scopes.md` when they exist
-- Only the standard docs targeted by the requested review scope
+- Only the managed docs targeted by the requested review scope
 
 Load on demand:
 - Route files, models, migrations, or UI routes needed to verify documented claims
@@ -15,4 +17,4 @@ Load on demand:
 Constraints:
 - Track work with `manage_todo_list`
 - No redundant rereads without a new reason
-- Prefer targeted doc loads over bulk `docs/` reads
+- Prefer targeted managed-doc loads over bulk `docs/` reads

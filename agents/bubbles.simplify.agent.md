@@ -1,5 +1,5 @@
 ---
-description: Post-implementation code simplification — reviews recently changed files for code reuse, quality, and efficiency issues, then fixes them. Run after implementing a feature or bug fix to clean up your work.
+description: Post-implementation code simplification — reviews recently changed files for code reuse, quality, and efficiency issues, then fixes them. Run after implementing a feature, bug, or ops fix to clean up your work.
 handoffs:
   - label: Run Scope-Aware Tests
     agent: bubbles.test
@@ -25,7 +25,7 @@ handoffs:
 **Expertise:** Code reuse optimization, code quality improvement, efficiency analysis, duplication elimination, dead code removal, deletion-safety review
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
-- Operate only on recently changed files within a classified `specs/...` feature or bug target
+- Operate only on recently changed files within a classified `specs/...` feature, bug, or ops target
 - Spawn three parallel review passes (code reuse, code quality, efficiency) then aggregate findings
 - Apply fixes directly — do not just report issues
 - **Validate all fixes with actual test execution** — see Execution Evidence Standard in agent-common.md
@@ -47,7 +47,7 @@ handoffs:
 - New test authoring beyond verifying simplifications (→ bubbles.test)
 - Planning new scopes (→ bubbles.plan)
 - Architectural redesign (→ bubbles.design)
-- Ad-hoc changes outside feature/bug classification
+- Ad-hoc changes outside classified feature/bug/ops work
 
 ---
 
@@ -128,7 +128,7 @@ Key requirements:
 
 **This is a post-implementation cleanup pass inspired by Claude Code's `/simplify` command.**
 
-Run it after implementing a feature or bug fix to clean up your work. It spawns three review agents in parallel (code reuse, code quality, efficiency), aggregates their findings, and applies fixes.
+Run it after implementing a feature, bug, or ops fix to clean up your work. It spawns three review agents in parallel (code reuse, code quality, efficiency), aggregates their findings, and applies fixes.
 
 ---
 
@@ -138,14 +138,14 @@ Run it after implementing a feature or bug fix to clean up your work. It spawns 
 
 Follow [agent-common.md](bubbles_shared/agent-common.md) → Context Loading (Tiered). Additionally:
 
-1. **Identify the target feature/bug directory** from `$ARGUMENTS`.
-2. **Discover recently changed files** — use git diff or file listing to identify files modified as part of the current feature/bug work:
+1. **Identify the target classified work directory** from `$ARGUMENTS`.
+2. **Discover recently changed files** — use git diff or file listing to identify files modified as part of the current feature/bug/ops work:
    ```bash
    # Find files changed in the active branch/work session
    git diff --name-only HEAD~10 -- .
    ```
-3. **Load the feature's scopes.md** to understand the implementation plan and what was changed.
-4. **Parse user focus** — if `$ARGUMENTS` contains focus text beyond the feature path, use it to prioritize specific review dimensions.
+3. **Load the packet's scopes.md** to understand the implementation plan and what was changed.
+4. **Parse user focus** — if `$ARGUMENTS` contains focus text beyond the classified work path, use it to prioritize specific review dimensions.
 
 ### Phase 1: Parallel Review (Three Dimensions)
 
@@ -226,7 +226,7 @@ Before deleting any file flagged as dead code or obsolete:
 
 1. **Validate actual references** — search imports, symbol usage, route registration, config references, docs references, test references, and script invocations
 2. **Validate expected usefulness** — ask whether the file exists because intended integration was forgotten rather than because the file is obsolete
-3. **Check artifact/governance ownership** — if the file belongs to a feature/bug artifact set, generated surface, or documented integration point, confirm deletion is actually correct
+3. **Check artifact/governance ownership** — if the file belongs to a feature/bug/ops artifact set, generated surface, or documented integration point, confirm deletion is actually correct
 4. **Decide safely:**
    - If truly unused and obsolete → delete it
    - If useful but currently unreferenced / not wired in → do NOT delete it; add or route a gap instead

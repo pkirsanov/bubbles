@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **32 Agents · 64 Gates · 28 Workflow Modes · 19 Phases**
+> **33 Agents · 64 Gates · 29 Workflow Modes · 20 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -32,9 +32,10 @@
 | <img src="../icons/barb-keys.svg" width="28"> | `bubbles.plan` | Barb Lahey | Owns scopes, DoD, Test Plan structure, and scenario contracts. | *"Jim, you need a plan."* |
 | <img src="../icons/julian-glass.svg" width="28"> | `bubbles.implement` | Julian | Delivers code. Every. Time. Zero drops, zero rollbacks. | *"I got work to do."* |
 | <img src="../icons/trinity-notebook.svg" width="28"> | `bubbles.test` | Trinity | Grew up in chaos. Learned to verify everything independently. Trust nothing. | *"Dad, that's not how that works."* |
-| <img src="../icons/jroc-mic.svg" width="28"> | `bubbles.docs` | J-Roc | Makes sure everything is narrated, recorded, and documented. | *"It could happen to you, 'cause it happened to me. And T."* |
+| <img src="../icons/jroc-mic.svg" width="28"> | `bubbles.docs` | J-Roc | Publishes the managed-doc truth and cleans out stale paperwork before closeout. | *"Know what I'm sayin'? Publish the truth."* |
 | <img src="../icons/ricky-dynamite.svg" width="28"> | `bubbles.chaos` | Ricky | Breaks things in ways nobody could predict. Worst case Ontario, something catches fire. | *"It's not rocket appliances."* |
 | <img src="../icons/donny-ducttape.svg" width="28"> | `bubbles.simplify` | Donny | Reduces needless complexity without weakening the behavior contract. | *"Just tape it up and move on."* |
+| <img src="../icons/tommy-rack.svg" width="28"> | `bubbles.devops` | Tommy Bean | Owns CI/CD, build, deployment, monitoring, and observability execution once operational work is identified. | *"Get the rack humming and keep the park online."* |
 | <img src="../icons/sebastian-guitar.svg" width="28"> | `bubbles.cinematic-designer` | Sebastian Bach | Premium UI implementation when the surface needs flagship treatment, not default sludge. | *"I was in Skid Row!"* |
 
 ## <img src="../icons/ted-badge.svg" width="32"> Diagnostic & Certification Routing
@@ -90,7 +91,7 @@
 | `sunnyvale get-two-birds-stoned` | `bubbles.implement` + `bubbles.test` | *"Get two birds stoned at once"* |
 | `sunnyvale i-got-work-to-do` | `bubbles.implement` | *"I got work to do."* |
 | `sunnyvale smokes-lets-go` | `bubbles.setup` | *"Smokes, let's go."* |
-| `sunnyvale know-what-im-sayin` | `bubbles.docs` | *"Know what I'm sayin'?"* |
+| `sunnyvale know-what-im-sayin` | `bubbles.docs` | *"Know what I'm sayin'? Publish the truth."* |
 | `sunnyvale somethings-fucky` | `bubbles.validate` | *"Something's fucky"* |
 | `sunnyvale mans-gotta-eat` | `bubbles.validate` | *"A man's gotta eat, Julian"* |
 | `sunnyvale way-she-goes` | `bubbles.analyst` | *"Way she goes, boys."* |
@@ -108,12 +109,13 @@
 | `sunnyvale skid-row` | `bubbles.cinematic-designer` | *"I was in Skid Row!"* |
 | `sunnyvale the-super` | `bubbles.super` | *"I'm the trailer park supervisor."* |
 | `sunnyvale parts-unknown` | `bubbles.code-review` | *"From parts unknown!"* |
+| `sunnyvale keep-the-park-online` | `bubbles.devops` | *"Get the rack humming and keep the park online."* |
 | `sunnyvale whole-show` | `bubbles.system-review` | *"Orangie sees everything. He's not dead, he's just... reviewing."* |
 | `sunnyvale not-how-that-works` | `bubbles.test` | *"Dad, that's not how that works."* |
 | `sunnyvale lets-get-organized` | `bubbles.design` | *"Let's get this organized."* |
 | `sunnyvale whats-going-on-here` | `bubbles.clarify` | *"What in the f— is going on here?"* |
 | `sunnyvale nice-kitty` | `bubbles.bug` | *"That's a nice f\*\*\*ing kitty right there."* |
-| `sunnyvale just-fixes` | `bubbles.stabilize` | *"..." (Bill just fixes things)* |
+| `sunnyvale just-fixes` | `bubbles.stabilize` | *"..." (Bill spots the problem and points at it)* |
 | `sunnyvale used-to-be-a-vet` | `bubbles.create-skill` | *"I used to be a vet, you know."* |
 | `sunnyvale true` | `bubbles.commands` | *"True."* |
 | `sunnyvale ill-do-whatever` | `bubbles.iterate` | *"I'll do whatever you need, Julian."* |
@@ -131,6 +133,7 @@
 | `full-delivery` | full-send | Standard complete delivery — the default |
 | `full-delivery-strict` | clean-and-sober | Strict enforcement, no blocked continuation |
 | `delivery-lockdown` | no-loose-ends | Keep looping through tests, quality sweep, validation, and bug closure until truly green |
+| `devops-to-doc` | keep-the-park-online | Focused DevOps execution + operational verification + docs sync |
 | `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
 | `spec-review-to-doc` | laser-eyes-sweep | Audit specs for freshness, classify trust levels, produce maintenance report |
 | `chaos-hardening` | shit-storm | Iterative chaos + bugfix cycles until clean |
@@ -169,7 +172,7 @@
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
-`analyze` → `discover` → `select` → `spec-review` → `bootstrap` → `harden` → `gaps` → `stabilize` → `implement` → `test` → `regression` → `simplify` → `stabilize` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
+`analyze` → `discover` → `select` → `spec-review` → `bootstrap` → `harden` → `gaps` → `stabilize` → `devops` → `implement` → `test` → `regression` → `simplify` → `stabilize` → `devops` → `security` → `docs` → `validate` → `audit` → `chaos` → `finalize`
 
 | Gate | Name | What It Checks |
 |------|------|---------------|
@@ -369,7 +372,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | � Spec stale | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
 | �🔴 Spec conflict | *"Steve French found another cougar's territory. Two specs, same route."* |
 | ❌ Security vuln | *"Safety... always ON."* |
-| ✅ Docs updated | *"Know what I'm sayin'? It's documented."* |
+| ✅ Docs updated | *"Know what I'm sayin'? It's published."* |
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
 | ❌ Deferral blocks done | *"That's NOT gettin' two birds stoned — that's just sayin' you WILL."* |
 | ❌ Manipulation detected | *"That's GREASY, boys. You can't just cross things out and say they're done!"* |

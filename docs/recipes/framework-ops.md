@@ -4,6 +4,8 @@
 
 Use `bubbles.super` when the problem is about the Bubbles framework itself: health, hooks, gates, metrics, upgrades, or recovering from a framework-level problem. If you need broader prompt help first, use the dedicated [Ask the Super First](ask-the-super-first.md) recipe.
 
+If the work is inside a target project's CI/CD, deployment, monitoring, or build surfaces, use [DevOps Work](devops-work.md) instead. If that work is cross-cutting and not feature-owned, use [Ops Packet Work](ops-packet-work.md). Framework ops is for Bubbles itself, not application delivery plumbing.
+
 **Scope rule:** Bubbles-managed git hooks are for the Bubbles framework repo only. Consumer repos use installed Bubbles files, but they must not install Bubbles-managed `pre-commit` or `pre-push` hooks.
 
 ## Check Project Health

@@ -217,6 +217,7 @@ Dispatch each requested lens to the mapped specialist from `bubbles/code-review.
 | harden | `bubbles.harden` | fragility, robustness, quality risks |
 | simplify | `bubbles.simplify` | complexity, duplication, cleanup |
 | stabilize | `bubbles.stabilize` | performance, infra, config, reliability |
+| devops | `bubbles.devops` | CI/CD, build, deployment, monitoring, observability, release execution |
 | security | `bubbles.security` | security/compliance findings |
 | validate | `bubbles.validate` | validation mismatches and contract gaps |
 | tests | `bubbles.test` | coverage quality, realism, taxonomy issues |

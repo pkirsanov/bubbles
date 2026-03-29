@@ -26,7 +26,7 @@ description: Deep gap analysis & remediation - identify and fix ALL implementati
 - When gap analysis discovers missing scenarios, tests, or DoD items, invoke `bubbles.plan` via `runSubagent`.
 - When gap analysis discovers implementation defects, invoke `bubbles.implement` or `bubbles.test` via `runSubagent`.
 **Non-goals:**
-- Ad-hoc changes outside `specs/...` feature/bug classification
+- Ad-hoc changes outside classified `specs/...` feature/bug/ops work
 - Creating placeholder artifacts to satisfy gates
 - Marking work “done” without required test/validation evidence
 

@@ -4,6 +4,9 @@ handoffs:
   - label: Run Scope-Aware Tests
     agent: bubbles.test
     prompt: Run the required tests for this feature/scopes and fix failures.
+  - label: Publish Managed Docs
+    agent: bubbles.docs
+    prompt: Publish durable implementation changes into the managed docs before closeout.
   - label: Validate System
     agent: bubbles.validate
     prompt: Run the full validation suite and generate a report.
@@ -56,11 +59,12 @@ handoffs:
 - `scopes.md` planning content (new scenarios/DoD/Test Plan) → invoke `bubbles.plan`
 - `uservalidation.md` → invoke `bubbles.plan`
 - `state.json` certification fields → route to `bubbles.validate`
+- Managed docs → invoke `bubbles.docs`
 
 **Non-goals:**
 - Creating new scopes or planning work (→ bubbles.plan or bubbles.iterate)
 - Deep end-to-end hardening beyond scope (→ bubbles.harden)
-- Generic documentation cleanup (→ bubbles.docs)
+- Managed-doc publication and generic documentation cleanup (→ bubbles.docs)
 - Interactive clarification sessions (user can run /bubbles.design or /bubbles.clarify directly if needed)
 
 ---

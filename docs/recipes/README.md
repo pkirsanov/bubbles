@@ -56,6 +56,8 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Review A Feature Or System](system-review.md) | "I want a holistic review before deciding what to fix, streamline, or spec" |
 | [Review First, Then Improve](review-then-improve.md) | "I want to assess an existing area before choosing the right improvement workflow" |
 | [Quality Sweep](quality-sweep.md) | "I want to improve code quality across a feature" |
+| [DevOps Work](devops-work.md) | "I need CI/CD, deployment, build, or monitoring work executed cleanly" |
+| [Ops Packet Work](ops-packet-work.md) | "I need cross-cutting infra or platform work tracked outside a feature spec" |
 | [Regression Check](regression-check.md) | "I need to make sure new changes didn't break existing features" |
 | [Post-Implementation Hardening](post-impl-hardening.md) | "I want code cleaned up, stable, secure, and regression-free before shipping" |
 | [Chaos Testing](chaos-testing.md) | "I need to break things to find weaknesses" |
@@ -83,7 +85,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 |--------|-------------------|
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
-| [Update Docs](update-docs.md) | "Code changed, docs need updating" |
+| [Update Docs](update-docs.md) | "Code changed, managed docs need publishing or cleanup" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
 | [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in framework gates" |

@@ -255,6 +255,7 @@ Dispatch each requested lens to the mapped specialist from `bubbles/system-revie
 | ux | `bubbles.ux` | usability, accessibility, flow clarity, UI structure |
 | runtime | `bubbles.chaos` | real-user execution, brittle paths, flow failures |
 | stability | `bubbles.stabilize` | performance, infra, config, reliability |
+| devops | `bubbles.devops` | CI/CD, build, deployment, monitoring, observability, release operations |
 | simplify | `bubbles.simplify` | duplicate functionality, clutter, streamlining |
 | trust | `bubbles.security` | security/compliance findings with user/system impact |
 | validation | `bubbles.validate` | claims-vs-reality and contract gaps |

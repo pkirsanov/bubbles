@@ -11,9 +11,9 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-32-58a6ff?style=flat-square" alt="32 agents">
+  <img src="https://img.shields.io/badge/agents-33-58a6ff?style=flat-square" alt="33 agents">
   <img src="https://img.shields.io/badge/gates-64-3fb950?style=flat-square" alt="64 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-28-bc8cff?style=flat-square" alt="28 modes">
+  <img src="https://img.shields.io/badge/workflow_modes-29-bc8cff?style=flat-square" alt="29 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -33,9 +33,9 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>32 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>33 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>64 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>28 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>29 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 </table>
@@ -96,7 +96,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 32 agent definitions
+│   ├── bubbles.workflow.agent.md    # 33 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -105,9 +105,10 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 32 prompt shims
+│   └── bubbles.*.prompt.md          # 33 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 28 workflow mode definitions
+│   ├── workflows.yaml               # 29 workflow mode definitions
+│   ├── docs-registry.yaml           # Managed-doc source of truth
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -153,6 +154,7 @@ Bubbles now enforces hard artifact ownership:
 - `bubbles.design` owns `design.md`
 - `bubbles.plan` owns `scopes.md`, `report.md` structure, `uservalidation.md`, and `scenario-manifest.json`
 - `bubbles.validate` owns certification state in `state.json`
+- `bubbles.docs` owns the managed docs declared in `.github/bubbles/docs-registry.yaml`
 - Diagnostic and certification agents like `bubbles.validate`, `bubbles.audit`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression`, `bubbles.clarify`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
 
 Control-plane law:
@@ -162,6 +164,13 @@ Control-plane law:
 - Diagnostic and certification agents finish with concrete result envelopes and owner-targeted packets instead of inline remediation.
 
 This is enforced by the artifact ownership contract in `.github/agents/bubbles_shared/artifact-ownership.md`, the shared governance index in `.github/agents/bubbles_shared/agent-common.md`, the ownership manifest in `.github/bubbles/agent-ownership.yaml`, and the blocking `agent_ownership_gate` in `.github/bubbles/workflows.yaml`.
+
+### Managed Docs And Ops Packets
+
+- Published docs owned by Bubbles are declared in `.github/bubbles/docs-registry.yaml`.
+- Feature and bug packets remain execution truth while work is active; managed docs are the published truth.
+- Cross-cutting infrastructure and operational delivery work lives under `specs/_ops/OPS-*`.
+- Ops packets use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json`.
 
 ### <img src="icons/lahey-badge.svg" width="24"> Start Here
 
@@ -187,9 +196,10 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 | <img src="icons/barb-keys.svg" width="20"> | `bubbles.plan` | **Scope planner.** Defines the scopes, owns planning artifacts, and keeps the books. | Breaking work into scopes |
 | <img src="icons/julian-glass.svg" width="20"> | `bubbles.implement` | **The implementer.** Delivers every time. | Implementing planned scopes |
 | <img src="icons/trinity-notebook.svg" width="20"> | `bubbles.test` | **Test verification.** Trusts nothing. Verifies everything. | Running/fixing test suites |
-| <img src="icons/jroc-mic.svg" width="20"> | `bubbles.docs` | **Documentation.** Makes sure everything is narrated and recorded. | Updating docs after changes |
+| <img src="icons/jroc-mic.svg" width="20"> | `bubbles.docs` | **Managed docs publisher.** Publishes the durable truth before closeout. | Updating published docs after changes |
 | <img src="icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
 | <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise without weakening behavior or ownership boundaries. | Reducing complexity after implementation |
+| <img src="icons/tommy-rack.svg" width="20"> | `bubbles.devops` | **DevOps executor.** Owns CI/CD, build, deployment, monitoring, and observability execution once operational work is identified. | Shipping operational changes and delivery plumbing |
 | <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Premium UI implementer.** Over-the-top production value, real frontend output. | Cinematic or flagship UI implementation |
 
 ### <img src="icons/ted-badge.svg" width="24"> Diagnostic And Certification Routing
@@ -286,7 +296,7 @@ If you want the idea challenged before it turns into artifacts:
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 28 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 29 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -297,11 +307,12 @@ Bubbles supports 28 workflow modes plus optional execution tags. Here are the mo
 | `value-first-e2e-batch` | Prioritized: plan → implement batches → test → validate | Large features |
 | `chaos-hardening` | Chaos → harden → test → validate | Resilience work |
 | `harden-gaps-to-doc` | Harden → gaps → test → docs | Quality sweeps |
+| `devops-to-doc` | DevOps → test → stabilize → validate → docs | Operational delivery work |
 | `simplify-to-doc` | Simplify → test → validate → audit → docs | Safe cleanup of existing implementations |
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 28 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 29 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -367,7 +378,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 28 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 29 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
 | [Control Plane Rollout](docs/guides/CONTROL_PLANE_ROLLOUT.md) | Phased implementation plan for the control-plane redesign across all requested changes |
@@ -415,13 +426,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 32 agent definitions
+├── agents/                    # 33 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 32 prompt shims
+├── prompts/                   # 33 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

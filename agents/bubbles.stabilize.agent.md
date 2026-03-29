@@ -1,5 +1,5 @@
 ---
-description: Stability & ops hardening - find and fix performance, infrastructure, configuration, deployment, build, reliability, and resource-usage issues using code + logs/artifacts
+description: Stability diagnostic specialist - identify performance, infrastructure, configuration, deployment, build, reliability, and resource-usage issues, then route operational execution to the right owner
 handoffs:
   - label: Draft/Update Design (Non-Interactive)
     agent: bubbles.design
@@ -39,6 +39,7 @@ handoffs:
 **Artifact Ownership: this agent is DIAGNOSTIC — it owns no spec artifacts.**
 - It may read all artifacts for analysis.
 - It may append stability findings to `report.md`.
+- It MUST route CI/CD, build, deployment, monitoring, and observability execution work to `bubbles.devops` instead of owning that remediation inline.
 - It MUST NOT edit `spec.md`, `design.md`, `scopes.md`, `uservalidation.md`, or `state.json` certification fields.
 - When stabilization discovers missing planning, invoke `bubbles.plan`. When it discovers code/test defects, invoke `bubbles.implement` or `bubbles.test`.
 

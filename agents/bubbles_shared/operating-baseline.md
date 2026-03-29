@@ -33,7 +33,7 @@ Agents MUST resolve project-specific commands, ports, paths, and policy details 
 | `.github/copilot-instructions.md` | Project | Project-specific policies |
 | `.specify/memory/agents.md` | Project | CLI entrypoint, commands, naming |
 | `.specify/memory/constitution.md` | Project | Project governance principles |
-| `specs/**` | Project | Feature/bug artifacts |
+| `specs/**` | Project | Classified work artifacts (feature, bug, ops) |
 
 ### What To Do Instead
 
@@ -83,7 +83,7 @@ The `agnosticity-lint.sh --staged` pre-commit check detects project-specific con
 - Avoid shell wrapper patterns that trigger approval prompts unless explicitly required.
 - Every long-running operation must have an explicit timeout or bounded polling rule.
 
-## Feature/Bug Resolution
+## Classified Work Resolution
 
-- Work only inside classified `specs/...` feature or bug targets.
+- Work only inside classified `specs/...` feature, bug, or ops targets.
 - If the target is not found after one resolution attempt, fail fast and report the valid alternatives.

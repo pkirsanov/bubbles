@@ -1,0 +1,20 @@
+<!-- icon-name: tommy-rack -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="14" y="8" width="24" height="48" rx="3"/>
+  <path d="M 20 16 L 32 16"/>
+  <path d="M 20 24 L 32 24"/>
+  <path d="M 20 32 L 32 32"/>
+  <path d="M 20 40 L 32 40"/>
+  <path d="M 20 48 L 32 48"/>
+  <circle cx="18" cy="16" r="1"/>
+  <circle cx="18" cy="24" r="1"/>
+  <circle cx="18" cy="32" r="1"/>
+  <circle cx="18" cy="40" r="1"/>
+  <circle cx="18" cy="48" r="1"/>
+  <path d="M 46 14 L 54 14 L 54 22"/>
+  <path d="M 54 14 L 42 26"/>
+  <path d="M 46 34 C 49 31 54 31 57 34"/>
+  <path d="M 44 38 C 49 33 56 33 60 38" stroke-width="1.4"/>
+  <path d="M 48 44 L 56 44"/>
+  <path d="M 52 40 L 52 48"/>
+</svg>

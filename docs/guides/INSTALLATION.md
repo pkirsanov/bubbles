@@ -25,8 +25,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 ```
 
 This installs:
-- 32 agent definitions → `.github/agents/bubbles.*.agent.md`
-- 32 prompt shims → `.github/prompts/bubbles.*.prompt.md`
+- 33 agent definitions → `.github/agents/bubbles.*.agent.md`
+- 33 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
 - Shared portable instructions → `.github/instructions/bubbles-*.instructions.md`
 - Shared portable governance skills → `.github/skills/bubbles-*/SKILL.md`
@@ -90,7 +90,7 @@ The bootstrapped files contain `TODO` markers where you need to fill in project-
 - Add project-specific forbidden commands
 - Add project-specific required patterns
 
-Tip: Track project-specific customization in your repository's standard docs or `.specify/memory/` files.
+Tip: Track project-specific customization in your repository's managed docs or `.specify/memory/` files.
 
 ---
 

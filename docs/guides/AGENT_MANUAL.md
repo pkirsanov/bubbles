@@ -27,6 +27,13 @@ Artifact ownership:
 - `design.md`: `bubbles.design`
 - planning structure in scopes/report/uservalidation/scenario manifest: `bubbles.plan`
 - certification state in `state.json`: `bubbles.validate`
+- managed docs declared in `bubbles/docs-registry.yaml`: `bubbles.docs`
+
+Classified work packets:
+- feature work lives under `specs/NNN-feature-name/`
+- feature-bound bugs live under `specs/**/bugs/BUG-...`
+- cross-cutting ops work lives under `specs/_ops/OPS-.../`
+- ops packets use `objective.md` and `runbook.md` alongside `design.md`, `scopes.md`, `report.md`, and `state.json`
 
 Shared governance index:
 - `agents/bubbles_shared/agent-common.md`
@@ -65,9 +72,10 @@ Orchestrator rule:
 | `bubbles.plan` | break work into scopes, tests, DoD, and scenario contracts | `plan-bootstrap.md`, `planning-core.md`, `artifact-lifecycle.md`, `scope-templates.md` |
 | `bubbles.implement` | implement a planned scope | `implement-bootstrap.md`, `execution-core.md`, `completion-governance.md`, `quality-gates.md` |
 | `bubbles.test` | execute tests, close test gaps, and prove changed behavior | `test-bootstrap.md`, `test-core.md`, `quality-gates.md`, `test-fidelity.md` |
-| `bubbles.docs` | update docs for changed behavior | `docs-bootstrap.md`, `artifact-lifecycle.md` |
+| `bubbles.docs` | publish managed docs for changed behavior and close out published truth | `docs-bootstrap.md`, `artifact-lifecycle.md`, `managed-docs.md` |
 | `bubbles.chaos` | run resilience and breakage probes | `test-bootstrap.md`, `quality-gates.md` |
 | `bubbles.simplify` | reduce over-engineering and simplify changed code | `implement-bootstrap.md`, `operating-baseline.md` |
+| `bubbles.devops` | execute CI/CD, build, deployment, monitoring, and observability changes | `execution-ops.md`, `artifact-ownership.md`, `quality-gates.md` |
 
 Owner/executor rule:
 - only owners and execution specialists may modify their owned surfaces

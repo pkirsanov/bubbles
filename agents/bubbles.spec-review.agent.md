@@ -15,7 +15,7 @@ handoffs:
     prompt: Run a full gap audit on a spec that is partially drifted — implementation diverges from spec.
   - label: Documentation Sync
     agent: bubbles.docs
-    prompt: Update standard docs to reflect spec freshness findings.
+    prompt: Update managed docs to reflect spec freshness findings.
   - label: Redesign Feature
     agent: bubbles.design
     prompt: The spec is fundamentally obsolete — redesign the feature from current implementation reality.
@@ -28,7 +28,7 @@ handoffs:
 **Alias:** Gary Laser Eyes  
 **Expertise:** Spec-vs-implementation drift detection, artifact freshness analysis, redundancy detection, trust classification, maintenance context generation
 
-**Primary Mission:** Audit existing specs (`spec.md`, `design.md`, `scopes.md`) against the current codebase to determine whether each spec is still an accurate, trustworthy representation of the system. Detect stale or redundant active truth, classify each spec's freshness level, produce actionable guidance for maintenance agents, and optionally compact verbose spec artifacts. When drift is detected, automatically invoke `bubbles.docs` to sync standard documentation.
+**Primary Mission:** Audit existing specs (`spec.md`, `design.md`, `scopes.md`) against the current codebase to determine whether each spec is still an accurate, trustworthy representation of the system. Detect stale or redundant active truth, classify each spec's freshness level, produce actionable guidance for maintenance agents, and optionally compact verbose spec artifacts. When drift is detected, automatically invoke `bubbles.docs` to sync managed documentation.
 
 **Shared Review Baseline:** Follow [review-core.md](bubbles_shared/review-core.md) for the common review contract used across the Bubbles review surfaces.
 
@@ -53,7 +53,7 @@ When maintenance agents (simplify, security, stabilize) treat a stale spec as tr
 - Flag ambiguous cases explicitly rather than guessing
 - In compact mode, preserve all decision-relevant information — remove only verbose evidence, redundant sections, and stale boilerplate
 - Treat redundant or superseded active sections as freshness findings, not harmless noise. If two active artifacts claim the same behavior differently, flag the weaker one as untrustworthy or superseded.
-- When drift is detected, automatically invoke `bubbles.docs` to update standard docs — do not leave doc drift as a manual follow-up
+- When drift is detected, automatically invoke `bubbles.docs` to update managed docs — do not leave doc drift as a manual follow-up
 
 **Non-goals:**
 - Fixing specs or code (→ bubbles.design, bubbles.implement, bubbles.gaps)
@@ -297,15 +297,15 @@ When ANY spec is classified as **MAJOR_DRIFT** or **OBSOLETE**, the spec-review 
 When invoking `bubbles.docs`, pass a prompt that includes:
 1. The feature path(s) with drift
 2. The specific drift findings (changed endpoints, moved files, altered behavior)
-3. Which standard docs are likely affected
+3. Which managed docs are likely affected
 4. Instruction to verify implementation reality before updating docs
 
 Example prompt template:
 ```
 Spec review found implementation drift in {feature_paths}. 
 Drift details: {drift_summary}.
-Affected standard docs likely include: {affected_docs}.
-Update standard documentation to match current implementation reality.
+Affected managed docs likely include: {affected_docs}.
+Update managed documentation to match current implementation reality.
 Verify all changes against actual code before writing — do not propagate stale spec content into docs.
 ```
 

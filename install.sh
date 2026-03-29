@@ -108,6 +108,9 @@ ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
 info "Installing workflow config and registries..."
 mkdir -p "${TARGET}/bubbles"
 cp "$TEMP_DIR"/bubbles/workflows.yaml "${TARGET}/bubbles/"
+if [[ -f "$TEMP_DIR/bubbles/docs-registry.yaml" ]]; then
+  cp "$TEMP_DIR"/bubbles/docs-registry.yaml "${TARGET}/bubbles/"
+fi
 if [[ -f "$TEMP_DIR/bubbles/agent-ownership.yaml" ]]; then
   cp "$TEMP_DIR"/bubbles/agent-ownership.yaml "${TARGET}/bubbles/"
 fi

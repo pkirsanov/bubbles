@@ -45,7 +45,7 @@ handoffs:
       Report unresolved issues with raw test output as evidence.
   - label: Docs Sync
     agent: bubbles.docs
-    prompt: Sync docs and artifact consistency for current spec.
+    prompt: Sync managed docs and artifact consistency for the current work packet.
   - label: Simplify Pass
     agent: bubbles.simplify
     prompt: Analyze code for unnecessary complexity, dead code, and over-engineering. Make cleanup changes directly.
@@ -149,6 +149,7 @@ Expected forms:
 - Spec range: `011-037`
 - Explicit list: `011,012,019,037`
 - Feature paths: `specs/011-... specs/012-...`
+- Ops paths: `specs/_ops/OPS-001-...`
 
 Optional additional context:
 
@@ -190,10 +191,10 @@ Supported options:
 
 When execution discovers undocumented or improperly documented work, the workflow agent MUST repair the planning layer before continuing:
 
-1. **Missing feature/bug folder:** classify the work item and create the correct feature or bug artifact set via the owning planning agents.
+1. **Missing classified work folder:** classify the work item and create the correct feature, bug, or ops artifact set via the owning agent chain.
 2. **Existing folder but missing artifacts:** invoke the owner chain to create the missing artifacts instead of letting downstream agents continue on partial docs.
 3. **Existing artifacts but empty/skeletal content:** treat as missing planning, not as valid prerequisites.
-4. **Placeholder/TODO/stub code uncovered during execution:** if the behavior is not already owned by an active feature/bug spec, promote it into one before allowing implementation or hardening to claim progress.
+4. **Placeholder/TODO/stub code uncovered during execution:** if the behavior is not already owned by an active feature, bug, or ops packet, promote it into one before allowing implementation or hardening to claim progress.
 5. **UI-bearing work:** when the promoted work has user-facing behavior, include `bubbles.ux` in the planning chain before design/plan.
 
 This protocol is mandatory for feature work, bug work, hardening, gaps, stabilize, improve-existing, redesign-existing, and iterate-triggered execution. The orchestrator must fix the planning deficit itself rather than stopping with advice to the user.
@@ -947,7 +948,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
    c. **Pick trigger randomly:** Select one phase from `triggerPool` at random. Each trigger has equal probability. Track which triggers have been used to ensure diverse coverage — if all triggers have been used at least once, reset the tracking and allow repeats.
 
    d. **Execute trigger phase** via `runSubagent` against the selected spec:
-      - Map trigger name to agent: `chaos` → `bubbles.chaos`, `harden` → `bubbles.harden`, `gaps` → `bubbles.gaps`, `simplify` → `bubbles.simplify`, `stabilize` → `bubbles.stabilize`, `validate` → `bubbles.validate`, `improve` → `bubbles.analyst`, `security` → `bubbles.security`
+      - Map trigger name to agent: `chaos` → `bubbles.chaos`, `harden` → `bubbles.harden`, `gaps` → `bubbles.gaps`, `simplify` → `bubbles.simplify`, `stabilize` → `bubbles.stabilize`, `devops` → `bubbles.devops`, `validate` → `bubbles.validate`, `improve` → `bubbles.analyst`, `security` → `bubbles.security`
       - Include round number, selected spec, and sweep context in the subagent prompt: "This is round {R}/{maxRounds} of a stochastic quality sweep targeting spec {spec_id}. Your job is to probe for issues from your specialist angle. Report findings with specific actionable items."
       - For `improve` trigger specifically: the prompt to bubbles.analyst MUST instruct it to analyze the existing feature against competitors/best practices and propose concrete improvements. The analyst's output enriches spec.md with actors, use cases, and improvement proposals.
       - Parse the trigger agent's verdict for findings
@@ -1173,7 +1174,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 
         **Note on simplify trigger:** When `bubbles.simplify` is the trigger, it both identifies AND makes the code changes (refactoring, dead code removal, complexity reduction). No separate implement phase is needed — go directly to `test → validate → audit` to verify the simplification didn't break anything. This is the ONLY trigger without a `bootstrap` phase.
 
-        **Note on stabilize trigger:** When `bubbles.stabilize` is the trigger, it identifies performance, infrastructure, configuration, and reliability issues. Unlike simplify, stabilize reports findings but does NOT make the code changes itself — `bootstrap` ensures design readiness, then `bubbles.implement` applies the fixes, then `test → validate → audit` verifies.
+      **Note on stabilize trigger:** When `bubbles.stabilize` is the trigger, it identifies performance, infrastructure, configuration, and reliability issues. Operational execution should route through `bubbles.devops`, while product-code fixes still route through `bubbles.implement`, followed by `test → validate → audit`.
 
         **Note on chaos trigger:** When `bubbles.chaos` is the trigger and finds runtime failures, invoke `bubbles.bug` first to document the bug with structured artifacts (bug.md, spec.md, design.md, scopes.md) and root cause analysis. `bubbles.bug` does NOT implement the fix — it creates the bug documentation and analysis, then `bootstrap` ensures design readiness, then `bubbles.implement` fixes the code.
 
@@ -1228,6 +1229,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
 | `gaps` | `bubbles.gaps` | Implementation gaps vs design, missing features |
 | `simplify` | `bubbles.simplify` | Code complexity, unnecessary abstractions, dead code |
 | `stabilize` | `bubbles.stabilize` | Performance, infrastructure, config, reliability, resource usage |
+| `devops` | `bubbles.devops` | CI/CD, build, deployment, monitoring, observability, and release automation execution |
 | `validate` | `bubbles.validate` | Build/lint/test regressions, policy compliance |
 | `improve` | `bubbles.analyst` | Competitive analysis, business capabilities, improvement proposals (triggers full analyst→UX→design→plan pipeline in fix cycle) |
 | `security` | `bubbles.security` | Threat modeling, dependency scanning, code security review, auth/authz verification |

@@ -48,7 +48,7 @@ handoffs:
 - Declaring feature completion solely from chaos runs (chaos feeds into bubbles.bug / bubbles.test / bubbles.stabilize)
 - Using mocked/intercepted backend flows for live-system categories
 - Implementing fixes for discovered issues (→ bubbles.bug for documentation, then bubbles.implement for fix)
-- Ad-hoc code/doc changes outside feature/bug classification
+- Ad-hoc code/doc changes outside classified feature/bug/ops work
 - Running against the persistent development database (MUST use ephemeral test DB)
 
 ## ⚠️ FIXTURE OWNERSHIP AND PROTECTED STATE (NON-NEGOTIABLE)
@@ -552,7 +552,7 @@ The chaos run MUST abort early if any of these conditions are met:
 
 ### Phase 0: Pre-Flight & Context Loading
 
-1. Parse `$ARGUMENTS` to resolve `{TARGET_DIR}` (feature or bug directory). If not found after ONE search, STOP and list available folders.
+1. Parse `$ARGUMENTS` to resolve `{TARGET_DIR}` (feature, bug, or ops directory). If not found after ONE search, STOP and list available folders.
 2. Enforce Work Classification Gate. If bug target, enforce Bug Artifacts Gate.
 3. Load the minimum chaos baseline from [test-bootstrap.md](bubbles_shared/test-bootstrap.md) and [operating-baseline.md](bubbles_shared/operating-baseline.md) before first action.
 4. Load `{TARGET_DIR}/spec.md` and `{TARGET_DIR}/scopes.md`.

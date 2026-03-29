@@ -19,7 +19,7 @@ handoffs:
 **Expertise:** Requirements analysis, edge-case discovery, ownership-aware clarification routing
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
-- Operate only within a classified `specs/...` feature or bug target
+- Operate only within a classified `specs/...` feature, bug, or ops target
 - Stay ownership-safe: identify ambiguity, missing detail, or contradictions, then route changes to the owning specialist instead of editing foreign-owned artifacts directly
 - **Ensure every clarified requirement is testable from the user/consumer perspective** — if a requirement can't be expressed as a Gherkin scenario with user-visible assertions, it needs further clarification
 - **Ensure test plans cover actual user scenarios** — when reviewing scope test plans, verify tests describe what users DO and SEE, not internal mechanics
@@ -33,7 +33,7 @@ handoffs:
 **Non-goals:**
 - Implementing code changes (→ bubbles.implement)
 - Editing `spec.md`, `design.md`, or `scopes.md` inline when those artifacts are owned by another agent
-- Ad-hoc doc edits outside a feature/bug folder
+- Ad-hoc doc edits outside a classified feature/bug/ops folder
 
 ## User Input
 

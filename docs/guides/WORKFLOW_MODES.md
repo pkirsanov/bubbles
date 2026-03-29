@@ -61,7 +61,7 @@ These run the complete pipeline. Use for new features.
 **The standard.** All phases, strict gates, complete coverage.
 
 ```
-select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
+select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize
 ```
 
 **Use when:** New features, standard development work.
@@ -72,92 +72,65 @@ select → bootstrap → implement → test → regression → simplify → stab
 
 ### <img src="../../icons/julian-glass.svg" width="20"> full-delivery-strict
 
-Same as `full-delivery` but with **stricter gates** — chaos testing included, tighter evidence requirements.
+Same as `full-delivery` but with stricter evidence and enforcement expectations.
 
-**Use when:** Critical features, production-facing changes.
+**Use when:** Critical features and production-facing changes.
 
 ### <img src="../../icons/lahey-badge.svg" width="20"> delivery-lockdown
 
-Maximum-assurance delivery. This mode does not stop at a single pass. It keeps running the improvement and certification chain until `bubbles.validate` can legitimately certify `done`, or it records an explicit validate-owned blocker.
+Maximum-assurance delivery. The workflow loops until `bubbles.validate` can certify `done` or records a real blocker.
 
 ```
-[repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → security → validate → audit → chaos → docs] → finalize
+[repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → devops → security → validate → audit → chaos → docs] → finalize
 ```
 
-Optional tags:
-- `improvementPrelude: analyze-design-plan` runs analyst → design → plan before each round.
-- `improvementPrelude: analyze-ux-design-plan` runs analyst → ux → design → plan before each round.
-- `improvementPreludeRounds: N` caps how many rounds may include that prelude.
-
-The parent loop reuses child workflows instead of hardcoding every quality bundle:
-- `test-to-doc` handles required tests and initial verification.
-- `harden-gaps-to-doc` handles the deterministic quality sweep and includes chaos.
-- `validate-to-doc` handles final validation, audit, and docs synchronization.
-- `bugfix-fastlane` closes any real defects discovered by tests, chaos, validation, or the quality sweep.
-
-New findings must be classified, not hand-waved:
-- A legitimate new supported scenario means planning artifacts are updated and new tests are added before the next round.
-- A defect means a tracked bug plus a regression test, followed by inline bug closure during the same workflow run.
-
-This mode also defaults `specReview: once-before-implement` so stale or redundant legacy specs get audited once before round 1 starts touching code.
-
-**Use when:** Release-candidate work, difficult legacy features, multi-round hardening where one more pass must happen automatically until the spec is truly green.
+**Use when:** Release-candidate work and difficult legacy hardening where the system must keep going until it is legitimately green.
 
 ### <img src="../../icons/bubbles-glasses.svg" width="20"> value-first-e2e-batch
 
-Prioritized delivery. Scores work items by business value, implements in priority order, runs E2E tests in batches.
+Prioritized delivery. Scores work items by business value and implements in priority order.
 
 ```
-discover → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
+discover → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize
 ```
 
-**Use when:** Multiple features competing for time. Large backlogs.
-
-```
-/bubbles.workflow  value-first-e2e-batch for all pending specs
-```
+**Use when:** Multiple features compete for time and you want the highest-value work first.
 
 ### <img src="../../icons/bubbles-glasses.svg" width="20"> product-to-delivery
 
-Full product discovery → delivery pipeline.
+Full product discovery through delivery.
 
 ```
-analyze → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
+analyze → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize
 ```
 
-**Use when:** Starting from a product idea, not a technical spec.
+**Use when:** Starting from a product idea rather than an already-shaped technical spec.
 
 ---
 
 ## Fast-Track Modes
 
-Skip phases you don't need. Move fast without cutting safety.
+Skip phases you do not need without dropping the governance chain.
 
 ### <img src="../../icons/ricky-dynamite.svg" width="20"> bugfix-fastlane
 
-Fast bug resolution with proper evidence.
+Fast bug resolution with reproduce-before and verify-after evidence.
 
 ```
-select → implement → test → regression → simplify → stabilize → security → validate → audit → finalize
+select → implement → test → regression → simplify → stabilize → devops → security → validate → audit → finalize
 ```
 
-**Use when:** Bug fixes. Get in, fix it, prove it, get out.
-
-```
-/bubbles.workflow  bugfix-fastlane for BUG-015
-```
+**Use when:** Bug fixes.
 
 ### <img src="../../icons/cory-trevor-smokes.svg" width="20"> feature-bootstrap
 
-Just the planning phases. Sets up artifacts without implementing.
+Set up planning artifacts without implementing.
 
 ```
 select → bootstrap → finalize
 ```
 
-**Use when:** You want to plan but not implement yet.
-
-**Ownership behavior:** bootstrap and downstream specialists must respect artifact ownership. Missing business requirements route to `bubbles.analyst`, missing design routes to `bubbles.design`, and missing planning artifacts route to `bubbles.plan`.
+**Use when:** You want to prepare artifacts but not implement yet.
 
 ### <img src="../../icons/julian-glass.svg" width="20"> iterate
 
@@ -169,65 +142,45 @@ Pick the highest-priority next slice inside an existing spec and run one iterati
 
 **Use when:** Picking up where you left off.
 
-If the next executable action is ambiguous, `bubbles.iterate` may run `bubbles.code-review` or `bubbles.system-review` as a narrow diagnostic precursor, then continue into planning or execution. Review is not part of the normal iterate phase chain.
-
-```
-/bubbles.workflow  iterate for 042-catalog-assistant
-```
+If the next executable action is ambiguous, `bubbles.iterate` may run `bubbles.code-review` or `bubbles.system-review` as a narrow diagnostic precursor, then continue into planning or execution.
 
 ---
 
 ## Quality & Hardening Modes
 
-Focus on quality without new implementation.
+Focus on quality, hardening, and operational readiness.
 
 ### <img src="../../icons/conky-puppet.svg" width="20"> harden-gaps-to-doc
 
-Hardening → gap analysis → test → documentation. The quality sandwich.
-
 ```
-select → bootstrap → validate → harden → gaps → implement → test → regression → simplify → stabilize → security → chaos → validate → audit → docs → finalize
+select → bootstrap → validate → harden → gaps → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs → finalize
 ```
 
-**Use when:** Post-implementation quality sweep.
+**Use when:** You want a thorough post-implementation quality sweep.
 
 ### <img src="../../icons/ricky-dynamite.svg" width="20"> chaos-hardening
 
-Chaos testing followed by hardening fixes.
-
 ```
-select → bootstrap → chaos → implement → test → regression → simplify → stabilize → security → validate → audit → finalize
+select → bootstrap → chaos → implement → test → regression → simplify → stabilize → devops → security → validate → audit → finalize
 ```
 
-**Use when:** Resilience testing and fixing.
+**Use when:** Resilience testing and fixing what breaks.
 
 ### <img src="../../icons/conky-puppet.svg" width="20"> spec-scope-hardening
-
-Tighten specs and scope definitions. No code changes.
 
 ```
 select → bootstrap → harden → docs → validate → audit → finalize
 ```
 
-**Use when:** Specs are vague, scopes need tightening.
+**Use when:** Specs are vague and scope quality needs tightening.
 
 ### <img src="../../icons/ricky-dynamite.svg" width="20"> stochastic-quality-sweep
-
-Random quality checks across the codebase. Like bottle kids — you never know where they'll hit.
 
 ```
 [N randomized rounds: random spec + random trigger + trigger-specific fix cycle] → docs → finalize
 ```
 
-**Use when:** Periodic maintenance. Trust but verify.
-
-When the request is round-based and specialist-specific, keep the round semantics by constraining the sweep instead of switching to a deterministic batch mode.
-
-```
-/bubbles.workflow  stochastic-quality-sweep triggerAgents: stabilize maxRounds: 10
-```
-
-Use that pattern for prompts like "do 10 rounds of stabilize", "5 iterations of chaos", or similar repeated specialist passes.
+**Use when:** Periodic adversarial maintenance across the codebase.
 
 ---
 
@@ -237,8 +190,6 @@ Do one thing well.
 
 ### <img src="../../icons/trinity-notebook.svg" width="20"> test-to-doc
 
-Run tests, fix failures, update docs.
-
 ```
 test → validate → docs
 ```
@@ -246,8 +197,6 @@ test → validate → docs
 **Use when:** Tests need running and docs need updating.
 
 ### <img src="../../icons/jroc-mic.svg" width="20"> docs-only
-
-Documentation updates only. No code changes.
 
 ```
 docs
@@ -257,151 +206,111 @@ docs
 
 ### <img src="../../icons/randy-cheeseburger.svg" width="20"> validate-only
 
-Run validation gates only.
-
 ```
 validate
 ```
 
-**Use when:** Quick gate check without full audit.
+**Use when:** Quick gate checks without a full workflow rerun.
 
 ### <img src="../../icons/lahey-badge.svg" width="20"> audit-only
-
-Run the audit phase only.
 
 ```
 audit
 ```
 
-**Use when:** Compliance check on existing work.
+**Use when:** Compliance-only review on existing work.
 
 ### <img src="../../icons/bill-wrench.svg" width="20"> stabilize-to-doc
 
-Stability fixes → test → docs.
+Diagnose operational reliability issues, route delivery remediation through DevOps when needed, then run the rest of the quality chain.
 
 ```
-stabilize → test → validate → docs
+select → bootstrap → validate → stabilize → devops → implement → test → regression → simplify → security → chaos → validate → audit → docs → finalize
 ```
 
-**Use when:** Infrastructure/stability work.
+**Use when:** Infrastructure and operational hardening starts with diagnosis.
 
-Use this for direct stability work requests without round language. If the user asks for repeated rounds of stabilize, prefer `stochastic-quality-sweep` with `triggerAgents: stabilize` and `maxRounds: N`.
+### <img src="../../icons/tommy-rack.svg" width="20"> devops-to-doc
+
+Focused operational delivery for an existing feature or bug.
+
+```
+select → bootstrap → devops → test → stabilize → security → validate → audit → docs → finalize
+```
+
+**Use when:** CI/CD, build, deployment, monitoring, observability, or release automation needs direct execution work.
 
 ### <img src="../../icons/cyrus-sunglasses.svg" width="20"> improve-existing
 
-Analyze an existing feature, reconcile stale claims, and improve it competitively.
-
 ```
-analyze → select → validate → harden → gaps → implement → test → validate → audit → chaos → docs → finalize
+analyze → select → validate → harden → gaps → implement → test → regression → simplify → stabilize → devops → security → validate → audit → chaos → docs → finalize
 ```
 
-This mode now defaults `specReview: once-before-implement`, so a one-shot `bubbles.spec-review` audit catches stale or redundant active specs before the workflow starts changing code.
-
-**Use when:** The feature exists already and you want a full improvement pass rather than a narrow cleanup, but you want one freshness/redundancy check before implementation-capable work begins.
+**Use when:** An existing feature needs a full improvement pass.
 
 ### <img src="../../icons/lucy-mirror.svg" width="20"> redesign-existing
 
-Reconcile stale requirements, UX, design, and scopes for an existing feature, then redesign and deliver it.
-
 ```
-analyze → select → bootstrap → implement → test → regression → simplify → stabilize → security → docs → validate → audit → chaos → finalize
+analyze → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize
 ```
 
-This mode also defaults `specReview: once-before-implement` so stale or duplicated active truth is reviewed once before the redesign path starts rewriting implementation.
-
-**Use when:** The feature exists, but active artifacts no longer match the intended behavior and a major redesign is required before implementation can proceed safely.
-
-```
-/bubbles.workflow  redesign-existing for 019-visual-page-builder
-```
+**Use when:** An existing feature needs major artifact reconciliation and redesign before implementation can safely proceed.
 
 ### <img src="../../icons/donny-ducttape.svg" width="20"> simplify-to-doc
-
-Simplify an existing implementation, prove it still works, then sync docs.
 
 ```
 select → simplify → test → validate → audit → docs → finalize
 ```
 
-**Use when:** The feature already exists and the main goal is to remove complexity, over-engineering, or noisy abstractions without inventing a new product direction.
-
-```
-/bubbles.workflow  simplify-to-doc for 019-visual-page-builder
-```
+**Use when:** The main goal is to reduce complexity without inventing a new product direction.
 
 ### <img src="../../icons/gary-laser-eyes.svg" width="20"> spec-review-to-doc
-
-Audit specs for freshness, classify trust levels, and produce a maintenance context report. Read-only — no code changes.
 
 ```
 select → spec-review → docs → finalize
 ```
 
-**Use when:** You need to know which specs are still trustworthy before running maintenance agents (simplify, security, stabilize) or when specs haven't been updated after significant code changes.
-
-```
-/bubbles.workflow  spec-review-to-doc for all
-```
+**Use when:** You need a trust and freshness audit before maintenance work relies on existing artifacts.
 
 ### <img src="../../icons/conky-puppet.svg" width="20"> harden-to-doc
 
-Harden specs, then fix and test the issues found.
-
 ```
-bootstrap → validate → harden → implement → test → chaos → validate → audit → docs
+bootstrap → validate → harden → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs
 ```
 
 **Use when:** Code has weak spots that need tightening before shipping.
 
 ### <img src="../../icons/phil-collins-baam.svg" width="20"> gaps-to-doc
 
-Find implementation gaps, then fix and test.
-
 ```
-bootstrap → validate → gaps → implement → test → chaos → validate → audit → docs
+bootstrap → validate → gaps → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs
 ```
 
-**Use when:** Implementation may be incomplete or missing edge cases.
+**Use when:** Implementation may be incomplete or missing key edge cases.
 
 ### <img src="../../icons/ricky-dynamite.svg" width="20"> chaos-to-doc
-
-Run chaos probes, then document findings.
 
 ```
 chaos → validate → audit → docs
 ```
 
-**Use when:** Chaos testing without implementation fixes.
+**Use when:** You want chaos findings documented without an implementation pass.
 
 ### <img src="../../icons/randy-cheeseburger.svg" width="20"> reconcile-to-doc
 
-Reconcile stale artifact state with implementation reality.
-
 ```
-bootstrap → validate → implement → test → validate → audit → chaos → docs
+bootstrap → validate → implement → test → regression → simplify → stabilize → devops → security → validate → audit → chaos → docs
 ```
 
-**Use when:** Specs claim "done" but implementation has drifted or is incomplete.
+**Use when:** Implementation reality and artifact state need to be reconciled.
 
 ### <img src="../../icons/randy-cheeseburger.svg" width="20"> validate-to-doc
-
-Validate + audit + docs without implementation.
 
 ```
 validate → audit → docs
 ```
 
-**Use when:** Quick check that everything passes gates, then update docs.
-
-### <img src="../../icons/conky-puppet.svg" width="20"> spec-scope-hardening
-
-Tighten spec and scope artifacts only — no code changes.
-
-```
-select → bootstrap → harden → docs → validate → audit
-```
-
-**Use when:** Specs need better Gherkin scenarios, stronger DoD, or clearer design. Status ceiling: `specs_hardened`.
+**Use when:** Quick validation plus documentation sync.
 
 ---
 

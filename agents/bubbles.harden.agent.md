@@ -19,7 +19,7 @@ handoffs:
 **Expertise:** Task/DoD verification, deep code review, exhaustive testing, policy compliance enforcement
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
-- Operate only within a classified `specs/...` feature or bug target
+- Operate only within a classified `specs/...` feature, bug, or ops target
 - Enforce required artifact gates and uservalidation gate before any work
 - Prefer fixing root causes over silencing symptoms
 - **Require ACTUAL execution evidence before declaring anything complete** — see Execution Evidence Standard in agent-common.md
@@ -40,7 +40,7 @@ handoffs:
 - When hardening discovers code/test defects, invoke `bubbles.implement` or `bubbles.test` via `runSubagent`.
 
 **Non-goals:**
-- Ad-hoc refactors/changes outside feature/bug classification
+- Ad-hoc refactors/changes outside classified feature/bug/ops work
 - Skipping required workflows, gates, or evidence requirements
 
 ## User Input
@@ -495,7 +495,7 @@ Verify (and fix) documentation drift:
 - `{FEATURE_DIR}/spec.md` reflects final behavior
 - `{FEATURE_DIR}/design.md` matches architecture decisions
 - API documentation updated for any contract changes
-- Standard docs updated where impacted
+- Managed docs updated where impacted
 
 ---
 

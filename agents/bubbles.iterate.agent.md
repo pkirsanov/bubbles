@@ -42,13 +42,16 @@ handoffs:
     prompt: Analyze code for unnecessary complexity, dead code, and over-engineering. Make cleanup changes directly.
   - label: Stability Pass
     agent: bubbles.stabilize
-    prompt: Find and fix performance/deployment/config/reliability issues.
+    prompt: Diagnose performance/config/reliability issues and identify needed operational remediation.
+  - label: DevOps Execution
+    agent: bubbles.devops
+    prompt: Execute CI/CD, build, deployment, monitoring, and observability changes.
   - label: Security Review
     agent: bubbles.security
     prompt: Run threat modeling, dependency scanning, code security review, and auth verification.
   - label: Documentation Sweep
     agent: bubbles.docs
-    prompt: Update all docs to reflect scope changes.
+    prompt: Update managed docs and related execution docs to reflect scope changes.
   - label: Bug Documentation
     agent: bubbles.bug
     prompt: Document a bug with structured artifacts (bug.md, spec.md, design.md, scopes.md).
@@ -105,9 +108,11 @@ handoffs:
 $ARGUMENTS
 ```
 
-**Optional:** Feature path or short name (e.g., `specs/NNN-feature-name`, `NNN`). If omitted, auto-detect or create new.
+**Optional:** Classified work path or short name (e.g., `specs/NNN-feature-name`, `specs/_ops/OPS-001-ci-hardening`, `NNN`). If omitted, auto-detect or create new.
 
 **Bug folders:** If `$ARGUMENTS` points at a bug folder (`specs/**/bugs/BUG-*`), this invocation MUST be treated as bug work. Enforce the Bug Artifacts Gate and then proceed with scope selection/execution within that bug folder.
+
+**Ops folders:** If `$ARGUMENTS` points at an ops folder (`specs/_ops/OPS-*`), this invocation MUST be treated as ops work. Use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json` as the active packet.
 
 **Optional Additional Context:**
 
@@ -116,7 +121,7 @@ $ADDITIONAL_CONTEXT
 ```
 
 Supported options:
-- `type: tests|docs|stabilize|gaps|harden|implement|refactor|feature|bugfix|analyze|improve|security|chaos` - Work type to focus on
+- `type: tests|docs|stabilize|devops|gaps|harden|implement|refactor|feature|bugfix|analyze|improve|security|chaos` - Work type to focus on
 - `mode: full-delivery|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|improve-existing|iterate|resume-only` - Override automatic mode selection (default: auto-detect from work type)
 - `iterations: <N>` - Run N iterations (default: 1)
 - `run_mode: endless` - Keep iterating until time budget expires
@@ -151,6 +156,8 @@ When the user provides free-text input WITHOUT explicit `type:` or `mode:` param
 | "work on whatever needs attention" | (auto-detect, no type filter) |
 | "focus on documentation" | type: docs |
 | "make this more stable" | type: stabilize |
+| "fix the CI pipeline" | type: devops |
+| "work on ops packet OPS-001" | feature: specs/_ops/OPS-001, type: devops |
 | "simplify the code" | type: refactor |
 | "chaos test the whole system" | type: chaos |
 | "security review on auth" | feature: auth, type: security |
@@ -192,7 +199,7 @@ If registry and this file conflict, registry phase/gate policy wins and the conf
 
 Allowed triggers:
 - Existing artifacts do not make the next engineering action clear, and the ambiguity is code-local
-- `type: refactor`, `type: stabilize`, or `type: improve` is requested and current scopes are too vague to pick the next code-level fix safely
+- `type: refactor`, `type: stabilize`, `type: devops`, or `type: improve` is requested and current scopes are too vague to pick the next code-level fix safely
 - Repeated narrow-fix loops indicate structural uncertainty and iterate needs a diagnosis before selecting the next scope or repair
 - User-validation regressions or feature-level ambiguity indicate product, UX, runtime, or cross-domain uncertainty that cannot be resolved from the current spec/design/scopes alone
 
@@ -232,6 +239,7 @@ Use `bubbles/workflows.yaml`, [execution-core.md](bubbles_shared/execution-core.
 | `tests` | Find and fix test gaps, coverage issues, failing tests |
 | `docs` | Find and fix documentation gaps, drift, staleness |
 | `stabilize` | Find and fix performance, reliability, deployment issues |
+| `devops` | Find and fix CI/CD, build, deployment, monitoring, and observability issues |
 | `gaps` | Find and fix design/requirements gaps vs implementation |
 | `harden` | Deep verification and hardening of existing features |
 | `implement` | Implement next incomplete feature scope |
@@ -326,6 +334,7 @@ When the user does NOT specify an explicit `mode:`, iterate auto-selects based o
 | Type: `tests` | `test-to-doc` | Test execution + quality chain |
 | Type: `docs` | `docs-only` | Documentation updates only |
 | Type: `stabilize` | `stabilize-to-doc` | Validation → stability/ops hardening → fix → quality chain |
+| Type: `devops` | `devops-to-doc` | Focused DevOps execution + operational verification + docs sync |
 | Type: `gaps` | `gaps-to-doc` | Gap analysis → fix → quality chain |
 | Type: `harden` | `harden-to-doc` | Deep hardening → fix → quality chain |
 | Type: `implement` | `full-delivery` | Standard implementation |
@@ -449,6 +458,7 @@ Execute the selected mode's `phaseOrder` from `bubbles/workflows.yaml` by invoki
 | `gaps` | `bubbles.gaps` | Implementation/design gap closure |
 | `simplify` | `bubbles.simplify` | Code cleanup, complexity reduction, dead code removal |
 | `stabilize` | `bubbles.stabilize` | Performance, infra, config, reliability hardening |
+| `devops` | `bubbles.devops` | CI/CD, build, deployment, monitoring, and observability execution |
 | `security` | `bubbles.security` | Threat modeling, dependency scanning, code security review, auth verification |
 | `bug` | `bubbles.bug` | Document bug with structured artifacts |
 

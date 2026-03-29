@@ -75,7 +75,7 @@ Detect test frameworks by scanning for standard config files (e.g., `jest.config
 Detect linters/formatters by scanning for standard configs (e.g., `.eslintrc*`, `eslint.config.*`, `.prettierrc*`, `ruff.toml`, `pyproject.toml`, `.golangci.yml`, `rustfmt.toml`, `.scalafmt.conf`, `.rubocop.yml`, `.swiftlint.yml`). Use the repo’s documented command when available.
 
 ### Step 4: Locate Design Documents
-Search for design/architecture docs in common locations (e.g., `DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`, `design/README.md`, `architecture/README.md`, `README.md`). Also inventory standard docs from `docs/` (API, DEVELOPMENT, TESTING, DEPLOYMENT, TROUBLESHOOTING, PRACTICES) and `specs/`/`.specify/` when present. If user provides `--design=<path>`, use that path.
+Search for design/architecture docs in common locations (e.g., `DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`, `design/README.md`, `architecture/README.md`, `README.md`). Also load the managed-doc registry from `bubbles/docs-registry.yaml` when present and inventory the declared published docs plus any project governance docs from `specs/`/`.specify/`. If user provides `--design=<path>`, use that path.
 
 ### Step 4b: Detect & Generate Ignore Files
 
@@ -157,17 +157,17 @@ Thumbs.db
 
 Do not invent defaults/fallback rules. If required governance documents are missing, stop and report the issue.
 
-Use the repo's actual standard docs (`docs/*.md` and project governance docs that exist in the repo) as the source of truth. Do not rely on `.github/docs/BUBBLES_*.md` inventory files.
+Use the repo's actual managed docs declared in `bubbles/docs-registry.yaml` plus project governance docs that exist in the repo as the source of truth. If the registry does not exist yet, fall back to the repo's real `docs/*.md` files that are actually present. Do not rely on `.github/docs/BUBBLES_*.md` inventory files.
 
-### Step 5b: Sync Standard Doc References (MANDATORY)
+### Step 5b: Sync Managed Doc References (MANDATORY)
 
-When this agent runs, it must also keep the Bubbles command suite aligned with the project’s current standard docs:
+When this agent runs, it must also keep the Bubbles command suite aligned with the project’s current managed docs:
 
-1. Inventory the repo’s top-level `docs/*.md` files.
-2. Update Bubbles agents/prompts that enumerate “standard docs” so they reference the actual repo docs or another maintained source of truth that exists.
+1. Load `bubbles/docs-registry.yaml` when present and inventory the declared managed docs; otherwise inventory the repo’s top-level `docs/*.md` files that actually exist.
+2. Update Bubbles agents/prompts that enumerate managed docs so they reference the maintained registry or another source of truth that exists.
 3. Remove stale references to non-existent `.github/docs/BUBBLES_*.md` inventory files.
 
-This prevents drift when new standard docs are added to `docs/`.
+This prevents drift when managed docs are added or renamed.
 
 ### Step 6: Detect Platform
 

@@ -72,14 +72,14 @@
     - No incomplete docs for completed work; documentation must match shipped behavior.
 
 14. **Planning-First Delivery**
-   - Implementation, bug fixing, hardening, stabilization, and gap-closure work MUST be anchored to real feature or bug artifacts before completion work proceeds.
+   - Implementation, bug fixing, hardening, stabilization, gap-closure, and cross-cutting operational work MUST be anchored to real feature, bug, or ops artifacts before completion work proceeds.
    - If `spec.md`, `design.md`, `scopes.md`, or required sibling artifacts are missing, empty, or placeholder-only, agents MUST route to the owning planning agents first instead of improvising implementation.
    - Empty feature directories, partial artifact sets, or artifact files containing only skeletal headers are workflow failures, not permission to continue unplanned work.
 
 15. **No Cosmetic Relabeling Of Incomplete Work**
    - Renaming a `TODO`, stub, placeholder, fake value, or incomplete branch to softer language does NOT count as progress.
    - Rewording incomplete work as `placeholder`, `future improvement`, `deferred`, `follow-up`, `temporary`, `compat shim`, or similar is forbidden unless the work is also moved into real tracked planning artifacts owned by the correct agent.
-   - If incomplete behavior is discovered without owning artifacts, agents MUST create or update the corresponding feature/bug planning instead of disguising the incompleteness.
+   - If incomplete behavior is discovered without owning artifacts, agents MUST create or update the corresponding feature, bug, or ops planning instead of disguising the incompleteness.
 
 16. **Fixture Ownership And Shared-State Isolation**
    - Live-system work that creates or mutates state MUST use agent-owned fixtures with unique, traceable ownership.
@@ -107,7 +107,7 @@
 
 ## Enforcement Rules
 
-- A scope/feature/bug cannot be marked complete if any policy above is violated.
+- A scope/feature/bug/ops packet cannot be marked complete if any policy above is violated.
 - Evidence must be execution-backed, current-session, and specific to claimed outcomes.
 - Optional or proxy assertions cannot substitute for required behavior checks.
 - If uncertainty exists, agent must report uncertainty and keep status in progress instead of inventing conclusions.
@@ -151,7 +151,7 @@ Before reporting completion, all answers must be **YES**:
 7. Are there zero TODOs, stubs, fake/sample verification artifacts, defaults, and fallbacks masking failures?
 8. Is the implementation full-featured, edge-case complete, high-quality, and documented without shortcuts?
 9. Did all live-state mutations stay isolated to owned fixtures or get fully restored before completion?
-10. Was all implementation/hardening work backed by real feature or bug artifacts rather than empty or missing planning files?
+10. Was all implementation/hardening work backed by real feature, bug, or ops artifacts rather than empty or missing planning files?
 11. Were any TODOs, stubs, or placeholders resolved by real implementation or tracked planning instead of cosmetic relabeling?
 
 If any answer is **NO**, completion is prohibited.

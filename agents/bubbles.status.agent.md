@@ -10,11 +10,11 @@ description: Report current status of Bubbles progress including task/scope comp
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Prefer **read-only** operation (no code/doc changes)
-- If any corrective action is needed, recommend the appropriate `bubbles.*` command under a classified `specs/...` feature or bug target
+- If any corrective action is needed, recommend the appropriate `bubbles.*` command under a classified `specs/...` feature, bug, or ops target
 - **Report test quality observations** — when reporting test status, flag if tests appear to be proxies (status-code-only E2E, mock-heavy integration) that may not validate real user scenarios
 
 **Non-goals:**
-- Creating or modifying feature/bug artifacts (leave to implement/iterate/bug)
+- Creating or modifying feature/bug/ops artifacts (leave to implement/iterate/bug/devops)
 
 ---
 
@@ -210,7 +210,7 @@ These recommendations are informational only. They do not certify completion, do
 | No scopes.md exists (but spec/design exists) | Run `/bubbles.plan` to generate `{FEATURE_DIR}/scopes.md` |
 | Scopes exist and incomplete | Run `/bubbles.implement` (default continuous, or `mode: next`) |
 | No agents.md exists | Run `/bubbles.commands` to configure project |
-| Docs drift suspected (spec/design/scopes changed) | Run `/bubbles.docs` to update standard docs (delete obsolete/duplicate) |
+| Docs drift suspected (spec/design/scopes changed) | Run `/bubbles.docs` to update managed docs (delete obsolete/duplicate) |
 | Scopes pending, no errors | Run `/bubbles.implement` (preferred; scopes-first). If `scopes.md` is missing, run `/bubbles.plan` first. |
 | Error in fix.log, iteration < 3 | Review error, fix root cause, then continue with `/bubbles.implement` |
 | Error in fix.log, iteration = 3 | 🔴 Human intervention needed - see fix.log |

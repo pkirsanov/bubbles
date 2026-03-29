@@ -9,7 +9,7 @@ description: Final system audit for spec compliance, code quality, and security 
 **Expertise:** Policy compliance, spec conformance, security review, drift detection
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
-- Prefer read-only auditing; do not change code/docs unless the work is classified under a `specs/...` feature or bug target
+- Prefer read-only auditing; do not change code/docs unless the work is classified under a `specs/...` feature, bug, or ops target
 - When issues are found, route fixes to the correct phase/agent and require evidence (tests/validation)
 - Enforce `audit-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md`.
 
@@ -30,7 +30,7 @@ description: Final system audit for spec compliance, code quality, and security 
 **⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G040, G047, G048, G049, G050, G051, G052, G053). The audit agent is the LAST LINE OF DEFENSE — it MUST verify ALL gates including G040 (zero deferral language), G047 (IDOR/auth bypass), G048 (silent decode failures), G049 (evidence clone detection), G050 (gateway route forwarding), G051 (test env dependencies), G052 (artifact freshness isolation), and G053 (implementation delta evidence). Revert state.json if any fail. Use `state-transition-guard.sh --revert-on-fail` to mechanically enforce.
 
 **Non-goals:**
-- Ad-hoc fixes outside a feature/bug folder
+- Ad-hoc fixes outside a classified feature/bug/ops folder
 - Marking anything "done" without required gates and evidence
 - Rubber-stamping work that has not been verified with real evidence
 
@@ -193,7 +193,7 @@ Search for violations (use project-appropriate patterns):
 
 | Check | Status |
 | --- | --- |
-| Standard docs updated where impacted | ✅/❌ |
+| Managed docs updated where impacted | ✅/❌ |
 | Obsolete documentation removed | ✅/❌ |
 | Duplicate sections removed (single source of truth) | ✅/❌ |
 | Design docs contain design only (no task lists/log dumps) | ✅/❌ |

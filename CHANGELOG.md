@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+### DevOps Execution Lane
+
+- Added `bubbles.devops` as a new execution owner for CI/CD, build, deployment, monitoring, observability, and release automation work.
+- Kept `bubbles.stabilize` diagnostic and routed operational execution through `bubbles.devops` across workflow control-plane registries and iterate/review dispatch tables.
+- Added `devops-to-doc` workflow mode and inserted the `devops` phase into delivery and hardening paths that already pass through operational stabilization.
+- Updated README, cheat sheets, HTML roster, workflow docs, agent manual, and recipes to reflect the new DevOps lane.
+
 ### Control Plane v3.0 — Registry-Driven Delegation, Validate-Owned Certification, and Scenario Contracts
 
 Major architectural evolution implementing the unified control-plane design across the entire framework:
 
 **New registries and schemas:**
-- `bubbles/agent-capabilities.yaml` — Machine-readable agent class, phase ownership, artifact ownership, user-interaction permissions, and execution/certification write authority for all 32 agents.
+- `bubbles/agent-capabilities.yaml` — Machine-readable agent class, phase ownership, artifact ownership, user-interaction permissions, and execution/certification write authority for all 33 agents.
 - `bubbles/agent-ownership.yaml` v2 — Extended with `state.json` ownership (validate-owned), `scenario-manifest.json`, `lockdown-approvals.json`, `invalidation-ledger.json`, `transition-requests.json`, `rework-queue.json` ownership blocks, certified field declarations, and expanded routing rules.
 - `.specify/memory/bubbles.config.json` v2 — Central execution policy registry with defaults for grill, TDD, auto-commit, lockdown, regression immutability, and validation certification. Mode overrides for `bugfix-fastlane` and `chaos-hardening`. Managed by `bubbles policy` CLI.
 
@@ -41,7 +48,7 @@ Major architectural evolution implementing the unified control-plane design acro
 **CLI:**
 - `bubbles policy status|get|set|reset` — Manage control-plane defaults and provenance from the CLI.
 
-**Prompt migrations (all 32 agents updated where applicable):**
+**Prompt migrations (all 33 agents updated where applicable):**
 - Orchestrators (workflow, iterate, bug) updated to use `execution.currentPhase`/`certification.status` split and route final closure through validate.
 - Planning agents (analyst, ux, design, plan, security) updated to use v3 state template and execution-only metadata writes.
 - Execution agents (implement, test, docs, chaos) record `execution.completedPhaseClaims` only; never write `certification.*`.
@@ -81,7 +88,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `docs/guides/CONTROL_PLANE_ROLLOUT.md` — Phased rollout plan mapping all 11 requested changes.
 - `docs/guides/CONTROL_PLANE_SCHEMAS.md` — Schema definitions for all 8 control-plane surfaces.
 - `docs/CHEATSHEET.md` — Updated to 64 gates, no-hybrid control-plane law summary, and public-facing owner/executor vs diagnostic/certification taxonomy.
-- `docs/its-not-rocket-appliances.html` — v3.0, 32 agents, 64 gates, 27 modes, 19 phases. Control Plane Quick Rules, public taxonomy, and Sunnyvale vocabulary updated.
+- `docs/its-not-rocket-appliances.html` — v3.0, now updated through the DevOps lane expansion to 33 agents, 64 gates, 29 modes, and 20 phases. Control Plane Quick Rules, public taxonomy, and Sunnyvale vocabulary updated.
 - All recipes updated from `grillFirst` to `grillMode`.
 
 **Install system:**

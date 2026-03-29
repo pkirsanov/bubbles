@@ -3,15 +3,16 @@ defaultMode: full
 defaultDepth: standard
 defaultOutput: summary-only
 defaultLenses:
-  - product
-  - ux
-  - runtime
-  - stability
-  - simplify
-  - trust
-  - validation
-  - engineering
-  - docs
+- product
+- ux
+- runtime
+- stability
+- devops
+- simplify
+- trust
+- validation
+- engineering
+- docs
 dispatch:
   product:
     primaryAgent: bubbles.analyst
@@ -25,6 +26,9 @@ dispatch:
   stability:
     primaryAgent: bubbles.stabilize
     purpose: Performance, infra, config, and reliability
+  devops:
+    primaryAgent: bubbles.devops
+    purpose: Build, deployment, CI/CD, monitoring, observability, and release operations
   simplify:
     primaryAgent: bubbles.simplify
     purpose: Duplicate functionality, clutter, and streamlining
@@ -46,32 +50,32 @@ dispatch:
 modes:
   product:
     description: Product, UX, simplification, and engineering coherence review
-    lenses: [product, ux, simplify, engineering, docs]
+    lenses: [ product, ux, simplify, engineering, docs ]
     top: 12
   runtime:
     description: Real-user execution, runtime reliability, and validation review
-    lenses: [runtime, stability, validation, engineering, docs]
+    lenses: [ runtime, stability, devops, validation, engineering, docs ]
     top: 12
   trust:
     description: Security, validation, audit, and UX trust review
-    lenses: [ux, trust, validation, audit, engineering, docs]
+    lenses: [ ux, trust, validation, audit, engineering, docs ]
     top: 12
   full:
     description: Complete cross-domain system review
-    lenses: [product, ux, runtime, stability, simplify, trust, validation, engineering, docs]
+    lenses: [ product, ux, runtime, stability, devops, simplify, trust, validation, engineering, docs ]
     top: 15
 promotionRules:
   createSpecWhen:
-    - Cross-cutting change requires new behavior, architecture, or operating model
-    - Multiple components or surfaces require coordinated implementation
-    - User explicitly requests spec creation
+  - Cross-cutting change requires new behavior, architecture, or operating model
+  - Multiple components or surfaces require coordinated implementation
+  - User explicitly requests spec creation
   updateSpecWhen:
-    - Existing spec exists and findings materially change scope, scenarios, or DoD
-    - Docs and behavior drift from an active feature folder
-    - User explicitly requests spec update
+  - Existing spec exists and findings materially change scope, scenarios, or DoD
+  - Docs and behavior drift from an active feature folder
+  - User explicitly requests spec update
   summaryOnlyWhen:
-    - User requests assessment, prioritization, or discovery only
-    - Findings are isolated cleanup items or backlog candidates
+  - User requests assessment, prioritization, or discovery only
+  - Findings are isolated cleanup items or backlog candidates
 followUpTags:
   directFix: Ready for implementation without new spec work
   promoteToSpec: Should be converted into spec/design/scope work

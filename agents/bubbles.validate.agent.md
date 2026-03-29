@@ -15,7 +15,7 @@ handoffs:
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Use only repo-approved commands from `.specify/memory/agents.md`
 - Default to `deep`/`full` validation unless the user explicitly narrows the validation scope
-- If any changes are needed to fix validation failures, they must be made under a classified `specs/...` feature or bug target
+- If any changes are needed to fix validation failures, they must be made under a classified `specs/...` feature, bug, or ops target
 - Record evidence in the appropriate `report.md` using the rules in `evidence-rules.md`
 - Enforce `audit-core.md`, `test-fidelity.md`, `e2e-regression.md`, `evidence-rules.md`, and `state-gates.md` during validation
 - Treat any unresolved manual continuation language as a validation failure, not as an acceptable handoff. Phrases like `Next Steps`, `Record DoD evidence`, `Run full E2E suite`, `Commit the fix`, `Ready for /bubbles.audit`, or `Re-run /bubbles.validate` indicate unfinished routed work unless they appear inside historical evidence blocks.
@@ -35,11 +35,11 @@ handoffs:
 - `scopes.md` → invoke `bubbles.plan`
 - `uservalidation.md` → invoke `bubbles.plan`
 - Product code / test code → invoke `bubbles.implement` / `bubbles.test`
-- Standard docs → invoke `bubbles.docs`
+- Managed docs → invoke `bubbles.docs`
 
 **Non-goals:**
 - Inventing ad-hoc commands or bypassing repo workflows
-- Making code/doc changes without explicit feature/bug classification
+- Making code/doc changes without explicit classified feature/bug/ops work
 - Editing `spec.md`, `design.md`, `scopes.md`, or `uservalidation.md` directly; those changes belong to the owning specialist
 
 ---
@@ -281,9 +281,9 @@ bash bubbles/scripts/handoff-cycle-check.sh {FEATURE_DIR}
 
 #### 2D.0: Artifact Compliance Baseline
 
-Before deeper validation, verify the feature/bug artifact set is structurally compliant:
+Before deeper validation, verify the classified work artifact set is structurally compliant:
 
-1. Required artifacts exist for the work classification (feature or bug)
+1. Required artifacts exist for the work classification (feature, bug, or ops)
 2. `spec.md`, `design.md`, `scopes.md` or `scopes/_index.md`, `report.md`, `state.json`, and `uservalidation.md` do not contradict each other
 3. Scope templates, checkbox formats, and required sections are present
 4. Validation cannot pass on command output alone if artifact lint or compliance structure is broken
@@ -444,8 +444,8 @@ Verify documentation is updated:
 - [ ] README updated (if applicable)
 - [ ] Design docs updated (if architectural changes)
 
-If standard docs exist (see Context Loading), also verify:
-- [ ] Standard docs reflect current spec/design/scopes
+If managed docs are declared in `bubbles/docs-registry.yaml`, also verify:
+- [ ] Managed docs reflect current spec/design/scopes or objective/design/scopes for ops work
 - [ ] Obsolete sections removed
 - [ ] Duplicate sections removed (single source of truth)
 - [ ] Design docs contain design only (no task lists/log dumps)
@@ -636,7 +636,7 @@ When validation finds missing scenarios, missing tests, contract ambiguity, stal
 | Missing or stale Gherkin, Test Plan, DoD, traceability links, or uservalidation structure | `bubbles.plan` | Update planning artifacts so every planned behavior is executable and testable |
 | Missing scenario-specific regression coverage or inadequate real-test substance | `bubbles.test` and/or `bubbles.plan` | Add or repair tests and, if needed, update planning artifacts first |
 | Implementation/claimed-behavior mismatch or false-positive completion claim | `bubbles.implement` and/or `bubbles.bug` | Fix code to match planned behavior, then rerun validation |
-| Documentation drift outside planning artifacts | `bubbles.docs` | Sync standard docs |
+| Documentation drift outside planning artifacts | `bubbles.docs` | Sync managed docs |
 
 #### 7.2 Direct specialist behavior
 

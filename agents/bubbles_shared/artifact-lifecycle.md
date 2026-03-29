@@ -1,13 +1,15 @@
 # Artifact Lifecycle Governance
 
-Use this file for work classification, required artifacts, scope structure, and lifecycle expectations for spec folders.
+Use this file for work classification, required artifacts, scope structure, and lifecycle expectations for execution packets.
 
 ## Work Classification Gate
 
-All work must be classified as either:
+All work must be classified as one of:
 
 - feature work under `specs/NNN-feature-name/`
-- bug work under `specs/.../bugs/BUG-NNN-description/`
+- feature-bound bug work under `specs/.../bugs/BUG-NNN-description/`
+- cross-cutting bug work under `specs/_bugs/BUG-NNN-description/`
+- ops work under `specs/_ops/OPS-NNN-description/`
 
 Ad-hoc implementation outside that structure is not valid completion work.
 
@@ -33,6 +35,17 @@ Bug directories require:
 - `report.md`
 - `state.json`
 
+## Required Ops Artifacts
+
+Ops directories require:
+
+- `objective.md`
+- `design.md`
+- `scopes.md`
+- `report.md`
+- `runbook.md`
+- `state.json`
+
 ## User Validation Gate
 
 Unchecked items in `uservalidation.md` represent user-reported regressions and block unrelated forward progress until addressed or explicitly reclassified by the owning workflow.
@@ -49,6 +62,8 @@ Each scope must contain:
 - DoD checkboxes
 
 When UI behavior changes, add a UI scenario matrix.
+
+When ops behavior changes, add publication targets for the managed docs that must be updated before closeout.
 
 ## Tiered DoD Expectations
 
@@ -84,7 +99,7 @@ Artifacts must cross-reference each other so a reviewer can move between:
 - user validation
 - state
 
-Use the templates in `scope-templates.md` as the single source of truth for artifact shapes.
+Use the templates in `scope-templates.md` as the single source of truth for artifact shapes. Use `managed-docs.md` and `bubbles/docs-registry.yaml` for published-doc targets.
 
 ## Artifact Freshness And Supersession
 
@@ -106,3 +121,5 @@ When requirements or design changes invalidate scopes:
 ## Documentation Ownership Boundary
 
 Artifact ownership remains defined in `artifact-ownership.md`. Diagnostic agents may identify required changes, but they do not directly rewrite foreign-owned planning or design artifacts except through the execution-only exception.
+
+Managed docs are the published truth surfaces. Feature, bug, and ops packets remain execution truth while work is active.

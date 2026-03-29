@@ -14,7 +14,7 @@
 **This file extends [agent-common.md](agent-common.md).** All patterns from that file apply:
 
 - Loop Guard rules
-- **Feature/Bug Folder Resolution - FAIL FAST (ONE search only, no loops)**
+- **Classified Work Folder Resolution - FAIL FAST (ONE search only, no loops)**
 - User Validation Gate (blocking at start)
 - User Validation Update (last step after audit - items checked `[x]` by default)
 - Context Loading (tiered)
@@ -341,7 +341,7 @@ Both iterate and implement follow these phases:
 
 ### Phase 5: Documentation
 1. Update feature docs (`spec.md`, `design.md`)
-2. Update standard docs (API, ARCHITECTURE, etc.)
+2. Update managed docs declared in `bubbles/docs-registry.yaml` (API, ARCHITECTURE, etc.)
 3. Update execution evidence artifact for the active layout:
   - **Per-scope directory mode:** update only `scopes/NN-name/report.md`
   - **Single-file mode:** append/update the scope section in `report.md`
