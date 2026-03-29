@@ -122,6 +122,15 @@ Agents MUST NOT bypass completion gates by manipulating artifact format. The fol
 - Marking specs done without gate-complete evidence
 - Using handoffs as the primary phase execution mechanism (handoffs are for escalation only; use `runSubagent` for autonomous phase execution)
 
+## Review Intent Boundary
+
+Review-shaped requests are not implicit permission for planning or delivery work.
+
+- If the user asks to review, audit, assess, check, qualify, inspect, or compare behavior, default to diagnostic surfaces first.
+- Do NOT auto-route a review-shaped request into `analyze → bootstrap`, `improve-existing`, `product-discovery`, `product-to-delivery`, or any other planning/delivery flow unless the user explicitly asks to create/update specs, design, scopes, or to implement fixes.
+- Explicit promotion language includes phrases such as: `update spec`, `create design`, `repair scopes`, `promote findings`, `implement fixes`, `deliver`, `ship`, or an explicit `output`/`mode` that requests those outcomes.
+- When review intent is diagnostic only, keep the workflow on review/certification paths and report routed owners instead of silently invoking planning owners.
+
 ---
 
 ## Governance References
@@ -405,6 +414,8 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
 | "update docs", "documentation", "sync docs" | `docs-only` | spec from context |
 | "validate", "check compliance", "verify" | `validate-only` | spec from context |
 | "audit", "compliance audit" | `audit-only` | spec from context |
+| "review release readiness", "MVP release review", "qualification review" | `validate-to-doc` | spec from context |
+| "spec review", "review correctness/consistency/gaps/weaknesses" | `validate-to-doc` | spec from context |
 | "reconcile", "stale state", "claims don't match" | `reconcile-to-doc` | spec from context |
 | "discover requirements", "design UX", "product discovery" | `product-discovery` | spec from context |
 | "design and build", "end to end", "full pipeline" | `product-to-delivery` | spec from context |
@@ -477,6 +488,12 @@ User: "keep working on whatever is priority for 2 hours"
 
 User: "make sure spec 010 works properly"
 → mode: harden-to-doc, spec: specs/010-*
+
+User: "review the MVP release for correctness and gaps"
+→ mode: validate-to-doc, spec: inferred from context
+
+User: "do a spec review for consistency and weaknesses"
+→ mode: validate-to-doc, spec: inferred from context
 
 User: "update all documentation"
 → mode: docs-only, specs: auto-discover

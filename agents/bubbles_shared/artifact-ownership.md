@@ -33,12 +33,15 @@ If an agent discovers that a foreign-owned artifact must change:
 4. If invoked standalone, it may explicitly delegate to the owner via `runSubagent`, or it must stop with a concrete owner-targeted route result; it still MUST NOT perform foreign-owned remediation inline.
 5. The phase MUST NOT be reported complete until the owning specialist has run and the result has been verified.
 
+Owning one planning artifact does NOT grant permission to mutate sibling planning artifacts. Example: `bubbles.analyst` owns business requirements in `spec.md`, but `design.md` still belongs exclusively to `bubbles.design` and `scopes.md` still belongs exclusively to `bubbles.plan`.
+
 **Examples of violations:**
 - `bubbles.harden` adding new Gherkin scenarios to `scopes.md` → must invoke `bubbles.plan`
 - `bubbles.implement` creating `uservalidation.md` → must invoke `bubbles.plan`
 - `bubbles.gaps` updating DoD items in `scopes.md` → must invoke `bubbles.plan`
 - `bubbles.test` modifying `spec.md` requirements → must invoke `bubbles.analyst`
 - `bubbles.docs` changing `design.md` architecture → must invoke `bubbles.design`
+- `bubbles.analyst` updating `design.md` after a review or analysis run → must invoke `bubbles.design` or return a route-required packet
 - Any agent writing `certification.*` fields in `state.json` → must route to `bubbles.validate`
 
 ## Execution-Only Exception

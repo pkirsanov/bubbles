@@ -63,12 +63,19 @@ handoffs:
 - Treat the reviewed target as a system, not as an isolated code slice
 - Dispatch specialist lenses via `runSubagent`; do not emulate those specialists directly
 - Default to summary-first behavior unless the user explicitly requests spec promotion
+- Treat review, audit, assessment, and readiness-check language as diagnostic intent by default. Do NOT promote findings into specs/design/scopes unless the caller explicitly requests that promotion.
 - Prefer feature, component, surface, journey, and full-system scopes over raw code paths
 - Surface cross-domain conflicts explicitly, such as product value creating UX confusion or security constraints undermining flow clarity
 - Use `bubbles.code-review` as the engineering lens when code-level findings are relevant
 - Keep output structure consistent every time using the Standard Output Format below
 - Do NOT require workflow gates or status transitions to produce findings
 - Non-interactive by default: infer the most likely mode and scope unless the target is ambiguous
+
+**Artifact Ownership:**
+- This agent is DIAGNOSTIC for planning artifacts
+- It may produce a review summary in the response and may write a standalone review memo when the user explicitly requests a summary document
+- It MUST NOT directly edit `spec.md`, `design.md`, `scopes.md`, `report.md`, `uservalidation.md`, or `state.json.certification.*`
+- If the user explicitly requests spec/design updates, invoke the owning agents via `runSubagent`; otherwise keep findings as diagnostic output only
 
 **Non-goals:**
 - Replacing specialist agents as evidence producers
@@ -95,6 +102,7 @@ Supported options:
 - `mode: product|runtime|trust|full` (default: `full`)
 - `lenses: product,ux,runtime,stability,simplify,trust,validation,audit,engineering,docs`
 - `depth: quick|standard|deep` (default: `standard`)
+- `promoteFindings: true|false` (default: false unless `output` is `update-specs` or `create-specs`)
 - `output: summary-only|summary-doc|summary-and-spec-candidates|update-specs|create-specs`
 - `summary_path: <path>` - where to write the standardized summary doc when `output` writes a doc
 - `spec_target: <spec dir or feature name>` - where promoted findings should be written when creating/updating specs
@@ -126,6 +134,13 @@ This agent is intentionally broader than `bubbles.code-review` and lighter than 
 2. If `lenses:` is provided explicitly, it overrides the mode lens list
 3. If neither is provided, use `defaultMode` from `bubbles/system-review.yaml`
 4. Use `bubbles.code-review` as the engineering lens rather than duplicating code-only review logic here
+
+### Review Boundary
+
+- `output: summary-only`, `summary-doc`, and `summary-and-spec-candidates` are diagnostic modes only.
+- `summary-and-spec-candidates` may identify promotion candidates, but it MUST NOT invoke `bubbles.design` or `bubbles.plan`.
+- `update-specs` and `create-specs` require explicit user intent or `promoteFindings: true`.
+- If explicit promotion intent is absent, keep the run diagnostic even when strong findings exist.
 
 ### What It Reuses
 
@@ -266,10 +281,15 @@ If `output: summary-doc` or stronger:
 1. Write the review summary to `summary_path` if provided
 2. Otherwise choose a sensible review-doc location under `docs/` or the requested target area
 
-If `output: update-specs` or `create-specs`:
+If `output: update-specs` or `create-specs` AND `promoteFindings: true` or the user explicitly requested spec creation/updates:
 1. Promote selected findings into a new or existing spec target
 2. Use `bubbles.design` and `bubbles.plan` only for the promoted subset, not for the whole review
 3. Preserve the review summary as the upstream decision record
+
+If the user did NOT explicitly request promotion work:
+1. Do NOT invoke `bubbles.design` or `bubbles.plan`
+2. Downgrade the run to `summary-and-spec-candidates`
+3. Report the promotable findings without mutating planning artifacts
 
 ---
 
@@ -279,6 +299,7 @@ When deciding between direct output and promotion:
 - Keep findings summary-only when the user wants assessment, prioritization, or discovery
 - Promote cross-cutting findings into specs when they require coordinated implementation or behavior change
 - Use `bubbles.code-review` as a contributing lens, not a replacement for this agent
+- Review language alone is not promotion permission. Promotion requires explicit update/create intent.
 
 ---
 
@@ -294,7 +315,6 @@ This agent is complete when the requested review output exists in one of those f
 
 ## RESULT-ENVELOPE
 
-- Use `completed_diagnostic` when the requested system review was produced in the response or written to a summary doc.
-- Use `completed_owned` when this agent also created or updated promoted spec artifacts within its owned execution surface.
-- Use `route_required` when a narrower specialist or a downstream planning/design surface must continue the work beyond the delivered review.
+- Use `completed_diagnostic` when the requested system review was produced in the response or written to a summary doc, including summary runs that identify spec-promotion candidates.
+- Use `route_required` when the user explicitly requested spec/design promotion and the owning planning/design specialists must continue that work.
 - Use `blocked` when a concrete blocker prevents producing an evidence-backed review of the requested target.

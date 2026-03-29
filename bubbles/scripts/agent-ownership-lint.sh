@@ -57,6 +57,11 @@ check_has_match "$capabilities_file" '^  bubbles\.validate:' 'agent capabilities
 check_has_match "$capabilities_file" 'certificationWriter: bubbles\.validate' 'agent capabilities manifest must declare bubbles.validate as certification writer'
 
 check_no_match "$agents_dir/bubbles.design.agent.md" '^- `spec\.md` — Feature specification|create or complete it using the spec template' 'bubbles.design must not own or create spec.md'
+check_has_match "$agents_dir/bubbles.analyst.agent.md" '\*\*Artifact Ownership:\*\*' 'bubbles.analyst must declare an Artifact Ownership block'
+check_has_match "$agents_dir/bubbles.analyst.agent.md" 'MUST NOT edit `design\.md`, `scopes\.md`, `report\.md`, `uservalidation\.md`, or `state\.json\.certification\.\*`' 'bubbles.analyst must explicitly forbid foreign-artifact edits'
+check_has_match "$agents_dir/bubbles.analyst.agent.md" 'review-shaped requests default to diagnostic output|mode: review|output: diagnostic' 'bubbles.analyst must distinguish review-only runs from spec-promotion runs'
+check_no_match "$agents_dir/bubbles.analyst.agent.md" 'create design\.md\b|update design\.md\b|edit design\.md\b|modify.*design\.md\b' 'bubbles.analyst must not claim to create or edit design.md directly'
+check_no_match "$agents_dir/bubbles.analyst.agent.md" 'create scopes\.md\b|update scopes\.md\b|edit scopes\.md\b|modify.*scopes\.md\b' 'bubbles.analyst must not claim to create or edit scopes.md directly'
 check_no_match "$agents_dir/bubbles.validate.agent.md" '^#### 7\.2 What to Update \(Per Issue Category\)|Artifact to Update \| What to Add' 'bubbles.validate must route artifact changes instead of editing spec/design/scopes directly'
 check_no_match "$agents_dir/bubbles.ux.agent.md" 'recommend running `/bubbles\.analyst` first, but proceed' 'bubbles.ux must not proceed without analyst-owned business inputs'
 check_no_match "$agents_dir/bubbles.code-review.agent.md" 'directly or via `runSubagent`' 'bubbles.code-review must dispatch specialists, not emulate them directly'
