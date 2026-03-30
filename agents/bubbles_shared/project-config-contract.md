@@ -29,7 +29,7 @@ Every project using Bubbles MUST have these files:
 | `.specify/memory/agents.md` | **Command registry** — CLI entrypoint, build/test/lint/format commands, file organization, naming conventions, tech stack declaration | **YES** |
 | `.specify/memory/constitution.md` | **Governance principles** — project-specific principles layered on top of universal governance | **YES** |
 | `.github/copilot-instructions.md` | **Project policies** — project-specific rules, testing requirements, Docker config, port allocation, command tables | **YES** |
-| `.github/bubbles-project.yaml` | **Scan pattern extensions** — project-specific regex patterns for built-in quality gates (IDOR, silent decode, env deps), custom gates (G100+) | **OPTIONAL** |
+| `.github/bubbles-project.yaml` | **Project-owned framework extensions** — scan-pattern overrides, managed-doc registry overrides, and custom gates (G100+) | **OPTIONAL** |
 
 ---
 
@@ -118,9 +118,9 @@ Do NOT duplicate these — they are universal governance in `agent-common.md`:
 
 ---
 
-## `.github/bubbles-project.yaml` — Scan Pattern Extensions (OPTIONAL)
+## `.github/bubbles-project.yaml` — Project-Owned Framework Extensions (OPTIONAL)
 
-This file allows projects to extend or override the detection patterns used by built-in quality gates. The file is **project-owned** and never overwritten by Bubbles upgrades.
+This file allows projects to extend or override selected framework behavior without patching framework-managed files. The file is **project-owned** and never overwritten by Bubbles upgrades.
 
 ### Supported Configuration Sections
 
@@ -178,6 +178,20 @@ scans:
         - '\\.not\\.'
         - '\\bfalse\\b'
         - '\\bmissing\\b'
+
+# Managed-doc registry overrides
+docsRegistryOverrides:
+  managedDocs:
+    testing:
+      path: docs/Test_Architecture.md
+      requiredSections:
+        - Executive Summary
+        - Current Test Inventory
+    operations:
+      path: docs/Troubleshooting.md
+  classification:
+    featureRoot: specs
+    opsRoot: specs/_ops
 ```
 
 ### Design Principles
@@ -191,6 +205,8 @@ scans:
 | **YAML structure** | Simple `key: value` or `key: [list]` format parseable by `sed`/`awk` in bash scripts |
 
 `regressionQuality.*` follows the standard override model: if provided, those lists replace the generic fallback patterns used by `regression-quality-guard.sh`.
+
+`docsRegistryOverrides.*` follows the same ownership model: framework defaults remain in `bubbles/docs-registry.yaml`, while projects can override managed doc entries or classification values from `.github/bubbles-project.yaml`.
 
 ---
 

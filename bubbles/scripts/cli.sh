@@ -19,6 +19,7 @@
 #   guard <spec>                  Run state transition guard on a spec
 #   scan <spec>                   Run implementation reality scan on a spec
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
+#   docs-registry [mode]          Show framework-default or effective managed-doc registry
 #   framework-write-guard         Check downstream framework-managed files against install provenance
 #   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
 #   audit-done [--fix]            Audit all specs marked done
@@ -485,6 +486,7 @@ Commands:
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
+  docs-registry [mode]          Show framework-default or effective managed-doc registry
   framework-write-guard         Check downstream framework-managed files against install provenance
   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
   audit-done [--fix]            Audit all specs marked done
@@ -810,6 +812,35 @@ cmd_scan() {
 cmd_regression_quality() {
   [[ $# -lt 1 ]] && die "Usage: bubbles regression-quality [--bugfix] [--verbose] <test-file-or-dir> [...]"
   bash "$SCRIPT_DIR/regression-quality-guard.sh" "$@"
+}
+
+cmd_docs_registry() {
+  local mode="effective"
+  local passthrough=()
+
+  if [[ $# -gt 0 ]]; then
+    case "$1" in
+      effective)
+        mode="effective"
+        shift
+        ;;
+      framework-default|default)
+        mode="framework-default"
+        shift
+        ;;
+    esac
+  fi
+
+  while [[ $# -gt 0 ]]; do
+    passthrough+=("$1")
+    shift
+  done
+
+  if [[ "$mode" == "framework-default" ]]; then
+    bash "$SCRIPT_DIR/docs-registry-resolve.sh" --framework-default "${passthrough[@]}"
+  else
+    bash "$SCRIPT_DIR/docs-registry-resolve.sh" --effective "${passthrough[@]}"
+  fi
 }
 
 cmd_framework_write_guard() {
@@ -1725,6 +1756,7 @@ main() {
     workflow-selftest)  cmd_workflow_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
     regression-quality) cmd_regression_quality "$@" ;;
+    docs-registry)      cmd_docs_registry "$@" ;;
     framework-write-guard) cmd_framework_write_guard "$@" ;;
     framework-proposal)  cmd_framework_proposal "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;

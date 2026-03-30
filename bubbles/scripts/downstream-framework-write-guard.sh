@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "$SCRIPT_DIR" == *"/.github/bubbles/scripts" ]]; then
   PROJECT_ROOT="${SCRIPT_DIR%/.github/bubbles/scripts}"
-  FRAMEWORK_ROOT="$PROJECT_ROOT/.github"
-  MANAGED_ROOT="$FRAMEWORK_ROOT"
+  FRAMEWORK_ROOT="$PROJECT_ROOT/.github/bubbles"
+  MANAGED_ROOT="$PROJECT_ROOT/.github"
   SOURCE_REPO="false"
 else
   PROJECT_ROOT="${SCRIPT_DIR%/bubbles/scripts}"
