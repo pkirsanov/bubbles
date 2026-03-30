@@ -472,7 +472,7 @@ if [[ -f "$state_file" ]]; then
     # ============================================================
     if [[ "$state_status" == "done" ]]; then
       case "$state_workflow_mode" in
-          full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
+          fix|full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing)
           pass "Workflow mode '$state_workflow_mode' allows status 'done'"
           ;;
         spec-scope-hardening)

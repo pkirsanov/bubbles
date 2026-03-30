@@ -25,7 +25,7 @@ The control plane needs nine concrete schema surfaces:
 
 ## 1. Agent Capability Registry
 
-Proposed file: `bubbles/agent-capabilities.yaml`
+Runtime file: `bubbles/agent-capabilities.yaml`
 
 ```yaml
 version: 1
@@ -108,7 +108,7 @@ agents:
 
 ## 2. Execution Policy Registry
 
-Proposed file: `.specify/memory/bubbles.config.json`
+Runtime file: `.specify/memory/bubbles.config.json`
 
 ```json
 {
@@ -225,7 +225,7 @@ Adoption rule:
 
 ## 3. Scenario Contract Manifest
 
-Proposed file: `specs/<feature>/scenario-manifest.json`
+Runtime file: `specs/<feature>/scenario-manifest.json`
 
 ```json
 {
@@ -319,7 +319,7 @@ Adoption rule:
 
 ## 4. `state.json` Version 3
 
-Proposed file: `specs/<feature>/state.json`
+Runtime file: `specs/<feature>/state.json`
 
 ```json
 {
@@ -492,7 +492,7 @@ Proposed payload: returned by every agent or child workflow invocation.
 
 ## 6. Transition Request Packet
 
-Proposed file: embedded in state or stored under `specs/<feature>/transitions/`
+Runtime storage: embedded in state or stored under `specs/<feature>/transitions/`
 
 ```json
 {
@@ -523,7 +523,7 @@ Proposed file: embedded in state or stored under `specs/<feature>/transitions/`
 
 ## 7. Rework Packet
 
-Proposed file: embedded in state or stored under `specs/<feature>/rework/`
+Runtime storage: embedded in state or stored under `specs/<feature>/rework/`
 
 ```json
 {
@@ -559,7 +559,7 @@ Proposed file: embedded in state or stored under `specs/<feature>/rework/`
 
 ## 8. Lockdown Approval Record
 
-Proposed file: `specs/<feature>/lockdown-approvals.json`
+Runtime file: `specs/<feature>/lockdown-approvals.json`
 
 ```json
 {
@@ -581,7 +581,7 @@ Proposed file: `specs/<feature>/lockdown-approvals.json`
 
 ## 9. Invalidation Ledger Entry
 
-Proposed file: `specs/<feature>/invalidation-ledger.json`
+Runtime file: `specs/<feature>/invalidation-ledger.json`
 
 ```json
 {

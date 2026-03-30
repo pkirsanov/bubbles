@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **33 Agents · 64 Gates · 29 Workflow Modes · 20 Phases**
+> **33 Agents · 66 Gates · 29 Workflow Modes · 23 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -168,7 +168,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 64 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 66 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -240,6 +240,8 @@
 | G062 | Owner-only remediation | Only owning planning or execution specialists may remediate owned surfaces; diagnostics and certification must route |
 | G063 | Concrete result | Every agent or child-workflow invocation must end with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked` |
 | G064 | Child workflow depth | Only orchestrators may invoke child workflows, and nesting depth must stay bounded |
+| G065 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
+| G066 | Phase-claim provenance | Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory; cross-phase impersonation is fabrication |
 
 ---
 

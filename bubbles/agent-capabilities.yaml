@@ -32,7 +32,6 @@ stateModel:
   - bubbles.harden
   - bubbles.gaps
   - bubbles.stabilize
-  - bubbles.devops
   - bubbles.security
   - bubbles.simplify
   - bubbles.audit

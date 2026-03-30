@@ -133,7 +133,7 @@ extract_test_rows() {
   section="$(extract_section "$scope_path" '^### Test Plan')"
   printf '%s\n' "$section" \
     | grep -E '^\|' \
-    | grep -Ev '^\|[[:space:]-:|]+\|$' \
+    | grep -Ev '^\|[-:[:space:]|]+\|$' \
     | grep -Evi '^\|[[:space:]]*test type[[:space:]]*\|'
 }
 

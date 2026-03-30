@@ -75,6 +75,10 @@ is_framework_repo() {
   [[ "$SCRIPT_DIR" != *"/.github/bubbles/scripts" ]]
 }
 
+project_root() {
+  printf '%s\n' "$REPO_ROOT"
+}
+
 require_framework_repo_for_hooks() {
   if ! is_framework_repo; then
     die "Bubbles git hooks may only be installed in the Bubbles framework repo. Consumer repos should use Bubbles but must not install Bubbles-managed pre-commit/pre-push hooks."
@@ -1058,17 +1062,22 @@ cmd_doctor() {
   fi
 
   # Check 4: Project config files
-  local config_ok=true
-  for cfg in .github/copilot-instructions.md .specify/memory/constitution.md .specify/memory/agents.md; do
-    if [[ ! -f "$REPO_ROOT/$cfg" ]]; then
-      echo -e "  ${RED}❌${NC} Missing: $cfg"
-      config_ok=false
-      failed=$((failed + 1))
-    fi
-  done
-  if [[ "$config_ok" == "true" ]]; then
-    echo -e "  ${GREEN}✅${NC} Project config files exist"
+  if is_framework_repo; then
+    echo -e "  ${GREEN}✅${NC} Project bootstrap config checks not required in the Bubbles source repo"
     passed=$((passed + 1))
+  else
+    local config_ok=true
+    for cfg in .github/copilot-instructions.md .specify/memory/constitution.md .specify/memory/agents.md; do
+      if [[ ! -f "$REPO_ROOT/$cfg" ]]; then
+        echo -e "  ${RED}❌${NC} Missing: $cfg"
+        config_ok=false
+        failed=$((failed + 1))
+      fi
+    done
+    if [[ "$config_ok" == "true" ]]; then
+      echo -e "  ${GREEN}✅${NC} Project config files exist"
+      passed=$((passed + 1))
+    fi
   fi
 
   # Check 4b: Control-plane bootstrap registry
@@ -1119,7 +1128,10 @@ cmd_doctor() {
   fi
 
   # Check 7: Specs directory
-  if [[ -d "$SPECS_DIR" ]]; then
+  if is_framework_repo; then
+    echo -e "  ${GREEN}✅${NC} specs/ directory check not required in the Bubbles source repo"
+    passed=$((passed + 1))
+  elif [[ -d "$SPECS_DIR" ]]; then
     echo -e "  ${GREEN}✅${NC} specs/ directory exists"
     passed=$((passed + 1))
   else
@@ -1138,17 +1150,24 @@ cmd_doctor() {
     ver=$(cat "$FRAMEWORK_DIR/.version")
     echo -e "  ${GREEN}✅${NC} Bubbles version: $ver"
     passed=$((passed + 1))
+  elif is_framework_repo && [[ -f "$REPO_ROOT/VERSION" ]]; then
+    local ver
+    ver=$(cat "$REPO_ROOT/VERSION")
+    echo -e "  ${GREEN}✅${NC} Bubbles source version: $ver"
+    passed=$((passed + 1))
   else
     echo -e "  ${YELLOW}⚠️${NC}  No version stamp found"
   fi
 
   # Check 9: Custom gate scripts
   local project_config
-  # Resolve project root: cli.sh lives at .github/bubbles/scripts/ — go up 3 levels
   local proj_root
-  proj_root="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  proj_root="$(project_root)"
   project_config="$proj_root/.github/bubbles-project.yaml"
-  if [[ -f "$project_config" ]]; then
+  if is_framework_repo; then
+    echo -e "  ${GREEN}✅${NC} Project-owned custom gate scan not required in the Bubbles source repo"
+    passed=$((passed + 1))
+  elif [[ -f "$project_config" ]]; then
     local gate_ok=true
     local active_gate_count=0
     while IFS= read -r line; do
@@ -1169,10 +1188,16 @@ cmd_doctor() {
       echo -e "  ${GREEN}✅${NC} Custom gate scripts present"
       passed=$((passed + 1))
     fi
+  else
+    echo -e "  ${GREEN}✅${NC} No custom gate scripts defined"
+    passed=$((passed + 1))
   fi
 
   # Check 10: Project scan config auto-generation
-  if [[ ! -f "$project_config" ]] || ! grep -q '^scans:' "$project_config" 2>/dev/null; then
+  if is_framework_repo; then
+    echo -e "  ${GREEN}✅${NC} Project scan config auto-generation not required in the Bubbles source repo"
+    passed=$((passed + 1))
+  elif [[ ! -f "$project_config" ]] || ! grep -q '^scans:' "$project_config" 2>/dev/null; then
     local setup_script="$SCRIPT_DIR/project-scan-setup.sh"
     if [[ -f "$setup_script" ]]; then
       echo -e "  ${YELLOW}🔧${NC} Auto-generating project scan config..."
@@ -1671,10 +1696,29 @@ cmd_lessons() {
 }
 
 cmd_upgrade() {
-  local target_version="${1:-main}"
+  local target_version="main"
   local dry_run=false
-  for arg in "$@"; do
-    [[ "$arg" == "--dry-run" ]] && dry_run=true
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run)
+        dry_run=true
+        shift
+        ;;
+      --help|-h)
+        echo "Usage: bubbles upgrade [version] [--dry-run]"
+        return 0
+        ;;
+      --*)
+        die "Unknown upgrade option: $1"
+        ;;
+      *)
+        if [[ "$target_version" != "main" ]]; then
+          die "Upgrade accepts at most one target version. Got: $target_version and $1"
+        fi
+        target_version="$1"
+        shift
+        ;;
+    esac
   done
 
   local repo="pkirsanov/bubbles"
@@ -1690,7 +1734,7 @@ cmd_upgrade() {
   fi
 
   # Download and run install.sh
-  echo "Downloading installer..."
+      proj_root="$(project_root)"
   curl -fsSL "https://raw.githubusercontent.com/${repo}/${target_version}/install.sh" | bash -s -- "$target_version"
 
   # Run doctor to validate

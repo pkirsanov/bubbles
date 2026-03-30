@@ -320,6 +320,13 @@ echo ""
 echo "--- Check 3: Status Ceiling Enforcement ---"
 if [[ -n "$state_workflow_mode" ]]; then
   case "$state_workflow_mode" in
+    fix)
+      if [[ "$state_status" == "done" ]]; then
+        pass "Legacy workflow mode 'fix' allows status 'done'"
+      else
+        info "Legacy workflow mode 'fix' allows status 'done'; current status is '$state_status'"
+      fi
+      ;;
     full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       if [[ "$state_status" == "done" ]]; then
         pass "Workflow mode '$state_workflow_mode' allows status 'done'"

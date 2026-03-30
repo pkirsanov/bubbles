@@ -471,6 +471,15 @@ phases:
   spec-review:
     owner: bubbles.spec-review
     requiredGates: []
+  bug-discovery:
+    owner: bubbles.bug
+    requiredGates: [ G001 ]
+  certify-state:
+    owner: bubbles.validate
+    requiredGates: [ G023, G024, G056 ]
+  interrogate:
+    owner: bubbles.grill
+    requiredGates: []
   finalize:
     owner: bubbles.workflow
     requiredGates: [ G010, G011, G012 ]
