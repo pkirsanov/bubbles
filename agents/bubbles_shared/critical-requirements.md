@@ -100,8 +100,9 @@
    - Agents MUST NEVER create, modify, or delete files in Bubbles framework-managed directories: `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, `.github/prompts/bubbles.*.prompt.md`, `.github/bubbles/workflows.yaml`, `.github/bubbles/hooks.json`, `.github/instructions/bubbles-*.instructions.md`, or `.github/skills/bubbles-*/`.
    - These files are owned by the Bubbles framework and updated exclusively via `install.sh` upgrades.
    - If a framework script has a bug or needs enhancement, the change MUST be proposed upstream to the Bubbles repository — not patched locally.
+   - Downstream repos may record those requests only in project-owned proposal artifacts such as `.github/bubbles-project/proposals/` or via `bubbles framework-proposal <slug>`.
    - Project-specific scripts belong in `scripts/`. Project-specific quality gates belong in `.github/bubbles-project.yaml`.
-   - The `.github/bubbles/.manifest` file lists all framework-owned files; `agnosticity-lint.sh` detects non-manifested files in managed directories.
+   - The `.github/bubbles/.manifest` file lists all framework-owned files, and `.github/bubbles/.checksums` records the installed upstream checksum snapshot. `agnosticity-lint.sh` detects non-manifested files in managed directories, while `bubbles framework-write-guard` detects direct downstream edits to managed files.
 
 ---
 
@@ -130,7 +131,7 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 | No Fake Data (6) | Scan 1+2 | `MOCK_DATA`, `SAMPLE_DATA`, `getSimulationData()`, `useMockData()`, import mock modules |
 | No Defaults (7) | Scan 5 | `unwrap_or()`, `unwrap_or_default()`, `\\|\\| "default"`, `?? "fallback"`, `os.getenv("K", "default")` |
 | No Fallbacks (8) | Scan 5 | Same as defaults — any pattern that masks missing config with a silent value |
-| Real Implementation (9) | Scan 3 | Data hooks/services with ZERO fetch/axios/API calls — returning hardcoded data |
+| Real Implementation (9) | Scan 3 | Data hooks/services with ZERO API/query/client transport signals — returning hardcoded data |
 | No Sensitive Client Storage (17) | Scan 2B | `localStorage/sessionStorage/IndexedDB/AsyncStorage/SharedPreferences` storing auth/session/payment secrets |
 | No Fake Integrations (18) | Scan 1C + 1D | 501/not-implemented handlers, random/no-op provider adapters with no real upstream call signals |
 

@@ -1,13 +1,13 @@
 # Bubbles Control Plane Schemas
 
-This document defines the proposed schema surfaces for the control-plane redesign.
+This document defines the schema surfaces for the control-plane redesign and active version 3 runtime contract.
 
 Related documents:
 - [Control Plane Design](CONTROL_PLANE_DESIGN.md)
 - [Control Plane Rollout](CONTROL_PLANE_ROLLOUT.md)
 - [Existing Repo Adoption](CONTROL_PLANE_ADOPTION.md)
 
-These schemas are proposals for framework evolution. They are not active runtime contracts yet.
+The version 3 state model, `policySnapshot`, `certification.*`, and `scenario-manifest.json` are active runtime expectations in current Bubbles and are enforced by guard/lint surfaces. Sections that still say "Proposed" should be read as rollout-history or extension notes, not as permission to omit the active control-plane fields.
 
 ## Schema Set
 

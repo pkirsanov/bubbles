@@ -301,11 +301,11 @@ Bubbles supports 29 workflow modes plus optional execution tags. Here are the mo
 
 | Mode | What It Does | Use When |
 |------|-------------|----------|
-| `full-delivery` | All phases: analyze → design → plan → implement → test → validate → audit → docs | New features |
+| `full-delivery` | All phases: analyze → design → plan → implement → test → regression → simplify → stabilize → devops → security → validate → audit → docs | New features |
 | `delivery-lockdown` | Repeat the full improvement + certification chain until validate can certify done | Release-candidate or legacy hardening delivery |
-| `bugfix-fastlane` | Fast: reproduce → fix → test → validate | Bug fixes |
-| `value-first-e2e-batch` | Prioritized: plan → implement batches → test → validate | Large features |
-| `chaos-hardening` | Chaos → harden → test → validate | Resilience work |
+| `bugfix-fastlane` | Reproduce → fix → test → regression → simplify → stabilize → devops → security → validate → audit | Bug fixes |
+| `value-first-e2e-batch` | Prioritized delivery with the full quality chain per batch | Large features |
+| `chaos-hardening` | Chaos → fix → regression → hardening → validate → audit | Resilience work |
 | `harden-gaps-to-doc` | Harden → gaps → test → docs | Quality sweeps |
 | `devops-to-doc` | DevOps → test → stabilize → validate → docs | Operational delivery work |
 | `simplify-to-doc` | Simplify → test → validate → audit → docs | Safe cleanup of existing implementations |
@@ -358,6 +358,9 @@ Every scope must pass all applicable gates before completion. Gates check everyt
 
 ### Artifact Ownership Gate (G042)
 Cross-authoring is blocked. If a diagnostic or downstream specialist finds that a foreign-owned artifact must change, it must route that work to the owning specialist instead of rewriting the artifact directly.
+
+### Downstream Framework Ownership
+Consumer repos may install and refresh Bubbles, but they must not author direct edits to framework-managed Bubbles files. Record requested framework changes in `.github/bubbles-project/proposals/` with `bubbles framework-proposal <slug>`, implement the real change in the Bubbles source repo, then refresh downstream installs.
 
 ### Self-Healing Loops (G039)
 When agents hit failures, they attempt bounded self-repair: narrow context, retry up to 3 times, never stack. No infinite loops.

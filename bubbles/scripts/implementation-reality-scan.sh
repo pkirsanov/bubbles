@@ -13,7 +13,7 @@
 #   1. Backend stub patterns (hardcoded vecs, fake/mock/stub functions)
 #   2. Handler/endpoint execution-depth failures (public surface, no real delegation)
 #   3. Frontend fake data (getSimulationData, mock imports, hardcoded arrays)
-#   4. Frontend API call absence (hooks/services with zero fetch/axios calls)
+#   4. Frontend API/client signal absence (hooks/services with zero fetch/query/client signals)
 #   5. Prohibited simulation helpers in production (seeded_pick/seeded_range)
 #   6. Default/fallback value patterns (unwrap_or, || default, ?? fallback)
 #   7. Live-system tests using request interception/mocked backends
@@ -514,7 +514,7 @@ echo ""
 # Detects frontend code using hardcoded/simulation data instead of real
 # API calls. Common patterns:
 #   - getSimulationData() calls
-#   - Hooks with zero fetch()/axios/api calls that return static data
+#   - Hooks with zero API/query/client signals that return static data
 #   - Hardcoded arrays/objects used as component data sources
 #   - Import of simulation/mock data modules in production code
 # =============================================================================
@@ -602,16 +602,19 @@ echo ""
 # SCAN 3: Frontend API Call Absence Detection
 # =============================================================================
 # Detects frontend hook/service files that should make API calls but don't.
-# A "data hook" or "service" file that has zero fetch/axios/api calls is
-# likely returning hardcoded or simulated data.
+# A "data hook" or "service" file that has zero network/query/client
+# signals is likely returning hardcoded or simulated data.
 #
 # Heuristic: files matching *hook*.ts, *service*.ts, use*.ts, *api*.ts
-# that contain zero occurrences of: fetch, axios, api., useMutation,
-# useQuery, httpClient, .get(, .post(, .put(, .delete(, .patch(
+# that contain zero occurrences of:
+#   - direct calls (fetch, axios, .get/.post/.request)
+#   - query hooks (useQuery/useMutation/useSWR variants)
+#   - client transports/imports (apiClient/httpClient/*Client/*Api/*Transport)
 # =============================================================================
 echo "--- Scan 3: Frontend API Call Absence ---"
 
-API_CALL_PATTERNS='fetch\|axios\|\.get(\|\.post(\|\.put(\|\.delete(\|\.patch(\|useMutation\|useQuery\|useSWR\|httpClient\|apiClient\|grpc\|protobuf'
+API_CALL_PATTERNS='fetch\(|axios(\.|\b)|\.(get|post|put|delete|patch|request)\(|use(Query|Mutation|SuspenseQuery|InfiniteQuery|SWR)\b|mutateAsync\(|httpClient\b|apiClient\b|queryClient\b|grpc\b|protobuf\b|create(Api|Http)Client\b|requestClient\b|transport\b|client\.(get|post|put|delete|patch|request|query|mutate)\('
+API_IMPORT_PATTERNS='^import[[:space:]].*((api|client|transport|query)[A-Za-z0-9_]*|[A-Za-z0-9_]*(Api|Client|Transport|Query))[[:space:]]+from[[:space:]]+["\x27][^"\x27]+["\x27]|^import[[:space:]].*from[[:space:]]+["\x27][^"\x27]*(api|client|transport|query)[^"\x27]*["\x27]|require\(["\x27][^"\x27]*(api|client|transport|query)[^"\x27]*["\x27]\)'
 
 for impl_file in "${impl_files[@]}"; do
   file_ext="${impl_file##*.}"
@@ -636,8 +639,9 @@ for impl_file in "${impl_files[@]}"; do
 
     if [[ "$is_data_file" == "true" ]]; then
       api_call_count="$(grep -cE "$API_CALL_PATTERNS" "$impl_file" 2>/dev/null || true)"
-      if [[ "$api_call_count" -eq 0 ]]; then
-        violation "$impl_file" "0" "NO_API_CALLS" "Data hook/service file has ZERO API calls — likely returning hardcoded data"
+      api_import_count="$(grep -cEi "$API_IMPORT_PATTERNS" "$impl_file" 2>/dev/null || true)"
+      if [[ "$api_call_count" -eq 0 && "$api_import_count" -eq 0 ]]; then
+        violation "$impl_file" "0" "NO_API_CALLS" "Data hook/service file has ZERO API-call or client-transport signals — likely returning hardcoded data"
       fi
     fi
   fi

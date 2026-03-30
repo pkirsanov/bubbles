@@ -8,6 +8,8 @@ If the work is inside a target project's CI/CD, deployment, monitoring, or build
 
 **Scope rule:** Bubbles-managed git hooks are for the Bubbles framework repo only. Consumer repos use installed Bubbles files, but they must not install Bubbles-managed `pre-commit` or `pre-push` hooks.
 
+**Write rule:** Consumer repos must not directly edit `.github/bubbles/**`, `.github/agents/bubbles*`, `.github/prompts/bubbles*`, `.github/instructions/bubbles-*`, or other framework-managed Bubbles files. If a repo needs a framework change, it must record a proposal in `.github/bubbles-project/proposals/` or run `bubbles framework-proposal <slug>`, then make the real change in the Bubbles source repo.
+
 ## Check Project Health
 
 Refresh the framework-owned setup first when you have just installed or upgraded Bubbles:
@@ -26,6 +28,7 @@ Or via CLI:
 ```bash
 bash .github/bubbles/scripts/cli.sh doctor --heal
 bash .github/bubbles/scripts/cli.sh agnosticity
+bash .github/bubbles/scripts/cli.sh framework-write-guard
 bash .github/bubbles/scripts/cli.sh guard-selftest
 ```
 
@@ -48,6 +51,20 @@ This installs:
 ```
 
 This creates the entry in `.github/bubbles-project.yaml` and registers the hook.
+
+## Propose A Framework Change From A Consumer Repo
+
+```
+/bubbles.super  create a proposal for a Bubbles framework change called tighter-framework-write-guard
+```
+
+Or via CLI:
+
+```bash
+bash .github/bubbles/scripts/cli.sh framework-proposal tighter-framework-write-guard
+```
+
+This creates a project-owned proposal under `.github/bubbles-project/proposals/`. The actual framework edit still belongs in the Bubbles source repo.
 
 ## Upgrade Bubbles
 

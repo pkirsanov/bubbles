@@ -62,7 +62,7 @@ The **artifact lint script** (`artifact-lint.sh`) includes automated detection f
 The **implementation reality scan** (`implementation-reality-scan.sh`) includes automated detection for:
 - Backend stub patterns (hardcoded vecs, fake/mock/stub functions)
 - Frontend fake data (getSimulationData, import mock modules, hardcoded arrays)
-- Frontend API call absence (hooks/services with zero fetch/axios calls)
+- Frontend API/client signal absence (hooks/services with zero API/query/client transport signals)
 - Default/fallback patterns (`unwrap_or`, `unwrap_or_default`, `|| default`, `?? fallback`, `getOrElse`)
 - Prohibited simulation helpers in production code
 - Live-system tests that use request interception or canned backend responses

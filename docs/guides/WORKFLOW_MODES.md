@@ -124,13 +124,13 @@ select → implement → test → regression → simplify → stabilize → devo
 
 ### <img src="../../icons/cory-trevor-smokes.svg" width="20"> feature-bootstrap
 
-Set up planning artifacts without implementing.
+Bootstrap missing planning artifacts, then continue through implementation and the full verification chain for that feature.
 
 ```
-select → bootstrap → finalize
+select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → finalize
 ```
 
-**Use when:** You want to prepare artifacts but not implement yet.
+**Use when:** A feature is missing spec/design/scope readiness and you want the workflow to repair that planning debt before continuing delivery.
 
 ### <img src="../../icons/julian-glass.svg" width="20"> iterate
 
@@ -352,13 +352,13 @@ analyze → ux
 | `value-first-e2e-batch` | Prioritized + batched | Large backlogs |
 | `product-to-delivery` | Discovery → delivery | Product ideas |
 | `product-discovery` | Analysis only | Early exploration |
-| `bugfix-fastlane` | Bug → fix → test | Bug fixes |
-| `feature-bootstrap` | Select → bootstrap → finalize | Create required artifacts without implementation |
+| `bugfix-fastlane` | Fix → test → regression → hardening → validate → audit | Bug fixes that still need the full quality chain |
+| `feature-bootstrap` | Bootstrap missing artifacts, then deliver | Missing planning artifacts plus implementation |
 | `iterate` | Implement → test loop | Continuing work |
 | `harden-to-doc` | Harden → fix → test → docs | Code quality |
 | `gaps-to-doc` | Gaps → fix → test → docs | Gap closure |
 | `harden-gaps-to-doc` | Quality sweep | Post-implementation |
-| `stabilize-to-doc` | Stability → test → docs | Infrastructure |
+| `stabilize-to-doc` | Stability/devops → test → docs | Infrastructure |
 | `simplify-to-doc` | Simplify → test → docs | Code simplification |
 | `spec-review-to-doc` | Spec audit → docs | Spec freshness check |
 | `chaos-hardening` | Chaos → fix | Resilience |

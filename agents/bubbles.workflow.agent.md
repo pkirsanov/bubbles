@@ -208,29 +208,29 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | Your Goal | Mode | Ceiling | Phases |
 |-----------|------|---------|--------|
 | "Improve spec/scope quality only (no code changes)" | `spec-scope-hardening` | `specs_hardened` | select → bootstrap → harden → docs → validate → audit → finalize |
-| "Find and fix code issues against existing specs" | `harden-to-doc` | `done` | select → **bootstrap** → **validate** → harden → **implement** → test → chaos → validate → audit → docs → finalize |
-| "Fix performance, infra, config, reliability, security issues" | `stabilize-to-doc` | `done` | select → **bootstrap** → **validate** → **stabilize** → **implement** → test → chaos → validate → audit → docs → finalize |
-| "Close design-vs-code gaps and fix" | `gaps-to-doc` | `done` | select → **bootstrap** → **validate** → gaps → **implement** → test → chaos → validate → audit → docs → finalize |
-| "Full quality sweep (harden + gaps + fix + test)" | `harden-gaps-to-doc` | `done` | select → **bootstrap** → **validate** → harden → gaps → **implement** → test → chaos → validate → audit → docs → finalize |
-| "Full end-to-end delivery from scratch" | `full-delivery` | `done` | select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
-| "Strictest delivery with per-spec commits" | `full-delivery-strict` | `done` | select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
+| "Find and fix code issues against existing specs" | `harden-to-doc` | `done` | select → bootstrap → validate → harden → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs → finalize |
+| "Fix performance, infra, config, reliability, security issues" | `stabilize-to-doc` | `done` | select → bootstrap → validate → stabilize → devops → implement → test → regression → simplify → security → chaos → validate → audit → docs → finalize |
+| "Close design-vs-code gaps and fix" | `gaps-to-doc` | `done` | select → bootstrap → validate → gaps → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs → finalize |
+| "Full quality sweep (harden + gaps + fix + test)" | `harden-gaps-to-doc` | `done` | select → bootstrap → validate → harden → gaps → implement → test → regression → simplify → stabilize → devops → security → chaos → validate → audit → docs → finalize |
+| "Full end-to-end delivery from scratch" | `full-delivery` | `done` | select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize |
+| "Strictest delivery with per-spec commits" | `full-delivery-strict` | `done` | select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize |
 | "Maximum-assurance delivery until everything is truly green" | `delivery-lockdown` | `done` | [repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → security → validate → audit → chaos → docs] → finalize |
-| "Find highest-value work and deliver it" | `value-first-e2e-batch` | `done` | discover → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
-| "Create missing spec/design/scopes then implement" | `feature-bootstrap` | `done` | select → docs → implement → test → docs → validate → audit → finalize |
-| "Fix a specific bug" | `bugfix-fastlane` | `done` | select → implement → test → validate → audit → finalize |
-| "Run chaos probes and fix what breaks" | `chaos-hardening` | `done` | select → **bootstrap** → chaos → implement → test → validate → audit → finalize |
+| "Find highest-value work and deliver it" | `value-first-e2e-batch` | `done` | discover → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize |
+| "Create missing spec/design/scopes then implement" | `feature-bootstrap` | `done` | select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → finalize |
+| "Fix a specific bug" | `bugfix-fastlane` | `done` | select → implement → test → regression → simplify → stabilize → devops → security → validate → audit → finalize |
+| "Run chaos probes and fix what breaks" | `chaos-hardening` | `done` | select → bootstrap → chaos → implement → test → regression → simplify → stabilize → devops → security → validate → audit → finalize |
 | "Run tests, then quality chain" | `test-to-doc` | `done` | select → **bootstrap** → test → validate → audit → docs → finalize |
 | "Run chaos, then quality chain" | `chaos-to-doc` | `done` | select → chaos → validate → audit → docs → finalize |
-| "Validate claims, reconcile stale state, then deliver" | `reconcile-to-doc` | `done` | [one-shot spec-review default] → select → **bootstrap** → **validate** → implement → test → validate → audit → chaos → docs → finalize |
-| "Reconcile stale requirements/design/scopes, redesign the existing feature, then deliver" | `redesign-existing` | `done` | **analyze** → [one-shot spec-review default] → select → **bootstrap** → implement → test → docs → validate → audit → chaos → finalize |
+| "Validate claims, reconcile stale state, then deliver" | `reconcile-to-doc` | `done` | [one-shot spec-review default] → select → bootstrap → validate → implement → test → regression → simplify → stabilize → devops → security → validate → audit → chaos → docs → finalize |
+| "Reconcile stale requirements/design/scopes, redesign the existing feature, then deliver" | `redesign-existing` | `done` | analyze → [one-shot spec-review default] → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize |
 | "Update docs only (no code changes)" | `docs-only` | `docs_updated` | select → docs → validate → audit → finalize |
 | "Validate only" | `validate-only` | `validated` | select → validate → finalize |
 | "Audit only" | `audit-only` | `validated` | select → audit → finalize |
 | "Final validation + audit + docs" | `validate-to-doc` | `validated` | select → validate → audit → docs → finalize |
 | "Resume from saved state" | `resume-only` | `in_progress` | select → finalize |
-| "Discover requirements, design UX, then deliver" | `product-to-delivery` | `done` | **analyze** → select → bootstrap → implement → test → docs → validate → audit → chaos → finalize |
+| "Discover requirements, design UX, then deliver" | `product-to-delivery` | `done` | analyze → select → bootstrap → implement → test → regression → simplify → stabilize → devops → security → docs → validate → audit → chaos → finalize |
 | "Requirements + UX + design only (no code)" | `product-discovery` | `specs_hardened` | **analyze** → select → bootstrap → harden → docs → validate → audit → finalize |
-| "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | **analyze** → [one-shot spec-review default] → select → **validate** → harden → gaps → implement → test → validate → audit → chaos → docs → finalize |
+| "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | analyze → [one-shot spec-review default] → select → validate → harden → gaps → implement → test → regression → simplify → stabilize → devops → security → validate → audit → chaos → docs → finalize |
 | "Simplify an existing implementation, prove behavior still works, then sync docs" | `simplify-to-doc` | `done` | select → simplify → test → validate → audit → docs → finalize |
 | "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→bootstrap→impl→test→val→audit; simplify→test→val→audit; improve→analyze→bootstrap→impl→test→val→audit; others→bootstrap→impl→test→val→audit |
 | "Priority-driven iterative work execution (N iterations or time-bounded)" | `iterate` | `done` | [N iterations: pick highest-priority work → auto-select mode → execute full delivery cycle] → finalize (per-spec touched) |

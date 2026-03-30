@@ -10,6 +10,8 @@ Agents MUST resolve project-specific commands, ports, paths, and policy details 
 
 **Agents MUST NEVER create, modify, or delete files inside the Bubbles framework-managed directories.** These directories are owned exclusively by the Bubbles framework and updated only through `install.sh` upgrades.
 
+Downstream repos may request framework changes, but they must do that through a project-owned proposal artifact instead of editing framework-managed files locally.
+
 ### Framework-Managed Paths (READ-ONLY for agents)
 
 | Path | Owner | Update Mechanism |
@@ -30,6 +32,7 @@ Agents MUST resolve project-specific commands, ports, paths, and policy details 
 | Path | Owner | Purpose |
 |------|-------|---------|
 | `.github/bubbles-project.yaml` | Project | Custom quality gates and scan patterns |
+| `.github/bubbles-project/proposals/**` | Project | Proposed upstream Bubbles changes requested by this repo |
 | `.github/copilot-instructions.md` | Project | Project-specific policies |
 | `.specify/memory/agents.md` | Project | CLI entrypoint, commands, naming |
 | `.specify/memory/constitution.md` | Project | Project governance principles |
@@ -39,14 +42,14 @@ Agents MUST resolve project-specific commands, ports, paths, and policy details 
 
 | Need | Action |
 |------|--------|
-| Fix a framework script bug | Propose the change upstream to the Bubbles repository |
+| Fix a framework script bug | Run `bubbles framework-proposal <slug>` or add a proposal under `.github/bubbles-project/proposals/`, then implement it upstream in the Bubbles repository |
 | Add a project-specific quality check | Add to `scripts/` or `.github/bubbles-project.yaml` custom gates |
 | Add project-specific scan patterns | Edit `.github/bubbles-project.yaml` `scans:` section |
-| Extend allowlist for agnosticity lint | Edit `.github/bubbles/agnosticity-allowlist.txt` (project-owned data file) |
+| Need an agnosticity-lint exception or framework allowlist change | Propose the framework change upstream instead of editing `.github/bubbles/agnosticity-allowlist.txt` locally |
 
 ### Violation Detection
 
-The `agnosticity-lint.sh --staged` pre-commit check detects project-specific content in framework files. Additionally, `install.sh` upgrades will overwrite local modifications, causing silent regression if agents modify framework files locally.
+The `agnosticity-lint.sh --staged` pre-commit check detects project-specific content in framework files. The downstream `framework-write-guard` verifies that framework-managed files still match the last installed upstream checksum snapshot. Additionally, `install.sh` upgrades will overwrite local modifications, causing silent regression if agents modify framework files locally.
 
 ## Loop Guard
 

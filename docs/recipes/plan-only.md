@@ -13,16 +13,18 @@ This also applies when an existing feature's active planning artifacts are stale
 ## The Command
 
 ```
-/bubbles.workflow  feature-bootstrap for my-new-feature
+/bubbles.workflow  specs/050-my-new-feature mode: product-discovery
 
-/bubbles.workflow  feature-bootstrap for my-new-feature grillMode: required-on-ambiguity backlogExport: tasks
+/bubbles.workflow  specs/050-my-new-feature mode: product-discovery grillMode: required-on-ambiguity backlogExport: tasks
 
-/bubbles.workflow  redesign-existing for booking-page backlogExport: tasks
+/bubbles.workflow  specs/019-booking-page mode: spec-scope-hardening backlogExport: tasks
+
+/bubbles.workflow  specs/019-booking-page mode: redesign-existing backlogExport: tasks
 ```
 
 **Phases:**
-- New feature: analyst → design → plan
-- Existing stale feature: reconcile analyst/UX/design → refresh scopes
+- New feature: analyze → bootstrap → harden → docs → validate → audit
+- Existing feature: harden planning artifacts only, or redesign when the active truth is stale enough that planning must be rebuilt
 
 ## Or Step by Step
 
@@ -52,6 +54,9 @@ A complete `specs/NNN-feature/` folder with:
 - `spec.md` — requirements and acceptance criteria
 - `design.md` — architecture and data models
 - `scopes.md` — implementable scopes with DoD
+- `uservalidation.md` — validation checklist
+- `scenario-manifest.json` — scenario contract registry for active changed behavior
+- `state.json` — version 3 control-plane state with certification + policy provenance
 
 If you use `backlogExport: tasks` or `backlogExport: issues`, `bubbles.plan` also emits copy-ready backlog sections derived from the scopes without changing `scopes.md` as the source of truth.
 

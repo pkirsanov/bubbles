@@ -1,6 +1,6 @@
 # Bubbles Control Plane Rollout
 
-This document turns the control-plane design into an executable rollout plan.
+This document turns the control-plane design into an executable rollout plan and records the sequencing behind the active control-plane surfaces.
 
 Related documents:
 - [Control Plane Design](CONTROL_PLANE_DESIGN.md)
@@ -19,7 +19,7 @@ Implementation principle:
 
 ## Workstreams
 
-The rollout covers all proposed changes through seven workstreams:
+The rollout covers the control-plane changes across seven workstreams. Several of these surfaces are already active and mechanically enforced; the remaining value of this document is sequencing, adoption guidance, and alignment work.
 
 1. Specialist delegation, capability discovery, and no-hybrid role enforcement
 2. Central default policy and mode provenance

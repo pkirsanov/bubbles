@@ -50,6 +50,8 @@ Bootstrap-owned Bubbles artifacts must come from one of these two paths only:
 
 Do not hand-create or hand-copy Bubbles bootstrap artifacts in downstream repos. If `.specify/memory/bubbles.config.json` is missing, rerun the installer with `--bootstrap` instead of adding the file manually.
 
+Downstream repos must not directly edit framework-managed Bubbles files after install. The installer now writes `.github/bubbles/.checksums`, and consumer repos should use `bubbles framework-write-guard` or `bubbles doctor` to verify that their local framework layer still matches the installed upstream snapshot. If you need a framework change, record it in `.github/bubbles-project/proposals/` with `bubbles framework-proposal <slug>`, then implement the actual change in the Bubbles source repo and refresh downstream installs.
+
 The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and `--name` to override.
 
 > **Note:** Bootstrap never overwrites existing files. Safe to re-run.
@@ -159,6 +161,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
 | Control-plane policy registry | `.specify/memory/bubbles.config.json` | Bubbles bootstrap |
+| Framework change proposals | `.github/bubbles-project/proposals/**` | **You** |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |
 | Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** (bootstrapped) |
 | Command registry | `.specify/memory/agents.md` | **You** (bootstrapped) |

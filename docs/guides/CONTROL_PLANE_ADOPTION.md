@@ -26,9 +26,15 @@ The control plane is not just a greenfield template system. Existing repos need 
 4. Migrate only active specs immediately; untouched historical specs can convert later.
 5. Downgrade stale certification before claiming progress.
 
+Downstream framework-authoring rule:
+- Consumer repos must not hand-edit framework-managed Bubbles files in place.
+- Record requested framework changes under `.github/bubbles-project/proposals/` or via `bubbles framework-proposal <slug>`.
+- Implement the framework change in the Bubbles source repo, then refresh downstream installs.
+
 Bootstrap provenance rule:
 - `.specify/memory/bubbles.config.json` is a Bubbles bootstrap artifact and must be created by install/bootstrap, not by hand.
 - `.github` framework drift should be reconciled through `bubbles.setup`, not ad hoc edits in downstream repos.
+- `.github/bubbles/.checksums` is the downstream checksum snapshot for installed framework-managed files. If it reports drift, fix the framework upstream instead of patching local copies.
 
 ## Phase A: Framework Baseline
 

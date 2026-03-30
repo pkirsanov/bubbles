@@ -215,7 +215,7 @@ bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose
 ```
 
 - Detects gateway handlers returning hardcoded vec![...] data instead of real service calls
-- Detects frontend hooks calling getSimulationData() or containing zero fetch() calls
+- Detects frontend hooks calling getSimulationData() or containing zero API/query/client transport signals
 - Detects prohibited simulation helpers (seeded_pick/seeded_range) in production Rust code
 - If violations found → validation FAILS for implementation completeness
 - Record the full output in the validation report

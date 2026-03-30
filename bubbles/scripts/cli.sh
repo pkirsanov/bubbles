@@ -19,6 +19,8 @@
 #   guard <spec>                  Run state transition guard on a spec
 #   scan <spec>                   Run implementation reality scan on a spec
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
+#   framework-write-guard         Check downstream framework-managed files against install provenance
+#   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
 #   audit-done [--fix]            Audit all specs marked done
 #   autofix <spec>                Scaffold missing report sections
 #   sunnyvale <alias>             Resolve a Sunnyvale alias (agent or mode)
@@ -75,6 +77,12 @@ is_framework_repo() {
 require_framework_repo_for_hooks() {
   if ! is_framework_repo; then
     die "Bubbles git hooks may only be installed in the Bubbles framework repo. Consumer repos should use Bubbles but must not install Bubbles-managed pre-commit/pre-push hooks."
+  fi
+}
+
+require_downstream_repo_for_framework_proposal() {
+  if is_framework_repo; then
+    die "Framework proposals belong in consumer repos. Implement the change directly in the Bubbles source repo instead of scaffolding a downstream proposal here."
   fi
 }
 
@@ -477,6 +485,8 @@ Commands:
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
+  framework-write-guard         Check downstream framework-managed files against install provenance
+  framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
   audit-done [--fix]            Audit all specs marked done
   autofix <spec>                Scaffold missing report sections
   dag <spec>                    Show scope dependency graph (Mermaid)
@@ -802,6 +812,103 @@ cmd_regression_quality() {
   bash "$SCRIPT_DIR/regression-quality-guard.sh" "$@"
 }
 
+cmd_framework_write_guard() {
+  bash "$SCRIPT_DIR/downstream-framework-write-guard.sh" "$@"
+}
+
+cmd_framework_proposal() {
+  require_downstream_repo_for_framework_proposal
+
+  [[ $# -lt 1 ]] && die "Usage: bubbles framework-proposal <slug> [--title \"Title\"]"
+
+  local slug="$1"
+  shift
+
+  local explicit_title=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --title)
+        [[ $# -lt 2 ]] && die "Usage: bubbles framework-proposal <slug> [--title \"Title\"]"
+        explicit_title="$2"
+        shift 2
+        ;;
+      *)
+        die "Unknown option for framework-proposal: $1"
+        ;;
+    esac
+  done
+
+  local normalized_slug
+  normalized_slug="$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+  [[ -n "$normalized_slug" ]] || die "framework-proposal slug must contain letters or numbers"
+
+  local proposal_dir="$REPO_ROOT/.github/bubbles-project/proposals"
+  local date_prefix
+  date_prefix="$(date -u +%Y%m%d)"
+  local proposal_file="$proposal_dir/${date_prefix}-${normalized_slug}.md"
+  local title="$explicit_title"
+
+  if [[ -z "$title" ]]; then
+    title="$(printf '%s' "$normalized_slug" | sed -E 's/-+/ /g; s/\b(.)/\u\1/g')"
+  fi
+
+  [[ -e "$proposal_file" ]] && die "Proposal already exists: $proposal_file"
+
+  mkdir -p "$proposal_dir"
+
+  cat > "$proposal_file" <<EOF
+# Bubbles Framework Change Proposal
+
+- Title: $title
+- Slug: $normalized_slug
+- Created: $(date -u +"%Y-%m-%d")
+- Created From: $(basename "$REPO_ROOT")
+- Requested Upstream Repo: bubbles
+
+## Summary
+
+Describe the framework change you want in one short paragraph.
+
+## Why This Must Be Upstream
+
+Explain why this cannot live in project-owned files such as \`.github/bubbles-project.yaml\`, \`scripts/\`, or \`specs/\`.
+
+## Current Downstream Limitation
+
+Describe the current pain or blocked workflow in the consumer repo.
+
+## Proposed Bubbles Change
+
+List the desired upstream edits, commands, scripts, docs, or generated files.
+
+## Affected Framework Paths
+
+- \`.github/bubbles/scripts/...\`
+- \`.github/bubbles/workflows.yaml\`
+- \`.github/agents/bubbles...\`
+- Other:
+
+## Expected Downstream Outcome
+
+Describe what a consumer repo should be able to do after the upstream Bubbles change ships and the repo refreshes.
+
+## Acceptance Criteria
+
+- [ ] Upstream Bubbles implementation exists
+- [ ] Installer or refresh flow distributes the change
+- [ ] Downstream repos no longer need a local framework patch
+- [ ] Docs explain the new behavior
+
+## Notes
+
+- Do not edit \`.github/bubbles/**\`, \`.github/agents/bubbles*\`, or other framework-managed files locally.
+- Implement the framework fix in the Bubbles source repo, then refresh this repo via install/refresh.
+EOF
+
+  echo "✅ Framework proposal created: $proposal_file"
+  echo "ℹ️  Next step: implement the change in the Bubbles source repo, then refresh this repo's framework layer."
+}
+
 cmd_audit_done() {
   local fix_flag=""
   [[ "${1:-}" == "--fix" ]] && fix_flag="--fix"
@@ -1059,6 +1166,19 @@ cmd_doctor() {
     passed=$((passed + 1))
   else
     echo -e "  ${RED}❌${NC} Portable Bubbles surfaces contain project/tool drift"
+    failed=$((failed + 1))
+  fi
+
+  # Check 12: Downstream framework-managed files still match install provenance
+  if is_framework_repo; then
+    echo -e "  ${GREEN}✅${NC} Framework write guard not applicable in the Bubbles source repo"
+    passed=$((passed + 1))
+  elif bash "$SCRIPT_DIR/downstream-framework-write-guard.sh" --quiet; then
+    echo -e "  ${GREEN}✅${NC} Downstream framework-managed files still match upstream install provenance"
+    passed=$((passed + 1))
+  else
+    echo -e "  ${RED}❌${NC} Downstream framework-managed files were edited locally"
+    echo -e "     ${DIM}Move the request into .github/bubbles-project/proposals/ and implement it upstream in Bubbles.${NC}"
     failed=$((failed + 1))
   fi
 
@@ -1605,6 +1725,8 @@ main() {
     workflow-selftest)  cmd_workflow_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
     regression-quality) cmd_regression_quality "$@" ;;
+    framework-write-guard) cmd_framework_write_guard "$@" ;;
+    framework-proposal)  cmd_framework_proposal "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;
     autofix)            cmd_autofix "$@" ;;
     dag)                cmd_dag "$@" ;;
