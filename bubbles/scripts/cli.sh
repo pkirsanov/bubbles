@@ -18,6 +18,7 @@
 #   agnosticity [--staged]        Check portable Bubbles surfaces for drift
 #   guard <spec>                  Run state transition guard on a spec
 #   scan <spec>                   Run implementation reality scan on a spec
+#   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
 #   audit-done [--fix]            Audit all specs marked done
 #   autofix <spec>                Scaffold missing report sections
 #   sunnyvale <alias>             Resolve a Sunnyvale alias (agent or mode)
@@ -475,6 +476,7 @@ Commands:
   guard-selftest                Run the transition guard selftest suite
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
+  regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
   audit-done [--fix]            Audit all specs marked done
   autofix <spec>                Scaffold missing report sections
   dag <spec>                    Show scope dependency graph (Mermaid)
@@ -793,6 +795,11 @@ cmd_scan() {
   local verbose=""
   [[ "${2:-}" == "--verbose" || "${2:-}" == "-v" ]] && verbose="--verbose"
   bash "$SCRIPT_DIR/implementation-reality-scan.sh" "$spec_dir" $verbose
+}
+
+cmd_regression_quality() {
+  [[ $# -lt 1 ]] && die "Usage: bubbles regression-quality [--bugfix] [--verbose] <test-file-or-dir> [...]"
+  bash "$SCRIPT_DIR/regression-quality-guard.sh" "$@"
 }
 
 cmd_audit_done() {
@@ -1597,6 +1604,7 @@ main() {
     guard-selftest)     cmd_guard_selftest "$@" ;;
     workflow-selftest)  cmd_workflow_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
+    regression-quality) cmd_regression_quality "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;
     autofix)            cmd_autofix "$@" ;;
     dag)                cmd_dag "$@" ;;

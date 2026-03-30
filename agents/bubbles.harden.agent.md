@@ -451,7 +451,8 @@ Required checks:
 - Skip-marker scan (`t.Skip`, `.skip(`, `xit(`, `xdescribe(`, `.only(`, `test.todo`, `it.todo`, `pending(`)
 - Proxy/no-op detection (status-code-only E2E, assertion-free endpoint hits, existence-only UI checks)
 - Fake-live detection (mock/intercept usage inside tests classified as integration/e2e/stress/load)
-- Required E2E anti-false-positive patterns (`if (!has...) return`, optional required assertions)
+- Required E2E anti-false-positive patterns (`if (!has...) return`, redirect/login bailout returns, optional required assertions)
+- Bug-fix regression quality (at least one adversarial case; no tautological-only fixtures)
 - Scenario mapping specificity for required E2E tests (concrete scenario traceability)
 
 Mandatory scan patterns (minimum):
@@ -460,7 +461,8 @@ Mandatory scan patterns (minimum):
 grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo\|it\.todo\|pending(' [audit-test-files]
 grep -rn 'expect\(.*status.*\)\.toBe\(200\)\|toBe\(201\)\|toBe\(204\)' [e2e-and-integration-files]
 grep -rn 'page\.route\(|context\.route\(|msw\|nock\|intercept\|jest\.fn\|sinon\.stub\|mock\(' [integration-e2e-stress-load-files]
-grep -n 'if (!has.*)\|if \(.*layout.*\)\|return;' [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]   # bug-fix scopes only
 ```
 
 Compliance result format:

@@ -275,6 +275,7 @@ Modes:
 Required violation classes:
 - `NOOP_OR_PROXY_TEST`
 - `FALSE_POSITIVE_PATTERN`
+- `ADVERSARIAL_REGRESSION_MISSING`
 - `FAKE_LIVE_TEST`
 - `SKIP_MARKER_PRESENT`
 - `SCENARIO_MAPPING_MISSING`
@@ -286,8 +287,13 @@ Mandatory minimum scans:
 grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo\|it\.todo\|pending(' [audit-test-files]
 grep -rn 'expect\(.*status.*\)\.toBe\(200\)\|toBe\(201\)\|toBe\(204\)' [e2e-and-integration-files]
 grep -rn 'page\.route\(|context\.route\(|msw\|nock\|intercept\|jest\.fn\|sinon\.stub\|mock\(' [integration-e2e-stress-load-files]
-grep -n 'if (!has.*)\|if \(.*layout.*\)\|return;' [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]   # bug-fix scopes only
 ```
+
+Bug-fix scope audit requirement:
+- Verify at least one regression case uses adversarial input that would fail if the bug were reintroduced.
+- If all regression fixtures already satisfy the broken code path, record `ADVERSARIAL_REGRESSION_MISSING` as a blocking violation.
 
 Audit evidence format:
 

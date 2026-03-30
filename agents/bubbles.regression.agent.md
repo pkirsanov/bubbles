@@ -349,7 +349,8 @@ Before reporting verdict, this agent MUST run Tier 1 universal checks from [vali
 | R3 | Affected specs' tests run | Tests for all affected specs executed with evidence |
 | R4 | Coverage compared | Coverage numbers from before and after recorded |
 | R5 | Regression coverage added | Every regression found has a corresponding regression test |
-| R6 | No silent-pass patterns | Required E2E files pass anti-false-positive scans |
+| R6 | No silent-pass patterns | Required E2E files pass anti-false-positive scans, including redirect/login bailout checks |
+| R7 | Adversarial bugfix coverage | Bug-fix regressions include at least one adversarial case instead of only tautological fixtures |
 
 If any required check fails, do not report a regression verdict. Fix the issue first.
 

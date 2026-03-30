@@ -90,6 +90,8 @@ For new or changed behavior:
 3. show the passing targeted proof
 4. run the broader impacted regression coverage
 
+For bug fixes, the failing targeted proof must come from an adversarial regression case that would fail if the bug returned. A tautological pre-fix test does not satisfy red/green traceability.
+
 Tests and fixes must trace back to planned behavior in `spec.md`, `design.md`, `scopes.md`, and DoD.
 
 ## Consumer Trace Requirement

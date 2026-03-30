@@ -162,6 +162,22 @@ scans:
     # Additional regex patterns for env-dependent test failures
     # (appended to generic defaults, not replacing them)
     patterns: 'TRUSTED_PROXY_COUNT\|MY_CUSTOM_ENV_VAR'
+
+  # Regression quality guard: bailout + adversarial heuristics
+  regressionQuality:
+    # Regex patterns that indicate a required test bails out instead of failing
+    bailoutPatterns:
+        - 'if.*includes\(.*login.*\).*return;'
+        - 'if.*!has.*return;'
+    # Regex patterns for optional assertions that do not prove required behavior
+    optionalAssertionPatterns:
+        - 'if \(.*layout.*\)'
+        - 'toBeDefined\(\)'
+    # Regex patterns that count as adversarial bug-fix regression signals
+    adversarialSignals:
+        - '\\.not\\.'
+        - '\\bfalse\\b'
+        - '\\bmissing\\b'
 ```
 
 ### Design Principles
@@ -173,6 +189,8 @@ scans:
 | **Never overwritten** | `install.sh` upgrades never touch `bubbles-project.yaml` |
 | **Optional** | If the file does not exist, all scans use sensible generic defaults |
 | **YAML structure** | Simple `key: value` or `key: [list]` format parseable by `sed`/`awk` in bash scripts |
+
+`regressionQuality.*` follows the standard override model: if provided, those lists replace the generic fallback patterns used by `regression-quality-guard.sh`.
 
 ---
 

@@ -204,7 +204,8 @@ Minimum required checks in compliance mode:
 - No skip/only/todo/pending markers in required tests
 - No proxy/no-op tests (status-code-only E2E, assertion-free endpoint hits, existence-only UI checks)
 - No fake live tests (mock/intercept patterns in tests labeled integration/e2e/stress/load)
-- No silent-pass branches in required E2E scenarios (`if (!has...) return`, optional assertions for required behavior)
+- No silent-pass branches in required E2E scenarios (`if (!has...) return`, redirect/login bailout returns, optional assertions for required behavior)
+- Bug-fix scopes include at least one adversarial regression case that would fail if the bug were reintroduced
 - Scenario specificity: required E2E tests map to concrete Gherkin/UI scenarios (not generic placeholders)
 - Evidence quality: raw execution evidence requirements (≥10 lines per required section) are satisfiable and consistent with current policy
 
@@ -291,6 +292,7 @@ Run this phase when `compliance != off`.
 Required violation classes:
 - `NOOP_OR_PROXY_TEST`
 - `FALSE_POSITIVE_PATTERN`
+- `ADVERSARIAL_REGRESSION_MISSING`
 - `FAKE_LIVE_TEST`
 - `SKIP_MARKER_PRESENT`
 - `SCENARIO_MAPPING_MISSING`
@@ -302,7 +304,8 @@ Mandatory scan patterns (minimum):
 grep -rn 't\.Skip\|\.skip(\|xit(\|xdescribe(\|\.only(\|test\.todo\|it\.todo\|pending(' [audit-test-files]
 grep -rn 'expect\(.*status.*\)\.toBe\(200\)\|toBe\(204\)\|toBe\(201\)' [e2e-and-integration-files]
 grep -rn 'page\.route\(|context\.route\(|msw\|nock\|intercept\|jest\.fn\|sinon\.stub\|mock\(' [integration-e2e-stress-load-files]
-grep -n 'if (!has.*)\|if \(.*layout.*\)\|return;' [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]   # bug-fix scopes only
 ```
 
 Classification rule:
@@ -370,6 +373,7 @@ For each issue found:
 Additional requirement when compliance mode is enabled:
 - Resolve compliance violations in priority order: `critical` → `high` → `medium`.
 - For required e2e scenarios, convert optional/silent-pass logic to fail-fast assertions.
+- For bug-fix scopes, add or strengthen an adversarial regression case before treating the test plan as complete.
 
 Requirements:
 - No stubs, no default/fallback behavior.
@@ -414,6 +418,44 @@ grep -rn 'mock\|Mock\|jest\.fn\|sinon\|stub\|nock\|msw\|intercept\|route\(' [int
 - **Gaps created by reclassification:** [list categories now missing real tests]
 - **Action:** [tests created to fill gaps]
 ```
+
+### Phase 3c: Regression Quality Audit (MANDATORY for bug-fix scopes)
+
+**Purpose:** Detect regression tests that execute real code but still cannot catch the bug they claim to guard against.
+
+Run this phase when the selected target is a bug packet, a `bugs/` path, or a scope/scenario explicitly marked as `bugfix` or `regression`.
+
+Preferred reusable command:
+
+```bash
+bash bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]
+```
+
+For each required regression-capable test file in scope:
+
+1. **Bailout scan** — search for patterns that convert a failure into a silent pass:
+   - `if (url.includes('/login')) { return; }` or equivalent redirect bailout
+   - `if (!hasControl) { return; }` or equivalent missing-feature bailout
+   - Any conditional early return in a required test body where the condition describes the broken behavior
+
+2. **Adversarial coverage check** — verify at least one regression case uses input that would fail if the bug came back:
+   - Filter/gate bugs: include data that does **not** satisfy the buggy filter or gate
+   - Auth/redirect bugs: assert directly that the unwanted redirect/logout does **not** happen
+   - Persistence/data-shape bugs: use the edge-case payload that triggered the original failure and verify round-trip behavior
+
+3. **Block tautologies** — if all regression fixtures already satisfy the broken code path, the regression test is invalid and must be rewritten.
+
+4. **Record results in report.md**:
+
+```markdown
+### Regression Quality Audit
+- **Files scanned:** [count]
+- **Bailout violations:** [count/list]
+- **Adversarial cases verified:** [count/list]
+- **Tautological regressions rewritten:** [list or none]
+```
+
+**Blocking:** Bailout patterns in required test bodies are violations. Missing adversarial regression coverage in a bug-fix scope is a violation.
 
 ### Phase 4: Final Test Pass (No Exceptions)
 

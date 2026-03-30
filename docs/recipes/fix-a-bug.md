@@ -19,7 +19,7 @@ Something's broken. You need to fix it with proper reproduction, root cause anal
 2. Reproduces the bug with evidence
 3. Identifies root cause
 4. Implements the fix
-5. Adds regression test that fails without the fix
+5. Adds an adversarial regression test that fails without the fix
 6. Verifies the fix with evidence
 
 **Done.** One command.
@@ -50,4 +50,6 @@ specs/bugs/BUG-015-login-special-chars/
 
 - The bug **must be reproduced** before the fix (before/after evidence)
 - A regression test **must be added** that fails without the fix
+- The regression test **must be adversarial**: it needs input that would fail if the bug came back, not fixtures that already satisfy the broken path
+- Required bug-fix tests **must not** use bailout returns that silently pass when the failure occurs
 - Fix is not done until evidence shows the test passing with the fix

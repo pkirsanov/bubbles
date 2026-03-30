@@ -137,13 +137,13 @@
 | `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
 | `spec-review-to-doc` | laser-eyes-sweep | Audit specs for freshness, classify trust levels, produce maintenance report |
 | `chaos-hardening` | shit-storm | Iterative chaos + bugfix cycles until clean |
-| `bugfix-fastlane` | smash-and-grab | Fast bug closure — in, fix, out |
+| `bugfix-fastlane` | smash-and-grab | Fast bug closure with regression, hardening, validation, and audit |
 | `validate-only` | randy-put-a-shirt-on | Run validation gates only |
 | `stochastic-quality-sweep` | bottle-kids | Randomized probing — you never know where they'll hit |
 | `harden-gaps-to-doc` | conky-says | Thorough pre-release sweep |
 | `product-to-delivery` | freedom-35 | Full pipeline: analyst → UX → design → implement → ship |
 | `docs-only` | gnome-sayin | Documentation maintenance only |
-| `feature-bootstrap` | smokes-and-setup | Set up artifacts without implementing |
+| `feature-bootstrap` | smokes-and-setup | Repair missing artifacts, then continue delivery |
 | `iterate` | keep-going | Continue scope-by-scope implementation |
 | `resume-only` | resume-the-tape | Resume from last session state |
 | `product-discovery` | whats-the-big-idea | Business analysis + UX exploration only |
@@ -267,13 +267,14 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 
 | | |
 |---|---|
-| **What It Enforces** | Tests are real. No fakes. No shortcuts. No greasy workarounds. Every Gherkin scenario gets a test. Every assertion proves the behavior the spec describes. |
+| **What It Enforces** | Tests are real. No fakes. No shortcuts. No greasy workarounds. Every Gherkin scenario gets a test. Every assertion proves the behavior the spec describes. Bug-fix regressions must use adversarial cases, not tautologies. |
 | **Activates When** | Writing tests, implementing scope test plans, reviewing coverage, marking test DoD items, verifying Gherkin scenario coverage |
-| **5 Quality Gates** | Gherkin coverage · No internal mocks (live categories) · No silent-pass patterns · Real assertions · Test Plan↔DoD parity |
+| **6 Quality Gates** | Gherkin coverage · No internal mocks (live categories) · No silent-pass patterns · Real assertions · Test Plan↔DoD parity · Adversarial bug-fix regression coverage |
 | **The Decision Tree** | Does it execute real code? Does it assert spec behavior? Does it hit the real stack? Can it fail if the feature is broken? If any answer is no → it ain't a real test. |
 
 **Vocabulary:**
 - *"Greasy test"* — a test that passes when it shouldn't (silent-pass, no assertions, mocked internals)
+- *"Tautological regression"* — a bug-fix test whose fixtures already satisfy the broken path, so it passes whether the bug exists or not
 - *"Proxy assertion"* — asserting status codes or "defined" checks instead of actual behavior (*"Returns 200 or 404"* is not a test)
 - *"Trinity's checklist"* — the pre-test-writing checklist: read Gherkin, read spec, identify all paths, determine categories, verify test plan
 - *"Red before green"* — changed behavior must show a failing test first, then a fix

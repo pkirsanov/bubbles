@@ -104,6 +104,10 @@ Use the Test Plan table from scope-workflow.md and map each Gherkin scenario to 
 
 **Every feature/fix/change MUST include explicit regression E2E planning:** for every new/changed/fixed behavior, add at least one persistent `Regression:` E2E row tied to the exact scenario or bug behavior it protects. A broad "existing E2E suite" row does not satisfy this requirement by itself.
 
+**Transition-guard compatibility:** include at least one Test Plan row whose type/label literally contains `Regression E2E` so the mechanical guard can prove scenario-specific regression planning exists.
+
+**Bug-fix scopes MUST include an adversarial regression row:** at least one regression entry must use input that would fail if the bug were reintroduced. Tautological regressions where every fixture already satisfies the broken code path are invalid.
+
 **Renames/removals MUST include a Consumer Impact Sweep:** when a scope renames/removes any route, path, contract, identifier, or UI target, add a subsection enumerating affected navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests, plus explicit regression rows for those consumer flows and a stale-reference-scan row for the old identifier/path.
 
 Regression tests are previously missed tests: add them to feature/component-specific test files (no generic cross-feature regression files).
@@ -116,8 +120,8 @@ Use the Tiered DoD template from scope-workflow.md:
 - Build Quality Gate: zero warnings, zero deferrals, lint/format clean, artifact lint clean, docs aligned
 
 The Core Items MUST include both:
-- scenario-specific E2E regression coverage for each changed behavior
-- broader E2E regression suite confirmation
+- `- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior`
+- `- [ ] Broader E2E regression suite passes`
 
 If the scope renames/removes any route, path, contract, identifier, or UI target, the Core Items MUST also include a consumer impact sweep item proving zero stale first-party references remain.
 

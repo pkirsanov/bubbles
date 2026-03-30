@@ -30,6 +30,7 @@ Purpose: compact state/completion rules that must remain authoritative for all a
 - `state-transition-guard.sh` — DoD, scope status, certification/execution coherence, policy provenance (G055), certification state (G056), scenario manifest (G057), lockdown/regression (G058/G059), TDD evidence (G060), transition/rework closure (G061), packet/result integrity and framework contract enforcement (G062/G063/G064), phase-claim provenance (G066)
 - `artifact-lint.sh` — schema validation (v2 + v3), phase coherence, scope parity, specialist completion
 - `implementation-reality-scan.sh` — stub/fake/hardcoded data detection
+- `regression-quality-guard.sh` — silent-pass bailout detection plus adversarial regression heuristics for bug-fix tests
 - `artifact-freshness-guard.sh` — superseded content isolation (G052)
 - `traceability-guard.sh` — Gherkin-to-test-to-evidence linkage, scenario manifest cross-check (G057/G059)
 - `done-spec-audit.sh` — post-completion audit running state-transition-guard + artifact-lint + traceability-guard for all `done` specs

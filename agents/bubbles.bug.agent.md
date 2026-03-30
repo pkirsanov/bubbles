@@ -130,6 +130,7 @@ Core requirements:
 3. **Regression Prevention (ALL TEST TYPES MANDATORY — per Canonical Test Taxonomy)**
    - Every bug fix MUST include regression coverage across all applicable test types (see `agent-common.md` → Canonical Test Taxonomy).
    - Tests MUST fail before fix, pass after, and validate the specific failure scenario.
+   - Regression tests for bug fixes MUST include at least one adversarial case that would fail if the bug were reintroduced. Tautological tests that only use data already accepted by the broken code path are invalid.
    - Live system tests MUST use ephemeral storage or clean up test data after (no residual data).
    - E2E tests are MANDATORY for every bug fix; include UI scenario matrix + user-visible assertions when UI is affected.
    - Test commands and coverage thresholds come from `copilot-instructions.md`.
@@ -185,10 +186,20 @@ Feature: [Bug] Prevent [short description]
       ```
       [ACTUAL failing test output, ≥10 lines]
       ```
+- [ ] Adversarial regression case exists and would fail if the bug returned
+   - Raw output evidence (inline under this item, no references/summaries):
+      ```
+      [ACTUAL test/setup evidence showing adversarial input and failing behavior before the fix]
+      ```
 - [ ] Post-fix regression test PASSES
    - Raw output evidence (inline under this item, no references/summaries):
       ```
       [ACTUAL passing test output, ≥10 lines]
+      ```
+- [ ] Regression tests contain no silent-pass bailout patterns
+   - Raw output evidence (inline under this item, no references/summaries):
+      ```
+      [ACTUAL scan output proving no failure-condition early-return paths]
       ```
 - [ ] All existing tests pass (no regressions)
    - Raw output evidence (inline under this item, no references/summaries):
@@ -320,6 +331,8 @@ If you reach Phase 5 without having written and executed a failing test, STOP �
 2. **Write a failing regression test FIRST** (before ANY fix code):
    - Create a test that encodes the bug's reproduction steps
    - The test MUST currently FAIL (proving the bug exists)
+   - **⛔ ADVERSARIAL REGRESSION REQUIREMENT:** At least one regression case MUST use input that would FAIL if the bug were reintroduced but PASSES with the fix applied. If the bug is caused by a filter or gate on field X, create data with field X absent, false, or empty and assert it still passes. If every test fixture already satisfies the broken code path, the test is tautological and cannot detect regression.
+   - **⛔ NO BAILOUT PATTERNS:** The regression test MUST NOT contain conditional-return logic that silently passes when the failure condition occurs. Do not use patterns like `if (failure_condition) { return; }`; assert directly on the forbidden behavior instead.
    - Run the test and record the FAILURE output in report.md:
    ```markdown
    ### Pre-Fix Regression Test (MUST FAIL)

@@ -76,15 +76,14 @@ Required tests MUST fail when the feature is missing or broken.
 
 **Prohibited patterns (scan before marking done):**
 ```bash
-grep -n 'if (!has' [test-files]
-grep -n 'return;' [test-files]          # early returns in required test bodies
-grep -n 'if (.*layout.*)' [test-files]  # optional layout assertions
-grep -n 'toBeDefined()' [test-files]    # existence-only checks for required behavior
+bash .github/bubbles/scripts/regression-quality-guard.sh [test-files]
+bash .github/bubbles/scripts/regression-quality-guard.sh --bugfix [test-files]  # bug-fix scopes only
 ```
 
 **Rules:**
 - Missing required selector → test MUST fail via direct assertion (e.g., `expect(locator).toBeVisible()`)
 - No early-return paths after entering a required scenario
+- No redirect/auth bailout branches such as `if (page.url().includes('/login')) { return; }`
 - Persistence tests MUST assert concrete field values, not just null/defined checks
 - UI tests MUST assert user-visible outcomes (computed styles, DOM state, round-trip reload)
 
@@ -114,6 +113,27 @@ Count Test Plan rows == Count DoD test-related items
 ```
 
 Mismatch is a BLOCKING issue — scope cannot be marked Done.
+
+### Gate 6: Adversarial Regression Coverage (Bug Fixes)
+
+Bug-fix regression tests MUST include at least one adversarial test case — a test using input that would FAIL if the bug were reintroduced.
+
+**What makes a test adversarial:**
+- Filter/gate bugs: test data does **not** match the buggy filter, and still must pass
+- Auth/redirect bugs: direct assertion that the failure condition does **not** occur, with no bailout-return
+- Persistence/data-shape bugs: round-trip with the edge-case input that triggered the original bug
+
+**Prohibited (tautological tests):**
+- All test data already satisfies the broken code path
+- Test setup mirrors the exact condition the buggy filter checks for
+- No negative or adversarial scenario exists in any regression case
+
+**Prohibited (false-negative bailouts):**
+- `if (page.url().includes('/login')) { return; }`
+- `if (!hasControl) { return; }`
+- Any conditional early return in a required test body that exits without asserting on the failure path
+
+This gate applies to bug fixes and regression scopes. Feature-only scopes are exempt unless they claim to close an existing bug.
 
 ---
 
@@ -151,10 +171,13 @@ Run silent-pass pattern scan against all required test files.
 ### Step 4: Assertion Audit
 Verify every test body contains at least one behavior-proving assertion matching the corresponding Gherkin scenario.
 
-### Step 5: Test Plan ↔ DoD Cross-Check
+### Step 5: Adversarial Regression Audit
+For bug-fix scopes, verify at least one regression case would fail if the bug returned and that no bailout patterns convert the bug back into a pass.
+
+### Step 6: Test Plan ↔ DoD Cross-Check
 Count Test Plan rows. Count DoD test items. Confirm parity.
 
-### Step 6: Execute and Record Evidence
+### Step 7: Execute and Record Evidence
 Run all tests. Capture raw terminal output (≥10 lines per test category). Record in `report.md`.
 
 ---
@@ -173,7 +196,10 @@ Does the test execute real production code?
       └─ YES
          Can the test fail if the feature is broken or missing?
          ├─ NO → ❌ SILENT-PASS — add direct failure assertions
-         └─ YES → ✅ REAL TEST
+         └─ YES
+            For bug fixes: is at least one regression case adversarial rather than tautological?
+            ├─ NO → ❌ TAUTOLOGICAL — rewrite the regression case with adversarial input
+            └─ YES → ✅ REAL TEST
 ```
 
 ---

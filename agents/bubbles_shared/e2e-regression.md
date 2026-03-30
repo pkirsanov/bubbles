@@ -7,6 +7,7 @@ Purpose: canonical source for regression permanence requirements.
 - A broad rerun of existing suites is not enough by itself.
 - UI changes require user-visible assertions; API changes require consumer-visible behavior checks.
 - Rename/removal work requires consumer-facing regression coverage, not just producer-surface checks.
+- Bug-fix regressions must include at least one adversarial case that would fail if the bug were reintroduced; a tautological case that already satisfies the broken path is not protective coverage.
 
 ## Cross-Spec Regression (Gates G044, G045, G046)
 

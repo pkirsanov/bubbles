@@ -57,6 +57,27 @@ Before claiming completion for implementation work:
 - regression coverage must exist for changed behavior
 - skipped or proxy tests must be treated as failures for required behavior
 
+## Unbreakable E2E Guardrails
+
+Forbidden patterns for required live-system tests include:
+
+- `if (page.url().includes('/login')) { return; }` or equivalent redirect bailout in an authenticated scenario
+- `if (!hasControl) { return; }` or equivalent missing-feature bailout in a required test body
+- optional assertions for required behavior that let the test continue without proving the user-visible outcome
+- bug regression tests where every fixture already satisfies the broken filter or gate
+
+These patterns convert real failures into silent passes and block completion.
+
+## Adversarial Regression Tests For Bug Fixes
+
+Every bug-fix regression test must include at least one adversarial case that would fail if the bug were reintroduced.
+
+- filter or gate bugs must include data that does not satisfy the buggy condition
+- auth or redirect bugs must assert the forbidden redirect or logout does not happen
+- persistence or shape bugs must use the edge-case payload that triggered the original defect and verify round-trip behavior
+
+Tautological regressions are invalid even when they execute real code and contain assertions.
+
 ## Sequential Completion
 
 Specs and scopes complete in order. Do not advance later required work while earlier required work remains incomplete.
