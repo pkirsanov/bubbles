@@ -66,6 +66,14 @@ bash .github/bubbles/scripts/cli.sh framework-proposal tighter-framework-write-g
 
 This creates a project-owned proposal under `.github/bubbles-project/proposals/`. The actual framework edit still belongs in the Bubbles source repo.
 
+## Inspect The Effective Managed-Doc Registry
+
+```bash
+bash .github/bubbles/scripts/cli.sh docs-registry effective
+```
+
+Use this when a project's managed-doc layout differs from the framework default and you need to confirm how framework defaults plus project-owned overrides resolve in practice.
+
 ## Upgrade Bubbles
 
 ```

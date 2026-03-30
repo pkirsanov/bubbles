@@ -4,7 +4,7 @@ Always load:
 - `critical-requirements.md`
 - `artifact-ownership.md`
 - `managed-docs.md`
-- `bubbles/docs-registry.yaml`
+- The effective managed-doc registry (framework defaults in `bubbles/docs-registry.yaml` plus any project-owned overrides)
 - Feature `spec.md`
 - Feature `design.md` and `scopes.md` when they exist
 - Only the managed docs targeted by the requested review scope

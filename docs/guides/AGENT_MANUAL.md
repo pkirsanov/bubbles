@@ -27,7 +27,7 @@ Artifact ownership:
 - `design.md`: `bubbles.design`
 - planning structure in scopes/report/uservalidation/scenario manifest: `bubbles.plan`
 - certification state in `state.json`: `bubbles.validate`
-- managed docs declared in `bubbles/docs-registry.yaml`: `bubbles.docs`
+- managed docs declared in the effective managed-doc registry: `bubbles.docs`
 
 Classified work packets:
 - feature work lives under `specs/NNN-feature-name/`

@@ -30,9 +30,9 @@ Or documentation-only mode:
 - Cheatsheets and public HTML reference cards
 - Recipes and framework how-to docs
 - Feature-specific docs in `specs/`
-- Managed docs declared in `bubbles/docs-registry.yaml` (README, OPERATIONS, etc.)
+- Managed docs declared in the effective managed-doc registry (README, OPERATIONS, etc.)
 
-If the published-doc set itself changed, update `bubbles/docs-registry.yaml` in the same change.
+If the framework default published-doc set itself changed, update `bubbles/docs-registry.yaml` in the same change. If only a downstream repo's managed-doc layout changed, use `.github/bubbles-project.yaml` overrides instead.
 
 ## Rules
 

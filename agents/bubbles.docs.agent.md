@@ -20,7 +20,7 @@ handoffs:
 - Treat execution packets (`spec.md`/`design.md`/`scopes.md` for features and bugs, `objective.md`/`design.md`/`scopes.md` for ops) as active execution truth and publish durable facts into managed docs
 - Remove obsolete/duplicate content; avoid copying policy boilerplate into docs
 - **Verify doc accuracy by cross-referencing actual code** — don't assume docs are correct; check the implementation
-- Use `bubbles/docs-registry.yaml` as the source of truth for the Bubbles-managed doc set. Docs outside that registry are project-owned unless explicitly targeted.
+- Use the effective managed-doc registry as the source of truth for the Bubbles-managed doc set: framework defaults from `bubbles/docs-registry.yaml` plus any project-owned `docsRegistryOverrides` from `.github/bubbles-project.yaml`. Docs outside that resolved registry are project-owned unless explicitly targeted.
 - End every invocation with a `## RESULT-ENVELOPE`. Use `completed_owned` when documentation updates were applied with supporting verification, `route_required` when foreign-owned follow-up is required, or `blocked` when a concrete blocker prevents accurate documentation alignment.
 
 ## RESULT-ENVELOPE
@@ -42,7 +42,7 @@ If drift is found during any docs operation, the agent MUST NOT complete until t
 When invoked by another agent with drift details (e.g., `bubbles.spec-review` provides specific drift findings), use those details as a starting point but ALWAYS verify against actual implementation before updating docs. Do not blindly propagate stale spec content into docs.
 
 **Artifact Ownership (this agent creates/modifies ONLY these):**
-- Managed docs declared in `bubbles/docs-registry.yaml`
+- Managed docs declared in the effective managed-doc registry
 - `report.md` — append documentation verification evidence
 
 **Foreign artifacts (MUST invoke the owner, never edit directly):**
@@ -117,7 +117,7 @@ This prompt performs **documentation hardening**.
 Required outcomes:
 
 1) **Define and use the managed docs list**
-- Use `bubbles/docs-registry.yaml` as the managed-doc registry.
+- Use the effective managed-doc registry as the managed-doc source of truth.
 - Treat only the registry-defined managed docs as Bubbles-owned by default.
 
 2) **Validate managed docs are up-to-date**
@@ -150,7 +150,7 @@ Follow policy compliance in [agent-common.md](bubbles_shared/agent-common.md) an
 
 ## Managed Docs Registry (Source of Truth)
 
-Use `bubbles/docs-registry.yaml` as the source of truth for:
+Use the effective managed-doc registry as the source of truth for:
 
 - which docs are Bubbles-managed
 - which work classes publish into them
@@ -172,7 +172,7 @@ Rules:
    - `scope:` feature vs project
    - `sources:` explicit authoritative sources
    - Drift details provided by invoking agent (if any)
-3. Load `bubbles/docs-registry.yaml` and resolve the managed docs in scope.
+3. Resolve the effective managed-doc registry in scope. Framework defaults come from `bubbles/docs-registry.yaml`, and project-owned overrides may come from `.github/bubbles-project.yaml`.
 4. **If invoked by another agent with drift details:** Use the drift details to prioritize which docs to check first, but do NOT skip the standard drift detection for other docs.
 
 ### Phase 0b: Implementation Drift Scan (MANDATORY on every invocation)

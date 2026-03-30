@@ -20,7 +20,7 @@ Artifact authorship is a hard boundary, not a suggestion. Violations are blockin
 | `scenario-manifest.json` | `bubbles.plan` | `bubbles.test`, `bubbles.validate`, `bubbles.regression` may update evidence links only |
 | Product code / tests | `bubbles.implement`, `bubbles.test` | Per their phase ownership |
 | Operational code / CI/CD / deploy / monitoring surfaces | `bubbles.devops` | Pipelines, build/release automation, deployment config, dashboards, alerts, observability wiring |
-| Managed docs (declared in `bubbles/docs-registry.yaml`) | `bubbles.docs` | Must reflect real implementation state |
+| Managed docs (declared in the effective managed-doc registry) | `bubbles.docs` | Must reflect real implementation state |
 
 ## Read-Only Diagnostic And Certification Agents
 

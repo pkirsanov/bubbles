@@ -291,9 +291,9 @@ function resolved_classification_value(key) {
   return default_classification[key]
 }
 
-function emit_required_sections(list_blob, sections, idx) {
-  split(list_blob, sections, RS_SEP)
-  for (idx = 1; idx <= length(sections); idx++) {
+function emit_required_sections(list_blob, sections, idx, count) {
+  count = split(list_blob, sections, RS_SEP)
+  for (idx = 1; idx <= count; idx++) {
     if (sections[idx] != "") {
       print "      - " sections[idx]
     }

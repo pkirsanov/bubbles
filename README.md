@@ -108,7 +108,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │   └── bubbles.*.prompt.md          # 33 prompt shims
 ├── bubbles/
 │   ├── workflows.yaml               # 29 workflow mode definitions
-│   ├── docs-registry.yaml           # Managed-doc source of truth
+│   ├── docs-registry.yaml           # Framework default managed-doc registry
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -154,7 +154,7 @@ Bubbles now enforces hard artifact ownership:
 - `bubbles.design` owns `design.md`
 - `bubbles.plan` owns `scopes.md`, `report.md` structure, `uservalidation.md`, and `scenario-manifest.json`
 - `bubbles.validate` owns certification state in `state.json`
-- `bubbles.docs` owns the managed docs declared in `.github/bubbles/docs-registry.yaml`
+- `bubbles.docs` owns the managed docs declared in the effective managed-doc registry (framework defaults plus any project-owned overrides)
 - Diagnostic and certification agents like `bubbles.validate`, `bubbles.audit`, `bubbles.harden`, `bubbles.gaps`, `bubbles.stabilize`, `bubbles.security`, `bubbles.regression`, `bubbles.clarify`, `bubbles.code-review`, and `bubbles.system-review` must route foreign-artifact changes to the owning specialist instead of editing those artifacts directly
 
 Control-plane law:
@@ -167,7 +167,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 
 ### Managed Docs And Ops Packets
 
-- Published docs owned by Bubbles are declared in `.github/bubbles/docs-registry.yaml`.
+- Published docs owned by Bubbles are declared in the effective managed-doc registry. Framework defaults live in `bubbles/docs-registry.yaml`, and project-owned overrides may live in `.github/bubbles-project.yaml`.
 - Feature and bug packets remain execution truth while work is active; managed docs are the published truth.
 - Cross-cutting infrastructure and operational delivery work lives under `specs/_ops/OPS-*`.
 - Ops packets use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json`.

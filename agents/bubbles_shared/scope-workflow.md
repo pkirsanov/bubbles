@@ -341,7 +341,7 @@ Both iterate and implement follow these phases:
 
 ### Phase 5: Documentation
 1. Update feature docs (`spec.md`, `design.md`)
-2. Update managed docs declared in `bubbles/docs-registry.yaml` (API, ARCHITECTURE, etc.)
+2. Update managed docs declared in the effective managed-doc registry (API, ARCHITECTURE, etc.)
 3. Update execution evidence artifact for the active layout:
   - **Per-scope directory mode:** update only `scopes/NN-name/report.md`
   - **Single-file mode:** append/update the scope section in `report.md`

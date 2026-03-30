@@ -11,14 +11,14 @@ Execution artifacts under `specs/` are still required while work is active, but 
 ## Published Truth Model
 
 - Execution truth lives in feature, bug, and ops work packets while work is active.
-- Published truth lives in the managed docs declared in `bubbles/docs-registry.yaml`.
+- Published truth lives in the managed docs declared in the effective managed-doc registry.
 - Historical truth remains in closed work packets for auditability and evidence.
 
 Do NOT collapse all truth into one giant document. Use one authoritative location per concern.
 
 ## Managed Docs Registry
 
-`bubbles/docs-registry.yaml` defines the Bubbles-managed doc set for the current project.
+The effective managed-doc registry defines the Bubbles-managed doc set for the current project. Framework defaults live in `bubbles/docs-registry.yaml`, and project-owned overrides may live in `.github/bubbles-project.yaml`.
 
 The registry declares:
 

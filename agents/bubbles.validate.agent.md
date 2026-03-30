@@ -444,7 +444,7 @@ Verify documentation is updated:
 - [ ] README updated (if applicable)
 - [ ] Design docs updated (if architectural changes)
 
-If managed docs are declared in `bubbles/docs-registry.yaml`, also verify:
+If managed docs are declared in the effective managed-doc registry, also verify:
 - [ ] Managed docs reflect current spec/design/scopes or objective/design/scopes for ops work
 - [ ] Obsolete sections removed
 - [ ] Duplicate sections removed (single source of truth)

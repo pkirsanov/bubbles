@@ -99,7 +99,7 @@ Artifacts must cross-reference each other so a reviewer can move between:
 - user validation
 - state
 
-Use the templates in `scope-templates.md` as the single source of truth for artifact shapes. Use `managed-docs.md` and `bubbles/docs-registry.yaml` for published-doc targets.
+Use the templates in `scope-templates.md` as the single source of truth for artifact shapes. Use `managed-docs.md` and the effective managed-doc registry for published-doc targets.
 
 ## Artifact Freshness And Supersession
 

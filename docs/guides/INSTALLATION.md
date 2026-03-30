@@ -52,6 +52,8 @@ Do not hand-create or hand-copy Bubbles bootstrap artifacts in downstream repos.
 
 Downstream repos must not directly edit framework-managed Bubbles files after install. The installer now writes `.github/bubbles/.checksums`, and consumer repos should use `bubbles framework-write-guard` or `bubbles doctor` to verify that their local framework layer still matches the installed upstream snapshot. If you need a framework change, record it in `.github/bubbles-project/proposals/` with `bubbles framework-proposal <slug>`, then implement the actual change in the Bubbles source repo and refresh downstream installs.
 
+When a repo's published-doc layout differs from the framework default, use the project-owned `docsRegistryOverrides` section in `.github/bubbles-project.yaml` instead of editing `.github/bubbles/docs-registry.yaml`. You can inspect the resolved managed-doc registry with `bubbles docs-registry effective`.
+
 The bootstrap auto-detects your project name and CLI entrypoint. Use `--cli` and `--name` to override.
 
 > **Note:** Bootstrap never overwrites existing files. Safe to re-run.
@@ -161,6 +163,7 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
 | Control-plane policy registry | `.specify/memory/bubbles.config.json` | Bubbles bootstrap |
+| Docs registry overrides | `.github/bubbles-project.yaml` | **You** |
 | Framework change proposals | `.github/bubbles-project/proposals/**` | **You** |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |
 | Terminal discipline | `.github/instructions/terminal-discipline.instructions.md` | **You** (bootstrapped) |
