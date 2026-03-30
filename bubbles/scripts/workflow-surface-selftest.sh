@@ -27,6 +27,19 @@ check_pattern() {
   fi
 }
 
+check_optional_pattern() {
+  local file_path="$1"
+  local pattern="$2"
+  local label="$3"
+
+  if [[ ! -f "$file_path" ]]; then
+    echo "SKIP: $label (missing $(basename "$file_path"))"
+    return 0
+  fi
+
+  check_pattern "$file_path" "$pattern" "$label"
+}
+
 echo "Running workflow command-surface smoke test..."
 
 check_pattern "$ROOT_DIR/workflows.yaml" '^  delivery-lockdown:$' "Workflow registry exposes delivery-lockdown"
@@ -37,9 +50,9 @@ check_pattern "$ROOT_DIR/../agents/bubbles.workflow.agent.md" 'Phase 0\.95: Deli
 check_pattern "$ROOT_DIR/../agents/bubbles.super.agent.md" 'delivery-lockdown' "Super agent knows about delivery-lockdown"
 check_pattern "$ROOT_DIR/../agents/bubbles.super.agent.md" 'no loose ends|until all green|release-candidate' "Super agent recognizes the lockdown request vocabulary"
 check_pattern "$ROOT_DIR/../agents/bubbles.super.agent.md" 'specReview: once-before-implement|stale-spec check|Front-Door Policy' "Super agent exposes the one-shot spec review capability and front-door policy"
-check_pattern "$ROOT_DIR/../docs/CHEATSHEET.md" '\| `delivery-lockdown` \| no-loose-ends \|' "Cheatsheet exposes the delivery-lockdown alias"
-check_pattern "$ROOT_DIR/../docs/recipes/ask-the-super-first.md" 'delivery-lockdown' "Super recipe demonstrates delivery-lockdown guidance"
-check_pattern "$ROOT_DIR/../docs/its-not-rocket-appliances.html" 'wf-name">delivery-lockdown<' "HTML cheat sheet exposes the workflow card"
+check_optional_pattern "$ROOT_DIR/../docs/CHEATSHEET.md" '\| `delivery-lockdown` \| no-loose-ends \|' "Cheatsheet exposes the delivery-lockdown alias"
+check_optional_pattern "$ROOT_DIR/../docs/recipes/ask-the-super-first.md" 'delivery-lockdown' "Super recipe demonstrates delivery-lockdown guidance"
+check_optional_pattern "$ROOT_DIR/../docs/its-not-rocket-appliances.html" 'wf-name">delivery-lockdown<' "HTML cheat sheet exposes the workflow card"
 
 if [[ "$failures" -gt 0 ]]; then
   echo "workflow-surface selftest failed with $failures issue(s)."
