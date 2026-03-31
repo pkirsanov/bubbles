@@ -107,9 +107,9 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 34 agent definitions — workflow is the universal entry point
+│   ├── bubbles.workflow.agent.md    # 34 agent definitions
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.super.agent.md       # Framework ops, NLP resolution, command advice
+│   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
 │   └── bubbles_shared/              # Shared governance docs
 │       ├── agent-common.md
@@ -448,9 +448,9 @@ bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
 ├── agents/                    # 34 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
-│   ├── bubbles.workflow.agent.md  # Universal entry point
+│   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.super.agent.md     # Framework ops & NLP resolution
+│   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
 ├── prompts/                   # 34 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->

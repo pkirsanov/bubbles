@@ -79,6 +79,8 @@ replace_block() {
 
 mkdir -p "$generated_dir"
 
+version=$(cat "$repo_root/VERSION" | tr -d '[:space:]')
+
 agent_count=$(count_agents)
 gate_count=$(count_section_entries gates '^  G[0-9][0-9][0-9]:')
 workflow_mode_count=$(count_section_entries modes '^  [a-z][a-z0-9-]*:')
@@ -229,4 +231,16 @@ cat <<EOF > "$block_temp"
 EOF
 replace_block "$repo_root/docs/its-not-rocket-appliances.html" "GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START" "GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END" "$block_temp"
 
-printf '%s\n' "Updated Bubbles framework stats: $summary_line"
+block_temp=$(mktemp)
+cat <<EOF > "$block_temp"
+  <div class="subtitle">Agent Orchestration System v$version</div>
+EOF
+replace_block "$repo_root/docs/its-not-rocket-appliances.html" "GENERATED:FRAMEWORK_STATS_HTML_VERSION_HEADER_START" "GENERATED:FRAMEWORK_STATS_HTML_VERSION_HEADER_END" "$block_temp"
+
+block_temp=$(mktemp)
+cat <<EOF > "$block_temp"
+  <p>Bubbles Agent System v$version — Sunnyvale Trailer Park Software Division</p>
+EOF
+replace_block "$repo_root/docs/its-not-rocket-appliances.html" "GENERATED:FRAMEWORK_STATS_HTML_VERSION_FOOTER_START" "GENERATED:FRAMEWORK_STATS_HTML_VERSION_FOOTER_END" "$block_temp"
+
+printf '%s\n' "Updated Bubbles framework stats: $summary_line (v$version)"
