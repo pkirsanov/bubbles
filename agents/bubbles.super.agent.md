@@ -263,6 +263,23 @@ When a user asks "which mode should I use?" or describes a situation:
 - `autoCommit: scope|dod` — validated milestone commits
 - `maxScopeMinutes` / `maxDodMinutes` — keep scopes small
 - `microFixes: true` — narrow repair loops for failures
+- `crossModelReview: codex|terminal` — independent second-opinion review from a different AI model
+
+### New v3.1 Capabilities (Know These)
+
+The super agent should be aware of these recent framework improvements and recommend them when relevant:
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| `done_with_concerns` | 5th status: all gates pass but agent flags observational risks | When user asks "can we ship even though X is close to the threshold?" |
+| Smart phase routing | Phases skip automatically when irrelevant, re-evaluate on artifact change | When user notices workflows are slow — explain that irrelevant phases now skip safely |
+| Decision policy | Mechanical decisions auto-resolved, taste decisions batched | When user complains about too many questions during orchestrated workflows |
+| `test-plan.json` handoff | Machine-readable test plan from bubbles.plan → bubbles.test | When user asks about test discovery or plan-to-test flow |
+| Regression test auto-gen | Bug fixes auto-generate adversarial regression test skeletons | When user asks about bug fix workflow — note this is mandatory |
+| 3-strike escalation | Agents stop after 3 failed fix attempts instead of thrashing | When user asks why an agent stopped — may have hit 3-strike limit |
+| `crossModelReview` | Independent review from a different AI model | When user wants higher confidence on reviews |
+| `bubbles.retro` | Velocity, gate health, hotspot analysis from git + state.json | When user asks about shipping speed, patterns, or weekly review |
+| Registry freshness | 90-day reminder to update cross-model registry | Check on workflow_start and remind if stale |
 
 ### 3. Health Check & Auto-Heal
 
@@ -373,6 +390,11 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "I need the no-loose-ends release workflow" -> /bubbles.workflow <feature> mode: delivery-lockdown
 "give me a command to chaos test everything for 2 hours" -> /bubbles.workflow mode: stochastic-quality-sweep minutes: 120 triggerAgents: chaos
 "how do I set up custom gates?" -> explain gates workflow + provide example command
+"how are we shipping? how fast?" -> /bubbles.retro week
+"what's my velocity this month?" -> /bubbles.retro month
+"how did spec 042 go?" -> /bubbles.retro spec 042
+"get a second opinion from another AI" -> /bubbles.workflow <feature> mode: full-delivery crossModelReview: codex
+"update my model registry" -> explain crossModelReview registry in bubbles.config.json, check lastVerified freshness
 ```
 
 ---
@@ -389,6 +411,8 @@ When the user's request is ambiguous, use this priority:
 6. If about lessons -> `lessons`
 7. If about dependencies -> `dag`
 8. If about progress -> `status`
+9. If about velocity/patterns/retrospective -> `/bubbles.retro`
+10. If about model registry/cross-model review freshness -> check + explain registry
 9. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
 10. If about translating vague requests into exact prompts -> prefer `super`; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
 11. If about what to do next / which agent / which mode -> Platform Concierge

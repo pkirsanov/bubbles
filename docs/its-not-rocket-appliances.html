@@ -337,7 +337,7 @@
 
 <!-- ═══════════════════════════════ THE ROSTER ═══════════════════════════════ -->
 <!-- GENERATED:FRAMEWORK_STATS_ROSTER_START -->
-<div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Sunnyvale Roster — All 33 Agents</div>
+<div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The Sunnyvale Roster — All 34 Agents</div>
 <!-- GENERATED:FRAMEWORK_STATS_ROSTER_END -->
 
 <h3 style="color: var(--accent); margin: 1rem 0 0.5rem;"><img src="../icons/lahey-badge.svg" width="20" style="vertical-align: middle;"> Start Here</h3>
@@ -620,6 +620,15 @@
     </div>
   </div>
   <div class="card">
+    <div class="icon"><img src="../icons/lahey-bottle.svg" alt="Lahey's Bottle"></div>
+    <div class="info">
+      <div class="agent-name">bubbles.retro</div>
+      <div class="character">Jim Lahey (Bottle)</div>
+      <div class="role">The liquor-fueled retrospective. Analyzes velocity, gate health, hotspots, and shipping patterns across sessions. The liquor helps him see the patterns.</div>
+      <div class="quote">"The liquor helps me see the patterns, Randy."</div>
+    </div>
+  </div>
+  <div class="card">
     <div class="icon"><img src="../icons/cory-trevor-smokes.svg" alt="Smokes"></div>
     <div class="info">
       <div class="agent-name">bubbles.handoff / bubbles.setup</div>
@@ -856,6 +865,16 @@
       <td class="quote-col">"So basically what happened was..."</td>
     </tr>
     <tr>
+      <td class="cmd">sunnyvale i-am-the-liquor</td>
+      <td class="maps-to">bubbles.retro</td>
+      <td class="quote-col">"The liquor helps me see the patterns, Randy."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale see-the-patterns</td>
+      <td class="maps-to">bubbles.retro</td>
+      <td class="quote-col">"I AM the liquor."</td>
+    </tr>
+    <tr>
       <td class="cmd">sunnyvale same-lot-new-trailer</td>
       <td class="maps-to">redesign-existing</td>
       <td class="quote-col">"Same lot, boys. New trailer."</td>
@@ -1065,6 +1084,10 @@
     <span class="situation">Repair the smallest failure first</span>
     <span class="quote-text"><code>microFixes</code></span>
   </div>
+  <div class="line">
+    <span class="situation">Multi-AI second opinion on review</span>
+    <span class="quote-text"><code>crossModelReview</code></span>
+  </div>
 </div>
 
 <div class="quick-ref">
@@ -1178,6 +1201,13 @@
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Owner-only remediation"</span><span class="context">— diagnostics and certification route it; owners and executors do it</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Result envelope"</span><span class="context">— every run ends with completed_owned, completed_diagnostic, route_required, or blocked</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Narrow packet"</span><span class="context">— tiny fixes stay fast by dispatching the exact owner with the smallest safe context</span></div>
+    <div class="gate-msg"><span class="status">🧭</span><span class="msg">"3-strike rule"</span><span class="context">— after 3 failed fix attempts, STOP and escalate. No thrashing.</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"Done with concerns"</span><span class="context">— all gates pass but agent flags observational risks worth monitoring</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"Smart phase routing"</span><span class="context">— irrelevant phases skip with recorded justification, re-evaluate if artifacts change</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"Taste vs mechanical"</span><span class="context">— auto-resolve the obvious decisions, surface only the genuine tradeoffs</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"Cross-model review"</span><span class="context">— two different AIs look at the same diff, compare what each catches</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"Adversarial regression skeleton"</span><span class="context">— every bug fix auto-generates a test that would FAIL if the bug came back</span></div>
+    <div class="gate-msg"><span class="status">📊</span><span class="msg">"test-plan.json"</span><span class="context">— machine-readable test handoff from planning to test phase. No Markdown parsing lottery.</span></div>
   </div>
 </div>
 
@@ -1394,12 +1424,17 @@
     <tr><td class="cmd">"Gorilla see, gorilla do"</td><td class="maps-to">Monkey see, monkey do</td><td class="quote-col">Copy-paste code detected</td></tr>
     <tr><td class="cmd">"It's a doggy-dog world"</td><td class="maps-to">It's a dog-eat-dog world</td><td class="quote-col">Competitive analysis complete</td></tr>
     <tr><td class="cmd">"I'll do it tomorrah"</td><td class="maps-to">I'll do it tomorrow</td><td class="quote-col">Deferring work (G040 violation)</td></tr>
+    <tr><td class="cmd">"The liquor helps me see"</td><td class="maps-to">Retrospective analysis reveals hidden patterns</td><td class="quote-col">Running /bubbles.retro to analyze velocity and gate health trends</td></tr>
+    <tr><td class="cmd">"3 strikes you're out"</td><td class="maps-to">Three strikes and you're out</td><td class="quote-col">3-strike escalation — stop fixing, start escalating</td></tr>
+    <tr><td class="cmd">"Are we concerned or just done?"</td><td class="maps-to">Done… but watch that thing</td><td class="quote-col">done_with_concerns — all gates pass but risks flagged</td></tr>
+    <tr><td class="cmd">"Skip the boring parts"</td><td class="maps-to">Smart phase routing — skip irrelevant phases safely</td><td class="quote-col">phaseRelevance skips simplify/stabilize/devops/chaos when scope doesn't need them</td></tr>
+    <tr><td class="cmd">"Let the machines decide the easy stuff"</td><td class="maps-to">Mechanical vs taste decisions</td><td class="quote-col">decisionPolicy auto-resolves obvious choices, surfaces real tradeoffs</td></tr>
   </tbody>
 </table>
 
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_START -->
-<!-- ═══════════════════════════════ THE 66 GATES ═══════════════════════════════ -->
-<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 66 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
+<!-- ═══════════════════════════════ THE 67 GATES ═══════════════════════════════ -->
+<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 67 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_END -->
 
 <div class="phase-flow">
@@ -1424,10 +1459,11 @@
 
 <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; font-style: italic;">
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_START -->
-  "66 gates, boys. That's more security than the trailer park has ever had. 
+  "67 gates, boys. That's more security than the trailer park has ever had. 
   Something's fucky? We'll find it. That's greasy? We'll clean it. 
-  Red first, green after. Small scopes. Tiny fix loops.
+  Red first, green after. Small scopes. Tiny fix loops. 3-strike escalation.
   Can't defer things either — you can't just NOT do things, Corey!
+  Smart phase routing. Taste decisions. Cross-model review. The liquor helps me see the patterns.
   Worst case Ontario, we revert and try again. DEEEE-CENT."
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_END -->
   <br>— Bubbles, probably
@@ -1438,7 +1474,7 @@
   <div class="big-quote">"Have a good one, boys."</div>
   <p>Bubbles Agent System v3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>66 Gates • 33 Agents • 29 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
+  <p>67 Gates • 34 Agents • 29 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

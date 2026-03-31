@@ -17,6 +17,7 @@ Optional execution tags you can append to many workflow commands:
 - `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` to make `delivery-lockdown` refresh planning before early rounds
 - `improvementPreludeRounds: N` to cap how many delivery-lockdown rounds include that prelude
 - `specReview: once-before-implement` to run a one-shot stale/redundant spec audit before legacy improvement or implementation work starts
+- `crossModelReview: codex|terminal` to get an independent second-opinion review from a different AI model during code-review or audit phases
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, and scenario-specific test planning before implementation starts.
 
@@ -85,7 +86,9 @@ Control-plane law also requires owner-only remediation and concrete result envel
 |--------|-------------------|
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
+| [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |
 | [Update Docs](update-docs.md) | "Code changed, managed docs need publishing or cleanup" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
 | [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in framework gates" |
+| [Cross-Model Review](cross-model-review.md) | "I want a second AI opinion from a different model on my code review" |

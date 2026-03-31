@@ -119,6 +119,8 @@
 | `sunnyvale true` | `bubbles.commands` | *"True."* |
 | `sunnyvale ill-do-whatever` | `bubbles.iterate` | *"I'll do whatever you need, Julian."* |
 | `sunnyvale catch-me-up` | `bubbles.recap` | *"So basically what happened was..."* |
+| `sunnyvale i-am-the-liquor` | `bubbles.retro` | *"The liquor helps me see the patterns, Randy."* |
+| `sunnyvale see-the-patterns` | `bubbles.retro` | *"I AM the liquor."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 | `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
 
@@ -158,7 +160,7 @@
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
 
-**Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
+**Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `crossModelReview` (off|codex|terminal)
 
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
@@ -167,7 +169,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 66 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 67 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
