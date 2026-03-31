@@ -25,6 +25,8 @@ Optional execution tags apply across modes when you need more control without ch
 - `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
 - `specReview: once-before-implement` runs a one-shot `bubbles.spec-review` pass before legacy improvement or implementation-capable work begins. If the mode includes `analyze`, that review runs after analysis so it sees the refreshed intent. It does not repeat on retries or later rounds.
 - `crossModelReview: codex|terminal` requests an independent cross-model review during code-review or audit phases (requires model registry configuration in `.specify/memory/bubbles.config.json`).
+- `parallelScopes: dag|dag-dry` executes DAG-independent scopes in parallel via git worktrees. Off by default. `dag-dry` shows the plan without executing.
+- `maxParallelScopes: 2-4` controls maximum concurrent scope executions when `parallelScopes: dag`.
 
 ### Smart Phase Routing
 
@@ -121,6 +123,26 @@ analyze → select → bootstrap → implement → test → regression → simpl
 ```
 
 **Use when:** Starting from a product idea rather than an already-shaped technical spec.
+
+---
+
+## Brainstorm & Exploration Modes
+
+Explore and refine ideas without writing code.
+
+### <img src="../../icons/ray-lawnchair.svg" width="20"> brainstorm
+
+Like YC office hours for your feature. Explore the idea, analyze competitors, harden scenarios — zero code.
+
+```
+analyze → bootstrap → harden → finalize
+```
+
+**Use when:** "I have an idea but want to think it through before building." Outputs spec.md + design.md + scopes.md with `statusCeiling: specs_hardened`. Socratic mode is on by default (5 questions).
+
+```
+/bubbles.workflow  brainstorm for "property search engine with competitive edge"
+```
 
 ---
 

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Learning & Personalization (v3.2)
+
+- **Skill Evolution Loop** — Closed-loop learning from `lessons.md`. When the same problem pattern occurs 3+ times, the framework generates a skill proposal in `.specify/memory/skill-proposals.md`. User approves, `bubbles.create-skill` scaffolds the SKILL.md. Configured in `workflows.yaml` → `skillEvolution:`.
+- **Developer Profile (Observation-Driven)** — Dynamically tracks developer preferences from measurable activity: git diffs, taste decisions, workflow mode choices, post-agent code edits, scope sizing patterns. Patterns promoted to profile after ≥3 observations. Feeds `decisionPolicy` for taste-decision auto-resolution. Fresh/aging/stale/contradicted confidence tiers prevent staleness. Never auto-applied — always user-visible.
+- **Activity Tracking (Measurable Only)** — Extended `metrics` with `activityTracking:` for per-agent/per-spec/per-scope metrics. Tracks only what is measurable: invocation count, phase duration, retry count, gate pass/fail rate, scope completion time, lines changed. Explicitly does NOT track dollar costs or token counts (not exposed by platform).
+- **Brainstorm Mode** — New workflow mode for exploratory thinking before implementation. Runs `analyze → bootstrap → harden → finalize` with `statusCeiling: specs_hardened`. Socratic mode on by default. Outputs spec/design/scopes artifacts with zero code written. Like YC office hours for features.
+- **Parallel Scope Execution** — New opt-in execution tag `parallelScopes: dag|dag-dry` for concurrent scope execution via git worktrees. DAG-independent scopes (no mutual dependencies) run in parallel, dependent scopes wait. `maxParallelScopes: 2-4`. Off by default — sequential execution remains the safe default.
+- **Agent Activity Dashboard** — `bubbles.status` now shows per-agent invocation table, active execution chain visualization, and measurable activity metrics when tracking is enabled.
+- Updated `bubbles.super` with v3.2 capability awareness: brainstorm mode, skill evolution, developer profile, activity tracking, parallel scopes. New CLI commands: `skill-proposals`, `profile`, `profile --stale`, `profile --clear-stale`.
+- New recipes: `brainstorm-idea.md`, `parallel-scopes.md`.
+- Updated HTML cheatsheet, CHEATSHEET.md, WORKFLOW_MODES.md, and recipes README with new features, Rickyisms, and TPB vocabulary.
+- New Rickyisms: "Let me think about it over a couple smokes" (brainstorm), "Get two birds stoned at once" (parallel scopes), "The park knows what you like" (developer profile), "Same greasy mistake three times" (skill evolution), "Count the empties, Randy" (activity tracking).
+
 ### DevOps Execution Lane
 
 - Added `bubbles.devops` as a new execution owner for CI/CD, build, deployment, monitoring, observability, and release automation work.

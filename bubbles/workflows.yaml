@@ -353,13 +353,128 @@ lessonsMemory:
     archive: 90d+ # Moved to archive file
   deduplicationThreshold: 3 # Same root cause 3+ times → collapse
 
-# Metrics collection (optional, off by default)
+# ── Skill Evolution Loop ──
+#
+# Turns the passive lessons.md log into a closed-loop skill improvement system.
+# When the same problem/pattern is recorded 3+ times, the framework proposes
+# creating or updating a skill. Proposals are user-approved, never auto-applied.
+#
+# Flow: workflow execution → lessons captured → pattern frequency detected (≥3)
+#       → skill proposal generated → user approves → SKILL.md created/updated
+#       → future workflows load improved skill automatically
+skillEvolution:
+  enabled: true
+  triggerThreshold: 3          # Same lesson pattern 3+ times before proposing
+  sourceFile: .specify/memory/lessons.md
+  proposalFile: .specify/memory/skill-proposals.md
+  autoCreate: false            # Propose only, user approves
+  autoUpdate: false            # Propose only, user approves
+  reviewAgent: bubbles.super
+  reviewTrigger: workflow_start  # Surface proposals at start of workflow
+  proposalFormat: |
+    ## Skill Proposal: {skill_name}
+    - Pattern: {pattern_description}
+    - Observed: {count} times across {spec_list}
+    - Proposed skill: .github/skills/{skill_name}/SKILL.md
+    - Action: [Create / Dismiss / Later]
+
+# ── Developer Profile (Observation-Driven) ──
+#
+# Dynamically built from observed developer activity. NOT manually maintained.
+# Observations are append-only facts; patterns are promoted after ≥3 observations.
+# Used ONLY by decisionPolicy for taste-decision auto-resolution. Execution
+# agents (implement, test, validate, audit) NEVER read the profile.
+developerProfile:
+  enabled: true
+  file: .specify/memory/developer-profile.md
+  observationsFile: .specify/metrics/observations.jsonl
+  maxProfileLines: 100
+  maxObservationsLines: 5000
+
+  collection:
+    triggers:
+      - workflow_finalize     # Scan git + state.json at end of every workflow
+      - taste_decision        # Record choice immediately when user picks A/B
+      - retro_invocation      # Full historical analysis on demand
+    scans:
+      gitDiff: true           # File types, naming changes, structural edits
+      stateHistory: true      # Mode choices, tag usage, agent invocation patterns
+      tasteDecisions: true    # Explicit A/B choices from decisionPolicy
+      codeModifications: true # Post-agent edits (git diff between agent commit and next)
+      scopeSizing: true       # DoD item count, lines per scope
+
+  promotion:
+    threshold: 3                          # Observations before pattern enters profile
+    contradictionPolicy: immediate_suspend # Suspend on first contradiction
+    resolutionAfterContradiction: next_observation  # Next matching observation decides
+
+  freshness:
+    freshDays: 90              # Entries younger than this auto-resolve decisions
+    agingDays: 180             # Entries older than this only suggest, don't auto-resolve
+    staleAction: surface_for_review  # Surfaced for user review
+    reviewAgent: bubbles.super
+    reviewTrigger: workflow_start
+    reviewMessage: |
+      Your developer profile has {N} stale preferences (>180 days).
+      Review and confirm/remove? [Show / Skip / Clear all stale]
+
+  confidenceTiers:
+    fresh:
+      maxAgeDays: 90
+      usage: auto_resolve_matching_decisions
+    aging:
+      maxAgeDays: 180
+      usage: suggest_only_no_auto_resolve
+    stale:
+      maxAgeDays: null  # > 180 days
+      usage: ignored_surfaced_for_review
+    contradicted:
+      maxAgeDays: null  # Any age, opposite choice observed
+      usage: suspended_immediately
+
+  consumers:
+    - decisionPolicy          # Auto-resolve taste decisions (fresh patterns only)
+    - skillEvolution          # Inform skill proposals
+    # NOT consumed by: implement, test, validate, audit (NEVER)
+
+  observationConfidence:
+    explicit: auto_resolve    # From taste decisions — high confidence
+    inferred: suggest_only    # From git scan — lower confidence, never auto-resolve
+
+# ── Activity Tracking (Measurable Metrics Only) ──
+#
+# Tracks ONLY what can be measured with certainty. NO dollar costs, NO token
+# estimates, NO "thinking time" — those are not exposed by the platform and
+# guessing would be fabricated data.
+#
+# What IS measured: invocation counts, wall-clock durations, retry budgets,
+# gate pass/fail rates, scope completion times, lines changed (git).
 metrics:
   enabled: false
   storageFile: .specify/metrics/events.jsonl
   configFile: .specify/memory/bubbles.config.json
   enableCommand: "bubbles.sh metrics enable"
   disableCommand: "bubbles.sh metrics disable"
+  activityTracking:
+    enabled: false  # Separate toggle from event metrics
+    storageFile: .specify/metrics/activity.jsonl
+    perAgentTracking: true
+    perSpecTracking: true
+    perScopeTracking: true
+    measuredDimensions:
+      - invocationCount       # How many times each agent was called
+      - phaseDuration         # Wall-clock seconds per phase (from terminal timestamps)
+      - retryCount            # Self-healing retries consumed vs budget
+      - gatePassFailRate      # Per gate ID pass/fail ratio
+      - scopeCompletionTime   # First implement invocation to Done status
+      - linesChanged          # git diff --stat per scope
+      - phaseSkipRate         # Skipped vs executed phases
+    # Dimensions explicitly NOT tracked (not measurable):
+    # - tokenCount            # Not exposed by VS Code Copilot API
+    # - dollarCost            # Derived from unknown tokens = fabricated
+    # - thinkingTime          # No visibility into model inference
+    # - agentEfficiency       # No meaningful denominator
+    reportAgent: bubbles.retro
 
 priorityScoring:
   model: weighted_sum
@@ -670,6 +785,20 @@ executionOptions:
         codex: Use Codex CLI or configured reviewer for independent second opinion
         terminal: Run project-configured review command via terminal
       meaning: Request independent cross-model review during code-review or audit phases. Requires model registry in .specify/memory/bubbles.config.json.
+    parallelScopes:
+      type: string
+      default: "off"
+      values:
+        off: Sequential scope execution (current behavior, always safe)
+        dag: Execute DAG-independent scopes in parallel using git worktrees
+        dag-dry: Show parallelization plan without executing
+      meaning: Parallel independent scope execution using git worktrees. Scopes with no mutual dependencies run concurrently. Dependent scopes still wait for predecessors. Off by default.
+    maxParallelScopes:
+      type: integer
+      default: 2
+      min: 2
+      max: 4
+      meaning: Maximum concurrent scope executions when parallelScopes=dag. Each parallel scope runs in its own worktree.
 
   defaultPolicyBehavior:
     scenarioTddDefault: scenario-first
@@ -1099,6 +1228,20 @@ modes:
     statusCeiling: validated
     phaseOrder: [ select, audit, finalize ]
     requiredGates: [ G001, G008, G011, G012 ]
+
+  brainstorm:
+    description: Explore an idea thoroughly before committing to implementation. Produces design artifacts without touching code. Think of it as YC office hours for your feature — refine the idea, explore alternatives, harden scenarios, but write zero code.
+    statusCeiling: specs_hardened
+    phaseOrder: [ analyze, bootstrap, harden, finalize ]
+    requiredGates: [ G001, G011, G014, G015, G032 ]
+    constraints:
+      allowImplementation: false
+      requireDetailedStoriesAndGherkin: true
+      socraticDefault: true
+      socraticQuestions: 5
+      requireCompetitiveAnalysis: true
+      focus: exploration_and_design_only
+      noCodeChanges: true
 
   chaos-hardening:
     description: Repeat chaos and bugfix cycles until clean or retry limit.

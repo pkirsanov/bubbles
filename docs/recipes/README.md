@@ -18,6 +18,8 @@ Optional execution tags you can append to many workflow commands:
 - `improvementPreludeRounds: N` to cap how many delivery-lockdown rounds include that prelude
 - `specReview: once-before-implement` to run a one-shot stale/redundant spec audit before legacy improvement or implementation work starts
 - `crossModelReview: codex|terminal` to get an independent second-opinion review from a different AI model during code-review or audit phases
+- `parallelScopes: dag|dag-dry` to execute DAG-independent scopes in parallel via git worktrees (off by default)
+- `maxParallelScopes: 2-4` to control maximum concurrent scope executions
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, and scenario-specific test planning before implementation starts.
 
@@ -68,11 +70,18 @@ Control-plane law also requires owner-only remediation and concrete result envel
 
 | Recipe | Problem → Solution |
 |--------|-------------------|
+| [Brainstorm an Idea](brainstorm-idea.md) | "I have an idea and want to explore it thoroughly before writing any code — like YC office hours" |
 | [Plan Only](plan-only.md) | "I want to plan and scope a feature without implementing" |
 | [Explore an Idea](explore-idea.md) | "I have a vague product idea and need to flesh it out" |
 | [Reconcile Or Redesign An Existing Feature](reconcile-redesign-existing-feature.md) | "The feature exists, but the current spec/design/scopes are stale or need a major rewrite" |
 | [Grill an Idea](grill-an-idea.md) | "I want hard questions before we commit to this direction" |
 | [TDD First Execution](tdd-first-execution.md) | "I want the workflow to stay red-green-first instead of drifting into implementation-first" |
+
+## Performance & Parallelism
+
+| Recipe | Problem → Solution |
+|--------|-------------------|
+| [Parallel Scope Execution](parallel-scopes.md) | "My spec has independent scopes and I want to run them concurrently via worktrees" |
 
 ## Refactoring & Simplification
 

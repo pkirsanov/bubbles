@@ -1019,6 +1019,12 @@
     <div class="wf-quote">"Harden up, boys. This has gotta be tight."</div>
   </div>
   <div class="workflow-card">
+    <div class="wf-name">brainstorm</div>
+    <div class="wf-alias">→ sunnyvale smokes-and-thinking</div>
+    <div class="wf-desc">Explore an idea thoroughly before building. Competitive analysis, scenarios, alternatives — zero code. Like YC office hours.</div>
+    <div class="wf-quote">"Let me think about it over a couple smokes."</div>
+  </div>
+  <div class="workflow-card">
     <div class="wf-name">harden-to-doc</div>
     <div class="wf-alias">→ sunnyvale shit-winds-coming</div>
     <div class="wf-desc">Harden existing code, fix issues, then test and doc. Prepare for the storm.</div>
@@ -1087,6 +1093,10 @@
   <div class="line">
     <span class="situation">Multi-AI second opinion on review</span>
     <span class="quote-text"><code>crossModelReview</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Parallel independent scopes via worktrees</span>
+    <span class="quote-text"><code>parallelScopes</code> + <code>maxParallelScopes</code></span>
   </div>
 </div>
 
@@ -1208,6 +1218,11 @@
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Cross-model review"</span><span class="context">— two different AIs look at the same diff, compare what each catches</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Adversarial regression skeleton"</span><span class="context">— every bug fix auto-generates a test that would FAIL if the bug came back</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"test-plan.json"</span><span class="context">— machine-readable test handoff from planning to test phase. No Markdown parsing lottery.</span></div>
+    <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Smokes and thinking"</span><span class="context">— brainstorm mode: explore the idea before building anything</span></div>
+    <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Same greasy mistake"</span><span class="context">— lesson pattern detected ≥3 times → skill evolution proposes a SKILL.md</span></div>
+    <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like"</span><span class="context">— developer profile auto-resolving taste decisions from observed patterns</span></div>
+    <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Two birds stoned at once"</span><span class="context">— parallelScopes: dag — independent scopes run concurrently via worktrees</span></div>
+    <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Count the empties"</span><span class="context">— activity tracking: only measurable metrics (invocations, durations, retries), never fabricated costs</span></div>
   </div>
 </div>
 
@@ -1249,6 +1264,11 @@
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"You can't just erase the checkboxes and call it a day, Ricky!"</span><span class="context">— G041 format bypass</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"'Deferred — Planned Improvement'?! That's not even a real thing, Julian!"</span><span class="context">— G041 invented status</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"Have a good one, boys."</span><span class="context">— Handoff complete</span></div>
+  <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Let me think about it over a couple smokes."</span><span class="context">— Brainstorm mode started</span></div>
+  <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Same greasy mistake, boys. Time for a skill."</span><span class="context">— Skill proposal generated from repeated lessons</span></div>
+  <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like."</span><span class="context">— Auto-resolved taste decision from developer profile</span></div>
+  <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Two birds stoned at once!"</span><span class="context">— Parallel scopes launched via worktrees</span></div>
+  <div class="gate-msg"><span class="status">✅</span><span class="msg">"Count the empties, Randy."</span><span class="context">— Activity tracking report generated</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"This is f***ed. BAAAAM!"</span><span class="context">— Gap found by Phil</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"That's a nice f***ing kitty right there."</span><span class="context">— Bug located</span></div>
   <div class="gate-msg"><span class="status">⟳</span><span class="msg">"Knock knock." "Who's there?" "A passing build."</span><span class="context">— Build succeeds</span></div>
@@ -1279,6 +1299,14 @@
   <div class="line">
     <span class="situation">Release lockdown starts</span>
     <span class="quote-text">"No loose ends. All green or we keep going."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Brainstorm mode starts</span>
+    <span class="quote-text">"Let me think about it over a couple smokes."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Parallel scopes launched</span>
+    <span class="quote-text">"Getting two birds stoned at once, boys."</span>
   </div>
   <div class="line">
     <span class="situation">Legacy improvement preflight</span>
@@ -1429,6 +1457,11 @@
     <tr><td class="cmd">"Are we concerned or just done?"</td><td class="maps-to">Done… but watch that thing</td><td class="quote-col">done_with_concerns — all gates pass but risks flagged</td></tr>
     <tr><td class="cmd">"Skip the boring parts"</td><td class="maps-to">Smart phase routing — skip irrelevant phases safely</td><td class="quote-col">phaseRelevance skips simplify/stabilize/devops/chaos when scope doesn't need them</td></tr>
     <tr><td class="cmd">"Let the machines decide the easy stuff"</td><td class="maps-to">Mechanical vs taste decisions</td><td class="quote-col">decisionPolicy auto-resolves obvious choices, surfaces real tradeoffs</td></tr>
+    <tr><td class="cmd">"Let me think about it over a couple smokes"</td><td class="maps-to">Think about it before acting</td><td class="quote-col">Brainstorm mode — explore before building, like YC office hours</td></tr>
+    <tr><td class="cmd">"Get two birds stoned at once"</td><td class="maps-to">Kill two birds with one stone</td><td class="quote-col">Parallel scope execution — run independent scopes concurrently via worktrees</td></tr>
+    <tr><td class="cmd">"The park knows what you like"</td><td class="maps-to">Personalized from observed behavior</td><td class="quote-col">Developer profile auto-resolving taste decisions from 3+ observations</td></tr>
+    <tr><td class="cmd">"Same greasy mistake three times"</td><td class="maps-to">Repeated pattern detected</td><td class="quote-col">Skill evolution loop — lessons→pattern→skill proposal after 3+ occurrences</td></tr>
+    <tr><td class="cmd">"Count the empties, Randy"</td><td class="maps-to">Count what actually happened</td><td class="quote-col">Activity tracking — only measurable metrics (invocations, durations, retries), no fabricated costs</td></tr>
   </tbody>
 </table>
 
@@ -1461,9 +1494,8 @@
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_START -->
   "67 gates, boys. That's more security than the trailer park has ever had. 
   Something's fucky? We'll find it. That's greasy? We'll clean it. 
-  Red first, green after. Small scopes. Tiny fix loops. 3-strike escalation.
+  Red first, green after. Small scopes. Tiny fix loops.
   Can't defer things either — you can't just NOT do things, Corey!
-  Smart phase routing. Taste decisions. Cross-model review. The liquor helps me see the patterns.
   Worst case Ontario, we revert and try again. DEEEE-CENT."
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_END -->
   <br>— Bubbles, probably
@@ -1474,7 +1506,7 @@
   <div class="big-quote">"Have a good one, boys."</div>
   <p>Bubbles Agent System v3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>67 Gates • 34 Agents • 29 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
+  <p>67 Gates • 34 Agents • 30 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

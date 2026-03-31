@@ -153,6 +153,39 @@ Scope Progress: [done] / [total] scopes ([percentage]%)
 | Last Error | [type or "None"] |
 | Health | 🟢 HEALTHY / 🟡 STUCK / 🔴 ESCALATION |
 
+### Agent Activity Dashboard
+
+Show which agents have been active on the current spec, inferred from `state.json` executionHistory and completedPhaseClaims:
+
+| Agent | Invocations | Last Active | Phase | Status |
+|-------|-------------|-------------|-------|--------|
+| bubbles.implement | 3 | 2026-03-31 | implement | ✅ completed |
+| bubbles.test | 2 | 2026-03-31 | test | ✅ completed |
+| bubbles.validate | 1 | 2026-03-31 | validate | 🔄 in-progress |
+| bubbles.audit | 0 | — | audit | ⏳ pending |
+
+### Active Execution Chain
+
+```
+select ✅ → bootstrap ✅ → implement ✅ → test ✅ → validate 🔄 → audit ⏳ → finalize ⏳
+```
+
+### Activity Metrics (if activityTracking enabled)
+
+When `.specify/metrics/activity.jsonl` exists:
+
+| Metric | Value |
+|--------|-------|
+| Total agent invocations | N |
+| Retries consumed | X / Y budget |
+| Gate pass rate | N% (X pass / Y total) |
+| Avg scope completion | Xm wall-clock |
+| Lines changed this spec | +N / -M |
+| Current Task | TASK-XXX |
+| Iteration | N |
+| Last Error | [type or "None"] |
+| Health | 🟢 HEALTHY / 🟡 STUCK / 🔴 ESCALATION |
+
 ### Task Progress
 
 | Phase | Total | Done | Remaining |

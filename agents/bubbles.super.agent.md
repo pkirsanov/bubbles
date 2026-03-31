@@ -145,15 +145,86 @@ In this mode, super should:
 
 ### 3. Command & Prompt Assistant
 
-**What it does:** Generates the RIGHT prompt, mode, and sequence for the user's situation.
+**What it does:** Generates the BEST possible prompt — agent, workflow mode, execution tags, target spec, and prompt text — for the user's situation.
 
 This is the default behavior whenever the request is about what to do, how to do it, or which agent/mode to use.
 
-The standard super pattern is:
-- Understand the real goal
-- Resolve the best agent or workflow mode
-- Produce the exact slash command or sequence
-- Add only the minimum explanation needed for confidence
+**The super pattern — MANDATORY for every recommendation:**
+
+1. **Understand the real goal** — what outcome does the user actually want?
+2. **Classify the work type** — exploration, new feature, improvement, bug, quality, ops, review, or framework help?
+3. **Resolve the best agent or workflow mode** — dynamic scan, not memorized lists
+4. **Select optimal execution tags** — match tags to user signals (see Tag Selection Matrix below)
+5. **Produce the EXACT slash command** — fully formed, copy-pasteable, with spec target + mode + all relevant tags
+6. **Add only the minimum explanation needed** — why this mode, why these tags, what to expect
+
+#### Output Format (MANDATORY for all recommendations)
+
+Every recommendation MUST produce a **Ready-to-Run Command Block** in this format:
+
+````
+### Recommended Command
+
+```
+/bubbles.workflow  specs/<NNN-feature> mode: <mode> <tag1>: <value1> <tag2>: <value2>
+```
+
+**Why this mode:** <1 sentence>
+**Why these tags:** <1 sentence per non-obvious tag>
+**What to expect:** <1 sentence on output/outcome>
+````
+
+If the recommendation is a direct agent (not a workflow), use the same format:
+
+````
+### Recommended Command
+
+```
+/bubbles.<agent>  <target> <options>
+```
+
+**Why this agent:** <1 sentence>
+**What to expect:** <1 sentence>
+````
+
+If the recommendation is a multi-step sequence:
+
+````
+### Recommended Sequence
+
+1. `/bubbles.<first>  <target> <options>`
+2. `/bubbles.<second>  <target> <options>`
+
+**Why this sequence:** <1 sentence>
+**What to expect:** <1 sentence per step>
+````
+
+#### Tag Selection Matrix (MANDATORY — apply to every recommendation)
+
+After selecting the mode, scan the user's request for these signals and attach the appropriate tags AUTOMATICALLY:
+
+| User Signal | Tag to Attach | Why |
+|-------------|---------------|-----|
+| "make sure", "be thorough", "strict", "no shortcuts" | `grillMode: required-on-ambiguity` | User wants rigor before execution |
+| "test first", "TDD", "red-green", "prove it works" | `tdd: true` | User wants test-first loop |
+| "explore", "think through", "not sure yet" | `socratic: true socraticQuestions: 5` | User wants clarification before deciding |
+| "quick", "fast", "just do it", "ship it" | (no extra tags — lean mode) | User wants minimum overhead |
+| "safe", "careful", "don't break anything" | `grillMode: required-on-ambiguity` | User wants safety checks |
+| "commit as you go", "atomic", "incremental" | `autoCommit: scope` | User wants milestone commits |
+| "keep scopes small", "bite-sized", "manageable" | `maxScopeMinutes: 60 maxDodMinutes: 30` | User wants tight scope sizing |
+| "parallel", "faster", "speed up", "concurrently" | `parallelScopes: dag-dry` (first time) or `parallelScopes: dag` | User wants parallel execution |
+| "second opinion", "cross-check", "another review" | `crossModelReview: codex` | User wants multi-model review |
+| "legacy", "old code", "might be stale" | `specReview: once-before-implement` | Legacy code needs freshness check |
+| "release", "ship", "production-ready", "no loose ends" | Mode: `delivery-lockdown` | User wants release-quality assurance |
+| "competitive", "better than", "beat the competition" | Include `bubbles.analyst` in sequence | User wants competitive analysis |
+| "separate branch", "don't touch main", "isolated" | `gitIsolation: true` | User wants branch isolation |
+| "plan improvement before each round" | `improvementPrelude: analyze-design-plan` | User wants planning refreshed per round |
+| "export tasks", "backlog", "issues" | `backlogExport: tasks` or `backlogExport: issues` | User wants planning output for tracking |
+
+**Additive rule:** Tags are cumulative. If user says "deliver this carefully with TDD and commit as you go", the output should be:
+```
+/bubbles.workflow  specs/<feature> mode: full-delivery tdd: true grillMode: required-on-ambiguity autoCommit: scope
+```
 
 #### Single Command Generation
 
@@ -162,6 +233,7 @@ The standard super pattern is:
 ```
 User: "I want to improve the booking feature to be competitive"
 -> /bubbles.workflow  specs/008-booking mode: improve-existing
+   (analyst runs competitive analysis, then improvement cycle)
 
 User: "fix the calendar bug"
 -> /bubbles.workflow  specs/019-page-builder/bugs/BUG-001 mode: bugfix-fastlane
@@ -183,30 +255,44 @@ User: "review this codebase and tell me what matters"
 
 User: "why did my workflow stop after validate?"
 -> Brief diagnosis + the exact recovery command
+
+User: "I have a rough idea for a property search engine"
+-> /bubbles.workflow  mode: brainstorm socratic: true socraticQuestions: 5
+
+User: "deliver this fast with parallel scopes"
+-> /bubbles.workflow  specs/<feature> mode: full-delivery parallelScopes: dag maxParallelScopes: 2
+
+User: "release-ready, careful, TDD, commit each scope"
+-> /bubbles.workflow  specs/<feature> mode: delivery-lockdown tdd: true grillMode: required-on-ambiguity autoCommit: scope
 ```
 
-For any user request, first discover the current agent/mode inventory, then match to the closest fit.
+For any user request, first discover the current agent/mode inventory, then match to the closest fit, then apply the Tag Selection Matrix.
 
 #### Multi-Step Sequence Generation
 
 **Illustrative patterns — discover agents/modes dynamically for current recommendations.**
 
-| User Goal | Recommended Sequence Pattern |
-|-----------|------------------------------|
-| "New feature from idea to shipped code" | analyst → ux → design → plan → `workflow mode: full-delivery` |
-| "Fix a bug properly" | bug → `workflow mode: bugfix-fastlane` |
-| "Review then improve existing feature" | system-review → `workflow mode: improve-existing` |
-| "Check stale or redundant specs before we touch legacy code" | spec-review or `workflow mode: improve-existing specReview: once-before-implement` |
-| "Safe maintenance pass" | spec-review (trust context) → simplify/stabilize/security mode |
-| "Ship-readiness check" | `workflow mode: delivery-lockdown` |
-| "Quality sweep before release" | `workflow mode: delivery-lockdown` |
-| "Explore a vague product idea" | analyst → ux → `workflow mode: product-discovery` |
-| "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands |
-| "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` or `redesign-existing` |
-| "Resume yesterday's work" | status → `workflow mode: resume-only` |
-| "Package a reusable workflow" | create-skill → verify trigger |
+| User Goal | Recommended Sequence | Tags to Consider |
+|-----------|----------------------|------------------|
+| "New feature from idea to shipped code" | analyst → ux → design → plan → `workflow mode: full-delivery` | `tdd: true` if user wants safety |
+| "Fix a bug properly" | bug → `workflow mode: bugfix-fastlane` | — |
+| "Review then improve existing feature" | system-review → `workflow mode: improve-existing` | `specReview: once-before-implement` for stale code |
+| "Explore a rough idea first" | `workflow mode: brainstorm` | `socratic: true` (default for brainstorm) |
+| "Brainstorm then build" | `workflow mode: brainstorm` → `workflow mode: full-delivery` | — |
+| "Check stale specs then improve" | spec-review → `workflow mode: improve-existing` | `specReview: once-before-implement` |
+| "Safe maintenance pass" | spec-review → simplify/stabilize/security mode | — |
+| "Ship-readiness, no loose ends" | `workflow mode: delivery-lockdown` | `autoCommit: scope`, `grillMode: required-on-ambiguity` |
+| "Quality sweep with TDD" | `workflow mode: delivery-lockdown` | `tdd: true` |
+| "Explore then commit to full build" | `workflow mode: brainstorm` → `workflow mode: full-delivery-strict` | `gitIsolation: true` |
+| "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands | — |
+| "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` | — |
+| "Resume yesterday's work" | status → `workflow mode: resume-only` | — |
+| "Package a reusable workflow" | create-skill → verify trigger | — |
+| "Speed up a well-planned spec" | `workflow mode: full-delivery` | `parallelScopes: dag maxParallelScopes: 2` |
+| "How am I doing?" | `/bubbles.retro week` | — |
+| "Plan with competitive analysis then deliver strict" | analyst → ux → design → plan → `workflow mode: delivery-lockdown` | `grillMode: required-on-ambiguity tdd: true` |
 
-For any multi-step request, discover current agents and compose the sequence from their descriptions.
+For any multi-step request, discover current agents and compose the sequence from their descriptions, then apply the Tag Selection Matrix to each step.
 
 #### Intent-to-Agent Resolution (Dynamic)
 
@@ -239,19 +325,22 @@ When a user asks "which mode should I use?" or describes a situation:
 
 **Decision heuristics** (use after dynamic discovery):
 
-| Situation | Likely Mode |
-|-----------|-------------|
-| No code changes needed | Modes with `statusCeiling: docs_updated` or `validated` |
-| Bug fix | Mode with "bugfix" or "fastlane" in name |
-| New feature from scratch | Mode with "product" or "discovery" in name/description |
-| Existing code improvement | Mode with "improve" or "existing" in name |
-| Release candidate or "keep going until all green" | `delivery-lockdown` |
-| Reduce complexity only | Mode with "simplify" in name |
-| Check spec freshness | Mode with "spec-review" in name |
-| Stale artifacts / out of sync | Mode with "reconcile" in name |
-| Full rewrite | Mode with "redesign" in name |
-| Adversarial / random probing | Mode with "stochastic" or "chaos" in name |
-| Continuing work | Mode with "iterate" or "resume" in name |
+| Situation | Likely Mode | Default Tags |
+|-----------|-------------|--------------|
+| Exploring an idea, no code yet | `brainstorm` | `socratic: true` |
+| No code changes needed | Modes with `statusCeiling: docs_updated` or `validated` | — |
+| Bug fix | Mode with "bugfix" or "fastlane" in name | — |
+| New feature from scratch | Mode with "product" or "discovery" in name/description | — |
+| Existing code improvement | Mode with "improve" or "existing" in name | `specReview: once-before-implement` |
+| Release candidate or "keep going until all green" | `delivery-lockdown` | `autoCommit: scope` |
+| Reduce complexity only | Mode with "simplify" in name | — |
+| Check spec freshness | Mode with "spec-review" in name | — |
+| Stale artifacts / out of sync | Mode with "reconcile" in name | — |
+| Full rewrite | Mode with "redesign" in name | — |
+| Adversarial / random probing | Mode with "stochastic" or "chaos" in name | — |
+| Continuing work | Mode with "iterate" or "resume" in name | — |
+| Speed up delivery | Any delivery mode | `parallelScopes: dag` |
+| High-assurance delivery | `full-delivery-strict` or `delivery-lockdown` | `tdd: true grillMode: required-on-ambiguity` |
 
 **Optional control-plane tags** that can be appended to most workflow commands:
 - `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` — resolve whether `bubbles.grill` must interrogate assumptions before planning or invalidation
@@ -264,6 +353,9 @@ When a user asks "which mode should I use?" or describes a situation:
 - `maxScopeMinutes` / `maxDodMinutes` — keep scopes small
 - `microFixes: true` — narrow repair loops for failures
 - `crossModelReview: codex|terminal` — independent second-opinion review from a different AI model
+- `parallelScopes: dag|dag-dry` — execute DAG-independent scopes in parallel via worktrees
+- `maxParallelScopes: 2-4` — maximum concurrent scope executions
+- `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` — refresh planning before each delivery-lockdown round
 
 ### New v3.1 Capabilities (Know These)
 
@@ -280,6 +372,46 @@ The super agent should be aware of these recent framework improvements and recom
 | `crossModelReview` | Independent review from a different AI model | When user wants higher confidence on reviews |
 | `bubbles.retro` | Velocity, gate health, hotspot analysis from git + state.json | When user asks about shipping speed, patterns, or weekly review |
 | Registry freshness | 90-day reminder to update cross-model registry | Check on workflow_start and remind if stale |
+
+### New v3.2 Capabilities (Know These)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **Brainstorm mode** | Explore ideas without implementation. Like YC office hours — refine, analyze competitors, harden scenarios, zero code. `statusCeiling: specs_hardened` | When user says "I have an idea", "let me think through this", "explore before building", "help me refine this concept" |
+| **Skill evolution loop** | Lessons.md patterns (≥3 occurrences) generate skill proposals. User approves, SKILL.md created. Closed-loop learning. | When user asks "why do I keep hitting the same problem?" or when workflow_start detects pending proposals in `.specify/memory/skill-proposals.md` |
+| **Developer profile** | Observation-driven preference tracking. Git diffs, taste decisions, mode choices, post-agent edits → patterns promoted after ≥3 observations. Feeds decisionPolicy for better auto-resolution. | When user asks about personalization, or when taste decisions could be auto-resolved from prior choices. Also surface stale entries at workflow_start. |
+| **Activity tracking** | Measurable-only metrics: invocation count, phase duration, retry budget, gate pass/fail rate, scope completion time, lines changed. NO dollar costs or token estimates (not measurable). | When user asks "how long did that take?", "how many retries?", "which agents ran?". Recommend enabling via `bubbles metrics enable`. |
+| **Agent activity dashboard** | `bubbles.status` now shows per-agent invocation table, active execution chain visualization, and activity metrics when tracking is enabled. | When user asks "what's been running?", "show me agent activity", "which phase are we in?" |
+| **Parallel scope execution** | `parallelScopes: dag` runs DAG-independent scopes concurrently via git worktrees. Off by default. `maxParallelScopes: 2-4`. `dag-dry` shows plan without executing. | When user has a spec with many independent scopes and asks about speed. Caution: merge conflicts are a new failure class. |
+
+#### Skill Evolution Awareness
+
+At `workflow_start`, if `.specify/memory/skill-proposals.md` exists and has pending proposals:
+- Surface them: "You have {N} skill proposals from repeated lessons. Review? [Show / Dismiss]"
+- On "Show": display each proposal with the pattern, count, and proposed skill name
+- On user approval: invoke `bubbles.create-skill` to scaffold the SKILL.md
+
+#### Developer Profile Awareness
+
+At `workflow_start`, check `.specify/memory/developer-profile.md`:
+- If stale entries (>180 days) exist: surface review prompt
+- If contradicted entries exist: surface for resolution
+- This is informational — NEVER block work for profile review
+
+#### Activity Tracking Awareness
+
+When user asks about metrics, costs, or efficiency:
+- Explain what IS tracked (invocations, durations, retries, gate rates, lines)
+- Explain what is NOT tracked and why (dollar cost, tokens — not exposed by platform)
+- Recommend `bubbles metrics enable` if not already enabled
+
+#### Parallel Scopes Awareness
+
+When user asks about speeding up scope execution:
+- Check if spec has independent scopes (Depends On: — in multiple scopes)
+- Suggest `parallelScopes: dag-dry` first to preview the plan
+- Caution about merge conflicts when scopes touch overlapping files
+- Always suggest starting with `maxParallelScopes: 2`
 
 ### 3. Health Check & Auto-Heal
 
@@ -366,6 +498,21 @@ bash bubbles/scripts/cli.sh blocked
 bash bubbles/scripts/cli.sh dod <spec>
 ```
 
+### 11. Skill Proposals
+
+```bash
+bash bubbles/scripts/cli.sh skill-proposals          # Show pending proposals
+bash bubbles/scripts/cli.sh skill-proposals --dismiss  # Dismiss all
+```
+
+### 12. Developer Profile
+
+```bash
+bash bubbles/scripts/cli.sh profile              # Show current profile
+bash bubbles/scripts/cli.sh profile --stale       # Show only stale entries
+bash bubbles/scripts/cli.sh profile --clear-stale  # Remove stale entries
+```
+
 ---
 
 ## Natural Language Input Resolution (MANDATORY)
@@ -395,6 +542,16 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "how did spec 042 go?" -> /bubbles.retro spec 042
 "get a second opinion from another AI" -> /bubbles.workflow <feature> mode: full-delivery crossModelReview: codex
 "update my model registry" -> explain crossModelReview registry in bubbles.config.json, check lastVerified freshness
+"I have a rough idea for a new feature" -> /bubbles.workflow mode: brainstorm socratic: true socraticQuestions: 5
+"think through this booking idea before I build anything" -> /bubbles.workflow mode: brainstorm for specs/<NNN-feature>
+"this spec has 8 independent scopes, can we go faster?" -> /bubbles.workflow specs/<feature> mode: full-delivery parallelScopes: dag maxParallelScopes: 2
+"show me the parallel plan without running it" -> /bubbles.workflow specs/<feature> mode: full-delivery parallelScopes: dag-dry
+"I keep hitting the same Docker cache issue" -> Check skill-proposals; if pattern ≥3x, surface proposal
+"what are my coding preferences?" -> bash bubbles/scripts/cli.sh profile
+"which agents have been running?" -> /bubbles.status (shows agent activity dashboard)
+"deliver this carefully, TDD, commit each scope, on a branch" -> /bubbles.workflow specs/<feature> mode: full-delivery tdd: true grillMode: required-on-ambiguity autoCommit: scope gitIsolation: true
+"ship this, no loose ends, parallel where possible" -> /bubbles.workflow specs/<feature> mode: delivery-lockdown parallelScopes: dag autoCommit: scope
+"brainstorm first then deliver strict" -> (1) /bubbles.workflow mode: brainstorm, (2) /bubbles.workflow specs/<feature> mode: delivery-lockdown tdd: true
 ```
 
 ---
@@ -407,13 +564,18 @@ When the user's request is ambiguous, use this priority:
 2. If about hooks -> `hooks`
 3. If about gates/extensions -> `project gates`
 4. If about updating Bubbles -> `upgrade`
-5. If about metrics -> `metrics`
+5. If about metrics/activity -> `metrics`
 6. If about lessons -> `lessons`
 7. If about dependencies -> `dag`
 8. If about progress -> `status`
 9. If about velocity/patterns/retrospective -> `/bubbles.retro`
 10. If about model registry/cross-model review freshness -> check + explain registry
-9. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
-10. If about translating vague requests into exact prompts -> prefer `super`; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
-11. If about what to do next / which agent / which mode -> Platform Concierge
-12. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly
+11. If about brainstorming or exploring an idea -> `/bubbles.workflow mode: brainstorm`
+12. If about skill proposals or repeated patterns -> `skill-proposals`
+13. If about developer preferences or profile -> `profile`
+14. If about agent activity or invocation counts -> `/bubbles.status`
+15. If about parallelizing scopes -> explain `parallelScopes: dag` tag
+16. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
+17. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
+18. If about what to do next / which agent / which mode -> Platform Concierge
+19. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

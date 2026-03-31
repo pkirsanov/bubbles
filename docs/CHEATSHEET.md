@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **34 Agents · 67 Gates · 29 Workflow Modes · 23 Phases**
+> **34 Agents · 67 Gates · 30 Workflow Modes · 23 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -500,6 +500,9 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | Enable metrics | `/bubbles.super enable metrics` | `bubbles metrics enable` |
 | View lessons learned | `/bubbles.super show lessons` | `bubbles lessons` |
 | Compact old lessons | `/bubbles.super compact lessons` | `bubbles lessons compact` |
+| View skill proposals | `/bubbles.super show skill proposals` | `bubbles skill-proposals` |
+| View developer profile | `/bubbles.super show profile` | `bubbles profile` |
+| Clear stale preferences | `/bubbles.super clear stale profile` | `bubbles profile --clear-stale` |
 | Upgrade Bubbles | `/bubbles.super upgrade` | `bubbles upgrade` |
 | Upgrade (dry run) | `/bubbles.super upgrade --dry-run` | `bubbles upgrade --dry-run` |
 | **Help me choose an agent** | **`/bubbles.super help me <goal>`** | — |
@@ -527,7 +530,13 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | "Gorilla see, gorilla do" | Monkey see, monkey do | Copy-paste code detected |
 | "Steve French is just a big stoned kitty" | The regression guardian is doing its job | Cross-spec check running |
 | "It's a doggy-dog world" | Dog-eat-dog world | Competitive analysis |
-| "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) || \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
+| "I'll do it tomorrah" | I'll do it tomorrow | Deferring work (G040 violation) |
+| "Let me think about it over a couple smokes" | Let me think about it | Brainstorm mode — explore before building |
+| "Get two birds stoned at once" | Kill two birds with one stone | Parallel scope execution via worktrees |
+| "The park knows what you like" | Personalized from observation | Developer profile auto-resolving taste decisions |
+| "Same greasy mistake three times" | Repeated pattern detected | Skill evolution — lessons promoting to skill proposal |
+| "Count the empties, Randy" | Count what's measurable | Activity tracking — only measurable metrics, no guesses |
+| \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
 ---
 
 <p align="center">
