@@ -71,7 +71,7 @@
 |:----:|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and what comes next. | *"So basically what happened was..."* |
-| <img src="../icons/lahey-bottle.svg" width="28"> | `bubbles.retro` | Jim Lahey (Bottle) | The liquor-fueled retrospective. Analyzes velocity, gate health, hotspots, and shipping patterns across sessions. | *"The liquor helps me see the patterns, Randy."* |
+| <img src="../icons/lahey-bottle.svg" width="28"> | `bubbles.retro` | Jim Lahey (Bottle) | The liquor-fueled retrospective. Analyzes velocity, gate health, deep code hotspots (bug magnets, co-change coupling, bus factor, churn trends), and shipping patterns across sessions. | *"The liquor helps me see the patterns, Randy."* |
 | <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.setup` | Cory & Trevor | The errand duo. Set up or refresh the framework layer. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="28"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
@@ -122,6 +122,9 @@
 | `sunnyvale catch-me-up` | `bubbles.recap` | *"So basically what happened was..."* |
 | `sunnyvale i-am-the-liquor` | `bubbles.retro` | *"The liquor helps me see the patterns, Randy."* |
 | `sunnyvale see-the-patterns` | `bubbles.retro` | *"I AM the liquor."* |
+| `sunnyvale wheres-the-bodies` | `bubbles.retro hotspots` | *"The liquor knows where the bodies are buried, Randy."* |
+| `sunnyvale whos-driving` | `bubbles.retro busfactor` | *"Somebody's gotta know how to drive this thing."* |
+| `sunnyvale tangled-up` | `bubbles.retro coupling` | *"It's all tangled up like Christmas lights, Randy."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 | `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
 
@@ -375,8 +378,12 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | ❌ Warnings found | *"The shit winds are coming, Randy."* |
 | ✅ Chaos clean | *"Worst case Ontario... nothing broke."* |
 | 🟢 Regression clean | *"Steve French is purrin'. No regressions, boys."* |
-| 🔴 Regression found | *"Something's prowlin' around in the code, boys."* |
-| � Spec stale | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
+| 🔴 Regression found | *"Something's prowlin' around in the code, boys."* || 🔍 Deep hotspot analysis | *"The liquor knows where the bodies are buried, Randy."* |
+| 🔍 Co-change coupling detected | *"It's all tangled up like Christmas lights, Randy."* |
+| 🔍 Bus factor risk | *"Somebody's gotta know how to drive this thing."* |
+| 🔴 Bug magnet file | *"That file's a bug magnet, Randy. Stay away from it."* |
+| 🟢 Hotspot stabilizing | *"That hotspot's cooling down. The liquor did its job."* |
+| 🔴 Hotspot worsening | *"That file's getting worse, Randy. The shit-fire is spreading."* || � Spec stale | *"Gary can see right through it, boys. That spec expired three refactors ago."* |
 | �🔴 Spec conflict | *"Steve French found another cougar's territory. Two specs, same route."* |
 | ❌ Security vuln | *"Safety... always ON."* |
 | ✅ Docs updated | *"Know what I'm sayin'? It's published."* |
@@ -489,8 +496,11 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | Check progress | `/bubbles.status` |
 | Check progress (narrative) | `/bubbles.status --explain` |
 | Quick session recap | `/bubbles.recap` |
+| Run a retrospective | `/bubbles.retro week` |
+| Find code hotspots (bug magnets, coupling) | `/bubbles.retro hotspots` |
+| Check bus factor risk | `/bubbles.retro busfactor` |
+| Find hidden dependencies | `/bubbles.retro coupling` |
 | Update documentation | `/bubbles.docs` |
-| End of session | `/bubbles.handoff` |
 | End of session | `/bubbles.handoff` |
 | Resume tomorrow | `/bubbles.workflow  resume` |
 
@@ -545,6 +555,9 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | "The park knows what you like" | Personalized from observation | Developer profile auto-resolving taste decisions |
 | "Same greasy mistake three times" | Repeated pattern detected | Skill evolution — lessons promoting to skill proposal |
 | "Count the empties, Randy" | Count what's measurable | Activity tracking — only measurable metrics, no guesses |
+| "Where the bodies are buried" | Deep code hotspot analysis — bug magnets, coupling, bus factor | `/bubbles.retro hotspots` — the liquor sees which files keep breaking |
+| "All tangled up like Christmas lights" | Co-change coupling — files that always change together | `/bubbles.retro coupling` — hidden architectural dependencies |
+| "Somebody's gotta drive" | Bus factor analysis — single-author files are knowledge silos | `/bubbles.retro busfactor` — who knows what, and what happens if they leave |
 | \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
 | \"Just tell Bubbles\" | Start with `/bubbles.workflow` and describe what you want in plain English | Universal entry point — workflow resolves intent, picks work, drives phases |
 | \"Bubbles figures it out\" | Workflow delegates to super for NLP resolution and iterate for work-picking | Intent delegation — no need to know which agent or mode to use |

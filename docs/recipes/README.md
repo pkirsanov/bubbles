@@ -96,6 +96,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
 | [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |
+| [Code Health Analysis](code-health-analysis.md) | "Which files keep breaking? Are there hidden dependencies? What's our bus factor?" |
 | [Update Docs](update-docs.md) | "Code changed, managed docs need publishing or cleanup" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |

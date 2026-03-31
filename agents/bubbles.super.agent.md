@@ -450,6 +450,27 @@ When user asks about speeding up scope execution:
 - Caution about merge conflicts when scopes touch overlapping files
 - Always suggest starting with `maxParallelScopes: 2`
 
+### New v3.3 Capabilities (Know These)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **Deep code hotspot analysis** | `bubbles.retro` now performs bug-fix density mapping, co-change coupling detection, author concentration (bus factor), and churn trend analysis — not just file-change counts | When user asks "where are the problem areas?", "which files keep breaking?", "what's our bus factor?", "are there hidden dependencies?" |
+| **Bug magnet detection** | Retro classifies commits as bug-fix vs feature and surfaces files with highest bug-fix ratio | When user asks "which files attract the most bugs?", "where should we refactor?" |
+| **Co-change coupling** | Retro computes a co-change matrix from git history to find files that always change together — especially cross-directory pairs that reveal hidden architectural dependencies | When user asks "why do these files always break together?", "are there hidden dependencies?", "should we extract a shared module?" |
+| **Bus factor analysis** | Retro reports single-author risk per high-churn file — knowledge silos where one person holds all context | When user asks "what's our bus factor?", "who owns this code?", "risky if someone leaves?" |
+| **Hotspot trend tracking** | Retro compares current hotspots against prior retros to show stabilizing, worsening, new, and resolved hotspots | When user asks "are things getting better or worse?", "is the refactoring helping?" |
+| **Retro-driven action routing** | Retro output now includes recommended follow-up actions: `/bubbles.simplify` for bug magnets, `/bubbles.code-review` for coupling, `/bubbles.harden` for worsening hotspots | When user wants to act on retro findings — they get copy-pasteable next commands |
+| **Focused retro modes** | `hotspots`, `coupling`, `busfactor` sub-commands for targeted analysis without full retro overhead | When user wants quick answers about specific code health dimensions |
+
+#### Deep Hotspot Awareness
+
+When user asks about code quality, technical debt, or problem areas:
+- Recommend `/bubbles.retro hotspots` for a focused hotspot-only analysis
+- For full picture: `/bubbles.retro week` or `/bubbles.retro month` includes hotspots in the standard retro
+- For coupling questions: `/bubbles.retro coupling` reveals hidden architectural dependencies
+- For bus factor: `/bubbles.retro busfactor` shows single-author risk files
+- After retro: follow the "Recommended Actions" section for targeted follow-up commands
+
 ### 3. Health Check & Auto-Heal
 
 **What it does:** Validates the Bubbles installation is complete and correct.
@@ -589,6 +610,12 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "deliver this carefully, TDD, commit each scope, on a branch" -> /bubbles.workflow specs/<feature> mode: full-delivery tdd: true grillMode: required-on-ambiguity autoCommit: scope gitIsolation: true
 "ship this, no loose ends, parallel where possible" -> /bubbles.workflow specs/<feature> mode: delivery-lockdown parallelScopes: dag autoCommit: scope
 "brainstorm first then deliver strict" -> (1) /bubbles.workflow mode: brainstorm, (2) /bubbles.workflow specs/<feature> mode: delivery-lockdown tdd: true
+"which files keep breaking?" -> /bubbles.retro hotspots
+"where are the bug magnets?" -> /bubbles.retro hotspots (shows bug-fix density per file)
+"are there hidden dependencies in the code?" -> /bubbles.retro coupling (co-change coupling analysis)
+"what's our bus factor?" -> /bubbles.retro busfactor (author concentration per high-churn file)
+"is the codebase getting better or worse?" -> /bubbles.retro month (includes hotspot trend comparison)
+"which files should we refactor first?" -> /bubbles.retro hotspots then follow the Recommended Actions
 ```
 
 ---
@@ -612,7 +639,8 @@ When the user's request is ambiguous, use this priority:
 13. If about developer preferences or profile -> `profile`
 14. If about agent activity or invocation counts -> `/bubbles.status`
 15. If about parallelizing scopes -> explain `parallelScopes: dag` tag
-16. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
+16. If about code hotspots, bug magnets, technical debt location, or bus factor -> `/bubbles.retro hotspots` (or `coupling` / `busfactor`)
+17. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
 17. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
 18. If about what to do next / which agent / which mode -> Platform Concierge
 19. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

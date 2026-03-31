@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Deep Code Hotspot Analysis — Retro Agent Enhancement (v3.3)
+
+- **Bug-fix density mapping** — `bubbles.retro` now classifies commits as bug-fix vs feature and surfaces files with highest bug-fix ratio ("bug magnets" — files where >50% of commits are fixes)
+- **Co-change coupling detection** — Computes a co-change matrix from git history to find files that always change together, especially cross-directory pairs revealing hidden architectural dependencies
+- **Author concentration (bus factor)** — Reports single-author risk per high-churn file. Files with bus factor = 1 are knowledge silos
+- **Churn trend analysis** — Compares current hotspots against prior retro data to show stabilizing, worsening, new, and resolved hotspots
+- **Recommended actions** — Retro output now includes a "Recommended Actions" section with targeted follow-up commands (`/bubbles.simplify` for bug magnets, `/bubbles.code-review` for coupling, `/bubbles.harden` for worsening hotspots)
+- **Focused retro modes** — New sub-commands: `hotspots` (deep hotspot-only analysis), `coupling` (co-change coupling only), `busfactor` (author concentration only). All support time-bounding: `hotspots week`, `hotspots month`
+- **New Sunnyvale aliases** — `sunnyvale wheres-the-bodies` (retro hotspots), `sunnyvale whos-driving` (retro busfactor), `sunnyvale tangled-up` (retro coupling)
+- **New Rickyisms** — "Where the bodies are buried" (deep hotspot analysis), "All tangled up like Christmas lights" (co-change coupling), "Somebody's gotta drive" (bus factor)
+- **New Fun Mode messages** — Deep hotspot analysis, co-change coupling detected, bus factor risk, bug magnet file, hotspot stabilizing, hotspot worsening
+- **Super agent v3.3 awareness** — Updated intent resolution, decision flow, and Tag Selection Matrix with hotspot-related entries
+- **New recipe** — `code-health-analysis.md` — data-driven refactoring workflow using retro hotspot analysis
+- **Updated recipe** — `retro.md` expanded with new commands, output descriptions, and "Acting On Findings" section
+- **Docs updated** — CHEATSHEET.md, HTML cheatsheet, AGENT_MANUAL.md, recipes/README.md all updated with new capabilities
+
 ### Universal Entry Point — Workflow as Single Front Door (v3.3)
 
 - **Phase -1: Intent Resolution** — `bubbles.workflow` now accepts ANY input (vague natural language, continuation requests, framework ops, or structured parameters). A new Phase -1 classifies input into 4 buckets (STRUCTURED, VAGUE, CONTINUE, FRAMEWORK) and delegates to the appropriate agent via `runSubagent`:

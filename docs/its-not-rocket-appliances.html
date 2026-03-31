@@ -626,7 +626,7 @@
     <div class="info">
       <div class="agent-name">bubbles.retro</div>
       <div class="character">Jim Lahey (Bottle)</div>
-      <div class="role">The liquor-fueled retrospective. Analyzes velocity, gate health, hotspots, and shipping patterns across sessions. The liquor helps him see the patterns.</div>
+      <div class="role">The liquor-fueled retrospective. Analyzes velocity, gate health, deep code hotspots (bug magnets, co-change coupling, bus factor, churn trends), and shipping patterns across sessions. The liquor helps him see the patterns.</div>
       <div class="quote">"The liquor helps me see the patterns, Randy."</div>
     </div>
   </div>
@@ -875,6 +875,21 @@
       <td class="cmd">sunnyvale see-the-patterns</td>
       <td class="maps-to">bubbles.retro</td>
       <td class="quote-col">"I AM the liquor."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale wheres-the-bodies</td>
+      <td class="maps-to">bubbles.retro hotspots</td>
+      <td class="quote-col">"The liquor knows where the bodies are buried, Randy."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale whos-driving</td>
+      <td class="maps-to">bubbles.retro busfactor</td>
+      <td class="quote-col">"Somebody's gotta know how to drive this thing."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale tangled-up</td>
+      <td class="maps-to">bubbles.retro coupling</td>
+      <td class="quote-col">"It's all tangled up like Christmas lights, Randy."</td>
     </tr>
     <tr>
       <td class="cmd">sunnyvale same-lot-new-trailer</td>
@@ -1225,6 +1240,12 @@
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like"</span><span class="context">— developer profile auto-resolving taste decisions from observed patterns</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Two birds stoned at once"</span><span class="context">— parallelScopes: dag — independent scopes run concurrently via worktrees</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Count the empties"</span><span class="context">— activity tracking: only measurable metrics (invocations, durations, retries), never fabricated costs</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Where the bodies are buried"</span><span class="context">— deep code hotspot analysis: bug magnets, co-change coupling, bus factor, churn trends</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Bug magnet"</span><span class="context">— a file with &gt;50% bug-fix commits vs feature commits. The bugs keep coming back.</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Tangled up like Christmas lights"</span><span class="context">— co-change coupling: files that always change together, revealing hidden architectural dependencies</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Somebody's gotta drive"</span><span class="context">— bus factor = 1: only one person has touched this file. Knowledge silo.</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Cooling hotspot"</span><span class="context">— a file that was hot last retro but is stabilizing. Refactoring worked.</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Heating hotspot"</span><span class="context">— a file with increasing churn period-over-period. Getting worse.</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Just tell Bubbles"</span><span class="context">— start with /bubbles.workflow and describe what you want in plain English</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Bubbles figures it out"</span><span class="context">— workflow delegates to super for NLP + iterate for work-picking. Zero knowledge required.</span></div>
   </div>
@@ -1273,6 +1294,10 @@
   <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like."</span><span class="context">— Auto-resolved taste decision from developer profile</span></div>
   <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Two birds stoned at once!"</span><span class="context">— Parallel scopes launched via worktrees</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"Count the empties, Randy."</span><span class="context">— Activity tracking report generated</span></div>
+  <div class="gate-msg"><span class="status">🔍</span><span class="msg">"The liquor knows where the bodies are buried."</span><span class="context">— Deep hotspot analysis complete</span></div>
+  <div class="gate-msg"><span class="status">🔍</span><span class="msg">"It's all tangled up like Christmas lights, Randy."</span><span class="context">— Co-change coupling detected</span></div>
+  <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Somebody's gotta know how to drive this thing."</span><span class="context">— Bus factor risk detected (single-author file)</span></div>
+  <div class="gate-msg"><span class="status">🔴</span><span class="msg">"That file's a bug magnet, Randy. Stay away from it."</span><span class="context">— Bug-fix ratio &gt; 50% (bug magnet file)</span></div>
   <div class="gate-msg"><span class="status">❌</span><span class="msg">"This is f***ed. BAAAAM!"</span><span class="context">— Gap found by Phil</span></div>
   <div class="gate-msg"><span class="status">✅</span><span class="msg">"That's a nice f***ing kitty right there."</span><span class="context">— Bug located</span></div>
   <div class="gate-msg"><span class="status">⟳</span><span class="msg">"Knock knock." "Who's there?" "A passing build."</span><span class="context">— Build succeeds</span></div>
@@ -1363,6 +1388,14 @@
   <div class="line">
     <span class="situation">Audit starts</span>
     <span class="quote-text">"I AM the liquor."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Retro / code health check</span>
+    <span class="quote-text">"The liquor helps me see the patterns, Randy."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Finding bug magnets</span>
+    <span class="quote-text">"The liquor knows where the bodies are buried."</span>
   </div>
 </div>
 
@@ -1456,7 +1489,10 @@
     <tr><td class="cmd">"Gorilla see, gorilla do"</td><td class="maps-to">Monkey see, monkey do</td><td class="quote-col">Copy-paste code detected</td></tr>
     <tr><td class="cmd">"It's a doggy-dog world"</td><td class="maps-to">It's a dog-eat-dog world</td><td class="quote-col">Competitive analysis complete</td></tr>
     <tr><td class="cmd">"I'll do it tomorrah"</td><td class="maps-to">I'll do it tomorrow</td><td class="quote-col">Deferring work (G040 violation)</td></tr>
-    <tr><td class="cmd">"The liquor helps me see"</td><td class="maps-to">Retrospective analysis reveals hidden patterns</td><td class="quote-col">Running /bubbles.retro to analyze velocity and gate health trends</td></tr>
+    <tr><td class="cmd">"The liquor helps me see"</td><td class="maps-to">Retrospective analysis reveals hidden patterns</td><td class="quote-col">Running /bubbles.retro to analyze velocity, hotspots, and code health</td></tr>
+    <tr><td class="cmd">"Where the bodies are buried"</td><td class="maps-to">Deep code hotspot analysis — bug magnets, coupling, bus factor</td><td class="quote-col">/bubbles.retro hotspots — the liquor sees which files keep breaking</td></tr>
+    <tr><td class="cmd">"All tangled up like Christmas lights"</td><td class="maps-to">Co-change coupling — files that always change together</td><td class="quote-col">/bubbles.retro coupling — hidden architectural dependencies</td></tr>
+    <tr><td class="cmd">"Somebody's gotta drive"</td><td class="maps-to">Bus factor — single-author files are knowledge silos</td><td class="quote-col">/bubbles.retro busfactor — who knows what</td></tr>
     <tr><td class="cmd">"3 strikes you're out"</td><td class="maps-to">Three strikes and you're out</td><td class="quote-col">3-strike escalation — stop fixing, start escalating</td></tr>
     <tr><td class="cmd">"Are we concerned or just done?"</td><td class="maps-to">Done… but watch that thing</td><td class="quote-col">done_with_concerns — all gates pass but risks flagged</td></tr>
     <tr><td class="cmd">"Skip the boring parts"</td><td class="maps-to">Smart phase routing — skip irrelevant phases safely</td><td class="quote-col">phaseRelevance skips simplify/stabilize/devops/chaos when scope doesn't need them</td></tr>
