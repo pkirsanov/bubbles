@@ -372,6 +372,7 @@ When a user asks "which mode should I use?" or describes a situation:
 | Release candidate or "keep going until all green" | `delivery-lockdown` | `autoCommit: scope` |
 | Reduce complexity only | Mode with "simplify" in name | — |
 | Check spec freshness | Mode with "spec-review" in name | — |
+| Data-driven simplify/harden/review | Mode with "retro-to-" prefix | — |
 | Stale artifacts / out of sync | Mode with "reconcile" in name | — |
 | Full rewrite | Mode with "redesign" in name | — |
 | Adversarial / random probing | Mode with "stochastic" or "chaos" in name | — |
@@ -616,6 +617,10 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "what's our bus factor?" -> /bubbles.retro busfactor (author concentration per high-churn file)
 "is the codebase getting better or worse?" -> /bubbles.retro month (includes hotspot trend comparison)
 "which files should we refactor first?" -> /bubbles.retro hotspots then follow the Recommended Actions
+"find the worst code and simplify it" -> /bubbles.workflow <feature> mode: retro-to-simplify
+"find the weakest areas and harden them" -> /bubbles.workflow <feature> mode: retro-to-harden
+"review the riskiest code" -> /bubbles.workflow <feature> mode: retro-to-review
+"data-driven code cleanup" -> /bubbles.workflow <feature> mode: retro-to-simplify
 ```
 
 ---

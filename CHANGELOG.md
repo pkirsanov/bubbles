@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Data-Driven Workflow Modes + Recipe Catalog (v3.3)
+
+- **3 new workflow modes** — `retro-to-simplify`, `retro-to-harden`, `retro-to-review`: data-driven workflows that run retro hotspot analysis first to identify targets, then execute the appropriate action (simplify, harden, or code-review) on those targets
+- **2 new phases** — `retro` (owner: bubbles.retro) and `code-review` (owner: bubbles.code-review) added to the phase registry in workflows.yaml
+- **3 new recipes** — `retro-driven-simplify.md`, `retro-driven-harden.md`, `retro-driven-review.md` with workflow diagrams, decision tables, and related recipe links
+- **Recipe Catalog** — new `docs/CATALOG.md` providing a numbered index of all 38 recipes with mode/agent mappings, category groupings, and a decision tree for choosing the right recipe
+- **README updated** — added Recipe Catalog link to nav bar, updated mode count to 33
+- **New Sunnyvale aliases** — `sunnyvale liquor-then-tape` (retro-to-simplify), `sunnyvale liquor-then-harden` (retro-to-harden), `sunnyvale liquor-then-look` (retro-to-review)
+- **New Rickyisms** — "Liquor then tape", "Liquor then harden", "Liquor then look"
+- **New vocabulary** — Data-driven workflow terms added to CHEATSHEET.md and HTML cheatsheet
+- **Framework stats updated** — 30→33 workflow modes, 23→25 phases across all docs and badges
+- **Super agent updated** — new intent resolution entries, workflow mode advisor row, and v3.3 awareness for data-driven modes
+- **Recipes README** — new "Data-Driven Workflows (Retro → Action)" section, code-health-analysis moved there
+- **iterate supportedModes** — 3 new modes added to iterate's mode pool
+
 ### Deep Code Hotspot Analysis — Retro Agent Enhancement (v3.3)
 
 - **Bug-fix density mapping** — `bubbles.retro` now classifies commits as bug-fix vs feature and surfaces files with highest bug-fix ratio ("bug magnets" — files where >50% of commits are fixes)

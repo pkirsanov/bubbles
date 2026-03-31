@@ -590,6 +590,12 @@ phases:
   spec-review:
     owner: bubbles.spec-review
     requiredGates: []
+  retro:
+    owner: bubbles.retro
+    requiredGates: []
+  code-review:
+    owner: bubbles.code-review
+    requiredGates: []
   bug-discovery:
     owner: bubbles.bug
     requiredGates: [ G001 ]
@@ -1572,6 +1578,63 @@ modes:
       sequentialSpecCompletion: false
       antiFabricationDetection: true
 
+  retro-to-simplify:
+    description: "Data-driven simplification: run retro hotspot analysis (bug magnets, coupling, bus factor) to identify the worst offenders, then simplify those files, prove behavior still works, and sync docs."
+    statusCeiling: done
+    phaseOrder: [ select, retro, simplify, test, regression, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G027, G028, G029, G030, G035, G036, G044, G045 ]
+    constraints:
+      requireExistingImplementation: true
+      preferSmallChangedSurface: true
+      requireRedGreenProofWhenBehaviorChanges: true
+      retroModes: [ hotspots ]
+      sequentialSpecCompletion: true
+      crossAgentVerification: true
+      antiFabricationDetection: true
+      requireAllSpecialistsComplete: true
+      requireAllScopesDoneBeforeSpecDone: true
+      requirePerDodItemRawEvidence: true
+      requireTestsForAllRealScenarios: true
+      require100PercentBusinessLogicCoverage: true
+      requirePhaseScopeCoherence: true
+      requireImplementationRealityScan: true
+      requireNoDefaultsNoFallbacks: true
+      requireIntegrationCompleteness: true
+
+  retro-to-harden:
+    description: "Data-driven hardening: run retro hotspot analysis to find bug magnets and worsening hotspots, then harden and close gaps on those areas, test, and sync docs."
+    statusCeiling: done
+    phaseOrder: [ select, retro, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G034, G035, G044, G045, G046, G054, G055, G056, G057, G061 ]
+    constraints:
+      requireExistingImplementation: true
+      retroModes: [ hotspots ]
+      sequentialSpecCompletion: true
+      crossAgentVerification: true
+      antiFabricationDetection: true
+      requireAllSpecialistsComplete: true
+      requireAllScopesDoneBeforeSpecDone: true
+      requirePerDodItemRawEvidence: true
+      requireTestsForAllRealScenarios: true
+      require100PercentBusinessLogicCoverage: true
+      requirePhaseScopeCoherence: true
+      requireImplementationRealityScan: true
+      requireNoDefaultsNoFallbacks: true
+      requireIntegrationCompleteness: true
+
+  retro-to-review:
+    description: "Data-driven code review: run retro hotspot analysis to identify the highest-risk files, then perform a targeted code review on those areas. Read-only diagnostic — produces findings and recommendations, no code changes."
+    statusCeiling: docs_updated
+    phaseOrder: [ select, retro, code-review, docs, finalize ]
+    requiredGates: [ G001, G010, G011, G012 ]
+    constraints:
+      requireExistingImplementation: true
+      readOnlyAudit: true
+      noCodeChanges: true
+      retroModes: [ hotspots, coupling, busfactor ]
+      sequentialSpecCompletion: false
+      antiFabricationDetection: true
+
   stochastic-quality-sweep:
     description: Run multiple randomized rounds where each round picks a random spec (from all specs by default, or from a user-provided subset) AND a random trigger agent from a configurable pool, probes that spec, then runs a trigger-specific fix cycle if findings exist. Rounds limited by count or time budget. For adversarial quality hardening across specs via random probe angles.
     statusCeiling: done
@@ -1687,6 +1750,9 @@ modes:
       - improve-existing
       - test-to-doc
       - docs-only
+      - retro-to-simplify
+      - retro-to-harden
+      - retro-to-review
       # Default iterations (overridable via iterations user option)
       defaultIterations: 1
       # Default time budget in minutes (overridable via minutes user option)

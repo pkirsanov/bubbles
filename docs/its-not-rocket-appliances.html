@@ -892,6 +892,21 @@
       <td class="quote-col">"It's all tangled up like Christmas lights, Randy."</td>
     </tr>
     <tr>
+      <td class="cmd">sunnyvale liquor-then-tape</td>
+      <td class="maps-to">retro-to-simplify</td>
+      <td class="quote-col">"The liquor shows me the problems. Donny tapes them up."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale liquor-then-harden</td>
+      <td class="maps-to">retro-to-harden</td>
+      <td class="quote-col">"The liquor shows me the weak spots. Harden up, boys."</td>
+    </tr>
+    <tr>
+      <td class="cmd">sunnyvale liquor-then-look</td>
+      <td class="maps-to">retro-to-review</td>
+      <td class="quote-col">"The liquor shows me where to look. Green Bastard tells me what's broken."</td>
+    </tr>
+    <tr>
       <td class="cmd">sunnyvale same-lot-new-trailer</td>
       <td class="maps-to">redesign-existing</td>
       <td class="quote-col">"Same lot, boys. New trailer."</td>
@@ -1040,6 +1055,24 @@
     <div class="wf-alias">→ sunnyvale smokes-and-thinking</div>
     <div class="wf-desc">Explore an idea thoroughly before building. Competitive analysis, scenarios, alternatives — zero code. Like YC office hours.</div>
     <div class="wf-quote">"Let me think about it over a couple smokes."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">retro-to-simplify</div>
+    <div class="wf-alias">→ sunnyvale liquor-then-tape</div>
+    <div class="wf-desc">Data-driven simplification. Retro analyzes git history for bug magnets and hotspots, then Donny simplifies the worst offenders.</div>
+    <div class="wf-quote">"The liquor shows me the problems. Donny tapes them up."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">retro-to-harden</div>
+    <div class="wf-alias">→ sunnyvale liquor-then-harden</div>
+    <div class="wf-desc">Data-driven hardening. Retro finds bug magnets and worsening hotspots, then the hardening pipeline targets those areas.</div>
+    <div class="wf-quote">"The liquor shows me the weak spots. Harden up, boys."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">retro-to-review</div>
+    <div class="wf-alias">→ sunnyvale liquor-then-look</div>
+    <div class="wf-desc">Data-driven code review. Retro identifies highest-risk files, then Green Bastard reviews them. Read-only diagnostic.</div>
+    <div class="wf-quote">"The liquor shows me where to look. Green Bastard tells me what's broken."</div>
   </div>
   <div class="workflow-card">
     <div class="wf-name">harden-to-doc</div>
@@ -1246,6 +1279,9 @@
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Somebody's gotta drive"</span><span class="context">— bus factor = 1: only one person has touched this file. Knowledge silo.</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Cooling hotspot"</span><span class="context">— a file that was hot last retro but is stabilizing. Refactoring worked.</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Heating hotspot"</span><span class="context">— a file with increasing churn period-over-period. Getting worse.</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then tape"</span><span class="context">— retro-to-simplify: retro finds the hotspots, Donny simplifies them</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then harden"</span><span class="context">— retro-to-harden: retro finds the weak spots, then harden them up</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then look"</span><span class="context">— retro-to-review: retro identifies the riskiest files, Green Bastard reviews them</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Just tell Bubbles"</span><span class="context">— start with /bubbles.workflow and describe what you want in plain English</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Bubbles figures it out"</span><span class="context">— workflow delegates to super for NLP + iterate for work-picking. Zero knowledge required.</span></div>
   </div>
@@ -1493,6 +1529,9 @@
     <tr><td class="cmd">"Where the bodies are buried"</td><td class="maps-to">Deep code hotspot analysis — bug magnets, coupling, bus factor</td><td class="quote-col">/bubbles.retro hotspots — the liquor sees which files keep breaking</td></tr>
     <tr><td class="cmd">"All tangled up like Christmas lights"</td><td class="maps-to">Co-change coupling — files that always change together</td><td class="quote-col">/bubbles.retro coupling — hidden architectural dependencies</td></tr>
     <tr><td class="cmd">"Somebody's gotta drive"</td><td class="maps-to">Bus factor — single-author files are knowledge silos</td><td class="quote-col">/bubbles.retro busfactor — who knows what</td></tr>
+    <tr><td class="cmd">"Liquor then tape"</td><td class="maps-to">Data-driven simplification — retro finds hotspots, Donny simplifies</td><td class="quote-col">retro-to-simplify workflow mode</td></tr>
+    <tr><td class="cmd">"Liquor then harden"</td><td class="maps-to">Data-driven hardening — retro finds weak spots, then harden</td><td class="quote-col">retro-to-harden workflow mode</td></tr>
+    <tr><td class="cmd">"Liquor then look"</td><td class="maps-to">Data-driven review — retro targets riskiest files for review</td><td class="quote-col">retro-to-review workflow mode</td></tr>
     <tr><td class="cmd">"3 strikes you're out"</td><td class="maps-to">Three strikes and you're out</td><td class="quote-col">3-strike escalation — stop fixing, start escalating</td></tr>
     <tr><td class="cmd">"Are we concerned or just done?"</td><td class="maps-to">Done… but watch that thing</td><td class="quote-col">done_with_concerns — all gates pass but risks flagged</td></tr>
     <tr><td class="cmd">"Skip the boring parts"</td><td class="maps-to">Smart phase routing — skip irrelevant phases safely</td><td class="quote-col">phaseRelevance skips simplify/stabilize/devops/chaos when scope doesn't need them</td></tr>
@@ -1550,7 +1589,7 @@
   <p>Bubbles Agent System v3.3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_VERSION_FOOTER_END -->
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>67 Gates • 34 Agents • 30 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
+  <p>67 Gates • 34 Agents • 33 Workflow Modes • 25 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

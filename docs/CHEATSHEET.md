@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **34 Agents · 67 Gates · 30 Workflow Modes · 23 Phases**
+> **34 Agents · 67 Gates · 33 Workflow Modes · 25 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -125,6 +125,9 @@
 | `sunnyvale wheres-the-bodies` | `bubbles.retro hotspots` | *"The liquor knows where the bodies are buried, Randy."* |
 | `sunnyvale whos-driving` | `bubbles.retro busfactor` | *"Somebody's gotta know how to drive this thing."* |
 | `sunnyvale tangled-up` | `bubbles.retro coupling` | *"It's all tangled up like Christmas lights, Randy."* |
+| `sunnyvale liquor-then-tape` | `retro-to-simplify` | *"The liquor shows me the problems. Donny tapes them up."* |
+| `sunnyvale liquor-then-harden` | `retro-to-harden` | *"The liquor shows me the weak spots. Harden up, boys."* |
+| `sunnyvale liquor-then-look` | `retro-to-review` | *"The liquor shows me where to look. Green Bastard tells me what's broken."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 | `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
 
@@ -164,6 +167,9 @@
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
 | `brainstorm` | smokes-and-think | Explore ideas before building — produces design artifacts, no code |
+| `retro-to-simplify` | liquor-then-tape | Data-driven simplification — retro finds hotspots, then simplify fixes them |
+| `retro-to-harden` | liquor-then-harden | Data-driven hardening — retro finds bug magnets, then harden targets them |
+| `retro-to-review` | liquor-then-look | Data-driven review — retro finds risks, then code-review diagnoses them |
 
 **Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `crossModelReview` (off|codex|terminal)
 
@@ -558,6 +564,9 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | "Where the bodies are buried" | Deep code hotspot analysis — bug magnets, coupling, bus factor | `/bubbles.retro hotspots` — the liquor sees which files keep breaking |
 | "All tangled up like Christmas lights" | Co-change coupling — files that always change together | `/bubbles.retro coupling` — hidden architectural dependencies |
 | "Somebody's gotta drive" | Bus factor analysis — single-author files are knowledge silos | `/bubbles.retro busfactor` — who knows what, and what happens if they leave |
+| "Liquor then tape" | Data-driven simplification — retro finds hotspots, Donny simplifies them | `retro-to-simplify` workflow mode |
+| "Liquor then harden" | Data-driven hardening — retro finds weak spots, then harden them up | `retro-to-harden` workflow mode |
+| "Liquor then look" | Data-driven review — retro targets the riskiest files for code review | `retro-to-review` workflow mode |
 | \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
 | \"Just tell Bubbles\" | Start with `/bubbles.workflow` and describe what you want in plain English | Universal entry point — workflow resolves intent, picks work, drives phases |
 | \"Bubbles figures it out\" | Workflow delegates to super for NLP resolution and iterate for work-picking | Intent delegation — no need to know which agent or mode to use |

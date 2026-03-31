@@ -83,6 +83,15 @@ Control-plane law also requires owner-only remediation and concrete result envel
 |--------|-------------------|
 | [Parallel Scope Execution](parallel-scopes.md) | "My spec has independent scopes and I want to run them concurrently via worktrees" |
 
+## Data-Driven Workflows (Retro → Action)
+
+| Recipe | Problem → Solution |
+|--------|-------------------|
+| [Code Health Analysis](code-health-analysis.md) | "Which files keep breaking? Are there hidden dependencies? What's our bus factor?" |
+| [Data-Driven Simplification](retro-driven-simplify.md) | "I want to simplify code, but I don't know where to start — let the data decide" |
+| [Data-Driven Hardening](retro-driven-harden.md) | "I want to harden code, but I want to focus on the areas that actually cause problems" |
+| [Data-Driven Code Review](retro-driven-review.md) | "I want a code review, but I have a large codebase — let the data target the riskiest files" |
+
 ## Refactoring & Simplification
 
 | Recipe | Problem → Solution |
@@ -96,7 +105,6 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
 | [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |
-| [Code Health Analysis](code-health-analysis.md) | "Which files keep breaking? Are there hidden dependencies? What's our bus factor?" |
 | [Update Docs](update-docs.md) | "Code changed, managed docs need publishing or cleanup" |
 | [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
