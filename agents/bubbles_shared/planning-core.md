@@ -30,3 +30,54 @@ Purpose: mandatory planning-time rules for `bubbles.plan` and other planning-ori
 - `consumer-trace.md`
 - `e2e-regression.md`
 - `evidence-rules.md`
+
+## Test Plan Structured Handoff (test-plan.json)
+
+When `bubbles.plan` creates or updates Test Plan tables in scope artifacts, it MUST also write (or update) a machine-readable `test-plan.json` in the spec folder.
+
+This file enables structured handoff to `bubbles.test` — tests are discovered programmatically, not by Markdown parsing.
+
+### Schema
+
+```json
+{
+  "version": 1,
+  "specId": "042",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-03-31T10:00:00Z",
+  "scopes": [
+    {
+      "scopeId": "01-api-handlers",
+      "scopeName": "API Handler Implementation",
+      "tests": [
+        {
+          "type": "unit",
+          "category": "unit",
+          "file": "services/gateway/src/handlers/foo_test.rs",
+          "scenarioId": "SCN-042-01",
+          "description": "Returns 200 on valid input with correct payload shape",
+          "command": "[UNIT_TEST_COMMAND from agents.md]",
+          "liveSystem": false
+        },
+        {
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "tests/e2e/api/foo_e2e_test.rs",
+          "scenarioId": "SCN-042-02",
+          "description": "Full stack round-trip: create, read, verify",
+          "command": "[E2E_TEST_COMMAND from agents.md]",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Rules
+
+- `test-plan.json` is owned by `bubbles.plan` — only planning agents may write it
+- `bubbles.test` reads it to discover required tests — it cross-references against scopes.md
+- The JSON and Markdown Test Plan tables MUST stay in sync — divergence is a planning-core violation
+- `test-plan.json` is committed alongside `scopes.md` — never deferred
+- If `test-plan.json` does not exist when `bubbles.test` runs, test falls back to parsing Markdown Test Plan tables (backward compatibility)

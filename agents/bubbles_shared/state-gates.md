@@ -4,8 +4,9 @@ Purpose: compact state/completion rules that must remain authoritative for all a
 
 ## Completion Chain
 - A DoD item becomes `[x]` only after real validation evidence exists inline.
-- A scope becomes `Done` only when every DoD item is valid.
-- A spec becomes `done` only when every scope is `Done`.
+- A scope becomes `Done` (or `Done with Concerns` when all gates pass but agent flags observational risks) only when every DoD item is valid.
+- A spec becomes `done` (or `done_with_concerns`) only when every scope is `Done` or `Done with Concerns`.
+- `Done with Concerns` is a done-equivalent for all gate checks (G024, G027, G023). Gates treat it identically to `Done`.
 
 ## Read / Loop Discipline
 - Max 3 consecutive reads before action.

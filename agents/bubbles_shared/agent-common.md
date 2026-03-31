@@ -23,9 +23,9 @@ Load the smallest authoritative module set that matches the role and current pha
 | Artifact lifecycle and scope structure | `artifact-lifecycle.md` |
 | Scope templates | `scope-templates.md` |
 | Workflow rules and phase sequencing | `scope-workflow.md`, `state-gates.md` |
-| Planning bootstrap | `plan-bootstrap.md`, `planning-core.md` |
-| Implementation bootstrap | `implement-bootstrap.md`, `execution-core.md` |
-| Testing bootstrap | `test-bootstrap.md`, `test-core.md` |
+| Planning bootstrap (includes test-plan.json) | `plan-bootstrap.md`, `planning-core.md` |
+| Implementation bootstrap (includes regression auto-gen) | `implement-bootstrap.md`, `execution-core.md` |
+| Testing bootstrap (includes test-plan.json consumption) | `test-bootstrap.md`, `test-core.md` |
 | Audit bootstrap | `audit-bootstrap.md`, `audit-core.md` |
 | Analyst bootstrap | `analysis-bootstrap.md` |
 | Design bootstrap | `design-bootstrap.md` |
@@ -44,14 +44,22 @@ Load the smallest authoritative module set that matches the role and current pha
 | Who owns this artifact? | `artifact-ownership.md` |
 | How do I invalidate stale spec/design/scopes safely? | `artifact-freshness.md` |
 | Can this scope/spec be marked complete? | `completion-governance.md` |
+| What does `done_with_concerns` mean? | `completion-governance.md` |
 | What Tier 2 checks apply to this agent? | `validation-profiles.md` |
 | What test categories and evidence rules apply? | `quality-gates.md`, `evidence-rules.md`, `test-fidelity.md` |
 | What artifacts must exist and how are scopes structured? | `artifact-lifecycle.md`, `scope-templates.md`, `scope-workflow.md` |
 | What is the role loading baseline? | `operating-baseline.md` |
 | What happens on retries, timeouts, or auto-commit? | `execution-ops.md` |
+| What is the 3-strike escalation protocol? | `execution-ops.md` |
 | How do workflow phases and state transitions work? | `scope-workflow.md`, `state-gates.md` |
+| How does smart phase routing (skip/re-evaluate) work? | `workflows.yaml` → `phaseRelevance` section |
+| How do mechanical vs taste decisions work? | `workflows.yaml` → `decisionPolicy` section |
+| How does cross-model review work? | `workflows.yaml` → `crossModelReview` section |
+| How does test-plan.json handoff work? | `planning-core.md`, `test-bootstrap.md` |
+| How does regression test auto-generation work (bug fixes)? | `implement-bootstrap.md` |
+| How do I run a retrospective? | `bubbles.retro.agent.md` |
 | How does the v3 control plane work (execution vs certification, policy defaults, scenario contracts)? | `feature-templates.md`, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md), [CONTROL_PLANE_SCHEMAS.md](../../docs/guides/CONTROL_PLANE_SCHEMAS.md) |
-| What are gates G054–G064 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets, owner-only remediation, concrete results, child-workflow depth)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
+| What are gates G054–G068 (capability delegation, policy provenance, validate certification, scenario manifest, lockdown, regression contract, scenario TDD, rework packets, owner-only remediation, concrete results, child-workflow depth, etc.)? | `workflows.yaml` gate definitions, [CONTROL_PLANE_DESIGN.md](../../docs/guides/CONTROL_PLANE_DESIGN.md) |
 | Who owns state.json certification vs execution claims? | `agent-ownership.yaml`, `agent-capabilities.yaml`, `scope-workflow.md` |
 
 ## Command Prefix Convention

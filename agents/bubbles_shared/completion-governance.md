@@ -24,7 +24,7 @@ If any link in that chain is false, completion state must be lowered immediately
 
 ## Scope Completion Rules
 
-A scope cannot be `Done` when any of these are true:
+A scope cannot be `Done` (or `Done with Concerns`) when any of these are true:
 
 - any DoD item is unchecked
 - any checked DoD item lacks inline evidence
@@ -33,9 +33,28 @@ A scope cannot be `Done` when any of these are true:
 - the scope contains deferral language
 - the scope claims behavior that the tests do not prove
 
+### Done with Concerns
+
+A scope may be marked `Done with Concerns` instead of `Done` when ALL DoD items pass with evidence AND ALL gates pass, but the agent identified concrete risks worth recording. This status:
+
+- Does NOT bypass any gate — every gate must still pass identically to plain `Done`
+- Does NOT count as incomplete — `Done with Concerns` is a `Done`-equivalent for all gate checks (G024, G027)
+- MUST include a `concerns` list with severity, description, and originating agent
+- Is subject to `bubbles.validate` review — validate may downgrade to `In Progress` if a concern is actually a gate failure in disguise
+
+Concerns are observational, not deferral. Examples of valid concerns:
+- "Stress test p99 is 48ms, just under 50ms SLA threshold — monitor in production"
+- "Third-party API latency was high during testing — may affect real-world perf"
+- "Code coverage is 100% but one edge case relies on external timing"
+
+Examples of INVALID concerns (these are deferrals, not concerns):
+- "Integration test skipped due to flaky infrastructure" → fix the test
+- "Admin UI not implemented yet" → scope is In Progress
+- "Will address error handling in follow-up" → blocked by deferral language gate (G040)
+
 ## Spec Completion Rules
 
-A spec cannot be `done` when any scope is:
+A spec cannot be `done` (or `done_with_concerns`) when any scope is:
 
 - `Not Started`
 - `In Progress`
@@ -154,8 +173,28 @@ If state is stale, lower it immediately.
 Only `bubbles.validate` may certify completion state. Other agents submit execution claims and transition requests.
 
 - Only `bubbles.validate` may write `certification.status`, `certification.completedScopes`, `certification.certifiedCompletedPhases`, `certification.scopeProgress`, or `certification.lockdownState`
+- Valid `certification.status` values: `not_started`, `in_progress`, `done`, `done_with_concerns`, `blocked`
+- `done_with_concerns` carries all done-equivalent privileges but includes a `certification.concerns` array
 - Other agents may write `execution.*` fields (current phase, active agent, execution claims)
 - The top-level `status` field mirrors `certification.status` and must not contradict it
+
+### Concerns Schema
+
+```json
+"certification": {
+  "status": "done_with_concerns",
+  "concerns": [
+    {
+      "scope": "02-api-handlers",
+      "description": "Stress test p99 is 48ms, just under 50ms SLA. Monitor in production.",
+      "severity": "low",
+      "agent": "bubbles.test"
+    }
+  ]
+}
+```
+
+Severity levels: `low` (informational), `medium` (warrants monitoring), `high` (close to gate failure threshold).
 
 ## Related Modules
 

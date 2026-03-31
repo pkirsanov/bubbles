@@ -118,6 +118,9 @@ artifacts:
   observability-config:
     owner:
     - bubbles.devops
+  retro-reports:
+    owner:
+    - bubbles.retro
 
 diagnosticAgents:
 - bubbles.validate

@@ -18,6 +18,8 @@ Artifact authorship is a hard boundary, not a suggestion. Violations are blockin
 | `state.json` certification state | `bubbles.validate` | `certification.*`, promotion state, and reopen/invalidate certification only |
 | `state.json` execution claims | All execution agents | `execution.*` fields only — never `certification.*` |
 | `scenario-manifest.json` | `bubbles.plan` | `bubbles.test`, `bubbles.validate`, `bubbles.regression` may update evidence links only |
+| `test-plan.json` | `bubbles.plan` | Machine-readable test handoff; `bubbles.test` reads it, never writes it |
+| `.specify/memory/retros/*.md` | `bubbles.retro` | Read-only retrospective reports |
 | Product code / tests | `bubbles.implement`, `bubbles.test` | Per their phase ownership |
 | Operational code / CI/CD / deploy / monitoring surfaces | `bubbles.devops` | Pipelines, build/release automation, deployment config, dashboards, alerts, observability wiring |
 | Managed docs (declared in the effective managed-doc registry) | `bubbles.docs` | Must reflect real implementation state |

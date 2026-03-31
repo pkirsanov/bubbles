@@ -254,3 +254,9 @@ agents:
     delegatesRequired: false
     ownsArtifacts: []
     ownsPhases: []
+  bubbles.retro:
+    class: utility
+    canAskUserDirectly: false
+    delegatesRequired: false
+    ownsArtifacts: [ retro-reports ]
+    ownsPhases: []

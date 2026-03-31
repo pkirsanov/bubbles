@@ -24,6 +24,22 @@ Optional execution tags apply across modes when you need more control without ch
 - `maxScopeMinutes` and `maxDodMinutes` tighten scope sizing (recommended: scope 60-120, DoD 15-45).
 - `microFixes: false` is the opt-out switch if you explicitly do not want narrow repair loops.
 - `specReview: once-before-implement` runs a one-shot `bubbles.spec-review` pass before legacy improvement or implementation-capable work begins. If the mode includes `analyze`, that review runs after analysis so it sees the refreshed intent. It does not repeat on retries or later rounds.
+- `crossModelReview: codex|terminal` requests an independent cross-model review during code-review or audit phases (requires model registry configuration in `.specify/memory/bubbles.config.json`).
+
+### Smart Phase Routing
+
+Workflow modes now support **phase relevance evaluation** — before invoking each phase, `bubbles.workflow` checks whether the phase is relevant to the current scope's changed surface. Irrelevant phases are skipped with a recorded justification.
+
+**Safety guarantees:** Skipped phases are never silent. They're recorded in `executionHistory`. If artifacts change after a skip (e.g., a prior phase adds security-relevant code), the skip decision is re-evaluated and the phase is included if now relevant. Core phases (`implement`, `test`, `validate`, `docs`, `audit`, `finalize`) never skip.
+
+### Decision Policy (Orchestrated Workflows)
+
+When `bubbles.plan` or `bubbles.design` are invoked by the orchestrator (not directly by the user), decisions are classified as **mechanical** or **taste**:
+
+- **Mechanical** (auto-resolved): match existing patterns, prefer completeness, prefer reversible, respect spec constraints
+- **Taste** (surfaced to user): ambiguous choices below 60% confidence, security-affecting decisions, creative direction
+
+Taste decisions are batched at phase boundaries (max 5 per phase). When `grillMode` is active, taste decisions are pressure-tested by `bubbles.grill` first. When `socratic: true`, taste decisions become the Socratic questions (within the `socraticQuestions` limit).
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation is allowed to proceed. Those are not optional tags.
 

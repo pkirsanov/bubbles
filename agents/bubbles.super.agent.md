@@ -10,6 +10,9 @@ handoffs:
   - label: Review spec freshness
     agent: bubbles.spec-review
     prompt: Audit specs for staleness and classify trust levels so maintenance agents know what to rely on.
+  - label: Run retrospective
+    agent: bubbles.retro
+    prompt: Analyze velocity, gate health, and shipping patterns.
 ---
 
 ## Agent Identity
@@ -36,6 +39,7 @@ handoffs:
 - For destructive operations, explain impact before proceeding
 - Chain operations when logical (e.g. upgrade -> doctor -> reinstall hooks)
 - Non-interactive by default: execute the most reasonable interpretation of the request
+- **Cross-Model Registry Freshness:** On workflow_start or when the user asks about cross-model review, check `crossModelReview.lastVerified` in `.specify/memory/bubbles.config.json`. If more than 90 days have passed (or field is null), remind the user: "Your cross-model review registry was last verified {days} days ago. New models may be available. Would you like to update it?" Do NOT block work — this is an informational reminder only.
 
 **Dynamic Knowledge Sources — MUST Scan Before Answering:**
 
