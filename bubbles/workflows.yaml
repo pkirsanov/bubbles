@@ -127,7 +127,7 @@ gates:
   G041:
     name: dod_format_integrity_gate
     description: >-
-      ABSOLUTE BLOCKING gate. Prevents agents from bypassing DoD completion checks by reformatting checkbox items or inventing non-canonical scope statuses. THREE enforcement layers: (1) DoD FORMAT — Only '- [ ] ' and '- [x] ' are valid DoD item formats inside Definition of Done sections. Patterns like '- (deferred) ...', '- ~~...~~', '- *deferred* ...', or '- Text without checkbox' are FORBIDDEN manipulations. (2) SCOPE STATUS — Only four canonical statuses are valid: 'Not Started', 'In Progress', 'Done', 'Blocked'. Invented statuses like 'Deferred', 'Deferred — Planned Improvement', 'Skipped', 'N/A' are FORBIDDEN. (3) DoD ITEM DELETION — Removing DoD items to pass checkbox validation is structural fabrication. If a prior workflow phase added DoD items, they MUST remain as checkboxes until legitimately completed with evidence or explicitly removed with documented justification in the same commit. Mechanically enforced by state-transition-guard.sh Checks 4A and 4B.
+      ABSOLUTE BLOCKING gate. Prevents agents from bypassing DoD completion checks by reformatting checkbox items, inventing non-canonical scope statuses, or rewriting DoD item text. FOUR enforcement layers: (1) DoD FORMAT — Only '- [ ] ' and '- [x] ' are valid DoD item formats inside Definition of Done sections. Patterns like '- (deferred) ...', '- ~~...~~', '- *deferred* ...', or '- Text without checkbox' are FORBIDDEN manipulations. (2) SCOPE STATUS — Only four canonical statuses are valid: 'Not Started', 'In Progress', 'Done', 'Blocked'. Invented statuses like 'Deferred', 'Deferred — Planned Improvement', 'Skipped', 'N/A' are FORBIDDEN. (3) DoD ITEM DELETION — Removing DoD items to pass checkbox validation is structural fabrication. If a prior workflow phase added DoD items, they MUST remain as checkboxes until legitimately completed with evidence or explicitly removed with documented justification in the same commit. (4) DoD TEXT REWRITING — Modifying the behavioral claim in a DoD item's text description to match what was delivered instead of what the Gherkin scenario specified is CONTENT FABRICATION, semantically equivalent to deleting the original item and inventing a new one. Only bubbles.plan may modify DoD item text. Mechanically enforced by state-transition-guard.sh Checks 4A, 4B, and 22.
   G042:
     name: agent_ownership_gate
     description: >-
@@ -228,6 +228,10 @@ gates:
     name: phase_claim_provenance_gate
     description: >-
       BLOCKING gate. Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory. An agent may only record its own phase name; cross-phase impersonation is fabrication. Enforced by state-transition-guard.sh Check 6B.
+  G068:
+    name: dod_gherkin_content_fidelity_gate
+    description: >-
+      ABSOLUTE BLOCKING gate. DoD items MUST faithfully represent the behavioral claims of their source Gherkin scenarios. If a scope's Gherkin scenarios specify behavior X (e.g., "mock structs are removed and replaced with real test DB calls") but the DoD items describe behavior Y (e.g., "all files tagged for future migration"), the DoD has drifted from the spec and the scope MUST NOT be marked Done. This gate prevents execution agents from silently rewriting DoD item descriptions to match what was delivered instead of what was planned. Detection: cross-reference significant words from each Gherkin scenario against DoD item text using fuzzy matching. If a scenario's key behavioral claim has no corresponding DoD item preserving that claim, the gate fails. Enforced by traceability-guard.sh (Gherkin-to-DoD pass) and state-transition-guard.sh Check 22.
 
 failureRouting:
   code: implement

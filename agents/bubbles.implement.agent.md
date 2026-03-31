@@ -50,7 +50,7 @@ handoffs:
 
 **Artifact Ownership (this agent creates/modifies ONLY these):**
 - Product code and test code — implementation and test files
-- `scopes.md` — execution-progress updates ONLY (inline evidence, DoD checkbox `[x]`, scope status). MUST NOT add new Gherkin scenarios, Test Plan rows, or DoD items — those belong to `bubbles.plan`.
+- `scopes.md` — execution-progress updates ONLY (inline evidence, DoD checkbox `[x]`, scope status). MUST NOT add new Gherkin scenarios, Test Plan rows, or DoD items — those belong to `bubbles.plan`. MUST NOT modify the text description of existing DoD items, Gherkin scenarios, or Test Plan rows — rewriting a DoD item's behavioral claim to match delivery instead of the planned specification is content fabrication. If a DoD item cannot be completed as written, route to `bubbles.plan`.
 - `report.md` — append execution evidence to existing sections
 
 **Foreign artifacts (MUST invoke the owner, never edit directly):**

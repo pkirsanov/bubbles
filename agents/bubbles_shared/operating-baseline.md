@@ -6,11 +6,15 @@ Use this file for shared operating behavior instead of duplicating the same sess
 
 Agents MUST resolve project-specific commands, ports, paths, and policy details through `.specify/memory/agents.md`, `.specify/memory/constitution.md`, and `.github/copilot-instructions.md`. Do not hardcode project-specific values into portable prompts.
 
-## Framework File Immutability (NON-NEGOTIABLE)
+## Framework File Immutability — Upstream-First (NON-NEGOTIABLE)
 
-**Agents MUST NEVER create, modify, or delete files inside the Bubbles framework-managed directories.** These directories are owned exclusively by the Bubbles framework and updated only through `install.sh` upgrades.
+**Agents MUST NEVER create, modify, or delete Bubbles framework-managed files inside downstream project repos.** These files are owned exclusively by the canonical Bubbles repository and propagated to downstream projects only through `install.sh` upgrades.
 
-Downstream repos may request framework changes, but they must do that through a project-owned proposal artifact instead of editing framework-managed files locally.
+**Upstream-First Flow (ABSOLUTE):** ALL Bubbles framework changes — governance docs, agent definitions, shared modules, scripts, workflows, instructions, skills, prompts — MUST be authored in the **canonical Bubbles repository**. Downstream projects receive these updates via the upgrade command (`bash .github/bubbles/scripts/cli.sh upgrade`). Agents MUST NOT edit framework-managed files in downstream repos, and MUST NOT manually copy or sync framework files between repos.
+
+**Multi-Root Workspace Rule:** When working in a multi-root workspace that contains both the canonical Bubbles repo and one or more downstream projects, all framework file edits go to the Bubbles repo. The `.github/` copies in downstream repos are read-only install artifacts — not authoring targets.
+
+Downstream repos may request framework changes via `.github/bubbles-project/proposals/` or `bubbles framework-proposal <slug>`, but they MUST NOT directly edit framework-managed files.
 
 ### Framework-Managed Paths (READ-ONLY for agents)
 

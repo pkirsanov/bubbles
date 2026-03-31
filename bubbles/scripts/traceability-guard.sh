@@ -137,6 +137,68 @@ extract_test_rows() {
     | grep -Evi '^\|[[:space:]]*test type[[:space:]]*\|'
 }
 
+extract_dod_items() {
+  local scope_path="$1"
+  awk '
+    /^#{1,4}.*Definition of Done|^#{1,4}.*DoD/ {in_dod=1; next}
+    /^#{1,4} / {if (in_dod) exit}
+    in_dod && /^- \[(x| )\] / {
+      sub(/^- \[(x| )\] /, "", $0)
+      print
+    }
+  ' "$scope_path"
+}
+
+scenario_matches_dod() {
+  local scenario="$1"
+  local dod_item="$2"
+  local scenario_id
+  local dod_id
+  local words
+  local word
+  local dod_norm
+  local score=0
+  local threshold=0
+  local word_count=0
+
+  # Try trace ID matching first
+  scenario_id="$(extract_trace_ids "$scenario" | head -n 1 || true)"
+  if [[ -n "$scenario_id" ]]; then
+    while IFS= read -r dod_id; do
+      if [[ -n "$dod_id" ]] && [[ "$dod_id" == "$scenario_id" ]]; then
+        return 0
+      fi
+    done < <(extract_trace_ids "$dod_item")
+  fi
+
+  # Fuzzy word matching — extract significant words from the scenario
+  # and check how many appear in the DoD item
+  dod_norm="$(normalize_text "$dod_item")"
+  words="$(significant_words "$scenario")"
+  if [[ -z "$words" ]]; then
+    [[ "$dod_norm" == *"$(normalize_text "$scenario")"* ]]
+    return
+  fi
+
+  while IFS= read -r word; do
+    [[ -n "$word" ]] || continue
+    word_count=$((word_count + 1))
+    if [[ " $dod_norm " == *" $word "* ]]; then
+      score=$((score + 1))
+    fi
+  done <<< "$words"
+
+  if [[ "$word_count" -le 1 ]]; then
+    threshold=1
+  elif [[ "$word_count" -le 3 ]]; then
+    threshold=2
+  else
+    threshold=3
+  fi
+
+  [[ "$score" -ge "$threshold" ]]
+}
+
 extract_scenarios() {
   local scope_path="$1"
   grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//'
@@ -381,12 +443,74 @@ for scope_path in "${scope_files[@]}"; do
   echo ""
 done
 
+# =============================================================================
+# PASS 2: Gherkin → DoD Content Fidelity (Gate G068)
+# =============================================================================
+# Verifies that every Gherkin scenario's behavioral claim is faithfully
+# represented by at least one DoD item. Detects the failure mode where DoD
+# items are silently rewritten to match delivery instead of the spec.
+# =============================================================================
+echo "--- Gherkin → DoD Content Fidelity (Gate G068) ---"
+dod_fidelity_total=0
+dod_fidelity_mapped=0
+dod_fidelity_unmapped=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  scope_label="${scope_path#$feature_dir/}"
+  scenarios="$(extract_scenarios "$scope_path")"
+  dod_items="$(extract_dod_items "$scope_path")"
+
+  if [[ -z "$scenarios" ]]; then
+    continue
+  fi
+
+  if [[ -z "$dod_items" ]]; then
+    fail "$scope_label has Gherkin scenarios but no DoD items — cannot verify content fidelity"
+    continue
+  fi
+
+  while IFS= read -r scenario; do
+    [[ -n "$scenario" ]] || continue
+    dod_fidelity_total=$((dod_fidelity_total + 1))
+
+    matched_dod=""
+    while IFS= read -r dod_item; do
+      [[ -n "$dod_item" ]] || continue
+      if scenario_matches_dod "$scenario" "$dod_item"; then
+        matched_dod="$dod_item"
+        break
+      fi
+    done <<< "$dod_items"
+
+    if [[ -z "$matched_dod" ]]; then
+      fail "$scope_label Gherkin scenario has no faithful DoD item preserving its behavioral claim: $scenario"
+      dod_fidelity_unmapped=$((dod_fidelity_unmapped + 1))
+    else
+      dod_fidelity_mapped=$((dod_fidelity_mapped + 1))
+      pass "$scope_label scenario maps to DoD item: $scenario"
+    fi
+  done <<< "$scenarios"
+done
+
+if [[ "$dod_fidelity_total" -gt 0 ]]; then
+  info "DoD fidelity: $dod_fidelity_total scenarios checked, $dod_fidelity_mapped mapped to DoD, $dod_fidelity_unmapped unmapped"
+  if [[ "$dod_fidelity_unmapped" -gt 0 ]]; then
+    fail "DoD content fidelity gap: $dod_fidelity_unmapped Gherkin scenario(s) have no matching DoD item — DoD may have been rewritten to match delivery instead of the spec (Gate G068)"
+  fi
+else
+  info "No scenarios to check for DoD content fidelity"
+fi
+echo ""
+
 echo "--- Traceability Summary ---"
 info "Scenarios checked: $scenario_total"
 info "Test rows checked: $row_total"
 info "Scenario-to-row mappings: $mapped_total"
 info "Concrete test file references: $file_reference_total"
 info "Report evidence references: $report_reference_total"
+info "DoD fidelity scenarios: $dod_fidelity_total (mapped: $dod_fidelity_mapped, unmapped: $dod_fidelity_unmapped)"
 
 if [[ "$failures" -gt 0 ]]; then
   echo ""

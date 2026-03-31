@@ -1918,6 +1918,143 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 22: DoD-Gherkin Content Fidelity (Gate G068)
+# =============================================================================
+# Verifies that every Gherkin scenario's behavioral claim is faithfully
+# represented by at least one DoD item in the same scope. Detects the
+# failure mode where DoD items are silently rewritten by execution agents
+# to match what was delivered instead of what the spec planned.
+#
+# Uses the same fuzzy matching approach as traceability-guard.sh:
+# - Extract significant words (4+ chars, excluding stop words) from each
+#   Gherkin scenario
+# - Check that at least 2-3 of those words appear in at least one DoD item
+# - If no DoD item preserves the scenario's behavioral claim, flag it
+# =============================================================================
+echo "--- Check 22: DoD-Gherkin Content Fidelity (Gate G068) ---"
+
+# Helper: extract significant words from text (same logic as traceability-guard.sh)
+stg_normalize_text() {
+  local value="$1"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
+  printf '%s' "$value"
+}
+
+stg_significant_words() {
+  local text="$1"
+  local normalized
+  local word
+
+  normalized="$(stg_normalize_text "$text")"
+  for word in $normalized; do
+    if [[ ${#word} -lt 4 ]]; then
+      continue
+    fi
+    case "$word" in
+      given|when|then|with|from|into|onto|that|this|those|these|user|users|system|should|must|have|has|been|were|will|after|before|while|where|their|there|about|only|each)
+        continue
+        ;;
+    esac
+    printf '%s\n' "$word"
+  done
+}
+
+stg_scenario_matches_dod() {
+  local scenario="$1"
+  local dod_item="$2"
+  local dod_norm
+  local words
+  local word
+  local score=0
+  local word_count=0
+  local threshold=0
+
+  dod_norm="$(stg_normalize_text "$dod_item")"
+  words="$(stg_significant_words "$scenario")"
+  if [[ -z "$words" ]]; then
+    [[ "$dod_norm" == *"$(stg_normalize_text "$scenario")"* ]]
+    return
+  fi
+
+  while IFS= read -r word; do
+    [[ -n "$word" ]] || continue
+    word_count=$((word_count + 1))
+    if [[ " $dod_norm " == *" $word "* ]]; then
+      score=$((score + 1))
+    fi
+  done <<< "$words"
+
+  if [[ "$word_count" -le 1 ]]; then
+    threshold=1
+  elif [[ "$word_count" -le 3 ]]; then
+    threshold=2
+  else
+    threshold=3
+  fi
+
+  [[ "$score" -ge "$threshold" ]]
+}
+
+dod_fidelity_failures=0
+dod_fidelity_total=0
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  scope_label="${scope_path#$feature_dir/}"
+
+  # Extract Gherkin scenarios
+  scope_scenarios="$(grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//' || true)"
+  if [[ -z "$scope_scenarios" ]]; then
+    continue
+  fi
+
+  # Extract DoD items (text only, strip checkbox prefix)
+  scope_dod_items="$(awk '
+    /^#{1,4}.*Definition of Done|^#{1,4}.*DoD/ {in_dod=1; next}
+    /^#{1,4} / {if (in_dod) exit}
+    in_dod && /^- \[(x| )\] / {
+      sub(/^- \[(x| )\] /, "", $0)
+      print
+    }
+  ' "$scope_path" || true)"
+
+  if [[ -z "$scope_dod_items" ]]; then
+    continue
+  fi
+
+  while IFS= read -r scenario; do
+    [[ -n "$scenario" ]] || continue
+    dod_fidelity_total=$((dod_fidelity_total + 1))
+
+    matched=0
+    while IFS= read -r dod_item; do
+      [[ -n "$dod_item" ]] || continue
+      if stg_scenario_matches_dod "$scenario" "$dod_item"; then
+        matched=1
+        break
+      fi
+    done <<< "$scope_dod_items"
+
+    if [[ "$matched" -eq 0 ]]; then
+      fail "DoD-Gherkin content fidelity gap in $scope_label — scenario has no faithful DoD item: $(echo "$scenario" | head -c 120)"
+      dod_fidelity_failures=$((dod_fidelity_failures + 1))
+    fi
+  done <<< "$scope_scenarios"
+done
+
+if [[ "$dod_fidelity_total" -eq 0 ]]; then
+  pass "No Gherkin scenarios to check for DoD content fidelity"
+elif [[ "$dod_fidelity_failures" -gt 0 ]]; then
+  fail "$dod_fidelity_failures Gherkin scenario(s) have no matching DoD item — DoD may have been rewritten to match delivery instead of spec (Gate G068)"
+  info "Each Gherkin scenario's behavioral claim MUST be preserved in at least one DoD item"
+  info "If a DoD item was rewritten to describe different behavior, route to bubbles.plan for plan correction"
+else
+  pass "All $dod_fidelity_total Gherkin scenarios have faithful DoD items (Gate G068)"
+fi
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"

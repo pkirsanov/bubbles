@@ -51,6 +51,8 @@ Owning one planning artifact does NOT grant permission to mutate sibling plannin
 
 `bubbles.implement` may update `scopes.md` only for execution-progress concerns already defined by planning artifacts: inline evidence, DoD checkbox completion, and scope progress tied to completed work. It MUST NOT invent new Gherkin scenarios, Test Plan rows, or DoD structures that belong to `bubbles.plan`.
 
+**DoD Text Immutability (NON-NEGOTIABLE):** The text description of existing DoD items is owned by `bubbles.plan` and MUST NOT be modified by execution agents. `bubbles.implement` may only transition checkboxes (`- [ ]` → `- [x]`) and append inline evidence blocks beneath items. Rewriting a DoD item's behavioral claim to match what was delivered instead of what the Gherkin scenario specified is **content fabrication** — semantically equivalent to deleting the original DoD item and inventing a new one. If the planned DoD text does not match what can be delivered, the agent MUST route to `bubbles.plan` for a plan correction, not silently rewrite the item.
+
 ## Enforcement
 
 The ownership contract is enforced at three levels:
