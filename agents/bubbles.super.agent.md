@@ -87,6 +87,43 @@ For every request, super should return one of these outcomes:
 
 Whenever possible, give the user something they can run immediately or confirm immediately.
 
+### Subagent Response Contract (when invoked via `runSubagent`)
+
+When `bubbles.super` is invoked by another agent via `runSubagent` (not directly by the user), it MUST detect the subagent context and return machine-readable envelopes instead of user-facing markdown with slash commands.
+
+**Detection:** If the `runSubagent` prompt contains "RESOLUTION-ENVELOPE" or "FRAMEWORK-ENVELOPE", respond in subagent mode.
+
+**RESOLUTION-ENVELOPE format** (for intent resolution requests):
+
+```markdown
+## RESOLUTION-ENVELOPE
+- **invokedAs:** subagent
+- **mode:** <resolved workflow mode from workflows.yaml>
+- **specTargets:** ["specs/<NNN-feature-name>", ...]
+- **tags:** { "tdd": "true", "grillMode": "required-on-ambiguity", ... }
+- **rationale:** <1 sentence explaining why this mode and these targets>
+- **confidence:** high|medium|low
+```
+
+Resolution rules:
+1. Apply the same intent-to-mode matching, tag selection, and dynamic discovery logic used for direct user requests
+2. Scan `specs/` folders to resolve feature names to paths
+3. If multiple modes could fit, pick the most specific one (prefer `improve-existing` over `iterate` when intent is clear)
+4. Set `confidence: low` only when the intent is genuinely ambiguous — the calling agent will confirm with the user before proceeding
+5. Return tags using the same Tag Selection Matrix applied to direct user recommendations
+
+**FRAMEWORK-ENVELOPE format** (for framework operation requests):
+
+```markdown
+## FRAMEWORK-ENVELOPE
+- **invokedAs:** subagent
+- **operation:** <doctor|hooks|upgrade|metrics|lessons|status|...>
+- **result:** <operation output or summary>
+- **status:** success|failed|info
+```
+
+**When invoked directly by the user** (not via `runSubagent`), continue to use the existing Response Contract: slash commands, decision memos, and framework action execution as before. The subagent format is additive, not a replacement.
+
 ---
 
 ## User Input

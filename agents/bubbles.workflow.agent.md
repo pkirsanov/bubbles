@@ -49,6 +49,12 @@ handoffs:
   - label: Simplify Pass
     agent: bubbles.simplify
     prompt: Analyze code for unnecessary complexity, dead code, and over-engineering. Make cleanup changes directly.
+  - label: Intent Resolution
+    agent: bubbles.super
+    prompt: Resolve vague user intent into structured workflow parameters (mode, specTargets, tags). Return a RESOLUTION-ENVELOPE only.
+  - label: Work Discovery
+    agent: bubbles.iterate
+    prompt: Identify the next highest-priority work item. Return a WORK-ENVELOPE only (spec, scope, mode, workType) without executing the work.
 ---
 
 ## Agent Identity
@@ -521,6 +527,49 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
 ---
 
 ## Execution Model
+
+### Phase -1: Intent Resolution (MANDATORY — runs before Phase 0)
+
+Before parsing specs or selecting modes, classify the raw user input into one of four buckets and resolve it into structured parameters.
+
+**Input classification rules:**
+
+1. **STRUCTURED** — input contains an explicit `mode:` parameter AND/OR recognizable spec targets (numbers, paths, ranges) → **skip Phase -1**, proceed directly to Phase 0 with the provided parameters.
+
+2. **VAGUE** — input is free-text describing a goal, feature, problem, or desired outcome WITHOUT explicit `mode:` or spec targets (e.g., "improve the booking feature", "fix the calendar", "make this more robust", "deliver this feature") → **delegate to `bubbles.super`** for intent resolution.
+
+3. **CONTINUE** — input is empty, or contains continuation language ("continue", "next", "keep going", "what's next", "pick up where we left off", "do the next thing") → **delegate to `bubbles.iterate`** for work discovery.
+
+4. **FRAMEWORK** — input is about Bubbles framework operations ("doctor", "hooks", "upgrade", "status", "metrics", "lessons", "gates", "install") → **delegate to `bubbles.super`** for framework operation execution.
+
+**Execution per bucket:**
+
+**VAGUE → invoke `bubbles.super` via `runSubagent`:**
+
+Prompt contract:
+> "You are being invoked as a subagent by `bubbles.workflow` to resolve user intent into structured workflow parameters. Do NOT return slash commands or markdown recommendations. Instead, resolve the user's intent and return ONLY a `## RESOLUTION-ENVELOPE` section with the fields specified in your subagent response contract.
+> 
+> User intent: `{raw user input}`
+> 
+> Available specs: `{list of specs/ folders}`"
+
+Parse the returned `RESOLUTION-ENVELOPE` to extract `mode`, `specTargets`, and `tags`. If `confidence` is `low`, confirm with the user before proceeding. Then continue to Phase 0 with the resolved parameters injected as if the user had provided them explicitly.
+
+**CONTINUE → invoke `bubbles.iterate` via `runSubagent`:**
+
+Prompt contract:
+> "You are being invoked as a subagent by `bubbles.workflow` to identify the next highest-priority work item. Do NOT execute the work — only identify it. Scan state.json files, scopes.md, uservalidation.md, and fix.log to find the best next action. Return ONLY a `## WORK-ENVELOPE` section with the fields specified in your subagent picker contract."
+
+Parse the returned `WORK-ENVELOPE` to extract `spec`, `scope`, `mode`, and `workType`. Then continue to Phase 0 with the resolved spec as the target and the resolved mode as the workflow mode.
+
+**FRAMEWORK → invoke `bubbles.super` via `runSubagent`:**
+
+Prompt contract:
+> "You are being invoked as a subagent by `bubbles.workflow` to execute a framework operation. Execute the requested operation and return a `## FRAMEWORK-ENVELOPE` section with fields: `operation`, `result`, `status` (success/failed/info)."
+
+Parse the returned `FRAMEWORK-ENVELOPE` and report the result to the user. **STOP** — no phase execution is needed for framework operations.
+
+**Fallback:** If classification is ambiguous (could be VAGUE or STRUCTURED), prefer STRUCTURED interpretation. If classification is ambiguous between VAGUE and CONTINUE, prefer VAGUE (let super figure it out).
 
 ### Phase 0: Resolve Inputs
 

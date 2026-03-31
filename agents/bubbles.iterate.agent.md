@@ -58,6 +58,9 @@ handoffs:
   - label: Chaos Probes
     agent: bubbles.chaos
     prompt: Run stochastic browser automation/HTTP probes against live system to discover runtime issues.
+  - label: Intent Resolution
+    agent: bubbles.super
+    prompt: Resolve vague user intent into structured parameters (mode, specTargets, tags, workType). Return a RESOLUTION-ENVELOPE only.
 ---
 
 ## Agent Identity
@@ -169,6 +172,45 @@ When the user provides free-text input WITHOUT explicit `type:` or `mode:` param
 3. Extract time/iteration bounds → `minutes`, `iterations`, `run_mode`
 4. Extract focus area → `focus` parameter
 5. Confirm resolved parameters before starting
+
+### Vague Intent Delegation to `bubbles.super` (MANDATORY)
+
+When iterate receives free-text input that does NOT match any row in the Natural Language Input Resolution table above — i.e., it cannot confidently extract a `type`, `mode`, feature target, or work-type keyword — it MUST delegate intent resolution to `bubbles.super` via `runSubagent` before proceeding.
+
+**Detection:** If after applying the resolution steps above, BOTH `type` and feature target are unresolved AND the input is not a simple continuation request ("continue", "next", empty), invoke super:
+
+> `runSubagent("bubbles.super", "You are being invoked as a subagent by bubbles.iterate to resolve user intent into structured parameters. Return ONLY a RESOLUTION-ENVELOPE. User intent: {raw input}. Available specs: {specs/ listing}")`
+
+Parse the returned `RESOLUTION-ENVELOPE` to extract `mode`, `specTargets`, and `tags`. If `specTargets` resolves a feature, use it. If `mode` resolves, use it. Then proceed with normal iterate execution using the resolved parameters.
+
+**When NOT to delegate:** If the input clearly maps to a known `type:` or the user said "continue"/"next"/empty — iterate handles these natively without super.
+
+### Subagent Picker Contract (WORK-ENVELOPE)
+
+When `bubbles.iterate` is invoked by `bubbles.workflow` (or another orchestrator) via `runSubagent` with a prompt requesting work identification only (not execution), iterate MUST return a machine-readable envelope instead of executing the full iteration.
+
+**Detection:** If the `runSubagent` prompt contains "WORK-ENVELOPE" and "Do NOT execute the work", respond in picker mode.
+
+**WORK-ENVELOPE format:**
+
+```markdown
+## WORK-ENVELOPE
+- **invokedAs:** subagent-picker
+- **spec:** specs/<NNN-feature-name>
+- **scope:** <scope identifier or "auto" if scope selection should happen in Phase 0>
+- **mode:** <auto-selected workflow mode from Work-Type-to-Mode Mapping>
+- **workType:** <implement|bugfix|tests|docs|stabilize|gaps|harden|improve|chaos|...>
+- **priority:** <P0|P0.5|P1|P2|P3|P4>
+- **rationale:** <1 sentence explaining why this is the highest-priority work>
+```
+
+Picker mode rules:
+1. Apply the full Scope Selection Priority chain (P0 → P4) to identify the work item
+2. Apply the Work-Type-to-Mode Mapping to determine the appropriate mode
+3. Do NOT invoke any specialist agents, do NOT create artifacts, do NOT modify state
+4. If no work is found, return `scope: none` and `rationale: "No actionable work found"`
+
+**When invoked directly by the user** (not via `runSubagent` with WORK-ENVELOPE), continue to execute the full iteration with specialist dispatch as before. The picker mode is additive, not a replacement.
 
 ---
 

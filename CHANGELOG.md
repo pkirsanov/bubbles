@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Universal Entry Point — Workflow as Single Front Door (v3.3)
+
+- **Phase -1: Intent Resolution** — `bubbles.workflow` now accepts ANY input (vague natural language, continuation requests, framework ops, or structured parameters). A new Phase -1 classifies input into 4 buckets (STRUCTURED, VAGUE, CONTINUE, FRAMEWORK) and delegates to the appropriate agent via `runSubagent`:
+  - VAGUE → invokes `bubbles.super` for NLP intent resolution (returns RESOLUTION-ENVELOPE)
+  - CONTINUE → invokes `bubbles.iterate` for work discovery (returns WORK-ENVELOPE)
+  - FRAMEWORK → invokes `bubbles.super` for framework operation execution (returns FRAMEWORK-ENVELOPE)
+  - STRUCTURED → skips Phase -1 entirely (existing behavior unchanged)
+- **RESOLUTION-ENVELOPE** — New subagent response contract for `bubbles.super`. When invoked via `runSubagent`, super returns machine-readable `{ mode, specTargets, tags, confidence }` instead of user-facing slash commands. Direct user invocation behavior unchanged.
+- **WORK-ENVELOPE** — New subagent picker contract for `bubbles.iterate`. When invoked via `runSubagent` in picker mode, iterate returns `{ spec, scope, mode, workType, priority }` without executing work. Direct user invocation behavior unchanged.
+- **FRAMEWORK-ENVELOPE** — New subagent response contract for `bubbles.super` framework operations. Returns `{ operation, result, status }` for doctor, hooks, upgrade, metrics, etc.
+- **Iterate NLP delegation** — `bubbles.iterate` now delegates to `bubbles.super` when free-text input cannot be resolved by iterate's own Natural Language Input Resolution table. Zero logic duplication — super is the single NLP resolver.
+- **Handoff additions** — Added `bubbles.super` as handoff target for both `bubbles.workflow` (Intent Resolution, Framework Operations) and `bubbles.iterate` (Intent Resolution). Added `bubbles.iterate` as handoff target for `bubbles.workflow` (Work Discovery).
+- All existing modes, phases, gates, specialist dispatch, and direct agent invocation remain unchanged.
+
 ### Learning & Personalization (v3.2)
 
 - **Skill Evolution Loop** — Closed-loop learning from `lessons.md`. When the same problem pattern occurs 3+ times, the framework generates a skill proposal in `.specify/memory/skill-proposals.md`. User approves, `bubbles.create-skill` scaffolds the SKILL.md. Configured in `workflows.yaml` → `skillEvolution:`.
