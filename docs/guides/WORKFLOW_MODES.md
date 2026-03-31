@@ -411,6 +411,8 @@ analyze → ux
 | `docs-only` | Docs only | Pure docs |
 | `validate-only` | Validate only | Quick gate check |
 | `audit-only` | Audit only | Compliance |
+| `brainstorm` | Explore → bootstrap → harden → finalize | Idea exploration, no code |
+| `devops-to-doc` | DevOps → test → stabilize → security → validate → audit → docs → finalize | Operational delivery |
 | `resume-only` | Resume state | Picking up work |
 
 ---

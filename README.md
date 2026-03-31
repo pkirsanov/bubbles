@@ -224,6 +224,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 |:----:|-------|------|-------------|
 | <img src="icons/camera-crew.svg" width="20"> | `bubbles.status` | **Observer.** Reports state. Never interferes. Read-only. | Checking progress |
 | <img src="icons/camera-crew.svg" width="20"> | `bubbles.recap` | **Talking head.** Summarizes what happened in this session, what is in progress, and what comes next. | Quick conversation recap |
+| <img src="icons/lahey-bottle.svg" width="20"> | `bubbles.retro` | **Retrospective analyst.** Velocity metrics, gate health trends, hotspot analysis, and shipping patterns across sessions and specs. | Post-session or post-sprint retrospectives |
 | <img src="icons/trevor-handoff.svg" width="20"> | `bubbles.handoff` | **Session handoff.** Packages context for the next session. | End of session |
 | <img src="icons/cory-trevor-smokes.svg" width="20"> | `bubbles.setup` | **Framework setup.** Sets up or refreshes Bubbles project configuration and `.github` assets. | First-time project setup and framework refresh |
 | <img src="icons/t-cap.svg" width="20"> | `bubbles.commands` | **Command registry.** Manages the project command reference. | Updating command docs |

@@ -70,7 +70,9 @@
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and what comes next. | *"So basically what happened was..."* || <img src=\"../icons/lahey-bottle.svg\" width=\"28\"> | `bubbles.retro` | Jim Lahey (Bottle) | The liquor-fueled retrospective. Analyzes velocity, gate health, hotspots, and shipping patterns across sessions. | *\"The liquor helps me see the patterns, Randy.\"* || <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
+| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and what comes next. | *"So basically what happened was..."* |
+| <img src="../icons/lahey-bottle.svg" width="28"> | `bubbles.retro` | Jim Lahey (Bottle) | The liquor-fueled retrospective. Analyzes velocity, gate health, hotspots, and shipping patterns across sessions. | *"The liquor helps me see the patterns, Randy."* |
+| <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.setup` | Cory & Trevor | The errand duo. Set up or refresh the framework layer. Do the prep. | *"Smokes, let's go."* |
 | <img src="../icons/t-cap.svg" width="28"> | `bubbles.commands` | T | J-Roc's right hand. Makes the registry. Always there. | *"True."* |
 | <img src="../icons/sam-binoculars.svg" width="28"> | `bubbles.create-skill` | Sam Losco | Packages weird but useful specializations into something you can actually use again later. | *"I used to be a vet, you know. I got specialties."* |
@@ -86,7 +88,6 @@
 | `sunnyvale private-dancer` | `bubbles.grill` | *"You want answers? Put it under the light."* |
 | `sunnyvale worst-case-ontario` | `bubbles.chaos` | *"Worst case Ontario, something breaks"* |
 | `sunnyvale by-the-book` | `bubbles.audit --strict` | *"This is by the book now."* |
-| `sunnyvale i-am-the-liquor` | `bubbles.audit` | *"I AM the liquor."* |
 | `sunnyvale get-two-birds-stoned` | `bubbles.implement` + `bubbles.test` | *"Get two birds stoned at once"* |
 | `sunnyvale i-got-work-to-do` | `bubbles.implement` | *"I got work to do."* |
 | `sunnyvale smokes-lets-go` | `bubbles.setup` | *"Smokes, let's go."* |
@@ -159,6 +160,7 @@
 | `chaos-to-doc` | we-broke-it | Chaos → test → docs |
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
+| `brainstorm` | smokes-and-think | Explore ideas before building — produces design artifacts, no code |
 
 **Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `crossModelReview` (off|codex|terminal)
 
@@ -243,6 +245,7 @@
 | G064 | Child workflow depth | Only orchestrators may invoke child workflows, and nesting depth must stay bounded |
 | G065 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
 | G066 | Phase-claim provenance | Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory; cross-phase impersonation is fabrication |
+| G068 | DoD-Gherkin content fidelity | DoD items must faithfully represent the behavioral claims of their source Gherkin scenarios; no silent rewrites to match delivery |
 
 ---
 

@@ -119,6 +119,7 @@ Diagnostic/certification rule:
 | `bubbles.commands` | maintain command inventories and related framework command references | project-config and command docs |
 | `bubbles.create-skill` | scaffold or update repo-local skills | skills guidance plus shared governance index |
 | `bubbles.recap` | summarize current work, active state, and likely next steps without changing artifacts | prompt-specific recap guidance |
+| `bubbles.retro` | run post-session or post-sprint retrospectives with velocity metrics, gate health trends, hotspot analysis, and shipping patterns | prompt-specific retro guidance, git history, `state.json` metrics |
 
 ## Natural Language Input
 
