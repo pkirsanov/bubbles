@@ -43,6 +43,8 @@ If you want to run just the hardening sequence on existing code:
 /bubbles.workflow  stochastic-quality-sweep triggerAgents: regression,simplify,stabilize,security maxRounds: 8
 ```
 
+> **💡 Tip:** Run `/bubbles.retro hotspots` before hardening to identify bug magnets and worsening hotspots. This tells you which files deserve the most attention during the hardening pass.
+
 ## Zero-Loose-Ends Release Path
 
 If the requirement is not just "run the hardening agents" but "keep going until the whole feature is actually green," use:

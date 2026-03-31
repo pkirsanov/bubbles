@@ -10,6 +10,14 @@ You have an existing feature or product area and want to improve it, but you do 
 
 ## Step 1: Review The Right Thing
 
+If you want data-driven analysis of where the problems actually are before choosing a review type:
+
+```
+/bubbles.retro hotspots
+```
+
+This surfaces bug magnets, co-change coupling, bus factor risks, and churn trends — hard data to guide what you review and where.
+
 If the concern is engineering-only:
 
 ```

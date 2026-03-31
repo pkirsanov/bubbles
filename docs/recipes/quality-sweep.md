@@ -76,8 +76,9 @@ Like bottle kids — you never know where they'll hit, but they always find some
 ## Individual Quality Tools
 
 ```
-/bubbles.harden    # Deep hardening pass
-/bubbles.gaps      # Find missing pieces
-/bubbles.chaos     # Break things on purpose
-/bubbles.security  # Security scan
+/bubbles.harden         # Deep hardening pass
+/bubbles.gaps           # Find missing pieces
+/bubbles.chaos          # Break things on purpose
+/bubbles.security       # Security scan
+/bubbles.retro hotspots # Find bug magnets, hidden coupling, and bus factor risks
 ```

@@ -28,6 +28,8 @@ If you want assumptions challenged before the cleanup begins:
 /bubbles.workflow  <feature> mode: simplify-to-doc grillMode: required-on-ambiguity
 ```
 
+> **💡 Tip:** Run `/bubbles.retro hotspots` first to identify the highest-churn, highest-bug-fix-ratio files. This tells you where simplification will have the biggest impact — start with the bug magnets.
+
 ## What This Mode Does
 
 - Runs `bubbles.simplify` to reduce complexity

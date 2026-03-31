@@ -56,3 +56,5 @@ Use `bubbles.system-review` instead when:
 - you want feature, component, UX, or journey review
 - you want product-level or system-level prioritization
 - you want findings promoted into specs for cross-cutting work
+
+> **💡 Tip:** Run `/bubbles.retro hotspots` before launching a code review to identify the highest-churn and highest-bug-fix-ratio files. This helps you target the review scope at the areas that matter most — bug magnets, co-change coupling hotspots, and knowledge silos.
