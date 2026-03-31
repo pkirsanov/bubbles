@@ -737,25 +737,55 @@ decisionPolicy:
 
 # ── Cross-Model Review Registry ──
 #
+# ── Cross-Model Review Registry ──
+#
 # Optional multi-AI review capability. When enabled, code review or audit
 # phases can request an independent review from a different AI model.
 #
-# The model registry is USER-CONTROLLED. Bubbles does not auto-detect models.
-# The user specifies which models are available and approved.
+# DYNAMIC REGISTRY: The model list is maintained per-project in bubbles.config.json.
+# It is updated DYNAMICALLY based on actual usage:
 #
-# FRESHNESS: The registry includes a `lastVerified` date. When more than
-# 90 days have passed since lastVerified, bubbles.super and bubbles.workflow
-# will remind the user to refresh the registry (new models may be available,
-# old ones deprecated).
+# 1. When the user works with a model (any agent session), agents SHOULD
+#    increment `usageCount` and update `lastUsed` for that model in the registry.
+# 2. Models the user hasn't used in 90+ days get flagged for review.
+# 3. When the user switches to a new model not in the registry, agents SHOULD
+#    prompt: "You're using {model} which isn't in your model registry. Add it?"
+# 4. The `lastVerified` date triggers a full registry review reminder after 90 days.
+#
+# USER SOVEREIGNTY: The user always decides. Agents suggest additions/removals
+# based on usage patterns but never auto-modify the registry without confirmation.
 #
 crossModelReview:
-  enabled: false  # User must explicitly enable
+  enabled: false  # User must explicitly enable in bubbles.config.json
   freshnessPolicy:
     maxAgeDays: 90
     reminderAgent: bubbles.super
     reminderTrigger: workflow_start
     reminderMessage: "Your cross-model review registry was last verified {days} days ago. New models may be available. Run /bubbles.super update model registry to refresh."
-  # User-maintained model registry
+  # Dynamic usage tracking
+  usageTracking:
+    enabled: true  # When autoTrackUsage=true in config, agents update usage stats
+    trackFields:
+      usageCount: integer   # Incremented each time the model is used in a session
+      lastUsed: iso_date    # Updated to current date on each use
+    stalePeriodDays: 90     # Models unused for 90+ days are flagged for review
+    autoDiscovery:
+      # When the active session model is not in the registry, suggest adding it
+      promptOnUnknownModel: true
+      promptFormat: "You're using {model} which isn't in your model registry. Want to add it? (Role: {suggested_role})"
+      # Suggest role based on provider heuristics
+      roleHeuristics:
+        anthropic: primary
+        openai: reviewer
+        google: adversarial
+        meta: reviewer
+        mistral: reviewer
+    # Periodic usage report (part of /bubbles.retro output)
+    usageReport:
+      includeInRetro: true
+      reportFields: [ name, provider, role, usageCount, lastUsed, daysSinceLastUse ]
+      flagStaleModels: true  # Highlight models unused for >stalePeriodDays
+  # Model registry schema
   modelRegistry:
     configFile: .specify/memory/bubbles.config.json
     registryKey: crossModelReview.models
@@ -764,29 +794,9 @@ crossModelReview:
         provider: string     # e.g., "anthropic", "openai", "google"
         role: string         # "primary" | "reviewer" | "adversarial"
         available: boolean   # user-set — is this model currently accessible?
-        notes: string        # user notes — e.g., "1M context, best for deep code review"
-    # Example registry (user fills this in):
-    # models:
-    #   - name: claude-opus-4.6-1m
-    #     provider: anthropic
-    #     role: primary
-    #     available: true
-    #     notes: "1M tokens, deep analysis"
-    #   - name: gpt-5
-    #     provider: openai
-    #     role: reviewer
-    #     available: true
-    #     notes: "Good for adversarial challenge"
-    #   - name: gpt-4
-    #     provider: openai
-    #     role: reviewer
-    #     available: true
-    #     notes: "Fallback reviewer"
-    #   - name: gemini-3.1-pro
-    #     provider: google
-    #     role: adversarial
-    #     available: true
-    #     notes: "Occasional use for third opinion"
+        notes: string        # user notes
+        usageCount: integer  # dynamic — incremented on use
+        lastUsed: iso_date   # dynamic — updated on use
     lastVerified: null  # ISO date set by user when they confirm the registry
   # How cross-model review integrates with phases
   phaseIntegration:
