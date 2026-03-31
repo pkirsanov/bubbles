@@ -2,7 +2,27 @@
 
 > *"Julian's got a plan. A good plan this time."*
 
-Workflow modes define **which phases run** and **in what order** for a given piece of work. Choose the mode that matches what you're doing.
+Workflow modes define **which phases run** and **in what order** for a given piece of work.
+
+## Workflow Is The Universal Entry Point
+
+**`/bubbles.workflow` is the recommended entry point for all Bubbles work.** You don't need to know the mode, the spec target, or the exact parameters — just describe what you want:
+
+```
+/bubbles.workflow  improve the booking feature to be competitive
+/bubbles.workflow  continue
+/bubbles.workflow  fix the calendar bug
+/bubbles.workflow  spend 2 hours on whatever needs attention
+/bubbles.workflow  doctor
+```
+
+**How it works:**
+- **Structured input** (has `mode:` + spec target) → executes phases directly (existing behavior)
+- **Plain English** → delegates to `super` for intent resolution → gets mode + spec + tags → executes
+- **"Continue" / "next" / empty** → delegates to `iterate` for work-picking → gets next priority item → executes
+- **Framework ops** ("doctor", "hooks", "upgrade") → delegates to `super` for framework operations
+
+Direct agent calls (`/bubbles.super`, `/bubbles.iterate`, `/bubbles.implement`, etc.) still work for users who know exactly what they want.
 
 ## Review Is Not A Workflow Mode
 

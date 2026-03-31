@@ -330,7 +330,7 @@
 <div class="header">
   <img src="../icons/bubbles-logo.svg" alt="Bubbles Logo">
   <h1>BUBBLES</h1>
-  <div class="subtitle">Agent Orchestration System v3.0</div>
+  <div class="subtitle">Agent Orchestration System v3.2</div>
   <div class="subtitle">Sunnyvale Trailer Park Software Division</div>
   <div class="tagline">"It Ain't Rocket Appliances, But It Works."</div>
 </div>
@@ -360,7 +360,7 @@
     <div class="info">
       <div class="agent-name">bubbles.workflow</div>
       <div class="character">Bubbles</div>
-      <div class="role">Cross-spec orchestrator. Sees the whole board, keeps the phases moving, and runs the whole job.</div>
+      <div class="role"><strong>Universal entry point.</strong> Accepts plain English, structured commands, or "continue" — resolves intent via super, picks work via iterate, and drives phases to completion. Start here when in doubt.</div>
       <div class="quote">"Decent. I can see how all this fits together."</div>
     </div>
   </div>
@@ -369,7 +369,7 @@
     <div class="info">
       <div class="agent-name">bubbles.iterate</div>
       <div class="character">Jacob</div>
-      <div class="role">Single-iteration work picker. Quietly chooses the next high-priority slice and runs the right specialist chain without drama.</div>
+      <div class="role">Single-iteration work picker. Quietly chooses the next high-priority slice and runs the right specialist chain. Also accepts plain English via super delegation.</div>
       <div class="quote">"I can help with that, Mr. Lahey."</div>
     </div>
   </div>
@@ -1223,6 +1223,8 @@
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like"</span><span class="context">— developer profile auto-resolving taste decisions from observed patterns</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Two birds stoned at once"</span><span class="context">— parallelScopes: dag — independent scopes run concurrently via worktrees</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Count the empties"</span><span class="context">— activity tracking: only measurable metrics (invocations, durations, retries), never fabricated costs</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Just tell Bubbles"</span><span class="context">— start with /bubbles.workflow and describe what you want in plain English</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Bubbles figures it out"</span><span class="context">— workflow delegates to super for NLP + iterate for work-picking. Zero knowledge required.</span></div>
   </div>
 </div>
 
@@ -1462,6 +1464,8 @@
     <tr><td class="cmd">"The park knows what you like"</td><td class="maps-to">Personalized from observed behavior</td><td class="quote-col">Developer profile auto-resolving taste decisions from 3+ observations</td></tr>
     <tr><td class="cmd">"Same greasy mistake three times"</td><td class="maps-to">Repeated pattern detected</td><td class="quote-col">Skill evolution loop — lessons→pattern→skill proposal after 3+ occurrences</td></tr>
     <tr><td class="cmd">"Count the empties, Randy"</td><td class="maps-to">Count what actually happened</td><td class="quote-col">Activity tracking — only measurable metrics (invocations, durations, retries), no fabricated costs</td></tr>
+    <tr><td class="cmd">"Just tell Bubbles"</td><td class="maps-to">Start with /bubbles.workflow and describe what you want</td><td class="quote-col">Universal entry point — workflow resolves intent, picks work, drives phases</td></tr>
+    <tr><td class="cmd">"Bubbles figures it out"</td><td class="maps-to">Workflow delegates to super + iterate automatically</td><td class="quote-col">Intent delegation — no need to know which agent or mode to use</td></tr>
   </tbody>
 </table>
 
@@ -1504,7 +1508,7 @@
 <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
 <div class="footer">
   <div class="big-quote">"Have a good one, boys."</div>
-  <p>Bubbles Agent System v3.0 — Sunnyvale Trailer Park Software Division</p>
+  <p>Bubbles Agent System v3.2 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
   <p>67 Gates • 34 Agents • 30 Workflow Modes • 23 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->

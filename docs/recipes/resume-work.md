@@ -11,12 +11,16 @@ You were working on something in a previous session and need to pick up where yo
 ## The Command
 
 ```
+# Simplest — just say "continue":
+/bubbles.workflow  continue
+
+# Or resume explicitly:
 /bubbles.workflow  resume
 ```
 
 **What happens:**
-1. Reads `state.json` from the last active spec
-2. Determines what phase/scope was in progress
+1. "continue" delegates to `iterate` to pick the next highest-priority work
+2. "resume" reads `state.json` from the last active spec
 3. Continues from exactly where it stopped
 
 ## Alternative: Check Status First

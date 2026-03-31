@@ -18,8 +18,8 @@
 
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
-| <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | Cross-spec orchestrator. Sees the whole board, routes the work, and keeps the whole job moving. | *"Decent. I can see how all this fits together."* |
-| <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration work picker. Chooses the next executable slice and runs the right specialist chain. | *"I'll do whatever you need, Julian."* |
+| <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | **Universal entry point.** Cross-spec orchestrator that accepts plain English, structured commands, or "continue" — resolves intent via `super`, picks work via `iterate`, and drives phases to completion. Start here when in doubt. | *"Decent. I can see how all this fits together."* |
+| <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration work picker. Chooses the next executable slice and runs the right specialist chain. Also accepts plain English via `super` delegation. | *"I'll do whatever you need, Julian."* |
 | <img src="../icons/cory-cap.svg" width="28"> | `bubbles.bug` | Cory | Bug orchestrator. Reproduces the issue, packets the work, dispatches the right owners, and keeps going until the bug is actually closed. | *"I didn't wanna find it, but... there it is."* |
 
 ## <img src="../icons/julian-glass.svg" width="32"> Owners & Executors
@@ -399,22 +399,28 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 
 | Situation | Command |
 |-----------|---------|
-| New feature from scratch | `/bubbles.analyst  <describe feature>` |
-| Plan and scope a feature | `/bubbles.plan  <feature>` |
+| **Don't know what to do? Just describe it.** | **`/bubbles.workflow  <describe what you want in plain English>`** |
+| Continue from last session | `/bubbles.workflow  continue` |
+| New feature from scratch | `/bubbles.workflow  <describe feature> mode: product-to-delivery` |
 | Full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
 | Improve legacy feature with one stale-spec pass first | `/bubbles.workflow  improve-existing for <feature> specReview: once-before-implement` |
+| Fix a bug | `/bubbles.workflow  fix the <describe bug>` |
+| Plan and scope a feature | `/bubbles.plan  <feature>` |
+| Need framework help or advice? | `/bubbles.super  help me <describe goal>` |
 | Refresh framework setup | `/bubbles.setup  mode: refresh` |
-| Fix a bug | `/bubbles.bug  <describe bug>` |
-| **Don't know what to do?** | **`/bubbles.super  help me <describe goal>`** |
 
 ### Natural Language — Just Say What You Want
 
-All agents accept natural language. You don't need to know the exact mode or parameters — just describe what you want:
+All agents accept natural language. `/bubbles.workflow` is the **universal entry point** — it resolves intent via `super`, picks work via `iterate`, and drives phases to completion. Just describe what you want:
 
-| You Type | Agent Understands |
+| You Type | Workflow Understands |
 |----------|-------------------|
 | `/bubbles.workflow  improve the booking feature to be competitive` | mode: improve-existing, spec: booking |
-| `/bubbles.workflow  do 10 rounds of stabilize on booking` | mode: stochastic-quality-sweep, triggerAgents: stabilize, maxRounds: 10, spec: booking |
+| `/bubbles.workflow  continue` | Picks next highest-priority work via iterate |
+| `/bubbles.workflow  fix the calendar bug in page builder` | mode: bugfix-fastlane, spec: page-builder |
+| `/bubbles.workflow  do 10 rounds of stabilize on booking` | mode: stochastic-quality-sweep, triggerAgents: stabilize, maxRounds: 10 |
+| `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
+| `/bubbles.workflow  doctor` | Framework health check (delegates to super) |
 | `/bubbles.code-review  do an engineering sweep on the gateway` | profile: engineering-sweep, scope: service:gateway |
 | `/bubbles.system-review  review the booking feature as a user` | mode: full, scope: feature:booking |
 | `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
@@ -429,7 +435,7 @@ All agents accept natural language. You don't need to know the exact mode or par
 
 ### Using The Super as Your Assistant
 
-When you're not sure which agent to use, ask `bubbles.super` first:
+The super resolves intent and generates commands. Workflow delegates to it automatically for vague input, but you can also call `super` directly for advice or framework ops:
 
 | You Ask | The Super Responds With |
 |---------|-------------------|
@@ -540,6 +546,8 @@ When you're not sure which agent to use, ask `bubbles.super` first:
 | "Same greasy mistake three times" | Repeated pattern detected | Skill evolution — lessons promoting to skill proposal |
 | "Count the empties, Randy" | Count what's measurable | Activity tracking — only measurable metrics, no guesses |
 | \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
+| \"Just tell Bubbles\" | Start with `/bubbles.workflow` and describe what you want in plain English | Universal entry point — workflow resolves intent, picks work, drives phases |
+| \"Bubbles figures it out\" | Workflow delegates to super for NLP resolution and iterate for work-picking | Intent delegation — no need to know which agent or mode to use |
 ---
 
 <p align="center">

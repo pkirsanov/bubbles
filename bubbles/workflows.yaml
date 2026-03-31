@@ -364,13 +364,13 @@ lessonsMemory:
 #       → future workflows load improved skill automatically
 skillEvolution:
   enabled: true
-  triggerThreshold: 3          # Same lesson pattern 3+ times before proposing
+  triggerThreshold: 3 # Same lesson pattern 3+ times before proposing
   sourceFile: .specify/memory/lessons.md
   proposalFile: .specify/memory/skill-proposals.md
-  autoCreate: false            # Propose only, user approves
-  autoUpdate: false            # Propose only, user approves
+  autoCreate: false # Propose only, user approves
+  autoUpdate: false # Propose only, user approves
   reviewAgent: bubbles.super
-  reviewTrigger: workflow_start  # Surface proposals at start of workflow
+  reviewTrigger: workflow_start # Surface proposals at start of workflow
   proposalFormat: |
     ## Skill Proposal: {skill_name}
     - Pattern: {pattern_description}
@@ -393,25 +393,25 @@ developerProfile:
 
   collection:
     triggers:
-      - workflow_finalize     # Scan git + state.json at end of every workflow
-      - taste_decision        # Record choice immediately when user picks A/B
-      - retro_invocation      # Full historical analysis on demand
+    - workflow_finalize # Scan git + state.json at end of every workflow
+    - taste_decision # Record choice immediately when user picks A/B
+    - retro_invocation # Full historical analysis on demand
     scans:
-      gitDiff: true           # File types, naming changes, structural edits
-      stateHistory: true      # Mode choices, tag usage, agent invocation patterns
-      tasteDecisions: true    # Explicit A/B choices from decisionPolicy
+      gitDiff: true # File types, naming changes, structural edits
+      stateHistory: true # Mode choices, tag usage, agent invocation patterns
+      tasteDecisions: true # Explicit A/B choices from decisionPolicy
       codeModifications: true # Post-agent edits (git diff between agent commit and next)
-      scopeSizing: true       # DoD item count, lines per scope
+      scopeSizing: true # DoD item count, lines per scope
 
   promotion:
-    threshold: 3                          # Observations before pattern enters profile
+    threshold: 3 # Observations before pattern enters profile
     contradictionPolicy: immediate_suspend # Suspend on first contradiction
-    resolutionAfterContradiction: next_observation  # Next matching observation decides
+    resolutionAfterContradiction: next_observation # Next matching observation decides
 
   freshness:
-    freshDays: 90              # Entries younger than this auto-resolve decisions
-    agingDays: 180             # Entries older than this only suggest, don't auto-resolve
-    staleAction: surface_for_review  # Surfaced for user review
+    freshDays: 90 # Entries younger than this auto-resolve decisions
+    agingDays: 180 # Entries older than this only suggest, don't auto-resolve
+    staleAction: surface_for_review # Surfaced for user review
     reviewAgent: bubbles.super
     reviewTrigger: workflow_start
     reviewMessage: |
@@ -426,20 +426,20 @@ developerProfile:
       maxAgeDays: 180
       usage: suggest_only_no_auto_resolve
     stale:
-      maxAgeDays: null  # > 180 days
+      maxAgeDays: null # > 180 days
       usage: ignored_surfaced_for_review
     contradicted:
-      maxAgeDays: null  # Any age, opposite choice observed
+      maxAgeDays: null # Any age, opposite choice observed
       usage: suspended_immediately
 
   consumers:
-    - decisionPolicy          # Auto-resolve taste decisions (fresh patterns only)
-    - skillEvolution          # Inform skill proposals
-    # NOT consumed by: implement, test, validate, audit (NEVER)
+  - decisionPolicy # Auto-resolve taste decisions (fresh patterns only)
+  - skillEvolution # Inform skill proposals
+  # NOT consumed by: implement, test, validate, audit (NEVER)
 
   observationConfidence:
-    explicit: auto_resolve    # From taste decisions — high confidence
-    inferred: suggest_only    # From git scan — lower confidence, never auto-resolve
+    explicit: auto_resolve # From taste decisions — high confidence
+    inferred: suggest_only # From git scan — lower confidence, never auto-resolve
 
 # ── Activity Tracking (Measurable Metrics Only) ──
 #
@@ -456,19 +456,19 @@ metrics:
   enableCommand: "bubbles.sh metrics enable"
   disableCommand: "bubbles.sh metrics disable"
   activityTracking:
-    enabled: false  # Separate toggle from event metrics
+    enabled: false # Separate toggle from event metrics
     storageFile: .specify/metrics/activity.jsonl
     perAgentTracking: true
     perSpecTracking: true
     perScopeTracking: true
     measuredDimensions:
-      - invocationCount       # How many times each agent was called
-      - phaseDuration         # Wall-clock seconds per phase (from terminal timestamps)
-      - retryCount            # Self-healing retries consumed vs budget
-      - gatePassFailRate      # Per gate ID pass/fail ratio
-      - scopeCompletionTime   # First implement invocation to Done status
-      - linesChanged          # git diff --stat per scope
-      - phaseSkipRate         # Skipped vs executed phases
+    - invocationCount # How many times each agent was called
+    - phaseDuration # Wall-clock seconds per phase (from terminal timestamps)
+    - retryCount # Self-healing retries consumed vs budget
+    - gatePassFailRate # Per gate ID pass/fail ratio
+    - scopeCompletionTime # First implement invocation to Done status
+    - linesChanged # git diff --stat per scope
+    - phaseSkipRate # Skipped vs executed phases
     # Dimensions explicitly NOT tracked (not measurable):
     # - tokenCount            # Not exposed by VS Code Copilot API
     # - dollarCost            # Derived from unknown tokens = fabricated
@@ -831,23 +831,23 @@ decisionPolicy:
   # Only applies when agent is invoked by orchestrator, not direct user invocation
   activationCondition: callerMode=orchestrated
   mechanicalPrinciples:
-    - name: prefer_completeness
-      description: "When two approaches differ by <30% effort, choose the more complete one"
-    - name: match_existing_patterns
-      description: "Follow conventions already established in the codebase (file structure, naming, test patterns)"
-    - name: prefer_reversible
-      description: "When both options are viable, choose the one easier to undo"
-    - name: defer_ambiguous
-      description: "When confidence is below 60%, classify as taste decision"
-    - name: escalate_security
-      description: "Security-affecting decisions are ALWAYS taste decisions — never auto-resolved"
-    - name: use_prior_preferences
-      description: "If user made a similar choice in prior sessions (from learnings.jsonl), follow that pattern"
-    - name: respect_spec_constraints
-      description: "If spec.md or design.md already specifies the approach, follow it (not a decision at all)"
+  - name: prefer_completeness
+    description: "When two approaches differ by <30% effort, choose the more complete one"
+  - name: match_existing_patterns
+    description: "Follow conventions already established in the codebase (file structure, naming, test patterns)"
+  - name: prefer_reversible
+    description: "When both options are viable, choose the one easier to undo"
+  - name: defer_ambiguous
+    description: "When confidence is below 60%, classify as taste decision"
+  - name: escalate_security
+    description: "Security-affecting decisions are ALWAYS taste decisions — never auto-resolved"
+  - name: use_prior_preferences
+    description: "If user made a similar choice in prior sessions (from learnings.jsonl), follow that pattern"
+  - name: respect_spec_constraints
+    description: "If spec.md or design.md already specifies the approach, follow it (not a decision at all)"
   tasteDecisionHandling:
-    batchTiming: end_of_phase  # Collect during phase, present at boundary
-    maxPerPhase: 5  # If >5 taste decisions, the spec needs more clarity — route to bubbles.clarify
+    batchTiming: end_of_phase # Collect during phase, present at boundary
+    maxPerPhase: 5 # If >5 taste decisions, the spec needs more clarity — route to bubbles.clarify
     overflowAction: route_to_clarify
     format: |
       ## Taste Decisions (Require Your Input)
@@ -885,7 +885,7 @@ decisionPolicy:
 # based on usage patterns but never auto-modify the registry without confirmation.
 #
 crossModelReview:
-  enabled: false  # User must explicitly enable in bubbles.config.json
+  enabled: false # User must explicitly enable in bubbles.config.json
   freshnessPolicy:
     maxAgeDays: 90
     reminderAgent: bubbles.super
@@ -893,11 +893,11 @@ crossModelReview:
     reminderMessage: "Your cross-model review registry was last verified {days} days ago. New models may be available. Run /bubbles.super update model registry to refresh."
   # Dynamic usage tracking
   usageTracking:
-    enabled: true  # When autoTrackUsage=true in config, agents update usage stats
+    enabled: true # When autoTrackUsage=true in config, agents update usage stats
     trackFields:
-      usageCount: integer   # Incremented each time the model is used in a session
-      lastUsed: iso_date    # Updated to current date on each use
-    stalePeriodDays: 90     # Models unused for 90+ days are flagged for review
+      usageCount: integer # Incremented each time the model is used in a session
+      lastUsed: iso_date # Updated to current date on each use
+    stalePeriodDays: 90 # Models unused for 90+ days are flagged for review
     autoDiscovery:
       # When the active session model is not in the registry, suggest adding it
       promptOnUnknownModel: true
@@ -913,20 +913,20 @@ crossModelReview:
     usageReport:
       includeInRetro: true
       reportFields: [ name, provider, role, usageCount, lastUsed, daysSinceLastUse ]
-      flagStaleModels: true  # Highlight models unused for >stalePeriodDays
+      flagStaleModels: true # Highlight models unused for >stalePeriodDays
   # Model registry schema
   modelRegistry:
     configFile: .specify/memory/bubbles.config.json
     registryKey: crossModelReview.models
     schema:
-      - name: string        # e.g., "claude-opus-4.6-1m"
-        provider: string     # e.g., "anthropic", "openai", "google"
-        role: string         # "primary" | "reviewer" | "adversarial"
-        available: boolean   # user-set — is this model currently accessible?
-        notes: string        # user notes
-        usageCount: integer  # dynamic — incremented on use
-        lastUsed: iso_date   # dynamic — updated on use
-    lastVerified: null  # ISO date set by user when they confirm the registry
+    - name: string # e.g., "claude-opus-4.6-1m"
+      provider: string # e.g., "anthropic", "openai", "google"
+      role: string # "primary" | "reviewer" | "adversarial"
+      available: boolean # user-set — is this model currently accessible?
+      notes: string # user notes
+      usageCount: integer # dynamic — incremented on use
+      lastUsed: iso_date # dynamic — updated on use
+    lastVerified: null # ISO date set by user when they confirm the registry
   # How cross-model review integrates with phases
   phaseIntegration:
     codeReview:
@@ -969,50 +969,50 @@ modes:
     enabled: true
     # Re-evaluate skip decisions when these events occur
     reevaluateTriggers:
-      - artifact_modified  # spec.md, design.md, or scopes.md changed by a prior phase
-      - scope_surface_expanded  # new files/directories added to scope plan
-      - gate_failure  # a gate that was met pre-skip now fails (e.g., security finding added)
-      - phase_routed_new_work  # a prior phase routed work that changes relevance
+    - artifact_modified # spec.md, design.md, or scopes.md changed by a prior phase
+    - scope_surface_expanded # new files/directories added to scope plan
+    - gate_failure # a gate that was met pre-skip now fails (e.g., security finding added)
+    - phase_routed_new_work # a prior phase routed work that changes relevance
     rules:
-      - phase: simplify
-        skipWhen: scope_changed_fewer_than_50_lines
-        reason: "Simplification pass skipped — scope delta is small enough to not warrant a dedicated pass"
-      - phase: stabilize
-        skipWhen: scope_has_no_sla_or_perf_targets
-        reason: "Stability pass skipped — scope defines no latency SLAs or performance targets"
-      - phase: devops
-        skipWhen: scope_has_no_ci_deploy_or_infra_changes
-        reason: "DevOps pass skipped — scope does not modify CI, deployment, monitoring, or infrastructure"
-      - phase: chaos
-        skipWhen: scope_is_docs_only_or_config_only
-        reason: "Chaos pass skipped — scope is documentation or configuration only, no runtime behavior to probe"
-      - phase: interrogate  # grill
-        skipWhen: scope_has_no_ambiguity_markers
-        reason: "Grill pass skipped — scope has clear requirements with no ambiguity markers"
-      - phase: security
-        skipWhen: scope_has_no_auth_input_crypto_or_trust_boundary_changes
-        reason: "Security pass skipped — scope does not touch authentication, input handling, crypto, or trust boundaries"
-      - phase: regression
-        skipWhen: scope_is_new_feature_with_no_prior_specs
-        reason: "Regression pass skipped — no prior specs exist that could be affected"
+    - phase: simplify
+      skipWhen: scope_changed_fewer_than_50_lines
+      reason: "Simplification pass skipped — scope delta is small enough to not warrant a dedicated pass"
+    - phase: stabilize
+      skipWhen: scope_has_no_sla_or_perf_targets
+      reason: "Stability pass skipped — scope defines no latency SLAs or performance targets"
+    - phase: devops
+      skipWhen: scope_has_no_ci_deploy_or_infra_changes
+      reason: "DevOps pass skipped — scope does not modify CI, deployment, monitoring, or infrastructure"
+    - phase: chaos
+      skipWhen: scope_is_docs_only_or_config_only
+      reason: "Chaos pass skipped — scope is documentation or configuration only, no runtime behavior to probe"
+    - phase: interrogate # grill
+      skipWhen: scope_has_no_ambiguity_markers
+      reason: "Grill pass skipped — scope has clear requirements with no ambiguity markers"
+    - phase: security
+      skipWhen: scope_has_no_auth_input_crypto_or_trust_boundary_changes
+      reason: "Security pass skipped — scope does not touch authentication, input handling, crypto, or trust boundaries"
+    - phase: regression
+      skipWhen: scope_is_new_feature_with_no_prior_specs
+      reason: "Regression pass skipped — no prior specs exist that could be affected"
     # Phases that NEVER skip regardless of relevance rules
     neverSkip:
-      - select
-      - bootstrap
-      - implement
-      - test
-      - validate
-      - finalize
-      - docs  # docs must always sync after any change
-      - audit  # audit is the final quality gate, never optional
+    - select
+    - bootstrap
+    - implement
+    - test
+    - validate
+    - finalize
+    - docs # docs must always sync after any change
+    - audit # audit is the final quality gate, never optional
     # How skip decisions are recorded
     skipRecordSchema:
       phase: string
       outcome: skipped
       reason: string
-      changedSurface: list  # dirs/files that were evaluated
-      reevaluated: boolean  # true if skip was re-evaluated and upheld
-      reevaluationTrigger: string  # which trigger caused re-evaluation (if any)
+      changedSurface: list # dirs/files that were evaluated
+      reevaluated: boolean # true if skip was re-evaluated and upheld
+      reevaluationTrigger: string # which trigger caused re-evaluation (if any)
 
   value-first-e2e-batch:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.

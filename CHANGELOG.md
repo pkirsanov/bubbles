@@ -16,6 +16,17 @@
 - **Handoff additions** — Added `bubbles.super` as handoff target for both `bubbles.workflow` (Intent Resolution, Framework Operations) and `bubbles.iterate` (Intent Resolution). Added `bubbles.iterate` as handoff target for `bubbles.workflow` (Work Discovery).
 - All existing modes, phases, gates, specialist dispatch, and direct agent invocation remain unchanged.
 
+### Docs, Prefix Rule, G068 Issue (v3.3)
+
+- **Command prefix rule strengthened** — The `/` slash prefix rule for agent commands is now NON-NEGOTIABLE in `agent-common.md` and explicitly added to `bubbles.recap`, `bubbles.handoff`, and `bubbles.status` agents. All agents generating next-step commands or continuation options MUST use `/bubbles.*`, never `@bubbles.*`.
+- **Workflow emphasized as universal entry point** across all docs:
+  - CHEATSHEET.md: workflow card updated, "Starting a Job" table reordered, natural language section rewritten, new vocabulary entries ("Just tell Bubbles", "Bubbles figures it out")
+  - HTML cheatsheet: workflow card, iterate card, vocabulary, Rickyisms updated, version bumped to v3.2
+  - WORKFLOW_MODES.md: new "Workflow Is The Universal Entry Point" section with examples
+  - AGENT_MANUAL.md: workflow promoted to "Start Here First" with usage examples
+  - Recipes: new `just-tell-bubbles.md` recipe, updated `ask-the-super-first.md` with v3.2 note, updated `resume-work.md` with "continue" shortcut
+- **G068 issue filed** — `docs/issues/G068-word-overlap-threshold.md` documents the false-positive matching problem where `stg_significant_words` exclusion list and 3-word overlap threshold prevent legitimate DoD items from matching their source Gherkin scenarios. Proposes lowering min word length from 4→3, reducing exclusion list, and considering percentage-based thresholds.
+
 ### Learning & Personalization (v3.2)
 
 - **Skill Evolution Loop** — Closed-loop learning from `lessons.md`. When the same problem pattern occurs 3+ times, the framework generates a skill proposal in `.specify/memory/skill-proposals.md`. User approves, `bubbles.create-skill` scaffolds the SKILL.md. Configured in `workflows.yaml` → `skillEvolution:`.

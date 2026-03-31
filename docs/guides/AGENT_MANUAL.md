@@ -6,9 +6,19 @@ Authoritative operating policy lives under `agents/bubbles_shared/`. This manual
 
 ## Start Here First
 
+### bubbles.workflow (Universal Entry Point)
+
+**Start here.** `/bubbles.workflow` accepts plain English, structured commands, or "continue" and drives the right workflow to completion. It delegates to `super` for intent resolution and `iterate` for work-picking — you don't need to know which agent, mode, or parameters to use.
+
+```
+/bubbles.workflow  improve the booking feature
+/bubbles.workflow  continue
+/bubbles.workflow  specs/042 mode: full-delivery
+```
+
 ### bubbles.super
 
-Use when you do not know which agent, mode, or sequence fits the task.
+Use for framework operations (doctor, hooks, upgrade, metrics) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input.
 
 Primary references:
 - `bubbles/workflows.yaml`
@@ -53,7 +63,7 @@ Common source modules:
 
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
-| `bubbles.workflow` | run end-to-end spec delivery or resume a workflow | `bubbles/workflows.yaml`, `scope-workflow.md`, `state-gates.md` |
+| `bubbles.workflow` | **universal entry point** — run any Bubbles work by describing it in plain English, structured commands, or "continue" | `bubbles/workflows.yaml`, `scope-workflow.md`, `state-gates.md` |
 | `bubbles.iterate` | pick the highest-priority next work slice inside an existing spec and drive one iteration through the right specialists | `scope-workflow.md`, `completion-governance.md`, `quality-gates.md` |
 | `bubbles.bug` | investigate a bug, create bug artifacts, and dispatch the required fix workflow | `artifact-lifecycle.md`, `completion-governance.md`, `quality-gates.md` |
 

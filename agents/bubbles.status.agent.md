@@ -11,6 +11,7 @@ description: Report current status of Bubbles progress including task/scope comp
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Prefer **read-only** operation (no code/doc changes)
 - If any corrective action is needed, recommend the appropriate `bubbles.*` command under a classified `specs/...` feature, bug, or ops target
+- **Command prefix rule (ABSOLUTE):** When recommending commands, ALWAYS use the `/` slash prefix (`/bubbles.workflow`, `/bubbles.validate`). NEVER use `@bubbles.*`.
 - **Report test quality observations** — when reporting test status, flag if tests appear to be proxies (status-code-only E2E, mock-heavy integration) that may not validate real user scenarios
 
 **Non-goals:**

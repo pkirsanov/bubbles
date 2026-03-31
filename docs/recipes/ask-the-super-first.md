@@ -2,9 +2,9 @@
 
 > *"I'm the trailer park supervisor. Start here and I'll tell you the next move."*
 
-Use `bubbles.super` as the default help and assistant agent for Bubbles. This is the recipe for turning vague goals, messy problems, or framework confusion into the exact next prompt or command.
+**Note:** Since v3.2, `/bubbles.workflow` is the **universal entry point** — it delegates to `super` automatically for vague input. You can now type `/bubbles.workflow improve the booking feature` directly and workflow will resolve the intent via super internally. Use `/bubbles.super` directly when you want framework ops (doctor, hooks, upgrade) or when you want command *recommendations* without execution.
 
-Use direct specialist or workflow commands when you already know the exact target. `bubbles.super` is the front door for ambiguity, not a mandatory hop in front of explicit commands.
+Use `bubbles.super` as the help and assistant agent for Bubbles. This is the recipe for turning vague goals, messy problems, or framework confusion into the exact next prompt or command.
 
 ## When To Use It
 

@@ -27,4 +27,5 @@ description: Session recap — summarize what was done, what's in progress, and 
 - Do NOT modify any files or state.
 - Do NOT record execution history or phase claims — this agent is purely informational.
 - Continuation suggestions are informational only; they must not be treated as completion state, copied into `report.md`, or interpreted as deferred required work.
+- **Command prefix rule (ABSOLUTE):** When showing continuation options or suggested next commands, ALWAYS use the `/` slash prefix: `/bubbles.workflow`, `/bubbles.implement`, `/bubbles.test`. NEVER use the `@` prefix (`@bubbles.workflow` is WRONG). The `/` prefix invokes the agent as a slash command in VS Code Copilot Chat.
 - If no spec work is active, note that and focus on conversation content.

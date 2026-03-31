@@ -10,6 +10,7 @@ description: Create a manual handoff packet for moving a long session into a new
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - This is guidance-only; it must not modify code or docs
+- **Command prefix rule (ABSOLUTE):** When showing resume commands or continuation prompts, ALWAYS use the `/` slash prefix (`/bubbles.workflow`, `/bubbles.iterate`). NEVER use `@bubbles.*`.
 
 **Non-goals:**
 - Any repository changes
