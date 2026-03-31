@@ -1539,7 +1539,7 @@ modes:
       requireIntegrationCompleteness: true
 
   devops-to-doc:
-    description: Execute focused DevOps work for an existing feature or bug: CI/CD, build, deployment, monitoring, observability, or release automation changes, then run the quality chain and sync docs.
+    description: "Execute focused DevOps work for an existing feature or bug: CI/CD, build, deployment, monitoring, observability, or release automation changes, then run the quality chain and sync docs."
     statusCeiling: done
     phaseOrder: [ select, bootstrap, devops, test, stabilize, security, validate, audit, docs, finalize ]
     requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G010, G011, G012, G018, G019, G020, G021, G022, G023, G024, G025, G027, G028, G029, G030, G031, G033, G035, G050, G054, G055, G056, G057, G061 ]
