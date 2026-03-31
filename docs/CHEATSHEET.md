@@ -8,17 +8,17 @@
 
 ---
 
-## <img src="../icons/lahey-badge.svg" width="32"> Start Here
+## <img src="../icons/bubbles-glasses.svg" width="32"> Start Here — Universal Entry Point
 
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
-| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles.super` | Mr. Lahey | First-touch assistant. The park super for prompts, framework help, workflow advice, and getting the right next move. | *"I'm the trailer park supervisor. Start here and I'll tell you the next move."* |
+| <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | **Universal entry point.** Just describe what you want. Accepts plain English, structured commands, or "continue" — resolves intent via `super`, picks work via `iterate`, and drives all phases to completion. | *"Decent. I can see how all this fits together. Just tell me what you need."* |
+| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles.super` | Mr. Lahey | Framework ops & advice. NLP resolver, command generator, health checks, hooks, gates, upgrades. Workflow delegates to him automatically for vague input. | *"I'm the trailer park supervisor. I'll tell you the next move."* |
 
-## <img src="../icons/bubbles-glasses.svg" width="32"> Orchestrators
+## <img src="../icons/jacob-hardhat.svg" width="32"> Orchestrators
 
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
-| <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | **Universal entry point.** Cross-spec orchestrator that accepts plain English, structured commands, or "continue" — resolves intent via `super`, picks work via `iterate`, and drives phases to completion. Start here when in doubt. | *"Decent. I can see how all this fits together."* |
 | <img src="../icons/jacob-hardhat.svg" width="28"> | `bubbles.iterate` | Jacob | Single-iteration work picker. Chooses the next executable slice and runs the right specialist chain. Also accepts plain English via `super` delegation. | *"I'll do whatever you need, Julian."* |
 | <img src="../icons/cory-cap.svg" width="28"> | `bubbles.bug` | Cory | Bug orchestrator. Reproduces the issue, packets the work, dispatches the right owners, and keeps going until the bug is actually closed. | *"I didn't wanna find it, but... there it is."* |
 

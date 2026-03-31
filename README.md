@@ -29,6 +29,17 @@
 
 Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work.
 
+**One entry point. Just describe what you want:**
+
+```
+/bubbles.workflow  improve the booking feature to be competitive
+/bubbles.workflow  fix the calendar bug
+/bubbles.workflow  continue
+/bubbles.workflow  spend 2 hours on whatever needs attention
+```
+
+Workflow resolves your intent, picks the right mode, and drives specialists to completion. No need to memorize agents, modes, or parameters.
+
 Think of it as a trailer park supervisor for your codebase. Except this one actually works.
 
 <table>
@@ -96,9 +107,9 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 34 agent definitions
+│   ├── bubbles.workflow.agent.md    # 34 agent definitions — workflow is the universal entry point
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
+│   ├── bubbles.super.agent.md       # Framework ops, NLP resolution, command advice
 │   ├── ...
 │   └── bubbles_shared/              # Shared governance docs
 │       ├── agent-common.md
@@ -142,7 +153,7 @@ specs/                                   # Feature/bug spec folders
   <img src="pictures/bazaar_v5_agent_icons_presentation.svg" width="900" alt="Bubbles Agent Network Presentation Layout">
 </p>
 
-Every agent has a job. Start with the super when you need help, then hand off to the right specialist.
+Every agent has a job. Start with `/bubbles.workflow` — it figures out which specialists to call. Use `/bubbles.super` for framework ops and advice.
 
 ### Artifact Ownership
 
@@ -171,18 +182,18 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 - Cross-cutting infrastructure and operational delivery work lives under `specs/_ops/OPS-*`.
 - Ops packets use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json`.
 
-### <img src="icons/lahey-badge.svg" width="24"> Start Here
+### <img src="icons/bubbles-glasses.svg" width="24"> Start Here — Universal Entry Point
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
-| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **The park super.** First-touch assistant for prompts, workflow guidance, framework troubleshooting, and getting the right next move without memorizing Bubbles. | When you're unsure what to do, need help using the framework, or want the exact command |
+| <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **Universal entry point.** Accepts plain English, structured commands, or "continue". Resolves intent via `super`, picks work via `iterate`, drives all phases to completion. | **Always. Just describe what you want.** |
+| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **Framework ops & advice.** NLP resolver, command generator, framework health, hooks, gates, upgrades. Workflow delegates to it automatically for vague input. | Framework operations, advice without execution |
 
-### <img src="icons/bubbles-glasses.svg" width="24"> Orchestrators
+### <img src="icons/jacob-hardhat.svg" width="24"> Orchestrators
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
-| <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **The orchestrator.** Bubbles sees the whole board, keeps the pieces moving, and runs the full operation. | Starting any multi-phase or multi-spec workflow |
-| <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration through the right specialists. | Continuing existing spec work without choosing phases by hand |
+| <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration. Also accepts plain English via `super` delegation. | Continuing existing spec work without choosing phases by hand |
 | <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug orchestrator.** Reproduces, packets, routes, and drives the fix workflow until the defect is actually closed. | Investigating and routing bug work end to end |
 
 ### <img src="icons/julian-glass.svg" width="24"> Owners And Executors
@@ -236,59 +247,51 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 
 ### 0. Setup (after install)
 ```
-/bubbles.super                       — Ask the super first for help, the right command, or a framework fix
+/bubbles.super  doctor                — Check framework health
 /bubbles.commands                     — Auto-detect project, generate command registry
 /bubbles.setup mode: refresh          — Verify framework setup completeness
 ```
 
-### 1. Plan a Feature
-```
-/bubbles.analyst  Build a user authentication system with JWT tokens
-```
+### 1. Just Tell Workflow What You Want
 
-If you want the idea challenged before it turns into artifacts:
+**You don't need to know which agent, mode, or parameters to use. Workflow figures it out.**
 
 ```
-/bubbles.grill  Build a user authentication system with JWT tokens
+# Describe your goal in plain English — workflow resolves the right mode and drives it:
+/bubbles.workflow  Build a user authentication system with JWT tokens
+/bubbles.workflow  improve the booking feature to be competitive
+/bubbles.workflow  fix the calendar bug in page builder
+/bubbles.workflow  spend 2 hours on whatever needs attention
+
+# Continue from where you left off:
+/bubbles.workflow  continue
+
+# Or use structured mode when you know exactly what you want:
+/bubbles.workflow  specs/042 mode: full-delivery tdd: true
 ```
 
-### 2. Design It
-```
-/bubbles.design   Create the technical design for auth
-```
+### 2. How It Works Under The Hood
 
-`bubbles.design` no longer backfills missing business requirements itself. If `spec.md` is incomplete, it routes that work to `bubbles.analyst` first.
+Workflow's Phase -1 classifies your input and delegates:
 
-### 3. Break Into Scopes
-```
-/bubbles.plan     Create scopes for the auth feature
-```
+| Your Input | What Happens |
+|-----------|-------------|
+| Plain English | Delegates to `super` for NLP resolution → gets mode + spec + tags → executes |
+| "Continue" / "next" | Delegates to `iterate` for work-picking → gets next priority item → executes |
+| Structured (`mode:` + spec) | Skips resolution, executes phases directly |
+| Framework ops ("doctor", "hooks") | Delegates to `super` for framework operations |
 
-`bubbles.plan` is the only planning owner. If validation, hardening, security, or gap analysis discovers missing Gherkin scenarios, Test Plan rows, DoD items, or `uservalidation.md`, those agents route the change back to `bubbles.plan`.
+### 3. Direct Agents (When You Know The Target)
 
-### 4. Implement
-```
-/bubbles.implement  Execute scope 1 of auth
-```
+You can still call any specialist directly:
 
-### 5. Test
 ```
-/bubbles.test     Run all tests for the auth feature
-```
-
-### 6. Review Code Directly
-```
-/bubbles.code-review   profile: engineering-sweep scope: path:services/gateway output: summary-doc
-```
-
-### 7. Review A Feature Or System
-```
-/bubbles.system-review   mode: full scope: feature:auth output: summary-doc
-```
-
-### 8. Ship It
-```
-/bubbles.workflow  full-delivery for auth feature
+/bubbles.analyst   Build a user authentication system with JWT tokens
+/bubbles.implement Execute scope 1 of auth
+/bubbles.test      Run all tests for the auth feature
+/bubbles.code-review  profile: engineering-sweep scope: path:services/gateway
+/bubbles.system-review  mode: full scope: feature:auth output: summary-doc
+/bubbles.super     help me choose the right workflow mode
 ```
 
 ---
@@ -340,7 +343,7 @@ Control-plane rules:
 - Diagnostic and certification phases route foreign-owned follow-up; they do not perform inline remediation.
 - Child workflows are orchestrator-only and bounded in depth.
 
-Use `bubbles.super` as the default natural-language front door when you need help translating goals into the right agent, workflow mode, or command sequence. If you already know the exact specialist or mode, call it directly instead of adding an unnecessary `super` hop.
+Use `/bubbles.super` for framework operations (doctor, hooks, upgrade, metrics) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input.
 
 ---
 
@@ -397,28 +400,42 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 
 > "Boys, we need a plan." — Here's what to type.
 
+**Start with `/bubbles.workflow` — it handles everything:**
+
 | I Want To... | Run This |
 |-------------|----------|
-| Start a new feature from scratch | `/bubbles.analyst  <describe feature>` |
-| Reconcile and redesign an existing feature | `/bubbles.workflow  redesign-existing for <feature>` |
-| Fix a bug | `/bubbles.bug  <describe bug>` |
+| **Just describe what I want** | **`/bubbles.workflow  <describe it in plain English>`** |
+| **Continue where I left off** | **`/bubbles.workflow  continue`** |
+| Start a new feature from scratch | `/bubbles.workflow  <describe feature>` |
+| Improve an existing feature | `/bubbles.workflow  improve <feature>` |
+| Fix a bug | `/bubbles.workflow  fix the <describe bug>` |
 | Run the full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
-| Review code directly and get engineering priorities | `/bubbles.code-review  scope: full-repo output: summary-only` |
-| Review a feature or component and turn findings into specs | `/bubbles.system-review  mode: full scope: component:<name> output: create-specs` |
+| Reconcile and redesign | `/bubbles.workflow  redesign-existing for <feature>` |
+| Harden the code quality | `/bubbles.workflow  harden <feature>` |
+| Break things on purpose | `/bubbles.workflow  chaos test <feature>` |
+| Spend time on whatever | `/bubbles.workflow  spend 2 hours on whatever needs attention` |
+| Maximum assurance delivery | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+
+**Direct agents (when you know the target):**
+
+| I Want To... | Run This |
+|-------------|----------|
+| Review code directly | `/bubbles.code-review  scope: full-repo output: summary-only` |
+| Review a feature holistically | `/bubbles.system-review  mode: full scope: component:<name>` |
 | Check what's going on | `/bubbles.status` |
 | Something's not right, validate it | `/bubbles.validate` |
-| Find gaps in my implementation | `/bubbles.gaps` |
-| Check for regressions | `/bubbles.regression` |
-| Harden the code quality | `/bubbles.harden` |
-| Break things on purpose | `/bubbles.chaos` |
 | Hand off to next session | `/bubbles.handoff` |
-| Ask the super for help | `/bubbles.super  help me get this repo ready` |
+
+**Framework operations:**
+
+| I Want To... | Run This |
+|-------------|----------|
 | Check project health | `/bubbles.super  doctor` |
 | Install git hooks | `/bubbles.super  install hooks` |
 | Upgrade bubbles | `/bubbles.super  upgrade` |
 | Add a custom quality gate | `/bubbles.super  add a pre-push gate for license checking` |
 | View scope dependencies | `/bubbles.super  show dag for 042` |
-| Enable metrics collection | `/bubbles.super  enable metrics` |
+| Get help choosing a mode | `/bubbles.super  help me <describe goal>` |
 
 See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 
@@ -431,9 +448,9 @@ bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
 ├── agents/                    # 34 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
-│   ├── bubbles.workflow.agent.md
+│   ├── bubbles.workflow.agent.md  # Universal entry point
 │   ├── bubbles.implement.agent.md
-│   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
+│   ├── bubbles.super.agent.md     # Framework ops & NLP resolution
 │   └── ...
 ├── prompts/                   # 34 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
