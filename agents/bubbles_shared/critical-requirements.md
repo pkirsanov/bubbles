@@ -96,11 +96,13 @@
    - README tables, capability ledgers, feature matrices, and user-facing status claims must be verified against real code paths before they can assert a capability is delivered.
    - Docs-only evidence cannot close runtime work. Delivered-status claims require implementation evidence plus executed proof.
 
-19. **Framework File Immutability**
-   - Agents MUST NEVER create, modify, or delete files in Bubbles framework-managed directories: `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, `.github/prompts/bubbles.*.prompt.md`, `.github/bubbles/workflows.yaml`, `.github/bubbles/hooks.json`, `.github/instructions/bubbles-*.instructions.md`, or `.github/skills/bubbles-*/`.
+19. **Framework File Immutability — Upstream-First Rule**
+   - Agents MUST NEVER create, modify, or delete files in Bubbles framework-managed directories of downstream projects: `.github/bubbles/scripts/`, `.github/agents/bubbles_shared/`, `.github/agents/bubbles.*.agent.md`, `.github/prompts/bubbles.*.prompt.md`, `.github/bubbles/workflows.yaml`, `.github/bubbles/hooks.json`, `.github/instructions/bubbles-*.instructions.md`, or `.github/skills/bubbles-*/`.
    - These files are owned by the Bubbles framework and updated exclusively via `install.sh` upgrades.
-   - If a framework script has a bug or needs enhancement, the change MUST be proposed upstream to the Bubbles repository — not patched locally.
-   - Downstream repos may record those requests only in project-owned proposal artifacts such as `.github/bubbles-project/proposals/` or via `bubbles framework-proposal <slug>`.
+   - **Upstream-First Flow (ABSOLUTE):** ALL Bubbles framework changes — governance docs, agent definitions, shared modules, scripts, workflows, instructions, skills, prompts — MUST be made in the **canonical Bubbles repository only**. Downstream projects (any repo that has Bubbles installed under `.github/`) MUST NEVER receive direct edits to framework-managed files. After changes are committed in the canonical Bubbles repo, downstream projects are updated using the standard Bubbles upgrade command (`bash .github/bubbles/scripts/cli.sh upgrade` or `install.sh`). Agents MUST NOT manually copy, sync, or replicate framework files between repos.
+   - **Multi-Root Workspace Rule:** In workspaces containing both the canonical Bubbles repo and downstream project repos, agents MUST direct all framework file edits to the canonical Bubbles repo path (e.g., `bubbles/agents/bubbles_shared/`, `bubbles/bubbles/scripts/`). Editing the downstream copies at `.github/agents/bubbles_shared/` or `.github/bubbles/scripts/` in project repos is FORBIDDEN — those copies are install artifacts, not source-of-truth files.
+   - If a framework script has a bug or needs enhancement, the change MUST be made upstream in the canonical Bubbles repository — not patched locally in downstream repos.
+   - Downstream repos may record change requests only in project-owned proposal artifacts such as `.github/bubbles-project/proposals/` or via `bubbles framework-proposal <slug>`.
    - Project-specific scripts belong in `scripts/`. Project-specific quality gates belong in `.github/bubbles-project.yaml`.
    - The `.github/bubbles/.manifest` file lists all framework-owned files, and `.github/bubbles/.checksums` records the installed upstream checksum snapshot. `agnosticity-lint.sh` detects non-manifested files in managed directories, while `bubbles framework-write-guard` detects direct downstream edits to managed files.
 
