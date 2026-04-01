@@ -473,7 +473,52 @@ When user asks about code quality, technical debt, or problem areas:
 - For bus factor: `/bubbles.retro busfactor` shows single-author risk files
 - After retro: follow the "Recommended Actions" section for targeted follow-up commands
 
-### 3. Health Check & Auto-Heal
+### New v3.4 Capabilities (Know These)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **Design Brief** | `bubbles.design` now produces a short (~30-50 line) alignment checkpoint at the top of design.md: current state, target state, patterns to follow, patterns to avoid, resolved decisions, open questions. Reviewable in 5 minutes instead of reading entire design doc. | When user asks "what's the plan?", "can someone review this quickly?", "did the agent find the right patterns?" — point them to the Design Brief section |
+| **Execution Outline** | `bubbles.plan` now produces a short (~30-50 line) preamble at the top of scopes.md: phase order, new types/signatures being introduced, validation checkpoints. Like C header files for the plan. | When user asks "what order are we building things?", "what's the plan shape?", "where are the checkpoints?" — point them to the Execution Outline |
+| **Phase 0.55: Objective Research** | For brownfield modes (`improve-existing`, `redesign-existing`, `delivery-lockdown`, `bugfix-fastlane`, `reconcile-to-doc`), the workflow now runs a two-pass research phase: (1) generate questions about the codebase while knowing the intent, (2) research the codebase in a fresh context WITHOUT knowing the intent. Produces objective "current truth" instead of confirmation-biased research. | When user asks "why did it find the wrong pattern?", "how does improve-existing understand my code?" — explain the solution-blind research pass |
+| **Horizontal plan detection** | `bubbles.plan` Phase 4 now mechanically detects horizontal scope sequences (3+ consecutive single-layer scopes like all-DB → all-service → all-API → all-UI) and restructures them into vertical slices. | When user asks "why were my scopes reordered?", "what's a horizontal plan?" — explain that layer-by-layer plans are the #1 AI planning failure mode |
+| **Slop Tax metrics** | `bubbles.retro` now tracks rework metrics: scope reopens, phase retries, post-validate reversions, design reversals, fix-on-fix chains, and a net forward progress score. Target: < 15% slop tax. | When user asks "is the framework helping or hurting?", "how much rework?", "are we writing slop or craft?" |
+| **Instruction budget lint** | `bash bubbles/scripts/cli.sh lint-budget` counts directive lines per agent prompt. Warning at 120, hard limit at 200. Only `bubbles.workflow` currently exceeds budget (212 directives). | When user asks "why is the workflow agent inconsistent?", "how big are the prompts?" |
+
+### 14. Additional CLI Commands
+
+These CLI commands are available but not listed in the numbered sections above:
+
+```bash
+# Artifact and quality scanning
+bash bubbles/scripts/cli.sh lint <spec>              # Run artifact lint
+bash bubbles/scripts/cli.sh guard <spec>             # Run state transition guard
+bash bubbles/scripts/cli.sh scan <spec>              # Run implementation reality scan
+bash bubbles/scripts/cli.sh regression-quality [args] # Bailout/adversarial quality scan
+bash bubbles/scripts/cli.sh audit-done [--fix]       # Audit all specs marked done
+bash bubbles/scripts/cli.sh autofix <spec>           # Scaffold missing report sections
+
+# Framework integrity
+bash bubbles/scripts/cli.sh agnosticity [--staged]   # Check portable surfaces for drift
+bash bubbles/scripts/cli.sh framework-write-guard    # Check downstream files against provenance
+bash bubbles/scripts/cli.sh framework-proposal <slug> # Scaffold upstream change proposal
+bash bubbles/scripts/cli.sh docs-registry [mode]     # Show managed-doc registry
+
+# Control plane
+bash bubbles/scripts/cli.sh policy status            # Show control-plane defaults
+bash bubbles/scripts/cli.sh policy get <key>         # Get a specific policy default
+bash bubbles/scripts/cli.sh policy set <key> <value> # Set a policy default
+bash bubbles/scripts/cli.sh policy reset             # Reset all policy defaults
+bash bubbles/scripts/cli.sh session                  # Show current session state
+
+# Selftests
+bash bubbles/scripts/cli.sh guard-selftest           # Run transition guard selftest
+bash bubbles/scripts/cli.sh runtime-selftest         # Run runtime lease selftest
+bash bubbles/scripts/cli.sh workflow-selftest        # Run workflow surface selftest
+
+# Aliases
+bash bubbles/scripts/cli.sh sunnyvale <alias>        # Resolve a Sunnyvale alias
+bash bubbles/scripts/cli.sh aliases                  # List all Sunnyvale aliases
+```
 
 **What it does:** Validates the Bubbles installation is complete and correct.
 
@@ -635,6 +680,18 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "find the weakest areas and harden them" -> /bubbles.workflow <feature> mode: retro-to-harden
 "review the riskiest code" -> /bubbles.workflow <feature> mode: retro-to-review
 "data-driven code cleanup" -> /bubbles.workflow <feature> mode: retro-to-simplify
+"how much rework are we doing?" -> /bubbles.retro week (includes Slop Tax analysis — target < 15%)
+"is the framework generating slop?" -> /bubbles.retro week (check Slop Tax section for net forward progress score)
+"what's our net forward progress?" -> /bubbles.retro month (Slop Tax section shows rework breakdown)
+"review the design quickly" -> Point user to the Design Brief section at top of design.md (~30-50 lines)
+"what's the plan shape?" -> Point user to the Execution Outline preamble at top of scopes.md
+"why did improve-existing find the wrong pattern?" -> Explain Phase 0.55 objective research — the two-pass solution-blind research prevents confirmation bias
+"why were my scopes reordered?" -> Explain horizontal plan detection — vertical slices are enforced in planning Phase 4
+"how big are the agent prompts?" -> bash bubbles/scripts/instruction-budget-lint.sh (counts directives per agent)
+"run all the selftests" -> bash bubbles/scripts/cli.sh guard-selftest && cli.sh runtime-selftest && cli.sh workflow-selftest
+"check artifact quality" -> bash bubbles/scripts/cli.sh lint <spec>
+"scan for stubs in my implementation" -> bash bubbles/scripts/cli.sh scan <spec>
+"show control plane defaults" -> bash bubbles/scripts/cli.sh policy status
 ```
 
 ---
@@ -660,7 +717,14 @@ When the user's request is ambiguous, use this priority:
 15. If about agent activity or invocation counts -> `/bubbles.status`
 16. If about parallelizing scopes -> explain `parallelScopes: dag` tag
 17. If about code hotspots, bug magnets, technical debt location, or bus factor -> `/bubbles.retro hotspots` (or `coupling` / `busfactor`)
-18. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
-19. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
-20. If about what to do next / which agent / which mode -> Platform Concierge
-19. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly
+18. If about rework, slop tax, net forward progress, or framework effectiveness -> `/bubbles.retro` (includes Slop Tax section)
+19. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
+20. If about reviewing the design quickly -> point to Design Brief section in design.md
+21. If about plan shape or scope order -> point to Execution Outline in scopes.md
+22. If about why wrong patterns were found -> explain Phase 0.55 objective research
+23. If about artifact quality, lint, scanning -> `lint`, `scan`, `guard`, `audit-done` CLI commands
+24. If about control plane defaults or policy -> `policy` CLI command
+25. If about selftests -> `guard-selftest`, `runtime-selftest`, `workflow-selftest`
+26. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
+27. If about what to do next / which agent / which mode -> Platform Concierge
+28. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

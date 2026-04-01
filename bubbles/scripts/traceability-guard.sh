@@ -73,9 +73,9 @@ json_first_string() {
     return 0
   fi
 
-  grep -Eo '"'"$key"'"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" \
+  grep -Eo '"'"'"$key"'"'"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" \
     | head -n 1 \
-    | sed -E 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
+    | sed -E 's/.*"'"'"$key"'"'"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
 }
 
 detect_scope_layout() {
@@ -85,6 +85,70 @@ detect_scope_layout() {
     echo "per-scope-directory"
   else
     echo "single-file"
+  fi
+}
+
+scope_section_tmp_files=()
+
+cleanup_tmp_artifacts() {
+  if [[ ${#scope_section_tmp_files[@]} -gt 0 ]]; then
+    rm -f "${scope_section_tmp_files[@]}"
+  fi
+}
+
+trap cleanup_tmp_artifacts EXIT
+
+build_scope_analysis_units() {
+  local scope_path="$1"
+  local current_tmp=""
+  local current_label=""
+  local line=""
+
+  if [[ "$scope_layout" != "single-file" ]] || [[ "$(basename "$scope_path")" != "scopes.md" ]]; then
+    scope_analysis_files+=("$scope_path")
+    scope_analysis_labels+=("${scope_path#$feature_dir/}")
+    return
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]] ]]; then
+      if [[ -n "$current_tmp" ]]; then
+        scope_analysis_files+=("$current_tmp")
+        scope_analysis_labels+=("$current_label")
+      fi
+
+      current_tmp="$(mktemp)"
+      scope_section_tmp_files+=("$current_tmp")
+      current_label="$(printf '%s' "$line" | sed -E 's/^##[[:space:]]+//')"
+      printf '%s\n' "$line" > "$current_tmp"
+      continue
+    fi
+
+    if [[ -n "$current_tmp" ]]; then
+      if [[ "$line" =~ ^##[[:space:]]+Shared[[:space:]]+Planning[[:space:]]+Expectations ]]; then
+        scope_analysis_files+=("$current_tmp")
+        scope_analysis_labels+=("$current_label")
+        current_tmp=""
+        current_label=""
+        continue
+      fi
+
+      printf '%s\n' "$line" >> "$current_tmp"
+    fi
+  done < "$scope_path"
+
+  if [[ -n "$current_tmp" ]]; then
+    scope_analysis_files+=("$current_tmp")
+    scope_analysis_labels+=("$current_label")
+  fi
+}
+
+scope_analysis_label() {
+  local index="$1"
+  if [[ "$index" -lt ${#scope_analysis_labels[@]} ]]; then
+    printf '%s\n' "${scope_analysis_labels[$index]}"
+  else
+    printf '%s\n' "${scope_analysis_files[$index]#$feature_dir/}"
   fi
 }
 
@@ -287,8 +351,22 @@ scenario_matches_row() {
 
 scope_layout="$(detect_scope_layout)"
 scope_files=()
+scope_layout="$(detect_scope_layout)"
+scope_files=()
+scope_analysis_files=()
+scope_analysis_labels=()
 
 if [[ "$scope_layout" == "per-scope-directory" ]]; then
+  for scope_path in "${scope_files[@]}"; do
+    build_scope_analysis_units "$scope_path"
+  done
+
+  if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
+    scope_analysis_files=("${scope_files[@]}")
+    for scope_path in "${scope_files[@]}"; do
+      scope_analysis_labels+=("${scope_path#$feature_dir/}")
+    done
+  fi
   while IFS= read -r scope_path; do
     scope_files+=("$scope_path")
   done < <(find "$feature_dir/scopes" -mindepth 2 -maxdepth 2 -type f -name 'scope.md' | sort)
@@ -348,13 +426,14 @@ else
 fi
 echo ""
 
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   if [[ ! -f "$scope_path" ]]; then
-    fail "Missing scope file: ${scope_path#$feature_dir/}"
+    fail "Missing scope file: $(scope_analysis_label "$scope_index")"
     continue
   fi
 
-  scope_label="${scope_path#$feature_dir/}"
+  scope_label="$(scope_analysis_label "$scope_index")"
   scope_dir="$(dirname "$scope_path")"
   if [[ "$scope_layout" == "per-scope-directory" ]]; then
     report_path="$scope_dir/report.md"

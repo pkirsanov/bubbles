@@ -50,8 +50,8 @@ Every recipe solves a specific problem. Find yours, follow the steps.
 | 38 | [Coordinate Runtime Leases](recipes/runtime-coordination.md) | `bubbles runtime ...` | Shared Docker/Compose ownership and conflict recovery |
 | 39 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
 | 40 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |
-| 40 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
-| 41 | [Outcome-First Specs](recipes/outcome-first-specs.md) | `bubbles.analyst` | Define what 'done' means before how to get there |
+| 41 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
+| 42 | [Outcome-First Specs](recipes/outcome-first-specs.md) | `bubbles.analyst` | Define what 'done' means before how to get there |
 
 ---
 

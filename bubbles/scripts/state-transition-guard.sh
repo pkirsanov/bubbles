@@ -96,10 +96,69 @@ detect_scope_layout() {
 }
 
 combined_scopes_tmp=""
+scope_section_tmp_files=()
+
+build_scope_analysis_units() {
+  local scope_path="$1"
+  local current_tmp=""
+  local current_label=""
+  local line=""
+
+  if [[ "$scope_layout" != "single-file" ]] || [[ "$(basename "$scope_path")" != "scopes.md" ]]; then
+    scope_analysis_files+=("$scope_path")
+    scope_analysis_labels+=("${scope_path#$feature_dir/}")
+    return
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]] ]]; then
+      if [[ -n "$current_tmp" ]]; then
+        scope_analysis_files+=("$current_tmp")
+        scope_analysis_labels+=("$current_label")
+      fi
+
+      current_tmp="$(mktemp)"
+      scope_section_tmp_files+=("$current_tmp")
+      current_label="$(printf '%s' "$line" | sed -E 's/^##[[:space:]]+//')"
+      printf '%s\n' "$line" > "$current_tmp"
+      continue
+    fi
+
+    if [[ -n "$current_tmp" ]]; then
+      if [[ "$line" =~ ^##[[:space:]]+Shared[[:space:]]+Planning[[:space:]]+Expectations ]]; then
+        scope_analysis_files+=("$current_tmp")
+        scope_analysis_labels+=("$current_label")
+        current_tmp=""
+        current_label=""
+        continue
+      fi
+
+      printf '%s\n' "$line" >> "$current_tmp"
+    fi
+  done < "$scope_path"
+
+  if [[ -n "$current_tmp" ]]; then
+    scope_analysis_files+=("$current_tmp")
+    scope_analysis_labels+=("$current_label")
+  fi
+}
+
+scope_analysis_label() {
+  local index="$1"
+  if [[ "$index" -lt ${#scope_analysis_labels[@]} ]]; then
+    printf '%s\n' "${scope_analysis_labels[$index]}"
+  else
+    printf '%s\n' "${scope_analysis_files[$index]#$feature_dir/}"
+  fi
+}
 
 cleanup_tmp_artifacts() {
   if [[ -n "$combined_scopes_tmp" ]] && [[ -f "$combined_scopes_tmp" ]]; then
     rm -f "$combined_scopes_tmp"
+  fi
+
+  if [[ ${#scope_section_tmp_files[@]} -gt 0 ]]; then
+    rm -f "${scope_section_tmp_files[@]}"
   fi
 }
 
@@ -108,7 +167,22 @@ trap cleanup_tmp_artifacts EXIT
 scope_layout="$(detect_scope_layout)"
 scope_index_file="$feature_dir/scopes/_index.md"
 scope_files=()
+scope_layout="$(detect_scope_layout)"
+scope_index_file="$feature_dir/scopes/_index.md"
+scope_files=()
+scope_analysis_files=()
+scope_analysis_labels=()
 report_files=()
+for scope_path in "${scope_files[@]}"; do
+  build_scope_analysis_units "$scope_path"
+done
+
+if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
+  scope_analysis_files=("${scope_files[@]}")
+  for scope_path in "${scope_files[@]}"; do
+    scope_analysis_labels+=("${scope_path#$feature_dir/}")
+  done
+fi
 scenario_manifest_file="$feature_dir/scenario-manifest.json"
 lockdown_approvals_file="$feature_dir/lockdown-approvals.json"
 invalidation_ledger_file="$feature_dir/invalidation-ledger.json"
@@ -658,14 +732,14 @@ fi
 echo ""
 
 # =============================================================================
-# CHECK 3G: Framework ownership/result contract integrity (G062/G063/G064)
+# CHECK 3G: Framework ownership/result contract integrity (G042/G063/G064)
 # =============================================================================
-echo "--- Check 3G: Framework Ownership And Result Contract (G062/G063/G064) ---"
+echo "--- Check 3G: Framework Ownership And Result Contract (G042/G063/G064) ---"
 if [[ -x "$framework_ownership_lint_script" || -f "$framework_ownership_lint_script" ]]; then
   if bash "$framework_ownership_lint_script" >/tmp/bubbles-agent-ownership-lint.$$ 2>&1; then
-    pass "Framework ownership lint passed — owner-only remediation, concrete result contract, and child workflow policy are internally consistent"
+    pass "Framework ownership lint passed — artifact ownership enforcement, concrete result contract, and child workflow policy are internally consistent"
   else
-    fail "Framework ownership lint failed — G062/G063/G064 cannot be certified during state transition"
+    fail "Framework ownership lint failed — G042/G063/G064 cannot be certified during state transition"
     while IFS= read -r lint_line; do
       [[ -n "$lint_line" ]] || continue
       echo "   → $lint_line"
@@ -673,7 +747,7 @@ if [[ -x "$framework_ownership_lint_script" || -f "$framework_ownership_lint_scr
   fi
   rm -f /tmp/bubbles-agent-ownership-lint.$$
 else
-  fail "Framework ownership lint script not found at $framework_ownership_lint_script — cannot enforce G062/G063/G064"
+  fail "Framework ownership lint script not found at $framework_ownership_lint_script — cannot enforce G042/G063/G064"
 fi
 echo ""
 
@@ -1195,27 +1269,29 @@ fi
 echo "--- Check 8A: Scenario-Specific Regression E2E Coverage ---"
 missing_regression_e2e=0
 
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
+  scope_label="$(scope_analysis_label "$scope_index")"
 
   if grep -Eiq '^\- \[(x| )\] Scenario-specific E2E regression tests? for (EVERY|every) new/changed/fixed behavior' "$scope_path"; then
-    pass "Scope DoD includes scenario-specific regression E2E requirement: ${scope_path#$feature_dir/}"
+    pass "Scope DoD includes scenario-specific regression E2E requirement: $scope_label"
   else
-    fail "Scope is missing DoD item for scenario-specific regression E2E coverage: ${scope_path#$feature_dir/}"
+    fail "Scope is missing DoD item for scenario-specific regression E2E coverage: $scope_label"
     missing_regression_e2e=$((missing_regression_e2e + 1))
   fi
 
   if grep -Eiq '^\- \[(x| )\] Broader E2E regression suite passes' "$scope_path"; then
-    pass "Scope DoD includes broader E2E regression suite requirement: ${scope_path#$feature_dir/}"
+    pass "Scope DoD includes broader E2E regression suite requirement: $scope_label"
   else
-    fail "Scope is missing DoD item for broader E2E regression suite coverage: ${scope_path#$feature_dir/}"
+    fail "Scope is missing DoD item for broader E2E regression suite coverage: $scope_label"
     missing_regression_e2e=$((missing_regression_e2e + 1))
   fi
 
   if grep -Eiq '^\|.*Regression E2E' "$scope_path" || grep -Eiq '^\|.*e2e-(api|ui).*(\||`).*Regression:' "$scope_path"; then
-    pass "Scope Test Plan includes explicit regression E2E row(s): ${scope_path#$feature_dir/}"
+    pass "Scope Test Plan includes explicit regression E2E row(s): $scope_label"
   else
-    fail "Scope Test Plan is missing explicit scenario-specific regression E2E row(s): ${scope_path#$feature_dir/}"
+    fail "Scope Test Plan is missing explicit scenario-specific regression E2E row(s): $scope_label"
     missing_regression_e2e=$((missing_regression_e2e + 1))
   fi
 done
@@ -1231,30 +1307,32 @@ echo "--- Check 8B: Consumer Trace Planning For Renames/Removals ---"
 rename_scope_hits=0
 missing_consumer_trace=0
 
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
+  scope_label="$(scope_analysis_label "$scope_index")"
 
   if grep -Eiq '\b(rename|renamed|remove|removed|move|moved|replace|replaced|deprecat(e|ed)|migration)\b.*\b(route|path|endpoint|contract|api|url|slug|identifier|symbol|link|breadcrumb|navigation|redirect)\b|\b(route|path|endpoint|contract|api|url|slug|identifier|symbol|link|breadcrumb|navigation|redirect)\b.*\b(rename|renamed|remove|removed|move|moved|replace|replaced|deprecat(e|ed)|migration)\b' "$scope_path"; then
     rename_scope_hits=$((rename_scope_hits + 1))
 
     if grep -Eiq 'Consumer Impact Sweep' "$scope_path"; then
-      pass "Scope includes Consumer Impact Sweep section: ${scope_path#$feature_dir/}"
+      pass "Scope includes Consumer Impact Sweep section: $scope_label"
     else
-      fail "Scope renames/removes interfaces but has no Consumer Impact Sweep section: ${scope_path#$feature_dir/}"
+      fail "Scope renames/removes interfaces but has no Consumer Impact Sweep section: $scope_label"
       missing_consumer_trace=$((missing_consumer_trace + 1))
     fi
 
     if grep -Eiq '^\- \[(x| )\] .*consumer impact sweep.*zero stale first-party references remain' "$scope_path"; then
-      pass "Scope DoD includes consumer impact sweep completion item: ${scope_path#$feature_dir/}"
+      pass "Scope DoD includes consumer impact sweep completion item: $scope_label"
     else
-      fail "Scope renames/removes interfaces but is missing DoD item for consumer impact sweep: ${scope_path#$feature_dir/}"
+      fail "Scope renames/removes interfaces but is missing DoD item for consumer impact sweep: $scope_label"
       missing_consumer_trace=$((missing_consumer_trace + 1))
     fi
 
     if grep -Eiq 'navigation|breadcrumb|redirect|API client|generated client|deep link|stale-reference' "$scope_path"; then
-      pass "Scope lists affected consumer surfaces for rename/removal work: ${scope_path#$feature_dir/}"
+      pass "Scope lists affected consumer surfaces for rename/removal work: $scope_label"
     else
-      fail "Scope renames/removes interfaces but does not enumerate affected consumer surfaces: ${scope_path#$feature_dir/}"
+      fail "Scope renames/removes interfaces but does not enumerate affected consumer surfaces: $scope_label"
       missing_consumer_trace=$((missing_consumer_trace + 1))
     fi
   fi
@@ -1273,44 +1351,46 @@ echo "--- Check 8C: Shared Infrastructure Blast-Radius Planning ---"
 shared_scope_hits=0
 missing_shared_infra_requirements=0
 
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
+  scope_label="$(scope_analysis_label "$scope_index")"
 
   if grep -Eiq '\b(shared|global|common|core)\b.*\b(fixture|fixtures|harness|setup|bootstrap|test helper|test infrastructure)\b|\b(auth|login|session|password reset|token refresh|tenant context|role detection|storage injection|init script|addinitscript)\b.*\b(fixture|fixtures|harness|setup|bootstrap|contract|flow)\b|\b(auth fixture|login fixture|global setup|playwright setup|bootstrap helper|shared test helper)\b' "$scope_path"; then
     shared_scope_hits=$((shared_scope_hits + 1))
 
     if grep -Eiq 'Shared Infrastructure Impact Sweep' "$scope_path"; then
-      pass "Scope includes Shared Infrastructure Impact Sweep section: ${scope_path#$feature_dir/}"
+      pass "Scope includes Shared Infrastructure Impact Sweep section: $scope_label"
     else
-      fail "Scope touches shared fixture/bootstrap infrastructure but has no Shared Infrastructure Impact Sweep section: ${scope_path#$feature_dir/}"
+      fail "Scope touches shared fixture/bootstrap infrastructure but has no Shared Infrastructure Impact Sweep section: $scope_label"
       missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
     fi
 
     if grep -Eiq '^\- \[(x| )\] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns' "$scope_path"; then
-      pass "Scope DoD includes shared-infrastructure canary item: ${scope_path#$feature_dir/}"
+      pass "Scope DoD includes shared-infrastructure canary item: $scope_label"
     else
-      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the canary DoD item: ${scope_path#$feature_dir/}"
+      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the canary DoD item: $scope_label"
       missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
     fi
 
     if grep -Eiq '^\- \[(x| )\] Rollback or restore path for shared infrastructure changes is documented and verified' "$scope_path"; then
-      pass "Scope DoD includes rollback/restore item for shared infrastructure: ${scope_path#$feature_dir/}"
+      pass "Scope DoD includes rollback/restore item for shared infrastructure: $scope_label"
     else
-      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the rollback/restore DoD item: ${scope_path#$feature_dir/}"
+      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the rollback/restore DoD item: $scope_label"
       missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
     fi
 
     if grep -Eiq '^\|.*Canary:' "$scope_path" || grep -Eiq '^\|.*Fixture Canary' "$scope_path"; then
-      pass "Scope Test Plan includes explicit canary row(s): ${scope_path#$feature_dir/}"
+      pass "Scope Test Plan includes explicit canary row(s): $scope_label"
     else
-      fail "Scope touches shared fixture/bootstrap infrastructure but lacks an explicit canary Test Plan row: ${scope_path#$feature_dir/}"
+      fail "Scope touches shared fixture/bootstrap infrastructure but lacks an explicit canary Test Plan row: $scope_label"
       missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
     fi
 
     if grep -Eiq 'ordering|timing|storage|session|context|role|bootstrap contract|downstream contract|blast radius' "$scope_path"; then
-      pass "Scope enumerates downstream contract surfaces for shared infrastructure work: ${scope_path#$feature_dir/}"
+      pass "Scope enumerates downstream contract surfaces for shared infrastructure work: $scope_label"
     else
-      fail "Scope touches shared fixture/bootstrap infrastructure but does not enumerate downstream contract surfaces: ${scope_path#$feature_dir/}"
+      fail "Scope touches shared fixture/bootstrap infrastructure but does not enumerate downstream contract surfaces: $scope_label"
       missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
     fi
   fi
@@ -2096,10 +2176,11 @@ stg_scenario_matches_dod() {
 
 dod_fidelity_failures=0
 dod_fidelity_total=0
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
 
-  scope_label="${scope_path#$feature_dir/}"
+  scope_label="$(scope_analysis_label "$scope_index")"
 
   # Extract Gherkin scenarios
   scope_scenarios="$(grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//' || true)"

@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **34 Agents · 70 Gates · 34 Workflow Modes · 25 Phases**
+> **34 Agents · 60 Gates · 29 Workflow Modes · 25 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -182,7 +182,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 70 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 60 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -256,7 +256,9 @@
 | G064 | Child workflow depth | Only orchestrators may invoke child workflows, and nesting depth must stay bounded |
 | G040 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
 | G066 | Phase-claim provenance | Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory; cross-phase impersonation is fabrication |
+| G067 | Shared infrastructure blast radius | High-fan-out shared infrastructure changes require blast-radius planning, canary coverage, rollback, and explicit change boundaries |
 | G068 | DoD-Gherkin content fidelity | DoD items must faithfully represent the behavioral claims of their source Gherkin scenarios; no silent rewrites to match delivery |
+| G069 | Collateral change containment | Narrow repairs and risky refactors must declare a Change Boundary; opportunistic cleanups bundled into repair paths are blocking |
 | G070 | Outcome contract | spec.md must have Outcome Contract (Intent, Success Signal, Hard Constraints, Failure Condition); validate verifies the outcome was actually achieved |
 
 ---

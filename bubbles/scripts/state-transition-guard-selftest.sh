@@ -585,7 +585,7 @@ else
   sed -n '1,220p' "$g064_log"
 fi
 assert_log_contains "$g064_log" "only orchestrators may enable child workflows" "Negative fixture triggers the G064 orchestrator-only child-workflow check"
-assert_log_contains "$g064_log" "G062/G063/G064 cannot be certified" "Negative fixture surfaces the framework contract failure through guard Check 3G"
+assert_log_contains "$g064_log" "G042/G063/G064 cannot be certified" "Negative fixture surfaces the framework contract failure through guard Check 3G"
 
 echo "----------------------------------------"
 if [[ "$failures" -gt 0 ]]; then

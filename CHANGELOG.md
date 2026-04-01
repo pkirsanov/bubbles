@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Planning Alignment & Research Quality (v3.4)
+
+- **Design Brief** — `bubbles.design` now produces a required ~30-50 line alignment checkpoint at the top of design.md: current state, target state, patterns to follow/avoid, resolved decisions, open questions. Gives reviewers 5-minute steering leverage before expensive scoping.
+- **Execution Outline** — `bubbles.plan` now produces a required ~30-50 line preamble at the top of scopes.md: phase order, new types/signatures, validation checkpoints. Like C header files for the plan.
+- **Phase 0.55: Objective Research Pass** — For brownfield modes (`improve-existing`, `redesign-existing`, `delivery-lockdown`, `bugfix-fastlane`, `reconcile-to-doc`), the workflow runs a two-pass research phase: (1) generate codebase questions while knowing the intent, (2) research in a fresh solution-blind context. Produces objective "current truth" instead of confirmation-biased research.
+- **Horizontal plan detection** — `bubbles.plan` Phase 4 now mechanically detects horizontal scope sequences (3+ consecutive single-layer scopes) and restructures into vertical slices.
+- **Slop Tax metrics** — `bubbles.retro` tracks rework: scope reopens, phase retries, post-validate reversions, design reversals, fix-on-fix chains, net forward progress score. Target: < 15%.
+- **`instruction-budget-lint.sh`** — New script counting directive lines per agent prompt. Warning at 120, hard at 200. Registered as `bubbles lint-budget` CLI command.
+- **Super agent v3.4 awareness** — Design Brief, Execution Outline, Phase 0.55, horizontal plan detection, Slop Tax, instruction budget lint, 18 previously undocumented CLI commands now surfaced.
+- **CHEATSHEET fixes** — Added missing gates G067 (shared infrastructure blast radius) and G069 (collateral change containment).
+- **WORKFLOW_MODES.md fixes** — Added missing `retro-to-simplify`, `retro-to-harden`, `retro-to-review` to Quick Reference table. Added new capability sections.
+
 ### Data-Driven Workflow Modes + Recipe Catalog (v3.3)
 
 - **3 new workflow modes** — `retro-to-simplify`, `retro-to-harden`, `retro-to-review`: data-driven workflows that run retro hotspot analysis first to identify targets, then execute the appropriate action (simplify, harden, or code-review) on those targets

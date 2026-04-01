@@ -46,9 +46,13 @@ check_has_match "$capabilities_file" '^version:' 'agent capabilities manifest mi
 check_has_match "$capabilities_file" '^childWorkflowPolicy:' 'agent capabilities manifest missing child workflow policy block'
 check_has_match "$capabilities_file" '^resultPolicy:' 'agent capabilities manifest missing result policy block'
 check_has_match "$shared_dir/agent-common.md" '^## Artifact Ownership And Delegation Contract$' 'agent-common.md missing ownership contract section'
-check_has_match "$workflows_file" 'name: agent_ownership_gate' 'workflows.yaml missing agent ownership gate'
-check_has_match "$workflows_file" 'name: capability_delegation_gate' 'workflows.yaml missing capability delegation gate'
-check_has_match "$workflows_file" 'name: owner_only_remediation_gate' 'workflows.yaml missing G062 owner-only remediation gate'
+if grep -nE 'name: artifact_ownership_enforcement_gate' "$workflows_file" >/dev/null; then
+  :
+else
+  check_has_match "$workflows_file" 'name: agent_ownership_gate' 'workflows.yaml missing ownership enforcement gate (expected consolidated artifact_ownership_enforcement_gate or legacy agent_ownership_gate)'
+  check_has_match "$workflows_file" 'name: capability_delegation_gate' 'workflows.yaml missing legacy capability delegation gate when consolidated artifact_ownership_enforcement_gate is absent'
+  check_has_match "$workflows_file" 'name: owner_only_remediation_gate' 'workflows.yaml missing legacy owner-only remediation gate when consolidated artifact_ownership_enforcement_gate is absent'
+fi
 check_has_match "$workflows_file" 'name: concrete_result_gate' 'workflows.yaml missing G063 concrete result gate'
 check_has_match "$workflows_file" 'name: child_workflow_depth_gate' 'workflows.yaml missing G064 child workflow depth gate'
 check_has_match "$ownership_file" '^  state\.json:' 'agent ownership manifest missing state.json ownership block'
@@ -112,7 +116,7 @@ do
   check_has_match "$agents_dir/${result_agent}.agent.md" 'RESULT-ENVELOPE' "$result_agent must declare RESULT-ENVELOPE completion output"
 done
 
-# G062 enforcement: diagnostic agents must NOT contain language that permits foreign-artifact edits
+# G042 enforcement: diagnostic agents must NOT contain language that permits foreign-artifact edits
 for diagnostic_agent in \
   bubbles.validate \
   bubbles.audit \

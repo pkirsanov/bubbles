@@ -76,6 +76,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Reconcile Or Redesign An Existing Feature](reconcile-redesign-existing-feature.md) | "The feature exists, but the current spec/design/scopes are stale or need a major rewrite" |
 | [Grill an Idea](grill-an-idea.md) | "I want hard questions before we commit to this direction" |
 | [TDD First Execution](tdd-first-execution.md) | "I want the workflow to stay red-green-first instead of drifting into implementation-first" |
+| [Outcome-First Specs](outcome-first-specs.md) | "I want to define what 'done' means (Intent, Success Signal, Hard Constraints) before getting into implementation details" |
 
 ## Performance & Parallelism
 

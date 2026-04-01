@@ -309,10 +309,22 @@ Each scope must include:
 Create or update `{FEATURE_DIR}/scopes.md`.
 
 Must include:
+- **Execution Outline** (REQUIRED — short alignment checkpoint preamble, ~30-50 lines)
 - Overview + scope ordering rationale
 - A table of scopes (Name, Surfaces, Tests, DoD summary, Status)
 - Full details per scope (as defined above)
 - If prior scopes were invalidated, move them out of the active inventory and preserve them only in a clearly labeled superseded appendix when needed
+
+#### Execution Outline (REQUIRED — scopes.md preamble)
+
+The Execution Outline is a short, human-reviewable summary at the top of scopes.md. It exists so a reviewer can see the plan shape in ~30-50 lines without reading the full scope details.
+
+**MUST include:**
+- **Phase Order** — Numbered list of scopes with one-sentence description each
+- **New Types & Signatures** — Key new types, interfaces, endpoints, or schema changes being introduced (like C header files — just the signatures, not the implementation)
+- **Validation Checkpoints** — Where tests run between phases (which scopes have verification gates that catch breakage before the next scope starts)
+
+**Why this exists:** Full scopes.md can be 500+ lines with Gherkin, test plans, and DoD. The Execution Outline gives a reviewer the plan shape — what order, what changes, where the checkpoints are — in a fraction of the reading time. Wrong scope ordering or missing validation checkpoints are caught here before implementation begins.
 
 ### Phase 4: Planning Output Quality Gate
 
@@ -321,6 +333,7 @@ Before finishing:
 - Ensure each scope includes all impacted surfaces.
 - Ensure each scope has explicit tests and DoD.
 - Ensure the file `{FEATURE_DIR}/scopes.md` exists and is complete.
+- **Horizontal plan detection (REQUIRED):** Scan the scope sequence for horizontal layering. If 3+ consecutive scopes each touch only one architectural layer (e.g., consecutive DB-only scopes, then consecutive service-only scopes, then consecutive API-only scopes, then consecutive UI-only scopes), flag as "likely horizontal plan" and restructure into vertical slices where each scope delivers one user/system outcome across all necessary layers. Horizontal plans are the #1 quality failure in AI-generated scope sequences — they produce 1,000+ lines of untestable code before any end-to-end verification is possible.
 
 ---
 

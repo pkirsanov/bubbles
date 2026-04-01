@@ -65,6 +65,30 @@ Taste decisions are batched at phase boundaries (max 5 per phase). When `grillMo
 
 Baseline workflow law already requires spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation is allowed to proceed. The **Outcome Contract** (G070) additionally requires every spec to declare Intent, Success Signal, Hard Constraints, and Failure Condition before bootstrap completes — and validation verifies the outcome was actually achieved, not just that the process was followed. Those are not optional tags.
 
+### Planning Alignment Checkpoints (v3.4)
+
+Two short, human-reviewable alignment artifacts are now mandatory:
+
+- **Design Brief** — A ~30-50 line section at the top of `design.md` showing current state, target state, patterns to follow, patterns to avoid, resolved decisions, and open questions. Review this for steering (5 min) instead of reading the full design doc.
+- **Execution Outline** — A ~30-50 line preamble at the top of `scopes.md` showing phase order, new types/signatures being introduced, and validation checkpoints. Like C header files for the plan.
+
+### Brownfield Research (Phase 0.55)
+
+For brownfield modes (`improve-existing`, `redesign-existing`, `delivery-lockdown`, `bugfix-fastlane`, `reconcile-to-doc`), the workflow now runs an **Objective Research Pass** before design:
+1. Questions are generated while knowing the solution intent
+2. Codebase research is done in a **fresh, solution-blind context** — it never sees the spec or ticket
+3. Results are recorded as a `## Current Truth` section in design.md
+
+This prevents confirmation bias where the model finds patterns that support its intended design instead of reporting what actually exists.
+
+### Horizontal Plan Detection
+
+`bubbles.plan` Phase 4 now mechanically detects horizontal scope sequences (3+ consecutive single-layer scopes like all-DB → all-service → all-API → all-UI) and restructures them into vertical slices. Horizontal plans are the #1 quality failure in AI-generated scope sequences.
+
+### Slop Tax Tracking
+
+`bubbles.retro` now tracks rework metrics: scope reopens, phase retries, post-validate reversions, design reversals, fix-on-fix chains, and a **net forward progress** score. Target: < 15% slop tax.
+
 ---
 
 ## Choosing a Mode
@@ -433,6 +457,9 @@ analyze → ux
 | `product-to-delivery` (with existing impl) | Reconcile → redesign → deliver | Major existing-feature rewrite |
 | `improve-existing` | Analyze → harden → gaps → fix | Code improvement |
 | `retro-quality-sweep` | Retro-targeted quality sweep | Hotspot-guided maintenance |
+| `retro-to-simplify` | Retro hotspots → simplify worst | Data-driven simplification |
+| `retro-to-harden` | Retro bug magnets → harden targets | Data-driven hardening |
+| `retro-to-review` | Retro risks → code review | Data-driven review |
 | `stochastic-quality-sweep` | Random quality | Maintenance |
 | `test-to-doc` | Test → docs | Test/doc focus |
 | `validate-to-doc` | Validate → audit → docs | Validation + docs |

@@ -761,6 +761,29 @@ Each selection must output:
 - reason/value score summary
 - chosen downstream workflow path
 
+### Phase 0.55: Objective Research Pass (brownfield modes only)
+
+**Applies to:** `improve-existing`, `redesign-existing`, `delivery-lockdown`, `bugfix-fastlane`, `reconcile-to-doc`, and any mode where implementation already exists in the codebase.
+
+**Purpose:** Produce objective "current truth" about the codebase before the design agent forms opinions about the solution. This prevents the common failure where the model finds patterns that confirm its intended design instead of reporting what actually exists.
+
+**Two-pass protocol:**
+1. **Question generation (solution-aware):** Invoke `runSubagent` with a focused prompt:
+   - Input: spec.md (the ticket/intent) + design.md (if exists)
+   - Output: 5-10 factual questions about the current codebase state (e.g., "How do endpoints register in the router?", "What is the existing error model for this domain?", "Where does tenant isolation happen for this entity?", "What patterns do existing tests use for this module?")
+   - The questions should target the specific codebase zones that the intended change will touch
+
+2. **Objective research (solution-blind):** Invoke a FRESH `runSubagent` call:
+   - Input: ONLY the questions from pass 1 — do NOT include spec.md, design.md, or any description of what is being built
+   - Instruction: "Answer each question by reading the codebase. Report only facts — file paths, function signatures, patterns found, data flows observed. Do NOT suggest improvements, alternatives, or opinions. Do NOT infer intent."
+   - Output: Compressed factual answers (file paths, signatures, patterns, data flows)
+
+3. **Record results:** Append the objective findings as a `## Current Truth` section at the top of design.md (before the Design Brief). This section is input for the design agent — it shows the real state of the code, not the assumed state.
+
+**Why this exists:** When the model knows what it's about to build, it confirmation-biases its codebase research toward patterns that support the intended solution. Separating question generation from fact-finding produces research that reports what actually exists — including patterns that are wrong, outdated, or inconsistent — so the design agent can make informed decisions instead of building on assumptions.
+
+**Skip conditions:** Skip this phase for greenfield work (no existing implementation) or when `spec.md` explicitly marks the feature as net-new with no brownfield dependencies.
+
 ### Phase 0.6: Bootstrap Loop (conditional)
 
 If selected work is new or underspecified (missing robust design/spec/scopes), run bootstrap iterations using `runSubagent` for each step:
@@ -772,6 +795,7 @@ If selected work is new or underspecified (missing robust design/spec/scopes), r
 
 1. **Design** → invoke `runSubagent` with bubbles.design role: create/refine design.md for the feature
    - bubbles.design auto-detects from-analysis depth when analyst+UX sections are present in spec.md
+   - If Phase 0.55 produced a `## Current Truth` section, the design agent uses it as objective ground truth about existing code patterns
 2. **Clarify (only if ambiguity remains)** → invoke `runSubagent` with bubbles.clarify role: classify ambiguity and identify the owning specialist
 3. **Plan** → invoke `runSubagent` with bubbles.plan role: create scopes.md with scenarios/tests/DoD
 

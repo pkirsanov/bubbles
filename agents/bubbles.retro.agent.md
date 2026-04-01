@@ -151,6 +151,41 @@ If prior retros exist in `.specify/memory/retros/`:
 - Compare churn patterns
 - Note improvements and regressions
 
+### Step 5a: Slop Tax Analysis
+
+Measure rework caused by the framework/agent itself — how much work was undone, redone, or wasted after initial completion. This answers "are we writing slop or craft?"
+
+**Data sources:** `specs/*/state.json` (scope status transitions, phase retries, certification events), git log (design.md changes after implementation started).
+
+**Metrics to compute:**
+
+| Metric | How to Measure | What It Means |
+|--------|---------------|---------------|
+| **Scope reopen rate** | Count scope status transitions from Done → In Progress or Done → Blocked across all state.json files in the period | Work that was claimed complete but had to be redone |
+| **Phase retry rate** | Count retry events in state.json executionHistory per phase | How often the agent gets it wrong the first time |
+| **Post-validate reversions** | Count state.json certification events followed by status regression (done → in_progress) | Work that passed all gates but still had to be fixed |
+| **Design reversal rate** | Count git commits that modify design.md AFTER the first commit that modifies source code for the same spec | How often the plan was wrong and had to be revised mid-implementation |
+| **Fix-on-fix count** | Count sequential fix cycles in executionHistory where the same scope has 2+ consecutive implement→test→fail→implement loops | Cascading failures from bad initial work |
+
+**Output format:**
+
+```markdown
+## Slop Tax
+| Metric | Count | Rate | Trend |
+|--------|-------|------|-------|
+| Scope reopens | {n} | {n/total_done}% | {↑↓→ vs prior} |
+| Phase retries | {n} | {n/total_phases}% | {↑↓→} |
+| Post-validate reversions | {n} | {n/total_validated}% | {↑↓→} |
+| Design reversals | {n} | {n/total_specs_impl}% | {↑↓→} |
+| Fix-on-fix chains | {n} | {n/total_scopes}% | {↑↓→} |
+| **Net forward progress** | — | {100 - weighted_slop}% | {↑↓→} |
+
+{Interpretation: if slop tax > 30%, the framework is generating more rework than value.
+Recommended actions based on highest-rate metric.}
+```
+
+**Net forward progress** is the inverse of weighted slop: `100% - (scope_reopen_rate * 0.3 + phase_retry_rate * 0.2 + post_validate_reversion_rate * 0.3 + design_reversal_rate * 0.1 + fix_on_fix_rate * 0.1)`. This is a rough heuristic — the weights emphasize reopens and reversions because those represent the most expensive rework.
+
 ### Step 6: Produce Retrospective
 
 Write to `.specify/memory/retros/YYYY-MM-DD.md`:
@@ -211,6 +246,18 @@ Write to `.specify/memory/retros/YYYY-MM-DD.md`:
 | Mode | Specs | Avg Scopes |
 |------|-------|------------|
 | {mode} | {count} | {avg} |
+
+## Slop Tax
+| Metric | Count | Rate | Trend |
+|--------|-------|------|-------|
+| Scope reopens | {n} | {pct}% | {↑↓→ vs prior} |
+| Phase retries | {n} | {pct}% | {↑↓→} |
+| Post-validate reversions | {n} | {pct}% | {↑↓→} |
+| Design reversals | {n} | {pct}% | {↑↓→} |
+| Fix-on-fix chains | {n} | {pct}% | {↑↓→} |
+| **Net forward progress** | — | {pct}% | {↑↓→} |
+
+*Slop tax > 30% means the framework is generating more rework than value. Target: < 15%.*
 
 ## Trends (vs {prior_retro_date})
 - Scope velocity: {delta}% ({old} → {new} per session)

@@ -213,6 +213,7 @@ Core requirements:
 
 ### Phase 2: Draft Design Structure
 Create a structured design.md with sections:
+- **Design Brief** (REQUIRED — short alignment checkpoint, ~30-50 lines)
 - Purpose & scope
 - Architecture overview
 - Data model (DDL-level if from-analysis)
@@ -224,6 +225,20 @@ Create a structured design.md with sections:
 - Testing & validation strategy (with scenario-to-test mapping if from-analysis)
 - Alternatives & tradeoffs
 - Open questions
+
+#### Design Brief (REQUIRED)
+
+The Design Brief is a short, human-reviewable alignment checkpoint at the top of design.md. It exists so a code owner can review ~30-50 lines and catch wrong patterns, wrong assumptions, or wrong direction BEFORE the full design and plan are generated.
+
+**MUST include:**
+- **Current State** — What exists today in the codebase for this area (2-3 sentences)
+- **Target State** — What we are building and why (2-3 sentences)
+- **Patterns to Follow** — Which existing codebase patterns the design will use (with file/module references)
+- **Patterns to Avoid** — Which existing codebase patterns exist but should NOT be followed (with explanation of why they are wrong/outdated)
+- **Resolved Decisions** — Key technical decisions already made (bullet list)
+- **Open Questions** — Things not yet decided that need human input (bullet list, may be empty)
+
+**Why this exists:** Full design docs can be 200+ lines. Humans will read 30 lines but not 200. The Design Brief gives steering leverage before the expensive downstream work (scoping, planning, implementation) begins. A wrong pattern caught here saves thousands of lines of rework.
 
 ### Phase 3: Clarify & Iterate
 - If `mode: interactive`: ask targeted questions for unresolved areas.

@@ -727,6 +727,7 @@ Commands:
   skill-proposals [subcommand]  Show or dismiss generated skill proposals
   profile [subcommand]          Show, inspect stale, or clear developer profile observations
   upgrade [version] [--dry-run] Upgrade Bubbles to latest or specific version
+  lint-budget                   Measure instruction density in agent prompts
   sunnyvale <alias>             Resolve a Sunnyvale alias
   aliases                       List all Sunnyvale aliases
   help                          Show this help message
@@ -2001,6 +2002,15 @@ cmd_profile() {
   bash "$SCRIPT_DIR/developer-profile.sh" "${1:-show}"
 }
 
+cmd_lint_budget() {
+  local agents_dir
+  agents_dir="$(cd "$SCRIPT_DIR/../.." && pwd)/agents"
+  if [[ ! -d "$agents_dir" ]]; then
+    agents_dir="$(find_repo_root)/.github/agents"
+  fi
+  bash "$SCRIPT_DIR/instruction-budget-lint.sh" "$agents_dir" "$@"
+}
+
 cmd_upgrade() {
   local target_version="main"
   local dry_run=false
@@ -2128,6 +2138,7 @@ main() {
     skill-proposals)    cmd_skill_proposals "$@" ;;
     profile)            cmd_profile "$@" ;;
     upgrade)            cmd_upgrade "$@" ;;
+    lint-budget)        cmd_lint_budget "$@" ;;
     sunnyvale)          cmd_sunnyvale "$@" ;;
     aliases)            cmd_aliases "$@" ;;
     help|-h|--help)     cmd_help ;;
