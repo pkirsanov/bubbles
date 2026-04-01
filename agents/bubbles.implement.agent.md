@@ -44,9 +44,9 @@ handoffs:
 
 **⚠️ Anti-Fabrication (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
-**⚠️ No-Defaults / No-Stubs:** See [critical-requirements.md](bubbles_shared/critical-requirements.md). Reality scan (G028+G030) enforces mechanically.
+**⚠️ No-Defaults / No-Stubs:** See [critical-requirements.md](bubbles_shared/critical-requirements.md). Reality scan (G028+G028) enforces mechanically.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G030, G036, G038, G040). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I5) MUST pass before reporting results. **G040 (zero deferral language) is critical — NEVER write deferral language into scope artifacts and then mark the spec done.**
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G027, G028, G028, G036, G038, G040). State transition guard MUST pass before any state.json write. Per-agent validation (Tier 2 checks I1-I5) MUST pass before reporting results. **G040 (zero deferral language) is critical — NEVER write deferral language into scope artifacts and then mark the spec done.**
 
 **Artifact Ownership (this agent creates/modifies ONLY these):**
 - Product code and test code — implementation and test files

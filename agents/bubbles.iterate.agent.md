@@ -91,7 +91,7 @@ handoffs:
 
 **⚠️ Sequential Completion:** Previous scope MUST be fully complete before next scope. Each iteration N fully complete before N+1.
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G030). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail`. Tier 2 checks IT1-IT5 MUST pass before reporting.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G023, G024, G025, G028, G028). State transition guard (G023) MUST pass before any state.json write — use `--revert-on-fail`. Tier 2 checks IT1-IT5 MUST pass before reporting.
 
 **Non-goals:**
 - Implementing code directly (→ bubbles.implement)
@@ -125,7 +125,7 @@ $ADDITIONAL_CONTEXT
 
 Supported options:
 - `type: tests|docs|stabilize|devops|gaps|harden|implement|refactor|feature|bugfix|analyze|improve|security|chaos` - Work type to focus on
-- `mode: full-delivery|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|improve-existing|iterate|resume-only` - Override automatic mode selection (default: auto-detect from work type)
+- `mode: full-delivery|full-delivery|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|improve-existing|iterate|resume-only` - Override automatic mode selection (default: auto-detect from work type)
 - `iterations: <N>` - Run N iterations (default: 1)
 - `run_mode: endless` - Keep iterating until time budget expires
 - `until: <RFC3339>` - Time budget end (finish active iteration, don't start new)
@@ -372,7 +372,7 @@ When the user does NOT specify an explicit `mode:`, iterate auto-selects based o
 | Incomplete bug fix | `bugfix-fastlane` | Focused bug loop with reproduction/verification |
 | Active blocker | `bugfix-fastlane` | Fix the blocker immediately |
 | Existing incomplete scope | `full-delivery` | Standard implementation-to-completion |
-| Missing artifacts (spec/design/scopes) | `feature-bootstrap` | Create artifacts before implementing |
+| Missing artifacts (spec/design/scopes) | `full-delivery` | Create artifacts before implementing |
 | Type: `tests` | `test-to-doc` | Test execution + quality chain |
 | Type: `docs` | `docs-only` | Documentation updates only |
 | Type: `stabilize` | `stabilize-to-doc` | Validation → stability/ops hardening → fix → quality chain |
@@ -381,9 +381,9 @@ When the user does NOT specify an explicit `mode:`, iterate auto-selects based o
 | Type: `harden` | `harden-to-doc` | Deep hardening → fix → quality chain |
 | Type: `implement` | `full-delivery` | Standard implementation |
 | Type: `refactor` | `harden-gaps-to-doc` | Full quality sweep for refactoring |
-| Type: `feature` | `feature-bootstrap` | New feature with artifact creation |
+| Type: `feature` | `full-delivery` | New feature with artifact creation |
 | Type: `bugfix` | `bugfix-fastlane` | Bug fix with reproduction gates |
-| Type: `analyze` | `improve-existing` or `product-discovery` | Competitive analysis + improvements |
+| Type: `analyze` | `improve-existing` or `spec-scope-hardening` with `analyze: true` | Competitive analysis + improvements |
 | Type: `improve` | `improve-existing` | Competitive analysis + reconcile + implement improvements |
 | Type: `security` | `full-delivery` | Security review runs as part of the full delivery quality chain |
 | Type: `chaos` | `chaos-hardening` | Stochastic probes + fix what breaks |
@@ -506,7 +506,7 @@ Execute the selected mode's `phaseOrder` from `bubbles/workflows.yaml` by invoki
 
 #### Analyze Phase Protocol (MANDATORY for modes with `analyze` in phaseOrder)
 
-When the selected mode's `phaseOrder` includes `analyze` (e.g., `improve-existing`, `product-to-delivery`, `product-discovery`), this phase MUST be executed BEFORE any implementation work. Skipping this phase is a **blocking violation**.
+When the selected mode's `phaseOrder` includes `analyze` (e.g., `improve-existing`, `product-to-delivery`, `spec-scope-hardening` with `analyze: true`), this phase MUST be executed BEFORE any implementation work. Skipping this phase is a **blocking violation**.
 
 1. **Business Analysis** — invoke `runSubagent` with `bubbles.analyst`:
    - Analyze current capabilities by reverse-engineering code and specs

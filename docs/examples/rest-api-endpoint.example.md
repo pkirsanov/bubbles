@@ -561,7 +561,7 @@ Scenario: Database migration creates schema correctly
     ```
     [PASTE VERBATIM grep output showing imports/usage]
     ```
-- [ ] No defaults/fallbacks in production code (Gate G030) — zero `unwrap_or()`, `|| default`, `?? fallback` patterns
+- [ ] No defaults/fallbacks in production code (Gate G028) — zero `unwrap_or()`, `|| default`, `?? fallback` patterns
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM grep output showing no matches]
@@ -873,7 +873,7 @@ Scenario: Idempotent PUT — same payload twice yields same result
     ```
     [PASTE VERBATIM cross-reference output]
     ```
-- [ ] No defaults/fallbacks in production code (Gate G030)
+- [ ] No defaults/fallbacks in production code (Gate G028)
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM grep output showing no matches for unwrap_or, default, fallback]

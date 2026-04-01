@@ -32,7 +32,7 @@ Use them when you want diagnosis, prioritization, or assessment without entering
 
 Use workflow modes after review when you already know you want follow-through work such as planning, implementation, testing, validation, audit, or docs synchronization.
 
-Current assessment: review still does not need its own separate workflow family, but existing-feature work now splits more clearly: use `improve-existing` for evolutionary improvements, `reconcile-to-doc` for stale state cleanup, and `redesign-existing` when requirements, UX, design, and scopes all need reconciliation before a major rewrite.
+Current assessment: review still does not need its own separate workflow family, but existing-feature work now splits more clearly: use `improve-existing` for evolutionary improvements, `reconcile-to-doc` for stale state cleanup, and `product-to-delivery` (with existing impl) when requirements, UX, design, and scopes all need reconciliation before a major rewrite.
 
 Optional execution tags apply across modes when you need more control without changing the default autonomous behavior:
 - `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` inserts or requires `bubbles.grill` before analysis, selection, bootstrap, or locked-behavior invalidation so weak assumptions get challenged early.
@@ -413,13 +413,13 @@ analyze → ux
 | Mode | Phases | Best For |
 |------|--------|----------|
 | `full-delivery` | All phases | Standard features |
-| `full-delivery-strict` | All phases + strict chaos | Critical features |
+| `full-delivery` (with strict tag) | All phases + strict chaos | Critical features |
 | `delivery-lockdown` | Repeated full improvement/certification rounds | Release-candidate or zero-loose-ends delivery |
 | `value-first-e2e-batch` | Prioritized + batched | Large backlogs |
 | `product-to-delivery` | Discovery → delivery | Product ideas |
-| `product-discovery` | Analysis only | Early exploration |
+| `spec-scope-hardening` (with analyze) | Analysis only | Early exploration |
 | `bugfix-fastlane` | Fix → test → regression → hardening → validate → audit | Bug fixes that still need the full quality chain |
-| `feature-bootstrap` | Bootstrap missing artifacts, then deliver | Missing planning artifacts plus implementation |
+| `full-delivery` (with bootstrap) | Bootstrap missing artifacts, then deliver | Missing planning artifacts plus implementation |
 | `iterate` | Implement → test loop | Continuing work |
 | `harden-to-doc` | Harden → fix → test → docs | Code quality |
 | `gaps-to-doc` | Gaps → fix → test → docs | Gap closure |
@@ -430,7 +430,7 @@ analyze → ux
 | `chaos-hardening` | Chaos → fix | Resilience |
 | `chaos-to-doc` | Chaos → validate → docs | Chaos auditing |
 | `reconcile-to-doc` | Reconcile → test → docs | Stale state cleanup |
-| `redesign-existing` | Reconcile → redesign → deliver | Major existing-feature rewrite |
+| `product-to-delivery` (with existing impl) | Reconcile → redesign → deliver | Major existing-feature rewrite |
 | `improve-existing` | Analyze → harden → gaps → fix | Code improvement |
 | `retro-quality-sweep` | Retro-targeted quality sweep | Hotspot-guided maintenance |
 | `stochastic-quality-sweep` | Random quality | Maintenance |
@@ -440,7 +440,7 @@ analyze → ux
 | `docs-only` | Docs only | Pure docs |
 | `validate-only` | Validate only | Quick gate check |
 | `audit-only` | Audit only | Compliance |
-| `brainstorm` | Explore → bootstrap → harden → finalize | Idea exploration, no code |
+| `spec-scope-hardening` (with analyze + socratic) | Explore → bootstrap → harden → finalize | Idea exploration, no code |
 | `devops-to-doc` | DevOps → test → stabilize → security → validate → audit → docs → finalize | Operational delivery |
 | `resume-only` | Resume state | Picking up work |
 

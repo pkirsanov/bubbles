@@ -157,7 +157,7 @@ Replace delegation-by-prose with delegation-by-registry.
   - `bubbles/agent-ownership.yaml`
   - `bubbles/workflows.yaml`
 - update orchestrators and super to consult the registry at runtime
-- add `G054 capability_delegation_gate`
+- add `G042 artifact_ownership_enforcement_gate (absorbs former G042)`
 - extend ownership lint to validate:
   - every workflow phase has an owning agent
   - every specialist declares exactly one primary class: orchestrator, planning-owner, execution-owner, diagnostic, certification, or utility
@@ -295,7 +295,7 @@ Make every agent invocation return a concrete machine-readable outcome and remov
 - upgrade existing `ROUTE-REQUIRED` output into the canonical packet contract
 - teach orchestrators to consume envelopes and continue automatically
 - implement orchestrator-owned micro-fix dispatch: diagnostics emit narrow packets, orchestrators immediately invoke the correct owner
-- add `G062 owner_only_remediation_gate`, `G063 concrete_result_gate`, and `G064 child_workflow_depth_gate`
+- add `G042 artifact_ownership_enforcement_gate` (absorbs former G042), `G063 concrete_result_gate`, and `G064 child_workflow_depth_gate`
 
 ### Exit Criteria
 
@@ -430,7 +430,7 @@ Once enforcement is real, move from opt-in modes to safer defaults.
 
 | Phase | Gates To Add |
 |---|---|
-| 1 | G054 |
+| 1 | G042 |
 | 2 | G055 |
 | 3 | G056, G061 |
 | 4 | G057 |

@@ -592,7 +592,7 @@ Scenario: URL with query string and special characters preserved
     ```
     [PASTE VERBATIM grep output showing: middleware redirect uses returnTo, handler reads return_to field, template has hidden input]
     ```
-- [ ] No defaults/fallbacks in production code (Gate G030) — the `/dashboard` fallback in the login handler is the ONLY intentional default (documented in spec as "missing returnTo defaults to dashboard")
+- [ ] No defaults/fallbacks in production code (Gate G028) — the `/dashboard` fallback in the login handler is the ONLY intentional default (documented in spec as "missing returnTo defaults to dashboard")
   - Raw output evidence (inline):
     ```
     [PASTE VERBATIM grep output — only one intentional default for missing returnTo, no other unwrap_or/fallback patterns]

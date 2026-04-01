@@ -34,4 +34,4 @@ An agent MUST NOT write evidence tagged with another agent's phase name. Cross-p
 
 - [artifact-ownership.md](artifact-ownership.md) — who may write to which artifacts (evidence blocks follow the same ownership)
 - [completion-governance.md](completion-governance.md) — what "complete" means and what deferral language blocks it
-- [state-gates.md](state-gates.md) — mechanical gate definitions including G065 (pseudo-completion language) and G066 (phase-claim provenance)
+- [state-gates.md](state-gates.md) — mechanical gate definitions including G040 (incomplete work language) and G066 (phase-claim provenance)

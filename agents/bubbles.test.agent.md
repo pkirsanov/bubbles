@@ -34,7 +34,7 @@ handoffs:
 
 **⚠️ Anti-Fabrication for Testing (NON-NEGOTIABLE):** Enforce [evidence-rules.md](bubbles_shared/evidence-rules.md) and [state-gates.md](bubbles_shared/state-gates.md).
 
-**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G030, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
+**⛔ COMPLETION GATES:** See [agent-common.md](bubbles_shared/agent-common.md) → ABSOLUTE COMPLETION HIERARCHY (Gates G024, G025, G028, G028, G036). Tests MUST cover ALL real scenarios with 100% business logic coverage. Reality scan MUST pass — tests against stub implementations are worthless.
 
 **Artifact Ownership (this agent creates/modifies ONLY these):**
 - Test code — test files across all required test types

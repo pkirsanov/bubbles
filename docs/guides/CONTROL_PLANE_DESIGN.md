@@ -399,7 +399,7 @@ Only orchestrators may invoke child workflows, and child workflow depth must be 
 
 The current gate registry ends at G061. This design would add the following framework gates:
 
-- `G054 capability_delegation_gate` — foreign-owned work must route through the registered specialist
+- `G042 artifact_ownership_enforcement_gate (absorbs former G042)` — foreign-owned work must route through the registered specialist
 - `G055 policy_provenance_gate` — active modes must record value plus source
 - `G056 validate_certification_gate` — only validate may certify promotion state
 - `G057 scenario_manifest_gate` — every changed behavior must resolve to stable scenario IDs and live tests
@@ -407,7 +407,7 @@ The current gate registry ends at G061. This design would add the following fram
 - `G059 regression_contract_gate` — protected regression tests cannot drift without scenario invalidation
 - `G060 scenario_tdd_gate` — when TDD is active, targeted red evidence must exist before green certification
 - `G061 rework_packet_gate` — route-required findings must produce structured packets, not narrative-only handoffs
-- `G062 owner_only_remediation_gate` — only owning planning/execution specialists may modify their surfaces; diagnostics must route
+- `G042 artifact_ownership_enforcement_gate` (absorbs former G042) — only owning planning/execution specialists may modify their surfaces; diagnostics must route
 - `G063 concrete_result_gate` — every agent invocation must end with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked` plus the required concrete payload
 - `G064 child_workflow_depth_gate` — only orchestrators may invoke child workflows and nesting depth may not exceed 1
 

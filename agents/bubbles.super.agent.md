@@ -295,7 +295,7 @@ User: "why did my workflow stop after validate?"
 -> Brief diagnosis + the exact recovery command
 
 User: "I have a rough idea for a property search engine"
--> /bubbles.workflow  mode: brainstorm socratic: true socraticQuestions: 5
+-> /bubbles.workflow  mode: spec-scope-hardening analyze: true socratic: true socratic: true socraticQuestions: 5
 
 User: "deliver this fast with parallel scopes"
 -> /bubbles.workflow  specs/<feature> mode: full-delivery parallelScopes: dag maxParallelScopes: 2
@@ -315,13 +315,13 @@ For any user request, first discover the current agent/mode inventory, then matc
 | "New feature from idea to shipped code" | analyst → ux → design → plan → `workflow mode: full-delivery` | `tdd: true` if user wants safety |
 | "Fix a bug properly" | bug → `workflow mode: bugfix-fastlane` | — |
 | "Review then improve existing feature" | system-review → `workflow mode: improve-existing` | `specReview: once-before-implement` for stale code |
-| "Explore a rough idea first" | `workflow mode: brainstorm` | `socratic: true` (default for brainstorm) |
-| "Brainstorm then build" | `workflow mode: brainstorm` → `workflow mode: full-delivery` | — |
+| "Explore a rough idea first" | `workflow mode: spec-scope-hardening analyze: true socratic: true` | `socratic: true` (default for brainstorm) |
+| "Brainstorm then build" | `workflow mode: spec-scope-hardening analyze: true socratic: true` → `workflow mode: full-delivery` | — |
 | "Check stale specs then improve" | spec-review → `workflow mode: improve-existing` | `specReview: once-before-implement` |
 | "Safe maintenance pass" | spec-review → simplify/stabilize/security mode | — |
 | "Ship-readiness, no loose ends" | `workflow mode: delivery-lockdown` | `autoCommit: scope`, `grillMode: required-on-ambiguity` |
 | "Quality sweep with TDD" | `workflow mode: delivery-lockdown` | `tdd: true` |
-| "Explore then commit to full build" | `workflow mode: brainstorm` → `workflow mode: full-delivery-strict` | `gitIsolation: true` |
+| "Explore then commit to full build" | `workflow mode: spec-scope-hardening analyze: true socratic: true` → `workflow mode: full-delivery strict: true` | `gitIsolation: true` |
 | "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands | — |
 | "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` | — |
 | "Resume yesterday's work" | status → `workflow mode: resume-only` | — |
@@ -365,7 +365,7 @@ When a user asks "which mode should I use?" or describes a situation:
 
 | Situation | Likely Mode | Default Tags |
 |-----------|-------------|--------------|
-| Exploring an idea, no code yet | `brainstorm` | `socratic: true` |
+| Exploring an idea, no code yet | `spec-scope-hardening` with `analyze: true socratic: true` | `socratic: true` |
 | No code changes needed | Modes with `statusCeiling: docs_updated` or `validated` | — |
 | Bug fix | Mode with "bugfix" or "fastlane" in name | — |
 | New feature from scratch | Mode with "product" or "discovery" in name/description | — |
@@ -379,7 +379,7 @@ When a user asks "which mode should I use?" or describes a situation:
 | Adversarial / random probing | Mode with "stochastic" or "chaos" in name | — |
 | Continuing work | Mode with "iterate" or "resume" in name | — |
 | Speed up delivery | Any delivery mode | `parallelScopes: dag` |
-| High-assurance delivery | `full-delivery-strict` or `delivery-lockdown` | `tdd: true grillMode: required-on-ambiguity` |
+| High-assurance delivery | `full-delivery` with `strict: true` or `delivery-lockdown` | `tdd: true grillMode: required-on-ambiguity` |
 
 **Optional control-plane tags** that can be appended to most workflow commands:
 - `grillMode: on-demand|required-on-ambiguity|required-for-lockdown` — resolve whether `bubbles.grill` must interrogate assumptions before planning or invalidation
@@ -612,8 +612,8 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "how did spec 042 go?" -> /bubbles.retro spec 042
 "get a second opinion from another AI" -> /bubbles.workflow <feature> mode: full-delivery crossModelReview: codex
 "update my model registry" -> explain crossModelReview registry in bubbles.config.json, check lastVerified freshness
-"I have a rough idea for a new feature" -> /bubbles.workflow mode: brainstorm socratic: true socraticQuestions: 5
-"think through this booking idea before I build anything" -> /bubbles.workflow mode: brainstorm for specs/<NNN-feature>
+"I have a rough idea for a new feature" -> /bubbles.workflow mode: spec-scope-hardening analyze: true socratic: true socratic: true socraticQuestions: 5
+"think through this booking idea before I build anything" -> /bubbles.workflow mode: spec-scope-hardening analyze: true socratic: true for specs/<NNN-feature>
 "this spec has 8 independent scopes, can we go faster?" -> /bubbles.workflow specs/<feature> mode: full-delivery parallelScopes: dag maxParallelScopes: 2
 "show me the parallel plan without running it" -> /bubbles.workflow specs/<feature> mode: full-delivery parallelScopes: dag-dry
 "I keep hitting the same Docker cache issue" -> Check skill-proposals; if pattern ≥3x, surface proposal
@@ -624,7 +624,7 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "which agents have been running?" -> /bubbles.status (shows agent activity dashboard)
 "deliver this carefully, TDD, commit each scope, on a branch" -> /bubbles.workflow specs/<feature> mode: full-delivery tdd: true grillMode: required-on-ambiguity autoCommit: scope gitIsolation: true
 "ship this, no loose ends, parallel where possible" -> /bubbles.workflow specs/<feature> mode: delivery-lockdown parallelScopes: dag autoCommit: scope
-"brainstorm first then deliver strict" -> (1) /bubbles.workflow mode: brainstorm, (2) /bubbles.workflow specs/<feature> mode: delivery-lockdown tdd: true
+"brainstorm first then deliver strict" -> (1) /bubbles.workflow mode: spec-scope-hardening analyze: true socratic: true, (2) /bubbles.workflow specs/<feature> mode: delivery-lockdown tdd: true
 "which files keep breaking?" -> /bubbles.retro hotspots
 "where are the bug magnets?" -> /bubbles.retro hotspots (shows bug-fix density per file)
 "are there hidden dependencies in the code?" -> /bubbles.retro coupling (co-change coupling analysis)
@@ -654,7 +654,7 @@ When the user's request is ambiguous, use this priority:
 9. If about runtime lease conflicts, shared Docker reuse, or stale stacks -> `runtime`
 10. If about velocity/patterns/retrospective -> `/bubbles.retro`
 11. If about model registry/cross-model review freshness -> check + explain registry
-12. If about brainstorming or exploring an idea -> `/bubbles.workflow mode: brainstorm`
+12. If about brainstorming or exploring an idea -> `/bubbles.workflow mode: spec-scope-hardening analyze: true socratic: true`
 13. If about skill proposals or repeated patterns -> `skill-proposals`
 14. If about developer preferences or profile -> `profile`
 15. If about agent activity or invocation counts -> `/bubbles.status`

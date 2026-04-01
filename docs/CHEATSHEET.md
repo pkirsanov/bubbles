@@ -130,7 +130,7 @@
 | `sunnyvale liquor-then-sweep` | `retro-quality-sweep` | *"The liquor finds the mess. Then the whole crew sweeps it clean."* |
 | `sunnyvale liquor-then-look` | `retro-to-review` | *"The liquor shows me where to look. Green Bastard tells me what's broken."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
-| `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
+| `sunnyvale same-lot-new-trailer` | `product-to-delivery` (with existing impl) | *"Same lot, boys. New trailer."* |
 
 ---
 
@@ -140,7 +140,7 @@
 |------|-------|-------------|
 | `value-first-e2e-batch` | boys-plan | Auto-discover highest-value work, full delivery pipeline |
 | `full-delivery` | full-send | Standard complete delivery — the default |
-| `full-delivery-strict` | clean-and-sober | Strict enforcement, no blocked continuation |
+| `full-delivery` (with strict tag) | clean-and-sober | Strict enforcement, no blocked continuation |
 | `delivery-lockdown` | no-loose-ends | Keep looping through tests, quality sweep, validation, and bug closure until truly green |
 | `devops-to-doc` | keep-the-park-online | Focused DevOps execution + operational verification + docs sync |
 | `simplify-to-doc` | strip-it-down | Simplify an existing implementation, prove it still works, then sync docs |
@@ -152,22 +152,22 @@
 | `harden-gaps-to-doc` | conky-says | Thorough pre-release sweep |
 | `product-to-delivery` | freedom-35 | Full pipeline: analyst → UX → design → implement → ship |
 | `docs-only` | gnome-sayin | Documentation maintenance only |
-| `feature-bootstrap` | smokes-and-setup | Repair missing artifacts, then continue delivery |
+| `full-delivery` (with bootstrap) | smokes-and-setup | Repair missing artifacts, then continue delivery |
 | `iterate` | keep-going | Continue scope-by-scope implementation |
 | `resume-only` | resume-the-tape | Resume from last session state |
-| `product-discovery` | whats-the-big-idea | Business analysis + UX exploration only |
+| `spec-scope-hardening` (with analyze) | whats-the-big-idea | Business analysis + UX exploration only |
 | `test-to-doc` | quick-dirty | Run tests, fix failures, update docs |
 | `audit-only` | open-and-shut | Run audit phase only |
 | `stabilize-to-doc` | bill-fixes-it | Stability fixes → test → docs |
 | `improve-existing` | survival-of-the-fitness | Analyze, harden, improve → test → docs |
-| `redesign-existing` | same-lot-new-trailer | Reconcile stale artifacts, redesign an existing feature, then deliver |
+| `product-to-delivery` (with existing impl) | same-lot-new-trailer | Reconcile stale artifacts, redesign an existing feature, then deliver |
 | `spec-scope-hardening` | harden-up | Tighten specs and scope definitions |
 | `harden-to-doc` | shit-winds-coming | Harden → test → docs |
 | `gaps-to-doc` | gut-feeling | Gap analysis → test → docs |
 | `chaos-to-doc` | we-broke-it | Chaos → test → docs |
 | `reconcile-to-doc` | i-toad-a-so | Reconcile conflicts → test → docs |
 | `validate-to-doc` | just-watching | Validate + audit + docs |
-| `brainstorm` | smokes-and-think | Explore ideas before building — produces design artifacts, no code |
+| `spec-scope-hardening` (with analyze + socratic) | smokes-and-think | Explore ideas before building — produces design artifacts, no code |
 | `retro-to-simplify` | liquor-then-tape | Data-driven simplification — retro finds hotspots, then simplify fixes them |
 | `retro-to-harden` | liquor-then-harden | Data-driven hardening — retro finds bug magnets, then harden targets them |
 | `retro-quality-sweep` | liquor-then-sweep | Retro finds hotspots, then the deterministic quality crew cleans them up |
@@ -206,7 +206,7 @@
 | G014 | Bootstrap readiness | Design/spec/scopes ready before implementation |
 | G015 | Scenario depth | Detailed Gherkin scenarios covering use cases |
 | G016 | Gherkin traceability | Scenarios map to E2E tests |
-| G017 | DoD E2E expansion | DoD includes E2E items |
+| G016 | DoD E2E expansion | DoD includes E2E items |
 | G018 | DoD completion | All DoD checkboxes checked |
 | G019 | Sequential completion | Previous spec done before starting next |
 | G020 | Anti-fabrication | Evidence is real, not fabricated |
@@ -219,7 +219,7 @@
 | G027 | Phase-scope coherence | Completed phases match completed scopes |
 | G028 | Implementation reality | No stubs/fakes/hardcoded data in source |
 | G029 | Integration completeness | All artifacts wired into the system |
-| G030 | No defaults/no fallbacks | Production code fails fast instead of masking missing inputs |
+| G028 | No defaults/no fallbacks | Production code fails fast instead of masking missing inputs |
 | G031 | Findings artifact update | Findings are recorded in artifacts before verdict |
 | G032 | Business analysis | Actors, use cases, scenarios, wireframes are present when required |
 | G033 | Design readiness | design.md + scopes.md exist before implement |
@@ -228,22 +228,22 @@
 | G036 | Red→green traceability | Changed behavior shows failing proof before passing proof |
 | G037 | Scope size discipline | Scopes stay small, isolated, and single-outcome |
 | G038 | Micro-fix containment | Failures are repaired in narrow loops before broad reruns |
-| G039 | Self-healing containment | Fix loops never stack; maxDepth=1, maxRetries=3, narrowing context |
+| G038 | Self-healing containment | Fix loops never stack; maxDepth=1, maxRetries=3, narrowing context |
 | G040 | Zero deferral language | Scope artifacts scanned for "deferred", "future scope", "out of scope", etc. — can't mark done with outstanding work |
 | G041 | DoD format integrity | Prevents agents from bypassing guards by reformatting checkboxes (`- (deferred)`) or inventing scope statuses (`Deferred — Planned Improvement`) |
 | G042 | Agent ownership | Foreign-owned artifacts must be routed to the owning specialist; no cross-authoring by diagnostic agents |
 | G043 | Consumer trace | Renames/removals require zero stale references across all consumers |
 | G044 | Regression baseline | Before/after test count comparison — previously-passing tests must still pass |
-| G045 | Cross-spec regression | Done specs' tests rerun after changes — no cross-feature interference |
-| G046 | Spec conflict detection | Route/table/API collisions scanned against all existing specs |
+| G044 | Cross-spec regression | Done specs' tests rerun after changes — no cross-feature interference |
+| G044 | Spec conflict detection | Route/table/API collisions scanned against all existing specs |
 | G047 | IDOR/auth bypass | Authorization decisions must use authenticated context, not caller-controlled identity fields |
 | G048 | Silent decode failure | Stored-data decode failures must be surfaced, never silently dropped |
-| G049 | Evidence clone detection | DoD evidence blocks must be unique, not copy-pasted clones |
-| G050 | Gateway route forwarding | Backend endpoints must have matching gateway or proxy forwarding rules |
+| G021 | Evidence clone detection | DoD evidence blocks must be unique, not copy-pasted clones |
+| G035 | Gateway route forwarding | Backend endpoints must have matching gateway or proxy forwarding rules |
 | G051 | Test env dependency | Tests must not rely on hidden environment dependencies |
 | G052 | Artifact freshness | Superseded content must be isolated from active truth; stale scope appendices cannot keep executable structure |
 | G053 | Implementation delta evidence | Implementation-bearing workflows must prove runtime delivery with git-backed code-diff evidence |
-| G054 | Capability delegation | Foreign-owned work must route through the registered specialist; agents must not perform cross-owner actions inline |
+| G042 | Capability delegation | Foreign-owned work must route through the registered specialist; agents must not perform cross-owner actions inline |
 | G055 | Policy provenance | Active execution modes (grill, TDD, lockdown, etc.) must record value plus source in policySnapshot |
 | G056 | Validate certification | Only bubbles.validate may certify completion state; other agents submit execution claims and transition requests |
 | G057 | Scenario manifest | Every changed user-visible behavior must map to stable scenario IDs in scenario-manifest.json with live-system BDD coverage |
@@ -251,10 +251,10 @@
 | G059 | Regression contract | Scenario-linked regression tests cannot drift, weaken, or be removed until the owning scenario contract is invalidated |
 | G060 | Scenario TDD | When TDD is active, targeted failing proof must exist before the implementation is accepted as green |
 | G061 | Rework packet | Route-required findings must produce structured transition or rework packets tied to scenarios, DoD items, and owning specialists |
-| G062 | Owner-only remediation | Only owning planning or execution specialists may remediate owned surfaces; diagnostics and certification must route |
+| G042 | Owner-only remediation | Only owning planning or execution specialists may remediate owned surfaces; diagnostics and certification must route |
 | G063 | Concrete result | Every agent or child-workflow invocation must end with `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked` |
 | G064 | Child workflow depth | Only orchestrators may invoke child workflows, and nesting depth must stay bounded |
-| G065 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
+| G040 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
 | G066 | Phase-claim provenance | Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory; cross-phase impersonation is fabrication |
 | G068 | DoD-Gherkin content fidelity | DoD items must faithfully represent the behavioral claims of their source Gherkin scenarios; no silent rewrites to match delivery |
 | G070 | Outcome contract | spec.md must have Outcome Contract (Intent, Success Signal, Hard Constraints, Failure Condition); validate verifies the outcome was actually achieved |

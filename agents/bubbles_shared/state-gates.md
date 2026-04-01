@@ -22,22 +22,22 @@ Purpose: compact state/completion rules that must remain authoritative for all a
 - Only `bubbles.validate` may write `certification.*` fields (Gate G056).
 - `policySnapshot` must record effective mode settings with provenance (Gate G055).
 - `transitionRequests` and `reworkQueue` must be empty before certification (Gate G061).
-- Diagnostic and certification agents must route foreign-owned remediation instead of fixing inline (Gate G062).
+- Diagnostic and certification agents must route foreign-owned remediation instead of fixing inline (Gate G042).
 - Agent and child-workflow invocations must end with a concrete result outcome, not narrative-only findings (Gate G063).
 - Only orchestrators may invoke child workflows, and nesting depth must remain bounded (Gate G064).
 - Phase claims in `completedPhaseClaims` must have matching agent provenance in `executionHistory` (Gate G066). An agent may only record its own phase name; cross-phase impersonation is fabrication.
 
 ## Mechanical Gates
-- `state-transition-guard.sh` — DoD, scope status, certification/execution coherence, policy provenance (G055), certification state (G056), scenario manifest (G057), lockdown/regression (G058/G059), TDD evidence (G060), transition/rework closure (G061), packet/result integrity and framework contract enforcement (G062/G063/G064), phase-claim provenance (G066)
+- `state-transition-guard.sh` — DoD, scope status, certification/execution coherence, policy provenance (G055), certification state (G056), scenario manifest (G057), lockdown/regression (G058/G059), TDD evidence (G060), transition/rework closure (G061), packet/result integrity and framework contract enforcement (G042/G063/G064), phase-claim provenance (G066)
 - `artifact-lint.sh` — schema validation (v2 + v3), phase coherence, scope parity, specialist completion
 - `implementation-reality-scan.sh` — stub/fake/hardcoded data detection
 - `regression-quality-guard.sh` — silent-pass bailout detection plus adversarial regression heuristics for bug-fix tests
 - `artifact-freshness-guard.sh` — superseded content isolation (G052)
 - `traceability-guard.sh` — Gherkin-to-test-to-evidence linkage, scenario manifest cross-check (G057/G059)
 - `done-spec-audit.sh` — post-completion audit running state-transition-guard + artifact-lint + traceability-guard for all `done` specs
-- `agent-ownership-lint.sh` — ownership/capability registry validation plus owner-only remediation, result-envelope, and child-workflow policy checks (G054/G062/G063/G064)
+- `agent-ownership-lint.sh` — ownership/capability registry validation plus owner-only remediation, result-envelope, and child-workflow policy checks (G042/G042/G063/G064)
 
-## Pseudo-Completion Language Gate (G065)
+## Pseudo-Completion Language Gate (G040)
 
 Scope and report artifacts must not contain unresolved pseudo-completion language when the spec/bug status is `done` or transitioning to `done`.
 

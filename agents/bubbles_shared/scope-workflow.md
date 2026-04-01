@@ -398,7 +398,7 @@ Before marking ANY scope "Done" or setting spec status to "done", the agent MUST
 16. **Verify per-DoD-item evidence (G025)** — EVERY [x] item has raw terminal output evidence inline with legitimate terminal signals. Manually verify each checked item has an evidence block containing real output (pass/fail counts, file paths, exit codes). Items without evidence or with fabricated prose MUST be reverted to [ ]
 17. **Verify test reality (G025)** — ALL test-related DoD items show tests covering ALL Gherkin scenarios, error paths, boundary conditions, and parameter permutations. Tests MUST use real systems (no internal mocks, real test DBs). 100% business logic coverage required.
 18. **Verify stress coverage** — If scope defines latency SLAs (e.g., "under 50ms"), stress test DoD items MUST exist and pass.
-19. **Verify no defaults/fallbacks (G030)** — `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` covers Scan 5. Zero `unwrap_or()`, `|| default`, `?? fallback`, `os.getenv("K", "default")` in production code. All config MUST fail-fast if missing.
+19. **Verify no defaults/fallbacks (G028)** — `bash bubbles/scripts/implementation-reality-scan.sh {FEATURE_DIR} --verbose` covers Scan 5. Zero `unwrap_or()`, `|| default`, `?? fallback`, `os.getenv("K", "default")` in production code. All config MUST fail-fast if missing.
 20. **If ANY check fails** → status MUST remain `in_progress`, NOT be promoted to `done`
 
 **⚠️ STATE TRANSITION SEQUENCE (NON-NEGOTIABLE):**
@@ -420,7 +420,7 @@ Step 5: IF lint fails → STOP. Status stays "in_progress". Fix failures.
 |---------------|-----------------|---------|
 | `full-delivery` | `done` | Implementation + tests completed and verified |
 | `value-first-e2e-batch` | `done` | Full delivery with value-first selection |
-| `feature-bootstrap` | `done` | Bootstrap + implementation completed |
+| `full-delivery` | `done` | Bootstrap + implementation completed |
 | `bugfix-fastlane` | `done` | Bug fixed with reproduction evidence |
 | `chaos-hardening` | `done` | Chaos rounds clean + implementation verified |
 | `spec-scope-hardening` | `specs_hardened` | Planning artifacts improved — NO implementation done |
@@ -436,7 +436,7 @@ Step 5: IF lint fails → STOP. Status stays "in_progress". Fix failures.
 - **Phase Recording Responsibility (MANDATORY):** Each specialist agent may append only its OWN phase name to `execution.completedPhaseClaims` in `state.json` AFTER its Tier 1 + Tier 2 validation checks pass. Agents MUST NOT add other agents' phase names and MUST NOT write `certification.certifiedCompletedPhases`; certification is validate-owned. Pre-populating phases that have not actually executed is fabrication (Gate G027). The recording happens as the agent's LAST step — never before validation succeeds.
 - **Execution History Ownership (MANDATORY):** `executionHistory` is the audit trail for agent/workflow runs. Standalone specialist runs MUST append their own `executionHistory` entry. When a specialist is invoked by the workflow/orchestrator via `runSubagent`, the specialist MUST skip appending `executionHistory`; the workflow/orchestrator records the authoritative entry for that run to avoid duplicate history rows. This exception does NOT change the specialist's responsibility to append its own execution claim.
 - **Phase name mapping:** `bubbles.implement` → `"implement"`, `bubbles.test` → `"test"`, `bubbles.docs` → `"docs"`, `bubbles.validate` → `"validate"`, `bubbles.audit` → `"audit"`, `bubbles.chaos` → `"chaos"`
-- A subsequent `full-delivery` or `feature-bootstrap` run is required to advance status to `done`
+- A subsequent `full-delivery` or `full-delivery` run is required to advance status to `done`
 
 **Example state.json after `spec-scope-hardening`:**
 ```json

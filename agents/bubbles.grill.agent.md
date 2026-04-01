@@ -117,7 +117,7 @@ Strong matches include:
 
 User: `grill this feature idea before we spec it`
 - Return a Grill Report
-- Usually route to `bubbles.analyst` or `bubbles.workflow ... mode: product-discovery grillMode: required-on-ambiguity`
+- Usually route to `bubbles.analyst` or `bubbles.workflow ... mode: spec-scope-hardening analyze: true grillMode: required-on-ambiguity`
 
 User: `pressure test this design before implementation`
 - Return the weakest technical assumptions
