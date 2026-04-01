@@ -902,6 +902,11 @@
       <td class="quote-col">"The liquor shows me the weak spots. Harden up, boys."</td>
     </tr>
     <tr>
+      <td class="cmd">sunnyvale liquor-then-sweep</td>
+      <td class="maps-to">retro-quality-sweep</td>
+      <td class="quote-col">"The liquor finds the mess. Then the whole crew sweeps it clean."</td>
+    </tr>
+    <tr>
       <td class="cmd">sunnyvale liquor-then-look</td>
       <td class="maps-to">retro-to-review</td>
       <td class="quote-col">"The liquor shows me where to look. Green Bastard tells me what's broken."</td>
@@ -1067,6 +1072,12 @@
     <div class="wf-alias">→ sunnyvale liquor-then-harden</div>
     <div class="wf-desc">Data-driven hardening. Retro finds bug magnets and worsening hotspots, then the hardening pipeline targets those areas.</div>
     <div class="wf-quote">"The liquor shows me the weak spots. Harden up, boys."</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">retro-quality-sweep</div>
+    <div class="wf-alias">→ sunnyvale liquor-then-sweep</div>
+    <div class="wf-desc">Retro-guided quality sweep. The liquor finds the hotspot mess, then simplify, harden, and the rest of the crew clean it up deterministically.</div>
+    <div class="wf-quote">"The liquor finds the mess. Then the whole crew sweeps it clean."</div>
   </div>
   <div class="workflow-card">
     <div class="wf-name">retro-to-review</div>
@@ -1281,6 +1292,7 @@
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Heating hotspot"</span><span class="context">— a file with increasing churn period-over-period. Getting worse.</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then tape"</span><span class="context">— retro-to-simplify: retro finds the hotspots, Donny simplifies them</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then harden"</span><span class="context">— retro-to-harden: retro finds the weak spots, then harden them up</span></div>
+    <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then sweep"</span><span class="context">— retro-quality-sweep: retro picks the hotspot mess, then the deterministic quality crew sweeps it clean</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then look"</span><span class="context">— retro-to-review: retro identifies the riskiest files, Green Bastard reviews them</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Just tell Bubbles"</span><span class="context">— start with /bubbles.workflow and describe what you want in plain English</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Bubbles figures it out"</span><span class="context">— workflow delegates to super for NLP + iterate for work-picking. Zero knowledge required.</span></div>
@@ -1531,6 +1543,7 @@
     <tr><td class="cmd">"Somebody's gotta drive"</td><td class="maps-to">Bus factor — single-author files are knowledge silos</td><td class="quote-col">/bubbles.retro busfactor — who knows what</td></tr>
     <tr><td class="cmd">"Liquor then tape"</td><td class="maps-to">Data-driven simplification — retro finds hotspots, Donny simplifies</td><td class="quote-col">retro-to-simplify workflow mode</td></tr>
     <tr><td class="cmd">"Liquor then harden"</td><td class="maps-to">Data-driven hardening — retro finds weak spots, then harden</td><td class="quote-col">retro-to-harden workflow mode</td></tr>
+    <tr><td class="cmd">"Liquor then sweep"</td><td class="maps-to">Retro-guided quality sweep — retro finds the hotspot mess, then the crew sweeps it clean</td><td class="quote-col">retro-quality-sweep workflow mode</td></tr>
     <tr><td class="cmd">"Liquor then look"</td><td class="maps-to">Data-driven review — retro targets riskiest files for review</td><td class="quote-col">retro-to-review workflow mode</td></tr>
     <tr><td class="cmd">"3 strikes you're out"</td><td class="maps-to">Three strikes and you're out</td><td class="quote-col">3-strike escalation — stop fixing, start escalating</td></tr>
     <tr><td class="cmd">"Are we concerned or just done?"</td><td class="maps-to">Done… but watch that thing</td><td class="quote-col">done_with_concerns — all gates pass but risks flagged</td></tr>
@@ -1589,7 +1602,7 @@
   <p>Bubbles Agent System v3.3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_VERSION_FOOTER_END -->
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>67 Gates • 34 Agents • 33 Workflow Modes • 25 Phases • 0 Shit Hawks</p>
+  <p>67 Gates • 34 Agents • 34 Workflow Modes • 25 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

@@ -39,11 +39,16 @@ If you want to run just the hardening sequence on existing code:
 /bubbles.regression  check for regressions in catalog feature
 /bubbles.stabilize  stabilize the catalog feature
 
+# Retro-guided deterministic quality sweep
+/bubbles.workflow  retro-quality-sweep for 042-catalog
+
 # Quality sweep with all hardening agents
 /bubbles.workflow  stochastic-quality-sweep triggerAgents: regression,simplify,stabilize,security maxRounds: 8
 ```
 
 > **💡 Tip:** Run `/bubbles.retro hotspots` before hardening to identify bug magnets and worsening hotspots. This tells you which files deserve the most attention during the hardening pass.
+
+> **💡 Tip:** If you want retro to pick the hotspots and then immediately run the deterministic cleanup/hardening chain, use `retro-quality-sweep` instead of wiring together separate retro/simplify/harden steps yourself.
 
 ## Zero-Loose-Ends Release Path
 

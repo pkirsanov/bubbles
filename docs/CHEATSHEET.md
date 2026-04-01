@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **34 Agents · 67 Gates · 33 Workflow Modes · 25 Phases**
+> **34 Agents · 67 Gates · 34 Workflow Modes · 25 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -127,6 +127,7 @@
 | `sunnyvale tangled-up` | `bubbles.retro coupling` | *"It's all tangled up like Christmas lights, Randy."* |
 | `sunnyvale liquor-then-tape` | `retro-to-simplify` | *"The liquor shows me the problems. Donny tapes them up."* |
 | `sunnyvale liquor-then-harden` | `retro-to-harden` | *"The liquor shows me the weak spots. Harden up, boys."* |
+| `sunnyvale liquor-then-sweep` | `retro-quality-sweep` | *"The liquor finds the mess. Then the whole crew sweeps it clean."* |
 | `sunnyvale liquor-then-look` | `retro-to-review` | *"The liquor shows me where to look. Green Bastard tells me what's broken."* |
 | `sunnyvale cant-just-slap` | `bubbles.ux` | *"You can't just slap things together."* |
 | `sunnyvale same-lot-new-trailer` | `redesign-existing` | *"Same lot, boys. New trailer."* |
@@ -169,6 +170,7 @@
 | `brainstorm` | smokes-and-think | Explore ideas before building — produces design artifacts, no code |
 | `retro-to-simplify` | liquor-then-tape | Data-driven simplification — retro finds hotspots, then simplify fixes them |
 | `retro-to-harden` | liquor-then-harden | Data-driven hardening — retro finds bug magnets, then harden targets them |
+| `retro-quality-sweep` | liquor-then-sweep | Retro finds hotspots, then the deterministic quality crew cleans them up |
 | `retro-to-review` | liquor-then-look | Data-driven review — retro finds risks, then code-review diagnoses them |
 
 **Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `crossModelReview` (off|codex|terminal)
@@ -566,6 +568,7 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | "Somebody's gotta drive" | Bus factor analysis — single-author files are knowledge silos | `/bubbles.retro busfactor` — who knows what, and what happens if they leave |
 | "Liquor then tape" | Data-driven simplification — retro finds hotspots, Donny simplifies them | `retro-to-simplify` workflow mode |
 | "Liquor then harden" | Data-driven hardening — retro finds weak spots, then harden them up | `retro-to-harden` workflow mode |
+| "Liquor then sweep" | Retro-guided quality sweep — retro picks the hotspot mess, then the full cleanup crew sweeps it | `retro-quality-sweep` workflow mode |
 | "Liquor then look" | Data-driven review — retro targets the riskiest files for code review | `retro-to-review` workflow mode |
 | \"That spec's got freezer burn\" | Expired/stale content | Spec freshness audit finding |
 | \"Just tell Bubbles\" | Start with `/bubbles.workflow` and describe what you want in plain English | Universal entry point — workflow resolves intent, picks work, drives phases |

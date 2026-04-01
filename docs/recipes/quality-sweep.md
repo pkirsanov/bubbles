@@ -73,6 +73,16 @@ Use that pattern for requests like "do 10 rounds of stabilize" or similar single
 
 Like bottle kids — you never know where they'll hit, but they always find something.
 
+## Alternative: Retro-Guided Sweep
+
+Want the targeting to be data-driven but the remediation path to be deterministic?
+
+```
+/bubbles.workflow  <feature> mode: retro-quality-sweep
+```
+
+This starts with `bubbles.retro` to identify hotspots, then runs a fixed cleanup-and-hardening chain on those areas: `simplify → harden → gaps → implement → test → regression → stabilize → devops → security → validate → audit → docs`.
+
 ## Individual Quality Tools
 
 ```

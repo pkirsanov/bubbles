@@ -164,7 +164,7 @@ $ADDITIONAL_CONTEXT
 ```
 
 Supported options:
-- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|delivery-lockdown|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|redesign-existing|test-to-doc|chaos-to-doc|validate-to-doc|product-to-delivery|product-discovery|improve-existing|simplify-to-doc|stochastic-quality-sweep|iterate|resume-only`
+- `mode: value-first-e2e-batch|spec-scope-hardening|full-delivery|full-delivery-strict|delivery-lockdown|feature-bootstrap|bugfix-fastlane|docs-only|validate-only|audit-only|brainstorm|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|test-to-doc|chaos-to-doc|validate-to-doc|resume-only|product-discovery|product-to-delivery|stabilize-to-doc|improve-existing|redesign-existing|simplify-to-doc|devops-to-doc|spec-review-to-doc|retro-to-simplify|retro-to-harden|retro-quality-sweep|retro-to-review|stochastic-quality-sweep|iterate`
 - `continue_on_blocked: true|false` (default: true)
 - `final_global_pass: true|false` (default: true)
 - `socratic: true|false` (default: false)
@@ -238,6 +238,7 @@ This protocol is mandatory for feature work, bug work, hardening, gaps, stabiliz
 | "Requirements + UX + design only (no code)" | `product-discovery` | `specs_hardened` | **analyze** → select → bootstrap → harden → docs → validate → audit → finalize |
 | "Analyze existing feature, reconcile stale claims, then improve competitively" | `improve-existing` | `done` | analyze → [one-shot spec-review default] → select → validate → harden → gaps → implement → test → regression → simplify → stabilize → devops → security → validate → audit → chaos → docs → finalize |
 | "Simplify an existing implementation, prove behavior still works, then sync docs" | `simplify-to-doc` | `done` | select → simplify → test → validate → audit → docs → finalize |
+| "Retro-target the hotspot mess, simplify first, then run the full quality crew" | `retro-quality-sweep` | `done` | select → retro → simplify → harden → gaps → implement → test → regression → stabilize → devops → security → validate → audit → docs → finalize |
 | "Randomized adversarial quality probing across specs" | `stochastic-quality-sweep` | `done` | [N rounds: random spec (all or user-subset) + random trigger → per-trigger fix cycle] → docs → finalize (per-spec). Fix cycles: chaos→bug→bootstrap→impl→test→val→audit; simplify→test→val→audit; improve→analyze→bootstrap→impl→test→val→audit; others→bootstrap→impl→test→val→audit |
 | "Priority-driven iterative work execution (N iterations or time-bounded)" | `iterate` | `done` | [N iterations: pick highest-priority work → auto-select mode → execute full delivery cycle] → finalize (per-spec touched) |
 
@@ -329,6 +330,9 @@ The `bubbles.workflow` agent is the **orchestrator** that drives all modes. Invo
 # Simplify an existing implementation without changing the product story:
 /bubbles.workflow specs/019-visual-page-builder mode: simplify-to-doc
 
+# Let retro pick the hotspots, then run a deterministic quality sweep on those areas:
+/bubbles.workflow specs/019-visual-page-builder mode: retro-quality-sweep
+
 # Randomized adversarial quality probing (ALL specs in repo, default pool):
 /bubbles.workflow mode: stochastic-quality-sweep
 
@@ -415,6 +419,7 @@ When the user provides a free-text request WITHOUT an explicit `mode:` parameter
 | "harden", "strengthen", "make robust", "quality check code" | `harden-to-doc` | spec from context |
 | "find gaps", "close gaps", "missing implementation" | `gaps-to-doc` | spec from context |
 | "full quality sweep", "harden and fix gaps" | `harden-gaps-to-doc` | spec from context |
+| "retro quality sweep", "retro first then simplify and harden", "use retro to pick hotspots then sweep" | `retro-quality-sweep` | spec from context |
 | "new feature", "start from scratch", "bootstrap" | `feature-bootstrap` | spec from context or new |
 | "chaos", "stress test", "break things", "probe", "random testing" | `chaos-hardening` | spec from context |
 | "test", "run tests", "verify tests", "check tests" | `test-to-doc` | spec from context |
@@ -450,6 +455,7 @@ When the user's request combines multiple intents, resolve to the MOST COMPREHEN
 |-----------------|------------|
 | "fix bugs and improve the feature" | `iterate` with `iterations: 2` (first picks bug, then improvement) |
 | "harden and close gaps" | `harden-gaps-to-doc` |
+| "retro first, then simplify and harden" | `retro-quality-sweep` |
 | "chaos test then fix what breaks" | `chaos-hardening` |
 | "build the feature and test it" | `full-delivery` (includes test phase) |
 | "analyze, design, and implement" | `product-to-delivery` |
@@ -467,6 +473,9 @@ User: "fix the calendar bug in the page builder"
 
 User: "improve the booking feature to be competitive"
 → mode: improve-existing, spec: specs/008-google-vacation-rentals-integration
+
+User: "start from retro, then simplify and harden the weakest booking files"
+→ mode: retro-quality-sweep, spec: booking
 
 User: "spend 2 hours working on whatever needs attention"
 → mode: iterate, minutes: 120, specs: auto-discover
@@ -522,7 +531,7 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
   - Proceed only after acknowledgment or mode override.
 
 - Modes that **cannot reach `done`**: `spec-scope-hardening` (`specs_hardened`), `product-discovery` (`specs_hardened`), `docs-only` (`docs_updated`), `validate-only` (`validated`), `audit-only` (`validated`), `validate-to-doc` (`validated`), `resume-only` (`in_progress`)
-- Modes that **can reach `done`**: All others (`full-delivery`, `full-delivery-strict`, `delivery-lockdown`, `harden-to-doc`, `gaps-to-doc`, `harden-gaps-to-doc`, `reconcile-to-doc`, `value-first-e2e-batch`, `feature-bootstrap`, `bugfix-fastlane`, `chaos-hardening`, `test-to-doc`, `chaos-to-doc`, `product-to-delivery`, `improve-existing`, `stochastic-quality-sweep`, `iterate`)
+- Modes that **can reach `done`**: All others (`full-delivery`, `full-delivery-strict`, `delivery-lockdown`, `harden-to-doc`, `gaps-to-doc`, `harden-gaps-to-doc`, `reconcile-to-doc`, `value-first-e2e-batch`, `feature-bootstrap`, `bugfix-fastlane`, `chaos-hardening`, `test-to-doc`, `chaos-to-doc`, `product-to-delivery`, `improve-existing`, `retro-quality-sweep`, `stochastic-quality-sweep`, `iterate`)
 
 ---
 

@@ -45,6 +45,7 @@ After the review, pick the right follow-through:
 |---------|-----------|
 | Bug magnets need simplification | `/bubbles.workflow  <feature> mode: retro-to-simplify` |
 | Fragile areas need hardening | `/bubbles.workflow  <feature> mode: retro-to-harden` |
+| The whole hotspot area needs cleanup + hardening + verification | `/bubbles.workflow  <feature> mode: retro-quality-sweep` |
 | Architecture issues need redesign | `/bubbles.workflow  <feature> mode: redesign-existing` |
 | Specific files need focused improvement | `/bubbles.workflow  <feature> mode: improve-existing` |
 

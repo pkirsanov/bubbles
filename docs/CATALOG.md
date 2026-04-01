@@ -32,22 +32,23 @@ Every recipe solves a specific problem. Find yours, follow the steps.
 | 20 | [Code Health Analysis](recipes/code-health-analysis.md) | `bubbles.retro hotspots` | Bug magnets, coupling, bus factor |
 | 21 | [Data-Driven Simplify](recipes/retro-driven-simplify.md) | `retro-to-simplify` | Retro finds targets → simplify fixes them |
 | 22 | [Data-Driven Harden](recipes/retro-driven-harden.md) | `retro-to-harden` | Retro finds targets → harden fixes them |
-| 23 | [Data-Driven Review](recipes/retro-driven-review.md) | `retro-to-review` | Retro finds targets → review diagnoses them |
-| 24 | [Retrospective](recipes/retro.md) | `bubbles.retro` | Velocity, gate health, shipping patterns |
-| 25 | [Regression Check](recipes/regression-check.md) | `bubbles.regression` | Verify changes didn't break things |
-| 26 | [Chaos Testing](recipes/chaos-testing.md) | `chaos-hardening` | Break things to find weaknesses |
-| 27 | [Security Review](recipes/security-review.md) | `bubbles.security` | Vulnerability scanning |
-| 28 | [Spec Freshness Review](recipes/spec-freshness-review.md) | `spec-review-to-doc` | Check if specs are still valid |
-| 29 | [DevOps Work](recipes/devops-work.md) | `devops-to-doc` | CI/CD, deployment, monitoring |
-| 30 | [Ops Packet Work](recipes/ops-packet-work.md) | OPS packets | Cross-cutting infra work |
-| 31 | [Parallel Scopes](recipes/parallel-scopes.md) | `parallelScopes: dag` | Run independent scopes concurrently |
-| 32 | [Cross-Model Review](recipes/cross-model-review.md) | `crossModelReview` | Second AI opinion |
-| 33 | [Structured Commits](recipes/structured-commits.md) | `autoCommit: scope` | Clean git history |
-| 34 | [Custom Gates](recipes/custom-gates.md) | CLI | Project-specific quality checks |
-| 35 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Hooks, gates, upgrades, metrics |
-| 36 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
-| 37 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |
-| 38 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
+| 23 | [Retro Quality Sweep](recipes/retro-quality-sweep.md) | `retro-quality-sweep` | Retro finds the mess → simplify/harden sweep cleans it |
+| 24 | [Data-Driven Review](recipes/retro-driven-review.md) | `retro-to-review` | Retro finds targets → review diagnoses them |
+| 25 | [Retrospective](recipes/retro.md) | `bubbles.retro` | Velocity, gate health, shipping patterns |
+| 26 | [Regression Check](recipes/regression-check.md) | `bubbles.regression` | Verify changes didn't break things |
+| 27 | [Chaos Testing](recipes/chaos-testing.md) | `chaos-hardening` | Break things to find weaknesses |
+| 28 | [Security Review](recipes/security-review.md) | `bubbles.security` | Vulnerability scanning |
+| 29 | [Spec Freshness Review](recipes/spec-freshness-review.md) | `spec-review-to-doc` | Check if specs are still valid |
+| 30 | [DevOps Work](recipes/devops-work.md) | `devops-to-doc` | CI/CD, deployment, monitoring |
+| 31 | [Ops Packet Work](recipes/ops-packet-work.md) | OPS packets | Cross-cutting infra work |
+| 32 | [Parallel Scopes](recipes/parallel-scopes.md) | `parallelScopes: dag` | Run independent scopes concurrently |
+| 33 | [Cross-Model Review](recipes/cross-model-review.md) | `crossModelReview` | Second AI opinion |
+| 34 | [Structured Commits](recipes/structured-commits.md) | `autoCommit: scope` | Clean git history |
+| 35 | [Custom Gates](recipes/custom-gates.md) | CLI | Project-specific quality checks |
+| 36 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Hooks, gates, upgrades, metrics |
+| 37 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
+| 38 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |
+| 39 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
 
 ---
 
@@ -66,7 +67,7 @@ Every recipe solves a specific problem. Find yours, follow the steps.
 13 → 14 → 15 → 16 → 28
 
 ### 📊 Data-Driven Workflows
-20 → 21 → 22 → 23 → 24
+20 → 21 → 22 → 23 → 24 → 25
 
 ### 🛡️ Quality & Hardening
 17 → 18 → 19 → 25 → 26 → 27
@@ -101,14 +102,14 @@ START
   │     │     → Recipe 19 (Simplify) or Recipe 18 (Harden)
   │     │
   │     └─ Need data first?
-  │           → Recipe 20 (Code Health) then Recipe 21/22/23
+  │           → Recipe 20 (Code Health) then Recipe 21/22/23/24
   │
   ├─ Want a code review?
   │     ├─ Know what to review?
   │     │     → Recipe 14 (Code Review Directly)
   │     │
   │     └─ Need data to target it?
-  │           → Recipe 23 (Data-Driven Review)
+  │           → Recipe 24 (Data-Driven Review)
   │
   ├─ Pre-release quality check?
   │     → Recipe 17 (Quality Sweep)

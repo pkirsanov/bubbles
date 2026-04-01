@@ -2,6 +2,6 @@
 
 - Agents: 34
 - Gates: 67
-- Workflow modes: 30
-- Phases: 23
-- Generated at: 2026-03-31T22:09:50Z
+- Workflow modes: 34
+- Phases: 25
+- Generated at: 2026-04-01T05:37:34Z

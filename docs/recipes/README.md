@@ -90,6 +90,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Code Health Analysis](code-health-analysis.md) | "Which files keep breaking? Are there hidden dependencies? What's our bus factor?" |
 | [Data-Driven Simplification](retro-driven-simplify.md) | "I want to simplify code, but I don't know where to start — let the data decide" |
 | [Data-Driven Hardening](retro-driven-harden.md) | "I want to harden code, but I want to focus on the areas that actually cause problems" |
+| [Retro Quality Sweep](retro-quality-sweep.md) | "I want retro to pick the hotspots, then run a full cleanup-and-hardening sweep on those areas" |
 | [Data-Driven Code Review](retro-driven-review.md) | "I want a code review, but I have a large codebase — let the data target the riskiest files" |
 
 ## Refactoring & Simplification

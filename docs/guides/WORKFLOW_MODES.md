@@ -240,6 +240,14 @@ select → bootstrap → harden → docs → validate → audit → finalize
 
 **Use when:** Periodic adversarial maintenance across the codebase.
 
+### <img src="../../icons/lahey-bottle.svg" width="20"> retro-quality-sweep
+
+```
+select → retro → simplify → harden → gaps → implement → test → regression → stabilize → devops → security → validate → audit → docs → finalize
+```
+
+**Use when:** You want retro to pick the hotspots, then run a deterministic quality sweep on those areas instead of random trigger rounds.
+
 ---
 
 ## Focused Modes
@@ -424,6 +432,7 @@ analyze → ux
 | `reconcile-to-doc` | Reconcile → test → docs | Stale state cleanup |
 | `redesign-existing` | Reconcile → redesign → deliver | Major existing-feature rewrite |
 | `improve-existing` | Analyze → harden → gaps → fix | Code improvement |
+| `retro-quality-sweep` | Retro-targeted quality sweep | Hotspot-guided maintenance |
 | `stochastic-quality-sweep` | Random quality | Maintenance |
 | `test-to-doc` | Test → docs | Test/doc focus |
 | `validate-to-doc` | Validate → audit → docs | Validation + docs |

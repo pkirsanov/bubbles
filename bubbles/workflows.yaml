@@ -1635,6 +1635,27 @@ modes:
       sequentialSpecCompletion: false
       antiFabricationDetection: true
 
+  retro-quality-sweep:
+    description: "Data-driven quality sweep: run retro analysis first to identify the noisiest hotspots, then simplify those areas before hardening, gap-closing, fixing, and finishing with the full quality chain."
+    statusCeiling: done
+    phaseOrder: [ select, retro, simplify, harden, gaps, implement, test, regression, stabilize, devops, security, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G010, G011, G012, G015, G016, G017, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G030, G031, G033, G034, G035, G044, G045, G046, G054, G055, G056, G057, G061 ]
+    constraints:
+      requireExistingImplementation: true
+      retroModes: [ hotspots, coupling, busfactor ]
+      sequentialSpecCompletion: true
+      crossAgentVerification: true
+      antiFabricationDetection: true
+      requireAllSpecialistsComplete: true
+      requireAllScopesDoneBeforeSpecDone: true
+      requirePerDodItemRawEvidence: true
+      requireTestsForAllRealScenarios: true
+      require100PercentBusinessLogicCoverage: true
+      requirePhaseScopeCoherence: true
+      requireImplementationRealityScan: true
+      requireNoDefaultsNoFallbacks: true
+      requireIntegrationCompleteness: true
+
   stochastic-quality-sweep:
     description: Run multiple randomized rounds where each round picks a random spec (from all specs by default, or from a user-provided subset) AND a random trigger agent from a configurable pool, probes that spec, then runs a trigger-specific fix cycle if findings exist. Rounds limited by count or time budget. For adversarial quality hardening across specs via random probe angles.
     statusCeiling: done
@@ -1752,6 +1773,7 @@ modes:
       - docs-only
       - retro-to-simplify
       - retro-to-harden
+      - retro-quality-sweep
       - retro-to-review
       # Default iterations (overridable via iterations user option)
       defaultIterations: 1
