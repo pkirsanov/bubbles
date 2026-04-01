@@ -5,12 +5,34 @@ set -eu
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH= cd -- "$script_dir/../.." && pwd)
 
+check_only=false
+if [ "${1:-}" = "--check" ]; then
+  check_only=true
+fi
+
 agents_dir="$repo_root/agents"
 workflows_file="$repo_root/bubbles/workflows.yaml"
 generated_dir="$repo_root/docs/generated"
 
 count_agents() {
   find "$agents_dir" -maxdepth 1 -type f -name 'bubbles.*.agent.md' | wc -l | tr -d ' '
+}
+
+count_workflow_modes() {
+  awk '
+    /^  [a-z][a-z0-9-]*:$/ {
+      candidate = $1
+      sub(/:$/, "", candidate)
+      if ((getline next_line) > 0) {
+        if (next_line ~ /^    description:/) {
+          count++
+        }
+      }
+    }
+    END {
+      print count + 0
+    }
+  ' "$workflows_file"
 }
 
 count_section_entries() {
@@ -83,7 +105,7 @@ version=$(cat "$repo_root/VERSION" | tr -d '[:space:]')
 
 agent_count=$(count_agents)
 gate_count=$(count_section_entries gates '^  G[0-9][0-9][0-9]:')
-workflow_mode_count=$(count_section_entries modes '^  [a-z][a-z0-9-]*:')
+workflow_mode_count=$(count_workflow_modes)
 phase_count=$(count_section_entries phases '^  [a-z][a-z0-9-]*:')
 
 summary_line="$agent_count Agents · $gate_count Gates · $workflow_mode_count Workflow Modes · $phase_count Phases"
@@ -99,7 +121,19 @@ cat <<EOF > "$json_temp"
   "generatedAt": "$generated_at"
 }
 EOF
-write_file "$generated_dir/framework-stats.json" "$json_temp"
+if [ "$check_only" = true ]; then
+  current_agents=$(grep -oE '"agents":[[:space:]]*[0-9]+' "$generated_dir/framework-stats.json" | sed -E 's/.*:[[:space:]]*([0-9]+)/\1/' || true)
+  current_gates=$(grep -oE '"gates":[[:space:]]*[0-9]+' "$generated_dir/framework-stats.json" | sed -E 's/.*:[[:space:]]*([0-9]+)/\1/' || true)
+  current_modes=$(grep -oE '"workflowModes":[[:space:]]*[0-9]+' "$generated_dir/framework-stats.json" | sed -E 's/.*:[[:space:]]*([0-9]+)/\1/' || true)
+  current_phases=$(grep -oE '"phases":[[:space:]]*[0-9]+' "$generated_dir/framework-stats.json" | sed -E 's/.*:[[:space:]]*([0-9]+)/\1/' || true)
+  if [ "$current_agents" != "$agent_count" ] || [ "$current_gates" != "$gate_count" ] || [ "$current_modes" != "$workflow_mode_count" ] || [ "$current_phases" != "$phase_count" ]; then
+    printf '%s\n' "Generated framework stats JSON is stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  fi
+  rm -f "$json_temp"
+else
+  write_file "$generated_dir/framework-stats.json" "$json_temp"
+fi
 
 markdown_temp=$(mktemp)
 cat <<EOF > "$markdown_temp"
@@ -111,7 +145,36 @@ cat <<EOF > "$markdown_temp"
 - Phases: $phase_count
 - Generated at: $generated_at
 EOF
-write_file "$generated_dir/framework-stats.md" "$markdown_temp"
+if [ "$check_only" = true ]; then
+  grep -q -- "- Agents: $agent_count" "$generated_dir/framework-stats.md" || {
+    printf '%s\n' "Generated framework stats Markdown is stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  }
+  grep -q -- "- Gates: $gate_count" "$generated_dir/framework-stats.md" || {
+    printf '%s\n' "Generated framework stats Markdown is stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  }
+  grep -q -- "- Workflow modes: $workflow_mode_count" "$generated_dir/framework-stats.md" || {
+    printf '%s\n' "Generated framework stats Markdown is stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  }
+  grep -q -- "- Phases: $phase_count" "$generated_dir/framework-stats.md" || {
+    printf '%s\n' "Generated framework stats Markdown is stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  }
+  rm -f "$markdown_temp"
+else
+  write_file "$generated_dir/framework-stats.md" "$markdown_temp"
+fi
+
+if [ "$check_only" = true ]; then
+  if grep -q 'workflow mode definitions' "$repo_root/README.md" && ! grep -q "# $workflow_mode_count workflow mode definitions" "$repo_root/README.md"; then
+    printf '%s\n' "README generated workflow mode count appears stale. Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  fi
+  printf '%s\n' "Framework stats are current: $summary_line (v$version)"
+  exit 0
+fi
 
 block_temp=$(mktemp)
 cat <<EOF > "$block_temp"

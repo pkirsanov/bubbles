@@ -1,7 +1,7 @@
 # <img src="../icons/bubbles-glasses.svg" width="28"> Bubbles Cheat Sheet
 
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_START -->
-> **34 Agents · 67 Gates · 34 Workflow Modes · 25 Phases**
+> **34 Agents · 70 Gates · 34 Workflow Modes · 25 Phases**
 <!-- GENERATED:FRAMEWORK_STATS_SUMMARY_END -->
 >
 > *"It Ain't Rocket Appliances, But It Works."*
@@ -182,7 +182,7 @@
 ---
 
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_START -->
-## <img src="../icons/lahey-badge.svg" width="32"> The 67 Gates
+## <img src="../icons/lahey-badge.svg" width="32"> The 70 Gates
 <!-- GENERATED:FRAMEWORK_STATS_CHEATSHEET_GATES_END -->
 
 **Phase flow:**
@@ -257,6 +257,7 @@
 | G065 | Pseudo-completion language | Scope and report artifacts must not contain unresolved pseudo-completion language when transitioning to done |
 | G066 | Phase-claim provenance | Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory; cross-phase impersonation is fabrication |
 | G068 | DoD-Gherkin content fidelity | DoD items must faithfully represent the behavioral claims of their source Gherkin scenarios; no silent rewrites to match delivery |
+| G070 | Outcome contract | spec.md must have Outcome Contract (Intent, Success Signal, Hard Constraints, Failure Condition); validate verifies the outcome was actually achieved |
 
 ---
 
@@ -310,7 +311,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 - *"Way the spec goes"* — the spec defines truth; tests validate it; implementation follows it
 - *"Observable behavior"* — what users see and what data changes, not how the code is structured
 - *"Tech leak"* — mentioning Rust, PostgreSQL, React, etc. in a spec (*"That's a tech leak, Ray."*)
-
+- *"Outcome contract"* — the mandatory Intent / Success Signal / Hard Constraints / Failure Condition block in spec.md that defines what "done" actually means for the user
 #### <img src="../icons/barb-keys.svg" width="24"> The Lot Rules — `bubbles-docker-lifecycle-governance`
 
 *Barb ran the business side of the park. She knows what stays, what goes, and what gets cleaned up.*
@@ -386,7 +387,8 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | ❌ Warnings found | *"The shit winds are coming, Randy."* |
 | ✅ Chaos clean | *"Worst case Ontario... nothing broke."* |
 | 🟢 Regression clean | *"Steve French is purrin'. No regressions, boys."* |
-| 🔴 Regression found | *"Something's prowlin' around in the code, boys."* || 🔍 Deep hotspot analysis | *"The liquor knows where the bodies are buried, Randy."* |
+| 🔴 Regression found | *"Something's prowlin' around in the code, boys."* |
+| 🔍 Deep hotspot analysis | *"The liquor knows where the bodies are buried, Randy."* |
 | 🔍 Co-change coupling detected | *"It's all tangled up like Christmas lights, Randy."* |
 | 🔍 Bus factor risk | *"Somebody's gotta know how to drive this thing."* |
 | 🔴 Bug magnet file | *"That file's a bug magnet, Randy. Stay away from it."* |
@@ -398,6 +400,9 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | ❌ Deferral detected | *"You can't just NOT do things, Corey!"* |
 | ❌ Deferral blocks done | *"That's NOT gettin' two birds stoned — that's just sayin' you WILL."* |
 | ❌ Manipulation detected | *"That's GREASY, boys. You can't just cross things out and say they're done!"* |
+| ✅ Outcome contract satisfied | *"That's what we said we'd do, and that's what we did. DEEEE-CENT!"* |
+| ❌ Outcome contract violated | *"Tests passed but the thing don't actually WORK, boys. That's not decent."* |
+| ❌ Missing outcome contract | *"You can't ship it if you never said what it's supposed to DO, Ray."* |
 | ❌ Format bypass | *"You can't just erase the checkboxes and call it a day, Ricky!"* |
 | ❌ Invented status | *"'Deferred — Planned Improvement'?! That's not even a real thing, Julian!"* |
 | ✅ Handoff complete | *"Have a good one, boys."* |
@@ -464,6 +469,8 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | `/bubbles.super  what should I do before shipping?` | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
 | `/bubbles.super  should I start here or call the agent directly?` | Policy answer: use `super` for vague intent; go direct when the target is already known |
 | `/bubbles.super  why did my workflow stop after validate?` | Short diagnosis + the next command to recover or continue |
+| `/bubbles.super  why are my parallel sessions colliding?` | `bubbles runtime doctor` plus the right recovery step |
+| `/bubbles.super  reuse the validation stack if it is compatible` | `bubbles runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml` |
 | `/bubbles.super  turn this problem into the right Bubbles prompts` | A command sequence with brief reasons for each step |
 
 ### During Implementation
@@ -525,6 +532,10 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | Add custom gate | `/bubbles.super add license gate` | `bubbles project gates add name --script path` |
 | Show scope dependencies | `/bubbles.super show dag for 042` | `bubbles dag 042` |
 | Enable metrics | `/bubbles.super enable metrics` | `bubbles metrics enable` |
+| Show runtime lease owners | `/bubbles.super show active runtime leases` | `bubbles runtime leases` |
+| Summarize runtime usage | `/bubbles.super show runtime summary` | `bubbles runtime summary` |
+| Diagnose runtime conflicts | `/bubbles.super show runtime lease conflicts` | `bubbles runtime doctor` |
+| Reclaim stale runtime leases | `/bubbles.super reclaim stale runtime leases` | `bubbles runtime reclaim-stale` |
 | View lessons learned | `/bubbles.super show lessons` | `bubbles lessons` |
 | Compact old lessons | `/bubbles.super compact lessons` | `bubbles lessons compact` |
 | View skill proposals | `/bubbles.super show skill proposals` | `bubbles skill-proposals` |
@@ -563,6 +574,10 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | "The park knows what you like" | Personalized from observation | Developer profile auto-resolving taste decisions |
 | "Same greasy mistake three times" | Repeated pattern detected | Skill evolution — lessons promoting to skill proposal |
 | "Count the empties, Randy" | Count what's measurable | Activity tracking — only measurable metrics, no guesses |
+| "Lease the lot" | Claim runtime ownership before you start or reuse a shared stack | `bubbles runtime acquire` — make Docker/Compose ownership explicit |
+| "Same stack, same lease" | Reuse the running stack only when the fingerprint matches | `shared-compatible` runtime reuse |
+| "Stale trailer tag" | The owning session disappeared and the lease aged out | `bubbles runtime doctor` / `bubbles runtime reclaim-stale` |
+| "Don't burn down the wrong trailer" | Cleanup must only touch owned or stale stacks | Lease-aware teardown and runtime conflict recovery |
 | "Where the bodies are buried" | Deep code hotspot analysis — bug magnets, coupling, bus factor | `/bubbles.retro hotspots` — the liquor sees which files keep breaking |
 | "All tangled up like Christmas lights" | Co-change coupling — files that always change together | `/bubbles.retro coupling` — hidden architectural dependencies |
 | "Somebody's gotta drive" | Bus factor analysis — single-author files are knowledge silos | `/bubbles.retro busfactor` — who knows what, and what happens if they leave |

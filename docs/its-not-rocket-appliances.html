@@ -1279,6 +1279,10 @@
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Cross-model review"</span><span class="context">— two different AIs look at the same diff, compare what each catches</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Adversarial regression skeleton"</span><span class="context">— every bug fix auto-generates a test that would FAIL if the bug came back</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"test-plan.json"</span><span class="context">— machine-readable test handoff from planning to test phase. No Markdown parsing lottery.</span></div>
+    <div class="gate-msg"><span class="status">🏷️</span><span class="msg">"Lease the lot"</span><span class="context">— claim runtime ownership before starting or reusing a shared stack</span></div>
+    <div class="gate-msg"><span class="status">🏷️</span><span class="msg">"Same stack, same lease"</span><span class="context">— shared-compatible reuse only when the fingerprint matches exactly</span></div>
+    <div class="gate-msg"><span class="status">🏷️</span><span class="msg">"Stale trailer tag"</span><span class="context">— the session disappeared, the lease aged out, and Runtime doctor decides whether reclaim is safe</span></div>
+    <div class="gate-msg"><span class="status">🏷️</span><span class="msg">"Don't burn down the wrong trailer"</span><span class="context">— lease-aware cleanup only touches owned or stale stacks</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Smokes and thinking"</span><span class="context">— brainstorm mode: explore the idea before building anything</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"Same greasy mistake"</span><span class="context">— lesson pattern detected ≥3 times → skill evolution proposes a SKILL.md</span></div>
     <div class="gate-msg"><span class="status">🧠</span><span class="msg">"The park knows what you like"</span><span class="context">— developer profile auto-resolving taste decisions from observed patterns</span></div>
@@ -1294,6 +1298,10 @@
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then harden"</span><span class="context">— retro-to-harden: retro finds the weak spots, then harden them up</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then sweep"</span><span class="context">— retro-quality-sweep: retro picks the hotspot mess, then the deterministic quality crew sweeps it clean</span></div>
     <div class="gate-msg"><span class="status">🔍</span><span class="msg">"Liquor then look"</span><span class="context">— retro-to-review: retro identifies the riskiest files, Green Bastard reviews them</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Outcome contract"</span><span class="context">— Intent, Success Signal, Hard Constraints, Failure Condition in spec.md — what 'done' actually means for the user</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Success signal"</span><span class="context">— observable user/system proof that the outcome was achieved, not 'tests pass'</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Hard constraint"</span><span class="context">— business invariant that survives model upgrades: 'never double-charge', 'PII encrypted'</span></div>
+    <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Model compensation"</span><span class="context">— gate that exists because current models fabricate/shortcut; review when models improve</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Just tell Bubbles"</span><span class="context">— start with /bubbles.workflow and describe what you want in plain English</span></div>
     <div class="gate-msg"><span class="status">🎯</span><span class="msg">"Bubbles figures it out"</span><span class="context">— workflow delegates to super for NLP + iterate for work-picking. Zero knowledge required.</span></div>
   </div>
@@ -1386,6 +1394,10 @@
     <span class="quote-text">"Getting two birds stoned at once, boys."</span>
   </div>
   <div class="line">
+    <span class="situation">Shared runtime preflight</span>
+    <span class="quote-text">"Lease the lot first, boys. Then nobody burns down the wrong trailer."</span>
+  </div>
+  <div class="line">
     <span class="situation">Legacy improvement preflight</span>
     <span class="quote-text">"Gary checks the paperwork before we start wrenching."</span>
   </div>
@@ -1473,6 +1485,10 @@
     <span class="situation">Stochastic sweep triggered</span>
     <span class="quote-text">"BOTTLE KIDS!" *ducks*</span>
   </div>
+  <div class="line">
+    <span class="situation">Parallel sessions colliding</span>
+    <span class="quote-text">"Runtime doctor, boys. Figure out whose trailer this is before you touch it."</span>
+  </div>
 </div>
 
 <div class="quick-ref">
@@ -1556,12 +1572,19 @@
     <tr><td class="cmd">"Count the empties, Randy"</td><td class="maps-to">Count what actually happened</td><td class="quote-col">Activity tracking — only measurable metrics (invocations, durations, retries), no fabricated costs</td></tr>
     <tr><td class="cmd">"Just tell Bubbles"</td><td class="maps-to">Start with /bubbles.workflow and describe what you want</td><td class="quote-col">Universal entry point — workflow resolves intent, picks work, drives phases</td></tr>
     <tr><td class="cmd">"Bubbles figures it out"</td><td class="maps-to">Workflow delegates to super + iterate automatically</td><td class="quote-col">Intent delegation — no need to know which agent or mode to use</td></tr>
+    <tr><td class="cmd">"What's it supposed to DO?"</td><td class="maps-to">Define the outcome before the process</td><td class="quote-col">Outcome Contract — Intent, Success Signal, Hard Constraints must exist before work starts</td></tr>
+    <tr><td class="cmd">"Tests passed but it don't WORK"</td><td class="maps-to">Process completion ≠ outcome achieved</td><td class="quote-col">G070 — a feature can pass every gate and still fail its own Success Signal</td></tr>
+    <tr><td class="cmd">"That rule ain't going anywhere"</td><td class="maps-to">Business invariant that transcends model generations</td><td class="quote-col">Hard Constraints survive model upgrades; model compensations get reviewed</td></tr>
+    <tr><td class="cmd">"Lease the lot"</td><td class="maps-to">Claim runtime ownership before starting or reusing a stack</td><td class="quote-col">`bubbles runtime acquire` — make shared Docker/Compose ownership explicit</td></tr>
+    <tr><td class="cmd">"Same stack, same lease"</td><td class="maps-to">Reuse only when the runtime fingerprint matches</td><td class="quote-col">`shared-compatible` runtime reuse — same stack only when compatibility is proven</td></tr>
+    <tr><td class="cmd">"Stale trailer tag"</td><td class="maps-to">Stale lease</td><td class="quote-col">`bubbles runtime doctor` / `bubbles runtime reclaim-stale` — the session vanished, now recover safely</td></tr>
+    <tr><td class="cmd">"Don't burn down the wrong trailer"</td><td class="maps-to">Lease-aware cleanup</td><td class="quote-col">Teardown must touch only owned or stale stacks, never someone else's live runtime</td></tr>
   </tbody>
 </table>
 
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_START -->
-<!-- ═══════════════════════════════ THE 67 GATES ═══════════════════════════════ -->
-<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 67 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
+<!-- ═══════════════════════════════ THE 70 GATES ═══════════════════════════════ -->
+<div class="section-title"><img src="../icons/lahey-badge.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> The 70 Gates of Sunnyvale (Quality Never Takes a Day Off)</div>
 <!-- GENERATED:FRAMEWORK_STATS_HTML_GATES_END -->
 
 <div class="phase-flow">
@@ -1586,8 +1609,8 @@
 
 <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem; font-style: italic;">
   <!-- GENERATED:FRAMEWORK_STATS_HTML_QUOTE_START -->
-  "67 gates, boys. That's more security than the trailer park has ever had. 
-  Something's fucky? We'll find it. That's greasy? We'll clean it. 
+  "70 gates, boys. That's more security than the trailer park has ever had.
+  Something's fucky? We'll find it. That's greasy? We'll clean it.
   Red first, green after. Small scopes. Tiny fix loops.
   Can't defer things either — you can't just NOT do things, Corey!
   Worst case Ontario, we revert and try again. DEEEE-CENT."
@@ -1602,7 +1625,7 @@
   <p>Bubbles Agent System v3.3.0 — Sunnyvale Trailer Park Software Division</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_VERSION_FOOTER_END -->
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_START -->
-  <p>67 Gates • 34 Agents • 34 Workflow Modes • 25 Phases • 0 Shit Hawks</p>
+  <p>70 Gates • 34 Agents • 34 Workflow Modes • 25 Phases • 0 Shit Hawks</p>
   <!-- GENERATED:FRAMEWORK_STATS_HTML_FOOTER_END -->
   <p style="margin-top: 0.5rem;">© 2026 — All rights reserved by the residents of Sunnyvale Trailer Park</p>
   <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #555;">"It's not rocket appliances."</p>

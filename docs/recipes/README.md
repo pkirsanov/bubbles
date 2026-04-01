@@ -97,12 +97,14 @@ Control-plane law also requires owner-only remediation and concrete result envel
 
 | Recipe | Problem → Solution |
 |--------|-------------------|
+| [Safe Shared-Infrastructure Refactor](safe-shared-infrastructure-refactor.md) | "I need to refactor a shared fixture/bootstrap surface without collateral damage" |
 | [Simplify Existing Code](simplify-existing-code.md) | "This works, but it's too complicated and I want to reduce the noise safely" |
 
 ## Day-to-Day
 
 | Recipe | Problem → Solution |
 |--------|-------------------|
+| [Coordinate Runtime Leases](runtime-coordination.md) | "Parallel sessions might share or collide on Docker/Compose stacks" |
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
 | [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |

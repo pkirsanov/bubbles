@@ -28,27 +28,30 @@ Every recipe solves a specific problem. Find yours, follow the steps.
 | 16 | [Review Then Improve](recipes/review-then-improve.md) | Review → workflow | Assess first, choose follow-through |
 | 17 | [Quality Sweep](recipes/quality-sweep.md) | `delivery-lockdown` | Keep looping until green |
 | 18 | [Post-Impl Hardening](recipes/post-impl-hardening.md) | Hardening sequence | Clean up before shipping |
-| 19 | [Simplify Existing Code](recipes/simplify-existing-code.md) | `simplify-to-doc` | Reduce complexity safely |
-| 20 | [Code Health Analysis](recipes/code-health-analysis.md) | `bubbles.retro hotspots` | Bug magnets, coupling, bus factor |
-| 21 | [Data-Driven Simplify](recipes/retro-driven-simplify.md) | `retro-to-simplify` | Retro finds targets → simplify fixes them |
-| 22 | [Data-Driven Harden](recipes/retro-driven-harden.md) | `retro-to-harden` | Retro finds targets → harden fixes them |
-| 23 | [Retro Quality Sweep](recipes/retro-quality-sweep.md) | `retro-quality-sweep` | Retro finds the mess → simplify/harden sweep cleans it |
-| 24 | [Data-Driven Review](recipes/retro-driven-review.md) | `retro-to-review` | Retro finds targets → review diagnoses them |
-| 25 | [Retrospective](recipes/retro.md) | `bubbles.retro` | Velocity, gate health, shipping patterns |
-| 26 | [Regression Check](recipes/regression-check.md) | `bubbles.regression` | Verify changes didn't break things |
-| 27 | [Chaos Testing](recipes/chaos-testing.md) | `chaos-hardening` | Break things to find weaknesses |
-| 28 | [Security Review](recipes/security-review.md) | `bubbles.security` | Vulnerability scanning |
-| 29 | [Spec Freshness Review](recipes/spec-freshness-review.md) | `spec-review-to-doc` | Check if specs are still valid |
-| 30 | [DevOps Work](recipes/devops-work.md) | `devops-to-doc` | CI/CD, deployment, monitoring |
-| 31 | [Ops Packet Work](recipes/ops-packet-work.md) | OPS packets | Cross-cutting infra work |
-| 32 | [Parallel Scopes](recipes/parallel-scopes.md) | `parallelScopes: dag` | Run independent scopes concurrently |
-| 33 | [Cross-Model Review](recipes/cross-model-review.md) | `crossModelReview` | Second AI opinion |
-| 34 | [Structured Commits](recipes/structured-commits.md) | `autoCommit: scope` | Clean git history |
-| 35 | [Custom Gates](recipes/custom-gates.md) | CLI | Project-specific quality checks |
-| 36 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Hooks, gates, upgrades, metrics |
-| 37 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
-| 38 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |
-| 39 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
+| 19 | [Safe Shared-Infrastructure Refactor](recipes/safe-shared-infrastructure-refactor.md) | `simplify-to-doc` | Refactor shared fixtures/bootstrap safely |
+| 20 | [Simplify Existing Code](recipes/simplify-existing-code.md) | `simplify-to-doc` | Reduce complexity safely |
+| 21 | [Code Health Analysis](recipes/code-health-analysis.md) | `bubbles.retro hotspots` | Bug magnets, coupling, bus factor |
+| 22 | [Data-Driven Simplify](recipes/retro-driven-simplify.md) | `retro-to-simplify` | Retro finds targets → simplify fixes them |
+| 23 | [Data-Driven Harden](recipes/retro-driven-harden.md) | `retro-to-harden` | Retro finds targets → harden fixes them |
+| 24 | [Retro Quality Sweep](recipes/retro-quality-sweep.md) | `retro-quality-sweep` | Retro finds the mess → simplify/harden sweep cleans it |
+| 25 | [Data-Driven Review](recipes/retro-driven-review.md) | `retro-to-review` | Retro finds targets → review diagnoses them |
+| 26 | [Retrospective](recipes/retro.md) | `bubbles.retro` | Velocity, gate health, shipping patterns |
+| 27 | [Regression Check](recipes/regression-check.md) | `bubbles.regression` | Verify changes didn't break things |
+| 28 | [Chaos Testing](recipes/chaos-testing.md) | `chaos-hardening` | Break things to find weaknesses |
+| 29 | [Security Review](recipes/security-review.md) | `bubbles.security` | Vulnerability scanning |
+| 30 | [Spec Freshness Review](recipes/spec-freshness-review.md) | `spec-review-to-doc` | Check if specs are still valid |
+| 31 | [DevOps Work](recipes/devops-work.md) | `devops-to-doc` | CI/CD, deployment, monitoring |
+| 32 | [Ops Packet Work](recipes/ops-packet-work.md) | OPS packets | Cross-cutting infra work |
+| 33 | [Parallel Scopes](recipes/parallel-scopes.md) | `parallelScopes: dag` | Run independent scopes concurrently |
+| 34 | [Cross-Model Review](recipes/cross-model-review.md) | `crossModelReview` | Second AI opinion |
+| 35 | [Structured Commits](recipes/structured-commits.md) | `autoCommit: scope` | Clean git history |
+| 36 | [Custom Gates](recipes/custom-gates.md) | CLI | Project-specific quality checks |
+| 37 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Hooks, gates, upgrades, metrics |
+| 38 | [Coordinate Runtime Leases](recipes/runtime-coordination.md) | `bubbles runtime ...` | Shared Docker/Compose ownership and conflict recovery |
+| 39 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
+| 40 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |
+| 40 | [Update Docs](recipes/update-docs.md) | `docs-only` | Publish managed docs |
+| 41 | [Outcome-First Specs](recipes/outcome-first-specs.md) | `bubbles.analyst` | Define what 'done' means before how to get there |
 
 ---
 
