@@ -104,6 +104,36 @@ After enabling, governance scripts log events to `.specify/metrics/events.jsonl`
 /bubbles.super  show metrics summary
 ```
 
+## Coordinate Runtime Resources Across Sessions
+
+Use the runtime lease surface when multiple sessions may start or reuse Docker/Compose stacks:
+
+```bash
+bash .github/bubbles/scripts/cli.sh runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml --resource container:backend
+bash .github/bubbles/scripts/cli.sh runtime leases
+bash .github/bubbles/scripts/cli.sh runtime doctor
+bash .github/bubbles/scripts/cli.sh runtime release <lease-id>
+```
+
+Typical flow:
+- acquire before starting a shared stack
+- heartbeat or attach if another session reuses the same compatible runtime
+- doctor before cleanup if sessions appear to be colliding
+- release when the owning session is done
+
+For downstream repos using the installed framework layout, the same surface is available through `.github/bubbles/scripts/cli.sh`:
+
+```bash
+bash .github/bubbles/scripts/cli.sh runtime summary
+bash .github/bubbles/scripts/cli.sh runtime doctor
+```
+
+If a consumer repo is missing the runtime commands entirely, refresh the framework layer from the upstream Bubbles checkout instead of patching `.github/bubbles` by hand:
+
+```bash
+bash /path/to/bubbles/install.sh --local-source /path/to/bubbles --bootstrap
+```
+
 ## View Lessons Learned
 
 ```

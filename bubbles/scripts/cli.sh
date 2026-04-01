@@ -13,10 +13,12 @@
 #   blocked                       Show only blocked specs with reasons
 #   dod <spec>                    Show unchecked DoD items for a spec
 #   policy <subcommand>           Manage control-plane defaults and provenance
+#   runtime <subcommand>          Manage runtime leases and coordination
 #   session                       Show current session state
 #   lint <spec>                   Run artifact lint on a spec
 #   agnosticity [--staged]        Check portable Bubbles surfaces for drift
 #   guard <spec>                  Run state transition guard on a spec
+#   runtime-selftest              Run runtime lease selftest coverage
 #   scan <spec>                   Run implementation reality scan on a spec
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
 #   docs-registry [mode]          Show framework-default or effective managed-doc registry
@@ -24,6 +26,10 @@
 #   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
 #   audit-done [--fix]            Audit all specs marked done
 #   autofix <spec>                Scaffold missing report sections
+#   metrics <subcommand>          Manage metrics and activity tracking
+#   lessons [--all|compact]       View or compact lessons-learned memory
+#   skill-proposals [subcommand]  Show or dismiss generated skill proposals
+#   profile [subcommand]          Show, inspect stale, or clear developer profile observations
 #   sunnyvale <alias>             Resolve a Sunnyvale alias (agent or mode)
 #   aliases                       List all Sunnyvale aliases
 #   help                          Show this help message
@@ -57,6 +63,13 @@ SESSION_FILE="$REPO_ROOT/.specify/memory/bubbles.session.json"
 CONTROL_PLANE_CONFIG="$REPO_ROOT/.specify/memory/bubbles.config.json"
 CONTROL_PLANE_METRICS_DIR="$REPO_ROOT/.specify/metrics"
 CONTROL_PLANE_METRICS_FILE="$CONTROL_PLANE_METRICS_DIR/events.jsonl"
+CONTROL_PLANE_ACTIVITY_FILE="$CONTROL_PLANE_METRICS_DIR/activity.jsonl"
+CONTROL_PLANE_OBSERVATIONS_FILE="$CONTROL_PLANE_METRICS_DIR/observations.jsonl"
+CONTROL_PLANE_RUNTIME_DIR="$REPO_ROOT/.specify/runtime"
+CONTROL_PLANE_RUNTIME_FILE="$CONTROL_PLANE_RUNTIME_DIR/resource-leases.json"
+LESSONS_FILE="$REPO_ROOT/.specify/memory/lessons.md"
+SKILL_PROPOSALS_FILE="$REPO_ROOT/.specify/memory/skill-proposals.md"
+DEVELOPER_PROFILE_FILE="$REPO_ROOT/.specify/memory/developer-profile.md"
 
 # ── Colors ──────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
@@ -150,6 +163,12 @@ default_control_plane_config() {
     "validation": {
       "certificationRequired": true,
       "source": "repo-default"
+    },
+    "runtime": {
+      "leaseTtlMinutes": 20,
+      "staleAfterMinutes": 60,
+      "reusePolicy": "fingerprint-match-only",
+      "source": "repo-default"
     }
   },
   "modeOverrides": {
@@ -167,7 +186,8 @@ default_control_plane_config() {
     }
   },
   "metrics": {
-    "enabled": false
+    "enabled": false,
+    "activityTrackingEnabled": false
   }
 }
 EOF
@@ -177,6 +197,134 @@ ensure_control_plane_config() {
   mkdir -p "$(dirname "$CONTROL_PLANE_CONFIG")" "$CONTROL_PLANE_METRICS_DIR"
   if [[ ! -f "$CONTROL_PLANE_CONFIG" ]]; then
     default_control_plane_config > "$CONTROL_PLANE_CONFIG"
+  fi
+}
+
+bootstrap_placeholder_count() {
+  local target_file="$1"
+
+  if [[ ! -f "$target_file" ]]; then
+    printf '%s' '0'
+    return 0
+  fi
+
+  grep -oE '\[TODO([^]]*)\]|> \*\*TODO:\*\*|\{\{[A-Z_]+\}\}' "$target_file" 2>/dev/null | wc -l | tr -d ' '
+}
+
+json_escape() {
+  local raw="$1"
+  raw=${raw//\\/\\\\}
+  raw=${raw//"/\\"}
+  raw=${raw//$'\n'/\\n}
+  raw=${raw//$'\r'/\\r}
+  raw=${raw//$'\t'/\\t}
+  printf '%s' "$raw"
+}
+
+append_jsonl() {
+  local target_file="$1"
+  local payload="$2"
+
+  mkdir -p "$(dirname "$target_file")"
+  printf '%s\n' "$payload" >> "$target_file"
+}
+
+current_timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+slugify() {
+  printf '%s' "$1" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-{2,}/-/g'
+}
+
+activity_tracking_enabled() {
+  [[ "${CFG_METRICS_ENABLED:-false}" == "true" && "${CFG_ACTIVITY_TRACKING_ENABLED:-false}" == "true" ]]
+}
+
+current_epoch_ms() {
+  date +%s%3N
+}
+
+record_metric_event() {
+  local event_type="$1"
+  local result="$2"
+  local duration_ms="$3"
+  local details="$4"
+
+  if [[ "${CFG_METRICS_ENABLED:-false}" != "true" ]]; then
+    return 0
+  fi
+
+  append_jsonl "$CONTROL_PLANE_METRICS_FILE" "{\"type\":\"$(json_escape "$event_type")\",\"timestamp\":\"$(current_timestamp)\",\"command\":\"$(json_escape "${CURRENT_BUBBLES_COMMAND:-unknown}")\",\"result\":\"$(json_escape "$result")\",\"durationMs\":${duration_ms},\"details\":\"$(json_escape "$details")\"}"
+}
+
+record_observation() {
+  local observation_type="$1"
+  local value="$2"
+  local source="$3"
+  local confidence="$4"
+
+  append_jsonl "$CONTROL_PLANE_OBSERVATIONS_FILE" "{\"timestamp\":\"$(current_timestamp)\",\"type\":\"$(json_escape "$observation_type")\",\"value\":\"$(json_escape "$value")\",\"source\":\"$(json_escape "$source")\",\"confidence\":\"$(json_escape "$confidence")\"}"
+}
+
+record_activity_event() {
+  local command_name="$1"
+  local result="$2"
+  local duration_ms="$3"
+  local target="$4"
+  local detail_args="$5"
+
+  if ! activity_tracking_enabled; then
+    return 0
+  fi
+
+  append_jsonl "$CONTROL_PLANE_ACTIVITY_FILE" "{\"timestamp\":\"$(current_timestamp)\",\"command\":\"$(json_escape "$command_name")\",\"phase\":\"$(json_escape "$command_name")\",\"result\":\"$(json_escape "$result")\",\"durationMs\":${duration_ms},\"target\":\"$(json_escape "$target")\",\"args\":\"$(json_escape "$detail_args")\"}"
+}
+
+first_tracking_target() {
+  local raw_args="${1:-}"
+  local first_word
+
+  if [[ -z "$raw_args" ]]; then
+    printf '%s' 'global'
+    return 0
+  fi
+
+  first_word="${raw_args%% *}"
+
+  case "$first_word" in
+    --*) printf '%s' 'global' ;;
+    *) printf '%s' "$first_word" ;;
+  esac
+}
+
+record_cli_completion() {
+  local exit_code="$1"
+  local end_ms duration_ms result target
+
+  if [[ "${CLI_RECORDING_ACTIVE:-false}" != "true" ]]; then
+    return 0
+  fi
+
+  end_ms="$(current_epoch_ms)"
+  duration_ms=0
+  if [[ -n "${COMMAND_START_MS:-}" ]]; then
+    duration_ms=$((end_ms - COMMAND_START_MS))
+  fi
+
+  if [[ "$exit_code" -eq 0 ]]; then
+    result="success"
+  else
+    result="fail"
+  fi
+
+  if [[ -n "${CURRENT_BUBBLES_COMMAND:-}" ]]; then
+    load_control_plane_config
+    target="$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")"
+    record_metric_event "cli_command" "$result" "$duration_ms" "args=${CURRENT_BUBBLES_ARGS:-}"
+    record_activity_event "$CURRENT_BUBBLES_COMMAND" "$result" "$duration_ms" "$target" "${CURRENT_BUBBLES_ARGS:-}"
   fi
 }
 
@@ -246,6 +394,43 @@ config_metrics_enabled_value() {
   fi
 }
 
+config_activity_tracking_enabled_value() {
+  local file="$1"
+  local value
+
+  value="$({
+    grep -A4 '"metrics"' "$file" 2>/dev/null \
+      | grep -m1 '"activityTrackingEnabled"' \
+      | sed -E 's/.*:[[:space:]]*(true|false).*/\1/'
+  } || true)"
+
+  if [[ "$value" == "true" || "$value" == "false" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' 'false'
+  fi
+}
+
+config_number_value() {
+  local section="$1"
+  local key="$2"
+  local default_value="$3"
+  local file="$4"
+  local value
+
+  value="$({
+    grep -A8 "\"$section\"" "$file" 2>/dev/null \
+      | grep -m1 "\"$key\"" \
+      | sed -E 's/.*:[[:space:]]*([0-9]+).*/\1/'
+  } || true)"
+
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' "$default_value"
+  fi
+}
+
 load_control_plane_config() {
   ensure_control_plane_config
 
@@ -262,7 +447,12 @@ load_control_plane_config() {
   CFG_REGRESSION_SOURCE="$(config_string_value regression source repo-default "$CONTROL_PLANE_CONFIG")"
   CFG_VALIDATION_CERT_REQUIRED="$(config_bool_value validation certificationRequired true "$CONTROL_PLANE_CONFIG")"
   CFG_VALIDATION_SOURCE="$(config_string_value validation source repo-default "$CONTROL_PLANE_CONFIG")"
+  CFG_RUNTIME_LEASE_TTL_MINUTES="$(config_number_value runtime leaseTtlMinutes 20 "$CONTROL_PLANE_CONFIG")"
+  CFG_RUNTIME_STALE_AFTER_MINUTES="$(config_number_value runtime staleAfterMinutes 60 "$CONTROL_PLANE_CONFIG")"
+  CFG_RUNTIME_REUSE_POLICY="$(config_string_value runtime reusePolicy fingerprint-match-only "$CONTROL_PLANE_CONFIG")"
+  CFG_RUNTIME_SOURCE="$(config_string_value runtime source repo-default "$CONTROL_PLANE_CONFIG")"
   CFG_METRICS_ENABLED="$(config_metrics_enabled_value "$CONTROL_PLANE_CONFIG")"
+  CFG_ACTIVITY_TRACKING_ENABLED="$(config_activity_tracking_enabled_value "$CONTROL_PLANE_CONFIG")"
 }
 
 save_control_plane_config() {
@@ -298,6 +488,12 @@ save_control_plane_config() {
     "validation": {
       "certificationRequired": $CFG_VALIDATION_CERT_REQUIRED,
       "source": "$CFG_VALIDATION_SOURCE"
+    },
+    "runtime": {
+      "leaseTtlMinutes": $CFG_RUNTIME_LEASE_TTL_MINUTES,
+      "staleAfterMinutes": $CFG_RUNTIME_STALE_AFTER_MINUTES,
+      "reusePolicy": "$CFG_RUNTIME_REUSE_POLICY",
+      "source": "$CFG_RUNTIME_SOURCE"
     }
   },
   "modeOverrides": {
@@ -315,7 +511,8 @@ save_control_plane_config() {
     }
   },
   "metrics": {
-    "enabled": $CFG_METRICS_ENABLED
+    "enabled": $CFG_METRICS_ENABLED,
+    "activityTrackingEnabled": $CFG_ACTIVITY_TRACKING_ENABLED
   }
 }
 EOF
@@ -339,7 +536,12 @@ default_value_for_policy_path() {
     regression.source) printf '%s' 'repo-default' ;;
     validation.certificationRequired) printf '%s' 'true' ;;
     validation.source) printf '%s' 'repo-default' ;;
+    runtime.leaseTtlMinutes) printf '%s' '20' ;;
+    runtime.staleAfterMinutes) printf '%s' '60' ;;
+    runtime.reusePolicy) printf '%s' 'fingerprint-match-only' ;;
+    runtime.source) printf '%s' 'repo-default' ;;
     metrics.enabled) printf '%s' 'false' ;;
+    metrics.activityTrackingEnabled) printf '%s' 'false' ;;
     bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode) printf '%s' 'scenario-first' ;;
     bugfix-fastlane.tdd.source|chaos-hardening.tdd.source) printf '%s' 'workflow-forced' ;;
     *) return 1 ;;
@@ -363,7 +565,12 @@ read_control_plane_setting() {
     regression.source) printf '%s' "$CFG_REGRESSION_SOURCE" ;;
     validation.certificationRequired) printf '%s' "$CFG_VALIDATION_CERT_REQUIRED" ;;
     validation.source) printf '%s' "$CFG_VALIDATION_SOURCE" ;;
+    runtime.leaseTtlMinutes) printf '%s' "$CFG_RUNTIME_LEASE_TTL_MINUTES" ;;
+    runtime.staleAfterMinutes) printf '%s' "$CFG_RUNTIME_STALE_AFTER_MINUTES" ;;
+    runtime.reusePolicy) printf '%s' "$CFG_RUNTIME_REUSE_POLICY" ;;
+    runtime.source) printf '%s' "$CFG_RUNTIME_SOURCE" ;;
     metrics.enabled) printf '%s' "$CFG_METRICS_ENABLED" ;;
+    metrics.activityTrackingEnabled) printf '%s' "$CFG_ACTIVITY_TRACKING_ENABLED" ;;
     bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode) printf '%s' 'scenario-first' ;;
     bugfix-fastlane.tdd.source|chaos-hardening.tdd.source) printf '%s' 'workflow-forced' ;;
     *) return 1 ;;
@@ -409,8 +616,11 @@ validate_policy_value() {
         *) die "Invalid autoCommit.mode: $value" ;;
       esac
       ;;
-    lockdown.default|lockdown.requireGrillForInvalidation|validation.certificationRequired|metrics.enabled)
+    lockdown.default|lockdown.requireGrillForInvalidation|validation.certificationRequired|metrics.enabled|metrics.activityTrackingEnabled)
       validate_boolean_literal "$value"
+      ;;
+    runtime.leaseTtlMinutes|runtime.staleAfterMinutes)
+      [[ "$value" =~ ^[0-9]+$ ]] || die "Invalid numeric value for $path: $value"
       ;;
     regression.immutability)
       case "$value" in
@@ -418,7 +628,13 @@ validate_policy_value() {
         *) die "Invalid regression.immutability: $value" ;;
       esac
       ;;
-    grill.source|tdd.source|autoCommit.source|lockdown.source|regression.source|validation.source)
+    runtime.reusePolicy)
+      case "$value" in
+        fingerprint-match-only|always-isolate) ;;
+        *) die "Invalid runtime.reusePolicy: $value" ;;
+      esac
+      ;;
+    grill.source|tdd.source|autoCommit.source|lockdown.source|regression.source|validation.source|runtime.source)
       validate_policy_source "$value"
       ;;
     bugfix-fastlane.tdd.mode|chaos-hardening.tdd.mode|bugfix-fastlane.tdd.source|chaos-hardening.tdd.source)
@@ -448,7 +664,12 @@ write_control_plane_setting() {
     regression.source) CFG_REGRESSION_SOURCE="$value" ;;
     validation.certificationRequired) CFG_VALIDATION_CERT_REQUIRED="$value" ;;
     validation.source) CFG_VALIDATION_SOURCE="$value" ;;
+    runtime.leaseTtlMinutes) CFG_RUNTIME_LEASE_TTL_MINUTES="$value" ;;
+    runtime.staleAfterMinutes) CFG_RUNTIME_STALE_AFTER_MINUTES="$value" ;;
+    runtime.reusePolicy) CFG_RUNTIME_REUSE_POLICY="$value" ;;
+    runtime.source) CFG_RUNTIME_SOURCE="$value" ;;
     metrics.enabled) CFG_METRICS_ENABLED="$value" ;;
+    metrics.activityTrackingEnabled) CFG_ACTIVITY_TRACKING_ENABLED="$value" ;;
     *) die "Unknown policy path: $path" ;;
   esac
 }
@@ -482,11 +703,13 @@ Commands:
   blocked                       Show only blocked specs with reasons
   dod <spec>                    Show unchecked DoD items for a spec
   policy <subcommand>           Manage control-plane defaults (status|get|set|reset)
+  runtime <subcommand>          Manage runtime leases and coordination
   session                       Show current session state
   lint <spec>                   Run artifact lint on a spec
   agnosticity [--staged]        Check portable Bubbles surfaces for drift
   guard <spec>                  Run state transition guard on a spec
   guard-selftest                Run the transition guard selftest suite
+  runtime-selftest              Run the runtime lease selftest suite
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
@@ -499,8 +722,10 @@ Commands:
   doctor [--heal]               Check project health, optionally auto-fix
   hooks <subcommand>            Manage git hooks (catalog|list|install|add|remove|run|status)
   project [gates <subcmd>]      Manage project extensions (bubbles-project.yaml)
-  metrics <subcommand>          Manage metrics (enable|disable|status|summary)
+  metrics <subcommand>          Manage metrics (enable|disable|activity-enable|activity-disable|status|summary|gates|agents)
   lessons [--all|compact]       View or compact lessons-learned memory
+  skill-proposals [subcommand]  Show or dismiss generated skill proposals
+  profile [subcommand]          Show, inspect stale, or clear developer profile observations
   upgrade [version] [--dry-run] Upgrade Bubbles to latest or specific version
   sunnyvale <alias>             Resolve a Sunnyvale alias
   aliases                       List all Sunnyvale aliases
@@ -510,6 +735,10 @@ HELPEOF
 
 cmd_status() {
   bash "$SCRIPT_DIR/spec-dashboard.sh" "$SPECS_DIR"
+  if [[ -x "$SCRIPT_DIR/runtime-leases.sh" ]]; then
+    bash "$SCRIPT_DIR/runtime-leases.sh" summary || true
+    echo ""
+  fi
 }
 
 cmd_specs() {
@@ -802,6 +1031,10 @@ cmd_guard_selftest() {
 
 cmd_workflow_selftest() {
   bash "$SCRIPT_DIR/workflow-surface-selftest.sh"
+}
+
+cmd_runtime_selftest() {
+  bash "$SCRIPT_DIR/runtime-lease-selftest.sh"
 }
 
 cmd_scan() {
@@ -1097,7 +1330,7 @@ cmd_doctor() {
   for cfg in .github/copilot-instructions.md .specify/memory/agents.md; do
     if [[ -f "$REPO_ROOT/$cfg" ]]; then
       local c
-      c=$(grep -c 'TODO' "$REPO_ROOT/$cfg" 2>/dev/null || true)
+      c=$(bootstrap_placeholder_count "$REPO_ROOT/$cfg")
       c=${c:-0}
       todo_count=$((todo_count + c))
     fi
@@ -1236,6 +1469,35 @@ cmd_doctor() {
     echo -e "  ${RED}❌${NC} Downstream framework-managed files were edited locally"
     echo -e "     ${DIM}Move the request into .github/bubbles-project/proposals/ and implement it upstream in Bubbles.${NC}"
     failed=$((failed + 1))
+  fi
+
+  # Check 13: Workflow registry and documented command surface stay aligned
+  if bash "$SCRIPT_DIR/workflow-registry-consistency.sh" --quiet; then
+    echo -e "  ${GREEN}✅${NC} Workflow inventory and documented control-plane surfaces are consistent"
+    passed=$((passed + 1))
+  else
+    echo -e "  ${RED}❌${NC} Workflow inventory or documented control-plane surfaces drifted"
+    failed=$((failed + 1))
+  fi
+
+  # Check 14: Runtime lease registry is readable and conflict free
+  if [[ -x "$SCRIPT_DIR/runtime-leases.sh" ]]; then
+    local runtime_summary runtime_stale runtime_conflicts
+    runtime_summary="$(bash "$SCRIPT_DIR/runtime-leases.sh" summary 2>/dev/null || true)"
+    runtime_stale="$(printf '%s\n' "$runtime_summary" | sed -nE 's/.*stale=([0-9]+).*/\1/p')"
+    runtime_conflicts="$(printf '%s\n' "$runtime_summary" | sed -nE 's/.*conflicts=([0-9]+).*/\1/p')"
+    runtime_stale="${runtime_stale:-0}"
+    runtime_conflicts="${runtime_conflicts:-0}"
+    if bash "$SCRIPT_DIR/runtime-leases.sh" doctor --quiet >/dev/null 2>&1; then
+      echo -e "  ${GREEN}✅${NC} Runtime lease registry readable"
+      passed=$((passed + 1))
+      if [[ "$runtime_stale" -gt 0 ]]; then
+        echo -e "  ${YELLOW}⚠️${NC}  Runtime registry contains $runtime_stale stale lease(s)"
+      fi
+    else
+      echo -e "  ${RED}❌${NC} Runtime lease registry has active conflicts (${runtime_conflicts})"
+      failed=$((failed + 1))
+    fi
   fi
 
   echo ""
@@ -1422,7 +1684,6 @@ PPHOOK
 cmd_project() {
   local subcmd="${1:-}"
   shift 2>/dev/null || true
-
   local project_yaml="$REPO_ROOT/.github/bubbles-project.yaml"
 
   case "$subcmd" in
@@ -1497,6 +1758,10 @@ GATEEOF
   esac
 }
 
+cmd_runtime() {
+  bash "$SCRIPT_DIR/runtime-leases.sh" "$@"
+}
+
 cmd_policy() {
   local subcmd="${1:-status}"
   shift || true
@@ -1515,6 +1780,9 @@ cmd_policy() {
       echo "  lockdown.requireGrillForInvalidation = $CFG_LOCKDOWN_REQUIRE_GRILL"
       echo "  regression.immutability = $CFG_REGRESSION_IMMUTABILITY (source=$CFG_REGRESSION_SOURCE)"
       echo "  validation.certificationRequired = $CFG_VALIDATION_CERT_REQUIRED (source=$CFG_VALIDATION_SOURCE)"
+      echo "  runtime.leaseTtlMinutes = $CFG_RUNTIME_LEASE_TTL_MINUTES (source=$CFG_RUNTIME_SOURCE)"
+      echo "  runtime.staleAfterMinutes = $CFG_RUNTIME_STALE_AFTER_MINUTES"
+      echo "  runtime.reusePolicy = $CFG_RUNTIME_REUSE_POLICY"
       echo ""
       echo "Workflow-forced overrides:"
       echo "  bugfix-fastlane.tdd.mode = scenario-first (source=workflow-forced)"
@@ -1522,6 +1790,7 @@ cmd_policy() {
       echo ""
       echo "Auxiliary settings:"
       echo "  metrics.enabled = $CFG_METRICS_ENABLED"
+      echo "  metrics.activityTrackingEnabled = $CFG_ACTIVITY_TRACKING_ENABLED"
       ;;
     get)
       local path="${1:-}"
@@ -1561,6 +1830,7 @@ cmd_policy() {
         lockdown.default|lockdown.requireGrillForInvalidation) CFG_LOCKDOWN_SOURCE="$source" ;;
         regression.immutability) CFG_REGRESSION_SOURCE="$source" ;;
         validation.certificationRequired) CFG_VALIDATION_SOURCE="$source" ;;
+        runtime.leaseTtlMinutes|runtime.staleAfterMinutes|runtime.reusePolicy) CFG_RUNTIME_SOURCE="$source" ;;
       esac
       save_control_plane_config
       echo "✅ Updated $path = $value"
@@ -1587,6 +1857,7 @@ cmd_policy() {
         lockdown.default|lockdown.requireGrillForInvalidation|lockdown.source) CFG_LOCKDOWN_SOURCE="repo-default" ;;
         regression.immutability|regression.source) CFG_REGRESSION_SOURCE="repo-default" ;;
         validation.certificationRequired|validation.source) CFG_VALIDATION_SOURCE="repo-default" ;;
+        runtime.leaseTtlMinutes|runtime.staleAfterMinutes|runtime.reusePolicy|runtime.source) CFG_RUNTIME_SOURCE="repo-default" ;;
       esac
       save_control_plane_config
       echo "✅ Reset $path to $(read_control_plane_setting "$path")"
@@ -1609,14 +1880,32 @@ cmd_metrics() {
       ;;
     disable)
       CFG_METRICS_ENABLED="false"
+      CFG_ACTIVITY_TRACKING_ENABLED="false"
       save_control_plane_config
       echo "✅ Metrics disabled. Existing data preserved."
       ;;
+    activity-enable)
+      CFG_METRICS_ENABLED="true"
+      CFG_ACTIVITY_TRACKING_ENABLED="true"
+      save_control_plane_config
+      echo "✅ Activity tracking enabled. Metrics events will be logged to $CONTROL_PLANE_METRICS_FILE and activity snapshots to $CONTROL_PLANE_ACTIVITY_FILE"
+      ;;
+    activity-disable)
+      CFG_ACTIVITY_TRACKING_ENABLED="false"
+      save_control_plane_config
+      echo "✅ Activity tracking disabled. Existing activity data preserved."
+      ;;
     status)
       if [[ "$CFG_METRICS_ENABLED" == "true" ]]; then
-        local count=0
+        local count=0 activity_count=0
         [[ -f "$CONTROL_PLANE_METRICS_FILE" ]] && count=$(wc -l < "$CONTROL_PLANE_METRICS_FILE")
+        [[ -f "$CONTROL_PLANE_ACTIVITY_FILE" ]] && activity_count=$(wc -l < "$CONTROL_PLANE_ACTIVITY_FILE")
         echo "Metrics: ENABLED ($count events collected)"
+        if [[ "$CFG_ACTIVITY_TRACKING_ENABLED" == "true" ]]; then
+          echo "Activity tracking: ENABLED ($activity_count records collected)"
+        else
+          echo "Activity tracking: DISABLED (run: bubbles metrics activity-enable)"
+        fi
       else
         echo "Metrics: DISABLED (run: bubbles metrics enable)"
       fi
@@ -1635,6 +1924,15 @@ cmd_metrics() {
       phase_completions="${phase_completions:-0}"
       echo "  Gate checks: $gate_checks"
       echo "  Phase completions: $phase_completions"
+      if [[ -f "$CONTROL_PLANE_ACTIVITY_FILE" ]]; then
+        local activity_total command_invocations avg_duration
+        activity_total="$(wc -l < "$CONTROL_PLANE_ACTIVITY_FILE")"
+        command_invocations="$(grep -c '"command":' "$CONTROL_PLANE_ACTIVITY_FILE" 2>/dev/null || true)"
+        avg_duration="$(awk -F'"durationMs":' 'NF > 1 { split($2, rest, ","); sum += rest[1]; count += 1 } END { if (count == 0) { print 0 } else { printf "%d", sum / count } }' "$CONTROL_PLANE_ACTIVITY_FILE")"
+        echo "  Activity records: $activity_total"
+        echo "  Command invocations tracked: ${command_invocations:-0}"
+        echo "  Avg command duration: ${avg_duration}ms"
+      fi
       ;;
     gates)
       if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
@@ -1648,7 +1946,7 @@ cmd_metrics() {
       grep '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null \
         | grep -oE '"agent":"[^"]*"' | sort | uniq -c | sort -rn || echo "  No invocations recorded"
       ;;
-    *) die "Unknown metrics subcommand: $subcmd. Try: enable, disable, status, summary, gates, agents" ;;
+    *) die "Unknown metrics subcommand: $subcmd. Try: enable, disable, activity-enable, activity-disable, status, summary, gates, agents" ;;
   esac
 }
 
@@ -1693,6 +1991,14 @@ cmd_lessons() {
       ;;
     *) die "Unknown lessons subcommand: $subcmd. Try: compact, --all, or no argument for recent" ;;
   esac
+}
+
+cmd_skill_proposals() {
+  bash "$SCRIPT_DIR/skill-evolution.sh" "${1:-show}"
+}
+
+cmd_profile() {
+  bash "$SCRIPT_DIR/developer-profile.sh" "${1:-show}"
 }
 
 cmd_upgrade() {
@@ -1747,19 +2053,19 @@ cmd_upgrade() {
   local recs=0
   if [[ -f "$REPO_ROOT/.github/copilot-instructions.md" ]]; then
     local t
-    t=$(grep -c 'TODO' "$REPO_ROOT/.github/copilot-instructions.md" 2>/dev/null || true)
+    t=$(bootstrap_placeholder_count "$REPO_ROOT/.github/copilot-instructions.md")
     t=${t:-0}
     if [[ "$t" -gt 0 ]]; then
-      echo "  ⚠️  copilot-instructions.md has $t unfilled TODO items"
+      echo "  ⚠️  copilot-instructions.md has $t unfilled bootstrap placeholder items"
       recs=$((recs + 1))
     fi
   fi
   if [[ -f "$REPO_ROOT/.specify/memory/agents.md" ]]; then
     local t
-    t=$(grep -c 'TODO' "$REPO_ROOT/.specify/memory/agents.md" 2>/dev/null || true)
+    t=$(bootstrap_placeholder_count "$REPO_ROOT/.specify/memory/agents.md")
     t=${t:-0}
     if [[ "$t" -gt 0 ]]; then
-      echo "  ⚠️  agents.md has $t unfilled TODO items"
+      echo "  ⚠️  agents.md has $t unfilled bootstrap placeholder items"
       recs=$((recs + 1))
     fi
   fi
@@ -1786,17 +2092,25 @@ main() {
   local command="$1"
   shift
 
+  CURRENT_BUBBLES_COMMAND="$command"
+  CURRENT_BUBBLES_ARGS="$*"
+  COMMAND_START_MS="$(current_epoch_ms)"
+  CLI_RECORDING_ACTIVE=true
+  trap 'record_cli_completion $?' EXIT
+
   case "$command" in
     status|dashboard)   cmd_status "$@" ;;
     specs|list)         cmd_specs "$@" ;;
     blocked)            cmd_blocked "$@" ;;
     dod)                cmd_dod "$@" ;;
     policy)             cmd_policy "$@" ;;
+    runtime)            cmd_runtime "$@" ;;
     session)            cmd_session "$@" ;;
     lint)               cmd_lint "$@" ;;
     agnosticity)        cmd_agnosticity "$@" ;;
     guard)              cmd_guard "$@" ;;
     guard-selftest)     cmd_guard_selftest "$@" ;;
+    runtime-selftest)   cmd_runtime_selftest "$@" ;;
     workflow-selftest)  cmd_workflow_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
     regression-quality) cmd_regression_quality "$@" ;;
@@ -1811,6 +2125,8 @@ main() {
     project)            cmd_project "$@" ;;
     metrics)            cmd_metrics "$@" ;;
     lessons)            cmd_lessons "$@" ;;
+    skill-proposals)    cmd_skill_proposals "$@" ;;
+    profile)            cmd_profile "$@" ;;
     upgrade)            cmd_upgrade "$@" ;;
     sunnyvale)          cmd_sunnyvale "$@" ;;
     aliases)            cmd_aliases "$@" ;;

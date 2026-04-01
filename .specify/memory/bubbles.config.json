@@ -43,6 +43,8 @@
     }
   },
   "metrics": {
-    "enabled": false
+    "enabled": false,
+    "activityTrackingEnabled": false,
+    "outcomeEvalsEnabled": true
   }
 }

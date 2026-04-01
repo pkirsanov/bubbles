@@ -40,9 +40,19 @@ And with `--bootstrap`, also creates:
 - `.specify/memory/constitution.md` — project governance principles
 - `.specify/memory/agents.md` — command registry for agent resolution
 - `.specify/memory/bubbles.config.json` — control-plane policy registry (grill, TDD, lockdown defaults)
+- `.specify/memory/.gitignore` — ignore runtime developer-profile and skill-proposal artifacts
+- `.specify/metrics/.gitignore` — ignore runtime metrics/activity JSONL artifacts
+- `.specify/runtime/.gitignore` — ignore runtime lease registry artifacts
 - `.github/bubbles/docs/CROSS_PROJECT_SETUP.md` — setup checklist
 - `.github/bubbles/docs/SETUP_SOURCES.md` — bootstrap source registry
 - `specs/` — directory for feature/bug specs
+
+Runtime-generated control-plane artifacts are intentionally not bootstrap fixtures and should stay untracked:
+- `.specify/memory/developer-profile.md`
+- `.specify/memory/skill-proposals.md`
+- `.specify/memory/skill-proposals-dismissed.md`
+- `.specify/metrics/*.jsonl`
+- `.specify/runtime/resource-leases.json`
 
 Bootstrap-owned Bubbles artifacts must come from one of these two paths only:
 - installer/bootstrap from the Bubbles repo
@@ -163,6 +173,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/v1.2.0/install.sh
 | Workflow config | `.github/bubbles/workflows.yaml` | Bubbles |
 | Governance scripts | `.github/bubbles/scripts/*.sh` | Bubbles |
 | Control-plane policy registry | `.specify/memory/bubbles.config.json` | Bubbles bootstrap |
+| Runtime profile/proposal artifacts | `.specify/memory/developer-profile.md`, `.specify/memory/skill-proposals*.md` | Runtime-generated, keep untracked |
+| Runtime metrics/activity logs | `.specify/metrics/*.jsonl` | Runtime-generated, keep untracked |
 | Docs registry overrides | `.github/bubbles-project.yaml` | **You** |
 | Framework change proposals | `.github/bubbles-project/proposals/**` | **You** |
 | Project instructions | `.github/copilot-instructions.md` | **You** (bootstrapped) |

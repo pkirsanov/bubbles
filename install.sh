@@ -333,6 +333,8 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   # ── Create directories ────────────────────────────────────────────
   mkdir -p specs
   mkdir -p .specify/memory
+  mkdir -p .specify/metrics
+  mkdir -p .specify/runtime
   mkdir -p "${TARGET}/instructions"
   mkdir -p "${TARGET}/docs"
   mkdir -p "${TARGET}/bubbles/docs"
@@ -504,9 +506,43 @@ SRCEOF
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
+  # ── Scaffold: runtime artifact ignore rules ───────────────────────
+  if [[ ! -f ".specify/memory/.gitignore" ]]; then
+    if [[ -f "$TEMP_DIR/.specify/memory/.gitignore" ]]; then
+      cp "$TEMP_DIR/.specify/memory/.gitignore" ".specify/memory/.gitignore"
+      ok "Created .specify/memory/.gitignore (runtime profile/proposal artifacts stay untracked)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/memory/.gitignore (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  if [[ ! -f ".specify/metrics/.gitignore" ]]; then
+    if [[ -f "$TEMP_DIR/.specify/metrics/.gitignore" ]]; then
+      cp "$TEMP_DIR/.specify/metrics/.gitignore" ".specify/metrics/.gitignore"
+      ok "Created .specify/metrics/.gitignore (runtime metrics stay untracked)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/metrics/.gitignore (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
+  if [[ ! -f ".specify/runtime/.gitignore" ]]; then
+    if [[ -f "$TEMP_DIR/.specify/runtime/.gitignore" ]]; then
+      cp "$TEMP_DIR/.specify/runtime/.gitignore" ".specify/runtime/.gitignore"
+      ok "Created .specify/runtime/.gitignore (runtime lease registry stays untracked)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/runtime/.gitignore (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
   # ── Auto-generate: .github/bubbles-project.yaml ───────────────────────
   if [[ ! -f ".github/bubbles-project.yaml" ]] || ! grep -q '^scans:' ".github/bubbles-project.yaml" 2>/dev/null; then
-    local setup_script=".github/bubbles/scripts/project-scan-setup.sh"
+    setup_script=".github/bubbles/scripts/project-scan-setup.sh"
     if [[ -f "$setup_script" ]]; then
       info "Auto-detecting project scan patterns..."
       bash "$setup_script" --quiet 2>/dev/null || true
@@ -540,9 +576,18 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "     specs/                                          — Feature/bug specs go here"
   echo "     .specify/memory/constitution.md                 — Project governance"
   echo "     .specify/memory/agents.md                       — Command registry"
+  echo "     .specify/memory/bubbles.config.json             — Control-plane defaults"
+  echo "     .specify/memory/.gitignore                      — Ignore runtime profile/proposal artifacts"
+  echo "     .specify/metrics/.gitignore                     — Ignore runtime metrics artifacts"
   echo "     .github/copilot-instructions.md                 — Project policies"
   echo "     .github/instructions/terminal-discipline...md   — CLI discipline"
   echo "     .github/bubbles-project.yaml                    — Scan patterns (auto-detected)"
+  echo ""
+  echo "  Runtime-generated control-plane artifacts are created on demand and stay untracked:"
+  echo "     .specify/memory/developer-profile.md"
+  echo "     .specify/memory/skill-proposals.md"
+  echo "     .specify/memory/skill-proposals-dismissed.md"
+  echo "     .specify/metrics/*.jsonl"
   echo ""
   printf "  ${YELLOW}⚠️  Action required:${NC} Update the TODO items in the generated files\n"
   echo "     to match your project's actual commands, paths, and config."

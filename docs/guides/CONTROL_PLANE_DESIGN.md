@@ -35,6 +35,7 @@ The target architecture must satisfy all of the following:
 10. Regression tests become protected behavior contracts that cannot drift without spec invalidation.
 11. Every user-visible or externally observable behavior change must have explicit Gherkin and passing live-system BDD evidence.
 12. Existing repos and active specs can adopt the control plane incrementally without blind rewrites or mixed authoritative state.
+13. Concurrent sessions must coordinate shared Docker or runtime resources through an explicit lease registry so reuse is safe and teardown blast radius is bounded.
 
 ## Non-Goals
 
@@ -47,7 +48,7 @@ This design does not propose:
 
 ## Architecture Overview
 
-The new control plane has seven cooperating parts.
+The new control plane has eight cooperating parts.
 
 ### 1. Agent Capability Registry
 
@@ -113,6 +114,25 @@ Every workflow run must record a policy snapshot plus provenance for each active
 - `repo-default`
 - `workflow-forced`
 - `spec-lockdown`
+
+The runtime coordination defaults also belong here:
+- runtime lease TTL
+- stale-lease detection threshold
+- reuse policy for shared-compatible stacks
+
+### 2.5. Runtime Lease Registry
+
+Execution isolation is not enough when multiple sessions can start or reuse Docker containers, Compose projects, networks, volumes, or mutable test stores. The control plane therefore needs a runtime lease registry under `.specify/runtime/`.
+
+The registry is responsible for:
+
+1. recording which session currently owns or is attached to a runtime stack
+2. classifying the stack as `shared-compatible`, `exclusive`, `disposable`, or `persistent-protected`
+3. storing a compatibility fingerprint derived from repo state and declared runtime inputs
+4. generating safe Compose project names for compatible reuse or isolated duplication
+5. surfacing stale leases and active conflicts in `bubbles status`, `bubbles doctor`, and `bubbles runtime ...`
+
+This keeps source-level parallelism (`gitIsolation`, worktrees, parallel scopes) from accidentally colliding at the container/runtime layer.
 
 ### 3. Validate-Owned Certification State
 

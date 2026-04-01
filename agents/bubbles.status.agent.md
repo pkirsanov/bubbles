@@ -87,6 +87,7 @@ Read the following files:
 2. Current feature's `scopes.md` (if exists) - Scope-by-scope progress (from `/bubbles.plan`)
 3. `.specify/memory/fix.log` - Current error (if exists)
 4. `.specify/memory/agents.md` - Project configuration
+5. `.specify/runtime/resource-leases.json` - Runtime lease state, if present
 
 ## Execution Flow
 
@@ -153,6 +154,19 @@ Scope Progress: [done] / [total] scopes ([percentage]%)
 | Iteration | N |
 | Last Error | [type or "None"] |
 | Health | 🟢 HEALTHY / 🟡 STUCK / 🔴 ESCALATION |
+
+### Runtime Coordination
+
+If `.specify/runtime/resource-leases.json` exists:
+
+| Metric | Value |
+|--------|-------|
+| Active Runtime Leases | X |
+| Stale Runtime Leases | Y |
+| Runtime Conflicts | Z |
+
+When active leases exist, list each active compose project, purpose, share mode, and owner session.
+When stale leases or runtime conflicts exist, surface them prominently and recommend the relevant framework action (`/bubbles.super  show runtime lease conflicts`, `/bubbles.super  reclaim stale runtime leases`).
 
 ### Agent Activity Dashboard
 

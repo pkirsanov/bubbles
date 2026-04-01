@@ -74,6 +74,12 @@ Use this recipe when any of these are true:
 
 /bubbles.super  my hooks don't seem installed right, fix that
 → The repair action plus the verification command
+
+/bubbles.super  why are my parallel sessions colliding?
+→ `bubbles runtime doctor` plus the safest recovery step
+
+/bubbles.super  reuse the validation stack if it is compatible
+→ `bubbles runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml`
 ```
 
 ## Ask It To Translate Problems Into Bubbles

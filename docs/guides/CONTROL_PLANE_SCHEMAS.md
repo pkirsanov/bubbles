@@ -11,7 +11,7 @@ The version 3 state model, `policySnapshot`, `certification.*`, and `scenario-ma
 
 ## Schema Set
 
-The control plane needs nine concrete schema surfaces:
+The control plane needs ten concrete schema surfaces:
 
 1. Agent capability registry
 2. Execution policy registry
@@ -22,6 +22,7 @@ The control plane needs nine concrete schema surfaces:
 7. Rework packet
 8. Lockdown approval record
 9. Invalidation ledger entry
+10. Runtime lease registry
 
 ## 1. Agent Capability Registry
 
@@ -139,6 +140,12 @@ Runtime file: `.specify/memory/bubbles.config.json`
     "validation": {
       "certificationRequired": true,
       "source": "repo-default"
+    },
+    "runtime": {
+      "leaseTtlMinutes": 20,
+      "staleAfterMinutes": 60,
+      "reusePolicy": "fingerprint-match-only",
+      "source": "repo-default"
     }
   },
   "modeOverrides": {
@@ -208,6 +215,12 @@ When a repo already has Bubbles framework files but no repo-local policy registr
     "validation": {
       "certificationRequired": true,
       "source": "repo-default"
+    },
+    "runtime": {
+      "leaseTtlMinutes": 20,
+      "staleAfterMinutes": 60,
+      "reusePolicy": "fingerprint-match-only",
+      "source": "repo-default"
     }
   },
   "modeOverrides": {},
@@ -222,6 +235,59 @@ Adoption rule:
 - adding this file is safe and additive
 - repo defaults belong here even when prompts describe the same modes conceptually
 - the first control-plane-aware workflow run records the effective values into `state.json.policySnapshot`
+
+## 10. Runtime Lease Registry
+
+Runtime file: `.specify/runtime/resource-leases.json`
+
+```json
+{
+  "version": 1,
+  "leases": [
+    {
+      "leaseId": "rls_20260401120000_1234",
+      "repo": "guestHost",
+      "sessionId": "workflow-session-a",
+      "agent": "bubbles.validate",
+      "worktree": "/workspace/guestHost",
+      "branch": "feature/parallel-runtime",
+      "purpose": "validation",
+      "environment": "dev",
+      "composeProject": "guesthost-dev-validation-cmpabc12345",
+      "stackGroup": "validation",
+      "shareMode": "shared-compatible",
+      "compatibilityFingerprint": "sha256:abc123...",
+      "resources": "container:guesthost-backend|volume:guesthost-postgres-data",
+      "attachedSessions": "workflow-session-a,workflow-session-b",
+      "startedAt": "2026-04-01T12:00:00Z",
+      "lastHeartbeatAt": "2026-04-01T12:05:00Z",
+      "expiresAt": "2026-04-01T12:25:00Z",
+      "status": "active"
+    }
+  ]
+}
+```
+
+### CLI Surface
+
+```text
+bubbles runtime leases
+bubbles runtime summary
+bubbles runtime doctor
+bubbles runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml
+bubbles runtime attach <lease-id>
+bubbles runtime heartbeat <lease-id>
+bubbles runtime release <lease-id>
+bubbles runtime reclaim-stale
+```
+
+### Invariants
+
+- `.specify/runtime/` is runtime-generated and stays untracked except for `.gitignore`
+- `shared-compatible` reuse requires an exact compatibility fingerprint match
+- `exclusive` leases block concurrent acquisition for the same repo/purpose/environment tuple
+- `doctor` must surface stale leases and active compose/fingerprint conflicts
+- status and doctor surfaces may summarize the registry, but the registry itself is the runtime source of truth
 
 ## 3. Scenario Contract Manifest
 

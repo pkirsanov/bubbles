@@ -40,6 +40,7 @@ handoffs:
 - Chain operations when logical (e.g. upgrade -> doctor -> reinstall hooks)
 - Non-interactive by default: execute the most reasonable interpretation of the request
 - **Cross-Model Registry Freshness:** On workflow_start or when the user asks about cross-model review, check `crossModelReview.lastVerified` in `.specify/memory/bubbles.config.json`. If more than 90 days have passed (or field is null), remind the user: "Your cross-model review registry was last verified {days} days ago. New models may be available. Would you like to update it?" Do NOT block work — this is an informational reminder only.
+- When multiple sessions may share or collide on Docker/Compose resources, prefer the runtime lease surface (`bubbles runtime ...`) over ad-hoc cleanup advice.
 
 **Dynamic Knowledge Sources — MUST Scan Before Answering:**
 
@@ -542,13 +543,23 @@ bash bubbles/scripts/cli.sh lessons --all
 bash bubbles/scripts/cli.sh lessons compact
 ```
 
-### 9. Scope Dependency Visualization
+### 9. Runtime Coordination
+
+```bash
+bash bubbles/scripts/cli.sh runtime leases
+bash bubbles/scripts/cli.sh runtime summary
+bash bubbles/scripts/cli.sh runtime doctor
+bash bubbles/scripts/cli.sh runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml
+bash bubbles/scripts/cli.sh runtime release <lease-id>
+```
+
+### 10. Scope Dependency Visualization
 
 ```bash
 bash bubbles/scripts/cli.sh dag <spec>
 ```
 
-### 10. Spec Progress
+### 11. Spec Progress
 
 ```bash
 bash bubbles/scripts/cli.sh status
@@ -557,14 +568,14 @@ bash bubbles/scripts/cli.sh blocked
 bash bubbles/scripts/cli.sh dod <spec>
 ```
 
-### 11. Skill Proposals
+### 12. Skill Proposals
 
 ```bash
 bash bubbles/scripts/cli.sh skill-proposals          # Show pending proposals
 bash bubbles/scripts/cli.sh skill-proposals --dismiss  # Dismiss all
 ```
 
-### 12. Developer Profile
+### 13. Developer Profile
 
 ```bash
 bash bubbles/scripts/cli.sh profile              # Show current profile
@@ -607,6 +618,9 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "show me the parallel plan without running it" -> /bubbles.workflow specs/<feature> mode: full-delivery parallelScopes: dag-dry
 "I keep hitting the same Docker cache issue" -> Check skill-proposals; if pattern ≥3x, surface proposal
 "what are my coding preferences?" -> bash bubbles/scripts/cli.sh profile
+"show active runtime leases" -> bash bubbles/scripts/cli.sh runtime leases
+"why are my parallel sessions colliding?" -> bash bubbles/scripts/cli.sh runtime doctor
+"reuse the validation stack if it is compatible" -> bash bubbles/scripts/cli.sh runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml
 "which agents have been running?" -> /bubbles.status (shows agent activity dashboard)
 "deliver this carefully, TDD, commit each scope, on a branch" -> /bubbles.workflow specs/<feature> mode: full-delivery tdd: true grillMode: required-on-ambiguity autoCommit: scope gitIsolation: true
 "ship this, no loose ends, parallel where possible" -> /bubbles.workflow specs/<feature> mode: delivery-lockdown parallelScopes: dag autoCommit: scope
@@ -637,15 +651,16 @@ When the user's request is ambiguous, use this priority:
 6. If about lessons -> `lessons`
 7. If about dependencies -> `dag`
 8. If about progress -> `status`
-9. If about velocity/patterns/retrospective -> `/bubbles.retro`
-10. If about model registry/cross-model review freshness -> check + explain registry
-11. If about brainstorming or exploring an idea -> `/bubbles.workflow mode: brainstorm`
-12. If about skill proposals or repeated patterns -> `skill-proposals`
-13. If about developer preferences or profile -> `profile`
-14. If about agent activity or invocation counts -> `/bubbles.status`
-15. If about parallelizing scopes -> explain `parallelScopes: dag` tag
-16. If about code hotspots, bug magnets, technical debt location, or bus factor -> `/bubbles.retro hotspots` (or `coupling` / `busfactor`)
-17. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
-17. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
-18. If about what to do next / which agent / which mode -> Platform Concierge
+9. If about runtime lease conflicts, shared Docker reuse, or stale stacks -> `runtime`
+10. If about velocity/patterns/retrospective -> `/bubbles.retro`
+11. If about model registry/cross-model review freshness -> check + explain registry
+12. If about brainstorming or exploring an idea -> `/bubbles.workflow mode: brainstorm`
+13. If about skill proposals or repeated patterns -> `skill-proposals`
+14. If about developer preferences or profile -> `profile`
+15. If about agent activity or invocation counts -> `/bubbles.status`
+16. If about parallelizing scopes -> explain `parallelScopes: dag` tag
+17. If about code hotspots, bug magnets, technical debt location, or bus factor -> `/bubbles.retro hotspots` (or `coupling` / `busfactor`)
+18. If about spec freshness / trust / stale specs -> `spec-review` or `spec-review-to-doc` mode
+19. If about translating vague requests into exact prompts -> use Platform Concierge with Tag Selection Matrix; if the user already supplied an exact agent or mode, do not add an unnecessary `super` hop
+20. If about what to do next / which agent / which mode -> Platform Concierge
 19. If the user is unsure where to start -> act as the front door and give the best first command or sequence directly

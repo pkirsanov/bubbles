@@ -31,6 +31,7 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 
 # Framework operations
 /bubbles.workflow  doctor
+/bubbles.workflow  show runtime lease conflicts
 /bubbles.workflow  show status
 
 # Structured input still works
