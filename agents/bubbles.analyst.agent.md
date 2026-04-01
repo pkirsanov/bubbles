@@ -34,7 +34,7 @@ handoffs:
 - If `socratic: true`, switch into a tightly bounded discovery interview: ask only targeted questions that materially change requirements, architecture direction, or UX outcomes; stop after `socraticQuestions` questions or earlier if ambiguity is resolved
 
 **Artifact Ownership:**
-- Owns analyst-managed business sections in `spec.md` only (actors, personas, use cases, business scenarios, competitive analysis, improvement proposals, UI scenario matrix, non-functional requirements)
+- Owns analyst-managed business sections in `spec.md` only (actors, personas, use cases, business scenarios, competitive analysis, improvement proposals, UI scenario matrix, non-functional requirements, outcome contract)
 - May update `state.json.execution` only
 - MUST NOT edit `design.md`, `scopes.md`, `report.md`, `uservalidation.md`, or `state.json.certification.*`
 - If analysis reveals required design or planning changes, return a concrete owner-targeted route or invoke the owning agent only when the caller explicitly asked for downstream promotion
@@ -353,6 +353,12 @@ When writing, update only analyst-owned sections of `spec.md`:
 | Actor | Description | Key Goals | Permissions |
 |-------|------------|-----------|-------------|
 
+## Outcome Contract
+**Intent:** [1-3 sentences: what outcome should be achieved from the user/system perspective]
+**Success Signal:** [Observable, testable proof that the outcome was achieved]
+**Hard Constraints:** [Business invariants that must hold regardless of implementation approach]
+**Failure Condition:** [What would make this feature a failure even if all tests pass]
+
 ## Use Cases
 ### UC-001: [Use Case Name]
 - **Actor:** ...
@@ -399,6 +405,8 @@ Then [business outcome]
 - Compliance: ...
 ```
 
+**Outcome Contract is MANDATORY (Gate G070).** The `## Outcome Contract` section MUST be present and non-empty in `spec.md` before bootstrap phase can complete. If missing after Phase 8, this is a BLOCKING failure.
+
 Preserve any existing spec.md sections not owned by this agent. Merge, don't overwrite.
 Within analyst-owned sections, reconcile instead of blindly appending. Active sections must reflect only the current truth.
 
@@ -409,6 +417,7 @@ Within analyst-owned sections, reconcile instead of blindly appending. Active se
    - Actors discovered
    - Use cases defined
    - Business scenarios created
+   - Outcome contract defined (Intent, Success Signal, Hard Constraints)
    - Analyst sections reconciled or superseded
    - Competitive gaps identified
    - Improvement proposals with priority

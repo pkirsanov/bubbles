@@ -220,6 +220,10 @@ gates:
     name: child_workflow_depth_gate
     description: >-
       BLOCKING gate. Only orchestrators may invoke child workflows, and workflow nesting depth MUST NOT exceed 1. Non-orchestrator agents may emit packets but may not recursively spawn workflow execution.
+  G067:
+    name: shared_infrastructure_blast_radius_gate
+    description: >-
+      BLOCKING gate. When a scope touches high-fan-out shared test or bootstrap infrastructure (fixtures, harnesses, global setup, auth/login/session bootstrap, storage/session injection, ordering/timing contracts), planning artifacts MUST include a Shared Infrastructure Impact Sweep, an independent canary suite entry that validates downstream contracts before broad suite reruns, and a rollback or restore path. Agents MUST NOT rewrite such infrastructure wholesale unless the blast radius, downstream contract surfaces, and recovery path are explicitly planned and verified. Enforced by state-transition-guard.sh Check 8C.
   G065:
     name: pseudo_completion_language_gate
     description: >-
@@ -228,10 +232,18 @@ gates:
     name: phase_claim_provenance_gate
     description: >-
       BLOCKING gate. Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory. An agent may only record its own phase name; cross-phase impersonation is fabrication. Enforced by state-transition-guard.sh Check 6B.
+  G069:
+    name: collateral_change_containment_gate
+    description: >-
+      BLOCKING gate. Mixed-purpose cleanup is forbidden for narrow repairs and risky refactors. Scopes that refactor, simplify, or repair high-fan-out infrastructure MUST declare a Change Boundary listing allowed file families and excluded surfaces that must remain untouched, and they MUST prove zero unrelated file families were changed as part of the fix loop. Opportunistic cleanups, unrelated handler/test edits, or broad repo sweeps bundled into the same repair path are blocking failures. Enforced by state-transition-guard.sh Check 8D.
   G068:
     name: dod_gherkin_content_fidelity_gate
     description: >-
       ABSOLUTE BLOCKING gate. DoD items MUST faithfully represent the behavioral claims of their source Gherkin scenarios. If a scope's Gherkin scenarios specify behavior X (e.g., "mock structs are removed and replaced with real test DB calls") but the DoD items describe behavior Y (e.g., "all files tagged for future migration"), the DoD has drifted from the spec and the scope MUST NOT be marked Done. This gate prevents execution agents from silently rewriting DoD item descriptions to match what was delivered instead of what was planned. Detection: cross-reference significant words from each Gherkin scenario against DoD item text using fuzzy matching. If a scenario's key behavioral claim has no corresponding DoD item preserving that claim, the gate fails. Enforced by traceability-guard.sh (Gherkin-to-DoD pass) and state-transition-guard.sh Check 22.
+  G070:
+    name: outcome_contract_gate
+    description: >-
+      BLOCKING gate for bootstrap and validate phases. spec.md MUST contain a non-empty Outcome Contract section with Intent, Success Signal, Hard Constraints, and Failure Condition fields before the bootstrap phase completes. During validation, the Success Signal MUST be demonstrated in report.md evidence and Hard Constraints MUST be verified as preserved. A feature that passes all process gates but fails to satisfy its declared Intent or violates a Hard Constraint is NOT done. Enforced by artifact-lint.sh (presence check) and bubbles.validate Step 0 (substance check).
 
 failureRouting:
   code: implement
@@ -475,6 +487,39 @@ metrics:
     # - thinkingTime          # No visibility into model inference
     # - agentEfficiency       # No meaningful denominator
     reportAgent: bubbles.retro
+  outcomeEvals:
+    enabled: true
+    dimensions:
+    - outcomeContractPresent # spec.md has Outcome Contract section
+    - successSignalDemonstrated # report.md evidence demonstrates the Success Signal
+    - hardConstraintsPreserved # Hard Constraints verified during validation
+    - intentSatisfied # Overall outcome matches declared Intent
+
+# ── Gate Classification (Model Compensation Tagging) ──
+#
+# Gates tagged modelCompensation: true exist primarily to compensate for
+# current AI model limitations (fabrication, shortcutting, batching).
+# Gates tagged modelCompensation: false enforce durable business, security,
+# or architectural invariants that should remain regardless of model capability.
+# Review model-compensation gates when models improve significantly.
+gateClassification:
+  modelCompensation:
+  - G021 # anti_fabrication_gate — models fabricate evidence
+  - G025 # per_dod_item_raw_evidence — models batch-check DoD items
+  - G027 # phase_scope_coherence — models claim phases without doing work
+  - G040 # zero_deferral_language — models defer work with language tricks
+  - G041 # dod_format_integrity — models reformat checkboxes to bypass counts
+  - G049 # evidence_clone_detection — models copy-paste evidence blocks
+  - G065 # pseudo_completion_language — models emit "next steps" instead of doing them
+  - G066 # phase_claim_provenance — models impersonate other agents' phase claims
+  - G068 # dod_gherkin_content_fidelity — models rewrite DoD text to match delivery
+  businessInvariant:
+  - G030 # no_defaults_no_fallbacks — fail-fast configuration
+  - G034 # security_gate — vulnerability prevention
+  - G035 # vertical_slice — architectural completeness
+  - G047 # idor_auth_bypass — OWASP A01 prevention
+  - G048 # silent_decode_failure — data corruption prevention
+  - G070 # outcome_contract — intent-first planning and verification
 
 priorityScoring:
   model: weighted_sum

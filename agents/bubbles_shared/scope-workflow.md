@@ -215,6 +215,8 @@ Use these rules for every scope status change.
    - Scope DoD items in its `scope.md` (or `scopes.md`) are all checked `[x]`
   - Scope DoD explicitly includes scenario-specific E2E regression coverage for changed behavior plus a broader regression suite pass
   - If the scope renames/removes any route, path, contract, identifier, or UI target, the DoD includes a consumer impact sweep item and the affected consumer flows are validated
+  - If the scope changes shared fixtures, harnesses, or bootstrap/auth/session/storage infrastructure, the DoD includes a Shared Infrastructure Impact Sweep, an independent canary suite item, and a rollback/restore item
+  - If the scope is a narrow repair or risky refactor, the DoD includes a Change Boundary item and evidence that zero excluded file families changed
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
   - Scope entry in `state.json` is updated in `certification.scopeProgress` and `certification.completedScopes`
   - `certification.completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries

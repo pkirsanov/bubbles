@@ -10,6 +10,12 @@ Use these templates when creating feature artifacts.
 ## Problem Statement
 State the user pain, system gap, and why now. Keep it user-visible and testable.
 
+## Outcome Contract
+**Intent:** [1-3 sentences: what outcome should be achieved from the user/system perspective]
+**Success Signal:** [Observable, testable proof that the outcome was achieved — not "tests pass" but "user can do X and sees Y"]
+**Hard Constraints:** [Business invariants that must hold regardless of implementation approach — these survive model upgrades]
+**Failure Condition:** [What would make this feature a failure even if all tests pass]
+
 ## Goals
 - Concrete outcomes that can be verified by tests.
 - Each goal should map to one or more requirements below.
@@ -96,6 +102,8 @@ Links: [spec.md](spec.md) | [design.md](design.md) | [uservalidation.md](userval
 
 ### Implementation Plan
 - Files/surfaces to modify
+- Shared Infrastructure Impact Sweep (required when modifying shared fixtures, harnesses, or bootstrap/auth/session/storage contracts): enumerate downstream contract surfaces and likely blast radius.
+- Change Boundary (required for narrow repairs and risky refactors): list allowed file families and explicitly list excluded surfaces that must remain untouched.
 
 ### Test Plan
 Use the Test Plan table from scope-workflow.md and map each Gherkin scenario to a test entry that validates the exact use case behavior.
@@ -109,6 +117,12 @@ Use the Test Plan table from scope-workflow.md and map each Gherkin scenario to 
 **Bug-fix scopes MUST include an adversarial regression row:** at least one regression entry must use input that would fail if the bug were reintroduced. Tautological regressions where every fixture already satisfies the broken code path are invalid.
 
 **Renames/removals MUST include a Consumer Impact Sweep:** when a scope renames/removes any route, path, contract, identifier, or UI target, add a subsection enumerating affected navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests, plus explicit regression rows for those consumer flows and a stale-reference-scan row for the old identifier/path.
+
+**High-fan-out shared infrastructure MUST include a Shared Infrastructure Impact Sweep:** when a scope changes shared fixtures, harnesses, global setup/bootstrap, auth/login/session bootstrap code, storage injection, or other high-fan-out infrastructure, add a subsection enumerating downstream contract surfaces (ordering, timing, bootstrap/session state, tenant/user context, role detection, storage injection, or equivalent) plus an independent `Canary:` test row that validates those contracts before the broader suite reruns.
+
+**Risky refactors MUST include a Change Boundary:** when a scope simplifies, refactors, or repairs a fragile shared surface, add a subsection listing the allowed file families for the change and explicitly name the excluded surfaces that must remain untouched. Narrow repair loops cannot absorb unrelated cleanup by implication.
+
+**Shared infrastructure changes MUST include an explicit canary row:** add at least one `Canary:` row tied to the shared fixture/bootstrap contract surfaces that could cascade silently. The canary must run before the broader suite reruns and must not rely solely on the changed fixture validating itself.
 
 Regression tests are previously missed tests: add them to feature/component-specific test files (no generic cross-feature regression files).
 
@@ -124,6 +138,13 @@ The Core Items MUST include both:
 - `- [ ] Broader E2E regression suite passes`
 
 If the scope renames/removes any route, path, contract, identifier, or UI target, the Core Items MUST also include a consumer impact sweep item proving zero stale first-party references remain.
+
+If the scope changes shared fixtures, harnesses, or bootstrap/auth/session/storage infrastructure, the Core Items MUST also include:
+- `- [ ] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns`
+- `- [ ] Rollback or restore path for shared infrastructure changes is documented and verified`
+
+If the scope is a narrow repair or risky refactor, the Core Items MUST also include:
+- `- [ ] Change Boundary is respected and zero excluded file families were changed`
 
 All DoD entries MUST be markdown checkboxes (`- [ ]` or `- [x]`). Non-checkbox DoD items are invalid.
 Record raw execution evidence in the matching report file:

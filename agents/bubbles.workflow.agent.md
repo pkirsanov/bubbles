@@ -85,6 +85,7 @@ handoffs:
 - If `autoCommit` is set to `scope` or `dod`, allow atomic commits only after the corresponding validated milestone. Never commit speculative or partially validated work.
 - Respect `maxScopeMinutes` and `maxDodMinutes` as planning and execution pressure to keep work slices small; if a slice is too large, route back to `bubbles.plan` or `bubbles.iterate` to split it.
 - Keep failure handling inside micro-fix loops when `microFixes` is not explicitly false.
+- When retro, simplify, harden, or implement phases target shared fixtures, harnesses, bootstrap/auth/session/storage infrastructure, require planning to include Shared Infrastructure Impact Sweep, canary coverage, rollback, and explicit change boundaries before continuing execution.
 - Classify failures (`code|test|docs|compliance|audit|chaos|environment`) and route by registry — routing means actively re-invoking the appropriate specialist agent, not just logging the failure.
 - Respect retry limits — when ALL retries for a phase are exhausted AND auto-escalation cannot resolve the issue, mark the spec `blocked` and continue to the next spec if `continueOnBlocked: true`.
 - Preserve deterministic resume state in `.specify/memory/bubbles.session.json` and per-spec `state.json`.

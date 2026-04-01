@@ -19,6 +19,7 @@ handoffs:
 - Tests MUST be derived from spec/design requirements (spec-first), not from current behavior.
 - Enforce `planning-core.md`, `test-fidelity.md`, `consumer-trace.md`, `e2e-regression.md`, and `evidence-rules.md` when writing scope artifacts.
 - Honor optional sizing hints (`maxScopeMinutes`, `maxDodMinutes`) when provided, but keep scopes small even when no time boundary is given.
+- Treat shared fixtures, harnesses, bootstrap/auth/session/storage infrastructure, and other high-fan-out helper surfaces as protected planning targets: require blast-radius planning, canary coverage, rollback, and explicit change boundaries before downstream execution.
 - Follow tiered context loading and loop limits (below) to avoid read loops.
 - Reconcile stale scopes before writing new ones; active scopes must match current `spec.md` and `design.md`
 - Non-interactive by default: do NOT ask the user for clarifications; document open questions instead.
@@ -235,6 +236,7 @@ ASSUMPTIONS: ...
 ### Phase 1: Extract Use Cases and Requirements
 
 - Extract user journeys, requirements, and constraints from spec/design.
+- Read the **Outcome Contract** from `spec.md` — every scope MUST trace back to the declared Intent, and the Success Signal/Hard Constraints must be verifiable through the planned test coverage.
 - Identify any existing active scopes that are now invalid under the current spec/design.
 - Normalize into a list of candidate use cases.
 - Write each use case in **Gherkin**.
@@ -270,6 +272,8 @@ Each scope must include:
 - Error handling + authn/authz considerations
 - Observability (logs/metrics/traces)
 - **Consumer Impact Sweep (required when renaming/removing routes, paths, contracts, identifiers, or UI targets):** enumerate every affected consumer and stale-reference search surface: navigation links, breadcrumbs, redirects, API clients, generated clients, deep links, docs, config, and tests.
+- **Shared Infrastructure Impact Sweep (required when modifying shared fixtures, harnesses, or bootstrap/auth/session/storage contracts):** enumerate downstream contract surfaces, likely blast radius, and the independent canary tests that must validate those contracts before broad suite reruns.
+- **Change Boundary (required for narrow repairs and risky refactors):** list allowed file families, explicitly name excluded surfaces that must remain untouched, and make collateral cleanup opt-in rather than implicit.
 
 4) **Test Plan (Required)**
 - `Gherkin-to-test mapping`: each scenario must map to one or more tests.
@@ -294,6 +298,8 @@ Each scope must include:
 - Scenario-specific E2E regression tests are added or updated for every changed behavior
 - Broader E2E regression suite passes
 - Consumer impact sweep is completed for every renamed/removed route, path, contract, identifier, or UI target; zero stale first-party references remain
+- Shared Infrastructure Impact Sweep, canary coverage, and rollback/restore proof exist for every protected shared fixture/bootstrap change
+- Change Boundary is respected and zero excluded file families changed for narrow repairs or risky refactors
 - Docs updated (spec/design/API/architecture/dev/testing) as required
 - Policies complied with (explicitly list the relevant ones)
 - Services build/run using repo standard commands (see `copilot-instructions.md`)

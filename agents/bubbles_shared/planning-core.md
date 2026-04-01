@@ -18,6 +18,8 @@ Purpose: mandatory planning-time rules for `bubbles.plan` and other planning-ori
 - Test plans must encode user-perspective scenarios.
 - State-changing behavior must include round-trip verification rows.
 - Rename/removal work must include a Consumer Impact Sweep.
+- Shared fixtures, harnesses, bootstrap/auth/session infrastructure, or storage/bootstrap contract changes must include a Shared Infrastructure Impact Sweep, an independent canary test row, and a rollback or restore path.
+- Narrow repairs and risky refactors must include a Change Boundary listing allowed file families plus excluded surfaces that must remain untouched.
 - UI work must include a UI scenario matrix.
 
 ## Load Discipline

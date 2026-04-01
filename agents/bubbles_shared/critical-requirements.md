@@ -106,6 +106,17 @@
    - Project-specific scripts belong in `scripts/`. Project-specific quality gates belong in `.github/bubbles-project.yaml`.
    - The `.github/bubbles/.manifest` file lists all framework-owned files, and `.github/bubbles/.checksums` records the installed upstream checksum snapshot. `agnosticity-lint.sh` detects non-manifested files in managed directories, while `bubbles framework-write-guard` detects direct downstream edits to managed files.
 
+20. **High-Fan-Out Shared Infrastructure Refactors Require Blast-Radius Planning**
+   - Shared fixtures, harnesses, global setup/bootstrap, auth/login/session bootstrap code, storage injection paths, and other high-fan-out infrastructure MUST be treated as protected change surfaces.
+   - Agents MUST NOT rewrite such files wholesale by default. Prefer surgical edits, wrappers, or narrowly-scoped substitutions unless planning artifacts explicitly justify broader replacement.
+   - Before changing a protected shared-infrastructure surface, planning MUST record the downstream contract surfaces that depend on it (ordering, timing, session/bootstrap state, tenant/user context, role detection, storage injection, or equivalent) and define an independent canary suite that validates those contracts before broad suite reruns.
+   - A rollback or restore path for the shared-infrastructure change MUST be documented and verified before completion.
+
+21. **Collateral Change Containment For Narrow Repairs And Refactors**
+   - Narrow fixes and risky refactors MUST declare a change boundary listing the allowed file families and the excluded surfaces that must remain untouched.
+   - Opportunistic cleanup, unrelated test rewrites, broad handler changes, or cross-directory sweeps MUST NOT be bundled into a shared-infrastructure repair loop unless the planning artifacts explicitly expand scope first.
+   - If unrelated files change during a narrow repair, the work remains incomplete until the collateral edits are either removed or promoted into explicitly planned follow-up work owned by the correct scope.
+
 ---
 
 ## Enforcement Rules
@@ -156,5 +167,7 @@ Before reporting completion, all answers must be **YES**:
 9. Did all live-state mutations stay isolated to owned fixtures or get fully restored before completion?
 10. Was all implementation/hardening work backed by real feature, bug, or ops artifacts rather than empty or missing planning files?
 11. Were any TODOs, stubs, or placeholders resolved by real implementation or tracked planning instead of cosmetic relabeling?
+12. If shared fixtures, harnesses, or bootstrap contracts changed, was blast radius planned with a canary suite and rollback path before the broad suite reran?
+13. If the work was a narrow repair or risky refactor, did it stay inside an explicit change boundary with zero excluded file families changed?
 
 If any answer is **NO**, completion is prohibited.

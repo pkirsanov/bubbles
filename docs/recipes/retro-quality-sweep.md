@@ -18,6 +18,12 @@ This is the best fit when you want **data-driven targeting** plus a **predictabl
 /bubbles.workflow  <feature> mode: retro-quality-sweep
 ```
 
+Safer for fragile shared fixtures or bootstrap infrastructure:
+
+```
+/bubbles.workflow  <feature> mode: retro-quality-sweep gitIsolation: true autoCommit: scope maxScopeMinutes: 60 maxDodMinutes: 30
+```
+
 Or in plain English:
 
 ```
@@ -36,6 +42,10 @@ Or in plain English:
 | **test + regression** | Trinity + Steve French | Proves the hotspot fixes work and did not break neighboring specs. |
 | **stabilize + devops + security** | Bill + Tommy + Cyrus | Checks reliability, operational concerns, and security on the changed surface. |
 | **validate + audit + docs** | Randy + Ted + J-Roc | Runs gates, compliance, and documentation sync before closeout. |
+
+## Shared Infrastructure Safety
+
+If the hotspot set includes shared fixtures, harnesses, global setup, or auth/session/bootstrap infrastructure, the workflow now expects planning artifacts to capture blast radius, canary coverage, rollback/restore, and explicit change boundaries before the cleanup chain can legitimately close. Use the safer invocation above for those refactors so validated milestone commits and isolated git state are available during the sweep.
 
 ## When To Use This Over Other Modes
 

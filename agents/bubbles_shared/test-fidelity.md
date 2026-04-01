@@ -13,3 +13,5 @@ Purpose: canonical source for planned-behavior fidelity and use-case-centered te
 - Live-state tests that create or mutate data must use agent-owned fixtures, not borrowed shared fixtures.
 - Write paths must not target "first existing" resources from list endpoints unless the scenario is explicitly read-only.
 - Shared defaults, host-level settings, and other cross-scenario baseline state require snapshot-and-restore proof before a mutation test can claim completion.
+- When shared fixtures, harnesses, or bootstrap/auth/session infrastructure change, tests must include an independent downstream canary that validates the consumer contract before the broad suite reruns; using the modified fixture to validate only itself is insufficient.
+- Canary tests for shared infrastructure must assert the contract surfaces that tend to cascade silently, such as ordering, timing, bootstrap state injection, session/context hydration, or equivalent downstream assumptions.

@@ -32,6 +32,9 @@ handoffs:
 - **No regression introduction** — simplification must not introduce new test failures or warnings; verify by running impacted tests after each fix (see No Regression Introduction in agent-common.md)
 - Respect all repo policies: no defaults, no fallbacks, no stubs, no dead code, no TODOs (see copilot-instructions.md)
 - Keep changes minimal and targeted — simplify, do not redesign
+- Treat shared fixtures, harnesses, global setup/bootstrap, auth/login/session bootstrap, and similar high-fan-out infrastructure as protected surfaces: do not rewrite them wholesale by default
+- For protected shared surfaces, require a Shared Infrastructure Impact Sweep, an independent canary path, and a rollback/restore plan before applying cleanup changes; if those planning controls are absent, route to `bubbles.plan`
+- Keep one hotspot family per simplification batch when the target is fragile shared infrastructure; do not mix unrelated cleanup from other directories or file families into the same pass
 - Before deleting any file, validate whether it is truly unused, still useful but currently unreferenced, or missing an intended consumer/reference
 - If a file appears useful but is not wired in, do not delete it blindly — record a gap and route the missing integration/reference work instead
 - Re-review every file deletion after edits land to confirm no broken references, hidden consumers, or missed artifact responsibilities remain

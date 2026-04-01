@@ -75,6 +75,44 @@ Unless the user explicitly asks for a narrower mode, `bubbles.validate` MUST run
 
 ## Execution Flow
 
+### Step 0: Outcome Contract Verification (Gate G070)
+
+Before running mechanical validation, verify the feature satisfies its declared outcome:
+
+1. **Read spec.md → Outcome Contract section:**
+   - If `Outcome Contract` section is missing or empty → validation FAILS (G070). Route to `bubbles.analyst` to create it.
+   - Extract `Intent`, `Success Signal`, `Hard Constraints`, and `Failure Condition` fields.
+
+2. **Verify Success Signal is demonstrated:**
+   - Search `report.md` evidence for concrete proof matching the declared Success Signal.
+   - The Success Signal is user/system-visible behavior, not "tests pass." Evidence must show the actual observable outcome.
+   - If Success Signal is not demonstrated in evidence → validation FAILS. Route to `bubbles.implement` or `bubbles.test`.
+
+3. **Verify Hard Constraints are preserved:**
+   - For each Hard Constraint, verify it is not violated by the implementation:
+     - Check test coverage explicitly validates the constraint
+     - Check no code path contradicts the constraint
+   - If any Hard Constraint is violated → validation FAILS. Route to `bubbles.implement`.
+
+4. **Check Failure Condition is not triggered:**
+   - Verify the declared Failure Condition does not apply to the current state.
+   - A feature that passes all process gates but matches its own Failure Condition is NOT done.
+
+Record outcome contract verification in the validation report:
+
+```markdown
+### Outcome Contract Verification (G070)
+
+| Field | Declared | Evidence | Status |
+|-------|----------|----------|--------|
+| Intent | [from spec.md] | [evidence ref or gap] | ✅/❌ |
+| Success Signal | [from spec.md] | [evidence ref or gap] | ✅/❌ |
+| Hard Constraints | [from spec.md] | [test/code ref or violation] | ✅/❌ |
+| Failure Condition | [from spec.md] | [not triggered / triggered] | ✅/❌ |
+```
+
+**If ANY outcome contract field fails → validation status is FAILED.** This gate is checked before mechanical process validation because a feature that achieves the wrong outcome with perfect process is still wrong.
+
 ### Step 1: Load Verification Commands
 
 From `agents.md`, extract:

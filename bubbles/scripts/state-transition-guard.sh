@@ -1267,6 +1267,104 @@ elif [[ "$missing_consumer_trace" -gt 0 ]]; then
 fi
 echo ""
 
+# CHECK 8C: Shared infrastructure blast-radius planning
+# =============================================================================
+echo "--- Check 8C: Shared Infrastructure Blast-Radius Planning ---"
+shared_scope_hits=0
+missing_shared_infra_requirements=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  if grep -Eiq '\b(shared|global|common|core)\b.*\b(fixture|fixtures|harness|setup|bootstrap|test helper|test infrastructure)\b|\b(auth|login|session|password reset|token refresh|tenant context|role detection|storage injection|init script|addinitscript)\b.*\b(fixture|fixtures|harness|setup|bootstrap|contract|flow)\b|\b(auth fixture|login fixture|global setup|playwright setup|bootstrap helper|shared test helper)\b' "$scope_path"; then
+    shared_scope_hits=$((shared_scope_hits + 1))
+
+    if grep -Eiq 'Shared Infrastructure Impact Sweep' "$scope_path"; then
+      pass "Scope includes Shared Infrastructure Impact Sweep section: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope touches shared fixture/bootstrap infrastructure but has no Shared Infrastructure Impact Sweep section: ${scope_path#$feature_dir/}"
+      missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
+    fi
+
+    if grep -Eiq '^\- \[(x| )\] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns' "$scope_path"; then
+      pass "Scope DoD includes shared-infrastructure canary item: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the canary DoD item: ${scope_path#$feature_dir/}"
+      missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
+    fi
+
+    if grep -Eiq '^\- \[(x| )\] Rollback or restore path for shared infrastructure changes is documented and verified' "$scope_path"; then
+      pass "Scope DoD includes rollback/restore item for shared infrastructure: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope touches shared fixture/bootstrap infrastructure but is missing the rollback/restore DoD item: ${scope_path#$feature_dir/}"
+      missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
+    fi
+
+    if grep -Eiq '^\|.*Canary:' "$scope_path" || grep -Eiq '^\|.*Fixture Canary' "$scope_path"; then
+      pass "Scope Test Plan includes explicit canary row(s): ${scope_path#$feature_dir/}"
+    else
+      fail "Scope touches shared fixture/bootstrap infrastructure but lacks an explicit canary Test Plan row: ${scope_path#$feature_dir/}"
+      missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
+    fi
+
+    if grep -Eiq 'ordering|timing|storage|session|context|role|bootstrap contract|downstream contract|blast radius' "$scope_path"; then
+      pass "Scope enumerates downstream contract surfaces for shared infrastructure work: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope touches shared fixture/bootstrap infrastructure but does not enumerate downstream contract surfaces: ${scope_path#$feature_dir/}"
+      missing_shared_infra_requirements=$((missing_shared_infra_requirements + 1))
+    fi
+  fi
+done
+
+if [[ "$shared_scope_hits" -eq 0 ]]; then
+  info "No shared fixture/bootstrap scope patterns detected — blast-radius planning check not applicable"
+elif [[ "$missing_shared_infra_requirements" -gt 0 ]]; then
+  fail "$missing_shared_infra_requirements shared-infrastructure planning requirement(s) missing"
+fi
+echo ""
+
+# CHECK 8D: Change boundary containment for risky refactors
+# =============================================================================
+echo "--- Check 8D: Change Boundary Containment ---"
+boundary_scope_hits=0
+missing_change_boundary=0
+
+for scope_path in "${scope_files[@]}"; do
+  [[ -f "$scope_path" ]] || continue
+
+  if grep -Eiq '\b(refactor|refactoring|simplify|simplification|cleanup|repair|hotspot)\b|Shared Infrastructure Impact Sweep' "$scope_path"; then
+    boundary_scope_hits=$((boundary_scope_hits + 1))
+
+    if grep -Eiq 'Change Boundary' "$scope_path"; then
+      pass "Scope includes Change Boundary section: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope is a refactor/repair but has no Change Boundary section: ${scope_path#$feature_dir/}"
+      missing_change_boundary=$((missing_change_boundary + 1))
+    fi
+
+    if grep -Eiq '^\- \[(x| )\] Change Boundary is respected and zero excluded file families were changed' "$scope_path"; then
+      pass "Scope DoD includes change-boundary containment item: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope is a refactor/repair but is missing the change-boundary DoD item: ${scope_path#$feature_dir/}"
+      missing_change_boundary=$((missing_change_boundary + 1))
+    fi
+
+    if grep -Eiq 'Allowed file families|Included file families|Excluded surfaces|Untouched surfaces' "$scope_path"; then
+      pass "Scope enumerates allowed and excluded surfaces for the change boundary: ${scope_path#$feature_dir/}"
+    else
+      fail "Scope is a refactor/repair but does not enumerate allowed and excluded surfaces: ${scope_path#$feature_dir/}"
+      missing_change_boundary=$((missing_change_boundary + 1))
+    fi
+  fi
+done
+
+if [[ "$boundary_scope_hits" -eq 0 ]]; then
+  info "No refactor/repair scope patterns detected — change-boundary check not applicable"
+elif [[ "$missing_change_boundary" -gt 0 ]]; then
+  fail "$missing_change_boundary change-boundary containment requirement(s) missing"
+fi
+echo ""
+
 # =============================================================================
 # CHECK 9: Evidence depth — DoD [x] items must have evidence blocks
 # =============================================================================

@@ -18,6 +18,7 @@ Ensure `spec.md` follows the repository spec template and captures behavior usin
 - Preserve section order and headings exactly.
 - Replace all placeholders with concrete content.
 - Remove unused template sections only when explicitly allowed by the template.
+- The **Outcome Contract** section (Intent, Success Signal, Hard Constraints, Failure Condition) is MANDATORY and must be filled with concrete, testable content — not placeholders.
 
 ## BDD Rules (Gherkin Style)
 - Write acceptance scenarios using explicit Given, When, Then phrasing.
@@ -36,6 +37,7 @@ Ensure `spec.md` follows the repository spec template and captures behavior usin
 - Edge cases are concrete and behavior-focused.
 - Functional requirements are testable and implementation-free.
 - Success criteria are measurable and technology-agnostic.
+- Outcome Contract has concrete Intent, Success Signal, Hard Constraints, and Failure Condition.
 - Scenario names are stable enough to support later `scenario-manifest.json` mapping and protected regression coverage.
 
 ## References
