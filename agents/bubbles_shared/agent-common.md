@@ -68,6 +68,16 @@ When any agent emits a command recommendation, prompt example, next-step instruc
 
 **This applies to ALL agents** — including recap, status, handoff, and any agent that generates suggested next commands. Every agent reference in output MUST start with `/bubbles.`, never `@bubbles.`.
 
+## Workflow-Only Continuation Convention (NON-NEGOTIABLE)
+
+When a read-only or advisory surface suggests how to continue stateful work, it MUST default to a workflow command, not a raw specialist command.
+
+Required behavior:
+- Recap, status, handoff, and recommendation-first uses of `bubbles.super` MUST recommend `/bubbles.workflow ...` with the appropriate mode by default.
+- Direct specialist continuation commands such as `/bubbles.implement`, `/bubbles.test`, `/bubbles.validate`, or `/bubbles.audit` are allowed only when the user explicitly asks for a surgical direct-agent invocation.
+- Read-only continuation surfaces may emit a `## CONTINUATION-ENVELOPE` carrying `target`, `intent`, `preferredWorkflowMode`, `tags`, and `reason` so `bubbles.workflow` can consume the recommendation safely.
+- If a continuation recommendation came from recap, status, handoff, or another advisory surface, treat it as intent-routing metadata, not as permission to bypass workflow orchestration.
+
 ## Artifact Ownership And Delegation Contract
 
 Use [artifact-ownership.md](artifact-ownership.md) as the single source of truth for ownership boundaries and foreign-artifact routing.

@@ -63,16 +63,18 @@ If UX sections are needed, run `bubbles.ux` after analyst work. If you skip that
 ### Step 4: Implement (Scope by Scope)
 
 ```
-/bubbles.implement  Execute scope 1 of notification system
+/bubbles.workflow  notification-system mode: delivery-lockdown
 ```
 
-**What happens:** The implement agent works through one scope's DoD — writing code, tests, and marking checkboxes with evidence.
+**What happens:** The workflow keeps driving the feature through implementation, tests, validation, and certification until the current state is legitimately clean.
 
 Repeat for each scope, or use:
 
 ```
-/bubbles.iterate  Continue notification system
+/bubbles.implement  Execute scope 1 of notification system
 ```
+
+Use the direct specialist form only when you intentionally want a surgical single-scope step.
 
 ### Step 5: Full Pipeline (Or Do It All At Once)
 
@@ -100,7 +102,7 @@ If validation, hardening, gap analysis, stability review, or security review dis
 
 - **Start small.** If the feature is large, use `/bubbles.plan` first, then `/bubbles.iterate` to work through scopes.
 - **Check progress** anytime: `/bubbles.status`
-- **Something wrong?** `/bubbles.validate` to check gates.
+- **Something wrong?** `/bubbles.workflow  notification-system mode: validate-to-doc` to check gates and route fixes correctly.
 - **End of day?** `/bubbles.handoff` to save context.
 
 ---

@@ -45,8 +45,10 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 |-----------|-----|
 | Framework ops, advice, command recommendations without execution | `/bubbles.super` |
 | Single-iteration work-picking with type filter | `/bubbles.iterate type: tests` |
-| Direct specialist work on a known scope | `/bubbles.implement`, `/bubbles.test`, etc. |
+| Explicit surgical specialist work on a known scope | `/bubbles.implement`, `/bubbles.test`, etc. |
 | Bug documentation from scratch | `/bubbles.bug` |
+
+If recap, status, or handoff told you what to do next, prefer feeding that recommendation back into `/bubbles.workflow` so orchestration, certification, and retries stay intact.
 
 ## The Delegation Graph
 

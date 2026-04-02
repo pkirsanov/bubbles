@@ -124,11 +124,11 @@ Diagnostic/certification rule:
 
 | Agent | Use When | Primary References |
 |------|----------|--------------------|
-| `bubbles.status` | inspect spec/scope status without changing work | `state-gates.md`, `artifact-lifecycle.md` |
-| `bubbles.handoff` | package session context for the next run | prompt-specific handoff format plus shared governance index |
+| `bubbles.status` | inspect spec/scope status without changing work and emit the recommended workflow continuation | `state-gates.md`, `artifact-lifecycle.md` |
+| `bubbles.handoff` | package session context for the next run, including a workflow continuation packet | prompt-specific handoff format plus shared governance index |
 | `bubbles.commands` | maintain command inventories and related framework command references | project-config and command docs |
 | `bubbles.create-skill` | scaffold or update repo-local skills | skills guidance plus shared governance index |
-| `bubbles.recap` | summarize current work, active state, and likely next steps without changing artifacts | prompt-specific recap guidance |
+| `bubbles.recap` | summarize current work, active state, and likely workflow continuation without changing artifacts | prompt-specific recap guidance |
 | `bubbles.retro` | run post-session or post-sprint retrospectives with velocity metrics, gate health trends, deep code hotspot analysis (bug magnets, co-change coupling, bus factor, churn trends), and shipping patterns. Also supports focused modes: `hotspots`, `coupling`, `busfactor` | prompt-specific retro guidance, git history, `state.json` metrics |
 
 ## Natural Language Input

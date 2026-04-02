@@ -617,7 +617,7 @@
     <div class="info">
       <div class="agent-name">bubbles.recap</div>
       <div class="character">Talking Head</div>
-      <div class="role">The interview segment. Looks at the camera and gives the fast narrative version: what happened, what is in progress, and what comes next.</div>
+      <div class="role">The interview segment. Looks at the camera and gives the fast narrative version: what happened, what is in progress, and which workflow should safely continue next.</div>
       <div class="quote">"So basically what happened was..."</div>
     </div>
   </div>
@@ -944,7 +944,7 @@
   <div class="workflow-card">
     <div class="wf-name">delivery-lockdown</div>
     <div class="wf-alias">→ sunnyvale no-loose-ends</div>
-    <div class="wf-desc">Maximum-assurance delivery. Keep looping until validate certifies done or records a real blocker.</div>
+    <div class="wf-desc">Maximum-assurance delivery. Keep looping until validate certifies done or records a real blocker. Default continuation target for active recap/status/handoff follow-up.</div>
     <div class="wf-quote">"No loose ends. All green or we keep going."</div>
   </div>
   <div class="workflow-card">
@@ -1114,6 +1114,27 @@
     <div class="wf-alias">→ sunnyvale just-watching</div>
     <div class="wf-desc">Validate + audit + docs. The camera crew watches and documents.</div>
     <div class="wf-quote">"(camera crew just watches)"</div>
+  </div>
+</div>
+
+<div class="section-title"><img src="../icons/bubbles-glasses.svg" width="24" style="vertical-align: middle; margin-right: 8px;"> TPB Vocabulary</div>
+
+<div class="workflow-grid">
+  <div class="workflow-card">
+    <div class="wf-name">workflow-only continuation</div>
+    <div class="wf-desc">Recap, status, and handoff point you back to <code>/bubbles.workflow ...</code> by default instead of raw implement/test/validate commands.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">continuation envelope</div>
+    <div class="wf-desc">Machine-readable packet from a read-only agent carrying target, intent, preferred workflow mode, and reason for the next workflow step.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">scenario replay</div>
+    <div class="wf-desc">Validate reruns the linked live-system <code>SCN-*</code> journeys from <code>scenario-manifest.json</code> before certification.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">human acceptance</div>
+    <div class="wf-desc"><code>uservalidation.md</code> is human-owned acceptance input. Automation findings do not toggle it.</div>
   </div>
 </div>
 

@@ -30,6 +30,7 @@ handoffs:
 **Behavioral Rules:**
 - Start from user intent, not framework vocabulary
 - Treat `bubbles.super` as the natural-language dispatcher, not as a universal runtime middleman between explicit commands and specialist agents
+- When the user is asking how to continue work from recap, status, handoff, or another advisory surface, upgrade that continuation into `/bubbles.workflow ...` with the appropriate mode instead of echoing raw specialist commands unless the user explicitly asked for a direct specialist
 - Default to reading current repo files when answering framework questions that may depend on the latest docs, workflows, recipes, agent definitions, or generated guidance
 - Prefer inspecting the source of truth over relying on remembered summaries when precision matters
 - Ask follow-up questions only when the answer would materially change the recommended agent, mode, or command
@@ -325,6 +326,7 @@ For any user request, first discover the current agent/mode inventory, then matc
 | "Set up a brand new project" | `super doctor --heal` → `super install hooks` → commands | — |
 | "Reconcile stale artifacts" | `workflow mode: reconcile-to-doc` | — |
 | "Resume yesterday's work" | status → `workflow mode: resume-only` | — |
+| "Do the next thing from recap/status/handoff" | `workflow mode: delivery-lockdown` or `bugfix-fastlane` | Preserve workflow orchestration instead of mirroring raw specialist advice |
 | "Package a reusable workflow" | create-skill → verify trigger | — |
 | "Speed up a well-planned spec" | `workflow mode: full-delivery` | `parallelScopes: dag maxParallelScopes: 2` |
 | "How am I doing?" | `/bubbles.retro week` | — |

@@ -22,7 +22,7 @@ Workflow modes define **which phases run** and **in what order** for a given pie
 - **"Continue" / "next" / empty** → delegates to `iterate` for work-picking → gets next priority item → executes
 - **Framework ops** ("doctor", "hooks", "upgrade") → delegates to `super` for framework operations
 
-Direct agent calls (`/bubbles.super`, `/bubbles.iterate`, `/bubbles.implement`, etc.) still work for users who know exactly what they want.
+Direct agent calls (`/bubbles.super`, `/bubbles.iterate`, `/bubbles.implement`, etc.) still work for users who know exactly what they want, but recap/status/handoff continuations should normally route back through `/bubbles.workflow` so orchestration and certification stay intact.
 
 ## Review Is Not A Workflow Mode
 
@@ -141,6 +141,8 @@ Same as `full-delivery` but with stricter evidence and enforcement expectations.
 ### <img src="../../icons/lahey-badge.svg" width="20"> delivery-lockdown
 
 Maximum-assurance delivery. The workflow loops until `bubbles.validate` can certify `done` or records a real blocker.
+
+This is also the default workflow continuation target emitted by recap, status, and handoff when active feature work remains and no narrower bug-only path has been identified.
 
 ```
 [repeat until certified done: optional analyze/ux/design/plan prelude → bootstrap → implement → test → regression → simplify → gaps → harden → stabilize → devops → security → validate → audit → chaos → docs] → finalize

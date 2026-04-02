@@ -536,17 +536,21 @@ When resolving mode in Phase 0, the workflow agent MUST check if the user's inte
 
 ### Phase -1: Intent Resolution (MANDATORY — runs before Phase 0)
 
-Before parsing specs or selecting modes, classify the raw user input into one of four buckets and resolve it into structured parameters.
+Before parsing specs or selecting modes, classify the raw user input into one of five buckets and resolve it into structured parameters.
+
+`bubbles.workflow` MUST also recognize workflow continuation packets from read-only advisory agents. If recap, status, handoff, or super recommendation output is pasted back into workflow, consume the packet and continue with the preferred workflow mode instead of mirroring any raw specialist command text that may appear in surrounding prose.
 
 **Input classification rules:**
 
 1. **STRUCTURED** — input contains an explicit `mode:` parameter AND/OR recognizable spec targets (numbers, paths, ranges) → **skip Phase -1**, proceed directly to Phase 0 with the provided parameters.
 
-2. **VAGUE** — input is free-text describing a goal, feature, problem, or desired outcome WITHOUT explicit `mode:` or spec targets (e.g., "improve the booking feature", "fix the calendar", "make this more robust", "deliver this feature") → **delegate to `bubbles.super`** for intent resolution.
+2. **CONTINUATION** — input contains a `## CONTINUATION-ENVELOPE` block from a read-only agent OR quotes a recap/status/handoff recommendation while the user is invoking `bubbles.workflow` to continue the work → parse the packet, upgrade any raw specialist continuation into the appropriate workflow mode, and continue to Phase 0.
 
-3. **CONTINUE** — input is empty, or contains continuation language ("continue", "next", "keep going", "what's next", "pick up where we left off", "do the next thing") → **delegate to `bubbles.iterate`** for work discovery.
+3. **VAGUE** — input is free-text describing a goal, feature, problem, or desired outcome WITHOUT explicit `mode:` or spec targets (e.g., "improve the booking feature", "fix the calendar", "make this more robust", "deliver this feature") → **delegate to `bubbles.super`** for intent resolution.
 
-4. **FRAMEWORK** — input is about Bubbles framework operations ("doctor", "hooks", "upgrade", "status", "metrics", "lessons", "gates", "install") → **delegate to `bubbles.super`** for framework operation execution.
+4. **CONTINUE** — input is empty, or contains continuation language ("continue", "next", "keep going", "what's next", "pick up where we left off", "do the next thing") → **delegate to `bubbles.iterate`** for work discovery.
+
+5. **FRAMEWORK** — input is about Bubbles framework operations ("doctor", "hooks", "upgrade", "status", "metrics", "lessons", "gates", "install") → **delegate to `bubbles.super`** for framework operation execution.
 
 **Execution per bucket:**
 
@@ -560,6 +564,31 @@ Prompt contract:
 > Available specs: `{list of specs/ folders}`"
 
 Parse the returned `RESOLUTION-ENVELOPE` to extract `mode`, `specTargets`, and `tags`. If `confidence` is `low`, confirm with the user before proceeding. Then continue to Phase 0 with the resolved parameters injected as if the user had provided them explicitly.
+
+**CONTINUATION → parse advisory continuation guidance inline:**
+
+Accepted packet shape:
+
+```markdown
+## CONTINUATION-ENVELOPE
+- target: specs/<NNN-feature> | specs/<NNN-feature>/bugs/BUG-... | none
+- targetType: feature | bug | ops | framework | none
+- intent: continue delivery | close bug | validate release readiness | publish docs | framework follow-up
+- preferredWorkflowMode: delivery-lockdown | bugfix-fastlane | validate-to-doc | docs-only | devops-to-doc | none
+- tags: <comma-separated tags or none>
+- reason: <short rationale>
+```
+
+Rules:
+- If the packet provides a concrete `target` and `preferredWorkflowMode`, continue to Phase 0 using those values.
+- If the surrounding prose includes raw specialist guidance such as `/bubbles.implement`, `/bubbles.test`, `/bubbles.validate`, or `/bubbles.audit`, treat that as advisory text only. Do NOT mirror it back into execution.
+- If a packet is missing but workflow sees quoted continuation text from recap/status/handoff, upgrade it to the safest workflow mode instead of echoing the raw specialist:
+   - bug target or bug intent → `bugfix-fastlane`
+   - active feature/spec continuation → `delivery-lockdown`
+   - docs-only follow-up → `docs-only`
+   - validation-only finishing pass → `validate-to-doc`
+   - framework follow-up → delegate to `bubbles.super`
+- If the packet says `target: none`, fall back to VAGUE or CONTINUE classification based on the surrounding request.
 
 **CONTINUE → invoke `bubbles.iterate` via `runSubagent`:**
 

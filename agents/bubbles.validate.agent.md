@@ -470,8 +470,8 @@ If `{FEATURE_DIR}/scopes.md` exists:
 
 - Verify all scopes are marked Done (`[x]`) and each scope’s Definition of Done is satisfied.
 - If any scope is Not started/In progress/Blocked, validation is NOT complete:
-	- Run `/bubbles.implement` to finish remaining scopes.
-	- Then re-run `/bubbles.validate`.
+   - Continue through workflow orchestration with `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown`.
+   - Validation remains open until the workflow returns with clean certification evidence.
 
 ### Step 4: Documentation Check
 
@@ -542,6 +542,32 @@ Execute Gate 9 from `agent-common.md`. Use project-specific values from `copilot
 
 **If ANY sub-check fails, the Build Freshness check is FAILED and overall validation is FAILED.**
 
+### Step 4C: Scenario Replay (When `scenario-manifest.json` Exists)
+
+**Purpose:** Provide deterministic, automation-owned proof that the planned user-visible scenarios still work the way the spec says they should.
+
+Scenario replay is NOT the same thing as `uservalidation.md`:
+- `scenario-manifest.json` + live-system tests = automation proof owned by validate/test/planning
+- `uservalidation.md` = human acceptance signal owned by the user and planning surfaces
+
+When `{FEATURE_DIR}/scenario-manifest.json` exists, validate MUST:
+
+1. Read each active `SCN-*` contract referenced by the active scopes or changed behavior.
+2. Verify every required scenario has:
+   - `requiredTestType` set to `e2e-ui` or `e2e-api` as appropriate
+   - at least one linked live-system test file in `linkedTests`
+   - at least one evidence reference in `evidenceRefs`
+3. Re-run the linked live-system tests for the active scenario contracts when the current validation run is certifying changed behavior.
+4. Verify the linked tests assert user-visible or externally observable outcomes, not proxy signals.
+5. Fail validation if any active scenario contract lacks runnable live-system proof, passing execution evidence, or coherent traceability.
+
+Routing rules:
+- Missing or stale scenario contracts / linked tests → route to `bubbles.plan`
+- Scenario contracts exist but live-system tests are missing or weak → route to `bubbles.test`
+- Scenario replay fails because behavior is broken → route to `bubbles.implement` or `bubbles.bug`
+
+**Never encode automation failures by unchecking `uservalidation.md`.** Automation gaps belong in validation findings, scenario contracts, and routed follow-up packets.
+
 ### Step 5: User Validation Regression Analysis (MANDATORY)
 
 **Purpose:** When a user unchecks `[ ]` an item in `uservalidation.md`, it means the feature is NOT working as the user expected. The validate agent MUST investigate WHY.
@@ -551,6 +577,8 @@ Execute Gate 9 from `agent-common.md`. Use project-specific values from `copilot
 Read `{FEATURE_DIR}/uservalidation.md` and parse ALL checkbox items:
 - `[x]` = Working as expected (no action needed)
 - `[ ]` = **User-reported regression** — user found this feature is NOT working as expected
+
+`bubbles.validate` MUST treat these unchecked items as human feedback only. It MUST NOT create, clear, or toggle them to reflect automated scenario replay results.
 
 #### 5.2 For EACH Unchecked Item — Research Root Cause
 
@@ -586,7 +614,7 @@ For every `[ ]` item found, perform the following investigation:
 If ANY unchecked items were found:
 - **Validation status is FAILED** — unchecked items are blocking regressions
 - List all unchecked items with investigation results
-- Recommend: "Fix regressions with `/bubbles.bug` or `/bubbles.implement` then re-validate"
+- Route the fix through workflow orchestration: `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown` (or `bugfix-fastlane` for a concrete bug target)
 
 If NO unchecked items:
 - User validation: ✅ ALL items checked — user confirms features work as expected
@@ -615,6 +643,7 @@ If NO unchecked items:
 | E2E UI | ✅/❌/⚪ | X passed, Y failed (or N/A) |
 | Stress | ✅/❌/⚪ | [result or N/A] |
 | Security | ✅/❌/⚪ | [result or N/A] |
+| Scenario Replay | ✅/❌/⚪ | [SCN-* live-system replay clean, or routed follow-up required] |
 | Bundle Freshness | ✅/❌/⚪ | [Gate 9: hash match, feature strings found, container fresh — or N/A if no UI changes] |
 | State Guard (G023) | ✅/❌ | [Guard script exit code + failure count] |
 | Artifact Lint | ✅/❌ | [Lint exit code + issue count] |
@@ -758,6 +787,7 @@ If user specifies a mode:
 | `deep`      | All checks (default) — artifact compliance, claim verification, scenario traceability, ownership routing, and ALL test types per Canonical Test Taxonomy |
 | `full`      | Alias of `deep` |
 | `security`  | Security scan only        |
+| `scenario-replay` | Scenario-contract replay only — deterministic live-system proof for active `SCN-*` user journeys |
 | `user-validation` | User validation regression analysis only |
 
 **Mode Labeling Rules (NON-NEGOTIABLE):**

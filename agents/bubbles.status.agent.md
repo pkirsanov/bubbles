@@ -10,7 +10,7 @@ description: Report current status of Bubbles progress including task/scope comp
 
 **Behavioral Rules (follow Autonomous Operation within Guardrails in agent-common.md):**
 - Prefer **read-only** operation (no code/doc changes)
-- If any corrective action is needed, recommend the appropriate `bubbles.*` command under a classified `specs/...` feature, bug, or ops target
+- If any corrective action is needed, recommend a classified `/bubbles.workflow ...` continuation under the appropriate `specs/...` feature, bug, or ops target instead of raw specialist commands by default
 - **Command prefix rule (ABSOLUTE):** When recommending commands, ALWAYS use the `/` slash prefix (`/bubbles.workflow`, `/bubbles.validate`). NEVER use `@bubbles.*`.
 - **Report test quality observations** — when reporting test status, flag if tests appear to be proxies (status-code-only E2E, mock-heavy integration) that may not validate real user scenarios
 
@@ -255,15 +255,15 @@ These recommendations are informational only. They do not certify completion, do
 
 | Condition | Recommended Action |
 |-----------|-------------------|
-| No scopes.md exists (but spec/design exists) | Run `/bubbles.plan` to generate `{FEATURE_DIR}/scopes.md` |
-| Scopes exist and incomplete | Run `/bubbles.implement` (default continuous, or `mode: next`) |
+| No scopes.md exists (but spec/design exists) | Run `/bubbles.workflow  {FEATURE_DIR} mode: full-delivery` |
+| Scopes exist and incomplete | Run `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown` |
 | No agents.md exists | Run `/bubbles.commands` to configure project |
-| Docs drift suspected (spec/design/scopes changed) | Run `/bubbles.docs` to update managed docs (delete obsolete/duplicate) |
-| Scopes pending, no errors | Run `/bubbles.implement` (preferred; scopes-first). If `scopes.md` is missing, run `/bubbles.plan` first. |
-| Error in fix.log, iteration < 3 | Review error, fix root cause, then continue with `/bubbles.implement` |
+| Docs drift suspected (spec/design/scopes changed) | Run `/bubbles.workflow  {FEATURE_DIR} mode: docs-only` |
+| Scopes pending, no errors | Run `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown` |
+| Error in fix.log, iteration < 3 | Run `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown` |
 | Error in fix.log, iteration = 3 | 🔴 Human intervention needed - see fix.log |
-| All scopes/tasks complete | Run `/bubbles.test` (scope-aware), then `/bubbles.validate`, then `/bubbles.audit` |
-| Validation passed | Ready for PR - run `/bubbles.audit` for final check |
+| All scopes/tasks complete | Run `/bubbles.workflow  {FEATURE_DIR} mode: validate-to-doc` |
+| Validation passed | Run `/bubbles.workflow  {FEATURE_DIR} mode: delivery-lockdown` for the no-loose-ends finish |
 
 **Example Output:**
 
@@ -271,9 +271,9 @@ These recommendations are informational only. They do not certify completion, do
 
 ### Available Actions
 
-1. ✅ **Immediate:** Run `/bubbles.implement` to continue implementation
+1. ✅ **Immediate:** Run `/bubbles.workflow  specs/042-catalog-assistant mode: delivery-lockdown`
    - Scopes pending, no blockers detected
-2. ⚠️ **Before merge:** Run `/bubbles.validate` to verify completion readiness
+2. ⚠️ **Before merge:** Run `/bubbles.workflow  specs/042-catalog-assistant mode: validate-to-doc`
    - Ensures certification and evidence are current
 
 3. 📋 **Checklist:** 2 items incomplete in `checklists/security.md`
@@ -287,11 +287,11 @@ These recommendations are informational only. They do not certify completion, do
 
 | Status         | Condition                  | Action                                 |
 | -------------- | -------------------------- | -------------------------------------- |
-| 🟢 HEALTHY     | No errors, making progress | Continue with `/bubbles.implement`       |
+| 🟢 HEALTHY     | No errors, making progress | Continue with `/bubbles.workflow  <feature> mode: delivery-lockdown` |
 | 🟡 STUCK       | Same error 2 iterations    | Error auto-retrying, monitor progress  |
 | 🔴 ESCALATION  | Same error 3+ iterations   | Human review required - check fix.log  |
-| ⚪ NOT STARTED | No tasks attempted         | Run `/bubbles.plan` then `/bubbles.implement` |
-| ✅ COMPLETE    | All scopes/tasks done      | Run `/bubbles.test` → `/bubbles.validate` → `/bubbles.audit` |
+| ⚪ NOT STARTED | No tasks attempted         | Run `/bubbles.workflow  <feature> mode: full-delivery` |
+| ✅ COMPLETE    | All scopes/tasks done      | Run `/bubbles.workflow  <feature> mode: validate-to-doc` |
 
 ## Pre-Implementation Checklist
 
@@ -299,22 +299,41 @@ Before starting implementation, verify Bubbles artifacts are ready:
 
 | Check               | Command if Missing               |
 | ------------------- | -------------------------------- |
-| spec.md exists      | `/bubbles.analyst` or `/bubbles.design` |
-| design.md exists    | `/bubbles.design`                |
-| scopes.md exists    | `/bubbles.plan`                  |
-| state.json exists   | `/bubbles.design` (creates v3 template) |
+| spec.md exists      | `/bubbles.workflow  <feature> mode: product-to-delivery` |
+| design.md exists    | `/bubbles.workflow  <feature> mode: product-to-delivery` |
+| scopes.md exists    | `/bubbles.workflow  <feature> mode: full-delivery` |
+| state.json exists   | `/bubbles.workflow  <feature> mode: product-to-delivery` |
 | agents.md exists    | `/bubbles.commands`              |
 
-**Ideal workflow:**
+**Ideal continuation path:**
 
 ```
-/bubbles.analyst → /bubbles.design → /bubbles.plan → /bubbles.implement → /bubbles.test → /bubbles.validate → /bubbles.audit
+/bubbles.workflow  <feature> mode: full-delivery
+
+# Once work exists and you want the highest-assurance finish:
+/bubbles.workflow  <feature> mode: delivery-lockdown
 ```
 
 Docs hardening (recommended when specs/scopes change):
 
 ```
-/bubbles.docs
+/bubbles.workflow  <feature> mode: docs-only
+```
+
+## CONTINUATION-ENVELOPE
+
+When status can identify a concrete continuation target, append:
+
+```markdown
+## CONTINUATION-ENVELOPE
+- source: bubbles.status
+- target: specs/<NNN-feature> | specs/<NNN-feature>/bugs/BUG-... | none
+- targetType: feature | bug | ops | framework | none
+- intent: continue delivery | close bug | validate release readiness | publish docs | framework follow-up
+- preferredWorkflowMode: delivery-lockdown | bugfix-fastlane | validate-to-doc | docs-only | devops-to-doc | none
+- tags: <comma-separated tags or none>
+- reason: <short rationale>
+- directAgentOnly: false
 ```
 
 ---

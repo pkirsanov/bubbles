@@ -292,7 +292,7 @@ Workflow's Phase -1 classifies your input and delegates:
 
 ### 3. Direct Agents (When You Know The Target)
 
-You can still call any specialist directly:
+You can still call any specialist directly when you explicitly want surgical work. Recap, status, and handoff continuation should usually go back through `/bubbles.workflow ...` instead of jumping straight to implement/test/validate.
 
 ```
 /bubbles.analyst   Build a user authentication system with JWT tokens
@@ -352,6 +352,8 @@ Control-plane rules:
 - Route-required outcomes carry owner-targeted packets with scope, scenario, or DoD references.
 - Diagnostic and certification phases route foreign-owned follow-up; they do not perform inline remediation.
 - Child workflows are orchestrator-only and bounded in depth.
+- `scenario-manifest.json` carries stable `SCN-*` contracts, and validate replays linked live-system scenario proof before certification.
+- `uservalidation.md` remains human acceptance input; automation findings do not toggle it.
 
 Use `/bubbles.super` for framework operations (doctor, hooks, upgrade, metrics) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input.
 
@@ -433,7 +435,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Review code directly | `/bubbles.code-review  scope: full-repo output: summary-only` |
 | Review a feature holistically | `/bubbles.system-review  mode: full scope: component:<name>` |
 | Check what's going on | `/bubbles.status` |
-| Something's not right, validate it | `/bubbles.validate` |
+| Something's not right, validate it | `/bubbles.workflow  <feature> mode: validate-to-doc` |
 | Hand off to next session | `/bubbles.handoff` |
 
 **Framework operations:**

@@ -10,7 +10,7 @@ Every agent MUST pass ALL of the following before reporting a completion or diag
 2. **State-transition guard** — run `state-transition-guard.sh` against the target spec/bug folder when transitioning toward `done`; must exit 0.
 3. **No unresolved continuation language** — report.md, scopes.md, and scope directories must not contain unresolved pseudo-completion text: `Next Steps` (as heading or bullet leader), `Recommended routing:`, `Recommended resolution:`, `Ready for /bubbles.`, `Re-run /bubbles.validate`, `Commit the fix`, `Record DoD evidence`, `Run full E2E suite`, `[PENDING`, `header only initially`.
 4. **No deferral language** — scope artifacts must not contain any phrases from the deferral-language list in `completion-governance.md`.
-5. **RESULT-ENVELOPE emitted** — state-modifying and diagnostic agents must end their response with a `## RESULT-ENVELOPE` containing a concrete outcome (`completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`). Read-only agents (status, recap, handoff) are exempt.
+5. **RESULT-ENVELOPE emitted** — state-modifying and diagnostic agents must end their response with a `## RESULT-ENVELOPE` containing a concrete outcome (`completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`). Read-only agents (status, recap, handoff) are exempt, but if they emit continuation guidance they should use a `## CONTINUATION-ENVELOPE` and recommend workflow commands rather than raw specialist commands.
 
 If ANY Tier 1 check fails, the agent must fix the issue or report failure — not claim completion.
 

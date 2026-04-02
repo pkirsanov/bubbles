@@ -162,7 +162,7 @@ gates:
   G057:
     name: scenario_manifest_gate
     description: >-
-      BLOCKING gate for scenario-contract-aware specs. Every changed user-visible or externally observable behavior MUST map to stable scenario IDs in scenario-manifest.json, and each scenario MUST map to real live-system BDD coverage plus report evidence.
+      BLOCKING gate for scenario-contract-aware specs. Every changed user-visible or externally observable behavior MUST map to stable scenario IDs in scenario-manifest.json, and each scenario MUST map to real live-system BDD coverage plus report evidence. Validate-owned certification MUST replay or otherwise directly verify the linked live-system scenario proof for active SCN-* contracts before completion is certified. uservalidation.md remains a human acceptance surface and MUST NOT be toggled to mirror automation outcomes.
   G058:
     name: lockdown_gate
     description: >-

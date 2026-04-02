@@ -70,7 +70,7 @@
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/camera-crew.svg" width="28"> | `bubbles.status` | Camera Crew | Documentary crew. Observes. Reports. Never interferes. Read-only. | *(just watches silently)* |
-| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and what comes next. | *"So basically what happened was..."* |
+| <img src="../icons/camera-crew.svg" width="28"> | `bubbles.recap` | Talking Head | The interview segment. Gives the fast narrative version of this session: what happened, what is in progress, and which workflow should safely continue the work. | *"So basically what happened was..."* |
 | <img src="../icons/lahey-bottle.svg" width="28"> | `bubbles.retro` | Jim Lahey (Bottle) | The liquor-fueled retrospective. Analyzes velocity, gate health, deep code hotspots (bug magnets, co-change coupling, bus factor, churn trends), and shipping patterns across sessions. | *"The liquor helps me see the patterns, Randy."* |
 | <img src="../icons/trevor-handoff.svg" width="28"> | `bubbles.handoff` | Trevor | Runs the handoff package to the next shift. Carries things. | *"Here, take this. I gotta go."* |
 | <img src="../icons/cory-trevor-smokes.svg" width="28"> | `bubbles.setup` | Cory & Trevor | The errand duo. Set up or refresh the framework layer. Do the prep. | *"Smokes, let's go."* |
@@ -178,6 +178,15 @@
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
 **Control-plane law:** `state.json.execution.*` records runtime claims, `state.json.certification.*` is validate-owned authority, `policySnapshot` records effective defaults with provenance, changed behavior should flow through `scenario-manifest.json` with stable `SCN-*` contracts, diagnostics and certification route foreign-owned work instead of fixing inline, and every invocation ends with a concrete result envelope.
+
+## <img src="../icons/bubbles-glasses.svg" width="32"> TPB Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| `workflow-only continuation` | Recap, status, and handoff point you back to `/bubbles.workflow ...` by default instead of raw `/bubbles.implement` or `/bubbles.test` commands. |
+| `continuation envelope` | Machine-readable packet from a read-only agent carrying the target, intent, preferred workflow mode, and reason for the next workflow step. |
+| `scenario replay` | Validate reruns the linked live-system `SCN-*` user journeys from `scenario-manifest.json` before certification. |
+| `human acceptance` | `uservalidation.md` is human-owned acceptance input. Automation findings do not toggle it. |
 
 ---
 
@@ -447,7 +456,7 @@ All agents accept natural language. `/bubbles.workflow` is the **universal entry
 | `/bubbles.system-review  review the booking feature as a user` | mode: full, scope: feature:booking |
 | `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
 | `/bubbles.iterate  fix tests for the page builder` | type: tests, feature: page-builder |
-| `/bubbles.implement  do the next scope` | mode: next |
+| `/bubbles.workflow  do the next thing from recap` | mode: delivery-lockdown, target resolved from continuation envelope |
 | `/bubbles.test  why are integration tests failing?` | action: triage, types: integration |
 | `/bubbles.analyst  how does our booking compare to competitors?` | mode: improve, competitive research on |
 | `/bubbles.security  scan for hardcoded secrets` | focus: secrets |
@@ -479,7 +488,8 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 
 | Situation | Command |
 |-----------|---------|
-| Implement a scope | `/bubbles.implement  execute scope 1 of <feature>` |
+| Continue an active feature safely | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| Implement a known scope surgically | `/bubbles.implement  execute scope 1 of <feature>` |
 | Continue next scope | `/bubbles.iterate  continue <feature>` |
 | Simplify complex code | `/bubbles.simplify` |
 | Design the architecture | `/bubbles.design  create design for <feature>` |
@@ -488,8 +498,8 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 
 | Situation | Command |
 |-----------|---------|
-| Run and fix tests | `/bubbles.test  run tests for <feature>` |
-| Validate gates | `/bubbles.validate` |
+| Run the workflow test pass | `/bubbles.workflow  <feature> mode: test-to-doc` |
+| Validate gates and publish the finishing packet | `/bubbles.workflow  <feature> mode: validate-to-doc` |
 | Full audit | `/bubbles.audit` |
 | Chaos testing | `/bubbles.chaos` |
 
@@ -497,7 +507,7 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 
 | Situation | Command |
 |-----------|---------|
-| Something seems off | `/bubbles.validate` |
+| Something seems off | `/bubbles.workflow  <feature> mode: validate-to-doc` |
 | Find what's missing | `/bubbles.gaps` |
 | Check if specs are still valid | `/bubbles.spec-review  all` |
 | Harden weak spots | `/bubbles.harden` |

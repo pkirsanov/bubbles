@@ -32,10 +32,10 @@ You were working on something in a previous session and need to pick up where yo
 See what's in progress, what's done, what's remaining. Then:
 
 ```
-/bubbles.iterate  continue 042-catalog-assistant
+/bubbles.workflow  042-catalog-assistant mode: delivery-lockdown
 ```
 
-If the next executable action is unclear, `bubbles.iterate` can now run a narrow `bubbles.code-review` or `bubbles.system-review` first, then continue the same iteration with planning or execution.
+If the next executable action is unclear, feed the recap/status recommendation back into `/bubbles.workflow`; it can consume continuation packets and keep orchestration intact.
 
 ## If the Previous Session Saved a Handoff
 
@@ -54,3 +54,4 @@ End every session with:
 ```
 
 This saves a snapshot of what was done, what's next, and any open questions — making the next resume seamless.
+This also records the recommended workflow continuation instead of leaving you to reconstruct the next command manually.
