@@ -88,6 +88,7 @@ Read the following files:
 3. `.specify/memory/fix.log` - Current error (if exists)
 4. `.specify/memory/agents.md` - Project configuration
 5. `.specify/runtime/resource-leases.json` - Runtime lease state, if present
+6. `.specify/runtime/workflow-runs.json` - Active/recent workflow continuation state, if present
 
 ## Execution Flow
 
@@ -330,10 +331,12 @@ When status can identify a concrete continuation target, append:
 - target: specs/<NNN-feature> | specs/<NNN-feature>/bugs/BUG-... | none
 - targetType: feature | bug | ops | framework | none
 - intent: continue delivery | close bug | validate release readiness | publish docs | framework follow-up
-- preferredWorkflowMode: delivery-lockdown | bugfix-fastlane | validate-to-doc | docs-only | devops-to-doc | none
+- preferredWorkflowMode: <any valid workflow mode from bubbles/workflows.yaml> | none
 - tags: <comma-separated tags or none>
 - reason: <short rationale>
 - directAgentOnly: false
 ```
+
+When `.specify/runtime/workflow-runs.json` or active spec state identifies a concrete non-terminal workflow run, preserve that exact workflow mode in the continuation envelope instead of flattening it to a narrower direct-specialist follow-up.
 
 ---

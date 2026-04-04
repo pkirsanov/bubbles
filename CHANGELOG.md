@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Workflow Continuation Guardrails
+
+- **Continuation language now preserves active workflow orchestration** — `bubbles.workflow` and `bubbles.super` treat follow-ups like `continue`, `fix all found`, `fix everything found`, `address rest`, `fix the rest`, and `resolve remaining findings` as workflow continuation, not as permission to drop into raw specialist execution.
+- **Active workflow mode preservation** — continuation handling now prefers the active mode and target recovered from continuation envelopes, recent workflow outputs, workflow run-state, or spec state. Existing `stochastic-quality-sweep`, `iterate`, and `delivery-lockdown` runs stay in those modes unless the remaining work is explicitly narrowed.
+- **Continuation envelope widened** — `preferredWorkflowMode` in recap/status/workflow continuation packets now accepts any valid workflow mode from `bubbles/workflows.yaml`, allowing stochastic sweeps and iterate runs to survive handoff and recovery without lossy down-conversion.
+- **Stochastic sweep closeout safety** — when a stochastic sweep ends with non-terminal touched specs, workflow output must preserve a workflow-owned continuation packet instead of suggesting raw `/bubbles.implement`, `/bubbles.test`, or similar specialist follow-ups.
+
 ### Planning Alignment & Research Quality (v3.4)
 
 - **Design Brief** — `bubbles.design` now produces a required ~30-50 line alignment checkpoint at the top of design.md: current state, target state, patterns to follow/avoid, resolved decisions, open questions. Gives reviewers 5-minute steering leverage before expensive scoping.

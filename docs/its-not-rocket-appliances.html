@@ -358,7 +358,7 @@
     <div class="info">
       <div class="agent-name">bubbles.super</div>
       <div class="character">Mr. Lahey</div>
-      <div class="role">Framework ops &amp; advice. NLP resolver, command generator, health checks, hooks, gates, upgrades. Workflow delegates to him automatically for vague input.</div>
+      <div class="role">Framework ops &amp; advice. NLP resolver, command generator, health checks, framework validation, release hygiene, hooks, gates, upgrades, and repo-readiness guidance. Workflow delegates to him automatically for vague input.</div>
       <div class="quote">"I'm the trailer park supervisor. I'll tell you the next move."</div>
     </div>
   </div>
@@ -968,7 +968,7 @@
   <div class="workflow-card">
     <div class="wf-name">stochastic-quality-sweep</div>
     <div class="wf-alias">→ sunnyvale bottle-kids</div>
-    <div class="wf-desc">Randomized adversarial probing. You never know where they'll hit.</div>
+    <div class="wf-desc">Randomized adversarial probing. You never know where they'll hit, and follow-up commands like <code>fix all found</code> should resume the sweep instead of dropping into raw specialist work.</div>
     <div class="wf-quote">"BOTTLE KIDS!" *runs for cover*</div>
   </div>
   <div class="workflow-card">
@@ -1136,6 +1136,30 @@
     <div class="wf-name">human acceptance</div>
     <div class="wf-desc"><code>uservalidation.md</code> is human-owned acceptance input. Automation findings do not toggle it.</div>
   </div>
+  <div class="workflow-card">
+    <div class="wf-name">framework validation</div>
+    <div class="wf-desc">The framework's own self-check surface. Runs portable-surface, ownership, registry, and selftest checks before you trust a release or upgrade.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">release hygiene</div>
+    <div class="wf-desc">Source-repo ship check for Bubbles itself. Confirms framework validation passed, required release docs exist, and no stray temp or backup files are riding along.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">workflow run-state</div>
+    <div class="wf-desc">Durable per-run coordination state that makes resume, runtime reuse, and packet routing explicit instead of guesswork.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">typed framework event</div>
+    <div class="wf-desc">Structured framework log entry for gate outcomes, packet routing, lease changes, and policy provenance instead of narrative-only breadcrumbs.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">action risk class</div>
+    <div class="wf-desc">Safety label for operations such as read-only, owned mutation, destructive mutation, external side effect, or runtime teardown.</div>
+  </div>
+  <div class="workflow-card">
+    <div class="wf-name">repo-readiness</div>
+    <div class="wf-desc">Advisory repo hygiene check for agent adoption. Useful before deep framework use, but separate from <code>bubbles.validate</code> certification.</div>
+  </div>
 </div>
 
 <div class="quick-ref">
@@ -1212,6 +1236,26 @@
     <span class="situation">Who can spawn child workflows</span>
     <span class="quote-text"><code>bubbles.workflow</code>, <code>bubbles.iterate</code>, <code>bubbles.bug</code></span>
   </div>
+  <div class="line">
+    <span class="situation">Framework self-check</span>
+    <span class="quote-text"><code>framework-validate</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Source-repo release gate</span>
+    <span class="quote-text"><code>release-check</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Typed framework event stream</span>
+    <span class="quote-text"><code>framework-events</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Workflow run-state view</span>
+    <span class="quote-text"><code>run-state</code></span>
+  </div>
+  <div class="line">
+    <span class="situation">Advisory repo-readiness check</span>
+    <span class="quote-text"><code>repo-readiness</code></span>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════ SHARED SKILLS ═══════════════════════════════ -->
@@ -1267,6 +1311,15 @@
       <div class="quote">"I used to be a vet, you know. I got specialties."</div>
     </div>
   </div>
+  <div class="card">
+    <div class="icon"><img src="../icons/lahey-badge.svg" alt="Lahey"></div>
+    <div class="info">
+      <div class="agent-name">bubbles-repo-readiness</div>
+      <div class="character">The Pre-Flight Walkaround</div>
+      <div class="role">Verify-first repo hygiene for agent adoption. Checks whether the commands, docs, and framework-owned surfaces are clear enough for agents to work safely. Advisory only, never a replacement for certification.</div>
+      <div class="quote">"Before the liquor starts talking, make sure the trailer's still standing."</div>
+    </div>
+  </div>
 </div>
 
 <!-- SKILL VOCABULARY -->
@@ -1290,9 +1343,12 @@
     <div class="gate-msg"><span class="status">🔌</span><span class="msg">"Localhost is a lie"</span><span class="context">— use 127.0.0.1, no DNS games</span></div>
     <div class="gate-msg"><span class="status">📦</span><span class="msg">"Progressive disclosure"</span><span class="context">— SKILL.md is the field card, references/ are the textbooks</span></div>
     <div class="gate-msg"><span class="status">📦</span><span class="msg">"Project-agnostic"</span><span class="context">— no repo names, no ports, no CLI commands. Skills travel.</span></div>
+    <div class="gate-msg"><span class="status">🛠️</span><span class="msg">"Walk the lot first"</span><span class="context">— check repo surfaces before declaring the framework ready to operate there</span></div>
+    <div class="gate-msg"><span class="status">🛠️</span><span class="msg">"Advisory, not certification"</span><span class="context">— repo-readiness informs framework ops, but it does not satisfy bubbles.validate</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Owner-only remediation"</span><span class="context">— diagnostics and certification route it; owners and executors do it</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Result envelope"</span><span class="context">— every run ends with completed_owned, completed_diagnostic, route_required, or blocked</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Narrow packet"</span><span class="context">— tiny fixes stay fast by dispatching the exact owner with the smallest safe context</span></div>
+    <div class="gate-msg"><span class="status">🧭</span><span class="msg">"Action risk class"</span><span class="context">— read_only, owned_mutation, destructive_mutation, external_side_effect, or runtime_teardown</span></div>
     <div class="gate-msg"><span class="status">🧭</span><span class="msg">"3-strike rule"</span><span class="context">— after 3 failed fix attempts, STOP and escalate. No thrashing.</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Done with concerns"</span><span class="context">— all gates pass but agent flags observational risks worth monitoring</span></div>
     <div class="gate-msg"><span class="status">📊</span><span class="msg">"Smart phase routing"</span><span class="context">— irrelevant phases skip with recorded justification, re-evaluate if artifacts change</span></div>
@@ -1338,6 +1394,7 @@
   <tr><td class="cmd">sunnyvale lot-rules</td><td class="maps-to">bubbles-docker-lifecycle-governance</td><td class="quote-col">"There are RULES about what stays."</td></tr>
   <tr><td class="cmd">sunnyvale no-port-squatting</td><td class="maps-to">bubbles-docker-port-standards</td><td class="quote-col">"You can't just squat on standard ports."</td></tr>
   <tr><td class="cmd">sunnyvale sams-specialties</td><td class="maps-to">bubbles-skill-authoring</td><td class="quote-col">"I used to be a vet, you know."</td></tr>
+  <tr><td class="cmd">sunnyvale walk-the-lot</td><td class="maps-to">bubbles-repo-readiness</td><td class="quote-col">"Before we start, walk the lot and see what's actually standing."</td></tr>
 </table>
 </div>
 

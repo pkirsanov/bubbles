@@ -133,6 +133,9 @@ fi
 if [[ -f "$TEMP_DIR/bubbles/agent-capabilities.yaml" ]]; then
   cp "$TEMP_DIR"/bubbles/agent-capabilities.yaml "${TARGET}/bubbles/"
 fi
+if [[ -f "$TEMP_DIR/bubbles/action-risk-registry.yaml" ]]; then
+  cp "$TEMP_DIR"/bubbles/action-risk-registry.yaml "${TARGET}/bubbles/"
+fi
 if [[ -f "$TEMP_DIR/bubbles/agnosticity-allowlist.txt" ]]; then
   cp "$TEMP_DIR"/bubbles/agnosticity-allowlist.txt "${TARGET}/bubbles/"
 fi

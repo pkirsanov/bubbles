@@ -13,7 +13,7 @@
 | Icon | Agent | Alias | Role | Quote |
 |:----:|-------|-------|------|-------|
 | <img src="../icons/bubbles-glasses.svg" width="28"> | `bubbles.workflow` | Bubbles | **Universal entry point.** Just describe what you want. Accepts plain English, structured commands, or "continue" — resolves intent via `super`, picks work via `iterate`, and drives all phases to completion. | *"Decent. I can see how all this fits together. Just tell me what you need."* |
-| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles.super` | Mr. Lahey | Framework ops & advice. NLP resolver, command generator, health checks, hooks, gates, upgrades. Workflow delegates to him automatically for vague input. | *"I'm the trailer park supervisor. I'll tell you the next move."* |
+| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles.super` | Mr. Lahey | Framework ops & advice. NLP resolver, command generator, health checks, framework validation, release hygiene, hooks, gates, upgrades, and repo-readiness guidance. Workflow delegates to him automatically for vague input. | *"I'm the trailer park supervisor. I'll tell you the next move."* |
 
 ## <img src="../icons/jacob-hardhat.svg" width="32"> Orchestrators
 
@@ -187,6 +187,12 @@
 | `continuation envelope` | Machine-readable packet from a read-only agent carrying the target, intent, preferred workflow mode, and reason for the next workflow step. |
 | `scenario replay` | Validate reruns the linked live-system `SCN-*` user journeys from `scenario-manifest.json` before certification. |
 | `human acceptance` | `uservalidation.md` is human-owned acceptance input. Automation findings do not toggle it. |
+| `framework validation` | The framework's own self-check surface. Runs portable-surface, ownership, registry, and selftest checks before you trust a release or upgrade. |
+| `release hygiene` | Source-repo ship check for Bubbles itself. Confirms framework validation passed, required release docs exist, and no stray temp or backup files are riding along. |
+| `workflow run-state` | Durable per-run coordination state that makes resume, runtime reuse, and packet routing explicit instead of guesswork. |
+| `typed framework event` | Structured framework log entry for gate outcomes, packet routing, lease changes, and policy provenance instead of narrative-only breadcrumbs. |
+| `action risk class` | Safety label for an operation such as read-only, owned mutation, destructive mutation, external side effect, or runtime teardown. |
+| `repo-readiness` | Advisory repo hygiene check for agent adoption. Useful before deep framework use, but separate from `bubbles.validate` certification. |
 
 ---
 
@@ -287,6 +293,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | <img src="../icons/barb-keys.svg" width="28"> | `bubbles-docker-lifecycle-governance` | Barb Lahey | *"Jim, there are RULES about what stays and what gets cleaned."* |
 | <img src="../icons/ted-badge.svg" width="28"> | `bubbles-docker-port-standards` | Ted Johnson | *"You can't just park wherever you want. There's a system."* |
 | <img src="../icons/sam-binoculars.svg" width="28"> | `bubbles-skill-authoring` | Sam Losco | *"I used to be a vet, you know. I got specialties."* |
+| <img src="../icons/lahey-badge.svg" width="28"> | `bubbles-repo-readiness` | Mr. Lahey | *"Before the liquor starts talking, make sure the trailer's still standing."* |
 
 ### What Each Skill Does
 
@@ -370,6 +377,21 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 - *"Progressive disclosure"* — SKILL.md is the field card; references/ are the textbooks. Don't shove the textbook into the field card.
 - *"Project-agnostic"* — no repo names, no port numbers, no CLI commands. Skills travel between parks.
 
+#### <img src="../icons/lahey-badge.svg" width="24"> The Pre-Flight Walkaround — `bubbles-repo-readiness`
+
+*Lahey checks whether the framework can operate cleanly before anyone starts declaring victory.*
+
+| | |
+|---|---|
+| **What It Enforces** | Verify-first repo hygiene for agent adoption: docs point at real commands, framework-owned surfaces are understood, automation entrypoints exist, and repo-specific expectations are written down clearly enough for agents to operate safely. |
+| **Activates When** | Auditing whether a repo is ready for Bubbles-style work, checking agent onboarding hygiene, reviewing framework adoption quality, or translating vague "is this repo agent-ready?" questions into a structured checklist. |
+| **Boundary Rule** | Repo-readiness is advisory framework ops. It does **not** certify feature completion and it must never replace `bubbles.validate`. |
+
+**Vocabulary:**
+- *"Walk the lot first"* — check the repo surfaces before you start heavy workflow execution.
+- *"Advisory, not certification"* — repo-readiness tells you whether the park is ready for agents, not whether the feature is done.
+- *"Verify-first"* — read the real commands, hooks, docs, and managed surfaces before making framework promises.
+
 ### Sunnyvale Skill Aliases
 
 | Alias | Skill | Quote |
@@ -380,6 +402,7 @@ Skills are portable procedural checklists auto-installed to every repo. They act
 | `sunnyvale lot-rules` | `bubbles-docker-lifecycle-governance` | *"There are RULES about what stays and what gets cleaned."* |
 | `sunnyvale no-port-squatting` | `bubbles-docker-port-standards` | *"You can't just squat on standard ports, Ricky."* |
 | `sunnyvale sams-specialties` | `bubbles-skill-authoring` | *"I used to be a vet, you know."* |
+| `sunnyvale walk-the-lot` | `bubbles-repo-readiness` | *"Before we start, walk the lot and see what's actually standing."* |
 
 ---
 
@@ -447,7 +470,8 @@ All agents accept natural language. `/bubbles.workflow` is the **universal entry
 | You Type | Workflow Understands |
 |----------|-------------------|
 | `/bubbles.workflow  improve the booking feature to be competitive` | mode: improve-existing, spec: booking |
-| `/bubbles.workflow  continue` | Picks next highest-priority work via iterate |
+| `/bubbles.workflow  continue` | Resume active workflow if continuation context exists; otherwise pick next work via iterate |
+| `/bubbles.workflow  fix all found` | Resume the active workflow's remaining routed work instead of dropping into raw specialists |
 | `/bubbles.workflow  fix the calendar bug in page builder` | mode: bugfix-fastlane, spec: page-builder |
 | `/bubbles.workflow  do 10 rounds of stabilize on booking` | mode: stochastic-quality-sweep, triggerAgents: stabilize, maxRounds: 10 |
 | `/bubbles.workflow  spend 2 hours working on whatever needs attention` | mode: iterate, minutes: 120 |
@@ -476,10 +500,16 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | `/bubbles.super  which mode should I use?` | Decision tree based on your situation |
 | `/bubbles.super  help me write a command for chaos testing` | `/bubbles.workflow mode: stochastic-quality-sweep maxRounds: 5` |
 | `/bubbles.super  before we improve booking, do one stale-spec check and then continue` | `/bubbles.workflow  <booking-spec> mode: improve-existing specReview: once-before-implement` |
+| `/bubbles.super  fix all found from the last sweep` | `/bubbles.workflow  <same-target> mode: stochastic-quality-sweep` |
 | `/bubbles.super  give me the no-loose-ends release workflow for booking` | `/bubbles.workflow  <booking-spec> mode: delivery-lockdown` |
 | `/bubbles.super  what should I do before shipping?` | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
 | `/bubbles.super  should I start here or call the agent directly?` | Policy answer: use `super` for vague intent; go direct when the target is already known |
 | `/bubbles.super  why did my workflow stop after validate?` | Short diagnosis + the next command to recover or continue |
+| `/bubbles.super  run framework validation before I upgrade` | `bash bubbles/scripts/cli.sh framework-validate` |
+| `/bubbles.super  check whether bubbles itself is ready to ship` | `bash bubbles/scripts/cli.sh release-check` |
+| `/bubbles.super  show me the framework event stream` | `bash bubbles/scripts/cli.sh framework-events --tail 20` |
+| `/bubbles.super  show current workflow run-state` | `bash bubbles/scripts/cli.sh run-state --all` |
+| `/bubbles.super  is this repo agent-ready?` | `bash bubbles/scripts/cli.sh repo-readiness .` with the explicit note that this is advisory and not completion certification |
 | `/bubbles.super  why are my parallel sessions colliding?` | `bubbles runtime doctor` plus the right recovery step |
 | `/bubbles.super  reuse the validation stack if it is compatible` | `bubbles runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml` |
 | `/bubbles.super  turn this problem into the right Bubbles prompts` | A command sequence with brief reasons for each step |
@@ -489,6 +519,7 @@ The super resolves intent and generates commands. Workflow delegates to it autom
 | Situation | Command |
 |-----------|---------|
 | Continue an active feature safely | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| Continue routed work from a stochastic sweep | `/bubbles.workflow  fix all found` |
 | Implement a known scope surgically | `/bubbles.implement  execute scope 1 of <feature>` |
 | Continue next scope | `/bubbles.iterate  continue <feature>` |
 | Simplify complex code | `/bubbles.simplify` |

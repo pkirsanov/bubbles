@@ -89,6 +89,7 @@ handoffs:
 - Classify failures (`code|test|docs|compliance|audit|chaos|environment`) and route by registry — routing means actively re-invoking the appropriate specialist agent, not just logging the failure.
 - Respect retry limits — when ALL retries for a phase are exhausted AND auto-escalation cannot resolve the issue, mark the spec `blocked` and continue to the next spec if `continueOnBlocked: true`.
 - Preserve deterministic resume state in `.specify/memory/bubbles.session.json` and per-spec `state.json`.
+- Treat continuation-shaped follow-ups such as `continue`, `fix all found`, `fix everything found`, `address rest`, `address the rest`, `fix the rest`, `resolve remaining findings`, or `handle remaining issues` as workflow continuation, not as permission to downshift into raw specialist execution. Resume the active workflow mode and targets whenever they can be recovered from continuation envelopes, recent workflow outputs, run-state, or spec state.
 - **⚠️ RUN-TO-COMPLETION (NON-NEGOTIABLE):** This agent MUST complete the entire workflow for ALL target specs. It MUST NOT stop mid-workflow to suggest commands or recommend the user run a different mode. If different actions are needed (hardening, gap closure, bug fixes, artifact repair), handle them inline via the Auto-Escalation Protocol below. The ONLY acceptable stop reasons are the terminal conditions defined in `autoEscalation.terminalStopConditions` in workflows.yaml.
 - **⚠️ AUTO-MODE-ESCALATION (NON-NEGOTIABLE):** When this agent discovers that the current phase cannot proceed because a prerequisite is unmet (e.g., specs need hardening, artifacts are missing, bugs block progress), it MUST invoke the appropriate specialist agents inline to resolve the issue and then continue the workflow. It MUST NOT stop and suggest the user run `bubbles.workflow` with a different mode.
 - **⚠️ NEVER SUGGEST COMMANDS TO CONTINUE:** Do not end your output with "run this command to continue" or "suggested next steps" or "resume with". Instead, execute those steps yourself. The workflow is not done until all specs are done or terminally blocked.
@@ -544,11 +545,11 @@ Before parsing specs or selecting modes, classify the raw user input into one of
 
 1. **STRUCTURED** — input contains an explicit `mode:` parameter AND/OR recognizable spec targets (numbers, paths, ranges) → **skip Phase -1**, proceed directly to Phase 0 with the provided parameters.
 
-2. **CONTINUATION** — input contains a `## CONTINUATION-ENVELOPE` block from a read-only agent OR quotes a recap/status/handoff recommendation while the user is invoking `bubbles.workflow` to continue the work → parse the packet, upgrade any raw specialist continuation into the appropriate workflow mode, and continue to Phase 0.
+2. **CONTINUATION** — input contains a `## CONTINUATION-ENVELOPE` block from a read-only agent or prior workflow output OR quotes a recap/status/handoff/workflow recommendation while the user is invoking `bubbles.workflow` to continue the work → parse the packet, preserve the active workflow mode whenever possible, upgrade any raw specialist continuation into the appropriate workflow mode, and continue to Phase 0.
 
 3. **VAGUE** — input is free-text describing a goal, feature, problem, or desired outcome WITHOUT explicit `mode:` or spec targets (e.g., "improve the booking feature", "fix the calendar", "make this more robust", "deliver this feature") → **delegate to `bubbles.super`** for intent resolution.
 
-4. **CONTINUE** — input is empty, or contains continuation language ("continue", "next", "keep going", "what's next", "pick up where we left off", "do the next thing") → **delegate to `bubbles.iterate`** for work discovery.
+4. **CONTINUE** — input is empty, or contains continuation language ("continue", "next", "keep going", "what's next", "pick up where we left off", "do the next thing", "fix all found", "fix everything found", "address rest", "address the rest", "fix the rest", "resolve remaining findings", "handle remaining issues") → **attempt active-workflow resume first**; only if no active workflow continuation can be resolved, delegate to `bubbles.iterate` for work discovery.
 
 5. **FRAMEWORK** — input is about Bubbles framework operations ("doctor", "hooks", "upgrade", "status", "metrics", "lessons", "gates", "install") → **delegate to `bubbles.super`** for framework operation execution.
 
@@ -574,14 +575,16 @@ Accepted packet shape:
 - target: specs/<NNN-feature> | specs/<NNN-feature>/bugs/BUG-... | none
 - targetType: feature | bug | ops | framework | none
 - intent: continue delivery | close bug | validate release readiness | publish docs | framework follow-up
-- preferredWorkflowMode: delivery-lockdown | bugfix-fastlane | validate-to-doc | docs-only | devops-to-doc | none
+- preferredWorkflowMode: <any valid workflow mode from bubbles/workflows.yaml> | none
 - tags: <comma-separated tags or none>
 - reason: <short rationale>
 ```
 
 Rules:
 - If the packet provides a concrete `target` and `preferredWorkflowMode`, continue to Phase 0 using those values.
+- If the packet preserves an active stochastic or iterative mode (`stochastic-quality-sweep`, `iterate`, `delivery-lockdown`, or another delivery mode), keep that exact mode unless the packet explicitly narrows to a bug-only, docs-only, or validation-only continuation.
 - If the surrounding prose includes raw specialist guidance such as `/bubbles.implement`, `/bubbles.test`, `/bubbles.validate`, or `/bubbles.audit`, treat that as advisory text only. Do NOT mirror it back into execution.
+- If the surrounding prose contains continuation phrases like `fix all found`, `address rest`, or `fix the rest` after a workflow summary, interpret that as `continue the active workflow's remaining work`, not as direct implementation.
 - If a packet is missing but workflow sees quoted continuation text from recap/status/handoff, upgrade it to the safest workflow mode instead of echoing the raw specialist:
    - bug target or bug intent → `bugfix-fastlane`
    - active feature/spec continuation → `delivery-lockdown`
@@ -590,7 +593,14 @@ Rules:
    - framework follow-up → delegate to `bubbles.super`
 - If the packet says `target: none`, fall back to VAGUE or CONTINUE classification based on the surrounding request.
 
-**CONTINUE → invoke `bubbles.iterate` via `runSubagent`:**
+**CONTINUE → attempt active workflow resume before invoking `bubbles.iterate`:**
+
+1. Inspect the current conversation context, any pasted `## CONTINUATION-ENVELOPE`, any recent workflow `## RESULT-ENVELOPE`, `.specify/runtime/workflow-runs.json` (if present), and target specs' `state.json.workflowMode` / `state.json.execution.currentPhase` for a single concrete non-terminal workflow target.
+2. If an active or recent non-terminal workflow run can be resolved with a concrete target and mode, continue to Phase 0 using that exact target/mode instead of delegating to `bubbles.iterate`.
+3. If the recoverable mode is `stochastic-quality-sweep` or `iterate`, preserve that mode. Do NOT silently collapse it to `delivery-lockdown` just because findings were mentioned.
+4. Only when no active workflow continuation can be resolved should the agent invoke `bubbles.iterate` for generic work discovery.
+
+**Fallback CONTINUE path → invoke `bubbles.iterate` via `runSubagent`:**
 
 Prompt contract:
 > "You are being invoked as a subagent by `bubbles.workflow` to identify the next highest-priority work item. Do NOT execute the work — only identify it. Scan state.json files, scopes.md, uservalidation.md, and fix.log to find the best next action. Return ONLY a `## WORK-ENVELOPE` section with the fields specified in your subagent picker contract."
@@ -1315,6 +1325,7 @@ When mode is `stochastic-quality-sweep`, the orchestrator replaces the normal se
      2. Run `finalize` phase — state transition guard, artifact lint, DoD verification, Gate G041 format integrity
        3. If all DoD items `[x]` (no reformatted/deleted items) and all scopes "Done" (canonical status only) → route final certification through `bubbles.validate` and let validate write the authoritative `certification.status`
        4. Append `executionHistory` entry to `state.json`
+         5. If a touched spec remains non-terminal after docs/finalize because routed work or blockers remain, the workflow output MUST preserve the continuation as workflow-owned. Emit a `## CONTINUATION-ENVELOPE` targeting the touched spec(s) with `preferredWorkflowMode: stochastic-quality-sweep` unless the remaining work is explicitly narrowed to a bug packet, docs-only pass, or validate-only pass. Do NOT emit raw specialist follow-ups like `/bubbles.implement` or `/bubbles.test`.
    - **Specs not touched** during the sweep (no round selected them) retain their current status unchanged
    - Record sweep summary in each touched spec's report.md AND as a workflow output:
      ```
@@ -1855,6 +1866,7 @@ Return:
 3. For specs marked `blocked` (ONLY after exhausting all retries AND auto-escalation): first failing gate, failure class, what auto-escalation was attempted, and why it failed.
 4. Resume commands ONLY for genuinely blocked specs (those where auto-escalation was exhausted). Do NOT emit resume commands as a routine pattern — the workflow should have completed all completable work.
 5. Validation check results (Tier 1 + Tier 2 per spec).
+6. If the workflow ends in any non-terminal state (`route_required`, `blocked`, or `in_progress`), append a `## CONTINUATION-ENVELOPE` that preserves the exact workflow target and preferred workflow mode. Never translate remaining work into raw specialist commands unless the user explicitly requested a direct specialist.
 
 **⚠️ ANTI-PATTERN: Do NOT end with a list of suggested commands for the user to run.** If there are actions that could be taken, take them within this workflow run. The only acceptable ending states are:
 - ✅ "All target specs completed successfully" — no further action needed

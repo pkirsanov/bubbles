@@ -23,6 +23,11 @@
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
 #   docs-registry [mode]          Show framework-default or effective managed-doc registry
 #   framework-write-guard         Check downstream framework-managed files against install provenance
+#   framework-validate            Run framework self-validation across core guard and selftest surfaces
+#   release-check                 Run source-repo release hygiene checks
+#   framework-events [options]    Show typed framework event history
+#   run-state [options]           Show active and recent workflow run-state records
+#   repo-readiness [path]         Run advisory repo-readiness checks
 #   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
 #   audit-done [--fix]            Audit all specs marked done
 #   autofix <spec>                Scaffold missing report sections
@@ -67,9 +72,12 @@ CONTROL_PLANE_ACTIVITY_FILE="$CONTROL_PLANE_METRICS_DIR/activity.jsonl"
 CONTROL_PLANE_OBSERVATIONS_FILE="$CONTROL_PLANE_METRICS_DIR/observations.jsonl"
 CONTROL_PLANE_RUNTIME_DIR="$REPO_ROOT/.specify/runtime"
 CONTROL_PLANE_RUNTIME_FILE="$CONTROL_PLANE_RUNTIME_DIR/resource-leases.json"
+CONTROL_PLANE_EVENT_FILE="$CONTROL_PLANE_RUNTIME_DIR/framework-events.jsonl"
+CONTROL_PLANE_RUN_STATE_FILE="$CONTROL_PLANE_RUNTIME_DIR/workflow-runs.json"
 LESSONS_FILE="$REPO_ROOT/.specify/memory/lessons.md"
 SKILL_PROPOSALS_FILE="$REPO_ROOT/.specify/memory/skill-proposals.md"
 DEVELOPER_PROFILE_FILE="$REPO_ROOT/.specify/memory/developer-profile.md"
+ACTION_RISK_REGISTRY_FILE="$FRAMEWORK_DIR/action-risk-registry.yaml"
 
 # ── Colors ──────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
@@ -233,6 +241,351 @@ current_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
+derive_session_id() {
+  if [[ -n "${BUBBLES_SESSION_ID:-}" ]]; then
+    printf '%s' "$BUBBLES_SESSION_ID"
+    return 0
+  fi
+
+  if [[ -f "$SESSION_FILE" ]]; then
+    local session_id
+    session_id="$({ grep -oE '"sessionId"[[:space:]]*:[[:space:]]*"[^"]+"' "$SESSION_FILE" | head -1 | sed -E 's/.*"([^"]+)"$/\1/'; } || true)"
+    if [[ -n "$session_id" ]]; then
+      printf '%s' "$session_id"
+      return 0
+    fi
+  fi
+
+  printf 'shell-%s' "$$"
+}
+
+derive_agent_name() {
+  if [[ -n "${BUBBLES_AGENT_NAME:-}" ]]; then
+    printf '%s' "$BUBBLES_AGENT_NAME"
+  else
+    printf '%s' 'cli'
+  fi
+}
+
+current_branch_name() {
+  git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || printf '%s' 'unknown'
+}
+
+generate_run_id() {
+  printf 'wrn_%s_%04d' "$(date -u +%Y%m%d%H%M%S)" "$((RANDOM % 10000))"
+}
+
+ensure_runtime_event_log() {
+  mkdir -p "$CONTROL_PLANE_RUNTIME_DIR"
+  touch "$CONTROL_PLANE_EVENT_FILE"
+}
+
+ensure_run_state_registry() {
+  mkdir -p "$CONTROL_PLANE_RUNTIME_DIR"
+  if [[ ! -f "$CONTROL_PLANE_RUN_STATE_FILE" ]]; then
+    cat > "$CONTROL_PLANE_RUN_STATE_FILE" <<'EOF'
+{
+  "version": 1,
+  "activeRuns": [
+  ],
+  "recentRuns": [
+  ]
+}
+EOF
+  fi
+}
+
+run_state_lines() {
+  local section="$1"
+
+  ensure_run_state_registry
+
+  awk -v target="$section" '
+    $0 ~ "\"" target "\"[[:space:]]*:[[:space:]]*\\[" { in_target = 1; next }
+    in_target && /^[[:space:]]*\]/ { exit }
+    in_target && /\{/ {
+      gsub(/^[[:space:]]+/, "", $0)
+      sub(/,[[:space:]]*$/, "", $0)
+      print $0
+    }
+  ' "$CONTROL_PLANE_RUN_STATE_FILE"
+}
+
+write_run_state_registry() {
+  local active_lines="$1"
+  local recent_lines="$2"
+  local tmp_file="$CONTROL_PLANE_RUN_STATE_FILE.tmp"
+  local active_count=0 recent_count=0 active_index=0 recent_index=0 line
+
+  active_count=$(printf '%s\n' "$active_lines" | sed '/^$/d' | wc -l | tr -d ' ')
+  recent_count=$(printf '%s\n' "$recent_lines" | sed '/^$/d' | wc -l | tr -d ' ')
+
+  {
+    echo '{'
+    echo '  "version": 1,'
+    echo '  "activeRuns": ['
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      active_index=$((active_index + 1))
+      if [[ "$active_index" -lt "$active_count" ]]; then
+        printf '    %s,\n' "$line"
+      else
+        printf '    %s\n' "$line"
+      fi
+    done <<< "$active_lines"
+    echo '  ],'
+    echo '  "recentRuns": ['
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      recent_index=$((recent_index + 1))
+      if [[ "$recent_index" -lt "$recent_count" ]]; then
+        printf '    %s,\n' "$line"
+      else
+        printf '    %s\n' "$line"
+      fi
+    done <<< "$recent_lines"
+    echo '  ]'
+    echo '}'
+  } > "$tmp_file"
+
+  mv "$tmp_file" "$CONTROL_PLANE_RUN_STATE_FILE"
+}
+
+field_from_json_line() {
+  local line="$1"
+  local field="$2"
+
+  printf '%s\n' "$line" | sed -nE "s/.*\"${field}\":\"([^\"]*)\".*/\1/p"
+}
+
+runtime_attachment_for_session() {
+  local session_id="$1"
+  local attachments=''
+  local line lease_id
+
+  [[ -n "$session_id" && -f "$CONTROL_PLANE_RUNTIME_FILE" ]] || {
+    printf '%s' ''
+    return 0
+  }
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    if [[ "$line" == *'"status":"active"'* ]] && [[ "$line" == *"\"$session_id\""* ]]; then
+      lease_id="$(field_from_json_line "$line" 'leaseId')"
+      [[ -n "$lease_id" ]] || continue
+      if [[ -z "$attachments" ]]; then
+        attachments="$lease_id"
+      else
+        attachments="$attachments,$lease_id"
+      fi
+    fi
+  done < <(awk '
+    /"leases"[[:space:]]*:[[:space:]]*\[/ { in_leases = 1; next }
+    in_leases && /^[[:space:]]*\]/ { exit }
+    in_leases && /"leaseId"/ {
+      gsub(/^[[:space:]]+/, "", $0)
+      sub(/,[[:space:]]*$/, "", $0)
+      print $0
+    }
+  ' "$CONTROL_PLANE_RUNTIME_FILE")
+
+  printf '%s' "$attachments"
+}
+
+classify_run_posture() {
+  local command_name="$1"
+  local command_args="$2"
+
+  case "$command_name" in
+    session) printf '%s' 'resume' ;;
+    *)
+      if [[ "$command_args" == *'--retry'* || "$command_args" == *' retry'* ]]; then
+        printf '%s' 'retry'
+      elif [[ "$command_args" == *'resume'* || "$command_args" == *'continue'* ]]; then
+        printf '%s' 'resume'
+      else
+        printf '%s' 'fresh'
+      fi
+      ;;
+  esac
+}
+
+registry_default_risk_class() {
+  local command_name="$1"
+  local value=''
+
+  if [[ -f "$ACTION_RISK_REGISTRY_FILE" ]]; then
+    value="$({
+      awk -v cmd="$command_name" '
+        $0 == "  " cmd ":" { in_cmd = 1; next }
+        in_cmd && $0 ~ /^  [^[:space:]].*:/ { exit }
+        in_cmd && /defaultRiskClass:/ {
+          sub(/.*defaultRiskClass:[[:space:]]*/, "", $0)
+          print $0
+          exit
+        }
+      ' "$ACTION_RISK_REGISTRY_FILE"
+    } || true)"
+  fi
+
+  if [[ -n "$value" ]]; then
+    printf '%s' "$value"
+  else
+    printf '%s' 'read_only'
+  fi
+}
+
+command_effective_risk_class() {
+  local command_name="$1"
+  local command_args="$2"
+  local default_risk
+
+  default_risk="$(registry_default_risk_class "$command_name")"
+
+  case "$command_name" in
+    doctor)
+      if [[ "$command_args" == *'--heal'* ]]; then
+        printf '%s' 'owned_mutation'
+      else
+        printf '%s' "$default_risk"
+      fi
+      ;;
+    hooks|framework-proposal|autofix|upgrade)
+      printf '%s' 'owned_mutation'
+      ;;
+    policy)
+      if [[ "$command_args" == set* || "$command_args" == reset* ]]; then
+        printf '%s' 'owned_mutation'
+      else
+        printf '%s' "$default_risk"
+      fi
+      ;;
+    runtime)
+      case "${command_args%% *}" in
+        release|reclaim-stale) printf '%s' 'runtime_teardown' ;;
+        acquire|attach|heartbeat) printf '%s' 'owned_mutation' ;;
+        *) printf '%s' "$default_risk" ;;
+      esac
+      ;;
+    *)
+      printf '%s' "$default_risk"
+      ;;
+  esac
+}
+
+record_framework_event() {
+  local event_type="$1"
+  local result="$2"
+  local duration_ms="$3"
+  local details="$4"
+  local risk_class="$5"
+  local target="$6"
+  local run_id="$7"
+
+  ensure_runtime_event_log
+  append_jsonl "$CONTROL_PLANE_EVENT_FILE" "{\"version\":1,\"type\":\"$(json_escape "$event_type")\",\"timestamp\":\"$(current_timestamp)\",\"runId\":\"$(json_escape "$run_id")\",\"sessionId\":\"$(json_escape "${CURRENT_SESSION_ID:-unknown}")\",\"command\":\"$(json_escape "${CURRENT_BUBBLES_COMMAND:-unknown}")\",\"target\":\"$(json_escape "$target")\",\"riskClass\":\"$(json_escape "$risk_class")\",\"result\":\"$(json_escape "$result")\",\"durationMs\":${duration_ms},\"details\":\"$(json_escape "$details")\"}"
+}
+
+build_run_record_line() {
+  local run_id="$1"
+  local status="$2"
+  local started_at="$3"
+  local updated_at="$4"
+  local completed_at="$5"
+  local result="$6"
+  local duration_ms="$7"
+  local target="$8"
+  local runtime_attachment="$9"
+  local posture="${10}"
+  local risk_class="${11}"
+
+  printf '{"runId":"%s","command":"%s","args":"%s","sessionId":"%s","agent":"%s","repo":"%s","branch":"%s","worktree":"%s","status":"%s","startedAt":"%s","updatedAt":"%s","completedAt":"%s","result":"%s","durationMs":%s,"target":"%s","runtimeAttachment":"%s","posture":"%s","riskClass":"%s"}' \
+    "$(json_escape "$run_id")" \
+    "$(json_escape "${CURRENT_BUBBLES_COMMAND:-unknown}")" \
+    "$(json_escape "${CURRENT_BUBBLES_ARGS:-}")" \
+    "$(json_escape "${CURRENT_SESSION_ID:-unknown}")" \
+    "$(json_escape "${CURRENT_AGENT_NAME:-cli}")" \
+    "$(json_escape "$(basename "$REPO_ROOT")")" \
+    "$(json_escape "${CURRENT_BRANCH_NAME:-unknown}")" \
+    "$(json_escape "$REPO_ROOT")" \
+    "$(json_escape "$status")" \
+    "$(json_escape "$started_at")" \
+    "$(json_escape "$updated_at")" \
+    "$(json_escape "$completed_at")" \
+    "$(json_escape "$result")" \
+    "$duration_ms" \
+    "$(json_escape "$target")" \
+    "$(json_escape "$runtime_attachment")" \
+    "$(json_escape "$posture")" \
+    "$(json_escape "$risk_class")"
+}
+
+begin_cli_run_state() {
+  local active_lines new_line
+
+  CURRENT_SESSION_ID="$(derive_session_id)"
+  CURRENT_AGENT_NAME="$(derive_agent_name)"
+  CURRENT_BRANCH_NAME="$(current_branch_name)"
+  CURRENT_RUN_ID="$(generate_run_id)"
+  CURRENT_RUN_STARTED_AT="$(current_timestamp)"
+  CURRENT_RUN_POSTURE="$(classify_run_posture "${CURRENT_BUBBLES_COMMAND:-unknown}" "${CURRENT_BUBBLES_ARGS:-}")"
+  CURRENT_RISK_CLASS="$(command_effective_risk_class "${CURRENT_BUBBLES_COMMAND:-unknown}" "${CURRENT_BUBBLES_ARGS:-}")"
+
+  ensure_run_state_registry
+  active_lines="$(run_state_lines activeRuns)"
+  new_line="$(build_run_record_line "$CURRENT_RUN_ID" 'active' "$CURRENT_RUN_STARTED_AT" "$CURRENT_RUN_STARTED_AT" '' 'pending' 0 "$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")" "$(runtime_attachment_for_session "$CURRENT_SESSION_ID")" "$CURRENT_RUN_POSTURE" "$CURRENT_RISK_CLASS")"
+  if [[ -n "$active_lines" ]]; then
+    active_lines="$active_lines
+$new_line"
+  else
+    active_lines="$new_line"
+  fi
+  write_run_state_registry "$active_lines" "$(run_state_lines recentRuns)"
+  record_framework_event "framework_command_started" "pending" 0 "args=${CURRENT_BUBBLES_ARGS:-}" "$CURRENT_RISK_CLASS" "$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")" "$CURRENT_RUN_ID"
+}
+
+trim_recent_run_lines() {
+  local recent_lines="$1"
+  printf '%s\n' "$recent_lines" | sed '/^$/d' | tail -n 25
+}
+
+complete_cli_run_state() {
+  local result="$1"
+  local duration_ms="$2"
+  local target runtime_attachment active_lines recent_lines line updated_recent completed_line
+
+  [[ -n "${CURRENT_RUN_ID:-}" ]] || return 0
+
+  ensure_run_state_registry
+  target="$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")"
+  runtime_attachment="$(runtime_attachment_for_session "${CURRENT_SESSION_ID:-unknown}")"
+
+  active_lines=''
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    if [[ "$(field_from_json_line "$line" 'runId')" == "$CURRENT_RUN_ID" ]]; then
+      continue
+    fi
+    if [[ -z "$active_lines" ]]; then
+      active_lines="$line"
+    else
+      active_lines="$active_lines
+$line"
+    fi
+  done <<< "$(run_state_lines activeRuns)"
+
+  completed_line="$(build_run_record_line "$CURRENT_RUN_ID" 'completed' "${CURRENT_RUN_STARTED_AT:-$(current_timestamp)}" "$(current_timestamp)" "$(current_timestamp)" "$result" "$duration_ms" "$target" "$runtime_attachment" "${CURRENT_RUN_POSTURE:-fresh}" "${CURRENT_RISK_CLASS:-read_only}")"
+  recent_lines="$(run_state_lines recentRuns)"
+  if [[ -n "$recent_lines" ]]; then
+    updated_recent="$recent_lines
+$completed_line"
+  else
+    updated_recent="$completed_line"
+  fi
+
+  write_run_state_registry "$active_lines" "$(trim_recent_run_lines "$updated_recent")"
+}
+
 slugify() {
   printf '%s' "$1" \
     | tr '[:upper:]' '[:lower:]' \
@@ -325,6 +678,8 @@ record_cli_completion() {
     target="$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")"
     record_metric_event "cli_command" "$result" "$duration_ms" "args=${CURRENT_BUBBLES_ARGS:-}"
     record_activity_event "$CURRENT_BUBBLES_COMMAND" "$result" "$duration_ms" "$target" "${CURRENT_BUBBLES_ARGS:-}"
+    record_framework_event "framework_command_completed" "$result" "$duration_ms" "args=${CURRENT_BUBBLES_ARGS:-}" "${CURRENT_RISK_CLASS:-read_only}" "$target" "${CURRENT_RUN_ID:-unknown}"
+    complete_cli_run_state "$result" "$duration_ms"
   fi
 }
 
@@ -715,6 +1070,11 @@ Commands:
   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
   docs-registry [mode]          Show framework-default or effective managed-doc registry
   framework-write-guard         Check downstream framework-managed files against install provenance
+  framework-validate            Run framework self-validation across core guard and selftest surfaces
+  release-check                 Run source-repo release hygiene checks
+  framework-events [options]    Show typed framework event history
+  run-state [options]           Show active and recent workflow run-state records
+  repo-readiness [path]         Run advisory repo-readiness checks
   framework-proposal <slug>     Scaffold a project-owned upstream Bubbles change proposal
   audit-done [--fix]            Audit all specs marked done
   autofix <spec>                Scaffold missing report sections
@@ -1079,6 +1439,145 @@ cmd_docs_registry() {
   else
     bash "$SCRIPT_DIR/docs-registry-resolve.sh" --effective "${passthrough[@]}"
   fi
+}
+
+cmd_framework_validate() {
+  bash "$SCRIPT_DIR/framework-validate.sh" "$@"
+}
+
+cmd_release_check() {
+  bash "$SCRIPT_DIR/release-check.sh" "$@"
+}
+
+cmd_framework_events() {
+  local tail_count=20
+  local type_filter=''
+  local output_mode='text'
+  local line shown=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --tail)
+        tail_count="$2"
+        shift 2
+        ;;
+      --type)
+        type_filter="$2"
+        shift 2
+        ;;
+      --json)
+        output_mode='json'
+        shift
+        ;;
+      *)
+        die "Usage: bubbles framework-events [--tail N] [--type TYPE] [--json]"
+        ;;
+    esac
+  done
+
+  ensure_runtime_event_log
+
+  if [[ "$output_mode" == 'json' ]]; then
+    cat "$CONTROL_PLANE_EVENT_FILE"
+    return 0
+  fi
+
+  echo "Framework events: $CONTROL_PLANE_EVENT_FILE"
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    if [[ -n "$type_filter" && "$line" != *"\"type\":\"$type_filter\""* ]]; then
+      continue
+    fi
+    printf '%s\n' "$line"
+    shown=$((shown + 1))
+  done < <(tail -n "$tail_count" "$CONTROL_PLANE_EVENT_FILE")
+
+  if [[ "$shown" -eq 0 ]]; then
+    echo "No matching framework events."
+  fi
+}
+
+cmd_run_state() {
+  local mode='summary'
+  local output_mode='text'
+  local active_lines recent_lines filtered_active active_count recent_count line
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --active) mode='active' ; shift ;;
+      --recent) mode='recent' ; shift ;;
+      --all) mode='all' ; shift ;;
+      --json) output_mode='json' ; shift ;;
+      *) die "Usage: bubbles run-state [--active|--recent|--all] [--json]" ;;
+    esac
+  done
+
+  ensure_run_state_registry
+
+  if [[ "$output_mode" == 'json' ]]; then
+    cat "$CONTROL_PLANE_RUN_STATE_FILE"
+    return 0
+  fi
+
+  active_lines="$(run_state_lines activeRuns)"
+  recent_lines="$(run_state_lines recentRuns)"
+  filtered_active=''
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    if [[ "$(field_from_json_line "$line" 'runId')" == "${CURRENT_RUN_ID:-}" ]]; then
+      continue
+    fi
+    if [[ -z "$filtered_active" ]]; then
+      filtered_active="$line"
+    else
+      filtered_active="$filtered_active
+$line"
+    fi
+  done <<< "$active_lines"
+
+  echo "Workflow run-state: $CONTROL_PLANE_RUN_STATE_FILE"
+  case "$mode" in
+    active)
+      if [[ -n "$filtered_active" ]]; then
+        printf '%s\n' "$filtered_active"
+      else
+        echo "No active runs."
+      fi
+      ;;
+    recent)
+      if [[ -n "$recent_lines" ]]; then
+        printf '%s\n' "$recent_lines"
+      else
+        echo "No recent runs."
+      fi
+      ;;
+    all)
+      echo
+      echo "Active Runs"
+      if [[ -n "$filtered_active" ]]; then
+        printf '%s\n' "$filtered_active"
+      else
+        echo "No active runs."
+      fi
+      echo
+      echo "Recent Runs"
+      if [[ -n "$recent_lines" ]]; then
+        printf '%s\n' "$recent_lines"
+      else
+        echo "No recent runs."
+      fi
+      ;;
+    summary)
+      active_count="$(printf '%s\n' "$filtered_active" | sed '/^$/d' | wc -l | tr -d ' ')"
+      recent_count="$(printf '%s\n' "$recent_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+      echo "Active runs: $active_count"
+      echo "Recent runs: $recent_count"
+      ;;
+  esac
+}
+
+cmd_repo_readiness() {
+  bash "$SCRIPT_DIR/repo-readiness.sh" "$@"
 }
 
 cmd_framework_write_guard() {
@@ -2106,6 +2605,7 @@ main() {
   CURRENT_BUBBLES_ARGS="$*"
   COMMAND_START_MS="$(current_epoch_ms)"
   CLI_RECORDING_ACTIVE=true
+  begin_cli_run_state
   trap 'record_cli_completion $?' EXIT
 
   case "$command" in
@@ -2126,6 +2626,11 @@ main() {
     regression-quality) cmd_regression_quality "$@" ;;
     docs-registry)      cmd_docs_registry "$@" ;;
     framework-write-guard) cmd_framework_write_guard "$@" ;;
+    framework-validate) cmd_framework_validate "$@" ;;
+    release-check)      cmd_release_check "$@" ;;
+    framework-events)   cmd_framework_events "$@" ;;
+    run-state)          cmd_run_state "$@" ;;
+    repo-readiness)     cmd_repo_readiness "$@" ;;
     framework-proposal)  cmd_framework_proposal "$@" ;;
     audit-done|audit)   cmd_audit_done "$@" ;;
     autofix)            cmd_autofix "$@" ;;

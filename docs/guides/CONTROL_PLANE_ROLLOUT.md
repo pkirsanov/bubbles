@@ -19,7 +19,7 @@ Implementation principle:
 
 ## Workstreams
 
-The rollout covers the control-plane changes across seven workstreams. Several of these surfaces are already active and mechanically enforced; the remaining value of this document is sequencing, adoption guidance, and alignment work.
+The rollout covers the control-plane changes across ten workstreams. Several of these surfaces are already active and mechanically enforced; the remaining value of this document is sequencing, adoption guidance, and alignment work.
 
 1. Specialist delegation, capability discovery, and no-hybrid role enforcement
 2. Central default policy and mode provenance
@@ -28,6 +28,9 @@ The rollout covers the control-plane changes across seven workstreams. Several o
 5. Scenario contract, BDD enforcement, and regression immutability
 6. Grill mode and lockdown behavior governance
 7. TDD-default workflow behavior for bug, chaos, and then broader delivery modes
+8. Framework self-validation and release hygiene
+9. Typed run-state and framework event surfaces
+10. Action-risk classification and repo-readiness boundary enforcement
 
 ## Implementation Surface Matrix
 
@@ -45,6 +48,7 @@ Tasks:
 - add bootstrap checks for missing `.specify/memory/bubbles.config.json`
 - distinguish framework-managed refresh from repo-owned artifact migration
 - expose a doctor/status path that reports missing policy registry, missing version 3 state, and missing `scenario-manifest.json` for active changed specs
+- keep `framework-validate` and `release-check` visible as first-class framework-source operations
 
 ### Guard And Lint Surfaces
 
@@ -117,6 +121,7 @@ Tasks:
 - document the no-destructive migration rule for dirty downstream repos
 - document the difference between framework refresh and project-owned artifact migration
 - document freshness-aware workflow selection for existing features
+- document repo-readiness as advisory framework ops rather than delivery certification
 
 ## Phase 0: Baseline And Inventory
 

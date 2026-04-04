@@ -54,7 +54,7 @@ The single code block must contain:
 7.  **Evidence References:** (List of evidence already recorded in report.md — section anchors and what they prove)
 8.  **Baseline Health:** (Pre-change baseline test counts if captured: total/passing/failing/skipped)
 9.  **Recommended Workflow Continuation:** (Exact `/bubbles.workflow ...` command to run next)
-10. **Continuation Envelope:** (Machine-readable continuation packet with target, intent, preferredWorkflowMode, tags, and reason)
+10. **Continuation Envelope:** (Machine-readable continuation packet with target, intent, preferredWorkflowMode, tags, and reason. Preserve the exact active workflow mode when one is already in progress; do not collapse workflow continuation into raw specialist follow-ups.)
 11. **Code Context:** (Brief snippet of last change, **no nested code fences**)
 
 At the very end of the block, include this exact restoration command (still inside the same code block):

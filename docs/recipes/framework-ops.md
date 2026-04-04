@@ -2,7 +2,7 @@
 
 > *"Ask the super first. We'll figure out the right move before we make a mess of this."*
 
-Use `bubbles.super` when the problem is about the Bubbles framework itself: health, hooks, gates, metrics, upgrades, or recovering from a framework-level problem. If you need broader prompt help first, use the dedicated [Ask the Super First](ask-the-super-first.md) recipe.
+Use `bubbles.super` when the problem is about the Bubbles framework itself: health, hooks, gates, metrics, framework validation, release hygiene, repo-readiness guidance, upgrades, or recovering from a framework-level problem. If you need broader prompt help first, use the dedicated [Ask the Super First](ask-the-super-first.md) recipe.
 
 If the work is inside a target project's CI/CD, deployment, monitoring, or build surfaces, use [DevOps Work](devops-work.md) instead. If that work is cross-cutting and not feature-owned, use [Ops Packet Work](ops-packet-work.md). Framework ops is for Bubbles itself, not application delivery plumbing.
 
@@ -29,10 +29,30 @@ Or via CLI:
 bash .github/bubbles/scripts/cli.sh doctor --heal
 bash .github/bubbles/scripts/cli.sh agnosticity
 bash .github/bubbles/scripts/cli.sh framework-write-guard
+bash .github/bubbles/scripts/cli.sh framework-validate
+bash .github/bubbles/scripts/cli.sh framework-events --tail 20
+bash .github/bubbles/scripts/cli.sh run-state --all
+bash .github/bubbles/scripts/cli.sh repo-readiness . --deep
 bash .github/bubbles/scripts/cli.sh guard-selftest
 ```
 
 `guard-selftest` exercises the framework's promotion guard with temporary fixtures so you can verify the concrete-result and child-workflow enforcement paths without mutating real specs.
+
+`framework-validate` is the framework's self-check surface. Use it when you want the portable-surface, ownership, registry, and selftest surfaces verified as a bundle.
+
+`framework-events` exposes the typed framework event stream, and `run-state` shows the active and recent workflow-run records that make resume and runtime attachment explicit.
+
+## Run Release Hygiene Checks
+
+Use this in the Bubbles source repo before packaging or publishing framework changes:
+
+```bash
+bash bubbles/scripts/cli.sh release-check
+```
+
+`release-check` runs framework validation first, confirms the expected release docs are present, and blocks shipment when stray temp or backup files are still in the tree.
+
+This is a framework-source operation, not a downstream repo command.
 
 ## Install Git Hooks
 
@@ -186,6 +206,14 @@ Use `bubbles.super` when something in the framework itself is confused, blocked,
   2. /bubbles.super  doctor --heal
   3. /bubbles.commands
   4. /bubbles.super  install hooks
+```
+
+If the question is specifically whether a repo is well-prepared for agentic work, the super should frame that as **repo-readiness guidance**, not certification. Use the repo-readiness skill or an equivalent framework-ops checklist, and do not treat the result as a substitute for `bubbles.validate`.
+
+If you want the guidance as a concrete CLI check instead of a skill-only conversation, run:
+
+```bash
+bash .github/bubbles/scripts/cli.sh repo-readiness .
 ```
 
 ### Still Not Sure?

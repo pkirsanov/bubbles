@@ -111,7 +111,7 @@ build_scope_analysis_units() {
   fi
 
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]] ]]; then
+    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]]+[0-9]+: ]]; then
       if [[ -n "$current_tmp" ]]; then
         scope_analysis_files+=("$current_tmp")
         scope_analysis_labels+=("$current_label")
@@ -351,27 +351,26 @@ scenario_matches_row() {
 
 scope_layout="$(detect_scope_layout)"
 scope_files=()
-scope_layout="$(detect_scope_layout)"
-scope_files=()
 scope_analysis_files=()
 scope_analysis_labels=()
 
 if [[ "$scope_layout" == "per-scope-directory" ]]; then
-  for scope_path in "${scope_files[@]}"; do
-    build_scope_analysis_units "$scope_path"
-  done
-
-  if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
-    scope_analysis_files=("${scope_files[@]}")
-    for scope_path in "${scope_files[@]}"; do
-      scope_analysis_labels+=("${scope_path#$feature_dir/}")
-    done
-  fi
   while IFS= read -r scope_path; do
     scope_files+=("$scope_path")
   done < <(find "$feature_dir/scopes" -mindepth 2 -maxdepth 2 -type f -name 'scope.md' | sort)
 else
   scope_files+=("$feature_dir/scopes.md")
+fi
+
+for scope_path in "${scope_files[@]}"; do
+  build_scope_analysis_units "$scope_path"
+done
+
+if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
+  scope_analysis_files=("${scope_files[@]}")
+  for scope_path in "${scope_files[@]}"; do
+    scope_analysis_labels+=("${scope_path#$feature_dir/}")
+  done
 fi
 
 echo "============================================================"
@@ -534,10 +533,11 @@ dod_fidelity_total=0
 dod_fidelity_mapped=0
 dod_fidelity_unmapped=0
 
-for scope_path in "${scope_files[@]}"; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
 
-  scope_label="${scope_path#$feature_dir/}"
+  scope_label="$(scope_analysis_label "$scope_index")"
   scenarios="$(extract_scenarios "$scope_path")"
   dod_items="$(extract_dod_items "$scope_path")"
 

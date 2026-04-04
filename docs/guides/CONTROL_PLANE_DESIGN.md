@@ -10,12 +10,15 @@ Related documents:
 
 ## Why This Change Exists
 
-Bubbles already has strong specialist-agent boundaries, gate-driven workflows, state-transition checks, and optional tags such as `grillMode`, `tdd`, and `autoCommit`. The current framework still has four systemic weaknesses:
+Bubbles already has strong specialist-agent boundaries, gate-driven workflows, state-transition checks, and optional tags such as `grillMode`, `tdd`, and `autoCommit`. The current framework still has seven systemic weaknesses:
 
 1. Delegation is described in prose more often than enforced through a registry.
 2. State authority is fragmented across workflow, specialists, and guard scripts.
 3. User-visible behavior contracts are tracked as prose Gherkin instead of stable machine-readable scenario identities.
 4. Optional execution tags are not yet a first-class repo-level policy surface with default provenance.
+5. Framework-level self-validation and release hygiene are spread across individual scripts rather than described as first-class control-plane operations.
+6. Run-state and framework event history are still more narrative than typed, which makes resume and postmortem analysis harder than they should be.
+7. Risk level is implicit in many framework actions even though runtime teardown, external side effects, and owned mutations should be visibly classified.
 
 The requested changes all point to the same architectural direction: Bubbles needs a real control plane.
 
@@ -36,6 +39,9 @@ The target architecture must satisfy all of the following:
 11. Every user-visible or externally observable behavior change must have explicit Gherkin and passing live-system BDD evidence.
 12. Existing repos and active specs can adopt the control plane incrementally without blind rewrites or mixed authoritative state.
 13. Concurrent sessions must coordinate shared Docker or runtime resources through an explicit lease registry so reuse is safe and teardown blast radius is bounded.
+14. The framework must expose a first-class self-validation surface so shipping or upgrading Bubbles does not depend on tribal knowledge of which scripts to chain.
+15. Repo-readiness guidance must stay separate from completion certification so repos can be assessed without weakening validate-owned authority.
+16. Framework actions should advertise their risk class so advice, automation, and future approvals can reason about blast radius explicitly.
 
 ## Non-Goals
 
@@ -48,7 +54,7 @@ This design does not propose:
 
 ## Architecture Overview
 
-The new control plane has eight cooperating parts.
+The new control plane has eleven cooperating parts.
 
 ### 1. Agent Capability Registry
 
@@ -134,6 +140,32 @@ The registry is responsible for:
 
 This keeps source-level parallelism (`gitIsolation`, worktrees, parallel scopes) from accidentally colliding at the container/runtime layer.
 
+### 2.6. Workflow Run-State
+
+The framework already records execution and certification state, but long-running or resumed work also needs a typed run-state surface that answers simpler operational questions:
+
+- what workflow run is active right now
+- which packet or continuation target is pending
+- what runtime lease or shared stack the run is attached to
+- whether a run is resuming, retrying, or recovering from a routed packet
+
+This is distinct from completion authority. Run-state is about safe continuation and inspection, not promotion.
+
+### 2.7. Framework Event Stream
+
+Guard scripts, packets, runtime lease transitions, and policy provenance changes should be representable as typed framework events instead of only prompt prose or loose terminal output. A typed event stream enables better resume diagnostics, metrics, and later automation without weakening the existing raw-evidence rules.
+
+Examples of useful event classes:
+
+- `gate_passed`
+- `gate_failed`
+- `packet_emitted`
+- `packet_consumed`
+- `runtime_lease_acquired`
+- `runtime_lease_released`
+- `policy_snapshot_recorded`
+- `certification_downgraded`
+
 ### 3. Validate-Owned Certification State
 
 Current Bubbles guidance allows specialists to append their own phase completion metadata. That is useful for execution traceability but not strong enough for the stricter model requested here.
@@ -212,6 +244,26 @@ If `bubbles.validate` reopens work, it should never just uncheck a box and stop.
 
 If a diagnostic agent finds a tiny, obvious fix, it should still emit a narrow packet. The orchestrator may then immediately dispatch that packet to the correct owner with tightly scoped context. This preserves micro-fix speed without creating hybrid agents.
 
+### 5.5. Action Risk Classification
+
+Framework operations are easier to reason about when each action advertises its risk class up front. The control plane should classify framework actions using a small, stable vocabulary:
+
+- `read_only`
+- `owned_mutation`
+- `destructive_mutation`
+- `external_side_effect`
+- `runtime_teardown`
+
+Examples:
+
+- `doctor` is mostly `read_only`, with `owned_mutation` only when `--heal` is explicitly requested
+- `framework-validate` is `read_only`
+- `release-check` is `read_only`
+- runtime stack cleanup is `runtime_teardown`
+- hook installation is `owned_mutation`
+
+This gives the super-agent, CLI, and future approval flows a shared safety vocabulary.
+
 ### 6. Grill Mode As An Interactive Ambiguity Gate
 
 `bubbles.grill` should remain distinct from `bubbles.clarify`.
@@ -244,6 +296,16 @@ This gives Bubbles a safe way to protect already-approved product behavior.
 The control plane is only useful if existing repos can adopt it without corrupting in-flight work. The framework therefore needs an explicit adoption model for active specs, not just greenfield templates.
 
 The adoption model has four required behaviors.
+
+### 8.5. Repo-Readiness Boundary
+
+Repo-readiness is useful, but it is not the same thing as delivery certification. The control plane should treat repo-readiness as an advisory framework-ops surface that answers questions like:
+
+- are the command entrypoints documented and real
+- do the framework-owned surfaces appear intact
+- are the local instructions and operational assumptions legible enough for agents to work safely
+
+It must not be allowed to certify scope completion, satisfy `bubbles.validate`, or silently replace scenario- and evidence-based delivery gates.
 
 #### 8.1. Validate-Owned Certification Migration
 

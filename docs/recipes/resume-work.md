@@ -19,9 +19,11 @@ You were working on something in a previous session and need to pick up where yo
 ```
 
 **What happens:**
-1. "continue" delegates to `iterate` to pick the next highest-priority work
-2. "resume" reads `state.json` from the last active spec
-3. Continues from exactly where it stopped
+1. `continue` tries to resume the active workflow context first when a continuation envelope, workflow run-state record, or non-terminal spec state is available
+2. If no active workflow continuation can be recovered safely, workflow falls back to `iterate` to pick the next highest-priority work
+3. `resume` reads `state.json` from the last active spec and continues from exactly where it stopped
+
+That matters after workflows like `stochastic-quality-sweep`: follow-ups such as `fix all found` or `address the rest` should keep the work inside the active workflow mode instead of downshifting into raw specialist execution.
 
 ## Alternative: Check Status First
 
@@ -36,6 +38,15 @@ See what's in progress, what's done, what's remaining. Then:
 ```
 
 If the next executable action is unclear, feed the recap/status recommendation back into `/bubbles.workflow`; it can consume continuation packets and keep orchestration intact.
+
+If the previous run ended with remaining routed work, you can also say things like:
+
+```
+/bubbles.workflow  fix all found
+/bubbles.workflow  address the rest
+```
+
+Those are continuation-shaped requests. Workflow now resolves them against active continuation context before it ever falls back to generic work-picking.
 
 ## If the Previous Session Saved a Handoff
 

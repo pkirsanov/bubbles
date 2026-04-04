@@ -27,7 +27,7 @@
 
 ## What Is This?
 
-Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work.
+Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work, plus a control plane that tracks certification authority, scenario contracts, workflow run-state, typed framework events, runtime lease safety, and framework-level validation.
 
 **One entry point. Just describe what you want:**
 
@@ -49,6 +49,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>29 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
 </table>
 
 ---
@@ -107,6 +108,8 @@ Runtime-generated control-plane artifacts are created on demand and should remai
 - `.specify/memory/skill-proposals-dismissed.md`
 - `.specify/metrics/*.jsonl`
 - `.specify/runtime/resource-leases.json`
+- `.specify/runtime/workflow-runs.json`
+- `.specify/runtime/framework-events.jsonl`
 
 After bootstrap, update the `TODO` items in the generated files, then start using agents.
 
@@ -196,7 +199,7 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
 | <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **Universal entry point.** Accepts plain English, structured commands, or "continue". Resolves intent via `super`, picks work via `iterate`, drives all phases to completion. | **Always. Just describe what you want.** |
-| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **Framework ops & advice.** NLP resolver, command generator, framework health, hooks, gates, upgrades. Workflow delegates to it automatically for vague input. | Framework operations, advice without execution |
+| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **Framework ops & advice.** NLP resolver, command generator, framework health, framework validation, release hygiene, hooks, gates, upgrades, and repo-readiness guidance. Workflow delegates to it automatically for vague input. | Framework operations, advice without execution |
 
 ### <img src="icons/jacob-hardhat.svg" width="24"> Orchestrators
 

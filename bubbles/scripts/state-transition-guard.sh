@@ -111,7 +111,7 @@ build_scope_analysis_units() {
   fi
 
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]] ]]; then
+    if [[ "$line" =~ ^##[[:space:]]+Scope[[:space:]]+[0-9]+: ]]; then
       if [[ -n "$current_tmp" ]]; then
         scope_analysis_files+=("$current_tmp")
         scope_analysis_labels+=("$current_label")
@@ -167,22 +167,9 @@ trap cleanup_tmp_artifacts EXIT
 scope_layout="$(detect_scope_layout)"
 scope_index_file="$feature_dir/scopes/_index.md"
 scope_files=()
-scope_layout="$(detect_scope_layout)"
-scope_index_file="$feature_dir/scopes/_index.md"
-scope_files=()
 scope_analysis_files=()
 scope_analysis_labels=()
 report_files=()
-for scope_path in "${scope_files[@]}"; do
-  build_scope_analysis_units "$scope_path"
-done
-
-if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
-  scope_analysis_files=("${scope_files[@]}")
-  for scope_path in "${scope_files[@]}"; do
-    scope_analysis_labels+=("${scope_path#$feature_dir/}")
-  done
-fi
 scenario_manifest_file="$feature_dir/scenario-manifest.json"
 lockdown_approvals_file="$feature_dir/lockdown-approvals.json"
 invalidation_ledger_file="$feature_dir/invalidation-ledger.json"
@@ -201,6 +188,17 @@ if [[ "$scope_layout" == "per-scope-directory" ]]; then
 else
   scope_files+=("$feature_dir/scopes.md")
   report_files+=("$feature_dir/report.md")
+fi
+
+for scope_path in "${scope_files[@]}"; do
+  build_scope_analysis_units "$scope_path"
+done
+
+if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
+  scope_analysis_files=("${scope_files[@]}")
+  for scope_path in "${scope_files[@]}"; do
+    scope_analysis_labels+=("${scope_path#$feature_dir/}")
+  done
 fi
 
 scopes_file=""

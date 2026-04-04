@@ -53,6 +53,8 @@ Runtime-generated control-plane artifacts are intentionally not bootstrap fixtur
 - `.specify/memory/skill-proposals-dismissed.md`
 - `.specify/metrics/*.jsonl`
 - `.specify/runtime/resource-leases.json`
+- `.specify/runtime/workflow-runs.json`
+- `.specify/runtime/framework-events.jsonl`
 
 Bootstrap-owned Bubbles artifacts must come from one of these two paths only:
 - installer/bootstrap from the Bubbles repo

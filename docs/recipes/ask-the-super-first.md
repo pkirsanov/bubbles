@@ -72,14 +72,26 @@ Use this recipe when any of these are true:
 /bubbles.super  why did my workflow stop after validate?
 → A diagnosis of the likely framework reason and the recovery command
 
+/bubbles.super  fix all found from the last sweep
+→ /bubbles.workflow  <same target> mode: stochastic-quality-sweep
+
 /bubbles.super  my hooks don't seem installed right, fix that
 → The repair action plus the verification command
 
 /bubbles.super  why are my parallel sessions colliding?
 → `bubbles runtime doctor` plus the safest recovery step
 
+/bubbles.super  what just happened in the framework?
+→ `bash <source-or-downstream-cli> framework-events --tail 20`
+
+/bubbles.super  show me the active and recent workflow runs
+→ `bash <source-or-downstream-cli> run-state --all`
+
 /bubbles.super  reuse the validation stack if it is compatible
 → `bubbles runtime acquire --purpose validation --share-mode shared-compatible --fingerprint-file docker-compose.yml`
+
+/bubbles.super  is this repo ready for Bubbles?
+→ `bash <source-or-downstream-cli> repo-readiness .`
 ```
 
 ## Ask It To Translate Problems Into Bubbles
@@ -99,3 +111,7 @@ Good requests include one of these:
 - The outcome: "turn this into the right prompts"
 
 You do not need perfect framework vocabulary. Just describe the situation and let the super resolve it.
+
+Super should resolve the correct CLI path automatically:
+- source framework repo: `bash bubbles/scripts/cli.sh ...`
+- downstream installed repo: `bash .github/bubbles/scripts/cli.sh ...`

@@ -11,7 +11,7 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 | Input Type | What Happens | Example |
 |-----------|-------------|---------|
 | **Plain English** | Delegates to `super` for NLP resolution → gets mode + spec + tags | `/bubbles.workflow improve the booking feature` |
-| **"Continue" / "next"** | Delegates to `iterate` for work-picking → gets next priority item | `/bubbles.workflow continue` |
+| **"Continue" / continuation language** | Resumes the active workflow when continuation context exists; otherwise falls back to `iterate` for work-picking | `/bubbles.workflow continue` |
 | **Structured** | Skips resolution, executes directly | `/bubbles.workflow specs/042 mode: full-delivery` |
 | **Framework ops** | Delegates to `super` for framework operations | `/bubbles.workflow doctor` |
 
@@ -28,6 +28,8 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 # Continue from where you left off
 /bubbles.workflow  continue
 /bubbles.workflow  next
+/bubbles.workflow  fix all found
+/bubbles.workflow  address the rest
 
 # Framework operations
 /bubbles.workflow  doctor
@@ -57,7 +59,7 @@ If recap, status, or handoff told you what to do next, prefer feeding that recom
   │
   ├─ structured input → execute phases directly
   ├─ vague input     → runSubagent(super) → resolve → execute
-  ├─ "continue"      → runSubagent(iterate) → pick work → execute
+  ├─ continuation    → resume active workflow if available → else runSubagent(iterate) → pick work → execute
   └─ framework op    → runSubagent(super) → execute op → report
 ```
 

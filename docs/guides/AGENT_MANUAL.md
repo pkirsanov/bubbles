@@ -18,7 +18,7 @@ Authoritative operating policy lives under `agents/bubbles_shared/`. This manual
 
 ### bubbles.super
 
-Use for framework operations (doctor, hooks, upgrade, metrics) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input.
+Use for framework operations (doctor, framework validation, release checks, framework events, run-state inspection, hooks, upgrade, metrics, repo-readiness guidance) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input. Super should dynamically discover the live agent, mode, command, recipe, skill, instruction, risk, and runtime surfaces before recommending commands.
 
 Primary references:
 - `bubbles/workflows.yaml`

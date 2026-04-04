@@ -37,6 +37,8 @@ Control-plane law also requires owner-only remediation and concrete result envel
 
 > **💡 Tip:** `bubbles.super` should be your natural-language front door, not a mandatory middleman. Use it when you need translation or guidance. If you already know the exact agent or mode, call it directly.
 
+> **💡 Tip:** Repo-readiness is advisory framework guidance, not delivery certification. Use framework ops when you want to know if a repo is well-prepared for agentic work; use `bubbles.validate` when you need completion authority.
+
 > **💡 Tip:** For release-candidate or "no loose ends" work, ask for `delivery-lockdown` rather than a one-pass sweep. It reuses the test, quality, validation, and bug workflows until certification is actually clean.
 
 ## Getting Started
@@ -110,7 +112,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
 | [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |
 | [Update Docs](update-docs.md) | "Code changed, managed docs need publishing or cleanup" |
-| [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — hooks, gates, upgrades, metrics" |
+| [Framework Ops](framework-ops.md) | "I need to manage Bubbles itself — health, framework validation, release hygiene, hooks, gates, upgrades, metrics" |
 | [Structured Commits](structured-commits.md) | "I want clean, scope-by-scope git history" |
 | [Custom Gates](custom-gates.md) | "I need project-specific quality checks beyond the built-in framework gates" |
 | [Cross-Model Review](cross-model-review.md) | "I want a second AI opinion from a different model on my code review" |

@@ -14,6 +14,7 @@ fi
 
 RUNTIME_DIR="$REPO_ROOT/.specify/runtime"
 RUNTIME_FILE="$RUNTIME_DIR/resource-leases.json"
+EVENT_FILE="$RUNTIME_DIR/framework-events.jsonl"
 RUNTIME_LOCK_DIR="$RUNTIME_DIR/.locks/resource-leases.lock"
 CONTROL_PLANE_CONFIG="$REPO_ROOT/.specify/memory/bubbles.config.json"
 SESSION_FILE="$REPO_ROOT/.specify/memory/bubbles.session.json"
@@ -64,6 +65,23 @@ json_escape() {
   raw=${raw//$'\n'/ }
   raw=${raw//$'\r'/ }
   printf '%s' "$raw"
+}
+
+append_jsonl() {
+  local target_file="$1"
+  local payload="$2"
+
+  mkdir -p "$(dirname "$target_file")"
+  printf '%s\n' "$payload" >> "$target_file"
+}
+
+record_framework_event() {
+  local event_type="$1"
+  local result="$2"
+  local details="$3"
+  local risk_class="$4"
+
+  append_jsonl "$EVENT_FILE" "{\"version\":1,\"type\":\"$(json_escape "$event_type")\",\"timestamp\":\"$(current_timestamp)\",\"sessionId\":\"$(json_escape "$(derive_session_id)")\",\"command\":\"runtime\",\"target\":\"runtime\",\"riskClass\":\"$(json_escape "$risk_class")\",\"result\":\"$(json_escape "$result")\",\"durationMs\":0,\"details\":\"$(json_escape "$details")\"}"
 }
 
 hash_command() {
@@ -821,6 +839,7 @@ cmd_acquire() {
         replacement_line="$(rebuild_line_with_updates "$line" "$(field_from_line "$line" sessionId)" "$attached_sessions" "$started_at" "$expires_at" active)"
         update_lease_line "$(field_from_line "$line" leaseId)" "$replacement_line"
         release_registry_lock
+        record_framework_event "runtime_lease_reused" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "owned_mutation"
         echo "✅ Reused existing runtime lease"
         format_lease_line "$replacement_line"
         return 0
@@ -842,6 +861,7 @@ cmd_acquire() {
         replacement_line="$(rebuild_line_with_updates "$line" "$(field_from_line "$line" sessionId)" "$attached_sessions" "$started_at" "$expires_at" active)"
         update_lease_line "$(field_from_line "$line" leaseId)" "$replacement_line"
         release_registry_lock
+        record_framework_event "runtime_lease_reused" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "owned_mutation"
         echo "✅ Reused compatible runtime lease"
         format_lease_line "$replacement_line"
         return 0
@@ -886,6 +906,7 @@ $line"
   write_runtime_registry "$lines"
   release_registry_lock
 
+  record_framework_event "runtime_lease_acquired" "success" "leaseId=$(field_from_line "$line" leaseId) composeProject=$(field_from_line "$line" composeProject)" "owned_mutation"
   echo "✅ Acquired runtime lease"
   format_lease_line "$line"
 }
@@ -931,6 +952,7 @@ cmd_attach() {
       replacement_line="$(rebuild_line_with_updates "$line" "$owner_session" "$attached_sessions" "$now" "$expires_at" active)"
       update_lease_line "$lease_id" "$replacement_line"
       release_registry_lock
+      record_framework_event "runtime_lease_attached" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "owned_mutation"
       echo "✅ Attached to runtime lease"
       format_lease_line "$replacement_line"
       return 0
@@ -940,6 +962,7 @@ cmd_attach() {
       replacement_line="$(rebuild_line_with_updates "$line" "$session_id" "$session_id" "$now" "$expires_at" active)"
       update_lease_line "$lease_id" "$replacement_line"
       release_registry_lock
+      record_framework_event "runtime_lease_taken_over" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "owned_mutation"
       echo "✅ Took over stale runtime lease"
       format_lease_line "$replacement_line"
       return 0
@@ -979,6 +1002,7 @@ cmd_heartbeat() {
     replacement_line="$(rebuild_line_with_updates "$line" "$(field_from_line "$line" sessionId)" "$attached_sessions" "$now" "$expires_at" active)"
     update_lease_line "$lease_id" "$replacement_line"
     release_registry_lock
+    record_framework_event "runtime_lease_heartbeat" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "owned_mutation"
     echo "✅ Renewed runtime lease heartbeat"
     format_lease_line "$replacement_line"
     return 0
@@ -1038,6 +1062,7 @@ cmd_release() {
         replacement_line="$(rebuild_line_with_updates "$line" "$current_owner" "$updated_sessions" "$now" "$now" released)"
         update_lease_line "$lease_id" "$replacement_line"
         release_registry_lock
+        record_framework_event "runtime_lease_released" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "runtime_teardown"
         echo "✅ Released runtime lease"
         format_lease_line "$replacement_line"
         return 0
@@ -1054,6 +1079,7 @@ cmd_release() {
       replacement_line="$(rebuild_line_with_updates "$line" "$next_owner" "$updated_sessions" "$now" "$(timestamp_plus_minutes "$CFG_RUNTIME_TTL_MINUTES")" active)"
       update_lease_line "$lease_id" "$replacement_line"
       release_registry_lock
+      record_framework_event "runtime_lease_detached" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "runtime_teardown"
       echo "✅ Detached session from runtime lease"
       format_lease_line "$replacement_line"
       return 0
@@ -1062,6 +1088,7 @@ cmd_release() {
     replacement_line="$(rebuild_line_with_updates "$line" "$(field_from_line "$line" sessionId)" "$(field_from_line "$line" attachedSessions)" "$now" "$now" released)"
     update_lease_line "$lease_id" "$replacement_line"
     release_registry_lock
+    record_framework_event "runtime_lease_released" "success" "leaseId=$(field_from_line "$replacement_line" leaseId) composeProject=$(field_from_line "$replacement_line" composeProject)" "runtime_teardown"
     echo "✅ Released runtime lease"
     format_lease_line "$replacement_line"
     return 0
@@ -1094,6 +1121,7 @@ $line"
 
   write_runtime_registry "$updated"
   release_registry_lock
+  record_framework_event "runtime_leases_reclaimed" "success" "stale leases marked in $RUNTIME_FILE" "runtime_teardown"
   echo "✅ Marked stale runtime leases"
   cmd_list
 }

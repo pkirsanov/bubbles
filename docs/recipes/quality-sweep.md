@@ -63,6 +63,15 @@ Don't know what to check? Let the system randomly pick:
 /bubbles.workflow  stochastic-quality-sweep
 ```
 
+When a stochastic sweep turns up real work, keep the remediation inside workflow orchestration:
+
+```
+/bubbles.workflow  fix all found
+/bubbles.workflow  address the rest
+```
+
+Those follow-ups now preserve the active sweep context when continuation state is available, so the system keeps the workflow-owned fix/finalize chain instead of collapsing into raw `/bubbles.implement` or `/bubbles.test` advice.
+
 For repeated passes from one specialist angle, constrain the trigger pool instead of using a deterministic batch mode:
 
 ```

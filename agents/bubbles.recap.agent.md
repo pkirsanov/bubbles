@@ -41,10 +41,12 @@ When recap can identify a concrete continuation target, end the response with:
 - target: specs/<NNN-feature> | specs/<NNN-feature>/bugs/BUG-... | none
 - targetType: feature | bug | ops | framework | none
 - intent: continue delivery | close bug | validate release readiness | publish docs | framework follow-up
-- preferredWorkflowMode: delivery-lockdown | bugfix-fastlane | validate-to-doc | docs-only | devops-to-doc | none
+- preferredWorkflowMode: <any valid workflow mode from bubbles/workflows.yaml> | none
 - tags: <comma-separated tags or none>
 - reason: <short rationale>
 - directAgentOnly: false
 ```
+
+If the current or most recent actionable continuation is already an active workflow mode such as `stochastic-quality-sweep`, `iterate`, or `delivery-lockdown`, preserve that exact mode in the envelope instead of collapsing it to a raw specialist or generic fallback.
 
 If no actionable workflow target exists, set `target: none`, `preferredWorkflowMode: none`, and explain why in `reason`.

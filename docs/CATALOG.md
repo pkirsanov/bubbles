@@ -46,7 +46,7 @@ Every recipe solves a specific problem. Find yours, follow the steps.
 | 34 | [Cross-Model Review](recipes/cross-model-review.md) | `crossModelReview` | Second AI opinion |
 | 35 | [Structured Commits](recipes/structured-commits.md) | `autoCommit: scope` | Clean git history |
 | 36 | [Custom Gates](recipes/custom-gates.md) | CLI | Project-specific quality checks |
-| 37 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Hooks, gates, upgrades, metrics |
+| 37 | [Framework Ops](recipes/framework-ops.md) | CLI / `bubbles.super` | Health, framework validation, release hygiene, hooks, gates, upgrades, metrics |
 | 38 | [Coordinate Runtime Leases](recipes/runtime-coordination.md) | `bubbles runtime ...` | Shared Docker/Compose ownership and conflict recovery |
 | 39 | [Check Status](recipes/check-status.md) | `bubbles.status` | Current work state |
 | 40 | [End of Day](recipes/end-of-day.md) | `bubbles.handoff` | Session handoff |

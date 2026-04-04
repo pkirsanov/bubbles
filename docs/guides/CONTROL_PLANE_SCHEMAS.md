@@ -11,7 +11,7 @@ The version 3 state model, `policySnapshot`, `certification.*`, and `scenario-ma
 
 ## Schema Set
 
-The control plane needs ten concrete schema surfaces:
+The control plane needs thirteen concrete schema surfaces:
 
 1. Agent capability registry
 2. Execution policy registry
@@ -23,6 +23,54 @@ The control plane needs ten concrete schema surfaces:
 8. Lockdown approval record
 9. Invalidation ledger entry
 10. Runtime lease registry
+11. Workflow run-state record
+12. Framework event log entry
+13. Action risk classification registry
+
+The newer surfaces above are active runtime or framework surfaces:
+
+- `runtime lease registry` is active
+- `workflow run-state` is active at `.specify/runtime/workflow-runs.json`
+- `framework event log` is active at `.specify/runtime/framework-events.jsonl`
+- `action risk classification registry` is active at `bubbles/action-risk-registry.yaml`
+- `framework-validate` and `release-check` are operational command surfaces that sit on top of these schemas rather than replacing them
+
+## Extension Surface Notes
+
+### Workflow Run-State Record
+
+Runtime file: `.specify/runtime/workflow-runs.json`
+
+Purpose: describe the active workflow run, pending continuation target, runtime attachment, and retry/resume posture without overloading completion certification fields.
+
+CLI surface:
+
+```text
+bubbles run-state
+bubbles run-state --active
+bubbles run-state --recent
+bubbles run-state --all
+```
+
+### Framework Event Log Entry
+
+Runtime file: `.specify/runtime/framework-events.jsonl`
+
+Purpose: represent gate outcomes, packet routing, runtime lease transitions, and policy provenance changes as typed events.
+
+CLI surface:
+
+```text
+bubbles framework-events
+bubbles framework-events --tail 50
+bubbles framework-events --type runtime_lease_acquired
+```
+
+### Action Risk Classification Registry
+
+Registry file: `bubbles/action-risk-registry.yaml`
+
+Purpose: give framework commands and packets a stable risk vocabulary such as `read_only`, `owned_mutation`, `destructive_mutation`, `external_side_effect`, and `runtime_teardown`.
 
 ## 1. Agent Capability Registry
 

@@ -19,10 +19,12 @@ Workflow modes define **which phases run** and **in what order** for a given pie
 **How it works:**
 - **Structured input** (has `mode:` + spec target) → executes phases directly (existing behavior)
 - **Plain English** → delegates to `super` for intent resolution → gets mode + spec + tags → executes
-- **"Continue" / "next" / empty** → delegates to `iterate` for work-picking → gets next priority item → executes
+- **"Continue" / continuation-shaped input** → resumes the active workflow when continuation context is available; otherwise delegates to `iterate` for work-picking → gets next priority item → executes
 - **Framework ops** ("doctor", "hooks", "upgrade") → delegates to `super` for framework operations
 
 Direct agent calls (`/bubbles.super`, `/bubbles.iterate`, `/bubbles.implement`, etc.) still work for users who know exactly what they want, but recap/status/handoff continuations should normally route back through `/bubbles.workflow` so orchestration and certification stay intact.
+
+Continuation-shaped input includes plain `continue`/`next`, but also phrases like `fix all found`, `fix the rest`, and `address the rest` after a workflow run. Those should preserve the active workflow mode whenever workflow packets, run-state, or active spec state make that mode recoverable.
 
 ## Review Is Not A Workflow Mode
 
@@ -265,6 +267,8 @@ select → bootstrap → harden → docs → validate → audit → finalize
 ```
 
 **Use when:** Periodic adversarial maintenance across the codebase.
+
+If a sweep ends with findings and routed follow-up work, resume it through `/bubbles.workflow` using continuation-shaped language such as `fix all found` or `address the rest`. The workflow should preserve the active `stochastic-quality-sweep` continuation context instead of flattening the result into raw specialist next steps.
 
 ### <img src="../../icons/lahey-bottle.svg" width="20"> retro-quality-sweep
 
