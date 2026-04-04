@@ -31,6 +31,12 @@ Use this recipe when any of these are true:
 /bubbles.super  I need the no-loose-ends release workflow for booking
 → /bubbles.workflow  <booking-spec> mode: delivery-lockdown
 
+/bubbles.super  I have a rough idea and want to think it through before we write code
+→ /bubbles.workflow  mode: brainstorm for <idea>
+
+/bubbles.super  I want the brownfield improvement path that researches current reality before it starts designing fixes
+→ /bubbles.workflow  <feature-spec> mode: improve-existing
+
 /bubbles.super  review this repo before we decide what to spec
 → /bubbles.system-review  scope: full-system output: summary-doc
 
@@ -83,6 +89,12 @@ Use this recipe when any of these are true:
 
 /bubbles.super  what just happened in the framework?
 → `bash <source-or-downstream-cli> framework-events --tail 20`
+
+/bubbles.super  show me whether we're shipping progress or just cleaning up rework
+→ `/bubbles.retro  week`
+
+/bubbles.super  did our prompt surfaces get too bloated?
+→ `bash <source-or-downstream-cli> lint-budget`
 
 /bubbles.super  show me the active and recent workflow runs
 → `bash <source-or-downstream-cli> run-state --all`

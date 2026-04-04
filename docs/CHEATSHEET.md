@@ -175,6 +175,18 @@
 
 **Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `crossModelReview` (off|codex|terminal)
 
+### How Users Actually Use The Newer Planning Improvements
+
+| Goal | What To Run | What Shows Up |
+|------|-------------|---------------|
+| Explore an idea before code | `/bubbles.workflow  mode: brainstorm for <idea>` | Planning artifacts only, no code |
+| Improve an existing feature | `/bubbles.workflow  improve <feature>` | Objective research pass, then Design Brief + Execution Outline |
+| Fix a bug in existing code | `/bubbles.workflow  fix the <bug>` | Bugfix-fastlane with objective research and reproduce/fix/verify flow |
+| Keep moving the current work forward | `/bubbles.workflow  continue` | Resume active workflow or fall back to `iterate` |
+| Keep going until the feature is truly green | `/bubbles.workflow  <feature> mode: delivery-lockdown` | Repeated quality/certification rounds until done or concretely blocked |
+| Inspect rework and bug-magnet patterns | `/bubbles.retro  week` | Slop Tax, retries, reversions, hotspots |
+| Audit framework prompt size | `bash bubbles/scripts/cli.sh lint-budget` | Instruction budget report for framework maintainers |
+
 **Baseline workflow law:** spec/design/plan coherence, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof are required before implementation starts.
 
 **Control-plane law:** `state.json.execution.*` records runtime claims, `state.json.certification.*` is validate-owned authority, `policySnapshot` records effective defaults with provenance, changed behavior should flow through `scenario-manifest.json` with stable `SCN-*` contracts, diagnostics and certification route foreign-owned work instead of fixing inline, and every invocation ends with a concrete result envelope.
@@ -193,6 +205,15 @@
 | `typed framework event` | Structured framework log entry for gate outcomes, packet routing, lease changes, and policy provenance instead of narrative-only breadcrumbs. |
 | `action risk class` | Safety label for an operation such as read-only, owned mutation, destructive mutation, external side effect, or runtime teardown. |
 | `repo-readiness` | Advisory repo hygiene check for agent adoption. Useful before deep framework use, but separate from `bubbles.validate` certification. |
+| `objective research pass` | Brownfield workflows split question generation from codebase research so the research context reports current truth instead of solution-shaped opinions. |
+| `current truth` | The short section in `design.md` produced by objective research that summarizes how the code actually works today. |
+| `design brief` | A short top-of-file checkpoint in `design.md` that lets humans steer the design without reviewing the whole document. |
+| `execution outline` | A short top-of-file checkpoint in `scopes.md` that shows phase order, new signatures, and validation checkpoints before implementation starts. |
+| `horizontal plan` | A layer-by-layer plan like DB → service → API → UI that Bubbles tries to rewrite because it hides breakage until too late. |
+| `vertical slice` | An implementation sequence that gives you checkpoints through the stack instead of a giant horizontal batch. |
+| `slop tax` | Rework signal measured by `bubbles.retro`: retries, reversions, reopened scopes, and fix-on-fix churn versus forward progress. |
+| `instruction budget` | Prompt-size budget for agent surfaces. If the prompt gets too bloated, adherence gets worse; audit it with `bubbles lint-budget`. |
+| `read the code` | Use the short planning artifacts to steer early, then read the implementation and evidence instead of trusting giant plans blindly. |
 
 ---
 

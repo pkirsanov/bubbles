@@ -282,6 +282,42 @@ This is enforced by the artifact ownership contract in `.github/agents/bubbles_s
 /bubbles.workflow  specs/042 mode: full-delivery tdd: true
 ```
 
+### 1.5. The Most Useful Real-World Patterns
+
+These are the most direct ways users interact with the newer planning and completion improvements.
+
+```
+# Explore the idea before any code is written
+/bubbles.workflow  mode: brainstorm for multi-tenant booking search with competitive differentiation
+
+# Improve a brownfield feature — objective research runs automatically
+/bubbles.workflow  improve the booking feature to be competitive
+
+# Fix a bug in existing code — reproduce/fix/verify loop with the quality chain
+/bubbles.workflow  fix the calendar bug in page builder
+
+# Keep shipping the next important slice without choosing phases by hand
+/bubbles.workflow  continue
+
+# Release-candidate / no-loose-ends delivery
+/bubbles.workflow  specs/042-catalog-assistant mode: delivery-lockdown
+
+# Measure rework and hotspot churn after a run
+/bubbles.retro  week
+
+# Framework-maintainer check for prompt bloat
+bash bubbles/scripts/cli.sh lint-budget
+```
+
+| Command Pattern | What Bubbles Does For You |
+|----------------|---------------------------|
+| `mode: brainstorm` | Explores the idea without code and produces reviewable planning artifacts |
+| `improve ...` / `mode: improve-existing` | Runs objective brownfield research, then produces/refines design and scopes before coding |
+| `fix ...` / `mode: bugfix-fastlane` | Runs the focused bug loop with reproduce-before and verify-after evidence |
+| `continue` | Resumes the active workflow if possible; otherwise falls back to `iterate` to pick the next highest-value work |
+| `mode: delivery-lockdown` | Keeps looping through implementation, tests, quality sweep, validation, and audit until the feature is truly green or concretely blocked |
+| `/bubbles.retro ...` | Shows slop tax and hotspot data so you can see whether you are shipping progress or just cleaning up rework |
+
 ### 2. How It Works Under The Hood
 
 Workflow's Phase -1 classifies your input and delegates:
@@ -292,6 +328,31 @@ Workflow's Phase -1 classifies your input and delegates:
 | "Continue" / "next" | Delegates to `iterate` for work-picking → gets next priority item → executes |
 | Structured (`mode:` + spec) | Skips resolution, executes phases directly |
 | Framework ops ("doctor", "hooks") | Delegates to `super` for framework operations |
+
+### 2.5. How The Planning Improvements Show Up In Practice
+
+You usually do not invoke these as separate commands. They show up as workflow behavior and short reviewable artifacts.
+
+| Improvement | How Users Experience It |
+|------------|--------------------------|
+| **Objective Research Pass** | Brownfield modes run a two-pass research step before design so the workflow captures current truth instead of jumping straight to solution-shaped opinions |
+| **Design Brief** | `design.md` starts with a short alignment checkpoint you can review in a few minutes instead of reading a giant design doc |
+| **Execution Outline** | `scopes.md` starts with a short plan preamble so you can steer the order and checkpoints before implementation |
+| **Horizontal Plan Detection** | If planning drifts into DB → service → API → UI sequencing, Bubbles restructures toward vertical slices |
+| **Slop Tax** | `bubbles.retro` reports rework signals like retries, reversions, and fix-on-fix churn |
+| **Instruction Budget Lint** | Framework maintainers can audit prompt size with `bubbles lint-budget` instead of guessing when prompts got too bloated |
+
+### 2.6. Review The Short Artifacts, Then Read The Code
+
+The intended loop is:
+
+1. Run a workflow.
+2. Review the **Design Brief** at the top of `design.md`.
+3. Review the **Execution Outline** at the top of `scopes.md`.
+4. Let Bubbles implement.
+5. Read the actual code and test evidence.
+
+The short artifacts are there to help you steer early. They are not a substitute for reading the implementation.
 
 ### 3. Direct Agents (When You Know The Target)
 
@@ -421,6 +482,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 |-------------|----------|
 | **Just describe what I want** | **`/bubbles.workflow  <describe it in plain English>`** |
 | **Continue where I left off** | **`/bubbles.workflow  continue`** |
+| Explore an idea before writing code | `/bubbles.workflow  mode: brainstorm for <idea>` |
 | Start a new feature from scratch | `/bubbles.workflow  <describe feature>` |
 | Improve an existing feature | `/bubbles.workflow  improve <feature>` |
 | Fix a bug | `/bubbles.workflow  fix the <describe bug>` |
@@ -430,6 +492,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Break things on purpose | `/bubbles.workflow  chaos test <feature>` |
 | Spend time on whatever | `/bubbles.workflow  spend 2 hours on whatever needs attention` |
 | Maximum assurance delivery | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| Show rework and hotspot patterns | `/bubbles.retro  week` |
 
 **Direct agents (when you know the target):**
 

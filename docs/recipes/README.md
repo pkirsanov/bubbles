@@ -41,6 +41,8 @@ Control-plane law also requires owner-only remediation and concrete result envel
 
 > **💡 Tip:** For release-candidate or "no loose ends" work, ask for `delivery-lockdown` rather than a one-pass sweep. It reuses the test, quality, validation, and bug workflows until certification is actually clean.
 
+> **💡 Tip:** The newer planning improvements mostly show up as workflow behavior, not extra commands. Brownfield modes run objective research automatically, planning produces a short Design Brief and Execution Outline for steering, and `bubbles.retro` now exposes slop tax so you can see whether you are shipping craft or just rework.
+
 ## Getting Started
 
 | Recipe | Problem → Solution |
@@ -49,6 +51,18 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [New Feature](new-feature.md) | "I have a feature idea and need to take it from concept to shipped code" |
 | [Fix a Bug](fix-a-bug.md) | "Something's broken and I need to fix it properly" |
 | [Resume Work](resume-work.md) | "I was working on something yesterday, need to pick up where I left off" |
+
+### Common How-To Patterns
+
+| Goal | Best Entry Point |
+|------|------------------|
+| Explore an idea before any code | `/bubbles.workflow  mode: brainstorm for <idea>` |
+| Improve a legacy feature with objective research first | `/bubbles.workflow  improve <feature>` |
+| Fix a bug in brownfield code | `/bubbles.workflow  fix the <bug>` |
+| Keep shipping the next most important slice | `/bubbles.workflow  continue` |
+| Keep going until the whole thing is truly green | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| Review rework and churn after a run | `/bubbles.retro  week` |
+| Audit framework prompt size | `bash bubbles/scripts/cli.sh lint-budget` |
 
 > **💡 Tip:** Not sure which recipe? Ask the super first: `/bubbles.super  help me <describe what you want to do>` — the super agent will recommend the right agent, mode, and steps.
 

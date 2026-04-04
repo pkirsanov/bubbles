@@ -16,8 +16,8 @@ This runs: `analyze → bootstrap → harden → finalize`
 
 **What you get:**
 - `spec.md` — Business analysis, actors, use cases, competitive landscape
-- `design.md` — Technical design with alternatives explored
-- `scopes.md` — Hardened scopes with Gherkin scenarios and DoD
+- `design.md` — Technical design with alternatives explored, including a short **Design Brief** at the top
+- `scopes.md` — Hardened scopes with Gherkin scenarios and DoD, including a short **Execution Outline** at the top
 - A decision document — Ready for implementation in a separate session
 
 **What you DON'T get:**
@@ -38,6 +38,13 @@ Once brainstorming is complete, start implementation:
 
 ```
 /bubbles.workflow  specs/<NNN-feature> mode: full-delivery
+```
+
+For messy legacy code or release-candidate work, prefer:
+
+```
+/bubbles.workflow  specs/<NNN-feature> mode: improve-existing
+/bubbles.workflow  specs/<NNN-feature> mode: delivery-lockdown
 ```
 
 ## Optional Tags

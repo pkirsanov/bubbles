@@ -1479,6 +1479,14 @@
     <span class="situation">Legacy improvement preflight</span>
     <span class="quote-text">"Gary checks the paperwork before we start wrenching."</span>
   </div>
+  <div class="line">
+    <span class="situation">Explore the idea before writing code</span>
+    <span class="quote-text">"Couple smokes first, boys. Then we decide if it's worth building."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Brownfield feature improvement starts</span>
+    <span class="quote-text">"Check what the trailer actually looks like before you start renovating it."</span>
+  </div>
 </div>
 
 <div class="quick-ref">
@@ -1502,6 +1510,14 @@
   <div class="line">
     <span class="situation">Stale-spec preflight</span>
     <span class="quote-text">"Gary can see right through it, boys. Check the old paperwork once before you touch the code."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Review the short planning checkpoints</span>
+    <span class="quote-text">"Read the short brief, then read the actual code."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Horizontal plan detected</span>
+    <span class="quote-text">"Quit doing all the plumbing first, boys. Build a slice that actually works."</span>
   </div>
 </div>
 
@@ -1534,6 +1550,10 @@
   <div class="line">
     <span class="situation">Finding bug magnets</span>
     <span class="quote-text">"The liquor knows where the bodies are buried."</span>
+  </div>
+  <div class="line">
+    <span class="situation">Checking whether progress is real or just rework</span>
+    <span class="quote-text">"Count the slop tax, Randy."</span>
   </div>
 </div>
 
@@ -1657,6 +1677,13 @@
     <tr><td class="cmd">"Same stack, same lease"</td><td class="maps-to">Reuse only when the runtime fingerprint matches</td><td class="quote-col">`shared-compatible` runtime reuse — same stack only when compatibility is proven</td></tr>
     <tr><td class="cmd">"Stale trailer tag"</td><td class="maps-to">Stale lease</td><td class="quote-col">`bubbles runtime doctor` / `bubbles runtime reclaim-stale` — the session vanished, now recover safely</td></tr>
     <tr><td class="cmd">"Don't burn down the wrong trailer"</td><td class="maps-to">Lease-aware cleanup</td><td class="quote-col">Teardown must touch only owned or stale stacks, never someone else's live runtime</td></tr>
+    <tr><td class="cmd">"Check what the trailer actually looks like first"</td><td class="maps-to">Research current reality before designing the fix</td><td class="quote-col">Objective Research Pass in brownfield workflows</td></tr>
+    <tr><td class="cmd">"Current truth, boys"</td><td class="maps-to">What the code actually does today</td><td class="quote-col">The Current Truth section produced in design.md before brownfield changes</td></tr>
+    <tr><td class="cmd">"Short brief, then the real work"</td><td class="maps-to">Review the short checkpoints, then read the code</td><td class="quote-col">Design Brief and Execution Outline before implementation, code review after</td></tr>
+    <tr><td class="cmd">"Quit doing all the plumbing first"</td><td class="maps-to">Avoid horizontal layer-by-layer plans</td><td class="quote-col">Horizontal plan detection rewrites DB → service → API → UI into vertical slices</td></tr>
+    <tr><td class="cmd">"Build a slice that actually works"</td><td class="maps-to">Prove progress in stack-shaped checkpoints</td><td class="quote-col">Vertical slices with earlier checkpoints and validation</td></tr>
+    <tr><td class="cmd">"Count the slop tax, Randy"</td><td class="maps-to">Measure rework instead of hand-waving about productivity</td><td class="quote-col">/bubbles.retro reports retries, reversions, reopened scopes, and forward progress</td></tr>
+    <tr><td class="cmd">"Too many damn instructions"</td><td class="maps-to">Prompt surfaces got too bloated</td><td class="quote-col">Run `bubbles lint-budget` to audit instruction budgets</td></tr>
   </tbody>
 </table>
 

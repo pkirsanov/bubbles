@@ -21,6 +21,7 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 # Describe what you want — workflow figures out the rest
 /bubbles.workflow  improve the booking feature to be competitive
 /bubbles.workflow  fix the calendar bug in page builder
+/bubbles.workflow  mode: brainstorm for multi-tenant booking search with competitive differentiation
 /bubbles.workflow  spend 2 hours on whatever needs attention
 /bubbles.workflow  harden specs 11 through 37
 /bubbles.workflow  chaos test the whole system
@@ -38,8 +39,25 @@ Workflow has a Phase -1 (Intent Resolution) that classifies your input:
 
 # Structured input still works
 /bubbles.workflow  specs/042 mode: full-delivery tdd: true
+/bubbles.workflow  specs/042-catalog-assistant mode: delivery-lockdown
 /bubbles.workflow  011-037 mode: harden-to-doc
 ```
+
+## What The Newer Workflow Improvements Feel Like As A User
+
+| You Type | What You Get |
+|----------|--------------|
+| `/bubbles.workflow  mode: brainstorm for <idea>` | Exploration without code, plus planning artifacts you can steer |
+| `/bubbles.workflow  improve <feature>` | Objective brownfield research before design and implementation |
+| `/bubbles.workflow  fix the <bug>` | Reproduce/fix/verify bug loop with the quality chain intact |
+| `/bubbles.workflow  continue` | Resume the active workflow if possible; otherwise `iterate` picks the next slice |
+| `/bubbles.workflow  <feature> mode: delivery-lockdown` | Keep looping through implementation, tests, quality, validation, and audit until truly green |
+
+The planning improvements are mostly artifact-driven:
+
+- **Design Brief** appears at the top of `design.md`
+- **Execution Outline** appears at the top of `scopes.md`
+- **Objective Research Pass** runs automatically inside brownfield modes instead of requiring a separate user command
 
 ## When To Use Direct Agents Instead
 
