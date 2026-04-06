@@ -94,6 +94,17 @@ Description of expected output structure.
 - Avoid drift:
   - If you add/remove a Bubbles command, update the relevant prompt shim under `.github/prompts/` and keep any command inventories in sync.
 
+### Coordinator Invocation Audit (MANDATORY)
+
+Any `bubbles.*` agent that actively orchestrates other agents via `runSubagent` MUST emit an audit-grade invocation ledger in its final output.
+
+Rules:
+- Add a final `## Invocation Audit` section in the response whenever the agent invoked one or more subagents.
+- Place `## Invocation Audit` immediately before the final machine-readable envelope (`## RESULT-ENVELOPE`, `## CONTINUATION-ENVELOPE`, or equivalent) when such an envelope is required.
+- List EVERY `runSubagent` call in execution order. Do not collapse the record into a single summary such as `specialists invoked: bubbles.implement, bubbles.test`.
+- Each audit entry MUST include: phase/round, invoked agent, why it was invoked, what it was asked to do, final outcome/status, and the primary artifact/evidence/blocker returned.
+- If no subagents were invoked, state that explicitly so the audit trail is complete.
+
 ## Bubbles Governance (MANDATORY for bubbles.* agents)
 
 All `bubbles.*` agents MUST follow these governance rules and reference canonical docs rather than duplicating policy blocks.
