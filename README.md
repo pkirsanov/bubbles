@@ -459,9 +459,15 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [It's Not Rocket Appliances](https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html) | Visual agent reference card — rendered on GitHub Pages |
 | [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
 | [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
+<!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
+| [Competitive Capabilities](docs/generated/competitive-capabilities.md) | Ledger-backed competitive posture guide — 4 shipped, 1 partial, 2 proposed |
+| [Issue Status](docs/generated/issue-status.md) | Ledger-backed status for 2 tracked framework gaps and proposals |
+| [Interop Migration Matrix](docs/generated/interop-migration-matrix.md) | Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline |
+<!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
 | [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 29 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
+| [Interop Migration Guide](docs/guides/INTEROP_MIGRATION.md) | Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems |
 | [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
 | [Control Plane Rollout](docs/guides/CONTROL_PLANE_ROLLOUT.md) | Phased implementation plan for the control-plane redesign across all requested changes |
 | [Control Plane Schemas](docs/guides/CONTROL_PLANE_SCHEMAS.md) | Proposed schema set for capability registry, policy defaults, scenario manifests, certification state, and rework packets |

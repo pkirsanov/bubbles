@@ -10,6 +10,8 @@ If the work is inside a target project's CI/CD, deployment, monitoring, or build
 
 **Write rule:** Consumer repos must not directly edit `.github/bubbles/**`, `.github/agents/bubbles*`, `.github/prompts/bubbles*`, `.github/instructions/bubbles-*`, or other framework-managed Bubbles files. If a repo needs a framework change, it must record a proposal in `.github/bubbles-project/proposals/` or run `bubbles framework-proposal <slug>`, then make the real change in the Bubbles source repo.
 
+**Interop rule:** Review-only interop intake is project-owned. `bubbles interop import --review-only` may snapshot and normalize Claude Code, Roo Code, Cursor, or Cline assets into `.github/bubbles-project/imports/**`, and it may emit project-owned proposals under `.github/bubbles-project/proposals/**` when imported workflow concepts would require framework-managed Bubbles changes. It must never write directly to `.github/bubbles/**`, `.github/agents/bubbles*`, `.github/prompts/bubbles*`, or `.github/skills/bubbles-*`.
+
 ## Check Project Health
 
 Refresh the framework-owned setup first when you have just installed or upgraded Bubbles:
@@ -28,6 +30,9 @@ Or via CLI:
 ```bash
 bash .github/bubbles/scripts/cli.sh doctor --heal
 bash .github/bubbles/scripts/cli.sh agnosticity
+bash .github/bubbles/scripts/cli.sh interop detect
+bash .github/bubbles/scripts/cli.sh interop import --review-only
+bash .github/bubbles/scripts/cli.sh interop status
 bash .github/bubbles/scripts/cli.sh framework-write-guard
 bash .github/bubbles/scripts/cli.sh framework-validate
 bash .github/bubbles/scripts/cli.sh framework-events --tail 20
@@ -41,6 +46,13 @@ bash .github/bubbles/scripts/cli.sh guard-selftest
 `framework-validate` is the framework's self-check surface. Use it when you want the portable-surface, ownership, registry, and selftest surfaces verified as a bundle.
 
 `framework-events` exposes the typed framework event stream, and `run-state` shows the active and recent workflow-run records that make resume and runtime attachment explicit.
+
+When you are in a downstream repo, `doctor` and `framework-write-guard` now consume `.github/bubbles/release-manifest.json` plus `.github/bubbles/.install-source.json` so the trust story stays explicit:
+- installed version and upstream git SHA
+- install mode (`remote-ref` vs `local-source`)
+- symbolic source ref
+- dirty local-source risk when applicable
+- managed-file integrity against `.github/bubbles/.checksums`
 
 ## Run Release Hygiene Checks
 
@@ -104,6 +116,20 @@ Or preview first:
 ```
 /bubbles.super  upgrade --dry-run
 ```
+
+The dry-run path is now a trust preview, not just a file-overwrite preview. It compares the current installed trust metadata with the target release manifest and distinguishes:
+- framework-managed files that will be replaced
+- project-owned files that will not be touched
+- profile or interop support changes between current and target manifests
+- trust warnings such as dirty local-source provenance or existing managed-file drift
+
+If you are validating a local source checkout before refreshing a downstream repo, preview that exact checkout explicitly:
+
+```bash
+bash .github/bubbles/scripts/cli.sh upgrade --dry-run --local-source /path/to/bubbles
+```
+
+That dry-run will warn if the local checkout is dirty so maintainers do not mistake a working-tree snapshot for a clean published release.
 
 ## Scope Dependency Visualization
 

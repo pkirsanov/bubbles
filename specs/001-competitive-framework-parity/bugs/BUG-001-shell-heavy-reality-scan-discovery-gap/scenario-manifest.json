@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "featureDir": "specs/001-competitive-framework-parity/bugs/BUG-001-shell-heavy-reality-scan-discovery-gap",
+  "generatedAt": "2026-04-05T00:00:00Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-001-01",
+      "scope": "01-shell-heavy-discovery-support",
+      "title": "Reality scan resolves legitimate shell-heavy implementation inventory from scope files",
+      "gherkin": {
+        "given": "a scope lists real on-disk implementation files that are primarily .sh, .yaml, .json, or documentation-backed framework surfaces",
+        "when": "implementation-reality-scan runs against that scope",
+        "then": "the scanner resolves those files and scans them instead of raising ZERO_FILES_RESOLVED"
+      },
+      "gherkinHash": "sha256:c467ed2b1874f07dc2f39ba20e9abd90f94632eb79969588e4c2c6133a67e9b1",
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/implementation-reality-scan.sh",
+          "testId": "TP-BUG-001.1"
+        },
+        {
+          "file": "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "testId": "TP-BUG-001.2"
+        },
+        {
+          "file": "bubbles/scripts/implementation-reality-scan.sh",
+          "testId": "TP-BUG-001.4"
+        },
+        {
+          "file": "bubbles/scripts/generate-release-manifest.sh",
+          "testId": "TP-BUG-001.5"
+        },
+        {
+          "file": "bubbles/scripts/release-manifest-selftest.sh",
+          "testId": "TP-BUG-001.6"
+        },
+        {
+          "file": "bubbles/scripts/framework-validate.sh",
+          "testId": "TP-BUG-001.7"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scn-bug-001-01-red-evidence",
+        "report.md#scn-bug-001-01-green-evidence",
+        "report.md#framework-regression-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-BUG-001-02",
+      "scope": "01-shell-heavy-discovery-support",
+      "title": "Reality scan still blocks honestly when no real implementation inventory exists",
+      "gherkin": {
+        "given": "a scope does not list any real on-disk implementation files",
+        "when": "implementation-reality-scan runs against that scope",
+        "then": "the scanner still blocks explicitly instead of passing on synthetic wrappers or fabricated coverage"
+      },
+      "gherkinHash": "sha256:6b9299453f1207c97009f614d5d8ab543330a60762dc96f4ceafe0a6c4d12b39",
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "testId": "TP-BUG-001.3"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scn-bug-001-02-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    }
+  ]
+}

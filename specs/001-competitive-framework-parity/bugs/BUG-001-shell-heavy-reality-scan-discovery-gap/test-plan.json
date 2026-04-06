@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "specId": "001-competitive-framework-parity/BUG-001",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-04-05T00:00:00Z",
+  "scopes": [
+    {
+      "scopeId": "01-shell-heavy-discovery-support",
+      "scopeName": "Upstream Discovery Support For Shell-Heavy Inventories",
+      "tests": [
+        {
+          "id": "TP-BUG-001.1",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/implementation-reality-scan.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "Historical pre-fix reproduction against the live feature packet confirms the ZERO_FILES_RESOLVED blocker before the upstream discovery fix.",
+          "command": "timeout 180 bash bubbles/scripts/implementation-reality-scan.sh specs/001-competitive-framework-parity --verbose",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.2",
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "The dedicated selftest shell-heavy fixture resolves declared .sh, .yaml, .json, and docs-backed surfaces without artificial wrappers.",
+          "command": "timeout 180 bash bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.3",
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "scenarioId": "SCN-BUG-001-02",
+          "description": "Missing inventories still fail honestly: the dedicated selftest keeps ZERO_FILES_RESOLVED as a blocking outcome when the fixture omits real implementation inventory.",
+          "command": "timeout 180 bash bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.4",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/implementation-reality-scan.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "Live post-fix scan against the Scope 05 feature packet resolves the declared implementation inventory and reports zero violations.",
+          "command": "timeout 180 bash bubbles/scripts/implementation-reality-scan.sh specs/001-competitive-framework-parity --verbose",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.5",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/generate-release-manifest.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "Regenerates the framework release manifest consumed by the broader regression chain after the discovery fix.",
+          "command": "timeout 180 bash bubbles/scripts/generate-release-manifest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.6",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/release-manifest-selftest.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "Verifies the regenerated release manifest remains internally consistent after the discovery fix lands.",
+          "command": "timeout 180 bash bubbles/scripts/release-manifest-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-BUG-001.7",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/framework-validate.sh",
+          "scenarioId": "SCN-BUG-001-01",
+          "description": "Confirms the broader framework validation suite passes with the shell-heavy discovery fix in place.",
+          "command": "timeout 900 bash bubbles/scripts/framework-validate.sh",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}

@@ -104,6 +104,15 @@ Use this recipe when any of these are true:
 
 /bubbles.super  is this repo ready for Bubbles?
 → `bash <source-or-downstream-cli> repo-readiness .`
+
+/bubbles.super  compare the Bubbles adoption profiles for this repo
+→ `bash <source-or-downstream-cli> profile show`
+
+/bubbles.super  switch this repo from foundation to delivery guidance
+→ `bash <source-or-downstream-cli> profile set delivery`
+
+/bubbles.super  show the stricter readiness posture without changing certification semantics
+→ `bash <source-or-downstream-cli> repo-readiness . --profile assured`
 ```
 
 ## Ask It To Translate Problems Into Bubbles

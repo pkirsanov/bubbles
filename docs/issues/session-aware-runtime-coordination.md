@@ -5,6 +5,13 @@
 **Severity:** High — concurrent sessions can stomp shared stacks, tear down each other's resources, or silently reuse incompatible runtime state  
 **Filed:** 2026-04-01
 
+<!-- GENERATED:CAPABILITY_LEDGER_STATUS_START -->
+**Ledger Status:** proposed
+**Related Capability:** Session-aware runtime coordination
+**Competitive Pressure:** claude-code, roo-code, cursor
+**Source Of Truth:** [Issue Status](../generated/issue-status.md)
+<!-- GENERATED:CAPABILITY_LEDGER_STATUS_END -->
+
 ## Problem
 
 Bubbles already has two useful but incomplete protections:

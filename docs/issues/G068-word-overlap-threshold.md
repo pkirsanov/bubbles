@@ -5,6 +5,13 @@
 **Severity:** Medium — causes false-positive gate failures on legitimate DoD items  
 **Filed:** 2026-03-31
 
+<!-- GENERATED:CAPABILITY_LEDGER_STATUS_START -->
+**Ledger Status:** proposed
+**Related Capability:** G068 DoD-Gherkin fidelity threshold tuning
+**Competitive Pressure:** cline, roo-code
+**Source Of Truth:** [Issue Status](../generated/issue-status.md)
+<!-- GENERATED:CAPABILITY_LEDGER_STATUS_END -->
+
 ## Problem
 
 The `stg_significant_words()` function strips words shorter than 4 characters AND excludes a hardcoded list of common words (`given`, `when`, `then`, `user`, `system`, `should`, `must`, `have`, etc.). The `stg_scenario_matches_dod()` function then requires a minimum overlap of **3 significant words** (when word_count > 3) between a Gherkin scenario title and a DoD item.

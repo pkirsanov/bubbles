@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Workflow Dispatch Reliability
+
+- **Instruction budget is now a framework validation gate** — `framework-validate` and `doctor` now fail when any agent prompt exceeds the hard instruction-budget limit instead of treating budget drift as an informational audit only.
+- **Workflow fix-cycle protocol extracted** — the stochastic repair-round dispatch contract moved into `workflow-fix-cycle-protocol.md` so `bubbles.workflow` keeps the same behavior with less prompt bloat.
+- **Planning specialist provenance** — `bubbles.design` and `bubbles.plan` now record bootstrap execution in `state.json.executionHistory`, and the state transition guard now checks that analyze-first modes actually dispatched the required planning owners.
+- **Planning provenance selftest** — `framework-validate` now runs a dedicated negative fixture proving `bubbles.workflow` cannot author planning artifacts without analyst, UX, design, and plan provenance in `executionHistory`.
+- **Source-repo project config cleanup** — the Bubbles source checkout now carries real maintainer commands and source-repo paths in `.github/copilot-instructions.md`, eliminating the last doctor-visible bootstrap placeholders.
+
+### Release Manifest And Install Provenance Trust
+
+- **Release manifest generation** — `bubbles/release-manifest.json` is now generated from the source repo and records version, git SHA, supported profiles, supported interop sources, validated surfaces, trust-doc digest, and framework-managed checksum inventory.
+- **Downstream install provenance** — installs now write `.github/bubbles/.install-source.json` with install mode, symbolic source ref, source SHA, dirty-tree state, and installed version. Local-source installs never persist an absolute checkout path.
+- **Trust-aware framework ops** — downstream `framework-write-guard`, `doctor`, and `upgrade --dry-run` now surface installed provenance, managed-file integrity, and dirty local-source warnings explicitly instead of treating trust state as implicit.
+- **Trust canaries** — added `release-manifest-selftest.sh`, `install-provenance-selftest.sh`, and `trust-doctor-selftest.sh`, and wired them into `framework-validate` plus `release-check`.
+
 ### Workflow Continuation Guardrails
 
 - **Continuation language now preserves active workflow orchestration** — `bubbles.workflow` and `bubbles.super` treat follow-ups like `continue`, `fix all found`, `fix everything found`, `address rest`, `fix the rest`, and `resolve remaining findings` as workflow continuation, not as permission to drop into raw specialist execution.

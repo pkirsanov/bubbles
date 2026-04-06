@@ -85,6 +85,29 @@ json_first_string() {
     | sed -E 's/.*"'"$key"'"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
 }
 
+json_nested_string() {
+  local parent_key="$1"
+  local child_key="$2"
+  local file="$3"
+  if [[ ! -f "$file" ]]; then
+    return 0
+  fi
+
+  python3 - "$file" "$parent_key" "$child_key" <<'PY'
+import json
+import sys
+
+file_path, parent_key, child_key = sys.argv[1:4]
+with open(file_path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+parent = data.get(parent_key, {})
+value = parent.get(child_key, "") if isinstance(parent, dict) else ""
+if isinstance(value, str):
+    print(value)
+PY
+}
+
 detect_scope_layout() {
   local state_layout=""
   state_layout="$(json_first_string "scopeLayout" "$feature_dir/state.json" || true)"
@@ -488,11 +511,7 @@ echo "--- Check 3B: Validate Certification State (Gate G056) ---"
 if grep -qE '"certification"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
   pass "state.json contains certification block"
 
-  certification_status="$({
-    grep -A10 '"certification"' "$state_file" 2>/dev/null \
-      | grep -m1 '"status"' \
-      | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/'
-  } || true)"
+  certification_status="$(json_nested_string "certification" "status" "$state_file" || true)"
 
   if [[ -n "$certification_status" ]]; then
     if [[ -n "$state_status" && "$certification_status" != "$state_status" ]]; then
@@ -968,26 +987,29 @@ echo ""
 # =============================================================================
 echo "--- Check 6: Specialist Phase Completion ---"
 state_completed_phases_block="$({
-  certification_phases_block="$({
-    grep -A40 '"certification"' "$state_file" 2>/dev/null \
-      | awk '/"certifiedCompletedPhases"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
-  } || true)"
-  execution_phase_claims_block="$({
-    grep -A40 '"execution"' "$state_file" 2>/dev/null \
-      | awk '/"completedPhaseClaims"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
-  } || true)"
+  python3 - "$state_file" <<'PY'
+import json
+import sys
 
-  if [[ -n "$certification_phases_block" ]]; then
-    echo "$certification_phases_block"
-  elif [[ -n "$execution_phase_claims_block" ]]; then
-    echo "$execution_phase_claims_block"
-  else
-    awk '
-      /"completedPhases"[[:space:]]*:/ {capture=1}
-      capture {print}
-      capture && /\]/ {exit}
-    ' "$state_file"
-  fi
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+
+certification_phases = data.get("certification", {}).get("certifiedCompletedPhases", [])
+execution_phase_claims = data.get("execution", {}).get("completedPhaseClaims", [])
+legacy_phases = data.get("completedPhases", [])
+
+if not isinstance(certification_phases, list):
+    certification_phases = []
+if not isinstance(execution_phase_claims, list):
+    execution_phase_claims = []
+if not isinstance(legacy_phases, list):
+    legacy_phases = []
+
+selected_phases = certification_phases or execution_phase_claims or legacy_phases
+for phase in selected_phases:
+    if isinstance(phase, str):
+        print(f'"{phase}"')
+PY
 } || true)"
 
 if [[ -n "$state_workflow_mode" ]]; then
@@ -1087,6 +1109,48 @@ if [[ -n "$state_workflow_mode" ]]; then
       fail "$missing_phases specialist phase(s) missing — work was NOT executed through the full pipeline"
     fi
   fi
+fi
+echo ""
+
+# =============================================================================
+# CHECK 6A: Planning specialist dispatch for analyze-first modes
+# =============================================================================
+echo "--- Check 6A: Planning Specialist Dispatch ---"
+if [[ -n "$state_workflow_mode" ]]; then
+  planning_required_agents=()
+  spec_file="$feature_dir/spec.md"
+  case "$state_workflow_mode" in
+    product-to-delivery|improve-existing)
+      planning_required_agents=("bubbles.analyst" "bubbles.design" "bubbles.plan")
+      if [[ -f "$spec_file" ]] && grep -qE '^## UI Wireframes' "$spec_file"; then
+        planning_required_agents+=("bubbles.ux")
+      fi
+      ;;
+  esac
+
+  if [[ ${#planning_required_agents[@]} -gt 0 ]]; then
+    execution_history_agents="$({
+      python3 -c "import json; data=json.load(open('$state_file')); history=data.get('execution', {}).get('executionHistory', data.get('executionHistory', [])); print('\\n'.join(entry.get('agent', '') for entry in history if entry.get('agent')))"
+    } || true)"
+
+    missing_planning_agents=0
+    for planning_agent in "${planning_required_agents[@]}"; do
+      if printf '%s\n' "$execution_history_agents" | grep -qx "$planning_agent"; then
+        pass "Planning specialist '$planning_agent' recorded in executionHistory"
+      else
+        fail "Planning specialist '$planning_agent' missing from executionHistory (workflow may have bypassed required dispatch)"
+        missing_planning_agents=$((missing_planning_agents + 1))
+      fi
+    done
+
+    if [[ "$missing_planning_agents" -gt 0 ]]; then
+      fail "$missing_planning_agents planning specialist dispatch record(s) missing — planning-first workflow compliance not proven"
+    fi
+  else
+    info "No planning-specialist dispatch requirement for mode '$state_workflow_mode'"
+  fi
+else
+  info "No workflow mode recorded; skipping planning-specialist dispatch check"
 fi
 echo ""
 

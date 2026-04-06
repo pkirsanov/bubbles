@@ -1,0 +1,6 @@
+{
+  "supportedReviewOnlySources": [
+    "claude-code"
+  ],
+  "reviewOnly": true
+}

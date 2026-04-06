@@ -6,6 +6,7 @@
 #   curl -fsSL .../install.sh | bash                    # Install shared framework files
 #   curl -fsSL .../install.sh | bash -s -- --agents-only  # Install agents/workflows/scripts only
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap  # Install + scaffold project config
+#   curl -fsSL .../install.sh | bash -s -- --bootstrap --profile assured  # Install + scaffold with assured guidance
 #   curl -fsSL .../install.sh | bash -s -- v1.0.0       # Pin to version
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
 #   bash /path/to/bubbles/install.sh --local-source /path/to/bubbles   # Install from local checkout
@@ -18,7 +19,9 @@ DO_BOOTSTRAP=false
 AGENTS_ONLY=false
 CLI_OVERRIDE=""
 NAME_OVERRIDE=""
+ADOPTION_PROFILE=""
 LOCAL_SOURCE=""
+SOURCE_OVERRIDE_DIR="${BUBBLES_SOURCE_OVERRIDE_DIR:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -26,12 +29,14 @@ while [[ $# -gt 0 ]]; do
     --agents-only) AGENTS_ONLY=true; shift ;;
     --cli)         CLI_OVERRIDE="$2"; shift 2 ;;
     --name)        NAME_OVERRIDE="$2"; shift 2 ;;
+    --profile)     ADOPTION_PROFILE="$2"; shift 2 ;;
     --local-source) LOCAL_SOURCE="$2"; shift 2 ;;
     --help|-h)
       echo "Usage: install.sh [REF] [OPTIONS]"
       echo ""
       echo "  REF                Git ref to install (default: main)"
       echo "  --bootstrap        Scaffold project config files after install"
+      echo "  --profile ID       Select bootstrap adoption profile (foundation, delivery, or assured)"
       echo "  --cli ./foo.sh     Set CLI entrypoint (auto-detected if omitted)"
       echo "  --name \"My Proj\"   Set project name (auto-detected if omitted)"
       echo "  --agents-only      Skip shared instructions and skills"
@@ -93,6 +98,12 @@ if [[ -n "$LOCAL_SOURCE" ]]; then
   [[ -d "$TEMP_DIR/agents" ]] || fail "Local source missing agents/: ${LOCAL_SOURCE}"
   [[ -d "$TEMP_DIR/prompts" ]] || fail "Local source missing prompts/: ${LOCAL_SOURCE}"
   [[ -d "$TEMP_DIR/bubbles" ]] || fail "Local source missing bubbles/: ${LOCAL_SOURCE}"
+elif [[ -n "$SOURCE_OVERRIDE_DIR" ]]; then
+  TEMP_DIR="$SOURCE_OVERRIDE_DIR"
+  info "Installing Bubbles ${BUBBLES_REF} from local source override"
+  [[ -d "$TEMP_DIR/agents" ]] || fail "Source override missing agents/: ${SOURCE_OVERRIDE_DIR}"
+  [[ -d "$TEMP_DIR/prompts" ]] || fail "Source override missing prompts/: ${SOURCE_OVERRIDE_DIR}"
+  [[ -d "$TEMP_DIR/bubbles" ]] || fail "Source override missing bubbles/: ${SOURCE_OVERRIDE_DIR}"
 else
   info "Downloading Bubbles ${BUBBLES_REF}..."
   TEMP_DIR=$(mktemp -d)
@@ -106,6 +117,101 @@ else
 
   tar xzf "$TEMP_DIR/bubbles.tar.gz" -C "$TEMP_DIR" --strip-components=1
 fi
+
+TRUST_HELPERS="$TEMP_DIR/bubbles/scripts/trust-metadata.sh"
+[[ -f "$TRUST_HELPERS" ]] || fail "Missing trust metadata helpers in source payload"
+source "$TRUST_HELPERS"
+
+RELEASE_MANIFEST_SOURCE="$TEMP_DIR/bubbles/release-manifest.json"
+GENERATED_LOCAL_MANIFEST=""
+if [[ -n "$LOCAL_SOURCE" ]]; then
+  if bubbles_owns_git_checkout "$TEMP_DIR"; then
+    GENERATED_LOCAL_MANIFEST="$(mktemp)"
+    trap '[[ -n "$GENERATED_LOCAL_MANIFEST" ]] && rm -f "$GENERATED_LOCAL_MANIFEST"' EXIT
+    bash "$TEMP_DIR/bubbles/scripts/generate-release-manifest.sh" --repo-root "$TEMP_DIR" --output "$GENERATED_LOCAL_MANIFEST"
+    RELEASE_MANIFEST_SOURCE="$GENERATED_LOCAL_MANIFEST"
+  elif [[ -f "$TEMP_DIR/bubbles/release-manifest.json" ]]; then
+    RELEASE_MANIFEST_SOURCE="$TEMP_DIR/bubbles/release-manifest.json"
+  else
+    fail "Local source is not a git checkout and does not contain bubbles/release-manifest.json"
+  fi
+fi
+
+[[ -f "$RELEASE_MANIFEST_SOURCE" ]] || fail "Missing release manifest in source payload. Run bubbles/scripts/generate-release-manifest.sh before installing."
+
+ADOPTION_PROFILES_SOURCE="$TEMP_DIR/bubbles/adoption-profiles.yaml"
+[[ -f "$ADOPTION_PROFILES_SOURCE" ]] || fail "Missing adoption profile registry in source payload."
+
+adoption_profile_ids() {
+  awk '
+    /^profiles:/ { in_profiles=1; next }
+    in_profiles && /^  [A-Za-z0-9_-]+:$/ {
+      profile=$1
+      sub(":$", "", profile)
+      print profile
+    }
+  ' "$ADOPTION_PROFILES_SOURCE"
+}
+
+adoption_profile_value() {
+  local profile="$1"
+  local key="$2"
+
+  awk -v profile="$profile" -v key="$key" '
+    /^profiles:/ { in_profiles=1; next }
+    in_profiles && $0 ~ ("^  " profile ":$") { in_profile=1; next }
+    in_profile && /^  [A-Za-z0-9_-]+:$/ { in_profile=0 }
+    in_profile && $0 ~ ("^    " key ":") {
+      sub("^    " key ":[[:space:]]*", "", $0)
+      gsub(/^"|"$/, "", $0)
+      print
+      exit
+    }
+  ' "$ADOPTION_PROFILES_SOURCE"
+}
+
+profile_supported() {
+  local requested_profile="$1"
+  local known_profile
+
+  while IFS= read -r known_profile; do
+    [[ -n "$known_profile" ]] || continue
+    if [[ "$known_profile" == "$requested_profile" ]]; then
+      return 0
+    fi
+  done < <(adoption_profile_ids)
+
+  return 1
+}
+
+persist_adoption_profile() {
+  local config_file="$1"
+  local selected_profile="$2"
+
+  [[ -f "$config_file" ]] || fail "Cannot persist adoption profile; missing config file: $config_file"
+
+  if grep -q '"adoptionProfile"' "$config_file"; then
+    perl -0pi -e 's/"adoptionProfile"\s*:\s*"[^"]+"/"adoptionProfile": "'"$selected_profile"'"/' "$config_file"
+  else
+    perl -0pi -e 's/(\{\n  "version": [0-9]+,\n)/$1  "adoptionProfile": "'"$selected_profile"'",\n/' "$config_file"
+  fi
+}
+
+SELECTED_ADOPTION_PROFILE="${ADOPTION_PROFILE:-delivery}"
+PROFILE_SELECTED_EXPLICITLY=false
+if [[ -n "$ADOPTION_PROFILE" ]]; then
+  PROFILE_SELECTED_EXPLICITLY=true
+fi
+
+profile_supported "$SELECTED_ADOPTION_PROFILE" || fail "Unknown adoption profile '${SELECTED_ADOPTION_PROFILE}'. Supported profiles: $(printf '%s ' $(adoption_profile_ids) | sed 's/[[:space:]]*$//')"
+
+if [[ "$DO_BOOTSTRAP" != "true" && -n "$ADOPTION_PROFILE" ]]; then
+  fail "--profile requires --bootstrap so the selected adoption profile can be written into repo-local policy state."
+fi
+
+SELECTED_PROFILE_LABEL="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" label)"
+SELECTED_PROFILE_SUMMARY="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" bootstrapSummary)"
+SELECTED_PROFILE_INVARIANT="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" governanceInvariant)"
 
 # ── Install agents ──────────────────────────────────────────────────
 info "Installing agents..."
@@ -123,22 +229,11 @@ ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
 # ── Install workflows ───────────────────────────────────────────────
 info "Installing workflow config and registries..."
 mkdir -p "${TARGET}/bubbles"
-cp "$TEMP_DIR"/bubbles/workflows.yaml "${TARGET}/bubbles/"
-if [[ -f "$TEMP_DIR/bubbles/docs-registry.yaml" ]]; then
-  cp "$TEMP_DIR"/bubbles/docs-registry.yaml "${TARGET}/bubbles/"
-fi
-if [[ -f "$TEMP_DIR/bubbles/agent-ownership.yaml" ]]; then
-  cp "$TEMP_DIR"/bubbles/agent-ownership.yaml "${TARGET}/bubbles/"
-fi
-if [[ -f "$TEMP_DIR/bubbles/agent-capabilities.yaml" ]]; then
-  cp "$TEMP_DIR"/bubbles/agent-capabilities.yaml "${TARGET}/bubbles/"
-fi
-if [[ -f "$TEMP_DIR/bubbles/action-risk-registry.yaml" ]]; then
-  cp "$TEMP_DIR"/bubbles/action-risk-registry.yaml "${TARGET}/bubbles/"
-fi
+cp "$TEMP_DIR"/bubbles/*.yaml "${TARGET}/bubbles/" 2>/dev/null || true
 if [[ -f "$TEMP_DIR/bubbles/agnosticity-allowlist.txt" ]]; then
   cp "$TEMP_DIR"/bubbles/agnosticity-allowlist.txt "${TARGET}/bubbles/"
 fi
+cp "$RELEASE_MANIFEST_SOURCE" "${TARGET}/bubbles/release-manifest.json"
 ok "workflows.yaml + registries installed"
 
 # ── Install scripts ─────────────────────────────────────────────────
@@ -147,6 +242,51 @@ mkdir -p "${TARGET}/bubbles/scripts"
 cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
+
+# ── Install installer shim ──────────────────────────────────────────
+info "Installing installer shim..."
+cp "$TEMP_DIR"/install.sh "${TARGET}/install.sh"
+chmod +x "${TARGET}/install.sh"
+ok "installer shim installed"
+
+# ── Install root metadata ───────────────────────────────────────────
+info "Installing framework metadata..."
+if [[ -f "$TEMP_DIR/README.md" ]]; then
+  cp "$TEMP_DIR/README.md" "${TARGET}/README.md"
+fi
+if [[ -f "$TEMP_DIR/CHANGELOG.md" ]]; then
+  cp "$TEMP_DIR/CHANGELOG.md" "${TARGET}/CHANGELOG.md"
+fi
+if [[ -f "$TEMP_DIR/VERSION" ]]; then
+  cp "$TEMP_DIR/VERSION" "${TARGET}/VERSION"
+fi
+ok "framework metadata installed"
+
+# ── Install bootstrap scaffolding assets ───────────────────────────
+if [[ -d "$TEMP_DIR/templates" ]]; then
+  info "Installing bootstrap templates..."
+  mkdir -p "${TARGET}/templates"
+  cp "$TEMP_DIR"/templates/* "${TARGET}/templates/" 2>/dev/null || true
+  ok "$(find "${TARGET}/templates" -type f 2>/dev/null | wc -l) bootstrap templates installed"
+fi
+
+if [[ -d "$TEMP_DIR/.specify" ]]; then
+  info "Installing bootstrap defaults..."
+  mkdir -p "${TARGET}/.specify/memory" "${TARGET}/.specify/metrics" "${TARGET}/.specify/runtime"
+  [[ -f "$TEMP_DIR/.specify/memory/bubbles.config.json" ]] && cp "$TEMP_DIR/.specify/memory/bubbles.config.json" "${TARGET}/.specify/memory/bubbles.config.json"
+  [[ -f "$TEMP_DIR/.specify/memory/.gitignore" ]] && cp "$TEMP_DIR/.specify/memory/.gitignore" "${TARGET}/.specify/memory/.gitignore"
+  [[ -f "$TEMP_DIR/.specify/metrics/.gitignore" ]] && cp "$TEMP_DIR/.specify/metrics/.gitignore" "${TARGET}/.specify/metrics/.gitignore"
+  [[ -f "$TEMP_DIR/.specify/runtime/.gitignore" ]] && cp "$TEMP_DIR/.specify/runtime/.gitignore" "${TARGET}/.specify/runtime/.gitignore"
+  ok "bootstrap defaults installed"
+fi
+
+# ── Install framework docs ──────────────────────────────────────────
+if [[ -d "$TEMP_DIR/docs" ]]; then
+  info "Installing framework docs..."
+  mkdir -p "${TARGET}/docs"
+  cp -r "$TEMP_DIR"/docs/* "${TARGET}/docs/" 2>/dev/null || true
+  ok "$(find "${TARGET}/docs" -type f 2>/dev/null | wc -l) framework docs installed"
+fi
 
 # ── Migration: rename legacy shared instruction filenames ──────────
 for legacy_pair in \
@@ -210,11 +350,50 @@ fi
 
 # ── Version stamp ───────────────────────────────────────────────────
 if [[ -f "$TEMP_DIR/VERSION" ]]; then
+  cp "$TEMP_DIR/VERSION" "${TARGET}/VERSION"
   cp "$TEMP_DIR/VERSION" "${TARGET}/bubbles/.version"
   VERSION=$(cat "${TARGET}/bubbles/.version")
   ok "Bubbles v${VERSION} installed"
 else
   ok "Bubbles (${BUBBLES_REF}) installed"
+fi
+
+INSTALL_MODE='remote-ref'
+SOURCE_REF="$BUBBLES_REF"
+SOURCE_GIT_SHA="$(bubbles_json_string_field "$RELEASE_MANIFEST_SOURCE" gitSha)"
+SOURCE_DIRTY='false'
+
+if [[ -n "$LOCAL_SOURCE" ]]; then
+  INSTALL_MODE='local-source'
+  SOURCE_REF="$(bubbles_local_source_ref "$LOCAL_SOURCE")"
+  SOURCE_GIT_SHA="$(bubbles_local_source_sha "$LOCAL_SOURCE")"
+  SOURCE_DIRTY="$(bubbles_local_source_dirty "$LOCAL_SOURCE")"
+fi
+
+if [[ "$INSTALL_MODE" == 'remote-ref' ]] && ! bubbles_provenance_ref_is_safe "$SOURCE_REF"; then
+  fail "Ref '${SOURCE_REF}' cannot be persisted safely in install provenance"
+fi
+
+[[ -n "$SOURCE_REF" ]] || fail "Could not determine a symbolic source ref for this install"
+[[ -n "$SOURCE_GIT_SHA" ]] || fail "Could not determine source git SHA for this install"
+
+INSTALL_VERSION="${VERSION:-$(bubbles_json_string_field "$RELEASE_MANIFEST_SOURCE" version)}"
+[[ -n "$INSTALL_VERSION" ]] || fail "Could not determine installed Bubbles version"
+
+cat > "${TARGET}/bubbles/.install-source.json" <<EOF
+{
+  "installedVersion": "${INSTALL_VERSION}",
+  "installMode": "${INSTALL_MODE}",
+  "sourceRef": "${SOURCE_REF}",
+  "sourceGitSha": "${SOURCE_GIT_SHA}",
+  "sourceDirty": ${SOURCE_DIRTY},
+  "installedAt": "$(bubbles_current_timestamp)"
+}
+EOF
+ok "Install provenance written (${INSTALL_MODE}: ${SOURCE_REF})"
+
+if [[ "$SOURCE_DIRTY" == "true" ]]; then
+  warn "Installed from a dirty local source checkout. Doctor and upgrade surfaces will flag this as a trust risk."
 fi
 
 # ── Framework manifest ──────────────────────────────────────────────
@@ -224,40 +403,8 @@ fi
   echo "# Bubbles framework manifest — auto-generated by install.sh"
   echo "# Files listed here are framework-owned and overwritten on upgrade."
   echo "# DO NOT add project-specific files to these directories."
-  # Scripts
-  for f in "${TARGET}"/bubbles/scripts/*.sh; do
-    [[ -f "$f" ]] && echo "bubbles/scripts/$(basename "$f")"
-  done
-  # Workflows and config
-  [[ -f "${TARGET}/bubbles/workflows.yaml" ]] && echo "bubbles/workflows.yaml"
+  bubbles_framework_manifest_entries "$TEMP_DIR" true
   [[ -f "${TARGET}/bubbles/hooks.json" ]] && echo "bubbles/hooks.json"
-  [[ -f "${TARGET}/bubbles/agnosticity-allowlist.txt" ]] && echo "bubbles/agnosticity-allowlist.txt"
-  for f in "${TARGET}"/bubbles/*.yaml; do
-    [[ -f "$f" ]] && [[ "$(basename "$f")" != "workflows.yaml" ]] && echo "bubbles/$(basename "$f")"
-  done
-  # Agents
-  for f in "${TARGET}"/agents/bubbles.*.agent.md; do
-    [[ -f "$f" ]] && echo "agents/$(basename "$f")"
-  done
-  for f in "${TARGET}"/agents/bubbles_shared/*.md; do
-    [[ -f "$f" ]] && echo "agents/bubbles_shared/$(basename "$f")"
-  done
-  # Prompts
-  for f in "${TARGET}"/prompts/bubbles.*.prompt.md; do
-    [[ -f "$f" ]] && echo "prompts/$(basename "$f")"
-  done
-  # Instructions
-  for f in "${TARGET}"/instructions/bubbles-*.instructions.md; do
-    [[ -f "$f" ]] && echo "instructions/$(basename "$f")"
-  done
-  # Skills
-  for skill_dir in "${TARGET}"/skills/bubbles-*/; do
-    [[ -d "$skill_dir" ]] || continue
-    local_skill_name="$(basename "$skill_dir")"
-    find "$skill_dir" -type f | while read -r sf; do
-      echo "skills/${local_skill_name}/$(basename "$sf")"
-    done
-  done
 } > "${TARGET}/bubbles/.manifest"
 ok "Framework manifest written ($(wc -l < "${TARGET}/bubbles/.manifest") entries)"
 
@@ -271,7 +418,7 @@ ok "Framework manifest written ($(wc -l < "${TARGET}/bubbles/.manifest") entries
     printf '%s\t%s\n' "$(sha256_file "$managed_path")" "$managed_entry"
   done < "${TARGET}/bubbles/.manifest"
 
-  for extra_entry in "bubbles/.version" "bubbles/.manifest"; do
+  for extra_entry in "bubbles/.version" "bubbles/.manifest" "bubbles/release-manifest.json" "bubbles/.install-source.json"; do
     extra_path="${TARGET}/${extra_entry}"
     [[ -f "$extra_path" ]] || continue
     printf '%s\t%s\n' "$(sha256_file "$extra_path")" "$extra_entry"
@@ -509,6 +656,9 @@ SRCEOF
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
+  persist_adoption_profile ".specify/memory/bubbles.config.json" "$SELECTED_ADOPTION_PROFILE"
+  info "Active adoption profile recorded: ${SELECTED_PROFILE_LABEL} (${SELECTED_ADOPTION_PROFILE})"
+
   # ── Scaffold: runtime artifact ignore rules ───────────────────────
   if [[ ! -f ".specify/memory/.gitignore" ]]; then
     if [[ -f "$TEMP_DIR/.specify/memory/.gitignore" ]]; then
@@ -575,6 +725,18 @@ echo ""
 if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "Bubbles is installed and bootstrapped. Your project is ready."
   echo ""
+  echo "  🧭 Active adoption profile: ${SELECTED_PROFILE_LABEL} (${SELECTED_ADOPTION_PROFILE})"
+  echo "     ${SELECTED_PROFILE_SUMMARY}"
+  echo "     Governance invariant: ${SELECTED_PROFILE_INVARIANT}"
+  if [[ "$SELECTED_ADOPTION_PROFILE" == "foundation" ]]; then
+    echo "     Foundation was selected explicitly; the installer default still remains delivery."
+  elif [[ "$SELECTED_ADOPTION_PROFILE" == "assured" ]]; then
+    echo "     Assured was selected explicitly; the installer default still remains delivery."
+    echo "     Assured raises earlier readiness visibility without changing the full-certification invariant."
+  else
+    echo "     Delivery remains the installer default during the current rollout."
+  fi
+  echo ""
   echo "  📁 Created:"
   echo "     specs/                                          — Feature/bug specs go here"
   echo "     .specify/memory/constitution.md                 — Project governance"
@@ -595,25 +757,50 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   printf "  ${YELLOW}⚠️  Action required:${NC} Update the TODO items in the generated files\n"
   echo "     to match your project's actual commands, paths, and config."
   echo ""
-  echo "  Then open VS Code and run these agents in order:"
+  echo "  Then open VS Code and run these next steps:"
   echo ""
-  echo "     /bubbles.commands                   — Auto-detect your project and regenerate agents.md"
-  echo "     /bubbles.setup mode: refresh        — Verify setup is complete"
-  echo "     /bubbles.status                     — Check spec progress"
-  echo "     /bubbles.analyst  <describe feature> — Start new feature work"
-  echo "     /bubbles.workflow full-delivery      — Run the full pipeline"
+  if [[ "$SELECTED_ADOPTION_PROFILE" == "foundation" ]]; then
+    echo "     /bubbles.setup mode: refresh          — Verify the foundation bootstrap landed cleanly"
+    echo "     /bubbles.commands                     — Auto-detect your project and regenerate agents.md"
+    echo "     bash .github/bubbles/scripts/cli.sh doctor"
+    echo "     bash .github/bubbles/scripts/cli.sh repo-readiness ."
+    echo "     /bubbles.workflow full-delivery       — Move into the full delivery pipeline when ready"
+  elif [[ "$SELECTED_ADOPTION_PROFILE" == "assured" ]]; then
+    echo "     /bubbles.setup mode: refresh          — Verify the assured bootstrap landed cleanly"
+    echo "     /bubbles.commands                     — Auto-detect your project and regenerate agents.md"
+    echo "     bash .github/bubbles/scripts/cli.sh doctor"
+    echo "     bash .github/bubbles/scripts/cli.sh repo-readiness . --profile assured"
+    echo "     /bubbles.status                       — Review stricter readiness guidance before scaling delivery"
+    echo "     /bubbles.workflow full-delivery       — Run the same full-strength delivery pipeline when ready"
+  else
+    echo "     /bubbles.commands                   — Auto-detect your project and regenerate agents.md"
+    echo "     /bubbles.setup mode: refresh        — Verify setup is complete"
+    echo "     bash .github/bubbles/scripts/cli.sh doctor"
+    echo "     bash .github/bubbles/scripts/cli.sh repo-readiness ."
+    echo "     /bubbles.status                     — Check spec progress"
+    echo "     /bubbles.analyst  <describe feature> — Start new feature work"
+    echo "     /bubbles.workflow full-delivery      — Run the full pipeline"
+  fi
 else
   echo "Bubbles is installed. Next steps:"
   echo ""
-  echo "  Option A — Full bootstrap (recommended for new projects):"
-  echo "     Re-run with --bootstrap to scaffold project config:"
+  echo "  Option A — Foundation bootstrap (recommended for first-time adoption and evaluation):"
+  echo "     Re-run with --bootstrap --profile foundation to scaffold project config with the lighter first-run posture:"
+  printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --bootstrap --profile foundation${NC}\n"
+  echo ""
+  echo "  Option B — Default delivery bootstrap:"
+  echo "     Re-run with --bootstrap to use the current installer default profile:"
   printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --bootstrap${NC}\n"
   echo ""
-  echo "  Option B — Agents only install:"
+  echo "  Option C — Assured bootstrap:"
+  echo "     Re-run with --bootstrap --profile assured for earlier guardrail visibility and stricter readiness guidance while keeping the same certification model:"
+  printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --bootstrap --profile assured${NC}\n"
+  echo ""
+  echo "  Option D — Agents only install:"
   echo "     Re-run with --agents-only if you want to skip shared instructions and skills:"
   printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --agents-only${NC}\n"
   echo ""
-  echo "  Option C — Manual project setup on top of the shared install:"
+  echo "  Option E — Manual project setup on top of the shared install:"
   echo "     1. Add project-specific config to .github/copilot-instructions.md"
   echo "     2. Create .specify/memory/agents.md with your commands"
   echo "     3. Create .specify/memory/constitution.md with your principles"

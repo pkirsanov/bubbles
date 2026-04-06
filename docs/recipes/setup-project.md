@@ -7,10 +7,12 @@ First time using Bubbles? Here's how to go from zero to a working project.
 ## Step 1: Install Bubbles
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- --bootstrap --profile foundation
 ```
 
 This installs agents, scripts, prompts, and scaffolds your project config.
+
+If you want the current installer default instead of the lighter first-run path, omit `--profile foundation`. The default remains `delivery` until later canaries justify any change.
 
 ## Step 2: Check Health
 
@@ -29,12 +31,19 @@ Then check overall project health:
 Or:
 ```bash
 bash .github/bubbles/scripts/cli.sh doctor
+bash .github/bubbles/scripts/cli.sh repo-readiness .
 ```
 
 Fix any issues:
 ```
 /bubbles.super  doctor --heal
 ```
+
+If the repo already contains Claude Code, Roo Code, Cursor, or Cline rules, review the migration surfaces before you start authoring new Bubbles behavior:
+
+1. Open the [Interop Migration Guide](../guides/INTEROP_MIGRATION.md).
+2. Open the generated [Interop Migration Matrix](../generated/interop-migration-matrix.md).
+3. Use review-only interop intake first, then supported apply only for the explicit project-owned targets recorded in the import manifest.
 
 ## Step 3: Fill In Your Config
 

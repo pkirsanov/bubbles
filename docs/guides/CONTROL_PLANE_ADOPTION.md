@@ -7,6 +7,8 @@ Related documents:
 - [Control Plane Rollout](CONTROL_PLANE_ROLLOUT.md)
 - [Control Plane Schemas](CONTROL_PLANE_SCHEMAS.md)
 - [Workflow Modes](WORKFLOW_MODES.md)
+- [Interop Migration Guide](INTEROP_MIGRATION.md)
+- [Generated Interop Migration Matrix](../generated/interop-migration-matrix.md)
 
 ## Purpose
 
@@ -56,6 +58,30 @@ Checklist:
 
 Expected outcome:
 - runtime defaults come from one repo-local registry instead of prompt prose
+
+## Adoption Profiles
+
+Adoption profiles are maturity-tier guidance presets. They change bootstrap emphasis, doctor messaging, and repo-readiness severity without changing certification authority, scenario contracts, or artifact ownership.
+
+| Profile | Intended Audience | Guidance Posture | Required Docs | Suggested First Commands |
+| --- | --- | --- | --- | --- |
+| `foundation` | Brownfield repos adopting Bubbles with active local work and partial framework bootstrap | Advisory-first onboarding and smaller first-step cleanup | `docs/guides/CONTROL_PLANE_ADOPTION.md`, `docs/recipes/ask-the-super-first.md` | `bash bubbles/scripts/cli.sh repo-readiness .`, `bash bubbles/scripts/cli.sh doctor` |
+| `delivery` | Teams already ready to operate normal Bubbles packets and workflow surfaces | Standard readiness checklist and default control-plane posture | `docs/guides/CONTROL_PLANE_ADOPTION.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/recipes/ask-the-super-first.md` | `bash bubbles/scripts/cli.sh profile show`, `bash bubbles/scripts/cli.sh repo-readiness .` |
+| `assured` | Teams that want stronger early guardrail visibility before scaling delivery | Guardrail-forward readiness and earlier hygiene pressure | `docs/guides/CONTROL_PLANE_ADOPTION.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/recipes/ask-the-super-first.md` | `bash bubbles/scripts/cli.sh profile show`, `bash bubbles/scripts/cli.sh repo-readiness . --profile assured` |
+
+Invariant for every profile:
+- `bubbles.validate` remains the only certification authority.
+- Scenario contracts and completion gates stay full-strength.
+- Profile changes are repo-local state in `.specify/memory/bubbles.config.json`, not framework-owned trust metadata.
+
+To inspect or change the active profile:
+
+```bash
+bash bubbles/scripts/cli.sh profile show
+bash bubbles/scripts/cli.sh profile list
+bash bubbles/scripts/cli.sh profile set foundation
+bash bubbles/scripts/cli.sh policy status
+```
 
 ## Phase C: Active Spec Inventory
 
@@ -143,3 +169,15 @@ Prefer redesign workflow when:
 - active requirements, UX, design, and scopes all contradict intended behavior
 - stale scopes would otherwise remain executable after migration
 - bulk scenario invalidation is required because approved behavior is changing substantially
+
+## Interop Migration Path
+
+Use the generated migration matrix and the interop migration guide when a repo already carries Claude Code, Roo Code, Cursor, or Cline assets.
+
+1. Start with review-only intake so the repo snapshots external assets into `.github/bubbles-project/imports/**` without mutating framework-managed files.
+2. Use supported apply only for explicit project-owned targets recorded in the import manifest: imported instructions, additive recommendations in `.specify/memory/agents.md`, project-owned helper paths under `scripts/`, and any generated project-owned migration skill.
+3. Treat workflow-mode requests, framework-surface edits, and file collisions as proposal-only outcomes. Those stay reviewable under `.github/bubbles-project/proposals/**` and never become a back door into `.github/bubbles/**`.
+
+The benchmark narrative lives in generated docs, not hand-maintained competitor prose:
+- [Competitive Capabilities](../generated/competitive-capabilities.md)
+- [Interop Migration Matrix](../generated/interop-migration-matrix.md)

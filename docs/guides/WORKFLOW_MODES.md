@@ -114,6 +114,22 @@ The workflow agent infers the correct mode and parameters from your description.
 
 **Not sure which mode?** Ask the super: `/bubbles.super  which mode should I use for <your situation>`
 
+## Adoption Profiles Are Not Workflow Modes
+
+Workflow modes decide phase order. Adoption profiles decide how Bubbles explains bootstrap and readiness guidance.
+
+- Use workflow modes to choose how work executes.
+- Use adoption profiles to choose how onboarding and readiness surfaces speak to the repo.
+- No profile weakens validate-owned certification, scenario contracts, or artifact ownership.
+
+Useful profile commands:
+
+```bash
+bash bubbles/scripts/cli.sh profile show
+bash bubbles/scripts/cli.sh profile set delivery
+bash bubbles/scripts/cli.sh repo-readiness . --profile assured
+```
+
 ---
 
 ## Full Delivery Modes
