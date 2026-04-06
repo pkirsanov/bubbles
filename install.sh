@@ -243,25 +243,6 @@ cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
 
-# ── Install installer shim ──────────────────────────────────────────
-info "Installing installer shim..."
-cp "$TEMP_DIR"/install.sh "${TARGET}/install.sh"
-chmod +x "${TARGET}/install.sh"
-ok "installer shim installed"
-
-# ── Install root metadata ───────────────────────────────────────────
-info "Installing framework metadata..."
-if [[ -f "$TEMP_DIR/README.md" ]]; then
-  cp "$TEMP_DIR/README.md" "${TARGET}/README.md"
-fi
-if [[ -f "$TEMP_DIR/CHANGELOG.md" ]]; then
-  cp "$TEMP_DIR/CHANGELOG.md" "${TARGET}/CHANGELOG.md"
-fi
-if [[ -f "$TEMP_DIR/VERSION" ]]; then
-  cp "$TEMP_DIR/VERSION" "${TARGET}/VERSION"
-fi
-ok "framework metadata installed"
-
 # ── Install bootstrap scaffolding assets ───────────────────────────
 if [[ -d "$TEMP_DIR/templates" ]]; then
   info "Installing bootstrap templates..."
@@ -350,7 +331,6 @@ fi
 
 # ── Version stamp ───────────────────────────────────────────────────
 if [[ -f "$TEMP_DIR/VERSION" ]]; then
-  cp "$TEMP_DIR/VERSION" "${TARGET}/VERSION"
   cp "$TEMP_DIR/VERSION" "${TARGET}/bubbles/.version"
   VERSION=$(cat "${TARGET}/bubbles/.version")
   ok "Bubbles v${VERSION} installed"

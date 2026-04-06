@@ -170,6 +170,7 @@ scope_files=()
 scope_analysis_files=()
 scope_analysis_labels=()
 report_files=()
+spec_file="$feature_dir/spec.md"
 scenario_manifest_file="$feature_dir/scenario-manifest.json"
 lockdown_approvals_file="$feature_dir/lockdown-approvals.json"
 invalidation_ledger_file="$feature_dir/invalidation-ledger.json"
@@ -489,9 +490,7 @@ if grep -qE '"certification"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
   pass "state.json contains certification block"
 
   certification_status="$({
-    grep -A10 '"certification"' "$state_file" 2>/dev/null \
-      | grep -m1 '"status"' \
-      | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/'
+    python3 -c "import json; data=json.load(open('$state_file')); print(data.get('certification', {}).get('status', ''))"
   } || true)"
 
   if [[ -n "$certification_status" ]]; then

@@ -349,9 +349,7 @@ if [[ -f "$state_file" ]]; then
   } || true)"
 
   state_certification_status="$({
-    grep -A12 '"certification"' "$state_file" 2>/dev/null \
-      | grep -m1 '"status"' \
-      | sed -E 's/.*"status"[[:space:]]*:[[:space:]]*"([^"]+)"/\1/'
+    python3 -c "import json; data=json.load(open('$state_file')); print(data.get('certification', {}).get('status', ''))"
   } || true)"
 
   state_workflow_mode="$({

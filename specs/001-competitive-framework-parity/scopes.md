@@ -1217,6 +1217,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
 
 - [x] TP-05.1 proves SCN-001-E01 by capturing external assets into project-owned intake surfaces and classifying the supported external source formats correctly.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/interop-import-selftest.sh
   Running interop-import selftest...
@@ -1232,6 +1233,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] TP-05.2 proves SCN-001-E01 by writing raw snapshots, normalized output, and translation reports only into project-owned intake paths.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/interop-import-selftest.sh
   Running interop-import selftest...
@@ -1247,6 +1249,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] TP-05.3 proves SCN-001-E02 by escalating unsupported or framework-level changes as proposals instead of direct framework mutation.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/interop-import-selftest.sh
   Running interop-import selftest...
@@ -1259,6 +1262,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && git status --short -- bubbles/interop-registry.yaml bubbles/scripts/interop-registry.sh bubbles/scripts/interop-intake.sh bubbles/scripts/interop-import-selftest.sh bubbles/scripts/cli.sh docs/guides/INSTALLATION.md docs/recipes/framework-ops.md install.sh bubbles/scripts/generate-release-manifest.sh bubbles/scripts/release-manifest-selftest.sh bubbles/release-manifest.json && git --no-pager diff --stat -- bubbles/interop-registry.yaml bubbles/scripts/interop-registry.sh bubbles/scripts/interop-intake.sh bubbles/scripts/interop-import-selftest.sh bubbles/scripts/cli.sh docs/guides/INSTALLATION.md docs/recipes/framework-ops.md install.sh bubbles/scripts/generate-release-manifest.sh bubbles/scripts/release-manifest-selftest.sh bubbles/release-manifest.json
    M bubbles/scripts/cli.sh
@@ -1281,6 +1285,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
 - [x] Broader E2E regression suite passes.
 
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 900 bash bubbles/scripts/framework-validate.sh
   Bubbles Framework Validation
@@ -1363,6 +1368,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] TP-05.7 preserves the release-manifest trust baseline during review-only interop intake, keeping `release hygiene generates one complete trust manifest for downstream installs.` true for the post-implementation packet.
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 900 bash bubbles/scripts/framework-validate.sh
   Bubbles Framework Validation
@@ -1385,6 +1391,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] TP-05.8 preserves downstream install provenance during review-only interop intake, keeping `downstream installs capture release metadata and provenance for release and local-source modes.` true for the post-implementation packet.
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 900 bash bubbles/scripts/framework-validate.sh
   ==> Install provenance selftest
@@ -1410,6 +1417,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] TP-05.9 preserves trust-surface behavior during review-only interop intake, keeping `doctor, framework-write-guard, and upgrade dry-run expose trust state and local-source risk explicitly.` true for the post-implementation packet.
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 900 bash bubbles/scripts/framework-validate.sh
   ==> Trust doctor selftest
@@ -1453,6 +1461,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
 - [x] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns.
 
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 600 bash bubbles/scripts/interop-import-selftest.sh
   Running interop-import selftest...
@@ -1494,6 +1503,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] Rollback or restore path for shared infrastructure changes is documented and verified.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && grep -n 'Rollback or restore path: remove interop command registration' specs/001-competitive-framework-parity/scopes.md && ls -la bubbles/scripts/interop-import-selftest.sh bubbles/scripts/release-manifest-selftest.sh && grep -n 'supportedInteropSources' bubbles/release-manifest.json && grep -n 'interop-registry.yaml' install.sh bubbles/scripts/generate-release-manifest.sh docs/guides/INSTALLATION.md docs/recipes/framework-ops.md
   578:  705:- Rollback or restore path: remove interop command registration and registry entries together, delete generated import schema changes in one revert, and rerun the import canaries before broader CLI reruns.
@@ -1508,6 +1518,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
   ```
 - [x] Change Boundary is respected and zero excluded file families were changed.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && git status --short -- bubbles/interop-registry.yaml bubbles/scripts/cli.sh bubbles/scripts/interop-registry.sh bubbles/scripts/interop-intake.sh bubbles/scripts/interop-import-selftest.sh bubbles/scripts/generate-release-manifest.sh bubbles/scripts/release-manifest-selftest.sh bubbles/release-manifest.json install.sh docs/guides/INSTALLATION.md docs/recipes/framework-ops.md && git diff --stat -- bubbles/interop-registry.yaml bubbles/scripts/cli.sh bubbles/scripts/interop-registry.sh bubbles/scripts/interop-intake.sh bubbles/scripts/interop-import-selftest.sh bubbles/scripts/generate-release-manifest.sh bubbles/scripts/release-manifest-selftest.sh bubbles/release-manifest.json install.sh docs/guides/INSTALLATION.md docs/recipes/framework-ops.md
    M bubbles/scripts/cli.sh
@@ -1530,6 +1541,7 @@ Scenario: SCN-001-E02 unsupported or framework-level changes are escalated as pr
 - [x] Stress coverage for the translation-heavy interop intake path passes and proves repeated import batches stay bounded.
 
   **Phase:** test
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && timeout 1200 bash bubbles/scripts/interop-import-selftest.sh && timeout 1200 bash bubbles/scripts/interop-import-selftest.sh && timeout 1200 bash bubbles/scripts/interop-import-selftest.sh
   Running interop-import selftest...
@@ -1674,6 +1686,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
 
 - [x] TP-06.1 proves SCN-001-F01 by applying supported interop outputs only into declared project-owned paths with manifest updates, collision fallback to proposals, and zero framework-managed mutations.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/interop-apply-selftest.sh
   Running interop-apply selftest...
@@ -1697,6 +1710,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] TP-06.2 proves SCN-001-F02 by keeping `ledger-backed competitive docs stay aligned with the source-of-truth registry.` while evaluator-facing migration guidance explains supported, review-only, and unsupported paths clearly from the shared truth surfaces.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/capability-ledger-selftest.sh
   Running capability-ledger selftest...
@@ -1715,6 +1729,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] TP-06.3 preserves SCN-001-F02 by keeping `README and generated evaluator docs expose the same competitive truth path.` with user-visible assertions instead of proxy checks.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/competitive-docs-selftest.sh
   Running competitive-docs selftest...
@@ -1734,6 +1749,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior are added or updated.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && git status --short -- README.md bubbles/scripts/cli.sh bubbles/scripts/interop-apply.sh bubbles/scripts/interop-apply-selftest.sh bubbles/interop-registry.yaml bubbles/capability-ledger.yaml docs/guides/CONTROL_PLANE_ADOPTION.md docs/recipes/setup-project.md docs/guides/INTEROP_MIGRATION.md docs/generated/interop-migration-matrix.md bubbles/scripts/generate-capability-ledger-docs.sh bubbles/scripts/capability-ledger-selftest.sh bubbles/scripts/competitive-docs-selftest.sh bubbles/scripts/framework-validate.sh bubbles/scripts/capability-freshness-selftest.sh bubbles/release-manifest.json && git diff --stat -- README.md bubbles/scripts/cli.sh bubbles/scripts/interop-apply.sh bubbles/scripts/interop-apply-selftest.sh bubbles/interop-registry.yaml bubbles/capability-ledger.yaml docs/guides/CONTROL_PLANE_ADOPTION.md docs/recipes/setup-project.md docs/guides/INTEROP_MIGRATION.md docs/generated/interop-migration-matrix.md bubbles/scripts/generate-capability-ledger-docs.sh bubbles/scripts/capability-ledger-selftest.sh bubbles/scripts/competitive-docs-selftest.sh bubbles/scripts/framework-validate.sh bubbles/scripts/capability-freshness-selftest.sh bubbles/release-manifest.json
    M README.md
@@ -1761,6 +1777,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] Broader E2E regression suite passes.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/framework-validate.sh
   Bubbles Framework Validation
@@ -1821,6 +1838,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] TP-06.7 preserves the release-manifest trust baseline during supported interop apply, keeping `release hygiene generates one complete trust manifest for downstream installs.` true for the post-implementation packet.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/framework-validate.sh
   Bubbles Framework Validation
@@ -1867,6 +1885,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && bash bubbles/scripts/framework-validate.sh
   ==> Capability ledger selftest
@@ -1898,6 +1917,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] Rollback or restore path for shared infrastructure changes is documented and verified.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && grep -n 'Rollback or restore path: revert apply wiring and generated migration docs together' specs/001-competitive-framework-parity/scopes.md && ls -la bubbles/scripts/interop-apply-selftest.sh bubbles/scripts/capability-ledger-selftest.sh bubbles/scripts/competitive-docs-selftest.sh bubbles/scripts/framework-validate.sh && grep -n 'supported-interop-apply' bubbles/capability-ledger.yaml && grep -n 'interop-migration-matrix.md' README.md docs/guides/CONTROL_PLANE_ADOPTION.md docs/recipes/setup-project.md bubbles/scripts/generate-capability-ledger-docs.sh
   579:  777:- Rollback or restore path: revert apply wiring and generated migration docs together, clear the new project-owned output paths in test fixtures, and rerun apply plus docs canaries before broader validation reruns.
@@ -1920,6 +1940,7 @@ Scenario: SCN-001-F02 evaluator-facing migration guidance explains supported, re
   ```
 - [x] Change Boundary is respected and zero excluded file families were changed.
   **Phase:** implement
+  **Evidence:**
   ```text
   $ cd /home/philipk/bubbles && git status --short -- README.md bubbles/scripts/cli.sh bubbles/scripts/interop-apply.sh bubbles/scripts/interop-apply-selftest.sh bubbles/interop-registry.yaml bubbles/capability-ledger.yaml docs/guides/CONTROL_PLANE_ADOPTION.md docs/recipes/setup-project.md docs/guides/INTEROP_MIGRATION.md docs/generated/interop-migration-matrix.md bubbles/scripts/generate-capability-ledger-docs.sh bubbles/scripts/capability-ledger-selftest.sh bubbles/scripts/competitive-docs-selftest.sh bubbles/scripts/framework-validate.sh bubbles/scripts/capability-freshness-selftest.sh bubbles/release-manifest.json && git diff --stat -- README.md bubbles/scripts/cli.sh bubbles/scripts/interop-apply.sh bubbles/scripts/interop-apply-selftest.sh bubbles/interop-registry.yaml bubbles/capability-ledger.yaml docs/guides/CONTROL_PLANE_ADOPTION.md docs/recipes/setup-project.md docs/guides/INTEROP_MIGRATION.md docs/generated/interop-migration-matrix.md bubbles/scripts/generate-capability-ledger-docs.sh bubbles/scripts/capability-ledger-selftest.sh bubbles/scripts/competitive-docs-selftest.sh bubbles/scripts/framework-validate.sh bubbles/scripts/capability-freshness-selftest.sh bubbles/release-manifest.json
    M README.md

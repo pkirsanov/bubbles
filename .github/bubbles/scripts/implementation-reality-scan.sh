@@ -175,7 +175,7 @@ for scope_file in "${scope_files[@]}"; do
     if [[ -n "$resolved" ]]; then
       add_impl_file "$resolved"
     fi
-  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs|sh)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
 
   while IFS= read -r raw_test_path; do
     test_path="${raw_test_path//\`/}"
@@ -184,7 +184,7 @@ for scope_file in "${scope_files[@]}"; do
     if [[ -n "$resolved_test" ]]; then
       add_test_file "$resolved_test"
     fi
-  done < <(grep -oE '`[^`]+(spec|test)[^`]*\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+(spec|test)[^`]*\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs|sh)\b[^`]*`' "$scope_file" 2>/dev/null | sort -u || true)
 done
 
 is_live_system_test_file() {
@@ -218,7 +218,7 @@ if [[ ${#impl_files[@]} -eq 0 ]] && [[ -f "$feature_dir/design.md" ]]; then
     if [[ -n "$resolved" ]]; then
       add_impl_file "$resolved"
     fi
-  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs)\b[^`]*`' "$feature_dir/design.md" 2>/dev/null | sort -u || true)
+  done < <(grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java|dart|scala|brs|sh)\b[^`]*`' "$feature_dir/design.md" 2>/dev/null | sort -u || true)
   if [[ ${#impl_files[@]} -gt 0 ]]; then
     vwarn "Resolved ${#impl_files[@]} file(s) from design.md fallback — scopes.md should reference these directly"
   fi
