@@ -1,3 +1,0 @@
-imports:
-  claude-code:
-    target: .github/bubbles-project/imports/claude-code

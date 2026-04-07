@@ -9,7 +9,7 @@
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap --profile assured  # Install + scaffold with assured guidance
 #   curl -fsSL .../install.sh | bash -s -- v1.0.0       # Pin to version
 #   curl -fsSL .../install.sh | bash -s -- --bootstrap --cli ./myproject.sh --name "My Project"
-#   bash /path/to/bubbles/install.sh --local-source /path/to/bubbles   # Install from local checkout
+#   bash /path/to/bubbles/install.sh --local-source /path/to/bubbles   # Install into another repo from a local checkout
 #
 set -euo pipefail
 
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --cli ./foo.sh     Set CLI entrypoint (auto-detected if omitted)"
       echo "  --name \"My Proj\"   Set project name (auto-detected if omitted)"
       echo "  --agents-only      Skip shared instructions and skills"
-      echo "  --local-source DIR Install from a local Bubbles checkout instead of GitHub"
+      echo "  --local-source DIR Install into this downstream repo from a local Bubbles checkout instead of GitHub"
       echo ""
       exit 0
       ;;
@@ -89,6 +89,11 @@ fi
 
 if [[ ! -d ".git" ]]; then
   fail "Not a git repo. Run this from your project root."
+fi
+
+CURRENT_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [[ -f "$CURRENT_REPO_ROOT/install.sh" && -f "$CURRENT_REPO_ROOT/VERSION" && -d "$CURRENT_REPO_ROOT/agents" && -d "$CURRENT_REPO_ROOT/prompts" && -d "$CURRENT_REPO_ROOT/bubbles" && -f "$CURRENT_REPO_ROOT/bubbles/scripts/cli.sh" ]]; then
+  fail "Do not run install.sh inside the Bubbles source repository. The installer is for downstream repos only. In the source repo, edit framework files directly and validate with 'bash bubbles/scripts/cli.sh framework-validate' or 'bash bubbles/scripts/cli.sh release-check'."
 fi
 
 # ── Source acquisition ──────────────────────────────────────────────

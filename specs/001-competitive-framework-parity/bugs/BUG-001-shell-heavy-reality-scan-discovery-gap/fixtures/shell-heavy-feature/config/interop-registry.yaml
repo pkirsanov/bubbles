@@ -1,4 +1,0 @@
-sources:
-- id: claude-code
-  parser: markdown-export
-  review_only: true

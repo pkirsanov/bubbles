@@ -14,8 +14,8 @@
 | 1 | `.specify/memory/constitution.md` | Repo governance for this source checkout |
 | 2 | `.specify/memory/agents.md` | Command registry and file layout |
 | 3 | `.github/copilot-instructions.md` | Source-repo operating rules |
-| 4 | `.github/agents/bubbles_shared/critical-requirements.md` | Top-priority universal constraints |
-| 5 | `.github/agents/bubbles_shared/agent-common.md` | Shared workflow and evidence rules |
+| 4 | `agents/bubbles_shared/critical-requirements.md` | Top-priority universal constraints |
+| 5 | `agents/bubbles_shared/agent-common.md` | Shared workflow and evidence rules |
 | 6 | `README.md` | Source-repo overview and maintainer entry points |
 
 ---
@@ -105,7 +105,7 @@ bash bubbles/scripts/cli.sh run-state --all
 | Shell validation surfaces | `bubbles/scripts/*.sh` |
 | Specs and packets | `specs/` |
 | Repo memory and control plane | `.specify/memory/`, `.specify/runtime/`, `.specify/metrics/` |
-| Generated install payload | `.github/` mirrors installed framework layout, but source-of-truth edits belong in the repo-root framework directories |
+| Downstream install payload | Downstream repos receive the installed framework under `.github/`, but source-of-truth edits belong in the repo-root framework directories |
 
 ### Naming Conventions
 
@@ -147,5 +147,5 @@ bash bubbles/scripts/cli.sh run-state --all
 | Framework CLI and scripts | `bubbles/scripts/` |
 | Repo policies | `.github/copilot-instructions.md` |
 | Governance | `.specify/memory/constitution.md` |
-| Shared rules | `.github/agents/bubbles_shared/agent-common.md` |
+| Shared rules | `agents/bubbles_shared/agent-common.md` |
 | Workflow registry | `bubbles/workflows.yaml` |
