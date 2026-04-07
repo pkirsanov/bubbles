@@ -472,10 +472,12 @@ Follow [workflow-execution-loops.md](bubbles_shared/workflow-execution-loops.md)
 
 Retained workflow-agent anchors:
 - `mode: stochastic-quality-sweep` is randomized round-based execution across the active spec pool.
-- Each round picks a spec and trigger, resolves `triggerWorkflowModes`, and dispatches the trigger-owned child workflow.
+- **SYNCHRONOUS ROUND LOOP:** Each round MUST dispatch its child workflow via `runSubagent`, WAIT for a terminal `## RESULT-ENVELOPE`, and record the outcome BEFORE starting the next round. Batching round selections without dispatching child workflows is FORBIDDEN.
+- Each round picks a spec and trigger, resolves `triggerWorkflowModes`, and dispatches the trigger-owned child workflow with `runSubagent`.
 - The stochastic parent MUST NOT execute the trigger phase directly or build a manual trigger-specific fix cycle when a mapped child workflow exists.
-- Invoke `bubbles.workflow` as a child workflow with the resolved mode and require that it owns the full chain from its trigger through the finding-owned planning workflow.
+- Invoke `bubbles.workflow` as a child workflow with the resolved mode and require that it owns the full chain from its trigger through the finding-owned planning workflow, then implementation, tests, validation, audit, docs, finalize, and certification.
 - The stochastic parent MUST NOT rerun a bespoke docs/finalize tail per spec after the child workflow returns.
+- **No report-only completion.** Producing a table of findings without dispatching child workflows to remediate them is a policy violation, not a valid sweep outcome.
 - The stochastic sweep MUST NOT end in summary-only output while any touched spec or any round remains non-terminal.
 - Non-terminal rounds must preserve workflow-owned continuation with `preferredWorkflowMode: stochastic-quality-sweep`.
 

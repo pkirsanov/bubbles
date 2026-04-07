@@ -67,6 +67,17 @@ check_pattern "$AGENTS_DIR/bubbles.implement.agent.md" '`addressedFindings`' "Im
 check_pattern "$AGENTS_DIR/bubbles.implement.agent.md" '`unresolvedFindings`' "Implement agent requires unresolvedFindings in the result envelope"
 check_pattern "$AGENTS_DIR/bubbles.implement.agent.md" 'completed_owned.*unresolvedFindings.*empty' "Implement agent blocks completed_owned when unresolved findings remain"
 
+# Stochastic sweep round loop must be synchronous and dispatch-then-wait
+check_pattern "$AGENTS_DIR/bubbles.workflow.agent.md" 'SYNCHRONOUS ROUND LOOP.*Each round MUST dispatch.*runSubagent.*WAIT' "Workflow agent enforces synchronous dispatch-and-wait per round"
+check_pattern "$AGENTS_DIR/bubbles.workflow.agent.md" 'Batching round selections without dispatching child workflows is FORBIDDEN' "Workflow agent forbids batch-then-summarize round execution"
+check_pattern "$AGENTS_DIR/bubbles.workflow.agent.md" 'No report-only completion.*Producing a table of findings without dispatching child workflows' "Workflow agent forbids report-only sweep completion"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-execution-loops.md" 'CRITICAL: Each round MUST complete.*including full child workflow remediation.*before the next round starts' "Execution loops enforce synchronous round completion"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-execution-loops.md" 'No batch-then-summarize.*MUST NOT generate all N round selections first' "Execution loops explicitly prohibit batch-then-summarize pattern"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-execution-loops.md" 'No report-only completion.*Producing a table of findings without dispatching' "Execution loops forbid report-only sweep output"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-execution-loops.md" 'Dispatch child workflow via.*runSubagent' "Execution loops require runSubagent for child dispatch"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-execution-loops.md" 'WAIT for the child workflow to return a terminal.*RESULT-ENVELOPE.*Do NOT proceed to the next round' "Execution loops require waiting for child before next round"
+check_pattern "$AGENTS_DIR/bubbles_shared/workflow-fix-cycle-protocol.md" 'dispatch.*wait.*record for one round before starting the next' "Fix-cycle protocol enforces per-round synchronous completion in round-based loops"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "finding-closure selftest failed with $failures issue(s)."
   exit 1

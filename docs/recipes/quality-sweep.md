@@ -63,7 +63,9 @@ Don't know what to check? Let the system randomly pick:
 /bubbles.workflow  stochastic-quality-sweep
 ```
 
-The stochastic parent now does exactly two things per round: pick a spec and pick a trigger. After that it dispatches the mapped trigger-owned end-to-end workflow and lets that child workflow own the full chain.
+The stochastic parent now does exactly two things per round: pick a spec and pick a trigger. After that it dispatches the mapped trigger-owned end-to-end workflow via `runSubagent` and **waits for it to complete** before starting the next round.
+
+**Rounds are synchronous.** The sweep MUST NOT batch-select all rounds first and then produce a findings table — that is a scoreboard, not a sweep. Each round dispatches a child workflow, waits for its terminal `RESULT-ENVELOPE`, records the outcome, and only then proceeds to the next round.
 
 That child workflow is not allowed to stop at a diagnosis. If the trigger finds a legitimate bug, regression, gap, or improvement, it must run the full finding-owned closure workflow before returning a terminal result upward:
 

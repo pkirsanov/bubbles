@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Stochastic Sweep Must Remediate, Not Just Report (Regression Fix)
+
+- **Root cause:** `workflow-execution-loops.md` Phase 0.9 was a table-of-contents skeleton that listed what it owned but never provided the step-by-step round loop procedure. The round loop existed only in YAML comments, and the "wait for child completion" requirement was in a separate generic protocol file (`workflow-fix-cycle-protocol.md`), not wired into the loop body. This allowed the LLM to interpret "dispatch N rounds" as "generate N round selections and produce a findings report."
+- **Fix: Populated the authoritative round loop** — `workflow-execution-loops.md` Phase 0.9 now contains the full step-by-step round procedure: pool resolution → synchronous round loop (select → resolve → dispatch via `runSubagent` → WAIT for terminal RESULT-ENVELOPE → record → classify → next round) → sweep summary with continuation.
+- **Fix: Explicit synchronous dispatch-and-wait** — every round MUST dispatch its child workflow and wait for completion before the next round starts. Batching round selections without dispatching child workflows is now explicitly FORBIDDEN in three locations.
+- **Fix: No report-only completion** — producing a findings table without dispatching child workflows to remediate is now explicitly called out as a policy violation in the execution loops, the workflow agent anchors, and the fix-cycle protocol.
+- **Fix: Fix-cycle protocol round-loop clause** — `workflow-fix-cycle-protocol.md` now explicitly addresses round-based loops (stochastic sweep, iterate), requiring dispatch → wait → record per round.
+- **Selftest coverage** — 10 new assertions in `finding-closure-selftest.sh` verify the synchronous round loop, batch-then-summarize prohibition, report-only prohibition, runSubagent dispatch requirement, and per-round wait-before-next instruction.
+
 ### Workflow Dispatch Reliability
 
 - **Instruction budget is now a framework validation gate** — `framework-validate` and `doctor` now fail when any agent prompt exceeds the hard instruction-budget limit instead of treating budget drift as an informational audit only.

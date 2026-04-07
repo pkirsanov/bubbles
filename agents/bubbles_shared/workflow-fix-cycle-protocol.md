@@ -25,6 +25,7 @@ Use this module when `bubbles.workflow` runs a stochastic or other trigger-owned
 - Pass through policy/options context that affects execution (`socratic`, `tdd`, `gitIsolation`, `autoCommit`, `specReview`, and similar workflow tags).
 - Preserve any `route_required` or `blocked` outcome from the child workflow. Parent workflows must not downgrade those outcomes into a clean round summary.
 - Parent workflows MUST wait for the child finding-owned workflow to reach a terminal `## RESULT-ENVELOPE`, then report that envelope upward instead of narrating partially-closed work.
+- **In round-based loops (stochastic sweep, iterate):** the parent MUST complete steps dispatch → wait → record for one round before starting the next. Selecting multiple rounds without dispatching child workflows is a batch-then-summarize violation.
 
 ## Child Workflow Responsibilities
 
