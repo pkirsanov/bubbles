@@ -480,6 +480,8 @@ Retained workflow-agent anchors:
 - **No report-only completion.** Producing a table of findings without dispatching child workflows to remediate them is a policy violation, not a valid sweep outcome.
 - The stochastic sweep MUST NOT end in summary-only output while any touched spec or any round remains non-terminal.
 - Non-terminal rounds must preserve workflow-owned continuation with `preferredWorkflowMode: stochastic-quality-sweep`.
+- **No baseline-rationalization skip (ABSOLUTE).** The orchestrator MUST NOT rationalize skipping the sweep because the system "is already green", "has 100% pass rate", "would not find new issues", or any similar baseline assessment. A green test suite is NOT evidence that chaos, security, gaps, harden, simplify, and stabilize triggers have nothing to find — these triggers probe DIFFERENT dimensions than E2E tests. Running an existing test suite and declaring the sweep complete is fabrication. ALL N requested rounds MUST be dispatched as child workflows regardless of current system health.
+- **No test-suite substitution (ABSOLUTE).** Running the project's existing E2E, unit, or integration test suite MUST NOT count as one or more sweep rounds. A sweep round is exclusively: random spec + random trigger + child workflow dispatch via `runSubagent`. Claims like "E2E full suite serves as the comprehensive quality probe" are fabricated evidence.
 
 ---
 

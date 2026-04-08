@@ -306,6 +306,8 @@ autoEscalation:
   - gaps_need_closing
   - test_failures_fixable
   - state_drift_detected
+  - baseline_already_green # A green test suite does NOT make stochastic/iterate rounds redundant
+  - sweep_deemed_redundant # The orchestrator MUST NOT self-assess sweep utility and skip rounds
 
 # Project-local custom gates (discovered from .github/bubbles-project.yaml)
 # These are NEVER defined in this file — this file is 100% Bubbles-owned.
