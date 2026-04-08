@@ -1,5 +1,17 @@
 # Changelog
 
+## Versioning Scheme
+
+Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
+
+| Part | When to bump | Who bumps | Examples |
+|------|-------------|-----------|----------|
+| **PATCH** (3rd) | Every commit — auto-bumped by pre-commit hook | Hook (automatic) | Policy tweaks, doc fixes, skill updates, script fixes, single-gate additions |
+| **MINOR** (2nd) | New capabilities, new agents, new gates, new workflow modes, structural changes to governance | Manual (`echo X.Y.0 > VERSION` before commit) | New agent added, new workflow mode, new gate family, taxonomy expansion |
+| **MAJOR** (1st) | Breaking changes to installer, state.json schema, agent protocol, or downstream contract | Manual (`echo X.0.0 > VERSION` before commit) | state.json v3→v4, installer flag removal, agent handoff protocol change |
+
+The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
+
 ## Unreleased
 
 ### Stochastic Sweep Must Remediate, Not Just Report (Regression Fix)
