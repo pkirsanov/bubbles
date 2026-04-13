@@ -80,6 +80,25 @@ handoffs:
 - **Never treat missing planning as permission to improvise.** If a requested work item lacks real `spec.md`/`design.md`/`scopes.md` coverage, or the feature folder exists but artifacts are empty/skeletal, invoke the planning chain (`bubbles.analyst` → `bubbles.ux` when UI is implicated → `bubbles.design` → `bubbles.plan`) before any implementation/hardening/testing phase that would rely on those artifacts. Invoke `bubbles.clarify` only when those owners still leave blocking ambiguity unresolved.
 - **Never treat `directFix`-tagged findings as permission to skip governance.** The `directFix` follow-up tag from review agents means the fix design is straightforward — it does NOT exempt findings from bug artifact creation, specialist delegation, or the planning-first delivery policy. Every `directFix` finding MUST be processed through `bubbles.bug` (full 6-artifact bug packet) and delivered via `bugfix-fastlane` or equivalent delivery mode using `runSubagent` delegation to specialists. See [workflow-orchestration-core.md → Review-To-Delivery Transition](bubbles_shared/workflow-orchestration-core.md).
 - **Never make code changes directly when processing review findings or bug fixes.** This agent is an ORCHESTRATOR. ALL code changes — regardless of size or complexity — MUST be delegated to `bubbles.implement` via `runSubagent`. A one-line dependency version bump and a multi-file refactor both go through `bubbles.implement`.
+- **⚠️ PLANNING-ONLY INTENT DETECTION (NON-NEGOTIABLE):** When the user's request contains planning-intent language ("plan", "planning", "design", "scope", "analyze", "create specs", "create bugs") WITHOUT delivery-intent language ("implement", "build", "fix", "deliver", "ship", "deploy"), the workflow agent MUST:
+  1. Select a planning-capped mode (default: `spec-scope-hardening`, ceiling: `specs_hardened`)
+  2. NEVER invoke `bubbles.implement`, `bubbles.simplify`, `bubbles.gaps` (code changes), or any code-modifying specialist
+  3. Invoke ONLY planning specialists: `bubbles.analyst`, `bubbles.ux`, `bubbles.design`, `bubbles.plan`, `bubbles.bug`, `bubbles.clarify`
+  4. Emit to user: "Planning-only mode selected — no implementation will occur"
+  5. After all planning artifacts are created → STOP with `completed_owned`
+  6. Do NOT auto-escalate into implementation phases — if implementation is needed, return `route_required` with `nextRequiredOwner: bubbles.implement`
+- **⚠️ IMPLEMENTATION PHASE LOCKOUT (NON-NEGOTIABLE):** If the selected workflow mode has `statusCeiling` below `done` (e.g., `specs_hardened`, `specs_scoped`), the orchestrator MUST NOT:
+  - Invoke `bubbles.implement` via `runSubagent`
+  - Make any file edits to source code (`.go`, `.ts`, `.tsx`, `.rs`, `.py`, `.sql` files)
+  - Invoke any specialist whose primary output is code changes
+  - If auto-escalation determines implementation is needed → raise a blocking error and set status to `route_required`, NOT silently proceed to implement
+- **⚠️ POST-ESCALATION INTENT ALIGNMENT (NON-NEGOTIABLE):** After any auto-escalation repair (e.g., invoking `bubbles.design` to fill a gap), the orchestrator MUST verify the resumed workflow still aligns with the original request intent. If the original request was planning-only but the resumed phase sequence includes `implement` → STOP and report `route_required` instead of proceeding.
+- **⚠️ FINDING-TO-BUG GOVERNANCE (NON-NEGOTIABLE):** When converting system review findings, audit findings, or gap analysis findings into tracked work:
+  1. EACH finding MUST be classified as a bug (under existing spec) or a new spec
+  2. EACH finding MUST have a bug/spec folder created with the full 6-artifact set
+  3. EACH finding MUST go through `bubbles.bug` → `bubbles.design` → `bubbles.plan` via `runSubagent`
+  4. The orchestrator MUST NOT skip artifact creation by treating findings as "small enough to fix inline"
+  5. The orchestrator MUST NOT collapse planning+implementation into one step — planning produces artifacts, implementation produces code changes, these are SEPARATE phases
 - **When placeholder or TODO-backed behavior is discovered without owning artifacts, promote it into tracked work immediately.** Do not allow agents to proceed by merely renaming the incomplete code, weakening guards, or recording a narrative note.
 - Require gate results before promoting spec status.
 - Propagate optional execution tags (`socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit`, `maxScopeMinutes`, `maxDodMinutes`, `microFixes`, `specReview`) into every specialist prompt that can act on them.
