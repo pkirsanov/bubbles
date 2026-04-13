@@ -476,6 +476,10 @@ Retained workflow-agent anchors:
 - `mode: stochastic-quality-sweep` is randomized round-based execution across the active spec pool.
 - **SYNCHRONOUS ROUND LOOP:** Each round MUST dispatch its child workflow via `runSubagent`, WAIT for a terminal `## RESULT-ENVELOPE`, and record the outcome BEFORE starting the next round. Batching round selections without dispatching child workflows is FORBIDDEN.
 - Each round picks a spec and trigger, resolves `triggerWorkflowModes`, and dispatches the trigger-owned child workflow with `runSubagent`.
+- **⚠️ DISPATCH TARGET IS ALWAYS `bubbles.workflow` WITH THE MAPPED MODE (ABSOLUTE).** For EVERY round: look up `triggerWorkflowModes[trigger]` → get the child mode → dispatch `runSubagent("bubbles.workflow", "specs/{spec} mode: {mapped-mode}")`. Two known failure modes are FORBIDDEN:
+  - ❌ **Failure Mode 1 (default-to-implement):** Dispatching `runSubagent("bubbles.implement", ...)` instead of the child workflow. This skips the trigger probe and gives every spec identical treatment.
+  - ❌ **Failure Mode 2 (direct-trigger-agent):** Dispatching `runSubagent("bubbles.chaos", ...)` or `runSubagent("bubbles.harden", ...)` instead of the child workflow. This runs only the probe and skips the implementation/quality chain.
+  - ✅ **CORRECT:** `runSubagent("bubbles.workflow", "specs/{spec} mode: chaos-hardening")` — always `bubbles.workflow` with the mapped mode.
 - The stochastic parent MUST NOT execute the trigger phase directly or build a manual trigger-specific fix cycle when a mapped child workflow exists.
 - Invoke `bubbles.workflow` as a child workflow with the resolved mode and require that it owns the full chain from its trigger through the finding-owned planning workflow, then implementation, tests, validation, audit, docs, finalize, and certification.
 - The stochastic parent MUST NOT rerun a bespoke docs/finalize tail per spec after the child workflow returns.
