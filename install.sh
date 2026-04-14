@@ -537,6 +537,20 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
+  # ── Scaffold: AGENTS.md (root-level guardrails) ──────────────────
+  # AGENTS.md is the newer VS Code convention for repo-wide AI rules.
+  # It complements copilot-instructions.md — both are loaded by GHCP.
+  if [[ ! -f "$REPO_ROOT/AGENTS.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/AGENTS.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/AGENTS.md.tmpl" "$REPO_ROOT/AGENTS.md"
+      ok "Created AGENTS.md (root-level AI guardrails)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped AGENTS.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
   # ── Scaffold: terminal-discipline.instructions.md ─────────────────
   if [[ ! -f "${TARGET}/instructions/terminal-discipline.instructions.md" ]]; then
     if [[ -f "$TEMPLATE_DIR/terminal-discipline.instructions.md.tmpl" ]]; then
@@ -587,6 +601,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
 | File | Status |
 |------|--------|
 | `.github/copilot-instructions.md` | ✅ Created by bootstrap |
+| `AGENTS.md` | ✅ Created by bootstrap (root-level AI guardrails) |
 | `.github/instructions/terminal-discipline.instructions.md` | ✅ Created by bootstrap |
 | `.specify/memory/constitution.md` | ✅ Created by bootstrap |
 | `.specify/memory/agents.md` | ✅ Created by bootstrap |
@@ -594,7 +609,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
 
 ## Customization Checklist
 
-- [ ] Update CLI commands in `copilot-instructions.md` and `agents.md`
+- [ ] Update CLI commands in `copilot-instructions.md`, `AGENTS.md`, and `agents.md`
 - [ ] Add project-specific test types and commands
 - [ ] Add Docker/container configuration (if applicable)
 - [ ] Add project-specific principles to `constitution.md`
@@ -730,6 +745,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "     .specify/memory/.gitignore                      — Ignore runtime profile/proposal artifacts"
   echo "     .specify/metrics/.gitignore                     — Ignore runtime metrics artifacts"
   echo "     .github/copilot-instructions.md                 — Project policies"
+  echo "     AGENTS.md                                       — Root-level AI guardrails"
   echo "     .github/instructions/terminal-discipline...md   — CLI discipline"
   echo "     .github/bubbles-project.yaml                    — Scan patterns (auto-detected)"
   echo ""
@@ -786,7 +802,7 @@ else
   printf "     ${CYAN}curl -fsSL .../install.sh | bash -s -- --agents-only${NC}\n"
   echo ""
   echo "  Option E — Manual project setup on top of the shared install:"
-  echo "     1. Add project-specific config to .github/copilot-instructions.md"
+  echo "     1. Add project-specific config to .github/copilot-instructions.md and AGENTS.md"
   echo "     2. Create .specify/memory/agents.md with your commands"
   echo "     3. Create .specify/memory/constitution.md with your principles"
   echo ""
