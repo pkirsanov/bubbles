@@ -540,9 +540,9 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   # ── Scaffold: AGENTS.md (root-level guardrails) ──────────────────
   # AGENTS.md is the newer VS Code convention for repo-wide AI rules.
   # It complements copilot-instructions.md — both are loaded by GHCP.
-  if [[ ! -f "$REPO_ROOT/AGENTS.md" ]]; then
+  if [[ ! -f "$CURRENT_REPO_ROOT/AGENTS.md" ]]; then
     if [[ -f "$TEMPLATE_DIR/AGENTS.md.tmpl" ]]; then
-      apply_template "$TEMPLATE_DIR/AGENTS.md.tmpl" "$REPO_ROOT/AGENTS.md"
+      apply_template "$TEMPLATE_DIR/AGENTS.md.tmpl" "$CURRENT_REPO_ROOT/AGENTS.md"
       ok "Created AGENTS.md (root-level AI guardrails)"
       CREATED_COUNT=$((CREATED_COUNT + 1))
     fi
