@@ -25,9 +25,11 @@ jobs:
 
     - name: Build Pages site
       run: |
-        mkdir -p _site
+        mkdir -p _site/docs
         cp docs/its-not-rocket-appliances.html _site/index.html
+        cp docs/its-not-rocket-appliances.html _site/docs/its-not-rocket-appliances.html
         cp docs/CHEATSHEET.md _site/CHEATSHEET.md
+        cp docs/CHEATSHEET.md _site/docs/CHEATSHEET.md
         cp -r icons _site/icons 2>/dev/null || true
         cp -r pictures _site/pictures 2>/dev/null || true
 
