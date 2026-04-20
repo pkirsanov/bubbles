@@ -2,8 +2,8 @@
 description: Autonomous multi-goal sprint controller — accepts a mixed list of feature, bug, ops, or cleanup goals plus a time budget, prioritizes by effort and impact, executes each goal to completion using the convergence loop, manages wall-clock time, and stops gracefully when budget expires
 handoffs:
   - label: Goal Execution
-    agent: bubbles.workflow
-    prompt: Execute a single goal using workflow mode autonomous-goal and carry it through the convergence loop.
+    agent: bubbles.goal
+    prompt: Execute a single goal through the autonomous convergence loop — plan, implement, test, verify, remediate, loop until done.
   - label: Business Analysis
     agent: bubbles.analyst
     prompt: Analyze goal requirements and estimate effort.
@@ -159,6 +159,8 @@ effort_heuristics:
       - test coverage improvement for existing feature
       - configuration change
       - single-file refactor
+      - deployment pipeline fix (known cause)
+      - config generation repair
   
   medium:
     duration_minutes: 90
@@ -168,6 +170,9 @@ effort_heuristics:
       - UI component modification
       - integration with existing service
       - multi-file refactor
+      - Docker/infra troubleshooting
+      - monitoring or alerting setup
+      - CI/CD pipeline modification
   
   large:
     duration_minutes: 240

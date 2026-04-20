@@ -1792,7 +1792,7 @@ modes:
   autonomous-goal:
     description: Fully autonomous single-goal execution. User provides a goal in natural language; the agent autonomously discovers requirements, creates specs/designs/scopes, implements, tests, validates, audits, runs chaos/E2E, remediates all findings, and loops until convergence (zero open findings + all gates pass) or max iterations reached. Never stops on fixable obstacles — searches for solutions, tries alternative approaches. Delegates to bubbles.goal as the outer convergence controller.
     statusCeiling: done
-    phaseOrder: [ analyze, bootstrap, implement, test, validate, audit, chaos, harden, gaps, security, regression, simplify, docs, finalize ]
+    phaseOrder: [ discover, analyze, bootstrap, implement, test, validate, audit, chaos, harden, gaps, security, regression, simplify, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G055, G056, G057, G059, G061 ]
     constraints:
       convergenceLoopExecution: true
@@ -1805,7 +1805,7 @@ modes:
       autoBootstrap: true
       requireFindingRemediation: true
       neverStopForFixableObstacles: true
-      triggerPhases: [ validate, audit, chaos, harden, gaps, security, regression ]
+      triggerPhases: [ validate, audit, chaos, harden, gaps, security, regression, devops, stabilize ]
       remediationWorkflowModes:
         chaos: chaos-hardening
         harden: harden-to-doc
@@ -1815,6 +1815,8 @@ modes:
         validate: reconcile-to-doc
         audit: reconcile-to-doc
         test: test-to-doc
+        devops: devops-to-doc
+        stabilize: stabilize-to-doc
       sequentialSpecCompletion: true
       crossAgentVerification: true
       antiFabricationDetection: true

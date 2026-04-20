@@ -19,9 +19,9 @@ You have multiple goals and a fixed time window. Those goals can mix features, b
 
 ```
 /bubbles.sprint  minutes: 240
-1. Fix the calendar sync bug in guestHost
+1. Fix the calendar sync bug
 2. Add the deposit hold/release feature
-3. Improve Playwright test coverage for page builder
+3. Improve browser E2E coverage for the page builder
 ```
 
 ```

@@ -95,21 +95,28 @@ convergence_loop:
     1_understand:
       actions:
         - parse_goal_to_feature_description
+        - classify_goal_type: [ feature, bug, ops, stabilization, hardening, cleanup ]
         - search_codebase_for_existing_work
         - search_specs_folder_for_existing_artifacts
         - if_existing_spec: read_spec_design_scopes
         - if_no_spec: identify_spec_folder_number_and_name
-      outputs: [ feature_description, spec_path, existing_artifacts_inventory ]
+        - if_goal_type_is_bug: invoke_bubbles_bug_for_reproduction_before_planning
+      outputs: [ feature_description, goal_type, spec_path, existing_artifacts_inventory ]
+      bug_detection_keywords: [ fix, broken, regression, failing, crash, error, bug, flaky ]
       
     2_plan:
+      # Goal invokes these specialists directly for the initial build pass.
+      # Remediation in phase 5 routes through bubbles.workflow modes instead.
       actions:
+        - if_goal_type_is_bug: invoke_bug_then_plan (bubbles.bug → bubbles.plan)
         - if_no_spec: invoke_analyst_then_design_then_plan
         - if_spec_no_scopes: invoke_plan
         - if_scopes_exist: verify_scopes_are_actionable
-      agents: [ bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
+      agents: [ bubbles.bug, bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
       outputs: [ spec.md, design.md, scopes.md, state.json ]
       
     3_execute:
+      # Goal invokes implement/test directly for the build pass.
       actions:
         - for_each_scope_in_dependency_order:
             - invoke_implement_for_scope
@@ -121,7 +128,7 @@ convergence_loop:
     4_verify:
       actions:
         - run_full_test_suite (unit + integration + e2e)
-        - run_playwright_e2e_if_ui_involved
+        - run_e2e_if_ui_involved
         - invoke_chaos_probes
         - invoke_validate
         - invoke_audit
@@ -134,6 +141,8 @@ convergence_loop:
       mandatory: [ e2e_execution, chaos_execution ]
       
     5_remediate:
+      # Remediation routes through bubbles.workflow modes (see remediationWorkflowModes
+      # in workflows.yaml), not direct specialist calls.
       actions:
         - collect_all_findings_from_verify
         - for_each_finding:
@@ -181,6 +190,10 @@ The goal agent MUST NOT stop execution for any of these reasons:
 | Chaos findings | Remediate via chaos-hardening workflow |
 | Audit findings | Fix each finding, re-audit |
 | Pre-existing issues encountered | Fix them (zero deferral policy) |
+| Docker/container failures | Diagnose container state, rebuild images, fix compose config |
+| Deployment pipeline failures | Fix CI/CD config, build scripts, or deploy manifests |
+| Config generation failures | Fix config templates or generation scripts |
+| Infrastructure issues | Diagnose and fix within project scope; escalate if external |
 
 The ONLY valid stop conditions are:
 1. **Convergence achieved** — all gates pass, all tests pass, zero findings
@@ -216,6 +229,24 @@ solution_search:
       - if 3 different approaches all fail, record detailed blockers
       - mark the specific scope as blocked with evidence
       - continue with remaining scopes
+```
+
+### Time Budget Protocol (Sprint Integration)
+
+When invoked by `bubbles.sprint` with a time cap:
+
+```yaml
+time_budget:
+  source: sprint passes timeBudgetMinutes via invocation context
+  check_points:
+    - before_each_scope_in_3_execute
+    - before_each_convergence_iteration
+  behavior:
+    if_time_remaining > 0: CONTINUE
+    if_time_expired_mid_scope: finish_current_scope_completely, then EXIT
+    if_time_expired_between_scopes: EXIT immediately
+  exit_outcome: time_expired
+  note: when no time budget is provided (standalone invocation), only maxConvergenceIterations applies
 ```
 
 ### E2E Enforcement (MANDATORY per Verify Cycle)

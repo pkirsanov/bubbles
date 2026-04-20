@@ -29,7 +29,7 @@ Give Tyrone a goal. He handles everything:
 1. **Understand** — Parse the goal, search codebase, find existing spec/design
 2. **Plan** — Create spec → design → scopes (or verify existing ones)
 3. **Execute** — Implement all scopes, run tests per scope
-4. **Verify** — Full suite: unit + integration + E2E/Playwright + chaos + validate + audit + harden + gaps + security + regression
+4. **Verify** — Full suite: unit + integration + browser E2E + chaos + validate + audit + harden + gaps + security + regression
 5. **Remediate** — Fix ALL findings from step 4 (search web/docs if stuck)
 6. **Optimize** — Simplify, security review, docs sync
 7. **Convergence Check** — All gates pass + zero findings? Done. Otherwise loop to step 4.
@@ -58,7 +58,7 @@ Give Tyrone a goal. He handles everything:
 |-----------|---------|-------------|
 | Max convergence iterations | 10 | Outer loop limit before forced exit with status report |
 | Max identical failure retries | 3 | Same error retried before trying alternative approach |
-| E2E per verify cycle | Mandatory | Playwright/E2E runs every iteration |
+| E2E per verify cycle | Mandatory | Browser E2E runs every iteration |
 | Chaos per verify cycle | Mandatory | `bubbles.chaos` probes every iteration |
 | Solution search | On block | Web/docs/codebase searched when implementation is stuck |
 
