@@ -23,6 +23,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Regenerate framework stats from VERSION
+      run: sh bubbles/scripts/generate-framework-stats.sh
+
     - name: Build Pages site
       run: |
         mkdir -p _site/docs
