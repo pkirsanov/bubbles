@@ -14,6 +14,17 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+### Orchestrator Delegation Enforcement (Goal + Sprint Agents)
+
+- **bubbles.goal — Orchestrator-Only Identity:** Added `⛔ ORCHESTRATOR-ONLY IDENTITY` section with explicit prohibition table forbidding the goal agent from making direct code changes. Goal agent is a convergence-loop controller that MUST delegate all specialist work via `runSubagent`.
+- **bubbles.goal — Phase delegation hardened:** Phases 2, 3, and 5 YAML now include `invocation_method: runSubagent` and explicit comments clarifying that "invoke" means `runSubagent`, not self-execution. Phase 5 remediation now mandates `bubbles.workflow` as the sole delegation target (not individual specialists).
+- **bubbles.goal — `runSubagent` prompt templates:** Added concrete prompt templates for every phase (plan, implement, test, validate, audit, chaos, workflow, simplify, docs) showing exactly what context to pass each specialist.
+- **bubbles.sprint — Orchestrator-Only Identity:** Added `⛔ ORCHESTRATOR-ONLY IDENTITY` section establishing the sprint agent as a time-bounded queue controller that MUST delegate all goal work to `bubbles.goal` via `runSubagent`. No exceptions for perceived simplicity.
+- **bubbles.sprint — Phase Execution Matrix:** Added scannable 4-phase table mapping what the sprint agent does directly vs. what it delegates.
+- **bubbles.sprint — `runSubagent` prompt templates:** Added prompt templates for `bubbles.super`, `bubbles.goal`, and `bubbles.docs` invocations.
+- **bubbles.sprint — execute_goal hardened:** YAML block now includes `invocation: runSubagent(bubbles.goal)`, `prompt_must_include` list, and ⛔ prohibition comment.
+- **Gate G042 — Delegation Fabrication:** New anti-fabrication gate added to both goal and sprint agents. Defines fabrication patterns (inline implementation, direct specialist calls, terminal-as-implementation, etc.), quantitative detection heuristics (minimum `runSubagent` call counts per phase), and consequences (all work suspect, audit required).
+
 ### Stochastic Sweep Must Remediate, Not Just Report (Regression Fix)
 
 - **Root cause:** `workflow-execution-loops.md` Phase 0.9 was a table-of-contents skeleton that listed what it owned but never provided the step-by-step round loop procedure. The round loop existed only in YAML comments, and the "wait for child completion" requirement was in a separate generic protocol file (`workflow-fix-cycle-protocol.md`), not wired into the loop body. This allowed the LLM to interpret "dispatch N rounds" as "generate N round selections and produce a findings report."
