@@ -207,6 +207,8 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
+| <img src="icons/tyrone-chain.svg" width="20"> | `bubbles.goal` | **Autonomous goal executor.** Give it one goal — feature, bug, ops, or hardening — and it plans, implements, tests, validates, remediates, and loops until full convergence. No hand-holding. | You want end-to-end autonomous delivery of a single goal |
+| <img src="icons/donna-whistle.svg" width="20"> | `bubbles.sprint` | **Autonomous sprint controller.** Give it multiple goals + a time budget. Prioritizes, executes each via convergence loop, manages the clock, stops gracefully. | You have a backlog and a deadline |
 | <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration. Also accepts plain English via `super` delegation. | Continuing existing spec work without choosing phases by hand |
 | <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug orchestrator.** Reproduces, packets, routes, and drives the fix workflow until the defect is actually closed. | Investigating and routing bug work end to end |
 
@@ -266,16 +268,15 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 /bubbles.setup mode: refresh          — Verify framework setup completeness
 ```
 
-### 1. Just Tell Workflow What You Want
+### 1. Just Tell Bubbles What You Want
 
-**You don't need to know which agent, mode, or parameters to use. Workflow figures it out.**
+**You don't need to know which agent, mode, or parameters to use. Just describe your goal.**
 
 ```
 # Describe your goal in plain English — workflow resolves the right mode and drives it:
 /bubbles.workflow  Build a user authentication system with JWT tokens
 /bubbles.workflow  improve the booking feature to be competitive
 /bubbles.workflow  fix the calendar bug in page builder
-/bubbles.workflow  spend 2 hours on whatever needs attention
 
 # Continue from where you left off:
 /bubbles.workflow  continue
@@ -284,11 +285,39 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 /bubbles.workflow  specs/042 mode: full-delivery tdd: true
 ```
 
-### 1.5. The Most Useful Real-World Patterns
+#### Autonomous Execution (Hands-Free)
 
-These are the most direct ways users interact with the newer planning and completion improvements.
+**New in v3.5:** For fully autonomous delivery, use `goal` (single goal) or `sprint` (multiple goals + time budget):
 
 ```
+# Single goal — agent handles EVERYTHING until done:
+/bubbles.goal  Implement the security deposit hold/release feature
+/bubbles.goal  Fix all broken E2E tests and make chaos scenarios pass
+/bubbles.goal  Stabilize the deployment pipeline and close config drift
+
+# Multiple goals + time budget — agent prioritizes and executes:
+/bubbles.sprint  minutes: 240
+1. Fix the calendar sync bug
+2. Add the deposit hold/release feature
+3. Improve browser E2E coverage for the page builder
+```
+
+**Goal** runs a convergence loop (plan → implement → test → validate → remediate → repeat) until zero findings remain or max iterations hit. **Sprint** wraps multiple goals in a time-managed queue, executing each via the convergence loop, managing the clock, and stopping gracefully when budget expires.
+
+### 1.5. The Most Useful Real-World Patterns
+
+These are the most direct ways users interact with Bubbles.
+
+```
+# Fully autonomous — give a goal, come back later
+/bubbles.goal  Implement the user authentication system with JWT tokens
+
+# Multiple goals in a time box — fully autonomous
+/bubbles.sprint  minutes: 120
+1. Fix broken E2E tests for theming
+2. Add missing unit tests for booking service
+3. Update API documentation
+
 # Explore the idea before any code is written
 /bubbles.workflow  mode: brainstorm for multi-tenant booking search with competitive differentiation
 
@@ -313,6 +342,8 @@ bash bubbles/scripts/cli.sh lint-budget
 
 | Command Pattern | What Bubbles Does For You |
 |----------------|---------------------------|
+| `/bubbles.goal <goal>` | Autonomous convergence loop — plan, implement, test, validate, remediate, loop until done |
+| `/bubbles.sprint minutes: N` + goals | Time-managed autonomous execution of multiple goals |
 | `mode: brainstorm` | Explores the idea without code and produces reviewable planning artifacts |
 | `improve ...` / `mode: improve-existing` | Runs objective brownfield research, then produces/refines design and scopes before coding |
 | `fix ...` / `mode: bugfix-fastlane` | Runs the focused bug loop with reproduce-before and verify-after evidence |
@@ -484,11 +515,13 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 
 > "Boys, we need a plan." — Here's what to type.
 
-**Start with `/bubbles.workflow` — it handles everything:**
+**Start with `/bubbles.workflow` — or go fully autonomous with `/bubbles.goal` and `/bubbles.sprint`:**
 
 | I Want To... | Run This |
 |-------------|----------|
 | **Just describe what I want** | **`/bubbles.workflow  <describe it in plain English>`** |
+| **Handle everything autonomously** | **`/bubbles.goal  <describe your goal>`** |
+| **Multiple goals + time budget** | **`/bubbles.sprint  minutes: N` + goal list** |
 | **Continue where I left off** | **`/bubbles.workflow  continue`** |
 | Explore an idea before writing code | `/bubbles.workflow  mode: brainstorm for <idea>` |
 | Start a new feature from scratch | `/bubbles.workflow  <describe feature>` |

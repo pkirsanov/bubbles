@@ -14,6 +14,10 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+(No unreleased changes.)
+
+## 3.5.1
+
 ### Orchestrator Delegation Enforcement (Goal + Sprint Agents)
 
 - **bubbles.goal — Orchestrator-Only Identity:** Added `⛔ ORCHESTRATOR-ONLY IDENTITY` section with explicit prohibition table forbidding the goal agent from making direct code changes. Goal agent is a convergence-loop controller that MUST delegate all specialist work via `runSubagent`.
