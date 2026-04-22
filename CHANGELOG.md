@@ -56,7 +56,7 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 ### Workflow Continuation Guardrails
 
 - **Continuation language now preserves active workflow orchestration** — `bubbles.workflow` and `bubbles.super` treat follow-ups like `continue`, `fix all found`, `fix everything found`, `address rest`, `fix the rest`, and `resolve remaining findings` as workflow continuation, not as permission to drop into raw specialist execution.
-- **Active workflow mode preservation** — continuation handling now prefers the active mode and target recovered from continuation envelopes, recent workflow outputs, workflow run-state, or spec state. Existing `stochastic-quality-sweep`, `iterate`, and `delivery-lockdown` runs stay in those modes unless the remaining work is explicitly narrowed.
+- **Active workflow mode preservation** — continuation handling now prefers the active mode and target recovered from continuation envelopes, recent workflow outputs, workflow run-state, or spec state. Existing `stochastic-quality-sweep`, `iterate`, and `full-delivery` runs stay in those modes unless the remaining work is explicitly narrowed.
 - **Continuation envelope widened** — `preferredWorkflowMode` in recap/status/workflow continuation packets now accepts any valid workflow mode from `bubbles/workflows.yaml`, allowing stochastic sweeps and iterate runs to survive handoff and recovery without lossy down-conversion.
 - **Stochastic sweep closeout safety** — when a stochastic sweep ends with non-terminal touched specs, workflow output must preserve a workflow-owned continuation packet instead of suggesting raw `/bubbles.implement`, `/bubbles.test`, or similar specialist follow-ups.
 
@@ -64,7 +64,7 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 - **Design Brief** — `bubbles.design` now produces a required ~30-50 line alignment checkpoint at the top of design.md: current state, target state, patterns to follow/avoid, resolved decisions, open questions. Gives reviewers 5-minute steering leverage before expensive scoping.
 - **Execution Outline** — `bubbles.plan` now produces a required ~30-50 line preamble at the top of scopes.md: phase order, new types/signatures, validation checkpoints. Like C header files for the plan.
-- **Phase 0.55: Objective Research Pass** — For brownfield modes (`improve-existing`, `redesign-existing`, `delivery-lockdown`, `bugfix-fastlane`, `reconcile-to-doc`), the workflow runs a two-pass research phase: (1) generate codebase questions while knowing the intent, (2) research in a fresh solution-blind context. Produces objective "current truth" instead of confirmation-biased research.
+- **Phase 0.55: Objective Research Pass** — For brownfield modes (`improve-existing`, `redesign-existing`, `full-delivery`, `bugfix-fastlane`, `reconcile-to-doc`), the workflow runs a two-pass research phase: (1) generate codebase questions while knowing the intent, (2) research in a fresh solution-blind context. Produces objective "current truth" instead of confirmation-biased research.
 - **Horizontal plan detection** — `bubbles.plan` Phase 4 now mechanically detects horizontal scope sequences (3+ consecutive single-layer scopes) and restructures into vertical slices.
 - **Slop Tax metrics** — `bubbles.retro` tracks rework: scope reopens, phase retries, post-validate reversions, design reversals, fix-on-fix chains, net forward progress score. Target: < 15%.
 - **`instruction-budget-lint.sh`** — New script counting directive lines per agent prompt. Warning at 120, hard at 200. Registered as `bubbles lint-budget` CLI command.
@@ -199,8 +199,8 @@ Major architectural evolution implementing the unified control-plane design acro
 - `bubbles.super` front-door policy is now explicit: use it for vague intent and prompt translation, but bypass it when the exact specialist or workflow mode is already known.
 
 **Workflow mode updates:**
-- Added `delivery-lockdown` — a new maximum-assurance workflow mode that repeats the full improvement and certification chain until validate can legitimately certify `done` or records an explicit blocker. Supports optional `improvementPrelude` and `improvementPreludeRounds` tags for bounded analyst/UX/design/plan refresh passes ahead of implementation rounds.
-- Added `specReview: once-before-implement` — a one-shot execution tag that runs `bubbles.spec-review` before legacy implementation/improvement work so stale or redundant active specs are reconciled once instead of rediscovered every retry round. `improve-existing`, `reconcile-to-doc`, `redesign-existing`, and `delivery-lockdown` now default this hook on.
+- Added `full-delivery` convergence loop — a maximum-assurance workflow mode that repeats the full improvement and certification chain until validate can legitimately certify `done` or records an explicit blocker. Supports optional `improvementPrelude` and `improvementPreludeRounds` tags for bounded analyst/UX/design/plan refresh passes ahead of implementation rounds.
+- Added `specReview: once-before-implement` — a one-shot execution tag that runs `bubbles.spec-review` before legacy implementation/improvement work so stale or redundant active specs are reconciled once instead of rediscovered every retry round. `improve-existing`, `reconcile-to-doc`, `redesign-existing`, and `full-delivery` now default this hook on.
 - `bugfix-fastlane` and `chaos-hardening` now force `scenario-first` TDD by default (`forceTddMode: scenario-first`).
 - `chaos-hardening` now lockdown-aware with `requireProtectedRegressionContracts`.
 - `grillFirst` tag deprecated in favor of `grillMode` with `inherit` default.

@@ -13,7 +13,7 @@
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-36-58a6ff?style=flat-square" alt="36 agents">
   <img src="https://img.shields.io/badge/gates-60-3fb950?style=flat-square" alt="60 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-34-bc8cff?style=flat-square" alt="34 modes">
+  <img src="https://img.shields.io/badge/workflow_modes-33-bc8cff?style=flat-square" alt="33 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -46,7 +46,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>36 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>60 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>34 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>33 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
@@ -132,7 +132,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 36 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 34 workflow mode definitions
+│   ├── workflows.yaml               # 33 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -331,7 +331,7 @@ These are the most direct ways users interact with Bubbles.
 /bubbles.workflow  continue
 
 # Release-candidate / no-loose-ends delivery
-/bubbles.workflow  specs/042-catalog-assistant mode: delivery-lockdown
+/bubbles.workflow  specs/042-catalog-assistant mode: full-delivery
 
 # Measure rework and hotspot churn after a run
 /bubbles.retro  week
@@ -348,7 +348,7 @@ bash bubbles/scripts/cli.sh lint-budget
 | `improve ...` / `mode: improve-existing` | Runs objective brownfield research, then produces/refines design and scopes before coding |
 | `fix ...` / `mode: bugfix-fastlane` | Runs the focused bug loop with reproduce-before and verify-after evidence |
 | `continue` | Resumes the active workflow if possible; otherwise falls back to `iterate` to pick the next highest-value work |
-| `mode: delivery-lockdown` | Keeps looping through implementation, tests, quality sweep, validation, and audit until the feature is truly green or concretely blocked |
+| `mode: full-delivery` | Keeps looping through implementation, tests, quality sweep, validation, and audit until the feature is truly green or concretely blocked |
 | `/bubbles.retro ...` | Shows slop tax and hotspot data so you can see whether you are shipping progress or just cleaning up rework |
 
 ### 2. How It Works Under The Hood
@@ -405,13 +405,12 @@ You can still call any specialist directly when you explicitly want surgical wor
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 34 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 33 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
 |------|-------------|----------|
-| `full-delivery` | All phases: analyze → design → plan → implement → test → regression → simplify → stabilize → devops → security → validate → audit → docs | New features |
-| `delivery-lockdown` | Repeat the full improvement + certification chain until validate can certify done | Release-candidate or legacy hardening delivery |
+| `full-delivery` | Convergence loop: implement → test → regression → simplify → gaps → harden → stabilize → devops → security → validate → audit → chaos → docs — repeats until certified done | All features (default) |
 | `bugfix-fastlane` | Reproduce → fix → test → regression → simplify → stabilize → devops → security → validate → audit | Bug fixes |
 | `value-first-e2e-batch` | Prioritized delivery with the full quality chain per batch | Large features |
 | `chaos-hardening` | Chaos → fix → regression → hardening → validate → audit | Resilience work |
@@ -422,7 +421,7 @@ Bubbles supports 34 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 34 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 33 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -433,8 +432,8 @@ Optional execution tags:
 - `grillMode: required-on-ambiguity` pressure-tests the direction before planning or implementation starts.
 - `tdd: true` forces a red-green-first execution loop inside the implement/test path after planning readiness is already satisfied.
 - `backlogExport: tasks|issues` makes planning emit copy-ready backlog outputs per scope.
-- `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` turns on delivery-lockdown pre-round planning passes.
-- `improvementPreludeRounds: N` limits how many delivery-lockdown rounds may run that prelude.
+- `improvementPrelude: analyze-design-plan|analyze-ux-design-plan` turns on full-delivery pre-round planning passes.
+- `improvementPreludeRounds: N` limits how many full-delivery rounds may run that prelude.
 - `specReview: once-before-implement` runs one freshness/redundancy audit before legacy improvement or implementation work starts so stale active specs are reconciled once, not rediscovered every retry round.
 
 Baseline workflow law already requires coherent spec/design/plan artifacts, explicit Gherkin scenarios, scenario-specific test planning, and scenario-driven E2E/integration proof before implementation begins.
@@ -498,7 +497,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Interop Migration Matrix](docs/generated/interop-migration-matrix.md) | Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline |
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 34 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 33 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Interop Migration Guide](docs/guides/INTEROP_MIGRATION.md) | Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems |
 | [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
@@ -532,7 +531,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Harden the code quality | `/bubbles.workflow  harden <feature>` |
 | Break things on purpose | `/bubbles.workflow  chaos test <feature>` |
 | Spend time on whatever | `/bubbles.workflow  spend 2 hours on whatever needs attention` |
-| Maximum assurance delivery | `/bubbles.workflow  <feature> mode: delivery-lockdown` |
+| Maximum assurance delivery | `/bubbles.workflow  <feature> mode: full-delivery` |
 | Show rework and hotspot patterns | `/bubbles.retro  week` |
 
 **Direct agents (when you know the target):**

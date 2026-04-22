@@ -422,7 +422,7 @@ if [[ -n "$state_workflow_mode" ]]; then
         info "Legacy workflow mode 'fix' allows status 'done'; current status is '$state_status'"
       fi
       ;;
-    full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
+    full-delivery|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       if [[ "$state_status" == "done" ]]; then
         pass "Workflow mode '$state_workflow_mode' allows status 'done'"
       else
@@ -1104,10 +1104,10 @@ PY
 if [[ -n "$state_workflow_mode" ]]; then
   required_specialists=()
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|value-first-e2e-batch)
+    full-delivery|value-first-e2e-batch)
       required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
       ;;
-    delivery-lockdown)
+    full-delivery)
       required_specialists=("implement" "test" "regression" "simplify" "gaps" "harden" "stabilize" "security" "validate" "audit" "chaos" "docs")
       ;;
     feature-bootstrap)
@@ -1823,7 +1823,7 @@ echo ""
 echo "--- Check 13B: Implementation Delta Evidence (Gate G053) ---"
 requires_impl_delta="false"
 case "$state_workflow_mode" in
-  full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
+  full-delivery|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
     requires_impl_delta="true"
     ;;
 esac
@@ -1910,7 +1910,7 @@ echo "--- Check 15: Phase-Scope Coherence (Gate G027) ---"
 if [[ -n "$state_workflow_mode" ]]; then
   # Only check modes that involve implementation
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
+    full-delivery|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       # Check if implement/test phases are claimed
       has_implement="false"
       has_test="false"
@@ -1977,7 +1977,7 @@ if [[ -f "$reality_scan_script" ]]; then
   # Only run for modes that involve implementation
   run_reality_scan="false"
   case "$state_workflow_mode" in
-    full-delivery|full-delivery-strict|delivery-lockdown|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
+    full-delivery|value-first-e2e-batch|feature-bootstrap|bugfix-fastlane|chaos-hardening|harden-to-doc|gaps-to-doc|harden-gaps-to-doc|reconcile-to-doc|stabilize-to-doc|security-to-doc|regression-to-doc|simplify-to-doc|devops-to-doc|test-to-doc|chaos-to-doc|batch-implement|batch-harden|batch-gaps|batch-harden-gaps|batch-improve-existing|batch-reconcile-to-doc|product-to-delivery|improve-existing|redesign-existing|iterate|stochastic-quality-sweep)
       run_reality_scan="true"
       ;;
   esac
@@ -2010,26 +2010,26 @@ echo ""
 # CHECK 17: Strict mode commit enforcement (commit-per-spec)
 # =============================================================================
 echo "--- Check 17: Strict Mode Commit Enforcement ---"
-if [[ "$state_workflow_mode" == "full-delivery-strict" ]] && [[ "$state_status" == "done" ]]; then
+if [[ "$state_workflow_mode" == "full-delivery" ]] && [[ "$state_status" == "done" ]]; then
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     spec_basename="$(basename "$feature_dir")"
     spec_id="${spec_basename%%-*}"
 
     feature_commit_count="$(git log --oneline -- "$feature_dir" 2>/dev/null | wc -l | tr -d ' ')"
     if [[ "$feature_commit_count" -eq 0 ]]; then
-      fail "full-delivery-strict requires at least one commit touching $feature_dir (none found)"
+      fail "full-delivery requires at least one commit touching $feature_dir (none found)"
     else
       pass "Found $feature_commit_count commit(s) touching $feature_dir"
     fi
 
     structured_commit_count="$(git log --format='%s' -- "$feature_dir" 2>/dev/null | grep -Ec "^spec\(${spec_id}\)|^bubbles\(${spec_id}/" || true)"
     if [[ "$structured_commit_count" -eq 0 ]]; then
-      fail "full-delivery-strict requires at least one structured commit message for spec $spec_id (expected prefix: spec(${spec_id}) or bubbles(${spec_id}/...)"
+      fail "full-delivery requires at least one structured commit message for spec $spec_id (expected prefix: spec(${spec_id}) or bubbles(${spec_id}/...)"
     else
       pass "Found $structured_commit_count structured commit(s) for spec $spec_id"
     fi
   else
-    fail "full-delivery-strict commit enforcement requires execution inside a git worktree"
+    fail "full-delivery commit enforcement requires execution inside a git worktree"
   fi
 else
   info "Strict-mode commit enforcement not required for workflowMode '$state_workflow_mode' with status '$state_status'"
@@ -2237,7 +2237,7 @@ echo ""
 # =============================================================================
 echo "--- Check 21: Spec Review Enforcement (specReview policy) ---"
 if [[ "$state_status" == "done" ]] && [[ -n "$state_workflow_mode" ]]; then
-  spec_review_required_modes="improve-existing|reconcile-to-doc|redesign-existing|delivery-lockdown"
+  spec_review_required_modes="improve-existing|reconcile-to-doc|redesign-existing|full-delivery"
   if echo "$state_workflow_mode" | grep -qE "^($spec_review_required_modes)$"; then
     if echo "$state_completed_phases_block" | grep -qE '"spec-review"'; then
       pass "Spec-review phase recorded for legacy-improvement mode '$state_workflow_mode'"
