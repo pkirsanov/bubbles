@@ -207,6 +207,26 @@ gates:
     name: outcome_contract_gate
     description: >-
       BLOCKING gate for bootstrap and validate phases. spec.md MUST contain a non-empty Outcome Contract section with Intent, Success Signal, Hard Constraints, and Failure Condition fields before the bootstrap phase completes. During validation, the Success Signal MUST be demonstrated in report.md evidence and Hard Constraints MUST be verified as preserved. A feature that passes all process gates but fails to satisfy its declared Intent or violates a Hard Constraint is NOT done. Enforced by artifact-lint.sh (presence check) and bubbles.validate Step 0 (substance check).
+  G074:
+    name: workflow_mode_consistency_gate
+    description: >-
+      BLOCKING gate. The top-level state.json `workflowMode` and `policySnapshot.workflowMode` MUST agree. These two fields are written by independent code paths and any divergence indicates that one was fabricated or that an agent silently switched modes mid-spec without an audit trail. Enforced by state-transition-guard.sh Check 2B.
+  G075:
+    name: scope_index_parity_gate
+    description: >-
+      BLOCKING gate (per-scope-directory layout only). The status column of `scopes/_index.md` MUST match the `**Status:**` line of every linked `scopes/NN-name/scope.md`. Fabricated batch promotions historically updated individual scope.md files to "Done" while leaving _index.md showing "In Progress"; this gate detects that drift. Enforced by state-transition-guard.sh Check 5B.
+  G076:
+    name: phantom_scope_detection_gate
+    description: >-
+      BLOCKING gate. Every entry in `state.json` `completedScopes` (and `certification.completedScopes`) MUST map to a real scope artifact on disk. Phantom entries that name scopes with no corresponding directory or `## Scope N:` heading are a documented fabrication pattern (e.g. QF 042's "scope-15-stochastic-sweep-remediation"). Enforced by state-transition-guard.sh Check 5C.
+  G077:
+    name: execution_history_plausibility_gate
+    description: >-
+      BLOCKING gate. `executionHistory` entries MUST have plausible `runStartedAt`/`runCompletedAt` timestamps. The gate fails when (a) consecutive entries are spaced at exactly identical intervals (e.g., 3 or more 15-minute gaps), (b) any non-trivial entry has zero duration, or (c) entries overlap in time (sequential agent execution is impossible if runs overlap). It also enforces lockdown round consistency: `certification.lockdownState.round` MUST be ≤ the number of implement-phase runs in executionHistory, and `lastCleanRound` MUST NOT exceed `round`. Enforced by state-transition-guard.sh Checks 7A and 7B.
+  G078:
+    name: batch_promotion_limit_gate
+    description: >-
+      BLOCKING CI gate. A single git commit (or push range) MUST NOT promote more than one spec's `state.json` `status` to "done" without explicit override. Mass promotions are a documented fabrication pattern (QF 2026-03-15 batch promoted 33 specs in commit 4dde8526; QF 2026-03-31 batch promoted 17 specs in commit ec7fba88). Enforced by `bubbles/scripts/batch-promotion-lint.sh` and the `state-transition-guard` GitHub Actions workflow.
 
 failureRouting:
   code: implement
@@ -655,7 +675,7 @@ modeDefaults:
     requireSmallWellDefinedScopes: true
     requireRedGreenEvidence: true
     enableMicroFixLoops: true
-    inheritedRequiredGates: [ G036, G037, G038, G040, G042, G047, G048, G051, G052, G053, G063, G064, G066 ]
+    inheritedRequiredGates: [ G036, G037, G038, G040, G042, G047, G048, G051, G052, G053, G063, G064, G066, G074, G075, G076, G077 ]
 
 # Batch Execution Parameter (NON-NEGOTIABLE)
 #

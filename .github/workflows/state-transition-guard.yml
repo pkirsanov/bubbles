@@ -1,0 +1,134 @@
+name: state-transition-guard
+
+# Enforces that when any state.json changes such that its top-level `status`
+# becomes "done", the corresponding feature directory passes
+# state-transition-guard.sh and the commit is not a batch promotion.
+#
+# This is the CI-level mechanical enforcement that complements the agent-level
+# self-audit: agents can ignore prose rules, but a failed CI job blocks merge.
+
+on:
+  pull_request:
+    paths:
+      - 'specs/**/state.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'specs/**/state.json'
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve compare base
+        id: base
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+            echo "head=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+            echo "head=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Discover state.json files transitioning to "done"
+        id: discover
+        run: |
+          set -euo pipefail
+          base="${{ steps.base.outputs.ref }}"
+          head="${{ steps.base.outputs.head }}"
+          # When base is all-zeros (initial push), compare against empty tree
+          if [[ -z "$base" ]] || [[ "$base" == "0000000000000000000000000000000000000000" ]]; then
+            base="$(git hash-object -t tree /dev/null)"
+          fi
+
+          changed_files=()
+          while IFS= read -r path; do
+            [[ -n "$path" ]] || continue
+            [[ "$(basename "$path")" == "state.json" ]] || continue
+            changed_files+=("$path")
+          done < <(git diff --name-only "$base..$head" -- 'specs/**/state.json')
+
+          promoted_features=()
+          for path in "${changed_files[@]}"; do
+            after="$(git show "$head:$path" 2>/dev/null || true)"
+            before="$(git show "$base:$path" 2>/dev/null || true)"
+            after_status="$(echo "$after" | python3 -c 'import json,sys
+try:
+  d=json.loads(sys.stdin.read())
+  s=d.get("status","")
+  print(s if isinstance(s,str) else "")
+except Exception:
+  pass' 2>/dev/null || true)"
+            before_status="$(echo "$before" | python3 -c 'import json,sys
+try:
+  d=json.loads(sys.stdin.read())
+  s=d.get("status","")
+  print(s if isinstance(s,str) else "")
+except Exception:
+  pass' 2>/dev/null || true)"
+            if [[ "$after_status" == "done" ]] && [[ "$before_status" != "done" ]]; then
+              promoted_features+=("$(dirname "$path")")
+            fi
+          done
+
+          {
+            echo "promoted<<EOF"
+            for f in "${promoted_features[@]}"; do echo "$f"; done
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Detected ${#promoted_features[@]} feature(s) promoted to done in this change."
+
+      - name: Batch promotion lint
+        env:
+          BUBBLES_BATCH_PROMOTION_OVERRIDE: ${{ vars.BUBBLES_BATCH_PROMOTION_OVERRIDE || '0' }}
+        run: |
+          set -euo pipefail
+          base="${{ steps.base.outputs.ref }}"
+          head="${{ steps.base.outputs.head }}"
+          # Walk every commit in the range and run the lint per commit.
+          # This catches multi-commit batches as well as single fat commits.
+          if [[ -z "$base" ]] || [[ "$base" == "0000000000000000000000000000000000000000" ]]; then
+            commits="$(git rev-list "$head")"
+          else
+            commits="$(git rev-list "$base..$head")"
+          fi
+          fail=0
+          for sha in $commits; do
+            echo "::group::batch-promotion-lint $sha"
+            if ! bash bubbles/scripts/batch-promotion-lint.sh --ref="$sha" --max=1; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$fail"
+
+      - name: Run state-transition-guard for each promoted feature
+        if: steps.discover.outputs.promoted != ''
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r feature_dir; do
+            [[ -n "$feature_dir" ]] || continue
+            echo "::group::state-transition-guard $feature_dir"
+            if ! bash bubbles/scripts/state-transition-guard.sh "$feature_dir"; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done <<< "${{ steps.discover.outputs.promoted }}"
+          exit "$fail"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Done-promotion enforcement complete."
+          echo "If this job failed, the commit batch promoted multiple specs"
+          echo "or a promoted spec fails one or more state-transition-guard"
+          echo "checks. Fix the underlying artifacts; do not bypass."
