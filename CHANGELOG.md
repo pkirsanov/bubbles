@@ -16,6 +16,20 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 (No unreleased changes.)
 
+## 3.6.0
+
+### Added
+
+- **UX8 validation gate** — `validation-profiles.md` now requires `{FEATURE_DIR}` to contain no UX sidecar files (`ux.md`, `wireframes.md`, `flows.md`, `user-flows.md`, `screens.md`). All UX content MUST live inside `spec.md` under `## UI Wireframes` and `## User Flows`.
+- **Forbidden Artifacts policy** in `agents/bubbles_shared/artifact-ownership.md` — declarative ownership map of filenames that MUST NOT exist as sidecars (UX, business, design, planning, evidence). Includes a speckit interop note clarifying that `tasks.md`, `data-model.md`, `requirements.md`, and `test-plan.md` are NOT forbidden (they belong to the speckit workflow that coexists with bubbles).
+- **`artifact-lint.sh` enforcement** — script now fails when any forbidden sidecar filename appears under a feature/bug folder, with a message pointing to `artifact-ownership.md → Forbidden Artifacts`.
+- **`bubbles.ux` agent hardening** — Single-File Output Rule (FORBIDDEN/REQUIRED table), Phase 5 absolute-write directive, and Tier 2 mechanical pre-report gate (`grep` for `## UI Wireframes` + loop checking forbidden filenames).
+- **`ux-bootstrap.md`** — added single-file output constraint to the UX bootstrap module so every UX agent invocation reads it before writing.
+
+### Why
+
+The `bubbles.ux` agent (running under `/bubbles.goal` orchestration) was observed creating sidecar `ux.md` files in 4 smackerel specs instead of appending wireframes to `spec.md`. Diagnosis confirmed the prompts were unambiguous, but no mechanical enforcement existed — the LLM made a stylistic judgment to "split for organization." This release adds the missing enforcement layer so the same mistake fails the lint gate immediately.
+
 ## 3.5.1
 
 ### Orchestrator Delegation Enforcement (Goal + Sprint Agents)
