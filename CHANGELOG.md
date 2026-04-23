@@ -16,6 +16,19 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 (No unreleased changes.)
 
+## 3.6.1
+
+### Fixed (`implementation-reality-scan.sh`)
+
+- **Filesystem fallback by spec slug** — when neither `scopes.md` nor `design.md` enumerate `Implementation Files`, fall back to filesystem search for files whose names contain the spec slug (e.g. `037-llm-agent-tools` → matches `*llm_agent_tools*` and `*llm-agent-tools*`). Previously triggered `ZERO_FILES_RESOLVED` even when implementation clearly existed. Project-agnostic: searches from repo root excluding `node_modules`, `.dart_tool`, `.venv`, `venv`, `.git`, `target`, `build`, `dist`, `coverage`, `specs`.
+- **Consolidated `[Nn]ot [Ii]mplemented` pattern** — replaced 4 separate patterns (`'Not Implemented'`, `'throw new Error\\('`, `'not implemented'`, `'return .*not implemented'`) with one case-insensitive regex. The `'throw new Error\\('` pattern was a major false-positive generator — it matched any thrown error, not just unimplemented placeholders.
+- **Narrower Python `responses` library detection** — replaced bare `'responses\\.'` (which matched `requests.responses.json()`, `mock.responses[0]`, etc.) with three specific patterns: `'^import responses'`, `'@responses\\.activate'`, `'responses\\.add\\('`.
+- **Skip docstring matches in Python tests** — awk state machine tracks Python triple-quoted-string regions and excludes those line numbers from intercept checks. Documentation examples in `"""..."""` are no longer flagged.
+
+### Why
+
+These fixes were discovered as local mods in the wanderaide downstream and upstreamed verbatim (with the filesystem fallback generalized for project-agnosticism).
+
 ## 3.6.0
 
 ### Added
