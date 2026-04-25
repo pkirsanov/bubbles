@@ -14,7 +14,12 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
-(No unreleased changes.)
+### Fixed
+
+- **Autonomous orchestrator tool access** — `bubbles.sprint`, `bubbles.goal`, `bubbles.workflow`, `bubbles.iterate`, and `bubbles.bug` now declare the VS Code `agent` tool alias in frontmatter so their mandatory `runSubagent` delegation path is available at runtime instead of only described in body-level governance text.
+- **Outcome-first dispatch contract** — autonomous orchestrators now explicitly route to the better-fit Bubbles mode, child workflow, or specialist owner when that is needed to satisfy user intent. They must not stop and ask the user to switch mode; only a missing `agent` tool may produce a blocked envelope.
+- **Capability registry parity** — `bubbles.goal` and `bubbles.sprint` are now declared as orchestrators in `agent-capabilities.yaml`, matching their existing child-workflow permissions and execution-claim writer status.
+- **Regression selftest** — `workflow-delegation-selftest.sh` now checks child-workflow caller frontmatter for the `agent` tool alias plus the outcome-first dispatch and missing-agent-tool policy anchors.
 
 ## 3.6.1
 
