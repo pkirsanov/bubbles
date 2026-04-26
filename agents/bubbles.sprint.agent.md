@@ -1,6 +1,6 @@
 ---
 description: Autonomous multi-goal sprint controller — accepts a mixed list of feature, bug, ops, or cleanup goals plus a time budget, prioritizes by effort and impact, executes each goal to completion using the convergence loop, manages wall-clock time, and stops gracefully when budget expires
-tools: [read, search, edit, agent, todo, web]
+tools: [read, search, edit, agent, todo, web, execute]
 handoffs:
   - label: Goal Execution
     agent: bubbles.goal
@@ -40,6 +40,7 @@ allowed_tools:
     - manage_todo_list
     - runSubagent          # ← ALL goal work happens here
     - vscode_askQuestions
+    - run_in_terminal      # execute repo-standard commands when evidence requires it
   
   session_state_only:
     - create_file           # ONLY for .specify/memory/bubbles.session.json
@@ -49,7 +50,6 @@ forbidden_tools:
   - create_file             # on any path except session JSON
   - replace_string_in_file  # on any path except session JSON
   - multi_replace_string_in_file  # always
-  - run_in_terminal         # always
   - runTests                # always — goals handle testing
 ```
 

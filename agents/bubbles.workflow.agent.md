@@ -1,6 +1,6 @@
 ---
 description: Cross-spec workflow orchestrator that executes mode-driven Bubbles phases with deterministic gates, retries, and resume
-tools: [read, search, edit, agent, todo, web]
+tools: [read, search, edit, agent, todo, web, execute]
 handoffs:
   - label: Business Analysis
     agent: bubbles.analyst

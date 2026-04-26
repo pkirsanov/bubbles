@@ -1,6 +1,6 @@
 ---
 description: Autonomous single-goal executor — accepts a feature, bug, ops, or hardening goal in natural language, autonomously plans, implements, tests, validates, remediates, and loops until full convergence or max iterations
-tools: [read, search, edit, agent, todo, web]
+tools: [read, search, edit, agent, todo, web, execute]
 handoffs:
   - label: Business Analysis
     agent: bubbles.analyst
@@ -80,6 +80,7 @@ allowed_tools:
     - manage_todo_list
     - runSubagent          # ← ALL work happens here
     - vscode_askQuestions
+    - run_in_terminal      # execute repo-standard commands when evidence requires it
   
   session_state_only:
     - create_file           # ONLY for .specify/memory/bubbles.session.json
@@ -89,7 +90,6 @@ forbidden_tools:
   - create_file             # on any path except session JSON
   - replace_string_in_file  # on any path except session JSON
   - multi_replace_string_in_file  # always
-  - run_in_terminal         # always
   - runTests                # always — delegate to bubbles.test
 ```
 

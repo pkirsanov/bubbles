@@ -14,6 +14,12 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## 3.6.2
+
+### Changed
+
+- **Orchestrator authoring guidance** — documented the structural YAML body convention for router/orchestrator agents, including the required relationship between body-level tool allowlists and frontmatter tool availability.
+
 ### Fixed
 
 - **Autonomous orchestrator tool access** — `bubbles.sprint`, `bubbles.goal`, `bubbles.workflow`, `bubbles.iterate`, and `bubbles.bug` now declare the VS Code `agent` tool alias in frontmatter so their mandatory `runSubagent` delegation path is available at runtime instead of only described in body-level governance text.
