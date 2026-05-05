@@ -5,7 +5,7 @@
   ],
   "pre-push": [
     {"name": "agnosticity-full", "type": "builtin"},
-    {"name": "guard-done-specs", "type": "builtin"},
+    {"name": "guard-changed-done-specs", "type": "builtin"},
     {"name": "reality-scan", "type": "builtin"}
   ]
 }
