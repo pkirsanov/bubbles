@@ -11,9 +11,9 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-36-58a6ff?style=flat-square" alt="36 agents">
+  <img src="https://img.shields.io/badge/agents-37-58a6ff?style=flat-square" alt="37 agents">
   <img src="https://img.shields.io/badge/gates-65-3fb950?style=flat-square" alt="65 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-33-bc8cff?style=flat-square" alt="33 modes">
+  <img src="https://img.shields.io/badge/workflow_modes-34-bc8cff?style=flat-square" alt="34 modes">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -44,9 +44,9 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>36 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>37 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>65 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>33 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>34 workflow modes</strong> — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
@@ -121,7 +121,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 36 agent definitions
+│   ├── bubbles.workflow.agent.md    # 37 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -130,9 +130,9 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 36 prompt shims
+│   └── bubbles.*.prompt.md          # 37 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 33 workflow mode definitions
+│   ├── workflows.yaml               # 34 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -208,7 +208,7 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
 | <img src="icons/tyrone-chain.svg" width="20"> | `bubbles.goal` | **Autonomous goal executor.** Give it one goal — feature, bug, ops, or hardening — and it plans, implements, tests, validates, remediates, and loops until full convergence. No hand-holding. | You want end-to-end autonomous delivery of a single goal |
-| <img src="icons/donna-whistle.svg" width="20"> | `bubbles.sprint` | **Autonomous sprint controller.** Give it multiple goals + a time budget. Prioritizes, executes each via convergence loop, manages the clock, stops gracefully. | You have a backlog and a deadline |
+| <img src="icons/erica-doublestack.svg" width="20"> | `bubbles.sprint` | **Autonomous sprint controller.** Give it multiple goals + a time budget. Prioritizes, executes each via convergence loop, manages the clock, stops gracefully. | You have a backlog and a deadline |
 | <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration. Also accepts plain English via `super` delegation. | Continuing existing spec work without choosing phases by hand |
 | <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug orchestrator.** Reproduces, packets, routes, and drives the fix workflow until the defect is actually closed. | Investigating and routing bug work end to end |
 
@@ -227,6 +227,7 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise without weakening behavior or ownership boundaries. | Reducing complexity after implementation |
 | <img src="icons/tommy-rack.svg" width="20"> | `bubbles.devops` | **DevOps executor.** Owns CI/CD, build, deployment, monitoring, and observability execution once operational work is identified. | Shipping operational changes and delivery plumbing |
 | <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Premium UI implementer.** Over-the-top production value, real frontend output. | Cinematic or flagship UI implementation |
+| <img src="icons/sonny-ledger.svg" width="20"> | `bubbles.releases` | **Release packet planner.** Sonny "Iron Lung" Smith. Produces phase release packets, enforces Product Direction Surfaces trio + carry-forward, coordinates cross-product releases. | Bootstrap, refresh, extend, or coordinate release packets per phase |
 
 ### <img src="icons/ted-badge.svg" width="24"> Diagnostic And Certification Routing
 
@@ -405,7 +406,7 @@ You can still call any specialist directly when you explicitly want surgical wor
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 33 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 34 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -421,7 +422,7 @@ Bubbles supports 33 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 33 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 34 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -497,7 +498,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | [Interop Migration Matrix](docs/generated/interop-migration-matrix.md) | Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline |
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 33 workflow modes explained |
+| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 34 workflow modes explained |
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 | [Interop Migration Guide](docs/guides/INTEROP_MIGRATION.md) | Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems |
 | [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
@@ -564,13 +565,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 36 agent definitions
+├── agents/                    # 37 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 36 prompt shims
+├── prompts/                   # 37 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

@@ -14,6 +14,32 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+### Changed
+
+- **Persona rebalance** — `bubbles.sprint` persona swapped from "Donna" (non-canonical) to **Erica** (Trevor's mom — ran "Liquor Inside / Liquor Outside" hustle in TPB). New canonical icon `icons/erica-doublestack.svg` (two stacked liquor bottles + stopwatch overlay) replaces `icons/donna-whistle.svg`. Quote, command aliases, and TPB vocabulary updated across CHEATSHEET, README, recipe, guides, and HTML cheatsheet to *"Inside and outside, both at once. Don't fall behind."*
+- **Persona convention documented** — added "Persona Convention: Contextual Variants" section to `docs/CHEATSHEET.md` ratifying that Mr. Lahey (sober/super vs. drunk/retro), Camera Crew (silent/status vs. talking-head/recap), and Cory + Trevor (solo bug+handoff vs. paired setup) are intentional contextual variants of the same TPB character, not duplicates. Future agents may NOT casually reuse a persona; the table is the authoritative allowlist.
+
+### Removed
+
+- **`icons/donna-whistle.svg`** — replaced by `icons/erica-doublestack.svg`.
+
+## 3.7.0
+
+### Added
+
+- **`bubbles.releases` agent** — new owner agent for producing and refreshing phase release packets (vision/features/actions/business-plan/deployment/marketing/monetization/ops-scalability) and plan packets across product repos. Carries the Sonny "Iron Lung" Smith TPB persona. Owns release-packets and plan-packets per `agent-ownership.yaml`.
+- **`release-planning-to-doc` workflow mode** — registered in `bubbles/workflows.yaml` as a doc-only mode that gates on Product Direction Surfaces presence (INVESTOR_OVERVIEW.md, Product-Principles.md, product-principles.instructions.md) before allowing release packet creation.
+- **Product Direction Surfaces convention** — new guide at `docs/guides/PRODUCT_DIRECTION_SURFACES.md` defines the required investor/product-principles trio plus the recommended `docs/plans/` and `docs/releases/` structure for downstream product repos.
+- **`bubbles-product-principle-discovery` skill** — new repo-local skill encoding the evidence-based principle-surfacing protocol: cite source (existing repo doc), no fabrication, flag every drafted principle "Surfaced for owner approval — not yet ratified", never auto-ratify.
+- **`bubbles.releases` recipe** — new `docs/recipes/release-planning.md` walks operators through the phase-release planning loop, carry-forward rules, and Product Direction Surfaces preflight.
+- **Sonny "Iron Lung" Smith icon** — new TPB-style line-art SVG at `icons/sonny-ledger.svg` (wheelchair + breathing tube + open ledger) carries the agent's identity across docs.
+
+### Changed
+
+- **`bubbles.setup` agent** — now requires Product Direction Surfaces trio when bootstrapping or refreshing downstream repos. Missing surfaces are surfaced as setup findings, not auto-created (owner must approve product direction).
+- **`bubbles-repo-readiness` skill** — readiness audit now includes Product Direction Surfaces presence check.
+- **`docs/CATALOG.md`, `docs/recipes/README.md`, `docs/CHEATSHEET.md`, `docs/guides/AGENT_MANUAL.md`, `docs/guides/WORKFLOW_MODES.md`, `README.md`, `docs/its-not-rocket-appliances.html`** — registered the new agent, recipe, mode, and Sonny vocabulary entries across catalog and reference surfaces.
+
 ## 3.6.2
 
 ### Changed
