@@ -42,6 +42,8 @@ Workflow resolves your intent, picks the right mode, and drives specialists to c
 
 Think of it as a trailer park supervisor for your codebase. Except this one actually works.
 
+> ⛔ **Framework Scope Policy (NON-NEGOTIABLE — READ BEFORE COMMITTING):** This repository is a generic, repo-agnostic framework. **No** repo-specific, product-specific, machine-specific, deployment-specific, or operator-specific content of any kind belongs here. See [docs/SCOPE_POLICY.md](docs/SCOPE_POLICY.md) for the full rule, the self-audit checklist, and the violation history. Per-product content lives in each downstream repo (`<product-repo>/docs/`, `<product-repo>/specs/`, `<product-repo>/deploy/`); cross-product or operator-specific content lives outside any framework or product repo.
+
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>37 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
