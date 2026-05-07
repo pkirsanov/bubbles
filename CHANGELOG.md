@@ -64,7 +64,7 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ### Why
 
-These fixes were discovered as local mods in the wanderaide downstream and upstreamed verbatim (with the filesystem fallback generalized for project-agnosticism).
+These fixes were discovered as local mods in a downstream installation and upstreamed verbatim (with the filesystem fallback generalized for project-agnosticism).
 
 ## 3.6.0
 
@@ -78,7 +78,7 @@ These fixes were discovered as local mods in the wanderaide downstream and upstr
 
 ### Why
 
-The `bubbles.ux` agent (running under `/bubbles.goal` orchestration) was observed creating sidecar `ux.md` files in 4 smackerel specs instead of appending wireframes to `spec.md`. Diagnosis confirmed the prompts were unambiguous, but no mechanical enforcement existed — the LLM made a stylistic judgment to "split for organization." This release adds the missing enforcement layer so the same mistake fails the lint gate immediately.
+The `bubbles.ux` agent (running under `/bubbles.goal` orchestration) was observed creating sidecar `ux.md` files in 4 specs of a downstream installation instead of appending wireframes to `spec.md`. Diagnosis confirmed the prompts were unambiguous, but no mechanical enforcement existed — the LLM made a stylistic judgment to "split for organization." This release adds the missing enforcement layer so the same mistake fails the lint gate immediately.
 
 ## 3.5.1
 

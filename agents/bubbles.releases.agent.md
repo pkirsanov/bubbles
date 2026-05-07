@@ -78,7 +78,7 @@ $ADDITIONAL_CONTEXT
 Supported options:
 - `mode: bootstrap` — Create a fresh release packet for a phase that has none
 - `mode: refresh` — Reconcile an existing release packet against current capability state (default if packet exists)
-- `mode: extend` — Add new plans to an existing phase's `docs/plans/<phase>/` (e.g., adding P07 Smackerel-companion plan to v1.5)
+- `mode: extend` — Add new plans to an existing phase's `docs/plans/<phase>/` (e.g., adding a P07 paired-companion plan to v1.5)
 - `mode: cross-product` — Produce coordinated plans across two repos (requires `paired_repo: <path>` argument)
 - `docs: vision|features|actions|business-plan|deployment|marketing|monetization|ops-scalability|all` — Restrict update scope (default: all)
 - `paired_repo: <path>` — When `mode: cross-product`, the path to the partner repo
@@ -95,8 +95,8 @@ When the user provides free-text input WITHOUT explicit `mode:` parameters, infe
 |-----------|---------------------|
 | "plan v1.5 release" | mode: bootstrap or refresh (depending on whether packet exists), docs: all |
 | "refresh the v1.0 features" | mode: refresh, docs: features |
-| "add Smackerel plan to v1.5" | mode: extend, docs: features (+ new plan file under docs/plans/) |
-| "coordinate v2.0 across WA and Smackerel" | mode: cross-product, paired_repo: <prompt for path>, docs: all |
+| "add a paired-companion plan to v1.5" | mode: extend, docs: features (+ new plan file under docs/plans/) |
+| "coordinate v2.0 across this repo and a paired companion repo" | mode: cross-product, paired_repo: <prompt for path>, docs: all |
 | "update the marketing copy for v1.0" | mode: refresh, docs: marketing |
 | "what should the next release contain, ask me" | mode: bootstrap, socratic: true |
 | "plan the next phase based on what's shipped" | mode: bootstrap, (read capability ledger first) |
@@ -151,7 +151,7 @@ In parallel:
 4. Capability ledger (`docs/Capability_Ledger.md` if present) OR all `specs/*/state.json` files for capability truth
 5. Prior release packets (`docs/releases/<previous-phase>/`)
 6. Existing plans for this phase (`docs/plans/<phase>/`)
-7. Cross-product specs (e.g., `specs/063-*` for QF↔Smackerel boundary)
+7. Cross-product specs (e.g., a spec defining the paired-companion boundary contract)
 
 ### Phase 2: Capability Truth Reconciliation
 
@@ -174,7 +174,7 @@ For multi-phase repos:
 ### Phase 4: Cross-Product Coordination (if mode: cross-product)
 
 1. Read paired repo's release direction (constitution, design doc, prior packets)
-2. Identify shared boundary (e.g., Smackerel design doc §1.6 QF Companion Boundary)
+2. Identify shared boundary (e.g., "design doc §1.6: Companion Boundary" in one repo)
 3. Produce coordinated plan files in BOTH repos with:
    - Matching schema version
    - Cross-references in both directions

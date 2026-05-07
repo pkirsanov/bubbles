@@ -2,7 +2,7 @@
 
 > **Status**: Convention adopted across Bubbles-installed product repos as of 2026-05-07.
 > **Owners**: `bubbles.bootstrap`, `bubbles.setup`, `bubbles.repo-readiness` skill, future `bubbles.releases` agent.
-> **Repos validated against this convention**: WanderAide, QuantitativeFinance, GuestHost, Smackerel.
+> **Repos validated against this convention**: pattern adopted across multiple downstream Bubbles installations.
 
 ## Why This Convention Exists
 
@@ -63,14 +63,14 @@ Every product repo MUST have:
 
 ## Phase Model (REQUIRED for multi-phase repos)
 
-Repos with a multi-phase release roadmap MUST express the phase model in the trio. The phase numbering and naming is per-repo and reflects actual product reality. Examples observed across repos:
+Repos with a multi-phase release roadmap MUST express the phase model in the trio. The phase numbering and naming is per-repo and reflects actual product reality. Common patterns observed across downstream installations:
 
-| Repo | Phase Model |
-|------|-------------|
-| WanderAide | golden-mvp → mvp → v1.0 → v1.1 → v1.5 → v1.6 → v2.0 → v3.0 |
-| QuantitativeFinance | pre-mvp → mvp → v1.0 → v2.0 → v3.0 |
-| GuestHost | MVP (Single-Host Product Core) → v1.0 (Commercial Hardening) → v2.0 (Platform Control Plane) → v3.0 (Ecosystem track-based) |
-| Smackerel | Phase 1 Foundation → Phase 2 Passive Ingestion → Phase 3 Intelligence → Phase 4 Expansion → Phase 5 Advanced Intelligence (per design doc §19) |
+| Repo Pattern | Example Phase Model |
+|--------------|---------------------|
+| Pre-MVP-driven product | golden-mvp → mvp → v1.0 → v1.1 → v1.5 → v1.6 → v2.0 → v3.0 |
+| Quant / regulated product | pre-mvp → mvp → v1.0 → v2.0 → v3.0 |
+| Single-host → platform product | MVP (Single-Host Product Core) → v1.0 (Commercial Hardening) → v2.0 (Platform Control Plane) → v3.0 (Ecosystem track-based) |
+| Phase-numbered ingestion-style product | Phase 1 Foundation → Phase 2 Passive Ingestion → Phase 3 Intelligence → Phase 4 Expansion → Phase 5 Advanced Intelligence |
 
 The phase model lives in:
 - `INVESTOR_OVERVIEW.md` Phase Overview table (canonical)
@@ -90,11 +90,11 @@ Both apply only to repos with multi-phase release packets.
 
 ## Cross-Product Surfaces
 
-When two products integrate (e.g., WanderAide ↔ Smackerel companion bundles, QuantitativeFinance ↔ Smackerel companion via spec 063):
+When two products integrate (e.g., a personal-knowledge product paired with a domain-specific companion product, or a quant product paired with a research-context companion):
 
 - The integration MUST be expressed as plans in BOTH repos with cross-references
 - Schema versioning MUST be coordinated; cross-repo PRs are required for schema changes
-- Each repo's Product-Principles.md MUST encode any cross-product boundary (e.g., Smackerel Principle 10 — QF Companion Boundary; WanderAide Principle #14 — Frictionless Preference Acquisition Hierarchy with L0 passive observation across wider digital surfaces)
+- Each repo's Product-Principles.md MUST encode any cross-product boundary as an explicit principle (typically: "Companion Boundary" principle in one repo and a corresponding consumption principle in the other)
 - Each repo's `product-principles.instructions.md` MUST encode the cross-product enforcement at the same severity as in-repo principles
 
 ## Enforcement
@@ -121,15 +121,15 @@ The future `bubbles.releases` agent assumes the trio exists; if missing, it rout
 - Does NOT replace the constitution as the engineering authority (that authority remains NON-NEGOTIABLE)
 - Does NOT replace `agent-common.md` or `scope-workflow.md` as the universal agent governance (those remain authoritative)
 
-## Source Repos (Validation Set As Of 2026-05-07)
+## Adoption Pattern (Validation Set As Of Codification)
 
-| Repo | Trio Present | Phase Model | Notes |
-|------|--------------|-------------|-------|
-| WanderAide | ✅ Yes | 8 phases | Reference implementation |
-| QuantitativeFinance | ✅ Yes | 5 phases | Release packets are canonical planning structure (no parallel `docs/plans/`) |
-| GuestHost | ✅ Yes | 4 phases | Capability ledger is the truth source for current-state claims |
-| Smackerel | ✅ Yes | 5 phases | Phase model lives in design doc §19, mirrored in INVESTOR_OVERVIEW.md |
+| Repo Profile | Trio Present | Phase Model | Notes |
+|--------------|--------------|-------------|-------|
+| Pre-MVP-driven product (8 phases) | ✅ Yes | 8 phases | Reference implementation |
+| Quant / regulated product (5 phases) | ✅ Yes | 5 phases | Release packets are canonical planning structure (no parallel `docs/plans/`) |
+| Single-host → platform product (4 phases) | ✅ Yes | 4 phases | Capability ledger is the truth source for current-state claims |
+| Phase-numbered ingestion product (5 phases) | ✅ Yes | 5 phases | Phase model lives in design doc, mirrored in INVESTOR_OVERVIEW.md |
 
 ## Change Log
 
-- 2026-05-07: Convention codified after cross-project standardization pass across WanderAide, QuantitativeFinance, GuestHost, Smackerel.
+- 2026-05-07: Convention codified after a cross-project standardization pass across multiple downstream installations.

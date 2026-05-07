@@ -40,7 +40,7 @@ Read the constitution and binding instruction files. Build a list of engineering
 
 ### Step 2 — Read Product Design Evidence
 For every candidate principle, find its source. Acceptable sources:
-- Explicit statement in design doc (e.g., "Smackerel design doc §1.6: QF Companion Boundary")
+- Explicit statement in design doc (e.g., "design doc §1.6: Companion Boundary")
 - Repeated emphasis across multiple docs (3+ mentions of the same conviction)
 - Owner statement captured in a spec or runbook
 - Cross-product contract that asserts a boundary
@@ -108,4 +108,4 @@ A discovery pass is useful when:
 - `docs/guides/PRODUCT_DIRECTION_SURFACES.md` (the convention this skill implements)
 - `skills/bubbles-repo-readiness/SKILL.md` (companion: trio presence check)
 - `skills/bubbles-skill-authoring/SKILL.md` (skill format authority)
-- Example repos already at the convention: WanderAide, QuantitativeFinance, GuestHost, Smackerel
+- Reference downstream installations have already adopted this convention as the validation set

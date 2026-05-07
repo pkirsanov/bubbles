@@ -59,15 +59,15 @@ This invokes the `bubbles-repo-readiness` skill which checks trio presence + pha
 ### Step 4: Add A New Plan To An Existing Phase
 
 ```
-/bubbles.releases  add Smackerel companion plan to v1.5
+/bubbles.releases  add a paired-product companion plan to v1.5
 ```
 
-**What happens:** The releases agent creates `docs/plans/05-v1.5/P0N-smackerel-companion.md` and updates the v1.5 `features.md` Plan-to-Release Traceability table to reference the new plan.
+**What happens:** The releases agent creates `docs/plans/05-v1.5/P0N-paired-companion.md` and updates the v1.5 `features.md` Plan-to-Release Traceability table to reference the new plan.
 
 ### Step 5: Cross-Product Coordinated Release
 
 ```
-/bubbles.releases  coordinate v2.0 across this repo and Smackerel paired_repo: /home/philipk/smackerel
+/bubbles.releases  coordinate v2.0 across this repo and a paired repo paired_repo: /path/to/paired/repo
 ```
 
 **What happens:** Produces coordinated plans in BOTH repos with cross-references, shared schema versioning, and matching boundary statements.
@@ -77,7 +77,7 @@ This invokes the `bubbles-repo-readiness` skill which checks trio presence + pha
 If release planning surfaces a new product principle (e.g., a cross-product boundary), do NOT update `Product-Principles.md` from `bubbles.releases`. Route to `bubbles.analyst`:
 
 ```
-/bubbles.analyst  surface a new product principle for the cross-product Smackerel boundary
+/bubbles.analyst  surface a new product principle for the cross-product paired-companion boundary
 ```
 
 This invokes the `bubbles-product-principle-discovery` skill.
