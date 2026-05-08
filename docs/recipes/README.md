@@ -91,6 +91,9 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Review First, Then Improve](review-then-improve.md) | "I want to assess an existing area before choosing the right improvement workflow" |
 | [Quality Sweep](quality-sweep.md) | "I want to improve code quality across a feature" |
 | [DevOps Work](devops-work.md) | "I need CI/CD, deployment, build, or monitoring work executed cleanly" |
+| [Build-Once Deploy-Many](build-once-deploy-many.md) | "I ship the same image to multiple environments and need digest pinning, signed artifacts, and pointer-swap rollback" |
+| [Add A Deployment Target](add-deployment-target.md) | "I need to add a new deployment target (home-lab, cloud, staging) without re-architecting the build pipeline" |
+| [DevOps + Release Coordination](devops-release-coordination.md) | "I just shipped a devops change and the phase release packet's `deployment.md` is now stale" |
 | [Ops Packet Work](ops-packet-work.md) | "I need cross-cutting infra or platform work tracked outside a feature spec" |
 | [Regression Check](regression-check.md) | "I need to make sure new changes didn't break existing features" |
 | [Post-Implementation Hardening](post-impl-hardening.md) | "I want code cleaned up, stable, secure, and regression-free before shipping" |

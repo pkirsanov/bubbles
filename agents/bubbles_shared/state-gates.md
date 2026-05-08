@@ -93,7 +93,7 @@ Blocked patterns:
 
 Enforced by: `state-transition-guard.sh` (Check 3B), agent-common.md (Mode Ceiling Pre-Flight), bubbles.implement (Mode Ceiling Pre-Flight behavioral rule), bubbles.bug (Phase 5 Mode Ceiling Gate).
 
-## Build-Once Deploy-Many Integrity Gate (G074)
+## Build-Once Deploy-Many Integrity Gate (G079)
 
 **Status in framework:** Advisory. Becomes BLOCKING when a downstream product repo opts in via its own `copilot-instructions.md`.
 
@@ -115,4 +115,4 @@ Blocked patterns:
 
 Enforced by: `bubbles-deployment-target-adapter` skill (Build-Once Deploy-Many Pattern, CI ↔ Adapter Handshake, Anti-Patterns table), `bubbles-deployment-target.instructions.md` (Build-Once Deploy-Many section), `bubbles-config-sst` skill (Config Bundle Artifact section).
 
-Downstream enforcement (when a product repo declares G074 BLOCKING in its `copilot-instructions.md`): pre-push hook scans for mutable-tag patterns in deployment manifests; CI workflow lint scans for build/deploy fusion; adapter `apply.sh` audit confirms cosign verification call site exists.
+Downstream enforcement (when a product repo declares G079 BLOCKING in its `copilot-instructions.md`): pre-push hook scans for mutable-tag patterns in deployment manifests; CI workflow lint scans for build/deploy fusion; adapter `apply.sh` audit confirms cosign verification call site exists.

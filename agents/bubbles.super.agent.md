@@ -677,12 +677,43 @@ When users ask about orchestrator agents, super should explain the hierarchy and
 | `bubbles.iterate` | Medium — picks next slice, runs one cycle | Work queue, one iteration | Specialists per phase |
 | `bubbles.bug` | Focused — bug lifecycle management | One bug, reproduce → fix → verify | Specialists per phase |
 | `bubbles.devops` | Focused — ops/infra/CI/CD execution | Ops or infra change | Direct execution (not orchestrator-only) |
+| `bubbles.releases` | Focused — release packet author (Sonny "Iron Lung" Smith) | One phase release packet, Product Direction Surfaces compliance, cross-product coordination, carry-forward reconciliation | Direct doc authoring; refuses to mutate `docs/Product-Principles.md` or `.specify/memory/constitution.md` |
 
 **Key distinctions to explain:**
 - **Goal vs Workflow:** Goal is autonomous (loops until done), Workflow is mode-driven (user picks mode, workflow follows the phase order). Goal uses Workflow internally for orchestration.
 - **Goal vs Sprint:** Goal handles one goal, Sprint manages multiple goals with a clock. Sprint delegates each goal to Goal.
 - **Iterate vs Workflow continue:** Both pick up where things left off, but Iterate specifically selects the next priority slice from the backlog, while continue resumes the active workflow mode.
 - **Bug vs Goal for bugs:** Bug has specialized reproduce-before/verify-after logic. Goal detects bug intent and uses similar patterns but runs the full convergence loop. Bug is better for surgical bug work; Goal is better when you want autonomous completion including docs and audit.
+
+### New v3.6 Capabilities (Orchestrator Authoring + Reality Scan Hardening)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **Orchestrator Authoring Guidance** | `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, and `bubbles.workflow` follow an Outcome-First Dispatch Contract. Their `tools:` frontmatter declares the VS Code `agent` tool alias so `runSubagent` is available at runtime. The body allowlist is the governance contract; the frontmatter is what makes delegation work. | When user asks why an orchestrator could not delegate, why `runSubagent` failed to appear, or how to author a new orchestrator agent — explain that the `tools:` frontmatter is what makes delegation real, not the body allowlist alone |
+| **Implementation Reality Scan Improvements** | `bubbles/scripts/implementation-reality-scan.sh` now uses filesystem fallback by spec slug (no longer requires a manifest entry to scan), narrower stub/fake/hardcoded patterns to reduce false positives, and clearer per-file reporting. | When user asks why the reality scan missed a spec, complains about scan false positives, or wants to scan a spec that has no manifest entry yet |
+| **Forbidden Artifacts Policy** | UX scopes MUST produce a single `ux/wireframes.md` file. Sidecar artifacts (`ux/component-inventory.md`, `ux/responsive-states.md`, etc.) are forbidden and caught by the UX8 validation gate. | When user asks where to put UX content, why their UX sidecars were rejected, or how to structure UX deliverables — direct them to the single `ux/wireframes.md` with required sections inline |
+| **UX8 Validation Gate** | Verifies `ux/wireframes.md` exists, is the only `ux/` artifact, and contains all required sections (component inventory, responsive states, accessibility notes) inline. | When user asks why UX validation is failing, what UX8 checks for, or how to satisfy the UX gate |
+| **Structural YAML Body Convention** | Orchestrator agent bodies use a `phase_router` YAML block at the top so the routing logic is machine-checkable, not just prose. | When user asks how to author or modify orchestrator routing logic, or why orchestrators are structured the way they are |
+
+### New v3.7 Capabilities (Release Packets + Product Direction Surfaces)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **`bubbles.releases` agent** | Sonny "Iron Lung" Smith persona. Owns the 8-doc release packet (`docs/releases/<phase>.md` plus `docs/plans/<phase>/{vision,features,actions,business-plan,deployment,marketing,monetization,ops-scalability}.md`) and the Phase Overview table inside `docs/INVESTOR_OVERVIEW.md`. Refuses to mutate `docs/Product-Principles.md` or `.specify/memory/constitution.md`. | When user asks to plan a phase release, refresh release docs, extend a release packet, coordinate cross-product release plans, or surface carry-forward items from a prior phase |
+| **`release-planning-to-doc` workflow mode** | `phaseOrder: [select, releases, docs, finalize]`, `statusCeiling: docs_updated`, requires the Product Direction Surfaces trio to exist before running. Constraints: `requireProductDirectionTrio: true`, `requireCarryForwardTable: true`, `requireInlineVisionRestatement: true`, `noFabricatedPrinciples/Capabilities/Competitors: true`. Supports modes: `bootstrap`, `refresh`, `extend`, `cross-product`. | When user wants release planning that ends at docs (not implementation) — explain the trio prerequisite and that constraints block fabrication of principles, capabilities, or competitors |
+| **Product Direction Surfaces convention** | Every product repo MUST carry a trio: `docs/INVESTOR_OVERVIEW.md` (capability ledger), `docs/Product-Principles.md` (ratified principles), `.github/instructions/product-principles.instructions.md` (agent-facing enforcement). `bubbles.releases` refuses to run when the trio is missing — routes to `bubbles.setup` first. | When user asks to start release planning in a repo without the trio — route to `/bubbles.setup` to bootstrap the trio first, then return to release planning |
+| **`bubbles-product-principle-discovery` skill** | Surfaces principles from existing repo evidence (constitution, design docs, capability ledger, README) without fabrication. | When bootstrapping the trio in a new product repo, or when refreshing surfaced principles in `Product-Principles.md` — never invent principles, always cite repo evidence |
+| **`bubbles-repo-readiness` skill** | Verify-first repo-readiness audits for downstream installs (advisory, separate from certification). | When user asks whether a downstream repo is ready for Bubbles, or wants to validate documented commands map to real CLI surfaces — clarify this is advisory posture, not a certification of delivery completion |
+
+### Build-Once Deploy-Many Awareness (Gate G079)
+
+| Capability | What It Does | When to Recommend |
+|------------|--------------|-------------------|
+| **Gate G079 (Build-Once Deploy-Many Integrity)** | When a project ships images to multiple environments, deployment manifests MUST pin images by `sha256:<digest>`, CI MUST stop at registry push (no SSH/apply from CI), adapter `apply.sh` MUST verify cosign signature + SBOM + SLSA provenance + bundle hash before container start, `rollback.sh` MUST be a pointer-swap (no rebuild), and config bundles MUST be CI-published artifacts (not deploy-time generated). Advisory in framework, blocking in opted-in product repos. | When user asks about image promotion, signed deploys, deploy-time builds, mutable tags (`:latest`, `:main`), CI-driven SSH, or rollback strategy — diagnose against the G079 contract |
+| **`docs/recipes/build-once-deploy-many.md` recipe** | End-to-end recipe: pipeline shape, immutable artifacts table, operator promote/rollback flow, "Add A Target" walkthrough, verification checklist, and companion-asset index. The single best front door for users learning the pattern or onboarding a new deployment target. | When user asks "how do I deploy the same image to multiple envs", "how do I add a new target", "how do I sign and promote", or "how do I roll back without rebuilding" — point them at this recipe BEFORE invoking devops |
+| **`bubbles-deployment-target-adapter` skill** | Per-target adapter pattern: `deploy/<target>/{params.yaml, manifest.yaml, preconditions.sh, bootstrap.sh, apply.sh, rollback.sh, verify.sh, teardown.sh, README.md}`. The contract (services/ports/env/volumes) lives in `deploy/contract.yaml` (generated from SST). The adapter owns FQDNs, IPs, TLS dirs, ufw rules, systemd unit names. Two targets sharing one host coexist via host-singleton drop-in / namespace / assert pattern. | When user wants to add a new deployment target (home-lab, cloud, staging VPS), audit an adapter, or understand the contract-vs-adapter boundary |
+| **Operator surface** | `./<project>.sh deploy <target> {preconditions, bootstrap, apply, rollback, verify, teardown, status, manifest, params, contract}`. Adapter actions are idempotent; re-running `apply` with the same digest+bundle is a no-op. | When user asks how to deploy, verify, or roll back a target — recommend the operator surface and emphasize idempotency |
+| **Companion skills** | `bubbles-config-sst` (SST and config bundle artifact), `bubbles-docker-lifecycle-governance` (cleanup/freshness/persistent-volume safety), `bubbles-docker-port-standards` (10k Rule + Dual-URL), `bubbles-test-environment-isolation` (ephemeral test storage). | When user asks about config drift, hardcoded ports, hand-edited `.env`, persistent volume safety, port allocation, dual-URL conventions, or test data leaking into dev — route to the matching companion skill |
 
 ### 14. Additional CLI Commands
 
@@ -900,6 +931,18 @@ When the user provides a free-text request WITHOUT structured parameters, resolv
 "scan for stubs in my implementation" -> bash bubbles/scripts/cli.sh scan <spec>
 "show control plane defaults" -> bash bubbles/scripts/cli.sh policy status
 "check whether this repo is agent-ready" -> bash <resolved-cli-path> repo-readiness .  (explain that it is advisory, not certification)
+"plan release v2.0" / "what's in v2.0" / "release packet for phase 2" -> /bubbles.workflow mode: release-planning-to-doc <phase>
+"refresh the release plan" / "update the phase docs" -> /bubbles.workflow mode: release-planning-to-doc <phase> mode: refresh
+"extend the release packet" / "add a new section to the phase plan" -> /bubbles.workflow mode: release-planning-to-doc <phase> mode: extend
+"coordinate release across products" / "cross-product release plan" -> /bubbles.workflow mode: release-planning-to-doc <phase> mode: cross-product
+"set up product principles" / "bootstrap the product direction trio" -> /bubbles.setup then /bubbles.workflow mode: release-planning-to-doc bootstrap
+"deploy to a new target" / "add home-lab adapter" / "set up cloud deployment" -> /bubbles.devops focus: deployment-target  (reference bubbles-deployment-target-adapter skill)
+"verify cosign signature" / "check image digest" / "sign the build" -> /bubbles.devops focus: release-automation
+"promote build to staging" / "rollback deployment" -> /bubbles.devops focus: release-automation  (use scripts/deploy/promote.sh and scripts/deploy/rollback.sh if present)
+"clean up Docker safely" / "Docker volumes are corrupted" / "freshen the build" -> /bubbles.devops focus: docker-lifecycle  (reference bubbles-docker-lifecycle-governance skill)
+"test data is leaking into dev" / "ephemeral test stack" -> /bubbles.devops focus: test-isolation  (reference bubbles-test-environment-isolation skill)
+"config drift" / "hardcoded ports" / "hand-edited .env" / "SST violations" -> /bubbles.devops focus: config-sst  (reference bubbles-config-sst skill)
+"docker port allocation" / "10k Rule" / "Dual-URL Standard" -> /bubbles.devops focus: docker-ports  (reference bubbles-docker-port-standards skill)
 ```
 
 ---
@@ -947,3 +990,12 @@ When the user's request is ambiguous, use this priority:
 37. If about choosing between goal vs workflow vs iterate -> explain the orchestrator hierarchy (see v3.5 capabilities section)
 38. If user describes a bug they want fixed autonomously -> `/bubbles.goal Fix <bug>`; if user wants step-by-step control -> `/bubbles.workflow fix <bug>`
 39. If about DevOps/ops work autonomously -> `/bubbles.goal <ops goal>`; if step-by-step -> `/bubbles.workflow <work> mode: devops-to-doc`
+40. If about authoring or refreshing a release packet -> `/bubbles.workflow mode: release-planning-to-doc <phase>` (or `/bubbles.releases <phase>` for direct invocation). Owned by Sonny "Iron Lung" Smith.
+41. If about the Product Direction Surfaces trio (`docs/INVESTOR_OVERVIEW.md` + `docs/Product-Principles.md` + `.github/instructions/product-principles.instructions.md`) -> check trio exists; if missing, route to `/bubbles.setup` first; if surfacing principles, use the `bubbles-product-principle-discovery` skill.
+42. If about Build-Once Deploy-Many, deployment digests, cosign verification, config bundles, or per-target adapters -> `/bubbles.devops focus: deployment-target` (or `focus: release-automation` for promote/rollback scripts). Point user to the dedicated [`docs/recipes/build-once-deploy-many.md`](../docs/recipes/build-once-deploy-many.md) recipe and the `bubbles-deployment-target-adapter` skill. If the user's intent is to ADD a new deployment target, prefer routing to that recipe's "Add A Target" walkthrough.
+43. If about adding a new deployment target (home-lab, cloud, staging VPS) -> `/bubbles.devops focus: deployment-target` and follow the per-target adapter layout in the `bubbles-deployment-target-adapter` skill.
+44. If about config drift, hardcoded ports, hand-edited `.env`, or SST violations -> `/bubbles.devops focus: config-sst` and reference the `bubbles-config-sst` skill.
+45. If about Docker port allocation, the 10k Rule, or the Dual-URL Standard -> `/bubbles.devops focus: docker-ports` and reference the `bubbles-docker-port-standards` skill.
+46. If about persistent volume protection, smart cleanup, freshness verification, or Compose stack grouping -> `/bubbles.devops focus: docker-lifecycle` and reference the `bubbles-docker-lifecycle-governance` skill.
+47. If about test data leaking into dev databases or test environment isolation -> `/bubbles.devops focus: test-isolation` and reference the `bubbles-test-environment-isolation` skill.
+48. If about cross-product release coordination across multiple repos -> `/bubbles.workflow mode: release-planning-to-doc` with `mode: cross-product` parameter (Sonny coordinates across product repos).
