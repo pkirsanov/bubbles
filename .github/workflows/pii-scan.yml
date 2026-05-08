@@ -1,0 +1,33 @@
+name: pii-scan
+
+# PII & secret scan — runs on every push and PR. Catches anything the
+# pre-commit hook missed (or that was bypassed via SKIP_PII_SCAN=1).
+#
+# This workflow is portable: it relies only on `.gitleaks.toml` at the repo
+# root and (optionally) `.gitleaksignore`. No project-specific config.
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout (full history for accurate scan)
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_CONFIG: .gitleaks.toml
+        # Optional: enable Pro features if a license key is provided.
+        # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
