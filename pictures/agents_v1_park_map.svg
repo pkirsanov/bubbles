@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="10" dy="10" stdDeviation="4" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2c3e50" filter="url(#handdrawn)"/>
+    </marker>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <!-- Outer paper + dashed inner frame -->
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#2980b9" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <!-- Title banner -->
+  <g transform="translate(1300, 116)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-760,-58 746,-48 786,54 690,90 -710,80 -790,8" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+      <path d="M -720,-42 L 712,-32" fill="none" stroke="#2980b9" stroke-width="3" opacity="0.32"/>
+      <path d="M -718,70 L 688,78" fill="none" stroke="#2980b9" stroke-width="3" opacity="0.28"/>
+    </g>
+    <text x="0" y="14" font-size="56" text-anchor="middle" fill="#2c3e50" letter-spacing="3" filter="url(#handdrawn)">SUNNYVALE AGENT PARK · THE FULL ROSTER</text>
+    <text x="0" y="58" font-size="22" text-anchor="middle" fill="#7f8c8d" filter="url(#handdrawn)">37 agents · 7 districts · workflow pulls the strings, super gives advice</text>
+  </g>
+
+  <!-- Speech-bubble flavor quotes -->
+  <g filter="url(#handdrawn)" font-weight="bold">
+    <g transform="translate(160, 240) rotate(-3)">
+      <rect x="-18" y="-30" width="380" height="78" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#f1c40f" stroke-width="4"/>
+      <text x="0" y="0" font-size="22" fill="#c0392b">DECENT. I CAN SEE</text>
+      <text x="20" y="30" font-size="22" fill="#c0392b">HOW ALL THIS FITS TOGETHER.</text>
+    </g>
+    <g transform="translate(2050, 220) rotate(4)">
+      <rect x="-18" y="-30" width="420" height="78" rx="12" fill="#ffffff" fill-opacity="0.92" stroke="#16a085" stroke-width="4"/>
+      <text x="0" y="0" font-size="22" fill="#16a085">I'M THE TRAILER PARK</text>
+      <text x="14" y="30" font-size="22" fill="#16a085">SUPERVISOR. NEXT MOVE'S MINE.</text>
+    </g>
+  </g>
+
+  <!-- District boundary boxes (pale fills) -->
+  <g filter="url(#handdrawn)">
+    <!-- Center plaza -->
+    <rect x="1070" y="630" width="470" height="340" rx="22" fill="#fff8dc" fill-opacity="0.85" stroke="#2c3e50" stroke-width="5" stroke-dasharray="12,6"/>
+    <!-- North: orchestrators -->
+    <rect x="590" y="250" width="1420" height="290" rx="22" fill="#e8f4fd" fill-opacity="0.8" stroke="#2980b9" stroke-width="5"/>
+    <!-- East: builders -->
+    <rect x="1700" y="555" width="830" height="665" rx="22" fill="#eaf8ee" fill-opacity="0.8" stroke="#27ae60" stroke-width="5"/>
+    <!-- Northwest: product owners -->
+    <rect x="90" y="560" width="930" height="280" rx="22" fill="#f9ecf6" fill-opacity="0.8" stroke="#8e44ad" stroke-width="5"/>
+    <!-- South: certification row -->
+    <rect x="780" y="1260" width="1080" height="250" rx="22" fill="#fdecea" fill-opacity="0.8" stroke="#c0392b" stroke-width="5"/>
+    <!-- Southwest: diagnostics -->
+    <rect x="90" y="880" width="660" height="630" rx="22" fill="#fef5e7" fill-opacity="0.85" stroke="#d35400" stroke-width="5"/>
+    <!-- Southeast: utilities -->
+    <rect x="1880" y="1230" width="650" height="385" rx="22" fill="#eef0f3" fill-opacity="0.85" stroke="#7f8c8d" stroke-width="5"/>
+  </g>
+
+  <!-- District labels -->
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <text x="1300" y="292" font-size="22" text-anchor="middle" fill="#2980b9">NORTH LOT · ORCHESTRATORS — THEY DECIDE WHAT GETS DONE</text>
+    <text x="1305" y="665" font-size="22" text-anchor="middle" fill="#2c3e50">CENTER PLAZA · ENTRY POINTS</text>
+    <text x="555" y="595" font-size="22" text-anchor="middle" fill="#8e44ad">PRODUCT-OWNER ROW — SHAPE THE WORK</text>
+    <text x="2115" y="592" font-size="22" text-anchor="middle" fill="#27ae60">BUILDER LOT — THEY GET WORK TO DO</text>
+    <text x="1320" y="1295" font-size="22" text-anchor="middle" fill="#c0392b">CERTIFICATION ROW — IT AIN'T DONE TILL THEY SAY SO</text>
+    <text x="420" y="915" font-size="22" text-anchor="middle" fill="#d35400">DIAGNOSTIC LANE — FIND IT, ROUTE IT, DON'T FIX IT</text>
+    <text x="2205" y="1260" font-size="20" text-anchor="middle" fill="#7f8c8d">UTILITY SHED</text>
+    <text x="2205" y="1284" font-size="14" text-anchor="middle" fill="#7f8c8d">STATUS · RECAP · HANDOFF · SETUP · COMMANDS</text>
+  </g>
+
+  <!-- =========================================================
+       FOOTPATHS: drawn behind cards so they guide without covering labels
+       ========================================================= -->
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round" opacity="0.82">
+    <!-- workflow to orchestrators: northbound fan, routed above the center plaza -->
+    <path d="M 1200,700 C 1080,585 930,548 820,505" stroke="#2980b9" stroke-width="5" stroke-dasharray="14,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 1230,690 C 1190,575 1140,545 1100,505" stroke="#2980b9" stroke-width="5" stroke-dasharray="14,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 1325,690 C 1340,575 1360,545 1380,505" stroke="#2980b9" stroke-width="5" stroke-dasharray="14,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 1365,700 C 1460,585 1580,545 1660,505" stroke="#2980b9" stroke-width="5" stroke-dasharray="14,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 1395,715 C 1580,605 1800,548 1940,505" stroke="#2980b9" stroke-width="5" stroke-dasharray="14,8" marker-end="url(#arrow-blue)"/>
+
+    <!-- workflow and super advice loop, kept inside the center plaza -->
+    <path d="M 1290,780 C 1325,765 1350,765 1310,780" stroke="#16a085" stroke-width="5" marker-end="url(#arrow-green)"/>
+    <path d="M 1310,830 C 1350,845 1325,845 1290,830" stroke="#16a085" stroke-width="5" marker-end="url(#arrow-green)"/>
+
+    <!-- orchestrators to planning owners: enter from the top, not through the cards -->
+    <path d="M 820,505 C 650,540 500,585 400,630" stroke="#8e44ad" stroke-width="5" marker-end="url(#arrow-purple)"/>
+    <path d="M 1100,505 C 960,545 760,590 610,630" stroke="#8e44ad" stroke-width="5" marker-end="url(#arrow-purple)"/>
+
+    <!-- planning chain analyst to ux to design to plan -->
+    <path d="M 280,720 L 310,720" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <path d="M 490,720 L 520,720" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <path d="M 700,720 L 730,720" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+
+    <!-- plan to builder lot: wide southern arc beneath center plaza -->
+    <path d="M 910,735 C 1120,925 1510,900 1745,720" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <path d="M 1920,700 L 1965,700" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <path d="M 2140,700 L 2185,700" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+
+    <!-- test to certification: routed down the right-side lane, then west into certification -->
+    <path d="M 2050,790 C 2020,1085 1640,1240 1100,1310" stroke="#27ae60" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-red)"/>
+    <path d="M 1100,1400 L 1220,1400" stroke="#c0392b" stroke-width="7" marker-end="url(#arrow-red)"/>
+    <path d="M 1420,1400 L 1540,1400" stroke="#c0392b" stroke-width="7" marker-end="url(#arrow-red)"/>
+
+    <!-- chaos triggers re-test without crossing certification -->
+    <path d="M 1940,1090 C 1820,1040 1840,910 2050,790" stroke="#e74c3c" stroke-width="5" stroke-dasharray="10,6" marker-end="url(#arrow-red)"/>
+
+    <!-- diagnostic lane routes: use top edge exits and one certification handoff -->
+    <path d="M 360,948 C 565,875 920,850 1110,815" stroke="#d35400" stroke-width="4" stroke-dasharray="10,6" marker-end="url(#arrow-orange)"/>
+    <path d="M 540,948 C 760,820 1320,640 1660,505" stroke="#d35400" stroke-width="4" stroke-dasharray="10,6" marker-end="url(#arrow-orange)"/>
+    <path d="M 540,1130 C 960,1110 1600,900 1830,720" stroke="#d35400" stroke-width="4" stroke-dasharray="10,6" marker-end="url(#arrow-orange)"/>
+    <path d="M 540,1310 C 735,1320 900,1320 1000,1310" stroke="#d35400" stroke-width="4" stroke-dasharray="10,6" marker-end="url(#arrow-orange)"/>
+
+    <!-- bug and retro routes stay in the open middle channel -->
+    <path d="M 1660,505 C 1510,820 1290,1110 1100,1310" stroke="#c0392b" stroke-width="4" stroke-dasharray="14,8" marker-end="url(#arrow-red)"/>
+    <path d="M 540,1380 C 1120,1275 1750,1120 2030,930" stroke="#8e44ad" stroke-width="4" stroke-dasharray="6,10" marker-end="url(#arrow-purple)"/>
+    <path d="M 540,1380 C 1260,1320 1780,1230 2200,1090" stroke="#8e44ad" stroke-width="4" stroke-dasharray="6,10" marker-end="url(#arrow-purple)"/>
+    <path d="M 540,1380 C 610,1325 610,1285 540,1290" stroke="#8e44ad" stroke-width="4" stroke-dasharray="6,10" marker-end="url(#arrow-purple)"/>
+
+    <!-- utility feedback: low-opacity traces back to the entry point -->
+    <path d="M 2010,1328 C 1740,1220 1430,1010 1380,890" stroke="#2c3e50" stroke-width="3" stroke-dasharray="4,8" marker-end="url(#arrow-black)"/>
+    <path d="M 2200,1328 C 1925,1125 1530,930 1400,890" stroke="#2c3e50" stroke-width="3" stroke-dasharray="4,8" marker-end="url(#arrow-black)"/>
+  </g>
+
+  <!-- =========================================================
+       AGENT CARD TEMPLATE (drawn inline per card):
+       group at (cx,cy)
+         shadow rect, color border, icon image, name plate
+       ========================================================= -->
+
+  <!-- ============== CENTER PLAZA: workflow + super ============== -->
+  <g transform="translate(1200, 800)" filter="url(#shadow)">
+    <rect x="-90" y="-100" width="180" height="200" rx="16" fill="#ffffff" stroke="#2c3e50" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/bubbles-glasses.svg" x="-50" y="-90" width="100" height="100"/>
+    <rect x="-86" y="36" width="172" height="56" rx="6" fill="#ffe082" stroke="#2c3e50" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="58" font-size="18" text-anchor="middle" fill="#2c3e50" font-weight="bold">bubbles.workflow</text>
+    <text x="0" y="80" font-size="14" text-anchor="middle" fill="#2c3e50">Bubbles · entry point</text>
+  </g>
+  <g transform="translate(1400, 800)" filter="url(#shadow)">
+    <rect x="-90" y="-100" width="180" height="200" rx="16" fill="#ffffff" stroke="#16a085" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/lahey-badge.svg" x="-50" y="-90" width="100" height="100"/>
+    <rect x="-86" y="36" width="172" height="56" rx="6" fill="#d1f2eb" stroke="#16a085" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="58" font-size="18" text-anchor="middle" fill="#16a085" font-weight="bold">bubbles.super</text>
+    <text x="0" y="80" font-size="14" text-anchor="middle" fill="#16a085">Mr. Lahey · advice</text>
+  </g>
+
+  <!-- ============== NORTH: ORCHESTRATORS ============== -->
+  <!-- iterate · goal · sprint · bug spread across north lot -->
+  <g transform="translate(820, 410)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/jacob-hardhat.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#2980b9" font-weight="bold">bubbles.iterate</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#2980b9">Jacob · pick next slice</text>
+  </g>
+  <g transform="translate(1100, 410)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/tyrone-chain.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#2980b9" font-weight="bold">bubbles.goal</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#2980b9">Tyrone · run one goal</text>
+  </g>
+  <g transform="translate(1380, 410)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/erica-doublestack.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#2980b9" font-weight="bold">bubbles.sprint</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#2980b9">Erica · two flows at once</text>
+  </g>
+  <g transform="translate(1660, 410)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/cory-cap.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#2980b9" font-weight="bold">bubbles.bug</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#2980b9">Cory · run one bug</text>
+  </g>
+  <g transform="translate(1940, 410)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/sonny-ledger.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#2980b9" font-weight="bold">bubbles.releases</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#2980b9">Sonny · phase packets</text>
+  </g>
+
+  <!-- ============== NORTHWEST: PRODUCT OWNERS ============== -->
+  <g transform="translate(190, 720)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#8e44ad" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/ray-lawnchair.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#ebdef0" stroke="#8e44ad" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#8e44ad" font-weight="bold">bubbles.analyst</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#8e44ad">Ray · spec.md owner</text>
+  </g>
+  <g transform="translate(400, 720)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#8e44ad" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/lucy-mirror.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#ebdef0" stroke="#8e44ad" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#8e44ad" font-weight="bold">bubbles.ux</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#8e44ad">Lucy · UX sections</text>
+  </g>
+  <g transform="translate(610, 720)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#8e44ad" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/sarah-clipboard.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#ebdef0" stroke="#8e44ad" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#8e44ad" font-weight="bold">bubbles.design</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#8e44ad">Sarah · design.md owner</text>
+  </g>
+  <g transform="translate(820, 720)" filter="url(#shadow)">
+    <rect x="-90" y="-90" width="180" height="180" rx="16" fill="#ffffff" stroke="#8e44ad" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/barb-keys.svg" x="-45" y="-78" width="90" height="90"/>
+    <rect x="-86" y="22" width="172" height="56" rx="6" fill="#ebdef0" stroke="#8e44ad" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="44" font-size="17" text-anchor="middle" fill="#8e44ad" font-weight="bold">bubbles.plan</text>
+    <text x="0" y="64" font-size="13" text-anchor="middle" fill="#8e44ad">Barb · scopes + DoD</text>
+  </g>
+
+  <!-- ============== EAST: BUILDERS ============== -->
+  <g transform="translate(1830, 700)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/julian-glass.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">bubbles.implement</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">Julian · ships code</text>
+  </g>
+  <g transform="translate(2050, 700)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/trinity-notebook.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">bubbles.test</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">Trinity · trust nothing</text>
+  </g>
+  <g transform="translate(2270, 700)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/jroc-mic.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">bubbles.docs</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">J-Roc · publish truth</text>
+  </g>
+  <g transform="translate(1830, 920)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/tommy-rack.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">bubbles.devops</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">Tommy · keep park online</text>
+  </g>
+  <g transform="translate(2050, 920)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/donny-ducttape.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">bubbles.simplify</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">Donny · tape it up</text>
+  </g>
+  <g transform="translate(2270, 920)" filter="url(#shadow)">
+    <rect x="-85" y="-85" width="170" height="170" rx="16" fill="#ffffff" stroke="#27ae60" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/sebastian-guitar.svg" x="-42" y="-74" width="84" height="84"/>
+    <rect x="-82" y="20" width="164" height="56" rx="6" fill="#d4efdf" stroke="#27ae60" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="42" font-size="17" text-anchor="middle" fill="#27ae60" font-weight="bold">cinematic-designer</text>
+    <text x="0" y="62" font-size="13" text-anchor="middle" fill="#27ae60">Sebastian · flagship UI</text>
+  </g>
+  <g transform="translate(1940, 1090)" filter="url(#shadow)">
+    <rect x="-90" y="-72" width="180" height="160" rx="16" fill="#ffffff" stroke="#e74c3c" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/ricky-dynamite.svg" x="-42" y="-62" width="84" height="84"/>
+    <rect x="-86" y="30" width="172" height="52" rx="6" fill="#fadbd8" stroke="#e74c3c" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="50" font-size="17" text-anchor="middle" fill="#c0392b" font-weight="bold">bubbles.chaos</text>
+    <text x="0" y="70" font-size="13" text-anchor="middle" fill="#c0392b">Ricky · break it</text>
+  </g>
+  <g transform="translate(2200, 1090)" filter="url(#shadow)">
+    <rect x="-90" y="-72" width="180" height="160" rx="16" fill="#ffffff" stroke="#e74c3c" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/conky-puppet.svg" x="-42" y="-62" width="84" height="84"/>
+    <rect x="-86" y="30" width="172" height="52" rx="6" fill="#fadbd8" stroke="#e74c3c" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="50" font-size="17" text-anchor="middle" fill="#c0392b" font-weight="bold">bubbles.harden</text>
+    <text x="0" y="70" font-size="13" text-anchor="middle" fill="#c0392b">Conky · pave your cave</text>
+  </g>
+
+  <!-- ============== SOUTH: CERTIFICATION ROW ============== -->
+  <g transform="translate(1000, 1400)" filter="url(#shadow)">
+    <rect x="-100" y="-90" width="200" height="180" rx="16" fill="#ffffff" stroke="#c0392b" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/randy-cheeseburger.svg" x="-50" y="-78" width="100" height="100"/>
+    <rect x="-96" y="32" width="192" height="56" rx="6" fill="#fadbd8" stroke="#c0392b" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="54" font-size="18" text-anchor="middle" fill="#c0392b" font-weight="bold">bubbles.validate</text>
+    <text x="0" y="74" font-size="13" text-anchor="middle" fill="#c0392b">Randy · checks gates</text>
+  </g>
+  <g transform="translate(1320, 1400)" filter="url(#shadow)">
+    <rect x="-100" y="-90" width="200" height="180" rx="16" fill="#ffffff" stroke="#c0392b" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/ted-badge.svg" x="-50" y="-78" width="100" height="100"/>
+    <rect x="-96" y="32" width="192" height="56" rx="6" fill="#fadbd8" stroke="#c0392b" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="54" font-size="18" text-anchor="middle" fill="#c0392b" font-weight="bold">bubbles.audit</text>
+    <text x="0" y="74" font-size="13" text-anchor="middle" fill="#c0392b">Ted · official audit</text>
+  </g>
+  <g transform="translate(1640, 1400)" filter="url(#shadow)">
+    <rect x="-100" y="-90" width="200" height="180" rx="16" fill="#ffffff" stroke="#c0392b" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/cyrus-sunglasses.svg" x="-50" y="-78" width="100" height="100"/>
+    <rect x="-96" y="32" width="192" height="56" rx="6" fill="#fadbd8" stroke="#c0392b" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="54" font-size="18" text-anchor="middle" fill="#c0392b" font-weight="bold">bubbles.security</text>
+    <text x="0" y="74" font-size="13" text-anchor="middle" fill="#c0392b">Cyrus · safety always off</text>
+  </g>
+
+  <!-- ============== SOUTHWEST: DIAGNOSTICS ============== -->
+  <g transform="translate(180, 1020)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/private-dancer-lamp.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.grill</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Leslie · pressure-test</text>
+  </g>
+  <g transform="translate(360, 1020)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/george-green-badge.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.clarify</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">George · what's going on</text>
+  </g>
+  <g transform="translate(540, 1020)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/phil-collins-baam.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.gaps</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Phil · finds gaps</text>
+  </g>
+  <g transform="translate(180, 1200)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/bill-wrench.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.stabilize</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Bill · spots issues</text>
+  </g>
+  <g transform="translate(360, 1200)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/steve-french-paw.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.regression</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Steve · prowls the code</text>
+  </g>
+  <g transform="translate(540, 1200)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/green-bastard-outline.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">code-review</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Green Bastard</text>
+  </g>
+  <g transform="translate(180, 1380)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/orangie-fishbowl.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">system-review</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Orangie · whole show</text>
+  </g>
+  <g transform="translate(360, 1380)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/gary-laser-eyes.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">spec-review</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Gary · audits artifacts</text>
+  </g>
+  <g transform="translate(540, 1380)" filter="url(#shadow)">
+    <rect x="-78" y="-72" width="156" height="160" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/lahey-bottle.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-74" y="28" width="148" height="50" rx="6" fill="#fdebd0" stroke="#d35400" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#d35400" font-weight="bold">bubbles.retro</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#d35400">Lahey (bottle)</text>
+  </g>
+
+  <!-- ============== SOUTHEAST: UTILITIES ============== -->
+  <g transform="translate(2010, 1400)" filter="url(#shadow)">
+    <rect x="-80" y="-72" width="160" height="160" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/camera-crew.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-76" y="28" width="152" height="50" rx="6" fill="#ecf0f1" stroke="#7f8c8d" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#2c3e50" font-weight="bold">bubbles.status</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#7f8c8d">silent observer</text>
+  </g>
+  <g transform="translate(2200, 1400)" filter="url(#shadow)">
+    <rect x="-80" y="-72" width="160" height="160" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/camera-crew.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-76" y="28" width="152" height="50" rx="6" fill="#ecf0f1" stroke="#7f8c8d" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#2c3e50" font-weight="bold">bubbles.recap</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#7f8c8d">Talking Head</text>
+  </g>
+  <g transform="translate(2390, 1400)" filter="url(#shadow)">
+    <rect x="-80" y="-72" width="160" height="160" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/trevor-handoff.svg" x="-38" y="-60" width="76" height="76"/>
+    <rect x="-76" y="28" width="152" height="50" rx="6" fill="#ecf0f1" stroke="#7f8c8d" stroke-width="3" filter="url(#handdrawn)"/>
+    <text x="0" y="48" font-size="15" text-anchor="middle" fill="#2c3e50" font-weight="bold">bubbles.handoff</text>
+    <text x="0" y="66" font-size="11" text-anchor="middle" fill="#7f8c8d">Trevor · packet</text>
+  </g>
+  <g transform="translate(2010, 1560)" filter="url(#shadow)">
+    <rect x="-82" y="-54" width="164" height="76" rx="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="4" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/cory-trevor-smokes.svg" x="-68" y="-42" width="48" height="48"/>
+    <text x="-12" y="-24" font-size="13" text-anchor="start" fill="#2c3e50" font-weight="bold">bubbles.setup</text>
+    <text x="-12" y="-7" font-size="10" text-anchor="start" fill="#7f8c8d">Cory + Trevor</text>
+  </g>
+  <g transform="translate(2200, 1560)" filter="url(#shadow)">
+    <rect x="-82" y="-54" width="164" height="76" rx="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="4" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/t-cap.svg" x="-68" y="-42" width="48" height="48"/>
+    <text x="-12" y="-24" font-size="13" text-anchor="start" fill="#2c3e50" font-weight="bold">bubbles.commands</text>
+    <text x="-12" y="-7" font-size="10" text-anchor="start" fill="#7f8c8d">T · registry</text>
+  </g>
+  <g transform="translate(2390, 1560)" filter="url(#shadow)">
+    <rect x="-82" y="-54" width="164" height="76" rx="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="4" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/sam-binoculars.svg" x="-68" y="-42" width="48" height="48"/>
+    <text x="-12" y="-24" font-size="13" text-anchor="start" fill="#2c3e50" font-weight="bold">create-skill</text>
+    <text x="-12" y="-7" font-size="10" text-anchor="start" fill="#7f8c8d">Sam Losco</text>
+  </g>
+
+  <!-- Arrow legend -->
+  <g transform="translate(105, 1650)" filter="url(#handdrawn)" font-weight="bold">
+    <rect x="-8" y="-26" width="2400" height="100" rx="14" fill="#ffffff" fill-opacity="0.92" stroke="#2c3e50" stroke-width="3"/>
+    <text x="0" y="0" font-size="20" fill="#2c3e50">FOOTPATH KEY:</text>
+    <line x1="200" y1="-6" x2="320" y2="-6" stroke="#2980b9" stroke-width="6" stroke-dasharray="12,6" marker-end="url(#arrow-blue)"/>
+    <text x="335" y="0" font-size="16" fill="#2980b9">workflow → orchestrator dispatch</text>
+    <line x1="700" y1="-6" x2="820" y2="-6" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <text x="835" y="0" font-size="16" fill="#8e44ad">planning chain (analyst→ux→design→plan)</text>
+    <line x1="1320" y1="-6" x2="1440" y2="-6" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <text x="1455" y="0" font-size="16" fill="#27ae60">build flow (plan→implement→test→docs)</text>
+    <line x1="2000" y1="-6" x2="2120" y2="-6" stroke="#c0392b" stroke-width="6" marker-end="url(#arrow-red)"/>
+    <text x="2135" y="0" font-size="16" fill="#c0392b">certification gate</text>
+    <line x1="200" y1="44" x2="320" y2="44" stroke="#d35400" stroke-width="5" stroke-dasharray="10,6" marker-end="url(#arrow-orange)"/>
+    <text x="335" y="50" font-size="16" fill="#d35400">diagnostic finding routed to owner</text>
+    <line x1="700" y1="44" x2="820" y2="44" stroke="#e74c3c" stroke-width="5" stroke-dasharray="10,6" marker-end="url(#arrow-red)"/>
+    <text x="835" y="50" font-size="16" fill="#c0392b">chaos triggers re-test</text>
+    <line x1="1320" y1="44" x2="1440" y2="44" stroke="#8e44ad" stroke-width="4" stroke-dasharray="6,10" marker-end="url(#arrow-purple)"/>
+    <text x="1455" y="50" font-size="16" fill="#8e44ad">retro data-driven loop</text>
+    <line x1="2000" y1="44" x2="2120" y2="44" stroke="#2c3e50" stroke-width="3" stroke-dasharray="4,8" marker-end="url(#arrow-black)"/>
+    <text x="2135" y="50" font-size="16" fill="#2c3e50">utility feedback / handoff</text>
+  </g>
+
+</svg>

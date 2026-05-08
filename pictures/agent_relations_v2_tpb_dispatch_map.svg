@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <title>Bubbles Agent Relations Dispatch Map</title>
+  <desc>TPB style infographic showing Bubbles orchestrators, owners, diagnostics, utilities, dispatch routes, and artifact ownership boundaries.</desc>
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="10" dy="10" stdDeviation="4" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7f8c8d" filter="url(#handdrawn)"/>
+    </marker>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#2980b9" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <g transform="translate(1300, 112)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-720,-48 690,-38 728,42 640,70 -700,60 -756,8" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+      <path d="M -690,-28 L 662,-18" fill="none" stroke="#2980b9" stroke-width="4"/>
+      <path d="M -680,-10 L 650,0" fill="none" stroke="#2980b9" stroke-width="4"/>
+    </g>
+    <text x="0" y="18" font-size="58" text-anchor="middle" fill="#2c3e50" letter-spacing="3" filter="url(#handdrawn)">BUBBLES DISPATCH MAP</text>
+    <text x="0" y="62" font-size="25" text-anchor="middle" fill="#7f8c8d" filter="url(#handdrawn)">who routes, who owns, who checks, who tapes the handoff packet to the door</text>
+  </g>
+
+  <g filter="url(#handdrawn)">
+    <rect x="100" y="220" width="2400" height="450" rx="24" fill="#e8f4fd" fill-opacity="0.78" stroke="#2980b9" stroke-width="6"/>
+    <rect x="100" y="720" width="760" height="390" rx="24" fill="#f9ecf6" fill-opacity="0.82" stroke="#8e44ad" stroke-width="6"/>
+    <rect x="900" y="720" width="1598" height="390" rx="24" fill="#eaf8ee" fill-opacity="0.82" stroke="#27ae60" stroke-width="6"/>
+    <rect x="100" y="1160" width="1650" height="450" rx="24" fill="#fef5e7" fill-opacity="0.84" stroke="#d35400" stroke-width="6"/>
+    <rect x="1790" y="1160" width="708" height="450" rx="24" fill="#eef0f3" fill-opacity="0.88" stroke="#7f8c8d" stroke-width="6"/>
+    <rect x="610" y="1512" width="1420" height="120" rx="20" fill="#ffffff" fill-opacity="0.88" stroke="#c0392b" stroke-width="5" stroke-dasharray="14,8"/>
+  </g>
+
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <text x="1300" y="255" font-size="28" text-anchor="middle" fill="#2980b9">ORCHESTRATORS AND CONTROL DESK</text>
+    <text x="480" y="758" font-size="25" text-anchor="middle" fill="#8e44ad">PLANNING OWNERS</text>
+    <text x="1700" y="758" font-size="25" text-anchor="middle" fill="#27ae60">EXECUTION OWNERS</text>
+    <text x="925" y="1198" font-size="25" text-anchor="middle" fill="#d35400">DIAGNOSTICS AND CERTIFIERS</text>
+    <text x="2144" y="1198" font-size="25" text-anchor="middle" fill="#7f8c8d">UTILITY SHED</text>
+    <text x="1320" y="1552" font-size="24" text-anchor="middle" fill="#c0392b">OWNERSHIP BOUNDARY: ROUTE FOREIGN ARTIFACT CHANGES TO THE OWNER</text>
+  </g>
+
+  <!-- Orchestrators -->
+  <g font-weight="bold">
+    <g transform="translate(250, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#2c3e50" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/bubbles-glasses.svg" x="-52" y="-95" width="104" height="104"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#fff1b8" stroke="#2c3e50" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#2c3e50">bubbles.workflow</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">universal entry point</text>
+    </g>
+    <g transform="translate(620, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#16a085" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/lahey-badge.svg" x="-52" y="-95" width="104" height="104"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#d1f2eb" stroke="#16a085" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#16a085">bubbles.super</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">intent and framework ops</text>
+    </g>
+    <g transform="translate(990, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/jacob-hardhat.svg" x="-50" y="-92" width="100" height="100"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#2980b9">bubbles.iterate</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">pick next work slice</text>
+    </g>
+    <g transform="translate(1360, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/tyrone-chain.svg" x="-50" y="-92" width="100" height="100"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#2980b9">bubbles.goal</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">one goal to convergence</text>
+    </g>
+    <g transform="translate(1730, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/erica-doublestack.svg" x="-50" y="-92" width="100" height="100"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#2980b9">bubbles.sprint</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">many goals, one clock</text>
+    </g>
+    <g transform="translate(2100, 455)" filter="url(#shadow)">
+      <rect x="-105" y="-110" width="210" height="220" rx="18" fill="#ffffff" stroke="#2980b9" stroke-width="6" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/cory-cap.svg" x="-50" y="-92" width="100" height="100"/>
+      <rect x="-96" y="32" width="192" height="62" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3" filter="url(#handdrawn)"/>
+      <text x="0" y="55" font-size="18" text-anchor="middle" fill="#2980b9">bubbles.bug</text>
+      <text x="0" y="78" font-size="13" text-anchor="middle" fill="#7f8c8d">reproduce and route</text>
+    </g>
+  </g>
+
+  <!-- Planning owners -->
+  <g font-weight="bold">
+    <g transform="translate(200, 930)" filter="url(#shadow)">
+      <rect x="-78" y="-86" width="156" height="172" rx="14" fill="#ffffff" stroke="#8e44ad" stroke-width="5" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/ray-lawnchair.svg" x="-42" y="-76" width="84" height="84"/>
+      <text x="0" y="32" font-size="16" text-anchor="middle" fill="#8e44ad">analyst</text>
+      <text x="0" y="54" font-size="12" text-anchor="middle" fill="#7f8c8d">spec.md</text>
+    </g>
+    <g transform="translate(390, 930)" filter="url(#shadow)">
+      <rect x="-78" y="-86" width="156" height="172" rx="14" fill="#ffffff" stroke="#8e44ad" stroke-width="5" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/lucy-mirror.svg" x="-42" y="-76" width="84" height="84"/>
+      <text x="0" y="32" font-size="16" text-anchor="middle" fill="#8e44ad">ux</text>
+      <text x="0" y="54" font-size="12" text-anchor="middle" fill="#7f8c8d">UX sections</text>
+    </g>
+    <g transform="translate(580, 930)" filter="url(#shadow)">
+      <rect x="-78" y="-86" width="156" height="172" rx="14" fill="#ffffff" stroke="#8e44ad" stroke-width="5" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/sarah-clipboard.svg" x="-42" y="-76" width="84" height="84"/>
+      <text x="0" y="32" font-size="16" text-anchor="middle" fill="#8e44ad">design</text>
+      <text x="0" y="54" font-size="12" text-anchor="middle" fill="#7f8c8d">design.md</text>
+    </g>
+    <g transform="translate(770, 930)" filter="url(#shadow)">
+      <rect x="-78" y="-86" width="156" height="172" rx="14" fill="#ffffff" stroke="#8e44ad" stroke-width="5" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/barb-keys.svg" x="-42" y="-76" width="84" height="84"/>
+      <text x="0" y="32" font-size="16" text-anchor="middle" fill="#8e44ad">plan</text>
+      <text x="0" y="54" font-size="12" text-anchor="middle" fill="#7f8c8d">scopes + report</text>
+    </g>
+  </g>
+
+  <!-- Execution owners -->
+  <g font-weight="bold">
+    <g transform="translate(1045, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/julian-glass.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1245, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/trinity-notebook.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1445, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/jroc-mic.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">docs</text></g>
+    <g transform="translate(1645, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/tommy-rack.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">devops</text></g>
+    <g transform="translate(1845, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/ricky-dynamite.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">chaos</text></g>
+    <g transform="translate(2045, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/donny-ducttape.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">simplify</text></g>
+    <g transform="translate(2245, 865)" filter="url(#shadow)"><rect x="-78" y="-76" width="156" height="152" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/sebastian-guitar.svg" x="-40" y="-68" width="80" height="80"/><text x="0" y="36" font-size="15" text-anchor="middle" fill="#27ae60">cinematic</text></g>
+    <g transform="translate(1245, 1035)" filter="url(#shadow)"><rect x="-98" y="-58" width="196" height="116" rx="14" fill="#ffffff" stroke="#27ae60" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/sonny-ledger.svg" x="-40" y="-52" width="80" height="80"/><text x="0" y="45" font-size="15" text-anchor="middle" fill="#27ae60">releases</text></g>
+  </g>
+
+  <!-- Diagnostics and certification -->
+  <g font-weight="bold">
+    <g transform="translate(210, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#c0392b" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/randy-cheeseburger.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#c0392b">validate</text></g>
+    <g transform="translate(380, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#c0392b" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/ted-badge.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#c0392b">audit</text></g>
+    <g transform="translate(550, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/private-dancer-lamp.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">grill</text></g>
+    <g transform="translate(720, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/george-green-badge.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">clarify</text></g>
+    <g transform="translate(890, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/conky-puppet.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">harden</text></g>
+    <g transform="translate(1060, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/phil-collins-baam.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">gaps</text></g>
+    <g transform="translate(1230, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/bill-wrench.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">stabilize</text></g>
+    <g transform="translate(1400, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/steve-french-paw.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">regression</text></g>
+    <g transform="translate(1570, 1320)" filter="url(#shadow)"><rect x="-74" y="-70" width="148" height="140" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/cyrus-sunglasses.svg" x="-36" y="-60" width="72" height="72"/><text x="0" y="34" font-size="14" text-anchor="middle" fill="#d35400">security</text></g>
+    <g transform="translate(550, 1485)" filter="url(#shadow)"><rect x="-88" y="-52" width="176" height="104" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/green-bastard-outline.svg" x="-38" y="-46" width="76" height="76"/><text x="0" y="43" font-size="13" text-anchor="middle" fill="#d35400">code-review</text></g>
+    <g transform="translate(760, 1485)" filter="url(#shadow)"><rect x="-88" y="-52" width="176" height="104" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/orangie-fishbowl.svg" x="-38" y="-46" width="76" height="76"/><text x="0" y="43" font-size="13" text-anchor="middle" fill="#d35400">system-review</text></g>
+    <g transform="translate(970, 1485)" filter="url(#shadow)"><rect x="-88" y="-52" width="176" height="104" rx="14" fill="#ffffff" stroke="#d35400" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/gary-laser-eyes.svg" x="-38" y="-46" width="76" height="76"/><text x="0" y="43" font-size="13" text-anchor="middle" fill="#d35400">spec-review</text></g>
+  </g>
+
+  <!-- Utilities -->
+  <g font-weight="bold">
+    <g transform="translate(1910, 1320)" filter="url(#shadow)"><rect x="-74" y="-68" width="148" height="136" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/camera-crew.svg" x="-36" y="-58" width="72" height="72"/><text x="0" y="35" font-size="14" text-anchor="middle" fill="#2c3e50">status</text></g>
+    <g transform="translate(2075, 1320)" filter="url(#shadow)"><rect x="-74" y="-68" width="148" height="136" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/camera-crew.svg" x="-36" y="-58" width="72" height="72"/><text x="0" y="35" font-size="14" text-anchor="middle" fill="#2c3e50">recap</text></g>
+    <g transform="translate(2240, 1320)" filter="url(#shadow)"><rect x="-74" y="-68" width="148" height="136" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/lahey-bottle.svg" x="-36" y="-58" width="72" height="72"/><text x="0" y="35" font-size="14" text-anchor="middle" fill="#2c3e50">retro</text></g>
+    <g transform="translate(2405, 1320)" filter="url(#shadow)"><rect x="-74" y="-68" width="148" height="136" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/trevor-handoff.svg" x="-36" y="-58" width="72" height="72"/><text x="0" y="35" font-size="14" text-anchor="middle" fill="#2c3e50">handoff</text></g>
+    <g transform="translate(1980, 1485)" filter="url(#shadow)"><rect x="-80" y="-50" width="160" height="100" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/cory-trevor-smokes.svg" x="-32" y="-44" width="64" height="64"/><text x="0" y="40" font-size="13" text-anchor="middle" fill="#2c3e50">setup</text></g>
+    <g transform="translate(2170, 1485)" filter="url(#shadow)"><rect x="-80" y="-50" width="160" height="100" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/t-cap.svg" x="-32" y="-44" width="64" height="64"/><text x="0" y="40" font-size="13" text-anchor="middle" fill="#2c3e50">commands</text></g>
+    <g transform="translate(2360, 1485)" filter="url(#shadow)"><rect x="-80" y="-50" width="160" height="100" rx="14" fill="#ffffff" stroke="#7f8c8d" stroke-width="5" filter="url(#handdrawn-thick)"/><image href="../icons/sam-binoculars.svg" x="-32" y="-44" width="64" height="64"/><text x="0" y="40" font-size="13" text-anchor="middle" fill="#2c3e50">create-skill</text></g>
+  </g>
+
+  <!-- Dispatch and routing lines -->
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+    <path d="M 355,455 C 420,420 500,420 515,455" stroke="#16a085" stroke-width="7" stroke-dasharray="12,8" marker-end="url(#arrow-green)"/>
+    <path d="M 355,510 C 560,620 820,665 990,760" stroke="#2980b9" stroke-width="7" stroke-dasharray="16,10" marker-end="url(#arrow-blue)"/>
+    <path d="M 735,455 L 870,455" stroke="#2980b9" stroke-width="7" marker-end="url(#arrow-blue)"/>
+    <path d="M 1098,455 L 1240,455" stroke="#2980b9" stroke-width="7" marker-end="url(#arrow-blue)"/>
+    <path d="M 1468,455 L 1610,455" stroke="#2980b9" stroke-width="7" marker-end="url(#arrow-blue)"/>
+    <path d="M 1838,455 L 1980,455" stroke="#2980b9" stroke-width="7" marker-end="url(#arrow-blue)"/>
+    <path d="M 990,565 C 760,680 610,760 770,845" stroke="#8e44ad" stroke-width="7" marker-end="url(#arrow-purple)"/>
+    <path d="M 2100,565 C 1980,660 1860,730 1845,790" stroke="#c0392b" stroke-width="7" marker-end="url(#arrow-red)"/>
+    <path d="M 278,930 L 312,930" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <path d="M 468,930 L 502,930" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <path d="M 658,930 L 692,930" stroke="#8e44ad" stroke-width="6" marker-end="url(#arrow-purple)"/>
+    <path d="M 850,930 C 930,900 965,880 965,865" stroke="#27ae60" stroke-width="7" marker-end="url(#arrow-green)"/>
+    <path d="M 1125,865 L 1165,865" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <path d="M 1325,865 L 1365,865" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <path d="M 1525,865 L 1565,865" stroke="#27ae60" stroke-width="6" marker-end="url(#arrow-green)"/>
+    <path d="M 1245,941 C 1200,1120 770,1190 380,1250" stroke="#c0392b" stroke-width="6" stroke-dasharray="14,8" marker-end="url(#arrow-red)"/>
+    <path d="M 1400,1250 C 1500,1130 1640,1060 1845,940" stroke="#d35400" stroke-width="5" stroke-dasharray="10,7" marker-end="url(#arrow-orange)"/>
+    <path d="M 1060,1250 C 870,1140 810,1060 770,1015" stroke="#d35400" stroke-width="5" stroke-dasharray="10,7" marker-end="url(#arrow-orange)"/>
+    <path d="M 1570,1250 C 1680,1130 1770,1030 1845,940" stroke="#c0392b" stroke-width="5" stroke-dasharray="12,7" marker-end="url(#arrow-red)"/>
+    <path d="M 2144,1220 C 2080,1110 2000,1035 2045,940" stroke="#7f8c8d" stroke-width="5" stroke-dasharray="7,9" marker-end="url(#arrow-gray)"/>
+  </g>
+
+  <!-- Ownership boundary details -->
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="650" y="1574" width="260" height="36" rx="8" fill="#ebdef0" stroke="#8e44ad" stroke-width="3"/>
+    <text x="780" y="1598" font-size="15" text-anchor="middle" fill="#8e44ad">spec.md -> analyst + ux</text>
+    <rect x="930" y="1574" width="220" height="36" rx="8" fill="#ebdef0" stroke="#8e44ad" stroke-width="3"/>
+    <text x="1040" y="1598" font-size="15" text-anchor="middle" fill="#8e44ad">design.md -> design</text>
+    <rect x="1170" y="1574" width="300" height="36" rx="8" fill="#ebdef0" stroke="#8e44ad" stroke-width="3"/>
+    <text x="1320" y="1598" font-size="15" text-anchor="middle" fill="#8e44ad">scopes/report -> plan</text>
+    <rect x="1490" y="1574" width="220" height="36" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/>
+    <text x="1600" y="1598" font-size="15" text-anchor="middle" fill="#27ae60">code/tests/docs</text>
+    <rect x="1730" y="1574" width="250" height="36" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/>
+    <text x="1855" y="1598" font-size="15" text-anchor="middle" fill="#c0392b">state -> validate</text>
+  </g>
+
+  <g transform="translate(2160, 250) rotate(3)" filter="url(#handdrawn)">
+    <rect x="-18" y="-28" width="320" height="96" rx="12" fill="#ffffff" fill-opacity="0.94" stroke="#d35400" stroke-width="4"/>
+    <text x="0" y="0" font-size="21" fill="#d35400" font-weight="bold">FAIL A GATE?</text>
+    <text x="12" y="28" font-size="21" fill="#d35400" font-weight="bold">ROUTE THE PACKET.</text>
+    <text x="24" y="55" font-size="18" fill="#7f8c8d">No drive-by fixes.</text>
+  </g>
+</svg>

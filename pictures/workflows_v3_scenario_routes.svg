@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <title>Bubbles Workflow Scenario Routes</title>
+  <desc>TPB style infographic showing main Bubbles workflow scenarios, agent call chains, phase boundary gates, and rework routing loops.</desc>
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="8" dy="8" stdDeviation="4" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/></marker>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#27ae60" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <g transform="translate(1300, 105)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-760,-48 730,-38 768,44 678,72 -740,62 -798,8" fill="#ffffff" stroke="#27ae60" stroke-width="8"/>
+    </g>
+    <text x="0" y="18" font-size="58" text-anchor="middle" fill="#1e8449" letter-spacing="3" filter="url(#handdrawn)">BUBBLES WORKFLOW ROUTE BOARD</text>
+    <text x="0" y="62" font-size="25" text-anchor="middle" fill="#27ae60" filter="url(#handdrawn)">seven common scenarios, the call chains, and the gate stamps at the phase doors</text>
+  </g>
+
+  <g filter="url(#handdrawn)" font-weight="bold">
+    <g transform="translate(120, 205) rotate(-2)">
+      <rect x="-14" y="-25" width="530" height="64" rx="12" fill="#ffffff" fill-opacity="0.94" stroke="#2980b9" stroke-width="4"/>
+      <text x="0" y="0" font-size="20" fill="#2980b9">THE RULE: ROUTE TO THE OWNER, THEN RECHECK THE GATE.</text>
+      <text x="20" y="25" font-size="17" fill="#7f8c8d">If it looks done but lacks evidence, it is not done.</text>
+    </g>
+    <g transform="translate(1990, 205) rotate(2)">
+      <rect x="-14" y="-25" width="450" height="64" rx="12" fill="#ffffff" fill-opacity="0.94" stroke="#c0392b" stroke-width="4"/>
+      <text x="0" y="0" font-size="20" fill="#c0392b">FAILED STAMP MEANS REWORK PACKET.</text>
+      <text x="20" y="25" font-size="17" fill="#7f8c8d">No mystery errands, no narrative-only fixes.</text>
+    </g>
+  </g>
+
+  <!-- Row backgrounds -->
+  <g filter="url(#handdrawn)">
+    <rect x="105" y="290" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#8e44ad" stroke-width="5"/>
+    <rect x="105" y="500" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#27ae60" stroke-width="5"/>
+    <rect x="105" y="710" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#c0392b" stroke-width="5"/>
+    <rect x="105" y="920" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#d35400" stroke-width="5"/>
+    <rect x="105" y="1130" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#e74c3c" stroke-width="5"/>
+    <rect x="105" y="1340" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#2980b9" stroke-width="5"/>
+    <rect x="105" y="1550" width="2390" height="180" rx="22" fill="#ffffff" fill-opacity="0.85" stroke="#16a085" stroke-width="5"/>
+  </g>
+
+  <!-- Scenario labels -->
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <text x="285" y="350" font-size="28" text-anchor="middle" fill="#8e44ad">PRODUCT-TO-DELIVERY</text>
+    <text x="285" y="383" font-size="17" text-anchor="middle" fill="#7f8c8d">new thing with full planning</text>
+    <text x="285" y="560" font-size="28" text-anchor="middle" fill="#27ae60">FULL-DELIVERY</text>
+    <text x="285" y="593" font-size="17" text-anchor="middle" fill="#7f8c8d">finish an existing packet</text>
+    <text x="285" y="770" font-size="28" text-anchor="middle" fill="#c0392b">BUGFIX-FASTLANE</text>
+    <text x="285" y="803" font-size="17" text-anchor="middle" fill="#7f8c8d">reproduce, fix, prove</text>
+    <text x="285" y="980" font-size="28" text-anchor="middle" fill="#d35400">VALIDATE-ONLY</text>
+    <text x="285" y="1013" font-size="17" text-anchor="middle" fill="#7f8c8d">certify or reopen</text>
+    <text x="285" y="1190" font-size="28" text-anchor="middle" fill="#e74c3c">CHAOS-HARDENING</text>
+    <text x="285" y="1223" font-size="17" text-anchor="middle" fill="#7f8c8d">break then harden</text>
+    <text x="285" y="1400" font-size="28" text-anchor="middle" fill="#2980b9">RELEASE-TO-DOC</text>
+    <text x="285" y="1433" font-size="17" text-anchor="middle" fill="#7f8c8d">phase packet to truth docs</text>
+    <text x="285" y="1610" font-size="28" text-anchor="middle" fill="#16a085">IMPROVE-EXISTING</text>
+    <text x="285" y="1643" font-size="17" text-anchor="middle" fill="#7f8c8d">brownfield research to delivery</text>
+  </g>
+
+  <!-- Helper arrow rails for each row -->
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+    <path d="M 520,380 L 2260,380" stroke="#8e44ad" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-purple)"/>
+    <path d="M 560,590 L 2140,590" stroke="#27ae60" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-green)"/>
+    <path d="M 560,800 L 1960,800" stroke="#c0392b" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-red)"/>
+    <path d="M 640,1010 L 1840,1010" stroke="#d35400" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-orange)"/>
+    <path d="M 720,1220 L 1820,1220" stroke="#e74c3c" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-red)"/>
+    <path d="M 720,1430 L 1860,1430" stroke="#2980b9" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 540,1640 L 2180,1640" stroke="#16a085" stroke-width="5" stroke-dasharray="18,8" marker-end="url(#arrow-green)"/>
+  </g>
+
+  <!-- Row 1 product-to-delivery -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(535, 380)"><image href="../icons/bubbles-glasses.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#2c3e50">workflow</text></g>
+    <g transform="translate(715, 380)"><image href="../icons/ray-lawnchair.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">analyst</text></g>
+    <g transform="translate(895, 380)"><image href="../icons/lucy-mirror.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">ux</text></g>
+    <g transform="translate(1075, 380)"><image href="../icons/sarah-clipboard.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">design</text></g>
+    <g transform="translate(1255, 380)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">plan</text></g>
+    <g transform="translate(1435, 380)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1615, 380)"><image href="../icons/trinity-notebook.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1795, 380)"><image href="../icons/jroc-mic.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">docs</text></g>
+    <g transform="translate(1975, 380)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+    <g transform="translate(2155, 380)"><image href="../icons/ted-badge.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">audit</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="620" y="305" width="110" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="675" y="327" font-size="13" text-anchor="middle" fill="#7d6608">G070</text>
+    <rect x="805" y="305" width="110" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="860" y="327" font-size="13" text-anchor="middle" fill="#7d6608">G032</text>
+    <rect x="990" y="305" width="110" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="1045" y="327" font-size="13" text-anchor="middle" fill="#7d6608">G033</text>
+    <rect x="1345" y="305" width="130" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1410" y="327" font-size="13" text-anchor="middle" fill="#1e8449">G028/G035</text>
+    <rect x="1510" y="305" width="150" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1585" y="327" font-size="13" text-anchor="middle" fill="#1e8449">G003-G005</text>
+    <rect x="1885" y="305" width="110" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1940" y="327" font-size="13" text-anchor="middle" fill="#922b21">G023</text>
+  </g>
+
+  <!-- Row 2 full-delivery -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(560, 590)"><image href="../icons/jacob-hardhat.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#2980b9">iterate</text></g>
+    <g transform="translate(780, 590)"><image href="../icons/sarah-clipboard.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">design</text></g>
+    <g transform="translate(1000, 590)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">plan</text></g>
+    <g transform="translate(1220, 590)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1440, 590)"><image href="../icons/trinity-notebook.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1660, 590)"><image href="../icons/donny-ducttape.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">simplify</text></g>
+    <g transform="translate(1880, 590)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+    <g transform="translate(2100, 590)"><image href="../icons/ted-badge.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">audit</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="645" y="516" width="110" height="32" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3"/><text x="700" y="538" font-size="13" text-anchor="middle" fill="#1f618d">G013</text>
+    <rect x="865" y="516" width="110" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="920" y="538" font-size="13" text-anchor="middle" fill="#7d6608">G033</text>
+    <rect x="1135" y="516" width="120" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1195" y="538" font-size="13" text-anchor="middle" fill="#1e8449">G028</text>
+    <rect x="1350" y="516" width="145" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1422" y="538" font-size="13" text-anchor="middle" fill="#1e8449">G003-G005</text>
+    <rect x="1788" y="516" width="110" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1843" y="538" font-size="13" text-anchor="middle" fill="#922b21">G023</text>
+  </g>
+
+  <!-- Row 3 bugfix-fastlane -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(560, 800)"><image href="../icons/cory-cap.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#2980b9">bug</text></g>
+    <g transform="translate(780, 800)"><image href="../icons/sarah-clipboard.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">design</text></g>
+    <g transform="translate(1000, 800)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">plan</text></g>
+    <g transform="translate(1220, 800)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1440, 800)"><image href="../icons/trinity-notebook.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1660, 800)"><image href="../icons/steve-french-paw.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#d35400">regress</text></g>
+    <g transform="translate(1880, 800)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="620" y="726" width="150" height="32" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3"/><text x="695" y="748" font-size="13" text-anchor="middle" fill="#1f618d">repro first</text>
+    <rect x="1320" y="726" width="150" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="1395" y="748" font-size="13" text-anchor="middle" fill="#7d6608">G036 red-green</text>
+    <rect x="1570" y="726" width="110" height="32" rx="8" fill="#fdebd0" stroke="#d35400" stroke-width="3"/><text x="1625" y="748" font-size="13" text-anchor="middle" fill="#a04000">G044</text>
+    <rect x="1795" y="726" width="110" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1850" y="748" font-size="13" text-anchor="middle" fill="#922b21">G023</text>
+  </g>
+
+  <!-- Row 4 validate-only -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(650, 1010)"><image href="../icons/camera-crew.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#7f8c8d">status</text></g>
+    <g transform="translate(900, 1010)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+    <g transform="translate(1150, 1010)"><image href="../icons/trevor-handoff.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#d35400">route packet</text></g>
+    <g transform="translate(1400, 1010)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">owner</text></g>
+    <g transform="translate(1650, 1010)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">recheck</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="735" y="936" width="135" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="802" y="958" font-size="13" text-anchor="middle" fill="#922b21">G005/G018</text>
+    <rect x="960" y="936" width="130" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1025" y="958" font-size="13" text-anchor="middle" fill="#922b21">G056</text>
+    <rect x="1510" y="936" width="130" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1575" y="958" font-size="13" text-anchor="middle" fill="#922b21">G023</text>
+    <path d="M 1660,1055 C 1460,1110 1150,1100 930,1055" fill="none" stroke="#d35400" stroke-width="4" stroke-dasharray="10,8" marker-end="url(#arrow-orange)"/>
+  </g>
+
+  <!-- Row 5 chaos-hardening -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(720, 1220)"><image href="../icons/ricky-dynamite.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#e74c3c">chaos</text></g>
+    <g transform="translate(980, 1220)"><image href="../icons/conky-puppet.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#e74c3c">harden</text></g>
+    <g transform="translate(1240, 1220)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1500, 1220)"><image href="../icons/trinity-notebook.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1760, 1220)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="800" y="1146" width="100" height="32" rx="8" fill="#fadbd8" stroke="#e74c3c" stroke-width="3"/><text x="850" y="1168" font-size="13" text-anchor="middle" fill="#922b21">G009</text>
+    <rect x="1055" y="1146" width="120" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="1115" y="1168" font-size="13" text-anchor="middle" fill="#7d6608">G038</text>
+    <rect x="1335" y="1146" width="120" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1395" y="1168" font-size="13" text-anchor="middle" fill="#1e8449">G028</text>
+    <path d="M 1500,1265 C 1280,1310 980,1305 850,1265" fill="none" stroke="#e74c3c" stroke-width="4" stroke-dasharray="10,8" marker-end="url(#arrow-red)"/>
+  </g>
+
+  <!-- Row 6 release-planning-to-doc -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(720, 1430)"><image href="../icons/sonny-ledger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#2980b9">releases</text></g>
+    <g transform="translate(980, 1430)"><image href="../icons/ray-lawnchair.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">direction</text></g>
+    <g transform="translate(1240, 1430)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">packet</text></g>
+    <g transform="translate(1500, 1430)"><image href="../icons/jroc-mic.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">docs</text></g>
+    <g transform="translate(1760, 1430)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="830" y="1356" width="130" height="32" rx="8" fill="#d6eaf8" stroke="#2980b9" stroke-width="3"/><text x="895" y="1378" font-size="13" text-anchor="middle" fill="#1f618d">release scope</text>
+    <rect x="1360" y="1356" width="110" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1415" y="1378" font-size="13" text-anchor="middle" fill="#1e8449">G006</text>
+    <rect x="1620" y="1356" width="110" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="1675" y="1378" font-size="13" text-anchor="middle" fill="#922b21">G012</text>
+  </g>
+
+  <!-- Row 7 improve-existing -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(540, 1640)"><image href="../icons/bubbles-glasses.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#2c3e50">workflow</text></g>
+    <g transform="translate(740, 1640)"><image href="../icons/lahey-badge.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#16a085">super</text></g>
+    <g transform="translate(940, 1640)"><image href="../icons/ray-lawnchair.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">research</text></g>
+    <g transform="translate(1140, 1640)"><image href="../icons/lucy-mirror.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">ux</text></g>
+    <g transform="translate(1340, 1640)"><image href="../icons/sarah-clipboard.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">design</text></g>
+    <g transform="translate(1540, 1640)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">plan</text></g>
+    <g transform="translate(1740, 1640)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1940, 1640)"><image href="../icons/steve-french-paw.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#d35400">regress</text></g>
+    <g transform="translate(2140, 1640)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+  </g>
+  <g font-weight="bold" filter="url(#handdrawn)">
+    <rect x="820" y="1566" width="150" height="32" rx="8" fill="#d1f2eb" stroke="#16a085" stroke-width="3"/><text x="895" y="1588" font-size="13" text-anchor="middle" fill="#0e6655">objective pass</text>
+    <rect x="1245" y="1566" width="110" height="32" rx="8" fill="#fff8d6" stroke="#f1c40f" stroke-width="3"/><text x="1300" y="1588" font-size="13" text-anchor="middle" fill="#7d6608">G033</text>
+    <rect x="1645" y="1566" width="135" height="32" rx="8" fill="#d4efdf" stroke="#27ae60" stroke-width="3"/><text x="1712" y="1588" font-size="13" text-anchor="middle" fill="#1e8449">G043/G044</text>
+    <rect x="2045" y="1566" width="110" height="32" rx="8" fill="#fadbd8" stroke="#c0392b" stroke-width="3"/><text x="2100" y="1588" font-size="13" text-anchor="middle" fill="#922b21">G023</text>
+  </g>
+
+  <g transform="translate(2320, 730) rotate(4)" filter="url(#handdrawn)">
+    <rect x="-14" y="-24" width="150" height="58" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="4"/>
+    <text x="60" y="0" font-size="16" text-anchor="middle" fill="#7d6608" font-weight="bold">GATE STAMP</text>
+    <text x="60" y="22" font-size="13" text-anchor="middle" fill="#7f8c8d">phase door check</text>
+  </g>
+</svg>

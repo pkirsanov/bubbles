@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <title>Bubbles High-Level Agent Usage Picker</title>
+  <desc>TPB style infographic showing when to use bubbles.workflow, bubbles.super, bubbles.iterate, bubbles.goal, bubbles.sprint, and bubbles.releases with their canonical agent icons.</desc>
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="10" dy="10" stdDeviation="4" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/>
+    </marker>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#2980b9" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <g transform="translate(1300, 112)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-775,-50 742,-42 780,44 690,72 -755,62 -812,8" fill="#ffffff" stroke="#2c3e50" stroke-width="8"/>
+      <path d="M -740,-28 L 710,-18" fill="none" stroke="#2980b9" stroke-width="4"/>
+      <path d="M -720,-8 L 690,2" fill="none" stroke="#2980b9" stroke-width="4"/>
+    </g>
+    <text x="0" y="18" font-size="58" text-anchor="middle" fill="#2c3e50" letter-spacing="3" filter="url(#handdrawn)">HIGH-LEVEL AGENT USE MAP</text>
+    <text x="0" y="62" font-size="25" text-anchor="middle" fill="#7f8c8d" filter="url(#handdrawn)">pick the right Sunnyvale supervisor before the specialist chain starts</text>
+  </g>
+
+  <g filter="url(#handdrawn)">
+    <rect x="118" y="218" width="2364" height="146" rx="24" fill="#fff6cf" stroke="#d35400" stroke-width="6"/>
+    <text x="172" y="262" font-size="28" font-weight="bold" fill="#d35400">FAST PICKER</text>
+    <text x="172" y="307" font-size="25" fill="#2c3e50">If the request is vague, start at workflow. If the request is framework advice, call super. If the work is known, choose iterate, goal, sprint, or releases.</text>
+    <text x="172" y="340" font-size="20" fill="#7f8c8d">Rule of thumb: scope size decides the controller; artifact ownership still decides who edits.</text>
+  </g>
+
+  <g font-weight="bold">
+    <g transform="translate(390, 615)" filter="url(#shadow)">
+      <rect x="-252" y="-190" width="504" height="380" rx="22" fill="#e8f4fd" stroke="#2980b9" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/bubbles-glasses.svg" x="-74" y="-168" width="148" height="148"/>
+      <text x="0" y="16" font-size="32" text-anchor="middle" fill="#2980b9">bubbles.workflow</text>
+      <text x="0" y="52" font-size="20" text-anchor="middle" fill="#2c3e50">universal entry point</text>
+      <rect x="-216" y="82" width="432" height="78" rx="10" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+      <text x="0" y="111" font-size="20" text-anchor="middle" fill="#2c3e50">Use when the user says what they want</text>
+      <text x="0" y="139" font-size="20" text-anchor="middle" fill="#2c3e50">in plain English or says continue.</text>
+    </g>
+    <g transform="translate(990, 615)" filter="url(#shadow)">
+      <rect x="-252" y="-190" width="504" height="380" rx="22" fill="#d1f2eb" stroke="#16a085" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/lahey-badge.svg" x="-74" y="-168" width="148" height="148"/>
+      <text x="0" y="16" font-size="32" text-anchor="middle" fill="#16a085">bubbles.super</text>
+      <text x="0" y="52" font-size="20" text-anchor="middle" fill="#2c3e50">framework ops and advice</text>
+      <rect x="-216" y="82" width="432" height="78" rx="10" fill="#ffffff" stroke="#16a085" stroke-width="3"/>
+      <text x="0" y="111" font-size="20" text-anchor="middle" fill="#2c3e50">Use for command help, setup, health,</text>
+      <text x="0" y="139" font-size="20" text-anchor="middle" fill="#2c3e50">repo readiness, upgrades, and routing.</text>
+    </g>
+    <g transform="translate(1590, 615)" filter="url(#shadow)">
+      <rect x="-252" y="-190" width="504" height="380" rx="22" fill="#e8f4fd" stroke="#2980b9" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/jacob-hardhat.svg" x="-74" y="-168" width="148" height="148"/>
+      <text x="0" y="16" font-size="32" text-anchor="middle" fill="#2980b9">bubbles.iterate</text>
+      <text x="0" y="52" font-size="20" text-anchor="middle" fill="#2c3e50">next executable slice</text>
+      <rect x="-216" y="82" width="432" height="78" rx="10" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+      <text x="0" y="111" font-size="20" text-anchor="middle" fill="#2c3e50">Use when the repo already has work</text>
+      <text x="0" y="139" font-size="20" text-anchor="middle" fill="#2c3e50">and you want the best next pickup.</text>
+    </g>
+    <g transform="translate(2190, 615)" filter="url(#shadow)">
+      <rect x="-252" y="-190" width="504" height="380" rx="22" fill="#e8f4fd" stroke="#2980b9" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/tyrone-chain.svg" x="-74" y="-168" width="148" height="148"/>
+      <text x="0" y="16" font-size="32" text-anchor="middle" fill="#2980b9">bubbles.goal</text>
+      <text x="0" y="52" font-size="20" text-anchor="middle" fill="#2c3e50">one goal to convergence</text>
+      <rect x="-216" y="82" width="432" height="78" rx="10" fill="#ffffff" stroke="#2980b9" stroke-width="3"/>
+      <text x="0" y="111" font-size="20" text-anchor="middle" fill="#2c3e50">Use for a single feature, bug, ops,</text>
+      <text x="0" y="139" font-size="20" text-anchor="middle" fill="#2c3e50">or hardening goal that should finish.</text>
+    </g>
+  </g>
+
+  <g font-weight="bold">
+    <g transform="translate(690, 1120)" filter="url(#shadow)">
+      <rect x="-372" y="-205" width="744" height="410" rx="24" fill="#f4ecf7" stroke="#8e44ad" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/erica-doublestack.svg" x="-82" y="-184" width="164" height="164"/>
+      <text x="0" y="20" font-size="36" text-anchor="middle" fill="#8e44ad">bubbles.sprint</text>
+      <text x="0" y="58" font-size="22" text-anchor="middle" fill="#2c3e50">multi-goal timeboxed controller</text>
+      <rect x="-316" y="92" width="632" height="88" rx="12" fill="#ffffff" stroke="#8e44ad" stroke-width="3"/>
+      <text x="0" y="124" font-size="21" text-anchor="middle" fill="#2c3e50">Use when there are multiple goals and a time budget.</text>
+      <text x="0" y="153" font-size="21" text-anchor="middle" fill="#2c3e50">It prioritizes, runs loops, and stops cleanly.</text>
+    </g>
+    <g transform="translate(1910, 1120)" filter="url(#shadow)">
+      <rect x="-372" y="-205" width="744" height="410" rx="24" fill="#eaf8ee" stroke="#27ae60" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/sonny-ledger.svg" x="-82" y="-184" width="164" height="164"/>
+      <text x="0" y="20" font-size="36" text-anchor="middle" fill="#27ae60">bubbles.releases</text>
+      <text x="0" y="58" font-size="22" text-anchor="middle" fill="#2c3e50">phase and release packet owner</text>
+      <rect x="-316" y="92" width="632" height="88" rx="12" fill="#ffffff" stroke="#27ae60" stroke-width="3"/>
+      <text x="0" y="124" font-size="21" text-anchor="middle" fill="#2c3e50">Use for release packets, carry-forward traceability,</text>
+      <text x="0" y="153" font-size="21" text-anchor="middle" fill="#2c3e50">phase planning, and cross-product coordination.</text>
+    </g>
+  </g>
+
+  <g filter="url(#handdrawn)" fill="none" stroke-linecap="round">
+    <path d="M 390,806 C 600,870 830,880 990,806" stroke="#16a085" stroke-width="7" stroke-dasharray="14,9" marker-end="url(#arrow-green)"/>
+    <path d="M 390,806 C 760,1030 1120,1040 1590,806" stroke="#2980b9" stroke-width="7" stroke-dasharray="18,10" marker-end="url(#arrow-blue)"/>
+    <path d="M 390,806 C 1040,1045 1640,1045 2190,806" stroke="#2980b9" stroke-width="7" stroke-dasharray="18,10" marker-end="url(#arrow-blue)"/>
+    <path d="M 990,806 C 880,900 760,950 690,915" stroke="#8e44ad" stroke-width="7" stroke-dasharray="14,10" marker-end="url(#arrow-purple)"/>
+    <path d="M 990,806 C 1240,940 1600,960 1910,915" stroke="#27ae60" stroke-width="7" stroke-dasharray="14,10" marker-end="url(#arrow-green)"/>
+    <path d="M 1590,806 C 1450,880 1280,960 1120,1180" stroke="#d35400" stroke-width="6" marker-end="url(#arrow-orange)"/>
+    <path d="M 2190,806 C 2025,865 1840,940 1730,1180" stroke="#d35400" stroke-width="6" marker-end="url(#arrow-orange)"/>
+  </g>
+
+  <g filter="url(#handdrawn)" font-weight="bold">
+    <rect x="230" y="1468" width="2140" height="166" rx="22" fill="#ffffff" stroke="#2c3e50" stroke-width="5"/>
+    <text x="1300" y="1512" font-size="30" text-anchor="middle" fill="#2c3e50">DECISION SHORTCUT</text>
+    <text x="305" y="1560" font-size="23" fill="#2980b9">vague or continue: workflow</text>
+    <text x="760" y="1560" font-size="23" fill="#16a085">framework advice: super</text>
+    <text x="1190" y="1560" font-size="23" fill="#2980b9">next task: iterate</text>
+    <text x="1530" y="1560" font-size="23" fill="#2980b9">one outcome: goal</text>
+    <text x="1870" y="1560" font-size="23" fill="#8e44ad">many outcomes: sprint</text>
+    <text x="305" y="1605" font-size="23" fill="#27ae60">release packets, carry-forward, Product Direction Surfaces: releases</text>
+    <text x="1230" y="1605" font-size="23" fill="#7f8c8d">then the owning specialist edits the actual artifact</text>
+  </g>
+
+  <g transform="translate(2145, 246) rotate(3)" filter="url(#handdrawn)">
+    <rect x="-18" y="-28" width="330" height="96" rx="12" fill="#ffffff" fill-opacity="0.94" stroke="#c0392b" stroke-width="4"/>
+    <text x="0" y="0" font-size="21" fill="#c0392b" font-weight="bold">DON'T KNOW?</text>
+    <text x="12" y="28" font-size="21" fill="#c0392b" font-weight="bold">START WITH BUBBLES.</text>
+    <text x="24" y="55" font-size="18" fill="#7f8c8d">He'll call the right person.</text>
+  </g>
+</svg>

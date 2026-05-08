@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <title>Bubbles Gate Control Plane Overlay</title>
+  <desc>TPB style infographic showing the analyze to finalize phase spine, grouped Bubbles gate families, control-plane ownership, and rework routing back to owners.</desc>
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="8" dy="8" stdDeviation="4" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2980b9" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#27ae60" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#d35400" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8e44ad" filter="url(#handdrawn)"/></marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7f8c8d" filter="url(#handdrawn)"/></marker>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#7d6608" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <g transform="translate(1300, 112)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-740,-48 710,-38 748,44 660,72 -720,62 -778,8" fill="#ffffff" stroke="#7d6608" stroke-width="8"/>
+    </g>
+    <text x="0" y="18" font-size="58" text-anchor="middle" fill="#7d6608" letter-spacing="3" filter="url(#handdrawn)">BUBBLES GATE CONTROL PLANE</text>
+    <text x="0" y="62" font-size="25" text-anchor="middle" fill="#a04000" filter="url(#handdrawn)">phase spine, permit families, and the rework chutes back to the right owner</text>
+  </g>
+
+  <!-- Phase spine -->
+  <g filter="url(#handdrawn-thick)">
+    <path d="M 200,900 C 480,820 650,980 900,900 C 1150,820 1330,980 1580,900 C 1830,820 2040,980 2380,900" fill="none" stroke="#2c3e50" stroke-width="18" stroke-linecap="round"/>
+    <path d="M 200,900 C 480,820 650,980 900,900 C 1150,820 1330,980 1580,900 C 1830,820 2040,980 2380,900" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(240,900)"><circle r="58" fill="#8e44ad" stroke="#5b2c6f" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="20" text-anchor="middle" fill="#ffffff">ANALYZE</text></g>
+    <g transform="translate(545,900)"><circle r="58" fill="#8e44ad" stroke="#5b2c6f" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="18" text-anchor="middle" fill="#ffffff">BOOTSTRAP</text></g>
+    <g transform="translate(850,900)"><circle r="58" fill="#27ae60" stroke="#196f3d" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="18" text-anchor="middle" fill="#ffffff">IMPLEMENT</text></g>
+    <g transform="translate(1155,900)"><circle r="58" fill="#27ae60" stroke="#196f3d" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="20" text-anchor="middle" fill="#ffffff">TEST</text></g>
+    <g transform="translate(1460,900)"><circle r="58" fill="#27ae60" stroke="#196f3d" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="20" text-anchor="middle" fill="#ffffff">DOCS</text></g>
+    <g transform="translate(1765,900)"><circle r="58" fill="#c0392b" stroke="#7d2818" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="18" text-anchor="middle" fill="#ffffff">VALIDATE</text></g>
+    <g transform="translate(2070,900)"><circle r="58" fill="#c0392b" stroke="#7d2818" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="20" text-anchor="middle" fill="#ffffff">AUDIT</text></g>
+    <g transform="translate(2375,900)"><circle r="58" fill="#2c3e50" stroke="#111111" stroke-width="6" filter="url(#handdrawn-thick)"/><text y="8" font-size="18" text-anchor="middle" fill="#ffffff">FINALIZE</text></g>
+  </g>
+
+  <!-- Gate family boards -->
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(380, 365)">
+      <rect x="-265" y="-120" width="530" height="240" rx="22" fill="#ffffff" stroke="#8e44ad" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/barb-keys.svg" x="-244" y="-98" width="86" height="86"/>
+      <text x="40" y="-76" font-size="25" text-anchor="middle" fill="#8e44ad">ARTIFACT AND READINESS</text>
+      <text x="-210" y="-20" font-size="17" fill="#5b2c6f">G001 artifacts exist</text>
+      <text x="-210" y="8" font-size="17" fill="#5b2c6f">G002 scopes are real</text>
+      <text x="-210" y="36" font-size="17" fill="#5b2c6f">G014 bootstrap ready</text>
+      <text x="-210" y="64" font-size="17" fill="#5b2c6f">G015/G016 scenarios and E2E</text>
+      <text x="-210" y="92" font-size="17" fill="#5b2c6f">G032/G033/G070 substance</text>
+    </g>
+    <g transform="translate(1010, 365)">
+      <rect x="-265" y="-120" width="530" height="240" rx="22" fill="#ffffff" stroke="#27ae60" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/julian-glass.svg" x="-244" y="-98" width="86" height="86"/>
+      <text x="40" y="-76" font-size="25" text-anchor="middle" fill="#27ae60">IMPLEMENTATION REALITY</text>
+      <text x="-210" y="-20" font-size="17" fill="#196f3d">G028 no stubs, fakes, fallbacks</text>
+      <text x="-210" y="8" font-size="17" fill="#196f3d">G029 wired into a consumer</text>
+      <text x="-210" y="36" font-size="17" fill="#196f3d">G035 vertical slice complete</text>
+      <text x="-210" y="64" font-size="17" fill="#196f3d">G043 consumer trace sweep</text>
+      <text x="-210" y="92" font-size="17" fill="#196f3d">G052/G053/G067/G069 containment</text>
+    </g>
+    <g transform="translate(1640, 365)">
+      <rect x="-265" y="-120" width="530" height="240" rx="22" fill="#ffffff" stroke="#c0392b" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/trinity-notebook.svg" x="-244" y="-98" width="86" height="86"/>
+      <text x="40" y="-76" font-size="25" text-anchor="middle" fill="#c0392b">EVIDENCE AND TEST INTEGRITY</text>
+      <text x="-210" y="-20" font-size="17" fill="#922b21">G003 test labels match reality</text>
+      <text x="-210" y="8" font-size="17" fill="#922b21">G004 tests executed and pass</text>
+      <text x="-210" y="36" font-size="17" fill="#922b21">G005 raw evidence captured</text>
+      <text x="-210" y="64" font-size="17" fill="#922b21">G021/G025 anti-fabrication</text>
+      <text x="-210" y="92" font-size="17" fill="#922b21">G036/G051/G060 red-green</text>
+    </g>
+    <g transform="translate(2220, 365)">
+      <rect x="-225" y="-120" width="450" height="240" rx="22" fill="#ffffff" stroke="#d35400" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/randy-cheeseburger.svg" x="-204" y="-98" width="86" height="86"/>
+      <text x="36" y="-76" font-size="24" text-anchor="middle" fill="#d35400">CERTIFY AND PROMOTE</text>
+      <text x="-170" y="-20" font-size="17" fill="#a04000">G010 user validation</text>
+      <text x="-170" y="8" font-size="17" fill="#a04000">G011 session updated</text>
+      <text x="-170" y="36" font-size="17" fill="#a04000">G012 final promotion</text>
+      <text x="-170" y="64" font-size="17" fill="#a04000">G040/G041 no deferral tricks</text>
+      <text x="-170" y="92" font-size="17" fill="#a04000">G068 DoD matches scenarios</text>
+    </g>
+  </g>
+
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(565, 1240)">
+      <rect x="-360" y="-120" width="720" height="240" rx="22" fill="#ffffff" stroke="#2980b9" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/lahey-badge.svg" x="-338" y="-98" width="86" height="86"/>
+      <text x="54" y="-76" font-size="25" text-anchor="middle" fill="#2980b9">OWNERSHIP AND CONTROL PLANE</text>
+      <text x="-300" y="-20" font-size="17" fill="#1f618d">G020/G022 verify every specialist output</text>
+      <text x="-300" y="8" font-size="17" fill="#1f618d">G023 state-transition guard before done</text>
+      <text x="-300" y="36" font-size="17" fill="#1f618d">G024/G027 scopes and phase claims line up</text>
+      <text x="-300" y="64" font-size="17" fill="#1f618d">G042 owner-only remediation boundary</text>
+      <text x="-300" y="92" font-size="17" fill="#1f618d">G055-G061 plus G063/G064 and G066/G074-G078</text>
+    </g>
+    <g transform="translate(1430, 1240)">
+      <rect x="-310" y="-120" width="620" height="240" rx="22" fill="#ffffff" stroke="#c0392b" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/cyrus-sunglasses.svg" x="-288" y="-98" width="86" height="86"/>
+      <text x="54" y="-76" font-size="25" text-anchor="middle" fill="#c0392b">SECURITY, REGRESSION, AUDIT</text>
+      <text x="-255" y="-20" font-size="17" fill="#922b21">G008 audit verdict acceptable</text>
+      <text x="-255" y="8" font-size="17" fill="#922b21">G009 chaos rounds resolved</text>
+      <text x="-255" y="36" font-size="17" fill="#922b21">G034 critical security clean</text>
+      <text x="-255" y="64" font-size="17" fill="#922b21">G044 regression safety sweep</text>
+      <text x="-255" y="92" font-size="17" fill="#922b21">G047/G048/G058/G059 protected behavior</text>
+    </g>
+    <g transform="translate(2170, 1240)">
+      <rect x="-250" y="-120" width="500" height="240" rx="22" fill="#ffffff" stroke="#7f8c8d" stroke-width="7" filter="url(#handdrawn-thick)"/>
+      <image href="../icons/trevor-handoff.svg" x="-228" y="-98" width="86" height="86"/>
+      <text x="40" y="-76" font-size="25" text-anchor="middle" fill="#7f8c8d">REWORK ROUTER</text>
+      <text x="-200" y="-20" font-size="17" fill="#2c3e50">failed gate -> transition request</text>
+      <text x="-200" y="8" font-size="17" fill="#2c3e50">route packet names owner</text>
+      <text x="-200" y="36" font-size="17" fill="#2c3e50">owner repairs only its surface</text>
+      <text x="-200" y="64" font-size="17" fill="#2c3e50">validate replays evidence</text>
+      <text x="-200" y="92" font-size="17" fill="#2c3e50">audit closes only after clean pass</text>
+    </g>
+  </g>
+
+  <!-- Connect families to phase spine -->
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+    <path d="M 380,485 C 320,600 275,730 250,840" stroke="#8e44ad" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-purple)"/>
+    <path d="M 1010,485 C 930,650 875,760 850,840" stroke="#27ae60" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-green)"/>
+    <path d="M 1640,485 C 1500,690 1265,785 1160,840" stroke="#c0392b" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-red)"/>
+    <path d="M 2220,485 C 2210,650 2140,790 2070,840" stroke="#d35400" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-orange)"/>
+    <path d="M 565,1120 C 785,1010 1430,1010 1765,958" stroke="#2980b9" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-blue)"/>
+    <path d="M 1430,1120 C 1540,1040 1690,980 1765,958" stroke="#c0392b" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-red)"/>
+    <path d="M 2170,1120 C 2020,1040 1840,980 1765,958" stroke="#7f8c8d" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-gray)"/>
+  </g>
+
+  <!-- Rework chute -->
+  <g transform="translate(1300, 665)" filter="url(#shadow)">
+    <rect x="-330" y="-68" width="660" height="136" rx="18" fill="#fff8d6" stroke="#f1c40f" stroke-width="6" filter="url(#handdrawn-thick)"/>
+    <image href="../icons/randy-cheeseburger.svg" x="-300" y="-52" width="70" height="70"/>
+    <image href="../icons/ted-badge.svg" x="230" y="-52" width="70" height="70"/>
+    <text x="0" y="-20" font-size="28" text-anchor="middle" fill="#7d6608" font-weight="bold">PERMIT FAILED</text>
+    <text x="0" y="16" font-size="19" text-anchor="middle" fill="#a04000" font-weight="bold">emit rework packet, name owner, reopen narrow phase</text>
+    <text x="0" y="48" font-size="16" text-anchor="middle" fill="#7f8c8d" font-weight="bold">no broad rerun until the narrow fix loop is exhausted</text>
+  </g>
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+    <path d="M 1300,733 C 1180,790 1040,840 900,885" stroke="#f1c40f" stroke-width="8" marker-end="url(#arrow-orange)"/>
+    <path d="M 1300,733 C 1420,790 1600,840 1765,885" stroke="#f1c40f" stroke-width="8" marker-end="url(#arrow-orange)"/>
+    <path d="M 1300,733 C 1520,770 1900,825 2070,885" stroke="#f1c40f" stroke-width="8" marker-end="url(#arrow-orange)"/>
+  </g>
+
+  <!-- Owner return row -->
+  <g filter="url(#handdrawn)">
+    <rect x="125" y="1510" width="2350" height="150" rx="22" fill="#ffffff" fill-opacity="0.9" stroke="#2c3e50" stroke-width="5"/>
+  </g>
+  <g font-weight="bold" filter="url(#shadow)">
+    <g transform="translate(250,1585)"><image href="../icons/ray-lawnchair.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">analyst</text></g>
+    <g transform="translate(470,1585)"><image href="../icons/lucy-mirror.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">ux</text></g>
+    <g transform="translate(690,1585)"><image href="../icons/sarah-clipboard.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">design</text></g>
+    <g transform="translate(910,1585)"><image href="../icons/barb-keys.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#8e44ad">plan</text></g>
+    <g transform="translate(1130,1585)"><image href="../icons/julian-glass.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">implement</text></g>
+    <g transform="translate(1350,1585)"><image href="../icons/trinity-notebook.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">test</text></g>
+    <g transform="translate(1570,1585)"><image href="../icons/jroc-mic.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">docs</text></g>
+    <g transform="translate(1790,1585)"><image href="../icons/tommy-rack.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#27ae60">devops</text></g>
+    <g transform="translate(2010,1585)"><image href="../icons/cyrus-sunglasses.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">security</text></g>
+    <g transform="translate(2230,1585)"><image href="../icons/randy-cheeseburger.svg" x="-34" y="-54" width="68" height="68"/><text x="0" y="42" font-size="13" text-anchor="middle" fill="#c0392b">validate</text></g>
+  </g>
+  <g fill="none" filter="url(#handdrawn)" stroke-linecap="round">
+    <path d="M 2170,1360 C 1980,1450 1570,1510 1130,1530" stroke="#d35400" stroke-width="6" stroke-dasharray="10,8" marker-end="url(#arrow-orange)"/>
+    <path d="M 2170,1360 C 1970,1450 1250,1510 690,1530" stroke="#d35400" stroke-width="5" stroke-dasharray="10,8" marker-end="url(#arrow-orange)"/>
+    <path d="M 2170,1360 C 2080,1460 2050,1500 2010,1530" stroke="#c0392b" stroke-width="5" stroke-dasharray="10,8" marker-end="url(#arrow-red)"/>
+    <path d="M 2230,1530 C 2100,1360 1880,1110 1765,958" stroke="#c0392b" stroke-width="6" stroke-dasharray="12,8" marker-end="url(#arrow-red)"/>
+  </g>
+
+  <g transform="translate(1985, 690) rotate(2)" filter="url(#handdrawn)">
+    <rect x="-18" y="-30" width="430" height="96" rx="12" fill="#ffffff" fill-opacity="0.94" stroke="#c0392b" stroke-width="4"/>
+    <text x="0" y="0" font-size="21" fill="#c0392b" font-weight="bold">THE PERMIT BOARD DOES NOT CARE</text>
+    <text x="15" y="28" font-size="21" fill="#c0392b" font-weight="bold">HOW CONFIDENT THE STORY SOUNDS.</text>
+    <text x="35" y="55" font-size="18" fill="#7f8c8d">Evidence or back through the chute.</text>
+  </g>
+</svg>

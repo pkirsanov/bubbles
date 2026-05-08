@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 2600 1800" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="background-color: #fdfcf9; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;">
+  <defs>
+    <filter id="handdrawn" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="handdrawn-thick" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="6" dy="6" stdDeviation="3" flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- Re-usable permit-card template via use/symbol style -->
+    <symbol id="pin" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="9" fill="#c0392b" stroke="#7d2818" stroke-width="2"/>
+      <circle cx="10" cy="10" r="3" fill="#fdfcf9"/>
+    </symbol>
+    <filter id="icon-ink" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.19 0 0 0 0 0.25 0 0 0 1 0"/>
+    </filter>
+    <style><![CDATA[
+      image[href^="../icons/"] { filter: url(#icon-ink); }
+    ]]></style>
+  </defs>
+
+  <!-- Frame -->
+  <rect x="32" y="32" width="2536" height="1736" rx="28" fill="#fdfcf9" stroke="#2c3e50" stroke-width="8" filter="url(#handdrawn)"/>
+  <rect x="72" y="72" width="2456" height="1656" rx="22" fill="none" stroke="#7d6608" stroke-width="4" stroke-dasharray="14,10" filter="url(#handdrawn)"/>
+
+  <!-- Title banner -->
+  <g transform="translate(1300, 116)">
+    <g filter="url(#handdrawn-thick)">
+      <polygon points="-720,-50 700,-38 736,46 652,72 -700,62 -754,8" fill="#ffffff" stroke="#7d6608" stroke-width="8"/>
+    </g>
+    <text x="0" y="20" font-size="60" text-anchor="middle" fill="#7d6608" letter-spacing="3" filter="url(#handdrawn)">LAHEY'S PERMIT BOARD</text>
+    <text x="0" y="64" font-size="26" text-anchor="middle" fill="#a04000" filter="url(#handdrawn)">every gate · pinned, dated, signed · the liquor stays in the pocket until the lot is certified</text>
+  </g>
+
+  <!-- Lahey corner decorations -->
+  <g transform="translate(180, 230) rotate(-8)">
+    <image href="../icons/lahey-badge.svg" x="-60" y="-60" width="120" height="120"/>
+  </g>
+  <g transform="translate(2420, 230) rotate(8)">
+    <image href="../icons/lahey-badge.svg" x="-60" y="-60" width="120" height="120"/>
+  </g>
+  <g transform="translate(180, 1620) rotate(6)">
+    <image href="../icons/lahey-bottle.svg" x="-60" y="-60" width="120" height="120"/>
+  </g>
+  <g transform="translate(2420, 1620) rotate(-6)" filter="url(#handdrawn)">
+    <rect x="-110" y="-50" width="220" height="100" rx="12" fill="#ffffff" stroke="#7d6608" stroke-width="4"/>
+    <text x="0" y="-12" font-size="18" text-anchor="middle" fill="#7d6608" font-weight="bold">SIGNED:</text>
+    <text x="0" y="14" font-size="20" text-anchor="middle" fill="#7d6608" font-style="italic">J. Lahey</text>
+    <text x="0" y="38" font-size="14" text-anchor="middle" fill="#7d6608">trailer park supervisor</text>
+  </g>
+
+  <!-- =========================================================
+       4 COLUMN HEADERS at y=300
+       ========================================================= -->
+  <g font-weight="bold" filter="url(#handdrawn-thick)">
+    <g transform="translate(390, 300)">
+      <rect x="-260" y="-36" width="520" height="72" rx="14" fill="#8e44ad" stroke="#5b2c6f" stroke-width="5"/>
+      <text x="0" y="-2" font-size="24" text-anchor="middle" fill="#fdfcf9">ARTIFACT &amp; SPEC GATES</text>
+      <text x="0" y="22" font-size="16" text-anchor="middle" fill="#fdfcf9" font-weight="normal">product-owner phases · before code</text>
+    </g>
+    <g transform="translate(990, 300)">
+      <rect x="-260" y="-36" width="520" height="72" rx="14" fill="#27ae60" stroke="#196f3d" stroke-width="5"/>
+      <text x="0" y="-2" font-size="24" text-anchor="middle" fill="#fdfcf9">IMPLEMENTATION REALITY</text>
+      <text x="0" y="22" font-size="16" text-anchor="middle" fill="#fdfcf9" font-weight="normal">builders · scan source for stubs/dupes</text>
+    </g>
+    <g transform="translate(1590, 300)">
+      <rect x="-260" y="-36" width="520" height="72" rx="14" fill="#c0392b" stroke="#7d2818" stroke-width="5"/>
+      <text x="0" y="-2" font-size="24" text-anchor="middle" fill="#fdfcf9">CERTIFICATION &amp; EVIDENCE</text>
+      <text x="0" y="22" font-size="16" text-anchor="middle" fill="#fdfcf9" font-weight="normal">validate/audit/finalize · raw evidence only</text>
+    </g>
+    <g transform="translate(2190, 300)">
+      <rect x="-260" y="-36" width="520" height="72" rx="14" fill="#d35400" stroke="#a04000" stroke-width="5"/>
+      <text x="0" y="-2" font-size="24" text-anchor="middle" fill="#fdfcf9">REGRESSION · WORKFLOW · BUG</text>
+      <text x="0" y="22" font-size="16" text-anchor="middle" fill="#fdfcf9" font-weight="normal">cross-cutting · pickup &amp; bug-only gates</text>
+    </g>
+  </g>
+
+  <!-- =========================================================
+       COLUMN 1 — ARTIFACT & SPEC (purple) — 13 gates in 2 sub-columns
+       Card width 245, height 90, gutter 10. Top y=380. Pitch 95.
+       Sub-col A: x_center 270. Sub-col B: x_center 510.
+       ========================================================= -->
+
+  <g font-weight="bold">
+    <!-- A column -->
+    <g transform="translate(270, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G001</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">spec template</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">spec.md follows</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">canonical layout</text>
+    </g>
+    <g transform="translate(270, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G002</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">scope structure</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">scopes.md present,</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">numbered, owned</text>
+    </g>
+    <g transform="translate(270, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G003</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">actors &amp; perms</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">spec lists who acts,</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">scope, role</text>
+    </g>
+    <g transform="translate(270, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G004</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">DoD checklist</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">every scope has</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">tiered, testable DoD</text>
+    </g>
+    <g transform="translate(270, 805)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G005</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">test-first design</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">design.md derives</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">test plan first</text>
+    </g>
+    <g transform="translate(270, 900)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G006</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">architecture coh.</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">design fits existing</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">system shape</text>
+    </g>
+    <g transform="translate(270, 995)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G007</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">plan ↔ DoD parity</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">plan claims = DoD</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">items 1-for-1</text>
+    </g>
+    <!-- B column -->
+    <g transform="translate(510, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G009</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">capability claims</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">no unsubstantiated</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">capability promises</text>
+    </g>
+    <g transform="translate(510, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G010</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">docs registry</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">managed docs index</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">in sync with truth</text>
+    </g>
+    <g transform="translate(510, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G031</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">UI scenario matrix</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">every UI flow has</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">a tested scenario</text>
+    </g>
+    <g transform="translate(510, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G032</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">accessibility</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">a11y baseline met</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">across UI scopes</text>
+    </g>
+    <g transform="translate(510, 805)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#8e44ad" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G033</text>
+      <text x="-50" y="-12" font-size="14" fill="#5b2c6f">wireframes</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">UX delivers ASCII</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">wireframes per flow</text>
+    </g>
+    <g transform="translate(510, 900)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#8e44ad" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G070</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ outcome contract</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">intent + signal +</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">hard constraints</text>
+    </g>
+  </g>
+
+  <!-- =========================================================
+       COLUMN 2 — IMPLEMENTATION REALITY (green) — 11 gates
+       Sub-col A x_center 870. Sub-col B x_center 1110.
+       ========================================================= -->
+  <g font-weight="bold">
+    <g transform="translate(870, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G011</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">zero stubs/fakes</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">no TODO/unimpl/</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">placeholder/fake</text>
+    </g>
+    <g transform="translate(870, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G012</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">fix code, not test</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">tests stay honest;</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">code adapts to spec</text>
+    </g>
+    <g transform="translate(870, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G017</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">100% coverage</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">all logic paths,</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">all permutations</text>
+    </g>
+    <g transform="translate(870, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G018</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">real test DBs</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">integration uses</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">live ephemeral DB</text>
+    </g>
+    <g transform="translate(870, 805)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G019</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">no internal mocks</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">only external 3rd-</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">party deps stubbed</text>
+    </g>
+    <g transform="translate(870, 900)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G024</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">quality + reuse</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">small functions,</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">shared modules</text>
+    </g>
+    <!-- B column -->
+    <g transform="translate(1110, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G025</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">dead code purge</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">unused imports,</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">vars, funcs gone</text>
+    </g>
+    <g transform="translate(1110, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G026</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">no duplication</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">copy-paste extracted</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">to shared lib</text>
+    </g>
+    <g transform="translate(1110, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G028</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ implementation reality</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">scan source for</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">stub/fake patterns</text>
+    </g>
+    <g transform="translate(1110, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#27ae60" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G034</text>
+      <text x="-50" y="-12" font-size="14" fill="#196f3d">docs sync</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">managed docs match</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">code &amp; spec truth</text>
+    </g>
+    <g transform="translate(1110, 805)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#27ae60" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G035</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ vertical slice</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">end-to-end real path</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">UI → service → DB</text>
+    </g>
+  </g>
+
+  <!-- =========================================================
+       COLUMN 3 — CERTIFICATION & EVIDENCE (red) — 9 gates
+       Sub-col A x_center 1470. Sub-col B x_center 1710.
+       ========================================================= -->
+  <g font-weight="bold">
+    <g transform="translate(1470, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G013</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ anti-fabrication</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">claims must match</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">terminal evidence</text>
+    </g>
+    <g transform="translate(1470, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#c0392b" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G014</text>
+      <text x="-50" y="-12" font-size="14" fill="#922b21">DoD complete</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">every checkbox [x]</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">with linked evidence</text>
+    </g>
+    <g transform="translate(1470, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G016</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ raw evidence ≥10</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">≥10 lines unfiltered</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">terminal output</text>
+    </g>
+    <g transform="translate(1470, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#c0392b" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G020</text>
+      <text x="-50" y="-12" font-size="14" fill="#922b21">user validation</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">uservalidation.md</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">all items checked</text>
+    </g>
+    <g transform="translate(1470, 805)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#c0392b" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G023</text>
+      <text x="-50" y="-12" font-size="14" fill="#922b21">state.json done</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">execution metadata</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">+ history complete</text>
+    </g>
+    <!-- B column -->
+    <g transform="translate(1710, 425)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G027</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ status ceiling</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">no agent promotes</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">past its tier</text>
+    </g>
+    <g transform="translate(1710, 520)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#c0392b" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G029</text>
+      <text x="-50" y="-12" font-size="14" fill="#922b21">finding-set closure</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">every audit finding</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">resolved or routed</text>
+    </g>
+    <g transform="translate(1710, 615)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#ffffff" stroke="#c0392b" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G037</text>
+      <text x="-50" y="-12" font-size="14" fill="#922b21">transition guard</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">phase transitions</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">auto-validated</text>
+    </g>
+    <g transform="translate(1710, 710)" filter="url(#shadow)">
+      <rect x="-120" y="-45" width="240" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-128" y="-53" width="20" height="20"/>
+      <rect x="-120" y="-45" width="60" height="90" rx="10" fill="#c0392b" filter="url(#handdrawn)"/>
+      <text x="-90" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G038</text>
+      <text x="-50" y="-12" font-size="14" fill="#7d6608">★ certification ladder</text>
+      <text x="-50" y="6" font-size="12" fill="#7f8c8d" font-weight="normal">audit/release tiers</text>
+      <text x="-50" y="22" font-size="12" fill="#7f8c8d" font-weight="normal">climbed in order</text>
+    </g>
+  </g>
+
+  <!-- =========================================================
+       COLUMN 4 — REGRESSION + WORKFLOW + BUG (orange/blue/gray) — 8 gates
+       Single sub-column at x_center 2190 (cards full 480 wide).
+       ========================================================= -->
+  <g font-weight="bold">
+    <g transform="translate(2190, 425)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#d35400" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#d35400" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G021</text>
+      <text x="-190" y="-12" font-size="16" fill="#a04000">zero baseline regress</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">tests that passed yesterday still pass today · no silent breakage</text>
+    </g>
+    <g transform="translate(2190, 520)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#d35400" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#d35400" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G022</text>
+      <text x="-190" y="-12" font-size="16" fill="#a04000">cross-spec coherence</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">change in spec A doesn't quietly break a contract in spec B</text>
+    </g>
+    <g transform="translate(2190, 615)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#d35400" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#d35400" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G030</text>
+      <text x="-190" y="-12" font-size="16" fill="#a04000">security review</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">authn/authz, OWASP top-10, dependency audit, secret hygiene</text>
+    </g>
+    <g transform="translate(2190, 710)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#fff8d6" stroke="#f1c40f" stroke-width="5" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#d35400" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G036</text>
+      <text x="-190" y="-12" font-size="16" fill="#7d6608">★ adversarial regression</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">bug-fix test FAILS without fix, PASSES with fix · no tautology</text>
+    </g>
+
+    <!-- Workflow (blue) -->
+    <g transform="translate(2190, 805)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#2980b9" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#2980b9" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G041</text>
+      <text x="-190" y="-12" font-size="16" fill="#1f618d">recency tiers</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">iterate picks newest qualifying work · no stale specs forever</text>
+    </g>
+    <g transform="translate(2190, 900)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#2980b9" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#2980b9" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G042</text>
+      <text x="-190" y="-12" font-size="16" fill="#1f618d">priority + tie-break</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">deterministic ordering · no agent gets stuck choosing what next</text>
+    </g>
+
+    <!-- Bug-only (gray) -->
+    <g transform="translate(2190, 995)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#7f8c8d" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G050</text>
+      <text x="-190" y="-12" font-size="16" fill="#5d6d7e">reproduce in env</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">bug fixers must show the bug breaks the system before fixing</text>
+    </g>
+    <g transform="translate(2190, 1090)" filter="url(#shadow)">
+      <rect x="-260" y="-45" width="520" height="90" rx="10" fill="#ffffff" stroke="#7f8c8d" stroke-width="4" filter="url(#handdrawn)"/>
+      <use href="#pin" x="-268" y="-53" width="20" height="20"/>
+      <rect x="-260" y="-45" width="60" height="90" rx="10" fill="#7f8c8d" filter="url(#handdrawn)"/>
+      <text x="-230" y="-8" font-size="18" text-anchor="middle" fill="#fdfcf9">G051</text>
+      <text x="-190" y="-12" font-size="16" fill="#5d6d7e">bug packet drafted</text>
+      <text x="-190" y="10" font-size="13" fill="#7f8c8d" font-weight="normal">repro + impact + suspected cause filed before dispatch</text>
+    </g>
+  </g>
+
+  <!-- =========================================================
+       Bottom — KEY GATES BANNER and stamp legend
+       ========================================================= -->
+
+  <g transform="translate(1300, 1240)" filter="url(#handdrawn-thick)">
+    <rect x="-1100" y="-50" width="2200" height="100" rx="16" fill="#fff8d6" stroke="#f1c40f" stroke-width="6"/>
+    <text x="-1080" y="-12" font-size="22" fill="#7d6608" font-weight="bold">★ THE FAILURE-PRONE FIVE — agents skip these and shit hits the trailer:</text>
+    <text x="-1080" y="22" font-size="18" fill="#7d6608">G013 anti-fabrication · G016 raw evidence · G027 status ceiling · G028 implementation reality · G036 adversarial regression</text>
+  </g>
+
+  <g transform="translate(1300, 1430)" filter="url(#handdrawn-thick)">
+    <rect x="-1100" y="-90" width="2200" height="170" rx="16" fill="#ffffff" stroke="#2c3e50" stroke-width="5"/>
+    <text x="-1080" y="-58" font-size="20" fill="#2c3e50" font-weight="bold">PHASE COLOR KEY · which crew owns enforcement</text>
+    <g transform="translate(-1000, -16)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#8e44ad"/>
+      <text x="40" y="-2" font-size="16" fill="#5b2c6f">PURPLE  · Sarah, Barb, Lucy, Ray</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">spec / design / plan / UX (artifact-shape gates)</text>
+    </g>
+    <g transform="translate(-280, -16)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#27ae60"/>
+      <text x="40" y="-2" font-size="16" fill="#196f3d">GREEN   · Julian, Trinity, Donny, J-Roc</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">implement / test / simplify / docs (reality gates)</text>
+    </g>
+    <g transform="translate(440, -16)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#c0392b"/>
+      <text x="40" y="-2" font-size="16" fill="#922b21">RED     · Randy, Ted, Lahey</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">validate / audit / finalize (cert + evidence gates)</text>
+    </g>
+    <g transform="translate(-1000, 50)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#d35400"/>
+      <text x="40" y="-2" font-size="16" fill="#a04000">ORANGE  · Steve French, Phil, Bill</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">regression / gaps / stabilize (cross-cut gates)</text>
+    </g>
+    <g transform="translate(-280, 50)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#2980b9"/>
+      <text x="40" y="-2" font-size="16" fill="#1f618d">BLUE    · Jacob, Cyrus, Mr Mahogany</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">iterate / security / DevOps (selection + safety)</text>
+    </g>
+    <g transform="translate(440, 50)" font-weight="bold">
+      <rect x="-30" y="-22" width="44" height="44" rx="8" fill="#7f8c8d"/>
+      <text x="40" y="-2" font-size="16" fill="#5d6d7e">GRAY    · Cory, Trevor (bug crew)</text>
+      <text x="40" y="20" font-size="13" fill="#7f8c8d" font-weight="normal">bug intake / packet drafting (bug-only gates)</text>
+    </g>
+  </g>
+
+</svg>
