@@ -112,6 +112,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [TDD First Execution](tdd-first-execution.md) | "I want the workflow to stay red-green-first instead of drifting into implementation-first" |
 | [Outcome-First Specs](outcome-first-specs.md) | "I want to define what 'done' means (Intent, Success Signal, Hard Constraints) before getting into implementation details" |
 | [Release Planning](release-planning.md) | "I need to produce or refresh a release packet for a phase, with carry-forward and cross-product coordination" |
+| [Idea → Release Completion](idea-to-release.md) | "I have an idea and want the framework to walk it from brainstorm → release packet bootstrap → specs → implementation → validation → release packet refresh (delivered) in one chain" |
 
 ## Performance & Parallelism
 
@@ -135,12 +136,14 @@ Control-plane law also requires owner-only remediation and concrete result envel
 |--------|-------------------|
 | [Safe Shared-Infrastructure Refactor](safe-shared-infrastructure-refactor.md) | "I need to refactor a shared fixture/bootstrap surface without collateral damage" |
 | [Simplify Existing Code](simplify-existing-code.md) | "This works, but it's too complicated and I want to reduce the noise safely" |
+| [UX Single-File Sweep](ux-single-file-sweep.md) | "I need to clean up one user-facing file without scope creep into adjacent code" |
 
 ## Day-to-Day
 
 | Recipe | Problem → Solution |
 |--------|-------------------|
 | [Coordinate Runtime Leases](runtime-coordination.md) | "Parallel sessions might share or collide on Docker/Compose stacks" |
+| [Bookend Phases](bookend-phases.md) | "Long workflows leak containers, leases, and half-applied state when they exit early" |
 | [Check Status](check-status.md) | "What's the state of my current work?" |
 | [End of Day](end-of-day.md) | "I'm done for today, need to hand off context" |
 | [Retrospective](retro.md) | "What's my velocity, which gates fail most, where are the hotspots?" |

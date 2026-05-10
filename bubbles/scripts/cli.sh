@@ -1194,6 +1194,8 @@ Commands:
   lint-budget                   Measure instruction density in agent prompts
   sunnyvale <alias>             Resolve a Sunnyvale alias
   aliases                       List all Sunnyvale aliases
+  trajectory [options]          Print human-readable trajectory report from
+                                session, lessons, and per-spec state
   help                          Show this help message
 HELPEOF
 }
@@ -1470,6 +1472,10 @@ cmd_session() {
   fi
 
   echo
+}
+
+cmd_trajectory() {
+  bash "$SCRIPT_DIR/trajectory-inspector.sh" --repo-root "$REPO_ROOT" "$@"
 }
 
 cmd_lint() {
@@ -3100,6 +3106,7 @@ main() {
     lint-budget)        cmd_lint_budget "$@" ;;
     sunnyvale)          cmd_sunnyvale "$@" ;;
     aliases)            cmd_aliases "$@" ;;
+    trajectory)         cmd_trajectory "$@" ;;
     help|-h|--help)     cmd_help ;;
     *)                  die "Unknown command: $command\nRun 'bubbles help' for usage." ;;
   esac
