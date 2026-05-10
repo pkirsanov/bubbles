@@ -184,6 +184,10 @@ exit_conditions:
   - fundamental_impossibility → EXIT_BLOCKED
 ```
 
+## Context Compaction
+
+When accumulating specialist `RESULT-ENVELOPE`s across convergence iterations, follow [operating-baseline.md → Context Compaction Discipline (Orchestrator Agents)](bubbles_shared/operating-baseline.md). Compact every 3 subagent results OR when the accumulated raw envelope text exceeds 8 KB, whichever fires first. Use `bash bubbles/scripts/context-compactor.sh <raw-envelope-file>` and append the resulting record to `compactedHistory[]` in `.specify/memory/bubbles.session.json`. Keep the latest 2 raw envelopes in working memory; never drop blocked findings or `nextRequiredOwner` chains.
+
 ## Never-Stop Rules
 
 ```yaml
@@ -241,7 +245,7 @@ file: .specify/memory/bubbles.session.json
 resume: read session JSON, continue from last phase — never restart from scratch
 ```
 
-## Anti-Fabrication (Gate G042)
+## Anti-Fabrication (Gate G021)
 
 ```yaml
 detection: count runSubagent calls in phases 2-6
