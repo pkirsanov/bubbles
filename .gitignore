@@ -2,3 +2,29 @@
 *.swp
 *.swo
 *~
+
+# Editor / OS temp
+*.tmp
+*.bak
+*.orig
+.idea/
+.vscode/
+
+# Python temp / build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node temp
+node_modules/
+
+# Logs
+*.log
