@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "version": "3.8.0",
-  "gitSha": "69e18710c5b757e818f63c2b1ffd958985d6c679",
-  "generatedAt": "2026-05-13T06:00:46+00:00",
+  "gitSha": "1da2c44613faa710a3d8e58a7bcd3925e7cad2ba",
+  "generatedAt": "2026-05-16T20:33:42+00:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
