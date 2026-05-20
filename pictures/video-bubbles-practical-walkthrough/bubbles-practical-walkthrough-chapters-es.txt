@@ -1,0 +1,16 @@
+00:00 - De un repositorio vacío a un resultado verificado
+00:36 - Empieza con un repositorio sintético pequeño
+01:16 - Instala y prepara Bubbles
+01:53 - Pregunta a Super si no conoces la ruta
+02:30 - Ejecuta Workflow con el problema real del usuario
+03:04 - La spec captura el contrato de resultado
+03:44 - Design define la forma segura del arreglo
+04:23 - Plan divide el trabajo en alcances verificables
+04:55 - La implementación cambia el comportamiento
+05:36 - Ejecuta pruebas que realmente pueden fallar
+06:05 - Report registra evidencia cruda
+06:36 - Las gates de validación presionan de vuelta
+07:15 - Los agentes de calidad añaden presión
+07:53 - Docs y specs se mantienen sincronizados
+08:24 - El resultado real es un comportamiento verificado
+08:59 - Usa este patrón en un flujo real

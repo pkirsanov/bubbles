@@ -1,0 +1,135 @@
+1
+00:00:00,000 --> 00:00:10,404
+Deja de aceptar que la IA diga terminado como si mandara
+
+2
+00:00:10,404 --> 00:00:27,380
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+3
+00:00:27,380 --> 00:00:42,740
+Bubbles es un sistema de entrega para Copilot Chat
+
+4
+00:00:42,740 --> 00:01:07,800
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+5
+00:01:07,800 --> 00:01:22,365
+La IA abarató escribir, no regaló la confianza
+
+6
+00:01:22,365 --> 00:01:46,130
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+7
+00:01:46,130 --> 00:01:59,829
+El impuesto de lo falsamente terminado es brutal
+
+8
+00:01:59,829 --> 00:02:22,180
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+9
+00:02:22,180 --> 00:02:39,196
+Piensa en un supervisor de parque para el trabajo de agentes
+
+10
+00:02:39,196 --> 00:03:06,960
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+11
+00:03:06,960 --> 00:03:22,901
+La intención se convierte en una ruta de trabajo
+
+12
+00:03:22,901 --> 00:03:48,910
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+13
+00:03:48,910 --> 00:04:06,257
+Tu interfaz llama a un endpoint que no existe
+
+14
+00:04:06,257 --> 00:04:34,560
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+15
+00:04:34,560 --> 00:04:51,086
+La prueba pasa porque esquiva el error
+
+16
+00:04:51,086 --> 00:05:18,050
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+17
+00:05:18,050 --> 00:05:34,063
+La ventana de contexto se fue de paseo
+
+18
+00:05:34,063 --> 00:06:00,190
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+19
+00:06:00,190 --> 00:06:14,991
+Instala una vez y empieza con Workflow
+
+20
+00:06:14,991 --> 00:06:39,140
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+21
+00:06:39,140 --> 00:06:52,619
+Usa especialistas cuando necesitas una herramienta precisa
+
+22
+00:06:52,619 --> 00:07:14,610
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+23
+00:07:14,610 --> 00:07:28,225
+Workflow es el caballo de batalla diario
+
+24
+00:07:28,225 --> 00:07:50,440
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+25
+00:07:50,440 --> 00:08:04,686
+Goal, Sprint y Releases manejan resultados más grandes
+
+26
+00:08:04,686 --> 00:08:27,930
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+27
+00:08:27,930 --> 00:08:45,186
+Un bug de checkout, dos futuros distintos
+
+28
+00:08:45,186 --> 00:09:13,340
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+29
+00:09:13,340 --> 00:09:25,561
+Reduce retrabajo, no creatividad
+
+30
+00:09:25,561 --> 00:09:45,500
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+31
+00:09:45,500 --> 00:09:57,766
+La evidencia se convierte en confianza
+
+32
+00:09:57,766 --> 00:10:17,780
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.
+
+33
+00:10:17,780 --> 00:10:32,684
+Pruébalo en un flujo de trabajo doloroso
+
+34
+00:10:32,684 --> 00:10:57,000
+Este segmento resume la idea y muestra en pantalla los pasos clave para aplicarla con Bubbles.

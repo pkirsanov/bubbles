@@ -515,6 +515,16 @@ SCENES: tuple[Scene, ...] = (
     ),
 )
 
+MARKETING_CUT_EXCLUDED_TITLES = {
+    "For Developers Who Like Speed And Receipts",
+    "Wrong Agent, Wrong Artifact, Weird Results",
+    "Bubbles Makes Governance Usable At Dev Speed",
+    "But I Already Have Prompts",
+    "But My Project Is Weird",
+}
+
+SCENES = tuple(scene for scene in SCENES if scene.title not in MARKETING_CUT_EXCLUDED_TITLES)
+
 
 def require_file(path: Path, label: str) -> None:
     if not path.is_file():

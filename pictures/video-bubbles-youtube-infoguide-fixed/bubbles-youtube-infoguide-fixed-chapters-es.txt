@@ -1,0 +1,17 @@
+00:00 - Deja de aceptar que la IA diga terminado como si mandara
+00:27 - Bubbles es un sistema de entrega para Copilot Chat
+01:07 - La IA abarató escribir, no regaló la confianza
+01:46 - El impuesto de lo falsamente terminado es brutal
+02:22 - Piensa en un supervisor de parque para el trabajo de agentes
+03:06 - La intención se convierte en una ruta de trabajo
+03:48 - Tu interfaz llama a un endpoint que no existe
+04:34 - La prueba pasa porque esquiva el error
+05:18 - La ventana de contexto se fue de paseo
+06:00 - Instala una vez y empieza con Workflow
+06:39 - Usa especialistas cuando necesitas una herramienta precisa
+07:14 - Workflow es el caballo de batalla diario
+07:50 - Goal, Sprint y Releases manejan resultados más grandes
+08:27 - Un bug de checkout, dos futuros distintos
+09:13 - Reduce retrabajo, no creatividad
+09:45 - La evidencia se convierte en confianza
+10:17 - Pruébalo en un flujo de trabajo doloroso

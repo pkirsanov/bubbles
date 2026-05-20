@@ -1,0 +1,17 @@
+00:00 - Stop Letting AI Say Done Like It Owns The Place
+00:27 - Bubbles Is A Delivery System For Copilot Chat
+01:07 - AI Made Typing Cheap. It Did Not Make Trust Free.
+01:46 - The Fake Done Tax Is Brutal
+02:22 - Think Trailer Park Supervisor For Agent Work
+03:06 - Intent Becomes A Work Trail
+03:48 - Your UI Calls An Endpoint That Does Not Exist
+04:34 - The Test Passes Because It Avoids The Bug
+05:18 - The Context Window Went For A Walk
+06:00 - Install Once, Then Start With Workflow
+06:39 - Use Specialists When You Need One Sharp Tool
+07:14 - Workflow Is The Everyday Workhorse
+07:50 - Goal, Sprint, And Releases Handle Bigger Outcomes
+08:27 - One Checkout Bug, Two Different Futures
+09:13 - It Reduces Rework, Not Creativity
+09:45 - Evidence Becomes Trust
+10:17 - Run It On One Painful Workflow

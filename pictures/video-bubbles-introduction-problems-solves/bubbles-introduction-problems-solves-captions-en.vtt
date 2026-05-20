@@ -1,0 +1,379 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:01.902
+Here is the short version.
+
+00:00:01.902 --> 00:00:04.390
+AI coding tools made output cheap.
+
+00:00:04.390 --> 00:00:10.902
+Bubbles is for the part that stayed expensive: knowing whether the work is actually done.
+
+00:00:10.902 --> 00:00:22.974
+It is a framework around VS Code Copilot Chat that adds specialist agents, workflow modes, repo-local instructions, artifacts, validation gates, and evidence trails.
+
+00:00:22.974 --> 00:00:25.461
+For developers, it reduces rework.
+
+00:00:25.461 --> 00:00:28.827
+For managers, it makes status less mysterious.
+
+00:00:28.827 --> 00:00:36.363
+For leadership, it turns AI coding from a pile of clever conversations into a governed delivery system.
+
+00:00:36.363 --> 00:00:38.163
+Still practical.
+
+00:00:38.163 --> 00:00:40.460
+Still funny enough to survive a standup.
+
+00:00:40.460 --> 00:00:43.692
+The core problem is not that AI is too slow.
+
+00:00:43.692 --> 00:00:51.112
+It is that AI is fast enough to create a convincing mess before anybody has checked the blast radius.
+
+00:00:51.112 --> 00:00:52.948
+The output looks serious.
+
+00:00:52.948 --> 00:00:55.225
+The summary sounds responsible.
+
+00:00:55.225 --> 00:00:57.943
+But did the agent run the real tests?
+
+00:00:57.943 --> 00:00:59.743
+Did it update the spec?
+
+00:00:59.743 --> 00:01:02.388
+Did it call an endpoint that exists?
+
+00:01:02.388 --> 00:01:06.428
+Did it break a workflow nobody mentioned in the prompt?
+
+00:01:06.428 --> 00:01:11.864
+Bubbles exists for that gap between code generation and verified delivery.
+
+00:01:11.864 --> 00:01:19.100
+It asks the annoying question every serious project eventually asks: cool story, where is the proof?
+
+00:01:19.100 --> 00:01:21.907
+For developers, the pain is practical.
+
+00:01:21.907 --> 00:01:24.345
+The agent changes a lot of files.
+
+00:01:24.345 --> 00:01:34.688
+You spend the next hour figuring out what is real, what is accidental, and why the test suite suddenly behaves like a witness with a lawyer.
+
+00:01:34.688 --> 00:01:37.052
+Bubbles gives that work a trail.
+
+00:01:37.052 --> 00:01:39.194
+Analyst captures the outcome.
+
+00:01:39.194 --> 00:01:41.263
+Design names the safe shape.
+
+00:01:41.263 --> 00:01:43.063
+Plan slices the work.
+
+00:01:43.063 --> 00:01:44.863
+Implement changes code.
+
+00:01:44.863 --> 00:01:46.663
+Test verifies behavior.
+
+00:01:46.663 --> 00:01:48.657
+Docs updates durable truth.
+
+00:01:48.657 --> 00:01:52.056
+Validate checks whether the claim can advance.
+
+00:01:52.056 --> 00:01:54.863
+That does not make development slower.
+
+00:01:54.863 --> 00:01:56.784
+It reduces the rework tax.
+
+00:01:56.784 --> 00:02:00.840
+The useful kind of strict is the kind that saves your Friday.
+
+00:02:00.840 --> 00:02:03.362
+How does it solve developer problems?
+
+00:02:03.362 --> 00:02:05.883
+By making the proof part of the loop.
+
+00:02:05.883 --> 00:02:11.677
+If the UI calls a route from a dream sequence, vertical slice checks should catch it.
+
+00:02:11.677 --> 00:02:18.151
+If a regression test only passes because it avoids the old bug, quality guards should complain.
+
+00:02:18.151 --> 00:02:24.626
+If the first implementation works but leaves duplicated logic everywhere, simplify gets a turn.
+
+00:02:24.626 --> 00:02:28.238
+The normal entry point is slash bubbles dot workflow.
+
+00:02:28.238 --> 00:02:30.038
+Describe the outcome.
+
+00:02:30.038 --> 00:02:34.537
+Bubbles routes the phases and keeps evidence attached to the work.
+
+00:02:34.537 --> 00:02:36.718
+You still write and review code.
+
+00:02:36.718 --> 00:02:41.352
+You just stop accepting a confident paragraph as the build artifact.
+
+00:02:41.352 --> 00:02:42.960
+A beautiful lifestyle change.
+
+00:02:42.960 --> 00:02:46.359
+For managers, the problem is not typing speed.
+
+00:02:46.359 --> 00:02:48.206
+It is inspectable status.
+
+00:02:48.206 --> 00:02:53.674
+Is this feature done, or did the agent just reach the end of the chat box?
+
+00:02:53.674 --> 00:02:55.474
+Which scenarios passed?
+
+00:02:55.474 --> 00:02:57.274
+Which risks remain?
+
+00:02:57.274 --> 00:02:59.074
+Which docs changed?
+
+00:02:59.074 --> 00:03:01.143
+Which scopes are still open?
+
+00:03:01.143 --> 00:03:04.837
+Bubbles turns that into artifacts you can inspect.
+
+00:03:04.837 --> 00:03:06.637
+Scopes explain the work.
+
+00:03:06.637 --> 00:03:10.406
+Definition of done items say what completion means.
+
+00:03:10.406 --> 00:03:13.435
+Reports show command output and evidence.
+
+00:03:13.435 --> 00:03:15.235
+State records progress.
+
+00:03:15.235 --> 00:03:20.334
+Validation gates can block a status transition when proof is missing.
+
+00:03:20.334 --> 00:03:27.058
+That makes status less like weather forecasting and more like reading the instrument panel.
+
+00:03:27.058 --> 00:03:29.880
+Still imperfect, but at least the knobs are labeled.
+
+00:03:29.880 --> 00:03:40.848
+Planning drift is what happens when one assistant tries to be product analyst, architect, implementer, tester, auditor, and release manager all at once.
+
+00:03:40.848 --> 00:03:42.648
+It can sound impressive.
+
+00:03:42.648 --> 00:03:47.554
+It can also turn a simple bug into a scenic tour of unrelated files.
+
+00:03:47.554 --> 00:03:49.574
+Bubbles separates ownership.
+
+00:03:49.574 --> 00:03:51.595
+Analyst owns business truth.
+
+00:03:51.595 --> 00:03:53.399
+Design owns architecture.
+
+00:03:53.399 --> 00:03:55.419
+Plan owns executable scopes.
+
+00:03:55.419 --> 00:03:57.219
+Implement implements.
+
+00:03:57.219 --> 00:03:59.019
+Test tests.
+
+00:03:59.019 --> 00:04:00.819
+Validate certifies.
+
+00:04:00.819 --> 00:04:02.619
+Audit reviews.
+
+00:04:02.619 --> 00:04:11.061
+Managers get a clearer operating model: who owns the artifact, what gate blocked the work, and what must happen next.
+
+00:04:11.061 --> 00:04:16.420
+That is much better than asking, why did the chatbot rewrite our onboarding copy while fixing a database lock?
+
+00:04:16.420 --> 00:04:19.186
+For leadership, the question is bigger.
+
+00:04:19.186 --> 00:04:25.498
+How do we use AI coding tools without turning every repository into a private experiment?
+
+00:04:25.498 --> 00:04:33.229
+How do we get speed without losing compliance, quality signals, release discipline, and institutional memory?
+
+00:04:33.229 --> 00:04:35.428
+Bubbles gives control surfaces.
+
+00:04:35.428 --> 00:04:37.343
+The rules live in the repo.
+
+00:04:37.343 --> 00:04:40.676
+The workflow modes encode how work should move.
+
+00:04:40.676 --> 00:04:42.476
+Gates make risk visible.
+
+00:04:42.476 --> 00:04:49.427
+Security, audit, release, retro, and hotspot analysis can become part of the same operating model.
+
+00:04:49.427 --> 00:04:52.335
+It does not replace engineering judgment.
+
+00:04:52.335 --> 00:05:00.890
+It gives engineering judgment a repeatable rail system so AI help does not become unmanaged enthusiasm with commit access.
+
+00:05:00.890 --> 00:05:04.303
+The trick is governance without freezing delivery.
+
+00:05:04.303 --> 00:05:12.835
+A twenty-page policy PDF does not help if the agent never reads it and developers only remember it during an incident review.
+
+00:05:12.835 --> 00:05:20.752
+Bubbles keeps policy close to the work: instructions, skills, templates, workflows, and gates inside the repository.
+
+00:05:20.752 --> 00:05:26.076
+That means the agent can be guided by the same standards the team cares about.
+
+00:05:26.076 --> 00:05:38.430
+Leadership gets a path to scale AI-assisted delivery with fewer blind spots: not by slowing everyone down, but by making proof, ownership, and validation part of the default motion.
+
+00:05:38.430 --> 00:05:40.517
+Here is a concrete example.
+
+00:05:40.517 --> 00:05:44.844
+Checkout fails when availability changes during payment.
+
+00:05:44.844 --> 00:05:55.663
+Without structure, the agent patches a handler, adds a happy-path test, says done, and the race condition returns next week with sunglasses.
+
+00:05:55.663 --> 00:06:00.609
+With Bubbles, the workflow starts with the user-visible outcome.
+
+00:06:00.609 --> 00:06:03.546
+Design names the transaction boundary.
+
+00:06:03.546 --> 00:06:06.714
+Plan defines scenarios and done criteria.
+
+00:06:06.714 --> 00:06:09.264
+Implement changes the right path.
+
+00:06:09.264 --> 00:06:11.660
+Test adds adversarial coverage.
+
+00:06:11.660 --> 00:06:13.460
+Chaos can poke timing.
+
+00:06:13.460 --> 00:06:15.392
+Validate checks evidence.
+
+00:06:15.392 --> 00:06:17.401
+Audit names residual risk.
+
+00:06:17.401 --> 00:06:19.201
+Same AI coding help.
+
+00:06:19.201 --> 00:06:21.519
+Very different operating loop.
+
+00:06:21.519 --> 00:06:23.760
+One future gives you a patch.
+
+00:06:23.760 --> 00:06:27.270
+The other gives you a reason to believe the patch.
+
+00:06:27.270 --> 00:06:30.340
+The starting path is intentionally small.
+
+00:06:30.340 --> 00:06:32.140
+Do not boil the ocean.
+
+00:06:32.140 --> 00:06:43.371
+Pick one painful workflow: a bug that keeps coming back, a feature with drifting requirements, or a release packet that always turns into archaeology.
+
+00:06:43.371 --> 00:06:45.617
+Install and bootstrap Bubbles.
+
+00:06:45.617 --> 00:06:47.417
+Run doctor.
+
+00:06:47.417 --> 00:06:51.610
+Ask slash bubbles dot super if you do not know the move.
+
+00:06:51.610 --> 00:06:55.129
+Use slash bubbles dot workflow for normal work.
+
+00:06:55.129 --> 00:06:59.621
+Use goal, sprint, and releases when the outcome gets bigger.
+
+00:06:59.621 --> 00:07:02.916
+Then judge the system by the evidence trail.
+
+00:07:02.916 --> 00:07:04.716
+Not by charm.
+
+00:07:04.716 --> 00:07:05.530
+Not by vibes.
+
+00:07:05.530 --> 00:07:05.530
+By what it can show you.
+
+00:07:05.530 --> 00:07:09.118
+The win is not that Bubbles makes agents magical.
+
+00:07:09.118 --> 00:07:10.918
+Magic is hard to debug.
+
+00:07:10.918 --> 00:07:19.045
+The win is that agents can take bigger swings while the work stays reviewable, recoverable, and safer to trust.
+
+00:07:19.045 --> 00:07:21.461
+Developers get less cleanup debt.
+
+00:07:21.461 --> 00:07:24.463
+Managers get clearer status and evidence.
+
+00:07:24.463 --> 00:07:29.589
+Leadership gets a practical governance layer for AI-assisted delivery.
+
+00:07:29.589 --> 00:07:31.389
+Output is cheap now.
+
+00:07:31.389 --> 00:07:33.292
+Verified work is valuable.
+
+00:07:33.292 --> 00:07:41.127
+Bubbles is the system that tries to turn one into the other, without making everybody wear a committee hat.
+
+00:07:41.127 --> 00:07:42.957
+That is the introduction.
+
+00:07:42.957 --> 00:07:44.757
+That is the pitch.
+
+00:07:44.757 --> 00:07:46.020
+And honestly, that is the job.

@@ -1,0 +1,544 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:01.800
+Okay, quick cold open.
+
+00:00:01.800 --> 00:00:10.883
+If you have ever watched an AI agent write a huge diff, say done, and then leave you to discover the tests were imaginary, this is for you.
+
+00:00:10.883 --> 00:00:13.954
+Because the problem is not that AI is too slow.
+
+00:00:13.954 --> 00:00:15.754
+No.
+
+00:00:15.754 --> 00:00:22.028
+The problem is that AI is fast enough to create a convincing mess before your coffee cools down.
+
+00:00:22.028 --> 00:00:27.380
+Bubbles is the operating loop that asks the very annoying, very useful question: cool story, where is the proof?
+
+00:00:27.380 --> 00:00:29.180
+So what is Bubbles?
+
+00:00:29.180 --> 00:00:35.081
+Bubbles is a spec-driven AI agent orchestration system for VS Code Copilot Chat.
+
+00:00:35.081 --> 00:00:39.654
+Translation: it gives Copilot a delivery crew and a clipboard.
+
+00:00:39.654 --> 00:00:49.316
+You get specialist agents for analysis, UX, design, planning, implementation, testing, docs, validation, audit, releases, and more.
+
+00:00:49.316 --> 00:00:53.078
+You get workflow modes for different kinds of work.
+
+00:00:53.078 --> 00:00:58.831
+You get gates that say, no, a confident paragraph is not the same as evidence.
+
+00:00:58.831 --> 00:01:00.631
+It is practical.
+
+00:01:00.631 --> 00:01:02.431
+It is strict.
+
+00:01:02.431 --> 00:01:07.800
+And, yes, it has a trailer park sense of humor because somebody had to make governance less beige.
+
+00:01:07.800 --> 00:01:09.600
+Here is the shift.
+
+00:01:09.600 --> 00:01:11.400
+AI made typing cheap.
+
+00:01:11.400 --> 00:01:13.200
+That is excellent.
+
+00:01:13.200 --> 00:01:15.270
+It did not make trust free.
+
+00:01:15.270 --> 00:01:17.070
+The bottleneck moved.
+
+00:01:17.070 --> 00:01:19.830
+Before, you spent time writing code.
+
+00:01:19.830 --> 00:01:25.119
+Now you spend time asking, did this actually satisfy the requirement?
+
+00:01:25.119 --> 00:01:27.036
+Did it break a user flow?
+
+00:01:27.036 --> 00:01:30.639
+Did the agent change the test to match the bug?
+
+00:01:30.639 --> 00:01:34.702
+Did the documentation drift into a decorative fossil?
+
+00:01:34.702 --> 00:01:37.845
+Bubbles is built for that new bottleneck.
+
+00:01:37.845 --> 00:01:46.130
+It turns the work into artifacts, tests, evidence, and certification so you are not just nodding at a cheerful final answer.
+
+00:01:46.130 --> 00:01:47.930
+Fake done is expensive.
+
+00:01:47.930 --> 00:01:58.492
+It feels fast because everybody gets to move on, and then two days later the same bug walks back in with a fake mustache and asks for database access.
+
+00:01:58.492 --> 00:02:01.238
+Bubbles is harsh about this on purpose.
+
+00:02:01.238 --> 00:02:05.673
+If a definition of done item is checked, it needs raw evidence.
+
+00:02:05.673 --> 00:02:10.039
+If a test claims to protect behavior, it must be able to fail.
+
+00:02:10.039 --> 00:02:14.686
+If a spec says done, the scopes underneath it need to be done too.
+
+00:02:14.686 --> 00:02:16.939
+This is not process for process.
+
+00:02:16.939 --> 00:02:19.403
+This is avoiding the fake done tax.
+
+00:02:19.403 --> 00:02:22.180
+And that tax has a terrible interest rate.
+
+00:02:22.180 --> 00:02:25.052
+The TPB-style mental model is simple.
+
+00:02:25.052 --> 00:02:33.123
+Picture a tiny operations office with too many clipboards and one person saying, hold on, who owns this?
+
+00:02:33.123 --> 00:02:34.923
+That is Bubbles.
+
+00:02:34.923 --> 00:02:37.096
+Analyst owns business truth.
+
+00:02:37.096 --> 00:02:39.114
+UX owns interaction flows.
+
+00:02:39.114 --> 00:02:41.830
+Design owns technical architecture.
+
+00:02:41.830 --> 00:02:45.943
+Plan owns scopes, scenarios, and definitions of done.
+
+00:02:45.943 --> 00:02:47.743
+Implement writes code.
+
+00:02:47.743 --> 00:02:49.543
+Test verifies.
+
+00:02:49.543 --> 00:02:51.343
+Docs publishes truth.
+
+00:02:51.343 --> 00:02:53.516
+Validate owns certification.
+
+00:02:53.516 --> 00:02:55.316
+Audit reviews.
+
+00:02:55.316 --> 00:02:59.817
+It means diagnostic agents do not casually rewrite design.
+
+00:02:59.817 --> 00:03:02.844
+Implementers do not certify themselves.
+
+00:03:02.844 --> 00:03:06.960
+And nobody gets to repaint the entire office because they found one crooked label.
+
+00:03:06.960 --> 00:03:11.127
+Most of the time, you start with slash bubbles dot workflow.
+
+00:03:11.127 --> 00:03:14.114
+You do not need to memorize the whole crew.
+
+00:03:14.114 --> 00:03:15.914
+Just describe the work.
+
+00:03:15.914 --> 00:03:17.714
+Fix this regression.
+
+00:03:17.714 --> 00:03:19.728
+Improve this onboarding flow.
+
+00:03:19.728 --> 00:03:21.534
+Continue the current spec.
+
+00:03:21.534 --> 00:03:23.756
+Prepare the next release packet.
+
+00:03:23.756 --> 00:03:32.299
+Workflow resolves intent, picks the right owners, runs phases, enforces status ceilings, and routes rework when gates fail.
+
+00:03:32.299 --> 00:03:35.841
+The important part is that the work leaves a trail.
+
+00:03:35.841 --> 00:03:40.633
+So the next session does not start with, wait, were we touching auth?
+
+00:03:40.633 --> 00:03:48.910
+It starts with: here are the artifacts, here is the scope, here is the evidence, and here is what remains, which is much better.
+
+00:03:48.910 --> 00:03:54.948
+Actual developer problem number one: the UI calls an endpoint that does not exist.
+
+00:03:54.948 --> 00:03:56.748
+Or the method is wrong.
+
+00:03:56.748 --> 00:03:58.956
+Or the response shape changed.
+
+00:03:58.956 --> 00:04:04.700
+Or the test intercepted the request and gave everybody a little bedtime story.
+
+00:04:04.700 --> 00:04:11.768
+Bubbles has vertical slice and integration completeness gates for exactly this kind of nonsense.
+
+00:04:11.768 --> 00:04:15.008
+Frontend calls need matching backend routes.
+
+00:04:15.008 --> 00:04:19.057
+New endpoints need consumers or external documentation.
+
+00:04:19.057 --> 00:04:24.653
+User-visible behavior needs scenarios and tests that exercise the real path.
+
+00:04:24.653 --> 00:04:31.869
+It is the difference between, the demo works on my laptop, and, the system path is actually wired.
+
+00:04:31.869 --> 00:04:33.669
+Tiny difference.
+
+00:04:33.669 --> 00:04:34.560
+Enormous Friday night.
+
+00:04:34.560 --> 00:04:41.000
+Actual developer problem number two: the test passes because it carefully avoids the bug.
+
+00:04:41.000 --> 00:04:42.800
+You have seen it.
+
+00:04:42.800 --> 00:04:44.754
+If login redirects, return.
+
+00:04:44.754 --> 00:04:48.083
+If the layout is missing, skip that assertion.
+
+00:04:48.083 --> 00:04:56.332
+If every fixture has the field the old bug required, congratulations, the regression test is ceremonial furniture.
+
+00:04:56.332 --> 00:04:59.661
+Bubbles pushes tests toward adversarial proof.
+
+00:04:59.661 --> 00:05:04.147
+A bug fix needs an input that would fail if the bug came back.
+
+00:05:04.147 --> 00:05:08.561
+Required E2E tests must fail loudly when behavior is missing.
+
+00:05:08.561 --> 00:05:14.350
+Live-stack tests cannot quietly fake the backend and still call themselves live.
+
+00:05:14.350 --> 00:05:18.050
+That one rule alone saves a lot of very confident nonsense.
+
+00:05:18.050 --> 00:05:22.272
+Actual developer problem number three: context vanishes.
+
+00:05:22.272 --> 00:05:24.072
+The chat was long.
+
+00:05:24.072 --> 00:05:25.956
+The work was complicated.
+
+00:05:25.956 --> 00:05:35.153
+Then the session compacts, the thread gets fuzzy, and now everybody is guessing what the last agent meant by mostly fixed.
+
+00:05:35.153 --> 00:05:37.716
+Bubbles centers durable artifacts.
+
+00:05:37.716 --> 00:05:43.898
+Specs, designs, scopes, reports, user validation, and state files carry the truth.
+
+00:05:43.898 --> 00:05:47.290
+Recap and handoff help move between sessions.
+
+00:05:47.290 --> 00:05:50.758
+Workflow can continue from the artifact state.
+
+00:05:50.758 --> 00:05:53.773
+That is boring in the best possible way.
+
+00:05:53.773 --> 00:05:55.573
+Boring is underrated.
+
+00:05:55.573 --> 00:06:00.190
+Boring lets you ship without reconstructing the plot from tire tracks.
+
+00:06:00.190 --> 00:06:03.362
+Installation is intentionally not dramatic.
+
+00:06:03.362 --> 00:06:06.682
+You install the framework assets into a repo.
+
+00:06:06.682 --> 00:06:15.313
+Bootstrap sets up the local Bubbles layer: agents, prompts, instructions, skills, templates, and governance surfaces.
+
+00:06:15.313 --> 00:06:18.485
+Then start with slash bubbles dot workflow.
+
+00:06:18.485 --> 00:06:20.285
+Give it a real problem.
+
+00:06:20.285 --> 00:06:23.088
+Not a toy problem if you can avoid it.
+
+00:06:23.088 --> 00:06:30.465
+Pick the annoying bug, the drifted feature, the release packet that always becomes a scavenger hunt.
+
+00:06:30.465 --> 00:06:33.489
+The point is not to admire the framework.
+
+00:06:33.489 --> 00:06:39.140
+The point is to see whether the evidence trail makes the work easier to trust.
+
+00:06:39.140 --> 00:06:41.539
+For small jobs, use a specialist.
+
+00:06:41.539 --> 00:06:44.955
+If you want an idea pressure-tested, use grill.
+
+00:06:44.955 --> 00:06:48.589
+If you want engineering findings, use code-review.
+
+00:06:48.589 --> 00:06:51.133
+If you need docs aligned, use docs.
+
+00:06:51.133 --> 00:06:54.476
+If you need a clean status report, use status.
+
+00:06:54.476 --> 00:06:57.384
+If you need the story so far, use recap.
+
+00:06:57.384 --> 00:06:59.184
+This is important.
+
+00:06:59.184 --> 00:07:02.382
+Bubbles is not maximum process all the time.
+
+00:07:02.382 --> 00:07:04.182
+That would be awful.
+
+00:07:04.182 --> 00:07:07.525
+It is the right tool for the size of the work.
+
+00:07:07.525 --> 00:07:09.924
+Sometimes you need the full crew.
+
+00:07:09.924 --> 00:07:14.610
+Sometimes you need one person with a flashlight and a suspicious expression.
+
+00:07:14.610 --> 00:07:19.269
+For normal feature and bug work, workflow is the everyday workhorse.
+
+00:07:19.269 --> 00:07:29.065
+It can analyze the request, pick the next executable slice, route to owners, run phases, enforce gates, and packet rework when something fails.
+
+00:07:29.065 --> 00:07:32.628
+This is where Bubbles feels different from a prompt.
+
+00:07:32.628 --> 00:07:35.574
+You are not just asking, please be careful.
+
+00:07:35.574 --> 00:07:43.863
+You are running a workflow that understands artifact ownership, validation, test integrity, and certification boundaries.
+
+00:07:43.863 --> 00:07:48.179
+And when validate gets unimpressed, that is not a vibe problem.
+
+00:07:48.179 --> 00:07:50.440
+That is the system doing its job.
+
+00:07:50.440 --> 00:07:54.132
+For bigger outcomes, Bubbles has bigger controllers.
+
+00:07:54.132 --> 00:07:56.901
+Goal handles one outcome across phases.
+
+00:07:56.901 --> 00:08:01.659
+Sprint handles several goals with prioritization and a time budget.
+
+00:08:01.659 --> 00:08:08.546
+Releases handles phase packets, launch context, carry-forward, and the business side of shipping.
+
+00:08:08.546 --> 00:08:15.859
+This is useful when the work is too broad for one specialist and too important for a vague instruction.
+
+00:08:15.859 --> 00:08:22.108
+You give the coordinator the steering wheel, then make the workflow prove what happened.
+
+00:08:22.108 --> 00:08:23.908
+It is still agentic work.
+
+00:08:23.908 --> 00:08:25.967
+It just has lane markers now.
+
+00:08:25.967 --> 00:08:27.767
+Very fancy.
+
+00:08:27.767 --> 00:08:27.930
+Almost civilized.
+
+00:08:27.930 --> 00:08:29.730
+Picture one real bug.
+
+00:08:29.730 --> 00:08:34.084
+Checkout fails when availability changes during payment.
+
+00:08:34.084 --> 00:08:44.348
+Without structure, an agent patches a handler, adds a happy-path test, says done, and everybody hopes physics takes the weekend off.
+
+00:08:44.348 --> 00:08:48.469
+With Bubbles, analyst clarifies the business outcome.
+
+00:08:48.469 --> 00:08:51.502
+Design shapes the transaction boundary.
+
+00:08:51.502 --> 00:08:55.156
+Plan creates scenarios and definitions of done.
+
+00:08:55.156 --> 00:08:56.956
+Implement changes code.
+
+00:08:56.956 --> 00:09:00.222
+Test adds adversarial regression coverage.
+
+00:09:00.222 --> 00:09:02.022
+Chaos can poke timing.
+
+00:09:02.022 --> 00:09:03.966
+Validate checks evidence.
+
+00:09:03.966 --> 00:09:05.988
+Audit names residual risk.
+
+00:09:05.988 --> 00:09:07.788
+Same AI assistance.
+
+00:09:07.788 --> 00:09:09.887
+Much better operating loop.
+
+00:09:09.887 --> 00:09:12.065
+The difference is not drama.
+
+00:09:12.065 --> 00:09:13.340
+The difference is proof.
+
+00:09:13.340 --> 00:09:16.802
+The obvious worry is, does this slow me down?
+
+00:09:16.802 --> 00:09:18.726
+Sometimes it adds a step.
+
+00:09:18.726 --> 00:09:21.034
+Usually it removes five later.
+
+00:09:21.034 --> 00:09:22.834
+That is the trade.
+
+00:09:22.834 --> 00:09:24.634
+Bubbles reduces rework.
+
+00:09:24.634 --> 00:09:26.434
+It reduces mystery.
+
+00:09:26.434 --> 00:09:34.897
+It reduces the weird feeling where a lot of code changed, but nobody can name the user behavior that improved.
+
+00:09:34.897 --> 00:09:37.282
+It does not replace creativity.
+
+00:09:37.282 --> 00:09:39.821
+It protects it from cleanup debt.
+
+00:09:39.821 --> 00:09:45.500
+Because nothing kills momentum like spending Thursday proving Tuesday was imaginary.
+
+00:09:45.500 --> 00:09:47.300
+Here is the payoff.
+
+00:09:47.300 --> 00:09:49.965
+Bubbles does not make agents magic.
+
+00:09:49.965 --> 00:09:51.944
+It makes them accountable.
+
+00:09:51.944 --> 00:09:53.744
+That is better.
+
+00:09:53.744 --> 00:09:55.544
+Magic is hard to debug.
+
+00:09:55.544 --> 00:09:57.828
+Accountability has file paths.
+
+00:09:57.828 --> 00:09:59.655
+Intent becomes artifact.
+
+00:09:59.655 --> 00:10:01.455
+Artifact becomes scope.
+
+00:10:01.455 --> 00:10:03.663
+Scope becomes implementation.
+
+00:10:03.663 --> 00:10:06.099
+Implementation becomes evidence.
+
+00:10:06.099 --> 00:10:07.899
+Evidence becomes trust.
+
+00:10:07.899 --> 00:10:17.780
+And trust is what lets you give agents bigger work without handing them the keys to the whole park and hoping they remember where the brakes are.
+
+00:10:17.780 --> 00:10:20.209
+So try it on one painful workflow.
+
+00:10:20.209 --> 00:10:22.009
+Not your whole company.
+
+00:10:22.009 --> 00:10:24.938
+Not every repository you have ever loved.
+
+00:10:24.938 --> 00:10:26.738
+One real workflow.
+
+00:10:26.738 --> 00:10:29.310
+Pick the bug that keeps coming back.
+
+00:10:29.310 --> 00:10:33.167
+Pick the feature where specs and implementation drift.
+
+00:10:33.167 --> 00:10:37.168
+Pick the release packet that always becomes archaeology.
+
+00:10:37.168 --> 00:10:43.669
+Install Bubbles, bootstrap the repo, run slash bubbles dot workflow, and inspect the trail.
+
+00:10:43.669 --> 00:10:50.884
+If you want AI coding help that moves fast and still shows its work, Bubbles is worth a serious look.
+
+00:10:50.884 --> 00:10:52.684
+It is strict.
+
+00:10:52.684 --> 00:10:54.484
+It is useful.
+
+00:10:54.484 --> 00:10:57.000
+And it is just funny enough that the clipboard does not ruin the day.

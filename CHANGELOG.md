@@ -12,6 +12,12 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## Unreleased
+
+### Fixed
+
+- **`implementation-reality-scan.sh` Scan 1D Go connector helper false positives** — Scan 1D now treats idiomatic Go helper `return nil` lines as non-fake when a sibling non-test file in the same Go package has real upstream/client-call evidence. Other suspicious integration patterns still fire, and a no-op connector package with no external call path remains blocking. Added hermetic selftest coverage for the honest-helper pass case and the adversarial no-op connector failure case.
+
 ## v3.8.0 — 2026-05-10
 
 Bubbles framework v3.8.0 — 21 improvements landed across runtime coordination, in-loop tooling, governance hygiene, and operator UX. Three independent audits (Opus 4.7, GPT-5.5, Gemini 3.1 Pro) returned GO. See ledger entries below.

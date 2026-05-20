@@ -1,0 +1,21 @@
+00:00 - Deja de aceptar vibras de IA como entrega
+00:38 - Bubbles es el sistema de trabajo alrededor de Copilot
+01:17 - La validación estricta es el personaje principal
+02:08 - Una casilla marcada sin salida real es solo confeti
+02:49 - Chaos, Simplify, Harden, Gaps y Security
+03:33 - Chaos no es aleatorio por diversión
+04:15 - Harden pregunta si terminado realmente significa terminado
+04:56 - Simplify limpia después del cerebro de sprint
+05:36 - Security no es una pegatina al final
+06:19 - Code Review, System Review y Spec Review
+07:09 - La documentación y las especificaciones deben seguir vivas
+07:50 - Retro encuentra los puntos calientes que nadie quiere nombrar
+08:33 - Pregunta a Super cuando no sabes el siguiente movimiento
+09:18 - Workflow maneja el ciclo normal de entrega
+09:59 - Goal, Sprint y Releases manejan trabajo más grande
+10:39 - La interfaz llama a una ruta salida de un sueño
+11:21 - La prueba pasa porque evita el incendio
+12:06 - La ventana de contexto se fue de paseo
+12:47 - Un bug de checkout, dos futuros
+13:34 - Bubbles permite a los agentes intentar cosas más grandes con seguridad
+14:13 - Ejecuta Bubbles en un flujo de trabajo doloroso

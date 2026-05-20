@@ -42,8 +42,6 @@ Workflow resolves your intent, picks the right mode, and drives specialists to c
 
 Think of it as a trailer park supervisor for your codebase. Except this one actually works.
 
-> ⛔ **Framework Scope Policy (NON-NEGOTIABLE — READ BEFORE COMMITTING):** This repository is a generic, repo-agnostic framework. **No** repo-specific, product-specific, machine-specific, deployment-specific, or operator-specific content of any kind belongs here. See [docs/SCOPE_POLICY.md](docs/SCOPE_POLICY.md) for the full rule, the self-audit checklist, and the violation history. Per-product content lives in each downstream repo (`<product-repo>/docs/`, `<product-repo>/specs/`, `<product-repo>/deploy/`); cross-product or operator-specific content lives outside any framework or product repo.
-
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>37 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
@@ -489,27 +487,32 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 
 ## Docs
 
-| Document | What's Inside |
-|----------|--------------|
-| [It's Not Rocket Appliances](https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html) | Visual agent reference card — rendered on GitHub Pages |
-| [Cheatsheet](docs/CHEATSHEET.md) | Markdown quick-reference |
-| [Agent Manual](docs/guides/AGENT_MANUAL.md) | Detailed guide for every agent |
+<table>
+<thead>
+<tr><th>Document</th><th>What's Inside</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html">It's Not Rocket Appliances</a></td><td>Visual agent reference card — rendered on GitHub Pages</td></tr>
+<tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
+<tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-| [Competitive Capabilities](docs/generated/competitive-capabilities.md) | Ledger-backed competitive posture guide — 12 shipped, 1 partial, 0 proposed |
-| [Issue Status](docs/generated/issue-status.md) | Ledger-backed status for 2 tracked framework gaps and proposals |
-| [Interop Migration Matrix](docs/generated/interop-migration-matrix.md) | Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline |
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 12 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
+<tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-| [Workflow Modes](docs/guides/WORKFLOW_MODES.md) | All 35 workflow modes explained |
+<tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 35 workflow modes explained</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
-| [Interop Migration Guide](docs/guides/INTEROP_MIGRATION.md) | Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems |
-| [Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md) | Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts |
-| [Control Plane Rollout](docs/guides/CONTROL_PLANE_ROLLOUT.md) | Phased implementation plan for the control-plane redesign across all requested changes |
-| [Control Plane Schemas](docs/guides/CONTROL_PLANE_SCHEMAS.md) | Proposed schema set for capability registry, policy defaults, scenario manifests, certification state, and rework packets |
-| [Recipes](docs/recipes/) | Common problems → solutions |
-| [Installing in Your Repo](docs/guides/INSTALLATION.md) | Step-by-step setup guide |
-| [Spec Examples](docs/examples/) | Annotated reference examples for common patterns |
-| [Shared Skills](skills/) | Portable governance skills installed to every repo |
+<tr><td><a href="docs/guides/INTEROP_MIGRATION.md">Interop Migration Guide</a></td><td>Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems</td></tr>
+<tr><td><a href="docs/guides/CONTROL_PLANE_DESIGN.md">Control Plane Design</a></td><td>Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts</td></tr>
+<tr><td><a href="docs/guides/CONTROL_PLANE_ROLLOUT.md">Control Plane Rollout</a></td><td>Phased implementation plan for the control-plane redesign across all requested changes</td></tr>
+<tr><td><a href="docs/guides/CONTROL_PLANE_SCHEMAS.md">Control Plane Schemas</a></td><td>Proposed schema set for capability registry, policy defaults, scenario manifests, certification state, and rework packets</td></tr>
+<tr><td><a href="docs/recipes/">Recipes</a></td><td>Common problems → solutions</td></tr>
+<tr><td><a href="docs/guides/INSTALLATION.md">Installing in Your Repo</a></td><td>Step-by-step setup guide</td></tr>
+<tr><td><a href="docs/examples/">Spec Examples</a></td><td>Annotated reference examples for common patterns</td></tr>
+<tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo</td></tr>
+</tbody>
+</table>
 
 ---
 
@@ -604,6 +607,13 @@ Agent files are Markdown. The system is pure text. No build step. No compilation
 **Rule:** All agent files (`bubbles.*.agent.md`) must be project-agnostic. Zero repo-specific paths, commands, or tool references.
 
 **Enforcement:** Run `bubbles agnosticity` for a full portable-surface drift check, `bubbles agnosticity --staged` for pre-commit scope, and `bubbles hooks install --all` to wire those checks into local git hooks.
+
+<details>
+<summary>Maintainer scope guard</summary>
+
+This repository is a generic, repo-agnostic framework. Repo-specific, product-specific, machine-specific, deployment-specific, and operator-specific content belongs in downstream repos or operator-owned locations, not here. See [docs/SCOPE_POLICY.md](docs/SCOPE_POLICY.md) for the full contributor rule, self-audit checklist, and violation history.
+
+</details>
 
 ---
 

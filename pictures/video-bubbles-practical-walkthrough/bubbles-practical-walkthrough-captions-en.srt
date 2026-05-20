@@ -1,0 +1,563 @@
+1
+00:00:00,000 --> 00:00:04,487
+This is a practical walkthrough, not a real customer project.
+
+2
+00:00:04,487 --> 00:00:06,287
+The repo is synthetic.
+
+3
+00:00:06,287 --> 00:00:08,087
+The bug is synthetic.
+
+4
+00:00:08,087 --> 00:00:10,146
+The artifacts are synthetic.
+
+5
+00:00:10,146 --> 00:00:11,946
+That is on purpose.
+
+6
+00:00:11,946 --> 00:00:23,862
+We are going to show the shape of a Bubbles workflow from setup to actual result: commands, responses, generated artifacts, tests, validation, and final evidence.
+
+7
+00:00:23,862 --> 00:00:32,910
+The example is a tiny product called pocket CRM demo, where the email retry button spins forever if the provider times out.
+
+8
+00:00:32,910 --> 00:00:34,710
+Small bug.
+
+9
+00:00:34,710 --> 00:00:36,410
+Realistic pain.
+
+10
+00:00:36,410 --> 00:00:36,410
+Perfect little clipboard exercise.
+
+11
+00:00:36,410 --> 00:00:38,471
+We start with a small repo.
+
+12
+00:00:38,471 --> 00:00:40,914
+Not an enterprise space station.
+
+13
+00:00:40,914 --> 00:00:44,044
+Just a web UI, an API, and a test folder.
+
+14
+00:00:44,044 --> 00:00:48,395
+The product sends follow-up emails from a contact record.
+
+15
+00:00:48,395 --> 00:00:55,418
+The bug is simple: if the email provider times out, the retry button keeps spinning forever.
+
+16
+00:00:55,418 --> 00:00:57,861
+Users do not see a clear status.
+
+17
+00:00:57,861 --> 00:01:00,457
+Sometimes the action queues twice.
+
+18
+00:01:00,457 --> 00:01:09,007
+The desired result is also simple: the button recovers, the status is visible, and retry is queued exactly once.
+
+19
+00:01:09,007 --> 00:01:10,807
+Notice the phrasing.
+
+20
+00:01:10,807 --> 00:01:16,030
+We are already thinking in user-visible behavior, not just code changes.
+
+21
+00:01:16,030 --> 00:01:17,982
+Next, install and bootstrap.
+
+22
+00:01:17,982 --> 00:01:27,464
+The exact install command depends on how you distribute Bubbles in your environment, so this panel shows the shape, not a live download.
+
+23
+00:01:27,464 --> 00:01:37,295
+After setup, the repo has the local Bubbles layer: agents, prompts, instructions, skills, templates, workflow scripts, and governance checks.
+
+24
+00:01:37,295 --> 00:01:39,095
+Then run doctor.
+
+25
+00:01:39,095 --> 00:01:41,953
+The important habit is boring but useful.
+
+26
+00:01:41,953 --> 00:01:49,344
+Before asking the framework to guide real work, confirm that the framework surface is present and healthy.
+
+27
+00:01:49,344 --> 00:01:53,400
+Exciting setup usually means somebody is about to lose an afternoon.
+
+28
+00:01:53,400 --> 00:01:57,230
+If you do not know which route to take, ask super.
+
+29
+00:01:57,230 --> 00:02:05,961
+Super is the first-touch assistant for Bubbles questions, agent selection, commands, recipes, setup, and recovery.
+
+30
+00:02:05,961 --> 00:02:12,011
+In this synthetic example, we say: fix the retry spinner bug, and I need proof.
+
+31
+00:02:12,011 --> 00:02:20,896
+Super recommends slash bubbles dot workflow, with a bugfix fastlane style path, because this is not just a question.
+
+32
+00:02:20,896 --> 00:02:25,338
+We need artifacts, a fix, tests, validation, and evidence.
+
+33
+00:02:25,338 --> 00:02:28,172
+That is bigger than one quick review.
+
+34
+00:02:28,172 --> 00:02:30,240
+That is workflow territory.
+
+35
+00:02:30,240 --> 00:02:33,748
+Now run workflow with the actual user problem.
+
+36
+00:02:33,748 --> 00:02:36,722
+Do not start with, change this handler.
+
+37
+00:02:36,722 --> 00:02:38,553
+Start with the behavior.
+
+38
+00:02:38,553 --> 00:02:41,603
+Email retry spins forever after timeout.
+
+39
+00:02:41,603 --> 00:02:45,416
+Expected result: recover, show status, queue once.
+
+40
+00:02:45,416 --> 00:02:51,746
+The workflow resolves a bugfix route and creates a synthetic feature or bug folder.
+
+41
+00:02:51,746 --> 00:02:56,475
+Then it starts in the right order: analysis, design, planning.
+
+42
+00:02:56,475 --> 00:02:58,275
+That is the point.
+
+43
+00:02:58,275 --> 00:03:04,940
+Bubbles tries to understand what must be true before it starts flinging code around the park.
+
+44
+00:03:04,940 --> 00:03:08,218
+The first important artifact is the spec.
+
+45
+00:03:08,218 --> 00:03:13,416
+In this synthetic example, the spec captures an outcome contract.
+
+46
+00:03:13,416 --> 00:03:16,374
+Intent: retry recovers after timeout.
+
+47
+00:03:16,374 --> 00:03:19,733
+Success signal: the user sees queued once.
+
+48
+00:03:19,733 --> 00:03:22,931
+Hard constraint: no duplicate retry job.
+
+49
+00:03:22,931 --> 00:03:26,849
+Failure condition: spinner remains after timeout.
+
+50
+00:03:26,849 --> 00:03:30,127
+That is more useful than, fix the button.
+
+51
+00:03:30,127 --> 00:03:35,245
+It gives tests and implementation something concrete to satisfy.
+
+52
+00:03:35,245 --> 00:03:38,763
+Bubbles wants requirements to be observable.
+
+53
+00:03:38,763 --> 00:03:44,760
+If nobody can prove the outcome, the outcome is probably fog wearing a hat.
+
+54
+00:03:44,760 --> 00:03:47,713
+Next, design names the safe fix shape.
+
+55
+00:03:47,713 --> 00:03:56,495
+This is where the workflow stops the agent from doing the classic thing: hiding the spinner and calling it fixed.
+
+56
+00:03:56,495 --> 00:04:02,091
+The design identifies the timeout boundary around the email client call.
+
+57
+00:04:02,091 --> 00:04:10,174
+It defines idempotency using contact ID and template ID, so repeated clicks do not queue duplicate jobs.
+
+58
+00:04:10,174 --> 00:04:16,003
+It names UI state transitions: sending, timeout, retryable, queued, failed.
+
+59
+00:04:16,003 --> 00:04:18,567
+Now the implementation has rails.
+
+60
+00:04:18,567 --> 00:04:20,367
+It is not just a patch.
+
+61
+00:04:20,367 --> 00:04:23,930
+It is a behavior change with failure handling.
+
+62
+00:04:23,930 --> 00:04:27,371
+Then plan slices the work into proveable scopes.
+
+63
+00:04:27,371 --> 00:04:30,382
+Scope one might be retry timeout recovery.
+
+64
+00:04:30,382 --> 00:04:37,765
+It names the scenario, the API test, the UI test, the files likely touched, and the definition of done.
+
+65
+00:04:37,765 --> 00:04:40,633
+This is where Bubbles gets strict again.
+
+66
+00:04:40,633 --> 00:04:45,006
+Every test-plan row needs a matching definition-of-done item.
+
+67
+00:04:45,006 --> 00:04:49,593
+Later, every checked definition-of-done item needs raw evidence.
+
+68
+00:04:49,593 --> 00:04:52,317
+That means the plan is not decorative.
+
+69
+00:04:52,317 --> 00:04:55,830
+It is a contract for how the work will be proven.
+
+70
+00:04:55,830 --> 00:04:58,847
+Now implementation can change behavior.
+
+71
+00:04:58,847 --> 00:05:05,499
+In this synthetic diff, the API returns a retryable state when the provider times out.
+
+72
+00:05:05,499 --> 00:05:08,593
+The retry queue uses an idempotency key.
+
+73
+00:05:08,593 --> 00:05:15,400
+The UI stops the spinner, shows retry available, and confirms queued status after retry.
+
+74
+00:05:15,400 --> 00:05:23,755
+Notice what is not happening: the agent is not only changing CSS, and it is not only changing an API branch.
+
+75
+00:05:23,755 --> 00:05:25,843
+The vertical slice matters.
+
+76
+00:05:25,843 --> 00:05:30,794
+The user-visible fix crosses UI, API, queue behavior, and tests.
+
+77
+00:05:30,794 --> 00:05:36,750
+This is exactly where Bubbles earns its keep: keeping the whole path in view.
+
+78
+00:05:36,750 --> 00:05:39,486
+Then run tests that can actually fail.
+
+79
+00:05:39,486 --> 00:05:44,454
+This is not the time for a happy provider response and a victory lap.
+
+80
+00:05:44,454 --> 00:05:47,478
+The regression case simulates the timeout.
+
+81
+00:05:47,478 --> 00:05:52,158
+The API test asserts that duplicate retry attempts queue one job.
+
+82
+00:05:52,158 --> 00:05:58,638
+The UI test asserts the spinner stops after timeout and queued status appears after retry.
+
+83
+00:05:58,638 --> 00:06:02,598
+If the old bug comes back, these tests should get loud.
+
+84
+00:06:02,598 --> 00:06:04,542
+Quiet tests are not polite.
+
+85
+00:06:04,542 --> 00:06:05,910
+They are expensive.
+
+86
+00:06:05,910 --> 00:06:07,850
+The report records evidence.
+
+87
+00:06:07,850 --> 00:06:10,622
+Not a summary pretending to be evidence.
+
+88
+00:06:10,622 --> 00:06:15,957
+The command, the observed output, the pass count, and the behavior assertion.
+
+89
+00:06:15,957 --> 00:06:18,451
+This is what a reviewer needs later.
+
+90
+00:06:18,451 --> 00:06:22,747
+It is also what the next agent needs after context compaction.
+
+91
+00:06:22,747 --> 00:06:31,893
+When Bubbles says raw evidence, this is the spirit: show what ran, show what passed, and show what user-visible behavior was proven.
+
+92
+00:06:31,893 --> 00:06:36,050
+Anything less is just trust me bro with Markdown formatting.
+
+93
+00:06:36,050 --> 00:06:38,297
+Now validation gates push back.
+
+94
+00:06:38,297 --> 00:06:42,864
+This is the part that makes Bubbles feel strict, and it should.
+
+95
+00:06:42,864 --> 00:06:48,880
+State-transition guard checks whether the work is even allowed to move toward done.
+
+96
+00:06:48,880 --> 00:06:54,896
+Artifact lint checks structure, checkboxes, evidence sections, and required fields.
+
+97
+00:06:54,896 --> 00:06:58,738
+Reality scan looks for stubs and fake implementation.
+
+98
+00:06:58,738 --> 00:07:01,565
+Integration completeness checks wiring.
+
+99
+00:07:01,565 --> 00:07:06,204
+Vertical slice completeness checks frontend-to-backend behavior.
+
+100
+00:07:06,204 --> 00:07:10,409
+If something is missing, the gate fails and routes rework.
+
+101
+00:07:10,409 --> 00:07:12,209
+That is not bureaucracy.
+
+102
+00:07:12,209 --> 00:07:15,700
+That is the system refusing to publish fake done.
+
+103
+00:07:15,700 --> 00:07:19,513
+After the fix works, the quality agents add pressure.
+
+104
+00:07:19,513 --> 00:07:24,046
+Chaos tries real-system usage variations around the retry path.
+
+105
+00:07:24,046 --> 00:07:25,846
+Double click.
+
+106
+00:07:25,846 --> 00:07:27,646
+Navigate away.
+
+107
+00:07:27,646 --> 00:07:29,446
+Return.
+
+108
+00:07:29,446 --> 00:07:31,246
+Retry after timeout.
+
+109
+00:07:31,246 --> 00:07:35,347
+Simplify reviews the diff and cleans awkward duplication.
+
+110
+00:07:35,347 --> 00:07:37,937
+Harden checks completion and policy.
+
+111
+00:07:37,937 --> 00:07:43,189
+Security looks for auth, exposure, and risk issues around the retry path.
+
+112
+00:07:43,189 --> 00:07:53,040
+This is how Bubbles avoids the classic delivery pattern where the first implementation technically works, and the second developer quietly inherits a shed full of questionable wiring.
+
+113
+00:07:53,040 --> 00:07:55,733
+Docs and specs need to stay in sync.
+
+114
+00:07:55,733 --> 00:08:01,268
+The fix is not complete if durable truth still describes the old behavior.
+
+115
+00:08:01,268 --> 00:08:07,102
+In the synthetic response, docs now explain timeout recovery and retry status.
+
+116
+00:08:07,102 --> 00:08:11,141
+The spec outcome contract reflects the final behavior.
+
+117
+00:08:11,141 --> 00:08:14,806
+Spec-review confirms the active truth is current.
+
+118
+00:08:14,806 --> 00:08:17,349
+State records the completed scope.
+
+119
+00:08:17,349 --> 00:08:19,149
+This is not glamorous.
+
+120
+00:08:19,149 --> 00:08:24,380
+It is how future work starts from reality instead of historical fiction.
+
+121
+00:08:24,380 --> 00:08:27,193
+The actual result is not, code changed.
+
+122
+00:08:27,193 --> 00:08:30,367
+The actual result is verified user behavior.
+
+123
+00:08:30,367 --> 00:08:32,748
+Timeout leads to retry available.
+
+124
+00:08:32,748 --> 00:08:34,840
+Retry leads to queued status.
+
+125
+00:08:34,840 --> 00:08:39,241
+Repeated clicks lead to one queue job, not a tiny job parade.
+
+126
+00:08:39,241 --> 00:08:44,867
+The artifacts show what changed, what ran, what passed, and what risk remains.
+
+127
+00:08:44,867 --> 00:08:49,412
+The final answer can be concise because the proof trail exists.
+
+128
+00:08:49,412 --> 00:08:59,800
+That is the practical Bubbles loop: setup, route, artifacts, implementation, tests, gates, quality pressure, docs, and a result you can inspect.
+
+129
+00:08:59,800 --> 00:09:02,808
+Use this pattern on one real workflow.
+
+130
+00:09:02,808 --> 00:09:10,803
+Pick a painful bug, a drifted spec, or a feature where you need more than a cheerful final paragraph.
+
+131
+00:09:10,803 --> 00:09:13,653
+Start with the user-visible outcome.
+
+132
+00:09:13,653 --> 00:09:15,790
+Let Bubbles route the work.
+
+133
+00:09:15,790 --> 00:09:17,590
+Inspect the artifacts.
+
+134
+00:09:17,590 --> 00:09:19,490
+Run the tests and gates.
+
+135
+00:09:19,490 --> 00:09:24,477
+Use the quality agents when the blast radius deserves pressure.
+
+136
+00:09:24,477 --> 00:09:26,694
+Keep docs and specs current.
+
+137
+00:09:26,694 --> 00:09:29,385
+Then judge the result by evidence.
+
+138
+00:09:29,385 --> 00:09:31,185
+Not charm.
+
+139
+00:09:31,185 --> 00:09:32,985
+Not vibes.
+
+140
+00:09:32,985 --> 00:09:33,760
+Evidence.
+
+141
+00:09:33,760 --> 00:09:33,760
+That is the practical move.

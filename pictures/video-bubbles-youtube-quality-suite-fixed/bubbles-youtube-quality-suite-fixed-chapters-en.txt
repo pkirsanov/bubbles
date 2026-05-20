@@ -1,0 +1,21 @@
+00:00 - Stop Accepting AI Vibes As Delivery
+00:38 - Bubbles Is The Work System Around Copilot
+01:17 - Strict Validation Is The Main Character
+02:08 - A Checked Box Without Output Is Just Confetti
+02:49 - Chaos, Simplify, Harden, Gaps, And Security
+03:33 - Chaos Is Not Random For Fun
+04:15 - Harden Asks If Done Means Done
+04:56 - Simplify Cleans Up After The Sprint Brain
+05:36 - Security Is Not A Sticker At The End
+06:19 - Code Review, System Review, And Spec Review
+07:09 - Docs And Specs Must Stay Alive
+07:50 - Retro Finds The Hotspots Nobody Wants To Name
+08:33 - Ask Super When You Do Not Know The Move
+09:18 - Workflow Handles The Normal Delivery Loop
+09:59 - Goal, Sprint, And Releases Handle Bigger Work
+10:39 - The UI Calls A Route From A Dream Sequence
+11:21 - The Test Passes By Avoiding The Fire
+12:06 - The Context Window Went For A Walk
+12:47 - One Checkout Bug, Two Futures
+13:34 - Bubbles Lets Agents Take Bigger Swings Safely
+14:13 - Run Bubbles On One Painful Workflow

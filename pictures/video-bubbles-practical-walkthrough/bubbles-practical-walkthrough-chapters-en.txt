@@ -1,0 +1,16 @@
+00:00 - From Blank Repo To Verified Result
+00:36 - Start With A Small Synthetic Repo
+01:16 - Install And Bootstrap Bubbles
+01:53 - Ask Super If You Do Not Know The Route
+02:30 - Run Workflow With The Real User Problem
+03:04 - Spec Captures The Outcome Contract
+03:44 - Design Names The Safe Fix Shape
+04:23 - Plan Slices The Work Into Proveable Scopes
+04:55 - Implementation Changes The Behavior
+05:36 - Run Tests That Can Actually Fail
+06:05 - Report Records Raw Evidence
+06:36 - Validation Gates Push Back
+07:15 - Quality Agents Add Pressure
+07:53 - Docs And Specs Stay In Sync
+08:24 - The Actual Result Is A Verified User Behavior
+08:59 - Use This Pattern On One Real Workflow
