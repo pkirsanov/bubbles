@@ -14,6 +14,19 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v3.10.0 — 2026-05-25
+
+### Added
+
+- **Framework convergence health documentation** — Added `docs/Framework_Convergence_Health.md` as the durable published overview for G082-G093: convergence cap, context compaction discipline, pre-existing deferral blocking, source-aware framework dogfood evidence, orchestrator persistence lint, planning packet linkage, post-certification edit detection, inter-spec dependency enforcement, retro convergence health, planning workflow chain enforcement, strict terminal statuses, and delivery implementation delta enforcement.
+- **Spec implementation alignment documentation** — Added `docs/Spec_Implementation_Alignment.md` to publish the hardened spec/implementation linkage contract: state linkage fields, planning-only classification, post-certification edit handling, dependency revalidation, spec-review default routing to `improve-existing`, G092 observations, and G093 delivery delta classification.
+
+### Changed
+
+- **Bubbles source repo no longer carries persistent `specs/`** — Migrated the temporary `specs/001-framework-convergence-health/` dogfood packet into durable docs and framework assets. The Bubbles source repository now treats a repo-local `specs/` tree as invalid; source dogfood evidence comes from framework validation, hermetic selftests, release manifest checks, and downstream/fixture specs.
+- **G085 source-aware dogfood evidence** — `framework-dogfood-guard.sh` now distinguishes the Bubbles source repository from downstream/fixture repositories. In source, the guard fails if `specs/` exists and verifies validation/release evidence surfaces. In downstream/fixture repos, it still accepts at least one numbered `specs/[0-9]*-*/state.json` with `status: done`.
+- **G092/G093 close the certification loopholes** — New terminal certification writes are restricted to `done` or `blocked`, with low/medium non-blocking notes stored as observations. Done-ceiling delivery modes now need implementation/runtime/config/contract/test/docs delta outside `specs/` and `.specify/` before certification.
+
 ### Fixed
 
 - **`implementation-reality-scan.sh` Scan 1D Go connector helper false positives** — Scan 1D now treats idiomatic Go helper `return nil` lines as non-fake when a sibling non-test file in the same Go package has real upstream/client-call evidence. Other suspicious integration patterns still fire, and a no-op connector package with no external call path remains blocking. Added hermetic selftest coverage for the honest-helper pass case and the adversarial no-op connector failure case.
