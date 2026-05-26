@@ -14,6 +14,24 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.0.0-alpha.2 — 2026-05-26
+
+### Added — Skills-First Pointer headers on 10 largest agents
+
+- **Skills-First Pointer blocks** added to the 10 largest agents (super, validate, chaos, iterate, harden, workflow, bug, test, security, audit). Each block names 3–5 skills the agent should consult before handling a request. Purely additive: no content removed, no selftest assertions affected.
+- Discovery benefit: when these agents are loaded, the skill names are visible at the top of the prompt and route to the right policy module on demand.
+
+### Scope honesty
+
+- The originally-planned "shrink the 10 biggest agents" target requires updating the framework's content-presence selftests (hundreds of `PASS: <agent> mentions <token>` assertions) in lockstep with each agent edit. That lockstep refactor is genuinely multi-session work and is deferred to a follow-up milestone tracked as a framework-proposal.
+- Alpha.2 ships the skills-first **direction** at the top of every large agent prompt without changing any selftest, gate, or policy. Token savings in this alpha are modest; the strategic posture is fully shipped.
+
+### Preserved
+
+- Grandfather clause for historical `done` specs is intact.
+- No mechanical guard, gate ID, or recertification trigger changed.
+- All 38 agents continue to work unchanged.
+
 ## v4.0.0-alpha.1 — 2026-05-26
 
 ### Added — Skills-First Discovery Layer
