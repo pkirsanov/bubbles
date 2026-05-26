@@ -14,6 +14,65 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.1.0 — 2026-05-27
+
+### Added — `delivered_pending_activation` ceiling + scope-kind taxonomy + lockdown contract
+
+This release introduces the schema primitives needed to honestly ship work that
+depends on external actors (operator commit, third-party approval, scheduled
+cutover, regulator review) without forcing agents to either (a) fabricate
+live-runtime evidence that does not yet exist, or (b) leave the status stuck at
+`in_progress` indefinitely.
+
+This commit ships the **schema additions only**. Subsequent v4.1.x commits will
+land the matching gate logic changes (G073 deliverable manifest, G008A scope-kind
+opt-out, G040 lockdown-FR allowlist, G022 phaseStubs, G009 evidence-by-reference,
+G090 execution-runtime skip, G056 schema loosening, G041 annotation tolerance) so
+gates evaluate these new ceilings/kinds/lockdowns correctly. Until those guard
+patches land, the new modes/ceiling are inert (no existing spec uses them) and
+no existing behavior changes.
+
+**New top-level workflow registry entries** (`bubbles/workflows.yaml`):
+
+- **`scopeKinds:` taxonomy** — declares the 6 recognised scope kinds
+  (`runtime-behavior` (default), `contract-only`, `deploy-pointer`, `ci-config`,
+  `docs-only`, `bootstrap`) with explicit `requiresLiveE2E` /
+  `requiresIntegrationWiring` / per-kind evidence flags. Scopes opt in via an
+  optional `Scope-Kind:` header in `scopes.md` / `scopes/<NN>/scope.md`. Default
+  remains `runtime-behavior` so existing scopes that omit the header behave
+  exactly as in v4.0.x.
+- **`lockdownContract:` registry** — declares the lockdown-tag vocabulary that
+  G040 will allow-list when paired with a cited FR / `condition:` / `unblocker:`
+  / `expectedActivation:` field. Patterns include
+  `[lockdown-deferred-FR-NNN]`, `[awaiting-operator-commit]`,
+  `[awaiting-third-party-approval]`, `[awaiting-cutover-window]`,
+  `[awaiting-regulator-review]`. Untagged "deferred", "future work",
+  "placeholder", "stub for now", "TODO later", "punt" continue to fail G040.
+
+**New workflow modes targeting `delivered_pending_activation` ceiling**:
+
+- **`adapter-readiness-to-packet`** — deploy-adapter readiness mode. Ships
+  `apply.sh` / `verify.sh` / `rollback.sh` / manifest schema plus an operator
+  activation packet. Requires contract-level tests, `shellcheck`, `yamllint`,
+  manifest schema validation, and dry-run apply. Honestly defers live runtime
+  E2E until the operator commits per-host params. Default scope kind:
+  `deploy-pointer`.
+- **`dark-launch-shipped`** — feature-flag dark-launch mode. Ships implementation
+  behind off-by-default flag. Requires full implement/test/audit plus sealed-env
+  E2E with flag forced on. Honestly defers production E2E until rollout.
+  Default scope kind: `runtime-behavior`.
+- **`migration-shipped-pending-cutover`** — forward/backward-compatible migration
+  mode. Ships migration code (DB / API / protocol). Requires backward-compat,
+  forward-compat, and dual-read-or-dual-write contract tests plus rollback plan.
+  Honestly defers live cutover E2E until scheduled window. Default scope kind:
+  `contract-only`.
+
+**Compatibility**: Pure additive. No existing mode, gate, or guard is modified
+in this commit. The new ceiling string `delivered_pending_activation` is
+recognised by `resolve_workflow_status_ceiling` (which reads the value directly
+from `workflows.yaml`) and any existing guard logic that compares `status ==
+ceiling` continues to work.
+
 ## v4.0.1 — 2026-05-26
 
 ### Fixed — Guard resilience for downstream + cross-layout invocation
