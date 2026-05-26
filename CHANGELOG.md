@@ -14,6 +14,39 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.0.0-alpha.1 — 2026-05-26
+
+### Added — Skills-First Discovery Layer
+
+- **9 new discovery skills** under `skills/bubbles-*/`:
+  - `bubbles-skills-first-discovery` — top-level "which skill applies" map
+  - `bubbles-anti-fabrication` — pre-DoD-checkbox honesty enforcement
+  - `bubbles-evidence-capture` — ≥10-line raw-output evidence shape
+  - `bubbles-dod-validation` — Tier 1/Tier 2 pre-completion audit
+  - `bubbles-status-transition` — `state.json` transitions + grandfather clause
+  - `bubbles-result-envelope` — end-of-run packet shape and finding accounting
+  - `bubbles-artifact-ownership-routing` — own-or-route, framework-managed boundary
+  - `bubbles-quality-gates-catalog` — gate ID lookup, canonical test taxonomy
+  - `bubbles-scope-workflow-runtime` — scope layout, Test Plan ↔ DoD parity
+- **`agent-common.md` Skills-First Discovery Layer section** — additive index linking the new skills to their authoritative governance modules
+- **README skills row** updated to highlight the v4.0 skills-first layer
+- **CHEATSHEET TPB Vocabulary** — added `skills-first discovery`, `policy skill`, and `grandfather clause` entries
+- **`its-not-rocket-appliances.html`** — same three TPB cards added to the visual cheatsheet
+- **`docs/recipes/framework-ops.md`** — new "Skills-First Discovery (v4.0+)" section pointing to every shipped policy skill
+- **Capability ledger entry `skills-first-discovery-layer`** registered as `shipped` for v4.0.0
+
+### Preserved (NON-NEGOTIABLE)
+
+- **Grandfather clause for historical `done` specs is intact.** `done-spec-audit.sh --profile advisory` remains the default; the pre-push hook continues to use `--profile changed`; historical specs are not re-evaluated under new policy unless their `state.json` is touched in the same commit. The skills-first refactor is purely additive — it does not introduce new mechanical guards, gate IDs, or recertification triggers.
+- **All existing governance modules under `agents/bubbles_shared/*.md` stay authoritative.** Skills are discovery shims, not policy rewrites. The mechanical guards in `bubbles/scripts/` are unchanged.
+- **All existing agents continue to work unchanged.** No agent prompt content was removed or restructured in this alpha. Agent shrinking ships incrementally in v4.0.0-alpha.2 with paired selftest updates per agent.
+
+### Roadmap
+
+- **v4.0.0-alpha.2** — shrink the 10 largest agents (`super`, `validate`, `chaos`, `iterate`, `harden`, `bug`, `workflow`, `test`, `audit`, `security`) by replacing repeated policy prose with skill pointers. Each agent edit ships with paired updates to its content-presence selftests.
+- **v4.0.0-alpha.3** — move workflow internals (execution loops, phase engine, mode resolution, fix cycle) and templates (feature, scope, bug) from `agents/bubbles_shared/` into skills, leaving thin orchestration in agents.
+- **v4.0.0 final** — full validation, regenerated capability ledger and release manifest, downstream rollout.
+
 ## v3.11.1 — 2026-05-26
 
 ### Fixed

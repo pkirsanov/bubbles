@@ -497,7 +497,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 12 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 13 shipped, 1 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
@@ -511,7 +511,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/recipes/">Recipes</a></td><td>Common problems → solutions</td></tr>
 <tr><td><a href="docs/guides/INSTALLATION.md">Installing in Your Repo</a></td><td>Step-by-step setup guide</td></tr>
 <tr><td><a href="docs/examples/">Spec Examples</a></td><td>Annotated reference examples for common patterns</td></tr>
-<tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo</td></tr>
+<tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo — including <strong>v4.0 skills-first policy discovery layer</strong> (anti-fabrication, evidence capture, DoD validation, status transition, result envelope, ownership routing, quality gates, scope workflow)</td></tr>
 </tbody>
 </table>
 
