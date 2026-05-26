@@ -140,6 +140,29 @@ SCENES: tuple[Scene, ...] = (
         face="dispatcher",
     ),
     Scene(
+        eyebrow="CAPABILITY FIRST",
+        title="Build The Foundation, Then Plug In Providers",
+        subtitle="One shed, many tools. Don't weld the wrench to the shed.",
+        bullets=(
+            "Analyst models the domain capability.",
+            "Design splits foundation from concrete implementations.",
+            "Plan puts foundation scopes before provider overlays.",
+        ),
+        board_lines=(
+            "G094:",
+            "capability foundation",
+            "concrete implementations",
+            "variation axes",
+            "foundation:true first",
+        ),
+        narration=(
+            "Capability first. Provider second. Bubbles designs the shed before parking tools in it: one notification foundation, then ntfy, email, webhook, or whatever else plugs in later."
+        ),
+        bg="0x1f2430",
+        accent="0xf2c14e",
+        face="strict",
+    ),
+    Scene(
         eyebrow="GATES",
         title="The Gates Are Tiny But Annoyingly Correct",
         subtitle="A checkbox without output is just decorative confetti.",

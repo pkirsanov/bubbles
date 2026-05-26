@@ -15,7 +15,7 @@ from pathlib import Path
 WIDTH = 1920
 HEIGHT = 1080
 FPS = 30
-DURATION_SECONDS = 36
+DURATION_SECONDS = 42
 FONT = "DejaVu Sans"
 MONO_FONT = "DejaVu Sans Mono"
 AUDIO_SAMPLE_RATE = 48000
@@ -93,6 +93,17 @@ SLIDES: tuple[Slide, ...] = (
     Slide(
         30,
         36,
+        "CAPABILITY",
+        "Build The Shed First",
+        "Capability first. Provider second. That's the way she goes, boys.",
+        ("foundation", "ntfy overlay", "email overlay", "no welded wrench"),
+        "0x1f2430",
+        "0xf2c14e",
+        "strict",
+    ),
+    Slide(
+        36,
+        42,
         "PAYOFF",
         "Less Chaos, More Receipts",
         "Developers, managers, and leadership all get something inspectable.",

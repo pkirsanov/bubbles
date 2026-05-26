@@ -14,6 +14,14 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v3.11.0 — 2026-05-25
+
+### Added
+
+- **Capability-First Design doctrine** — Added `agents/bubbles_shared/capability-foundation.md`, validation IDs AN5/DE4/UX9/P4, and the `bubbles-capability-foundation-design` skill. Planning agents now model reusable capability foundations before concrete providers/adapters/variants when proportionality applies.
+- **Gate G094 (`capability_foundation_gate`)** — New guard `bubbles/scripts/capability-foundation-guard.sh` plus hermetic selftest and persistent regression. It detects adapter/provider/strategy/plugin/channel/driver/connector/variant signals or multiple concrete implementations, enforces required capability sections, and grandfathers older specs via `state.json.createdAt`.
+- **Capability design examples and recipes** — Added `docs/examples/capability-foundation.example.md` and `docs/recipes/design-a-capability.md`, then cross-linked the doctrine through guides, recipes, cheatsheets, and visual/TPB vocabulary surfaces.
+
 ## v3.10.0 — 2026-05-25
 
 ### Added

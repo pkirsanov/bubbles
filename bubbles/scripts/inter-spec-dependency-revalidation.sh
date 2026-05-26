@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Temp-file cleanup: register every mktemp via _btmp so EXIT/INT/TERM removes them.
+_BTMPS=()
+trap '[[ ${#_BTMPS[@]} -gt 0 ]] && rm -rf "${_BTMPS[@]}" 2>/dev/null || true' EXIT INT TERM
+_btmp() { local t; t="$(mktemp "$@")"; _BTMPS+=("$t"); printf '%s' "$t"; }
+
 # inter-spec-dependency-revalidation.sh
 #
 # Helper for Gate G089. When a dependency spec is demoted or otherwise not
@@ -184,7 +189,7 @@ validate_state_shape() {
 mark_revalidation() {
   local state_file="$1"
   local tmp_file
-  tmp_file="$(mktemp)"
+  tmp_file="$(_btmp)"
   jq '.requiresRevalidation = true' "$state_file" > "$tmp_file"
   mv "$tmp_file" "$state_file"
 }

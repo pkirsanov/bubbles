@@ -152,6 +152,29 @@ SCENES: tuple[Scene, ...] = (
         voice_rate="-2%",
     ),
     Scene(
+        eyebrow="CAPABILITY DESIGN",
+        title="Foundation Before Overlay",
+        subtitle="Do not let the first provider secretly become the architecture.",
+        bullets=(
+            "Analyst defines the domain capability model before provider details.",
+            "Design writes the foundation contract, concrete implementations, and variation axes.",
+            "Plan orders foundation scopes before ntfy, email, connector, or variant overlays.",
+        ),
+        board_lines=(
+            "G094:",
+            "capability first",
+            "provider second",
+            "foundation:true",
+            "then overlays",
+        ),
+        narration=(
+            "Capability-first design stops the first implementation from becoming accidental architecture. If notifications start with ntfy, Bubbles still asks for the notification capability: the domain primitives, the dispatch contract, the variation axes, and the foundation scope before provider overlays. Build the trailer, then park the cars in it — not the other way around, decent."
+        ),
+        bg="0x1f2430",
+        accent="0xf2c14e",
+        voice_rate="-2%",
+    ),
+    Scene(
         eyebrow="PRODUCT LEADERS",
         title="Ship Features That Survive Real Users",
         subtitle="Stay current. Catch drift. Cut the slop tax.",

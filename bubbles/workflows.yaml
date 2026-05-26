@@ -287,6 +287,10 @@ gates:
     name: delivery_implementation_delta_gate
     description: >-
       BLOCKING gate. Done-ceiling delivery modes MUST prove real implementation/runtime/config/contract/test/docs delta outside planning bookkeeping paths (`specs/**` and `.specify/**`) before certification can reach `done`. G053 remains the Code Diff Evidence shape check; G093 consumes git diff paths and/or G053-compatible report Code Diff Evidence, classifies changed paths as planning-only/source/runtime/config/contract/test/docs/other, and blocks spec-only delivery runs with a blocked RESULT-ENVELOPE that includes changed-path classification plus next-owner routing to implementation/test/docs or a below-done planning-only downgrade. Planning-only and docs-only modes with status ceilings below `done` are exempt from G093; `specs_hardened` planning packets remain governed by G087 linkage. Enforced mechanically by `bubbles/scripts/delivery-implementation-delta-guard.sh`, which exits 0 (clean or lower-ceiling exemption), 1 (G093 delivery delta violation), or 2 (runtime error / malformed input / bad refs). State-transition-guard.sh invokes this guard as Check 29B after G087 and before final promotion. Hermetic selftest: `bubbles/scripts/delivery-implementation-delta-guard-selftest.sh`. Persistent regression: `tests/regression/test_17_delivery_implementation_delta.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
+  G094:
+    name: capability_foundation_gate
+    description: >-
+      BLOCKING gate. Capability-first design applies when proportionality triggers are present: a brand-new capability with no existing foundation, the second or later concrete implementation/provider/component/variant, adapter/provider/strategy/plugin/channel/driver/connector/variant language, or shared UI/data/contract surface across two or more screens/features/services. Detection uses keyword scans across planning artifacts plus `## Concrete Implementations` entry counts. When applicable, spec.md MUST contain `## Domain Capability Model` or a non-empty `### Single-Capability Justification`; design.md MUST contain `## Capability Foundation`, `## Concrete Implementations`, and `### Variation Axes` with at least two axes, or a non-empty `### Single-Implementation Justification`; multi-screen/reusable UI work MUST include `### UI Primitives` or a non-empty `### Single-Screen Justification`; and split designs MUST plan a `foundation:true` scope that overlay/provider scopes reference in `Depends On`. Specs with `state.json.createdAt` earlier than 2026-05-25 are grandfathered until touched or recertified. Enforced mechanically by `bubbles/scripts/capability-foundation-guard.sh`, which exits 0 (clean/not applicable/grandfathered), 1 (G094 findings), or 2 (malformed input). State-transition-guard.sh invokes this guard as Check 34. Hermetic selftest: `bubbles/scripts/capability-foundation-guard-selftest.sh`. Persistent regression: `tests/regression/test_18_capability_foundation_gate.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
 
 # Outcome contract (applies to all workflow modes that allow `done` as a
 # terminal status — i.e., every mode whose `statusCeiling` is `done`).
@@ -352,13 +356,14 @@ modeTemplates:
       requireImplementationRealityScan: true
       requireNoDefaultsNoFallbacks: true
       requireIntegrationCompleteness: true
+      requireCapabilityFoundationWhenProportional: true
 
   # Common gate baseline shared by every refactored delivery mode.
   # Excludes G002 (scope_definition_gate — opt-in per mode) and G060
   # (scenario_tdd_gate — bugfix-only). After resolver dedup+sort the gate
   # list is canonical alphabetical order regardless of merge order.
   delivery-gate-baseline:
-    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G094 ]
 
   # Diagnostic-discovered work routes through the canonical planning agents
   # (analyst → ux → design → plan) and finishes through the standard

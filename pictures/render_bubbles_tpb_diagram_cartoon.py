@@ -223,6 +223,20 @@ def add_stamp(lines: list[str], start: float, end: float, x1: int, y1: int, x2: 
     lines.append(dialogue(66, start, end, move_text(label, x1 + 68, y1 + 13, x2 + 68, y2 + 13, 28, PAPER, "00", 5, True, MONO_FONT, -14)))
 
 
+def add_capability_shed(lines: list[str], start: float, end: float) -> None:
+    # Capability-first panel: build the shed/foundation, then hang concrete tools on it.
+    lines.append(dialogue(48, start, end, rect_obj(735, 330, 430, 260, "0xfef5e7", "00", 8)))
+    lines.append(dialogue(49, start, end, shape_path(tri_path(480, 84), pos_tag(710, 258), ORANGE, "00")))
+    lines.append(dialogue(50, start, end, text_obj("CAPABILITY SHED", 950, 286, 30, PAPER, "00", 5, True)))
+    lines.append(dialogue(50, start, end, rect_obj(775, 392, 350, 42, BLUE, "18", 4)))
+    lines.append(dialogue(51, start, end, text_obj("foundation contract", 950, 400, 24, INK, "00", 5, True, MONO_FONT)))
+    for index, (label, color) in enumerate((("ntfy", RED), ("email", GREEN), ("webhook", PURPLE))):
+        xpos = 805 + index * 112
+        lines.append(dialogue(51, start + index * 0.2, end, rect_obj(xpos, 470, 82, 54, color, "00", 4)))
+        lines.append(dialogue(52, start + index * 0.2, end, text_obj(label, xpos + 41, 486, 21, PAPER, "00", 5, True, MONO_FONT)))
+    lines.append(dialogue(53, start + 0.5, end, text_obj("Build the trailer, then park the cars in it — not the other way around, decent.", 950, 554, 22, INK, "00", 5, True)))
+
+
 def add_speech(lines: list[str], start: float, end: float, xpos: int, ypos: int, text: str, color: str, layer: int = 80) -> None:
     lines.append(dialogue(layer, start, end, f"{{\\an5{pos_tag(xpos, ypos)}\\fn{FONT}\\fs32\\b1\\fad(120,160)\\bord4\\3c&H{hex_to_ass_bgr(color)}&\\shad0{color_tag(PAPER)}}}{clean(text)}"))
 
@@ -263,6 +277,7 @@ def add_action_sequence(lines: list[str]) -> None:
     add_artifact_card(lines, 35.0, 41.5, 1410, 590, 1630, 590, "state", BLUE, 61)
     add_artifact_card(lines, 36.0, 42.4, 1420, 665, 1640, 655, "evidence", GREEN, 62)
     add_speech(lines, 37.2, 42.5, 1600, 515, "Now status has receipts.", BLUE)
+    add_capability_shed(lines, 34.4, 42.8)
 
     # Final repaired truck and team lineup.
     add_truck(lines, 42.0, 54.0, 180, 765, 300, 765, "CERTIFIED", GREEN, False)
@@ -288,7 +303,8 @@ def add_scene_captions(lines: list[str]) -> None:
         (12.0, 18.2, "The dispatcher routes the job to the right specialist owners."),
         (18.2, 27.6, "Artifacts travel with the work: specs, scopes, tests, reports."),
         (28.0, 36.0, "Gates inspect proof before anybody claims done."),
-        (36.0, 44.2, "Managers get status with receipts, not folklore."),
+        (36.0, 38.8, "Managers get status with receipts, not folklore."),
+        (38.8, 43.2, "Capability-first design builds the foundation before providers and overlays."),
         (44.3, 53.5, "That is Bubbles: moving work through a visible, validated path."),
     )
     for start, end, caption in captions:

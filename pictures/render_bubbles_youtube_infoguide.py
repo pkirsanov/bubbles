@@ -167,6 +167,29 @@ SCENES: tuple[Scene, ...] = (
         voice_rate="-5%",
     ),
     Scene(
+        eyebrow="CAPABILITY VS CONCRETE",
+        title="Design The Capability. Plug In The Provider.",
+        subtitle="One shed, many tools. Do not weld the wrench to the shed.",
+        bullets=(
+            "Capability foundation: provider-neutral domain primitives and contracts.",
+            "Concrete implementation: ntfy, email, webhook, connector, or UI variant.",
+            "Variation axes explain how implementations differ without rewriting the foundation.",
+        ),
+        board_lines=(
+            "Capability first",
+            "Provider second",
+            "foundation:true",
+            "overlays depend on it",
+            "G094 checks the plan",
+        ),
+        narration=(
+            "Capability versus concrete is the new planning move. A capability foundation is the shared thing: domain primitives, contracts, lifecycle, extension points. A concrete implementation is ntfy, email, webhook, a connector, a variant. Bubbles wants the foundation first, then the plugs. One shed, many tools. Do not weld the wrench to the shed."
+        ),
+        bg="0x1f2430",
+        accent="0xf2c14e",
+        voice_rate="-5%",
+    ),
+    Scene(
         eyebrow="HOW IT MOVES",
         title="Intent Becomes A Work Trail",
         subtitle="Plain English goes in. Artifacts, scopes, evidence, and status come out.",

@@ -3107,6 +3107,32 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 34: Capability Foundation Enforcement (Gate G094)
+# =============================================================================
+# Mechanical wrapper around bubbles/scripts/capability-foundation-guard.sh.
+# New specs that trigger capability-first proportionality must model the
+# domain capability, technical foundation, concrete implementations,
+# variation axes, UI primitives where applicable, and foundation-before-
+# overlay scope ordering. Older specs are grandfathered by state.json
+# createdAt so framework upgrades do not retroactively block closed work.
+echo "--- Check 34: Capability Foundation Enforcement (Gate G094) ---"
+capability_foundation_guard="$SCRIPT_DIR/capability-foundation-guard.sh"
+if [[ -x "$capability_foundation_guard" ]]; then
+  if run_guard_in_feature_repo bash "$capability_foundation_guard" "$feature_dir" --quiet > /dev/null 2>&1; then
+    pass "Capability foundation requirements are satisfied, not applicable, or grandfathered (Gate G094)"
+  else
+    fail "Capability foundation guard failed — Gate G094. Run 'bash $capability_foundation_guard $feature_dir' for full diagnostic"
+    info "Proportionality triggers: new capability, N>=2 implementation/provider/component/variant, adapter/provider/strategy/plugin/channel/driver/connector/variant language, or shared surfaces"
+    info "Required sections: spec.md Domain Capability Model or Single-Capability Justification; design.md Capability Foundation / Concrete Implementations / Variation Axes or Single-Implementation Justification"
+    info "When multiple screens share UI behavior, spec.md must include UI Primitives or Single-Screen Justification"
+    info "When design splits foundation and concrete implementations, scopes must tag foundation:true and overlay scopes must Depends On the foundation"
+  fi
+else
+  info "capability-foundation-guard.sh not present at $capability_foundation_guard; skipping (advisory)"
+fi
+echo ""
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"

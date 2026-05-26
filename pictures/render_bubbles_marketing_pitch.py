@@ -137,6 +137,27 @@ SCENES: tuple[Scene, ...] = (
         voice_rate="-5%",
     ),
     Scene(
+        eyebrow="NEW VALUE PROP",
+        title="Capability First, Provider Second",
+        subtitle="Reusable foundations keep the second implementation from becoming a rewrite.",
+        bullets=(
+            "Model the capability before ntfy, email, webhook, or any other provider.",
+            "Name variation axes so future implementations know where to plug in.",
+            "Gate G094 blocks provider-first designs when proportionality applies.",
+        ),
+        command_lines=(
+            "Domain Capability Model",
+            "Capability Foundation -> Concrete Implementations",
+            "foundation:true scope before provider overlays",
+        ),
+        narration=(
+            "New value prop: capability first, provider second. If a feature has providers, adapters, connectors, channels, variants, or shared UI surfaces, Bubbles makes the plan define the reusable foundation before the first concrete implementation hardens into a trap."
+        ),
+        bg="0x1f2430",
+        accent="0xf2c14e",
+        voice_rate="-5%",
+    ),
+    Scene(
         eyebrow="WHO IT HELPS",
         title="For Developers Who Like Speed And Receipts",
         subtitle="The target user is not allergic to AI. They are allergic to unverified work.",

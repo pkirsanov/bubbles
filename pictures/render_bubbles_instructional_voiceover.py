@@ -103,6 +103,25 @@ SCENES = [
         accent="0x3fb950",
     ),
     Scene(
+        eyebrow="CAPABILITY-FIRST DESIGN",
+        title="Design The Capability Before The Provider",
+        subtitle="Foundation first, then overlays.",
+        bullets=(
+            "Use this when multiple providers, adapters, connectors, variants, or screens share a surface.",
+            "Analyst writes the Domain Capability Model; design writes the foundation split.",
+            "Plan tags the foundation scope and makes overlays depend on it.",
+        ),
+        command_lines=(
+            "/bubbles.workflow design capability notifications",
+            "G094 checks proportionality, sections, and foundation ordering",
+        ),
+        narration=(
+            "Capability-first design is the rule for reusable surfaces. Design the notification capability before the ntfy provider. Design the connector foundation before the second connector. Build the trailer, then park the cars in it. Gate G094 enforces that only when proportionality applies."
+        ),
+        bg="0x1f2430",
+        accent="0xf2c14e",
+    ),
+    Scene(
         eyebrow="INSTALL",
         title="Install In A Downstream Repo",
         subtitle="Bootstrap gives the target project a Bubbles-ready control surface.",

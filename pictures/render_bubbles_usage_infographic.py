@@ -11,7 +11,7 @@ from pathlib import Path
 WIDTH = 1920
 HEIGHT = 1080
 FPS = 30
-DURATION_SECONDS = 32
+DURATION_SECONDS = 36
 FONT_FAMILY = "DejaVu Sans"
 
 SLIDES = [
@@ -102,6 +102,20 @@ SLIDES = [
     {
         "start": 24,
         "end": 28,
+        "bg": "0x1f2430",
+        "accent": "0xf2c14e",
+        "kicker": "CAPABILITY-FIRST",
+        "title": "Build The Trailer Before The Cars",
+        "subtitle": "Reusable foundation first. Providers, adapters, and variants second.",
+        "bullets": [
+            "Domain primitives and contracts come before providers.",
+            "Variation axes show where implementations differ.",
+            "Foundation scopes run before overlays: foundation:true.",
+        ],
+    },
+    {
+        "start": 28,
+        "end": 32,
         "bg": "0x102a2a",
         "accent": "0x39d0c8",
         "kicker": "BENEFITS",
@@ -114,8 +128,8 @@ SLIDES = [
         ],
     },
     {
-        "start": 28,
-        "end": 32,
+        "start": 32,
+        "end": 36,
         "bg": "0x151515",
         "accent": "0xffffff",
         "kicker": "TRY THIS",
@@ -233,7 +247,7 @@ def build_ass() -> str:
             lines.append(dialogue(2, start, end, text("o", x, y, size, accent, "9D", 5, True)))
 
         lines.append(dialogue(3, start, end, text(slide["kicker"], 135, 99, 26, "0x111827", "00", 7, True)))
-        lines.append(dialogue(3, start, end, text(f"{index + 1:02d}/08", 1615, 108, 36, accent, "00", 7, True)))
+        lines.append(dialogue(3, start, end, text(f"{index + 1:02d}/{len(SLIDES):02d}", 1615, 108, 36, accent, "00", 7, True)))
         lines.append(dialogue(3, start, end, text(slide["title"], 116, 260, 76, "0xffffff", "00", 7, True)))
         lines.append(dialogue(3, start, end, text(slide["subtitle"], 120, 365, 38, "0xffffff", "22", 7)))
 
