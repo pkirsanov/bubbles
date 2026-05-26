@@ -14,6 +14,28 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.0.1 — 2026-05-26
+
+### Fixed — Guard resilience for downstream + cross-layout invocation
+
+Promoted downstream-tested patches into the framework's two most-invoked guards. These started as local QF patches and were proven in production before promotion; they extend the v3.11.1 downstream-installed guard layout resolution work without regressing any existing fixture.
+
+- **`bubbles/scripts/artifact-lint.sh`**
+  - `resolve_workflow_registry_file` falls back through 4 candidate paths (`$artifact_repo_root/bubbles/workflows.yaml`, `$artifact_repo_root/.github/bubbles/workflows.yaml`, `$script_repo_root/bubbles/workflows.yaml`, `$script_repo_root/.github/bubbles/workflows.yaml`) so `workflows.yaml` is found whether the lint runs from the source repo, an installed `.github/bubbles/` layout, or with a feature dir outside the script's repo root.
+  - `resolve_workflow_status_ceiling_from_registry` adds a direct-YAML `statusCeiling` parser as fallback when `mode-resolver.sh` returns empty.
+  - Passes `BUBBLES_WORKFLOWS_FILE` through to `mode-resolver.sh` so the resolver consults the resolved registry path explicitly.
+
+- **`bubbles/scripts/state-transition-guard.sh`**
+  - Same `resolve_workflow_registry_file` + direct-YAML fallback as artifact-lint.
+  - Adds `is_test_fixture_dir` + `fixture_gate_skip` helpers so certain gates emit `INFO Fixture target under tests/fixtures; <gate> is not evaluated for artifact-state fixture acceptance` instead of false-positive blocking when the target is `tests/fixtures/*`.
+
+### Preserved
+
+- Grandfather clause for historical `done` specs is intact.
+- All existing `state-transition-guard-selftest.sh` and `artifact-lint.sh` fixtures still pass with their original verdicts (no fixture relaxation, no gate weakening).
+- No new gate ID introduced.
+- No CHANGELOG promotion for shipped capabilities; this is a patch-level bug fix.
+
 ## v4.0.0 — 2026-05-26
 
 ### v4.0.0 — Skills-First Architecture (consolidated release)
