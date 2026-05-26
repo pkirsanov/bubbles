@@ -14,6 +14,60 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.0.0 — 2026-05-26
+
+### v4.0.0 — Skills-First Architecture (consolidated release)
+
+This is the **v4.0.0 final** release. It consolidates the work shipped across alpha.1, alpha.2, and alpha.3 into the stable v4.0.0 line. No new content beyond the three alphas; the version bump records the strategic transition from agent-centric to skills-first discovery.
+
+#### Skills-First Discovery Layer (14 skills)
+
+The new `.github/skills/bubbles-*` skills are thin discovery shims that auto-load by description match in Copilot, Claude, Cursor, and other skill-aware tools. They route agents to the authoritative governance modules in `agents/bubbles_shared/*.md` without duplicating policy text. The 14 skills:
+
+**Policy skills (alpha.1)**
+- `bubbles-skills-first-discovery` — top-level situation-to-skill map
+- `bubbles-anti-fabrication` — pre-DoD-checkbox honesty enforcement
+- `bubbles-evidence-capture` — ≥10-line raw-output evidence shape
+- `bubbles-dod-validation` — Tier 1/Tier 2 pre-completion audit
+- `bubbles-status-transition` — `state.json` transitions + grandfather clause
+- `bubbles-result-envelope` — end-of-run packet shape + finding accounting
+- `bubbles-artifact-ownership-routing` — own-or-route + framework-managed boundary
+- `bubbles-quality-gates-catalog` — gate ID lookup + canonical test taxonomy
+- `bubbles-scope-workflow-runtime` — scope layout, Test Plan ↔ DoD parity
+
+**Workflow + template skills (alpha.3)**
+- `bubbles-workflow-execution-loops` — per-round synchronous dispatch-and-wait
+- `bubbles-workflow-mode-resolution` — natural-language intent routing + template inheritance
+- `bubbles-fix-cycle-protocol` — finding-set closure + cherry-pick prevention
+- `bubbles-feature-template` — canonical feature artifact set + v3 control-plane fields
+- `bubbles-bug-template` — 6-artifact bug shape + Gate 0 reproduction + adversarial regression
+
+#### Agent-visible direction shift (alpha.2)
+
+The 10 largest agents (super, validate, chaos, iterate, harden, workflow, bug, test, security, audit) now open with a Skills-First Pointer block naming the 3–5 skills the agent should consult before handling a request. No content was removed; no content-presence selftest was touched.
+
+#### Documentation surface
+
+- `README.md` skills row updated to highlight the 14-skill layer
+- `agents/bubbles_shared/agent-common.md` gained a Skills-First Discovery Layer section
+- `docs/CHEATSHEET.md` TPB Vocabulary gained `skills-first discovery`, `policy skill`, `grandfather clause` entries
+- `docs/its-not-rocket-appliances.html` gained the matching three TPB cards
+- `docs/recipes/framework-ops.md` gained a Skills-First Discovery section
+- `bubbles/capability-ledger.yaml` gained the `skills-first-discovery-layer` shipped capability (released v4.0.0)
+- All generated docs (competitive-capabilities, framework-stats, release-manifest) regenerated for v4.0.0
+
+#### Preserved across the v4.0 release (NON-NEGOTIABLE)
+
+- **Grandfather clause for historical `done` specs is intact.** `done-spec-audit.sh --profile advisory` remains the default; the pre-push hook continues to use `--profile changed`; historical specs are not re-evaluated under new policy unless their `state.json` is touched in the same commit. The skills-first refactor is purely additive — it does not introduce new mechanical guards, gate IDs, or recertification triggers.
+- **All existing governance modules under `agents/bubbles_shared/*.md` remain authoritative.** Skills are discovery shims, not policy rewrites.
+- **All mechanical guards in `bubbles/scripts/` are unchanged.** Gate IDs G024–G095+ behave identically. No new gate IDs were introduced in v4.0.0.
+- **All 38 agents continue to work unchanged.** No agent prompt content was removed; alpha.2 added a Skills-First Pointer block at the top of 10 agents purely additively.
+- **Selftest assertions updated only for the new shipped-capability count** (12 → 13). No content-presence selftest was relaxed or removed.
+
+#### Roadmap beyond v4.0.0
+
+The originally-planned "shrink the 10 biggest agents" target requires updating hundreds of content-presence selftests in lockstep with each agent edit. That refactor is a follow-up milestone (tracked as a framework-proposal) and will land as v4.1+ once the lockstep selftest work is staged. The v4.0 line ships the skills-first direction and the full discovery surface; the underlying agent prompts continue at their v3.11 size until lockstep work begins.
+
 ## v4.0.0-alpha.3 — 2026-05-26
 
 ### Added — Workflow internals + templates as discovery skills
