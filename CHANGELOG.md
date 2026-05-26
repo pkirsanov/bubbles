@@ -14,6 +14,13 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v3.11.1 — 2026-05-26
+
+### Fixed
+
+- **Downstream-installed guard layout resolution** — `orchestrator-persistence-lint.sh`, `planning-workflow-chain-guard.sh`, `delivery-implementation-delta-guard.sh`, and `strict-terminal-status-guard.sh` now resolve both Bubbles source layout (`agents/...`, `bubbles/workflows.yaml`) and downstream-installed layout (`.github/agents/...`, `.github/bubbles/workflows.yaml`). Added downstream-layout selftest fixtures for G086, G091, G093, and G092 so installed repos no longer fail solely because guards searched source-only paths.
+- **G092 downstream script text scanning** — `strict-terminal-status-guard.sh` now treats `.github/bubbles/scripts/*` as script/detection context, matching source-layout `bubbles/scripts/*`, so installed guard code that detects legacy `done_with_concerns` is not misclassified as active permission prose.
+
 ## v3.11.0 — 2026-05-25
 
 ### Added
