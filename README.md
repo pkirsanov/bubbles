@@ -511,7 +511,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/recipes/">Recipes</a></td><td>Common problems → solutions</td></tr>
 <tr><td><a href="docs/guides/INSTALLATION.md">Installing in Your Repo</a></td><td>Step-by-step setup guide</td></tr>
 <tr><td><a href="docs/examples/">Spec Examples</a></td><td>Annotated reference examples for common patterns</td></tr>
-<tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo — including <strong>v4.0 skills-first policy discovery layer</strong> (anti-fabrication, evidence capture, DoD validation, status transition, result envelope, ownership routing, quality gates, scope workflow)</td></tr>
+<tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo — including <strong>v4.0 skills-first policy discovery layer</strong> (14 discovery skills: anti-fabrication, evidence capture, DoD validation, status transition, result envelope, ownership routing, quality gates, scope workflow, feature template, bug template, workflow execution loops, mode resolution, fix-cycle protocol, top-level discovery)</td></tr>
 </tbody>
 </table>
 

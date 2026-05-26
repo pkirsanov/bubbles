@@ -14,6 +14,32 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+## v4.0.0-alpha.3 — 2026-05-26
+
+### Added — Workflow internals + templates as discovery skills
+
+5 new discovery skills extending the skills-first layer to workflow internals and artifact templates:
+
+- `bubbles-workflow-execution-loops` — per-round synchronous dispatch-and-wait; batch-then-summarize prohibition; mapped-mode execution
+- `bubbles-workflow-mode-resolution` — natural-language intent routing; template inheritance; statusCeiling/executionOptions/gates lookup
+- `bubbles-fix-cycle-protocol` — finding-set closure; cherry-pick prevention; trigger-owned closure
+- `bubbles-feature-template` — canonical feature artifact set (spec.md, design.md, scopes.md, report.md, uservalidation.md, state.json) + v3 control-plane fields
+- `bubbles-bug-template` — bug folder shape (6 required artifacts); Gate 0 reproduction; adversarial regression
+
+### Wired
+
+- `agent-common.md` Skills-First Discovery Layer expanded with 5 new triggers
+- `bubbles-skills-first-discovery` situation-map updated with the new entries
+- `bubbles/capability-ledger.yaml` skills-first-discovery-layer capability now lists all 14 discovery skills as evidence
+- README skills row updated count
+- Release manifest regenerated to include the 5 new SKILL.md files
+
+### Preserved
+
+- Grandfather clause for historical `done` specs is intact.
+- No mechanical guard, gate ID, or recertification trigger changed.
+- All 38 agents continue to work unchanged.
+
 ## v4.0.0-alpha.2 — 2026-05-26
 
 ### Added — Skills-First Pointer headers on 10 largest agents
