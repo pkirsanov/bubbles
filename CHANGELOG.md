@@ -14,6 +14,26 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+### Changed — Guard tier-1 refinements (G073 deliverableFiles + G090 executionRuntime skip)
+
+- **G073 Source Code Edit Lockout** (`bubbles/scripts/state-transition-guard.sh`):
+  Replaced the v4.0.x blanket "no source edits when ceiling != done" lockout
+  with a `deliverableFiles[]` manifest check. When state.json declares the
+  files a non-`done`-ceiling spec is allowed to ship, those files pass the
+  lockout while every other source edit still fails. Manifest entries may be
+  exact paths, directory prefixes (`<dir>/`), or recursive globs (`<dir>/**`).
+  Backward compatible: specs that omit `deliverableFiles[]` keep v4.0.x
+  behavior (any source edit under restrictive ceiling fails).
+- **G090 Convergence Health** (`bubbles/scripts/retro-convergence-health.sh`):
+  Added `executionRuntime` early-exit. When the work was driven by a
+  non-orchestrated runtime (`manual`, `direct-implement`, `direct`, `adhoc`,
+  `ad-hoc`), the script emits `slo: skipped` with an explicit `skipReason`
+  and exits 0 instead of flagging a non-existent SLO breach. Runtime is
+  resolved from session JSON `executionRuntime`, `runs[].runtime`,
+  `execution.runtime`, or spec-level state.json `executionRuntime`. Sprint /
+  goal-loop / workflow runtimes continue to be evaluated by the full
+  convergence-loop metrics program.
+
 ## v4.1.0 — 2026-05-27
 
 ### Added — `delivered_pending_activation` ceiling + scope-kind taxonomy + lockdown contract

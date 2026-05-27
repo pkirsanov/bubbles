@@ -620,12 +620,61 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
     # Exclude specs/ docs/ .github/ .specify/ paths — those are allowed
     allowed_path_pattern='^(specs/|docs/|\.github/|\.specify/|CHANGELOG|README|LICENSE|VERSION)'
 
+    # ── v4.1.0: Deliverable Files Manifest (Gate G073 refinement) ─────────
+    # When state.json declares `deliverableFiles[]`, those files are
+    # permitted edits even under restrictive ceilings (e.g.
+    # `delivered_pending_activation`, `specs_hardened`, `validated`,
+    # `docs_updated`). This is the honest replacement for the v4.0.x
+    # blanket lockout, which was a false positive for adapter-readiness,
+    # dark-launch, and migration-pending-cutover modes.
+    #
+    # Manifest entries may be:
+    #   - exact file path: "smackerel/home-lab/apply.sh"
+    #   - directory prefix (trailing '/'): "smackerel/home-lab/"
+    #   - recursive glob (trailing '/**'): "smackerel/home-lab/tests/**"
+    deliverable_files_list=""
+    if command -v python3 &>/dev/null; then
+      deliverable_files_list="$(python3 -c "
+import json
+try:
+    d=json.load(open('$state_file'))
+    for f in (d.get('deliverableFiles') or []):
+        if isinstance(f,str) and f.strip():
+            print(f.strip())
+except Exception:
+    pass" 2>/dev/null || true)"
+    fi
+
+    is_deliverable_file() {
+      local f="$1"
+      [[ -z "$deliverable_files_list" ]] && return 1
+      local df
+      while IFS= read -r df; do
+        [[ -z "$df" ]] && continue
+        if [[ "$f" == "$df" ]]; then return 0; fi
+        # Recursive glob: "<prefix>/**"
+        if [[ "$df" == */\*\* && "$f" == "${df%/\*\*}/"* ]]; then return 0; fi
+        # Directory prefix: "<prefix>/"
+        if [[ "$df" == */ && "$f" == "$df"* ]]; then return 0; fi
+      done <<< "$deliverable_files_list"
+      return 1
+    }
+
+    if [[ -n "$deliverable_files_list" ]]; then
+      manifest_count=$(printf '%s\n' "$deliverable_files_list" | grep -c .)
+      info "deliverableFiles[] manifest present ($manifest_count entries) — declared files permitted under ceiling '$ceiling_label'"
+    fi
+
     # Check staged files
     while IFS= read -r changed_file; do
       [[ -z "$changed_file" ]] && continue
       if echo "$changed_file" | grep -qE "$source_code_pattern"; then
         if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
-          fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but staged file modified: $changed_file"
+          if is_deliverable_file "$changed_file"; then
+            pass "Staged file '$changed_file' is declared in deliverableFiles[] manifest — permitted under ceiling '$ceiling_label'"
+            continue
+          fi
+          fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but staged file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
         fi
       fi
@@ -636,7 +685,11 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
       [[ -z "$changed_file" ]] && continue
       if echo "$changed_file" | grep -qE "$source_code_pattern"; then
         if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
-          fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but working tree file modified: $changed_file"
+          if is_deliverable_file "$changed_file"; then
+            pass "Working-tree file '$changed_file' is declared in deliverableFiles[] manifest — permitted under ceiling '$ceiling_label'"
+            continue
+          fi
+          fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but working tree file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
         fi
       fi
@@ -649,6 +702,9 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
         [[ -z "$changed_file" ]] && continue
         if echo "$changed_file" | grep -qE "$source_code_pattern"; then
           if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
+            if is_deliverable_file "$changed_file"; then
+              continue
+            fi
             warn "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits — last commit touched: $changed_file (review commit: $last_commit_msg)"
           fi
         fi
@@ -656,9 +712,9 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
     fi
 
     if [[ "$source_code_violations" -eq 0 ]]; then
-      pass "No source code edits detected under planning-only mode '$state_workflow_mode'"
+      pass "No undeclared source code edits detected under mode '$state_workflow_mode' (ceiling: $ceiling_label)"
     else
-      fail "Found $source_code_violations source code file(s) modified under planning-only mode '$state_workflow_mode' — implementation is forbidden when statusCeiling is '$ceiling_label'"
+      fail "Found $source_code_violations source code file(s) modified under mode '$state_workflow_mode' that are NOT declared in deliverableFiles[] — declare them in state.json or use a delivery mode (ceiling: $ceiling_label)"
     fi
   else
     info "Git not available or target feature is not in a repo — skipping source code edit lockout check"
