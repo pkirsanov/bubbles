@@ -14,27 +14,27 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
-### Changed — Guard tier-3 refinements (G040 lockdown allowlist + G008A scope-kind opt-out)
+### Changed — Guard tier-4 refinements (G009 evidence-by-reference + G056 schema loosening)
 
-- **G040 Deferral Language Scan** (`bubbles/scripts/state-transition-guard.sh`):
-  Extended `deferral_exclusion_pattern` with the 6 lockdown-tag patterns from
-  `workflows.yaml.lockdownContract.patterns`. Lines containing `[lockdown-deferred-FR-NNN]`,
-  `[lockdown-deferred-<spec>-FR-NNN]`, `[awaiting-operator-commit]`,
-  `[awaiting-third-party-approval]`, `[awaiting-cutover-window]`, or
-  `[awaiting-regulator-review]` now pass G040 even when they also contain
-  "deferred", "future work", "placeholder", etc. Untagged deferral language
-  continues to fail. The schema-level `requiredFields` contract
-  (FR/condition/unblocker/expectedActivation citation alongside `[awaiting-*]`
-  tags) is documented in workflows.yaml and enforced via skill / instruction
-  docs + artifact-lint review, not by multi-line context analysis here.
-- **G008A Scenario-Specific E2E Coverage** (`bubbles/scripts/state-transition-guard.sh`):
-  Added scope-kind opt-out using the v4.1.0 scopeKinds taxonomy. Scopes
-  declare kind via `Scope-Kind: <kind>` header (or `**Scope-Kind:** <kind>`).
-  Default kind `runtime-behavior` enforces the full 3-row E2E DoD/Test-Plan
-  requirement (v4.0.x compatible). Kinds `contract-only`, `deploy-pointer`,
-  `ci-config`, `docs-only`, `bootstrap` skip the E2E rows with an `info`
-  message because they legitimately do not produce live-runtime E2E at ship
-  time. Unrecognised kinds fall through to default with a warning.
+- **G009 DoD Evidence Presence** (`bubbles/scripts/state-transition-guard.sh`):
+  Added evidence-by-reference resolver. When a `- [x]` line carries a
+  markdown link of shape `[<text>](report.md#anchor)` (or
+  `[…](../report.md#anchor)`), the gate now resolves the link, finds the
+  anchor in the target report (Markdown heading slug, explicit
+  `{#anchor}` attribute, or `<a name="anchor">`), and requires ≥10 non-blank
+  lines of evidence between the anchor and the next heading (or EOF). This
+  honors the long-standing report.md convention where multi-line terminal
+  output is captured once and referenced by many DoD items, without forcing
+  each `[x]` to inline 10+ lines of evidence. Pre-existing inline-evidence
+  paths (`Executed:`, `Command:`, `Exit Code:`, fenced blocks) continue to
+  satisfy G009 as in v4.0.x.
+- **G056 Validate Certification State** (`bubbles/scripts/state-transition-guard.sh`):
+  Loosened the schema check to enforce field PRESENCE without restricting
+  value type. Pre-v4.1.0 patterns required `"certifiedCompletedPhases": [`,
+  `"scopeProgress": [`, `"lockdownState": {` literal starts, which fired
+  false positives when bubbles.validate emitted `null` or `[]` / `{}` as
+  legitimate placeholders before the first scope landed. The field's
+  structural content is still enforced by other gates (G024, G026, G027).
 
 ## v4.1.0 — 2026-05-27
 

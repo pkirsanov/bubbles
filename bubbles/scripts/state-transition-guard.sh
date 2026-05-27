@@ -775,20 +775,27 @@ if grep -qE '"certification"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
     fail "certification block is missing status field (Gate G056)"
   fi
 
-  if grep -qE '"certifiedCompletedPhases"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
-    pass "certification block records certifiedCompletedPhases"
+  # v4.1.0: G056 schema loosening. Accept presence of the field with any
+  # value type (array, object, null, empty). Pre-v4.1.0 the grep patterns
+  # required `: [` or `: {` literal starts, which fired false positives
+  # whenever the certifying agent (bubbles.validate) emitted `null` or
+  # `[]` / `{}` placeholders before the first scope landed. Field
+  # presence is what the gate must enforce; the field's structural
+  # content is checked by other gates (G024, G026, G027, etc.).
+  if grep -qE '"certifiedCompletedPhases"[[:space:]]*:' "$state_file"; then
+    pass "certification block records certifiedCompletedPhases (any value type)"
   else
     fail "certification block missing certifiedCompletedPhases (Gate G056)"
   fi
 
-  if grep -qE '"scopeProgress"[[:space:]]*:[[:space:]]*\[' "$state_file"; then
-    pass "certification block records scopeProgress"
+  if grep -qE '"scopeProgress"[[:space:]]*:' "$state_file"; then
+    pass "certification block records scopeProgress (any value type)"
   else
     fail "certification block missing scopeProgress (Gate G056)"
   fi
 
-  if grep -qE '"lockdownState"[[:space:]]*:[[:space:]]*\{' "$state_file"; then
-    pass "certification block records lockdownState"
+  if grep -qE '"lockdownState"[[:space:]]*:' "$state_file"; then
+    pass "certification block records lockdownState (any value type)"
   else
     fail "certification block missing lockdownState (Gate G056)"
   fi
@@ -2160,14 +2167,90 @@ echo ""
 echo "--- Check 9: DoD Evidence Presence ---"
 checked_without_evidence=0
 checked_with_evidence=0
+
+# v4.1.0: Evidence-by-reference resolver. When a DoD line is shaped like
+#   - [x] Item description → Evidence: [anchor-name](report.md#anchor-name)
+# follow the link to the report.md anchor and verify a ≥10-line evidence
+# block exists between the anchor heading and the next heading (or EOF).
+# This honors the long-standing report.md convention where multi-line
+# terminal output is captured ONCE in report.md and referenced from many
+# DoD items, instead of inlined 10+ lines under each [x] (which would
+# bloat scopes.md without adding evidence value).
+resolve_evidence_by_reference() {
+  local scope_dir="$1"
+  local link_target="$2"     # e.g. "report.md#scope-3-cosign"
+  local rel_report="${link_target%%#*}"
+  local anchor="${link_target##*#}"
+  [[ -z "$anchor" || "$anchor" == "$link_target" ]] && return 1
+  # Resolve report path relative to scope file's directory
+  local report_path
+  if [[ "$rel_report" == /* ]]; then
+    report_path="$rel_report"
+  else
+    report_path="$scope_dir/$rel_report"
+  fi
+  [[ -f "$report_path" ]] || return 1
+  # Normalize anchor: GitHub-style slugify (lower, spaces->dash, strip non-alnum/dash)
+  local anchor_lower
+  anchor_lower="$(echo "$anchor" | tr '[:upper:]' '[:lower:]')"
+  # Find the anchor — match either an HTML anchor <a name="X">, an explicit
+  # {#anchor} attribute, or a Markdown heading whose GitHub slug matches.
+  local anchor_line
+  anchor_line="$(awk -v a="$anchor_lower" '
+    BEGIN { IGNORECASE=1 }
+    /<a[[:space:]]+name=/ {
+      if (tolower($0) ~ "name=\""a"\"") { print NR; exit }
+    }
+    /\{#[^}]+\}/ {
+      if (tolower($0) ~ "\\{#"a"\\}") { print NR; exit }
+    }
+    /^#+[[:space:]]/ {
+      h = $0
+      sub(/^#+[[:space:]]+/, "", h)
+      sub(/[[:space:]]+\{#[^}]+\}[[:space:]]*$/, "", h)
+      slug = tolower(h)
+      gsub(/[^a-z0-9 -]/, "", slug)
+      gsub(/[[:space:]]+/, "-", slug)
+      if (slug == a) { print NR; exit }
+    }
+  ' "$report_path")"
+  [[ -z "$anchor_line" ]] && return 1
+  # Count non-blank lines from anchor_line+1 until next heading or EOF
+  local end_line
+  end_line="$(awk -v start="$anchor_line" 'NR>start && /^#+[[:space:]]/ { print NR; exit }' "$report_path")"
+  [[ -z "$end_line" ]] && end_line="$(wc -l < "$report_path")"
+  local block_lines
+  block_lines="$(sed -n "$((anchor_line+1)),${end_line}p" "$report_path" | grep -cE '\S' || true)"
+  if [[ "${block_lines:-0}" -ge 10 ]]; then
+    return 0
+  fi
+  return 1
+}
+
 for scope_path in "${scope_files[@]}"; do
   [[ -f "$scope_path" ]] || continue
+  scope_dir="$(dirname "$scope_path")"
   while IFS= read -r line; do
     item_line_num="$({ grep -nF -- "$line" "$scope_path" | head -1 | cut -d: -f1; } || true)"
     if [[ -n "$item_line_num" ]]; then
       next_lines="$({ sed -n "$((item_line_num+1)),$((item_line_num+15))p" "$scope_path"; } || true)"
+
+      # 1. Inline Evidence: marker on the same line
       if echo "$line" | grep -qiE '(→[[:space:]]*Evidence:|Evidence:)'; then
-        checked_with_evidence=$((checked_with_evidence + 1))
+        # v4.1.0: if Evidence reference is a markdown link to a report
+        # anchor, follow it and require ≥10-line block.
+        link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md#[A-Za-z0-9_-]+\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/')"
+        if [[ -n "$link_target" ]]; then
+          if resolve_evidence_by_reference "$scope_dir" "$link_target"; then
+            checked_with_evidence=$((checked_with_evidence + 1))
+          else
+            checked_without_evidence=$((checked_without_evidence + 1))
+            fail "DoD item [x] references '$link_target' but anchor missing OR block <10 non-blank lines in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+          fi
+        else
+          checked_with_evidence=$((checked_with_evidence + 1))
+        fi
+      # 2. Inline evidence block within next 15 lines (v4.0.x behavior)
       elif echo "$next_lines" | grep -qE '(Executed:|Command:|Evidence|```|Exit Code:|Raw Output)'; then
         checked_with_evidence=$((checked_with_evidence + 1))
       else
