@@ -1952,6 +1952,37 @@ for scope_index in "${!scope_analysis_files[@]}"; do
   [[ -f "$scope_path" ]] || continue
   scope_label="$(scope_analysis_label "$scope_index")"
 
+  # v4.1.0: Scope-Kind opt-out. The default kind is `runtime-behavior`
+  # which enforces the full 3 E2E DoD/Test-Plan rows. Other kinds
+  # (contract-only, deploy-pointer, ci-config, docs-only, bootstrap)
+  # legitimately do not produce live-runtime E2E evidence at ship time
+  # and are exempted here. Authors opt in by adding either:
+  #   `Scope-Kind: <kind>`   (markdown header line near top)
+  #   `**Scope-Kind:** <kind>` (bold variant)
+  # to the scope file. Default behavior (no header) = runtime-behavior =
+  # full E2E enforcement (v4.0.x compatible).
+  scope_kind="$(head -n 80 "$scope_path" \
+    | grep -iE '^(\*\*)?Scope-Kind(\*\*)?:[[:space:]]*' \
+    | head -n 1 \
+    | sed -E 's/^(\*\*)?Scope-Kind(\*\*)?:[[:space:]]*//I' \
+    | sed -E 's/[[:space:]]+$//' \
+    | tr '[:upper:]' '[:lower:]' || true)"
+  if [[ -z "$scope_kind" ]]; then
+    scope_kind="runtime-behavior"
+  fi
+  case "$scope_kind" in
+    contract-only|deploy-pointer|ci-config|docs-only|bootstrap)
+      info "Scope-Kind '$scope_kind' for $scope_label — E2E regression rows not required (v4.1.0 scopeKinds opt-out)"
+      continue
+      ;;
+    runtime-behavior|"")
+      # Fall through to full E2E enforcement (default).
+      ;;
+    *)
+      warn "Scope-Kind '$scope_kind' for $scope_label is not a recognised v4.1.0 scopeKinds entry — enforcing default runtime-behavior E2E rules"
+      ;;
+  esac
+
   if grep -Eiq '^\- \[(x| )\] Scenario-specific E2E regression tests? for (EVERY|every) new/changed/fixed behavior' "$scope_path"; then
     pass "Scope DoD includes scenario-specific regression E2E requirement: $scope_label"
   else
@@ -1975,7 +2006,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
 done
 
 if [[ "$missing_regression_e2e" -gt 0 ]]; then
-  fail "$missing_regression_e2e regression E2E planning requirement(s) missing — every feature/fix/change needs persistent scenario-specific E2E regression coverage"
+  fail "$missing_regression_e2e regression E2E planning requirement(s) missing — every runtime-behavior feature/fix/change needs persistent scenario-specific E2E regression coverage"
 fi
 echo ""
 
@@ -2592,7 +2623,18 @@ else
   # work prose. grep -ivE is case-insensitive so all case variants
   # (followupowner, FollowUpOwner, follow-up narrative, FOLLOW-UP
   # NARRATIVE, etc.) are covered.
-  deferral_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred|no issues deferred or skipped|followUpOwner|followUpAction|followUpTarget|followUps|follow-up narrative|follow-up section'
+  #
+  # v4.1.0: lockdownContract.patterns allowlist. When a deferral-language
+  # line carries a lockdown tag from workflows.yaml.lockdownContract.patterns
+  # the line is honest deferral (external actor gating runtime evidence)
+  # and exits G040 cleanly. The tags themselves embed the FR citation
+  # (e.g. [lockdown-deferred-FR-020]) so the schema-level requiredFields
+  # contract is satisfied by the tag itself. For [awaiting-*] tags the
+  # author MUST still cite the FR / condition / unblocker / expectedActivation
+  # nearby — that contract is enforced by skill/instruction docs and via
+  # routine artifact-lint review, not by this regex (multi-line context
+  # analysis would slow the guard substantially).
+  deferral_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred|no issues deferred or skipped|followUpOwner|followUpAction|followUpTarget|followUps|follow-up narrative|follow-up section|\[lockdown-deferred-fr-[0-9]+\]|\[lockdown-deferred-[a-z0-9-]+-fr-[0-9]+\]|\[awaiting-operator-commit\]|\[awaiting-third-party-approval\]|\[awaiting-cutover-window\]|\[awaiting-regulator-review\]'
   total_deferral_hits=0
 
   # Strategy (iii): the awk filter strips fenced code AND content between

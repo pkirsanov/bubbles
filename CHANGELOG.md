@@ -14,47 +14,27 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
-### Changed — Guard tier-1 refinements (G073 deliverableFiles + G090 executionRuntime skip)
+### Changed — Guard tier-3 refinements (G040 lockdown allowlist + G008A scope-kind opt-out)
 
-- **G073 Source Code Edit Lockout** (`bubbles/scripts/state-transition-guard.sh`):
-  Replaced the v4.0.x blanket "no source edits when ceiling != done" lockout
-  with a `deliverableFiles[]` manifest check. When state.json declares the
-  files a non-`done`-ceiling spec is allowed to ship, those files pass the
-  lockout while every other source edit still fails. Manifest entries may be
-  exact paths, directory prefixes (`<dir>/`), or recursive globs (`<dir>/**`).
-  Backward compatible: specs that omit `deliverableFiles[]` keep v4.0.x
-  behavior (any source edit under restrictive ceiling fails).
-- **G090 Convergence Health** (`bubbles/scripts/retro-convergence-health.sh`):
-  Added `executionRuntime` early-exit. When the work was driven by a
-  non-orchestrated runtime (`manual`, `direct-implement`, `direct`, `adhoc`,
-  `ad-hoc`), the script emits `slo: skipped` with an explicit `skipReason`
-  and exits 0 instead of flagging a non-existent SLO breach. Runtime is
-  resolved from session JSON `executionRuntime`, `runs[].runtime`,
-  `execution.runtime`, or spec-level state.json `executionRuntime`. Sprint /
-  goal-loop / workflow runtimes continue to be evaluated by the full
-  convergence-loop metrics program.
-
-### Changed — Guard tier-2 refinements (G022 phaseStubs + G041 annotation + None-safety)
-
-- **G022 Specialist Phase Completion** (`bubbles/scripts/state-transition-guard.sh`):
-  Extended the Check 6 Python collector to accept `phaseStubs[<phase>]` as an
-  honest substitute for `completedPhases[]` membership. A stubbed phase
-  satisfies G022 IFF the stub entry carries a non-empty `reason` field
-  (preventing empty-stub fabrication). Stubs may live at
-  `state.json.execution.phaseStubs.<phase>` or top-level
-  `state.json.phaseStubs.<phase>`.
-- **None-safety in two Python blocks**: Check 6 collector and Check 6A
-  planning specialist dispatch both used `dict.get(K, {})` / `dict.get(K, [])`
-  chains that throw `AttributeError: 'NoneType' object has no attribute 'get'`
-  when state.json contains explicit `null` values for `execution`,
-  `certification`, `executionHistory`, or `completedPhaseClaims`. Replaced
-  with `(d.get(K) or {})` / `(d.get(K) or [])` guards.
-- **G041 Scope Status Canonicality**: Now accepts a parenthesized annotation
-  after the canonical status, e.g. `Done (completed_owned)`,
-  `Done (lockdown-deferred-FR-020)`, `Blocked (awaiting-operator-commit)`.
-  The base status before the parenthesis is still required to be one of the
-  4 canonical values (`Not Started`, `In Progress`, `Done`, `Blocked`).
-  Invented statuses like `Deferred`, `Skipped`, `N/A` continue to fail.
+- **G040 Deferral Language Scan** (`bubbles/scripts/state-transition-guard.sh`):
+  Extended `deferral_exclusion_pattern` with the 6 lockdown-tag patterns from
+  `workflows.yaml.lockdownContract.patterns`. Lines containing `[lockdown-deferred-FR-NNN]`,
+  `[lockdown-deferred-<spec>-FR-NNN]`, `[awaiting-operator-commit]`,
+  `[awaiting-third-party-approval]`, `[awaiting-cutover-window]`, or
+  `[awaiting-regulator-review]` now pass G040 even when they also contain
+  "deferred", "future work", "placeholder", etc. Untagged deferral language
+  continues to fail. The schema-level `requiredFields` contract
+  (FR/condition/unblocker/expectedActivation citation alongside `[awaiting-*]`
+  tags) is documented in workflows.yaml and enforced via skill / instruction
+  docs + artifact-lint review, not by multi-line context analysis here.
+- **G008A Scenario-Specific E2E Coverage** (`bubbles/scripts/state-transition-guard.sh`):
+  Added scope-kind opt-out using the v4.1.0 scopeKinds taxonomy. Scopes
+  declare kind via `Scope-Kind: <kind>` header (or `**Scope-Kind:** <kind>`).
+  Default kind `runtime-behavior` enforces the full 3-row E2E DoD/Test-Plan
+  requirement (v4.0.x compatible). Kinds `contract-only`, `deploy-pointer`,
+  `ci-config`, `docs-only`, `bootstrap` skip the E2E rows with an `info`
+  message because they legitimately do not produce live-runtime E2E at ship
+  time. Unrecognised kinds fall through to default with a warning.
 
 ## v4.1.0 — 2026-05-27
 
