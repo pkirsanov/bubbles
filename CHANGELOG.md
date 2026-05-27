@@ -34,6 +34,28 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
   goal-loop / workflow runtimes continue to be evaluated by the full
   convergence-loop metrics program.
 
+### Changed — Guard tier-2 refinements (G022 phaseStubs + G041 annotation + None-safety)
+
+- **G022 Specialist Phase Completion** (`bubbles/scripts/state-transition-guard.sh`):
+  Extended the Check 6 Python collector to accept `phaseStubs[<phase>]` as an
+  honest substitute for `completedPhases[]` membership. A stubbed phase
+  satisfies G022 IFF the stub entry carries a non-empty `reason` field
+  (preventing empty-stub fabrication). Stubs may live at
+  `state.json.execution.phaseStubs.<phase>` or top-level
+  `state.json.phaseStubs.<phase>`.
+- **None-safety in two Python blocks**: Check 6 collector and Check 6A
+  planning specialist dispatch both used `dict.get(K, {})` / `dict.get(K, [])`
+  chains that throw `AttributeError: 'NoneType' object has no attribute 'get'`
+  when state.json contains explicit `null` values for `execution`,
+  `certification`, `executionHistory`, or `completedPhaseClaims`. Replaced
+  with `(d.get(K) or {})` / `(d.get(K) or [])` guards.
+- **G041 Scope Status Canonicality**: Now accepts a parenthesized annotation
+  after the canonical status, e.g. `Done (completed_owned)`,
+  `Done (lockdown-deferred-FR-020)`, `Blocked (awaiting-operator-commit)`.
+  The base status before the parenthesis is still required to be one of the
+  4 canonical values (`Not Started`, `In Progress`, `Done`, `Blocked`).
+  Invented statuses like `Deferred`, `Skipped`, `N/A` continue to fail.
+
 ## v4.1.0 — 2026-05-27
 
 ### Added — `delivered_pending_activation` ceiling + scope-kind taxonomy + lockdown contract

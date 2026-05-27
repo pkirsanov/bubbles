@@ -1130,13 +1130,20 @@ for scope_path in "${scope_files[@]}"; do
     # Extract the status value after "**Status:**"
     status_value="$(echo "$status_line" | sed -E 's/.*\*\*Status:\*\*[[:space:]]*//' | sed -E 's/[[:space:]]*$//')"
 
+    # v4.1.0: tolerate canonical-status followed by parenthesized annotation,
+    # e.g. "Done (completed_owned)", "Done (lockdown-deferred-FR-020)",
+    # "Blocked (awaiting-operator-commit)". The base status before the
+    # parenthesis is still required to be canonical; the annotation is
+    # informational (typically routing context from the owning agent).
+    base_status="$(echo "$status_value" | sed -E 's/[[:space:]]*\(.*\)[[:space:]]*$//' | sed -E 's/[[:space:]]+$//')"
+
     # Check against canonical values
-    case "$status_value" in
+    case "$base_status" in
       "Not Started"|"In Progress"|"Done"|"Blocked")
-        # Valid canonical status
+        # Valid canonical status (with or without parenthesized annotation)
         ;;
       *)
-        fail "Non-canonical scope status detected in ${scope_path#$feature_dir/}: '$status_value' — ONLY 'Not Started', 'In Progress', 'Done', 'Blocked' are valid"
+        fail "Non-canonical scope status detected in ${scope_path#$feature_dir/}: '$status_value' — ONLY 'Not Started', 'In Progress', 'Done', 'Blocked' (optionally followed by '(<annotation>)') are valid"
         fun_message invented_status
         non_canonical_statuses=$((non_canonical_statuses + 1))
         ;;
@@ -1148,8 +1155,9 @@ if [[ "$non_canonical_statuses" -gt 0 ]]; then
   fail "$non_canonical_statuses scope(s) have invented/non-canonical status values — MANIPULATION DETECTED (Gate G041)"
   info "Canonical scope statuses are ONLY: 'Not Started', 'In Progress', 'Done', 'Blocked'"
   info "Invented statuses like 'Deferred', 'Skipped', 'N/A', 'Deferred — Planned Improvement' are FORBIDDEN"
+  info "Parenthesized annotations such as 'Done (completed_owned)' or 'Blocked (awaiting-operator-commit)' are permitted"
 else
-  pass "All scope statuses are canonical (Not Started / In Progress / Done / Blocked)"
+  pass "All scope statuses are canonical (Not Started / In Progress / Done / Blocked, optionally with annotation)"
 fi
 echo ""
 
@@ -1371,9 +1379,15 @@ import sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     data = json.load(handle)
 
-certification_phases = data.get("certification", {}).get("certifiedCompletedPhases", [])
-execution_phase_claims = data.get("execution", {}).get("completedPhaseClaims", [])
-legacy_phases = data.get("completedPhases", [])
+# None-safe accessors: state.json may contain explicit null values for any of
+# these keys; default-arg of dict.get(...) does NOT replace None, so chain
+# .get() with `or {}` / `or []` to guarantee a non-None object.
+certification = (data.get("certification") or {})
+execution = (data.get("execution") or {})
+
+certification_phases = certification.get("certifiedCompletedPhases") or []
+execution_phase_claims = execution.get("completedPhaseClaims") or []
+legacy_phases = data.get("completedPhases") or []
 
 if not isinstance(certification_phases, list):
     certification_phases = []
@@ -1383,7 +1397,32 @@ if not isinstance(legacy_phases, list):
     legacy_phases = []
 
 selected_phases = certification_phases or execution_phase_claims or legacy_phases
-for phase in selected_phases:
+
+# v4.1.0: phaseStubs[] — a phase can be honestly declared as no-work-needed
+# via state.json.execution.phaseStubs[<phase>] = {reason: "...", justification: "..."}
+# or state.json.phaseStubs[<phase>]. A stubbed phase satisfies G022 IFF the
+# stub entry carries a non-empty `reason` field, preventing empty-stub
+# fabrication.
+phase_stubs = execution.get("phaseStubs")
+if not isinstance(phase_stubs, dict):
+    phase_stubs = data.get("phaseStubs")
+if not isinstance(phase_stubs, dict):
+    phase_stubs = {}
+
+stubbed_phases = []
+for phase_name, stub_entry in phase_stubs.items():
+    if not isinstance(phase_name, str):
+        continue
+    if isinstance(stub_entry, dict):
+        reason = (stub_entry.get("reason") or "").strip() if isinstance(stub_entry.get("reason"), str) else ""
+        if reason:
+            stubbed_phases.append(phase_name)
+    elif isinstance(stub_entry, str) and stub_entry.strip():
+        stubbed_phases.append(phase_name)
+
+# Merge: a phase satisfies G022 if it appears in either set.
+merged_phases = list(dict.fromkeys(list(selected_phases) + stubbed_phases))
+for phase in merged_phases:
     if isinstance(phase, str):
         print(f'"{phase}"')
 PY
@@ -1513,7 +1552,7 @@ if [[ -n "$state_workflow_mode" ]]; then
 
   if [[ ${#planning_required_agents[@]} -gt 0 ]]; then
     execution_history_agents="$({
-      python3 -c "import json; data=json.load(open('$state_file')); history=data.get('execution', {}).get('executionHistory', data.get('executionHistory', [])); print('\\n'.join(entry.get('agent', '') for entry in history if entry.get('agent')))"
+      python3 -c "import json; data=json.load(open('$state_file')); execution=(data.get('execution') or {}); history=(execution.get('executionHistory') or data.get('executionHistory') or []); print('\\n'.join((entry.get('agent') or '') for entry in history if isinstance(entry, dict) and entry.get('agent')))"
     } || true)"
 
     missing_planning_agents=0
