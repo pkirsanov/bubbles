@@ -1209,28 +1209,28 @@ scopeKinds:
 # ─────────────────────────────────────────────────────────────────────────────
 lockdownContract:
   patterns:
-    - "[lockdown-deferred-FR-NNN]"
-    - "[lockdown-deferred-<spec>-FR-NNN]"
-    - "[awaiting-operator-commit]"
-    - "[awaiting-third-party-approval]"
-    - "[awaiting-cutover-window]"
-    - "[awaiting-regulator-review]"
+  - "[lockdown-deferred-FR-NNN]"
+  - "[lockdown-deferred-<spec>-FR-NNN]"
+  - "[awaiting-operator-commit]"
+  - "[awaiting-third-party-approval]"
+  - "[awaiting-cutover-window]"
+  - "[awaiting-regulator-review]"
   requiredFields:
     # Every lockdown tag MUST be accompanied by at least one of these
     # so the gate can verify the deferral is honest, not vague hand-waving.
     anyOf:
-      - "FR-NNN citation in same line or following bullet"
-      - "condition: <free text> in same scope/DoD item"
-      - "unblocker: <actor + action> in same scope/DoD item"
-      - "expectedActivation: <ISO date or named milestone>"
+    - "FR-NNN citation in same line or following bullet"
+    - "condition: <free text> in same scope/DoD item"
+    - "unblocker: <actor + action> in same scope/DoD item"
+    - "expectedActivation: <ISO date or named milestone>"
   forbiddenWithoutLockdown:
-    # These deferral strings continue to fail G040 unless tagged.
-    - "deferred"
-    - "future work"
-    - "TODO later"
-    - "punt"
-    - "placeholder"
-    - "stub for now"
+  # These deferral strings continue to fail G040 unless tagged.
+  - "deferred"
+  - "future work"
+  - "TODO later"
+  - "punt"
+  - "placeholder"
+  - "stub for now"
 
 modes:
 
