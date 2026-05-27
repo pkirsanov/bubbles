@@ -2241,7 +2241,13 @@ for scope_path in "${scope_files[@]}"; do
       if echo "$line" | grep -qiE '(→[[:space:]]*Evidence:|Evidence:)'; then
         # v4.1.0: if Evidence reference is a markdown link to a report
         # anchor, follow it and require ≥10-line block.
-        link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md#[A-Za-z0-9_-]+\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/')"
+        # NOTE: `|| true` at end keeps `set -euo pipefail` from killing the
+        # whole guard silently when the line has an `Evidence:` marker but
+        # no `#anchor` in the link (e.g. plain `[report.md](report.md)`).
+        # Without it, the inner grep exits 1, pipefail propagates, and the
+        # EXIT trap fires before this branch can fall through to the plain
+        # link handler below.
+        link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md#[A-Za-z0-9_-]+\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/' || true)"
         if [[ -n "$link_target" ]]; then
           if resolve_evidence_by_reference "$scope_dir" "$link_target"; then
             checked_with_evidence=$((checked_with_evidence + 1))
@@ -2258,7 +2264,10 @@ for scope_path in "${scope_files[@]}"; do
       # Plain `report.md` links (no anchor) count as evidence if the file
       # exists at the expected location.
       elif echo "$line" | grep -qoE '\[[^]]+\]\([^)]*report\.md(#[A-Za-z0-9_.-]+)?\)'; then
-        link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md(#[A-Za-z0-9_.-]+)?\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/')"
+        # `|| true` guards against pipefail-killed silent exit on edge
+        # cases where the outer grep matched but the resubstitution does
+        # not (e.g. exotic link shapes).
+        link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md(#[A-Za-z0-9_.-]+)?\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/' || true)"
         if [[ "$link_target" == *"#"* ]]; then
           if resolve_evidence_by_reference "$scope_dir" "$link_target"; then
             checked_with_evidence=$((checked_with_evidence + 1))
