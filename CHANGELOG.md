@@ -14,6 +14,24 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+### Added — `artifact-lint.sh` Check 3 evidence-legitimacy skip markers (report.md only)
+
+- **Check 3 escape hatch** (`bubbles/scripts/artifact-lint.sh`): Added
+  HTML-comment marker pair `<!-- bubbles:evidence-legitimacy-skip-begin -->` /
+  `<!-- bubbles:evidence-legitimacy-skip-end -->` that exempts wrapped code
+  blocks from the ≥3-line and ≥2-terminal-signal evidence-legitimacy checks
+  Check 3 enforces at `state.status == done`. Markers are honored ONLY in
+  `report.md` files (spec.md/design.md/scopes.md retain stricter evidence
+  shape) and ONLY when they appear outside fenced code blocks. Unmatched
+  begin/end markers or an open skip region at EOF fail the lint with a
+  dedicated `❌ Unmatched evidence-legitimacy-skip markers in <file>` message.
+  An informational line `ℹ️  Skipped N evidence blocks under … markers in
+  <file>` is emitted when N > 0. Intended use: long-running specs whose
+  accumulated round-history evidence pre-dates the stricter signal heuristic;
+  preserves the audit trail without forcing destructive rewrites of historical
+  rounds. **Audit-trail-preservation tool only — MUST NOT be applied to
+  fresh-round evidence.**
+
 ### Changed — Guard tier-4 refinements (G009 evidence-by-reference + G056 schema loosening)
 
 - **G009 DoD Evidence Presence** (`bubbles/scripts/state-transition-guard.sh`):
