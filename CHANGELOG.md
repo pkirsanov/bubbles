@@ -12,7 +12,113 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
-## Unreleased
+## v5.0.0 — Production Cycle Platform
+
+The full production-cycle layer: cross-train propagation, multi-train portfolio rollup, incident response fastlane, live telemetry adapters, and framework self-observation. One new agent (J-Roc / `bubbles.propagate`), five workflow modes, six gates, two reference adapters, plus NL-first routing so users still only ever type into `bubbles.super`/`workflow`/`goal`/`sprint`.
+
+### Added — bubbles.propagate (J-Roc) — cross-train change propagation
+
+- New agent `bubbles.propagate` (J-Roc, "cross-train hustler") with single-prop SVG icon `icons/jroc-cap.svg` (backward cap) and quote *"Same fix, every park, knawmsayin?"*.
+- Owns `propagation-policy.yaml` (root or `config/`) and `propagation-ledger.yaml` (append-only JSONL).
+- Three operations: `forward` (auto-cherry-pick across declared train edges), `backport` (reverse cherry-pick under approval guard), `audit` (read-only drift report).
+- Boundary discipline: routes cherry-pick execution to `bubbles.devops` (Tommy) and receiving-train validation to `bubbles.validate`/`bubbles.test` per edge policy. NEVER runs `git cherry-pick` inline; NEVER edits `config/release-trains.yaml` or flag bundles.
+- New skill `skills/bubbles-propagation-policy/` documenting the policy schema, edge semantics, ledger contract.
+- New instructions `instructions/bubbles-propagation.instructions.md` (`applyTo: "**"`) with non-negotiable rules.
+- New template `templates/propagation-policy.yaml.tmpl`.
+- New recipe `docs/recipes/propagate-changes.md` (NL-first ordering).
+
+### Added — bubbles.train multi-train rollup (`status --all-trains`)
+
+- New action on `bubbles.train` (DVS): read-only rollup across every declared train. Reports id, phase, target_slot, flags_bundle, retention, pii, open-flag count.
+- New script `bubbles/scripts/release-train-rollup.sh` + selftest (4 cases). Reads `config/release-trains.yaml` + `specs/*/state.json` for the open-flag count.
+- New recipe `docs/recipes/multi-train-status.md`.
+
+### Added — Incident fastlane
+
+- New mode `incident-fastlane`: chains `bubbles.stabilize` (diagnose + classify severity) → `bubbles.train` (rollback authority) → `bubbles.devops` (redeploy) → `bubbles.validate` (confirm) → `bubbles.docs` (notes). Stabilize NEVER rolls back inline — DVS keeps that authority.
+- `bubbles.stabilize` extended with a Severity Classification section (`incident`/`high`/`medium`/`low`).
+- New recipe `docs/recipes/incident-response.md`.
+
+### Added — Observability adapter contract
+
+- New schema extension under `traceContracts.liveTelemetryEndpoints` documented in `docs/guides/CONTROL_PLANE_SCHEMAS.md`. Selects an adapter per signal (alerts / slo-burn / error-rate / deploy-impact).
+- New adapter directory `bubbles/adapters/observability/`:
+  - `none.sh` — default; all 4 verbs return `{}`.
+  - `prometheus.sh` — reference; queries `${PROMETHEUS_BASE_URL}` (NO default; fail-fast when unset).
+- Uniform 4-verb contract: `fetch-alerts`, `fetch-slo-burn`, `fetch-error-rate`, `fetch-deploy-impact`. Adapter exit 1 = telemetry unavailable (NOT a framework failure); consumers gracefully degrade.
+- New script `bubbles/scripts/observability-adapter-lint.sh` + selftest (5 cases). Grep-validates every adapter declares all 4 verbs; runtime-verifies `none.sh` returns `{}`.
+- New skill `skills/bubbles-observability-adapter/`.
+- New recipe `docs/recipes/observe-production.md`.
+
+### Added — Framework self-observation (`bubbles.retro target: framework`)
+
+- New retro target: pivots `bubbles.retro` (Jim Lahey) from product retro to framework retro.
+- Reads `.specify/runtime/framework-events.jsonl`, `workflow-runs.json`, `bubbles/capability-ledger.yaml`.
+- Writes ONE proposal per invocation to `improvements/IMP-NNN-<slug>.md`. NEVER mutates `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml`. Proposal-first; human-in-the-loop preserved.
+- New mode `framework-health` (statusCeiling `framework_proposal_written`).
+- New script `bubbles/scripts/retro-framework-health.sh` + selftest (4 cases) including a sentinel-mtime check enforcing the "zero writes outside `improvements/`" boundary.
+- New recipe `docs/recipes/framework-health.md`.
+
+### Added — NL-first routing surface
+
+- New `bubbles/intent-routes.yaml`: 6 routes mapping 32 natural-language phrases to (targetAgent, targetMode) pairs.
+  - "ship to v2 and v3" → propagate-forward
+  - "backport" → propagate-backport
+  - "what's missing on prod" → propagate-audit
+  - "what's in prod and dev" → release-train-status-all
+  - "prod is broken" → incident-fastlane
+  - "framework health" → framework-health
+- New script `bubbles/scripts/intent-routes-lint.sh` + selftest (8 cases). Validates: version, non-empty routes, lowercase phrases, no duplicates, every targetAgent in `agent-capabilities.yaml`, every targetMode in `workflows.yaml` (`.modes` key).
+- `bubbles.super` Discovery Surfaces table updated: reads `intent-routes.yaml` to match NL phrases BEFORE falling back to descriptive parsing of agent docs.
+
+### Added — Workflow modes (5 new) and gates (5 new)
+
+| Mode | Ceiling | Owner |
+|------|---------|-------|
+| `propagate-forward` | `propagated_forward` | bubbles.propagate |
+| `propagate-backport` | `propagated_backward` | bubbles.propagate |
+| `propagate-audit` | `propagation_audited` | bubbles.propagate |
+| `release-train-status-all` | `train_status_reported` | bubbles.train |
+| `incident-fastlane` | `incident_mitigated` | bubbles.stabilize → bubbles.train chain |
+| `framework-health` | `framework_proposal_written` | bubbles.retro |
+
+| Gate | Name | Enforces |
+|------|------|----------|
+| G121 | propagation-policy-declared | `propagation-policy.yaml` exists + parses + references only declared trains |
+| G122 | propagation-validation-required | Every edge has `receivingTrainValidationMode`; `none` requires `validationSkipReason` |
+| G123 | propagation-ledger-recorded | Every operation appends one immutable JSONL line; backports record `approvalToken` |
+| G124 | incident-severity-declared | `incident-fastlane` requires per-finding severity tag; `incident` routes rollback to bubbles.train |
+| G125 | framework-health-evidence | `framework-health` writes proposal under `improvements/`; ZERO framework-file mutation |
+
+### Registry changes
+
+- `bubbles/agent-capabilities.yaml`: registered `bubbles.propagate` (class: execution-owner) with `executionClaimWriters` entry.
+- `bubbles/agent-ownership.yaml`: added `propagation-policy` + `propagation-ledger` artifacts; added 3 routing rules (`crossTrainPropagation`, `propagationBackportApproval`, `propagationAudit`).
+- `agents/bubbles.workflow.agent.md` mode enum: added all 6 new modes.
+- `bubbles/scripts/framework-validate.sh`: wired 4 new selftests + 2 new live lints (intent-routes, observability-adapter).
+
+### Stats
+
+- Agents: 39 → 40
+- Gates: 92 → 98
+- Workflow modes: 49 → 55
+- Phases: 26 (unchanged)
+
+### TPB vocabulary
+
+J-Roc joins the cast. The full bench in v5:
+- DVS — single-train lifecycle (cut, promote, rollback, retire)
+- **J-Roc — cross-train propagation (NEW)**
+- Treena Lahey — recurring upkeep (backup, restore drill, BCDR, patch, secret rotation, flag cleanup, compliance sweep)
+- Sonny Iron Lung Smith — release packets
+- Shitty Bill — stabilization (now with `incident` severity routing)
+- Tommy Bean — devops execution
+- Tyrone — autonomous single goal
+- Erica — autonomous multi-goal sprint
+- Jim Lahey — retros (now with `target: framework` self-observation)
+- Mr. Lahey — general first-touch
+
+## v4.2.4 — Release Trains + Upkeep Framework
 
 ### Added — Release Trains + Upkeep Framework (Phase 0)
 
