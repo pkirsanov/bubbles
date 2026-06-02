@@ -376,6 +376,16 @@ gates:
     description: >-
       BLOCKING gate for the `incident-fastlane` workflow mode. bubbles.stabilize MUST classify each finding with a severity tag (`incident`/`high`/`medium`/`low`) before the verdict is recorded. At least one `incident` finding REQUIRES emitting a `route_required` packet to `bubbles.train` with `action: rollback` — stabilize MUST NOT perform rollback inline. Owned by `bubbles.stabilize` (classification) + `bubbles.train` (rollback authority).
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # FRAMEWORK SELF-OBSERVATION GATE (G125)
+  # Introduced with `bubbles.retro target: framework` and the
+  # `framework-health` workflow mode.
+  # ─────────────────────────────────────────────────────────────────────────
+  G125:
+    name: framework_health_evidence_gate
+    description: >-
+      BLOCKING gate for the `framework-health` workflow mode. `bubbles.retro target: framework` MUST emit an improvement proposal under `improvements/IMP-NNN-<slug>.md` referencing the input data sources analyzed (`.specify/runtime/framework-events.jsonl`, `workflow-runs.json`, `bubbles/capability-ledger.yaml`). The proposal MUST NOT auto-mutate `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` — proposal-first, human reviewed. Enforced by `bubbles/scripts/retro-framework-health.sh` writing only to `improvements/`. Owned by `bubbles.retro`.
+
 # Outcome contract (applies to all workflow modes that allow `done` as a
 # terminal status — i.e., every mode whose `statusCeiling` is `done`).
 # anchor: outcome-states
@@ -2597,3 +2607,18 @@ modes:
       planningTruthMutation: false
       specReviewDefault: off
       specReviewOptOutReason: incident-fastlane operates on existing trunk state; no planning surface change
+
+  framework-health:
+    description: "Framework self-observation mode. bubbles.retro (target: framework) analyzes Bubbles' own usage signals — framework-events.jsonl, workflow-runs.json, gate failure frequency, capability ledger staleness — and writes an improvement proposal to improvements/IMP-NNN-<slug>.md. NEVER auto-mutates bubbles/*, agents/*, or workflows.yaml — proposal-first, human reviewed. Routed by NL phrases 'framework health', 'anything broken in bubbles', 'improve bubbles'. Gate G125 enforces evidence."
+    statusCeiling: framework_proposal_written
+    terminalAliases: [ framework_proposal_written ]
+    phaseOrder: [ select, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G011, G012, G073, G125 ]
+    constraints:
+      modeClass: framework-self-observation
+      requireImprovementProposalOutput: true
+      forbidFrameworkAutoMutation: true
+      auditOnly: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: framework-health is read-only over framework's own runtime data
