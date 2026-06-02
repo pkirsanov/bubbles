@@ -9,14 +9,13 @@ description: How to author per-train feature-flag YAML bundles consumed by the e
 Trunk holds code for ALL trains (mvp, v1, v2, experimental). The same git SHA can ship to multiple slots simultaneously. What differs per train is **which feature flags are default-ON**. Bundles encode that difference.
 
 CI's existing config-bundle generator (G081 Build-Once Deploy-Many) reads the train's bundle file and emits `<env>-<sourceSha>.tar.gz` containing the resolved env file. The bundle is signed (cosign) and pushed to the registry as an immutable artifact.
-
 ## Bundle File Layout
 
 `config/feature-flags.<train>.yaml`:
 
 ```yaml
 # Per-train feature-flag bundle. Owned by bubbles.train.
-# This file is consumed by the config-bundle generator (G074) at CI build time.
+# This file is consumed by the config-bundle generator (G081) at CI build time.
 version: 1
 train: mvp              # MUST match the file name suffix and a train id in release-trains.yaml
 

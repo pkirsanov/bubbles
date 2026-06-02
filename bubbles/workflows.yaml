@@ -306,7 +306,7 @@ gates:
   G110:
     name: release_train_discipline_gate
     description: >-
-      BLOCKING gate. Every spec under `specs/` in `in_progress`, `done`, or any train-related terminal status MUST declare `releaseTrain: <id>` in `state.json` referring to an existing train id in `config/release-trains.yaml`. Every declared train MUST have a valid `phase` (`active|maintained|frozen|retired`) and `target_slot` (`prod|staging|none`). Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
+      BLOCKING gate. Every spec under `specs/` in `in_progress` or any train-related terminal status (`train_cut`, `train_promoted`) MUST declare `releaseTrain: <id>` in `state.json` referring to an existing train id in `config/release-trains.yaml`. GRANDFATHER CLAUSE: pre-existing `done` / `specs_hardened` / `delivered_pending_activation` specs without `releaseTrain` are WARN only (operators backfill at their pace). Every train MUST have valid `phase` (`active|maintained|frozen|retired`) and `target_slot` (`prod|staging|home-lab|none`). Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
   G111:
     name: flag_default_off_on_other_trains_gate
     description: >-

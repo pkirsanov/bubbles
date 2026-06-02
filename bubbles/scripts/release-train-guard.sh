@@ -63,8 +63,8 @@ for tid in $TRAIN_IDS; do
   esac
 
   case "$slot" in
-    prod|staging|none) ;;
-    *) err "train '$tid' has invalid target_slot '$slot' (expected prod|staging|none)" ;;
+    prod|staging|home-lab|none) ;;
+    *) err "train '$tid' has invalid target_slot '$slot' (expected prod|staging|home-lab|none)" ;;
   esac
 
   if [[ -z "$bundle" || "$bundle" == "null" ]]; then
@@ -82,18 +82,31 @@ for tid in $TRAIN_IDS; do
   fi
 done
 
-# Check 5+6: every active spec declares a valid releaseTrain
+# Check 5+6: every active spec declares a valid releaseTrain.
+# GRANDFATHER CLAUSE: specs created before the repo adopted release-trains.yaml
+# may lack the field. To avoid blocking the rollout, the guard distinguishes:
+#   - in_progress / train_*: BLOCKING error if missing releaseTrain
+#   - done / specs_hardened / delivered_pending_activation: WARN only
+# Operators backfill at their pace; new work MUST declare from day one.
 if [[ -d "$SPECS_DIR" ]]; then
   while IFS= read -r state_file; do
     status="$(yq -r '.status // ""' "$state_file" 2>/dev/null || echo "")"
     case "$status" in
-      in_progress|done|specs_hardened|delivered_pending_activation|train_cut|train_promoted) ;;
-      *) continue ;;
+      in_progress|train_cut|train_promoted)
+        require_train=1 ;;
+      done|specs_hardened|delivered_pending_activation)
+        require_train=0 ;;
+      *)
+        continue ;;
     esac
 
     train="$(yq -r '.releaseTrain // ""' "$state_file" 2>/dev/null || echo "")"
     if [[ -z "$train" || "$train" == "null" ]]; then
-      err "spec $(dirname "$state_file") status=$status missing releaseTrain field"
+      if [[ "$require_train" -eq 1 ]]; then
+        err "spec $(dirname "$state_file") status=$status missing releaseTrain field"
+      else
+        warn "spec $(dirname "$state_file") status=$status missing releaseTrain field (grandfathered; backfill recommended)"
+      fi
       continue
     fi
 
