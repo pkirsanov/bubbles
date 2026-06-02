@@ -14,6 +14,66 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## Unreleased
 
+### Added — Release Trains + Upkeep Framework (Phase 0)
+
+New trunk-based release-train model + recurring operational upkeep layer. Adds 2 agents, 11 workflow modes, 11 gates (G110-G120), 6 skills, 3 instructions, 2 schema templates, 2 recipes, 4 scripts.
+
+**New agents:**
+- **`bubbles.train`** (Detroit Velvet Smooth) — release-train lifecycle operator. Cuts candidates, promotes between slots, rollback pointer-swap, retires trains. Owns feature-flag lifecycle. New icon: `icons/dvs-mic.svg` (single-prop velvet curtain + cardioid mic on stand). Quote: *"Smoooth as silk, gentlemen. The train rolls on schedule."*
+- **`bubbles.upkeep`** (Treena Lahey) — recurring operational hygiene owner. Calendar-driven dispatcher for backup verify, restore drill, BCDR drill, patch cycle, secret rotation, flag-cleanup audit, compliance sweep. New icon: `icons/treena-broom.svg` (single-prop broom + apron tie). Quote: *"Trailer don't clean itself, Jim. Never has."*
+
+**New workflow modes** (`bubbles/workflows.yaml`):
+- `release-train-cut`, `release-train-promote`, `release-train-rollback`, `release-train-retire` (status ceilings: `train_cut`, `train_promoted`, `train_rolled_back`, `train_retired`)
+- `upkeep-backup-verify`, `upkeep-restore-drill`, `upkeep-bcdr-drill`, `upkeep-patch-cycle`, `upkeep-secret-rotation`, `upkeep-flag-cleanup`, `upkeep-compliance-sweep` (status ceilings: `backup_verified`, `restore_verified`, `bcdr_verified`, `patched`, `secrets_rotated`, `flags_audited`, `compliance_swept`)
+
+**New gates (G110-G120):**
+- G110 release-train-discipline, G111 flag-default-off-on-other-trains, G112 backup-evidence-required, G113 restore-drill-evidence, G114 bcdr-evidence, G115 env-pollution-isolation, G116 offsite-backup-required-for-prod-trains, G117 audit-trail-immutable, G118 backup-retention-declared, G119 secret-rotation-recorded, G120 pii-classification-declared
+
+**New skills** (`bubbles/skills/`):
+- `bubbles-release-train-model/` — trunk + trains + flags + phases doctrine
+- `bubbles-upkeep-cadence/` — daily/weekly/monthly/quarterly playbook + ledger schema
+- `bubbles-backup-bcdr-doctrine/` — 4-tier model (T1 ZFS / T2 host-local / T3 USB / T4 cloud), `OFFSITE_BACKEND` swap contract, RTO/RPO definitions
+- `bubbles-env-pollution-isolation/` — extends test-env-isolation with monitoring + backup + manifest pollution vectors (G115)
+- `bubbles-config-bundle-per-train/` — per-train YAML flag bundle authoring + language-specific consumption (Rust/Go/TS/Python)
+- `bubbles-flag-lifecycle/` — naming discipline, retirement triggers, "flag dies + 1 cycle" rule
+
+**New instructions** (`bubbles/instructions/`, all `applyTo: "**"`):
+- `bubbles-release-trains.instructions.md` — non-negotiable train rules
+- `bubbles-upkeep-operations.instructions.md` — calendar discipline + ledger immutability
+- `bubbles-env-pollution-isolation.instructions.md` — extends test-env-isolation
+
+**New scripts** (`bubbles/scripts/`):
+- `release-train-guard.sh` — validates train registry + flag default-off (G110, G111)
+- `release-train-flag-audit.sh` — overdue flag cleanup advisory
+- `upkeep-calendar.sh` — calendar-driven due-task lister
+- `env-pollution-scan.sh` — test-code → prod-surface write detector (G115)
+
+**New schema templates** (`bubbles/templates/`):
+- `release-trains.yaml.tmpl` — per-repo train registry schema
+- `upkeep-calendar.yaml.tmpl` — per-repo upkeep cadence schema
+
+**New recipes** (`bubbles/docs/recipes/`):
+- `release-train-lifecycle.md` — cut + promote + rollback + retire operator recipe
+- `upkeep-monthly.md` — monthly operator checklist + quarterly drill walkthrough
+
+**Boundary model — B2 cooperative (anti-drift, anti-fabrication):**
+- One writer per surface (`bubbles.train` owns `release-trains.yaml`, flag bundles, train-state fields; `bubbles.upkeep` owns `upkeep-calendar.yaml`, upkeep ledger, runbook, compliance report).
+- Read access is open: `bubbles.train` reads upkeep ledger for promote-freshness gating (G112/G113); `bubbles.upkeep` reads train config + knb manifest for restore-test scoping.
+- All writes flow through owner via packet — no inference, no fabrication.
+
+**Compliance (C1 + C3):**
+- 4 new compliance gates (G117-G120) baked into existing audit surface.
+- New quarterly `upkeep-compliance-sweep` mode generates `docs/Compliance_Report.md`; `bubbles.upkeep` gathers evidence, `bubbles.audit` certifies. Treena cannot certify her own work.
+
+**Cheatsheet + vocabulary updates:**
+- `docs/CHEATSHEET.md` — added DVS + Treena rows; added 17 new TPB vocabulary entries (release train, cut, promote, slot, train phase, dark code, flag retirement, drift, upkeep cycle, near-line backup, offsite backup, restore drill, BCDR drill, RTO/RPO, OFFSITE_BACKEND, upkeep ledger, pollution isolation, compliance sweep)
+- `docs/its-not-rocket-appliances.html` — matching DVS + Treena cards + 17 vocabulary cards
+- `docs/guides/AUTONOMOUS_EXECUTION.md` — 3 new TPB vocabulary terms
+
+**Registry updates:**
+- `bubbles/agent-capabilities.yaml` — registered `bubbles.train` + `bubbles.upkeep` with `readOnlyAccess` cooperative boundary; added to executionClaimWriters
+- `bubbles/agent-ownership.yaml` — added 9 new artifact entries (release-trains-config, feature-flag-bundles, release-train-state, release-trains-doc, upkeep-calendar, upkeep-ledger, upkeep-runbook, compliance-report) + 9 new routingRules entries
+
 ### Added — `artifact-lint.sh` Check 3 evidence-legitimacy skip markers (report.md only)
 
 - **Check 3 escape hatch** (`bubbles/scripts/artifact-lint.sh`): Added

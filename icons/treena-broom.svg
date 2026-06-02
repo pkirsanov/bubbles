@@ -1,0 +1,18 @@
+<!-- icon-name: treena-broom -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- broom handle (diagonal) -->
+  <path d="M 50 8 L 18 56"/>
+  <!-- broom collar (band where bristles attach) -->
+  <path d="M 22 50 L 28 46" stroke-width="1.5"/>
+  <!-- broom bristle bundle (trapezoid fan) -->
+  <path d="M 12 60 L 18 56 L 28 46 L 26 60 Z"/>
+  <!-- bristle texture lines -->
+  <path d="M 16 58 L 19 54" stroke-width="1"/>
+  <path d="M 19 60 L 22 51" stroke-width="1"/>
+  <path d="M 23 60 L 25 50" stroke-width="1"/>
+  <!-- apron tie loop wrapped around upper handle -->
+  <path d="M 44 14 C 40 12 38 14 40 18 C 42 22 46 22 48 18"/>
+  <!-- apron tie hanging ends -->
+  <path d="M 46 22 L 44 30" stroke-width="1.2"/>
+  <path d="M 48 22 L 50 30" stroke-width="1.2"/>
+</svg>

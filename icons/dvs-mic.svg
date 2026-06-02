@@ -1,0 +1,19 @@
+<!-- icon-name: dvs-mic -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- velvet curtain swag (single arc with two fall lines) -->
+  <path d="M 6 14 C 22 22 42 22 58 14"/>
+  <path d="M 6 14 L 10 22" stroke-width="1.2"/>
+  <path d="M 58 14 L 54 22" stroke-width="1.2"/>
+  <!-- mic head (cardioid, slightly egg-shaped) -->
+  <ellipse cx="32" cy="30" rx="7" ry="9"/>
+  <!-- mic grille lines -->
+  <path d="M 27 27 L 37 27" stroke-width="1"/>
+  <path d="M 26 30 L 38 30" stroke-width="1"/>
+  <path d="M 27 33 L 37 33" stroke-width="1"/>
+  <!-- mic neck -->
+  <path d="M 32 39 L 32 44"/>
+  <!-- mic stand vertical pole -->
+  <path d="M 32 44 L 32 56"/>
+  <!-- mic stand round base -->
+  <ellipse cx="32" cy="58" rx="10" ry="2"/>
+</svg>

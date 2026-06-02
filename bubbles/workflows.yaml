@@ -2239,3 +2239,189 @@ modes:
       requireAllScopesDoneBeforeSpecDone: true
       requirePerDodItemRawEvidence: true
       requireEvidenceByReference: true
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # RELEASE TRAIN MODES (DVS — bubbles.train)
+  # Trunk-based release trains: cut, promote between slots, rollback,
+  # retire. Train identifiers are operator-chosen strings; phases are
+  # `active|maintained|frozen|retired`; slots are `prod|staging|none`.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  release-train-cut:
+    description: "Cut a release-train candidate. Tags trunk at SHA, triggers CI to build signed image digests + per-train config bundle. Cut produces evidence (build manifest + bundle SHA + signature receipts) but does NOT deploy. Refuses if any spec on this train has off-train flags defaulted ON (G111) or missing compliance declarations (G117-G120)."
+    statusCeiling: train_cut
+    terminalAliases: [ train_cut ]
+    phaseOrder: [ select, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G074, G081, G110, G111, G117, G118, G120 ]
+    constraints:
+      modeClass: release-train
+      requireDeclaredTrainInRegistry: true
+      requireTrainPhaseAllowsCut: [ active, maintained ]
+      requireAllOffTrainFlagsDefaultOff: true
+      requireCompliancePreflightDeclared: true
+      requireSignedBuildManifest: true
+      requirePerTrainConfigBundle: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: release-train-cut consumes existing planning truth; does not modify spec/design/scopes
+
+  release-train-promote:
+    description: "Promote a release-train candidate from one slot to another (typically staging → prod). Pure pointer-swap on knb-side <product>/<target>/manifest.yaml to the candidate's digests + bundle. Requires staging soak evidence + passing backup-freshness gate (G112). Refuses if restore-drill has not run within cadence (G113)."
+    statusCeiling: train_promoted
+    terminalAliases: [ train_promoted ]
+    phaseOrder: [ select, validate, devops, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G074, G081, G110, G112, G113, G117 ]
+    constraints:
+      modeClass: release-train
+      requireDeclaredTrainInRegistry: true
+      requireTrainPhaseAllowsPromote: [ active ]
+      requireCandidateExistsForTrain: true
+      requirePriorSlotSoakEvidence: true
+      requireBackupFreshness: true
+      requireRestoreDrillWithinCadence: true
+      requireAtomicManifestCommit: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: release-train-promote is a pointer-swap operation; no planning surface
+
+  release-train-rollback:
+    description: "Roll back a release-train slot to the previous manifest commit. Pure pointer-swap on knb-side <product>/<target>/manifest.yaml. Never rebuilds. Reads previous manifest from `git show HEAD~1:...`, calls adapter apply.sh with old digests + bundle."
+    statusCeiling: train_rolled_back
+    terminalAliases: [ train_rolled_back ]
+    phaseOrder: [ select, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G081, G110, G117 ]
+    constraints:
+      modeClass: release-train
+      requireDeclaredTrainInRegistry: true
+      requirePreviousManifestExists: true
+      forbidRebuild: true
+      requireAtomicManifestCommit: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: release-train-rollback is a pointer-swap operation; no planning surface
+
+  release-train-retire:
+    description: "Retire a release train. Pre-step requires ALL flags introduced by specs on this train to be cleaned up (removed from code + bundle) via flag-cleanup audits. Transitions train phase to `retired`. After retire, no cuts or promotes are allowed."
+    statusCeiling: train_retired
+    terminalAliases: [ train_retired ]
+    phaseOrder: [ select, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111 ]
+    constraints:
+      modeClass: release-train
+      requireDeclaredTrainInRegistry: true
+      requireTrainPhaseAllowsRetire: [ active, maintained, frozen ]
+      requireZeroLiveFlagsForTrain: true
+      requireFlagCleanupAuditClean: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # UPKEEP MODES (Treena Lahey — bubbles.upkeep)
+  # Recurring operational hygiene: backup, restore drill, BCDR drill,
+  # patch cycle, secret rotation, flag cleanup audit, compliance sweep.
+  # Calendar-driven via config/upkeep-calendar.yaml; ledger at
+  # /srv/backups/upkeep-ledger.jsonl (append-only).
+  # ─────────────────────────────────────────────────────────────────────────
+
+  upkeep-backup-verify:
+    description: "Daily backup verification. Runs T1 (ZFS snapshot) + T2 (host-local restic). Conditionally runs T3 (USB) and T4 (offsite cloud) based on OFFSITE_BACKEND env. Writes ledger entry with restic check exit code. Failure packets to bubbles.devops."
+    statusCeiling: backup_verified
+    terminalAliases: [ backup_verified ]
+    phaseOrder: [ select, devops, validate, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G011, G012, G073, G112, G115, G117, G118 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: backup
+      requireBackupLedgerWrite: true
+      requireResticCheckPasses: true
+      requireEphemeralRestoreNamespace: false
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-restore-drill:
+    description: "Weekly restore drill. Restores latest T2 snapshot into isolated `restore-test` namespace, runs product's smoke check, tears down namespace. Proves backup is restorable. Failure blocks next release-train-promote for that product (G113)."
+    statusCeiling: restore_verified
+    terminalAliases: [ restore_verified ]
+    phaseOrder: [ select, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G113, G115, G117 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: restore-test
+      requireEphemeralRestoreNamespace: true
+      requireSmokeCheckPasses: true
+      requireNamespaceTeardownOnExit: true
+      requireProdStackUntouched: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-bcdr-drill:
+    description: "Quarterly BCDR drill. Full DR exercise restoring entire product stack into isolated namespace. Warns when OFFSITE_BACKEND=local-only (true BCDR impossible against single host). Records RTO/RPO actuals in ledger."
+    statusCeiling: bcdr_verified
+    terminalAliases: [ bcdr_verified ]
+    phaseOrder: [ select, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G114, G115, G116, G117 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: bcdr-drill
+      requireEphemeralRestoreNamespace: true
+      requireFullStackRestore: true
+      requireRtoRpoMeasurement: true
+      warnOnLocalOnlyOffsite: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-patch-cycle:
+    description: "Monthly patch cycle. Base-image refresh + dependency audit. Produces a candidate via release-train-cut for the affected trains. Failure packets to bubbles.security if CVE-related, bubbles.stabilize otherwise."
+    statusCeiling: patched
+    terminalAliases: [ patched ]
+    phaseOrder: [ select, security, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: patch-cycle
+      requireBaseImageRefresh: true
+      requireDependencyAudit: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-secret-rotation:
+    description: "Quarterly secret rotation. Rotates managed secrets (DB passwords, JWT keys, API tokens, OAuth secrets). Records old/new key-id hashes (NEVER values) in ledger (G119). Coordinates with bubbles.security if any secret is suspected compromised."
+    statusCeiling: secrets_rotated
+    terminalAliases: [ secrets_rotated ]
+    phaseOrder: [ select, security, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117, G119 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: secret-rotation
+      requireKeyIdHashesRecorded: true
+      forbidSecretValuesInLedger: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-flag-cleanup:
+    description: "Monthly flag-cleanup audit. Identifies flags whose owning train has graduated > 1 cycle ago and are still live in code. Packets cleanup work to bubbles.train (owner of flag lifecycle). Audit-only; never edits code."
+    statusCeiling: flags_audited
+    terminalAliases: [ flags_audited ]
+    phaseOrder: [ select, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G111 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: flag-cleanup-audit
+      auditOnly: true
+      planningTruthMutation: false
+      specReviewDefault: off
+
+  upkeep-compliance-sweep:
+    description: "Quarterly compliance sweep. Verifies G117 (audit-trail-immutable), G118 (backup-retention-declared), G119 (secret-rotation-recorded), G120 (pii-classification-declared). Generates docs/Compliance_Report.md with evidence; packets to bubbles.audit for sign-off. Treena gathers evidence, Ted certifies."
+    statusCeiling: compliance_swept
+    terminalAliases: [ compliance_swept ]
+    phaseOrder: [ select, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117, G118, G119, G120 ]
+    constraints:
+      modeClass: upkeep
+      requireCalendarTaskDue: compliance-sweep
+      requireComplianceReportGeneration: true
+      requireAuditSignoffPacket: true
+      auditOnly: true
+      planningTruthMutation: false
+      specReviewDefault: off
