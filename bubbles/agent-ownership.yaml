@@ -157,7 +157,7 @@ artifacts:
     - bubbles.train
     description: |
       Per-train feature-flag YAML bundles at `config/feature-flags.<train>.yaml`. Consumed by the
-      existing config-bundle generator (G074). bubbles.train enforces default-OFF discipline on
+      existing config-bundle generator (G081 Build-Once Deploy-Many). bubbles.train enforces default-OFF discipline on
       every train except the spec's declared `releaseTrain` (G111).
   release-train-state:
     owner:

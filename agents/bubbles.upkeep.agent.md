@@ -57,8 +57,8 @@ handoffs:
 - `bubbles-backup-bcdr-doctrine` skill — RTO/RPO definitions, offsite tier model, drill cadence.
 - `bubbles-env-pollution-isolation` skill — extends test-env-isolation to monitoring + backup + manifest writes.
 - `bubbles-upkeep-operations.instructions.md` — non-negotiable upkeep rules (auto-loaded).
-- knb-side: `knb-offsite-backup-restic` skill — restic backend abstraction.
-- knb-side: `knb-upkeep-dispatcher` skill — engine + ledger schema.
+- **External (optional, knb-side overlay)**: `knb-offsite-backup-restic` skill — restic backend abstraction (lives in knb repo, not framework).
+- **External (optional, knb-side overlay)**: `knb-upkeep-dispatcher` skill — engine + ledger schema (lives in knb repo, not framework).
 - Reference gates: **G112** (backup-evidence-required), **G113** (restore-drill-evidence), **G114** (bcdr-evidence), **G115** (env-pollution-isolation), **G116** (offsite-backup-required-for-prod-trains, warn→block toggle).
 
 **Artifact Ownership:**

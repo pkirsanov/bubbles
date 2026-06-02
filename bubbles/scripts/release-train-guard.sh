@@ -36,7 +36,10 @@ if ! command -v yq >/dev/null 2>&1; then
   exit 1
 fi
 
-# Check 1+2+3+4+7: train declarations
+# Check 1+2+3+4+7: train declarations (with defaults fallback for retention/pii)
+DEFAULT_RETENTION="$(yq -r '.defaults.retention // ""' "$TRAINS_FILE")"
+DEFAULT_PII="$(yq -r '.defaults.pii // ""' "$TRAINS_FILE")"
+
 TRAIN_IDS="$(yq -r '.trains[].id' "$TRAINS_FILE")"
 if [[ -z "$TRAIN_IDS" ]]; then
   err "no trains declared in $TRAINS_FILE"
@@ -47,8 +50,12 @@ for tid in $TRAIN_IDS; do
   phase="$(yq -r ".trains[] | select(.id==\"$tid\") | .phase" "$TRAINS_FILE")"
   slot="$(yq -r ".trains[] | select(.id==\"$tid\") | .target_slot" "$TRAINS_FILE")"
   bundle="$(yq -r ".trains[] | select(.id==\"$tid\") | .flags_bundle" "$TRAINS_FILE")"
-  retention="$(yq -r ".trains[] | select(.id==\"$tid\") | .retention" "$TRAINS_FILE")"
-  pii="$(yq -r ".trains[] | select(.id==\"$tid\") | .pii" "$TRAINS_FILE")"
+  retention="$(yq -r ".trains[] | select(.id==\"$tid\") | .retention // \"\"" "$TRAINS_FILE")"
+  pii="$(yq -r ".trains[] | select(.id==\"$tid\") | .pii // \"\"" "$TRAINS_FILE")"
+
+  # Apply defaults fallback for retention + pii
+  [[ -z "$retention" || "$retention" == "null" ]] && retention="$DEFAULT_RETENTION"
+  [[ -z "$pii" || "$pii" == "null" ]] && pii="$DEFAULT_PII"
 
   case "$phase" in
     active|maintained|frozen|retired) ;;
@@ -67,11 +74,11 @@ for tid in $TRAIN_IDS; do
   fi
 
   if [[ -z "$retention" || "$retention" == "null" ]]; then
-    err "train '$tid' missing retention policy (G118)"
+    err "train '$tid' missing retention policy (G118; declare per-train or via defaults.retention)"
   fi
 
   if [[ -z "$pii" || "$pii" == "null" ]]; then
-    err "train '$tid' missing pii classification (G120)"
+    err "train '$tid' missing pii classification (G120; declare per-train or via defaults.pii)"
   fi
 done
 

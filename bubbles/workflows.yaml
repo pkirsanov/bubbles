@@ -296,6 +296,58 @@ gates:
     description: >-
       BLOCKING gate. Every issue an agent observes during work MUST have an explicit disposition (`fixed-in-session`, `bug-filed`, `spec-filed`, `ops-filed`, or `routed`). Saying "pre-existing", "unrelated", "out of scope", or "not my session" without filing a corresponding artifact is forbidden and counts as fabrication. Enforced mechanically by `bubbles/scripts/discovered-issue-disposition-guard.sh`, which scans the active spec's `report.md` and the most recent RESULT-ENVELOPE narrative (when supplied) for forbidden deferral phrases. When a forbidden phrase is detected, the guard requires either (a) the same paragraph to cite a concrete artifact reference (`specs/.../bug.md`, `specs/.../spec.md`, `transitionRequests` entry, ops ticket URL), or (b) a `## Discovered Issues` section in `report.md` whose most recent `Observed` row is today. The guard exits 0 (clean), 1 (G095 findings), or 2 (runtime error / malformed input). State-transition-guard.sh invokes this guard as Check 35. Hermetic selftest: `bubbles/scripts/discovered-issue-disposition-guard-selftest.sh`. See `agents/bubbles_shared/operating-baseline.md` → "Discovered-Issue Disposition" for the full disposition table and report.md shape.
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # RELEASE TRAIN + UPKEEP GATES (G110-G120)
+  # Introduced with bubbles.train (DVS) and bubbles.upkeep (Treena Lahey).
+  # Enforced by bubbles/scripts/release-train-guard.sh and
+  # bubbles/scripts/env-pollution-scan.sh, plus per-mode constraints in the
+  # release-train-* and upkeep-* workflow modes.
+  # ─────────────────────────────────────────────────────────────────────────
+  G110:
+    name: release_train_discipline_gate
+    description: >-
+      BLOCKING gate. Every spec under `specs/` in `in_progress`, `done`, or any train-related terminal status MUST declare `releaseTrain: <id>` in `state.json` referring to an existing train id in `config/release-trains.yaml`. Every declared train MUST have a valid `phase` (`active|maintained|frozen|retired`) and `target_slot` (`prod|staging|none`). Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
+  G111:
+    name: flag_default_off_on_other_trains_gate
+    description: >-
+      BLOCKING gate. For every spec with `state.json.flagsIntroduced: [<flag>...]` on `releaseTrain: <owning-train>`, each flag MUST be default-OFF in every OTHER train's `config/feature-flags.<train>.yaml` bundle (`flag: false`). Default-ON allowed only in the owning train. Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
+  G112:
+    name: backup_evidence_required_gate
+    description: >-
+      BLOCKING gate. `release-train-promote` MUST verify a recent successful `backup` ledger entry within the cadence declared in `config/upkeep-calendar.yaml`. Enforced via mode constraint + read of `/srv/backups/upkeep-ledger.jsonl` (knb-side). Owned by `bubbles.train` (read) + `bubbles.upkeep` (write).
+  G113:
+    name: restore_drill_evidence_gate
+    description: >-
+      BLOCKING gate. `release-train-promote` MUST verify a recent successful `restore-test` ledger entry within the cadence declared in `config/upkeep-calendar.yaml`. Failed restore-drill blocks next promote for that product. Owned by `bubbles.upkeep`.
+  G114:
+    name: bcdr_evidence_gate
+    description: >-
+      BLOCKING gate for `prod`-slot promotes. `release-train-promote` to `prod` MUST verify a recent successful quarterly `bcdr-drill` ledger entry. WARNING (not blocking) when `OFFSITE_BACKEND=local-only` because true BCDR requires backups not on the source host. Owned by `bubbles.upkeep`.
+  G115:
+    name: env_pollution_isolation_gate
+    description: >-
+      BLOCKING gate. Test code (integration, e2e-api, e2e-ui, stress, load, chaos) MUST NEVER write to prod monitoring (prometheus pushgateway labeled `env=prod|home-lab`, loki tenant `prod|home-lab`), prod backup paths (`/srv/backups/*`), knb manifest pointers (`<product>/<target>/manifest.yaml`), or train config (`config/release-trains.yaml`, `config/feature-flags.<train>.yaml`). Enforced by `bubbles/scripts/env-pollution-scan.sh`. Owned by `bubbles.upkeep` (policy) + every agent (no-write discipline).
+  G116:
+    name: offsite_backup_required_for_prod_trains_gate
+    description: >-
+      Conditional BLOCKING gate. When `config/release-trains.yaml` declares `offsite_required: true` for a train shipping to `prod` slot, `release-train-promote` MUST verify `OFFSITE_BACKEND` is NOT `local-only`. WARNING when `offsite_required: false` (default). Operator flips the switch when USB drives or cloud offsite become available. Owned by `bubbles.train` (gate) + `bubbles.upkeep` (offsite verification).
+  G117:
+    name: audit_trail_immutable_gate
+    description: >-
+      BLOCKING gate. `/srv/backups/upkeep-ledger.jsonl` is append-only. Rewriting, deleting, or editing past entries is forbidden. Manifest commits via `bubbles.train` follow the same discipline — promote/rollback/retire operations write atomic forward commits, never force-push or rewrite history. Owned by `bubbles.upkeep` (ledger) + `bubbles.train` (manifest).
+  G118:
+    name: backup_retention_declared_gate
+    description: >-
+      BLOCKING gate. Every train in `config/release-trains.yaml` MUST declare a `retention` field (string, e.g. `7d-daily,4w-weekly,12m-monthly`). Defaults declared under `defaults.retention` apply when per-train `retention` is omitted. Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
+  G119:
+    name: secret_rotation_recorded_gate
+    description: >-
+      BLOCKING gate. Every `upkeep-secret-rotation` ledger entry MUST record old/new key-id HASHES (e.g. `sha256:<first-12-chars>`), NEVER the secret values themselves. Engine refuses to write entries containing high-entropy strings that match secret-value heuristics. Owned by `bubbles.upkeep`.
+  G120:
+    name: pii_classification_declared_gate
+    description: >-
+      BLOCKING gate. Every train in `config/release-trains.yaml` MUST declare a `pii` field (`none|pseudonymized|encrypted-only`). Defaults declared under `defaults.pii` apply when per-train `pii` is omitted. Backup ledger entries inherit the train's PII classification. Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
+
 # Outcome contract (applies to all workflow modes that allow `done` as a
 # terminal status — i.e., every mode whose `statusCeiling` is `done`).
 # anchor: outcome-states

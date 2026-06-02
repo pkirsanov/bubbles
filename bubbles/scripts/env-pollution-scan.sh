@@ -27,7 +27,9 @@ PATTERNS=(
   'loki.*tenant.*prod'
   'loki.*tenant.*home-lab'
   '/srv/backups/'
-  'knb/[a-z]\+/home-lab/manifest\.yaml'
+  'knb/[a-z]+/home-lab/manifest\.yaml'
+  'config/release-trains\.yaml'
+  'config/feature-flags\.[a-z0-9_-]+\.yaml'
   'env[ =:]*"prod"'
   'env[ =:]*"home-lab"'
 )

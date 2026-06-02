@@ -41,7 +41,7 @@ handoffs:
 - **Promote** = pointer-swap on knb-side `<product>/<target>/manifest.yaml` to the candidate's digests+bundle. Calls `bubbles.devops` for the actual `apply.sh` invocation. Promotion requires staging soak evidence + passing gates G110-G116.
 - **Rollback** = pointer-swap to the previous manifest commit. Pure git-history operation. Never rebuilds.
 - **Retire** = transition phase to `retired`. Required pre-step: all flags introduced by specs on this train MUST be cleaned up (removed from code + bundle) via `flag-cleanup` audits.
-- **Flag lifecycle (G111):** Every spec declaring `featureFlags: [...]` in `state.json` MUST have those flags default-OFF in every train's bundle EXCEPT the spec's `releaseTrain`. Cut refuses if violated.
+- **Flag lifecycle (G111):** Every spec declaring `flagsIntroduced: [...]` in `state.json` MUST have those flags default-OFF in every train's bundle EXCEPT the spec's `releaseTrain`. Cut refuses if violated.
 - **Train ownership of feature flags:** Flags belong to the train that introduced them. When a train graduates (transitions `active` → `maintained` → `retired`), `bubbles.train` audits and packets flag-cleanup work for `bubbles.implement`. Flags MUST NOT outlive their train + 1 cycle.
 - **Manifest discipline:** Every promote/rollback writes one atomic commit to knb with a structured message: `train(<product>/<target>): <action> <train-id> -> <sha>`. Audit trail is git history.
 - **Honesty:** A wrong "promoted" claim is 3x worse than an honest gap. If post-promote verify fails, immediately invoke rollback; never paper over.

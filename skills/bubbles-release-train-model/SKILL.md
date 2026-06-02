@@ -18,7 +18,7 @@ description: How to operate the trunk + release-train + per-train-flag-bundle mo
 | `retention` | string (e.g. `7d-daily,4w-weekly,12m-monthly`) | Backup retention for this train |
 | `pii` | `none` / `pseudonymized` / `encrypted-only` | Backup PII classification (G120) |
 
-**Feature flag = the switch that gates trunk code per-train.** A spec declares `featureFlags: [<flag>]` in `state.json`. The flag is default-ON in the spec's `releaseTrain`, default-OFF in every other train (G111).
+**Feature flag = the switch that gates trunk code per-train.** A spec declares `flagsIntroduced: [<flag>]` in `state.json`. The flag is default-ON in the spec's `releaseTrain`, default-OFF in every other train (G111).
 
 ## The Five Operations (owned by `bubbles.train`)
 

@@ -1,5 +1,5 @@
 ---
-description: How to author per-train feature-flag YAML bundles consumed by the existing config-bundle generator (G074). Use when introducing a new feature flag, when creating a new train, or when retiring a flag.
+description: How to author per-train feature-flag YAML bundles consumed by the existing config-bundle generator (G081 Build-Once Deploy-Many). Use when introducing a new feature flag, when creating a new train, or when retiring a flag.
 ---
 
 # Per-Train Config Bundle Authoring
@@ -8,7 +8,7 @@ description: How to author per-train feature-flag YAML bundles consumed by the e
 
 Trunk holds code for ALL trains (mvp, v1, v2, experimental). The same git SHA can ship to multiple slots simultaneously. What differs per train is **which feature flags are default-ON**. Bundles encode that difference.
 
-CI's existing config-bundle generator (G074) reads the train's bundle file and emits `<env>-<sourceSha>.tar.gz` containing the resolved env file. The bundle is signed (cosign) and pushed to the registry as an immutable artifact.
+CI's existing config-bundle generator (G081 Build-Once Deploy-Many) reads the train's bundle file and emits `<env>-<sourceSha>.tar.gz` containing the resolved env file. The bundle is signed (cosign) and pushed to the registry as an immutable artifact.
 
 ## Bundle File Layout
 
@@ -141,4 +141,4 @@ Triggered by `release-train-flag-audit.sh` flagging the flag as overdue (its tra
 - Skill: `bubbles-release-train-model` (trains + cuts + promotes)
 - Skill: `bubbles-flag-lifecycle` (introduction, retirement triggers)
 - Skill: `bubbles-config-sst` (config single source of truth)
-- Gate: G074 (Build-Once Deploy-Many), G111 (flag default-off)
+- Gate: G081 (Build-Once Deploy-Many), G111 (flag default-off)
