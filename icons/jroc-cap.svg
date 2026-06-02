@@ -1,0 +1,21 @@
+<!-- icon-name: jroc-cap -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- backward baseball cap (single prop) -->
+  <!-- crown (rounded dome facing right because cap is backward) -->
+  <path d="M 18 32 C 18 18 38 18 42 26"/>
+  <!-- crown back stitch line -->
+  <path d="M 30 18 L 30 26" stroke-width="1"/>
+  <!-- cap brim sticking out to the LEFT (backward) -->
+  <path d="M 18 32 L 8 30 L 8 34 L 18 34 Z"/>
+  <!-- cap headband (lower seam) -->
+  <path d="M 18 34 L 42 34"/>
+  <!-- snapback strap (the back of the cap now facing forward) -->
+  <path d="M 42 26 L 46 28 L 46 36 L 42 38" />
+  <!-- snap holes (3 dots) -->
+  <circle cx="44" cy="30" r="0.8" fill="#f8f9fa" stroke="none"/>
+  <circle cx="44" cy="32" r="0.8" fill="#f8f9fa" stroke="none"/>
+  <circle cx="44" cy="34" r="0.8" fill="#f8f9fa" stroke="none"/>
+  <!-- crown panel seams (subtle) -->
+  <path d="M 24 19 L 24 32" stroke-width="0.8"/>
+  <path d="M 36 19 L 36 32" stroke-width="0.8"/>
+</svg>

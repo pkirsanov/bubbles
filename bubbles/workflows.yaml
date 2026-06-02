@@ -348,6 +348,24 @@ gates:
     description: >-
       BLOCKING gate. Every train in `config/release-trains.yaml` MUST declare a `pii` field (`none|pseudonymized|encrypted-only`). Defaults declared under `defaults.pii` apply when per-train `pii` is omitted. Backup ledger entries inherit the train's PII classification. Enforced by `bubbles/scripts/release-train-guard.sh`. Owned by `bubbles.train`.
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # CROSS-TRAIN PROPAGATION GATES (G121-G123)
+  # Introduced with bubbles.propagate (J-Roc). Enforced by
+  # bubbles/scripts/propagation-policy-guard.sh.
+  # ─────────────────────────────────────────────────────────────────────────
+  G121:
+    name: propagation_policy_declared_gate
+    description: >-
+      BLOCKING gate. When a repo runs a `propagate-forward` / `propagate-backport` / `propagate-audit` workflow, `propagation-policy.yaml` (root or `config/`) MUST exist, parse, and reference only trains declared in `config/release-trains.yaml`. Enforced by `bubbles/scripts/propagation-policy-guard.sh`. Owned by `bubbles.propagate`.
+  G122:
+    name: propagation_validation_required_gate
+    description: >-
+      BLOCKING gate. Every edge in `defaultFlow[]` MUST declare `receivingTrainValidationMode` (`validate-only|full-delivery|none`). Edges using `none` MUST declare `validationSkipReason`. Forward and backport operations MUST route the receiving train through the declared validation mode before recording the ledger entry. Owned by `bubbles.propagate`.
+  G123:
+    name: propagation_ledger_recorded_gate
+    description: >-
+      BLOCKING gate. Every successful forward/backport operation MUST append one JSONL line to `propagation-ledger.yaml` (or path declared in policy). Ledger is append-only; rewriting past entries is forbidden (G117 audit-trail-immutable applies). Backport entries MUST include `approvalToken` referencing the human approval. Owned by `bubbles.propagate`.
+
 # Outcome contract (applies to all workflow modes that allow `done` as a
 # terminal status — i.e., every mode whose `statusCeiling` is `done`).
 # anchor: outcome-states
@@ -2477,3 +2495,61 @@ modes:
       auditOnly: true
       planningTruthMutation: false
       specReviewDefault: off
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # CROSS-TRAIN PROPAGATION MODES (J-Roc — bubbles.propagate)
+  # Forward-merge fixes between trains, backport under approval guard,
+  # audit drift. Reads propagation-policy.yaml; appends to
+  # propagation-ledger.yaml. Routes cherry-pick execution to bubbles.devops
+  # and receiving-train validation to bubbles.validate/bubbles.test.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  propagate-forward:
+    description: "Cherry-pick latest commits forward across declared train edges. For each `defaultFlow` edge with `auto: true`, identifies commits on the source train not yet on the target, routes cherry-pick to bubbles.devops, routes receiving-train validation per `receivingTrainValidationMode`, appends ledger entry. NEVER moves changes backward. NEVER edits flag bundles."
+    statusCeiling: propagated_forward
+    terminalAliases: [ propagated_forward ]
+    phaseOrder: [ select, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111, G117, G121, G122, G123 ]
+    constraints:
+      modeClass: propagation
+      requirePropagationPolicy: true
+      requireDeclaredTrainsInPolicy: true
+      requireReceivingTrainValidation: true
+      requireLedgerAppendOnly: true
+      forbidFlagBundleEdits: true
+      forbidBackwardMerge: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: propagate-forward moves existing trunk commits; does not modify planning surface
+
+  propagate-backport:
+    description: "Cherry-pick a fix backward (later train → earlier train) under approval guard. Refuses unless edge has `backportable: true` in policy AND operator supplies `--approval-token=<sha>` when `backportRequiresApproval: true`. Records approval token in ledger entry. Used for hotfixes shipped first to prod that need to flow back to trunk."
+    statusCeiling: propagated_backward
+    terminalAliases: [ propagated_backward ]
+    phaseOrder: [ select, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111, G117, G121, G122, G123 ]
+    constraints:
+      modeClass: propagation
+      requirePropagationPolicy: true
+      requireBackportableEdge: true
+      requireApprovalTokenWhenPolicyDemandsApproval: true
+      requireReceivingTrainValidation: true
+      requireLedgerAppendOnly: true
+      forbidFlagBundleEdits: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: propagate-backport moves existing prod commits; does not modify planning surface
+
+  propagate-audit:
+    description: "Read-only drift report. For each `defaultFlow` edge, lists commits on the source train not yet on the target. No cherry-pick, no validation, no ledger entry. Used before release windows to see what's drifted."
+    statusCeiling: propagation_audited
+    terminalAliases: [ propagation_audited ]
+    phaseOrder: [ select, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G121 ]
+    constraints:
+      modeClass: propagation
+      requirePropagationPolicy: true
+      auditOnly: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: propagate-audit is read-only
