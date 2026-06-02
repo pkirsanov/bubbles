@@ -171,6 +171,14 @@ if [[ -x "$SCRIPT_DIR/release-train-rollup-selftest.sh" ]]; then
   run_check "Release train rollup selftest" bash "$SCRIPT_DIR/release-train-rollup-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/observability-adapter-lint-selftest.sh" ]]; then
+  run_check "Observability adapter lint selftest" bash "$SCRIPT_DIR/observability-adapter-lint-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-adapter-lint.sh" && -d "$REPO_ROOT/bubbles/adapters/observability" ]]; then
+  run_check "Observability adapter lint (live)" bash "$SCRIPT_DIR/observability-adapter-lint.sh" "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/intent-routes-lint-selftest.sh" ]]; then
   run_check "Intent routes lint selftest" bash "$SCRIPT_DIR/intent-routes-lint-selftest.sh"
 fi
