@@ -366,6 +366,16 @@ gates:
     description: >-
       BLOCKING gate. Every successful forward/backport operation MUST append one JSONL line to `propagation-ledger.yaml` (or path declared in policy). Ledger is append-only; rewriting past entries is forbidden (G117 audit-trail-immutable applies). Backport entries MUST include `approvalToken` referencing the human approval. Owned by `bubbles.propagate`.
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # INCIDENT FASTLANE GATE (G124)
+  # Introduced with the incident-fastlane workflow mode + severity tagging
+  # in bubbles.stabilize.
+  # ─────────────────────────────────────────────────────────────────────────
+  G124:
+    name: incident_severity_declared_gate
+    description: >-
+      BLOCKING gate for the `incident-fastlane` workflow mode. bubbles.stabilize MUST classify each finding with a severity tag (`incident`/`high`/`medium`/`low`) before the verdict is recorded. At least one `incident` finding REQUIRES emitting a `route_required` packet to `bubbles.train` with `action: rollback` — stabilize MUST NOT perform rollback inline. Owned by `bubbles.stabilize` (classification) + `bubbles.train` (rollback authority).
+
 # Outcome contract (applies to all workflow modes that allow `done` as a
 # terminal status — i.e., every mode whose `statusCeiling` is `done`).
 # anchor: outcome-states
@@ -2566,3 +2576,24 @@ modes:
       planningTruthMutation: false
       specReviewDefault: off
       specReviewOptOutReason: propagate-audit is read-only
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # INCIDENT FASTLANE (Shitty Bill diagnoses, DVS rolls back, Tommy executes)
+  # Chains stabilize diagnostics → train rollback → devops redeploy → validate
+  # under a single workflow mode for production incidents.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  incident-fastlane:
+    description: "Production incident response chain. bubbles.stabilize diagnoses with severity tagging (G124); any `incident` severity routes pointer-swap rollback authority to bubbles.train (DVS); bubbles.devops executes the redeploy via repo CLI; bubbles.validate confirms the rollback target is live; bubbles.docs records post-incident notes (optional). Routed by NL phrases like 'prod is broken', 'rollback prod', 'production incident'. Preserves ownership boundaries — stabilize never rolls back inline."
+    statusCeiling: incident_mitigated
+    terminalAliases: [ incident_mitigated ]
+    phaseOrder: [ select, stabilize, devops, validate, audit, docs, finalize ]
+    requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G117, G124 ]
+    constraints:
+      modeClass: incident
+      requireSeverityClassification: true
+      forbidInlineRollbackInStabilize: true
+      requireRollbackAuthorityRoutedToTrain: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: incident-fastlane operates on existing trunk state; no planning surface change
