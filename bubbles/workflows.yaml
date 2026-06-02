@@ -2385,6 +2385,19 @@ modes:
       planningTruthMutation: false
       specReviewDefault: off
 
+  release-train-status-all:
+    description: "Read-only rollup of every train declared in config/release-trains.yaml. Reports id, phase, target_slot, flags_bundle, retention, pii, and open-flag count per train. Invoked via `/bubbles.train status --all-trains` or NL phrases routed by intent-routes.yaml (`what's in prod and dev`, `release status`). Never mutates state."
+    statusCeiling: train_status_reported
+    terminalAliases: [ train_status_reported ]
+    phaseOrder: [ select, audit, finalize ]
+    requiredGates: [ G001, G006, G007, G011, G012, G073, G110 ]
+    constraints:
+      modeClass: release-train
+      auditOnly: true
+      planningTruthMutation: false
+      specReviewDefault: off
+      specReviewOptOutReason: release-train-status-all is read-only multi-train rollup
+
   # ─────────────────────────────────────────────────────────────────────────
   # UPKEEP MODES (Treena Lahey — bubbles.upkeep)
   # Recurring operational hygiene: backup, restore drill, BCDR drill,

@@ -36,7 +36,7 @@ agents:
 EOF
 
   cat > "$TMP/bubbles/workflows.yaml" <<'EOF'
-workflows:
+modes:
   mode-a:
     description: "a"
   mode-b:

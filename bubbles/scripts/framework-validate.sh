@@ -167,6 +167,10 @@ if [[ -x "$SCRIPT_DIR/propagation-policy-guard-selftest.sh" ]]; then
   run_check "Propagation policy guard selftest" bash "$SCRIPT_DIR/propagation-policy-guard-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/release-train-rollup-selftest.sh" ]]; then
+  run_check "Release train rollup selftest" bash "$SCRIPT_DIR/release-train-rollup-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/intent-routes-lint-selftest.sh" ]]; then
   run_check "Intent routes lint selftest" bash "$SCRIPT_DIR/intent-routes-lint-selftest.sh"
 fi

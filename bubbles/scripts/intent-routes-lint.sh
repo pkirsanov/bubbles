@@ -109,7 +109,7 @@ if [[ -n "$KNOWN_AGENTS" ]]; then
 fi
 
 KNOWN_MODES=""
-[[ -f "$WORKFLOWS_FILE" ]] && KNOWN_MODES="$(yq -r '.workflows | keys | .[]' "$WORKFLOWS_FILE" 2>/dev/null || true)"
+[[ -f "$WORKFLOWS_FILE" ]] && KNOWN_MODES="$(yq -r '.modes | keys | .[]' "$WORKFLOWS_FILE" 2>/dev/null || true)"
 if [[ -n "$KNOWN_MODES" ]]; then
   for ((i = 0; i < route_count; i++)); do
     mode="${ROUTE_MODE[$i]:-}"

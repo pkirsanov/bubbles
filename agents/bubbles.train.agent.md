@@ -75,4 +75,6 @@ handoffs:
 $ARGUMENTS
 ```
 
-**Required:** Action (`cut` | `promote` | `rollback` | `retire` | `status` | `flag-audit`) + train id + optional target slot.
+**Required:** Action (`cut` | `promote` | `rollback` | `retire` | `status` | `status --all-trains` | `flag-audit`) + train id (omitted for `status --all-trains`) + optional target slot.
+
+**Multi-train rollup (`status --all-trains`):** Read-only. Runs `bubbles/scripts/release-train-rollup.sh` to produce a markdown table with one row per declared train: id, phase, target_slot, flags_bundle, retention, pii, open-flag count. Routed by the `release-train-status-all` workflow mode. Natural-language phrases like `what's in prod and dev`, `release status`, `all trains status` route here via `bubbles/intent-routes.yaml`. NEVER mutates any file.
