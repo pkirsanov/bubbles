@@ -259,11 +259,12 @@ fi
 
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
-if [[ ! -f "${TARGET}/.gitignore" ]]; then
-  touch "${TARGET}/.gitignore"
+# .gitignore lives at the repo root (cwd), NOT under .github/.
+if [[ ! -f ".gitignore" ]]; then
+  touch ".gitignore"
 fi
-if ! grep -qx 'improvements/' "${TARGET}/.gitignore" 2>/dev/null; then
-  printf '\n# Bubbles framework-health proposals (downstream-local)\nimprovements/\n' >> "${TARGET}/.gitignore"
+if ! grep -qx 'improvements/' ".gitignore" 2>/dev/null; then
+  printf '\n# Bubbles framework-health proposals (downstream-local)\nimprovements/\n' >> ".gitignore"
   ok "Added improvements/ to .gitignore"
 fi
 
