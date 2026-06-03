@@ -248,6 +248,25 @@ cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
 
+# ── Install adapters ─────────────────────────────────────────────────
+if [[ -d "$TEMP_DIR/bubbles/adapters" ]]; then
+  info "Installing framework adapters..."
+  mkdir -p "${TARGET}/bubbles/adapters"
+  cp -R "$TEMP_DIR"/bubbles/adapters/. "${TARGET}/bubbles/adapters/"
+  find "${TARGET}/bubbles/adapters" -type f -name '*.sh' -exec chmod +x {} \;
+  ok "$(find "${TARGET}/bubbles/adapters" -type f 2>/dev/null | wc -l) adapter file(s) installed"
+fi
+
+# Framework-health proposals are downstream-local scratch by default. Keep this
+# outside --bootstrap so normal upgrades also preserve the documented behavior.
+if [[ ! -f "${TARGET}/.gitignore" ]]; then
+  touch "${TARGET}/.gitignore"
+fi
+if ! grep -qx 'improvements/' "${TARGET}/.gitignore" 2>/dev/null; then
+  printf '\n# Bubbles framework-health proposals (downstream-local)\nimprovements/\n' >> "${TARGET}/.gitignore"
+  ok "Added improvements/ to .gitignore"
+fi
+
 # ── Install bootstrap scaffolding assets ───────────────────────────
 if [[ -d "$TEMP_DIR/templates" ]]; then
   info "Installing bootstrap templates..."

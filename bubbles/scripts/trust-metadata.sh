@@ -263,6 +263,12 @@ bubbles_framework_manifest_entries() {
     [[ -f "$file_path" ]] || continue
     relative_path="${file_path#$source_root/}"
     printf '%s\n' "$relative_path"
+  done < <(find "$source_root/bubbles/adapters" -type f 2>/dev/null | LC_ALL=C sort)
+
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    printf '%s\n' "$relative_path"
   done < <(find "$source_root/templates" -type f 2>/dev/null | LC_ALL=C sort)
 
   for relative_path in \

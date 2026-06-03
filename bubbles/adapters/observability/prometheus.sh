@@ -17,25 +17,30 @@
 # Operator override hooks (env vars, all optional):
 #   PROMETHEUS_BASE_URL              required; no default
 #   PROMETHEUS_BEARER_TOKEN          optional bearer token for /api/v1/*
-#   PROMETHEUS_CURL_MAX_TIME         default 10 (seconds)
-#   PROMETHEUS_QUERY_SLO_BURN        override SLO burn promql
-#   PROMETHEUS_QUERY_ERROR_RATE      override error-rate promql
-#   PROMETHEUS_QUERY_DEPLOY_IMPACT   override deploy-impact promql
+#   PROMETHEUS_CURL_MAX_TIME         required; no default
+#   PROMETHEUS_QUERY_SLO_BURN        required; no default
+#   PROMETHEUS_QUERY_ERROR_RATE      required; no default
+#   PROMETHEUS_QUERY_DEPLOY_IMPACT   required; no default
 
 set -euo pipefail
 
 VERB="${1:-}"
 
 [[ -n "${PROMETHEUS_BASE_URL:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_BASE_URL not set" >&2; exit 1; }
+[[ -n "${PROMETHEUS_CURL_MAX_TIME:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_CURL_MAX_TIME not set" >&2; exit 1; }
 command -v curl >/dev/null 2>&1 || { echo "[prometheus][ERROR] curl required" >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "[prometheus][ERROR] jq required for URL encoding" >&2; exit 1; }
 
-MAX_TIME="${PROMETHEUS_CURL_MAX_TIME:-10}"
 AUTH_HEADER=()
 [[ -n "${PROMETHEUS_BEARER_TOKEN:-}" ]] && AUTH_HEADER=(-H "Authorization: Bearer ${PROMETHEUS_BEARER_TOKEN}")
 
+urlencode() {
+  jq -nr --arg v "$1" '$v|@uri'
+}
+
 call() {
   local path="$1"
-  curl --max-time "$MAX_TIME" --silent --show-error --fail "${AUTH_HEADER[@]}" "${PROMETHEUS_BASE_URL}${path}"
+  curl --max-time "$PROMETHEUS_CURL_MAX_TIME" --silent --show-error --fail "${AUTH_HEADER[@]}" "${PROMETHEUS_BASE_URL}${path}"
 }
 
 case "$VERB" in
@@ -43,21 +48,21 @@ case "$VERB" in
     call '/api/v1/alerts'
     ;;
   fetch-slo-burn)
-    Q="${PROMETHEUS_QUERY_SLO_BURN:-slo:burn_rate}"
-    call "/api/v1/query?query=$(printf '%s' "$Q" | sed 's/ /%20/g')"
+    [[ -n "${PROMETHEUS_QUERY_SLO_BURN:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_SLO_BURN not set" >&2; exit 1; }
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_SLO_BURN")"
     ;;
   fetch-error-rate)
-    Q="${PROMETHEUS_QUERY_ERROR_RATE:-rate(http_requests_errors_total[5m])}"
-    call "/api/v1/query?query=$(printf '%s' "$Q" | sed 's/ /%20/g')"
+    [[ -n "${PROMETHEUS_QUERY_ERROR_RATE:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_ERROR_RATE not set" >&2; exit 1; }
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_ERROR_RATE")"
     ;;
   fetch-deploy-impact)
-    Q="${PROMETHEUS_QUERY_DEPLOY_IMPACT:-delta(deploy_regression_score[1h])}"
-    call "/api/v1/query?query=$(printf '%s' "$Q" | sed 's/ /%20/g')"
+    [[ -n "${PROMETHEUS_QUERY_DEPLOY_IMPACT:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_DEPLOY_IMPACT not set" >&2; exit 1; }
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_DEPLOY_IMPACT")"
     ;;
   -h|--help|"")
     cat >&2 <<'EOF'
 prometheus.sh — Prometheus telemetry adapter
-Usage: PROMETHEUS_BASE_URL=http://host:9090 prometheus.sh <verb>
+Usage: PROMETHEUS_BASE_URL=http://host:9090 PROMETHEUS_CURL_MAX_TIME=10 prometheus.sh <verb>
 Verbs: fetch-alerts | fetch-slo-burn | fetch-error-rate | fetch-deploy-impact
 EOF
     exit 0
