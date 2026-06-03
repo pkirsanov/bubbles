@@ -12,6 +12,51 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.0.1 — Hardening Release (Framework Eats Its Own Dog Food)
+
+**Theme:** Close the drift gaps the v5.0.0 ship cycle exposed. No new features, no policy softening. Every selftest added in this release would have caught a real bug shipped in the previous cycle.
+
+**Anti-fabrication invariant preserved.** This release adds 4 new selftests, fixes 4 registry-drift bugs, and tightens 1 installer regression — all without relaxing any gate.
+
+### Registry Consistency (H1, H2, H3)
+- **New:** `bubbles/scripts/registry-consistency-selftest.sh` — validates every `Gxxx` referenced in `workflows.yaml`, scripts, agents, and docs resolves to a gate defined in `bubbles/workflows.yaml` `gates:` block. Allows documented "former Gxxx" history mentions and custom-gate `G100+` range. Also lints `state-transition-guard.sh` for duplicate `CHECK <id>` labels.
+- **Fixed:** added missing gate definitions G071 (`execution_only_validation_gate`), G072 (`evidence_provenance_gate`), G073 (`planning_only_source_edit_lockout_gate`) — referenced in 28 `requiredGates:` lists and 4 shared-module governance docs but never defined.
+- **Fixed:** `state-transition-guard.sh` CHECK 20 now correctly references Gate G021 instead of the consolidated former G049.
+- **Fixed:** annotated legacy `G045`/`G046`/`G099` references in regression-baseline-guard and gate-id-grep-selftest as documented history mentions.
+- **Fixed:** renamed duplicate `CHECK 3B` (Validate certification → CHECK 3H) and corrected the misnumbered `# CHECK 4` comment block in `state-transition-guard.sh`.
+
+### YAML Schema Validation (H4)
+- **New:** `bubbles/schemas/{workflows,capability-ledger,adoption-profiles}.schema.json` — Draft-07 JSON Schemas for the three YAML registries that caused the strict-parser failures in the v5.0 downstream upgrade cycle.
+- **New:** `bubbles/scripts/yaml-schema-validate.sh` — validates each YAML against its schema using PyYAML + jsonschema. Skips gracefully if dependencies unavailable; passes deterministically when present. Catches yesterday's "unquoted colon in YAML string" bug class at commit time.
+
+### Installer Regression Fixtures (H5)
+- **Extended:** `bubbles/scripts/install-provenance-selftest.sh` with 9 new post-install assertions covering the latent bugs found in the v5.0.0 downstream upgrade:
+  - Adapters directory `.github/bubbles/adapters/observability/` is created.
+  - `none.sh` and `prometheus.sh` are installed and executable.
+  - Repo-root `.gitignore` is created/preserved and contains `improvements/`.
+  - Negative assertion: NO stray `.github/.gitignore` is created (the earlier `${TARGET}/.gitignore` bug).
+  - Manifest reports >= 300 managed files (sanity floor against enumeration regression).
+
+### Manifest Enumeration Purity (H6)
+- **New:** `bubbles/scripts/release-manifest-purity-selftest.sh` — plants untracked files inside framework directories, regenerates the manifest, and asserts the untracked files do NOT appear. Locks in the `git ls-files` fix added to `trust-metadata.sh`.
+
+### Cheatsheet Drift Check (H7)
+- **New:** `bubbles/scripts/cheatsheet-drift-selftest.sh` — diff-only check that every workflow mode and TPB vocabulary term present in `docs/CHEATSHEET.md` also appears in `docs/its-not-rocket-appliances.html`. Catches the v5.0 drift class where mode/vocab updates landed in MD but not HTML.
+- **Fixed:** backfilled 4 workflow modes (`simplify-to-doc`, `spec-review-to-doc`, `release-planning-to-doc`, `idea-to-release-completion`) and 17 TPB vocabulary terms into the HTML cheatsheet so both surfaces are aligned. v6 replaces this with a generator (S5 in modernization plan).
+
+### Pre-Push Hook for Source Repo (H8)
+- **New:** `bubbles/scripts/hooks/pre-push.sh` + `bubbles/scripts/install-bubbles-hooks.sh`. Framework maintainers can install a pre-push hook that runs `framework-validate.sh` and `release-check.sh` before allowing any push. Idempotent and appends to any existing hook rather than replacing it. NO bypass flags.
+
+### Honest Stats (H9)
+- Gate count badge in `README.md` and `docs/generated/framework-stats.*` regenerated to reflect 101 gates (was 98 with 3 missing definitions). Counts now equal the actual `gates:` block size and the selftest enforces no dead refs.
+
+### Framework Validation Wiring
+- `framework-validate.sh` now runs in order: registry-consistency-selftest → yaml-schema-validate → cheatsheet-drift-selftest → existing checks → release-manifest-purity-selftest → existing tail.
+
+### Downstream Impact
+- Pure framework hardening. Downstream upgrade is mechanical (`install.sh --local-source`).
+- No mode renames. No agent contract changes. No state.json schema changes.
+
 ## v5.0.0 — Production Cycle Platform
 
 The full production-cycle layer: cross-train propagation, multi-train portfolio rollup, incident response fastlane, live telemetry adapters, and framework self-observation. One new agent (J-Roc / `bubbles.propagate`), five workflow modes, six gates, two reference adapters, plus NL-first routing so users still only ever type into `bubbles.super`/`workflow`/`goal`/`sprint`.
