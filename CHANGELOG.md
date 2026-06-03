@@ -12,6 +12,50 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.1.0 — Modernization Foundation
+
+**Theme:** Structured tool-call provenance, machine-verifiable result envelopes, query-able gate registry, model-tier policy advisory. Sets up v6's MCP migration by replacing prose-based plumbing with typed artifacts. Anti-fabrication is monotonically stronger; no existing gate softened.
+
+### M1 — Structured tool-call evidence log
+- **New:** `bubbles/scripts/tool-log.sh` wraps any command, streams stdout/stderr to the caller AND records a JSONL entry to `.specify/runtime/tool-calls.jsonl` with `{ts, sessionId, agent, spec, scope, cmd, exitCode, durationMs, stdoutHash, stderrHash, tags}`.
+- **New:** `bubbles/schemas/tool-call.schema.json` defines the record shape.
+- **New:** `bubbles/scripts/tool-log-selftest.sh` (4 cases, all PASS) — exit-code preservation, session continuity, hash recording, schema validation.
+- **No-bypass design:** there is no `--no-log` flag. Anti-fabrication invariant — every wrap MUST record.
+
+### M2 — Evidence ↔ tool-log bridge (advisory in v5.1, primary in v5.2)
+- **New:** `bubbles/scripts/evidence-tool-log-bridge.sh` reports DoD ↔ tool-call coverage for a spec. Heuristic matcher: ≥2 non-stopword token overlap between DoD body and recorded `cmd`, plus `exitCode == 0`.
+- **Advisory only in v5.1.** Existing ≥10-line raw-output evidence path remains valid. v5.2 promotes tool-log to a primary structured evidence path — at which point DoD items with a passing tool-log entry no longer require inline ≥10-line output.
+
+### M3 — JSON result envelopes
+- **New:** `bubbles/schemas/result-envelope.schema.json` — typed shape for the `RESULT-ENVELOPE` every Bubbles agent emits. Fields: `agent`, `outcome` (one of `completed_owned`/`completed_diagnostic`/`route_required`/`blocked`), `findings[]`, `addressedFindings[]`, `unresolvedFindings[]`, `nextOwner`, `blocker`, `continuation`, `toolCalls[]`.
+- Markdown envelope stays for human readability. JSON envelope is additive — workflow agent will start consuming it instead of grepping prose in v6.
+
+### M5 — Diff-aware DoD evidence guard
+- **New:** `bubbles/scripts/diff-evidence-guard.sh` cross-references DoD claims of `add`/`create`/`new` against `git diff <baseSha>..HEAD`. When a DoD item names a file path it claims to have added but the path isn't in the diff, the guard reports a mismatch.
+- Advisory in v5.1 (`BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` to flip blocking). Catches the "claimed done, didn't change code" failure mode that survives prose-evidence inspection.
+
+### M6 — Gate registry query helper
+- **New:** `bubbles/scripts/gate-meta.sh` exposes `list` / `count` / `exists` / `name` / `description` / `json` queries against the canonical `gates:` block. Becomes the single read interface as v5.2/v6 prepare to migrate gate metadata to `bubbles/registry/gates.yaml` — callers won't change.
+
+### M7 — Model-tier policy (advisory)
+- **New:** `bubbles/workflows.yaml` `modeDefaults.modelFloor` per-phase declarations. Defaults: `sonnet-class` for analyze/design/plan/implement/validate/audit/chaos/review/retro/spec-review; `opus-class` for security; unset for mechanical phases like `test`.
+- **New:** `bubbles/scripts/model-tier-advisory.sh check --mode <m> --phase <p>` reads `BUBBLES_ACTIVE_MODEL` and warns when below floor. Advisory in v5.1; v6 S9 promotes to blocking.
+
+### M8 — Code-search facade
+- **New:** `bubbles/scripts/code-search.sh` delegates to `rg` when present, falls back to `grep`. Stable output across backends, 400-line cap (override with `--no-cap`). Saves agents from reinventing `grep`/`find` per repo and reduces token cost of exploration.
+
+### M9 — Schema-validated control-plane manifests
+- **New schemas:** `scenario-manifest.schema.json` (SCN-* contract manifests under `specs/*/scenario-manifest.json`), `propagation-policy.schema.json` (J-Roc's `propagation-policy.yaml`), `result-envelope.schema.json` (M3).
+- `bubbles/scripts/yaml-schema-validate.sh` now also discovers and validates every `specs/*/scenario-manifest.json` plus `propagation-policy.yaml` when present. Drift in those manifests becomes a commit-time failure.
+
+### Framework validation wiring
+- `framework-validate.sh` now runs in order: registry-consistency-selftest → yaml-schema-validate → cheatsheet-drift-selftest → **tool-log-selftest (new)** → existing chain.
+
+### Downstream impact
+- Pure additive. No mode rename, no agent contract change, no state.json schema change.
+- Agents may adopt `tool-log.sh` wrapping incrementally; no policy mandate yet.
+- Mechanical upgrade: `install.sh --local-source <v5.1.0-checkout>`.
+
 ## v5.0.2 — Installer Schema Distribution + Manifest Self-Drift Fix
 
 Follow-up patch to v5.0.1 that closes two gaps surfaced during the first downstream upgrade:
