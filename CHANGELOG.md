@@ -12,6 +12,16 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.0.2 — Installer Schema Distribution + Manifest Self-Drift Fix
+
+Follow-up patch to v5.0.1 that closes two gaps surfaced during the first downstream upgrade:
+
+- **Installer now distributes JSON Schemas downstream.** `install.sh` had no copy block for `bubbles/schemas/`, so v5.0.1's `yaml-schema-validate.sh` had nothing to validate against in downstream repos. Added a typed copy step and extended the install-provenance selftest with 4 new assertions covering the schemas directory and each schema file.
+- **Manifest enumeration now includes `bubbles/schemas/` and `bubbles/scripts/hooks/`** so downstream installs receive the new v5.0.1 surfaces via the standard manifest path.
+- **Manifest freshness check is now stable against self-touching commits.** Previously the `gitSha` field embedded in the manifest pointed at the *prior* commit when the manifest itself was part of the new commit, producing a chicken-and-egg "stale" verdict. Two fixes: (1) `generate-release-manifest.sh` excludes the manifest from the payload-SHA `git log` lookup; (2) the `--check` comparator now diffs manifest content while ignoring the volatile `gitSha`/`generatedAt` fields. Counts, checksums, and inventories are still compared exactly.
+
+Downstream impact: pure mechanical upgrade. After running `install.sh --local-source <v5.0.2-checkout>`, repos will have `.github/bubbles/schemas/` populated and can run `bash .github/bubbles/scripts/yaml-schema-validate.sh` locally.
+
 ## v5.0.1 — Hardening Release (Framework Eats Its Own Dog Food)
 
 **Theme:** Close the drift gaps the v5.0.0 ship cycle exposed. No new features, no policy softening. Every selftest added in this release would have caught a real bug shipped in the previous cycle.

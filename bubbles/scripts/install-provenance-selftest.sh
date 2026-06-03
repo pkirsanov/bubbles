@@ -155,6 +155,20 @@ for adapter in none.sh prometheus.sh; do
   fi
 done
 
+# v5.0.1 H4 follow-up: schemas directory landed downstream so
+# yaml-schema-validate.sh can run there.
+schemas_dir="$LOCAL_FIXTURE/.github/bubbles/schemas"
+[[ -d "$schemas_dir" ]] \
+  && pass "Local install creates schemas/ directory" \
+  || fail "Local install creates schemas/ directory"
+for schema in workflows.schema.json capability-ledger.schema.json adoption-profiles.schema.json; do
+  if [[ -f "$schemas_dir/$schema" ]]; then
+    pass "Schema installed: $schema"
+  else
+    fail "Schema missing: $schema"
+  fi
+done
+
 # improvements/ MUST be appended to the repo-root .gitignore (NOT
 # .github/.gitignore). The earlier installer bug wrote to TARGET/.gitignore
 # where TARGET=.github, which silently produced a useless .github/.gitignore.

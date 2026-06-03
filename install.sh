@@ -257,6 +257,16 @@ if [[ -d "$TEMP_DIR/bubbles/adapters" ]]; then
   ok "$(find "${TARGET}/bubbles/adapters" -type f 2>/dev/null | wc -l) adapter file(s) installed"
 fi
 
+# ── Install JSON Schemas (v5.0.1) ─────────────────────────────────────
+# Schemas for workflows/capability-ledger/adoption-profiles let downstream
+# repos run yaml-schema-validate.sh locally before commits.
+if [[ -d "$TEMP_DIR/bubbles/schemas" ]]; then
+  info "Installing framework schemas..."
+  mkdir -p "${TARGET}/bubbles/schemas"
+  cp -R "$TEMP_DIR"/bubbles/schemas/. "${TARGET}/bubbles/schemas/"
+  ok "$(find "${TARGET}/bubbles/schemas" -type f 2>/dev/null | wc -l) schema file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.
