@@ -12,6 +12,79 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.2.0 — Flip advisory plumbing → primary
+
+**Theme:** v5.1 introduced typed plumbing (tool-log, evidence-bridge, diff-evidence-guard, gate-meta facade, code-search facade, schema validators) as opt-in/advisory so the framework + 5 downstream repos could absorb the change without breakage. v5.2 flips the bridges to primary so the typed paths actually do enforcement, and consolidates the gate registry so v6 MCP work has a single source to point at.
+
+Anti-fabrication monotonically stronger. Markdown evidence path stays valid for the entire v5.2 cycle. No mode rename. No agent contract change. No state.json schema change. Pure mechanical upgrade via `install.sh --local-source`.
+
+### F1 — Tool-log primary evidence path
+- `bubbles/scripts/state-transition-guard.sh` Check 9 now accepts a 4th evidence path: a tool-call log entry whose `cmd` shares ≥2 distinct alpha-tokens with the DoD line body AND has `exitCode == 0`. Agents that wrap their gate-relevant commands via `tool-log.sh` no longer need to inline ≥10-line raw output under every DoD item — the structured log is cryptographic-hash-grade evidence that the command actually ran.
+- The existing markdown paths (cases 1–3: inline `Evidence:` marker, anchor link, inline evidence block) remain valid. F1 is strictly additive: a DoD item with EITHER a markdown evidence block OR a matching tool-log entry passes.
+- Anti-fabrication invariant: a DoD with NEITHER still fails.
+
+### F2 — Diff-evidence-guard auto-strict for new specs
+- `bubbles/scripts/diff-evidence-guard.sh` now auto-promotes to `--strict` mode when:
+  - `state.json.modernization.diffEvidence == "enforce"`, OR
+  - the spec's first commit is on/after `2026-06-04` (v5.2 cutoff).
+- Older specs default to advisory. Operators can opt a spec out of strict mode by setting `state.json.modernization.diffEvidence == "advisory"`.
+- The `BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` env var and `--strict` flag continue to override (always force strict).
+
+### F3 — Tool-call schema v2 (additive, backward-compatible)
+- `bubbles/schemas/tool-call.schema.json` adds `schemaVersion` (1|2) and `framework` provenance block (`{name, version, sourceGitSha}`).
+- `bubbles/scripts/tool-log.sh` writes `schemaVersion: 2` on every new entry and resolves framework provenance from `.github/bubbles/.version` (downstream repos) or repo `VERSION` (the framework repo itself) plus `.github/bubbles/.install-source.json` `sourceGitSha`.
+- Schema explicitly accepts both v1 (no `schemaVersion`) and v2 records. Existing logs continue to validate. Migration is forward-only.
+
+### F4 — Gate registry consolidation
+- New canonical file: `bubbles/registry/gates.yaml` (extracted verbatim from the workflows.yaml `gates:` block).
+- New generator: `bubbles/scripts/generate-gates-block.sh` with three modes:
+  - default — splice registry into `bubbles/workflows.yaml` (byte-identical when in sync).
+  - `--check` — exit 0 if in sync, 1 if drifted. Used in `framework-validate`.
+  - `--print` — emit the regenerated `workflows.yaml` to stdout.
+- Design: the registry IS the canonical YAML form. The generator splices the registry verbatim between the `gates:` line in `workflows.yaml` and the first blank line whose next non-blank is a top-level key OR top-level comment. Round-trip is byte-identical by construction; all comments inside the registry are preserved.
+- New selftest: `bubbles/scripts/gates-registry-selftest.sh` (T1 registry exists, T2 in sync, T3 round-trip stable, T4 drift detected, T5 gate-meta count matches).
+- `framework-validate` runs both the drift `--check` and the round-trip selftest.
+
+### F5 — Result-envelope validator (advisory in v5.2, blocking in v6)
+- New script: `bubbles/scripts/result-envelope-validate.sh`. Scans every `agents/*.agent.md` for fenced JSON blocks tagged as `result_envelope:` or under a `## Result Envelope` heading and validates each against `bubbles/schemas/result-envelope.schema.json`.
+- Advisory in v5.2: missing block warns, malformed block warns, always exit 0. v6 flips to blocking (`--strict` exits 1).
+- Runs in `framework-validate` to surface drift early.
+
+### F6 — Code-search auto-select with cache
+- `bubbles/scripts/code-search.sh` persists the chosen backend (`rg` or `grep`) to `.specify/runtime/code-search.tool` on first call. Subsequent invocations skip the `command -v rg` probe.
+- `BUBBLES_CODE_SEARCH_BACKEND=rg|grep` override is honored and does NOT mutate the cache (one-shot override).
+
+### F7 — Model-tier warning written to tool-call log
+- `bubbles/scripts/model-tier-advisory.sh` now writes a structured `model-tier-warning` entry to the tool-call log when active model < floor.
+- Entry shape: `schemaVersion: 2`, `tags: ["model-tier-warning"]`, plus a `modelTier` sub-object with `{mode, phase, floor, active, severity: "warn"}`. Survives operator scrollback and is queryable alongside command evidence.
+- Stdout text is unchanged.
+
+### F8 — Selftests
+- New: `bubbles/scripts/gates-registry-selftest.sh` (5 assertions for F4).
+- New: `bubbles/scripts/v5.2-selftest.sh` (aggregate for F1/F3/F6/F7; 8 assertions including v1↔v2 schema backward-compat, cache persistence, warning-only-when-below-floor).
+- All v5.2 selftests wired into `framework-validate.sh`.
+
+### F9 — Release
+- VERSION → `5.2.0`. Downstream upgrade is `install.sh --local-source` with no manual steps. Migration steps (per repo, all optional): opt specs into `diffEvidence: enforce` in `state.json.modernization`; start emitting v2 tool-call records.
+
+### Backward Compatibility
+
+| Existing artifact | v5.2 behavior |
+|---|---|
+| `report.md` with markdown-only evidence | Still validates (paths 1–3 in Check 9). |
+| `tool-call.jsonl` v1 entries | Still validate. New writes are v2. |
+| Spec without `diffEvidence` declared in `state.json.modernization` | Auto-strict if spec was created on/after 2026-06-04; advisory otherwise. |
+| Agent file without `result_envelope:` block | Warn-only in v5.2; blocking in v6. |
+| Downstream repo without `bubbles/registry/gates.yaml` | `install.sh --local-source` creates it. |
+
+### What v5.2 Does Not Do
+
+- Does not remove the markdown evidence path.
+- Does not delete any v5.1 advisory script (they become primary, not gone).
+- Does not introduce MCP.
+- Does not change agent prompts or mode names.
+- Does not require any operator to rewrite historical `report.md` files.
+
 ## v5.1.1 — Top-level-runtime routing for fan-out modes
 
 **Theme:** Close Failure Mode 4 — silent parent-expansion of fan-out workflow modes in subagent runtimes that lack `runSubagent`. Anti-fabrication invariant strictly stronger: fan-out modes (sweep / iterate / autonomous-*) can no longer be collapsed into one agent's turn through the parent-expansion fallback.
