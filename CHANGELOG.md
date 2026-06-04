@@ -12,6 +12,23 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.2.1 — Installer + manifest enumerator for v5.2 F4 registry
+
+**Theme:** v5.2.0 introduced `bubbles/registry/gates.yaml` (F4 gate registry consolidation) but the `install.sh` script and the release-manifest enumerator (`bubbles/scripts/trust-metadata.sh`) were not updated to copy/enumerate the new directory. Downstream repos that ran v5.2.0's installer received the new scripts (`generate-gates-block.sh`, `gates-registry-selftest.sh`) but no `bubbles/registry/gates.yaml` for them to read against — the gates-registry-selftest would skip, and the drift check would fail to find the canonical source.
+
+v5.2.1 closes this gap.
+
+### Changes
+
+- **install.sh**: new install step copies `bubbles/registry/` from the source payload into `${TARGET}/bubbles/registry/` (mirrors the existing `bubbles/schemas/` copy pattern).
+- **bubbles/scripts/trust-metadata.sh** (`bubbles_framework_manifest_entries`): enumerates every file under `bubbles/registry/` so the release manifest tracks `bubbles/registry/gates.yaml` as a framework-managed file. Downstream repos receive it on install and pre-push `release-manifest` selftests stay green.
+
+### Backward Compatibility
+
+- All v5.2.0 work items (F1–F9) ship unchanged.
+- Downstream repos that already upgraded to v5.2.0 should re-run `install.sh --local-source` (or remote install) to pick up `bubbles/registry/gates.yaml`. Until they do, the gates-registry-selftest reports SKIP rather than FAIL on the missing file (it returns early instead of asserting drift).
+- No agent contract change. No state.json schema change.
+
 ## v5.2.0 — Flip advisory plumbing → primary
 
 **Theme:** v5.1 introduced typed plumbing (tool-log, evidence-bridge, diff-evidence-guard, gate-meta facade, code-search facade, schema validators) as opt-in/advisory so the framework + 5 downstream repos could absorb the change without breakage. v5.2 flips the bridges to primary so the typed paths actually do enforcement, and consolidates the gate registry so v6 MCP work has a single source to point at.

@@ -267,6 +267,17 @@ if [[ -d "$TEMP_DIR/bubbles/schemas" ]]; then
   ok "$(find "${TARGET}/bubbles/schemas" -type f 2>/dev/null | wc -l) schema file(s) installed"
 fi
 
+# ── Install registry (v5.2.1 / F4 installer fix) ──────────────────────
+# bubbles/registry/gates.yaml is canonical for gate definitions starting
+# in v5.2. generate-gates-block.sh splices it back into workflows.yaml.
+# Drift detection in framework-validate requires this file to be present.
+if [[ -d "$TEMP_DIR/bubbles/registry" ]]; then
+  info "Installing framework registry..."
+  mkdir -p "${TARGET}/bubbles/registry"
+  cp -R "$TEMP_DIR"/bubbles/registry/. "${TARGET}/bubbles/registry/"
+  ok "$(find "${TARGET}/bubbles/registry" -type f 2>/dev/null | wc -l) registry file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.
