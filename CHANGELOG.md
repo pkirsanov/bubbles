@@ -12,6 +12,40 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.1.1 — Top-level-runtime routing for fan-out modes
+
+**Theme:** Close Failure Mode 4 — silent parent-expansion of fan-out workflow modes in subagent runtimes that lack `runSubagent`. Anti-fabrication invariant strictly stronger: fan-out modes (sweep / iterate / autonomous-*) can no longer be collapsed into one agent's turn through the parent-expansion fallback.
+
+### Background
+
+v5.0.x defined parent-expanded child mode as the fallback when nested `bubbles.workflow` subagents lack `runSubagent`. That fallback is correct for single-spec modes (`bugfix-fastlane`, `harden-to-doc`, etc.) where the phase chain is sequential and a single agent can legitimately execute every phase. It is INCORRECT for fan-out modes that dispatch N rounds × per-finding specialist chains (`bubbles.bug` → `bubbles.implement` → `bubbles.test` → `bubbles.validate` → `bubbles.audit` → `bubbles.docs`): collapsing those into one agent's turn forges cross-role transitions and produces evidence with no real specialist provenance.
+
+### Changes
+
+- **New mode constraint** `constraints.requiresTopLevelRuntime: true` declared on the six fan-out modes in `bubbles/workflows.yaml`:
+  - `stochastic-quality-sweep`
+  - `retro-quality-sweep`
+  - `iterate`
+  - `autonomous-goal`
+  - `autonomous-sprint`
+  - `idea-to-release-completion`
+- **New routing rule** in `agents/bubbles_shared/workflow-execution-loops.md`: when a subagent runtime resolves a mode with `requiresTopLevelRuntime: true`, it MUST emit `route_required` with `routingReason: "top-level-runtime-required"` and `nextOwner: "user-session"`. Parent-expansion is forbidden for these modes.
+- **New Failure Mode 4** added to the dispatch-failure-mode table — silent parent-expansion of fan-out modes is now an explicit prohibition with policy text.
+- **Updated `bubbles.workflow` agent** (`agents/bubbles.workflow.agent.md`) — TOOL-AVAILABILITY ESCALATION section adds the `requiresTopLevelRuntime` exception explicitly.
+- **Updated `bubbles.iterate` agent** (`agents/bubbles.iterate.agent.md`) — new "Top-Level Runtime Requirement" section spells out the route-up behavior for the iterate-in-subagent case.
+- **Updated `bubbles.super` agent** (`agents/bubbles.super.agent.md`) — Front-Door Policy section adds the top-level-runtime routing rule so super doesn't dispatch fan-out modes as subagents.
+- **New selftest** `bubbles/scripts/top-level-runtime-routing-selftest.sh` asserts: every fan-out mode has the flag set to exactly boolean `true`; no other mode has the flag spuriously set; documentation mentions Failure Mode 4 + the Top-level-runtime modes section + the `route_required` routingReason; every fan-out mode is listed by name in that section. Wired into `framework-validate.sh`.
+
+### Backward compatibility
+
+- Single-spec modes (`bugfix-fastlane`, `full-delivery`, `feature-delivery`, all `*-to-doc` modes, `release-train-*`, `upkeep-*`, `propagate-*`, `incident-fastlane`, `framework-health`, etc.) still allow parent-expansion exactly as in v5.0.x — only the six listed fan-out modes change.
+- No agent contract change, no state.json schema change, no gate addition or removal.
+- Mechanical upgrade via `install.sh --local-source`.
+
+### Why this hotfix ships before v5.2
+
+v5.2 strengthens evidence/diff/envelope enforcement during sweeps. If sweeps cannot orchestrate properly because subagent runtimes silently parent-expand and break role separation, v5.2's stronger evidence rules have no legitimate orchestrator to enforce them. Fix the orchestration loop first.
+
 ## v5.1.0 — Modernization Foundation
 
 **Theme:** Structured tool-call provenance, machine-verifiable result envelopes, query-able gate registry, model-tier policy advisory. Sets up v6's MCP migration by replacing prose-based plumbing with typed artifacts. Anti-fabrication is monotonically stronger; no existing gate softened.
