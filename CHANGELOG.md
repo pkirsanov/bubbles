@@ -14,7 +14,35 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
-### B2 — diff-evidence-guard default-on for all specs
+### B3 — result-envelope validator: malformed envelopes block; missing still warn
+
+**Theme:** v5.2 / F5 added the validator as fully advisory. v6.0 / B3 flips the default policy: malformed envelopes now BLOCK framework-validate, but missing envelopes still WARN. Authoring valid envelopes for all 40 agents is a substantial content task tracked separately as v6.1 — flipping "missing → blocking" today would block every push without first rolling out per-agent envelope blocks.
+
+The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operators who need temporary backwards compatibility (e.g., bisecting an upstream change).
+
+#### Changes
+
+- **`bubbles/schemas/result-envelope.schema.json`** — three compatibility fixes:
+    - `additionalProperties` flipped to `true` (was `false`) so agents can carry richer fields (`roleClass`, `featureDir`, `scopeIds`, `dodItems`, `packetRef`, `artifactsCreated`, `artifactsUpdated`, etc.) without schema drift.
+    - `nextRequiredOwner` accepted as an alias for `nextOwner` when `outcome=route_required`. Either field satisfies the conditional `required` clause via `anyOf`.
+    - `blockedReason` accepted as an alias for `blocker.reason` when `outcome=blocked`, same `anyOf` pattern.
+    - Both `nextOwner` and `nextRequiredOwner` accept `["string", "null"]` so template envelopes that show null placeholders for non-routing outcomes parse cleanly.
+- **`bubbles/scripts/result-envelope-validate.sh`** — three modes instead of two:
+    - `--advisory` (was the v5.2 default) — never block.
+    - no args (v6.0 default) — block on **malformed** envelopes only; warn on missing.
+    - `--strict` (v6.1+ opt-in) — block on missing OR malformed.
+- **NEW** `bubbles/scripts/result-envelope-validate-selftest.sh` — 12 assertions covering all three modes plus the schema-compatibility fixes plus a deliberately-invalid `outcome` fixture that fails in every mode (truly invalid envelope is always blocking).
+- **`bubbles/scripts/framework-validate.sh`** — the advisory invocation is upgraded to v6.0 default mode and the new selftest is registered after the diff-evidence-guard selftest.
+
+#### Invariants
+
+- Monotonically stronger: v5.2 advisory mode still reachable; v6.0 strictly adds malformed-blocks behavior; v6.1 strict mode is opt-in.
+- Backwards compatible: agents that already carry `nextRequiredOwner` or `blockedReason` (instead of `nextOwner` / `blocker.reason`) keep working.
+- Schema accepts richer envelope shape — no agent file needs editing to pass v6.0 default mode.
+- Adversarial: a deliberately invalid `outcome` value fails in v6.0 default AND strict modes (truly invalid envelope always blocks).
+- Out of scope for B3: authoring envelope blocks for the 38 agents that currently lack one. Tracked as v6.1.
+
+
 
 **Theme:** v5.2 / F2 introduced a date-based auto-strict policy: specs created on/after `2026-06-04` got strict mode automatically; older specs stayed advisory. v6.0 flips the default — diff-evidence-guard is strict for ALL specs unless the spec's `state.json.modernization.diffEvidence` explicitly opts out to `"advisory"`. The v5 grandfather clause survives ONLY for pre-cutoff specs that have no `modernization` block at all — touching `state.json` (any write) demotes them to v6 policy.
 
