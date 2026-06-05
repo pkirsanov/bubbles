@@ -14,7 +14,31 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
-### B1 — evidence-tool-log-bridge MCP-primary + structured JSON envelope
+### B2 — diff-evidence-guard default-on for all specs
+
+**Theme:** v5.2 / F2 introduced a date-based auto-strict policy: specs created on/after `2026-06-04` got strict mode automatically; older specs stayed advisory. v6.0 flips the default — diff-evidence-guard is strict for ALL specs unless the spec's `state.json.modernization.diffEvidence` explicitly opts out to `"advisory"`. The v5 grandfather clause survives ONLY for pre-cutoff specs that have no `modernization` block at all — touching `state.json` (any write) demotes them to v6 policy.
+
+#### Changes
+
+- **`bubbles/scripts/diff-evidence-guard.sh`** — promotion rules rewritten:
+    - `state.json.modernization.diffEvidence == "advisory"` → advisory mode (explicit opt-out).
+    - `state.json.modernization.diffEvidence == "enforce"` → strict mode (explicit opt-in).
+    - `state.json.modernization` missing or empty → strict mode by default (v6.0 / B2).
+    - **Grandfather:** pre-cutoff (`< 2026-06-04`) spec with NO `modernization` block at all → advisory (legacy compatibility). Touching `state.json` demotes to v6 policy.
+    - `--strict` flag and `BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` still force strict.
+    - Pre-existing bug fix: the FAIL/WARN output used backticks (`` `{p}` ``) inside the bash heredoc, which collapsed them via command substitution. Switched to single quotes.
+    - Pre-existing bug fix: `Path(sf).relative_to(repo_root)` failed when `sf` was already a relative path. Use `str(Path(sf).resolve()).removeprefix(...)` instead.
+- **NEW** `bubbles/scripts/diff-evidence-guard-selftest.sh` — 7 assertions covering all promotion paths: enforce/advisory choice in state.json, v6 default-on, v5 grandfather clause, `--strict` and env-var overrides, and a real-committed-path-claim positive case.
+- **`bubbles/scripts/framework-validate.sh`** — registers the new B2 selftest after the B1 bridge selftest.
+
+#### Invariants
+
+- Monotonically stronger: v5.2's date-based auto-strict still applies; v6.0 broadens it to all-specs-unless-opted-out.
+- Backwards compatible: pre-cutoff specs with no modernization block stay advisory until their state.json is touched.
+- Manual overrides (`--strict`, env var) work in both directions.
+- Markdown ≥10-line raw-evidence path remains the parallel evidence channel that v5 introduced; diff-evidence-guard is an ADDITIONAL signal that path-claims in DoD text correspond to actual git changes.
+
+
 
 **Theme:** v5.1 introduced the bridge as an advisory matcher and v5.2 promoted it to a primary evidence path (alongside the markdown ≥10-line raw-output path). v6.0 flips it to MCP-primary: the bridge gains a `--format=json` mode whose structured envelope is consumed by the `query_tool_log` MCP tool. When an MCP-aware client is registered, the orchestrator can ask "does the tool-log already contain evidence that satisfies DoD item X?" and receive a programmatic answer instead of a human-readable text blob. The bash twin and the markdown evidence path both remain accepted.
 
