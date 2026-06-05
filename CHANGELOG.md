@@ -12,6 +12,30 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v6.0 Group C — Migration Tooling and Docs (in progress)
+
+### C1 + C2 + C3 — migration script, deprecations log, upgrade recipe
+
+**Theme:** v6.0 / Group C wraps the migration story. Operators who installed any v5.x release get a single command to rewrite v5 mode names to v6 primitive+tag form (C1), a single doc that catalogs every shape change between v5.3 and v6.0 (C2), and a single recipe walking through the upgrade end to end (C3).
+
+#### Changes
+
+- **NEW** `bubbles/scripts/migrate-modes-v5-to-v6.sh` — one-shot rewriter. `--check` dry-run (exit 0 clean, 2 if rewrites pending, 1 on error); `--write` applies; idempotent. Default scope: operator-visible surfaces only (`*.md`, `Makefile`, `install.sh`). Excludes framework internals (`agents/`, `skills/`, `bubbles/scripts/`, `bubbles/workflows/`, generated cheatsheets, historical design docs, `CHANGELOG.md`). `--include-instructions` extends scope to `instructions/` and `.github/instructions/`. Pure-bash awk parser for `bubbles/workflows/aliases.yaml` (no yq dependency).
+- **NEW** `bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh` — 9 assertions covering: aliases parse, --check exits 0 on empty corpus, --check exits 2 on dirty corpus, --check does not modify files, --write rewrites correctly, --write is idempotent, default scope excludes framework internals, real-repo --check lists install.sh, unknown-flag exits 1, missing aliases file exits 1.
+- **NEW** `docs/DEPRECATIONS.md` — authoritative log of v5 → v6 shape changes. Operator-facing how-to-verify-your-surface section, complete table of high-traffic v5 → v6 mode mappings, opt-out flags for the three default flips (B1/B2/B3), removal schedule (v5 names removed in v7).
+- **NEW** `docs/recipes/upgrade-to-v6.md` — step-by-step upgrade recipe. Pre-flight check, installer re-run, framework-validate, migration --check + --write, doctor, installer manifest check, cheatsheet regen, push. Includes what-does-not-change list and rollback steps.
+- **`docs/governance-index.md`** — DEPRECATIONS.md added to Framework Maintainer Docs; upgrade-to-v6.md added to Recipes.
+- **`bubbles/scripts/framework-validate.sh`** — registers the C1 selftest (gated on the migrate script being executable to support downstream installs that haven't synced the new file yet).
+- **`bubbles/release-manifest.json`** — regenerated. trust-metadata picks up the two new scripts + two new docs automatically.
+
+#### Invariants
+
+- Migration is idempotent. Running `--write` twice produces no second-run changes.
+- Framework internals are excluded by default. Operator surfaces are the target.
+- Adding a new v5-only file under an excluded path WILL NOT be migrated (correct: it's a framework internal that uses v5 names as fixtures).
+- DEPRECATIONS.md captures only operator-facing shape changes. Framework-internal refactors are documented in their own CHANGELOG entry, not here.
+- Upgrade recipe references commands by their downstream-install path (`.github/bubbles/scripts/...`). It is operator-facing, not source-tree-facing.
+
 ## v6.0 Group B — Subtractive Release (in progress)
 
 ### B9 — Installer manifest + structural checker (adapter/gitignore bug class structurally impossible)

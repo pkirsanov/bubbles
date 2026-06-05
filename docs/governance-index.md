@@ -95,6 +95,7 @@ agent reads.
 
 Durable source-repo framework behavior and maintainer contracts.
 
+- [DEPRECATIONS.md](DEPRECATIONS.md)
 - [Framework_Convergence_Health.md](Framework_Convergence_Health.md)
 - [Spec_Implementation_Alignment.md](Spec_Implementation_Alignment.md)
 
@@ -197,6 +198,7 @@ end-to-end flows.
 - [system-review.md](recipes/system-review.md)
 - [tdd-first-execution.md](recipes/tdd-first-execution.md)
 - [update-docs.md](recipes/update-docs.md)
+- [upgrade-to-v6.md](recipes/upgrade-to-v6.md)
 - [ux-single-file-sweep.md](recipes/ux-single-file-sweep.md)
 - [validation-latency-budgets.md](recipes/validation-latency-budgets.md)
 
