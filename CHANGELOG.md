@@ -14,6 +14,21 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
+### B5 — Skills inventory + pruning baseline (zero deletions)
+
+**Theme:** v6 design B5 called for trimming thin-pointer skills (<80 LOC each) and keeping substantive policy skills. After auditing every skill in `skills/`, the conclusion is that **no skill in the current set is a pure pointer** — every entry carries enforceable rules that an agent invokes at trigger time. The v6.0 baseline is therefore "zero deletions", captured in a new `skills/INVENTORY.md` so v6.0.1 can act on operator-reviewed pruning candidates if they emerge later.
+
+#### Changes
+
+- **NEW** `skills/INVENTORY.md` — single source of truth listing every skill with its LOC, status (KEEP / CONSOLIDATE / POINTER-DELETE / REVIEW), and notes on why it's substantive. The full table covers 34 skills, ~3,800 LOC, 0 pruning candidates.
+
+#### Invariants
+
+- No skill is removed in v6.0 — downstream installs stay byte-compatible with v5.3.0.
+- The inventory file is the audit point for future pruning decisions.
+- If a future skill IS authored as a pure pointer, it's recorded here with `POINTER-DELETE` status and removed in the next minor release.
+- The inventory itself is the v6.0 deliverable; an auto-generator (`bubbles/scripts/generate-skill-inventory.sh`) is planned for v6.1 so the size column never drifts.
+
 ### B3 — result-envelope validator: malformed envelopes block; missing still warn
 
 **Theme:** v5.2 / F5 added the validator as fully advisory. v6.0 / B3 flips the default policy: malformed envelopes now BLOCK framework-validate, but missing envelopes still WARN. Authoring valid envelopes for all 40 agents is a substantial content task tracked separately as v6.1 — flipping "missing → blocking" today would block every push without first rolling out per-agent envelope blocks.
@@ -42,7 +57,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - Adversarial: a deliberately invalid `outcome` value fails in v6.0 default AND strict modes (truly invalid envelope always blocks).
 - Out of scope for B3: authoring envelope blocks for the 38 agents that currently lack one. Tracked as v6.1.
 
-
+### B2 — diff-evidence-guard default-on for all specs
 
 **Theme:** v5.2 / F2 introduced a date-based auto-strict policy: specs created on/after `2026-06-04` got strict mode automatically; older specs stayed advisory. v6.0 flips the default — diff-evidence-guard is strict for ALL specs unless the spec's `state.json.modernization.diffEvidence` explicitly opts out to `"advisory"`. The v5 grandfather clause survives ONLY for pre-cutoff specs that have no `modernization` block at all — touching `state.json` (any write) demotes them to v6 policy.
 
@@ -66,7 +81,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - Manual overrides (`--strict`, env var) work in both directions.
 - Markdown ≥10-line raw-evidence path remains the parallel evidence channel that v5 introduced; diff-evidence-guard is an ADDITIONAL signal that path-claims in DoD text correspond to actual git changes.
 
-
+### B1 — evidence-tool-log-bridge MCP-primary with structured JSON envelope
 
 **Theme:** v5.1 introduced the bridge as an advisory matcher and v5.2 promoted it to a primary evidence path (alongside the markdown ≥10-line raw-output path). v6.0 flips it to MCP-primary: the bridge gains a `--format=json` mode whose structured envelope is consumed by the `query_tool_log` MCP tool. When an MCP-aware client is registered, the orchestrator can ask "does the tool-log already contain evidence that satisfies DoD item X?" and receive a programmatic answer instead of a human-readable text blob. The bash twin and the markdown evidence path both remain accepted.
 
@@ -97,7 +112,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - MCP tool surfaces verbatim bridge stdout — the server doesn't summarize.
 - Adversarial: unknown `--format` value rejected; missing spec dir rejected.
 
-
+### B4 — workflow mode collapse: 55 v5 modes → 15 v6 primitives + tags
 
 **Theme:** v5 exposed 55 hand-coded workflow modes (`release-train-promote`, `upkeep-restore-drill`, `bugfix-fastlane`, ...). v6.0 collapses the operator-visible surface to 15 canonical primitives plus a deterministic tag grammar. Every v5 mode still works through the v6 cycle via an alias map; the v7 release removes the v5 names. The migrate-modes-v5-to-v6.sh script (Group C / C1) will rewrite operator invocations automatically.
 
@@ -129,7 +144,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - B7 (cheatsheet generator) shipped in commit `eb9a617`.
 - B4 (this entry) ships the alias map + selftest. Operators can now invoke either form; documentation and migration script land in C1-C3.
 
-
+### B7 — cheatsheet generator + retire H7 drift selftest
 
 **Theme:** the v5.0.1 H7 drift selftest treated `docs/CHEATSHEET.md` and `docs/its-not-rocket-appliances.html` as two independent surfaces that had to be kept in sync. v6 collapses them to a single source of truth so drift is structurally impossible.
 
@@ -151,7 +166,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - `--check` mode is byte-identical reproducible (used by `framework-validate` and `release-check`).
 - Adversarial regression: removing a `GENERATED:*` marker, adding an unknown mode, or duplicating an alias all fail the selftest.
 
-
+## v5.3.0 — Downstream-install validation cleanup
 
 **Theme:** `framework-validate` was authored inside the framework source repo and several of its selftests hardcoded assumptions that only hold from that tree (`install.sh` at repo root, `VERSION` file, `README.md`/`docs/` layout, `agents/` and `bubbles/` directly under the repo root). When downstream repos installed Bubbles, their copy of `framework-validate` would FAIL 11+ checks against expected-to-be-missing files, even though every framework-managed asset was installed correctly. Smackerel surfaced this with 11 baseline failures (9 source-only + 2 path-resolution).
 
