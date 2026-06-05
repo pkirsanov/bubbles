@@ -38,6 +38,63 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
+### B10 — Parallel phase fan-out contract (opt-in dispatcher in v6.0; default in v6.1)
+
+**Theme:** v6 design B10 called for "independent phases run in parallel where DAG permits". The DISPATCHER implementation that honors this is opt-in in v6.0 (`BUBBLES_PARALLEL_PHASES=1`); v6.0 ships the CONTRACT so workflow agents, selftests, and operators all read the same DAG rules, parallel-eligible phase shapes, determinism guarantees, and failure-handling requirements.
+
+#### Changes
+
+- **`agents/bubbles_shared/workflow-execution-loops.md`** — new "Phase 0.11: Parallel Phase Fan-Out (v6.0 / B10)" section. Defines:
+    - The 5-condition DAG that determines whether two phases MAY be dispatched in parallel (no data dependency, no status-promotion ordering, no shared mutable singleton, no finding-ownership conflict, both read-only OR both idempotent).
+    - Canonical parallel-eligible phase shapes (e.g. `bubbles.security` + `bubbles.test` against the same spec, per-spec `bubbles.docs` across N specs, per-scope `bubbles.test` with disjoint test files).
+    - Canonical sequential-only phase shapes (`bubbles.implement` + `bubbles.implement` same spec, any pair around a `state.json` write).
+    - 5 determinism guarantees (stable phase-name-sorted output ordering, stable finding ordering, latest-`at`-timestamp aggregation, per-phase temp-directory isolation, same-DAG-same-envelope-sequence selftest).
+    - Failure-handling rules (no-kill, full-aggregation, never mask partial-success).
+    - Operator opt-in via `BUBBLES_PARALLEL_PHASES=1`.
+    - 4-item anti-pattern checklist.
+
+#### Why opt-in, not default-on, in v6.0
+
+- Audit gap: not every workflow agent has been audited against the DAG.
+- Determinism gap: the dispatcher's stable-ordering invariant isn't yet enforced by a selftest.
+- Operator surprise: operators dependent on v5 sequential log ordering would see a reordered stream; the opt-in flag gives one release for adaptation.
+
+#### Invariants
+
+- The CONTRACT is normative immediately. Workflow agent definitions and reviewers can cite the DAG rules today regardless of dispatcher implementation status.
+- Parent envelope failure aggregation rules apply to both sequential and parallel dispatch — the contract is dispatch-mode-independent.
+- The parallel doctrine is subordinate to per-round synchronous dispatch. Rounds remain synchronous; parallelization is WITHIN-round only.
+
+#### v6.1 plan
+
+- Default-on the parallel dispatcher.
+- Ship `bubbles/scripts/parallel-fanout-determinism-selftest.sh` enforcing same-DAG-same-envelope-sequence across 100 runs.
+- Audit + tag every workflow agent's phases with `parallel-eligible: true|false` metadata.
+
+### B8 — v5.1 advisory paths absorbed by B1/B2/B3 (no distinct path to remove)
+
+**Theme:** v6 design B8 called for removing "v5.1 advisory paths superseded by v5.2 primaries" in `evidence-tool-log-bridge.sh`, `diff-evidence-guard.sh`, and `result-envelope-validate.sh`. Audit of the three scripts shows there is **no distinct v5.1 advisory code path remaining** — v5.2 unified the implementation and B1/B2/B3 already removed the advisory-only behavior at the entry-point level.
+
+#### What B1/B2/B3 already did
+
+- **B1** (`evidence-tool-log-bridge.sh`) — flipped the bridge from text-only to JSON-by-default. The always-exit-0 semantic was preserved deliberately so MCP integrations can interpret the JSON envelope; that semantic is NOT a v5.1 advisory remnant, it's the canonical contract.
+- **B2** (`diff-evidence-guard.sh`) — flipped the default from advisory to strict for all specs. The remaining advisory branch is a per-spec opt-out (`state.json.modernization.diffEvidence == "advisory"`) plus a v5 grandfather clause for pre-cutoff specs with NO modernization block. Both are documented operator escape hatches, not v5.1 advisory code paths.
+- **B3** (`result-envelope-validate.sh`) — flipped the default from `--advisory` to blocking-on-malformed. `--advisory` remains as an explicit operator flag for bisecting upstream changes; that's intentional opt-out, not vestigial v5.1.
+
+#### Why not delete `--advisory` too
+
+The design rationale for `--advisory` in B3 is documented in `docs/DEPRECATIONS.md`: it is "temporary backwards compatibility (e.g., bisecting an upstream change)". Removing it would deny operators a debugging tool with zero offsetting benefit. The flag is scheduled for removal in v6.1 once the agent set has fully migrated to the v6 schema (per `docs/DEPRECATIONS.md` "Removal Schedule").
+
+#### What B8 actually delivers
+
+This entry is the audit conclusion: B8 has no incremental code change to ship in v6.0. The three scripts are already at the post-B8 shape because B1/B2/B3 consolidated the surface. The "Selftests updated" requirement in the B8 row is satisfied by the v5 / B1/B2/B3 selftest updates.
+
+#### Invariants
+
+- Zero deletions in v6.0 / B8. The three scripts retain their B1/B2/B3 shape.
+- Advisory escape hatches (`--advisory`, state.json opt-out, v5 grandfather) are documented operator surfaces, not vestigial v5.1 code paths.
+- v6.1 removes `--advisory` from `result-envelope-validate.sh` per the DEPRECATIONS.md removal schedule.
+
 ### B9 — Installer manifest + structural checker (adapter/gitignore bug class structurally impossible)
 
 **Theme:** v6 design B9 called for an installer-as-generated-artifact (typed manifest + generator). v6.0 ships the verification half of that pattern: a typed manifest (`bubbles/installer/installer.yaml`) plus a structural checker (`bubbles/scripts/generate-installer.sh --check`) that audits `install.sh` against the manifest on every framework-validate run. Generation FROM the manifest is deferred to a future increment; verification AGAINST the manifest closes the historical bug classes today (improvements/ landing in the wrong .gitignore root, missing chmod +x on scripts/adapters, silent step deletion, missing provenance fields).

@@ -184,3 +184,96 @@ This section owns the full iterate loop contract, including:
 - per-spec finalization and iterate summary requirements
 
 The workflow agent should retain the phase header and a short summary, but the detailed iteration mechanics live here.
+
+### Phase 0.11: Parallel Phase Fan-Out (v6.0 / B10)
+
+This section owns the **parallel phase fan-out** contract — the rule for when a workflow orchestrator MAY dispatch multiple specialist phases concurrently and the determinism guarantees that must be preserved.
+
+#### What v6.0 / B10 actually delivers
+
+The parallel-fan-out CONTRACT is normative in v6.0. The DISPATCHER implementation that honors the contract is opt-in in v6.0 (gated by `BUBBLES_PARALLEL_PHASES=1`) and becomes the default in v6.1 once every workflow agent has been audited against the contract.
+
+The contract is normative immediately so that anyone reading a workflow agent definition can tell which phases are parallel-eligible and which are not, regardless of whether the runtime currently honors it.
+
+#### The DAG (parallel-eligible vs sequential-only)
+
+A workflow orchestrator MAY dispatch multiple specialist phases **in parallel** if and only if ALL of these hold:
+
+1. **No data dependency.** Phase B does NOT read artifacts that phase A writes. (Concrete check: phase B's input set ∩ phase A's output set = ∅.)
+2. **No status-promotion ordering.** Neither phase advances `state.json.status` past a checkpoint that the other must observe.
+3. **No shared mutable singleton.** Neither phase writes to a host singleton (`/etc/caddy/conf.d/*`, host firewall rules, shared adoption-profile state) that the other reads.
+4. **No finding-ownership conflict.** Both phases operate on disjoint finding sets (one phase per finding family).
+5. **Both phases are read-only OR both have idempotent writes** (e.g. two security scans against the same source tree may run in parallel; two `bubbles.implement` invocations against the same scope MAY NOT).
+
+#### Canonical parallel-eligible phase shapes
+
+Per Bubbles v5 conventions, the following phase shapes are parallel-eligible:
+
+| Phase pair | Why eligible |
+|---|---|
+| `bubbles.security` + `bubbles.test` (both read-only against the same spec) | Both produce findings against the same input tree without mutating it; their finding sets are orthogonal (security != correctness). |
+| `bubbles.audit` + `bubbles.regression` | Audit produces findings against committed source; regression runs against committed source. Neither mutates. |
+| `bubbles.docs` (per-spec) when run across N specs | Per-spec docs writes target disjoint artifact paths; safe to fan out. |
+| `bubbles.test` per-scope when scopes have disjoint test files | Disjoint write targets; safe to fan out (DAG-permitted by scope-isolation). |
+
+#### Canonical sequential-only phase shapes (never parallel)
+
+| Phase pair | Why NOT eligible |
+|---|---|
+| `bubbles.implement` + `bubbles.implement` (same spec) | Both mutate spec/scope artifacts; race condition. |
+| `bubbles.implement` -> `bubbles.test` (same scope) | test reads what implement writes. |
+| `bubbles.validate` -> `bubbles.audit` -> `bubbles.docs` | each phase reads the prior phase's status promotion. |
+| Anything writing to `state.json` for the same spec | state.json writes are non-atomic across multiple writers. |
+
+#### Determinism guarantees
+
+When the dispatcher fans out parallel phases, it MUST preserve:
+
+1. **Stable output ordering.** Aggregate envelope arrays MUST be sorted by phase name (alphabetic) before being emitted, regardless of actual completion order.
+2. **Stable finding ordering.** Findings MUST be sorted by (specSlug, scopeId, findingId) before aggregation.
+3. **Stable timestamp.** The aggregate phase's `at` timestamp MUST be the LATEST individual phase's `at`, not the dispatcher's wall-clock at completion (otherwise re-runs produce different timestamps).
+4. **No flaky tests from interleaving.** If two parallel phases write to the same temp directory, the dispatcher MUST give each a unique sub-directory (`$HOME/.cache/bubbles-workflow/<run-id>/<phase>/`).
+5. **Same DAG -> same envelope sequence across 100 runs.** The dispatcher selftest planted in v6.1 will verify this.
+
+#### Failure handling
+
+If any parallel phase fails, the dispatcher MUST:
+
+1. Allow all other in-flight parallel phases to complete (no kill).
+2. Aggregate all envelopes (succeeded + failed) into the parent's result.
+3. Mark the parent envelope `outcome=route_required` with `unresolvedFindings` accumulating findings from EVERY failed phase.
+4. Never mask a failure by emitting `completed_owned` on a partial-success.
+
+#### Operator opt-in (v6.0)
+
+```bash
+BUBBLES_PARALLEL_PHASES=1 ./<your-cli>.sh <env-args> validate ...
+```
+
+The flag is OFF by default in v6.0. v6.1 flips the default to ON. v7 removes the flag (parallel is mandatory for parallel-eligible phases).
+
+#### Why opt-in, not default-on, in v6.0
+
+Three reasons:
+
+1. **Audit gap.** Not every workflow agent has been audited against the DAG rules above. An agent that doesn't honor the read-only contract might race when fanned out.
+2. **Determinism gap.** The dispatcher's stable-ordering invariant isn't yet enforced by a selftest. v6.1 ships `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
+3. **Operator surprise.** Operators who depend on the v5 sequential-phase log shape would see a reordered output stream; the opt-in flag gives one release for them to adapt.
+
+#### Selftest (v6.1 planned)
+
+`bubbles/scripts/parallel-fanout-determinism-selftest.sh` will assert:
+- Same input DAG -> same envelope sequence across 100 runs.
+- Disjoint-write parallel phases produce no race-condition artifacts.
+- Shared-write parallel phases (forbidden by contract) are detected at dispatch time and rejected before any phase runs.
+- Failure aggregation preserves all findings.
+
+#### Anti-patterns (FORBIDDEN under both sequential and parallel dispatch)
+
+- Dispatching `bubbles.implement` and `bubbles.test` against the same scope in parallel.
+- Multiple writers to `state.json` for the same spec.
+- Parallel phases that share a temp directory without per-phase sub-isolation.
+- A parent envelope that masks a failed parallel phase as `completed_owned`.
+- A dispatcher that emits envelopes in completion order instead of phase-name-sorted order (breaks reproducibility).
+
+The parallel-fan-out doctrine is **subordinate to** the per-round synchronous dispatch rule at the top of this module. A workflow MAY parallelize phases WITHIN a round, but rounds themselves MUST remain synchronous.
