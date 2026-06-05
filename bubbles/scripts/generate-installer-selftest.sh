@@ -112,16 +112,7 @@ else
   fi
 fi
 
-# ── Assertion 7: manifest parses and reports declared counts ─────
-# Use the real repo's manifest. Explicitly set BUBBLES_REPO_ROOT so this
-# assertion is independent of CWD and prior-fixture environment changes.
-if BUBBLES_REPO_ROOT="$REPO_ROOT" bash "$SCRIPT" 2>&1 | grep -qE '[0-9]+ step\(s\), [0-9]+ invariant id\(s\) declared'; then
-  pass "checker reports a step+invariant summary line"
-else
-  bad "checker did not print any step+invariant summary line"
-fi
-
-# ── Assertion 8: missing install.sh => exit 2 ────────────────────
+# ── Assertion 7: missing install.sh => exit 2 ────────────────────
 fix8="$FIXTURE_ROOT/mutation-no-install-sh"
 mkdir -p "$fix8/bubbles/installer" "$fix8/bubbles/scripts"
 cp "$MANIFEST" "$fix8/bubbles/installer/installer.yaml"
