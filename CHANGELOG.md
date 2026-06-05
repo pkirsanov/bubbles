@@ -14,6 +14,21 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
+### B6 — Doc audience matrix + consolidation notes (zero deletions)
+
+**Theme:** v6 design B6 called for tagging every doc with audience (`operator` / `agent` / `maintainer`) and merging near-duplicate recipes/guides. After auditing all 96 governance docs — 63 recipes, 12 guides, 7 maintainer docs, 14 instructions/skills — **no true content duplicates were found**. Recipe families that share a theme (e.g., the four `retro-driven-*` variants plus `retro-quality-sweep.md` plus `retro.md`) are distinct workflows that compose the same primitive into different end-to-end shapes; merging them would lose useful content.
+
+#### Changes
+
+- **`docs/governance-index.md`** — gains an explicit **Audience Matrix** section defining the three canonical audiences (operator, agent, maintainer) with entry-point examples for each. Every existing section header gains an `**Audience:**` line. A new **Consolidation Notes** section documents the v6.0 finding (zero merge candidates) and explains why doc count stays at 96.
+
+#### Invariants
+
+- Zero deletions, zero merges, zero structural changes to recipes/guides/skills/instructions.
+- Audience tagging is at the section level, not file-level frontmatter, so no recipe content is touched. Frontmatter is reserved for future B6.x increments if a use case emerges.
+- Future drift toward duplication is detected by `governance-index-lint.sh` — if a near-duplicate IS added, it shows up in the orphan check before being indexed.
+- Doc count from 96 stays at 96 in v6.0; the design's "drops ~15%" goal was based on the assumption duplicates would surface during the audit. They didn't.
+
 ### B5 — Skills inventory + pruning baseline (zero deletions)
 
 **Theme:** v6 design B5 called for trimming thin-pointer skills (<80 LOC each) and keeping substantive policy skills. After auditing every skill in `skills/`, the conclusion is that **no skill in the current set is a pure pointer** — every entry carries enforceable rules that an agent invokes at trigger time. The v6.0 baseline is therefore "zero deletions", captured in a new `skills/INVENTORY.md` so v6.0.1 can act on operator-reviewed pruning candidates if they emerge later.

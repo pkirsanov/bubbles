@@ -7,7 +7,7 @@
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
   "validatedSurfaces": ["framework-validate", "release-check", "release-manifest-selftest", "install-provenance-selftest", "finding-closure-selftest", "interop-import-selftest", "trust-doctor-selftest"],
-  "docsDigest": "5bae7a6d5926add6bec9ff477217ac08a2a702cde59d39bbb3e73a8c62b13f3e",
+  "docsDigest": "0c28fae20beda8fdd213dbbea2d02d65dfe4fc1e7e339f78a1920a9f322c2842",
   "managedFileCount": 492,
   "managedFileChecksums": [
     {"path": "bubbles/scripts/action-risk-registry-lint.sh", "sha256": "a4728a5b86849b6d39652e79b266344e320b4bbb26751569ca8dc164acb3c9c0"},
@@ -242,7 +242,7 @@
     {"path": "docs/generated/framework-stats.md", "sha256": "feee680be010929e05c78c3b9f93141e5246b0615ea53a47e2bf3f80cb61678f"},
     {"path": "docs/generated/interop-migration-matrix.md", "sha256": "ba31459aa89034ea246297b057ce0cf0722407dba56032c079f15bf1ab097319"},
     {"path": "docs/generated/issue-status.md", "sha256": "3d9a1761012bee90e9188e81120332262db8792d9ac2ca6da0fc40d383bb6b39"},
-    {"path": "docs/governance-index.md", "sha256": "4515f455ad1639bfa081b2d48ff2f8f6336b89808632d59265a25a432159c23f"},
+    {"path": "docs/governance-index.md", "sha256": "1564f17c60d214b9063da10b2a1c8d18765f96d55cb590d12ae2ae0fb47e045f"},
     {"path": "docs/guides/AGENT_MANUAL.md", "sha256": "51e7b3bd2bc45e6d7a4247eb9f60e7ec77406557b66c83cb7c071bb43b30deac"},
     {"path": "docs/guides/AI_ENVIRONMENT.md", "sha256": "4f751a113f64b2afb2c34e548c49c0f4e866677979713437edd0d499d27972ad"},
     {"path": "docs/guides/AUTONOMOUS_EXECUTION.md", "sha256": "9a47765b1b89d3ed09ade5e8b61d63eb3e10f3e92d75b4e719340c3d33461d4b"},
