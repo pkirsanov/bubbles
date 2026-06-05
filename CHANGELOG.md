@@ -12,6 +12,47 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v5.3.0 — Downstream-install validation cleanup
+
+**Theme:** `framework-validate` was authored inside the framework source repo and several of its selftests hardcoded assumptions that only hold from that tree (`install.sh` at repo root, `VERSION` file, `README.md`/`docs/` layout, `agents/` and `bubbles/` directly under the repo root). When downstream repos installed Bubbles, their copy of `framework-validate` would FAIL 11+ checks against expected-to-be-missing files, even though every framework-managed asset was installed correctly. Smackerel surfaced this with 11 baseline failures (9 source-only + 2 path-resolution).
+
+v5.3 fixes the validation surface to be downstream-aware without weakening anti-fabrication or any gate enforcement.
+
+### Changes
+
+- **bubbles/scripts/framework-validate.sh** (`G1`): adds install-mode detection (`source` / `downstream` / `unknown`) based on presence of `install.sh`+`VERSION` (source) vs `.github/bubbles/.install-source.json` (downstream). Override via `BUBBLES_FRAMEWORK_VALIDATE_MODE=source|downstream` for selftest harnesses that synthesize either tree.
+- **bubbles/scripts/framework-validate.sh**: new `run_check_self_only` wrapper. The 9 selftests that depend on framework-source-only assets (`install.sh`, `VERSION`, the framework's own `README.md`/`docs/`/`bubbles/capability-ledger.yaml`) now SKIP instead of FAIL when run from a downstream tree, with explicit `SKIP: <label> (framework-source-only; install-mode=...)` accounting. Footer reports both `failures` and `skipped` counts. List: capability-ledger, capability-freshness, competitive-docs, interop-apply, release-manifest-freshness, release-manifest-selftest, release-manifest-purity, install-provenance, trust-doctor, runtime-lease.
+- **bubbles/scripts/spec-review-handoff-selftest.sh**: dual-resolve `agents/` and `bubbles/` so the selftest works from either source repo (`<root>/agents/...`) or downstream install (`<root>/.github/agents/...`).
+- **bubbles/scripts/workflow-delegation-selftest.sh**: dual-resolve `docs/` and `bubbles/` for the same reason. `WORKFLOW_MODES.md`, `agent-capabilities.yaml`, `workflows.yaml` are all resolved against the active install tree.
+- **bubbles/scripts/v5.3-selftest.sh** (NEW): synthesizes a minimal `.github/`-style downstream tree and asserts (T1) install-mode detection works downstream, (T2) install-mode detection works from source, (T3) all 9 self-only selftests SKIP cleanly with no FAIL, (T4) spec-review-handoff selftest passes against the synthetic tree, (T5) workflow-delegation selftest passes against the synthetic tree. Wired into `framework-validate.sh` so the v5.3 invariant is enforced on every source-side run.
+
+### Downstream Verification
+
+`cd ~/smackerel && bash .github/bubbles/scripts/framework-validate.sh` now exits 0 with:
+
+```
+SKIP: Capability ledger selftest (framework-source-only; install-mode=downstream)
+SKIP: Capability freshness selftest (framework-source-only; install-mode=downstream)
+SKIP: Competitive docs selftest (framework-source-only; install-mode=downstream)
+SKIP: Interop apply selftest (framework-source-only; install-mode=downstream)
+SKIP: Release manifest freshness (framework-source-only; install-mode=downstream)
+SKIP: Release manifest selftest (framework-source-only; install-mode=downstream)
+SKIP: Release manifest purity selftest (framework-source-only; install-mode=downstream)
+SKIP: Install provenance selftest (framework-source-only; install-mode=downstream)
+SKIP: Trust doctor selftest (framework-source-only; install-mode=downstream)
+SKIP: Runtime lease selftest (framework-source-only; install-mode=downstream)
+Framework validation passed (10 self-only check(s) skipped under install-mode=downstream). Run from a framework-source tree to execute them.
+```
+
+(was: `Framework validation failed with 11 failing check(s).`)
+
+### Backward Compatibility
+
+- Source-repo `framework-validate` runs the full set unchanged — no selftest weakened, no gate skipped, no assertion removed.
+- Downstream `framework-validate` now passes when the install is healthy. Genuine breakage (broken `workflows.yaml`, missing schema, drift in a downstream-resolvable selftest) still FAILs.
+- `cli.sh doctor` and `cli.sh framework-validate` dispatch surface unchanged.
+- No agent contract change. No state.json schema change. No `install.sh` behavior change.
+
 ## v5.2.1 — Installer + manifest enumerator for v5.2 F4 registry
 
 **Theme:** v5.2.0 introduced `bubbles/registry/gates.yaml` (F4 gate registry consolidation) but the `install.sh` script and the release-manifest enumerator (`bubbles/scripts/trust-metadata.sh`) were not updated to copy/enumerate the new directory. Downstream repos that ran v5.2.0's installer received the new scripts (`generate-gates-block.sh`, `gates-registry-selftest.sh`) but no `bubbles/registry/gates.yaml` for them to read against — the gates-registry-selftest would skip, and the drift check would fail to find the canonical source.
