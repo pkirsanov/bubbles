@@ -24,6 +24,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WORKFLOWS_FILE="${BUBBLES_WORKFLOWS_FILE:-$ROOT_DIR/bubbles/workflows.yaml}"
+ALIASES_FILE="${BUBBLES_WORKFLOW_ALIASES_FILE:-$ROOT_DIR/bubbles/workflows/aliases.yaml}"
 
 if ! command -v yq >/dev/null 2>&1; then
   echo "ERROR: yq (mikefarah, v4+) is required." >&2
@@ -56,8 +57,23 @@ Usage: $(basename "$0") <command-or-mode-name>
 Resolve workflow mode definitions with template inheritance.
 
 Commands:
-  <mode-name>          Print the fully-resolved mode definition as YAML
+  <mode-name>          Print the fully-resolved mode definition as YAML.
+                       If <mode-name> is a v5 mode, prints a stderr
+                       deprecation hint pointing at the v6 primitive+tag
+                       form.
+  <primitive> tag:val [tag:val ...]
+                       Resolve a v6 primitive+tag invocation to its
+                       backing v5 mode, then print the fully-resolved
+                       definition. Example:
+                         mode-resolver.sh ship action:promote
+                         mode-resolver.sh upkeep task:restore-drill
+                         mode-resolver.sh fix target:bug action:fastlane
   --list-modes         Print all defined mode names (one per line)
+  --list-aliases       Print every v5 mode and its v6 primitive+tag tuple
+                       (TSV: v5-name<TAB>primitive<TAB>tag:val,tag:val)
+  --resolve-v6 ARGS    Resolve v6 primitive+tag form (ARGS is space-
+                       separated) to the v5 mode name. Output: bare
+                       mode name on stdout. Exit 1 on unknown tuple.
   --list-templates     Print all defined template names (one per line)
   --validate           Validate every template and every mode resolves
                        cleanly with no inherits cycles and no unknown
@@ -235,6 +251,98 @@ cmd_list_modes() {
   yq -r '.modes | keys | .[]' "$WORKFLOWS_FILE"
 }
 
+# ── v6 primitive+tag alias support (B4) ───────────────────────────────
+
+aliases_available() {
+  [[ -f "$ALIASES_FILE" ]]
+}
+
+# Normalize a tag set string (space-separated key:value pairs) into a
+# stable sorted form. Empty input becomes the empty string.
+_normalize_tags() {
+  local input="$1"
+  if [[ -z "$input" ]]; then
+    echo ""
+    return
+  fi
+  echo "$input" | tr ' ' '\n' | sort -u | paste -sd ' '
+}
+
+# List every v5 alias as TSV: v5<TAB>primitive<TAB>sorted-tag-set
+# Example row: ship<TAB>release-train-promote<TAB>action:promote
+_list_alias_tsv() {
+  aliases_available || return 0
+  yq -r '
+    .v5Aliases
+    | to_entries[]
+    | .key as $v5
+    | .value.primitive as $prim
+    | (.value.tags // {} | to_entries | sort_by(.key) | map(.key + ":" + .value) | join(" ")) as $tags
+    | [$v5, $prim, $tags] | @tsv
+  ' "$ALIASES_FILE"
+}
+
+cmd_list_aliases() {
+  _list_alias_tsv
+}
+
+# Resolve a v6 primitive+tag invocation -> v5 mode name on stdout.
+# Args: $1=primitive, then space-separated tag:val pairs.
+resolve_v6_to_v5() {
+  local primitive="$1"
+  shift
+  local tags_input="$*"
+  local tags_norm
+  tags_norm="$(_normalize_tags "$tags_input")"
+
+  aliases_available || {
+    echo "ERROR: aliases file not found: $ALIASES_FILE (v6 primitive+tag form requires bubbles/workflows/aliases.yaml)" >&2
+    return 1
+  }
+
+  local match_count=0
+  local matched_v5=""
+  while IFS=$'\t' read -r v5 prim tags; do
+    [[ -z "$v5" ]] && continue
+    [[ "$prim" == "$primitive" ]] || continue
+    [[ "$tags" == "$tags_norm" ]] || continue
+    matched_v5="$v5"
+    match_count=$((match_count + 1))
+  done < <(_list_alias_tsv)
+
+  if (( match_count == 0 )); then
+    echo "ERROR: no v5 alias matches v6 form '$primitive $tags_norm'" >&2
+    return 1
+  fi
+  if (( match_count > 1 )); then
+    echo "ERROR: ambiguous v6 form '$primitive $tags_norm' matches $match_count v5 modes (alias map invariant violation)" >&2
+    return 1
+  fi
+  echo "$matched_v5"
+}
+
+# Resolve a v5 mode -> v6 primitive+tag form on stdout.
+# Format: "primitive tag:val tag:val ..." (sorted by tag key).
+resolve_v5_to_v6() {
+  local v5="$1"
+  aliases_available || return 1
+  local found=""
+  while IFS=$'\t' read -r name prim tags; do
+    [[ "$name" == "$v5" ]] || continue
+    found="${prim}${tags:+ $tags}"
+    break
+  done < <(_list_alias_tsv)
+  [[ -n "$found" ]] || return 1
+  echo "$found"
+}
+
+cmd_resolve_v6() {
+  if (( $# == 0 )); then
+    die "--resolve-v6 requires arguments (primitive plus tag:val pairs)"
+  fi
+  resolve_v6_to_v5 "$@"
+}
+
 cmd_list_templates() {
   if [[ "$(node_kind '.modeTemplates')" == '!!map' ]]; then
     yq -r '.modeTemplates | keys | .[]' "$WORKFLOWS_FILE"
@@ -317,7 +425,40 @@ case "${1:-}" in
     ;;
   --list-modes) cmd_list_modes ;;
   --list-templates) cmd_list_templates ;;
+  --list-aliases) cmd_list_aliases ;;
+  --resolve-v6)
+    shift
+    cmd_resolve_v6 "$@"
+    ;;
   --validate) cmd_validate ;;
   --*) die "unknown option: $1 (try --help)" ;;
-  *) cmd_resolve_mode "$1" ;;
+  *)
+    primitive="$1"
+    shift || true
+    # If extra tag:val args follow, treat as v6 primitive+tag invocation.
+    if (( $# > 0 )); then
+      v5_mode="$(resolve_v6_to_v5 "$primitive" "$@")" || exit 1
+      cmd_resolve_mode "$v5_mode"
+      exit 0
+    fi
+    # Bare token: try as v5 mode first. If unknown, see if it is a v6
+    # primitive with no tags (rare — only `analyze` and friends).
+    if mode_exists "$primitive"; then
+      if aliases_available; then
+        v6_form="$(resolve_v5_to_v6 "$primitive" || true)"
+        if [[ -n "$v6_form" ]]; then
+          echo "DEPRECATION (v6 alias): v5 mode '$primitive' will be removed in v7. v6 form: '$v6_form'" >&2
+        fi
+      fi
+      cmd_resolve_mode "$primitive"
+    else
+      # Bare primitive with no tags — try matching aliases that have no tags.
+      v5_mode="$(resolve_v6_to_v5 "$primitive" 2>/dev/null || true)"
+      if [[ -n "$v5_mode" ]]; then
+        cmd_resolve_mode "$v5_mode"
+      else
+        die "unknown mode or unmappable v6 primitive: $primitive"
+      fi
+    fi
+    ;;
 esac

@@ -292,6 +292,18 @@ if [[ -d "$TEMP_DIR/bubbles/mcp" ]]; then
   ok "$(find "${TARGET}/bubbles/mcp" -type f 2>/dev/null | wc -l) MCP file(s) installed"
 fi
 
+# ── Install workflow alias map (v6.0 / B4) ────────────────────────────
+# bubbles/workflows/ holds the v5 -> v6 primitive+tag alias map and any
+# other future per-workflow-family YAML. The mode-resolver consults the
+# alias map to translate legacy v5 mode strings to v6 primitive+tag form.
+# v5 names remain valid through the entire v6 cycle.
+if [[ -d "$TEMP_DIR/bubbles/workflows" ]]; then
+  info "Installing workflow alias map..."
+  mkdir -p "${TARGET}/bubbles/workflows"
+  cp -R "$TEMP_DIR"/bubbles/workflows/. "${TARGET}/bubbles/workflows/"
+  ok "$(find "${TARGET}/bubbles/workflows" -type f 2>/dev/null | wc -l) workflow alias file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.

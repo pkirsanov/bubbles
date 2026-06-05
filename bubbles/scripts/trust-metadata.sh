@@ -323,6 +323,15 @@ bubbles_framework_manifest_entries() {
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/cheatsheet" -type f 2>/dev/null | LC_ALL=C sort)
 
+  # v6.0 (B4): v5 -> v6 workflow mode alias map. Resolves legacy v5 mode
+  # names to v6 primitive+tag tuples. Installed downstream so the
+  # mode-resolver can accept both forms during the v6 cycle.
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    bubbles_print_manifest_entry "$source_root" "$relative_path"
+  done < <(find "$source_root/bubbles/workflows" -type f 2>/dev/null | LC_ALL=C sort)
+
   # v5.0.1 (H8): pre-push hook source for maintainer installs.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue

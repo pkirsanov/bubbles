@@ -14,7 +14,39 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
-### B7 — Cheatsheet generator + H7 drift check retired
+### B4 — Workflow mode collapse: 55 v5 modes → 15 v6 primitives + tag grammar
+
+**Theme:** v5 exposed 55 hand-coded workflow modes (`release-train-promote`, `upkeep-restore-drill`, `bugfix-fastlane`, ...). v6.0 collapses the operator-visible surface to 15 canonical primitives plus a deterministic tag grammar. Every v5 mode still works through the v6 cycle via an alias map; the v7 release removes the v5 names. The migrate-modes-v5-to-v6.sh script (Group C / C1) will rewrite operator invocations automatically.
+
+#### Changes
+
+- **NEW** `bubbles/workflows/aliases.yaml` — the v5 → v6 alias map. 55 entries cover every mode in `bubbles/workflows.yaml`. 15 canonical primitives (`analyze`, `plan`, `implement`, `test`, `validate`, `fix`, `ship`, `propagate`, `upkeep`, `review`, `improve`, `docs`, `iterate`, `resume`, `framework-health`). Tag grammar: `action:<verb>`, `task:<task-name>`, `target:<thing>`, `train:<name>`, `edge:<direction>`, `lifecycle:<state>`.
+- **NEW** `bubbles/scripts/mode-alias-selftest.sh` — 11 assertions covering: parse + non-empty, 1:1 coverage with workflows.yaml, no unknown v5 references, every primitive canonical, tuple uniqueness, full v6→v5 round-trip (55 modes), byte-identical resolution (subset by default; full set under `BUBBLES_MODE_ALIAS_FULL_PARITY=1`), plus three adversarial fixtures (unknown primitive, unknown tag, duplicate tuple).
+- **`bubbles/scripts/mode-resolver.sh`** — extended with:
+    - `--list-aliases` (TSV: v5-name<TAB>primitive<TAB>tag-set)
+    - `--resolve-v6 <primitive> [tag:val ...]` (v6 form → v5 mode name)
+    - Bare-arg dispatch accepts both `<v5-mode>` (with one-line deprecation hint pointing at the v6 form) and `<primitive> tag:val [tag:val ...]` (v6 form, resolves internally to v5 and prints the v5 resolution).
+    - Honors `BUBBLES_WORKFLOW_ALIASES_FILE` env var (used by selftest fixtures).
+- **`bubbles/scripts/framework-validate.sh`** — registers the new `mode-alias-selftest` selftest after `mode-resolver-selftest`.
+- **`bubbles/scripts/trust-metadata.sh`** — enumerates `bubbles/workflows/**` into the release manifest so downstream installs receive the alias map.
+- **`install.sh`** — copies `bubbles/workflows/` to `${TARGET}/bubbles/workflows/` during downstream install (mirrors the v5.2.1 / B7 patterns).
+- **`bubbles/release-manifest.json`** — regenerated (489 managed files; was 487).
+- **`CHANGELOG.md`** — v6.0 Group B4 entry.
+
+#### Invariants
+
+- v5 names remain valid through the entire v6 cycle (deprecation warning only, never block).
+- Every v5 mode maps to exactly one (primitive, tag-set) tuple; every tuple is unique.
+- Resolved-mode bytes are identical between v5 invocation and v6 invocation.
+- `analyze` is a canonical v6 primitive with no v5 alias; v6 unlocks `analyze target:<thing>` as a new direct-invocation surface that v5 only exposed under `plan target:product action:analyze-design-plan`.
+- Adversarial regression: unknown v6 primitive, unknown tag for a known primitive, and duplicate tuple in an alternate aliases file are all rejected.
+
+#### Working order
+
+- B7 (cheatsheet generator) shipped in commit `eb9a617`.
+- B4 (this entry) ships the alias map + selftest. Operators can now invoke either form; documentation and migration script land in C1-C3.
+
+
 
 **Theme:** the v5.0.1 H7 drift selftest treated `docs/CHEATSHEET.md` and `docs/its-not-rocket-appliances.html` as two independent surfaces that had to be kept in sync. v6 collapses them to a single source of truth so drift is structurally impossible.
 
