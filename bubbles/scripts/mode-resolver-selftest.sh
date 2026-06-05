@@ -33,16 +33,19 @@ fail() { echo "FAIL: $1" >&2; failures=$((failures + 1)); }
 
 # Run resolver against a fixture, capturing stdout+stderr+exit.
 # Args: $1 fixture-path  $2 args...
-# Sets RC, OUT (combined output).
+# Sets RC, OUT (stdout only — stderr is preserved separately for diagnostics
+# so the v6 deprecation hint emitted on stderr does not corrupt yq parsing).
 run_resolver() {
   local fixture="$1"; shift
-  local out_file
+  local out_file err_file
   out_file="$(mktemp -p "$TMP_DIR")"
+  err_file="$(mktemp -p "$TMP_DIR")"
   set +e
-  timeout "$selftest_timeout_seconds" env BUBBLES_WORKFLOWS_FILE="$fixture" "$RESOLVER" "$@" > "$out_file" 2>&1
+  timeout "$selftest_timeout_seconds" env BUBBLES_WORKFLOWS_FILE="$fixture" "$RESOLVER" "$@" > "$out_file" 2> "$err_file"
   RC=$?
   set -e
   OUT="$(cat "$out_file")"
+  ERR="$(cat "$err_file")"
 }
 
 # -----------------------------------------------------------------------
@@ -157,7 +160,7 @@ modes:
 YAML
 
 run_resolver "$fixture4" cyclic
-if (( RC != 0 )) && grep -qi 'cycle detected' <<< "$OUT"; then
+if (( RC != 0 )) && grep -qi 'cycle detected' <<< "$ERR"; then
   pass "Case 4: cycle detection — resolver rejects template cycle"
 else
   fail "Case 4: cycle detection — resolver rejects template cycle (rc=$RC)"
@@ -180,7 +183,7 @@ modes:
 YAML
 
 run_resolver "$fixture5" ghost
-if (( RC != 0 )) && grep -qi 'unknown template' <<< "$OUT"; then
+if (( RC != 0 )) && grep -qi 'unknown template' <<< "$ERR"; then
   pass "Case 5: unknown template reference rejected"
 else
   fail "Case 5: unknown template reference rejected (rc=$RC)"
