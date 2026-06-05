@@ -313,6 +313,16 @@ bubbles_framework_manifest_entries() {
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/mcp" -type f 2>/dev/null | LC_ALL=C sort)
 
+  # v6.0 (B7): cheatsheet registry. Source of truth for the operator
+  # cheatsheet (docs/CHEATSHEET.md + docs/its-not-rocket-appliances.html);
+  # generate-cheatsheet.sh renders both files from these JSON inputs and
+  # retires the v5.0.1 H7 drift check.
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    bubbles_print_manifest_entry "$source_root" "$relative_path"
+  done < <(find "$source_root/bubbles/cheatsheet" -type f 2>/dev/null | LC_ALL=C sort)
+
   # v5.0.1 (H8): pre-push hook source for maintainer installs.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue

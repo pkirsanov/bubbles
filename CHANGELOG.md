@@ -12,7 +12,31 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
-## v5.3.0 — Downstream-install validation cleanup
+## v6.0 Group B — Subtractive Release (in progress)
+
+### B7 — Cheatsheet generator + H7 drift check retired
+
+**Theme:** the v5.0.1 H7 drift selftest treated `docs/CHEATSHEET.md` and `docs/its-not-rocket-appliances.html` as two independent surfaces that had to be kept in sync. v6 collapses them to a single source of truth so drift is structurally impossible.
+
+#### Changes
+
+- **NEW** `bubbles/cheatsheet/` — registry directory. Three JSON files (`modes.json`, `aliases.json`, `vocabulary.json`) plus a `README.md` describing the schema and the add-an-entry workflow. The registry is the only place an operator edits mode/alias/vocabulary content; both cheatsheets are generated.
+- **NEW** `bubbles/scripts/generate-cheatsheet.sh` — generator. Reads the registry, validates it (every mode name must resolve to a real `workflows.yaml` entry; every `maps_to` must be a `bubbles.<agent>` token or a known mode; no duplicate aliases or vocab terms), then renders six blocks: three in `docs/CHEATSHEET.md` (`GENERATED:CHEATSHEET_ALIASES_*`, `GENERATED:CHEATSHEET_MODES_*`, `GENERATED:CHEATSHEET_VOCABULARY_*`) and three in `docs/its-not-rocket-appliances.html` (`GENERATED:HTML_ALIASES_TABLE_*`, `GENERATED:HTML_MODES_CARDS_*`, `GENERATED:HTML_VOCABULARY_CARDS_*`). Supports `--check` for CI.
+- **NEW** `bubbles/scripts/generate-cheatsheet-selftest.sh` — 17 assertions covering registry parse, `--check` parity, marker presence in both files, and two adversarial fixtures (phantom workflow mode → reject; duplicate alias → reject).
+- **`bubbles/scripts/framework-validate.sh`** — replaces the `cheatsheet-drift-selftest` invocation with `generate-cheatsheet-selftest`.
+- **`bubbles/scripts/release-check.sh`** — adds `generate-cheatsheet.sh --check` as a freshness gate; release fails if the registry was edited without regenerating the cheatsheets.
+- **`bubbles/scripts/trust-metadata.sh`** — enumerates `bubbles/cheatsheet/**` into the release manifest so downstream installs receive the registry alongside the generator.
+- **DELETED** `bubbles/scripts/cheatsheet-drift-selftest.sh` — the v5.0.1 H7 diff-only check. The generator makes drift impossible by construction.
+- **`docs/CHEATSHEET.md`** — `Command Aliases`, `Workflow Modes`, and `TPB Vocabulary` tables are now between `GENERATED:CHEATSHEET_*` markers.
+- **`docs/its-not-rocket-appliances.html`** — `Sunnyvale Command Aliases` table, `Workflow Mode Aliases` cards, and `TPB Vocabulary` cards are now between `GENERATED:HTML_*` markers.
+
+#### Invariants
+
+- Registry is the only edit point; both cheatsheets regenerate from it.
+- `--check` mode is byte-identical reproducible (used by `framework-validate` and `release-check`).
+- Adversarial regression: removing a `GENERATED:*` marker, adding an unknown mode, or duplicating an alias all fail the selftest.
+
+
 
 **Theme:** `framework-validate` was authored inside the framework source repo and several of its selftests hardcoded assumptions that only hold from that tree (`install.sh` at repo root, `VERSION` file, `README.md`/`docs/` layout, `agents/` and `bubbles/` directly under the repo root). When downstream repos installed Bubbles, their copy of `framework-validate` would FAIL 11+ checks against expected-to-be-missing files, even though every framework-managed asset was installed correctly. Smackerel surfaced this with 11 baseline failures (9 source-only + 2 path-resolution).
 
