@@ -303,6 +303,16 @@ bubbles_framework_manifest_entries() {
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/registry" -type f 2>/dev/null | LC_ALL=C sort)
 
+  # v6.0 (A1-A6): MCP server + tool catalog + resource catalog + client
+  # configs. Optional surface — repos that don't register the server still
+  # work via bash scripts. Installed downstream so mcp-server-selftest.sh
+  # and the operator's MCP client can resolve everything.
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    bubbles_print_manifest_entry "$source_root" "$relative_path"
+  done < <(find "$source_root/bubbles/mcp" -type f 2>/dev/null | LC_ALL=C sort)
+
   # v5.0.1 (H8): pre-push hook source for maintainer installs.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue

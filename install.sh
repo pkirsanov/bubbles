@@ -278,6 +278,20 @@ if [[ -d "$TEMP_DIR/bubbles/registry" ]]; then
   ok "$(find "${TARGET}/bubbles/registry" -type f 2>/dev/null | wc -l) registry file(s) installed"
 fi
 
+# ── Install MCP server + catalogs (v6.0 / A1-A6) ──────────────────────
+# bubbles/mcp/ contains the Python MCP server, declarative tool catalog
+# (JSON), declarative resource catalog (JSON), and sample client config
+# snippets (vscode/claude/cursor/cline). The MCP server is OPTIONAL —
+# downstream repos that don't register it still get every Bubbles gate
+# via the bash scripts. But we install the surface unconditionally so
+# operators can register the MCP server later without re-running install.
+if [[ -d "$TEMP_DIR/bubbles/mcp" ]]; then
+  info "Installing MCP server + catalog..."
+  mkdir -p "${TARGET}/bubbles/mcp"
+  cp -R "$TEMP_DIR"/bubbles/mcp/. "${TARGET}/bubbles/mcp/"
+  ok "$(find "${TARGET}/bubbles/mcp" -type f 2>/dev/null | wc -l) MCP file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.
