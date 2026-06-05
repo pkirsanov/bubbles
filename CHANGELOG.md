@@ -12,7 +12,68 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
-## v6.0 Group C — Migration Tooling and Docs (in progress)
+## v6.0.0 — MCP-aware framework, mode collapse, structurally-impossible bug classes
+
+> *"It ain't rocket appliances, boys."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** v6.0 is a subtractive release that collapses 55 v5 workflow modes to 15 v6 primitives + tag grammar, makes the v5.2 advisory paths default-on for evidence/diff/envelope gates, ships an MCP server for agent-native integration, and renders adapter/gitignore/missing-chmod bug classes structurally impossible. **Zero breaking changes** for operators on v5.x: every v5 mode name keeps working through the full v6 cycle, and every state.json schema stays compatible.
+
+### Highlights
+
+#### Group A (MCP — shipped earlier on `main`)
+
+- A1-A6: Python stdlib-only MCP server, declarative tool catalog, declarative resource catalog, sample client configs for VS Code / Claude / Cursor / Cline, and selftest.
+
+#### Group B (subtractive release)
+
+- **B1** `evidence-tool-log-bridge.sh` — MCP-primary with structured JSON envelope (`--format=json` default). The MCP `query_tool_log` tool now returns a parseable envelope instead of human-readable text.
+- **B2** `diff-evidence-guard.sh` — strict for ALL specs by default; explicit `state.json.modernization.diffEvidence: "advisory"` opt-out; v5 grandfather for pre-cutoff specs without a modernization block.
+- **B3** `result-envelope-validate.sh` — malformed envelopes block on every framework-validate; missing envelopes still warn (v6.1 will flip missing → blocking after per-agent envelope rollout). Schema accepts richer envelope shape (`additionalProperties: true`), `nextRequiredOwner`/`blockedReason` aliases, and `[string, null]` null placeholders.
+- **B4** Mode collapse — 55 v5 mode names → 15 v6 primitives + tag grammar. `bubbles/workflows/aliases.yaml` is the alias map; `mode-resolver.sh` accepts both forms; v5 names emit a deprecation hint on stderr; full byte-identical resolution parity across the round-trip.
+- **B5** Skills inventory baseline — `skills/INVENTORY.md` enumerates all 34 skills with `KEEP`/`CONSOLIDATE`/`POINTER-DELETE`/`REVIEW` status. Zero deletions in v6.0 (no pure-pointer skills found in the audit).
+- **B6** Doc audience matrix — `docs/governance-index.md` gains an Audience Matrix (operator / agent / maintainer) and per-section `**Audience:**` tags. Zero merges (no true content duplicates found across 96 governance docs).
+- **B7** Cheatsheet generator — `bubbles/cheatsheet/{modes,aliases,vocabulary}.json` is the single source of truth; `generate-cheatsheet.sh` renders `docs/CHEATSHEET.md` AND `docs/its-not-rocket-appliances.html` from it; the v5.0.1 H7 drift selftest is retired (drift is now structurally impossible).
+- **B8** v5.1 advisory paths absorbed by B1/B2/B3 — audit shows the distinct v5.1 implementation was already consolidated by v5.2; remaining advisory surfaces are documented operator escape hatches, not vestigial v5.1.
+- **B9** Installer manifest + structural checker — `bubbles/installer/installer.yaml` enumerates every install.sh step; `generate-installer.sh --check` audits install.sh against the manifest; 5 invariants close historical bug classes (wrong gitignore root closing bug `ce01576`, missing chmod on scripts/adapters, silent step deletion, missing provenance fields). 7-assertion selftest with 6 adversarial mutation fixtures.
+- **B10** Parallel phase fan-out contract — opt-in dispatcher (`BUBBLES_PARALLEL_PHASES=1`) in v6.0, default in v6.1. The 5-condition DAG, parallel-eligible / sequential-only phase shapes, 5 determinism guarantees, and failure-handling rules are normative immediately so workflow agents can cite them today.
+
+#### Group C (migration tooling)
+
+- **C1** `migrate-modes-v5-to-v6.sh` — one-shot rewriter; `--check` dry-run (exit 2 if rewrites pending); `--write` applies; idempotent. Default scope excludes framework internals. 9-assertion selftest.
+- **C2** `docs/DEPRECATIONS.md` — authoritative v5 → v6 shape-change log with high-traffic mode mapping table, opt-out flags, removal schedule.
+- **C3** `docs/recipes/upgrade-to-v6.md` — step-by-step upgrade recipe with what-does-not-change list and rollback steps.
+
+### Statistics
+
+- **Managed files:** 499 (was 481 at v5.3.0; +18 new files for installer manifest, cheatsheet registry, workflows alias map, MCP catalog, migration tooling, deprecations doc, upgrade recipe).
+- **Selftests:** +6 new in v6.0 (B1, B2, B3, B4, B7, B9, C1).
+- **Operator-visible mode count:** 55 → 15 + tags (or any v5 name still works).
+- **Zero deletions:** skills (34 stay), recipes (63 stay), guides (12 stay), maintainer docs (8 stay; +1 added: DEPRECATIONS.md).
+
+### What v6.0 does NOT do
+
+- Does not remove the bash script surface (MCP wraps it, doesn't replace it).
+- Does not remove markdown evidence (still fully valid when diff-evidence-guard is advisory).
+- Does not remove any operator capability — only renames (with aliases active), generates (instead of hand-editing), or prunes redundant docs/skills (where audits found candidates — they didn't).
+- Does not introduce HTTP transport (deferred to v6.1).
+- Does not change `state.json` schema (deferred to v7).
+- Does not delete v5 mode names (deferred to v7).
+- Does not enforce the parallel dispatcher (opt-in via env var; default in v6.1).
+
+### Upgrade Path
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh | bash -s -- v6.0.0
+bash .github/bubbles/scripts/framework-validate.sh
+bash .github/bubbles/scripts/migrate-modes-v5-to-v6.sh --check
+bash .github/bubbles/scripts/migrate-modes-v5-to-v6.sh --write   # if check returned 2
+```
+
+Full upgrade recipe: [`docs/recipes/upgrade-to-v6.md`](docs/recipes/upgrade-to-v6.md). Full shape-change log: [`docs/DEPRECATIONS.md`](docs/DEPRECATIONS.md).
+
+---
+
+## v6.0 Group C — Migration Tooling and Docs
 
 ### C1 + C2 + C3 — migration script, deprecations log, upgrade recipe
 
@@ -36,7 +97,7 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 - DEPRECATIONS.md captures only operator-facing shape changes. Framework-internal refactors are documented in their own CHANGELOG entry, not here.
 - Upgrade recipe references commands by their downstream-install path (`.github/bubbles/scripts/...`). It is operator-facing, not source-tree-facing.
 
-## v6.0 Group B — Subtractive Release (in progress)
+## v6.0 Group B — Subtractive Release
 
 ### B10 — Parallel phase fan-out contract (opt-in dispatcher in v6.0; default in v6.1)
 
