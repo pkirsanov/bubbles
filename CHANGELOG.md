@@ -14,6 +14,40 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
+### B9 — Installer manifest + structural checker (adapter/gitignore bug class structurally impossible)
+
+**Theme:** v6 design B9 called for an installer-as-generated-artifact (typed manifest + generator). v6.0 ships the verification half of that pattern: a typed manifest (`bubbles/installer/installer.yaml`) plus a structural checker (`bubbles/scripts/generate-installer.sh --check`) that audits `install.sh` against the manifest on every framework-validate run. Generation FROM the manifest is deferred to a future increment; verification AGAINST the manifest closes the historical bug classes today (improvements/ landing in the wrong .gitignore root, missing chmod +x on scripts/adapters, silent step deletion, missing provenance fields).
+
+#### Changes
+
+- **NEW** `bubbles/installer/installer.yaml` — typed enumeration of every action `install.sh` performs. 23 steps covering directory copies, glob installs, gitignore writes, migrations, version stamp, provenance write. 5 invariants close historical bug classes (wrong gitignore root, missing chmod, missing step, missing provenance field).
+- **NEW** `bubbles/scripts/generate-installer.sh` — `--check` mode parses the manifest and verifies `install.sh` implements every required step's marker AND satisfies every invariant. Exit codes: `0` PASS, `1` violation, `2` manifest or installer source error.
+- **NEW** `bubbles/scripts/generate-installer-selftest.sh` — 8 assertions including 6 adversarial mutation fixtures (remove a marker → FAIL; write improvements/ to `${TARGET}/.gitignore` → FAIL closing bug `ce01576`; drop chmod +x on scripts → FAIL; drop chmod +x on adapters → FAIL; drop a provenance field → FAIL; missing install.sh → exit 2). Fixtures live under `$HOME/.cache/bubbles-installer-selftest/` (snap-confined yq compatibility).
+- **`bubbles/scripts/framework-validate.sh`** — registers `Installer manifest check` and `Installer manifest selftest` immediately after the B3 result-envelope selftest.
+- **`bubbles/scripts/trust-metadata.sh`** — enumerates `bubbles/installer/**` into the release manifest so downstream installs receive the typed manifest alongside the checker.
+- **`install.sh`** — copies `bubbles/installer/` to `${TARGET}/bubbles/installer/` during downstream install (mirrors the v6.0 / B4 + B7 patterns). The manifest's new `install_installer_manifest` step makes this copy self-describing.
+
+#### Invariants closed
+
+| ID | Invariant | Historical bug class |
+|---|---|---|
+| I1 | `gitignore_root_is_repo_root` | bug `ce01576` — `improvements/` was written to `${TARGET}/.gitignore` instead of repo-root `.gitignore`, so git still tracked the scratch directory |
+| I2 | `scripts_are_chmod_x` | scripts copied without exec bit → downstream operators got permission denied |
+| I3 | `adapter_files_are_chmod_x` | same class for `bubbles/adapters/*.sh` |
+| I4 | `every_step_has_a_marker` | silent step deletion went unnoticed until a downstream operator noticed missing files |
+| I5 | `provenance_records_six_fields` | a provenance field was dropped from the `.install-source.json` heredoc, breaking trust-doctor downstream |
+
+#### Working order
+
+- v6.0 ships the verification layer (this entry). `install.sh` stays the source of truth at runtime.
+- v6.1 or v7 may flip the relationship and generate `install.sh` from the manifest. The checker stays valid in both modes because it asserts a structural correspondence, not a generation direction.
+
+#### Invariants of the change itself
+
+- Adding a real step to `install.sh` without a matching manifest entry → I4 FAILs.
+- Adding a manifest entry without implementing it in `install.sh` → marker-missing FAILs.
+- Downstream byte-compatibility: every previously-installed file still installs at the same path; one new directory (`${TARGET}/bubbles/installer/`) is added.
+
 ### B6 — Doc audience matrix + consolidation notes (zero deletions)
 
 **Theme:** v6 design B6 called for tagging every doc with audience (`operator` / `agent` / `maintainer`) and merging near-duplicate recipes/guides. After auditing all 96 governance docs — 63 recipes, 12 guides, 7 maintainer docs, 14 instructions/skills — **no true content duplicates were found**. Recipe families that share a theme (e.g., the four `retro-driven-*` variants plus `retro-quality-sweep.md` plus `retro.md`) are distinct workflows that compose the same primitive into different end-to-end shapes; merging them would lose useful content.

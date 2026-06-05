@@ -304,6 +304,19 @@ if [[ -d "$TEMP_DIR/bubbles/workflows" ]]; then
   ok "$(find "${TARGET}/bubbles/workflows" -type f 2>/dev/null | wc -l) workflow alias file(s) installed"
 fi
 
+# ── Install installer manifest (v6.0 / B9) ────────────────────────────
+# bubbles/installer/installer.yaml is the typed enumeration of every
+# step install.sh performs. Consumed by
+# bubbles/scripts/generate-installer.sh --check so downstream
+# re-validators can verify that install.sh actually implements every
+# declared step. Closes adapter/gitignore/missing-chmod bug classes.
+if [[ -d "$TEMP_DIR/bubbles/installer" ]]; then
+  info "Installing installer manifest..."
+  mkdir -p "${TARGET}/bubbles/installer"
+  cp -R "$TEMP_DIR"/bubbles/installer/. "${TARGET}/bubbles/installer/"
+  ok "$(find "${TARGET}/bubbles/installer" -type f 2>/dev/null | wc -l) installer manifest file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.

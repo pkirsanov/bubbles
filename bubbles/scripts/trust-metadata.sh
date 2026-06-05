@@ -332,6 +332,16 @@ bubbles_framework_manifest_entries() {
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/workflows" -type f 2>/dev/null | LC_ALL=C sort)
 
+  # v6.0 (B9): typed installer manifest. Consumed by
+  # bubbles/scripts/generate-installer.sh --check to verify that
+  # install.sh structurally implements every declared step. Installed
+  # downstream so re-validators can run the same check.
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    bubbles_print_manifest_entry "$source_root" "$relative_path"
+  done < <(find "$source_root/bubbles/installer" -type f 2>/dev/null | LC_ALL=C sort)
+
   # v5.0.1 (H8): pre-push hook source for maintainer installs.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
