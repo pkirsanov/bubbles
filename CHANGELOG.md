@@ -14,7 +14,38 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## v6.0 Group B — Subtractive Release (in progress)
 
-### B4 — Workflow mode collapse: 55 v5 modes → 15 v6 primitives + tag grammar
+### B1 — evidence-tool-log-bridge MCP-primary + structured JSON envelope
+
+**Theme:** v5.1 introduced the bridge as an advisory matcher and v5.2 promoted it to a primary evidence path (alongside the markdown ≥10-line raw-output path). v6.0 flips it to MCP-primary: the bridge gains a `--format=json` mode whose structured envelope is consumed by the `query_tool_log` MCP tool. When an MCP-aware client is registered, the orchestrator can ask "does the tool-log already contain evidence that satisfies DoD item X?" and receive a programmatic answer instead of a human-readable text blob. The bash twin and the markdown evidence path both remain accepted.
+
+#### Changes
+
+- **`bubbles/scripts/evidence-tool-log-bridge.sh`** — gains `--format=text|json`. JSON mode emits:
+    ```json
+    {
+      "spec":           "<spec-slug>",
+      "logPath":        "<absolute path>",
+      "logPresent":     true | false,
+      "scopeFiles":     N,
+      "dodItems":       N,
+      "toolLogEntries": N,
+      "matchedDodItems": N,
+      "coveragePct":    0-100,
+      "matches":        [{"scopeFile":..., "line":N, "dodBody":..., "cmd":..., "ts":..., "overlapTokens":[...]}, ...]
+    }
+    ```
+- **NEW** `bubbles/scripts/evidence-tool-log-bridge-selftest.sh` — 8 assertions covering text mode (no log + with log), JSON mode (no log + with log), valid-JSON output, unknown-format rejection, missing-arg rejection, and MCP catalog wiring.
+- **`bubbles/mcp/tools/query_tool_log.json`** — `argsTemplate` now appends `--format=json` so the MCP tool returns a parseable envelope. `successExitCodes` tightened to `[0]` (was `[0, 1]`; the bridge no longer signals coverage gaps via exit code).
+- **`bubbles/scripts/framework-validate.sh`** — registers the new bridge selftest after `tool-log-selftest`.
+
+#### Invariants
+
+- Bridge is monotonically stronger: text mode behavior preserved; JSON mode is additive.
+- Markdown ≥10-line raw-evidence path is still a fully accepted form (the bridge never blocks).
+- MCP tool surfaces verbatim bridge stdout — the server doesn't summarize.
+- Adversarial: unknown `--format` value rejected; missing spec dir rejected.
+
+
 
 **Theme:** v5 exposed 55 hand-coded workflow modes (`release-train-promote`, `upkeep-restore-drill`, `bugfix-fastlane`, ...). v6.0 collapses the operator-visible surface to 15 canonical primitives plus a deterministic tag grammar. Every v5 mode still works through the v6 cycle via an alias map; the v7 release removes the v5 names. The migrate-modes-v5-to-v6.sh script (Group C / C1) will rewrite operator invocations automatically.
 

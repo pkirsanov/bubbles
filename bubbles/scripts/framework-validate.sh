@@ -90,6 +90,7 @@ run_check "Registry consistency selftest" bash "$SCRIPT_DIR/registry-consistency
 run_check "YAML schema validate" bash "$SCRIPT_DIR/yaml-schema-validate.sh"
 run_check "Cheatsheet generator selftest (v6.0 / B7)" bash "$SCRIPT_DIR/generate-cheatsheet-selftest.sh"
 run_check "Tool-log selftest (v5.1 / M1)" bash "$SCRIPT_DIR/tool-log-selftest.sh"
+run_check "Evidence-tool-log bridge selftest (v6.0 / B1)" bash "$SCRIPT_DIR/evidence-tool-log-bridge-selftest.sh"
 run_check "Gates registry drift (v5.2 / F4)" bash "$SCRIPT_DIR/generate-gates-block.sh" --check
 run_check "Gates registry selftest (v5.2 / F4)" bash "$SCRIPT_DIR/gates-registry-selftest.sh"
 run_check "Result-envelope validate (v5.2 / F5, advisory)" bash "$SCRIPT_DIR/result-envelope-validate.sh"

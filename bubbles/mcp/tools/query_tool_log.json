@@ -1,6 +1,6 @@
 {
   "name": "query_tool_log",
-  "description": "Query the tool-call log (.specify/runtime/tool-calls.jsonl) for coverage of a spec's DoD items. Wraps evidence-tool-log-bridge.sh, which is the v5.1+ structured-evidence primary path — when MCP is registered, this is the canonical way to ask 'does the tool-log already contain evidence that satisfies DoD item X?' without scanning markdown.",
+  "description": "Query the tool-call log (.specify/runtime/tool-calls.jsonl) for coverage of a spec's DoD items. Wraps evidence-tool-log-bridge.sh, which v6.0 promotes to the MCP-primary structured-evidence path — when MCP is registered, this is the canonical way to ask 'does the tool-log already contain evidence that satisfies DoD item X?' without scanning markdown. The response is a JSON envelope with per-match provenance (scope file, line, DoD body, matched command, timestamp, overlap tokens). The traditional markdown ≥10-line raw-output evidence path remains accepted.",
   "inputSchema": {
     "type": "object",
     "properties": {
@@ -17,6 +17,7 @@
     "required": ["spec_dir"]
   },
   "script": "evidence-tool-log-bridge.sh",
-  "argsTemplate": ["${spec_dir}"],
-  "successExitCodes": [0, 1]
+  "argsTemplate": ["${spec_dir}", "--format=json"],
+  "successExitCodes": [0]
 }
+
