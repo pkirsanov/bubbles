@@ -12,6 +12,60 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.0 — Mode-collapse completion: v5 name input removed, existing artifacts grandfathered
+
+> *"You gotta let the old decals go, Ricky. The trailer rolls the same."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** v7.0 completes the v6 mode collapse. Through the entire v6 cycle, bare v5 mode names (e.g. `bugfix-fastlane`) kept working as operator input with a deprecation hint. **v7.0 removes them as input** — the one intentional breaking change — while leaving every existing artifact untouched. The v5 names remain the canonical registry keys; there is **no `state.json` schema change** and **no per-spec migration**. This release also makes `framework-validate` clean under a downstream install by skipping six maintainer-only selftests that were never downstream-aware.
+
+### The one breaking change (and why it isn't, for your existing work)
+
+- **`mode-resolver.sh` rejects bare v5 mode NAMES as operator input** (exit 3) and prints the v6 primitive+tag form to use instead. Start new work with the v6 form: `fix target:bug action:fastlane`, not `bugfix-fastlane`.
+- **v5 names remain the registry keys.** `bubbles/workflows/modes.yaml` is still keyed by the v5 names. `state.json.workflowMode` still stores them. The guards (`state-transition-guard.sh`, `artifact-lint.sh`, `is-terminal-for-mode.sh`) resolve status ceilings by **direct registry lookup of the stored key** — `mode-resolver.sh` isn't even on that path for a mode that exists in the registry.
+- **Existing specs/scopes/bugs/ops are completely unaffected.** No schema change, no migration, no re-validation. Already-complete work stays exactly as it is; only *new* operator input must use the v6 form.
+- **Grandfather switch for programmatic resolution.** Tools that resolve a *persisted* mode set `BUBBLES_MODE_GRANDFATHER=1` (or pass `--grandfather`), which downgrades the rejection to a one-line deprecation notice and resolves the stored key. The three guards set this automatically. Operators never need it for normal work.
+
+### Downstream-install validation fix (was a latent v6.0/v6.1 regression)
+
+Six maintainer-only selftests were added in v6.0/v6.1 with `run_check` instead of the downstream-aware `run_check_self_only`, so a downstream `framework-validate` FAILed on expected-to-be-missing source assets (`install.sh`, the cheatsheet JSON registry, the eval golden-task fixtures). They now SKIP cleanly under `install-mode=downstream`, mirroring the v5.3 pattern:
+
+- Portable surface agnosticity
+- Cheatsheet generator selftest (v6.0 / B7)
+- Installer manifest check (v6.0 / B9)
+- Installer manifest selftest (v6.0 / B9)
+- Migrate-modes-v5-to-v6 selftest (v6.0 / C1)
+- Golden-task eval harness selftest (v6.1 / R11)
+
+`v5.3-selftest.sh` now asserts all 13 source-only selftests skip downstream (was 9).
+
+### Also removed in v7.0
+
+- **`BUBBLES_PARALLEL_PHASES` opt-out flag.** Parallel phase fan-out for parallel-eligible phases (per the workflow-execution-loops DAG) was opt-in in v6.0, default-on in v6.1, and is now **mandatory** — the sequential-dispatch opt-out is gone. Determinism guarantees remain enforced by `parallel-fanout.sh` + `parallel-fanout-determinism-selftest.sh`.
+
+### New selftest
+
+- **`bubbles/scripts/v7-selftest.sh`** — asserts: (1) a bare v5 name is rejected with exit 3 + a v6-form hint; (2) the v6 primitive+tag form resolves; (3) `BUBBLES_MODE_GRANDFATHER=1` and `--grandfather` resolve a stored v5 key with a deprecation notice; (4) a persisted-mode ceiling still resolves through the guards for an existing-artifact fixture; (5) the alias table is structurally intact (v6 forms still map to registry keys). Wired into `framework-validate.sh`.
+
+### Migration
+
+```bash
+# Find operator-side surfaces still using v5 names:
+bash bubbles/scripts/migrate-modes-v5-to-v6.sh --check        # source repo
+bash .github/bubbles/scripts/migrate-modes-v5-to-v6.sh --check # downstream
+# Apply (idempotent):
+bash bubbles/scripts/migrate-modes-v5-to-v6.sh --write
+```
+
+### What v7.0 does NOT do
+
+- Does not change `state.json` schema.
+- Does not rename or remove any registry mode key (the v5 names stay as keys).
+- Does not require migrating any existing spec/scope/bug/ops artifact.
+- Does not remove the alias table — it still maps v6 forms to registry keys.
+- Does not touch agent contracts, gates (still 102), phases, or the MCP surface.
+
+---
+
 ## v6.1.0 — Deep-review follow-ups: blocking model floor, parallel dispatch, pre-tool gating, HTTP MCP, eval harness
 
 > *"You can't handcuff the wind, but you can put a timeout on it."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

@@ -85,18 +85,18 @@ echo "Install mode: $INSTALL_MODE"
 echo
 
 run_check "Repository drift report (informational)" bash "$SCRIPT_DIR/repo-drift-report.sh" --repo-root "$REPO_ROOT"
-run_check "Portable surface agnosticity" bash "$SCRIPT_DIR/agnosticity-lint.sh" --quiet "${agnosticity_targets[@]}"
+run_check_self_only "Portable surface agnosticity" bash "$SCRIPT_DIR/agnosticity-lint.sh" --quiet "${agnosticity_targets[@]}"
 run_check "Registry consistency selftest" bash "$SCRIPT_DIR/registry-consistency-selftest.sh"
 run_check "YAML schema validate" bash "$SCRIPT_DIR/yaml-schema-validate.sh"
-run_check "Cheatsheet generator selftest (v6.0 / B7)" bash "$SCRIPT_DIR/generate-cheatsheet-selftest.sh"
+run_check_self_only "Cheatsheet generator selftest (v6.0 / B7)" bash "$SCRIPT_DIR/generate-cheatsheet-selftest.sh"
 run_check "Tool-log selftest (v5.1 / M1)" bash "$SCRIPT_DIR/tool-log-selftest.sh"
 run_check "Evidence-tool-log bridge selftest (v6.0 / B1)" bash "$SCRIPT_DIR/evidence-tool-log-bridge-selftest.sh"
 run_check "Diff-evidence guard selftest (v6.0 / B2)" bash "$SCRIPT_DIR/diff-evidence-guard-selftest.sh"
 run_check "Result-envelope validate selftest (v6.0 / B3)" bash "$SCRIPT_DIR/result-envelope-validate-selftest.sh"
-run_check "Installer manifest check (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer.sh"
-run_check "Installer manifest selftest (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer-selftest.sh"
+run_check_self_only "Installer manifest check (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer.sh"
+run_check_self_only "Installer manifest selftest (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer-selftest.sh"
 if [[ -x "$SCRIPT_DIR/migrate-modes-v5-to-v6.sh" ]]; then
-  run_check "Migrate-modes-v5-to-v6 selftest (v6.0 / C1)" bash "$SCRIPT_DIR/migrate-modes-v5-to-v6-selftest.sh"
+  run_check_self_only "Migrate-modes-v5-to-v6 selftest (v6.0 / C1)" bash "$SCRIPT_DIR/migrate-modes-v5-to-v6-selftest.sh"
 fi
 run_check "Gates registry drift (v5.2 / F4)" bash "$SCRIPT_DIR/generate-gates-block.sh" --check
 if [[ -x "$SCRIPT_DIR/generate-modes-block.sh" ]]; then
@@ -119,7 +119,7 @@ if [[ -x "$SCRIPT_DIR/tool-capture-shim-selftest.sh" ]]; then
   run_check "Tool-capture shim selftest (v6.1 / R2)" bash "$SCRIPT_DIR/tool-capture-shim-selftest.sh"
 fi
 if [[ -x "$SCRIPT_DIR/eval-harness-selftest.sh" ]]; then
-  run_check "Golden-task eval harness selftest (v6.1 / R11)" bash "$SCRIPT_DIR/eval-harness-selftest.sh"
+  run_check_self_only "Golden-task eval harness selftest (v6.1 / R11)" bash "$SCRIPT_DIR/eval-harness-selftest.sh"
 fi
 if [[ -x "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh" ]]; then
   run_check "Guard reliability perf selftest (v6.1 / R1 / BUG-001)" bash "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh"
@@ -139,6 +139,9 @@ run_check "Workflow registry consistency" bash "$SCRIPT_DIR/workflow-registry-co
 run_check "Mode resolver validate" bash "$SCRIPT_DIR/mode-resolver.sh" --validate
 run_check "Mode resolver selftest" bash "$SCRIPT_DIR/mode-resolver-selftest.sh"
 run_check "Mode alias selftest (v6.0 / B4)" bash "$SCRIPT_DIR/mode-alias-selftest.sh"
+if [[ -x "$SCRIPT_DIR/v7-selftest.sh" ]]; then
+  run_check "v7 mode-name removal + grandfather selftest (v7.0)" bash "$SCRIPT_DIR/v7-selftest.sh"
+fi
 run_check "Spec-review handoff selftest" bash "$SCRIPT_DIR/spec-review-handoff-selftest.sh"
 if [[ -d "$REPO_ROOT/agents" ]]; then
   agents_dir="$REPO_ROOT/agents"

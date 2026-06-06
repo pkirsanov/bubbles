@@ -110,7 +110,7 @@ Your pre-push hook (if installed) runs `framework-validate` and `release-check`.
 
 ## What Changes for the Operator
 
-- **Cheat sheet:** `/bubbles.workflow <natural language>` still works exactly the same. The explicit-mode form now accepts v6 primitive+tag: `/bubbles.workflow implement action:full-delivery target:spec`. v5 names emit a deprecation hint but continue to work.
+- **Cheat sheet:** `/bubbles.workflow <natural language>` still works exactly the same. The explicit-mode form uses v6 primitive+tag: `/bubbles.workflow implement action:full-delivery target:spec`. Through the v6 cycle, v5 names emitted a deprecation hint but still worked; **v7.0 removed bare v5 names as input** — run `migrate-modes-v5-to-v6.sh --write` to convert any v5 names in your operator surfaces. Existing `state.json` artifacts are unaffected.
 - **Evidence pipeline:** stricter by default. If a previously-passing spec now fails `diff-evidence-guard`, either (a) add a real `git diff` to your DoD evidence block, or (b) set `state.json.modernization.diffEvidence: "advisory"` for that spec.
 - **Result envelopes:** malformed envelopes now block framework-validate. Missing envelopes still warn (deferred to v6.1).
 - **Installer manifest:** if you fork `install.sh`, mirror the change into `bubbles/installer/installer.yaml` OR your pre-push will fail the new B9 check.
@@ -119,9 +119,9 @@ Your pre-push hook (if installed) runs `framework-validate` and `release-check`.
 
 ## What Does NOT Change
 
-- `state.json` schema (deferred to v7)
+- `state.json` schema (unchanged in v6 AND v7 — no schema migration)
 - Agent contracts (no handoff protocol changes)
-- v5 mode names (work through full v6 cycle; removed in v7)
+- v5 mode names as REGISTRY KEYS (still the keys; `state.json` artifacts unchanged). Only bare v5 names as *new operator input* were removed in v7.0 — use the v6 form.
 - Markdown evidence path (still fully valid when diff-evidence-guard is advisory)
 - Bash script surface (MCP wraps it, doesn't replace it)
 

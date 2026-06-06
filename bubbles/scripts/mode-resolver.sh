@@ -30,6 +30,31 @@ ALIASES_FILE="${BUBBLES_WORKFLOW_ALIASES_FILE:-$ROOT_DIR/bubbles/workflows/alias
 # reassigned to a composed temp file below once modes live in their own file.
 WORKFLOWS_DISPLAY="$WORKFLOWS_FILE"
 
+# v7 grandfather switch. v7.0 removes bare v5 mode NAMES as operator input
+# (they remain the canonical registry KEYS). Tools that resolve a PERSISTED
+# mode from an existing artifact (state-transition-guard, artifact-lint,
+# is-terminal-for-mode) set BUBBLES_MODE_GRANDFATHER=1 (or pass --grandfather)
+# so stored v5-key modes keep resolving. New operator input that types a bare
+# v5 name is rejected with a pointer to the v6 primitive+tag form.
+GRANDFATHER="0"
+if [[ "${BUBBLES_MODE_GRANDFATHER:-0}" == "1" ]]; then
+  GRANDFATHER="1"
+fi
+_mr_args=()
+for _mr_a in "$@"; do
+  if [[ "$_mr_a" == "--grandfather" ]]; then
+    GRANDFATHER="1"
+  else
+    _mr_args+=("$_mr_a")
+  fi
+done
+if (( ${#_mr_args[@]} )); then
+  set -- "${_mr_args[@]}"
+else
+  set --
+fi
+unset _mr_args _mr_a
+
 if ! command -v yq >/dev/null 2>&1; then
   echo "ERROR: yq (mikefarah, v4+) is required." >&2
   echo "Install: https://github.com/mikefarah/yq" >&2
@@ -463,11 +488,25 @@ case "${1:-}" in
     # Bare token: try as v5 mode first. If unknown, see if it is a v6
     # primitive with no tags (rare — only `analyze` and friends).
     if mode_exists "$primitive"; then
+      # v7: bare v5 mode names are REMOVED as operator input. They remain the
+      # canonical registry KEYS — state.json.workflowMode stores them and the
+      # guards resolve status ceilings by direct registry lookup — so existing
+      # artifacts are completely unaffected. Typing a v5 name to START new work
+      # is rejected; the operator must use the v6 primitive+tag form. Tools that
+      # resolve a PERSISTED mode (guards, is-terminal) set
+      # BUBBLES_MODE_GRANDFATHER=1 / pass --grandfather to keep resolving stored
+      # v5-key modes.
+      v6_form=""
       if aliases_available; then
         v6_form="$(resolve_v5_to_v6 "$primitive" || true)"
-        if [[ -n "$v6_form" ]]; then
-          echo "DEPRECATION (v6 alias): v5 mode '$primitive' will be removed in v7. v6 form: '$v6_form'" >&2
-        fi
+      fi
+      if [[ -n "$v6_form" && "$GRANDFATHER" != "1" ]]; then
+        echo "ERROR: v5 mode name '$primitive' was removed in v7. Use the v6 form: '$v6_form'." >&2
+        echo "       Existing artifacts that already store '$primitive' keep working unchanged; this rejection only applies to new operator input. To resolve a persisted mode programmatically, set BUBBLES_MODE_GRANDFATHER=1 or pass --grandfather." >&2
+        exit 3
+      fi
+      if [[ -n "$v6_form" && "$GRANDFATHER" == "1" ]]; then
+        echo "DEPRECATION (v7 grandfather): resolving removed v5 mode '$primitive' (v6 form: '$v6_form'). New work must use the v6 form." >&2
       fi
       cmd_resolve_mode "$primitive"
     else

@@ -41,7 +41,12 @@ run_resolver() {
   out_file="$(mktemp -p "$TMP_DIR")"
   err_file="$(mktemp -p "$TMP_DIR")"
   set +e
-  timeout "$selftest_timeout_seconds" env BUBBLES_WORKFLOWS_FILE="$fixture" "$RESOLVER" "$@" > "$out_file" 2> "$err_file"
+  # v7: this selftest exercises resolution mechanics (template inheritance,
+  # tag grammar) against KNOWN registry/fixture modes, not new operator input.
+  # Grandfather the bare-mode-name path so v7's input rejection does not mask
+  # the resolution behavior under test. The v6-form validation rejections
+  # (unknown primitive/tag/duplicate tuple) are unaffected by grandfather.
+  timeout "$selftest_timeout_seconds" env BUBBLES_MODE_GRANDFATHER=1 BUBBLES_WORKFLOWS_FILE="$fixture" "$RESOLVER" "$@" > "$out_file" 2> "$err_file"
   RC=$?
   set -e
   OUT="$(cat "$out_file")"

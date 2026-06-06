@@ -200,6 +200,7 @@ end-to-end flows.
 - [tdd-first-execution.md](recipes/tdd-first-execution.md)
 - [update-docs.md](recipes/update-docs.md)
 - [upgrade-to-v6.md](recipes/upgrade-to-v6.md)
+- [upgrade-to-v7.md](recipes/upgrade-to-v7.md)
 - [ux-single-file-sweep.md](recipes/ux-single-file-sweep.md)
 - [validation-latency-budgets.md](recipes/validation-latency-budgets.md)
 

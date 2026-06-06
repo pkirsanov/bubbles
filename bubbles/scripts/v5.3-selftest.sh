@@ -143,6 +143,10 @@ self_only_labels=(
   "Release manifest purity selftest"
   "Install provenance selftest"
   "Trust doctor selftest"
+  "Portable surface agnosticity"
+  "Cheatsheet generator selftest (v6.0 / B7)"
+  "Installer manifest check (v6.0 / B9)"
+  "Installer manifest selftest (v6.0 / B9)"
 )
 t3_failures=0
 for label in "${self_only_labels[@]}"; do

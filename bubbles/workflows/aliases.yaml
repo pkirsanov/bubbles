@@ -9,13 +9,16 @@
 #      below and resolves to the underlying v5 mode by REVERSE lookup of this
 #      table, then resolves that mode definition from workflows.yaml. Tag grammar
 #      enforces unknown tags are rejected.
-#   2. If the user invokes a v5 mode name (e.g. `release-train-promote`), the
-#      resolver matches it under `v5Aliases` below and:
-#        a. Emits a one-line deprecation warning on stderr naming the v6 form.
-#        b. Resolves the v5 mode definition unchanged.
-#      v5 names remain valid through the entire v6 cycle. They are removed in
-#      v7. The migrate-modes-v5-to-v6.sh script (C1) rewrites operator-side
-#      invocations automatically.
+#   2. If the user invokes a bare v5 mode name (e.g. `release-train-promote`)
+#      as NEW operator input, the resolver REJECTS it (exit 3, v7.0) and prints
+#      the v6 form to use instead. The v5 names remain the canonical registry
+#      KEYS, so this table still maps v6 forms to those keys and existing
+#      artifacts (state.json.workflowMode) keep resolving unchanged. Tools that
+#      resolve a PERSISTED mode pass --grandfather / set
+#      BUBBLES_MODE_GRANDFATHER=1, which downgrades the rejection to a
+#      deprecation notice and resolves the stored key. The
+#      migrate-modes-v5-to-v6.sh script (C1) rewrites operator-side invocations
+#      from v5 names to v6 forms automatically.
 #
 # Invariants
 #   - Every v5 mode in workflows.yaml MUST appear under `v5Aliases`.

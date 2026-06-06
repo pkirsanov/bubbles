@@ -124,7 +124,11 @@ parity_failed=0
 parity_checked=0
 while IFS=$'\t' read -r v5 prim tags; do
   [[ -z "$v5" ]] && continue
-  v5_resolved="$(bash "$RESOLVER" "$v5" 2>/dev/null)"
+  # v7: the v5-NAME invocation is the grandfathered/persisted path (bare v5
+  # names are rejected only for new operator input). Grandfather it here so the
+  # byte-for-byte parity against the v6-form path still verifies that both
+  # invocations resolve to the same mode definition.
+  v5_resolved="$(BUBBLES_MODE_GRANDFATHER=1 bash "$RESOLVER" "$v5" 2>/dev/null)"
   # shellcheck disable=SC2086
   v6_resolved="$(bash "$RESOLVER" "$prim" $tags 2>/dev/null)"
   if [[ "$v5_resolved" != "$v6_resolved" ]]; then

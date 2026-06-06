@@ -191,7 +191,7 @@ This section owns the **parallel phase fan-out** contract — the rule for when 
 
 #### What v6.0 / B10 actually delivers
 
-The parallel-fan-out CONTRACT is normative since v6.0. The DISPATCHER that honors the contract was opt-in in v6.0 (`BUBBLES_PARALLEL_PHASES=1`) and is **default-ON in v6.1**; set `BUBBLES_PARALLEL_PHASES=0` to opt out. The mechanical determinism guarantees are enforced by `bubbles/scripts/parallel-fanout.sh` (the reference aggregator + DAG validator) and `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
+The parallel-fan-out CONTRACT is normative since v6.0. The DISPATCHER that honors the contract was opt-in in v6.0 (`BUBBLES_PARALLEL_PHASES=1`), default-ON in v6.1, and is **mandatory in v7.0** — the `BUBBLES_PARALLEL_PHASES` opt-out flag was removed, so parallel-eligible phases (per the DAG below) are always dispatched concurrently. The mechanical determinism guarantees are enforced by `bubbles/scripts/parallel-fanout.sh` (the reference aggregator + DAG validator) and `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
 
 The contract is normative immediately so that anyone reading a workflow agent definition can tell which phases are parallel-eligible and which are not, regardless of whether the runtime currently honors it.
 
@@ -244,14 +244,14 @@ If any parallel phase fails, the dispatcher MUST:
 3. Mark the parent envelope `outcome=route_required` with `unresolvedFindings` accumulating findings from EVERY failed phase.
 4. Never mask a failure by emitting `completed_owned` on a partial-success.
 
-#### Operator opt-OUT (v6.1)
+#### Parallel dispatch is mandatory (v7.0)
 
-```bash
-# Parallel fan-out is ON by default in v6.1. To force sequential dispatch:
-BUBBLES_PARALLEL_PHASES=0 ./<your-cli>.sh <env-args> validate ...
-```
-
-The flag was OFF by default in v6.0, is **ON by default in v6.1**, and is removed in v7 (parallel becomes mandatory for parallel-eligible phases). The aggregation/ordering guarantees are mechanically reproducible via `bubbles/scripts/parallel-fanout.sh` regardless of the flag.
+Parallel fan-out for parallel-eligible phases is **mandatory in v7.0**. The
+`BUBBLES_PARALLEL_PHASES` opt-out flag — OFF by default in v6.0, ON by default
+in v6.1 — was **removed in v7.0**. There is no sequential-dispatch opt-out: the
+DAG above decides eligibility, and eligible phases always fan out. The
+aggregation/ordering guarantees are mechanically reproducible via
+`bubbles/scripts/parallel-fanout.sh`.
 
 #### Why v6.0 was opt-in (gaps resolved in v6.1)
 
@@ -259,7 +259,7 @@ Three reasons applied in v6.0; all are closed in v6.1:
 
 1. **Audit gap.** Not every workflow agent had been audited against the DAG rules above. The canonical eligible/sequential-only shape tables and the `check-dag` validator now make eligibility mechanically checkable.
 2. **Determinism gap (CLOSED).** The stable-ordering invariant is now enforced by `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
-3. **Operator surprise.** Operators who depend on the v5 sequential-phase log shape can opt out with `BUBBLES_PARALLEL_PHASES=0` for one release before v7 removes the flag.
+3. **Operator surprise (resolved).** Operators who depended on the v5 sequential-phase log shape had the `BUBBLES_PARALLEL_PHASES=0` opt-out for the v6 cycle; v7.0 removed it and parallel dispatch is now mandatory.
 
 #### Selftest (v6.1, shipped)
 

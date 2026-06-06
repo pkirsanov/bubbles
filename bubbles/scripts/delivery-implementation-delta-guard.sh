@@ -235,7 +235,10 @@ resolve_workflow_status_ceiling() {
   fi
 
   if [[ -f "$resolver" ]]; then
-    if resolved="$(BUBBLES_WORKFLOWS_FILE="$WORKFLOWS_FILE" bash "$resolver" "$workflow_mode" 2>/dev/null)"; then
+    # v7: this resolves a PERSISTED workflowMode from an existing artifact, so
+    # grandfather the stored (possibly v5-name) registry key — the resolver
+    # rejects bare v5 names only for new operator input.
+    if resolved="$(BUBBLES_MODE_GRANDFATHER=1 BUBBLES_WORKFLOWS_FILE="$WORKFLOWS_FILE" bash "$resolver" "$workflow_mode" 2>/dev/null)"; then
       status_ceiling="$(printf '%s\n' "$resolved" | awk -F':[[:space:]]*' '{ key=$1; gsub(/^[[:space:]]+|[[:space:]]+$/, "", key); if (key == "statusCeiling") { gsub(/"/, "", $2); print $2; exit } }')"
     fi
   fi

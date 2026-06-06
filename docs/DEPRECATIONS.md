@@ -1,8 +1,8 @@
-# Bubbles Deprecations (v6.0)
+# Bubbles Deprecations (v7.0)
 
-> Maintained as the authoritative log of what changed shape, what changed default, and what is on a removal path between Bubbles v5.3 and v6.0.
+> Maintained as the authoritative log of what changed shape, what changed default, and what is on a removal path. Covers the v5 → v6 reshape and the v7.0 removal of the v5 mode-name input surface.
 
-This file is the operator-facing answer to "did Bubbles change X under me?" Everything below is the result of v6 design Group B (subtractive release) and Group C (migration tooling). The v5 → v6 cycle is **monotonically stronger**: every v5 form still works through the entire v6 cycle, but the v6 form is canonical. v7 removes v5 forms.
+This file is the operator-facing answer to "did Bubbles change X under me?" The v5 → v6 cycle was **monotonically stronger**: every v5 form kept working through the entire v6 cycle, with the v6 form canonical. **v7.0 completes that cycle by removing bare v5 mode NAMES as operator input.** This is the one intentional breaking change in v7 — see the Workflow Modes section for exactly what "removed" means and why existing artifacts are unaffected.
 
 ---
 
@@ -18,7 +18,9 @@ This file is the operator-facing answer to "did Bubbles change X under me?" Ever
 
 Source of truth: `bubbles/workflows/aliases.yaml`. Resolver: `bubbles/scripts/mode-resolver.sh`. Selftest: `bubbles/scripts/mode-alias-selftest.sh`.
 
-Every v5 mode name remains valid through the full v6 cycle. Invoking a v5 name emits a one-line deprecation hint on stderr naming the v6 form.
+**v7.0 change — bare v5 mode names are REMOVED as operator input.** Through the v6 cycle, typing a v5 name (e.g. `bugfix-fastlane`) emitted a deprecation hint and resolved. In v7, `mode-resolver.sh` **rejects** a bare v5 name (exit 3) and prints the v6 primitive+tag form to use instead. Start new work with the v6 form (e.g. `fix target:bug action:fastlane`).
+
+**What is NOT removed — existing artifacts are unaffected.** The v5 names remain the canonical **registry keys** inside `bubbles/workflows/modes.yaml`. `state.json.workflowMode` continues to store those keys, and the guards (`state-transition-guard.sh`, `artifact-lint.sh`, `is-terminal-for-mode.sh`) resolve status ceilings by direct registry lookup of the stored key. There is **no `state.json` schema change** and **no per-spec migration**: every already-complete spec, scope, bug, and ops artifact keeps validating exactly as before. Tools that resolve a persisted mode programmatically pass `--grandfather` / set `BUBBLES_MODE_GRANDFATHER=1`, which the guards do automatically. Only **new operator input** must use the v6 form.
 
 ### Canonical 15 v6 primitives
 
@@ -146,7 +148,7 @@ Zero deletions in v6.0. `docs/governance-index.md` gains an Audience Matrix and 
 
 | Removed in | What |
 |---|---|
-| v7.0 | All v5 mode aliases. Operators MUST be on v6 primitive+tag form by v7. |
+| **v7.0 (DONE)** | **Bare v5 mode NAMES as operator input.** `mode-resolver.sh` rejects them (exit 3) with the v6 form to use. v5 names remain registry keys; existing artifacts are grandfathered (no schema change, no per-spec migration). Operators MUST start new work with the v6 primitive+tag form. |
 | v6.1 | `--advisory` flag on `result-envelope-validate.sh` (the schema already accepts richer envelopes; advisory should not be needed). |
 | v6.x | Anything documented here that has been quiet for ≥1 release without operator pushback. |
 
