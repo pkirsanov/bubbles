@@ -854,14 +854,14 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     echo "     /bubbles.commands                     — Auto-detect your project and regenerate agents.md"
     echo "     bash .github/bubbles/scripts/cli.sh doctor"
     echo "     bash .github/bubbles/scripts/cli.sh repo-readiness ."
-    echo "     /bubbles.workflow full-delivery       — Move into the full delivery pipeline when ready"
+    echo "     /bubbles.workflow implement action:full-delivery target:spec — Move into the full delivery pipeline when ready"
   elif [[ "$SELECTED_ADOPTION_PROFILE" == "assured" ]]; then
     echo "     /bubbles.setup mode: refresh          — Verify the assured bootstrap landed cleanly"
     echo "     /bubbles.commands                     — Auto-detect your project and regenerate agents.md"
     echo "     bash .github/bubbles/scripts/cli.sh doctor"
     echo "     bash .github/bubbles/scripts/cli.sh repo-readiness . --profile assured"
     echo "     /bubbles.status                       — Review stricter readiness guidance before scaling delivery"
-    echo "     /bubbles.workflow full-delivery       — Run the same full-strength delivery pipeline when ready"
+    echo "     /bubbles.workflow implement action:full-delivery target:spec — Run the same full-strength delivery pipeline when ready"
   else
     echo "     /bubbles.commands                   — Auto-detect your project and regenerate agents.md"
     echo "     /bubbles.setup mode: refresh        — Verify setup is complete"
@@ -869,7 +869,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     echo "     bash .github/bubbles/scripts/cli.sh repo-readiness ."
     echo "     /bubbles.status                     — Check spec progress"
     echo "     /bubbles.analyst  <describe feature> — Start new feature work"
-    echo "     /bubbles.workflow full-delivery      — Run the full pipeline"
+    echo "     /bubbles.workflow implement action:full-delivery target:spec — Run the full pipeline"
   fi
 else
   echo "Bubbles is installed. Next steps:"

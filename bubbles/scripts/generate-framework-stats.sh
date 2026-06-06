@@ -232,7 +232,7 @@ block_temp=$(mktemp)
 cat <<EOF > "$block_temp"
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>$agent_count specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>$gate_count quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>$primitive_count primitive workflow modes</strong> — plus $alias_extra v5 aliases that still resolve — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>$primitive_count primitive workflow modes</strong> — plus $alias_extra v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 EOF
 replace_block "$repo_root/README.md" "GENERATED:FRAMEWORK_STATS_CALLOUTS_START" "GENERATED:FRAMEWORK_STATS_CALLOUTS_END" "$block_temp"
 

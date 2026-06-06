@@ -148,9 +148,13 @@ else
   #   bubbles/scripts/* (framework internals, NOT operator-side)
   #   skills, agents (framework internals, owned by maintainers)
   #   docs/CHEATSHEET.md and docs/its-not-rocket-appliances.html (generated)
-  #   docs/recipes (recipes are operator-facing but already reviewed by B6)
   #   docs/v5.2-design.md, docs/v6-mcp-design.md (historical design docs preserve v5 vocabulary)
   #   CHANGELOG.md (historical record preserves v5 vocabulary)
+  # NOTE: docs/recipes ARE scanned (v7) — they are operator-facing surfaces and
+  #   must stay free of bare v5 leading-token forms. Pedagogical v5 mentions in
+  #   prose/backticks (e.g. upgrade recipes) are not matched by the rewrite
+  #   patterns, which only target /bubbles.workflow <v5>, /bubbles.<v5>,
+  #   mode=<v5>, and run-mode <v5> — never the valid `mode: <v5>` key form.
   while IFS= read -r f; do
     SEARCH_PATHS+=("$f")
   done < <(
@@ -163,7 +167,6 @@ else
       \( -path "$REPO_ROOT/agents" -prune \) -o \
       \( -path "$REPO_ROOT/docs/CHEATSHEET.md" -prune \) -o \
       \( -path "$REPO_ROOT/docs/its-not-rocket-appliances.html" -prune \) -o \
-      \( -path "$REPO_ROOT/docs/recipes" -prune \) -o \
       \( -path "$REPO_ROOT/docs/v5.2-design.md" -prune \) -o \
       \( -path "$REPO_ROOT/docs/v6-mcp-design.md" -prune \) -o \
       \( -path "$REPO_ROOT/CHANGELOG.md" -prune \) -o \
@@ -202,11 +205,27 @@ scan_file() {
   tmpfile="$(mktemp)"
   cp "$file" "$tmpfile"
 
-  local v5 v6 file_changed=0
+  local v5 v6 v6_first v6_rest la file_changed=0
   for v5 in "${!V5_TO_V6[@]}"; do
     v6="${V5_TO_V6[$v5]}"
     # Skip primitives that have no v5 alias different from themselves
     [[ "$v5" == "$v6" ]] && continue
+
+    # Idempotency guard for SELF-NAMED primitives, where the v6 form begins with
+    # the v5 token itself (e.g. framework-health -> "framework-health
+    # action:proposal-first"). Without this, the already-rewritten string
+    # "workflow framework-health action:proposal-first" would re-match
+    # "workflow framework-health" and double-apply the tail. The negative
+    # lookahead skips a match that is already followed by the EXACT v6 tail, so
+    # the rewrite stays idempotent. (Non-self-named v6 forms can never re-match
+    # because their first token differs from the v5 name.)
+    v6_first="${v6%% *}"
+    if [[ "$v6_first" == "$v5" && "$v6" == *" "* ]]; then
+      v6_rest="${v6#* }"
+      la="(?![[:space:]]+\\Q${v6_rest}\\E)"
+    else
+      la=""
+    fi
 
     # Pattern A: slash command /bubbles.<v5name>
     # Pattern B: bare argument after a CLI: "./*.sh <v5name>" or "bubbles <v5name>"
@@ -214,10 +233,10 @@ scan_file() {
     # We use perl in-place with multi-pattern alternation.
     if grep -qE "(/bubbles\\.${v5}\\b|mode=${v5}\\b|run-mode[[:space:]]+${v5}\\b|workflow[[:space:]]+${v5}\\b)" "$tmpfile"; then
       perl -pi -e "
-        s|/bubbles\\.${v5}\\b|/bubbles.${v6%% *}|g;
-        s|mode=${v5}\\b|mode=${v6}|g;
-        s|run-mode[[:space:]]+${v5}\\b|run-mode ${v6}|g;
-        s|workflow[[:space:]]+${v5}\\b|workflow ${v6}|g;
+        s|/bubbles\\.${v5}\\b|/bubbles.${v6_first}|g;
+        s|mode=${v5}\\b${la}|mode=${v6}|g;
+        s|run-mode[[:space:]]+${v5}\\b${la}|run-mode ${v6}|g;
+        s|workflow[[:space:]]+${v5}\\b${la}|workflow ${v6}|g;
       " "$tmpfile"
       file_changed=1
     fi

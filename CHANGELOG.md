@@ -12,6 +12,28 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.1 — v7 surface closure: operator surfaces migrated, migrator made idempotent, cheatsheet/super v7-aware
+
+> *"You said you let the decals go, Ricky. The recipes still had 'em on."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** v7.0.0 shipped the resolver rejection but left the framework's *own* operator surfaces carrying bare v5 leading-token forms, and the migrate-modes selftest actually pinned that un-migrated state. v7.0.1 finishes the job: every operator-facing surface now uses the v6 form, the migrator is idempotent for self-named primitives and guards the v7 invariant, and the super agent + both cheatsheets state the v7 input rule explicitly. No behavior change to the resolver or guards; no `state.json` impact.
+
+### Operator surfaces migrated to v6 forms
+
+- **17 recipes** under `docs/recipes/` plus `README.md`, `docs/guides/WORKFLOW_MODES.md`, and `install.sh` had bare `/bubbles.workflow <v5-name> for <feature>` leading-token forms — the exact shape `mode-resolver.sh` now rejects. All were rewritten to the v6 primitive+tag form (e.g. `chaos-hardening` → `validate action:chaos-iterative`, `propagate-forward` → `propagate action:forward-merge`). The valid `mode: <registry-key>` form was left untouched — it resolves by direct registry lookup and is not the rejected leading-token shape.
+- **`migrate-modes-v5-to-v6.sh` now scans `docs/recipes/`.** The default scan previously excluded recipes on a stale "already reviewed" premise; that exclusion is removed so the migrator both fixes and guards them.
+
+### Migrator correctness
+
+- **Idempotency fix for self-named primitives.** Where a v6 form begins with the v5 token (`framework-health` → `framework-health action:proposal-first`), a naive rewrite re-matched `workflow framework-health` on the second pass and double-applied the tail. A negative-lookahead guard (applied only when the v6 first token equals the v5 name) makes the rewrite idempotent. Covered by a new adversarial selftest assertion.
+- **Selftest Assertion 7 flipped to the v7 invariant.** It previously asserted the real repo `--check` exits 2 with `install.sh` pending — pinning the un-migrated state. It now asserts a clean `--check` (exit 0), so any reintroduced bare v5 form in an operator surface is caught as a regression.
+
+### Docs & discovery surfaces are v7-aware
+
+- **`bubbles.super`** gained an ABSOLUTE v7 mode-input rule: always emit `mode: <key>` or the v6 primitive+tag form, never a bare `/bubbles.workflow <v5-name>` leading token.
+- **`docs/CHEATSHEET.md` and `docs/its-not-rocket-appliances.html`** carry a v7 input note clarifying that the mode column lists registry keys, how to invoke them, and that bare leading-token input is rejected (existing `state.json` keys unaffected).
+- **README callout phrasing corrected at the generator** (`generate-framework-stats.sh`): "v5 aliases that still resolve" → "v5 aliases retained as registry keys" — precise under v7, where bare v5 *input* no longer resolves but the *keys* are retained.
+
 ## v7.0.0 — Mode-collapse completion: v5 name input removed, existing artifacts grandfathered
 
 > *"You gotta let the old decals go, Ricky. The trailer rolls the same."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

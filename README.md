@@ -46,7 +46,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>40 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>102 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 40 v5 aliases that still resolve — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 40 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
@@ -533,7 +533,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | Start a new feature from scratch | `/bubbles.workflow  <describe feature>` |
 | Improve an existing feature | `/bubbles.workflow  improve <feature>` |
 | Fix a bug | `/bubbles.workflow  fix the <describe bug>` |
-| Run the full delivery pipeline | `/bubbles.workflow  full-delivery for <feature>` |
+| Run the full delivery pipeline | `/bubbles.workflow implement action:full-delivery target:spec for <feature>` |
 | Reconcile and redesign | `/bubbles.workflow  redesign-existing for <feature>` |
 | Harden the code quality | `/bubbles.workflow  harden <feature>` |
 | Break things on purpose | `/bubbles.workflow  chaos test <feature>` |

@@ -302,6 +302,8 @@ Every recommendation MUST produce a **Ready-to-Run Command Block** in this forma
 **What to expect:** <1 sentence on output/outcome>
 ````
 
+**v7 mode-input rule (ABSOLUTE):** Always emit the `mode: <registry-key>` form (e.g. `mode: full-delivery`) or the v6 primitive+tag form (e.g. `implement action:full-delivery target:spec`). NEVER emit a bare `/bubbles.workflow <v5-name>` leading-token form — v7.0 removed bare v5 mode names as operator input, so `mode-resolver.sh` rejects them with exit 3 and prints the v6 form to use. The v5 names remain the canonical registry KEYS, so `mode: <v5-name>` and persisted `state.json.workflowMode` values keep resolving unchanged (the guards pass `--grandfather` for stored modes).
+
 If the recommendation is a direct agent (not a workflow), use the same format:
 
 ````

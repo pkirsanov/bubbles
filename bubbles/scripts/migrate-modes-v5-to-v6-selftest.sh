@@ -53,6 +53,11 @@ v5Aliases:
     primitive: ship
     tags: { target: release-train, action: promote }
     description: Test fixture.
+
+  framework-health:
+    primitive: framework-health
+    tags: { action: proposal-first }
+    description: Test fixture (self-named primitive).
 EOF
 
 # ── Assertion 1: aliases parse and --check accepts empty corpus ──
@@ -121,6 +126,30 @@ else
   bad "after --write, --check still reports pending rewrites (NOT idempotent)"
 fi
 
+# ── Assertion 5b: self-named primitive (framework-health) is idempotent ──
+# Adversarial regression guard. The v6 form begins with the v5 token itself
+# ("framework-health action:proposal-first"), so a naive rewrite re-matches
+# "workflow framework-health" on the second pass and double-applies the tail.
+# The bare form must rewrite exactly ONCE and then be a no-op.
+fix5b="$FIXTURE_ROOT/fixture-self-named"
+mkdir -p "$fix5b"
+cat > "$fix5b/recipe.md" <<'EOF'
+Run `/bubbles.workflow framework-health` to self-observe the framework.
+EOF
+BUBBLES_REPO_ROOT="$fix5b" bash "$SCRIPT" --write --aliases-file "$ALIASES_FIXTURE" --paths "$fix5b/recipe.md" >/dev/null 2>&1 || true
+if grep -qF '/bubbles.workflow framework-health action:proposal-first' "$fix5b/recipe.md" \
+  && [[ "$(grep -c 'action:proposal-first' "$fix5b/recipe.md")" -eq 1 ]]; then
+  pass "self-named primitive rewrites once to 'framework-health action:proposal-first'"
+else
+  bad "self-named primitive rewrite wrong (expected exactly one tail). Current file:"
+  cat "$fix5b/recipe.md"
+fi
+if BUBBLES_REPO_ROOT="$fix5b" bash "$SCRIPT" --check --aliases-file "$ALIASES_FIXTURE" --paths "$fix5b/recipe.md" >/dev/null 2>&1; then
+  pass "self-named primitive --check is idempotent (exit 0, no double-apply)"
+else
+  bad "self-named primitive NOT idempotent — --check still reports pending rewrites"
+fi
+
 # ── Assertion 6: default scope excludes framework internals ──────
 fix6="$FIXTURE_ROOT/fixture-default-scope"
 mkdir -p "$fix6/bubbles/scripts" "$fix6/agents" "$fix6/skills/some-skill" "$fix6/docs"
@@ -152,17 +181,17 @@ else
   fi
 fi
 
-# ── Assertion 7: real install.sh produces the expected v5 -> v6 rewrites ──
-# Run --check against the real repo and assert install.sh is on the rewrite list.
+# ── Assertion 7: real repo operator surfaces are fully migrated to v6 (v7) ──
+# v7.0 removed bare v5 mode names as operator input, so every operator-facing
+# surface scanned by the default scope (README, docs/guides, docs/recipes,
+# install.sh, .specify) MUST be free of bare v5 leading-token forms. A clean
+# real-repo --check is the v7 invariant; it also guards against regressions that
+# reintroduce a bare /bubbles.workflow <v5> form into an operator surface.
 if real_out=$(bash "$SCRIPT" --check 2>&1); then
-  bad "real-repo --check exited 0 (expected 2 since install.sh still has v5 forms)"
+  pass "real-repo --check exits 0 — operator surfaces carry no bare v5 forms (v7 invariant)"
 else
-  if echo "$real_out" | grep -qF 'install.sh'; then
-    pass "real-repo --check lists install.sh as needing rewrite (v5 -> v6)"
-  else
-    bad "real-repo --check did NOT list install.sh in rewrite set. Output:"
-    echo "$real_out"
-  fi
+  bad "real-repo --check exited non-zero — an operator surface still has a bare v5 form. Output:"
+  echo "$real_out"
 fi
 
 # ── Assertion 8: unknown argument -> exit 1 ──────────────────────

@@ -161,6 +161,8 @@ Some TPB characters carry different agent roles when their narrative context leg
 
 ## <img src="../icons/julian-glass.svg" width="32"> Workflow Modes
 
+> **v7 input note:** The **Mode** column lists registry keys (the v5 names). Invoke a mode with the `mode: <key>` form (`/bubbles.workflow <feature> mode: full-delivery`) or the v6 primitive+tag form (`/bubbles.workflow implement action:full-delivery target:spec`). Typing a bare `/bubbles.workflow <key>` leading token is rejected in v7.0 — `mode-resolver.sh` prints the exact v6 form to use. Existing `state.json` artifacts that already store a v5 key keep working unchanged.
+
 | Mode | Alias | What It Does |
 |------|-------|-------------|
 <!-- GENERATED:CHEATSHEET_MODES_START - run `bash bubbles/scripts/generate-cheatsheet.sh` -->
