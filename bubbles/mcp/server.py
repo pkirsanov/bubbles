@@ -51,6 +51,7 @@ Exit codes:
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -289,28 +290,69 @@ class ToolCatalog:
 class ResourceCatalog:
     """Loads resource definitions from bubbles/mcp/resources/*.json.
 
-    Each resource JSON has the shape:
-      {
-        "uri": "bubbles://workflows.yaml",
-        "name": "Bubbles workflows registry",
-        "description": "...",
-        "mimeType": "application/yaml",
-        "path": "bubbles/workflows.yaml"     # relative to repo_root
-      }
+    Two kinds of resource are supported:
 
-    A resource may also use "pathTemplate" with `${var}` interpolation against
-    a `uriTemplate` to expose families of resources (e.g. per-spec state.json).
-    For v6.0 we support only static URIs; templated resources are deferred to
-    v6.1 (the catalog file may still declare them but the server returns
-    method-not-supported on read).
+    1. STATIC — a fixed `uri` mapped to a repo-relative `path`:
+         {
+           "uri": "bubbles://workflows.yaml",
+           "name": "...", "description": "...",
+           "mimeType": "application/yaml",
+           "path": "bubbles/workflows.yaml"
+         }
+
+    2. TEMPLATED — a `uriTemplate` (RFC 6570 level-1 `{var}` expansion) that
+       expands to a FAMILY of resources. A templated resource resolves its
+       content one of two ways:
+
+       a. `pathTemplate` — a repo-relative path/glob with `{var}` placeholders.
+            { "uriTemplate": "bubbles://spec/{nnn}/state.json",
+              "pathTemplate": "specs/{nnn}*/state.json", ... }
+
+       b. `commandTemplate` — a bash twin under scripts_dir, run with
+          `{var}`-substituted args; stdout becomes the resource body. This keeps
+          the server a THIN wrapper — it never duplicates the bash twin's logic.
+            { "uriTemplate": "bubbles://gates/{id}",
+              "commandTemplate": {"script": "gate-meta.sh", "args": ["json", "{id}"]}, ... }
+
+    Static URIs match first; if none match, the URI is tested against each
+    template's `uriTemplate`. Extracted variables may not contain `..` and
+    (being single URI path segments) never contain `/`.
     """
 
-    def __init__(self, mcp_dir: Path, repo_root: Path, logger: logging.Logger):
+    def __init__(
+        self,
+        mcp_dir: Path,
+        repo_root: Path,
+        scripts_dir: Path,
+        logger: logging.Logger,
+    ):
         self._mcp_dir = mcp_dir
         self._repo_root = repo_root
+        self._scripts_dir = scripts_dir
         self._logger = logger
         self._resources: dict[str, dict[str, Any]] = {}
+        self._templates: list[dict[str, Any]] = []
         self._reload()
+
+    @staticmethod
+    def _compile_uri_template(uri_template: str) -> "re.Pattern[str]":
+        # RFC 6570 level-1 simple expansion: {var} -> exactly one path segment.
+        parts: list[str] = []
+        idx = 0
+        while idx < len(uri_template):
+            start = uri_template.find("{", idx)
+            if start == -1:
+                parts.append(re.escape(uri_template[idx:]))
+                break
+            parts.append(re.escape(uri_template[idx:start]))
+            end = uri_template.find("}", start + 1)
+            if end == -1:
+                parts.append(re.escape(uri_template[start:]))
+                break
+            var = uri_template[start + 1 : end]
+            parts.append(f"(?P<{var}>[^/]+)")
+            idx = end + 1
+        return re.compile("^" + "".join(parts) + "$")
 
     def _reload(self) -> None:
         res_dir = self._mcp_dir / "resources"
@@ -326,16 +368,29 @@ class ResourceCatalog:
                 )
                 sys.exit(1)
             uri = spec.get("uri")
-            if not uri:
+            uri_template = spec.get("uriTemplate")
+            if not uri and not uri_template:
                 sys.stderr.write(
-                    f"bubbles-mcp: resource file {path} missing uri\n"
+                    f"bubbles-mcp: resource file {path} missing uri/uriTemplate\n"
                 )
                 sys.exit(1)
-            spec.setdefault("name", uri)
             spec.setdefault("description", "")
             spec.setdefault("mimeType", "text/plain")
-            self._resources[uri] = spec
-            self._logger.debug("loaded resource: %s", uri)
+            if uri_template:
+                spec.setdefault("name", uri_template)
+                if "pathTemplate" not in spec and "commandTemplate" not in spec:
+                    sys.stderr.write(
+                        f"bubbles-mcp: templated resource {uri_template} needs "
+                        "pathTemplate or commandTemplate\n"
+                    )
+                    sys.exit(1)
+                spec["_uriRegex"] = self._compile_uri_template(uri_template)
+                self._templates.append(spec)
+                self._logger.debug("loaded resource template: %s", uri_template)
+            else:
+                spec.setdefault("name", uri)
+                self._resources[uri] = spec
+                self._logger.debug("loaded resource: %s", uri)
 
     def list_resources(self) -> list[dict[str, Any]]:
         out = []
@@ -349,16 +404,58 @@ class ResourceCatalog:
             out.append(entry)
         return out
 
+    def list_resource_templates(self) -> list[dict[str, Any]]:
+        out = []
+        for spec in self._templates:
+            out.append(
+                {
+                    "uriTemplate": spec["uriTemplate"],
+                    "name": spec.get("name", spec["uriTemplate"]),
+                    "description": spec.get("description", ""),
+                    "mimeType": spec.get("mimeType", "text/plain"),
+                }
+            )
+        return out
+
     def read(self, uri: str) -> Optional[dict[str, Any]]:
         spec = self._resources.get(uri)
-        if spec is None:
-            return None
-        if "pathTemplate" in spec and "path" not in spec:
-            # Templated resource not yet supported in v6.0.
-            return {"error": "templated resources deferred to v6.1"}
+        if spec is not None:
+            return self._read_static(uri, spec)
+        for tspec in self._templates:
+            match = tspec["_uriRegex"].match(uri)
+            if not match:
+                continue
+            variables = match.groupdict()
+            for var, val in variables.items():
+                if ".." in val:
+                    return {"error": f"resource {uri} variable '{var}' contains '..'"}
+            if "commandTemplate" in tspec:
+                return self._read_command(uri, tspec, variables)
+            return self._read_path_template(uri, tspec, variables)
+        return None
+
+    def _read_static(self, uri: str, spec: dict[str, Any]) -> dict[str, Any]:
         rel = spec.get("path")
         if not rel:
             return {"error": f"resource {uri} has no path"}
+        return self._read_file(uri, rel, spec.get("mimeType", "text/plain"))
+
+    def _read_path_template(
+        self, uri: str, spec: dict[str, Any], variables: dict[str, str]
+    ) -> dict[str, Any]:
+        pattern = spec["pathTemplate"]
+        for var, val in variables.items():
+            pattern = pattern.replace("{" + var + "}", val)
+        matches = [p for p in sorted(self._repo_root.glob(pattern)) if p.is_file()]
+        if not matches:
+            return {"error": f"resource {uri} matched no file (pattern: {pattern})"}
+        if len(matches) > 1:
+            rels = ", ".join(str(p.relative_to(self._repo_root)) for p in matches)
+            return {"error": f"resource {uri} is ambiguous (matched: {rels})"}
+        rel = str(matches[0].relative_to(self._repo_root))
+        return self._read_file(uri, rel, spec.get("mimeType", "text/plain"))
+
+    def _read_file(self, uri: str, rel: str, mime: str) -> dict[str, Any]:
         abs_path = (self._repo_root / rel).resolve()
         # Containment check: don't allow `..` traversal out of repo_root.
         try:
@@ -371,8 +468,53 @@ class ResourceCatalog:
             text = abs_path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             return {"error": f"resource {uri} is not UTF-8 text"}
+        return {"text": text, "mimeType": mime}
+
+    def _read_command(
+        self, uri: str, spec: dict[str, Any], variables: dict[str, str]
+    ) -> dict[str, Any]:
+        cmd_spec = spec["commandTemplate"]
+        script = cmd_spec.get("script")
+        if not script:
+            return {"error": f"resource {uri} commandTemplate missing script"}
+        script_path = (self._scripts_dir / script).resolve()
+        # Containment: the script must live under scripts_dir.
+        try:
+            script_path.relative_to(self._scripts_dir.resolve())
+        except ValueError:
+            return {"error": f"resource {uri} script escapes scripts_dir"}
+        if not script_path.is_file():
+            return {"error": f"resource {uri} script not found: {script}"}
+        args: list[str] = []
+        for tok in cmd_spec.get("args", []):
+            rendered = tok
+            for var, val in variables.items():
+                rendered = rendered.replace("{" + var + "}", val)
+            args.append(rendered)
+        cmd = ["bash", str(script_path), *args]
+        timeout = int(
+            os.environ.get("BUBBLES_MCP_TOOL_TIMEOUT", DEFAULT_TOOL_TIMEOUT_SECONDS)
+        )
+        try:
+            completed = subprocess.run(
+                cmd,
+                cwd=self._repo_root,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {"error": f"resource {uri} command timed out after {timeout}s"}
+        if completed.returncode != 0:
+            return {
+                "error": (
+                    f"resource {uri} command exit={completed.returncode}: "
+                    f"{completed.stderr.strip()}"
+                )
+            }
         return {
-            "text": text,
+            "text": completed.stdout,
             "mimeType": spec.get("mimeType", "text/plain"),
         }
 
@@ -612,6 +754,8 @@ class Server:
             return self._tools_call(params)
         if method == "resources/list":
             return {"resources": self._resources.list_resources()}
+        if method == "resources/templates/list":
+            return {"resourceTemplates": self._resources.list_resource_templates()}
         if method == "resources/read":
             return self._resources_read(params)
         if method == "prompts/list":
@@ -635,10 +779,12 @@ class Server:
                 "prompts": {"listChanged": False},
             },
             "instructions": (
-                "Bubbles MCP server (v6.0). Tools are thin wrappers around "
+                "Bubbles MCP server. Tools are thin wrappers around "
                 "bubbles/scripts/*.sh — every call records the actual command "
                 "line and full stdout/stderr in the response. Resources are "
-                "read-only handles to canonical Bubbles files. No summarization."
+                "read-only handles to canonical Bubbles files; templated "
+                "resources (bubbles://gates/{id}, bubbles://spec/{nnn}/state.json) "
+                "expand per-id/per-spec. No summarization."
             ),
         }
 
@@ -873,7 +1019,7 @@ def main() -> int:
         mcp_dir,
     )
     tools = ToolCatalog(mcp_dir, scripts_dir, logger)
-    resources = ResourceCatalog(mcp_dir, repo_root, logger)
+    resources = ResourceCatalog(mcp_dir, repo_root, scripts_dir, logger)
     transport = StdioTransport(sys.stdin.buffer, sys.stdout.buffer)
     server = Server(
         transport, tools, resources, repo_root, scripts_dir, version, logger

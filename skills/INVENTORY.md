@@ -16,8 +16,8 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | Status | Meaning |
 |---|---|
 | **KEEP** | Substantive policy with concrete rules an agent invokes. Stays through v7. |
-| **CONSOLIDATE** | Overlaps with a sibling skill; merge candidate. Decision deferred to v6.0.1 with explicit consumer-impact review. |
-| **POINTER-DELETE** | Pure redirect to an authoritative module with no added rules. Safe to delete in v6.0.1. |
+| **CONSOLIDATE** | Overlaps with a sibling skill; merge candidate. Decision routed to a follow-up minor with explicit consumer-impact review. |
+| **POINTER-DELETE** | Pure redirect to an authoritative module with no added rules. Safe to delete in a follow-up minor. |
 | **REVIEW** | Substantive but compact (<80 LOC). Manual review needed before pruning. |
 
 ## Inventory

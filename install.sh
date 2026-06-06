@@ -125,6 +125,7 @@ fi
 
 TRUST_HELPERS="$TEMP_DIR/bubbles/scripts/trust-metadata.sh"
 [[ -f "$TRUST_HELPERS" ]] || fail "Missing trust metadata helpers in source payload"
+# shellcheck source=/dev/null  # dynamic path resolved from the extracted payload at install time
 source "$TRUST_HELPERS"
 
 RELEASE_MANIFEST_SOURCE="$TEMP_DIR/bubbles/release-manifest.json"
@@ -203,12 +204,8 @@ persist_adoption_profile() {
 }
 
 SELECTED_ADOPTION_PROFILE="${ADOPTION_PROFILE:-delivery}"
-PROFILE_SELECTED_EXPLICITLY=false
-if [[ -n "$ADOPTION_PROFILE" ]]; then
-  PROFILE_SELECTED_EXPLICITLY=true
-fi
 
-profile_supported "$SELECTED_ADOPTION_PROFILE" || fail "Unknown adoption profile '${SELECTED_ADOPTION_PROFILE}'. Supported profiles: $(printf '%s ' $(adoption_profile_ids) | sed 's/[[:space:]]*$//')"
+profile_supported "$SELECTED_ADOPTION_PROFILE" || fail "Unknown adoption profile '${SELECTED_ADOPTION_PROFILE}'. Supported profiles: $(adoption_profile_ids | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
 
 if [[ "$DO_BOOTSTRAP" != "true" && -n "$ADOPTION_PROFILE" ]]; then
   fail "--profile requires --bootstrap so the selected adoption profile can be written into repo-local policy state."

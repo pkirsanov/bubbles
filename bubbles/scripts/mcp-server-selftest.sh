@@ -28,6 +28,13 @@
 #   T10. `resources/read` for `bubbles://nonexistent` returns
 #        ERR_RESOURCE_NOT_FOUND.
 #   T11. Unknown JSON-RPC method returns ERR_METHOD_NOT_FOUND.
+#   T12. `resources/templates/list` returns the templated catalog (>= 2),
+#        including `bubbles://gates/{id}`.
+#   T13. `resources/read` for templated `bubbles://gates/G024` resolves via the
+#        gate-meta.sh bash twin and the body mentions G024.
+#   T14. `resources/read` for templated `bubbles://gates/G999` (unknown gate)
+#        returns ERR_RESOURCE_FAILED — the bash twin's non-zero exit is surfaced
+#        as a real error, never a fake empty success.
 #
 # Exit 0 = all assertions pass. Exit 1 = at least one failed.
 
@@ -153,6 +160,11 @@ msgs = [
     {"jsonrpc": "2.0", "id": 9, "method": "resources/read",
      "params": {"uri": "bubbles://nonexistent"}},
     {"jsonrpc": "2.0", "id": 10, "method": "some-unknown-method"},
+    {"jsonrpc": "2.0", "id": 11, "method": "resources/templates/list"},
+    {"jsonrpc": "2.0", "id": 12, "method": "resources/read",
+     "params": {"uri": "bubbles://gates/G024"}},
+    {"jsonrpc": "2.0", "id": 13, "method": "resources/read",
+     "params": {"uri": "bubbles://gates/G999"}},
 ]
 for m in msgs:
     proc.stdin.write(frame(m))
@@ -160,7 +172,7 @@ proc.stdin.flush()
 proc.stdin.close()
 
 replies = {}
-for _ in range(10):  # 10 IDs (notifications/initialized has no reply)
+for _ in range(13):  # 13 IDs (notifications/initialized has no reply)
     r = read_frame(proc.stdout)
     if r is None:
         break
@@ -282,6 +294,49 @@ if [[ "$err_code" == "-32601" ]]; then
   pass "T11: unknown method returned ERR_METHOD_NOT_FOUND (-32601)"
 else
   fail "T11: unknown method expected -32601, got $err_code"
+fi
+
+# T12: resources/templates/list returns the templated catalog (>= 2), including
+# the gate-by-id template.
+tmpl_reply="$(get 11)"
+ok="$(echo "$tmpl_reply" | python3 -c "
+import json,sys
+r = json.load(sys.stdin)
+tmpls = (r.get('result') or {}).get('resourceTemplates') or []
+uris = [t.get('uriTemplate') for t in tmpls]
+print('YES' if (len(tmpls) >= 2 and 'bubbles://gates/{id}' in uris) else 'NO')
+")"
+if [[ "$ok" == "YES" ]]; then
+  pass "T12: resources/templates/list returned templates incl bubbles://gates/{id}"
+else
+  fail "T12: resources/templates/list missing expected templates: $tmpl_reply"
+fi
+
+# T13: resources/read templated bubbles://gates/G024 — resolves via gate-meta.sh
+# bash twin, body is the gate's JSON record mentioning G024.
+gate_reply="$(get 12)"
+ok="$(echo "$gate_reply" | python3 -c "
+import json,sys
+r = json.load(sys.stdin)
+contents = (r.get('result') or {}).get('contents') or [{}]
+body = contents[0].get('text', '')
+print('YES' if ('G024' in body and 'error' not in r) else 'NO')
+")"
+if [[ "$ok" == "YES" ]]; then
+  pass "T13: templated resource bubbles://gates/G024 resolved via bash twin, body mentions G024"
+else
+  fail "T13: templated gate resource did not resolve correctly: $gate_reply"
+fi
+
+# T14: resources/read templated bubbles://gates/G999 (unknown gate) — the bash
+# twin exits non-zero, so the server returns ERR_RESOURCE_FAILED (not a fake
+# empty success).
+badgate_reply="$(get 13)"
+err_code="$(echo "$badgate_reply" | python3 -c "import json,sys; r=json.load(sys.stdin); print(r.get('error', {}).get('code', 0))")"
+if [[ "$err_code" == "-32004" ]]; then
+  pass "T14: unknown templated gate returned ERR_RESOURCE_FAILED (-32004)"
+else
+  fail "T14: unknown templated gate expected -32004, got $err_code: $badgate_reply"
 fi
 
 echo

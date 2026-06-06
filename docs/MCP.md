@@ -1,7 +1,7 @@
-# Bubbles MCP Server (v6.0)
+# Bubbles MCP Server
 
-> Status: SHIPPED in v6.0. Optional — bash scripts remain the supported fallback.
-> Transport: stdio (default) or HTTP (v6.1 / R9). Protocol: Model Context Protocol (MCP) 2024-11-05.
+> Status: SHIPPED (since v6.0). Optional — bash scripts remain the supported fallback.
+> Transport: stdio (default) or HTTP. Protocol: Model Context Protocol (MCP) 2024-11-05.
 > Runtime: Python 3.10+, stdlib only. No `pip install`. No daemon.
 
 The Bubbles MCP server exposes the framework's gate registry, validation scripts, and canonical resources as MCP tools and resources so MCP-aware clients (VS Code Copilot Chat agent, Claude Desktop, Cursor, Cline) can call them directly — without spawning shell processes or parsing markdown.
@@ -65,7 +65,23 @@ Tool definitions live in `.github/bubbles/mcp/tools/*.json`. Each declares an `i
 | `bubbles://schemas/tool-call` | `bubbles/schemas/tool-call.schema.json` | `application/json` |
 | `bubbles://workflows/intent-routes.yaml` | `bubbles/intent-routes.yaml` | `application/yaml` |
 
-Resources are read-only. Templated URIs (`bubbles://gates/{id}`, `bubbles://spec/{nnn}/state.json`) are deferred to v6.1.
+Resources are read-only.
+
+### Resource Templates
+
+The server also exposes **templated resources** (RFC 6570 level-1 `{var}`
+expansion), discoverable via the `resources/templates/list` method:
+
+| URI template | Resolves to | MIME |
+|--------------|-------------|------|
+| `bubbles://gates/{id}` | One gate's full metadata, e.g. `bubbles://gates/G024`. Backed by the `gate-meta.sh json <id>` bash twin — the same source the `check_gate` tool uses, never a duplicated parser. | `application/json` |
+| `bubbles://spec/{nnn}/state.json` | A spec's control-plane `state.json`, e.g. `bubbles://spec/042/state.json` → `specs/042*/state.json`. Resolves only in downstream consumer repos (the Bubbles source repo keeps no `specs/` per the G085 dogfood guard). | `application/json` |
+
+Templated reads surface the same anti-fabrication guarantee as tools: a
+`commandTemplate`-backed resource (like `bubbles://gates/{id}`) runs its bash
+twin and returns the verbatim stdout; an unknown id or an unmatched/ambiguous
+spec number returns a real `-32004` (`ERR_RESOURCE_FAILED`) error, never a fake
+empty success. Extracted `{var}` values may not contain `..`.
 
 ---
 
@@ -107,9 +123,9 @@ The server enforces the same anti-fabrication discipline as the bash scripts:
 
 ## Selftest
 
-`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 11 invariants (T1–T11): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, malformed/unknown requests return proper JSON-RPC error codes, optional `${var?}` substitution works.
+`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 14 invariants (T1–T14): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, `resources/templates/list` returns the templated catalog, templated reads (`bubbles://gates/{id}`) resolve via the bash twin and surface real `-32004` errors for unknown ids, malformed/unknown requests return proper JSON-RPC error codes, and optional `${var?}` substitution works.
 
-The selftest is wired into `bubbles/scripts/framework-validate.sh` so the v6 MCP invariant is enforced on every source-side framework-validate run.
+The selftest is wired into `bubbles/scripts/framework-validate.sh` so the MCP invariant is enforced on every source-side framework-validate run.
 
 ## HTTP Transport (v6.1 / R9)
 
@@ -128,10 +144,9 @@ python3 .github/bubbles/mcp/server.py --transport http --host 127.0.0.1 --port 8
 
 ---
 
-## What v6.0 Does Not Do
+## What The Server Does Not Do
 
-- HTTP/SSE transport (HTTP POST shipped in v6.1 / R9; Server-Sent Events streaming still deferred).
-- Templated resource URIs like `bubbles://gates/{id}` (deferred to v6.1).
+- Server-Sent Events (SSE) streaming over the HTTP transport (HTTP POST + health only).
 - Server-initiated notifications (`resources/listChanged`, `tools/listChanged` events).
-- Auth / per-tool authorization (the server inherits the OS user's permissions).
+- Auth / per-tool authorization beyond the optional HTTP bearer token (the server otherwise inherits the OS user's permissions).
 - Server installation via `pip install` or `npm install` — the design is intentionally dependency-free.

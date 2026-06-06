@@ -12,6 +12,40 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.2 — Framework self-review: MCP templated resources shipped, stale-deferral guard, doc reconciliation
+
+> *"You can't just keep sayin' you'll fix the deck next summer, Rick. It's been four summers."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A framework self-review surfaced one meta-issue — Bubbles ships fixes but doesn't always reconcile its own tracking surfaces, the exact freshness discipline it enforces on downstream repos. v7.0.2 fixes the concrete instances and adds a mechanical guard so the whole class can't recur. No resolver/guard/state.json behavior change.
+
+### MCP templated resources (the unfulfilled "deferred to v6.1")
+
+- **Templated MCP resources are now implemented** (they had been marked "deferred to v6.1" since v6.0 but never shipped). The server resolves `uriTemplate` resources (RFC 6570 level-1 `{var}`):
+  - `bubbles://gates/{id}` — one gate's metadata via the `gate-meta.sh` bash twin (a `commandTemplate`-backed resource; never a duplicated parser). Unknown id → real `-32004` error.
+  - `bubbles://spec/{nnn}/state.json` — a spec's control-plane state via a `pathTemplate` glob (`specs/{nnn}*/state.json`); resolves in downstream repos only.
+- New `resources/templates/list` JSON-RPC method advertises the templated catalog. Extracted `{var}` values may not contain `..`; command-backed reads surface verbatim stdout with the same anti-fabrication guarantee as tools.
+- `mcp-server-selftest.sh` extended 11 → **14 assertions** (T12 templates/list, T13 templated gate read via bash twin, T14 unknown-gate ERR_RESOURCE_FAILED).
+
+### Stale-deferral guard (prevents the whole class)
+
+- **`stale-deferral-lint.sh`** (+ hermetic selftest, 10 cases incl. an adversarial one) FAILS when a live surface says `deferred to vX.Y` where `X.Y <=` the current VERSION — a promise that has come due. Historical records (CHANGELOG.md, frozen design docs, ADRs) are excluded. Wired into `framework-validate` (live scan is source-only; selftest runs everywhere). This is the mechanical backstop that would have caught the MCP deferral three releases ago.
+
+### Doc / tracking reconciliation (found by the new guard)
+
+- `docs/MCP.md` — documents the templated resources, refreshes the selftest count (14), drops the stale "v6.0"/"deferred to v6.1" framing, and reframes "What The Server Does Not Do."
+- `docs/recipes/upgrade-to-v6.md` — the result-envelope "missing → blocking" flip was promised for v6.1 but never shipped; restated as "missing warns (not yet blocking); use `--strict` to opt in."
+- `skills/INVENTORY.md` — the CONSOLIDATE/POINTER-DELETE matrix no longer pins a lapsed v6.0.1 (the audit concluded 0 pruning candidates).
+- `BUGS.md` — BUG-001 reconciled to **partially-mitigated**: the Check 3G fail-safe 30s timeout (`BUG-001 guard`) and wall-clock budget shipped; root-cause filesystem-walk exclusions + perf regression remain open.
+
+### Shellcheck cleanup + regression gate (found real validation bugs)
+
+- **`shellcheck-lint.sh`** (+ hermetic selftest with an adversarial dirty-fixture case) lints the entire tracked shell surface (**222 scripts**) at `-S warning` and fails on any finding. Wired into `framework-validate` (source-only). This locks in the cleanup so warnings cannot silently regress; before this, shellcheck was never run in validate.
+- **Full `-S warning` cleanup** of the shell surface (was ~80 findings across 30 files; now **zero**). The sweep surfaced four real defects that prose review had missed:
+  - **3 dead-branch validation bugs (SC2221/SC2222).** `full-delivery` was swallowed by an earlier `full-delivery|value-first-e2e-batch)` case branch in `artifact-lint.sh` (×2) and `state-transition-guard.sh`, making the comprehensive `full-delivery)` branch unreachable — so full-delivery silently under-enforced its required specialists. Fixed by removing `full-delivery|` from the short-list branch, restoring the registry's `phaseOrder` for the mode. State-transition-guard selftest confirms no behavior regression.
+  - **Real quoting bug in `traceability-guard.sh` (SC2027).** Its copy of `json_first_string` used extra quote-segments that trapped `$key` inside single quotes (never expanded), so `scopeLayout` detection silently returned empty and fell back to the default layout. Aligned to the byte-identical working form used by the other three guards (`state-transition-guard`, `artifact-lint`, `artifact-freshness-guard`).
+  - **Real env-prefix bug in `upkeep-calendar-selftest.sh` (SC2034).** `UPKEEP_LEDGER=… output=$(…)` set a shell var the external calendar binary never saw, so the "recent backup marked ok" case passed only by accident. Restructured to a command-prefix assignment so the ledger path actually reaches the binary.
+- **Dead code removed** (no-dead-code policy): `diff_range`, `HAS_JSON`, three unused `*_FILE` path constants and `scope_name` in `cli.sh`, `REQUIRED_AGENTS`, `wi_parity_present`, and `install.sh`'s `PROFILE_SELECTED_EXPLICITLY`. Genuine false positives (namerefs, intentional globs, literal display tildes, sourced-fragment parent-scope vars) carry justified `# shellcheck disable` directives instead.
+
 ## v7.0.1 — v7 surface closure: operator surfaces migrated, migrator made idempotent, cheatsheet/super v7-aware
 
 > *"You said you let the decals go, Ricky. The recipes still had 'em on."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

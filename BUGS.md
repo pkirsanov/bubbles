@@ -9,10 +9,23 @@
 ## BUG-001 — state-transition-guard.sh hangs in Check 3G (Framework Ownership And Result Contract)
 
 - **Filed:** 2026-05-27
-- **Disposition:** bug-filed (this file)
+- **Disposition:** partially-mitigated (this file) — fail-safe timeout shipped; root-cause items still open
 - **Discovered by:** `bubbles.goal` session implementing G022/G060/G061 fixes
-- **Severity:** medium (does not block correctness, blocks selftest convergence)
+- **Severity:** low (was medium) — the guard now fails cleanly instead of hanging; selftest converges
 - **Affects:** `bubbles/scripts/state-transition-guard.sh` Check 3G (Framework Ownership And Result Contract — gates G042/G063/G064)
+
+### Mitigation Shipped (partial)
+
+Check 3G now wraps its sub-guard invocation in a hard timeout and reports its
+wall-clock cost, so the indefinite hang is gone — the check fails safe with a
+named error instead of blocking forever:
+
+- `state-transition-guard.sh` ~L765: `bubbles_run_with_timeout 30 bash "$framework_ownership_lint_script"` — on overrun it emits `Framework ownership lint TIMED OUT after 30s (BUG-001 guard)` and counts a failure (item 1 — done for Check 3G).
+- `state-transition-guard.sh` ~L779: `warn "Check 3G wall-clock ${_c3g_elapsed}s exceeded the 30s budget"` (item 3 — per-check budget surfaced for Check 3G).
+- The same `bubbles_run_with_timeout` wrapper now guards the other heavy sub-invocations (artifact-lint ~L2158, freshness-guard ~L2176, reality-scan ~L2352).
+
+Still open: the root-cause filesystem-walk exclusions in the sub-guards (item 2)
+and a hermetic perf regression with a synthetic large-spec fixture (item 4).
 
 ### Reproduction
 
@@ -46,10 +59,10 @@ Check 3G appears to invoke a sub-guard (likely `agent-ownership-lint.sh` or a pa
 
 ### Required Fix
 
-1. Add a 30s hard timeout around every sub-guard invocation in Check 3G (and audit Checks 3-34 for the same pattern).
-2. Add exclusion globs (`.git`, `node_modules`, `target`, `vendor`, `dist`, `__pycache__`, `.bubbles-cache`, container build dirs) to any filesystem walks in Check 3G's sub-guards.
-3. Add a per-check wall-clock budget reported in the verdict so future regressions surface immediately.
-4. Add a hermetic perf regression to `tests/regression/` that runs Check 3G against a synthetic 500-spec fixture and fails if elapsed > 5s.
+1. ~~Add a 30s hard timeout around every sub-guard invocation in Check 3G (and audit Checks 3-34 for the same pattern).~~ **DONE for Check 3G + the heavy sub-invocations** (see Mitigation Shipped above); a full Checks 3–34 audit is still advisable.
+2. Add exclusion globs (`.git`, `node_modules`, `target`, `vendor`, `dist`, `__pycache__`, `.bubbles-cache`, container build dirs) to any filesystem walks in Check 3G's sub-guards. **OPEN** (root cause).
+3. ~~Add a per-check wall-clock budget reported in the verdict so future regressions surface immediately.~~ **DONE for Check 3G** (budget warn at ~L779); broaden to all checks if the pattern recurs.
+4. Add a hermetic perf regression to `tests/regression/` that runs Check 3G against a synthetic 500-spec fixture and fails if elapsed > 5s. **OPEN.**
 
 ### Acceptance
 

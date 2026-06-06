@@ -38,7 +38,6 @@ PATTERNS=(
 # We only flag when paired with a write/mutation verb on the same line.
 WRITE_VERBS='write|push|publish|emit|send|record|append|update|patch|put|post'
 
-found_any=0
 for p_glob in $TEST_PATHS; do
   # shellcheck disable=SC2086
   files="$(find $REPO_ROOT -path "*/node_modules/*" -prune -o -path "*/target/*" -prune -o -path "*/.venv/*" -prune -o -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.py' -o -name '*.rs' -o -name '*.go' -o -name '*.sh' \) -print 2>/dev/null | grep -E "($(echo "$p_glob" | sed 's/\*\*\///g; s/\*//g'))" 2>/dev/null || true)"
@@ -46,7 +45,6 @@ for p_glob in $TEST_PATHS; do
     for pat in "${PATTERNS[@]}"; do
       if grep -nE "($WRITE_VERBS).*$pat|$pat.*($WRITE_VERBS)" "$f" 2>/dev/null; then
         err "$f: write to forbidden prod surface matching '$pat'"
-        found_any=1
       fi
     done
   done
