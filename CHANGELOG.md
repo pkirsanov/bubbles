@@ -12,6 +12,24 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.3 — Self-review follow-ups: PCRE-grep fail-fast + orchestrator tool-frontmatter reconciliation
+
+> *"The lint was lintin' the wrong thing, Bubbles. It's like a smoke detector that goes off 'cause the toast is too quiet."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Two follow-up findings from the v7.0.2 self-review, fixed to the same standard — every change carries a guard + adversarial selftest, and a previously-unwired live scan is reconciled with reality and then enforced. No resolver/state.json behavior change.
+
+### PCRE-grep fail-fast (gate-id-grep)
+
+- **`gate-id-grep.sh` now fail-fasts (exit 2) when the host `grep` lacks PCRE (`-P`) support** instead of silently passing. The duplicate-adjacent and reference scans depend on `grep -P` (back-reference `\1`, precise word boundaries); on a grep without `-P` (BSD/macOS default, or a GNU grep built `--without-pcre`) those scans erred out, got swallowed by `2>/dev/null || true`, found zero matches, and the gate **passed vacuously** — a false negative. A startup probe now refuses to run silently. Override with `BUBBLES_GREP=ggrep` (macOS Homebrew GNU grep).
+- Selftest extended with an adversarial case: a stub `grep` that rejects `-P` must drive exit 2 with the guard message (would regress to a silent exit 0 if the guard were removed).
+
+### Orchestrator tool-frontmatter reconciliation
+
+- **`orchestrator-tool-frontmatter-lint.sh` no longer false-positives on agents that declare no `tools:` allowlist.** An agent with absent `tools:` inherits ALL tools (including `agent`), so delegation works — it is not a defect. The guard previously treated absent `tools:` as "missing agent" and flagged 17 healthy orchestrators; only the *selftest* was wired into `framework-validate` (not the live scan), so the live failure stayed hidden. The guard now flags only a **present** `tools:` allowlist that omits `agent` — the real failure mode (`runSubagent(...)` silently blocked).
+- **The live scan is now wired into `framework-validate`** alongside the selftest (next to `agent-ownership-lint`), so the convention is actually enforced going forward — closing the under-enforcement gap.
+- Selftest extended with an adversarial absent-`tools:` orchestrator fixture that must PASS (would have exited 1 before this fix), and the PASS marker reworded to reflect "declares `agent` OR inherits all tools."
+- **The `tools:` frontmatter convention is now documented** in `docs/guides/AGENT_MANUAL.md` (Orchestrators section): omit `tools:` to inherit all; if you declare it on an orchestrator you MUST include `agent`; opt a terminal agent out with `delegationModel: none`.
+
 ## v7.0.2 — Framework self-review: MCP templated resources shipped, stale-deferral guard, doc reconciliation
 
 > *"You can't just keep sayin' you'll fix the deck next summer, Rick. It's been four summers."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
