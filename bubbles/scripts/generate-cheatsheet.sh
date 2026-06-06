@@ -24,6 +24,13 @@ VOCAB_JSON="$REGISTRY_DIR/vocabulary.json"
 MD_FILE="$REPO_ROOT/docs/CHEATSHEET.md"
 HTML_FILE="$REPO_ROOT/docs/its-not-rocket-appliances.html"
 WORKFLOWS_YAML="$REPO_ROOT/bubbles/workflows.yaml"
+# v6.1 (S2 true split): mode definitions live in bubbles/workflows/modes.yaml.
+# Validate mode existence against it unless workflows.yaml still embeds an
+# inline modes: block (pre-split / fixtures).
+MODES_YAML="$REPO_ROOT/bubbles/workflows/modes.yaml"
+if grep -qE '^modes:' "$WORKFLOWS_YAML" 2>/dev/null || [[ ! -f "$MODES_YAML" ]]; then
+  MODES_YAML="$WORKFLOWS_YAML"
+fi
 
 check_only=false
 if [[ "${1:-}" == "--check" ]]; then
@@ -74,7 +81,7 @@ validate_registry() {
       /^[A-Za-z][A-Za-z0-9_-]*:/ { in_modes = ($0 ~ /^modes:/) ? 1 : 0; next }
       in_modes && $0 == target { found = 1 }
       END { exit found ? 0 : 1 }
-    ' "$WORKFLOWS_YAML"; then
+    ' "$MODES_YAML"; then
       echo "generate-cheatsheet: modes.json references unknown workflow mode: $mode_name (stripped: $stripped)" >&2
       missing=$((missing + 1))
     fi

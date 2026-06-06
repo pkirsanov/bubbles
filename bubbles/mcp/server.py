@@ -3,7 +3,8 @@
 Bubbles MCP server — Model Context Protocol bridge for the Bubbles framework.
 
 Transport: stdio (newline-delimited JSON-RPC 2.0 messages framed with
-`Content-Length:` headers per MCP spec).
+`Content-Length:` headers per MCP spec) OR HTTP (v6.1 / R9 — JSON-RPC over
+POST, reachable from CI runners and shared/cloud environments).
 Runtime: Python 3.10+, stdlib only. No pip install. No daemon.
 
 Surface (per docs/v6-mcp-design.md):
@@ -24,7 +25,8 @@ Design rules (NON-NEGOTIABLE):
     script output.
 
 Invocation:
-  python3 bubbles/mcp/server.py
+  python3 bubbles/mcp/server.py                       # stdio (default)
+  python3 bubbles/mcp/server.py --transport http --host 127.0.0.1 --port 8765
   # OR, for repos that installed Bubbles into .github/:
   python3 .github/bubbles/mcp/server.py
 
@@ -37,6 +39,8 @@ Environment overrides:
   BUBBLES_MCP_LOG_LEVEL      DEBUG|INFO|WARNING|ERROR (default INFO)
   BUBBLES_MCP_LOG_FILE       absolute path for diagnostic log
                              (default: $TMPDIR/bubbles-mcp-server.log)
+  BUBBLES_MCP_HTTP_TOKEN     when set, HTTP transport requires
+                             `Authorization: Bearer <token>` on POST
 
 Exit codes:
   0   stdin EOF; clean shutdown
@@ -554,27 +558,39 @@ class Server:
             self._handle(msg)
 
     def _handle(self, msg: dict[str, Any]) -> None:
+        response = self.handle_message(msg)
+        if response is not None:
+            self._transport.write_message(response)
+
+    def handle_message(self, msg: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """Process a single JSON-RPC message and return the response dict.
+
+        Returns None for notifications (no id) and for messages with no
+        method. Transport-agnostic: used by BOTH the stdio loop and the HTTP
+        transport (v6.1 / R9). The dispatch logic is identical across
+        transports — only framing differs.
+        """
         method = msg.get("method")
         msg_id = msg.get("id")
         params = msg.get("params") or {}
         if not method:
             self._logger.debug("ignoring response/notification with no method")
-            return
+            return None
 
         # Notifications (no id) — never reply.
         if msg_id is None:
             self._handle_notification(method, params)
-            return
+            return None
 
         # Requests — must reply.
         try:
             result = self._dispatch(method, params)
-            self._reply_result(msg_id, result)
+            return {"jsonrpc": "2.0", "id": msg_id, "result": result}
         except _JsonRpcError as exc:
-            self._reply_error(msg_id, exc.code, exc.message, exc.data)
+            return self._error_obj(msg_id, exc.code, exc.message, exc.data)
         except Exception as exc:
             self._logger.exception("internal error handling %s", method)
-            self._reply_error(msg_id, ERR_INTERNAL, str(exc), None)
+            return self._error_obj(msg_id, ERR_INTERNAL, str(exc), None)
 
     def _handle_notification(self, method: str, params: dict[str, Any]) -> None:
         # We accept "notifications/initialized" as a no-op handshake completion.
@@ -660,6 +676,18 @@ class Server:
             {"jsonrpc": "2.0", "id": msg_id, "result": result}
         )
 
+    def _error_obj(
+        self,
+        msg_id: Any,
+        code: int,
+        message: str,
+        data: Any = None,
+    ) -> dict[str, Any]:
+        err: dict[str, Any] = {"code": code, "message": message}
+        if data is not None:
+            err["data"] = data
+        return {"jsonrpc": "2.0", "id": msg_id, "error": err}
+
     def _reply_error(
         self,
         msg_id: Any,
@@ -667,11 +695,8 @@ class Server:
         message: str,
         data: Any = None,
     ) -> None:
-        err: dict[str, Any] = {"code": code, "message": message}
-        if data is not None:
-            err["data"] = data
         self._transport.write_message(
-            {"jsonrpc": "2.0", "id": msg_id, "error": err}
+            self._error_obj(msg_id, code, message, data)
         )
 
 
@@ -681,6 +706,86 @@ class _JsonRpcError(Exception):
         self.code = code
         self.message = message
         self.data = data
+
+
+# ---------------------------------------------------------------------------
+# HTTP transport (v6.1 / R9) — stdlib only. Makes the gate surface reachable
+# from CI runners and shared/cloud environments, not just a local stdio shell.
+# Same JSON-RPC dispatch as stdio (Server.handle_message); only framing differs.
+
+def serve_http(server: "Server", host: str, port: int,
+               logger: logging.Logger) -> int:
+    """Serve the MCP JSON-RPC surface over HTTP POST.
+
+    Single endpoint: POST / (or POST /rpc) with a JSON-RPC request body;
+    responds with the JSON-RPC response body. GET /health returns 200 for
+    liveness probes. Optional bearer-token auth via BUBBLES_MCP_HTTP_TOKEN.
+    """
+    import http.server
+
+    auth_token = os.environ.get("BUBBLES_MCP_HTTP_TOKEN", "").strip()
+
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        # Quiet the default stderr access log; route through our file logger.
+        def log_message(self, fmt: str, *args: Any) -> None:
+            logger.debug("http %s - " + fmt, self.address_string(), *args)
+
+        def _authorized(self) -> bool:
+            if not auth_token:
+                return True
+            header = self.headers.get("Authorization", "")
+            expected = f"Bearer {auth_token}"
+            return header == expected
+
+        def _send_json(self, status: int, obj: Any) -> None:
+            payload = json.dumps(obj).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def do_GET(self) -> None:  # noqa: N802 (stdlib naming)
+            if self.path.rstrip("/") in ("/health", "/healthz"):
+                self._send_json(200, {"status": "ok", "server": SERVER_NAME})
+                return
+            self._send_json(404, {"error": "not found"})
+
+        def do_POST(self) -> None:  # noqa: N802 (stdlib naming)
+            if not self._authorized():
+                self._send_json(401, {"jsonrpc": "2.0", "id": None,
+                                      "error": {"code": ERR_INVALID_REQUEST,
+                                                "message": "unauthorized"}})
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                length = 0
+            raw = self.rfile.read(length) if length > 0 else b""
+            try:
+                msg = json.loads(raw.decode("utf-8")) if raw else {}
+            except (ValueError, UnicodeDecodeError) as exc:
+                self._send_json(200, {"jsonrpc": "2.0", "id": None,
+                                      "error": {"code": ERR_PARSE,
+                                                "message": f"parse error: {exc}"}})
+                return
+            response = server.handle_message(msg)
+            if response is None:
+                self.send_response(204)
+                self.end_headers()
+                return
+            self._send_json(200, response)
+
+    httpd = http.server.ThreadingHTTPServer((host, port), _Handler)
+    logger.info("bubbles-mcp HTTP transport listening on %s:%d (auth=%s)",
+                host, port, "on" if auth_token else "off")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        logger.info("HTTP transport interrupted; shutting down")
+    finally:
+        httpd.server_close()
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -718,14 +823,51 @@ def _validate_runtime() -> None:
 
 def main() -> int:
     _validate_runtime()
+    # Minimal CLI parsing (stdlib only; no argparse dependency on the hot path).
+    transport_kind = "stdio"
+    http_host = os.environ.get("BUBBLES_MCP_HTTP_HOST", "127.0.0.1")
+    http_port = int(os.environ.get("BUBBLES_MCP_HTTP_PORT", "8765"))
+    argv = sys.argv[1:]
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--transport":
+            i += 1
+            transport_kind = argv[i] if i < len(argv) else "stdio"
+        elif arg.startswith("--transport="):
+            transport_kind = arg.split("=", 1)[1]
+        elif arg == "--host":
+            i += 1
+            http_host = argv[i] if i < len(argv) else http_host
+        elif arg.startswith("--host="):
+            http_host = arg.split("=", 1)[1]
+        elif arg == "--port":
+            i += 1
+            http_port = int(argv[i]) if i < len(argv) else http_port
+        elif arg.startswith("--port="):
+            http_port = int(arg.split("=", 1)[1])
+        elif arg in ("-h", "--help"):
+            sys.stderr.write(
+                "Usage: server.py [--transport stdio|http] [--host H] [--port P]\n"
+            )
+            return 0
+        else:
+            sys.stderr.write(f"bubbles-mcp: unknown argument: {arg}\n")
+            return 2
+        i += 1
+    if transport_kind not in ("stdio", "http"):
+        sys.stderr.write(f"bubbles-mcp: unknown transport: {transport_kind}\n")
+        return 2
+
     logger = _configure_logging()
     repo_root = _detect_repo_root()
     scripts_dir = _resolve_scripts_dir(repo_root)
     mcp_dir = _resolve_mcp_dir(repo_root)
     version = _resolve_server_version(repo_root)
     logger.info(
-        "starting bubbles-mcp v%s repo_root=%s scripts=%s mcp=%s",
+        "starting bubbles-mcp v%s transport=%s repo_root=%s scripts=%s mcp=%s",
         version,
+        transport_kind,
         repo_root,
         scripts_dir,
         mcp_dir,
@@ -736,6 +878,8 @@ def main() -> int:
     server = Server(
         transport, tools, resources, repo_root, scripts_dir, version, logger
     )
+    if transport_kind == "http":
+        return serve_http(server, http_host, http_port, logger)
     return server.serve()
 
 

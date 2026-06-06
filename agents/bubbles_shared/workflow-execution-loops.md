@@ -48,7 +48,7 @@ For each round `R` from 1 to `maxRounds` (or until time budget exhausted):
 
 **1a. Select.** Pick a random spec from the spec pool. Pick a random trigger from the trigger pool. Record the selection.
 
-**1b. Resolve child workflow mode (MANDATORY LOOKUP — no shortcuts).** Look up `triggerWorkflowModes[trigger]` from `workflows.yaml`. Every trigger in the pool MUST have a mapping. If the mapping is missing, the round is a configuration error — log and skip.
+**1b. Resolve child workflow mode (MANDATORY LOOKUP — no shortcuts).** Look up `triggerWorkflowModes[trigger]` from `bubbles/workflows/modes.yaml`. Every trigger in the pool MUST have a mapping. If the mapping is missing, the round is a configuration error — log and skip.
 
 **Log the lookup before dispatching:** `"Round R{N}: trigger={T} → triggerWorkflowModes[{T}] = {M} → dispatching bubbles.workflow mode: {M} for spec {S}"`
 
@@ -132,7 +132,7 @@ After all rounds complete:
 
 ### Top-level-runtime modes (Failure Mode 4 prevention)
 
-Some workflow modes are **fan-out modes**: they dispatch multiple child workflows per round or per finding, and each child workflow itself spans multiple specialist agents (`bubbles.bug` → `bubbles.implement` → `bubbles.test` → `bubbles.validate` → `bubbles.audit` → `bubbles.docs`). These modes are marked in `bubbles/workflows.yaml` with `constraints.requiresTopLevelRuntime: true`:
+Some workflow modes are **fan-out modes**: they dispatch multiple child workflows per round or per finding, and each child workflow itself spans multiple specialist agents (`bubbles.bug` → `bubbles.implement` → `bubbles.test` → `bubbles.validate` → `bubbles.audit` → `bubbles.docs`). These modes are marked in `bubbles/workflows/modes.yaml` with `constraints.requiresTopLevelRuntime: true`:
 
 - `stochastic-quality-sweep` — N rounds × N findings per round
 - `retro-quality-sweep` — same shape, retro-driven hotspot selection
@@ -156,7 +156,7 @@ Some workflow modes are **fan-out modes**: they dispatch multiple child workflow
 **How the top-level session detects a `requiresTopLevelRuntime` mode.** When the operator requests a sweep/iterate/autonomous-* mode, the orchestrator checks the resolved mode's constraints. If `requiresTopLevelRuntime: true`, the top-level session keeps `runSubagent` itself and dispatches one specialist per finding per round, rather than dispatching `bubbles.workflow` as a subagent (which would land in a child runtime without `runSubagent`).
 
 **Selftest.** `bubbles/scripts/top-level-runtime-routing-selftest.sh` asserts:
-- Every mode listed above has `requiresTopLevelRuntime: true` in `workflows.yaml`.
+- Every mode listed above has `requiresTopLevelRuntime: true` in `bubbles/workflows/modes.yaml`.
 - No mode lacking this flag has the constraint set spuriously.
 - A fixture that simulates a subagent runtime resolving a `requiresTopLevelRuntime: true` mode produces a `route_required` envelope (not `completed_owned` with inline expansion).
 - A fixture resolving a mode WITHOUT the flag still allows parent-expansion (backward-compatible).
@@ -191,7 +191,7 @@ This section owns the **parallel phase fan-out** contract — the rule for when 
 
 #### What v6.0 / B10 actually delivers
 
-The parallel-fan-out CONTRACT is normative in v6.0. The DISPATCHER implementation that honors the contract is opt-in in v6.0 (gated by `BUBBLES_PARALLEL_PHASES=1`) and becomes the default in v6.1 once every workflow agent has been audited against the contract.
+The parallel-fan-out CONTRACT is normative since v6.0. The DISPATCHER that honors the contract was opt-in in v6.0 (`BUBBLES_PARALLEL_PHASES=1`) and is **default-ON in v6.1**; set `BUBBLES_PARALLEL_PHASES=0` to opt out. The mechanical determinism guarantees are enforced by `bubbles/scripts/parallel-fanout.sh` (the reference aggregator + DAG validator) and `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
 
 The contract is normative immediately so that anyone reading a workflow agent definition can tell which phases are parallel-eligible and which are not, regardless of whether the runtime currently honors it.
 
@@ -233,7 +233,7 @@ When the dispatcher fans out parallel phases, it MUST preserve:
 2. **Stable finding ordering.** Findings MUST be sorted by (specSlug, scopeId, findingId) before aggregation.
 3. **Stable timestamp.** The aggregate phase's `at` timestamp MUST be the LATEST individual phase's `at`, not the dispatcher's wall-clock at completion (otherwise re-runs produce different timestamps).
 4. **No flaky tests from interleaving.** If two parallel phases write to the same temp directory, the dispatcher MUST give each a unique sub-directory (`$HOME/.cache/bubbles-workflow/<run-id>/<phase>/`).
-5. **Same DAG -> same envelope sequence across 100 runs.** The dispatcher selftest planted in v6.1 will verify this.
+5. **Same DAG -> same envelope sequence across 100 runs.** Enforced by `bubbles/scripts/parallel-fanout-determinism-selftest.sh` (assertion A: 100 shuffled-input runs of `parallel-fanout.sh aggregate` produce byte-identical canonical output).
 
 #### Failure handling
 
@@ -244,29 +244,30 @@ If any parallel phase fails, the dispatcher MUST:
 3. Mark the parent envelope `outcome=route_required` with `unresolvedFindings` accumulating findings from EVERY failed phase.
 4. Never mask a failure by emitting `completed_owned` on a partial-success.
 
-#### Operator opt-in (v6.0)
+#### Operator opt-OUT (v6.1)
 
 ```bash
-BUBBLES_PARALLEL_PHASES=1 ./<your-cli>.sh <env-args> validate ...
+# Parallel fan-out is ON by default in v6.1. To force sequential dispatch:
+BUBBLES_PARALLEL_PHASES=0 ./<your-cli>.sh <env-args> validate ...
 ```
 
-The flag is OFF by default in v6.0. v6.1 flips the default to ON. v7 removes the flag (parallel is mandatory for parallel-eligible phases).
+The flag was OFF by default in v6.0, is **ON by default in v6.1**, and is removed in v7 (parallel becomes mandatory for parallel-eligible phases). The aggregation/ordering guarantees are mechanically reproducible via `bubbles/scripts/parallel-fanout.sh` regardless of the flag.
 
-#### Why opt-in, not default-on, in v6.0
+#### Why v6.0 was opt-in (gaps resolved in v6.1)
 
-Three reasons:
+Three reasons applied in v6.0; all are closed in v6.1:
 
-1. **Audit gap.** Not every workflow agent has been audited against the DAG rules above. An agent that doesn't honor the read-only contract might race when fanned out.
-2. **Determinism gap.** The dispatcher's stable-ordering invariant isn't yet enforced by a selftest. v6.1 ships `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
-3. **Operator surprise.** Operators who depend on the v5 sequential-phase log shape would see a reordered output stream; the opt-in flag gives one release for them to adapt.
+1. **Audit gap.** Not every workflow agent had been audited against the DAG rules above. The canonical eligible/sequential-only shape tables and the `check-dag` validator now make eligibility mechanically checkable.
+2. **Determinism gap (CLOSED).** The stable-ordering invariant is now enforced by `bubbles/scripts/parallel-fanout-determinism-selftest.sh`.
+3. **Operator surprise.** Operators who depend on the v5 sequential-phase log shape can opt out with `BUBBLES_PARALLEL_PHASES=0` for one release before v7 removes the flag.
 
-#### Selftest (v6.1 planned)
+#### Selftest (v6.1, shipped)
 
-`bubbles/scripts/parallel-fanout-determinism-selftest.sh` will assert:
-- Same input DAG -> same envelope sequence across 100 runs.
-- Disjoint-write parallel phases produce no race-condition artifacts.
-- Shared-write parallel phases (forbidden by contract) are detected at dispatch time and rejected before any phase runs.
-- Failure aggregation preserves all findings.
+`bubbles/scripts/parallel-fanout-determinism-selftest.sh` asserts:
+- Same input DAG -> same envelope sequence across 100 shuffled runs (byte-identical).
+- Findings emitted in stable `(specSlug, scopeId, findingId)` order; aggregate `at` = latest phase timestamp.
+- Shared-write and data-dependency parallel groups (forbidden by contract) are detected by `parallel-fanout.sh check-dag` and rejected before any phase runs.
+- Failure aggregation preserves all findings and forces `route_required`.
 
 #### Anti-patterns (FORBIDDEN under both sequential and parallel dispatch)
 

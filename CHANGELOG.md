@@ -12,7 +12,54 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v6.1.0 — Deep-review follow-ups: blocking model floor, parallel dispatch, pre-tool gating, HTTP MCP, eval harness
+
+> *"You can't handcuff the wind, but you can put a timeout on it."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** v6.1 implements every item from the v6.0 deep review (R1–R16). It hardens the anti-fabrication and reliability surface (auto-capture, guard timeouts), promotes three advisory mechanisms to blocking/default-on (model floor, parallel dispatch, pre-tool risk gating), ships HTTP transport for the MCP server, adds output-quality eval, and **physically splits the two largest monoliths** (`state-transition-guard.sh` and the `modes:` registry inside `workflows.yaml`). **Zero breaking changes**: every v5/v6 mode name and `state.json` schema stays compatible. New gate **G126** brings the registry to **102 gates**.
+
+### Highlights
+
+- **R1 — Guard reliability (BUG-001):** new `bubbles/scripts/guard-lib.sh` provides `bubbles_run_with_timeout` (portable, 124-on-timeout) and `bubbles_pruned_find` (excludes `.git`/`node_modules`/`target`/build caches). `state-transition-guard.sh` Check 3G is now wrapped in a 30s timeout with a per-check wall-clock budget; three other sub-guards are timeout-wrapped; the unbounded whole-repo `find` in the test-file check is replaced with a pruned walk. Closes the BUG-001 hang. Selftest: `state-transition-guard-perf-selftest.sh`.
+- **R2 — Automatic tool-call capture:** `tool-capture-shim.sh` (sourceable) routes gate-relevant commands through `tool-log.sh` so evidence provenance is a ground-truth side effect, not a manual step (`BUBBLES_AUTOCAPTURE=1` shadow wrappers + explicit `bubbles_capture`). Markdown evidence stays a valid fallback. Selftest: `tool-capture-shim-selftest.sh`.
+- **R3/R12 — Gate-band collision fixed:** project-local custom gates move to **G900+**; the framework reserves **G001–G199** (G200–G899 is a deliberate gap). `gate-id-grep.sh` always-allow threshold raised 100→900; docs + memory updated.
+- **R4 — Blocking model-tier floor (G126):** `modeDefaults.modelFloorEnforcedPhases` (default `audit, security, validate`) makes `model-tier-advisory.sh check` exit non-zero when a known model is below floor for an enforced phase. Never false-blocks on unknown models / undeclared floors. Selftest: `model-tier-advisory-selftest.sh`.
+- **R5 — Workflow-mode registry split + family inventory:** the `modes:` block (mode definitions + `phaseRelevance`) is **physically split out** of `workflows.yaml` into the dedicated canonical registry `bubbles/workflows/modes.yaml` (see *Surface reduction* below — no duplicated copy). `mode-family-inventory.sh` enforces that every mode maps to exactly one canonical v6 primitive. Selftests: `mode-family-inventory-selftest.sh`, `generate-modes-block.sh --check` (re-inlining guard).
+- **R6/R7 — Agent-surface decisions:** ADR-001 records the explicit decision to keep the four orchestration agents and the nine diagnostic agents, with rationale and revisit triggers (drift already contained by G086 and G042/G056/G061/G063).
+- **R8 — Parallel phase fan-out default-ON:** `parallel-fanout.sh` is the deterministic reference aggregator + DAG conflict validator; the dispatcher default flips to ON (`BUBBLES_PARALLEL_PHASES=0` opts out). Selftest: `parallel-fanout-determinism-selftest.sh` (100-run shuffle invariance, DAG rejection, failure aggregation).
+- **R9 — MCP HTTP transport:** `bubbles/mcp/server.py --transport http --host --port` serves JSON-RPC over HTTP POST with `GET /health` and optional `BUBBLES_MCP_HTTP_TOKEN` bearer auth — reachable from CI/cloud, not just a local stdio shell. Same dispatch as stdio. Selftest: `mcp-http-transport-selftest.sh`.
+- **R10 — Real-time PreToolUse risk gate:** `pre-tool-risk-gate.sh` (declared `pre-tool` in `hooks.json`) BLOCKs `destructive_mutation`/`external_side_effect` actions *before* execution using the existing `action-risk-registry.yaml`; `--confirm`/`BUBBLES_RISK_CONFIRM` override. Selftest: `pre-tool-risk-gate-selftest.sh`.
+- **R11 — Golden-task eval harness:** `eval-harness.sh` scores produced output (spec/report folders) against fixed rubrics (`bubbles/eval/tasks/*.json`) with a pluggable `BUBBLES_EVAL_JUDGE` LLM-as-judge — output-quality regression testing, not just gate-pass. Selftest: `eval-harness-selftest.sh`.
+- **R13 — Gate registry ordering:** registry reordered to strict ascending sequence (G066<G067<G068<G069).
+- **R14 — README modes badge:** now renders "15 primitives + 40 aliases" instead of the bare "55", matching the v6 narrative.
+- **R15 — GENERATED sentinel:** the `gates:` block in `workflows.yaml` now carries an explicit GENERATED-from-registry header + gate-band note.
+
+### Statistics
+
+- **Gates:** 102 (was 101; +G126 model-tier floor).
+- **New selftests:** 8 (R1, R2, R4, R5, R8, R9, R10, R11), all wired into `framework-validate.sh`.
+- **New scripts:** `guard-lib.sh`, `parallel-fanout.sh`, `pre-tool-risk-gate.sh`, `tool-capture-shim.sh`, `eval-harness.sh`, `mode-family-inventory.sh` + their selftests + `mcp-http-transport-selftest.sh`.
+- **Mode count, agent count, schema:** unchanged. No operator capability removed.
+
+### Surface reduction (monolith splits — the subtractive half of v6.1)
+
+The v6.1 review correctly flagged that the framework's two biggest files were monoliths the modernization plan (M4, S2) had never actually split. Both are now split, behavior-preserving, validated by their existing selftests:
+
+- **M4 — `state-transition-guard.sh` split.** The G023 enforcement core dropped from **3,972 → 2,967 lines** (−1,005, −25%). Self-contained check clusters were extracted into sourced fragments under `bubbles/scripts/guards/`: `control-plane-checks.sh` (Checks 3A/3H/3C/3D/3E/3F — G055–G061/G063), `planning-checks.sh` (Checks 8A–8D — G043/G067/G069), `tail-convergence-gates.sh` (Checks 23–25 — G082–G084), and `tail-delegated-gates.sh` (Checks 26–35 — G085–G095). Fragments are `source`d in the same shell scope, so execution is byte-identical; Check 3G stays inline because it carries the BUG-001 timeout wrapper. The `state-transition-guard-selftest.sh` passes with zero real failures after the split.
+- **S2 — `workflows.yaml` modes split (true split, not a mirror).** The 1,343-line `modes:` block (the final top-level section) was **physically removed** from `workflows.yaml` (**2,737 → 1,400 lines, −1,337 / −49%**) and now lives only in a dedicated canonical registry, `bubbles/workflows/modes.yaml`. There is no duplicated copy. `mode-resolver.sh` composes `workflows.yaml` + `modes.yaml` at read time (resolution is byte-identical to pre-split); every other modes reader — `state-transition-guard.sh`, `artifact-lint.sh`, `delivery-implementation-delta-guard.sh`, `is-terminal-for-mode.sh`, `intent-routes-lint.sh`, `generate-framework-stats.sh`, `generate-cheatsheet.sh`, `workflow-registry-consistency.sh`, `planning-workflow-chain-guard.sh`, `mode-family-inventory.sh` — reads `modes.yaml` directly (falling back to an inline `modes:` block for pre-split fixtures/repos). `bubbles/scripts/generate-modes-block.sh` is now a strip + no-duplication guard (`--strip` removes an inline block; `--check`, wired into `framework-validate`, blocks any re-inlining regression). Maintainers edit modes in a focused registry instead of scrolling a 2,700-line config.
+
+**New split artifacts:** `bubbles/scripts/guards/{control-plane-checks,planning-checks,tail-convergence-gates,tail-delegated-gates}.sh`, `bubbles/workflows/modes.yaml`, `bubbles/scripts/generate-modes-block.sh`.
+
+### What v6.1 does NOT do
+
+- Does not change `state.json` schema or any mode name.
+- Does not add SSE streaming to the MCP HTTP transport (POST + health only).
+- Does not fragment the single `modes.yaml` registry into 15 per-family files — the registry split already eliminates the monolith and `mode-family-inventory.sh --family <p>` provides per-family inspection/validation. (Decided, not deferred — see ADR-001 R5.)
+
+---
+
 ## v6.0.0 — MCP-aware framework, mode collapse, structurally-impossible bug classes
+
 
 > *"It ain't rocket appliances, boys."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
 

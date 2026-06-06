@@ -1,4 +1,7 @@
 {
+  "pre-tool": [
+    {"name": "pre-tool-risk-gate", "type": "builtin", "script": "pre-tool-risk-gate.sh", "description": "Real-time PreToolUse risk gate: BLOCK destructive_mutation/external_side_effect actions before execution (review R10)."}
+  ],
   "pre-commit": [
     {"name": "artifact-lint", "type": "builtin"},
     {"name": "agnosticity-lint", "type": "builtin"},

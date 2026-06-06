@@ -1,7 +1,7 @@
 # Bubbles MCP Server (v6.0)
 
 > Status: SHIPPED in v6.0. Optional — bash scripts remain the supported fallback.
-> Transport: stdio. Protocol: Model Context Protocol (MCP) 2024-11-05.
+> Transport: stdio (default) or HTTP (v6.1 / R9). Protocol: Model Context Protocol (MCP) 2024-11-05.
 > Runtime: Python 3.10+, stdlib only. No `pip install`. No daemon.
 
 The Bubbles MCP server exposes the framework's gate registry, validation scripts, and canonical resources as MCP tools and resources so MCP-aware clients (VS Code Copilot Chat agent, Claude Desktop, Cursor, Cline) can call them directly — without spawning shell processes or parsing markdown.
@@ -111,11 +111,26 @@ The server enforces the same anti-fabrication discipline as the bash scripts:
 
 The selftest is wired into `bubbles/scripts/framework-validate.sh` so the v6 MCP invariant is enforced on every source-side framework-validate run.
 
+## HTTP Transport (v6.1 / R9)
+
+The server also speaks JSON-RPC over HTTP so the gate surface is reachable from CI runners and shared/cloud environments, not just a local stdio shell:
+
+```bash
+python3 .github/bubbles/mcp/server.py --transport http --host 127.0.0.1 --port 8765
+```
+
+- `POST /` (or `/rpc`) with a JSON-RPC request body returns the JSON-RPC response. Notifications return `204`.
+- `GET /health` returns `200 {"status":"ok"}` for liveness probes.
+- Optional bearer auth: set `BUBBLES_MCP_HTTP_TOKEN=<token>` and send `Authorization: Bearer <token>`; missing/invalid tokens get `401`.
+- Host/port also configurable via `BUBBLES_MCP_HTTP_HOST` / `BUBBLES_MCP_HTTP_PORT`.
+- Same JSON-RPC dispatch as stdio (`Server.handle_message`); only framing differs, so every tool/resource behaves identically across transports.
+- Validated by `bubbles/scripts/mcp-http-transport-selftest.sh` (boots on an ephemeral port; asserts initialize/tools-list round-trips, health, bearer auth, and parse-error handling), wired into `framework-validate`.
+
 ---
 
 ## What v6.0 Does Not Do
 
-- HTTP/SSE transport (deferred to v6.1; all target clients support stdio today).
+- HTTP/SSE transport (HTTP POST shipped in v6.1 / R9; Server-Sent Events streaming still deferred).
 - Templated resource URIs like `bubbles://gates/{id}` (deferred to v6.1).
 - Server-initiated notifications (`resources/listChanged`, `tools/listChanged` events).
 - Auth / per-tool authorization (the server inherits the OS user's permissions).

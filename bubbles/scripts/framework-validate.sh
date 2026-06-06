@@ -99,7 +99,31 @@ if [[ -x "$SCRIPT_DIR/migrate-modes-v5-to-v6.sh" ]]; then
   run_check "Migrate-modes-v5-to-v6 selftest (v6.0 / C1)" bash "$SCRIPT_DIR/migrate-modes-v5-to-v6-selftest.sh"
 fi
 run_check "Gates registry drift (v5.2 / F4)" bash "$SCRIPT_DIR/generate-gates-block.sh" --check
+if [[ -x "$SCRIPT_DIR/generate-modes-block.sh" ]]; then
+  run_check "Modes split no-duplication (v6.1 / S2)" bash "$SCRIPT_DIR/generate-modes-block.sh" --check
+fi
 run_check "Gates registry selftest (v5.2 / F4)" bash "$SCRIPT_DIR/gates-registry-selftest.sh"
+if [[ -x "$SCRIPT_DIR/mode-family-inventory-selftest.sh" ]]; then
+  run_check "Mode-family inventory selftest (v6.1 / R5)" bash "$SCRIPT_DIR/mode-family-inventory-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/model-tier-advisory-selftest.sh" ]]; then
+  run_check "Model-tier floor selftest (v6.1 / S9 / G126)" bash "$SCRIPT_DIR/model-tier-advisory-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/parallel-fanout-determinism-selftest.sh" ]]; then
+  run_check "Parallel fan-out determinism selftest (v6.1 / B10 / R8)" bash "$SCRIPT_DIR/parallel-fanout-determinism-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/pre-tool-risk-gate-selftest.sh" ]]; then
+  run_check "Pre-tool risk gate selftest (v6.1 / R10)" bash "$SCRIPT_DIR/pre-tool-risk-gate-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/tool-capture-shim-selftest.sh" ]]; then
+  run_check "Tool-capture shim selftest (v6.1 / R2)" bash "$SCRIPT_DIR/tool-capture-shim-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/eval-harness-selftest.sh" ]]; then
+  run_check "Golden-task eval harness selftest (v6.1 / R11)" bash "$SCRIPT_DIR/eval-harness-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh" ]]; then
+  run_check "Guard reliability perf selftest (v6.1 / R1 / BUG-001)" bash "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh"
+fi
 run_check "Result-envelope validate (v6.0 / B3, malformed blocks)" bash "$SCRIPT_DIR/result-envelope-validate.sh"
 run_check "v5.2 aggregate selftest (F1, F3, F6, F7)" bash "$SCRIPT_DIR/v5.2-selftest.sh"
 if [[ -x "$SCRIPT_DIR/v5.3-selftest.sh" ]]; then
@@ -107,6 +131,9 @@ if [[ -x "$SCRIPT_DIR/v5.3-selftest.sh" ]]; then
 fi
 if [[ -x "$SCRIPT_DIR/mcp-server-selftest.sh" ]]; then
   run_check "v6 MCP server selftest (A5)" bash "$SCRIPT_DIR/mcp-server-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/mcp-http-transport-selftest.sh" ]]; then
+  run_check "MCP HTTP transport selftest (v6.1 / R9)" bash "$SCRIPT_DIR/mcp-http-transport-selftest.sh"
 fi
 run_check "Workflow registry consistency" bash "$SCRIPT_DIR/workflow-registry-consistency.sh" --quiet
 run_check "Mode resolver validate" bash "$SCRIPT_DIR/mode-resolver.sh" --validate

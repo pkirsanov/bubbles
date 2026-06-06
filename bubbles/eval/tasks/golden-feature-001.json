@@ -1,0 +1,13 @@
+{
+  "taskId": "golden-feature-001",
+  "title": "Feature spec declares an Outcome Contract + Gherkin scenarios, no stub/placeholder",
+  "rationale": "A quality feature spec states the outcome it must achieve (Intent / Success Signal), encodes behavior as Gherkin scenarios, and contains no placeholder content. This rubric scores spec substance, not just file presence.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    { "id": "spec-exists", "type": "file-exists", "weight": 1, "path": "spec.md" },
+    { "id": "outcome-contract", "type": "contains", "weight": 3, "path": "spec.md", "pattern": "Outcome Contract|Success Signal" },
+    { "id": "gherkin-scenarios", "type": "contains", "weight": 2, "path": "spec.md", "pattern": "Given|When|Then" },
+    { "id": "no-placeholder", "type": "not-contains", "weight": 2, "path": "spec.md", "pattern": "PLACEHOLDER|\\bTBD\\b|lorem ipsum|TODO:" }
+  ]
+}

@@ -19,7 +19,7 @@ Every doc section below is tagged with one canonical audience. The three audienc
 |---|---|---|
 | **operator** | Humans driving Bubbles through prompts and CLI commands; people who run pushes, validate, ship | `docs/CHEATSHEET.md`, `docs/recipes/`, `docs/guides/AGENT_MANUAL.md` |
 | **agent** | LLM-driven agents executing workflows; the rules and contracts an agent reads at trigger time | `agents/bubbles_shared/`, `skills/*/SKILL.md`, `instructions/*.instructions.md` |
-| **maintainer** | Bubbles framework maintainers extending the framework itself; people who add gates, agents, or governance modules | `docs/Framework_Convergence_Health.md`, `docs/v6-mcp-design.md`, `docs/MODERNIZATION_PLAN.md` |
+| **maintainer** | Bubbles framework maintainers extending the framework itself; people who add gates, agents, or governance modules | `docs/Framework_Convergence_Health.md`, `docs/v6-mcp-design.md`, `docs/decisions/` |
 
 A single doc may serve multiple audiences in practice (e.g., a skill describes agent rules but a maintainer reads it when authoring a new gate). The tag captures the **primary** audience — the one the doc is structured for.
 
@@ -98,6 +98,7 @@ Durable source-repo framework behavior and maintainer contracts.
 - [DEPRECATIONS.md](DEPRECATIONS.md)
 - [Framework_Convergence_Health.md](Framework_Convergence_Health.md)
 - [Spec_Implementation_Alignment.md](Spec_Implementation_Alignment.md)
+- [decisions/ADR-001-v6.1-review-followups.md](decisions/ADR-001-v6.1-review-followups.md)
 
 ---
 

@@ -246,7 +246,16 @@ info "Installing governance scripts..."
 mkdir -p "${TARGET}/bubbles/scripts"
 cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
-ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed"
+# bubbles/scripts/guards/ holds the sourced check-fragments that
+# state-transition-guard.sh loads (v6.1 / M4 split). The top-level *.sh glob
+# above does NOT descend into subdirectories, so the guards/ fragments MUST be
+# copied explicitly or downstream guard runs would `source` a missing file and
+# hard-fail. Fragments are sourced (not executed), so the exec bit is optional.
+if [[ -d "$TEMP_DIR/bubbles/scripts/guards" ]]; then
+  mkdir -p "${TARGET}/bubbles/scripts/guards"
+  cp -R "$TEMP_DIR"/bubbles/scripts/guards/. "${TARGET}/bubbles/scripts/guards/"
+fi
+ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed$([[ -d "${TARGET}/bubbles/scripts/guards" ]] && echo " (+$(ls "${TARGET}"/bubbles/scripts/guards/*.sh 2>/dev/null | wc -l) guard fragments)")"
 
 # ── Install adapters ─────────────────────────────────────────────────
 if [[ -d "$TEMP_DIR/bubbles/adapters" ]]; then

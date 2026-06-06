@@ -167,6 +167,13 @@ if [[ -z "$WORKFLOWS_FILE" ]]; then
   exit 2
 fi
 
+# v6.1 (S2 true split): mode definitions live in bubbles/workflows/modes.yaml,
+# not inside workflows.yaml. Raw .modes reads use this file; .modeTemplates
+# reads stay on workflows.yaml. Fall back to workflows.yaml for pre-split or
+# transitional repos that still embed an inline modes: block.
+MODES_FILE="$(dirname "$WORKFLOWS_FILE")/workflows/modes.yaml"
+[[ -f "$MODES_FILE" ]] || MODES_FILE="$WORKFLOWS_FILE"
+
 relative_path() {
   local path="$1"
   if [[ "$path" == "$REPO_ROOT" ]]; then
@@ -234,7 +241,7 @@ resolve_workflow_status_ceiling() {
   fi
 
   if [[ -z "$status_ceiling" ]] && command -v yq >/dev/null 2>&1; then
-    status_ceiling="$(yq -r ".modes.\"$workflow_mode\".statusCeiling // \"\"" "$WORKFLOWS_FILE" 2>/dev/null || true)"
+    status_ceiling="$(yq -r ".modes.\"$workflow_mode\".statusCeiling // \"\"" "$MODES_FILE" 2>/dev/null || true)"
     if [[ -z "$status_ceiling" || "$status_ceiling" == "null" ]]; then
       local inherited_template=""
       while IFS= read -r inherited_template; do
@@ -243,7 +250,7 @@ resolve_workflow_status_ceiling() {
         if [[ -n "$status_ceiling" && "$status_ceiling" != "null" ]]; then
           break
         fi
-      done < <(yq -r ".modes.\"$workflow_mode\".inherits[]?" "$WORKFLOWS_FILE" 2>/dev/null || true)
+      done < <(yq -r ".modes.\"$workflow_mode\".inherits[]?" "$MODES_FILE" 2>/dev/null || true)
     fi
   fi
 

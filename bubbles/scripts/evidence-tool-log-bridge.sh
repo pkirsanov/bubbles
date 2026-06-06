@@ -15,6 +15,11 @@
 #              this script and surfaces the JSON envelope produced by
 #              `--format=json`. The bash twin remains the supported
 #              fallback when MCP isn't registered.
+#   v6.1 (R2): auto-capture. `bubbles/scripts/tool-capture-shim.sh` (sourceable)
+#              routes gate-relevant commands through tool-log.sh so the entries
+#              this bridge reads are populated as a ground-truth side effect of
+#              running commands, not a manual step. Markdown evidence stays a
+#              valid fallback when no tool-log entry exists.
 #
 # Anti-fabrication is monotonically stronger: existing prose-evidence path
 # is preserved; tool-log path is additive proof.

@@ -90,6 +90,14 @@ for f in workflows.yaml agent-capabilities.yaml; do
     cp "$ROOT_DIR/bubbles/$f" "$tmp_root/.github/bubbles/$f"
   fi
 done
+# v6.1 (S2 true split): mode definitions live in bubbles/workflows/modes.yaml,
+# not inline in workflows.yaml. The mode-resolver composes the two, so the
+# synthesized tree MUST carry the workflows/ registry dir (modes.yaml +
+# aliases.yaml) or mode resolution returns nothing downstream.
+if [[ -d "$ROOT_DIR/bubbles/workflows" ]]; then
+  mkdir -p "$tmp_root/.github/bubbles/workflows"
+  cp -R "$ROOT_DIR/bubbles/workflows/." "$tmp_root/.github/bubbles/workflows/"
+fi
 if [[ -f "$ROOT_DIR/docs/guides/WORKFLOW_MODES.md" ]]; then
   cp "$ROOT_DIR/docs/guides/WORKFLOW_MODES.md" "$tmp_root/.github/docs/guides/WORKFLOW_MODES.md"
 fi

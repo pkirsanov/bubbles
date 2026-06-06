@@ -279,6 +279,18 @@ bubbles_framework_manifest_entries() {
     bubbles_print_manifest_entry "$source_root" "bubbles/scripts/$(basename "$file_path")"
   done
 
+  # v6.1 (M4 guard split): state-transition-guard.sh sources self-contained
+  # check-fragments from bubbles/scripts/guards/. The bubbles/scripts/*.sh glob
+  # above is NON-recursive, so the guard fragments MUST be enumerated explicitly
+  # or they would be copied by install.sh yet absent from the framework
+  # manifest/checksums — leaving them unprotected by drift detection and
+  # framework-write-guard.
+  while IFS= read -r file_path; do
+    [[ -f "$file_path" ]] || continue
+    relative_path="${file_path#$source_root/}"
+    bubbles_print_manifest_entry "$source_root" "$relative_path"
+  done < <(find "$source_root/bubbles/scripts/guards" -type f -name '*.sh' 2>/dev/null | LC_ALL=C sort)
+
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
     relative_path="${file_path#$source_root/}"

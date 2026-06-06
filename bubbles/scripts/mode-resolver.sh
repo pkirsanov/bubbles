@@ -24,7 +24,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WORKFLOWS_FILE="${BUBBLES_WORKFLOWS_FILE:-$ROOT_DIR/bubbles/workflows.yaml}"
+MODES_FILE="${BUBBLES_MODES_FILE:-$ROOT_DIR/bubbles/workflows/modes.yaml}"
 ALIASES_FILE="${BUBBLES_WORKFLOW_ALIASES_FILE:-$ROOT_DIR/bubbles/workflows/aliases.yaml}"
+# Preserve the operator-facing path for --help; WORKFLOWS_FILE may be
+# reassigned to a composed temp file below once modes live in their own file.
+WORKFLOWS_DISPLAY="$WORKFLOWS_FILE"
 
 if ! command -v yq >/dev/null 2>&1; then
   echo "ERROR: yq (mikefarah, v4+) is required." >&2
@@ -49,6 +53,19 @@ _resolver_tmp_base="${TMPDIR:-$HOME/.cache}"
 mkdir -p "$_resolver_tmp_base"
 TMP_DIR="$(mktemp -d -p "$_resolver_tmp_base" bubbles-mode-resolver.XXXXXX)"
 trap 'rm -rf "$TMP_DIR"' EXIT
+
+# v6.1 (S2 true split): the canonical mode registry lives in its own file
+# (bubbles/workflows/modes.yaml) and is NO LONGER duplicated inside
+# workflows.yaml. Compose the two so every .modes / .modeTemplates read below
+# sees one unified document. Composition is skipped when the workflows file
+# already carries an inline `modes:` block, which keeps two cases working
+# unchanged: (a) selftests that pass self-contained fixtures, and (b) any
+# pre-split or downstream-transitional workflows.yaml that still embeds modes.
+if [[ -f "$MODES_FILE" ]] && ! grep -qE '^modes:' "$WORKFLOWS_FILE"; then
+  _composed_file="$(mktemp -p "$TMP_DIR" workflows-composed.XXXXXX.yaml)"
+  yq eval-all '. as $item ireduce ({}; . * $item)' "$WORKFLOWS_FILE" "$MODES_FILE" > "$_composed_file"
+  WORKFLOWS_FILE="$_composed_file"
+fi
 
 usage() {
   cat <<EOF
@@ -82,8 +99,10 @@ Commands:
   --help, -h           Show this help
 
 Source file:
-  $WORKFLOWS_FILE
+  $WORKFLOWS_DISPLAY
   (override with BUBBLES_WORKFLOWS_FILE env var)
+  Modes registry: $MODES_FILE
+  (override with BUBBLES_MODES_FILE env var)
 
 Hard dependency: yq (mikefarah, v4+) — https://github.com/mikefarah/yq
 
