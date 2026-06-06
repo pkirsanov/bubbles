@@ -35,6 +35,14 @@
 #   T14. `resources/read` for templated `bubbles://gates/G999` (unknown gate)
 #        returns ERR_RESOURCE_FAILED — the bash twin's non-zero exit is surfaced
 #        as a real error, never a fake empty success.
+#   T15. `prompts/list` returns the Bubbles prompt shim catalog (>= 30),
+#        including `bubbles.workflow`.
+#   T16. `prompts/get` for `bubbles.workflow` returns a user message whose
+#        content points at the workflow agent and real prompt body.
+#   T17. `prompts/get` for an unknown prompt returns ERR_PROMPT_NOT_FOUND.
+#   T18. `tools/list` includes MCP tool annotations: read-only/idempotent hints
+#        for query tools and open-world/destructive-capable hints for the
+#        evidence command wrapper.
 #
 # Exit 0 = all assertions pass. Exit 1 = at least one failed.
 
@@ -165,6 +173,11 @@ msgs = [
      "params": {"uri": "bubbles://gates/G024"}},
     {"jsonrpc": "2.0", "id": 13, "method": "resources/read",
      "params": {"uri": "bubbles://gates/G999"}},
+    {"jsonrpc": "2.0", "id": 14, "method": "prompts/list"},
+    {"jsonrpc": "2.0", "id": 15, "method": "prompts/get",
+     "params": {"name": "bubbles.workflow"}},
+    {"jsonrpc": "2.0", "id": 16, "method": "prompts/get",
+     "params": {"name": "definitely-not-a-prompt"}},
 ]
 for m in msgs:
     proc.stdin.write(frame(m))
@@ -172,7 +185,7 @@ proc.stdin.flush()
 proc.stdin.close()
 
 replies = {}
-for _ in range(13):  # 13 IDs (notifications/initialized has no reply)
+for _ in range(16):  # 16 IDs (notifications/initialized has no reply)
     r = read_frame(proc.stdout)
     if r is None:
         break
@@ -337,6 +350,71 @@ if [[ "$err_code" == "-32004" ]]; then
   pass "T14: unknown templated gate returned ERR_RESOURCE_FAILED (-32004)"
 else
   fail "T14: unknown templated gate expected -32004, got $err_code: $badgate_reply"
+fi
+
+# T15: prompts/list returns Bubbles prompt shims.
+prompts_reply="$(get 14)"
+ok="$(echo "$prompts_reply" | python3 -c "
+import json,sys
+r = json.load(sys.stdin)
+prompts = (r.get('result') or {}).get('prompts') or []
+names = [p.get('name') for p in prompts]
+print('YES' if (len(prompts) >= 30 and 'bubbles.workflow' in names) else 'NO')
+")"
+if [[ "$ok" == "YES" ]]; then
+  pass "T15: prompts/list returned Bubbles prompt shims incl bubbles.workflow"
+else
+  fail "T15: prompts/list missing expected prompt catalog: $prompts_reply"
+fi
+
+# T16: prompts/get returns the workflow prompt body as a user message.
+prompt_reply="$(get 15)"
+ok="$(echo "$prompt_reply" | python3 -c "
+import json,sys
+r = json.load(sys.stdin)
+res = r.get('result') or {}
+messages = res.get('messages') or []
+text = (((messages[0] if messages else {}).get('content') or {}).get('text') or '')
+print('YES' if ('Use agent: bubbles.workflow' in text and 'workflow orchestrator' in text) else 'NO')
+")"
+if [[ "$ok" == "YES" ]]; then
+  pass "T16: prompts/get bubbles.workflow returns user message with agent + prompt body"
+else
+  fail "T16: prompts/get bubbles.workflow did not return expected prompt: $prompt_reply"
+fi
+
+# T17: prompts/get unknown prompt returns ERR_PROMPT_NOT_FOUND.
+badprompt_reply="$(get 16)"
+err_code="$(echo "$badprompt_reply" | python3 -c "import json,sys; r=json.load(sys.stdin); print(r.get('error', {}).get('code', 0))")"
+if [[ "$err_code" == "-32005" ]]; then
+  pass "T17: unknown prompt returned ERR_PROMPT_NOT_FOUND (-32005)"
+else
+  fail "T17: unknown prompt expected -32005, got $err_code: $badprompt_reply"
+fi
+
+# T18: tools/list exposes MCP annotations for modern client planning/safety.
+ok="$(echo "$tools_reply" | python3 -c "
+import json,sys
+r = json.load(sys.stdin)
+tools = {t.get('name'): t for t in (r.get('result') or {}).get('tools') or []}
+check_gate = tools.get('check_gate', {}).get('annotations') or {}
+record_evidence = tools.get('record_evidence', {}).get('annotations') or {}
+ok = (
+    check_gate.get('readOnlyHint') is True
+    and check_gate.get('destructiveHint') is False
+    and check_gate.get('idempotentHint') is True
+    and check_gate.get('openWorldHint') is False
+    and record_evidence.get('readOnlyHint') is False
+    and record_evidence.get('destructiveHint') is True
+    and record_evidence.get('idempotentHint') is False
+    and record_evidence.get('openWorldHint') is True
+)
+print('YES' if ok else 'NO')
+")"
+if [[ "$ok" == "YES" ]]; then
+  pass "T18: tools/list exposes MCP annotations for safe query tools and record_evidence"
+else
+  fail "T18: tools/list missing expected MCP annotations: $tools_reply"
 fi
 
 echo

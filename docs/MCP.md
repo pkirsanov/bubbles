@@ -18,7 +18,7 @@ If you do not register the MCP server, every Bubbles workflow continues to work 
 
 ```bash
 bash .github/bubbles/scripts/mcp-server-selftest.sh
-# Expected: 11 PASS lines and "mcp-server-selftest passed."
+# Expected: T1–T17 PASS lines and "mcp-server-selftest passed."
 ```
 
 ### 2. Register with your MCP client
@@ -32,7 +32,7 @@ Sample configs ship under `.github/bubbles/mcp/clients/`. Pick the one for your 
 | Cursor | `.cursor/mcp.json` (workspace) or `~/.cursor/mcp.json` (global) | `.github/bubbles/mcp/clients/cursor.json` |
 | Cline | `cline_mcp_settings.json` | `.github/bubbles/mcp/clients/cline.json` |
 
-Restart your client. The `bubbles` server should appear with 10 tools and 5 resources.
+Restart your client. The `bubbles` server should appear with 10 annotated tools, 5 static resources, 2 resource templates, and 37 prompts.
 
 ---
 
@@ -52,6 +52,11 @@ Restart your client. The `bubbles` server should appear with 10 tools and 5 reso
 | `list_open_findings` | `finding-closure-selftest.sh` | Surface the active finding-closure contract. |
 
 Tool definitions live in `.github/bubbles/mcp/tools/*.json`. Each declares an `inputSchema` (JSON Schema) and an `argsTemplate` with `${var}` (required) and `${var?}` (optional, drop-on-empty) placeholders.
+
+Tools also expose MCP annotations so newer clients can plan safely:
+
+- read-only query tools (`check_gate`, `resolve_mode`, `read_spec`, `search_code`, validation/readback tools) advertise `readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`, and `openWorldHint: false`.
+- `record_evidence` advertises `readOnlyHint: false`, `destructiveHint: true`, `idempotentHint: false`, and `openWorldHint: true` because it wraps an arbitrary command and appends to the tool-call log.
 
 ---
 
@@ -82,6 +87,19 @@ Templated reads surface the same anti-fabrication guarantee as tools: a
 twin and returns the verbatim stdout; an unknown id or an unmatched/ambiguous
 spec number returns a real `-32004` (`ERR_RESOURCE_FAILED`) error, never a fake
 empty success. Extracted `{var}` values may not contain `..`.
+
+---
+
+## Prompt Catalog
+
+The MCP server exposes the same prompt shims Bubbles installs for VS Code and other agent clients:
+
+| MCP method | Backing files | Result |
+|------------|---------------|--------|
+| `prompts/list` | `prompts/*.prompt.md` in the source repo, `.github/prompts/*.prompt.md` downstream | Lists every Bubbles prompt shim by name and description. |
+| `prompts/get` | One selected `.prompt.md` file | Returns a single user message containing the prompt body plus the target `agent:` from frontmatter. |
+
+Prompt exposure is read-only and does not synthesize new prompt logic. The server parses the existing frontmatter (`agent`, `description`) and body, so MCP clients that surface prompt catalogs can invoke the same Bubbles entrypoints as slash-prompt users. Unknown prompt names return a real `-32005` (`ERR_PROMPT_NOT_FOUND`) error.
 
 ---
 
@@ -123,7 +141,7 @@ The server enforces the same anti-fabrication discipline as the bash scripts:
 
 ## Selftest
 
-`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 14 invariants (T1–T14): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, `resources/templates/list` returns the templated catalog, templated reads (`bubbles://gates/{id}`) resolve via the bash twin and surface real `-32004` errors for unknown ids, malformed/unknown requests return proper JSON-RPC error codes, and optional `${var?}` substitution works.
+`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 18 invariants (T1–T18): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, `resources/templates/list` returns the templated catalog, templated reads (`bubbles://gates/{id}`) resolve via the bash twin and surface real `-32004` errors for unknown ids, `prompts/list` returns the prompt catalog, `prompts/get` returns a real prompt body, unknown prompts return `-32005`, `tools/list` exposes planning/safety annotations, malformed/unknown requests return proper JSON-RPC error codes, and optional `${var?}` substitution works.
 
 The selftest is wired into `bubbles/scripts/framework-validate.sh` so the MCP invariant is enforced on every source-side framework-validate run.
 
@@ -148,5 +166,6 @@ python3 .github/bubbles/mcp/server.py --transport http --host 127.0.0.1 --port 8
 
 - Server-Sent Events (SSE) streaming over the HTTP transport (HTTP POST + health only).
 - Server-initiated notifications (`resources/listChanged`, `tools/listChanged` events).
+- Prompt argument templating — current Bubbles prompt shims are static and accept no MCP prompt arguments.
 - Auth / per-tool authorization beyond the optional HTTP bearer token (the server otherwise inherits the OS user's permissions).
 - Server installation via `pip install` or `npm install` — the design is intentionally dependency-free.

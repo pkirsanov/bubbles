@@ -12,6 +12,21 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.4 — MCP prompt catalog support for modern agent clients
+
+> *"If the prompts are sittin' right there, why's the robot pretendin' it can't see 'em?"* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A follow-up review against current AI-assisted development surfaces found that Bubbles had MCP tools, resources, resource templates, and an advertised prompt capability — but `prompts/list` returned an empty catalog even though the framework ships 37 prompt shims. v7.0.4 connects that surface without adding a new runtime dependency or duplicating prompt logic.
+
+### MCP prompt catalog
+
+- **`prompts/list` now exposes the existing Bubbles prompt shims** from `prompts/*.prompt.md` in the source repo and `.github/prompts/*.prompt.md` downstream. This lets MCP-aware clients that surface prompt catalogs discover Bubbles entrypoints directly, not only tools/resources.
+- **`prompts/get` now returns a real prompt body** as a user message, prefixed with the target `agent:` from frontmatter (for example `bubbles.workflow`). Unknown prompt names return a real `-32005` (`ERR_PROMPT_NOT_FOUND`) error.
+- **`tools/list` now includes MCP tool annotations** for modern client planning/safety: read-only/idempotent hints for query/validation tools, and non-read-only/open-world/destructive-capable hints for `record_evidence` (which wraps arbitrary commands and writes the tool log).
+- **No prompt logic is duplicated.** The MCP server parses the existing VS Code prompt shim frontmatter/body and exposes it read-only, preserving the same thin-wrapper design as tools/resources.
+- **`mcp-server-selftest.sh` expanded T1–T14 → T1–T18**: prompt catalog list, prompt body retrieval, unknown prompt error, and tool annotation exposure are now mechanically covered.
+- `docs/MCP.md` now documents the prompt catalog, updated catalog counts (10 tools, 5 static resources, 2 resource templates, 37 prompts), and the current selftest invariant count.
+
 ## v7.0.3 — Self-review follow-ups: PCRE-grep fail-fast + orchestrator tool-frontmatter reconciliation
 
 > *"The lint was lintin' the wrong thing, Bubbles. It's like a smoke detector that goes off 'cause the toast is too quiet."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

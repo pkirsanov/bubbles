@@ -12,6 +12,8 @@ Surface (per docs/v6-mcp-design.md):
     bubbles/mcp/tools/*.json for the declarative catalog.
   Resources (A3): read-only handles to canonical repo files — see
     bubbles/mcp/resources/*.json.
+    Prompts: read-only exposure of the existing VS Code prompt shims under
+        prompts/*.prompt.md (or .github/prompts/*.prompt.md downstream).
 
 Design rules (NON-NEGOTIABLE):
   - The server NEVER duplicates business logic. Every tool dispatches to an
@@ -81,6 +83,7 @@ ERR_TOOL_NOT_FOUND = -32001
 ERR_TOOL_FAILED = -32002
 ERR_RESOURCE_NOT_FOUND = -32003
 ERR_RESOURCE_FAILED = -32004
+ERR_PROMPT_NOT_FOUND = -32005
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +140,16 @@ def _resolve_mcp_dir(repo_root: Path) -> Path:
         return downstream
     # Allow startup with no catalog — server exposes zero tools/resources
     # but still responds to initialize, ping, and method-not-found queries.
+    return src
+
+def _resolve_prompts_dir(repo_root: Path) -> Path:
+    """Return the path to Bubbles prompt shims in source/downstream layouts."""
+    src = repo_root / "prompts"
+    if src.is_dir():
+        return src
+    downstream = repo_root / ".github" / "prompts"
+    if downstream.is_dir():
+        return downstream
     return src
 
 
@@ -274,13 +287,14 @@ class ToolCatalog:
     def list_tools(self) -> list[dict[str, Any]]:
         out = []
         for name, spec in self._tools.items():
-            out.append(
-                {
-                    "name": name,
-                    "description": spec.get("description", ""),
-                    "inputSchema": spec.get("inputSchema", {"type": "object"}),
-                }
-            )
+            entry = {
+                "name": name,
+                "description": spec.get("description", ""),
+                "inputSchema": spec.get("inputSchema", {"type": "object"}),
+            }
+            if "annotations" in spec:
+                entry["annotations"] = spec["annotations"]
+            out.append(entry)
         return out
 
     def get(self, name: str) -> Optional[dict[str, Any]]:
@@ -519,6 +533,74 @@ class ResourceCatalog:
         }
 
 
+class PromptCatalog:
+    """Loads Bubbles prompt shims from prompts/*.prompt.md.
+
+    Prompt files are VS Code prompt shims with YAML frontmatter and a markdown
+    body. The MCP server does not synthesize prompt logic; it exposes those
+    existing files so MCP clients with prompt catalogs can discover and request
+    the same Bubbles entrypoints operators already use.
+    """
+
+    def __init__(self, prompts_dir: Path, logger: logging.Logger):
+        self._prompts_dir = prompts_dir
+        self._logger = logger
+        self._prompts: dict[str, dict[str, Any]] = {}
+        self._reload()
+
+    @staticmethod
+    def _split_prompt(text: str) -> tuple[dict[str, str], str]:
+        if not text.startswith("---\n"):
+            return {}, text.strip()
+        end = text.find("\n---\n", 4)
+        if end == -1:
+            return {}, text.strip()
+        frontmatter_text = text[4:end]
+        body = text[end + len("\n---\n") :].strip()
+        frontmatter: dict[str, str] = {}
+        for raw_line in frontmatter_text.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            frontmatter[key.strip()] = value.strip().strip('"\'')
+        return frontmatter, body
+
+    def _reload(self) -> None:
+        if not self._prompts_dir.is_dir():
+            self._logger.info("prompt catalog empty: %s not found", self._prompts_dir)
+            return
+        for path in sorted(self._prompts_dir.glob("*.prompt.md")):
+            text = path.read_text(encoding="utf-8")
+            frontmatter, body = self._split_prompt(text)
+            name = path.name.removesuffix(".prompt.md")
+            description = frontmatter.get("description", "")
+            agent = frontmatter.get("agent", name)
+            self._prompts[name] = {
+                "name": name,
+                "description": description,
+                "agent": agent,
+                "body": body,
+                "path": str(path),
+            }
+            self._logger.debug("loaded prompt: %s -> %s", name, path)
+
+    def list_prompts(self) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for name, spec in self._prompts.items():
+            out.append(
+                {
+                    "name": name,
+                    "description": spec.get("description", ""),
+                    "arguments": [],
+                }
+            )
+        return out
+
+    def get(self, name: str) -> Optional[dict[str, Any]]:
+        return self._prompts.get(name)
+
+
 # ---------------------------------------------------------------------------
 # Tool execution
 #
@@ -668,6 +750,7 @@ class Server:
         transport: StdioTransport,
         tools: ToolCatalog,
         resources: ResourceCatalog,
+        prompts: PromptCatalog,
         repo_root: Path,
         scripts_dir: Path,
         version: str,
@@ -676,6 +759,7 @@ class Server:
         self._transport = transport
         self._tools = tools
         self._resources = resources
+        self._prompts = prompts
         self._repo_root = repo_root
         self._scripts_dir = scripts_dir
         self._version = version
@@ -759,7 +843,9 @@ class Server:
         if method == "resources/read":
             return self._resources_read(params)
         if method == "prompts/list":
-            return {"prompts": []}
+            return {"prompts": self._prompts.list_prompts()}
+        if method == "prompts/get":
+            return self._prompts_get(params)
         raise _JsonRpcError(ERR_METHOD_NOT_FOUND, f"unknown method: {method}")
 
     def _initialize(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -784,7 +870,8 @@ class Server:
                 "line and full stdout/stderr in the response. Resources are "
                 "read-only handles to canonical Bubbles files; templated "
                 "resources (bubbles://gates/{id}, bubbles://spec/{nnn}/state.json) "
-                "expand per-id/per-spec. No summarization."
+                "expand per-id/per-spec. Prompts expose the repo's existing "
+                "Bubbles prompt shims. No summarization."
             ),
         }
 
@@ -815,6 +902,32 @@ class Server:
                     "text": result["text"],
                 }
             ]
+        }
+
+    def _prompts_get(self, params: dict[str, Any]) -> dict[str, Any]:
+        name = params.get("name")
+        if not name:
+            raise _JsonRpcError(ERR_INVALID_PARAMS, "missing 'name'")
+        spec = self._prompts.get(name)
+        if spec is None:
+            raise _JsonRpcError(ERR_PROMPT_NOT_FOUND, f"unknown prompt: {name}")
+        body = spec.get("body", "")
+        description = spec.get("description", "")
+        agent = spec.get("agent", name)
+        text = body
+        if agent:
+            text = f"Use agent: {agent}\n\n{text}".strip()
+        return {
+            "description": description,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "type": "text",
+                        "text": text,
+                    },
+                }
+            ],
         }
 
     def _reply_result(self, msg_id: Any, result: Any) -> None:
@@ -1009,20 +1122,23 @@ def main() -> int:
     repo_root = _detect_repo_root()
     scripts_dir = _resolve_scripts_dir(repo_root)
     mcp_dir = _resolve_mcp_dir(repo_root)
+    prompts_dir = _resolve_prompts_dir(repo_root)
     version = _resolve_server_version(repo_root)
     logger.info(
-        "starting bubbles-mcp v%s transport=%s repo_root=%s scripts=%s mcp=%s",
+        "starting bubbles-mcp v%s transport=%s repo_root=%s scripts=%s mcp=%s prompts=%s",
         version,
         transport_kind,
         repo_root,
         scripts_dir,
         mcp_dir,
+        prompts_dir,
     )
     tools = ToolCatalog(mcp_dir, scripts_dir, logger)
     resources = ResourceCatalog(mcp_dir, repo_root, scripts_dir, logger)
+    prompts = PromptCatalog(prompts_dir, logger)
     transport = StdioTransport(sys.stdin.buffer, sys.stdout.buffer)
     server = Server(
-        transport, tools, resources, repo_root, scripts_dir, version, logger
+        transport, tools, resources, prompts, repo_root, scripts_dir, version, logger
     )
     if transport_kind == "http":
         return serve_http(server, http_host, http_port, logger)
