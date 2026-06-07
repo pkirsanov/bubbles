@@ -12,6 +12,17 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.7 — G095 discovered-issue disposition guard selftest (close documented-but-missing coverage)
+
+> *"You can't write 'tested' on the box if the test was never in the box, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A review sweep for untested guards surfaced a documented-but-nonexistent selftest. The gates registry (G095, `discovered_issue_disposition_gate`) stated "Hermetic selftest: `bubbles/scripts/discovered-issue-disposition-guard-selftest.sh`" — but that file did not exist. G095 is a BLOCKING anti-fabrication gate (wired as state-transition-guard Check 35, and the bash twin behind the MCP `route_finding` tool), so a silent break in its deferral-phrase or disposition logic would have gone unnoticed. v7.0.7 makes the registry claim true.
+
+### G095 selftest
+
+- **New hermetic selftest** `discovered-issue-disposition-guard-selftest.sh` (9 assertions) with two adversarial cases: an unfiled "out of scope" deferral must BLOCK (exit 1), and a disposition row dated *yesterday* must still BLOCK (exit 1) — proving the guard requires a *today*-dated `## Discovered Issues` row, not just any row. It also covers inline `BUG-NNN` disposition (pass), clean reports (pass), the `--envelope` RESULT-ENVELOPE scan path (BLOCK on unfiled deferral), and the malformed-input fail-fast paths (exit 2).
+- **Wired into `framework-validate`** next to the sibling G084 pre-existing-deferral guard selftest, so the gate's mechanics are now verified on every source-side validation run. No guard behavior changed; this is pure coverage that closes the registry's drift.
+
 ## v7.0.6 — MCP protocol version negotiation
 
 > *"You can't keep answerin' the door in last year's bathrobe, Bubbles. The kitties grew up."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
