@@ -12,6 +12,19 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.6 — MCP protocol version negotiation
+
+> *"You can't keep answerin' the door in last year's bathrobe, Bubbles. The kitties grew up."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A continued review against current AI-assisted development surfaces found the MCP server hardcoded a single protocol version (`2024-11-05`) and ignored what the client requested in `initialize` — it always echoed its own. Newer MCP clients negotiate (`2025-03-26`, `2025-06-18`). v7.0.6 makes the handshake spec-aligned without changing the verbatim, thin-wrapper tool/resource design.
+
+### MCP protocol version negotiation
+
+- **`initialize` now negotiates the protocol version** per the MCP spec: it echoes the client's requested version when it is one the server supports (`2024-11-05`, `2025-03-26`, `2025-06-18`), and otherwise returns its latest supported version (`2025-06-18`) so the client can decide whether to proceed. Previously the server always returned `2024-11-05` regardless of the request.
+- The exposed wire surface (tools + annotations, resources + templates, prompts) is compatible across the supported range; newer-only features remain optional capabilities the server does not advertise, so no tool/resource behavior changes.
+- **`mcp-server-selftest.sh` expanded T1–T18 → T1–T19**: a new assertion proves `initialize` echoes a supported requested version and falls back to the latest for an unknown one.
+- `docs/MCP.md` updated: protocol line now states the negotiated version range, and the selftest invariant count is 19.
+
 ## v7.0.5 — MCP quick-start selftest count reconciliation
 
 **Theme:** Final release-surface drift cleanup after v7.0.4. The MCP server selftest expanded to T1–T18, and the detailed selftest paragraph was correct, but the quick-start snippet still said T1–T17. v7.0.5 reconciles that last stale count so both MCP documentation locations match the executable selftest.

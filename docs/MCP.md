@@ -1,7 +1,7 @@
 # Bubbles MCP Server
 
 > Status: SHIPPED (since v6.0). Optional — bash scripts remain the supported fallback.
-> Transport: stdio (default) or HTTP. Protocol: Model Context Protocol (MCP) 2024-11-05.
+> Transport: stdio (default) or HTTP. Protocol: Model Context Protocol (MCP) — negotiates 2024-11-05 / 2025-03-26 / 2025-06-18 (echoes the client's requested version when supported, else returns the latest).
 > Runtime: Python 3.10+, stdlib only. No `pip install`. No daemon.
 
 The Bubbles MCP server exposes the framework's gate registry, validation scripts, and canonical resources as MCP tools and resources so MCP-aware clients (VS Code Copilot Chat agent, Claude Desktop, Cursor, Cline) can call them directly — without spawning shell processes or parsing markdown.
@@ -18,7 +18,7 @@ If you do not register the MCP server, every Bubbles workflow continues to work 
 
 ```bash
 bash .github/bubbles/scripts/mcp-server-selftest.sh
-# Expected: T1–T18 PASS lines and "mcp-server-selftest passed."
+# Expected: T1–T19 PASS lines and "mcp-server-selftest passed."
 ```
 
 ### 2. Register with your MCP client
@@ -141,7 +141,7 @@ The server enforces the same anti-fabrication discipline as the bash scripts:
 
 ## Selftest
 
-`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 18 invariants (T1–T18): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, `resources/templates/list` returns the templated catalog, templated reads (`bubbles://gates/{id}`) resolve via the bash twin and surface real `-32004` errors for unknown ids, `prompts/list` returns the prompt catalog, `prompts/get` returns a real prompt body, unknown prompts return `-32005`, `tools/list` exposes planning/safety annotations, malformed/unknown requests return proper JSON-RPC error codes, and optional `${var?}` substitution works.
+`bash .github/bubbles/scripts/mcp-server-selftest.sh` asserts 19 invariants (T1–T19): server boots, every declared tool has a bash twin, `initialize`/`ping`/`tools/list`/`tools/call`/`resources/list`/`resources/read` round-trip correctly, `resources/templates/list` returns the templated catalog, templated reads (`bubbles://gates/{id}`) resolve via the bash twin and surface real `-32004` errors for unknown ids, `prompts/list` returns the prompt catalog, `prompts/get` returns a real prompt body, unknown prompts return `-32005`, `tools/list` exposes planning/safety annotations, `initialize` negotiates the protocol version (echo-when-supported, latest-otherwise), malformed/unknown requests return proper JSON-RPC error codes, and optional `${var?}` substitution works.
 
 The selftest is wired into `bubbles/scripts/framework-validate.sh` so the MCP invariant is enforced on every source-side framework-validate run.
 

@@ -43,6 +43,8 @@
 #   T18. `tools/list` includes MCP tool annotations: read-only/idempotent hints
 #        for query tools and open-world/destructive-capable hints for the
 #        evidence command wrapper.
+#   T19. `initialize` negotiates the protocol version: it echoes a supported
+#        requested version and falls back to the latest for an unknown one.
 #
 # Exit 0 = all assertions pass. Exit 1 = at least one failed.
 
@@ -178,6 +180,14 @@ msgs = [
      "params": {"name": "bubbles.workflow"}},
     {"jsonrpc": "2.0", "id": 16, "method": "prompts/get",
      "params": {"name": "definitely-not-a-prompt"}},
+    {"jsonrpc": "2.0", "id": 17, "method": "initialize",
+     "params": {"protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "mcp-selftest", "version": "0.0"}}},
+    {"jsonrpc": "2.0", "id": 18, "method": "initialize",
+     "params": {"protocolVersion": "1999-01-01",
+                "capabilities": {},
+                "clientInfo": {"name": "mcp-selftest", "version": "0.0"}}},
 ]
 for m in msgs:
     proc.stdin.write(frame(m))
@@ -185,7 +195,7 @@ proc.stdin.flush()
 proc.stdin.close()
 
 replies = {}
-for _ in range(16):  # 16 IDs (notifications/initialized has no reply)
+for _ in range(18):  # 18 IDs (notifications/initialized has no reply)
     r = read_frame(proc.stdout)
     if r is None:
         break
@@ -415,6 +425,18 @@ if [[ "$ok" == "YES" ]]; then
   pass "T18: tools/list exposes MCP annotations for safe query tools and record_evidence"
 else
   fail "T18: tools/list missing expected MCP annotations: $tools_reply"
+fi
+
+# T19: initialize negotiates the protocol version — echoes a supported requested
+# version (2024-11-05) and falls back to the latest for an unknown one.
+echo_reply="$(get 17)"
+echo_ver="$(echo "$echo_reply" | python3 -c "import json,sys; r=json.load(sys.stdin); print((r.get('result') or {}).get('protocolVersion',''))")"
+fallback_reply="$(get 18)"
+fallback_ver="$(echo "$fallback_reply" | python3 -c "import json,sys; r=json.load(sys.stdin); print((r.get('result') or {}).get('protocolVersion',''))")"
+if [[ "$echo_ver" == "2024-11-05" && "$fallback_ver" == "2025-06-18" ]]; then
+  pass "T19: initialize echoes supported version (2024-11-05) and falls back to latest (2025-06-18) for unknown"
+else
+  fail "T19: protocol negotiation wrong — echo=$echo_ver (want 2024-11-05), fallback=$fallback_ver (want 2025-06-18)"
 fi
 
 echo

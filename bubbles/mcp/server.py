@@ -5,6 +5,8 @@ Bubbles MCP server — Model Context Protocol bridge for the Bubbles framework.
 Transport: stdio (newline-delimited JSON-RPC 2.0 messages framed with
 `Content-Length:` headers per MCP spec) OR HTTP (v6.1 / R9 — JSON-RPC over
 POST, reachable from CI runners and shared/cloud environments).
+Protocol: negotiates MCP 2024-11-05 / 2025-03-26 / 2025-06-18 (echoes the
+client's requested version when supported, else returns the latest).
 Runtime: Python 3.10+, stdlib only. No pip install. No daemon.
 
 Surface (per docs/v6-mcp-design.md):
@@ -65,7 +67,14 @@ from typing import Any, Optional
 # ---------------------------------------------------------------------------
 # Constants
 
-PROTOCOL_VERSION = "2024-11-05"  # MCP spec version we implement
+# MCP protocol versions this server can speak, newest first. We negotiate per
+# the MCP spec: echo back the client's requested version when we support it,
+# otherwise return our latest supported version and let the client decide
+# whether to proceed. The wire surface we expose (tools + annotations,
+# resources + templates, prompts) is compatible across this range; newer-only
+# features are optional capabilities we simply do not advertise.
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
+PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0]  # latest MCP version we implement
 SERVER_NAME = "bubbles"
 # Server version reads from VERSION file when running from source repo;
 # falls back to .github/bubbles/.version when running from a downstream
@@ -849,9 +858,16 @@ class Server:
         raise _JsonRpcError(ERR_METHOD_NOT_FOUND, f"unknown method: {method}")
 
     def _initialize(self, params: dict[str, Any]) -> dict[str, Any]:
-        # We accept any client protocol version; we report ours.
+        # Protocol version negotiation (per MCP spec): echo the client's
+        # requested version when we support it; otherwise return our latest
+        # supported version and let the client decide whether to proceed.
+        requested = params.get("protocolVersion")
+        if isinstance(requested, str) and requested in SUPPORTED_PROTOCOL_VERSIONS:
+            negotiated = requested
+        else:
+            negotiated = PROTOCOL_VERSION
         return {
-            "protocolVersion": PROTOCOL_VERSION,
+            "protocolVersion": negotiated,
             "serverInfo": {
                 "name": SERVER_NAME,
                 "version": self._version,
