@@ -38,8 +38,12 @@
 
 # Canonical core allowlist shared by all five restricted orchestrators. Verified
 # byte-identical across bubbles.{goal,sprint,iterate,bug,workflow}.agent.md:
-#   tools: [read, search, edit, agent, todo, web, execute]
-BUBBLES_MCP_CORE_TOOLS=(read search edit agent todo web execute)
+#   tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright]
+# `bubbles` (the framework's own MCP server) and `playwright` ship as framework
+# defaults so the autonomous orchestrators can drive framework + browser MCP
+# tools out of the box. Unknown tokens (server not configured) are ignored by
+# the IDE. Per-downstream additions layer on via mcp.grants.
+BUBBLES_MCP_CORE_TOOLS=(read search edit agent todo web execute bubbles playwright)
 
 # The five framework-managed orchestrators that ship the restrictive allowlist.
 # Only these are eligible for grants; every other agent inherits all tools.

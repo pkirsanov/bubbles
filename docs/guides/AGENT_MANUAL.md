@@ -81,7 +81,7 @@ Orchestrator rule:
 An agent's frontmatter `tools:` field is an explicit allowlist of the VS Code tools the agent may call. The convention:
 
 - **Omit `tools:`** to inherit ALL available tools. This is the default for most specialists — they declare no allowlist and rely on the full tool surface.
-- **Declare `tools:`** only when you want to constrain the surface. The autonomous orchestrators (`bubbles.workflow`, `bubbles.goal`, `bubbles.iterate`, `bubbles.sprint`, `bubbles.bug`) declare the canonical allowlist `tools: [read, search, edit, agent, todo, web, execute]`.
+- **Declare `tools:`** only when you want to constrain the surface. The autonomous orchestrators (`bubbles.workflow`, `bubbles.goal`, `bubbles.iterate`, `bubbles.sprint`, `bubbles.bug`) declare the canonical allowlist `tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright]` — the `bubbles` (framework MCP server) and `playwright` defaults let the orchestrators drive framework + browser MCP tools out of the box. Additional per-project MCP tools layer on via `.github/bubbles-project.yaml` `mcp.grants` (see `project-config-contract.md`).
 - **Any orchestrator that declares a `tools:` allowlist MUST include `agent`** — that is the sub-agent dispatch tool that backs `runSubagent(...)`. An orchestrator that restricts its tools but forgets `agent` silently degrades into a single-agent transcript: the IDE blocks the call and the whole delegation pipeline collapses with no visible error.
 - Omitting `tools:` entirely is **not** a violation for an orchestrator — inheriting all tools includes `agent`, so delegation still works.
 - A genuinely terminal agent that never delegates may opt out of the check with frontmatter `delegationModel: none`.

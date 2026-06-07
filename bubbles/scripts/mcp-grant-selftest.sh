@@ -47,7 +47,7 @@ fi
 WORK="$(mktemp -d "$HOME/.bubbles-mcp-grant-selftest.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
-CANON_TOOLS='tools: [read, search, edit, agent, todo, web, execute]'
+CANON_TOOLS='tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright]'
 
 # Canonical restricted-agent fixture (mirrors real frontmatter shape).
 write_canonical_agent() {
@@ -69,12 +69,14 @@ CANON_AGENT="$WORK/canonical.agent.md"
 write_canonical_agent "$CANON_AGENT"
 CANON_BYTES="$(cat "$CANON_AGENT")"
 
-# Config: grant playwright + github to bubbles.goal.
+# Config: grant github + context7 to bubbles.goal (non-core grant tokens;
+# bubbles + playwright are framework defaults in the canonical core, so they are
+# never valid grants).
 CONFIG="$WORK/bubbles-project.yaml"
 {
   echo 'mcp:'
   echo '  grants:'
-  echo '    bubbles.goal: [playwright, github]'
+  echo '    bubbles.goal: [github, context7]'
 } >"$CONFIG"
 
 # Empty-grants config (grant removed).
@@ -86,7 +88,7 @@ CONFIG_EMPTY="$WORK/bubbles-project-empty.yaml"
 
 # --- T0: effective grants resolve, sorted, core-excluded -------------------
 EFF="$(bubbles_mcp_effective_grants "$CONFIG" bubbles.goal | paste -sd, -)"
-assert_eq "T0 effective grants = github,playwright (sorted, core-excluded)" "github,playwright" "$EFF"
+assert_eq "T0 effective grants = context7,github (sorted, core-excluded)" "context7,github" "$EFF"
 
 # Non-restricted/no-grant agent yields empty.
 EFF_NONE="$(bubbles_mcp_effective_grants "$CONFIG" bubbles.sprint | paste -sd, -)"
@@ -100,7 +102,7 @@ assert_eq "T1 reconcile(canonical) == canonical (pre-sync, no false positive)" "
 GRANTED="$(bubbles_mcp_inject_to_stdout "$CANON_AGENT" "$CONFIG" bubbles.goal)"
 GRANTED_FILE="$WORK/granted.agent.md"
 printf '%s\n' "$GRANTED" >"$GRANTED_FILE"
-EXPECT_GRANTED_LINE='tools: [read, search, edit, agent, todo, web, execute, github, playwright]'
+EXPECT_GRANTED_LINE='tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright, context7, github]'
 assert_eq "T2a inject appends sorted grants in canonical format" \
   "$EXPECT_GRANTED_LINE" "$(grep '^tools: ' "$GRANTED_FILE")"
 RECON_GRANTED="$(bubbles_mcp_reconcile_to_stdout "$GRANTED_FILE" "$CONFIG" bubbles.goal)"
@@ -118,14 +120,14 @@ assert_ne "T4 reconcile(granted + body tamper) != canonical (drift)" "$CANON_BYT
 
 # --- T5 (case c): undeclared tool still drifts -----------------------------
 UNDECL_FILE="$WORK/undeclared.agent.md"
-sed 's/^tools: \[.*\]$/tools: [read, search, edit, agent, todo, web, execute, playwright, eviltool]/' \
+sed 's/^tools: \[.*\]$/tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright, github, eviltool]/' \
   "$CANON_AGENT" >"$UNDECL_FILE"
 RECON_UNDECL="$(bubbles_mcp_reconcile_to_stdout "$UNDECL_FILE" "$CONFIG" bubbles.goal)"
-assert_ne "T5 reconcile(declared playwright + UNDECLARED eviltool) != canonical (drift)" \
+assert_ne "T5 reconcile(declared github + UNDECLARED eviltool) != canonical (drift)" \
   "$CANON_BYTES" "$RECON_UNDECL"
 # And the declared token WAS stripped (only eviltool remains beyond core).
 assert_eq "T5b undeclared tool survives strip; declared one removed" \
-  "tools: [read, search, edit, agent, todo, web, execute, eviltool]" \
+  "tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright, eviltool]" \
   "$(printf '%s\n' "$RECON_UNDECL" | grep '^tools: ')"
 
 # --- T6 (case d): grant removed from config resets to canonical ------------
@@ -134,7 +136,7 @@ assert_eq "T6 inject(granted, empty-grants config) == canonical (grant removed)"
 
 # --- T7 (case e): core token removed still drifts --------------------------
 NOAGENT_FILE="$WORK/noagent.agent.md"
-sed 's/^tools: \[.*\]$/tools: [read, search, edit, todo, web, execute, github, playwright]/' \
+sed 's/^tools: \[.*\]$/tools: [read, search, edit, todo, web, execute, bubbles, playwright, github]/' \
   "$CANON_AGENT" >"$NOAGENT_FILE"
 RECON_NOAGENT="$(bubbles_mcp_reconcile_to_stdout "$NOAGENT_FILE" "$CONFIG" bubbles.goal)"
 assert_ne "T7 reconcile(granted minus core 'agent') != canonical (drift)" "$CANON_BYTES" "$RECON_NOAGENT"

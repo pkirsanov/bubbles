@@ -12,6 +12,23 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.2.0 — bubbles + playwright MCP tools default-on for the restricted orchestrators
+
+> *"Give the man the whole toolbox, Bubbles — not just the rusty screwdriver."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** The five autonomous orchestrators (`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`, `bubbles.workflow`) ship a restrictive `tools:` allowlist, which meant they could not call MCP tools out of the box — including the framework's *own* `bubbles` MCP server. Worse, VS Code's tool picker cannot persist an MCP tool into a checksum-pinned framework agent file (it opens the file, the toggle does not stick), so operators had no working way to enable them. v7.2.0 makes `bubbles` (the framework MCP server) and `playwright` part of the canonical default allowlist for those five orchestrators.
+
+### What changed
+
+- The canonical orchestrator allowlist is now `tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright]` (was the 7 base tools). Unknown tokens are ignored by the IDE when the matching MCP server is not configured in `.vscode/mcp.json`, so this is harmless for projects that do not use those servers and immediately functional for those that do.
+- `BUBBLES_MCP_CORE_TOOLS` in `mcp-grant-reconcile.sh` was extended to match, so the grant-aware integrity model stays exact: `mcp sync` reproduces the new canonical line byte-for-byte, the write guard reconciles against the new canonical `.checksums`, and per-project `mcp.grants` continue to layer *additional* tools on top of the defaults.
+- `bubbles` and `playwright` are now defaults, not grants — listing them under `mcp.grants` is a no-op (the resolver excludes canonical tokens). Docs (`project-config-contract.md`, `AGENT_MANUAL.md`) updated accordingly.
+- `mcp-grant-selftest.sh` reworked to the new canonical line and non-core example grants (`github`, `context7`); all 14 adversarial assertions still pass, including the six integrity cases.
+
+### Operator note
+
+After upgrading a downstream to v7.2.0, **reload the VS Code window** (`Developer: Reload Window`) so the editor re-reads the updated agent definitions — a running session keeps the agent `tools:` lists it loaded at startup. The `bubbles`/`playwright` servers must be present in `.vscode/mcp.json` for the tools to actually resolve; they are ignored otherwise.
+
 ## v7.1.0 — operator-managed MCP tool grants for restricted orchestrators
 
 > *"You can hand Ricky a bigger toolbox without leavin' the shed unlocked, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

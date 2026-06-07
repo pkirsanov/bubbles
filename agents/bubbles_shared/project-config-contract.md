@@ -326,16 +326,18 @@ traceContracts:
         warning:
           - slow span
 
-# Operator-managed MCP tool grants for restricted orchestrators (v7.1)
-# Grants additional MCP/IDE tools to the five framework-managed orchestrators
-# that ship a restrictive `tools:` allowlist (bubbles.goal/sprint/iterate/bug/
-# workflow). Keys are agent names OR the reserved alias `restricted-orchestrators`
-# (fans out to all five). Values are tool NAMES only — never secrets, hosts, or
-# per-machine values. Apply with: bash .github/bubbles/scripts/cli.sh mcp sync
+# Operator-managed MCP tool grants for restricted orchestrators (v7.1+)
+# The five framework-managed orchestrators (bubbles.goal/sprint/iterate/bug/
+# workflow) ship a `tools:` allowlist whose defaults include `bubbles` (the
+# framework's own MCP server) and `playwright`. mcp.grants adds MORE tools on top
+# of those defaults. Keys are agent names OR the reserved alias
+# `restricted-orchestrators` (fans out to all five). Values are tool NAMES only —
+# never secrets, hosts, or per-machine values. Apply with:
+#   bash .github/bubbles/scripts/cli.sh mcp sync
+# (bubbles + playwright are already defaults; do NOT list them as grants.)
 mcp:
   grants:
-    bubbles.goal: [playwright, github]
-    bubbles.iterate: [playwright]
+    bubbles.goal: [github]
     restricted-orchestrators: [context7]   # applies to all five
 ```
 
@@ -353,20 +355,26 @@ mcp:
 
 `docsRegistryOverrides.*` follows the same ownership model: framework defaults remain in `bubbles/docs-registry.yaml`, while projects can override managed doc entries or classification values from `.github/bubbles-project.yaml`.
 
-### `mcp.grants` Contract (v7.1)
+### `mcp.grants` Contract (v7.1+)
 
-Five framework-managed orchestrators ship a **restrictive** `tools:` allowlist
+Five framework-managed orchestrators ship a `tools:` allowlist
 (`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`,
-`bubbles.workflow`). Because these agents are checksum-pinned, an operator cannot
-add an MCP tool to one of them by editing the file — it would trigger
-framework-managed file drift and be overwritten on the next refresh.
+`bubbles.workflow`). Its canonical defaults are
+`[read, search, edit, agent, todo, web, execute, bubbles, playwright]` — i.e.
+the framework's own `bubbles` MCP server and `playwright` are available to the
+autonomous orchestrators out of the box (unknown tokens are ignored by the IDE
+when the corresponding MCP server is not configured in `.vscode/mcp.json`).
+Because these agents are checksum-pinned, an operator cannot add a *further* MCP
+tool to one of them by editing the file — it would trigger framework-managed
+file drift and be overwritten on the next refresh.
 
-`mcp.grants` is the project-owned, refresh-safe way to grant extra tools:
+`mcp.grants` is the project-owned, refresh-safe way to grant tools beyond the
+defaults:
 
 | Aspect | Rule |
 |--------|------|
 | **Keys** | An agent name (`bubbles.goal`) or the reserved alias `restricted-orchestrators` (fans out to all five). Non-restricted agents are ignored (they already inherit all tools). |
-| **Values** | Tool **names** only (`[A-Za-z0-9_.-]`). Never secrets, hosts, ports, or per-machine values — consistent with the SST / no-PII policy. |
+| **Values** | Tool **names** only (`[A-Za-z0-9_.-]`). Never secrets, hosts, ports, or per-machine values — consistent with the SST / no-PII policy. The canonical defaults (`bubbles`, `playwright`, and the 7 base tools) are ignored if listed — they are already present. |
 | **Apply** | `bash .github/bubbles/scripts/cli.sh mcp sync` injects the grants as a deterministic, append-only suffix on the canonical `tools:` line. Idempotent. Re-run after editing grants. |
 | **Refresh-safe** | `install.sh` re-runs `mcp sync` after writing agents, so grants survive a framework upgrade. |
 | **Integrity** | The framework write guard is **grant-aware**: it strips only the declared grant tokens and re-checks against the unchanged canonical `.checksums`. A declared grant is clean; an **undeclared** tool, a body edit, or a missing core tool still fails as drift. |
