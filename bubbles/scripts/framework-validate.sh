@@ -216,6 +216,10 @@ if [[ -x "$SCRIPT_DIR/gate-id-grep-selftest.sh" ]]; then
   run_check "Gate ID grep selftest" bash "$SCRIPT_DIR/gate-id-grep-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/release-packet-location-guard-selftest.sh" ]]; then
+  run_check "Release packet location guard selftest" bash "$SCRIPT_DIR/release-packet-location-guard-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/workflow-surface-selftest.sh" ]]; then
   run_check "Workflow surface selftest" bash "$SCRIPT_DIR/workflow-surface-selftest.sh"
 fi

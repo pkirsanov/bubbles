@@ -12,6 +12,17 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.8 — release-packet-location-guard selftest (last untested guard)
+
+> *"Every decky in the park gets a smoke detector, Bubbles — even the shed out back."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Continuing the v7.0.7 sweep for untested guards. After classifying every guard/lint script, `release-packet-location-guard.sh` (owned by `bubbles.releases`, enforces the canonical `docs/releases/<phase>/...` packet location) was the last real guard with neither a selftest nor live framework-validate coverage. The other naming-convention gaps were confirmed non-issues: `artifact-lint` is exercised by two sibling selftests and five callers, `action-risk-registry-lint` runs live, and `downstream-framework-write-guard` is exercised by `trust-doctor-selftest` via `cli.sh framework-write-guard`. Selftest filenames referenced only in frozen design docs (`v6-mcp-design.md`, `v5.2-design.md`) and `DEPRECATIONS.md` are intentionally historical and were left untouched.
+
+### release-packet-location-guard selftest
+
+- **New hermetic selftest** `release-packet-location-guard-selftest.sh` (7 assertions) with two adversarial cases: a misplaced `specs/releases/<phase>/vision.md` and an upper-case `docs/RELEASE-1/features.md` must both BLOCK (exit 1), while a generic `docs/guides/features.md` off any release-shaped path must NOT be flagged (proving the false-positive filter). It also covers the canonical single-doc and full 8-doc packet (pass), the empty repo (pass), and the missing-repo-root fail-fast (exit 2).
+- **Wired into `framework-validate`** so the guard's placement logic is verified on every source-side validation run. No guard behavior changed; this is pure coverage.
+
 ## v7.0.7 — G095 discovered-issue disposition guard selftest (close documented-but-missing coverage)
 
 > *"You can't write 'tested' on the box if the test was never in the box, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
