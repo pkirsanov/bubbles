@@ -12,6 +12,27 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.1.0 — operator-managed MCP tool grants for restricted orchestrators
+
+> *"You can hand Ricky a bigger toolbox without leavin' the shed unlocked, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Five framework-managed orchestrators ship a deliberately **restrictive** `tools:` allowlist (`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`, `bubbles.workflow`). Because those files are checksum-pinned, an operator who wanted one of them to also drive an MCP tool (Playwright, a GitHub server, a DB client) had no good option — editing the allowlist triggered "Framework-managed file drift detected" and was wiped on the next refresh. v7.1.0 adds a project-owned, refresh-safe grant mechanism with a **grant-aware** integrity model: the trust anchor stays on the canonical `.checksums`, project config is used only as a strip-allowlist, and any undeclared edit still fails as drift.
+
+### Operator-managed grants
+
+- **Declare** extra tools in the project-owned `.github/bubbles-project.yaml` under `mcp.grants`. Keys are agent names or the reserved alias `restricted-orchestrators` (fans out to all five); values are tool **names** only — never secrets, hosts, or per-machine values (SST / no-PII preserving).
+- **Apply** with `bash .github/bubbles/scripts/cli.sh mcp sync` — a deterministic, append-only, idempotent injector that rewrites each restricted orchestrator's canonical single-line `tools:` array to `core + sorted(declared grants)`. `install.sh` re-runs the sync after writing agents, so grants **survive a framework refresh**.
+- **Integrity** (`downstream-framework-write-guard.sh`) is now grant-aware: it strips ONLY the operator-declared grant tokens and exact-matches the result against the unchanged canonical `.checksums`. A declared grant reconciles to canonical (clean); an **undeclared** tool, a body edit, or a missing core tool leaves a non-canonical reconstruction and still fails as drift. The canonical agent hashes are unchanged by this feature.
+
+### New surfaces
+
+- `bubbles/scripts/mcp-grant-reconcile.sh` — sourceable library: canonical core + restricted-agent constants, `mcp.grants` resolution (yq via stdin redirect, snap-confinement-safe), and the symmetric reconcile/inject transforms.
+- `bubbles/scripts/mcp-grant-sync.sh` — the `mcp sync` injector CLI (`--check`, `--quiet`); warns (never fails) on a grant whose server is absent from `.vscode/mcp.json`.
+- `bubbles/scripts/mcp-grant-selftest.sh` — **hermetic adversarial selftest** (14 assertions) covering the six integrity cases the write guard depends on: declared grant accepted; declared grant + body tamper drifts; undeclared tool drifts; grant removed resets to canonical; missing core `agent` drifts; and no false positive before sync. Plus injector idempotency and an end-to-end `mcp sync` run against a synthetic downstream tree. Wired into `framework-validate`.
+- `cli.sh mcp sync`, install-time re-sync, and docs in `project-config-contract.md` (`mcp.grants` Contract) and `bubbles.setup.agent.md` (refresh step 7).
+
+**Notes.** `trust-metadata.sh` is unchanged: its checksum path verifies a pristine source bundle (pre-install, no grants), so it correctly stays canonical. The optional strict extension to `orchestrator-tool-frontmatter-lint.sh` was intentionally not added — it would duplicate the now-grant-aware write guard, which is the authoritative undeclared-token check.
+
 ## v7.0.8 — release-packet-location-guard selftest (last untested guard)
 
 > *"Every decky in the park gets a smoke detector, Bubbles — even the shed out back."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

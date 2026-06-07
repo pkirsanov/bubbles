@@ -497,6 +497,19 @@ ok "Framework manifest written ($(wc -l < "${TARGET}/bubbles/.manifest") entries
 } > "${TARGET}/bubbles/.checksums"
 ok "Framework checksum snapshot written ($(wc -l < "${TARGET}/bubbles/.checksums") entries)"
 
+# ── Apply operator-declared MCP tool grants (v7.1) ──────────────────
+# The .checksums snapshot above captured the CANONICAL restricted-orchestrator
+# allowlists. Operator-declared grants (.github/bubbles-project.yaml mcp.grants)
+# are now re-applied on top so they survive this refresh. The write guard is
+# grant-aware: a declared grant reconciles to canonical; undeclared edits drift.
+if [[ -f "${TARGET}/bubbles/scripts/mcp-grant-sync.sh" ]]; then
+  if bash "${TARGET}/bubbles/scripts/mcp-grant-sync.sh" --quiet; then
+    ok "MCP tool grants synced (restricted orchestrators)"
+  else
+    info "MCP tool grant sync skipped (no grants declared or yq unavailable)"
+  fi
+fi
+
 # ── Bootstrap: scaffold project config ──────────────────────────────
 if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo ""

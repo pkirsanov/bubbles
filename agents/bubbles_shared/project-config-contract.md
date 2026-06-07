@@ -325,6 +325,18 @@ traceContracts:
           - Missing trace_id
         warning:
           - slow span
+
+# Operator-managed MCP tool grants for restricted orchestrators (v7.1)
+# Grants additional MCP/IDE tools to the five framework-managed orchestrators
+# that ship a restrictive `tools:` allowlist (bubbles.goal/sprint/iterate/bug/
+# workflow). Keys are agent names OR the reserved alias `restricted-orchestrators`
+# (fans out to all five). Values are tool NAMES only — never secrets, hosts, or
+# per-machine values. Apply with: bash .github/bubbles/scripts/cli.sh mcp sync
+mcp:
+  grants:
+    bubbles.goal: [playwright, github]
+    bubbles.iterate: [playwright]
+    restricted-orchestrators: [context7]   # applies to all five
 ```
 
 ### Design Principles
@@ -340,6 +352,28 @@ traceContracts:
 `regressionQuality.*` follows the standard override model: if provided, those lists replace the generic fallback patterns used by `regression-quality-guard.sh`.
 
 `docsRegistryOverrides.*` follows the same ownership model: framework defaults remain in `bubbles/docs-registry.yaml`, while projects can override managed doc entries or classification values from `.github/bubbles-project.yaml`.
+
+### `mcp.grants` Contract (v7.1)
+
+Five framework-managed orchestrators ship a **restrictive** `tools:` allowlist
+(`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`,
+`bubbles.workflow`). Because these agents are checksum-pinned, an operator cannot
+add an MCP tool to one of them by editing the file — it would trigger
+framework-managed file drift and be overwritten on the next refresh.
+
+`mcp.grants` is the project-owned, refresh-safe way to grant extra tools:
+
+| Aspect | Rule |
+|--------|------|
+| **Keys** | An agent name (`bubbles.goal`) or the reserved alias `restricted-orchestrators` (fans out to all five). Non-restricted agents are ignored (they already inherit all tools). |
+| **Values** | Tool **names** only (`[A-Za-z0-9_.-]`). Never secrets, hosts, ports, or per-machine values — consistent with the SST / no-PII policy. |
+| **Apply** | `bash .github/bubbles/scripts/cli.sh mcp sync` injects the grants as a deterministic, append-only suffix on the canonical `tools:` line. Idempotent. Re-run after editing grants. |
+| **Refresh-safe** | `install.sh` re-runs `mcp sync` after writing agents, so grants survive a framework upgrade. |
+| **Integrity** | The framework write guard is **grant-aware**: it strips only the declared grant tokens and re-checks against the unchanged canonical `.checksums`. A declared grant is clean; an **undeclared** tool, a body edit, or a missing core tool still fails as drift. |
+| **Inert until configured** | A grant is inert unless its MCP server is defined in `.vscode/mcp.json`; `mcp sync` warns (does not fail) on a grant with no matching server. |
+
+The trust anchor stays on the framework-managed `.checksums`; `mcp.grants` is used
+only as a strip-allowlist for reconstruction, never as a source of canonical bytes.
 
 ### `testImpact` Contract (G079)
 
