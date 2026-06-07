@@ -18,7 +18,7 @@ If you do not register the MCP server, every Bubbles workflow continues to work 
 
 ```bash
 bash .github/bubbles/scripts/mcp-server-selftest.sh
-# Expected: T1–T17 PASS lines and "mcp-server-selftest passed."
+# Expected: T1–T18 PASS lines and "mcp-server-selftest passed."
 ```
 
 ### 2. Register with your MCP client

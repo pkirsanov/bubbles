@@ -12,6 +12,10 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.0.5 — MCP quick-start selftest count reconciliation
+
+**Theme:** Final release-surface drift cleanup after v7.0.4. The MCP server selftest expanded to T1–T18, and the detailed selftest paragraph was correct, but the quick-start snippet still said T1–T17. v7.0.5 reconciles that last stale count so both MCP documentation locations match the executable selftest.
+
 ## v7.0.4 — MCP prompt catalog support for modern agent clients
 
 > *"If the prompts are sittin' right there, why's the robot pretendin' it can't see 'em?"* — Sunnyvale Trailer Park Operator Newsletter, June 2026
