@@ -12,6 +12,20 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.3.1 — orchestrators keep `edit` so delegated workers can do real work (reverts the 7.3.0 pure-router experiment)
+
+> *"You don't take the keys off the dispatcher and then wonder why the truck won't move, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A 7.3.0 experiment (Gate G096) tried to make "an orchestrator never authors a file" *mechanical* by stripping the `edit` tool from `bubbles.goal` and `bubbles.sprint`, turning them into edit-less "pure routers." In VS Code this **broke delegation itself**: a subagent *inherits the parent's tools by default*, so an orchestrator with no `edit` dispatches workers (`bubbles.implement`, `bubbles.test`, …) that also have no `edit` — and every dispatch returns `blocked`. An orchestrator that cannot give its workers the tools to do the work is not an orchestrator. 7.3.1 reverts the edit-stripping: all five orchestrators carry the uniform canonical allowlist again, so dispatched workers inherit a full tool surface and can do any work.
+
+> **Note on versioning:** 7.3.0 was distributed to downstreams from an uncommitted working tree but never committed, tagged, or pushed as a real release; it also failed its own G096 guard (one orchestrator was missing the required marker). 7.3.1 is the first committed/tagged/pushed release of this line and supersedes that phantom 7.3.0 — downstreams upgrade straight to 7.3.1.
+
+### What changed
+
+- **Reverted the G096 edit-stripping.** All five orchestrators (`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`, `bubbles.workflow`) keep the uniform canonical allowlist `tools: [read, search, edit, agent, todo, web, execute, bubbles, playwright]`. Because the orchestrator's surface includes `edit`, every worker it dispatches inherits `edit` and can create/modify files. Removed the `orchestrator-artifact-write-guard.sh` (G096) guard, the `session-state-write.sh` narrow writer, the per-agent pure-router core in `mcp-grant-reconcile.sh`, and the `G096` gate registry entry.
+- **"Orchestrators delegate, they don't author" stays as prose discipline** in the agent bodies (and Gate G042 ownership), where it lived before — it is enforced by instruction, not by amputating a tool the workers need.
+- **`docs/guides/AGENT_MANUAL.md`** now documents the VS Code subagent tool-inheritance rule (a subagent inherits the parent session's tools) and adds a troubleshooting section: edit failures and `blocked` dispatches are a session-side issue — use **Agent** mode, enable the **Edit Files** tool group, and reload the window after an upgrade. It also states explicitly that orchestrators must keep `edit` so their workers inherit it.
+
 ## v7.2.0 — bubbles + playwright MCP tools default-on for the restricted orchestrators
 
 > *"Give the man the whole toolbox, Bubbles — not just the rusty screwdriver."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
