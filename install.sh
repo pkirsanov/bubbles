@@ -243,6 +243,21 @@ info "Installing governance scripts..."
 mkdir -p "${TARGET}/bubbles/scripts"
 cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
+# Prune stale framework scripts: remove any installed bubbles/scripts/*.sh that
+# no longer exists in the source payload. .github/bubbles/scripts/ is a
+# framework-managed directory (project-owned scripts live in top-level scripts/),
+# so mirroring the source set is safe and prevents an orphaned script — e.g. a
+# guard or selftest removed upstream in a later release — from lingering and
+# breaking downstream validation. (registry-consistency-selftest scans every
+# installed script for gate IDs; an orphan referencing a since-removed gate
+# fails the whole run.)
+for installed_script in "${TARGET}"/bubbles/scripts/*.sh; do
+  [[ -e "$installed_script" ]] || continue
+  script_base="$(basename "$installed_script")"
+  if [[ ! -f "$TEMP_DIR/bubbles/scripts/$script_base" ]]; then
+    rm -f "$installed_script"
+  fi
+done
 # bubbles/scripts/guards/ holds the sourced check-fragments that
 # state-transition-guard.sh loads (v6.1 / M4 split). The top-level *.sh glob
 # above does NOT descend into subdirectories, so the guards/ fragments MUST be
@@ -251,6 +266,14 @@ chmod +x "${TARGET}"/bubbles/scripts/*.sh
 if [[ -d "$TEMP_DIR/bubbles/scripts/guards" ]]; then
   mkdir -p "${TARGET}/bubbles/scripts/guards"
   cp -R "$TEMP_DIR"/bubbles/scripts/guards/. "${TARGET}/bubbles/scripts/guards/"
+  # Prune stale guard fragments the same way (mirror the source guards/ set).
+  for installed_guard in "${TARGET}"/bubbles/scripts/guards/*.sh; do
+    [[ -e "$installed_guard" ]] || continue
+    guard_base="$(basename "$installed_guard")"
+    if [[ ! -f "$TEMP_DIR/bubbles/scripts/guards/$guard_base" ]]; then
+      rm -f "$installed_guard"
+    fi
+  done
 fi
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed$([[ -d "${TARGET}/bubbles/scripts/guards" ]] && echo " (+$(ls "${TARGET}"/bubbles/scripts/guards/*.sh 2>/dev/null | wc -l) guard fragments)")"
 

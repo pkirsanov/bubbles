@@ -12,6 +12,18 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.3.2 — installer prunes stale framework scripts on upgrade
+
+> *"When you swap the engine, Bubbles, you take the old busted one OUT — you don't just leave it rattlin' in the trunk."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** `install.sh` copied framework scripts into a downstream but never removed scripts that no longer exist upstream. When the phantom 7.3.0 added four G096 scripts (`orchestrator-artifact-write-guard.sh` + selftest, `session-state-write.sh` + selftest) and 7.3.1 removed them from source, the orphans lingered in every downstream's `.github/bubbles/scripts/`. Because `registry-consistency-selftest` scans every installed script for gate IDs, those orphans — which reference the since-removed `G096` — failed downstream `framework-validate` even though the source repo was green. This is a general upgrade-hygiene gap: any file removed upstream would have lingered.
+
+### What changed
+
+- **`install.sh` now prunes stale framework scripts.** After copying `bubbles/scripts/*.sh` (and `bubbles/scripts/guards/*.sh`), it removes any installed script not present in the source payload, mirroring the framework-managed set. `.github/bubbles/scripts/` is framework-managed (project-owned scripts live in top-level `scripts/`), so mirroring source is safe and self-heals orphans on the next upgrade.
+- **`install-provenance-selftest.sh`** gained a hermetic prune regression: it plants an orphan script in an installed fixture, re-installs, and asserts the orphan is pruned while a real framework script (`framework-validate.sh`) survives.
+- Re-upgrading the five downstreams to 7.3.2 auto-removes the four orphan G096 scripts and restores green downstream validation.
+
 ## v7.3.1 — orchestrators keep `edit` so delegated workers can do real work (reverts the 7.3.0 pure-router experiment)
 
 > *"You don't take the keys off the dispatcher and then wonder why the truck won't move, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
