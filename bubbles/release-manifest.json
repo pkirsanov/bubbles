@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "version": "7.4.0",
-  "gitSha": "2099ec62fcb3475cdd44173eae88a3167d796fa3",
-  "generatedAt": "2026-06-08T00:38:25+00:00",
+  "gitSha": "b7eac662cfdad9dfc734a53187693efd6614550e",
+  "generatedAt": "2026-06-08T15:00:18+00:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
   "validatedSurfaces": ["framework-validate", "release-check", "release-manifest-selftest", "install-provenance-selftest", "finding-closure-selftest", "interop-import-selftest", "trust-doctor-selftest"],
   "docsDigest": "3d170eea2eb356c6900412b23c553a46f85572b8d335664507a74aa358d41bf9",
-  "managedFileCount": 532,
+  "managedFileCount": 534,
   "managedFileChecksums": [
     {"path": "bubbles/scripts/action-risk-registry-lint.sh", "sha256": "a4728a5b86849b6d39652e79b266344e320b4bbb26751569ca8dc164acb3c9c0"},
     {"path": "bubbles/scripts/agent-ownership-lint-selftest.sh", "sha256": "5ad850f4c45a424bf5825555ac668f3f96fb1f7dadfecdfca8f6c1de9eb42d76"},
@@ -152,6 +152,8 @@
     {"path": "bubbles/scripts/repo-drift-report.sh", "sha256": "dafae717c6a604346ee61b48c32b087cf549a7311e48b5be57112b30cc406baa"},
     {"path": "bubbles/scripts/repo-readiness.sh", "sha256": "3c65c511c957ee77dd31ce742afdb865fb1038ea3f66f53dbaf56a892744033e"},
     {"path": "bubbles/scripts/report-section-autofix.sh", "sha256": "588635bb98f6672e22cfff0bbcfd9d96b0c0dc94c40e2e64ee160e74d5fc2182"},
+    {"path": "bubbles/scripts/requirement-mechanism-guard-selftest.sh", "sha256": "13e53a3e18457c4ce2b672beee1c83900dd65d52042209765ed04d4b008bd028"},
+    {"path": "bubbles/scripts/requirement-mechanism-guard.sh", "sha256": "2dfc9f64e8f7967dff4e171d5253b79229088a392c4ac957570b3a2aa8114b81"},
     {"path": "bubbles/scripts/result-envelope-validate-selftest.sh", "sha256": "10affc6ed52102d8a1fd90219484475b0a2cc87788af5f6d2ebc5ebbc2e543d8"},
     {"path": "bubbles/scripts/result-envelope-validate.sh", "sha256": "3f1c0686650fb51fc8168db7d52988a76f6bd4ef6edcadbfcad5d8f2a4f46a5b"},
     {"path": "bubbles/scripts/retro-convergence-health-selftest.sh", "sha256": "226afc75b84157454d10fa3e5c07bd0bf9acffa98847f5cc75a6f8184ada8568"},
@@ -543,7 +545,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "cdb5dfe55cc2d83769a35df2a6544ad1c15dea3d3a2fcc6d6f0916908ecdf9e8"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "80d966cfce697ec19fa418011d6cdf1042f52f5d95761e6bb6f477d947e72021"}
   ],
-  "sourceOnlyFileCount": 18,
+  "sourceOnlyFileCount": 19,
   "sourceOnlyFileChecksums": [
     {"path": "tests/regression/test_01_convergence_cap_enforcement.sh", "sha256": "f9a3885b5d5e92caf1d46bca66c1bc9ec4f69ec4f52ada15d99bdec52067bdfa"},
     {"path": "tests/regression/test_02_context_compaction_discipline.sh", "sha256": "0ab5b200cdbee68e94dbf939edec78c8e083acf1ab3d7c2cf5cd7f7e0b96a488"},
@@ -562,6 +564,7 @@
     {"path": "tests/regression/test_15_planning_workflow_chain.sh", "sha256": "12709ab4524387367f8e3f4b2bddd4961658f8344bc52d280a9de939732a38a9"},
     {"path": "tests/regression/test_16_strict_terminal_status.sh", "sha256": "bd2ed96d4d34c7ba8302d83c5b2d08eab36e66b73a5680ca12e6cf712545f1e5"},
     {"path": "tests/regression/test_17_delivery_implementation_delta.sh", "sha256": "ec92a451afc3d67668db76360ee323b065855d8ea2b7e5086e97b33e4521f8a2"},
-    {"path": "tests/regression/test_18_capability_foundation_gate.sh", "sha256": "407a5ee7a8327e9907b1b645386345ff17300dc095071c9d931ba929c4c6b308"}
+    {"path": "tests/regression/test_18_capability_foundation_gate.sh", "sha256": "407a5ee7a8327e9907b1b645386345ff17300dc095071c9d931ba929c4c6b308"},
+    {"path": "tests/regression/test_19_requirement_mechanism.sh", "sha256": "84c6359bd494896a4d5265a2d34ba821d78a23db0c63c9d84152e1aafd14a302"}
   ]
 }
