@@ -12,6 +12,21 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.4.0 — requirement-mechanism correspondence gate (G097): named mechanism must trace to code or a disclosed justification
+
+> *"Sayin' you put a deadbolt on the door don't mean there's a deadbolt on the door, Bubbles. I gotta be able to grab the handle and check."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A connector shipped green claiming OAuth2 + PKCE, but the implementation used a static bearer token — no PKCE anywhere. Self-consistent tests passed against an in-process fake, a paraphrased report over-claimed delivery, and the certification layer waved it through because every existing gate checks *shape*, not *requirement-to-code correspondence*: G021 verifies a command RAN (tests can pass against a fake), G028 verifies a real call is MADE (a real call with the wrong auth passes), and traceability-guard verifies a test EXISTS (not that it asserts the correct behavior). The gap was only caught later by a reconcile/`gaps` sweep that ran the one mechanical check that works — *"a requirement names a mechanism → grep the code for it"*. G097 pulls that check forward from a later sweep into certification.
+
+### What changed
+
+- **New gate G097 (`requirement_mechanism_correspondence_gate`).** When `spec.md`/`design.md`/scope files name a concrete mechanism (PKCE, OAuth2, refresh_token, CSRF, HMAC, mTLS, SAML, WebAuthn, TOTP, Content-Security-Policy, HSTS, Idempotency-Key), the guard greps the scope's declared implementation files (same backtick-path extraction as G028) for that mechanism or a known synonym. Pure comment lines are stripped before matching, so a `// TODO: PKCE` over bearer-only code does NOT count as implementing PKCE.
+- **Warn-and-require-justification, not blind hard-block.** A named mechanism is cleared by EITHER code evidence OR an explicit disclosure — a `## Requirement-Mechanism Justifications` section (in `spec.md` or `report.md`) or a `Mechanism-Justification: <mechanism> — <reason>` line. A legitimate differently-named mechanism is never blocked; only a mechanism named with NEITHER code evidence NOR a justification is a finding. Honest disclosure over mechanical green.
+- **Two advisory nudges (never change the exit code).** (#4) a security mechanism named with no negative/rejection assertion in the scope's tests — the environment-independent adversarial case that fails if the bug is reintroduced; (#3) a live-tier (integration/e2e) test backed only by an in-process fake server (`httptest.Server`/`MockWebServer`/`WireMock`) that does not exercise the real external contract.
+- **Grandfather clause.** Specs whose `state.json.createdAt` is absent or earlier than 2026-06-08 are WARN-only, so the upgrade never retroactively blocks closed downstream work; only specs created on/after the cutoff get blocking enforcement.
+- **Wiring.** `bubbles/scripts/requirement-mechanism-guard.sh` + hermetic `requirement-mechanism-guard-selftest.sh`; registered in `bubbles/registry/gates.yaml` (and the generated `bubbles/workflows.yaml` gates block); invoked by `state-transition-guard.sh` as Check 36; persistent regression `tests/regression/test_19_requirement_mechanism.sh`; wired into `framework-validate.sh`.
+- **Gate id G096 is intentionally skipped** — it was burned by the reverted phantom 7.3.0 orchestrator-artifact-write-guard experiment (see 7.3.1/7.3.2 below) and is not reused, to keep the historical record unambiguous.
+
 ## v7.3.2 — installer prunes stale framework scripts on upgrade
 
 > *"When you swap the engine, Bubbles, you take the old busted one OUT — you don't just leave it rattlin' in the trunk."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
