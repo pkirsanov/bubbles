@@ -12,6 +12,21 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.6.0 — goal scenario compiler: cross-repo, approval-gated, depth-safe missions
+
+> *"One plan, boys. From the napkin to the park bein' online — and nobody deploys till I say go."*
+
+**Theme:** Operators kept asking for one outcome bigger than a single spec — "get this repo ready for my target and ship it; the adapter repo owns the target details; deliver everything, deploy, then stand up ongoing ops." Until now that meant either a priority-picker (`iterate`, wrong semantics) or hand-running a chain of modes. v7.6.0 adds the **Goal Scenario Compiler**: `bubbles.goal` (single outcome) and `bubbles.sprint` (multi outcome) compile a high-level outcome into a typed, dependency-ordered, possibly cross-repo DAG whose nodes each resolve to an EXISTING workflow mode or specialist — no new per-journey workflow modes, no orchestrator nesting.
+
+### What changed
+
+- **New shared contract `agents/bubbles_shared/scenario-compile.md`.** Defines the scenario DAG schema, node types (`diagnostic`/`planning`/`delivery`/`verification`/`action`/`ongoing-ops`), the per-repo execution + per-repo validate-owned certification boundary, the pre-mutation approval-token gate for host-mutating action nodes (the propagate pattern), the runtime plan/ledger under `.specify/runtime/`, and the root Outcome Contract (Gate G070 shape) verified at the end.
+- **`bubbles.super` is scenario-aware (resolver only).** Its `RESOLUTION-ENVELOPE` gains optional cross-repo fields (`goalClass`, `primaryRepo`, `supportingRepos`, `targetEnvironment`, `deploymentModel`, `constraints`, `compositionHint`) plus a scenario-detection resolution rule and a discovery-source row. `super` still resolves intent ONLY — it never compiles or executes the DAG.
+- **`bubbles.goal` / `bubbles.sprint` compile + execute.** goal converges a single declared outcome; sprint executes a multi-outcome mission in dependency order (not effort-reorder). Both keep execution depth ≤ 1 by parent-expanding each node in the top-level runtime.
+- **New lint `bubbles/scripts/scenario-compile-lint.sh` + hermetic selftest.** Validates a compiled scenario DAG: no node resolves to a `requiresTopLevelRuntime` fan-out mode (Gate G064 depth safety — the forbidden set is DERIVED from `modes.yaml` so it never drifts), every node references a real mode/agent and a declared repo, action nodes are fully gated (`approvalRequired` + `riskClass` + `opsPacket`), `dependsOn` is an acyclic DAG, and `rootOutcome` is a complete Outcome Contract. Wired into `framework-validate.sh`; second-line persistent regression at `tests/regression/test_20_scenario_compile.sh`.
+- **Routing + discovery.** `bubbles/intent-routes.yaml` gains scenario phrases → (`bubbles.goal`, `autonomous-goal`) and (`bubbles.sprint`, `autonomous-sprint`). New capability-ledger entry `cross-repo-scenario-orchestration`. New recipe `docs/recipes/cross-repo-scenario.md` (#54), WORKFLOW_MODES "Goal Scenarios Are Not Workflow Modes" section, and TPB aliases `i-got-a-plan-boys` (goal) / `the-whole-operation` (sprint).
+- **No new certification gate, no new fan-out mode.** The scenario is data + a lint, mirroring the observability/intent-routes lint pattern. Completion stays spec/scope/DoD/validate-owned per repo (Gates G024/G025/G056).
+
 ## v7.5.0 — transparent multi-root MCP: installer auto-registers a unique per-repo server id
 
 > *"You can't share one remote between four trailers and expect the TV to come on, Bubbles. Everybody gets their own clicker."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

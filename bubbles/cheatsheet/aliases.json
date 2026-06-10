@@ -5,6 +5,16 @@
     "quote": "Bubbles is pulling the strings, boys."
   },
   {
+    "alias": "i-got-a-plan-boys",
+    "maps_to": "bubbles.goal",
+    "quote": "I got a plan, boys, and it's a good one — the whole thing, start to finish."
+  },
+  {
+    "alias": "the-whole-operation",
+    "maps_to": "bubbles.sprint",
+    "quote": "We're runnin' the whole operation now — review, deliver, deploy, the works."
+  },
+  {
     "alias": "under-the-light",
     "maps_to": "bubbles.grill",
     "quote": "Let's get it under the light and see if it survives."
