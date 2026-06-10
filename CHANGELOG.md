@@ -12,6 +12,19 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.5.0 — transparent multi-root MCP: installer auto-registers a unique per-repo server id
+
+> *"You can't share one remote between four trailers and expect the TV to come on, Bubbles. Everybody gets their own clicker."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** The Bubbles MCP server shipped since v6.0, but registering it was a manual copy-the-sample-config step, and every repo used the same server id (`bubbles`). VS Code 1.118 deduplicates MCP servers that share a name and **disables all but one** — so in a multi-root workspace with several Bubbles repos, only one repo's server stayed enabled and the rest silently went dark (showing a perpetual "refresh tools" and never being used). The fix makes registration automatic and collision-proof: the installer writes a **unique per-repo** server id so every repo's server stays enabled, and the agent uses it with no manual steps beyond VS Code's one-time trust prompt.
+
+### What changed
+
+- **New installer step `register_mcp_vscode`.** `install.sh` now writes/merges a `bubbles-<repo-slug>` server entry into the repo-root `.vscode/mcp.json` on every install/upgrade. The slug is derived from the repo directory name (lowercase, non-alphanumeric → `-`). The step is idempotent, creates the file if absent, migrates a legacy generic `bubbles` entry (preserving any operator-added `env`), leaves every other server in the file untouched, and skips an unparseable file rather than clobbering it. python3-gated; warns (never fails) when python3 is absent.
+- **Declared in the installer manifest.** `bubbles/installer/installer.yaml` gains a `register_mcp_vscode` step (new `mcp_register` step type, marker `Registering Bubbles MCP server`) so `generate-installer.sh --check` and its adversarial selftest enforce the step stays present.
+- **Why unique ids (VS Code 1.118 dedup).** When multiple workspace folders register a server under the same name, VS Code keeps only the most-specific one enabled and disables the others. A per-repo id sidesteps the dedup so all repos' servers coexist and stay enabled. The default Agent auto-selects enabled MCP tools, so transparent use needs no agent tool-list edits; the only remaining gate is VS Code's one-time per-server trust confirmation (a security control the installer does not bypass).
+- **Docs.** `docs/MCP.md` (auto-registration + multi-root troubleshooting), `docs/guides/AI_ENVIRONMENT.md` and `agents/bubbles_shared/project-config-contract.md` (Bubbles manages exactly its one unique-id entry; the rest of `.vscode/mcp.json` stays project-owned).
+
 ## v7.4.0 — requirement-mechanism correspondence gate (G097): named mechanism must trace to code or a disclosed justification
 
 > *"Sayin' you put a deadbolt on the door don't mean there's a deadbolt on the door, Bubbles. I gotta be able to grab the handle and check."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

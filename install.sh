@@ -321,6 +321,96 @@ if [[ -d "$TEMP_DIR/bubbles/mcp" ]]; then
   ok "$(find "${TARGET}/bubbles/mcp" -type f 2>/dev/null | wc -l) MCP file(s) installed"
 fi
 
+# ── Register the Bubbles MCP server in .vscode/mcp.json (unique id) ────
+# VS Code reads each workspace folder's own .vscode/mcp.json. When several
+# folders in a multi-root workspace all register a server under the SAME
+# generic id ("bubbles"), the editor's MCP gateway cannot disambiguate the
+# duplicates and silently refuses to start any of them — the server shows a
+# perpetual "Update Tools"/refresh state and never connects or surfaces its
+# tools. To make the server start cleanly in single- AND multi-root setups,
+# we register it under a UNIQUE per-repo id (bubbles-<repo-slug>) derived
+# from the repo directory name, and we manage ONLY that one entry. Every
+# other server in the file is operator-owned and left untouched; the file
+# itself remains project-owned. A legacy generic "bubbles" entry is migrated
+# to the unique id (its operator-added env is preserved). This step is a
+# no-op on re-install when the entry is already current.
+if command -v python3 >/dev/null 2>&1; then
+  info "Registering Bubbles MCP server in .vscode/mcp.json (unique per-repo id)..."
+  mcp_repo_basename="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+  mcp_repo_slug="$(printf '%s' "$mcp_repo_basename" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed -e 's/[^a-z0-9]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//')"
+  [[ -n "$mcp_repo_slug" ]] || mcp_repo_slug="repo"
+  mcp_server_id="bubbles-${mcp_repo_slug}"
+  mkdir -p .vscode
+  set +e
+  BUBBLES_MCP_SERVER_ID="$mcp_server_id" python3 - ".vscode/mcp.json" <<'PYEOF'
+import json
+import os
+import sys
+
+path = sys.argv[1]
+server_id = os.environ["BUBBLES_MCP_SERVER_ID"]
+canonical = {
+    "type": "stdio",
+    "command": "python3",
+    "args": ["${workspaceFolder}/.github/bubbles/mcp/server.py"],
+    "env": {"BUBBLES_MCP_LOG_LEVEL": "INFO"},
+}
+
+original_text = None
+doc = {}
+if os.path.isfile(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            original_text = handle.read()
+        doc = json.loads(original_text) if original_text.strip() else {}
+    except (ValueError, OSError):
+        sys.exit(3)  # not parseable JSON — leave the operator's file untouched
+
+if not isinstance(doc, dict):
+    sys.exit(3)
+
+servers = doc.get("servers")
+if not isinstance(servers, dict):
+    servers = {}
+
+# Preserve operator-added env when migrating a legacy generic "bubbles"
+# entry (or refreshing our own unique entry) to the unique per-repo id.
+preserved_env = {}
+for key in ("bubbles", server_id):
+    existing = servers.get(key)
+    if isinstance(existing, dict) and isinstance(existing.get("env"), dict):
+        preserved_env.update(existing["env"])
+
+if server_id != "bubbles":
+    servers.pop("bubbles", None)
+
+entry = dict(canonical)
+merged_env = dict(canonical["env"])
+merged_env.update(preserved_env)
+entry["env"] = merged_env
+servers[server_id] = entry
+doc["servers"] = servers
+
+new_text = json.dumps(doc, indent=4) + "\n"
+if original_text == new_text:
+    sys.exit(4)  # already registered and current — nothing to write
+
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write(new_text)
+sys.exit(0)
+PYEOF
+  mcp_register_rc=$?
+  set -e
+  case "$mcp_register_rc" in
+    0) ok "Bubbles MCP server registered as '${mcp_server_id}' in .vscode/mcp.json" ;;
+    4) ok "Bubbles MCP server already current as '${mcp_server_id}' in .vscode/mcp.json" ;;
+    3) warn ".vscode/mcp.json is not valid JSON — left it untouched. Add a '${mcp_server_id}' server entry by hand (see ${TARGET}/bubbles/mcp/clients/vscode.json)." ;;
+    *) warn "Could not register Bubbles MCP server in .vscode/mcp.json (python3 exit ${mcp_register_rc})." ;;
+  esac
+else
+  warn "python3 not found — skipped .vscode/mcp.json registration (the Bubbles MCP server requires python3)."
+fi
+
 # ── Install workflow alias map (v6.0 / B4) ────────────────────────────
 # bubbles/workflows/ holds the v5 -> v6 primitive+tag alias map and any
 # other future per-workflow-family YAML. The mode-resolver consults the
