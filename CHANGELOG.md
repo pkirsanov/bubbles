@@ -12,6 +12,21 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.7.0 — restricted orchestrators bind the per-repo MCP server (token materialization + newline fix)
+
+> *"You renamed everybody's clicker to stop the fightin', Bubbles — but then the five remotes in the drawer were still callin' out the old name and turnin' on nothin'. Make 'em say the new name."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** v7.5.0 gave the framework MCP server a UNIQUE per-repo id (`bubbles-<repo-slug>`) so VS Code 1.118+ stops dedup-disabling it in multi-root workspaces. But the five restricted orchestrators (`bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, `bubbles.bug`, `bubbles.workflow`) ship a `tools:` allowlist that still named the generic `bubbles` server — now a dead token the IDE silently ignores. So the server started, but those five autonomous agents never bound it; they fell back to bash twins. v7.7.0 closes that gap: the `bubbles` token is the canonical **placeholder**, materialized per-repo to `bubbles-<repo-slug>` in the installed agents so they actually bind the running server. Investigating it also surfaced a latent newline bug in the v7.1 grant machinery, fixed here.
+
+### What changed
+
+- **Per-repo MCP server-token materialization.** `bubbles/scripts/mcp-grant-reconcile.sh` gains `bubbles_mcp_server_token`, which returns `bubbles-<repo-slug>` in a downstream install layout (`.github/bubbles/scripts`) and the canonical `bubbles` in the Bubbles source layout. The slug algorithm is byte-identical to `install.sh`'s MCP-registration step, so the agent token always matches the registered `.vscode/mcp.json` server id. `inject` materializes the placeholder; `reconcile` (used by the downstream write guard) normalizes the per-repo token back to `bubbles` before hashing — so the canonical `.checksums` still matches and a materialized agent stays drift-clean, exactly like a stripped grant. The Bubbles source repo keeps canonical `bubbles` (no materialization).
+- **`mcp sync` materializes even with no operator grants.** Because `inject` now materializes, the existing `install.sh` post-copy `mcp sync` step rewrites the five orchestrators to the per-repo token automatically — no new install step, no operator action.
+- **Latent trailing-newline bug fixed.** `agents/bubbles.workflow.agent.md` shipped without a trailing newline; the grant-sync awk rewrite always re-emits a final newline, so any `mcp sync` added a byte and drifted `workflow` from `.checksums` (breaking the v7.1 grant feature for that one agent). The agent now ends with a newline, and `mcp-grant-selftest.sh` asserts all five restricted source agents do (regression T13).
+- **Selftest coverage.** `mcp-grant-selftest.sh` grows to 22 assertions: the materialization round-trip (inject → `bubbles-<slug>`; reconcile → canonical), a downstream end-to-end reconcile that proves the write guard stays green, the "grant equal to the server token is not double-appended" case, and the restricted-agent newline invariant.
+- **Docs.** `agents/bubbles_shared/project-config-contract.md` (`mcp.grants` contract), `docs/MCP.md`, and `docs/guides/AGENT_MANUAL.md` document materialization and the write-guard normalization.
+- **No new gate, no new workflow mode.** Pure lib + selftest change, consistent with the v7.1 grant trust model: the trust anchor stays on the canonical `.checksums`.
+
 ## v7.6.0 — goal scenario compiler: cross-repo, approval-gated, depth-safe missions
 
 > *"One plan, boys. From the napkin to the park bein' online — and nobody deploys till I say go."*
