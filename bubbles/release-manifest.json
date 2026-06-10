@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "version": "7.6.0",
-  "gitSha": "0367728967909a098d4f959cbcde070f093dcab7",
-  "generatedAt": "2026-06-10T05:54:44+00:00",
+  "gitSha": "63980f5845679b4d163a1cac9ac3b1c7b0061d63",
+  "generatedAt": "2026-06-10T07:12:06+00:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
   "validatedSurfaces": ["framework-validate", "release-check", "release-manifest-selftest", "install-provenance-selftest", "finding-closure-selftest", "interop-import-selftest", "trust-doctor-selftest"],
   "docsDigest": "088263a72f5a8f7eb3b6e53536f1492fa621a548da36afaecb8cd58cc5b8a80f",
-  "managedFileCount": 534,
+  "managedFileCount": 538,
   "managedFileChecksums": [
     {"path": "bubbles/scripts/action-risk-registry-lint.sh", "sha256": "a4728a5b86849b6d39652e79b266344e320b4bbb26751569ca8dc164acb3c9c0"},
     {"path": "bubbles/scripts/agent-ownership-lint-selftest.sh", "sha256": "5ad850f4c45a424bf5825555ac668f3f96fb1f7dadfecdfca8f6c1de9eb42d76"},
@@ -23,13 +23,13 @@
     {"path": "bubbles/scripts/batch-promotion-lint.sh", "sha256": "4259d96a42c8f873e6171b5db061bcda79b037211aaf18793b4b8e0000a50e90"},
     {"path": "bubbles/scripts/capability-foundation-guard-selftest.sh", "sha256": "4c379f2158398392773184609b6a43803f4024cc0cb2bafbe63901fba05e022a"},
     {"path": "bubbles/scripts/capability-foundation-guard.sh", "sha256": "94c4170947ad320772dbbfdab9379cfd28ff27dca84736fcc74c6294dda344d2"},
-    {"path": "bubbles/scripts/capability-freshness-selftest.sh", "sha256": "bb0073c84f035ec8767cad7485913e14e861606e194035df057c054308e2e989"},
+    {"path": "bubbles/scripts/capability-freshness-selftest.sh", "sha256": "4f6ca7b76f838536daac5ceac0dd5315c912de45ae24ac1a74e9d393d71bd650"},
     {"path": "bubbles/scripts/capability-ledger-selftest.sh", "sha256": "a7f2aca20572a71bbfee5c4f5432fb1f9ecc634e3daef2cb4e3ad6be4536e5d6"},
     {"path": "bubbles/scripts/cli.sh", "sha256": "71293bd51afa43b449ff4f285037e744f3fd97fcae77379d6f18198c2978413c"},
     {"path": "bubbles/scripts/code-search.sh", "sha256": "7b919681ec9ac70ef6706e792e0c4e55c2b3d2651a99e13e515813ea6848d62d"},
     {"path": "bubbles/scripts/compaction-discipline-guard-selftest.sh", "sha256": "c58fc3cec65698d001d90ae62a096516e7ecea2c804f9a52233eaa1680286dd4"},
     {"path": "bubbles/scripts/compaction-discipline-guard.sh", "sha256": "6abb4f4f17960e50c9b35719dda34b336122fec0ed5572667834048a7338af7c"},
-    {"path": "bubbles/scripts/competitive-docs-selftest.sh", "sha256": "3b54c8d3629f75b01db1d6336bcf756182c169ed8863349320b2ac751c481465"},
+    {"path": "bubbles/scripts/competitive-docs-selftest.sh", "sha256": "c2ca3a14ee09d0308c054ef5e9fbffa994608e19035bb5cde1d761218ef12ec7"},
     {"path": "bubbles/scripts/context-compactor-selftest.sh", "sha256": "e9bc29c489796110340be5814501cdafe21decbbada6f48fa129b93f279cf62e"},
     {"path": "bubbles/scripts/context-compactor.sh", "sha256": "ccc3c847ff04ff75e472153d28e0e23b6e880f37f72fc997ccdec322fbcb660c"},
     {"path": "bubbles/scripts/continuation-routing-selftest.sh", "sha256": "408aa97d8ce7f225bb0398f04479d6bdcaa1063ecf9bce53662bd9577d1570c2"},
@@ -162,6 +162,8 @@
     {"path": "bubbles/scripts/retro-framework-health.sh", "sha256": "2798cbf81f4ddf31010a8f1ce71e436f0fd9cb2e4ca0a47e5406faa8394e382e"},
     {"path": "bubbles/scripts/runtime-lease-selftest.sh", "sha256": "5f77bed6694076db00738582dcb22eafb13c25e099f65e51d72270ce65f8dd4d"},
     {"path": "bubbles/scripts/runtime-leases.sh", "sha256": "ba5fc34d885aaa57bacc7dcd58f383ea741b012cc6810d7ae4d3c210d13885c2"},
+    {"path": "bubbles/scripts/scenario-compile-lint-selftest.sh", "sha256": "086771ebad24ed5ba567fa3574e94296f8007ae30b72dd86f3782e24bc9eb564"},
+    {"path": "bubbles/scripts/scenario-compile-lint.sh", "sha256": "7ecb73651b4710d478bbc63a073b2675d854377be015e710b969d2daaf945de5"},
     {"path": "bubbles/scripts/shellcheck-lint-selftest.sh", "sha256": "237fe09f70f8160ca2d94e21c4e1e41e5a55ebe7daa4ea1b9c5ac30dbb7c77d9"},
     {"path": "bubbles/scripts/shellcheck-lint.sh", "sha256": "b43fca27e63d5895101ae01ea1a04847d2b8560a9d36a34d35993c27dce0fad3"},
     {"path": "bubbles/scripts/skill-evolution.sh", "sha256": "d3200b28a7b1452885fa2497f287b3479bdf252018146bb5ba37323fb533c943"},
@@ -311,6 +313,7 @@
     {"path": "docs/recipes/choose-review-path.md", "sha256": "3a311e360f134b2c3c340dfcbf95c5b7d795394df616cbb0e0dbc1e4530a16b0"},
     {"path": "docs/recipes/code-health-analysis.md", "sha256": "b1d14811ea3895ef13419e65890fe384c7f9657379164e37434886bd9d7bf2fe"},
     {"path": "docs/recipes/cross-model-review.md", "sha256": "22243274fd87dde7b26b004a9a2a662e5fd7eb8bf04acffb731cf6fdf7d62834"},
+    {"path": "docs/recipes/cross-repo-scenario.md", "sha256": "935c3ee53795414a31600667346ccc7cac5a20d4832e1103e8e6e227b734ebb4"},
     {"path": "docs/recipes/custom-gates.md", "sha256": "7b4c8c8f277e249c37f68a3ac03b6a50a0ad555e64f1f16d9218fab6cdece874"},
     {"path": "docs/recipes/design-a-capability.md", "sha256": "885fe9e9c551340a1fc61b6660d4d3dd52340574bcfdacd4d61edb9f2a500f13"},
     {"path": "docs/recipes/devops-release-coordination.md", "sha256": "98c8e2471b4a062aad9f007cefee3b99d552e3da742a33c070f246a96a7a6780"},
@@ -447,6 +450,7 @@
     {"path": "agents/bubbles_shared/project-config-contract.md", "sha256": "c773776e46c1c607ada4b1d44a9aad4a40107f14e8fce3b39a7c7df55c05051f"},
     {"path": "agents/bubbles_shared/quality-gates.md", "sha256": "006735bba027c997d15b9b8bef8952d41ca86e494a29e4c4c257ac2d4c0fb5a1"},
     {"path": "agents/bubbles_shared/review-core.md", "sha256": "01ec715e3d17edac8bc96e7d850220198b81654f69e018c8d45a3aae63acbc51"},
+    {"path": "agents/bubbles_shared/scenario-compile.md", "sha256": "6e388df2d1eb315fbd737835e1b9729385681f6bfcd3dbb620d0c8870750472e"},
     {"path": "agents/bubbles_shared/scope-templates.md", "sha256": "7dfbac207482bb88979e9e8ac5b604b05d9b514984913e648a720358c1ae275e"},
     {"path": "agents/bubbles_shared/scope-workflow.md", "sha256": "93f9ef30b48a3f46f036a74120a742a3af53a442824c871e46210d5d6fc80bc2"},
     {"path": "agents/bubbles_shared/state-gates.md", "sha256": "034d45dfd9b56fe21c0682873650a5ece89a4e9271314d67594eb11870f31a9f"},
@@ -545,7 +549,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "cdb5dfe55cc2d83769a35df2a6544ad1c15dea3d3a2fcc6d6f0916908ecdf9e8"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "80d966cfce697ec19fa418011d6cdf1042f52f5d95761e6bb6f477d947e72021"}
   ],
-  "sourceOnlyFileCount": 19,
+  "sourceOnlyFileCount": 20,
   "sourceOnlyFileChecksums": [
     {"path": "tests/regression/test_01_convergence_cap_enforcement.sh", "sha256": "f9a3885b5d5e92caf1d46bca66c1bc9ec4f69ec4f52ada15d99bdec52067bdfa"},
     {"path": "tests/regression/test_02_context_compaction_discipline.sh", "sha256": "0ab5b200cdbee68e94dbf939edec78c8e083acf1ab3d7c2cf5cd7f7e0b96a488"},
@@ -565,6 +569,7 @@
     {"path": "tests/regression/test_16_strict_terminal_status.sh", "sha256": "bd2ed96d4d34c7ba8302d83c5b2d08eab36e66b73a5680ca12e6cf712545f1e5"},
     {"path": "tests/regression/test_17_delivery_implementation_delta.sh", "sha256": "ec92a451afc3d67668db76360ee323b065855d8ea2b7e5086e97b33e4521f8a2"},
     {"path": "tests/regression/test_18_capability_foundation_gate.sh", "sha256": "407a5ee7a8327e9907b1b645386345ff17300dc095071c9d931ba929c4c6b308"},
-    {"path": "tests/regression/test_19_requirement_mechanism.sh", "sha256": "84c6359bd494896a4d5265a2d34ba821d78a23db0c63c9d84152e1aafd14a302"}
+    {"path": "tests/regression/test_19_requirement_mechanism.sh", "sha256": "84c6359bd494896a4d5265a2d34ba821d78a23db0c63c9d84152e1aafd14a302"},
+    {"path": "tests/regression/test_20_scenario_compile.sh", "sha256": "6f098d57dc900e464e524ea7ac5afb9894ddce06c7bb08c8c5dfc116a5966bbd"}
   ]
 }
