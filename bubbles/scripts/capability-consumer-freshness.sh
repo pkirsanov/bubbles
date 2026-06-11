@@ -204,8 +204,18 @@ for key in "${shipped_keys[@]}"; do
     yq -r '.capabilities["'"$key"'"].consumers[]?' "$LEDGER" 2>/dev/null || true
   )
 
-  if [[ "${#consumers[@]}" -eq 0 ]]; then
-    err "ORPHAN: shipped capability '$key' declares no consumers (empty/absent consumers list)."
+  # Count NON-EMPTY (substance) consumers. A list of only blank/whitespace
+  # entries is an ORPHAN just like an absent list — "declares a consumer" means
+  # a real path, not a blank line. Counting array size alone would let
+  # `consumers: ["", ""]` pass with zero real consumers (shape-not-substance
+  # hole — the exact FAILURE CONDITION this gate exists to close).
+  real_consumers=0
+  for consumer in "${consumers[@]}"; do
+    [[ -n "${consumer//[[:space:]]/}" ]] && real_consumers=$((real_consumers + 1))
+  done
+
+  if [[ "$real_consumers" -eq 0 ]]; then
+    err "ORPHAN: shipped capability '$key' declares no real consumers (empty/absent/blank-only consumers list)."
     err "        A shipped capability MUST name >=1 existing executable surface that uses it."
     err "        Wire a real consumer, or downgrade state to partial/proposed."
     findings=$((findings + 1))
@@ -213,7 +223,14 @@ for key in "${shipped_keys[@]}"; do
   fi
 
   for consumer in "${consumers[@]}"; do
-    [[ -z "$consumer" ]] && continue
+    # A blank/whitespace-only entry is MALFORMED — neither a real path nor a
+    # deliberate omission. Fail loud rather than silently skipping it, so a
+    # stray blank line can never dilute the consumer list undetected.
+    if [[ -z "${consumer//[[:space:]]/}" ]]; then
+      err "MALFORMED: shipped capability '$key' has a blank/empty consumer entry; remove it or replace with a real path."
+      findings=$((findings + 1))
+      continue
+    fi
     if [[ -e "$REPO_ROOT/$consumer" ]]; then
       checked_paths=$((checked_paths + 1))
     else

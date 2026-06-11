@@ -147,6 +147,47 @@ capabilities:
 YAML
 assert_stderr_contains "adversarial: one-good-one-dangling still fails" 1 "ghost.sh" bash "$GUARD" --repo-root "$R4"
 
+# Case 4b (adversarial — shape-not-substance hole): shipped + ONLY blank/empty
+# consumer entries. The list is non-empty (yq emits 2 elements), so a naive
+# array-size orphan check would PASS it with zero real consumers. The guard
+# MUST count NON-EMPTY consumers and flag this as an ORPHAN (exit 1).
+R4B="$WORK/r4b-allblank"
+make_repo "$R4B"
+cat >"$R4B/bubbles/capability-ledger.yaml" <<'YAML'
+version: 1
+capabilities:
+  all-blank-cap:
+    label: All-blank consumers
+    state: shipped
+    summary: A shipped cap whose consumers are all empty strings has no real consumer.
+    consumers:
+    - ""
+    - ""
+YAML
+assert_stderr_contains "adversarial: all-blank consumers is an ORPHAN" 1 "ORPHAN" bash "$GUARD" --repo-root "$R4B"
+assert_stderr_contains "all-blank ORPHAN names the capability" 1 "all-blank-cap" bash "$GUARD" --repo-root "$R4B"
+
+# Case 4c (adversarial): shipped + one REAL consumer + one blank entry. The real
+# consumer means it is NOT an orphan, but the blank entry is MALFORMED and MUST
+# fail loud (exit 1) rather than being silently skipped — a stray blank line can
+# never dilute the consumer list undetected.
+R4C="$WORK/r4c-realplusblank"
+make_repo "$R4C"
+: >"$R4C/bubbles/scripts/real.sh"
+cat >"$R4C/bubbles/capability-ledger.yaml" <<'YAML'
+version: 1
+capabilities:
+  real-plus-blank-cap:
+    label: Real plus blank consumer
+    state: shipped
+    summary: A real consumer plus a stray blank entry must still fail loud on the blank.
+    ownerSurface: bubbles/scripts/real.sh
+    consumers:
+    - bubbles/scripts/real.sh
+    - ""
+YAML
+assert_stderr_contains "adversarial: real+blank consumer fails MALFORMED" 1 "MALFORMED" bash "$GUARD" --repo-root "$R4C"
+
 # Case 5: proposed + no consumers → no-op PASS
 R5="$WORK/r5-proposed"
 make_repo "$R5"

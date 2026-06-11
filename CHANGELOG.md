@@ -12,6 +12,25 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.11.1 — G127 shape-not-substance fix + gate-catalog band
+
+> *"A lock that opens for a blank key ain't a lock at all, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A critical review of the v7.11.0 G127 delivery found one real defect in the new guard and two gate-catalog gaps. All fixed; full framework-validate green.
+
+### Fix — empty/blank-only `consumers:` no longer pass G127 (shape-not-substance hole)
+
+- **`capability-consumer-freshness.sh` now counts NON-EMPTY consumers.** v7.11.0 based the ORPHAN check on the raw array size, so a `state: shipped` capability declaring `consumers: ["", ""]` (all blank) slipped through with exit 0 and the self-incriminating message *"OK … 0 consumer path(s) verified present."* — the exact shape-not-substance FAILURE CONDITION the IMP-004 risk register names. The guard now orphans a blank-only list and flags any stray blank entry as `MALFORMED` (fail loud) instead of silently `continue`-skipping it.
+- **Selftest 16 → 19 cases:** added all-blank → ORPHAN, all-blank names the capability, and real+blank → MALFORMED adversarial cases. Proven: the exact `consumers: ["", ""]` fixture that returned exit 0 in v7.11.0 now returns exit 1.
+
+### Fix — gate-catalog quick-ref is ID-current (G110–G127 band)
+
+- **`skills/bubbles-quality-gates-catalog/SKILL.md`** previously stopped at G100. Added a compact `G110–G126` band row (release-train / upkeep / propagation / incident / framework-health / model-tier gates) + a dedicated `G127` row, restoring the quick-ref's "look up any gate by ID" completeness.
+
+### Identified improvement — IMP-005 (deeper rationale-doc backfill)
+
+- **Filed `improvements/IMP-005-curated-gate-catalog-backfill.md`** (per G095 discovered-issue disposition): the rationale-bearing module `agents/bubbles_shared/quality-gates.md` enumerates gates only through ~G081 and needs a G082–G127 backfill. Scoped as docs-only with an optional non-blocking freshness advisory — too large for a drive-by review edit, so tracked as a proposal.
+
 ## v7.11.0 — capability-consumer freshness gate (G127, IMP-004)
 
 > *"You can't be the decency police and let your own trailer go to shit, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
