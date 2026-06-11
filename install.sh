@@ -286,6 +286,25 @@ if [[ -d "$TEMP_DIR/bubbles/adapters" ]]; then
   ok "$(find "${TARGET}/bubbles/adapters" -type f 2>/dev/null | wc -l) adapter file(s) installed"
 fi
 
+# ── Observability posture reminder (READ-ONLY; never writes config) ───
+# IMP-001 SCOPE-5 (T5.4). After the framework/adapter copy, surface a one-line
+# reminder when the repo has NOT declared an observability posture, or when its
+# opt-out has expired. This is ADVISORY only: it resolves the posture via the
+# G098 guard's read-only `--print-state` query and PRINTS a reminder. It does
+# NOT write or scaffold `bubbles-project.yaml` — the operator declares posture
+# later via `/bubbles.setup focus: observability`. A missing yq parser resolves
+# to UNAVAILABLE (no reminder); never a failure.
+OBS_POSTURE_GUARD="${TARGET}/bubbles/scripts/observability-posture-guard.sh"
+if [[ -f "$OBS_POSTURE_GUARD" ]]; then
+  OBS_STATE="$(bash "$OBS_POSTURE_GUARD" --print-state --repo-root . 2>/dev/null || echo 'UNAVAILABLE')"
+  case "$OBS_STATE" in
+    UNDECLARED)
+      warn "Observability posture is UNDECLARED — run '/bubbles.setup focus: observability' to declare wired|opted-out. (advisory; no config was written)" ;;
+    OPTED-OUT-EXPIRED*)
+      warn "Observability opt-out EXPIRED (revisitAfter ${OBS_STATE#OPTED-OUT-EXPIRED|}) — run '/bubbles.setup focus: observability' to re-open the decision. (advisory; no config was written)" ;;
+  esac
+fi
+
 # ── Install JSON Schemas (v5.0.1) ─────────────────────────────────────
 # Schemas for workflows/capability-ledger/adoption-profiles let downstream
 # repos run yaml-schema-validate.sh locally before commits.

@@ -12,7 +12,7 @@
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-40-58a6ff?style=flat-square" alt="40 agents">
-  <img src="https://img.shields.io/badge/gates-103-3fb950?style=flat-square" alt="103 gates">
+  <img src="https://img.shields.io/badge/gates-106-3fb950?style=flat-square" alt="106 gates">
   <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_40_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+40 v5 aliases)">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html"><strong>Visual Cheatsheet</strong></a> · <a href="docs/CHEATSHEET.md">Markdown Cheatsheet</a> · <a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a> · <a href="docs/CATALOG.md">Recipe Catalog</a> · <a href="docs/recipes/">Recipes</a>
+  <a href="https://pkirsanov.github.io/bubbles/docs/its-not-rocket-appliances.html"><strong>Visual Cheatsheet</strong></a> · <a href="docs/CHEATSHEET.md">Markdown Cheatsheet</a> · <a href="docs/guides/EFFECTIVE_PROMPTING.md">Effective Prompting</a> · <a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a> · <a href="docs/CATALOG.md">Recipe Catalog</a> · <a href="docs/recipes/">Recipes</a>
 </p>
 
 ---
@@ -45,7 +45,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>40 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>103 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>106 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 40 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
@@ -465,7 +465,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 103 Quality Gates
+### 106 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
@@ -497,7 +497,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 18 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 19 shipped, 1 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->

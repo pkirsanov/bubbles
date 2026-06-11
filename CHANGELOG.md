@@ -12,6 +12,36 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.10.0 — observability as a first-class citizen + operator/contributor guidance
+
+> *"You can't fix what you can't see, Bubbles. Put the kitty-cam on prod and watch it like the kitties."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Two improvements ship together. **IMP-001** makes observability a first-class Bubbles concern: every repo must *declare a posture* (`wired` / `opted-out` / undeclared), wired repos must *prove telemetry + SLOs* in integration/e2e/stress, and ops agents *consume live operate-plane telemetry* during incidents, promotes, and SLO reviews — while opt-out stays a legitimate, recorded, expiring choice. It also converts the v5 observability-adapter layer (which shipped mechanism + lint + skill but had **zero wired consumers** — a G029 orphan foundation) into a live capability. **IMP-003** closes two guidance gaps: an operator-facing effective-prompting guide and a contributor-facing MCP "when to graduate a script to a tool" rubric.
+
+### IMP-001 — Observability first-class
+
+- **New contract `traceContracts.observability`** (nested under the existing, already-parsed `traceContracts:` key — never renamed, R2-C). Carries `schemaVersion`, tri-state `posture`, `policy.undeclaredPosture`, `decision`, `optOut` (reasonCode/reason/revisitAfter/approvedBy), two-plane `endpoints` (validate→ephemeral test stack, operate→prod), and `slos`. **Clean cutover:** the orphan v5 `liveTelemetryEndpoints` flat map is DELETED in the same change (no consumer existed, so no deprecation cycle).
+- **Three new gates.** **G098** `observability_posture_declared_gate` (WARN-default nag; project-flippable to blocking), **G099** `observability_opt_out_freshness_gate` (route-required when committed `revisitAfter` lapses), **G100** `observability_slo_evidence_gate` (BLOCKING when `posture: wired` and an instrumented scope targets a workflow with an `slo:`). **G080** trace-contract language upgraded SHOULD → MUST-when-wired; **G026** stress/load now cites the SLO registry when wired (no double-enforcement with G100). Registry now defines **106 gates**. G096 stays burned.
+- **New guards + selftests** (all NO-bypass, hermetic, framework-validate-wired): `observability-posture-guard.sh`, `observability-opt-out-guard.sh`, `observability-slo-guard.sh`, `observability-endpoint-resolve.sh` (plane→adapter+profile resolver, fail-loud, validate-plane cannot read operate env), plus `observability-check.sh` (one-shot posture+SLO+trace verdict). SLO guard fails loud on malformed/wrong-workflow evidence before any numeric compare; selftests include **adversarial-observability** cases (a regressed observed value / dropped metric MUST fail).
+- **Breaking adapter-payload normalization (R2-D).** `none.sh` now returns `[]` for `fetch-alerts` and `{}` for the other three verbs; `prometheus.sh` normalizes the raw alerts envelope to a bare array; `observability-adapter-lint.sh` asserts per-verb shapes (array for alerts, object for the rest) with an adversarial case proving a raw provider envelope is rejected.
+- **`bubbles doctor` Observability Posture line** (advisory; never changes doctor's exit code) renders WIRED / OPTED-OUT until <date> / OPT-OUT EXPIRED ⚠ / UNDECLARED ⚠ / EXEMPT.
+- **`bubbles.setup focus: observability`** routine: read-only stack discovery → PROPOSE (`wired` with endpoints+SLO stubs, or `opted-out` with reason/revisit) → WAIT → APPLY; never auto-writes config; handles traceContracts-only migration, wired→opted-out decommission, and the legacy-key clean cutover. `install.sh` prints a non-blocking posture reminder and never writes `bubbles-project.yaml`.
+- **Ops agents consume operate-plane telemetry (orphan → live).** `bubbles.stabilize` fetches alerts/error-rate/deploy-impact FIRST during a wired incident and routes rollback to `bubbles.train`; `bubbles.upkeep` adds a `slo-review` task (weekly, wired only) routing burning SLOs to stabilize (opt-out reminders stay guard/doctor-owned, INV-9); `bubbles.train` gates promote/rollback on operate-plane deploy-impact + SLO burn (read-only, INV-12); `bubbles.devops` owns the wiring-execution boundary. New **MCP tool `check_observability`** (11 tools total) wraps the `observability-check.sh` bash twin; reads flow through `record_evidence` for provenance.
+- **DoD injection + design template.** `scope-workflow.md` auto-adds telemetry-captured + SLO-met DoD items for wired instrumented scopes (with the "3 AM reconstructibility" acceptance heuristic); the `design.md` template gains an optional `### Trace Topology` section (required for wired service-bearing instrumented scopes); `agent-common.md` gains the "evidence is the agent's sensory input" (Loopy-AI) philosophy note. Explicit `observabilityWorkflow` Test Plan field added to `planning-core.md` + `project-config-contract.md`.
+- **Isolation preserved.** Validate-plane telemetry is `env=test*` only (G115); new env-pollution + resolver selftests prove an `env=prod` test write blocks and a validate resolution cannot reach operate env. New template `templates/observability.yaml.tmpl` + fixtures under `bubbles/tests/fixtures/observability/`.
+- **Execution plan:** `improvements/IMP-001-observability-first-class.md` (SCOPE-1..6 delivered in the source repo; SCOPE-7 QF dogfood, SCOPE-8 source/knb posture, SCOPE-9 downstream propagation are applied per-repo).
+
+### IMP-003 — Operator & contributor guidance
+
+- **New operator guide `docs/guides/EFFECTIVE_PROMPTING.md`** — good-request checklist, anti-patterns, and an "intent over runbook" section tying crisp outcomes to `bubbles.goal` / `bubbles.workflow`; linked from `docs/CATALOG.md` + `README.md` and surfaced by `bubbles.super`.
+- **MCP graduation rubric** added to `docs/MCP.md` ("When to graduate a script to an MCP tool") — stay-a-script vs add-a-thin-tool criteria that restate the non-negotiable bash-twin-canonical invariant (the server never holds logic); cross-linked from `docs/v6-mcp-design.md` + `docs/guides/AGENT_MANUAL.md`. Docs-only; no new gate/guard/schema.
+- **Execution plan:** `improvements/IMP-003-operator-contributor-guidance.md`.
+
+### Notes
+
+- No existing repo breaks on upgrade: undeclared posture is WARN by default; the Bubbles source repo auto-resolves to `no-runtime` EXEMPT.
+- Capability ledger, framework stats, cheatsheet, and release manifest regenerated; lockstep propagation to downstream `.github/bubbles/` trees flows via each repo's `install.sh`.
+
 ## v7.9.0 — build-time dependency-source locking + up-front complexity justification
 
 > *"It don't matter how good the lock on the shed is, Bubbles, if you let any stranger hand you the parts that go inside it."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

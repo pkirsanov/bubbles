@@ -1,0 +1,27 @@
+# Posture fixture: MALFORMED. posture is opted-out but the REQUIRED optOut
+# block is absent (a missing optOut/revisitAfter would make the freshness
+# guard a silent no-op).
+# Expectation: rejected as malformed by the SCOPE-2 posture guard (G098).
+traceContracts:
+  observability:
+    schemaVersion: 1
+    posture: opted-out
+    policy:
+      undeclaredPosture: warn
+    decision:
+      decidedAt: 2026-06-11
+      decidedBy: operator
+      decisionSource: "bubbles.setup focus: observability"
+      lastReviewedAt: 2026-06-11
+    # NOTE: no optOut block — this is the malformed condition under test.
+    endpoints:
+      validate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: none }
+        errorRate: { adapter: none }
+        deployImpact: { adapter: none }
+      operate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: none }
+        errorRate: { adapter: none }
+        deployImpact: { adapter: none }

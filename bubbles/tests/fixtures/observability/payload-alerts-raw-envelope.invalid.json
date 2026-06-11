@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "data": {
+    "alerts": [
+      {
+        "labels": { "alertname": "HighLatency", "service": "gateway" },
+        "state": "firing",
+        "activeAt": "2026-06-11T00:00:00Z"
+      }
+    ]
+  }
+}

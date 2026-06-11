@@ -293,7 +293,11 @@
   },
   {
     "term": "observability adapter",
-    "meaning": "`bubbles/adapters/observability/<name>.sh` — pluggable live-telemetry contract. Reference adapters: `none.sh` (default), `prometheus.sh` (requires `PROMETHEUS_BASE_URL` + per-query env vars). Adapters expose `health`, `query-instant`, `query-range`, `series-cardinality` verbs."
+    "meaning": "`bubbles/adapters/observability/<name>.sh` — pluggable live-telemetry contract selected per signal+plane via `traceContracts.observability.endpoints`. Reference adapters: `none.sh` (default; returns `[]` for `fetch-alerts`, `{}` for the other three verbs), `prometheus.sh` (requires `PROMETHEUS_BASE_URL` + per-query env vars). Four verbs: `fetch-alerts`, `fetch-slo-burn`, `fetch-error-rate`, `fetch-deploy-impact`. Two planes: validate (ephemeral test stack, `env=test*`) and operate (prod, read-only)."
+  },
+  {
+    "term": "observability posture",
+    "meaning": "First-class per-repo declaration under `traceContracts.observability.posture`: `wired` (proves captured telemetry + numeric SLOs in integration/e2e/stress) or `opted-out` (recorded + expiring via `revisitAfter`); undeclared nags. Enforced by G098 (posture declared), G099 (opt-out freshness), G100 (SLO evidence — blocking when wired), and G080 (trace contract — MUST-when-wired). `bubbles doctor` surfaces it, `bubbles.setup focus: observability` declares it, and the `check_observability` MCP tool reports a one-shot verdict."
   },
   {
     "term": "framework self-observation",

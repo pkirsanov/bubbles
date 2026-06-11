@@ -288,6 +288,38 @@ if [[ -x "$SCRIPT_DIR/observability-adapter-lint.sh" && -d "$REPO_ROOT/bubbles/a
   run_check "Observability adapter lint (live)" bash "$SCRIPT_DIR/observability-adapter-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/observability-posture-guard-selftest.sh" ]]; then
+  run_check "Observability posture guard selftest (G098)" bash "$SCRIPT_DIR/observability-posture-guard-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-opt-out-guard-selftest.sh" ]]; then
+  run_check "Observability opt-out guard selftest (G099)" bash "$SCRIPT_DIR/observability-opt-out-guard-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-posture-guard.sh" ]]; then
+  run_check "Observability posture guard (live, G098)" bash "$SCRIPT_DIR/observability-posture-guard.sh" --repo-root "$REPO_ROOT"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-opt-out-guard.sh" ]]; then
+  run_check "Observability opt-out guard (live, G099)" bash "$SCRIPT_DIR/observability-opt-out-guard.sh" --repo-root "$REPO_ROOT"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-slo-guard-selftest.sh" ]]; then
+  run_check "Observability SLO guard selftest (G100)" bash "$SCRIPT_DIR/observability-slo-guard-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-slo-guard.sh" ]]; then
+  run_check "Observability SLO guard (live, G100)" bash "$SCRIPT_DIR/observability-slo-guard.sh" --repo-root "$REPO_ROOT"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-endpoint-resolve-selftest.sh" ]]; then
+  run_check "Observability endpoint resolver selftest (SCOPE-3)" bash "$SCRIPT_DIR/observability-endpoint-resolve-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/env-pollution-scan-selftest.sh" ]]; then
+  run_check "Env pollution scan selftest (G115)" bash "$SCRIPT_DIR/env-pollution-scan-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/scenario-compile-lint-selftest.sh" ]]; then
   run_check "Scenario compile lint selftest" bash "$SCRIPT_DIR/scenario-compile-lint-selftest.sh"
 fi

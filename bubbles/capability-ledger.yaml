@@ -65,7 +65,7 @@ capabilities:
   observability-adapter-contract:
     label: Observability adapter contract
     state: shipped
-    summary: traceContracts.liveTelemetryEndpoints selects swappable observability adapters with a four-verb contract; v5 ships none and prometheus reference adapters plus lint/selftest.
+    summary: traceContracts.observability.endpoints selects swappable observability adapters with a four-verb contract across validate and operate planes; ships none and prometheus reference adapters plus lint/selftest.
     ownerSurface: bubbles/adapters/observability
     releaseIntroduced: v5.0.0
     docsRefs:
@@ -76,6 +76,31 @@ capabilities:
     - bubbles/adapters/observability/prometheus.sh
     - bubbles/scripts/observability-adapter-lint.sh
     - bubbles/scripts/observability-adapter-lint-selftest.sh
+    competitorTags:
+    - claude-code
+    - roo-code
+    freshnessTargets:
+    - docs/guides/CONTROL_PLANE_SCHEMAS.md
+    - docs/recipes/observe-production.md
+
+  observability-posture-and-slo-gates:
+    label: Observability posture + SLO/trace evidence gates
+    state: shipped
+    summary: "First-class per-repo observability posture (traceContracts.observability.posture wired | opted-out | undeclared) with recorded, expiring opt-out; wired repos prove captured telemetry + numeric SLO evidence in integration/e2e/stress. Enforced by G098 (posture declared), G099 (opt-out freshness), G100 (SLO evidence, blocking when wired), and G080 (trace contract, MUST-when-wired). bubbles doctor surfaces the posture line; bubbles.setup focus observability declares it; ops agents bubbles.stabilize, bubbles.upkeep, and bubbles.train consume read-only operate-plane telemetry; the check_observability MCP tool reports a one-shot verdict."
+    ownerSurface: bubbles/scripts/observability-posture-guard.sh
+    releaseIntroduced: v7.10.0
+    docsRefs:
+    - docs/guides/CONTROL_PLANE_SCHEMAS.md
+    - docs/recipes/observe-production.md
+    - agents/bubbles_shared/project-config-contract.md
+    evidenceRefs:
+    - bubbles/scripts/observability-posture-guard.sh
+    - bubbles/scripts/observability-opt-out-guard.sh
+    - bubbles/scripts/observability-slo-guard.sh
+    - bubbles/scripts/observability-endpoint-resolve.sh
+    - bubbles/scripts/observability-check.sh
+    - bubbles/mcp/tools/check_observability.json
+    - templates/observability.yaml.tmpl
     competitorTags:
     - claude-code
     - roo-code

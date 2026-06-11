@@ -1,0 +1,7 @@
+{
+  "workflow": "booking.create",
+  "slo": "gateway.request",
+  "sampleWindow": "PT5M",
+  "source": "stress",
+  "target": { "latencyP99Ms": 50, "errorRatePct": 0.1, "availabilityPct": 99.9 }
+}

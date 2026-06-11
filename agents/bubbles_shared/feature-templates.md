@@ -67,6 +67,15 @@ Auth, privacy, access control, and data handling constraints.
 ## Observability
 Logs, metrics, traces, and failure visibility. If the project defines `traceContracts`, identify which workflow names, spans, attributes, invariants, and red flags should prove the business Success Signal without leaking implementation detail into `spec.md`.
 
+### Trace Topology (Optional — REQUIRED for wired, service-bearing, instrumented scopes)
+The STATIC counterpart to the `traceContracts.observability.workflows` runtime contract: the expected span parent/child tree for the instrumented workflow, planned before implementation. OMIT this section when the repo is not `wired`, the scope declares no `observabilityWorkflow`, or the scope is not service-bearing. REQUIRED when all three hold — see scope-workflow.md → "Observability DoD Injection (MUST-when-wired)". Annotate each node with its required attributes/invariants so the topology lines up 1:1 with the `traceContracts.workflows.<workflow>` entry the G080 guard checks and the SLO the G100 guard asserts. Example:
+
+    booking.create                        # root span = workflow name
+    └─ http.request                        # attrs: trace_id, booking.id
+       ├─ db.query checkAvailability        # attrs: db.statement
+       ├─ payment.authorize                 # attrs: payment.id, amount
+       └─ event.publish booking.created     # invariant: exactly one confirmation event
+
 ## Testing Strategy
 Map test types to exact requirements and Gherkin scenarios. Require explicit coverage for unit, integration, e2e, and stress (plus other applicable taxonomy types), with live-test execution evidence and no skipped required tests.
 

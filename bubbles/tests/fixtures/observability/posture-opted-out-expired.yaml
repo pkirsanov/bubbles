@@ -1,0 +1,31 @@
+# Posture fixture: OPTED-OUT (expired). revisitAfter is in the past.
+# Expectation: the SCOPE-2 opt-out freshness guard (G099) escalates an
+# opt-in reminder (committed revisitAfter has passed).
+traceContracts:
+  observability:
+    schemaVersion: 1
+    posture: opted-out
+    policy:
+      undeclaredPosture: warn
+    decision:
+      decidedAt: 2019-01-01
+      decidedBy: operator
+      decisionSource: "bubbles.setup focus: observability"
+      lastReviewedAt: 2019-01-01
+    optOut:
+      reasonCode: pre-monitoring
+      reason: "monitoring not stood up yet"
+      declaredAt: 2019-01-01
+      revisitAfter: 2020-01-01
+      approvedBy: operator
+    endpoints:
+      validate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: none }
+        errorRate: { adapter: none }
+        deployImpact: { adapter: none }
+      operate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: none }
+        errorRate: { adapter: none }
+        deployImpact: { adapter: none }

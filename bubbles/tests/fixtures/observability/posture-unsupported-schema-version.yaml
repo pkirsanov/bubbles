@@ -1,0 +1,26 @@
+# Posture fixture: UNSUPPORTED SCHEMA VERSION. schemaVersion is an unknown
+# breaking value.
+# Expectation: every observability guard fails loud BEFORE applying semantics
+# (schema version is enforced first).
+traceContracts:
+  observability:
+    schemaVersion: 999
+    posture: wired
+    policy:
+      undeclaredPosture: warn
+    decision:
+      decidedAt: 2026-06-11
+      decidedBy: operator
+      decisionSource: "bubbles.setup focus: observability"
+      lastReviewedAt: 2026-06-11
+    endpoints:
+      validate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: prometheus, profile: test }
+        errorRate: { adapter: prometheus, profile: test }
+        deployImpact: { adapter: none }
+      operate:
+        alerts: { adapter: prometheus, profile: prod }
+        sloBurn: { adapter: prometheus, profile: prod }
+        errorRate: { adapter: prometheus, profile: prod }
+        deployImpact: { adapter: prometheus, profile: prod }

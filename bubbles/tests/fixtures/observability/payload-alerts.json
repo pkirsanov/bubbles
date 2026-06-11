@@ -1,0 +1,16 @@
+[
+  {
+    "id": "alert-001",
+    "service": "gateway",
+    "severity": "critical",
+    "startedAt": "2026-06-11T00:00:00Z",
+    "summary": "gateway.request p99 latency above SLO target"
+  },
+  {
+    "id": "alert-002",
+    "service": "inventory",
+    "severity": "warning",
+    "startedAt": "2026-06-11T00:05:00Z",
+    "summary": "inventory.reserve error rate climbing"
+  }
+]

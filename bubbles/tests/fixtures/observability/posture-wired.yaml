@@ -1,0 +1,35 @@
+# Posture fixture: WIRED (valid). At least one non-none validate-plane signal.
+# Expectation: accepted by the SCOPE-2 posture guard (G098).
+traceContracts:
+  observability:
+    schemaVersion: 1
+    posture: wired
+    policy:
+      undeclaredPosture: warn
+    decision:
+      decidedAt: 2026-06-11
+      decidedBy: operator
+      decisionSource: "bubbles.setup focus: observability"
+      lastReviewedAt: 2026-06-11
+    endpoints:
+      validate:
+        alerts: { adapter: none }
+        sloBurn: { adapter: prometheus, profile: test }
+        errorRate: { adapter: prometheus, profile: test }
+        deployImpact: { adapter: none }
+      operate:
+        alerts: { adapter: prometheus, profile: prod }
+        sloBurn: { adapter: prometheus, profile: prod }
+        errorRate: { adapter: prometheus, profile: prod }
+        deployImpact: { adapter: prometheus, profile: prod }
+    slos:
+      gateway.request:
+        latencyP99Ms: 50
+        errorRatePct: 0.1
+        availabilityPct: 99.9
+  workflows:
+    booking.create:
+      requiredSpans:
+        - name: http.request
+          attributes: [trace_id, booking.id]
+      slo: gateway.request
