@@ -76,6 +76,12 @@ capabilities:
     - bubbles/adapters/observability/prometheus.sh
     - bubbles/scripts/observability-adapter-lint.sh
     - bubbles/scripts/observability-adapter-lint-selftest.sh
+    consumers:
+    - bubbles/scripts/observability-endpoint-resolve.sh # resolves (plane,signal) -> adapter
+    - bubbles/scripts/observability-check.sh # invokes the resolver --names-only (endpoints block)
+    - agents/bubbles.stabilize.agent.md # operate-plane fetch via resolved adapter
+    - agents/bubbles.upkeep.agent.md # slo-review fetch via resolved adapter
+    - agents/bubbles.train.agent.md # promote/rollback gating via resolved adapter
     competitorTags:
     - claude-code
     - roo-code
@@ -101,6 +107,12 @@ capabilities:
     - bubbles/scripts/observability-check.sh
     - bubbles/mcp/tools/check_observability.json
     - templates/observability.yaml.tmpl
+    consumers:
+    - bubbles/scripts/state-transition-guard.sh # Checks 37/38/39 invoke G098/G099/G100 (done-gate)
+    - bubbles/scripts/guards/tail-delegated-gates.sh # fragment that wires the three checks
+    - bubbles/scripts/framework-validate.sh # selftests + live guards
+    - bubbles/scripts/cli.sh # doctor posture line (advisory)
+    - bubbles/mcp/tools/check_observability.json # one-shot verdict over the bash twin
     competitorTags:
     - claude-code
     - roo-code
@@ -170,18 +182,7 @@ capabilities:
     label: Cross-repo goal scenario compiler
     state: shipped
     summary: >
-      bubbles.goal (single outcome) and bubbles.sprint (multi outcome) compile a high-level
-      operator outcome into a typed, dependency-ordered, possibly cross-repo DAG whose nodes
-      each resolve to an EXISTING workflow mode or specialist — no new per-journey workflow
-      modes. bubbles.super resolves intent only (scenario-aware RESOLUTION-ENVELOPE fields);
-      it never compiles or executes the DAG. Node types (diagnostic/planning/delivery/
-      verification/action/ongoing-ops) are routing metadata, not a new completion model —
-      action and ongoing-ops nodes are OPS packets certified per repo by bubbles.validate.
-      Host-mutating action nodes are gated by a pre-mutation approval token (the propagate
-      pattern). scenario-compile-lint.sh forbids any node resolving to a
-      requiresTopLevelRuntime fan-out mode (Gate G064 depth safety) by deriving the forbidden
-      set from modes.yaml, and validates DAG acyclicity, action gating, and the rootOutcome
-      Outcome Contract (Gate G070 shape). Runtime plan/ledger live under .specify/runtime/.
+      bubbles.goal (single outcome) and bubbles.sprint (multi outcome) compile a high-level operator outcome into a typed, dependency-ordered, possibly cross-repo DAG whose nodes each resolve to an EXISTING workflow mode or specialist — no new per-journey workflow modes. bubbles.super resolves intent only (scenario-aware RESOLUTION-ENVELOPE fields); it never compiles or executes the DAG. Node types (diagnostic/planning/delivery/ verification/action/ongoing-ops) are routing metadata, not a new completion model — action and ongoing-ops nodes are OPS packets certified per repo by bubbles.validate. Host-mutating action nodes are gated by a pre-mutation approval token (the propagate pattern). scenario-compile-lint.sh forbids any node resolving to a requiresTopLevelRuntime fan-out mode (Gate G064 depth safety) by deriving the forbidden set from modes.yaml, and validates DAG acyclicity, action gating, and the rootOutcome Outcome Contract (Gate G070 shape). Runtime plan/ledger live under .specify/runtime/.
     ownerSurface: agents/bubbles_shared/scenario-compile.md
     releaseIntroduced: v7.6.0
     docsRefs:

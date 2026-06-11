@@ -2,7 +2,7 @@
 
 > **Type:** Framework self-improvement execution plan
 > **Owner surface:** Bubbles framework (`bubbles/`, `agents/`, `instructions/`, `skills/`, `docs/`) + downstream product repos
-> **Status:** PROPOSED — Revision 2 (grounded line-by-line review applied 2026-06-11; awaiting approval before any scope is implemented)
+> **Status:** FRAMEWORK SHIPPED — v7.10.0 delivered SCOPE-1..6 to `origin/main` (commit `1baa796`, 2026-06-11); v7.10.1 follow-up hardens downstream enforcement + consumer proof. Downstream rollout SCOPE-7..9 remains pending clean per-repo adoption windows.
 > **Authoring agent:** bubbles.analyst (design passes 1–4) → revised after a line-by-line verification of the shipped v7.8.0 codebase
 > **Created:** 2026-06-11
 
@@ -1348,16 +1348,23 @@ boundaries.
 > **Systemic root cause (generalizes beyond this feature):** the observability
 > adapter shipped as an orphan because the framework holds its *consumers* to
 > "no orphans" (G029 + Consumer Impact Sweep) while exempting its *own*
-> capability ledger — `bubbles/capability-ledger.yaml` has no `consumers:` field
-> and nothing in `framework-validate` asserts a shipped capability has a wired
-> consumer. SCOPE-6 fixes the observability instance, but the **durable**
+> capability ledger — `bubbles/capability-ledger.yaml` had no `consumers:` field
+> and nothing in `framework-validate` asserted a shipped capability has a wired
+> consumer. SCOPE-6 fixed the observability instance, but the **durable**
 > remedy is a capability-ledger `consumers:` field + a framework-dogfood
 > freshness check (a G029-equivalent for `state: shipped` capabilities) so
 > "shipped" requires a real consumer, not just a passing lint. That remedy is
 > intentionally NOT scoped into this observability feature — it is a separate,
-> framework-wide integrity improvement (candidate IMP-002) and is recorded here
-> only because this feature surfaced it. Discovered-issue disposition (G095):
-> **routed** to a future framework-health improvement, not silently deferred.
+> framework-wide integrity improvement. **UPDATE (v7.10.0 review):** the
+> originally-named "candidate IMP-002" routing was never honoured (IMP-002
+> shipped as supply-chain source locking instead). The systemic fix is now
+> correctly filed as **`improvements/IMP-004-capability-consumer-freshness.md`**,
+> and its FIRST half already landed in the v7.10.0 follow-up: a `consumers:`
+> field was added to the two observability ledger entries + the schema, and the
+> consumers are real (state-transition-guard now invokes G098/G099/G100;
+> observability-check.sh invokes the endpoint resolver). The remaining
+> enforcement guard is scoped in IMP-004. Discovered-issue disposition (G095):
+> **filed** to IMP-004 (no longer a dangling phantom reference).
 
 ## Feature-level Definition of Done
 

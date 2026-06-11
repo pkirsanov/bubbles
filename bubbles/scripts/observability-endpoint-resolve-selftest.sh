@@ -154,6 +154,27 @@ run_resolve --plane validate --signal sloBurn --repo-root "$REPO"
 assert_exit 1 "missing profile env fails loud"
 assert_err "missing required profile env" "missing-env message is loud"
 
+# --- --names-only: report wiring WITHOUT any secret env (read-only query) ---
+# The health-check consumer (observability-check.sh) calls this. With NO
+# BUBBLES_OBS_*_ env set, a wired prometheus adapter must still resolve its
+# NAME (exit 0) and must NOT fail-loud on missing secrets.
+run_resolve --plane validate --signal sloBurn --names-only --repo-root "$REPO"
+assert_exit 0 "names-only resolves wired adapter without secret env"
+assert_out "adapter=prometheus" "names-only reports adapter name"
+assert_out "profile=test" "names-only reports profile"
+assert_out_not "PROMETHEUS_BASE_URL" "names-only does NOT materialize env"
+
+# --- --names-only: still honors prod-block (validate never reads operate) ---
+run_resolve --plane operate --signal alerts --names-only --repo-root "$REPO"
+assert_exit 0 "names-only operate/alerts resolves"
+assert_out "adapter=prometheus" "names-only operate/alerts adapter"
+assert_out "profile=prod" "names-only operate/alerts profile"
+
+# --- --names-only: unconfigured signal → neutral none --------------------
+run_resolve --plane validate --signal alerts --names-only --repo-root "$REPO"
+assert_exit 0 "names-only unconfigured signal no-ops"
+assert_out "adapter=none" "names-only none for unconfigured signal"
+
 # --- usage errors --------------------------------------------------------
 run_resolve --signal sloBurn --repo-root "$REPO"
 assert_exit 2 "missing --plane is usage error"

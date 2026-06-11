@@ -2,7 +2,7 @@
 
 > **Type:** Framework self-improvement execution plan
 > **Owner surface:** Bubbles framework (`skills/`, `instructions/`, `agents/`, `CHANGELOG.md`, `VERSION`, release manifest)
-> **Status:** IMPLEMENTED — left in working tree for operator review (NOT committed, NOT pushed)
+> **Status:** SHIPPED — committed and pushed before the v7.10.0 observability/guidance delivery (framework release line v7.9.x)
 > **Authoring agent:** bubbles.workflow (parent-expanded; subagent runtime had no `runSubagent`)
 > **Created:** 2026-06-11
 

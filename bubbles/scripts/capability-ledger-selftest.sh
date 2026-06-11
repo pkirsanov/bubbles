@@ -27,6 +27,32 @@ check_pattern() {
   fi
 }
 
+check_consumers_exist() {
+  local capability="$1" label="$2"
+  local consumers=()
+  local consumer
+
+  if ! command -v yq >/dev/null 2>&1; then
+    fail "$label consumers cannot be checked because yq is missing"
+    return 0
+  fi
+
+  mapfile -t consumers < <(yq -r '.capabilities["'"$capability"'"].consumers[]?' "$ROOT_DIR/bubbles/capability-ledger.yaml" 2>/dev/null || true)
+  if [[ "${#consumers[@]}" -eq 0 ]]; then
+    fail "$label declares at least one consumer"
+    return 0
+  fi
+  pass "$label declares ${#consumers[@]} consumer path(s)"
+
+  for consumer in "${consumers[@]}"; do
+    if [[ -e "$ROOT_DIR/$consumer" ]]; then
+      pass "$label consumer path exists: $consumer"
+    else
+      fail "$label consumer path is missing: $consumer"
+    fi
+  done
+}
+
 echo "Running capability-ledger selftest..."
 echo "Scenario: ledger-backed competitive docs stay aligned with the source-of-truth registry."
 
@@ -48,6 +74,9 @@ check_pattern "$ROOT_DIR/docs/generated/competitive-capabilities.md" '\| Per-tur
 check_pattern "$ROOT_DIR/docs/generated/competitive-capabilities.md" '\| Linter-on-edit gate \| shipped \|' "Generated capability guide includes shipped linter-on-edit gate row"
 check_pattern "$ROOT_DIR/docs/generated/issue-status.md" '^Tracked gaps: 2 issue-backed capabilities\.$' "Generated issue status guide counts tracked gaps from the ledger"
 check_pattern "$ROOT_DIR/docs/generated/interop-migration-matrix.md" '\| Claude Code \| markdown \|' "Generated migration matrix is refreshed from the interop registry"
+
+check_consumers_exist "observability-adapter-contract" "Observability adapter contract"
+check_consumers_exist "observability-posture-and-slo-gates" "Observability posture/SLO gates"
 
 if [[ "$failures" -gt 0 ]]; then
   echo "capability-ledger selftest failed with $failures issue(s)."

@@ -8,6 +8,11 @@ set -uo pipefail
 #   * posture (G098) — observability-posture-guard.sh --print-state (+ enforce)
 #   * SLO     (G100) — observability-slo-guard.sh        (report mode)
 #   * trace   (G080) — trace-contract-guard.sh           (vs captured evidence)
+# plus an `endpoints` block that reports WHICH adapter is wired per
+# (plane, signal) by invoking observability-endpoint-resolve.sh --names-only
+# (read-only wiring query; never materializes or requires plane secret env, so
+# it preserves INV-12 — no live operate-plane fetch happens here). This makes
+# the endpoint resolver a real executable consumer, not just agent-prompt prose.
 #
 # Per the v6 MCP design rule, THIS script is the canonical logic; the MCP
 # server is only a thin wrapper around it. Running the bash twin directly is
@@ -199,6 +204,37 @@ fi
 posture_verdict="$(verdict_for "$posture_exit")"
 slo_verdict="$(verdict_for "$slo_exit")"
 
+# --- endpoints (resolver consumer) ---------------------------------------
+# Make observability-endpoint-resolve.sh a REAL executable consumer (not just
+# agent-prompt prose): for each (plane, signal) report WHICH adapter is wired,
+# read-only, via the resolver's --names-only mode. This never materializes or
+# requires plane-scoped secret env (so it is safe in a health-check context and
+# preserves INV-12 — no live operate-plane fetch happens here, only a config
+# read of the wired adapter name). The resolver auto-no-ops to `none` when the
+# repo has no observability config, so this is silent for non-adopters.
+RESOLVER="$SCRIPT_DIR/observability-endpoint-resolve.sh"
+resolve_adapter() { # $1=plane $2=signal -> adapter name (or "none"/"unknown")
+  local plane="$1" signal="$2" out adapter
+  if [[ ! -x "$RESOLVER" ]]; then printf 'unknown'; return 0; fi
+  out="$(bash "$RESOLVER" --plane "$plane" --signal "$signal" --names-only "${repo_args[@]}" 2>/dev/null)" || { printf 'unknown'; return 0; }
+  adapter="$(printf '%s\n' "$out" | sed -n 's/^adapter=//p' | head -1)"
+  [[ -n "$adapter" ]] || adapter="none"
+  printf '%s' "$adapter"
+}
+
+endpoints_json=""
+for _plane in validate operate; do
+  plane_pairs=""
+  for _signal in alerts sloBurn errorRate deployImpact; do
+    _adapter="$(resolve_adapter "$_plane" "$_signal")"
+    plane_pairs="${plane_pairs}      \"${_signal}\": \"$(json_escape "$_adapter")\",\n"
+  done
+  # strip trailing comma+newline of the last pair
+  plane_pairs="${plane_pairs%,\\n}"
+  endpoints_json="${endpoints_json}    \"${_plane}\": {\n${plane_pairs}\n    },\n"
+done
+endpoints_json="${endpoints_json%,\\n}"
+
 overall_exit=0
 if [[ "$posture_exit" -ne 0 || "$slo_exit" -ne 0 || "$trace_exit" -ne 0 ]]; then
   overall_exit=1
@@ -228,6 +264,9 @@ cat <<JSON
     "verdict": "$trace_verdict",
     "evidence": $trace_evidence_json,
     "detail": "$(sanitize_detail "$trace_detail")"
+  },
+  "endpoints": {
+$(printf '%b' "$endpoints_json")
   },
   "overall": "$overall_verdict"
 }

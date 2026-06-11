@@ -2,7 +2,7 @@
 
 > **Type:** Framework self-improvement execution plan
 > **Owner surface:** Bubbles framework docs (`docs/`, `docs/guides/`, `docs/MCP.md`) + optional first-touch surfacing (`agents/bubbles.super.agent.md`)
-> **Status:** IMPLEMENTED — both scopes delivered & verified; `framework-validate` green @ v7.9.0 (`FRAMEWORK_VALIDATE_EXIT=0`). Version bump + CHANGELOG + commit + push are handled centrally by the orchestrator (this agent did NOT touch `VERSION`/`CHANGELOG` and did NOT commit).
+> **Status:** SHIPPED — both scopes delivered & verified; shipped with framework v7.10.0 to `origin/main` (commit `1baa796`, 2026-06-11)
 > **Authoring agent:** general agent (grounded review of the agency workshop vs the shipped v7.8.0 framework)
 > **Created:** 2026-06-11
 

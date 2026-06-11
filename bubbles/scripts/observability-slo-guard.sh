@@ -41,7 +41,12 @@ set -euo pipefail
 # Parser dependency: `yq` (mikefarah v4) for YAML + `jq` for the evidence JSON.
 # Unlike the WARN-level posture guards (G098/G099), G100 is a BLOCKING gate, so
 # a MISSING parser FAILS CLOSED (exit 1) with an actionable "install jq/yq"
-# message rather than silently passing.
+# message rather than silently passing — but ONLY for a repo that has opted
+# into observability. A repo with no `bubbles-project.yaml`, or no
+# `traceContracts.observability` block, no-ops (exit 0) via a cheap parser-free
+# opt-in pre-check that runs BEFORE the fail-closed parser gate, so wiring G100
+# into the universal done-gate (state-transition-guard) never blocks a
+# non-adopter repo that merely lacks jq/yq.
 #
 # The Bubbles framework SOURCE checkout is auto-exempt: it has no runtime to
 # monitor and keeps no persistent `specs/` (G085), so it resolves to EXEMPT and
@@ -217,21 +222,67 @@ if repo_is_framework_source "$REPO_ROOT_RESOLVED"; then
   exit 0
 fi
 
-# --- Parser dependency: FAIL CLOSED on missing jq/yq ---------------------
-# G100 is a BLOCKING gate: a missing parser must NOT silently pass.
-MISSING_PARSERS=()
-command -v yq >/dev/null 2>&1 || MISSING_PARSERS+=("yq (mikefarah v4)")
-command -v jq >/dev/null 2>&1 || MISSING_PARSERS+=("jq")
-if [[ ${#MISSING_PARSERS[@]} -gt 0 ]]; then
-  err "G100 (observability_slo_evidence_gate): required parser(s) missing: ${MISSING_PARSERS[*]}. This is a BLOCKING gate and FAILS CLOSED — it will not silently pass. Install jq and yq (mikefarah v4) so the captured SLO evidence can be parsed and asserted."
-  exit 1
-fi
-
-# --- Config resolution ----------------------------------------------------
+# --- Non-adopter opt-in pre-check (NO external tools needed) -------------
+# A repo that never adopted observability MUST no-op even when jq/yq are
+# absent — the fail-closed parser requirement applies ONLY to repos that HAVE
+# opted in. This pre-check runs BEFORE the fail-closed parser gate so that
+# wiring G100 into the universal done-gate (state-transition-guard) never
+# blocks a non-adopter repo that simply lacks jq/yq. Determining posture==wired
+# needs yq, so this resolves the chicken-and-egg with a parser-free scan:
+# require a literal top-level/parent `traceContracts:` key followed by an
+# indented child `observability:` key. It ignores blank/comment lines and
+# unrelated keys such as `not_observability:` or `# observability:`. It is
+# implemented with bash builtins ONLY (`while read`, `[[ =~ ]]`, and string
+# length) so it stays correct even when PATH is fully stripped of grep/jq/yq.
 CFG="$(locate_config "$REPO_ROOT_RESOLVED")"
 if [[ -z "$CFG" ]]; then
   info "Observability SLO gate: no bubbles-project.yaml — posture undeclared; G100 no-op (G098 owns the posture nag). (G100 OK)"
   exit 0
+fi
+obs_optin="false"
+if [[ -r "$CFG" ]]; then
+  in_trace_contracts="false"
+  trace_indent=-1
+  while IFS= read -r _obs_line || [[ -n "$_obs_line" ]]; do
+    # Ignore blank and full-line comment lines without requiring grep/sed/awk.
+    if [[ "$_obs_line" =~ ^[[:space:]]*$ || "$_obs_line" =~ ^[[:space:]]*# ]]; then
+      continue
+    fi
+
+    leading_spaces="${_obs_line%%[! ]*}"
+    indent=${#leading_spaces}
+
+    if [[ "$_obs_line" =~ ^[[:space:]]*traceContracts:[[:space:]]*($|#) ]]; then
+      in_trace_contracts="true"
+      trace_indent=$indent
+      continue
+    fi
+
+    if [[ "$in_trace_contracts" == "true" && "$indent" -le "$trace_indent" ]]; then
+      in_trace_contracts="false"
+    fi
+
+    if [[ "$in_trace_contracts" == "true" && "$indent" -gt "$trace_indent" && "$_obs_line" =~ ^[[:space:]]*observability:[[:space:]]*($|#) ]]; then
+      obs_optin="true"
+      break
+    fi
+  done < "$CFG"
+fi
+if [[ "$obs_optin" != "true" ]]; then
+  info "Observability SLO gate: no traceContracts.observability block — posture undeclared; G100 no-op (G098 owns the posture nag). (G100 OK)"
+  exit 0
+fi
+
+# --- Parser dependency: FAIL CLOSED on missing jq/yq (adopters only) -----
+# Reached ONLY when the repo has opted into observability (config present with
+# an `observability:` key). G100 is a BLOCKING gate: for a repo that committed
+# to observability, a missing parser must NOT silently pass.
+MISSING_PARSERS=()
+command -v yq >/dev/null 2>&1 || MISSING_PARSERS+=("yq (mikefarah v4)")
+command -v jq >/dev/null 2>&1 || MISSING_PARSERS+=("jq")
+if [[ ${#MISSING_PARSERS[@]} -gt 0 ]]; then
+  err "G100 (observability_slo_evidence_gate): required parser(s) missing: ${MISSING_PARSERS[*]}. This repo HAS opted into observability (traceContracts.observability present) and this is a BLOCKING gate that FAILS CLOSED — it will not silently pass. Install jq and yq (mikefarah v4) so the captured SLO evidence can be parsed and asserted."
+  exit 1
 fi
 
 if ! yq '.' "$CFG" >/dev/null 2>&1; then

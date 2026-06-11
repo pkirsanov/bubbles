@@ -9,9 +9,13 @@
 #   fetch-alerts          → /api/v1/alerts (active alerts), NORMALIZED to a
 #                           bare JSON array (R2-D) — NOT the raw provider
 #                           envelope.
-#   fetch-slo-burn        → /api/v1/query?query=slo:burn_rate         (JSON map)
-#   fetch-error-rate      → /api/v1/query?query=rate(...)             (JSON map)
-#   fetch-deploy-impact   → /api/v1/query?query=delta(...)           (JSON map)
+#   fetch-slo-burn        → /api/v1/query?query=slo:burn_rate, NORMALIZED to a
+#                           bare JSON map (service → float) — NOT the raw vector
+#                           envelope.
+#   fetch-error-rate      → /api/v1/query?query=rate(...), NORMALIZED to a bare
+#                           JSON map (service → float).
+#   fetch-deploy-impact   → /api/v1/query?query=delta(...), NORMALIZED to a bare
+#                           JSON map (sourceSha → {service, regressionDelta}).
 #
 # Output: structured JSON to stdout. Adapter failure exits 1; framework
 # treats that as "telemetry unavailable", NOT as a framework failure.
@@ -19,9 +23,17 @@
 # Shape selftest (NO live backend, NO env required) — IMP-001 SCOPE-3 T3.2:
 #   prometheus.sh selftest <verb>
 # emits the canonical normalized SHAPE for <verb> so observability-adapter-lint
-# can validate output shape without a Prometheus server. `selftest fetch-alerts`
-# drives a canned raw envelope through the SAME normalize_alerts() used by the
-# live path, proving the envelope→array normalization.
+# can validate output shape without a Prometheus server. ALL 4 selftest verbs
+# now drive a canned RAW provider envelope through the SAME normalizer the live
+# path uses (fetch-alerts → normalize_alerts; slo-burn/error-rate →
+# normalize_query_map; deploy-impact → normalize_deploy_impact), so the shape
+# selftest proves the REAL normalization rather than a hand-written shape.
+#
+# Live fetch selftest (fake curl, NO live backend) —
+# bubbles/scripts/prometheus-adapter-fetch-selftest.sh exercises every live verb
+# end-to-end against a shadowed `curl` that returns canned raw envelopes,
+# proving the real curl→normalize pipeline (verb dispatch, URL/query
+# construction, and normalization) yields the contracted shapes.
 #
 # Operator override hooks (env vars):
 #   PROMETHEUS_BASE_URL              required (live verbs); no default
@@ -58,6 +70,32 @@ normalize_alerts() {
       } ]'
 }
 
+# normalize_query_map: read a raw Prometheus /api/v1/query vector response on
+# stdin (`{"status":"success","data":{"resultType":"vector","result":[
+# {"metric":{"service":"..."},"value":[ts,"0.5"]}, ...]}}`) and emit the bare
+# normalized JSON MAP required by the contract for fetch-slo-burn /
+# fetch-error-rate (R2-D):  { "<service>": <float>, ... }
+# The service key falls back to __name__ then "unknown"; the value is the
+# instant-vector sample coerced to a number. Empty result → {}.
+normalize_query_map() {
+  jq '[ (.data.result // [])[]
+        | { ( .metric.service // .metric.__name__ // "unknown" ):
+            ( (.value[1] // "0") | tonumber? // 0 ) } ]
+      | add // {}'
+}
+
+# normalize_deploy_impact: read a raw Prometheus /api/v1/query vector response
+# on stdin and emit the contracted deploy-impact MAP (R2-D):
+#   { "<sourceSha>": { "service": "<svc>", "regressionDelta": <float> }, ... }
+# The sha key falls back through source_sha/sha/commit then "unknown".
+normalize_deploy_impact() {
+  jq '[ (.data.result // [])[]
+        | { ( .metric.source_sha // .metric.sha // .metric.commit // "unknown" ):
+            { service:         ( .metric.service // "unknown" ),
+              regressionDelta: ( (.value[1] // "0") | tonumber? // 0 ) } } ]
+      | add // {}'
+}
+
 # --- selftest / help short-circuits (NO live backend, NO env required) ----
 case "$VERB" in
   -h|--help|"")
@@ -74,12 +112,13 @@ case "$VERB" in
         printf '%s' '{"status":"success","data":{"alerts":[{"labels":{"alertname":"HighLatency","service":"gateway","severity":"critical"},"state":"firing","activeAt":"2026-06-11T00:00:00Z","annotations":{"summary":"gateway.request p99 above SLO target"}}]}}' | normalize_alerts
         ;;
       fetch-slo-burn|fetch-error-rate)
-        # Canonical map shape: service.name -> float.
-        echo '{"gateway.request":0.5}'
+        # Drive a canned RAW Prometheus instant-vector envelope through the SAME
+        # normalizer the live path uses, proving it yields the contracted map.
+        printf '%s' '{"status":"success","data":{"resultType":"vector","result":[{"metric":{"service":"gateway.request"},"value":[1623456789,"0.5"]}]}}' | normalize_query_map
         ;;
       fetch-deploy-impact)
-        # Canonical map shape: sourceSha -> { service, regressionDelta }.
-        echo '{"a1b2c3d4e5f6":{"service":"gateway","regressionDelta":0.03}}'
+        # Drive a canned RAW envelope through the SAME deploy-impact normalizer.
+        printf '%s' '{"status":"success","data":{"resultType":"vector","result":[{"metric":{"source_sha":"a1b2c3d4e5f6","service":"gateway"},"value":[1623456789,"0.03"]}]}}' | normalize_deploy_impact
         ;;
       *)
         echo "[prometheus][ERROR] selftest: unknown verb '$SUB' (expected fetch-alerts|fetch-slo-burn|fetch-error-rate|fetch-deploy-impact)" >&2
@@ -115,15 +154,15 @@ case "$VERB" in
     ;;
   fetch-slo-burn)
     [[ -n "${PROMETHEUS_QUERY_SLO_BURN:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_SLO_BURN not set" >&2; exit 1; }
-    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_SLO_BURN")"
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_SLO_BURN")" | normalize_query_map
     ;;
   fetch-error-rate)
     [[ -n "${PROMETHEUS_QUERY_ERROR_RATE:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_ERROR_RATE not set" >&2; exit 1; }
-    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_ERROR_RATE")"
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_ERROR_RATE")" | normalize_query_map
     ;;
   fetch-deploy-impact)
     [[ -n "${PROMETHEUS_QUERY_DEPLOY_IMPACT:-}" ]] || { echo "[prometheus][ERROR] PROMETHEUS_QUERY_DEPLOY_IMPACT not set" >&2; exit 1; }
-    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_DEPLOY_IMPACT")"
+    call "/api/v1/query?query=$(urlencode "$PROMETHEUS_QUERY_DEPLOY_IMPACT")" | normalize_deploy_impact
     ;;
   *)
     echo "[prometheus][ERROR] unknown verb '$VERB'" >&2

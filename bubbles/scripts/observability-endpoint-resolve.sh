@@ -43,6 +43,11 @@ set -euo pipefail
 #   profile=<test|prod|>            (empty for adapter=none)
 #   <NATIVE_ENV_KEY>=<value>        (one per materialized adapter-native var)
 #
+# `--names-only` reports just `adapter=`/`profile=` and exits 0 WITHOUT reading
+# or requiring any plane-scoped secret env — the read-only wiring query used by
+# observability-check.sh (the check_observability MCP twin) to report which
+# adapter is wired per (plane, signal) without holding the plane's secrets.
+#
 # Exit codes:
 #   0  resolved (incl. adapter=none and yq-missing WARN-and-skip)
 #   1  resolution/validation failure (missing required profile env, malformed
@@ -59,6 +64,7 @@ SCRIPT_DIR="$(cd "${SCRIPT_SOURCE%/*}" 2>/dev/null && pwd)"
 PLANE=""
 SIGNAL=""
 REPO_ROOT_ARG=""
+NAMES_ONLY="false"
 
 usage() {
   cat <<'EOF'
@@ -74,6 +80,11 @@ Options:
   --signal <alerts|sloBurn|errorRate|deployImpact>   REQUIRED telemetry signal.
   --repo-root <dir>            Repo root to scan (default: the repo this script
                                lives in).
+  --names-only                 Report `adapter=`/`profile=` ONLY and exit 0
+                               without materializing or requiring any
+                               plane-scoped secret env. Read-only wiring query
+                               for health checks (e.g. observability-check.sh);
+                               never touches BUBBLES_OBS_*_ env.
   -h, --help                   Print this usage and exit 0.
 
 Exit codes:
@@ -109,6 +120,10 @@ while [[ $# -gt 0 ]]; do
       shift
       [[ $# -gt 0 ]] || { echo "observability-endpoint-resolve: --repo-root requires a directory argument" >&2; usage >&2; exit 2; }
       REPO_ROOT_ARG="$1"
+      shift
+      ;;
+    --names-only)
+      NAMES_ONLY="true"
       shift
       ;;
     --*)
@@ -215,6 +230,18 @@ PROFILE="$(yq ".traceContracts.observability.endpoints.${PLANE}.${SIGNAL}.profil
 # Unconfigured signal OR explicit none → neutral none resolution.
 if [[ -z "$ADAPTER" || "$ADAPTER" == "none" || "$ADAPTER" == "null" ]]; then
   emit_none
+  exit 0
+fi
+
+# --- Names-only read-only query: report wiring, never touch secret env ----
+# A health-check consumer (observability-check.sh) needs to know WHICH adapter
+# is wired for a (plane, signal) without holding the plane's secrets. Emit the
+# resolved adapter+profile and exit 0 BEFORE any env materialization, so this
+# path never reads or requires BUBBLES_OBS_*_ env and can never fail-loud on a
+# missing secret.
+if [[ "$NAMES_ONLY" == "true" ]]; then
+  printf 'adapter=%s\n' "$ADAPTER"
+  printf 'profile=%s\n' "$PROFILE"
   exit 0
 fi
 

@@ -12,6 +12,35 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.10.1 — observability enforcement teeth + orphan-root-cause follow-up
+
+> *"A lock you never check ain't a lock, Bubbles — it's a decoration."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A critical review of v7.10.0 found the observability posture model had no downstream teeth and the "orphan → live" claim was only half-true. This patch closes all four findings with real, tested wiring (no new gate IDs; G098/G099/G100 unchanged in number, now actually enforced).
+
+### P0 — Posture model now enforced at the universal done-gate
+
+- **G098/G099/G100 are now wired into `state-transition-guard.sh`** (Checks 37/38/39, via `bubbles/scripts/guards/tail-delegated-gates.sh`). v7.10.0 wired them only into source-repo `framework-validate.sh` (which self-EXEMPTs), so the posture/SLO model was **inert in every downstream repo**. Now every repo's done-certification runs them. Proven end-to-end: a wired+instrumented fixture with breaching SLO evidence blocks (exit 1); within-target passes (exit 0).
+- **`observability-slo-guard.sh` is now non-adopter-safe.** A parser-free, builtins-only opt-in pre-check runs BEFORE the fail-closed jq/yq gate, so a repo that never adopted observability no-ops even without jq/yq (the fail-closed requirement applies ONLY to repos that opted in). This is what makes G100 safe to wire into the universal done-gate. The pre-check is indentation-aware: it recognizes adoption ONLY as a `traceContracts:` parent with an indented `observability:` child, so a comment-only `# observability:` mention or an unrelated `not_observability:` key never trips it. Selftests prove a non-adopter without any parser is never blocked, including the comment-only and unrelated-key cases (34/34 SLO selftest).
+
+### P1 — Resolver is now a real executable consumer (orphan actually closed)
+
+- **`observability-endpoint-resolve.sh` gains a `--names-only` read-only mode** (reports `adapter=`/`profile=` without materializing or requiring plane-scoped secret env) and **`observability-check.sh` now invokes it** for all 4 signals × 2 planes, surfacing an `endpoints` block in the `check_observability` verdict. v7.10.0's resolver + adapter fetch verbs had ZERO executable consumers (only agent-prompt prose); now a shipped script behind the MCP tool consumes the resolver. A new hermetic `observability-check-selftest.sh` (wired into `framework-validate.sh`) stages a wired fixture and asserts the full JSON envelope reports `endpoints.validate.sloBurn == prometheus` (and the expected `none` entries). Resolver selftest 38/38; observability-check selftest 12/12.
+- **`consumers:` field added to `capability-ledger.yaml`** (both observability entries) + declared in `capability-ledger.schema.json`. The listed consumers are real (state-transition-guard, observability-check, ops agents).
+- **Systemic root cause filed as `improvements/IMP-004-capability-consumer-freshness.md`.** v7.10.0 routed the durable fix to a "candidate IMP-002" that never materialized (IMP-002 shipped as supply-chain locking). IMP-004 is the real follow-up: a framework-dogfood freshness check requiring every `state: shipped` capability to declare existing consumers. The dangling phantom reference in IMP-001 is corrected.
+
+### P2 — Prometheus adapter live path now actually normalizes (and is tested)
+
+- **`fetch-slo-burn` / `fetch-error-rate` / `fetch-deploy-impact` now normalize** the raw Prometheus vector envelope to the contracted bare map shape (`normalize_query_map` / `normalize_deploy_impact`). v7.10.0's live query verbs emitted the **raw provider envelope** — non-compliant with the documented map contract — and the adapter-lint never caught it because it only checked hand-written `selftest` shapes. The `selftest` query verbs now drive canned raw envelopes through the SAME normalizers (matching `fetch-alerts`), so the shape selftest proves real normalization.
+- **New `bubbles/scripts/prometheus-adapter-fetch-selftest.sh`** exercises every live verb end-to-end against a shadowed `curl` returning canned raw envelopes — proving the real curl→normalize pipeline (verb dispatch, exact URL-encoded query construction, normalization) yields the contracted shapes, including empty-vector responses normalizing to `{}` (17/17). Wired into `framework-validate.sh`.
+
+### Notes
+
+- No new gate IDs, no new workflow mode. G098/G099/G100 are the same gates, now enforced downstream.
+- New selftests wired into `framework-validate.sh`: prometheus live-fetch, observability-check wired-fixture envelope, and observability-check live smoke.
+- `capability-ledger-selftest.sh` now asserts every path in the two observability `consumers:` lists exists on disk, so the consumer claim is mechanically verified (not prose-only) ahead of the full IMP-004 freshness gate.
+- Release manifest, framework-stats, and capability-ledger docs regenerated.
+
 ## v7.10.0 — observability as a first-class citizen + operator/contributor guidance
 
 > *"You can't fix what you can't see, Bubbles. Put the kitty-cam on prod and watch it like the kitties."* — Sunnyvale Trailer Park Operator Newsletter, June 2026

@@ -207,6 +207,32 @@ stage_instrumented "$R" "$WF"
 write_evidence "$R" "$WF" '.'
 run_guard_no_parser "$R"; assert_exit 1 "missing parser fails closed"; assert_contains "install jq" "missing-parser message"
 
+# --- non-adopter + missing-parser: NO observability config → no-op (NOT blocked) ---
+# Safety property for wiring G100 into the universal done-gate: a repo that
+# never adopted observability MUST no-op even when jq/yq (and even all of PATH)
+# are absent. The parser-free builtin opt-in pre-check guarantees a non-adopter
+# is never fail-closed-blocked. (A) no config file at all; (B) a config with no
+# `observability:` key.
+R="$WORKSPACE/nonadopter-no-config"
+mkdir -p "$R/.github"
+# deliberately NO bubbles-project.yaml
+run_guard_no_parser "$R"; assert_exit 0 "non-adopter (no config) + no parser → no-op"; assert_contains "no-op" "non-adopter-no-config message"
+
+R="$WORKSPACE/nonadopter-no-obs-block"
+mkdir -p "$R/.github"
+printf 'scans:\n  idor:\n    handlerFilePatterns: handler\n' > "$R/.github/bubbles-project.yaml"
+run_guard_no_parser "$R"; assert_exit 0 "non-adopter (no observability block) + no parser → no-op"; assert_contains "no traceContracts.observability block" "non-adopter-no-obs-block message"
+
+R="$WORKSPACE/nonadopter-comment-only-observability"
+mkdir -p "$R/.github"
+printf '# observability: not adopted here\nscans:\n  idor:\n    handlerFilePatterns: handler\n' > "$R/.github/bubbles-project.yaml"
+run_guard_no_parser "$R"; assert_exit 0 "non-adopter (comment-only observability mention) + no parser → no-op"; assert_contains "no traceContracts.observability block" "non-adopter-comment-only message"
+
+R="$WORKSPACE/nonadopter-unrelated-observability-key"
+mkdir -p "$R/.github"
+printf 'not_observability: true\nscans:\n  idor:\n    handlerFilePatterns: handler\n' > "$R/.github/bubbles-project.yaml"
+run_guard_no_parser "$R"; assert_exit 0 "non-adopter (unrelated observability key) + no parser → no-op"; assert_contains "no traceContracts.observability block" "non-adopter-unrelated-key message"
+
 # --- framework-repo-exempt: VERSION + install.sh + bubbles/scripts → EXEMPT ---
 R="$WORKSPACE/fwrepo"
 mkdir -p "$R/bubbles/scripts" "$R/.github"

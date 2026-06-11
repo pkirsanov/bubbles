@@ -288,6 +288,10 @@ if [[ -x "$SCRIPT_DIR/observability-adapter-lint.sh" && -d "$REPO_ROOT/bubbles/a
   run_check "Observability adapter lint (live)" bash "$SCRIPT_DIR/observability-adapter-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/prometheus-adapter-fetch-selftest.sh" ]]; then
+  run_check "Prometheus adapter live-fetch selftest (P2)" bash "$SCRIPT_DIR/prometheus-adapter-fetch-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/observability-posture-guard-selftest.sh" ]]; then
   run_check "Observability posture guard selftest (G098)" bash "$SCRIPT_DIR/observability-posture-guard-selftest.sh"
 fi
@@ -314,6 +318,14 @@ fi
 
 if [[ -x "$SCRIPT_DIR/observability-endpoint-resolve-selftest.sh" ]]; then
   run_check "Observability endpoint resolver selftest (SCOPE-3)" bash "$SCRIPT_DIR/observability-endpoint-resolve-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-check-selftest.sh" ]]; then
+  run_check "Observability check twin selftest (wired fixture)" bash "$SCRIPT_DIR/observability-check-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/observability-check.sh" ]]; then
+  run_check "Observability check twin (live, posture+SLO+trace+endpoints)" bash "$SCRIPT_DIR/observability-check.sh" --repo-root "$REPO_ROOT"
 fi
 
 if [[ -x "$SCRIPT_DIR/env-pollution-scan-selftest.sh" ]]; then
