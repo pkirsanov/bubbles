@@ -12,6 +12,10 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.11.2 — framework-health recipe ↔ G127 cross-reference
+
+**Theme:** Documentation polish completing the v7.11.x G127 line. The `framework-health` recipe reads `bubbles/capability-ledger.yaml` to flag stale capabilities; G127 now *enforces* consumer freshness on that same ledger. Added a one-line cross-reference so the analysis recipe points at the enforcement gate (the retro *nudge* vs the blocking *gate* relationship is now explicit). No code, gate, or schema change.
+
 ## v7.11.1 — G127 shape-not-substance fix + gate-catalog band
 
 > *"A lock that opens for a blank key ain't a lock at all, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
