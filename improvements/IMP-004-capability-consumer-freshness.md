@@ -4,8 +4,15 @@
 > **Owner surface:** Bubbles framework (`bubbles/capability-ledger.yaml`,
 > `bubbles/schemas/capability-ledger.schema.json`, `bubbles/scripts/`,
 > `bubbles/scripts/framework-validate.sh`, `docs/`)
-> **Status:** PROPOSED — awaiting prioritization. Created from the v7.10.0
-> critical review (the IMP-001 R2-B "orphan foundation" root cause).
+> **Status:** FRAMEWORK SHIPPED — v7.11.0 delivered Gate **G127**
+> (`capability_consumer_freshness_gate`) via
+> `bubbles/scripts/capability-consumer-freshness.sh` +
+> `bubbles/scripts/capability-consumer-freshness-selftest.sh` (16 cases),
+> wired into `framework-validate.sh` (selftest + live guard). SCOPE-1
+> (`consumers:` field + schema) was landed in v7.10.1; SCOPE-2 (guard +
+> selftest + G127 registry entry) and SCOPE-3 (backfill `consumers:` for all
+> 19 shipped capabilities — 61 consumer paths verified) landed in v7.11.0. The
+> gate dogfoods itself (registered as a shipped capability with consumers).
 > **Created:** 2026-06-11
 
 > ⚠️ **Why this lives in `improvements/` and not `specs/`:** the Bubbles source

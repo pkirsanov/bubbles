@@ -12,6 +12,30 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.11.0 — capability-consumer freshness gate (G127, IMP-004)
+
+> *"You can't be the decency police and let your own trailer go to shit, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Delivers `improvements/IMP-004-capability-consumer-freshness.md` — the durable, framework-wide fix for the "orphan foundation" failure class that v7.10.1 only patched for the two observability entries. The framework stops exempting its OWN capability ledger from the G029 integration-completeness standard it enforces downstream.
+
+### New gate — G127 `capability_consumer_freshness_gate`
+
+- **Every `state: shipped` capability in `bubbles/capability-ledger.yaml` MUST now declare a non-empty `consumers:` list whose every path exists on disk.** This is the G029 standard ("every shipped artifact has a real consumer") applied to the framework's own ledger. `partial` / `proposed` / `deprecated` capabilities are exempt (no-op).
+- Enforced by **`bubbles/scripts/capability-consumer-freshness.sh`**: a repo with no ledger (every downstream product checkout) no-ops via a parser-free pre-check that runs BEFORE the fail-closed parser gate; a missing `yq` fails closed (blocking gate) ONLY when a ledger is present; there is **no `--skip`/`--force`/`--ignore` bypass**. An orphan shipped capability is a real finding — wire a consumer or downgrade the `state`.
+- Existence check (not semantic-reference): proves each declared consumer file is present. Choosing consumers that genuinely invoke the owner is the authoring contract; a future G097-style semantic-grep enhancement can layer on without changing the gate contract.
+- Hermetic selftest **`bubbles/scripts/capability-consumer-freshness-selftest.sh`** (16 cases): shipped-with-consumers PASS; shipped-no-consumers FAIL (ORPHAN); shipped-dangling-consumer FAIL (DANGLING); one-good-one-dangling adversarial FAIL; proposed/partial/deprecated no-op PASS; no-ledger no-op PASS; ledger-present-without-yq fail-closed; no-ledger-without-yq still no-ops; bypass flags rejected (exit 2); `--help` exit 0. Both the selftest and a live ledger guard are wired into `bubbles/scripts/framework-validate.sh`.
+
+### Ledger backfill — all shipped capabilities now declare real consumers
+
+- **`consumers:` backfilled for all 17 shipped capabilities** that lacked it (the 2 observability entries already had it from v7.10.1). Every listed consumer is a real, existing executable surface that invokes/references the owner (e.g. `workflow-orchestration` → mode-resolver + state-transition-guard + workflow agent; `artifact-ownership` → agent-ownership-lint + selftest; `session-aware-runtime-coordination` → cli.sh + framework-validate + lease selftest). The live guard verifies **61 consumer paths across 19 shipped capabilities** all exist.
+- **The gate dogfoods itself:** `capability-consumer-freshness` is itself registered as a shipped capability (consumers: framework-validate.sh, its selftest, gates.yaml), so it must satisfy its own rule. Ledger state summary is now **20 shipped, 1 partial, 0 proposed**.
+- `IMP-004` status moved from PROPOSED to delivered.
+
+### Notes
+
+- One new gate ID (G127), one new capability, no new workflow mode. Registry now declares 107 gates.
+- Regenerated: `workflows.yaml` gates block, `docs/generated/competitive-capabilities.md`, `docs/generated/interop-migration-matrix.md`, README capability row, framework-stats, release manifest.
+
 ## v7.10.1 — observability enforcement teeth + orphan-root-cause follow-up
 
 > *"A lock you never check ain't a lock, Bubbles — it's a decoration."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
