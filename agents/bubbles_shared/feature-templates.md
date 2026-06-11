@@ -70,6 +70,13 @@ Logs, metrics, traces, and failure visibility. If the project defines `traceCont
 ## Testing Strategy
 Map test types to exact requirements and Gherkin scenarios. Require explicit coverage for unit, integration, e2e, and stress (plus other applicable taxonomy types), with live-test execution evidence and no skipped required tests.
 
+## Complexity Tracking
+List any deviation from the simplest viable approach that satisfies the requirements. If the design introduces no such deviation, write a single line: `None — simplest viable approach used.` Otherwise add one row per deviation. This is a lightweight documentation discipline, not a blocking gate.
+
+| Decision | Simpler alternative considered | Why rejected |
+|----------|-------------------------------|--------------|
+| [Added complexity, e.g., a caching layer] | [Simplest approach, e.g., read from the store on each request] | [Concrete reason the simpler approach was insufficient] |
+
 ## Risks & Open Questions
 - Open decisions, risks, and how they will be resolved.
 ```

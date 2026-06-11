@@ -53,6 +53,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-skills-first-discovery` | 58 | KEEP | The router that surfaces every other discovery skill. CRITICAL — never delete. |
 | `bubbles-spec-template-bdd` | 46 | KEEP | Spec template enforcement (BDD shape). |
 | `bubbles-status-transition` | 87 | KEEP | Status-transition discovery skill — wraps `state-transition-guard.sh`. |
+| `bubbles-supply-chain-source-locking` | 178 | KEEP | Build-time dependency-source allowlist policy; complementary to (distinct from) deploy-time provenance. |
 | `bubbles-test-environment-isolation` | 182 | KEEP | Ephemeral-only test backing store policy. |
 | `bubbles-test-integrity` | 250 | KEEP | Trinity's field manual — substantive 6-gate decision tree. |
 | `bubbles-upkeep-cadence` | 116 | KEEP | Calendar + ledger mechanics for upkeep tasks. |

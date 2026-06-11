@@ -12,6 +12,20 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.9.0 — build-time dependency-source locking + up-front complexity justification
+
+> *"It don't matter how good the lock on the shed is, Bubbles, if you let any stranger hand you the parts that go inside it."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Bubbles was already strong on *deploy-time* artifact provenance (cosign keyless + SLSA build-provenance + SBOM + Trivy, enforced in the knb deploy adapters) but said nothing about where dependencies are RESOLVED FROM at *build* time — leaving dependency-confusion, typosquat, and malicious-mirror exposure ungoverned. It also had simplicity *principles* and a post-hoc `bubbles.simplify` agent, but no requirement to justify ADDED complexity up front with rejected alternatives. v7.9.0 closes both gaps with two reusable, toolchain-agnostic governance additions — **no new enforcement gate, no new script, no new workflow mode**.
+
+### What changed
+
+- **New skill `bubbles-supply-chain-source-locking`** + **binding instruction `instructions/bubbles-supply-chain-source-locking.instructions.md`** (`applyTo: "**"`). The rule: build-time dependency resolution MUST be locked to an explicit allowlist of trusted sources; arbitrary/implicit upstreams are forbidden. Each downstream repo wires the ecosystem-appropriate source check into its EXISTING blocking lint/pre-push gate — Rust (cargo-deny `[sources]` with `unknown-registry`/`unknown-git = "deny"` + a single `allow-registry`), Node (pinned `.npmrc` registry + committed lockfile + `npm ci`), Go (`GOFLAGS=-mod=readonly`, pinned `GOPROXY`, committed `go.sum`, no checksum-disable knobs), Python (single `--index-url`, hash-pinned requirements, no `--extra-index-url` fall-through) — with no `--skip`/`--force` bypass.
+- **Explicitly distinguished from deploy-time provenance.** The skill and instruction carry a "Two Axes" section that separates *build-time SOURCE locking* (this policy) from *deploy-time artifact PROVENANCE* (cosign/SLSA/SBOM/Trivy, owned by `bubbles-deployment-target-adapter`) and cross-links the two as complementary controls rather than duplicating them. A repo needs both; neither substitutes for the other.
+- **Both design templates gain a `## Complexity Tracking` section** — the feature design template (`agents/bubbles_shared/feature-templates.md`, columns `Decision | Simpler alternative considered | Why rejected`) and the bug-fix design template (`agents/bubbles_shared/bug-templates.md`, columns `Decision | Simpler fix considered | Why rejected`, framed for deviation from the minimal fix). If a design introduces no deviation from the simplest viable approach, the author records `None — simplest viable approach used.` (feature) / `None — simplest viable fix used.` (bug fix); only deviations need rows. This is a lightweight documentation discipline, NOT a blocking gate. `bubbles.design` requires the section on both surfaces.
+- **No new gate, no new workflow mode, no new script.** Policy A is enforced by each downstream repo's existing lint/pre-push gate using the ecosystem's native tool; Policy B is a template/authoring discipline. `skills/INVENTORY.md` updated; the release manifest regenerated.
+- **Execution plan:** `improvements/IMP-002-supply-chain-source-locking-and-complexity-tracking.md` (the source repo keeps no persistent `specs/` per Gate G085 — the framework dogfood evidence gate).
+
 ## v7.7.0 — restricted orchestrators bind the per-repo MCP server (token materialization + newline fix)
 
 > *"You renamed everybody's clicker to stop the fightin', Bubbles — but then the five remotes in the drawer were still callin' out the old name and turnin' on nothin'. Make 'em say the new name."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
