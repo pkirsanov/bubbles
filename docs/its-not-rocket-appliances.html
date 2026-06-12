@@ -1470,6 +1470,10 @@
     <div class="wf-desc">The 8-doc bundle Sonny "Iron Lung" Smith produces per phase: <code>vision.md</code>, <code>features.md</code>, <code>actions.md</code>, <code>business-plan.md</code>, <code>deployment.md</code>, <code>marketing.md</code>, <code>monetization.md</code>, <code>ops-scalability.md</code>.</div>
   </div>
   <div class="workflow-card">
+    <div class="wf-name">release-delivery reconciliation</div>
+    <div class="wf-desc">Gate G101: every <code>delivery=required</code> feature declared in a phase's <code>features.md</code> (via <code>bubbles:feature</code> machine annotations) MUST map to a terminal + validate-certified spec. Blocks a <code>bubbles.goal</code>/<code>bubbles.sprint</code> release-phase scenario from self-certifying 'delivered' while required features are unspecced, non-terminal, blocked, or implement-self-certified. WARN-grandfathered until a packet opts in with a <code>bubbles:reconciled-packet</code> header. Enforced by <code>release-delivery-reconciliation-guard.sh</code>; the compile-time twin in <code>scenario-compile-lint.sh</code> rejects an under-scoped scenario DAG.</div>
+  </div>
+  <div class="workflow-card">
     <div class="wf-name">carry-forward table</div>
     <div class="wf-desc">Mandatory section in every multi-phase repo's <code>features.md</code> — captures capabilities inherited from prior phases so nothing gets quietly dropped.</div>
   </div>

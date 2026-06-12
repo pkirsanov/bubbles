@@ -128,6 +128,10 @@
     "meaning": "The 8-doc bundle Sonny \"Iron Lung\" Smith produces per phase: `vision.md`, `features.md`, `actions.md`, `business-plan.md`, `deployment.md`, `marketing.md`, `monetization.md`, `ops-scalability.md`."
   },
   {
+    "term": "release-delivery reconciliation",
+    "meaning": "Gate G101: every `delivery=required` feature declared in a phase's `features.md` (via `bubbles:feature` machine annotations) MUST map to a terminal + validate-certified spec. Blocks a `bubbles.goal`/`bubbles.sprint` release-phase scenario from self-certifying 'delivered' while required features are unspecced, non-terminal, blocked, or implement-self-certified. WARN-grandfathered until a packet opts in with a `bubbles:reconciled-packet` header. Enforced by `release-delivery-reconciliation-guard.sh`; the compile-time twin in `scenario-compile-lint.sh` rejects an under-scoped scenario DAG."
+  },
+  {
     "term": "carry-forward table",
     "meaning": "Mandatory section in every multi-phase repo's `features.md` — captures capabilities inherited from prior phases so nothing gets quietly dropped."
   },

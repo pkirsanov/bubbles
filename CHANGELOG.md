@@ -12,6 +12,43 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.12.0 — release-delivery reconciliation gate (G101, IMP-006)
+
+> *"You can't tell the boys the trailer's built when half the rooms got no floor, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Delivers `improvements/IMP-006-release-delivery-reconciliation.md` — closes the scenario-level *"claimed delivered / actually skipped"* hole. The downstream symptom: a `bubbles.goal`/`bubbles.workflow` scenario tasked to "deliver the MVP" reported SUCCESS while only ~35% of the MVP features in `docs/releases/mvp/features.md` were actually built (the rest were unspecced, stubbed, or self-certified). The per-spec anti-fabrication gates (G021/G024/G025/G028/G029/G097 + downstream lints) are rigorous — but they only fire for specs that EXIST and are routed through `validate`. A feature that is *promised in a release packet but never specced* has no `state.json`, so no per-spec gate can ever fail on it. The gap was invisible to every gate. G101 adds the missing release-phase reconciliation layer.
+
+### New gate — G101 `release_delivery_reconciliation_gate`
+
+- **`bubbles/scripts/release-delivery-reconciliation-guard.sh`** reconciles the PROMISED required-feature set in `docs/releases/<phase>/features.md` against the DELIVERED (terminal + validate-certified) spec truth. Each feature carries an HTML-comment machine binding authored by `bubbles.releases` (the visible prose tables are untouched): `<!-- bubbles:feature id=<id> spec=<spec-dir|none> delivery=required|optional|carried|deferred-to:<phase> -->`, with a packet opt-in header `<!-- bubbles:reconciled-packet schemaVersion=1 phase=<phase> -->`.
+- For every `delivery=required` feature the guard verifies (1) the bound spec dir exists with a parseable `state.json`, (2) status is TERMINAL (`done` or the mode ceiling via `is-terminal-for-mode.sh`; `in_progress`/`not_started`/`blocked`/`done_with_concerns` are NOT terminal), and (3) the spec is VALIDATE-certified (`validate` in `certification.certifiedCompletedPhases[]` v3 or top-level `completedPhases[]` legacy) — so an implement self-certification with `validate` absent is a finding. This transitively closes the stub/fake-data half: forcing every required feature through `validate` re-runs the downstream per-spec reality scans (`no-fake-handler-data.sh`, `audit-ui-e2e-completeness.sh`) that only run under validate.
+- **Posture:** RECONCILED (blocking) when the packet carries the `bubbles:reconciled-packet` header OR `--require-coverage` is passed (the `bubbles.goal`/`bubbles.sprint` convergence path); otherwise GRANDFATHERED (WARN-only, exit 0) so existing downstream packets backfill at their pace. FAIL-LOUD on malformed (a reconciled packet that binds nothing, a missing `id`/`spec`/`delivery`, a duplicate id, an invalid `delivery`, or a `required` feature with `spec=none`). A required feature whose spec is legitimately `blocked` with a reason is reported NOT-DELIVERED (blocked) — distinct from silently-skipped. Bubbles SOURCE checkout auto-exempt (no `docs/releases/`). No `--skip`/`--force`/`--ignore` bypass.
+- **Hermetic selftest** `release-delivery-reconciliation-guard-selftest.sh` — 12 scenarios (S0–S11) including the exact downstream replay (S2: a reconciled `mvp` packet whose required feature binds a non-existent spec dir → exit 1), implement-self-cert (S4), the silent-no-op trap (S5), grandfather vs `--require-coverage` (S6/S7), and source-repo EXEMPT (S10).
+
+### Scenario coverage — compile-time twin (Hole A)
+
+- **`scenario-compile-lint.sh`** now reads an optional `rootOutcome.targetReleasePacket: <phase>` on the scenario DAG. When set and the phase's `features.md` is reachable, every `delivery=required` feature MUST be covered by some `delivery`-type node's `coversFeatures[]` — an under-scoped DAG (a promised required feature with no delivery node) is rejected at compile time before execution. Two new selftest cases (covered → exit 0; under-scoped → exit 1).
+
+### Convergence binding (Hole B)
+
+- **`bubbles.goal`** and **`bubbles.sprint`** root-outcome verification now runs `release-delivery-reconciliation-guard.sh --phase <phase> --require-coverage` for any release-phase scenario and treats a non-zero exit as a NON-terminal convergence state — loop back to create/route the missing required-feature specs, or end `blocked` — NEVER EXIT_SUCCESS. Documented in `agents/bubbles_shared/scenario-compile.md` → Root-Outcome Verification.
+
+### Ownership + knowledge surfaces
+
+- **`bubbles.releases`** owns the `bubbles:reconciled-packet` header + per-feature annotations in `features.md` and an OPTIONAL generated `docs/generated/release-reconciliation-<phase>.md` audit note (under `docs/generated/`, NOT a 9th packet doc — `release-packet-location-guard.sh` unaffected). Documented in the releases agent + `skills/bubbles-release-packet-template/SKILL.md`.
+- Registered as G101 in `bubbles/registry/gates.yaml` + `bubbles/workflows.yaml`; rationale entry in `agents/bubbles_shared/quality-gates.md` (range note updated: G101 used, G102–G109 reserved) + quick-ref row in `skills/bubbles-quality-gates-catalog/SKILL.md`; TPB vocabulary term `release-delivery reconciliation`; `bubbles.super` NL-routing; release-planning recipe section. Wired into `framework-validate.sh` (selftest + live guard, source-repo EXEMPT). Full framework-validate + release-check green.
+
+### Execution provenance
+
+- **Execution plan:** `improvements/IMP-006-release-delivery-reconciliation.md` (deleted on delivery per the improvements-doc lifecycle; recoverable from git history). The source repo keeps no persistent `specs/` per Gate G085 — the framework dogfood evidence gate.
+- IMP-002/003/004/005 improvement docs deleted on confirmed full delivery (their gates/skills/docs are shipped and validated in-tree); IMP-001 retained (downstream SCOPE-7..9 still pending per-repo adoption).
+
+### Bundled — PII/agnosticity hardening (BUG-004)
+
+- Scrubbed real downstream product names out of the framework's docs and test fixtures (`improvements/IMP-001`, the deleted `IMP-006`, `docs/v4.1.0-delivered-pending-activation.md`, `CHANGELOG` history, `BUGS.md`, and several guard selftests) per `docs/SCOPE_POLICY.md` — the repo stays product-agnostic.
+- Fixed **BUG-004**: `agnosticity-lint.sh` no longer uses a hardcoded downstream-name list (which both false-positived on the installer's `bubbles-<slug>` MCP-id token and silently under-checked unlisted products). It now derives the repo's own project slug and exempts the `bubbles-<slug>` token on agent `tools:` lines; an adversarial `agnosticity-lint-selftest.sh` case proves a genuine bare project-name leak is still flagged.
+- Untracked runtime session state (`.specify/memory/bubbles.session.json`) and added it to `.specify/memory/.gitignore`, matching the sibling runtime files (`developer-profile.md`, `skill-proposals*.md`).
+
 ## v7.11.3 — IMP-005 curated gate-catalog backfill + non-blocking freshness advisory
 
 > *"You can't keep addin' rooms to the trailer and never update the map, Bubbles. Folks get lost."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
@@ -121,7 +158,7 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 - **Ops agents consume operate-plane telemetry (orphan → live).** `bubbles.stabilize` fetches alerts/error-rate/deploy-impact FIRST during a wired incident and routes rollback to `bubbles.train`; `bubbles.upkeep` adds a `slo-review` task (weekly, wired only) routing burning SLOs to stabilize (opt-out reminders stay guard/doctor-owned, INV-9); `bubbles.train` gates promote/rollback on operate-plane deploy-impact + SLO burn (read-only, INV-12); `bubbles.devops` owns the wiring-execution boundary. New **MCP tool `check_observability`** (11 tools total) wraps the `observability-check.sh` bash twin; reads flow through `record_evidence` for provenance.
 - **DoD injection + design template.** `scope-workflow.md` auto-adds telemetry-captured + SLO-met DoD items for wired instrumented scopes (with the "3 AM reconstructibility" acceptance heuristic); the `design.md` template gains an optional `### Trace Topology` section (required for wired service-bearing instrumented scopes); `agent-common.md` gains the "evidence is the agent's sensory input" (Loopy-AI) philosophy note. Explicit `observabilityWorkflow` Test Plan field added to `planning-core.md` + `project-config-contract.md`.
 - **Isolation preserved.** Validate-plane telemetry is `env=test*` only (G115); new env-pollution + resolver selftests prove an `env=prod` test write blocks and a validate resolution cannot reach operate env. New template `templates/observability.yaml.tmpl` + fixtures under `bubbles/tests/fixtures/observability/`.
-- **Execution plan:** `improvements/IMP-001-observability-first-class.md` (SCOPE-1..6 delivered in the source repo; SCOPE-7 QF dogfood, SCOPE-8 source/knb posture, SCOPE-9 downstream propagation are applied per-repo).
+- **Execution plan:** `improvements/IMP-001-observability-first-class.md` (SCOPE-1..6 delivered in the source repo; SCOPE-7 downstream dogfood, SCOPE-8 source/knb posture, SCOPE-9 downstream propagation are applied per-repo).
 
 ### IMP-003 — Operator & contributor guidance
 
@@ -846,7 +883,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 
 ## v5.3.0 — Downstream-install validation cleanup
 
-**Theme:** `framework-validate` was authored inside the framework source repo and several of its selftests hardcoded assumptions that only hold from that tree (`install.sh` at repo root, `VERSION` file, `README.md`/`docs/` layout, `agents/` and `bubbles/` directly under the repo root). When downstream repos installed Bubbles, their copy of `framework-validate` would FAIL 11+ checks against expected-to-be-missing files, even though every framework-managed asset was installed correctly. Smackerel surfaced this with 11 baseline failures (9 source-only + 2 path-resolution).
+**Theme:** `framework-validate` was authored inside the framework source repo and several of its selftests hardcoded assumptions that only hold from that tree (`install.sh` at repo root, `VERSION` file, `README.md`/`docs/` layout, `agents/` and `bubbles/` directly under the repo root). When downstream repos installed Bubbles, their copy of `framework-validate` would FAIL 11+ checks against expected-to-be-missing files, even though every framework-managed asset was installed correctly. A downstream install surfaced this with 11 baseline failures (9 source-only + 2 path-resolution).
 
 v5.3 fixes the validation surface to be downstream-aware without weakening anti-fabrication or any gate enforcement.
 
@@ -860,7 +897,7 @@ v5.3 fixes the validation surface to be downstream-aware without weakening anti-
 
 ### Downstream Verification
 
-`cd ~/smackerel && bash .github/bubbles/scripts/framework-validate.sh` now exits 0 with:
+`cd ~/<repo> && bash .github/bubbles/scripts/framework-validate.sh` now exits 0 with:
 
 ```
 SKIP: Capability ledger selftest (framework-source-only; install-mode=downstream)
@@ -1379,7 +1416,7 @@ ceiling` continues to work.
 
 ### Fixed — Guard resilience for downstream + cross-layout invocation
 
-Promoted downstream-tested patches into the framework's two most-invoked guards. These started as local QF patches and were proven in production before promotion; they extend the v3.11.1 downstream-installed guard layout resolution work without regressing any existing fixture.
+Promoted downstream-tested patches into the framework's two most-invoked guards. These started as local downstream patches and were proven in production before promotion; they extend the v3.11.1 downstream-installed guard layout resolution work without regressing any existing fixture.
 
 - **`bubbles/scripts/artifact-lint.sh`**
   - `resolve_workflow_registry_file` falls back through 4 candidate paths (`$artifact_repo_root/bubbles/workflows.yaml`, `$artifact_repo_root/.github/bubbles/workflows.yaml`, `$script_repo_root/bubbles/workflows.yaml`, `$script_repo_root/.github/bubbles/workflows.yaml`) so `workflows.yaml` is found whether the lint runs from the source repo, an installed `.github/bubbles/` layout, or with a feature dir outside the script's repo root.

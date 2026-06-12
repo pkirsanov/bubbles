@@ -197,8 +197,9 @@ Before any final completion claim, confirm:
 
 ## Gate Family Reference (G082–G127)
 
-> **Range:** the canonical gate set runs G001–G127 (G096 is burned; G101–G109
-> is a reserved gap). The sections above narrate the foundational gates
+> **Range:** the canonical gate set runs G001–G127 (G096 is burned; G101 is the
+> release-delivery reconciliation gate; G102–G109 is a reserved gap). The
+> sections above narrate the foundational gates
 > (G001–G081) by topic. This reference covers the later gate families so the
 > module stays current with `bubbles/registry/gates.yaml` — which remains the
 > single source of truth for each gate's exact name, behavior, and enforcing
@@ -231,6 +232,9 @@ Before any final completion claim, confirm:
 - **G098** `observability_posture_declared_gate` — every repo declares `traceContracts.observability.posture` (wired/opted-out); undeclared WARNs (`observability-posture-guard.sh`).
 - **G099** `observability_opt_out_freshness_gate` — an opt-out is recorded + expiring; an expired `revisitAfter` raises a non-blocking reminder (`observability-opt-out-guard.sh`).
 - **G100** `observability_slo_evidence_gate` — BLOCKING when wired + an instrumented scope targets an `slo:`-linked workflow; captured evidence MUST meet the contract target (`observability-slo-guard.sh`).
+
+**Release-delivery reconciliation (G101)** — IMP-006; `bubbles.releases` + `bubbles.goal`/`bubbles.sprint` convergence:
+- **G101** `release_delivery_reconciliation_gate` — every `delivery=required` feature in `docs/releases/<phase>/features.md` (machine-bound via `<!-- bubbles:feature id=… spec=… delivery=required -->` plus a `<!-- bubbles:reconciled-packet … -->` header) MUST map to a TERMINAL + validate-certified spec; a promised-but-unspecced, non-terminal, blocked, or implement-self-certified required feature is a finding. WARN-grandfathered without the header; BLOCKING with the header or `--require-coverage` (the goal/sprint release-phase convergence path); a malformed reconciled packet fails loud; framework source EXEMPT. Compile-time twin: `scenario-compile-lint.sh` requires a scenario's `rootOutcome.targetReleasePacket` to cover every required feature with a delivery node (`release-delivery-reconciliation-guard.sh`).
 
 **Release-train & upkeep (G110–G120)** — `bubbles.train` + `bubbles.upkeep`; enforced mainly by `release-train-guard.sh` + `env-pollution-scan.sh`:
 - **G110** release-train discipline · **G111** flag default-off on other trains · **G112** backup evidence · **G113** restore-drill evidence · **G114** BCDR evidence · **G115** env-pollution isolation (test code never writes prod monitoring/backup/manifest) · **G116** offsite-backup-required for prod trains · **G117** audit-trail immutability · **G118** backup-retention declared · **G119** secret-rotation recorded (hashes, never values) · **G120** PII classification declared.

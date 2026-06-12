@@ -227,6 +227,14 @@ if [[ -x "$SCRIPT_DIR/release-packet-location-guard-selftest.sh" ]]; then
   run_check "Release packet location guard selftest" bash "$SCRIPT_DIR/release-packet-location-guard-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/release-delivery-reconciliation-guard-selftest.sh" ]]; then
+  run_check "Release delivery reconciliation guard selftest (G101)" bash "$SCRIPT_DIR/release-delivery-reconciliation-guard-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/release-delivery-reconciliation-guard.sh" ]]; then
+  run_check "Release delivery reconciliation guard (live, G101)" bash "$SCRIPT_DIR/release-delivery-reconciliation-guard.sh" --repo-root "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/workflow-surface-selftest.sh" ]]; then
   run_check "Workflow surface selftest" bash "$SCRIPT_DIR/workflow-surface-selftest.sh"
 fi
