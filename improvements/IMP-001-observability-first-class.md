@@ -1205,7 +1205,7 @@ NOT on the SCOPE-4 SLO-gate teeth, so it can run in parallel with SCOPE-4/SCOPE-
 - [x] stabilize/upkeep/devops/train prompts updated; ownership + handoff lints clean. **Claim Source: executed (2026-06-12).** Ops-agent observability wiring present: `bubbles.stabilize` (9 obs refs: operate-plane fetch-first), `bubbles.upkeep` (slo-review), `bubbles.train` (operate-plane promote/rollback gating), `bubbles.devops` (18 obs/adapter refs). `agent-ownership-lint.sh` exit 0.
 - [x] `slo-review` calendar task added for wired repos; upkeep-calendar selftest green; opt-out reminders remain guard/doctor-owned — raw output recorded. **Claim Source: executed (2026-06-12).** `slo-review` present in `workflows.yaml` (G099 owns committed-config reminders; `bubbles.upkeep` owns wired-prod slo-review only); `upkeep-calendar-selftest.sh` exit 0.
 - [x] `check_observability` MCP tool present; MCP server selftest lists the expanded tool set and the tool returns a verdict — raw output recorded. **Claim Source: executed (2026-06-12).** `bubbles/mcp/tools/check_observability.json` EXISTS; server auto-discovers via `tools_dir.glob("*.json")`; `mcp-server-selftest.sh` exit 0 and references `check_observability` (count 1).
-- [ ] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded. **Claim Source: executed (2026-06-12) — 4/5 SYNCED, QF PENDING.** canonical `check_observability.json` sha `661e5e2e…`: knb MATCH, guesthost MATCH, smackerel MATCH, wanderaide MATCH; quantitativeFinance ABSENT (still framework 7.7.0 — its upgrade is blocked by a concurrent 21-commit push). Box stays `[ ]` until QF upgrades to 7.11.x.
+- [x] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded. **Claim Source: executed (2026-06-12) — 5/5 SYNCED.** canonical `check_observability.json` sha `661e5e2e…`: knb MATCH, guesthost MATCH, smackerel MATCH, wanderaide MATCH, quantitativeFinance MATCH (QF upgraded 7.7.0→7.11.3, commit `b6a082d1` on origin). sha256 set size = 1.
 - [x] Build Quality Gate passes as a block. **Claim Source: executed (2026-06-12).** Source-repo `framework-validate` green (recorded with the IMP-005 v7.11.3 run below); the MCP/observability selftests (server, posture/opt-out/SLO guards, adapter-fetch, observability-check) are all wired and PASS.
 
 ---
@@ -1232,10 +1232,10 @@ cross-repo propagation.
 | QF doctor posture WIRED | functional | doctor line |
 
 **DoD**
-- [ ] QF reaches `posture: wired`; one instrumented scope validated with captured telemetry + SLO evidence — raw output recorded in QF.
-- [ ] QF doctor shows `WIRED` — raw output recorded.
-- [ ] QF lessons learned captured before propagation.
-- [ ] Build Quality Gate passes as a block per repo.
+- [ ] QF reaches `posture: wired`; one instrumented scope validated with captured telemetry + SLO evidence — raw output recorded in QF. **Claim Source: executed (2026-06-12) — PARTIAL.** QF posture IS `wired` (origin `b6a082d1`); G100 reports "wired, but no traceContracts.workflows entry carries an slo: link; no-op" — the instrumented-scope + captured-SLO-evidence half (T7.1–T7.3) is NOT done. Same honest SLO-instrumentation gap as SCOPE-9. Box stays `[ ]` until ≥1 QF wired scope carries a real `slo:` link with captured `.specify/runtime/observability/*` evidence.
+- [x] QF doctor shows `WIRED` — raw output recorded. **Claim Source: executed (2026-06-12).** `observability-posture-guard.sh --repo-root <qf-repo>` → "Observability posture: WIRED — at least one non-none telemetry signal declared. (G098 OK)" exit 0; check_observability twin posture=WIRED, endpoints resolve to prometheus.
+- [ ] QF lessons learned captured before propagation. **Claim Source: executed (2026-06-12) — PARTIAL.** Lesson recorded inline: the wired-posture rollout applied cleanly via `install.sh --local-source` + an additive `traceContracts.observability` block (adapter names only); the single remaining cross-repo gap is SLO-link instrumentation (T7.1–T7.3 / T9.4), unfinished in ALL wired repos. No separate lessons doc authored — box stays `[ ]`.
+- [x] Build Quality Gate passes as a block per repo. **Claim Source: executed (2026-06-12).** QF no-bypass pre-push passed end-to-end: Rust unit/doctest/integration/e2e (1689) + stress (33) + security (8) + governance (8), web 283 files/3271 tests, security-scan cargo-audit/npm-audit/trivy all PASSED, release-train-guard PASSED (4 trains) → `@@@QF_PUSH_RC=0`, `d87c207b..b6a082d1 main -> main`.
 
 ---
 
