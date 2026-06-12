@@ -358,3 +358,118 @@ file uses a plain `Role`+`Content` string message model over a Python sidecar
 and cannot emit Anthropic content-block errors. Route the upstream issue to the
 sub-agent request serialization path in `microsoft/vscode-copilot-chat`, NOT to
 smackerel / bubbles / knb.
+
+---
+
+## BUG-004 — agnosticity-lint flags the installer's own per-repo MCP-id substitution (bubbles-<repo>) downstream; hardcoded project-name list also omits smackerel
+
+- **Filed:** 2026-06-12
+- **Disposition:** open framework defect — DOCUMENTED, fix deferred. The fix is an agnosticity-lint redesign that also needs a selftest update plus a `framework-validate` run, which is too large for the drive-by edit that filed this entry. Per Gate G095 this is a tracked discovered-issue with a recommended fix, not a silently-ignored problem.
+- **Discovered by:** a downstream framework upgrade (7.7.0 → 7.11.2) where `bubbles doctor` reported 15 passed / 1 failed in the `wanderaide` repo, while the byte-identical upgrade in the `smackerel` repo reported 16 passed / 0 failed.
+- **Severity:** medium — makes `bubbles doctor` report a Framework Integrity failure ("Portable Bubbles surfaces contain project/tool drift") in every downstream repo whose project name is on the hardcoded list. It is **advisory**: it does NOT block the consumer repo's own pre-push, because Bubbles-managed pre-commit/pre-push hooks are installed in the Bubbles SOURCE repo only — consumer repos run their own product pre-push, which does not invoke `bubbles agnosticity-lint` against installed files. But it makes `doctor` permanently red and erodes trust in the check.
+- **Affects:** `bubbles/scripts/agnosticity-lint.sh` (the `PROJECT_NAME` rule, around line 157 in canonical) as consumed by `cli.sh doctor` against downstream-installed agent files. Also implicates `bubbles/agnosticity-allowlist.txt` (framework-managed) and the installer's MCP-id substitution in `install.sh`.
+
+> **Artifact convention:** the Bubbles source repo cannot keep `specs/` (Gate
+> G085 dogfood guard), so this single entry is the full bug artifact. Because the
+> fix is DEFERRED, the entry documents reproduction + proven root cause +
+> recommended fix IN LIEU OF an in-repo fix in this commit. **No code changed in
+> this entry — this is a filing only.**
+
+### Reproduction
+
+1. Install/upgrade Bubbles into a downstream repo whose project name is one of
+   the three hardcoded names — `wanderaide`, `guesthost`, or
+   `quantitativefinance` — e.g.
+   `bash .github/bubbles/scripts/cli.sh upgrade --local-source <bubbles>`.
+2. The installer substitutes the per-repo MCP server id into the `tools:` line
+   (line 3) of the 5 restricted-orchestrator agents (`bubbles.bug`,
+   `bubbles.goal`, `bubbles.iterate`, `bubbles.sprint`, `bubbles.workflow`):
+   canonical `tools: [..., bubbles, ...]` becomes
+   `tools: [..., bubbles-<slug>, ...]` (e.g. `bubbles-wanderaide`).
+3. `bubbles doctor` (or `agnosticity-lint` run on the INSTALLED files) reports
+   `❌ [PROJECT_NAME] agents/bubbles.goal.agent.md:3` for each of the 5 agents,
+   then `❌ Portable Bubbles surfaces contain project/tool drift`, giving
+   `doctor` a "1 failed" result.
+
+### Root Cause (proven)
+
+- `agnosticity-lint.sh` builds its `PROJECT_NAME` detector from a HARDCODED list
+  (~L157). The names are written with intra-string concatenation so the lint
+  script itself does not contain its own banned token:
+
+  ```bash
+  grep_project_name="$(printf '%s|' "wander""aide" "guest""host" "quantitative""finance")"
+  grep_project_name="${grep_project_name%|}"
+  ```
+
+- The case-insensitive bounded grep (~L165) then matches the substring
+  `wanderaide` *inside* the installer-substituted token `bubbles-wanderaide`
+  on the `tools:` line and raises a `PROJECT_NAME` violation:
+
+  ```bash
+  grep -niE "(^|[^[:alnum:]_])(${grep_project_name})([^[:alnum:]_]|$)" ...
+  ```
+
+  The leading boundary `(^|[^[:alnum:]_])` is satisfied by the `-` in
+  `bubbles-<slug>` (a hyphen is not alphanumeric/underscore), and the trailing
+  boundary is satisfied by the following `,`/`]`/space — so the embedded project
+  name matches.
+- The substitution is LEGITIMATE: `install.sh` deliberately rewrites the MCP
+  server id to a unique per-repo id (`bubbles-<slug>`) so each repo's
+  `.vscode/mcp.json` server is uniquely addressable. The lint has no exemption
+  for this installer-owned token, so it flags the framework's own output.
+
+### Why It Is Asymmetric (smackerel passes)
+
+- `smackerel` is NOT in the hardcoded project-name list, so `bubbles-smackerel`
+  is never matched and smackerel's `doctor` reports 16 / 0 / 0.
+- smackerel passes by ACCIDENT — and this is itself a coverage hole: a genuine
+  `smackerel` project-name leak into a portable surface would NOT be caught.
+- So the same bug both (a) false-positives on listed repos and (b) under-checks
+  unlisted repos.
+
+### Expected Behavior
+
+- `agnosticity-lint`, when checking downstream-installed agent files, MUST NOT
+  flag the installer's own per-repo MCP-id substitution token (`bubbles-<slug>`)
+  as project drift. The `PROJECT_NAME` rule should target genuine project-name
+  leaks in portable surfaces, not the framework's deliberate per-repo id.
+- The check should not depend on a hand-maintained, per-product hardcoded name
+  list (which is guaranteed to drift — it already omits `smackerel`).
+
+### Recommended Fix (priority order)
+
+1. **Exempt the per-repo MCP-id token on `tools:` lines.** When linting
+   installed files, derive the repo's own MCP id (from `.vscode/mcp.json` or
+   `.github/bubbles-project.yaml`) and skip that exact `bubbles-<slug>` token,
+   OR generically treat a `bubbles-<slug>` token on an agent `tools:` array as
+   an installer substitution and exempt it. This removes the false positive for
+   every downstream repo without weakening real drift detection.
+2. **Replace the hardcoded project-name list with a derived value** (the repo's
+   own project name/slug) so the check is correct for ANY project and cannot
+   omit one (closes the smackerel under-checking hole).
+3. **Do NOT fix this by adding an entry to `bubbles/agnosticity-allowlist.txt`
+   downstream** — that file is framework-managed (listed in
+   `release-manifest.json`, overwritten on every upgrade), so a per-repo
+   allowlist entry would be wiped on the next upgrade. The fix belongs in
+   canonical `agnosticity-lint.sh` + its selftest
+   (`agnosticity-lint-selftest.sh`).
+4. **Any fix MUST update `agnosticity-lint-selftest.sh`** with an adversarial
+   case proving (a) `bubbles-<slug>` on a `tools:` line is allowed, and (b) a
+   genuine bare project-name leak in prose/comments is still flagged — so the
+   exemption cannot become a hole.
+
+### Workaround
+
+None needed operationally — the failure is an advisory `doctor` result, not a
+push gate, and the substitution is correct. Operators can ignore the single
+`doctor` `PROJECT_NAME` failure on the 5 restricted-orchestrator agents until
+the lint is fixed.
+
+### Scope Note
+
+This entry is FILING ONLY — **no code changed in this commit.** The fix
+(agnosticity-lint redesign + selftest) is deferred to a dedicated change because
+it touches a core portable-surface guard and must not open a drift-detection
+hole. Pre-existing: the substituted token is identical at 7.7.0, so the 7.11.2
+upgrade did not introduce this; it merely made it visible during a `doctor` run.
