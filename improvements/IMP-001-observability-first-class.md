@@ -460,7 +460,7 @@ flowchart TD
   S3 --> S4
   S4 --> S5[SCOPE-5<br/>setup wiring + install/upgrade nudges]
   S4 --> S6[SCOPE-6<br/>ops-agent prod consumption + MCP tool]
-  S5 --> S7[SCOPE-7<br/>QF dogfood]
+  S5 --> S7[SCOPE-7<br/>downstream dogfood]
   S6 --> S7
   S7 --> S8[SCOPE-8<br/>Source/knb posture]
   S7 --> S9[SCOPE-9<br/>Downstream propagation]
@@ -1205,37 +1205,37 @@ NOT on the SCOPE-4 SLO-gate teeth, so it can run in parallel with SCOPE-4/SCOPE-
 - [x] stabilize/upkeep/devops/train prompts updated; ownership + handoff lints clean. **Claim Source: executed (2026-06-12).** Ops-agent observability wiring present: `bubbles.stabilize` (9 obs refs: operate-plane fetch-first), `bubbles.upkeep` (slo-review), `bubbles.train` (operate-plane promote/rollback gating), `bubbles.devops` (18 obs/adapter refs). `agent-ownership-lint.sh` exit 0.
 - [x] `slo-review` calendar task added for wired repos; upkeep-calendar selftest green; opt-out reminders remain guard/doctor-owned — raw output recorded. **Claim Source: executed (2026-06-12).** `slo-review` present in `workflows.yaml` (G099 owns committed-config reminders; `bubbles.upkeep` owns wired-prod slo-review only); `upkeep-calendar-selftest.sh` exit 0.
 - [x] `check_observability` MCP tool present; MCP server selftest lists the expanded tool set and the tool returns a verdict — raw output recorded. **Claim Source: executed (2026-06-12).** `bubbles/mcp/tools/check_observability.json` EXISTS; server auto-discovers via `tools_dir.glob("*.json")`; `mcp-server-selftest.sh` exit 0 and references `check_observability` (count 1).
-- [x] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded. **Claim Source: executed (2026-06-12) — 5/5 SYNCED.** canonical `check_observability.json` sha `661e5e2e…`: knb MATCH, guesthost MATCH, smackerel MATCH, wanderaide MATCH, quantitativeFinance MATCH (QF upgraded 7.7.0→7.11.3, commit `b6a082d1` on origin). sha256 set size = 1.
+- [x] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded. **Claim Source: executed (2026-06-12) — 5/5 SYNCED.** canonical `check_observability.json` sha `661e5e2e…`: all 5 downstream installations MATCH (a downstream repo upgraded to the current framework version, commit `<sha>` on origin). sha256 set size = 1.
 - [x] Build Quality Gate passes as a block. **Claim Source: executed (2026-06-12).** Source-repo `framework-validate` green (recorded with the IMP-005 v7.11.3 run below); the MCP/observability selftests (server, posture/opt-out/SLO guards, adapter-fetch, observability-check) are all wired and PASS.
 
 ---
 
-## SCOPE-7 — QF dogfood
+## SCOPE-7 — downstream dogfood
 
 **Intent:** Prove the full spine end-to-end on one real product repo before
 cross-repo propagation.
 
 **Gherkin**
-- Given QF (prometheus/grafana/jaeger already in compose), when `bubbles.setup focus: observability` runs, then QF reaches `posture: wired` with real workflows + SLOs.
-- Given a wired QF scope touching the gateway request path, when validation runs, then telemetry + SLO evidence is captured and gates pass.
+- Given a downstream product repo (prometheus/grafana/jaeger already in compose), when `bubbles.setup focus: observability` runs, then it reaches `posture: wired` with real workflows + SLOs.
+- Given a wired downstream scope touching the gateway request path, when validation runs, then telemetry + SLO evidence is captured and gates pass.
 
 **Tasks**
-- T7.1 — Wire QF: `observability:` block (validate→QF test stack, operate→home-lab prometheus via knb env), `slos` for gateway.request + signal-engine, `traceContracts.workflows` for 1–2 hot paths.
-- T7.2 — Add captured-evidence wiring to QF's integration/e2e harness (`./quantitativefinance.sh` deposits `.specify/runtime/observability/*`).
-- T7.3 — Run one QF wired scope through validation with captured telemetry + SLO evidence.
-- T7.4 — Document the QF lessons learned before propagating.
+- T7.1 — Wire a downstream repo: `observability:` block (validate→downstream test stack, operate→home-lab prometheus via knb env), `slos` for gateway.request + signal-engine, `traceContracts.workflows` for 1–2 hot paths.
+- T7.2 — Add captured-evidence wiring to the downstream repo's integration/e2e harness (the downstream product CLI deposits `.specify/runtime/observability/*`).
+- T7.3 — Run one downstream wired scope through validation with captured telemetry + SLO evidence.
+- T7.4 — Document the downstream lessons learned before propagating.
 
 **Test plan**
 | Test | Category | Proof |
 |------|----------|-------|
-| QF wired scope validation | e2e (QF) | telemetry + SLO evidence captured, gates pass |
-| QF doctor posture WIRED | functional | doctor line |
+| downstream wired scope validation | e2e (downstream) | telemetry + SLO evidence captured, gates pass |
+| downstream doctor posture WIRED | functional | doctor line |
 
 **DoD**
-- [ ] QF reaches `posture: wired`; one instrumented scope validated with captured telemetry + SLO evidence — raw output recorded in QF. **Claim Source: executed (2026-06-12) — PARTIAL.** QF posture IS `wired` (origin `b6a082d1`); G100 reports "wired, but no traceContracts.workflows entry carries an slo: link; no-op" — the instrumented-scope + captured-SLO-evidence half (T7.1–T7.3) is NOT done. Same honest SLO-instrumentation gap as SCOPE-9. Box stays `[ ]` until ≥1 QF wired scope carries a real `slo:` link with captured `.specify/runtime/observability/*` evidence.
-- [x] QF doctor shows `WIRED` — raw output recorded. **Claim Source: executed (2026-06-12).** `observability-posture-guard.sh --repo-root <qf-repo>` → "Observability posture: WIRED — at least one non-none telemetry signal declared. (G098 OK)" exit 0; check_observability twin posture=WIRED, endpoints resolve to prometheus.
-- [ ] QF lessons learned captured before propagation. **Claim Source: executed (2026-06-12) — PARTIAL.** Lesson recorded inline: the wired-posture rollout applied cleanly via `install.sh --local-source` + an additive `traceContracts.observability` block (adapter names only); the single remaining cross-repo gap is SLO-link instrumentation (T7.1–T7.3 / T9.4), unfinished in ALL wired repos. No separate lessons doc authored — box stays `[ ]`.
-- [x] Build Quality Gate passes as a block per repo. **Claim Source: executed (2026-06-12).** QF no-bypass pre-push passed end-to-end: Rust unit/doctest/integration/e2e (1689) + stress (33) + security (8) + governance (8), web 283 files/3271 tests, security-scan cargo-audit/npm-audit/trivy all PASSED, release-train-guard PASSED (4 trains) → `@@@QF_PUSH_RC=0`, `d87c207b..b6a082d1 main -> main`.
+- [ ] A downstream repo reaches `posture: wired`; one instrumented scope validated with captured telemetry + SLO evidence — raw output recorded in the downstream repo. **Claim Source: executed (2026-06-12) — PARTIAL.** The downstream posture IS `wired` (origin `<sha>`); G100 reports "wired, but no traceContracts.workflows entry carries an slo: link; no-op" — the instrumented-scope + captured-SLO-evidence half (T7.1–T7.3) is NOT done. Same honest SLO-instrumentation gap as SCOPE-9. Box stays `[ ]` until ≥1 downstream wired scope carries a real `slo:` link with captured `.specify/runtime/observability/*` evidence.
+- [x] A downstream repo's doctor shows `WIRED` — raw output recorded. **Claim Source: executed (2026-06-12).** `observability-posture-guard.sh --repo-root <repo>` → "Observability posture: WIRED — at least one non-none telemetry signal declared. (G098 OK)" exit 0; check_observability twin posture=WIRED, endpoints resolve to prometheus.
+- [ ] Downstream lessons learned captured before propagation. **Claim Source: executed (2026-06-12) — PARTIAL.** Lesson recorded inline: the wired-posture rollout applied cleanly via `install.sh --local-source` + an additive `traceContracts.observability` block (adapter names only); the single remaining cross-repo gap is SLO-link instrumentation (T7.1–T7.3 / T9.4), unfinished in ALL wired repos. No separate lessons doc authored — box stays `[ ]`.
+- [x] Build Quality Gate passes as a block per repo. **Claim Source: executed (2026-06-12).** The downstream no-bypass pre-push passed end-to-end: Rust unit/doctest/integration/e2e (1689) + stress (33) + security (8) + governance (8), web 283 files/3271 tests, security-scan cargo-audit/npm-audit/trivy all PASSED, release-train-guard PASSED (4 trains) → `@@@PUSH_RC=0`, `<sha>..<sha> main -> main`.
 
 ---
 
@@ -1265,7 +1265,7 @@ operate-plane env injection owned by the deployment overlay.
 - [x] Source repo doctor posture clean with no nag — raw output recorded. **Claim Source: executed (2026-06-12).** `observability-posture-guard.sh --repo-root .` → "posture: EXEMPT (no-runtime) — Bubbles framework source repo; nothing to monitor. (G098 OK)" rc=0.
 - [x] Knb overlay posture clean with no nag — raw output recorded. **Claim Source: executed (2026-06-12).** knb `bubbles-project.yaml` posture=opted-out (reasonCode=no-runtime, revisitAfter=2027-06-11); posture-guard rc=0, opt-out-guard rc=0, G100 slo-guard "opted-out (not wired); no-op" rc=0.
 - [ ] Knb docs identify operate-plane env injection path without exposing values. **Claim Source: executed (2026-06-12) — NOT DONE.** `grep BUBBLES_OBS_*` across `knb/docs/` returns zero hits; knb operator docs do not yet describe the operate-plane env-injection path. Real knb-repo doc gap (G095 disposition: deferred to knb doc pass). Box stays `[ ]`.
-- [x] Product repos contain adapter names only; PII/agnosticity lint clean. **Claim Source: executed (2026-06-12).** grep for real telemetry URLs (`:9090`/`:3100`/`:16686`/grafana/prometheus/loki) across knb+wanderaide+guestHost+smackerel `bubbles-project.yaml` → zero hits; adapter NAMES only.
+- [x] Product repos contain adapter names only; PII/agnosticity lint clean. **Claim Source: executed (2026-06-12).** grep for real telemetry URLs (`:9090`/`:3100`/`:16686`/grafana/prometheus/loki) across all downstream `bubbles-project.yaml` → zero hits; adapter NAMES only.
 
 ---
 
@@ -1276,13 +1276,13 @@ approved `bubbles.setup focus: observability` runs, preserving ownership
 boundaries.
 
 **Gherkin**
-- Given wanderaide, guesthost, or smackerel has monitoring infra, when setup runs, then it proposes `wired` with repo-specific workflows/SLOs and waits for approval.
+- Given a downstream repo has monitoring infra, when setup runs, then it proposes `wired` with repo-specific workflows/SLOs and waits for approval.
 - Given a product repo legitimately lacks monitoring, when setup runs, then it proposes `opted-out` with reason/revisit metadata and waits for approval.
 
 **Tasks**
-- T9.1 — Run `bubbles.setup focus: observability` for wanderaide; approve/apply the repo-specific posture.
-- T9.2 — Run `bubbles.setup focus: observability` for guesthost; approve/apply the repo-specific posture.
-- T9.3 — Run `bubbles.setup focus: observability` for smackerel; approve/apply the repo-specific posture.
+- T9.1 — Run `bubbles.setup focus: observability` for a downstream repo; approve/apply the repo-specific posture.
+- T9.2 — Run `bubbles.setup focus: observability` for a downstream repo; approve/apply the repo-specific posture.
+- T9.3 — Run `bubbles.setup focus: observability` for a downstream repo; approve/apply the repo-specific posture.
 - T9.4 — For each wired repo, add one initial workflow + SLO registry entry and validate-plane capture path.
 - T9.5 — For each opted-out repo, record `reasonCode`, `reason`, `decision` metadata, and `revisitAfter`.
 
@@ -1294,9 +1294,9 @@ boundaries.
 | wired repo smoke | integration/e2e | one captured telemetry/SLO proof where wired |
 
 **DoD**
-- [x] Wanderaide posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `c20af132`.
-- [x] GuestHost posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `dea62f9f`.
-- [x] Smackerel posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `784a11b1`.
+- [x] A downstream repo posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `<sha>`.
+- [x] A downstream repo posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `<sha>`.
+- [x] A downstream repo posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `<sha>`.
 - [ ] Wired repos have one workflow + SLO + validate-plane evidence path; opted-out repos have complete decision metadata. **Claim Source: executed (2026-06-12) — PARTIAL.** opted-out (knb) decision metadata COMPLETE (reasonCode/reason/revisitAfter present, opt-out-guard rc=0). Wired repos: G100 reports "wired, but no traceContracts.workflows entry carries an slo: link; no-op" for all 3 — i.e. posture declared but no SLO registry entry/workflow yet (T9.4 instrumentation). Box stays `[ ]` until ≥1 wired repo carries a real `slo:` link.
 - [x] Cross-repo ownership respected; no knb-owned values committed to product repos. **Claim Source: executed (2026-06-12).** No real telemetry URLs/tokens in any product `bubbles-project.yaml`; adapter names only (see SCOPE-8 item4).
 
@@ -1322,7 +1322,7 @@ boundaries.
 | 3 | SCOPE-4 SLO/trace gates + DoD (+ adversarial-observability selftest) | S2, S3 | L |
 | 4a | SCOPE-5 setup + install nudges (clean cutover) | S4 | M |
 | 4b | SCOPE-6 wire first real consumer + MCP (orphan → live; depends on S3 resolver only) | S3 | L — highest value |
-| 5a | SCOPE-7 QF dogfood | S5, S6 | M |
+| 5a | SCOPE-7 downstream dogfood | S5, S6 | M |
 | 5b | SCOPE-8 source/knb posture | S7 | S |
 | 5c | SCOPE-9 downstream propagation | S7, S8 | M |
 
@@ -1371,7 +1371,7 @@ boundaries.
 - [ ] All 9 scopes `Done` with per-item raw evidence (G024/G025).
 - [ ] G098/G099/G100 registered, regenerated, selftested, live-wired; G080 upgraded; G026 linked.
 - [ ] `bubbles doctor` posture line works across wired / opted-out / undeclared / exempt.
-- [ ] QF dogfood proves telemetry + SLO evidence in integration/e2e; ops agents read prod telemetry.
+- [ ] Downstream dogfood proves telemetry + SLO evidence in integration/e2e; ops agents read prod telemetry.
 - [ ] Zero existing repo broken on upgrade (undeclared = WARN); all framework-validate + downstream installs green.
 - [ ] CHANGELOG, capability-ledger, gate-registry memory updated; version bumped; lockstep verified.
 
@@ -1383,4 +1383,4 @@ This plan is the analyst/architecture artifact. Next steps:
 1. **Approve** scope set + confirmed gate IDs (G098–G100 — verified free against the registry 2026-06-11; G096 stays burned) + the `traceContracts.observability` nested schema.
 2. Drive **SCOPE-1** through `bubbles.plan` (formal scopes.md in a fixture/downstream, not source `specs/`) → `bubbles.design` → `bubbles.implement`.
 3. Land the **do-it-immediately orphan-doc-honesty fix** (SCOPE-6 callout) regardless of the rest of the feature timeline.
-4. Dogfood on **QF** (SCOPE-7) before declaring the feature done.
+4. Dogfood on a **downstream repo** (SCOPE-7) before declaring the feature done.

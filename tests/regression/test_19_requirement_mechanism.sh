@@ -4,7 +4,7 @@ set -euo pipefail
 # Persistent regression for Gate G097 - requirement_mechanism_correspondence_gate.
 # Stages minimal disposable spec fixtures and asserts the guard BLOCKs a
 # requirement that names a concrete mechanism with no matching code evidence
-# and no justification (the smackerel PKCE-fake shape), while passing both a
+# and no justification (a downstream PKCE-fake shape), while passing both a
 # real implementation (synonym evidence) and a disclosed naming difference.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
