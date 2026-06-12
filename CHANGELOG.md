@@ -12,6 +12,22 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.11.3 — IMP-005 curated gate-catalog backfill + non-blocking freshness advisory
+
+> *"You can't keep addin' rooms to the trailer and never update the map, Bubbles. Folks get lost."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Closes the IMP-005 documentation gap — the prose gate-catalog (`quality-gates.md`) had drifted to a ~G081 ceiling while the registry shipped through G127. Backfilled the catalog and added a non-blocking advisory so the gap can never silently reopen. No gate, schema, or enforcement change — docs + one advisory script.
+
+### SCOPE-1 — `quality-gates.md` Gate Family Reference (G082–G127)
+
+- Added a grouped **`## Gate Family Reference (G082–G127)`** section: Convergence/context (G082–G086), Planning/spec (G087–G091), Terminal/delivery (G092–G093), Capability/discovery (G094–G095, G097), Observability (G098–G100), Release-train/upkeep (G110–G120), Propagation (G121–G123), Incident/framework-health/model-tier/capability-consumer (G124–G127).
+- Each entry carries the registry-accurate gate name + one-line rationale + enforcing guard script. Range statement corrected to G001–G127 (notes G096 burned, G101–G109 reserved gap, registry as single source of truth, `gate-meta.sh <id>` for the authoritative entry).
+
+### SCOPE-2 — non-blocking gate-catalog freshness advisory
+
+- **New `bubbles/scripts/gate-catalog-freshness.sh`** — compares the registry's highest gate id against the curated ceilings in `quality-gates.md` and `skills/bubbles-quality-gates-catalog/SKILL.md`. ALWAYS exits 0 (advisory, mirrors `repo-drift-report.sh`); WARNs to stderr when a catalog ceiling lags the registry. No-op when no registry present.
+- Wired into `framework-validate.sh` as an informational check (after `repo-drift-report`). Shellcheck clean. Adversarial proof: a synthetic G100-ceiling catalog against a G127 registry emits two WARN lines but still exits 0 (non-blocking contract holds); current tree prints *"curated gate catalogs are current with the registry (ceiling G127)"* exit 0.
+
 ## v7.11.2 — framework-health recipe ↔ G127 cross-reference
 
 **Theme:** Documentation polish completing the v7.11.x G127 line. The `framework-health` recipe reads `bubbles/capability-ledger.yaml` to flag stale capabilities; G127 now *enforces* consumer freshness on that same ledger. Added a one-line cross-reference so the analysis recipe points at the enforcement gate (the retro *nudge* vs the blocking *gate* relationship is now explicit). No code, gate, or schema change.

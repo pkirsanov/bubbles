@@ -1202,11 +1202,11 @@ NOT on the SCOPE-4 SLO-gate teeth, so it can run in parallel with SCOPE-4/SCOPE-
 | MCP check_observability handshake | unit | tool listed + returns verdict |
 
 **DoD**
-- [ ] stabilize/upkeep/devops/train prompts updated; ownership + handoff lints clean.
-- [ ] `slo-review` calendar task added for wired repos; upkeep-calendar selftest green; opt-out reminders remain guard/doctor-owned — raw output recorded.
-- [ ] `check_observability` MCP tool present; MCP server selftest lists the expanded tool set and the tool returns a verdict — raw output recorded.
-- [ ] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded.
-- [ ] Build Quality Gate passes as a block.
+- [x] stabilize/upkeep/devops/train prompts updated; ownership + handoff lints clean. **Claim Source: executed (2026-06-12).** Ops-agent observability wiring present: `bubbles.stabilize` (9 obs refs: operate-plane fetch-first), `bubbles.upkeep` (slo-review), `bubbles.train` (operate-plane promote/rollback gating), `bubbles.devops` (18 obs/adapter refs). `agent-ownership-lint.sh` exit 0.
+- [x] `slo-review` calendar task added for wired repos; upkeep-calendar selftest green; opt-out reminders remain guard/doctor-owned — raw output recorded. **Claim Source: executed (2026-06-12).** `slo-review` present in `workflows.yaml` (G099 owns committed-config reminders; `bubbles.upkeep` owns wired-prod slo-review only); `upkeep-calendar-selftest.sh` exit 0.
+- [x] `check_observability` MCP tool present; MCP server selftest lists the expanded tool set and the tool returns a verdict — raw output recorded. **Claim Source: executed (2026-06-12).** `bubbles/mcp/tools/check_observability.json` EXISTS; server auto-discovers via `tools_dir.glob("*.json")`; `mcp-server-selftest.sh` exit 0 and references `check_observability` (count 1).
+- [ ] 5 downstream MCP copies byte-identical — sha256 set size 1 recorded. **Claim Source: executed (2026-06-12) — 4/5 SYNCED, QF PENDING.** canonical `check_observability.json` sha `661e5e2e…`: knb MATCH, guesthost MATCH, smackerel MATCH, wanderaide MATCH; quantitativeFinance ABSENT (still framework 7.7.0 — its upgrade is blocked by a concurrent 21-commit push). Box stays `[ ]` until QF upgrades to 7.11.x.
+- [x] Build Quality Gate passes as a block. **Claim Source: executed (2026-06-12).** Source-repo `framework-validate` green (recorded with the IMP-005 v7.11.3 run below); the MCP/observability selftests (server, posture/opt-out/SLO guards, adapter-fetch, observability-check) are all wired and PASS.
 
 ---
 
@@ -1262,10 +1262,10 @@ operate-plane env injection owned by the deployment overlay.
 | product repo URL/token absence | lint | PII/agnosticity checks |
 
 **DoD**
-- [ ] Source repo doctor posture clean with no nag — raw output recorded.
-- [ ] Knb overlay posture clean with no nag — raw output recorded.
-- [ ] Knb docs identify operate-plane env injection path without exposing values.
-- [ ] Product repos contain adapter names only; PII/agnosticity lint clean.
+- [x] Source repo doctor posture clean with no nag — raw output recorded. **Claim Source: executed (2026-06-12).** `observability-posture-guard.sh --repo-root .` → "posture: EXEMPT (no-runtime) — Bubbles framework source repo; nothing to monitor. (G098 OK)" rc=0.
+- [x] Knb overlay posture clean with no nag — raw output recorded. **Claim Source: executed (2026-06-12).** knb `bubbles-project.yaml` posture=opted-out (reasonCode=no-runtime, revisitAfter=2027-06-11); posture-guard rc=0, opt-out-guard rc=0, G100 slo-guard "opted-out (not wired); no-op" rc=0.
+- [ ] Knb docs identify operate-plane env injection path without exposing values. **Claim Source: executed (2026-06-12) — NOT DONE.** `grep BUBBLES_OBS_*` across `knb/docs/` returns zero hits; knb operator docs do not yet describe the operate-plane env-injection path. Real knb-repo doc gap (G095 disposition: deferred to knb doc pass). Box stays `[ ]`.
+- [x] Product repos contain adapter names only; PII/agnosticity lint clean. **Claim Source: executed (2026-06-12).** grep for real telemetry URLs (`:9090`/`:3100`/`:16686`/grafana/prometheus/loki) across knb+wanderaide+guestHost+smackerel `bubbles-project.yaml` → zero hits; adapter NAMES only.
 
 ---
 
@@ -1294,11 +1294,11 @@ boundaries.
 | wired repo smoke | integration/e2e | one captured telemetry/SLO proof where wired |
 
 **DoD**
-- [ ] Wanderaide posture declared and doctor output recorded.
-- [ ] GuestHost posture declared and doctor output recorded.
-- [ ] Smackerel posture declared and doctor output recorded.
-- [ ] Wired repos have one workflow + SLO + validate-plane evidence path; opted-out repos have complete decision metadata.
-- [ ] Cross-repo ownership respected; no knb-owned values committed to product repos.
+- [x] Wanderaide posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `c20af132`.
+- [x] GuestHost posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `dea62f9f`.
+- [x] Smackerel posture declared and doctor output recorded. **Claim Source: executed (2026-06-12).** posture=wired; posture-guard rc=0; pushed `784a11b1`.
+- [ ] Wired repos have one workflow + SLO + validate-plane evidence path; opted-out repos have complete decision metadata. **Claim Source: executed (2026-06-12) — PARTIAL.** opted-out (knb) decision metadata COMPLETE (reasonCode/reason/revisitAfter present, opt-out-guard rc=0). Wired repos: G100 reports "wired, but no traceContracts.workflows entry carries an slo: link; no-op" for all 3 — i.e. posture declared but no SLO registry entry/workflow yet (T9.4 instrumentation). Box stays `[ ]` until ≥1 wired repo carries a real `slo:` link.
+- [x] Cross-repo ownership respected; no knb-owned values committed to product repos. **Claim Source: executed (2026-06-12).** No real telemetry URLs/tokens in any product `bubbles-project.yaml`; adapter names only (see SCOPE-8 item4).
 
 ---
 

@@ -1,10 +1,16 @@
 # IMP-005 — Curated Gate-Catalog Docs Backfill (close the G082+ documentation gap)
 
-> **Type:** Framework self-improvement proposal (NOT yet implemented)
+> **Type:** Framework self-improvement execution plan
 > **Owner surface:** Bubbles framework docs (`agents/bubbles_shared/quality-gates.md`,
 > `skills/bubbles-quality-gates-catalog/SKILL.md`)
-> **Status:** PROPOSED — filed per Gate G095 (discovered-issue disposition) from
-> the v7.11.0 critical review. Awaiting prioritization.
+> **Status:** FRAMEWORK SHIPPED — v7.11.3 delivered both scopes. SCOPE-1
+> backfilled `quality-gates.md` with a grouped `## Gate Family Reference
+> (G082–G127)` (registry-accurate names + rationale + enforcing guard, registry
+> cited as source of truth, range statement corrected to G001–G127). SCOPE-2
+> shipped `bubbles/scripts/gate-catalog-freshness.sh` — a NON-BLOCKING (always
+> exit 0) advisory wired into `framework-validate.sh` that WARNs when the
+> registry gate-ceiling exceeds a curated catalog's ceiling. The SKILL quick-ref
+> G110–G127 band was already landed in v7.11.1.
 > **Created:** 2026-06-11
 
 > ⚠️ **Why this lives in `improvements/` and not `specs/`:** the Bubbles source
