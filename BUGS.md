@@ -475,7 +475,7 @@ made it visible during a `doctor` run.
 ## BUG-005 — state-transition-guard.sh Check 11 is O(forks): ~126s on a large report.md (downstream sweeps appear to "hang")
 
 - **Filed:** 2026-06-14
-- **Disposition:** open — root cause empirically confirmed; fix recommended below, NOT yet implemented. Routed to a bubbles framework session (this entry is the handoff). Per Gate G095 this is a tracked open framework performance defect, distinct from BUG-001 (which is Check 3G / `agent-ownership-lint.sh` and does not cover this inline loop).
+- **Disposition:** fixed (working tree; not committed) — Check 11's per-line/per-block `echo|grep` fork-storm converted to zero-fork bash builtins; the 8 per-block signal greps collapsed into per-line DISTINCT-category flag accumulation (verdict byte-identical: block legit iff ≥3 lines AND ≥2 distinct categories); the sibling hot loops (Check 4A DoD-format, Check 9 evidence-marker, Check 12 duplicate-evidence) also de-forked; a perf+correctness regression was added to `state-transition-guard-perf-selftest.sh`; `release-manifest.json` regenerated (guard + perf-selftest checksums change). Canonical Bubbles source ONLY — downstream re-vendor of the 5 copies via the release manifest is a separate propagation follow-up. Per Gate G095 this is a resolved discovered-issue, distinct from BUG-001 (Check 3G / `agent-ownership-lint.sh`, which does not cover this inline loop). See "Fix Applied" below.
 - **Discovered by:** `bubbles.goal` session driving knb deploy-test-drift remediation (downstream repo `knb`, spec-019 sweep test)
 - **Severity:** medium — not a wrong result, but a ~2-minute wall-clock cost per large `report.md` that makes any downstream test/gate invoking the guard with no timeout look hung; CI/pre-push wall-clock inflation
 - **Affects:** `bubbles/scripts/state-transition-guard.sh` **Check 11** (Report.md required sections / evidence-block legitimacy), the inline `while IFS= read -r line` loop (canonical ~L2069). Every downstream repo that vendors the guard inherits it (confirmed in `knb`).
@@ -533,3 +533,22 @@ BUG-001 shipped `bubbles_run_with_timeout` around heavy **sub-script** invocatio
 
 - `knb` `tests/deploy/spec_019_sweep_test.sh` invokes the guard untimed and so appears to hang for ~2 min before the guard's (correct) exit 1 surfaces. That sweep also fails on the merits (spec-019 is `blocked`), so the perf defect is not what's blocking knb — but it masks the real signal behind a 2-minute stall.
 - Downstream workaround until the canonical fix lands: wrap the guard call in `timeout` in the consuming test/gate so a slow run fails fast with a named timeout rather than appearing to hang. This is a band-aid; the real fix is the builtin conversion above.
+
+### Fix Applied (2026-06-14)
+
+All four hot loops in `bubbles/scripts/state-transition-guard.sh` were converted from per-line/per-block `echo "$x" | grep -qE` subshell forks to zero-fork bash builtins:
+
+1. **Check 11 (evidence-block legitimacy — the hot path):** fence detection is now `[[ "$line" == '```'* ]]` (open) / `[[ "$line" == '```' ]]` (close). The 8 per-block signal greps are collapsed into **8 per-line category flags** OR'd as each in-block line streams by; at block close `signals` is the sum of the 8 flags and the unchanged `signals < 2` rule applies. The verdict is **byte-identical** — distinct-CATEGORY counting (threshold ≥2), NOT matching-line counting. Case-insensitive categories (i/ii/iv/v/vii — original `grep -qiE`) run under `shopt -s nocasematch`; case-sensitive categories (iii/vi/viii — original `grep -qE`) run with it off. Per-line testing also preserves grep's line-oriented `^`/`$` anchors. The now-unused `block_content` accumulator (an O(n²) string concat) was removed.
+2. **Check 4A** (DoD format manipulation), **Check 9** (per-`[x]` evidence-marker scan), and **Check 12** (duplicate-evidence fence detection) had their per-line boolean `echo|grep` tests converted to `[[ =~ ]]` / glob builtins. `grep -oE | sed` EXTRACTION pipelines (which run at most once per matched line) were intentionally left as-is.
+
+A new BUG-005 section in `state-transition-guard-perf-selftest.sh` builds a synthetic ~5000-line `report.md` (≈1000 legitimate filler blocks + one exactly-2-category legit block + one single-category-repeated illegitimate block) and runs the real guard with `BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1`. It asserts the guard completes well under budget AND that exactly one illegitimate block is detected (proving the distinct-category semantics survived — a regression to line-counting would pass the repeated-single-category block and fail this assert):
+
+```
+  PASS: guard over 6036-line report.md completes in 3s (< 30s; fork-storm was ~126s)
+  PASS: Check 11 distinct-category semantics preserved (exactly 1 illegitimate block detected)
+
+[state-transition-guard-perf-selftest] 7 passed, 0 failed
+[state-transition-guard-perf-selftest] OK
+```
+
+The existing `state-transition-guard-selftest.sh` stays green (≈50 assertions; verdict semantics unchanged), and `release-manifest.json` was regenerated so the guard + perf-selftest checksum changes are recorded. Shipped as v7.12.1.

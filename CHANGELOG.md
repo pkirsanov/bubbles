@@ -12,6 +12,26 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.12.1 — state-transition-guard Check 11 fork-storm fix (BUG-005)
+
+> *"If the smoke detector takes two minutes to chirp, folks figure the trailer ain't on fire, Bubbles. Make it quick."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** Fixes [`BUGS.md` BUG-005](BUGS.md) — `state-transition-guard.sh` Check 11 (report.md evidence-block legitimacy) took ~126s of wall-clock on a 4888-line `report.md` because the inline scan forked a subshell **per line** (the `echo "$line" | grep` fence test) and **8× per closed code block** (`echo "$block_content" | grep` signal tests). The guard returned a CORRECT verdict — this was purely a fork-storm performance defect that made any untimed downstream caller (e.g. a `knb` sweep test) appear to hang for ~2 minutes.
+
+### Fix — Check 11 (and 3 sibling hot loops) converted to zero-fork bash builtins
+
+- **Check 11 evidence-block scan:** fence detection is now `[[ "$line" == '```'* ]]` / `[[ "$line" == '```' ]]` (glob, zero fork). The 8 per-block signal greps are collapsed into **per-line distinct-category flag accumulation** inside the existing read loop — each of the 8 categories is OR'd as the block's lines stream by, then `signals = sum of the 8 flags` at block close. The verdict is **byte-identical**: a block is legitimate iff it has ≥3 lines AND ≥2 DISTINCT matching categories. A naive single `grep -cE` (which counts matching LINES, not categories, and would change the verdict) is intentionally NOT used. Case-insensitive categories (i/ii/iv/v/vii — original `grep -qiE`) run under `shopt -s nocasematch`; case-sensitive categories (iii/vi/viii — original `grep -qE`) run with it off. Per-line testing also preserves grep's line-oriented `^`/`$` anchor semantics. The now-unused `block_content` accumulator (an O(n²) string concat) was dropped.
+- **Sibling hot loops also de-forked:** Check 4A (DoD format manipulation), Check 9 (per-`[x]` evidence-marker scan), and Check 12 (duplicate-evidence fence detection) had their per-line `echo|grep` boolean tests converted to bash `[[ =~ ]]` / glob builtins. `grep -oE | sed` extraction pipelines (which run at most once per matched line) are left as-is.
+
+### Perf + correctness regression
+
+- **`state-transition-guard-perf-selftest.sh`** gains a BUG-005 section that builds a synthetic ~5000-line `report.md` (≈1000 legitimate filler blocks + one exactly-2-category legit block + one single-category-repeated illegitimate block) and runs the real guard with `BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1`. It asserts (a) the whole guard completes in **< 30s** (the fork-storm took ~126s; measured **3s** on a 6036-line fixture), and (b) **exactly one** illegitimate block is detected — proving distinct-category counting survived and did NOT regress to matching-line counting.
+- `state-transition-guard-selftest.sh` stays green (verdict semantics unchanged).
+
+### Scope
+
+- Canonical Bubbles source only. The guard is framework-managed downstream (`release-manifest.json`), so the fix re-vendors into the 5 product repos via the manifest on their next `/bubbles.setup` — a separate propagation step, not part of this commit. `release-manifest.json` regenerated (the guard + perf-selftest checksums change).
+
 ## v7.12.0 — release-delivery reconciliation gate (G101, IMP-006)
 
 > *"You can't tell the boys the trailer's built when half the rooms got no floor, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
