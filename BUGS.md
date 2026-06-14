@@ -469,3 +469,67 @@ PII/agnosticity hardening, alongside scrubbing real downstream product names out
 of the framework's docs and test fixtures. Pre-existing: the substituted token
 was identical at 7.7.0, so the 7.11.2 upgrade did not introduce this; it merely
 made it visible during a `doctor` run.
+
+---
+
+## BUG-005 — state-transition-guard.sh Check 11 is O(forks): ~126s on a large report.md (downstream sweeps appear to "hang")
+
+- **Filed:** 2026-06-14
+- **Disposition:** open — root cause empirically confirmed; fix recommended below, NOT yet implemented. Routed to a bubbles framework session (this entry is the handoff). Per Gate G095 this is a tracked open framework performance defect, distinct from BUG-001 (which is Check 3G / `agent-ownership-lint.sh` and does not cover this inline loop).
+- **Discovered by:** `bubbles.goal` session driving knb deploy-test-drift remediation (downstream repo `knb`, spec-019 sweep test)
+- **Severity:** medium — not a wrong result, but a ~2-minute wall-clock cost per large `report.md` that makes any downstream test/gate invoking the guard with no timeout look hung; CI/pre-push wall-clock inflation
+- **Affects:** `bubbles/scripts/state-transition-guard.sh` **Check 11** (Report.md required sections / evidence-block legitimacy), the inline `while IFS= read -r line` loop (canonical ~L2069). Every downstream repo that vendors the guard inherits it (confirmed in `knb`).
+
+### Symptom
+
+A downstream knb test (`tests/deploy/spec_019_sweep_test.sh`, G2 SWEEP-GOVERNANCE) invokes `state-transition-guard.sh specs/019-...` with **no timeout** and captures its output. Against `specs/019-.../report.md` (4888 lines) the guard takes:
+
+```
+$ /usr/bin/time -v timeout 200 bash bubbles/scripts/state-transition-guard.sh specs/019-zero-manual-deploy-orchestrator
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 2:06.13
+  exit: 1
+```
+
+2:06 wall clock — long enough that an un-timed caller (the sweep test) reads as a hang. The guard *does* finish and returns a correct verdict (exit 1: the spec is legitimately `blocked`); it is purely a performance defect, not a correctness one.
+
+### Root Cause
+
+Check 11's evidence-block-legitimacy loop forks a subshell **per line** and **8× per closed code block** via the `echo "$var" | grep` anti-pattern:
+
+```bash
+while IFS= read -r line; do
+  if [[ "$in_block" -eq 0 ]] && echo "$line" | grep -qE '^```'; then      # fork/line
+    ...
+  elif [[ "$in_block" -eq 1 ]] && echo "$line" | grep -qE '^```$'; then   # fork/line
+    ...
+    echo "$block_content" | grep -qiE '(passed|failed|ok$|...)' && ...     # 8 forks
+    echo "$block_content" | grep -qiE '(exit code|...)'          && ...     #   per
+    ... (8 signal greps total) ...                                          #  block
+  fi
+done < "$report_path"
+```
+
+On a 4888-line file that is ~9.8k `echo|grep` forks for the per-line fence test alone, plus 8 more per block. `grep -cE 'echo "\$(line|block_content)" \| grep'` counts **23** such calls in hot per-line/per-block loops; **48** `echo "$x" | grep` anti-patterns exist in the script overall.
+
+BUG-001 shipped `bubbles_run_with_timeout` around heavy **sub-script** invocations (artifact-lint, freshness-guard, reality-scan), but Check 11 is an **inline bash loop**, so it is not wrapped — the fail-safe timeout does not apply here.
+
+### Recommended Fix (not yet implemented)
+
+1. Replace every per-line/per-block `echo "$x" | grep -qE 'pat'` with a **bash builtin** `[[ "$x" =~ pat ]]` (zero fork). Fence detection becomes `[[ "$line" == '```'* ]]`.
+2. Collapse the 8 per-block signal greps into a single pass — e.g. accumulate `block_content` and run one `grep -cE '(alt1|alt2|...)'`, or evaluate the 8 alternations with bash regex against the accumulated string — so a block costs O(1) forks (ideally zero) instead of 8.
+3. Apply the same builtin conversion to the other hot loops flagged by `grep -nE 'echo "\$(line|...)" \| grep'` (canonical ~L849 DoD scan, ~L1752, ~L1928 evidence-link scan).
+4. Re-propagate the canonical fix into the 5 vendored downstream copies via `release-manifest.json` (the guard is framework-managed downstream; `downstream-framework-write-guard.sh` rejects per-repo edits, so the fix MUST land canonical).
+5. Add a perf regression guard: a selftest fixture with a synthetic ~5000-line `report.md` asserting the guard completes well under a budget (e.g. < 10s), so the fork-storm cannot regress.
+
+### Reproduction
+
+```
+# In any repo with the vendored guard and a large report.md:
+/usr/bin/time -v bash .github/bubbles/scripts/state-transition-guard.sh \
+  specs/<feature-with-4000+line-report>/   # ~2 min wall clock; dominated by Check 11
+```
+
+### Downstream Impact / Workaround
+
+- `knb` `tests/deploy/spec_019_sweep_test.sh` invokes the guard untimed and so appears to hang for ~2 min before the guard's (correct) exit 1 surfaces. That sweep also fails on the merits (spec-019 is `blocked`), so the perf defect is not what's blocking knb — but it masks the real signal behind a 2-minute stall.
+- Downstream workaround until the canonical fix lands: wrap the guard call in `timeout` in the consuming test/gate so a slow run fails fast with a named timeout rather than appearing to hang. This is a band-aid; the real fix is the builtin conversion above.
