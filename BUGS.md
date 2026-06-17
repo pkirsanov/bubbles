@@ -552,3 +552,141 @@ A new BUG-005 section in `state-transition-guard-perf-selftest.sh` builds a synt
 ```
 
 The existing `state-transition-guard-selftest.sh` stays green (≈50 assertions; verdict semantics unchanged), and `release-manifest.json` was regenerated so the guard + perf-selftest checksum changes are recorded. Shipped as v7.12.1.
+
+---
+
+## BUG-006 — state-transition-guard Check 4B (G041) flags a header summary blockquote `> **Status:** …` as a non-canonical scope status
+
+- **Filed:** 2026-06-17
+- **Disposition:** fixed (working tree; not committed) — Check 4B (canonicality) and Check 5 (per-scope status counting) now exclude `^>`-prefixed blockquote lines, so a header/summary rollup is never read as a scope status. An adversarial selftest pair was added to `state-transition-guard-selftest.sh`: (a) a fixture with a `> **Status:** all scopes Not Started (planning refreshed …)` header blockquote still passes; (b) a plain `**Status:** Deferred` scope line is STILL flagged non-canonical (no over-exclusion). Selftest green (50+ assertions), perf-selftest green (2s), shellcheck clean. Canonical source only; re-vendors downstream via `release-manifest.json`. Per Gate G095 this is a resolved discovered-issue.
+- **Discovered by:** session review of QuantitativeFinance planning-refresh work (2026-06-17) — a `scopes.md` whose top-of-file rollup blockquote read `> **Status:** all scopes Not Started (planning refreshed …)` tripped Check 4B.
+- **Severity:** low-medium — no incorrect PASS, but it forces agents to **reword legitimate human-readable summary blockquotes** to satisfy a guard that should ignore them. That inversion (artifact bent to fit the regex) is the exact anti-pattern the framework warns against, and it erodes trust in the guard.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh` **Check 4B** (Scope Status Canonicality — Gate G041), canonical ~L900–945. Vendored byte-identical into all 5 downstream repos.
+
+> **Artifact convention:** the Bubbles source repo cannot keep `specs/` (Gate
+> G085 dogfood guard), so this entry is the full bug artifact — reproduction +
+> proven root cause + expected-behavior spec + scoped fix.
+
+### Reproduction
+
+A `scopes.md` (or `scopes/_index.md`) that carries a top-of-file summary blockquote, e.g.:
+
+```markdown
+> **Status:** all scopes Not Started (planning refreshed 2026-06-17)
+
+## Scope 1: …
+**Status:** Not Started
+```
+
+Run `state-transition-guard.sh specs/<feature>`. Check 4B fails:
+
+```
+--- Check 4B: Scope Status Canonicality (Gate G041) ---
+❌ Non-canonical scope status detected in scopes.md: 'all scopes Not Started (planning refreshed 2026-06-17)' …
+```
+
+### Root Cause (proven)
+
+Check 4B enumerates status lines with an UNANCHORED grep:
+
+```bash
+done < <(grep -E '\*\*Status:\*\*' "$scope_path" || true)
+```
+
+That matches ANY line containing `**Status:**`, including a Markdown blockquote
+(`>`-prefixed) rollup in the header preamble. The value `all scopes Not Started
+(planning refreshed …)` strips its parenthetical to base `all scopes Not Started`,
+which is not one of the four canonical values (`Not Started` / `In Progress` /
+`Done` / `Blocked`) → FAIL. A canonical scope status is a **plain** `**Status:**
+<value>` line under a `## Scope N:` heading, never a `>`-quoted summary.
+
+### Expected Behavior
+
+Check 4B validates only genuine per-scope status declarations. A `>`-prefixed
+blockquote `**Status:**` line is a human-readable summary/annotation and MUST NOT
+be treated as a scope status value.
+
+### Scoped Fix
+
+1. In Check 4B, skip blockquote lines — filter out `^[[:space:]]*>` before the
+   canonicality test (e.g. `grep -E '\*\*Status:\*\*' | grep -vE '^[[:space:]]*>'`).
+2. **Safety (no bypass):** confirm the completion-reading path (Gate G024
+   all-scopes-Done, and any scope-status enumeration that decides Done-ness) also
+   ignores blockquote `**Status:**` lines, so a fake `> **Status:** Done` cannot
+   smuggle a scope to Done. Align if needed.
+3. `state-transition-guard-selftest.sh` gains an adversarial pair: (a) a header
+   `> **Status:** all scopes Not Started (planning refreshed)` blockquote no
+   longer fails Check 4B; (b) a plain `**Status:** Deferred` scope line is STILL
+   flagged non-canonical.
+4. Canonical source only; re-vendors downstream via `release-manifest.json`.
+
+---
+
+## BUG-007 — state-transition-guard Check 8C (Shared-Infra Blast-Radius) trigger over-matches benign prose (`session` + `flow`)
+
+- **Filed:** 2026-06-17
+- **Disposition:** fixed (working tree; not committed) — the Check 8C trigger's middle-alternation second arm was tightened from `(fixture|fixtures|harness|setup|bootstrap|contract|flow)` to `(fixture|fixtures|harness|bootstrap)`, so a real test-infrastructure noun must co-occur with the infra subject; the `shared|global|common|core` qualifier arm and the specific multi-word-phrase arm (which signal GENUINE shared infra) are unchanged. An adversarial selftest was added: a benign "regression session re-runs the booking user flow" note no longer trips 8C, while the existing genuine shared-fixture positive/negative fixtures STILL trigger it. Selftest green, shellcheck clean. Canonical source only; re-vendors downstream via `release-manifest.json`. Per Gate G095 this is a resolved discovered-issue.
+- **Discovered by:** session review of QuantitativeFinance planning work (2026-06-17) — a scope whose Test Plan row described a "regression session" exercising a user "flow" tripped Check 8C's shared-infrastructure trigger, demanding an inapplicable Shared Infrastructure Impact Sweep.
+- **Severity:** low-medium — over-broad trigger forces agents to either add an **inapplicable** Shared Infrastructure Impact Sweep (+ canary DoD item + rollback DoD item + canary Test Plan row + downstream-contract enumeration) or **reword legitimate prose** to dodge the keywords. False gating + artifact churn.
+- **Affects:** `bubbles/scripts/guards/planning-checks.sh` **Check 8C** (Shared Infrastructure Blast-Radius Planning), canonical ~L129–180; sourced by `state-transition-guard.sh`. Vendored into all 5 downstream repos.
+
+### Reproduction
+
+A scope whose prose / Test Plan contains a benign co-occurrence of a trigger noun
+(`session`, `auth`, `login`, `token`, `role`, `context`) and a generic second-arm
+word (`flow`, `contract`), e.g. a Test Plan row:
+
+```markdown
+| Regression E2E | e2e | … | Regression session re-runs the booking user flow end to end | … |
+```
+
+Run the guard. Check 8C fires:
+
+```
+--- Check 8C: Shared Infrastructure Blast-Radius Planning ---
+❌ Scope touches shared fixture/bootstrap infrastructure but has no Shared Infrastructure Impact Sweep section: Scope N
+❌ … missing the canary DoD item …
+❌ … missing the rollback/restore DoD item …
+```
+
+### Root Cause (proven)
+
+The Check 8C trigger alternation includes generic single words that appear
+constantly in ordinary test prose:
+
+```bash
+if grep -Eiq '… \b(auth|login|session|password reset|token refresh|tenant context|role detection|storage injection|init script|addinitscript)\b.*\b(fixture|fixtures|harness|setup|bootstrap|contract|flow)\b …' "$scope_path"; then
+```
+
+`session … flow` (or `… contract`) on a single line satisfies it. The trigger is
+meant to fire on genuine SHARED test-infrastructure changes (global Playwright
+setup, auth-fixture bootstrap, `storageState` / `addInitScript` injection), not
+any sentence that mentions a session and a flow.
+
+### Expected Behavior
+
+Check 8C fires only when a scope genuinely modifies SHARED fixture / bootstrap /
+global-setup infrastructure — not when benign prose co-mentions trigger keywords.
+
+### Scoped Fix
+
+1. Tighten the trigger so a match requires a **shared-scope qualifier**
+   (`shared` / `global` / `common` / `core` / `global setup` / `playwright setup`
+   / `storageState` / `addInitScript` / `auth fixture` / `login fixture` /
+   `bootstrap helper`) **co-occurring with** an infrastructure noun. Drop the bare
+   `flow` / `contract` second-arm words and the standalone `session`/`role`/`context`
+   arms that over-match generic prose.
+2. `state-transition-guard-selftest.sh` (which already exercises a positive Check
+   8C fixture at ~L1033) gains an adversarial pair: (a) a benign "regression
+   session re-runs the booking user flow" Test Plan row no longer trips 8C;
+   (b) a real "modifies the shared Playwright global-setup auth fixture" scope
+   STILL requires the Impact Sweep + canary + rollback items.
+3. Canonical source only; re-vendors downstream via `release-manifest.json`.
+
+### Relationship to BUG-006 / IMP-009
+
+BUG-006 and BUG-007 are two instances of the same class: a guard trigger/scan
+that matches ordinary artifact wording and forces the agent to bend the artifact
+to the regex. `improvements/IMP-009` proposes the systemic hardening (structural
+matching + a meta-selftest that proves guards do not flag their own fixtures);
+these two bugs are the concrete fixes that land first.

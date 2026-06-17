@@ -215,6 +215,53 @@ SELECTED_PROFILE_LABEL="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" la
 SELECTED_PROFILE_SUMMARY="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" bootstrapSummary)"
 SELECTED_PROFILE_INVARIANT="$(adoption_profile_value "$SELECTED_ADOPTION_PROFILE" governanceInvariant)"
 
+# ── Orphan-prune helpers for framework-managed mirror directories ────
+# When a release REMOVES a framework-managed agent / prompt / instruction /
+# skill, an already-installed downstream keeps the orphan unless it is pruned.
+# The v7.3.2 prune covered only bubbles/scripts/ + guards/; this generalizes that
+# hardening to the remaining managed mirrors (IMP-008).
+#
+# Trust anchor: the PREVIOUS install's manifest (${TARGET}/bubbles/.manifest),
+# which lists exactly the files the framework owned last time. An entry is an
+# orphan iff it was framework-owned (present in the old manifest) AND the NEW
+# source payload ($TEMP_DIR) no longer ships it. Operator-owned files (never in
+# the manifest) are therefore NEVER touched. On a first install there is no old
+# manifest, so nothing is pruned. The new manifest is written post-copy, so the
+# old one is still intact when these run.
+PRE_INSTALL_MANIFEST="${TARGET}/bubbles/.manifest"
+
+bubbles_prune_managed_file_orphans() {
+  # $1 = manifest path prefix to scope the prune (e.g. "agents/", "prompts/",
+  # "instructions/"). Matches flat managed files (a leading "agents/" prefix also
+  # covers agents/bubbles_shared/*).
+  local prefix="$1"
+  [[ -f "$PRE_INSTALL_MANIFEST" ]] || return 0
+  local entry
+  while IFS= read -r entry; do
+    [[ -n "$entry" ]] || continue
+    [[ "$entry" == \#* ]] && continue
+    [[ "$entry" == "$prefix"* ]] || continue
+    if [[ ! -e "$TEMP_DIR/$entry" && -e "${TARGET}/$entry" ]]; then
+      rm -f "${TARGET}/$entry"
+      info "Pruned orphan framework file: $entry"
+    fi
+  done < "$PRE_INSTALL_MANIFEST"
+}
+
+bubbles_prune_managed_skill_orphans() {
+  # Skills are dir-per-skill (skills/<name>/...). A framework skill whose <name>
+  # the old manifest recorded but the new source dropped is removed whole.
+  [[ -f "$PRE_INSTALL_MANIFEST" ]] || return 0
+  local skill_name
+  while IFS= read -r skill_name; do
+    [[ -n "$skill_name" ]] || continue
+    if [[ ! -d "$TEMP_DIR/skills/$skill_name" && -d "${TARGET}/skills/$skill_name" ]]; then
+      rm -rf "${TARGET:?}/skills/${skill_name}"
+      info "Pruned orphan framework skill: skills/${skill_name}"
+    fi
+  done < <(grep -oE '^skills/[^/]+/' "$PRE_INSTALL_MANIFEST" | sort -u | sed -e 's#^skills/##' -e 's#/$##')
+}
+
 # ── Install agents ──────────────────────────────────────────────────
 info "Installing agents..."
 mkdir -p "${TARGET}/agents/bubbles_shared"
@@ -227,6 +274,12 @@ info "Installing prompts..."
 mkdir -p "${TARGET}/prompts"
 cp "$TEMP_DIR"/prompts/bubbles.*.prompt.md "${TARGET}/prompts/"
 ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
+
+# Prune orphan framework agents/prompts removed upstream (IMP-008). The leading
+# "agents/" prefix also covers agents/bubbles_shared/*; operator-authored agents
+# (never in the manifest) are untouched.
+bubbles_prune_managed_file_orphans "agents/"
+bubbles_prune_managed_file_orphans "prompts/"
 
 # ── Install workflows ───────────────────────────────────────────────
 info "Installing workflow config and registries..."
@@ -550,6 +603,12 @@ if [[ "$AGENTS_ONLY" != "true" ]]; then
     done
     ok "$(find "${TARGET}/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l) shared skills installed"
   fi
+
+  # Prune orphan framework instructions/skills removed upstream (IMP-008).
+  # Keyed on the old manifest, so operator-authored instruction files and skill
+  # directories (never framework-managed) are never removed.
+  bubbles_prune_managed_file_orphans "instructions/"
+  bubbles_prune_managed_skill_orphans
 fi
 
 # ── Version stamp ───────────────────────────────────────────────────

@@ -12,6 +12,70 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.13.0 — guard false-positive fixes (BUG-006/007) + maintenance ergonomics (IMP-007/008/010/011)
+
+> *"Don't make folks rewrite the trailer just 'cause the inspector's clipboard is too twitchy, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A session-history review across the five downstream repos surfaced a recurring friction class — guards that flag ORDINARY artifact wording and force agents to reword legitimate evidence — plus several re-discovered maintenance rituals. This release fixes the two concrete guard false-positives and delivers the maintenance-ergonomics and governance-visibility improvements (IMP-007 through IMP-014). Full framework-validate + release-check green.
+
+### Fixes — guard false-positives (BUG-006, BUG-007)
+
+- **BUG-006 — `state-transition-guard.sh` Check 4B/Check 5 now ignore header summary blockquotes.** Both checks read `**Status:**` lines with an unanchored grep, so a top-of-file rollup blockquote like `> **Status:** all scopes Not Started (planning refreshed …)` was mis-read as a non-canonical scope status (Check 4B) AND mis-counted in the scope tally / `state.json` cross-reference (Check 5). Both now exclude `^>`-prefixed blockquote lines. **Safety:** a canonical scope status MUST be a plain line, so a `> **Status:** Done` blockquote can never smuggle a scope to Done — it is simply not counted. Adversarial selftest pair: a header blockquote no longer fails; a plain `**Status:** Deferred` scope line is STILL flagged (no over-exclusion).
+- **BUG-007 — Check 8C (Shared-Infra Blast-Radius) trigger tightened.** The middle-alternation second arm allowed the generic words `setup|contract|flow`, so benign prose (a Test Plan row describing a "regression session" re-running a user "flow") matched `session`+`flow` and wrongly demanded a Shared Infrastructure Impact Sweep. The arm is narrowed to a real test-infrastructure noun (`fixture|fixtures|harness|bootstrap`); the `shared|global|common|core` qualifier arm and the specific multi-word-phrase arm (which signal GENUINE shared infra) are unchanged. Adversarial selftest: benign `session`+`flow` prose no longer trips 8C, while the genuine shared-fixture positive/negative fixtures STILL do.
+- Both fixes are verdict-preserving for real violations, shellcheck-clean, and keep the BUG-005 perf selftest green (2s on a 6036-line fixture). Canonical source only; re-vendor downstream via `release-manifest.json`.
+
+### IMP-007 — derived-artifact regeneration wrapper (`regen-derived.sh` + `release-check --fix`)
+
+- **`bubbles/scripts/regen-derived.sh`** regenerates the four derived artifacts in the one correct dependency order — framework-stats → cheatsheet → capability-ledger-docs → **release-manifest LAST** (it checksums the others) — then re-runs every generator in `--check` mode and FAILS LOUD if any is still stale (catches a silent no-op). `--check-only` diagnoses without regenerating. This removes the recurring "which generators, in what order?" trap that blocks the push at `release-check` after a green `framework-validate`.
+- **`release-check.sh --fix`** runs `regen-derived.sh` before the freshness gates, so one command both diagnoses and remediates; bare `release-check.sh` is unchanged (check-only).
+- Hermetic `regen-derived-selftest.sh` (stubbed generators) asserts dependency order, fail-loud on a still-stale artifact, `--check-only` non-mutation, and bad-usage exit 2. Wired into `framework-validate.sh`.
+
+### IMP-008 — installer orphan-prune completeness (agents / prompts / instructions / skills)
+
+- The v7.3.2 orphan-prune covered only `bubbles/scripts/` + `guards/`. `install.sh` now also prunes orphan framework files from the `agents/`, `prompts/`, `instructions/`, and `skills/` mirrors when a release REMOVES one upstream. The prune is keyed on the PREVIOUS install's `bubbles/.manifest` keep-set, so operator-authored files (never framework-managed) are NEVER removed — closing the gap the v7.3.2 work explicitly flagged for the shared `instructions/`/`skills/` dirs.
+- `install-provenance-selftest.sh` gains seven assertions: an orphan framework agent/prompt/instruction/skill is pruned on reinstall, while a real framework file AND operator-owned instruction/skill files survive.
+
+### IMP-010 — canonical long-running-commands skill
+
+- **`skills/bubbles-long-running-commands/SKILL.md`** promotes the repeatedly-reinvented "run a long build/test/deploy without polling" discipline into a product-agnostic skill (the pattern previously lived only in one downstream's project-local agent). Codifies the modern model — background/async + end the turn + await the completion notification; an optional signal-file heartbeat for cheap mid-flight peeks — plus the anti-patterns (polling a build terminal, short timeouts that kill mid-compile, concluding "stalled" from a quiet long command) and the terminal-discipline tie-in. Delivered as a SKILL (not an agent) because it is procedural knowledge: skills are discovered dynamically, are NOT counted by framework-stats, and avoid the heavy agent-capabilities/ownership/routing registration. agnosticity-lint clean.
+
+### IMP-011 — new-gate scaffolder (`scaffold-gate.sh`)
+
+- **`bubbles/scripts/scaffold-gate.sh`** collapses the error-prone parts of the 10-step new-gate ritual: it computes the next free gate ID (skipping the burned **G096** and the reserved **G102–G109** gap), computes the next `tests/regression/test_NN` number, stamps the three new skeleton files (guard + hermetic selftest + regression) with the correct exit-code contract, refuses to clobber, supports `--dry-run`, and prints the precise copy-pasteable wiring checklist for the shared-file touchpoints. It is intentionally PURELY ADDITIVE — it does NOT auto-edit `gates.yaml` / `workflows.yaml` / `state-transition-guard.sh` / `framework-validate.sh` (programmatic edits to those load-bearing files would make the tool a new failure surface); the checklist ends with `regen-derived.sh` (IMP-007).
+- `scaffold-gate-selftest.sh` — 13 assertions including next-ID after G127→G128, burned-G096 skip (G095→G097), reserved-gap skip (G101→G110), `--dry-run` non-mutation, clobber refusal, and bad-name/usage exits. Wired into `framework-validate.sh`.
+
+### Deferred sub-parts (tracked in the IMP docs)
+
+- A generic cross-guard self-fixture meta-selftest (IMP-009) — the concrete contracts shipped in `scan-lib-selftest.sh`; a generic harness across heterogeneous guards overlaps with the live lints and is built only if a new self-match class appears.
+- Bounded `-jN` parallelism for framework-validate (IMP-012) — the tiering already delivers the fast-signal win; parallel output/tmp contention needs its own care.
+- The vendoring surface-thinning study (IMP-013) — analysis-only; it would alter the `.checksums` trust model and must be ratified on its own.
+- The optional MCP `graph_neighbors` verb + traceability edge-confidence tagging (IMP-014 follow-ons).
+
+### IMP-009 — guard false-positive hardening (systemic: `scan-lib.sh`)
+
+- **`bubbles/scripts/scan-lib.sh`** centralizes the three recurring scan mistakes behind sourceable helpers: `bubbles_scan_files` (excludes a guard's own `*selftest*` fixtures + generated dirs — the G115 self-match class), `bubbles_strip_comments` (drops pure-comment lines before a code-evidence grep), and `bubbles_status_lines` (excludes `>`-blockquote summary lines — the BUG-006 class). `state-transition-guard.sh` Check 4B + Check 5 were retrofitted to consume `bubbles_status_lines` (a real consumer per G029; removes the duplicated inline exclusion). `scan-lib-selftest.sh` proves all three contracts; the state-transition-guard selftest stays green (verdict-identical retrofit). Wired into `framework-validate.sh`.
+
+### IMP-012 — framework-validate tiering + bounded de-fork
+
+- **Tiering:** `framework-validate.sh` gains `--tier=core|full` (default `full` runs every check exactly as before, so pre-push/release-check are unchanged) and `--list-tier=core|full` (dry-lists the core subset, exit 0, no execution). `core` runs the fast structural/lint/generator/scan subset. `framework-validate-tier-selftest.sh` (fast, non-circular via `--list-tier`) proves the core/full split + unknown-flag exit 2.
+- **De-fork (BUG-005 continuation):** the per-EVERY-line boolean `echo "$line" | grep -qE` tests in `artifact-freshness-guard.sh` were converted to zero-fork bash `[[ =~ ]]` builtins with byte-identical ERE (verdict-preserving; selftest green). Case-insensitive once-per-heading classifications keep their `grep -qiE` form, mirroring BUG-005's rare-path principle.
+
+### IMP-013 — per-repo framework drift signal (`bubbles-drift-check.sh`)
+
+- **`bubbles/scripts/bubbles-drift-check.sh`** recomputes the sha256 of every vendored managed file against the installed `release-manifest.json` and reports per-file IN-SYNC / DRIFTED / MISSING plus ORPHAN framework scripts — a fast, read-only, no-network "am I drifted from the framework?" signal between upgrades. Exit 0 in-sync, 1 on drift/missing, 2 on malformed input; `--format json`. `bubbles-drift-check-selftest.sh` (7 cases) wired into `framework-validate.sh`; a non-blocking drift advisory added to `cli.sh doctor`. (The phase-2 surface-thinning study stays analysis-only — it would alter the `.checksums` trust model and must be ratified on its own.)
+
+### IMP-014 — governance blast-radius hub report (`bubbles-hub-report.sh`)
+
+- **`bubbles/scripts/bubbles-hub-report.sh`** composes the framework's OWN dependency graph from the authoritative in-repo SSTs/source (script source/call graph, agent/script shared-module includes, gate references) — deterministically, no LLM, no network — and ranks the most-depended-on nodes by in-degree so the blast radius of a change is visible BEFORE the change. `--node <id>` prints the exact provenance-tagged reverse-dependency closure; `--top N`; `--format text|json`. Exit 0 (informational) / 2 (usage); never 1. The live run surfaces the real hubs (`critical-requirements.md`, `agent-common.md`, `state-transition-guard.sh`, `cli.sh`, gate `G027`). `bubbles-hub-report-selftest.sh` (8 cases, fixture graph with known edges) wired into `framework-validate.sh`; a non-blocking hub snapshot added to `cli.sh doctor`. Borrows the *concepts* (degree centrality, reverse-dep query, edge-provenance tagging) from a graphify trial while REJECTING its fuzzy tree-sitter+LLM re-derivation of edges the SSTs already declare authoritatively.
+
+### Bugs filed
+
+- `BUGS.md` gains **BUG-006** and **BUG-007** (full artifacts: reproduction, proven root cause, expected behavior, landed fix), each marked fixed (working tree) per Gate G095 discovered-issue disposition.
+
+### Execution provenance
+
+- Improvement execution plans `improvements/IMP-007/008/009/010/011/012/013/014.md` were authored to scope this review pass, then DELETED on confirmed delivery (each was implemented as shipped scripts + hermetic selftests + framework-validate wiring, all green) per the improvements-doc lifecycle. The durable record is the shipped code + selftests + this CHANGELOG entry, not the plan docs. `improvements/IMP-001-observability-first-class.md` is RETAINED: its framework half shipped in v7.10.x but its downstream dogfood tail (guesthost SCOPE-9) is still open, so it is not yet deletable. The source repo keeps no persistent `specs/` per Gate G085.
+
 ## v7.12.1 — state-transition-guard Check 11 fork-storm fix (BUG-005)
 
 > *"If the smoke detector takes two minutes to chirp, folks figure the trailer ain't on fire, Bubbles. Make it quick."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
