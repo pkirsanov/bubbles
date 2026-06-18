@@ -12,6 +12,38 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.14.0 — control-plane policy activation (BUG-008): SST precedence + real G060 red→green ordering + grandfather
+
+> *"Don't bolt a control panel to the trailer and then never wire it to the breaker, Bubbles — flip the switches or take 'em off."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
+
+**Theme:** A control-plane audit found the v3 gates G055–G060 sourced effective policy ONLY from each spec's `state.json.policySnapshot`, with NO fallback to the repo Single-Source-of-Truth defaults in `.specify/memory/bubbles.config.json`. Because ~93% of downstream specs carry no snapshot, the global control-plane settings (grill / tdd / autoCommit / lockdown / regression / validation) were declared-but-INERT, and the one evidence gate that did run (G060) passed merely because a report or template contained the word "tdd" — a rubber-stamp. This release activates the SST and gives G060 teeth, without retro-breaking historical specs.
+
+### Layer 1 — SST precedence resolver activates the control-plane settings (BUG-008)
+
+- **`bubbles/scripts/guard-lib.sh`** gains `resolve_effective_policy` / `resolve_effective_policy_source`, a self-contained precedence resolver: per-spec `policySnapshot.<section>.<key|mode|value>` → repo SST `defaults.<section>.<key>` in `.specify/memory/bubbles.config.json` → hardcoded framework default. python3-backed, injection-safe (args via argv), and graceful when the SST config is absent (falls through to the framework default — never a silent skip).
+- **Check 3A (G055)** no longer HARD-FAILS when `policySnapshot` is absent: the SST config IS the provenance of record, so provenance resolves from it and the check PASSES with an INFO note. Only a missing snapshot AND a missing SST config remains a fail. When a snapshot IS present, the stricter per-snapshot checks are unchanged.
+- **Check 3D (G058/G059)** surfaces the effective `regression.immutability` resolved through the chain (the lockdown/regression triggers still key off `scenario-manifest.json`).
+- **Check 3E (G060)** resolves the effective TDD mode through the chain (framework default `scenario-first`), so a missing snapshot no longer leaves the SST default inert. The existing per-packet exempt-handling and the bugfix-fastlane/chaos-hardening forced-scenario-first behavior are unchanged.
+
+### Layer 2 — G060 real red→green ordering (no more keyword rubber-stamp)
+
+- The old G060 evidence test was `grep -qiE '…|tdd'` — it matched the template word "tdd" and proved nothing. It is replaced by **`detect_red_green_ordering`**: G060 passes ONLY when a failing-proof (RED) marker appears on an earlier line than the first passing-proof (GREEN) marker in the SAME report. The literal word "tdd"/"scenario-first" alone can never pass.
+
+### Grandfather clause (no retro-break)
+
+- A spec with NO `policySnapshot` whose `state.json.createdAt` is missing or strictly before the cutoff `2026-06-18` has the newly-activated G060 enforcement downgraded to a grandfathered INFO (never a blocking fail), mirroring the G094 pattern. New specs (`createdAt ≥ cutoff`) and any spec that DOES carry a `policySnapshot` get full enforcement. This protects the ~93% of historical done specs across the 5 downstream repos.
+
+### Selftest + regression (the proof)
+
+- **`bubbles/scripts/control-plane-policy-activation-selftest.sh`** (hermetic; wired into `framework-validate.sh`) — 19 assertions: A activation-from-config, B adversarial keyword-only (`tdd`) FAILS hardened G060 while still matching the old grep, C red→green ordering passes, D grandfather, E precedence legs (snapshot > config > framework default) + boolean normalization.
+- **`tests/regression/test_21_control_plane_activation.sh`** — exercises the REAL `state-transition-guard.sh` against staged fixture specs and asserts the Check 3A SST-fallback + Check 3E activation/fail/pass/grandfather output lines.
+
+### Doc fix (bundled)
+
+- `agents/bubbles.iterate.agent.md` mislabeled the zero-deferral check as "Gate G036" (`red_green_traceability_gate`); corrected to "Gate G040" (`incomplete_work_language_gate`), matching `agents/bubbles.implement.agent.md`. `gates.yaml` is the source of truth; no other doc was touched.
+
+Canonical source only; re-vendors downstream via `release-manifest.json`. Full framework-validate green.
+
 ## v7.13.0 — guard false-positive fixes (BUG-006/007) + maintenance ergonomics (IMP-007/008/010/011)
 
 > *"Don't make folks rewrite the trailer just 'cause the inspector's clipboard is too twitchy, Bubbles."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
