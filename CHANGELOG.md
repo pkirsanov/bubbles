@@ -12,6 +12,22 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.15.0 — IMP-015: MCP `graph_neighbors` verb + traceability edge-confidence tags
+
+**Theme:** Completes the two IMP-014 follow-ons that v7.13.0 deferred. Both build on the already-shipped governance hub graph (`bubbles-hub-report.sh`) and the SST-derived edges it already computes — no new graph extraction, no LLM, no new vendored data source. The IMP-015 blueprint doc is deleted on delivery per the improvements-doc lifecycle.
+
+### IMP-015 Scope A — MCP `graph_neighbors` verb
+
+- **`bubbles/mcp/tools/graph_neighbors.json`** registers a `graph_neighbors` MCP tool (server tool count 11→12) so agents query the governance reverse-dependency graph through the MCP surface instead of grepping. It is backed by **`bubbles/scripts/bubbles-graph-neighbors.sh`**, a thin twin that does an existence check then `exec`s `bubbles-hub-report.sh --node <id> --format json` unchanged (no graph re-derivation). Returns the provenance-tagged `{ node, kind, inDegree, dependents:[{source, provenance, line}] }` payload; an unknown node yields a structured error (exit 3). Wired into `mcp-server-selftest.sh` (T20–T22) and documented in `docs/MCP.md`.
+
+### IMP-015 Scope B — traceability edge-confidence tags
+
+- **`bubbles/scripts/traceability-guard.sh`** now tags every scenario→TestPlanRow and scenario→DoD mapping `declared` (shared trace ID), `inferred` (single fuzzy match), or `ambiguous` (>1 fuzzy match), plus an `Edge confidence` summary line — all informational, via the existing `info` channel. Tags are computed READ-ONLY at the call sites (`classify_match_kind` + recheck loops); the twinned match functions (`scenario_matches_dod` / `scenario_matches_row` / `extract_trace_ids`), the `failures` counter, and the exit block are byte-for-byte untouched (purely additive — `git diff --numstat` reports 0 deletions), so the guard's pass/fail/exit semantics are provably unchanged. `traceability-guard-selftest.sh` gains Case 3 (declared) + Case 4 (ambiguous) and asserts the unchanged Case 1 = exit 0 / Case 2 = exit non-zero behavior.
+
+Borrows the *concepts* (reverse-dependency query, edge-provenance/confidence tagging) from a graphify trial while continuing to REJECT its fuzzy tree-sitter+LLM re-derivation of edges the SSTs already declare authoritatively.
+
+Canonical source only; re-vendors downstream via `release-manifest.json`. Full framework-validate green.
+
 ## v7.14.0 — control-plane policy activation (BUG-008): SST precedence + real G060 red→green ordering + grandfather
 
 > *"Don't bolt a control panel to the trailer and then never wire it to the breaker, Bubbles — flip the switches or take 'em off."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
