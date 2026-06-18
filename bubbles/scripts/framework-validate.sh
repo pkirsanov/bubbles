@@ -181,6 +181,9 @@ fi
 if [[ -x "$SCRIPT_DIR/pre-tool-risk-gate-selftest.sh" ]]; then
   run_check "Pre-tool risk gate selftest (v6.1 / R10)" bash "$SCRIPT_DIR/pre-tool-risk-gate-selftest.sh"
 fi
+if [[ -x "$SCRIPT_DIR/adversarial-resolve-selftest.sh" ]]; then
+  run_check "Adversarial-resolve control plane selftest (IMP-002 / S0)" bash "$SCRIPT_DIR/adversarial-resolve-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/tool-capture-shim-selftest.sh" ]]; then
   run_check "Tool-capture shim selftest (v6.1 / R2)" bash "$SCRIPT_DIR/tool-capture-shim-selftest.sh"
 fi

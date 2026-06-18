@@ -278,5 +278,20 @@
     "alias": "same-lot-new-trailer",
     "maps_to": "product-to-delivery (with existing impl)",
     "quote": "Same lot, boys. New trailer."
+  },
+  {
+    "alias": "nothing-is-bulletproof",
+    "maps_to": "bubbles.redteam",
+    "quote": "Nothing's bulletproof, boys. Let me prove it."
+  },
+  {
+    "alias": "prove-it",
+    "maps_to": "bubbles.redteam",
+    "quote": "You say it's done? Prove it."
+  },
+  {
+    "alias": "this-is-my-park-now",
+    "maps_to": "bubbles.redteam",
+    "quote": "This is my park now. Let's see what holds."
   }
 ]

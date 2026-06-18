@@ -310,5 +310,13 @@
   {
     "term": "release train portfolio",
     "meaning": "The set of all declared trains under `config/release-trains.yaml`. Surfaced by `release-train-status-all` (J-Roc). Each row reports phase, current candidate SHA per slot, open-flag count, and backup/restore freshness."
+  },
+  {
+    "term": "adversarial verification",
+    "meaning": "Cyrus (`bubbles.redteam`) attacks a FINISHED result to falsify the \"done\" claim — evidence-first counterexamples, risk-gated multi-validator (voting) scrutiny, and bounded chaos-monkey probing of live systems. It emits findings and NEVER certifies (completion stays with `bubbles.validate`). OFF BY DEFAULT. The missing post-result adversary alongside `bubbles.grill`, which pressure-tests ideas pre-build."
+  },
+  {
+    "term": "adversarial posture",
+    "meaning": "The effective on/off/passes/teeth resolved by `adversarial-resolve.sh` via one precedence chain: per-run directive (`adversarial: on passes: 3`) -> `BUBBLES_ADVERSARIAL*` env -> `.github/bubbles-project.yaml` `adversarial:` block -> framework default `off`. Seamless opt-in; zero behavior change on upgrade."
   }
 ]
