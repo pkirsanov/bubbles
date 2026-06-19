@@ -12,6 +12,14 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.16.1 — Downstream framework-validate: source-only-skip 5 fixture-dependent selftests
+
+**Theme:** A propagation dry-run surfaced that `framework-validate.sh` exited non-zero in a clean *downstream* install (5 failing checks) even though every live governance guard passed. Root cause: 5 selftests were wired with `run_check` (always-run) instead of `run_check_self_only`, yet they depend on source-only inputs the installer does not vendor — the `tests/fixtures/observability/` fixtures (the G098/G099/G100 selftests + the check-twin) and the canonical `bubbles` MCP token (a downstream install carries a per-repo `bubbles-<slug>` token, which makes `mcp-grant-selftest` structurally unsatisfiable). They now join the existing source-only-skip set, so downstream `framework-validate` exits 0 with explicit SKIP accounting, while the source repo still runs all 5 and the live G098/G099/G100 guards still run everywhere.
+
+### Fix
+
+- **`bubbles/scripts/framework-validate.sh`** — `run_check` → `run_check_self_only` for `MCP tool grant selftest (v7.1)`, `Observability posture guard selftest (G098)`, `Observability opt-out guard selftest (G099)`, `Observability SLO guard selftest (G100)`, and `Observability check twin selftest (wired fixture)`, each with an inline rationale. The live guards, `observability-endpoint-resolve-selftest`, and `prometheus-adapter-fetch-selftest` stay `run_check` — they pass downstream (no source-tree fixtures required). Source `framework-validate` behavior is unchanged (`run_check_self_only` is a passthrough in source mode), and the v5.3 downstream-install selftest's fixed 13-label assertion is unaffected (its synthesized tree never copies these 5 scripts). Canonical source only; re-vendors downstream via `release-manifest.json`.
+
 ## v7.16.0 — IMP-016: skill-evolution loop hardening + skill-template contract
 
 **Theme:** An analyst review of Nate B. Jones' Open Skills / OB1 against Bubbles' existing skill surface found Bubbles already implements most of the thesis (skills-first discovery, on-demand loading, verification-as-contract via gates, project-vs-personal scope, AND an already-shipped Skill Evolution Loop). Of the five candidate borrows, three are genuinely additive and are IMPLEMENTED; two are redundant with surfaces Bubbles already owns and are DESCOPED with rationale. NO new agent is created — the borrowed flywheel maps onto the existing `bubbles.create-skill` (Sam Losco) + the `skill-evolution.sh` loop, so no new TPB persona is consumed. The IMP-016 blueprint doc is deleted on delivery per the improvements-doc lifecycle (the durable record is the shipped code + the new selftest + this entry).
