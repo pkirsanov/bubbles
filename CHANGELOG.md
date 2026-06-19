@@ -12,6 +12,31 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.16.0 — IMP-016: skill-evolution loop hardening + skill-template contract
+
+**Theme:** An analyst review of Nate B. Jones' Open Skills / OB1 against Bubbles' existing skill surface found Bubbles already implements most of the thesis (skills-first discovery, on-demand loading, verification-as-contract via gates, project-vs-personal scope, AND an already-shipped Skill Evolution Loop). Of the five candidate borrows, three are genuinely additive and are IMPLEMENTED; two are redundant with surfaces Bubbles already owns and are DESCOPED with rationale. NO new agent is created — the borrowed flywheel maps onto the existing `bubbles.create-skill` (Sam Losco) + the `skill-evolution.sh` loop, so no new TPB persona is consumed. The IMP-016 blueprint doc is deleted on delivery per the improvements-doc lifecycle (the durable record is the shipped code + the new selftest + this entry).
+
+### IMP-016 IP-2 — "When NOT to use" + "Works well with" skill-template sections
+
+- **`skills/bubbles-skill-authoring/SKILL.md`** adds both as RECOMMENDED body sections (negative triggers that route to a sibling skill; composition pointers to the skills this one chains with), and **`agents/bubbles.create-skill.agent.md`** scaffolds both stubs for every new skill. Closes the template gap (1/34 skills carried a negative trigger, 0 carried a composition pointer). Existing skills are NOT mass-rewritten — the guidance is additive for new/edited skills and the discovery router stays authoritative.
+
+### IMP-016 IP-4 — promote-to-skill decision rule
+
+- The single stated promotion trigger — *"do it once → a prompt is fine; recurring + non-obvious + verified → promote to a skill"* — is codified in `skills/bubbles-skill-authoring/SKILL.md`, `agents/bubbles.create-skill.agent.md`, and the `skill-evolution.sh` proposal output, giving the evolution loop and the `INVENTORY.md` pruning policy a shared trigger (promotion and pruning are the two ends of one lifecycle).
+
+### IMP-016 IP-1 — Skill Evolution Loop quality bar + dedup + anti-hoarding
+
+- **`bubbles/scripts/skill-evolution.sh`** — every emitted `.specify/memory/skill-proposals.md` proposal now carries the creation quality bar (**Reusable · Non-trivial · Specific · Verified**), a dedup-before-create line (search existing `.github/skills/` + `INVENTORY.md` first, prefer update over a near-duplicate), and an anti-hoarding prompt (review least-recently-modified skills when the set is large). The threshold/dismiss/exit behavior is byte-unchanged.
+- **`agents/bubbles.create-skill.agent.md`** gains a pre-scaffold quality gate applying the same dedup-search + quality bar + decision rule. **`bubbles/workflows.yaml` `skillEvolution:`** documents the bar + rule (no behavior change).
+- NEW **`bubbles/scripts/skill-evolution-selftest.sh`** (hermetic + adversarial; wired into `framework-validate.sh`) asserts a repeated pattern still fires a proposal, the proposal now carries the quality-bar + dedup + decision-rule scaffolding, dismiss still works, and a below-threshold pattern produces NO proposal (the adversarial leg proves the threshold is unchanged).
+
+### IMP-016 IP-3 + IP-5 — descoped as redundant
+
+- **IP-3 (personal-scope skills)** — DESCOPED. Bubbles already separates personal/cross-repo procedural preference from project scope via `developerProfile` (`.specify/memory/developer-profile.md`) + the agent user-memory layer; a new personal-skills surface would duplicate them and add drift. One clarifying paragraph in `bubbles-skill-authoring` routes personal preferences there instead — no new mechanism.
+- **IP-5 (per-skill `metadata.json`)** — DESCOPED. `skills/INVENTORY.md` + SKILL.md frontmatter (`name`/`description` triggers) already provide the machine-readable registry; a parallel `metadata.json` would be a second source of truth (violates SST) and a new drift surface. No change.
+
+Docs synced: `docs/CHEATSHEET.md` (Sam's Specialties + skill-evolution row + new TPB vocabulary), `docs/its-not-rocket-appliances.html` (skill-evolution gate line + alias row), `skills/INVENTORY.md` (LOC 96→115), `agents/bubbles.super.agent.md` (§12 proposal note), and the `framework-health` recipe (the promote-a-recurring-lesson-to-a-skill flow). Canonical source only; re-vendors downstream via `release-manifest.json`. Full framework-validate green.
+
 ## v7.15.0 — IMP-015: MCP `graph_neighbors` verb + traceability edge-confidence tags
 
 **Theme:** Completes the two IMP-014 follow-ons that v7.13.0 deferred. Both build on the already-shipped governance hub graph (`bubbles-hub-report.sh`) and the SST-derived edges it already computes — no new graph extraction, no LLM, no new vendored data source. The IMP-015 blueprint doc is deleted on delivery per the improvements-doc lifecycle.

@@ -49,7 +49,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-repo-readiness` | 70 | KEEP | Verify-first hygiene check. Auto-loaded discovery skill. |
 | `bubbles-result-envelope` | 79 | KEEP | RESULT-ENVELOPE composition rules. Auto-loaded discovery skill. |
 | `bubbles-scope-workflow-runtime` | 76 | KEEP | Scope artifact runtime rules. Auto-loaded discovery skill. |
-| `bubbles-skill-authoring` | 96 | KEEP | Sam's specialties — how to author a skill safely. |
+| `bubbles-skill-authoring` | 115 | KEEP | Sam's specialties — how to author a skill safely. Carries the IP-2 **When NOT to use** / **Works well with** sections + the promote-to-skill decision rule + creation quality bar (IMP-016). |
 | `bubbles-skills-first-discovery` | 58 | KEEP | The router that surfaces every other discovery skill. CRITICAL — never delete. |
 | `bubbles-spec-template-bdd` | 46 | KEEP | Spec template enforcement (BDD shape). |
 | `bubbles-status-transition` | 87 | KEEP | Status-transition discovery skill — wraps `state-transition-guard.sh`. |
