@@ -203,7 +203,7 @@ modes:
       finalGlobalPassRequired: true
       requireDesignBeforeImplement: true
       allowBootstrapIterations: true
-      bootstrapAgents: [ bubbles.design, bubbles.plan ]
+      bootstrapAgents: [ bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
       bootstrapLoopExit: design_spec_scopes_ready
       forceSequentialPerSpec: true
       requirePerSpecPhaseCompletion: [ simplify, gaps, harden, stabilize, security, validate, audit, chaos, docs ]
@@ -220,7 +220,7 @@ modes:
         validationCertification: validate-to-doc
         bugClosure: bugfix-fastlane
       improvementPreludeProfiles:
-        analyze-design-plan: [ bubbles.analyst, bubbles.design, bubbles.plan ]
+        analyze-design-plan: [ bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
         analyze-ux-design-plan: [ bubbles.analyst, bubbles.ux, bubbles.design, bubbles.plan ]
       blockedOnlyWhenValidateBlocked: true
       requireImplementedVsClaimedReconciliation: true
