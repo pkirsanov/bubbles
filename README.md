@@ -13,7 +13,7 @@
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-41-58a6ff?style=flat-square" alt="41 agents">
   <img src="https://img.shields.io/badge/gates-108-3fb950?style=flat-square" alt="108 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_42_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+42 v5 aliases)">
+  <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_43_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+43 v5 aliases)">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -46,7 +46,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>41 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>108 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 42 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 43 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
@@ -132,7 +132,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 41 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 57 workflow mode definitions
+│   ├── workflows.yaml               # 58 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -407,7 +407,7 @@ You can still call any specialist directly when you explicitly want surgical wor
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 57 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 58 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -423,7 +423,7 @@ Bubbles supports 57 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 57 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 58 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
@@ -502,7 +502,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-<tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 57 workflow modes explained</td></tr>
+<tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 58 workflow modes explained</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 <tr><td><a href="docs/guides/INTEROP_MIGRATION.md">Interop Migration Guide</a></td><td>Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems</td></tr>
 <tr><td><a href="docs/guides/CONTROL_PLANE_DESIGN.md">Control Plane Design</a></td><td>Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts</td></tr>

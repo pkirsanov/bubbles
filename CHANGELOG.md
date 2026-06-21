@@ -12,6 +12,23 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
+
+**Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.
+
+### artifact-lint Check 3 — certifying-window boundary marker
+
+Check 3 applied its done-strict (>=3-line / >=2-signal) heuristic to the ENTIRE accumulated `report.md` corpus, so a long-running spec's historical evidence — often pre-dating the signal heuristic, frequently irreproducible, and frozen by the append-only rule — was re-judged by today's stricter rule, making Path-A promotion structurally impossible.
+
+- **`bubbles/scripts/artifact-lint.sh`** — Check 3 now honors an opt-in `<!-- bubbles:certifying-window-begin -->` marker in `report.md` only. Code blocks BEFORE the marker are prior-window history (counted as skipped, NOT enforced, like the `evidence-legitimacy-skip` region); blocks AFTER it are done-strict-checked exactly as before. The exemption is strictly opt-in PER FILE: a report.md with NO marker is enforced in full (the marker can never silently disable Check 3 fleet-wide), and more than one marker fails loud (ambiguous window start). A distinct info line reports the prior-window skip count separately from the skip-region count.
+- NEW **`bubbles/scripts/artifact-lint-selftest.sh`** (hermetic + adversarial; wired into `framework-validate.sh`) asserts: a compact PRE-marker block is exempt while a signal-rich POST-marker block passes; a weak POST-marker block is still enforced; two markers fail loud; and — the integrity guarantee — a marker-LESS report still enforces Check 3 in full (no silent fleet-wide disable).
+
+**Integrity:** this is NOT an anti-fabrication weakening. Fresh current-window evidence stays fully done-strict; only prior-window history (already audited in earlier rounds) is exempt, and only when the author opts in with one append-only marker. Like the skip region, the marker MUST mark the real current-window start and MUST NEVER hide fresh fabricated evidence.
+
+### Workflows — v5 `delivery-lockdown` mode restored (grandfathered)
+
+- **`bubbles/workflows/modes.yaml`** + **`bubbles/workflows/aliases.yaml`** + **`agents/bubbles.workflow.agent.md`** — re-adds the pre-v6 `delivery-lockdown` registry key (the v5 name of `full-delivery`) so persisted artifacts (`state.json.workflowMode: delivery-lockdown`) keep resolving via the grandfather path. Identical maximum-assurance delivery semantics to `full-delivery`; new operator input MUST use `full-delivery`. The extra `lifecycle: lockdown` tag keeps the (primitive, tag-set) tuple unique vs `full-delivery`.
+
 ## v7.16.1 — Downstream framework-validate: source-only-skip 5 fixture-dependent selftests
 
 **Theme:** A propagation dry-run surfaced that `framework-validate.sh` exited non-zero in a clean *downstream* install (5 failing checks) even though every live governance guard passed. Root cause: 5 selftests were wired with `run_check` (always-run) instead of `run_check_self_only`, yet they depend on source-only inputs the installer does not vendor — the `tests/fixtures/observability/` fixtures (the G098/G099/G100 selftests + the check-twin) and the canonical `bubbles` MCP token (a downstream install carries a per-repo `bubbles-<slug>` token, which makes `mcp-grant-selftest` structurally unsatisfiable). They now join the existing source-only-skip set, so downstream `framework-validate` exits 0 with explicit SKIP accounting, while the source repo still runs all 5 and the live G098/G099/G100 guards still run everywhere.
