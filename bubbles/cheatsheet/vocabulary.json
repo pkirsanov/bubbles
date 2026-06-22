@@ -28,6 +28,10 @@
     "meaning": "Durable per-run coordination state that makes resume, runtime reuse, and packet routing explicit instead of guesswork."
   },
   {
+    "term": "runtime capacity",
+    "meaning": "Weighted runtime-lease admission: heavy builds and tests acquire leases by weight (`--weight light|medium|heavy`, or `--weight-units N`), and the lease registry refuses (or `--wait`s) when the host weight budget (`runtime.capacityWeight` in `bubbles.config.json`) would be exceeded — so concurrent sessions can't OOM the box or stomp each other's build. Disabled by default (`capacityWeight: 0`); stale or released leases free their slot automatically. The park only has so many parking spots, boys."
+  },
+  {
     "term": "typed framework event",
     "meaning": "Structured framework log entry for gate outcomes, packet routing, lease changes, and policy provenance instead of narrative-only breadcrumbs."
   },
@@ -313,7 +317,7 @@
   },
   {
     "term": "adversarial verification",
-    "meaning": "Cyrus (`bubbles.redteam`) attacks a FINISHED result to falsify the \"done\" claim — evidence-first counterexamples, risk-gated multi-validator (voting) scrutiny, and bounded chaos-monkey probing of live systems. It emits findings and NEVER certifies (completion stays with `bubbles.validate`). OFF BY DEFAULT. The missing post-result adversary alongside `bubbles.grill`, which pressure-tests ideas pre-build."
+    "meaning": "Green Bastard (`bubbles.redteam`) attacks a FINISHED result to falsify the \"done\" claim — evidence-first counterexamples, risk-gated multi-validator (voting) scrutiny, and bounded chaos-monkey probing of live systems. It emits findings and NEVER certifies (completion stays with `bubbles.validate`). OFF BY DEFAULT. The missing post-result adversary alongside `bubbles.grill`, which pressure-tests ideas pre-build."
   },
   {
     "term": "adversarial posture",

@@ -27,6 +27,20 @@
 
 ## What Is This?
 
+**AI coding agents lie. They mark work "done" that's broken, paste test output that never ran, and ship stubs as features — and you find out in production.**
+
+Bubbles is the supervisor that won't let them. One command turns a plain request into a full delivery pipeline — analyze → build → test → audit — where **nothing is marked done without real, captured evidence.** No fabricated results. No half-finished work. No "trust me."
+
+You describe the outcome. Bubbles drives a crew of specialized agents to it, gates every step against proof, and stops only when the work genuinely holds up.
+
+```
+/bubbles.workflow  ship the booking feature — competitive, tested, and done for real
+```
+
+Stop babysitting your AI. Put it on the clock.
+
+## How It Works
+
 Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work, plus a control plane that tracks certification authority, scenario contracts, workflow run-state, typed framework events, runtime lease safety, and framework-level validation.
 
 **One entry point. Just describe what you want:**
@@ -243,6 +257,7 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | <img src="icons/steve-french-paw.svg" width="20"> | `bubbles.regression` | **Regression guardian.** Prowls the codebase catching cross-feature interference. | After implementation/bug fixes |
 | <img src="icons/cyrus-sunglasses.svg" width="20"> | `bubbles.security` | **Security scanner.** Finds threats. Confrontational. | Security review |
 | <img src="icons/green-bastard-outline.svg" width="20"> | `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
+| <img src="icons/green-bastard-mask.svg" width="20"> | `bubbles.redteam` | **Adversarial verifier.** Attacks finished results to falsify "done". Off by default. | Adversarial verification |
 | <img src="icons/orangie-fishbowl.svg" width="20"> | `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
 | <img src="icons/gary-laser-eyes.svg" width="20"> | `bubbles.spec-review` | **Spec freshness auditor.** Checks whether artifacts still deserve trust before maintenance or execution. | Auditing stale or drifted specs |
 

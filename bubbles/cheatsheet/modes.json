@@ -371,15 +371,15 @@
   {
     "name": "redteam-to-doc",
     "alias": "prove-it",
-    "description": "Adversarial red-team attack on a finished result (Cyrus); finding-owned remediation chain then validate/audit/docs. Off by default.",
-    "description_html": "Adversarial red-team attack on a finished result (Cyrus). Finding-owned remediation chain, then validate/audit/docs. Off by default.",
+    "description": "Adversarial red-team attack on a finished result (Green Bastard); finding-owned remediation chain then validate/audit/docs. Off by default.",
+    "description_html": "Adversarial red-team attack on a finished result (Green Bastard). Finding-owned remediation chain, then validate/audit/docs. Off by default.",
     "html_quote": "You say it's done? Prove it."
   },
   {
     "name": "production-adversarial-probe",
     "alias": "this-is-my-park-now",
-    "description": "Bounded, armed, read-only chaos-monkey probing of a LIVE system (Cyrus on a leash). Requires arming + target allowlist; restore-or-fix; never certifies.",
-    "description_html": "Bounded, armed, read-only chaos-monkey probing of a LIVE system (Cyrus on a leash). Requires arming + target allowlist; restore-or-fix; never certifies.",
+    "description": "Bounded, armed, read-only chaos-monkey probing of a LIVE system (Green Bastard on a leash). Requires arming + target allowlist; restore-or-fix; never certifies.",
+    "description_html": "Bounded, armed, read-only chaos-monkey probing of a LIVE system (Green Bastard on a leash). Requires arming + target allowlist; restore-or-fix; never certifies.",
     "html_quote": "This is my park now. Let's see what holds."
   }
 ]

@@ -12,6 +12,24 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## v7.18.0 — runtime leases: resource-weighted admission (host-capacity OOM guard)
+
+**Theme:** Extends the already-shipped session-aware runtime-coordination capability (`runtime-leases.sh`) with the one dimension it lacked — host-capacity (resource-weight) admission — so two *different* heavy builds sharing one host can no longer OOM-kill each other (exit 137) or orphan-hang when one session removes another's mid-build container. The existing lease model coordinated ownership, compatibility, and exclusivity but had no RAM-weight budget; this adds an opt-in, fully backward-compatible weighted-admission gate. Disabled by default (`runtime.capacityWeight: 0`), so a fresh install is unchanged until a host operator sets a budget.
+
+### Runtime leases — weighted admission
+
+- **`bubbles/scripts/runtime-leases.sh`**:
+  - New config under the `runtime` section of `bubbles.config.json`: `capacityWeight` (number, default `0` = admission DISABLED) and optional `weightClasses` (built-in default `{ light: 1, medium: 4, heavy: 8 }`).
+  - New `acquire` options: `--weight <light|medium|heavy>` (resolved via `weightClasses`, default `light`), `--weight-units <N>` (explicit integer units; takes precedence over `--weight`), and `--wait <seconds>` (block-and-poll for capacity before refusing; omitted = immediate structured refusal).
+  - New persisted numeric `weight` field on every lease record (shown by `format_lease_line` / `lookup` / `list`). Legacy lease lines with no `weight` read as `0`, so existing registries keep parsing.
+  - Admission gate: before creating a lease, sums `weight` over **effectively-active** leases only — stale/expired/released are excluded, so a dead session's heavy lease frees its budget automatically via the TTL/stale downgrade (the orphan-hang fix). When `active_sum + new_weight > capacityWeight`, refuses with a structured `Runtime capacity exceeded: …` message plus a `runtime_lease_capacity_refused` framework event, or blocks under `--wait`. The `--wait` poll loop uses a non-fatal lock attempt so transient registry contention does not abort the wait.
+  - `summary` / `doctor` now print `Runtime capacity: <active_sum>/<capacityWeight> weight units` (or `disabled` when `capacityWeight=0`).
+  - Backward-compat: with `capacityWeight` unset/`0`, `acquire` behaves exactly as before (the gate is skipped entirely).
+- **`bubbles/scripts/runtime-lease-selftest.sh`** — adds weighted-admission cases (wired into `framework-validate` via the existing selftest hook): heavy-under-budget acquire, an **adversarial** second-heavy refusal (which fails if the gate is reverted — proven by a mutation run), capacity-frees-on-release, stale-lease-frees-capacity (orphan-hang analog), `--wait` immediate-refuse / wait-loop-timeout / post-release-success, `--weight-units` precedence + exact-boundary admission, and a backward-compat case proving two heavy leases both acquire when `capacityWeight` is unset. All pre-existing cases pass unchanged.
+- **Docs** — `docs/issues/session-aware-runtime-coordination.md` documents weighted admission as a shipped extension; `docs/recipes/runtime-coordination.md` documents the `--weight` / `--weight-units` / `--wait` / `capacityWeight` operator surface plus the intended (not-yet-wired) downstream usage.
+
+**Scope:** framework primitive only. Product-repo CLI wiring (acquiring a weighted `build` lease before a heavy build, an `exclusive` `land` lease before a push) is a separate later task. VERSION is intentionally not bumped here — release versioning is left to release-check.
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.
