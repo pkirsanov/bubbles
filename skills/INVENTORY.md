@@ -29,6 +29,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-backup-bcdr-doctrine` | 100 | KEEP | Tier model + RTO/RPO + `OFFSITE_BACKEND` contract. Concrete operator rules. |
 | `bubbles-bug-template` | 50 | KEEP | Bug artifact template. Filed-with-bug enforcement. |
 | `bubbles-capability-foundation-design` | 157 | KEEP | Gate G094 enforcement details + provider/foundation split rules. |
+| `bubbles-cinematic-design` | 56 | KEEP | Opt-in design-language skill (premium/cinematic presets + pattern library) selected by `bubbles.ux`, applied by `bubbles.implement`; presets/patterns from the retired `bubbles.cinematic-designer` agent. Vendored only where `.github/bubbles-project.yaml` `designLanguages.enabled` lists it. |
 | `bubbles-config-bundle-per-train` | 143 | KEEP | Per-train flag bundle authoring — G081 mechanics. |
 | `bubbles-config-sst` | 276 | KEEP | Configuration single-source-of-truth governance. Largest substantive skill. |
 | `bubbles-deployment-target-adapter` | 542 | KEEP | Adapter authoring rules — central to G074 / G081. Largest skill overall. |
@@ -62,8 +63,8 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 
 ## Summary
 
-- **34 skills, 0 deletions** in v6.0 baseline.
-- **Total LOC:** ~3,800.
+- **35 skills** (34 v6.0 baseline + `bubbles-cinematic-design`), 0 deletions.
+- **Total LOC:** ~3,860.
 - **Pruning candidates** (POINTER-DELETE or CONSOLIDATE): **0**.
 - Every current skill carries substantive policy that an agent invokes at trigger time. The "thin pointers" the v6 design contemplated were not authored — every skill in the current set was already substantive when added.
 

@@ -11,7 +11,7 @@
 
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
-  <img src="https://img.shields.io/badge/agents-41-58a6ff?style=flat-square" alt="41 agents">
+  <img src="https://img.shields.io/badge/agents-40-58a6ff?style=flat-square" alt="40 agents">
   <img src="https://img.shields.io/badge/gates-108-3fb950?style=flat-square" alt="108 gates">
   <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_43_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+43 v5 aliases)">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
@@ -58,7 +58,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
-<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>41 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
+<tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>40 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>108 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 43 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
@@ -135,7 +135,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 .github/
 ├── agents/
 <!-- GENERATED:FRAMEWORK_STATS_INSTALL_TREE_START -->
-│   ├── bubbles.workflow.agent.md    # 41 agent definitions
+│   ├── bubbles.workflow.agent.md    # 40 agent definitions
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md       # NEW: first-touch assistant + framework operations
 │   ├── ...
@@ -144,7 +144,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # 41 prompt shims
+│   └── bubbles.*.prompt.md          # 40 prompt shims
 ├── bubbles/
 │   ├── workflows.yaml               # 58 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
@@ -240,7 +240,6 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | <img src="icons/ricky-dynamite.svg" width="20"> | `bubbles.chaos` | **Chaos tester.** Breaks things in ways nobody could predict. | Resilience testing |
 | <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise without weakening behavior or ownership boundaries. | Reducing complexity after implementation |
 | <img src="icons/tommy-rack.svg" width="20"> | `bubbles.devops` | **DevOps executor.** Owns CI/CD, build, deployment, monitoring, and observability execution once operational work is identified. | Shipping operational changes and delivery plumbing |
-| <img src="icons/sebastian-guitar.svg" width="20"> | `bubbles.cinematic-designer` | **Premium UI implementer.** Over-the-top production value, real frontend output. | Cinematic or flagship UI implementation |
 | <img src="icons/sonny-ledger.svg" width="20"> | `bubbles.releases` | **Release packet planner.** Sonny "Iron Lung" Smith. Produces phase release packets, enforces Product Direction Surfaces trio + carry-forward, coordinates cross-product releases. | Bootstrap, refresh, extend, or coordinate release packets per phase |
 
 ### <img src="icons/ted-badge.svg" width="24"> Diagnostic And Certification Routing
@@ -586,13 +585,13 @@ See [docs/recipes/](docs/recipes/) for detailed step-by-step guides.
 ```
 bubbles/
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START -->
-├── agents/                    # 41 agent definitions
+├── agents/                    # 40 agent definitions
 │   ├── bubbles_shared/        # Shared governance docs
 │   ├── bubbles.workflow.agent.md
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # 41 prompt shims
+├── prompts/                   # 40 prompt shims
 <!-- GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END -->
 ├── bubbles/                   # Workflow config + scripts + generated docs
 │   ├── workflows.yaml

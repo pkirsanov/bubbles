@@ -125,11 +125,6 @@
     "quote": "Here, take this. I gotta go."
   },
   {
-    "alias": "skid-row",
-    "maps_to": "bubbles.cinematic-designer",
-    "quote": "I was in Skid Row!"
-  },
-  {
     "alias": "plans-within-plans",
     "maps_to": "bubbles.releases",
     "quote": "Plans within plans, boys. Phase one is just the introduction."

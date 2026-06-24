@@ -587,6 +587,47 @@ for legacy_pair in \
 done
 
 # ── Optional: shared instructions & skills ──────────────────────────
+# Optional (opt-in) skill gating (design-language skills, etc.). A skill listed
+# in the source payload's bubbles/registry/optional-skills.txt is vendored ONLY
+# when the downstream repo opts in via `.github/bubbles-project.yaml`
+# `designLanguages`. Otherwise it is skipped, and a stale prior opt-in copy is
+# pruned (opt-out). This keeps a niche / premium skill physically absent — and
+# therefore non-loading — in repos that have not enabled it.
+BUBBLES_OPTIONAL_SKILLS_REGISTRY="$TEMP_DIR/bubbles/registry/optional-skills.txt"
+
+bubbles_project_config_path() {
+  if [[ -f "${TARGET}/bubbles-project.yaml" ]]; then
+    printf '%s' "${TARGET}/bubbles-project.yaml"
+  elif [[ -f "bubbles-project.yaml" ]]; then
+    printf '%s' "bubbles-project.yaml"
+  fi
+}
+
+bubbles_design_language_enabled() {
+  # $1 = enablement token. Enabled iff the project config's designLanguages:
+  # block contains the token (substring match — friendly alias or full skill
+  # name both match). No yq dependency.
+  local token="$1" cfg
+  cfg="$(bubbles_project_config_path)"
+  [[ -n "$cfg" ]] || return 1
+  awk '/^designLanguages:/{f=1; next} /^[A-Za-z0-9_-]+:/{f=0} f' "$cfg" | grep -qiF "$token"
+}
+
+bubbles_optional_skill_token() {
+  # $1 = skill dir name. Prints the enablement token and returns 0 if the skill
+  # is optional (listed in the registry); returns 1 if it is a normal skill.
+  [[ -f "$BUBBLES_OPTIONAL_SKILLS_REGISTRY" ]] || return 1
+  local want="$1" name token rest
+  while read -r name token rest; do
+    [[ -z "$name" || "$name" == \#* ]] && continue
+    if [[ "$name" == "$want" ]]; then
+      printf '%s' "${token:-$name}"
+      return 0
+    fi
+  done < "$BUBBLES_OPTIONAL_SKILLS_REGISTRY"
+  return 1
+}
+
 if [[ "$AGENTS_ONLY" != "true" ]]; then
   if [[ -d "$TEMP_DIR/instructions" ]]; then
     info "Installing shared instructions..."
@@ -598,6 +639,18 @@ if [[ "$AGENTS_ONLY" != "true" ]]; then
     info "Installing shared skills..."
     for skill_dir in "$TEMP_DIR"/skills/*/; do
       skill_name=$(basename "$skill_dir")
+      # Opt-in gating for optional skills (e.g. design-language skills).
+      if opt_token="$(bubbles_optional_skill_token "$skill_name")"; then
+        if ! bubbles_design_language_enabled "$opt_token"; then
+          # Not opted in: skip vendoring; prune a stale prior opt-in copy.
+          if [[ -d "${TARGET}/skills/${skill_name}" ]]; then
+            rm -rf "${TARGET:?}/skills/${skill_name}"
+            info "Pruned opted-out optional skill: skills/${skill_name}"
+          fi
+          continue
+        fi
+        info "Optional skill opted in: skills/${skill_name}"
+      fi
       mkdir -p "${TARGET}/skills/${skill_name}"
       cp -r "${skill_dir}"* "${TARGET}/skills/${skill_name}/" 2>/dev/null || true
     done
