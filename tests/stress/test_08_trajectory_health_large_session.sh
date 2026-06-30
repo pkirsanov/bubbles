@@ -70,14 +70,14 @@ echo "Synthetic fixture: precomputed convergence-health JSON plus 1000-snapshot 
 
 run_number=1
 while [[ "$run_number" -le 5 ]]; do
-  start_ns="$(date +%s%N)"
+  start_ns="$(date +%s%N)"; [[ "$start_ns" =~ ^[0-9]+$ ]] || start_ns="$(( $(date +%s) * 1000000000 ))"
   set +e
   bash "$INSPECTOR" --health --input "$health_json" > "$WORKSPACE/input.out" 2> "$WORKSPACE/input.err"
   input_rc=$?
   bash "$INSPECTOR" --repo-root "$repo" --health --spec "$SPEC_DIR" > "$WORKSPACE/spec.out" 2> "$WORKSPACE/spec.err"
   spec_rc=$?
   set -e
-  end_ns="$(date +%s%N)"
+  end_ns="$(date +%s%N)"; [[ "$end_ns" =~ ^[0-9]+$ ]] || end_ns="$(( $(date +%s) * 1000000000 ))"
   duration_ms=$(((end_ns - start_ns) / 1000000))
 
   if [[ "$input_rc" -eq 0 ]] \

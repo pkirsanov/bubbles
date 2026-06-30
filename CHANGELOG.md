@@ -49,6 +49,24 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 **Scope:** gate-consistency fix only. VERSION is intentionally not bumped here — release versioning is left to release-check.
 
+### Cross-platform (Linux + macOS) runtime portability
+
+**Theme:** The framework's runtime guards/scripts used several GNU-coreutils-only forms (`sed -i <prog>`, `date -d`, `date +%s%N`, `grep -P`) that abort or silently degrade under macOS BSD userland, so a contributor on macOS could not reliably run the guards the agents run. This makes the core runtime path OS-agnostic; each form now picks the working variant at runtime.
+
+- **`bubbles/scripts/guard-lib.sh`** — new portable helpers (`bubbles_sed_inplace`, `bubbles_iso_to_epoch`, `bubbles_now_ms`, `bubbles_file_mtime_epoch`) beside the existing `bubbles_run_with_timeout`. `bubbles_sed_inplace` rewrites via a temp file (GNU `sed -i <prog>` and BSD `sed -i '' <prog>` are mutually incompatible); `bubbles_iso_to_epoch` parses ISO-UTC timestamps AND bare `YYYY-MM-DD` dates on both GNU (`date -d`) and BSD (`date -j -f`); `bubbles_now_ms` falls back to second resolution when BSD `date` lacks `%N`; `bubbles_file_mtime_epoch` pairs `stat -c`/`stat -f`.
+- **`bubbles/scripts/state-transition-guard.sh`** — revert-on-fail `sed -i` (×5) and timestamp-plausibility `date -d` (×3) now call the portable helpers (guard-lib already sourced).
+- **`bubbles/scripts/artifact-lint.sh`** — timestamp `date -d` (×3) → a portable `bubbles_iso_to_epoch` defined **locally** (self-contained, no cross-file source) so the script stays runnable when a selftest copies it alone into an isolated fixture repo.
+- **`bubbles/scripts/done-spec-audit.sh`** — recertification `sed -i` (×4) → a portable `bubbles_sed_inplace`, likewise defined **locally**; its selftest copies the script by itself into a fixture repo, so a sourced sibling lib would not resolve there.
+- **`bubbles/scripts/observability-opt-out-guard.sh` / `observability-posture-guard.sh`** — `revisitAfter` `date -d` gains an inline BSD `date -j -f` fallback (kept inline to preserve their deliberate no-external-tool self-resolution path).
+- **`bubbles/scripts/tool-log.sh`** — `date +%s%N` duration timing tolerates BSD `date` lacking `%N` (numeric guard → second-resolution fallback).
+- **`bubbles/scripts/gate-id-grep.sh`** — auto-detects a PCRE-capable grep (system `grep` → `ggrep`) so its back-reference scans run on macOS without the operator pre-setting `BUBBLES_GREP`; the fail-loud no-PCRE path is preserved.
+- **`bubbles/scripts/framework-validate.sh`** — at startup, when the GNU tools exist only under their `g`-prefixed names (macOS coreutils), exposes `gsed`→`sed` and `gtimeout`→`timeout` on PATH for this process and every selftest subprocess it spawns, so selftests that still call GNU `sed -i` / `timeout` directly run on macOS unchanged (a no-op on Linux, which already has the unprefixed GNU tools).
+- **`tests/stress/test_06/07/08`** — `date +%s%N` latency timing guards against BSD `date` lacking `%N` (same numeric-guard fallback as tool-log).
+
+Verified on macOS (BSD userland): the four new helpers and the `artifact-lint`, `done-spec-audit`, `gate-id-grep`, and state-transition-guard selftests run green; tool-log duration timing is numeric; `framework-validate.sh` carries the GNU-only selftests through the PATH shim. (Pre-existing macOS gaps unrelated to this change — a missing `jsonschema` Python module, stale release-manifest/capability data, and deeper selftest assumptions — remain and are out of scope here.)
+
+**Scope:** runtime path. VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.

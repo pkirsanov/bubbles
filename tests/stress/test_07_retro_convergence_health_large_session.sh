@@ -66,12 +66,12 @@ echo "Synthetic fixture: 250 loops + 250 envelopes + 1000 complete turnSnapshots
 
 run_number=1
 while [[ "$run_number" -le 5 ]]; do
-  start_ns="$(date +%s%N)"
+  start_ns="$(date +%s%N)"; [[ "$start_ns" =~ ^[0-9]+$ ]] || start_ns="$(( $(date +%s) * 1000000000 ))"
   set +e
   bash "$RETRO_HEALTH" "$SPEC_DIR" --repo-root "$repo" --format json --out "$WORKSPACE/health.md" > "$WORKSPACE/health.json" 2> "$WORKSPACE/health.err"
   json_rc=$?
   set -e
-  end_ns="$(date +%s%N)"
+  end_ns="$(date +%s%N)"; [[ "$end_ns" =~ ^[0-9]+$ ]] || end_ns="$(( $(date +%s) * 1000000000 ))"
   duration_ms=$(((end_ns - start_ns) / 1000000))
 
   if [[ "$json_rc" -eq 0 ]] \

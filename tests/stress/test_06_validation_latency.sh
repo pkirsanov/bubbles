@@ -58,12 +58,12 @@ echo "Synthetic fixture: 100 specs x 5 phases = 500 turnSnapshots entries"
 
 run_number=1
 while [[ "$run_number" -le 10 ]]; do
-  start_ns="$(date +%s%N)"
+  start_ns="$(date +%s%N)"; [[ "$start_ns" =~ ^[0-9]+$ ]] || start_ns="$(( $(date +%s) * 1000000000 ))"
   set +e
   output="$(bash "$REPORT" --repo-root "$repo" --since 30 --now "2026-05-24T12:00:00Z" 2>&1)"
   rc=$?
   set -e
-  end_ns="$(date +%s%N)"
+  end_ns="$(date +%s%N)"; [[ "$end_ns" =~ ^[0-9]+$ ]] || end_ns="$(( $(date +%s) * 1000000000 ))"
   duration_ms=$(((end_ns - start_ns) / 1000000))
 
   if [[ "$rc" -eq 0 ]] && grep -qF "| Phase |" <<< "$output" && grep -qF "Valid durations: 500" <<< "$output" && [[ "$duration_ms" -lt 5000 ]]; then
