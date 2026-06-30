@@ -41,7 +41,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-feature-template` | 45 | KEEP | Canonical artifact templates (spec/design/scopes/report/uservalidation/state). |
 | `bubbles-fix-cycle-protocol` | 37 | KEEP | Fix-cycle round semantics, finding-set closure. |
 | `bubbles-flag-lifecycle` | 83 | KEEP | Flag introduce -> retire mechanics. Gate-adjacent. |
-| `bubbles-observability-adapter` | 98 | KEEP | Adapter contract (4 verbs) — phil-collins lineage. |
+| `bubbles-observability-adapter` | 184 | KEEP | Adapter contract (4 verbs) + trace-driven defect discovery during live-category tests — phil-collins lineage. |
 | `bubbles-product-principle-discovery` | 111 | KEEP | Surface principles from evidence; non-fabricating ratification rules. |
 | `bubbles-propagation-policy` | 120 | KEEP | J-Roc policy + ledger authoring. |
 | `bubbles-quality-gates-catalog` | 69 | KEEP | Lookup-style discovery skill (G024-G095+ by ID/symptom/script). |
