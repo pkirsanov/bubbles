@@ -40,6 +40,15 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 - **HARD per-repo opt-in (the first optional framework skill)** — `bubbles/registry/optional-skills.txt` declares opt-in skills + their enablement token; `install.sh` vendors an optional skill ONLY when the downstream `.github/bubbles-project.yaml` `designLanguages` opts in (and prunes it on opt-out), so it stays physically absent (non-loading) elsewhere; `bubbles-drift-check.sh` is optional-aware (an absent opted-out skill is reported `OPT-OUT`, not `MISSING`), with two new selftest cases (9 total). `designLanguages` is documented in `project-config-contract.md`.
 - **Skills-first discovery + INVENTORY** updated (35 skills); the generated CHEATSHEET / HTML cheatsheet / framework-stats regenerate from these source edits via `regen-derived.sh`.
 
+### G053 Code Diff Evidence recognizes shell runtime paths (parity with G093)
+
+**Theme:** Closes a silent inconsistency between the two delivery-delta gates. `delivery-implementation-delta-guard.sh` (G093) already classifies `*.sh` as a `runtime` delivery path via its `path_family()` helper, but the `state-transition-guard.sh` Check 13B (G053) "Code Diff Evidence" runtime-path regex omitted `.sh`/`.bash`. The effect: a legitimate shell-only delivery (a git-hook fix, an operator/deploy script, a CI helper) passed G093 but was wrongly rejected by G053 with "Code Diff Evidence does not show any non-artifact runtime/source/config file paths", blocking an otherwise-complete spec from `done`.
+
+- **`bubbles/scripts/state-transition-guard.sh`** — Check 13B (G053) runtime-path detection regex gains `sh|bash`, so a `*.sh` / `*.bash` path cited in a `### Code Diff Evidence` section now counts as a non-artifact runtime path, matching the G093 `path_family` classifier. No other extension behavior changes; artifact-only evidence is still rejected.
+- **`bubbles/scripts/state-transition-guard-selftest.sh`** — adds two G053 Check 13B cases (wired into `framework-validate` via the existing selftest hook): a positive case proving a shell-only Code Diff Evidence (whose ONLY runtime-extension token is a `.sh` path) is accepted, and a non-vacuous negative twin proving an artifact-only Code Diff Evidence is still rejected. All pre-existing cases pass unchanged.
+
+**Scope:** gate-consistency fix only. VERSION is intentionally not bumped here — release versioning is left to release-check.
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.

@@ -2294,7 +2294,7 @@ if [[ "$requires_impl_delta" == "true" ]]; then
     fi
 
     runtime_path_hits="$({
-      grep -oE '[^[:space:]]+\.(rs|go|py|ts|tsx|js|jsx|dart|java|scala|yaml|yml|proto)' "$rpt_path" \
+      grep -oE '[^[:space:]]+\.(rs|go|py|ts|tsx|js|jsx|dart|java|scala|sh|bash|yaml|yml|proto)' "$rpt_path" \
         | grep -viE '(^|/)(specs|docs|\.github)/|(^|/)(README|CHANGELOG)\.md$' \
         | wc -l || true
     } || true)"
