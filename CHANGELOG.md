@@ -89,6 +89,15 @@ Verified on macOS (BSD userland): a full `bash bubbles/scripts/framework-validat
 
 **Scope:** framework skill + instruction (additive). VERSION not bumped (release-check owns versioning).
 
+### Skill placement & naming invariant (root-cause fix for skill drift)
+
+**Theme:** A capability-placement audit across the framework and the five downstream repos surfaced recurring skill drift — `bubbles-`prefixed skills stranded in a single repo (knb's deploy trio: `bubbles-zero-manual-deployment`, `bubbles-client-binary-release`, `bubbles-shared-services-selector`) and the same UNPREFIXED skill name (`chaos-execution`, `trace-capture`, `bug-fix-testing`) independently authored in three-plus repos. Root cause: `bubbles-skill-authoring` had a "project vs personal" scope rule but no framework-vs-repo NAMING rule, so nothing declared where a skill lives or what its prefix means. This codifies one invariant so every future skill lands correctly and the existing violators get an unambiguous, consistent target.
+
+- **`skills/bubbles-skill-authoring/SKILL.md`** — new **Placement & Naming Invariant** section: `bubbles-<x>` is RESERVED for framework-owned, framework-sourced skills that sync to every repo; `<repo>-<x>` (`knb-*`, `wanderaide-*`, `smackerel-*`, …) is repo-specific and lives only in that repo. Includes the one-branch decision tree (product-agnostic contract → framework `bubbles-*`; concrete wiring of a framework capability → `<repo>-*`), the two anti-patterns it kills (a `bubbles-*` skill stranded in a downstream repo; the same unprefixed name duplicated across repos), and the safe migration procedure (route to the owning repo / the framework — never rename across contended repos in one shot).
+- **`instructions/bubbles-skills.instructions.md`** (`applyTo: "**"`, synced to every repo) — a tight statement of the reserved-`bubbles-`prefix rule that points at the skill's decision tree.
+
+**Scope:** governance (skill authoring). No skills renamed here — the invariant is the standard against which each owning repo migrates its own violators. VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.

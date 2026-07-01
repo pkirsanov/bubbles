@@ -14,6 +14,28 @@ This is a portable governance skill. Keep it free of project-specific commands, 
 ## Scope: project vs personal
 Project-scoped procedures live in `.github/skills/` and travel with the repository. Personal or cross-repo procedural preferences do NOT belong in a project skill — they live in the observation-driven developer profile (`.specify/memory/developer-profile.md`) and the agent's user-memory layer. Do not stand up a parallel personal-skills surface; route personal preferences to those existing layers instead.
 
+## Placement & Naming Invariant
+A skill has exactly ONE home, and its NAME declares that home. This one rule keeps the ecosystem simple, consistent, and drift-free.
+
+| Name | Home | Meaning |
+|---|---|---|
+| `bubbles-<x>` | framework `skills/` (synced to every repo) | Framework-owned, product-agnostic governance. The `bubbles-` prefix is RESERVED — a `bubbles-*` skill MUST live in the framework source. |
+| `<repo>-<x>` (`knb-*`, `wanderaide-*`, `smackerel-*`, …) | that repo's `.github/skills/` only | Repo-specific implementation or concrete wiring of a framework capability. |
+
+**Where does a new skill go?**
+```
+Is it a product-agnostic CONTRACT / policy (applies to any repo that adopts it)?
+├── Yes → framework skill `bubbles-<x>`, authored in the framework source, synced.
+└── No  → concrete wiring/config of a framework capability for THIS repo?
+          └── Yes → repo skill `<repo>-<x>`, lives only in this repo.
+```
+
+**Two anti-patterns this kills:**
+1. A `bubbles-*` skill that lives ONLY in a downstream repo — the prefix claims framework-grade but it never syncs. Promote it to the framework source, or rename it `<repo>-*` if it is genuinely repo-specific.
+2. The SAME unprefixed skill name duplicated across repos (`chaos-execution`, `trace-capture`, `bug-fix-testing`) — it reads as framework but has no framework base. Promote one `bubbles-*` base to the framework and let each repo keep a thin `<repo>-*` wiring, or rename every copy `<repo>-*`. Never leave N unprefixed copies drifting.
+
+**Migrating a violator:** route the change to the OWNING repo (or to the framework for a promotion) — do not rename across contended repos in one shot. Author/move the file under the target name, update that repo's `INVENTORY.md` + `bubbles-skills-first-discovery` router, regenerate derived artifacts, and validate before landing.
+
 ## Non-negotiables
 - Do not hardcode environment-specific hosts, URLs, or ports.
 - Do not invent defaults or fallbacks that hide missing configuration.

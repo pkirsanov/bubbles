@@ -23,6 +23,10 @@ Skills provide domain-specific knowledge that agents can load on demand. They're
 - Do not assume cross-repo skill names or file paths unless they exist in the current repository.
 - Keep this instruction file project-agnostic; put repo-specific skill inventories in repo docs if needed.
 
+## Naming reserves the `bubbles-` prefix
+
+The `bubbles-<x>` prefix is RESERVED for framework-owned skills that are authored in the framework source and synced to every repo. A skill written for one repo MUST use a `<repo>-<x>` name (`knb-*`, `wanderaide-*`, `smackerel-*`, …) and live only in that repo. Do NOT author a `bubbles-*` skill that exists only in a downstream repo, and do NOT leave the same unprefixed skill name duplicated across repos — promote a `bubbles-*` base to the framework, or name each copy `<repo>-*`. See the `bubbles-skill-authoring` skill for the placement decision tree.
+
 ## Skill Directory Structure
 
 Skills live in `.github/skills/<skill-name>/`:
