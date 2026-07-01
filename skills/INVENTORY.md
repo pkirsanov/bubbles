@@ -32,6 +32,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-cinematic-design` | 56 | KEEP | Opt-in design-language skill (premium/cinematic presets + pattern library) selected by `bubbles.ux`, applied by `bubbles.implement`; presets/patterns from the retired `bubbles.cinematic-designer` agent. Vendored only where `.github/bubbles-project.yaml` `designLanguages.enabled` lists it. |
 | `bubbles-config-bundle-per-train` | 143 | KEEP | Per-train flag bundle authoring — G081 mechanics. |
 | `bubbles-config-sst` | 276 | KEEP | Configuration single-source-of-truth governance. Largest substantive skill. |
+| `bubbles-cross-platform-shell` | 94 | KEEP | GNU/BSD (Linux + macOS) shell portability — guard-lib helpers, pitfall→portable table, selftest graceful-degradation. |
 | `bubbles-deployment-target-adapter` | 542 | KEEP | Adapter authoring rules — central to G074 / G081. Largest skill overall. |
 | `bubbles-docker-lifecycle-governance` | 50 | KEEP | Docker resource classes + cleanup safety + label-aware pruning. |
 | `bubbles-docker-port-standards` | 40 | KEEP | 10k Rule + Dual-URL standard. Concrete operator-visible rules. |

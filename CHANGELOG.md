@@ -79,6 +79,16 @@ Verified on macOS (BSD userland): a full `bash bubbles/scripts/framework-validat
 
 **Scope:** runtime + selftest path. VERSION not bumped (release-check owns versioning).
 
+### Cross-platform shell as a first-class framework skill + instruction
+
+**Theme:** The BSD/GNU portability knowledge proven out across the two runtime-portability passes above was repo-local — `wsl-macos-compatibility` existed only as a WanderAide skill and as an independently-authored per-repo instruction, never in the framework source — despite governing the framework's own 200+ shell scripts. This promotes it to a reusable framework asset so every downstream repo (and the framework itself) shares one authoritative portability contract.
+
+- **NEW skill `skills/bubbles-cross-platform-shell/`** — the GNU-vs-BSD pitfall→portable table (`sed -i`, `date -d` / `+%s%N`, `paste` stdin operand, `awk -v` newlines, 3-arg `match()`, `mktemp --suffix`, `readlink -f` symlink canonicalization, `grep -P`, `/bin/true`, `mapfile`, locale `sort`), the `guard-lib.sh` helper reference (`bubbles_sed_inplace`, `bubbles_iso_to_epoch`, `bubbles_now_ms`, `bubbles_file_mtime_epoch`, `bubbles_run_with_timeout`), the selftest graceful-degradation rule, and the `framework-validate` PATH-shim recipe. Registered in `skills/INVENTORY.md` (KEEP) and the `bubbles-skills-first-discovery` router.
+- **NEW instruction `instructions/wsl-macos-compatibility.instructions.md`** (`applyTo: "**"`) — the binding policy counterpart: the `timeout`→`gtimeout`→watchdog resolution wrapper, the forbidden→required forms table, the selftest SKIP contract, and the verification checklist. Becomes the framework source of truth that syncs to every repo (previously each repo carried an independently-authored copy that could silently diverge).
+- **Derived artifacts regenerated** via `regen-derived.sh` (framework-stats, cheatsheet, capability-ledger docs, release manifest — 583 managed files). `framework-validate.sh` passes (exit 0, zero failing checks) on macOS.
+
+**Scope:** framework skill + instruction (additive). VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.
