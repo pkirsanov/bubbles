@@ -473,7 +473,7 @@ clear_stale() {
     return 0
   fi
 
-  cutoff="$(date -u -d "${stale_cutoff_days} days ago" +"%Y-%m-%dT%H:%M:%SZ")"
+  cutoff="$(date -u -d "${stale_cutoff_days} days ago" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v-"${stale_cutoff_days}"d +"%Y-%m-%dT%H:%M:%SZ")"
   temp_file="$(_btmp)"
   awk -v cutoff="$cutoff" '
     match($0, /"timestamp":"([^"]+)"/, ts) {

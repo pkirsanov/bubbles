@@ -119,6 +119,14 @@ The full `tests/regression` suite now runs 21/21 on macOS (and Linux — the fix
 
 **Scope:** regression test alignment. VERSION not bumped (release-check owns versioning).
 
+### developer-profile.sh clear_stale — second `date -d` BSD fallback (review pass)
+
+**Theme:** A follow-up review pass across all `bubbles/scripts/*.sh` for residual BSD-userland gaps found one genuine miss: `developer-profile.sh` `clear_stale()` computed its cutoff with GNU `date -u -d "N days ago"` and no fallback, even though its twin `show_stale()` was already fixed. On macOS the cutoff resolved empty. It now carries the same `|| date -u -v-Nd` BSD fallback.
+
+The rest of the scan came back clean: `sed -i` survives only in selftests that run under the `framework-validate` PATH shim; the `date` / `stat` / `paste` / `readlink` / 3-arg-`match()` runtime uses are all guarded or gawk-shimmed; `install.sh` is portable; and the extensive `mapfile` usage is the framework's existing bash-4+ requirement (an environment prerequisite like GNU coreutils, not a per-script bug).
+
+**Scope:** runtime path. VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.

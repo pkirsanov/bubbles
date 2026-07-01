@@ -7,7 +7,7 @@
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
   "validatedSurfaces": ["framework-validate", "release-check", "release-manifest-selftest", "install-provenance-selftest", "finding-closure-selftest", "interop-import-selftest", "trust-doctor-selftest"],
-  "docsDigest": "24fb052d586b95c8b8514572b140fa78e6441c473563294593bc1293c6b11352",
+  "docsDigest": "0df3c1e27a6188f31b2779d2c7fdd640bb5c920e0f71efc82579b261fa85e1c7",
   "managedFileCount": 583,
   "managedFileChecksums": [
     {"path": "bubbles/scripts/action-risk-registry-lint.sh", "sha256": "a4728a5b86849b6d39652e79b266344e320b4bbb26751569ca8dc164acb3c9c0"},
@@ -48,7 +48,7 @@
     {"path": "bubbles/scripts/convergence-cap-guard.sh", "sha256": "f25984d2b27095238356aef5cc3efbb78561fa0dc79e259a2562e67fb092eb88"},
     {"path": "bubbles/scripts/delivery-implementation-delta-guard-selftest.sh", "sha256": "24f5f24484599e824bb525c8c677ab7274e6900ff781bc946a38242659f92775"},
     {"path": "bubbles/scripts/delivery-implementation-delta-guard.sh", "sha256": "a09a4518424ab248e1f4e9937609f14708eb94f636f33dc0a484b8c2603f6f9e"},
-    {"path": "bubbles/scripts/developer-profile.sh", "sha256": "944026fb93b081f8dc27bf421ad27b74dd0b74e62cbe4b21213cf21f2dc67e12"},
+    {"path": "bubbles/scripts/developer-profile.sh", "sha256": "4f4c853a690f74a35f5a2a5eef4c34575d6c78974a2bd3703728b567ae563e17"},
     {"path": "bubbles/scripts/diff-evidence-guard-selftest.sh", "sha256": "5a57594c0e217afae01d4a4bd596a2fd49b459ebffd4ccf0983221d8782127af"},
     {"path": "bubbles/scripts/diff-evidence-guard.sh", "sha256": "936dafb1344d9945cc81b530d191cc59203ca320a13906d76c079ec14482fdbc"},
     {"path": "bubbles/scripts/discovered-issue-disposition-guard-selftest.sh", "sha256": "ad360d2382e6923c1f4941f9dadb44a31d7f9becf4b0d44b4a87f01337260c7b"},
