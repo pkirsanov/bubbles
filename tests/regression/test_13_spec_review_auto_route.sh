@@ -79,7 +79,11 @@ assert_resolved_yq() {
   local resolved_file
   resolved_file="$(mktemp -p "$TMP_DIR")"
   set +e
-  "$RESOLVER" "$mode" > "$resolved_file" 2>&1
+  # v7 mode-collapse removed v5-name INPUT; these regression modes are persisted
+  # names resolved programmatically, so grandfather them (per the resolver's own
+  # remediation hint). Discard stderr (the deprecation notice) so the captured
+  # file is pure resolved-mode YAML.
+  BUBBLES_MODE_GRANDFATHER=1 "$RESOLVER" "$mode" > "$resolved_file" 2>/dev/null
   local rc=$?
   set -e
   if [[ "$rc" -ne 0 ]]; then
@@ -123,8 +127,8 @@ assert_yq "R1 delivery-quality-constraints defines specReviewDefault" '.modeTemp
 assert_yq "R2 delivery-quality-constraints records opt-out reason requirement" '.modeTemplates."delivery-quality-constraints".constraints.specReviewOptOutRequiresReason == true' "$WORKFLOWS_FILE"
 assert_resolved_yq "R3 inherited delivery mode resolves specReviewDefault" "bugfix-fastlane" '.constraints.specReviewDefault == "once-before-implement"'
 assert_resolved_yq "R4 explicit mode default on full-delivery remains once-before-implement" "full-delivery" '.constraints.specReviewDefault == "once-before-implement"'
-assert_yq "R5 docs-only explicit non-delivery opt-out is machine-readable" '.modes."docs-only".constraints.specReviewDefault == "off" and .modes."docs-only".constraints.modeClass == "docs-only" and .modes."docs-only".constraints.planningTruthMutation == false' "$WORKFLOWS_FILE"
-assert_yq "R6 spec-review-to-doc remains read-only spec-review-only" '.modes."spec-review-to-doc".constraints.specReviewDefault == "off" and .modes."spec-review-to-doc".constraints.modeClass == "spec-review-only" and .modes."spec-review-to-doc".constraints.readOnlyAudit == true and .modes."spec-review-to-doc".constraints.noCodeChanges == true' "$WORKFLOWS_FILE"
+assert_resolved_yq "R5 docs-only explicit non-delivery opt-out is machine-readable" "docs-only" '.constraints.specReviewDefault == "off" and .constraints.modeClass == "docs-only" and .constraints.planningTruthMutation == false'
+assert_resolved_yq "R6 spec-review-to-doc remains read-only spec-review-only" "spec-review-to-doc" '.constraints.specReviewDefault == "off" and .constraints.modeClass == "spec-review-only" and .constraints.readOnlyAudit == true and .constraints.noCodeChanges == true'
 
 echo ""
 echo "--- S3/S4/S5: severe done-spec drift routes to improve-existing automatically ---"

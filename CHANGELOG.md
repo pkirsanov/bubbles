@@ -108,6 +108,17 @@ Verified on macOS (BSD userland): a full `bash bubbles/scripts/framework-validat
 
 **Scope:** governance correction (skill authoring). VERSION not bumped (release-check owns versioning).
 
+### Regression test_13 realigned to the v7 mode-collapse
+
+**Theme:** `tests/regression/test_13_spec_review_auto_route.sh` had been red since v7.0.0 — a stale test, NOT a caught regression (the framework behavior is correct). It (a) resolved persisted mode names (`bugfix-fastlane`, `full-delivery`) through `mode-resolver.sh` WITHOUT the grandfather flag v7 requires after v5-name input was removed, and (b) asserted `specReviewDefault` / `modeClass` / etc. against the RAW `.modes.<name>.constraints` path even though v7 moved those constraints to template inheritance (the raw mode has no `constraints` key; the RESOLVED mode carries them).
+
+- `assert_resolved_yq` now resolves with `BUBBLES_MODE_GRANDFATHER=1` (per the resolver's own remediation hint) and discards stderr so the captured file is pure resolved-mode YAML.
+- R5 (`docs-only`) and R6 (`spec-review-to-doc`) switch from `assert_yq` on the raw `workflows.yaml` to `assert_resolved_yq` on the resolved mode. Their expected values (`off` / `docs-only` / `false`; `off` / `spec-review-only` / `true` / `true`) are unchanged and confirmed against the resolver.
+
+The full `tests/regression` suite now runs 21/21 on macOS (and Linux — the fix is platform-independent). Surfaced while extending the macOS "run all" verification beyond `framework-validate`.
+
+**Scope:** regression test alignment. VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.
