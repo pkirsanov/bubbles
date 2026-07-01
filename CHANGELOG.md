@@ -77,6 +77,13 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 Verified on macOS (BSD userland): a full `bash bubbles/scripts/framework-validate.sh` run exits `0` with **zero failing checks**. The only `SKIP` lines are the framework's intended graceful-degradation path for optional Python modules (PyYAML / jsonschema) absent from the active interpreter — the same convention `model-tier-advisory-selftest` already used; installing those modules (or pointing `python3` at an interpreter that has them) lights the skipped checks up with no code change.
 
+**Follow-up (`cli.sh doctor` macOS parity):** running `bash bubbles/scripts/cli.sh doctor` on BSD userland (an operator surface `framework-validate` does not exercise) surfaced two residual issues, now fixed:
+
+- **`bubbles/scripts/cli.sh`** — `current_epoch_ms` used `date +%s%3N` for command timing; BSD `date` lacks `%N`/`%3N` and emits a literal `N`, so `duration_ms=$((end_ms - COMMAND_START_MS))` aborted with `value too great for base (error token is "…N")` at the end of every `cli.sh` subcommand on macOS. Now numeric-guarded with a second-resolution (`×1000`) fallback, matching the `tool-log.sh` pattern.
+- **`skills/bubbles-skill-authoring/SKILL.md`** — the earlier skills-placement correction illustrated project-specific skill names with two literal product names (`wanderaide-*`, `smackerel-*`); the doctor's portable-surface agnosticity lint (correctly) flags product names in a portable framework skill. Genericized to a `<repo>-` placeholder; the `knb` ecosystem references in other portable skills are pre-existing and allowlisted.
+
+`cli.sh doctor` now reports **17 passed, 0 failed** on macOS.
+
 **Scope:** runtime + selftest path. VERSION not bumped (release-check owns versioning).
 
 ### Cross-platform shell as a first-class framework skill + instruction
