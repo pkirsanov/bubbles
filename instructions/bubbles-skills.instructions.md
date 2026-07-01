@@ -23,9 +23,9 @@ Skills provide domain-specific knowledge that agents can load on demand. They're
 - Do not assume cross-repo skill names or file paths unless they exist in the current repository.
 - Keep this instruction file project-agnostic; put repo-specific skill inventories in repo docs if needed.
 
-## Naming reserves the `bubbles-` prefix
+## Skill classification (portable vs project-specific)
 
-The `bubbles-<x>` prefix is RESERVED for framework-owned skills that are authored in the framework source and synced to every repo. A skill written for one repo MUST use a `<repo>-<x>` name (`knb-*`, `wanderaide-*`, `smackerel-*`, …) and live only in that repo. Do NOT author a `bubbles-*` skill that exists only in a downstream repo, and do NOT leave the same unprefixed skill name duplicated across repos — promote a `bubbles-*` base to the framework, or name each copy `<repo>-*`. See the `bubbles-skill-authoring` skill for the placement decision tree.
+Classify a skill by CONTENT, not by a name prefix — the authority is `project-config-contract.md` § Skills Classification. A **portable** skill hardcodes no project specifics (the framework's own portable skills use the `bubbles-` name prefix by convention); a **project-specific** skill references a project CLI/service/domain and uses a domain name (`chaos-execution`, `protobuf-only`) or a `<repo>-*` name, and must not be assumed to exist in other repos. Reserve the `bubbles-` prefix for portable skills, and never rename a skill that a framework agent loads by a fixed path (e.g. `bubbles.chaos.agent.md` → `chaos-execution`).
 
 ## Skill Directory Structure
 

@@ -98,6 +98,16 @@ Verified on macOS (BSD userland): a full `bash bubbles/scripts/framework-validat
 
 **Scope:** governance (skill authoring). No skills renamed here — the invariant is the standard against which each owning repo migrates its own violators. VERSION not bumped (release-check owns versioning).
 
+### Skill placement invariant corrected to defer to project-config-contract.md
+
+**Theme:** The invariant in the entry immediately above was over-strict and conflicted with the framework's EXISTING authoritative convention, so it is corrected here. `agents/bubbles_shared/project-config-contract.md` § Skills Classification already governs placement by CONTENT (Portable vs Project-specific) and explicitly sanctions UNPREFIXED domain skill names (`chaos-execution`, `protobuf-only`) — while the framework-synced `bubbles.chaos.agent.md` PINS the exact path `.github/skills/chaos-execution/SKILL.md`. The prior "no unprefixed / rename to `<repo>-*`" rule would have (a) broken the framework chaos agent's skill-load contract and (b) required rewriting the same skill names across 55+ downstream files including historical done-spec artifacts (knb specs 019/025/027/028/032 `state.json` / `report.md` / `uservalidation.md`, tests, and all four `contract.yaml`). This defers to the existing authority instead of competing with it.
+
+- **`skills/bubbles-skill-authoring/SKILL.md`** — the "Placement & Naming Invariant" section is replaced with "Placement & Naming": classify by CONTENT (portable vs project-specific) per `project-config-contract.md`; the `bubbles-` prefix is a convention for portable skills (not a mechanical rename mandate); unprefixed domain names AND `<repo>-*` are both acceptable for project-specific skills; a skill a framework agent PINS by fixed path (e.g. `chaos-execution`) is a contract and MUST NOT be renamed.
+- **`instructions/bubbles-skills.instructions.md`** — the "reserved prefix" rule is replaced with the same content-based classification plus the framework-agent-pinned-name rule.
+- **No downstream skills renamed.** The earlier-contemplated `chaos-execution` / `trace-capture` / `bug-fix-testing` renames and the knb `bubbles-*` deploy-skill renames are withdrawn — each is either the sanctioned unprefixed pattern, a framework-agent-pinned contract, or too deeply embedded in historical artifacts to rename safely.
+
+**Scope:** governance correction (skill authoring). VERSION not bumped (release-check owns versioning).
+
 ## v7.17.0 — artifact-lint certifying-window marker + v5 delivery-lockdown mode restored
 
 **Theme:** Two additive, independent changes ship together. (1) artifact-lint Check 3 (evidence legitimacy) gains an opt-in certifying-window boundary marker so a long-running spec with extensive pre-heuristic round-history can promote to `done` without retroactively rewriting hundreds of historical evidence blocks (which the append-only audit rule forbids). (2) The pre-v6 `delivery-lockdown` workflow mode is restored as a grandfathered registry key.
