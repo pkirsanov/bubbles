@@ -885,6 +885,65 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+mutate_dict_shaped_phase_claims() {
+  local state_file="$1"
+
+  python3 - "$state_file" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+# Regression shape for the Check 6 / Check 6B unhashable-dict crash:
+#   - certifiedCompletedPhases is EMPTY, forcing Check 6's fallback onto
+#     execution.completedPhaseClaims;
+#   - completedPhaseClaims entries are DICT objects (the real runtime shape),
+#     which previously blew up `dict.fromkeys(...)` with
+#     `TypeError: cannot use 'dict' as a dict key (unhashable type: 'dict')`.
+# workflowMode=iterate keeps required_specialists small (validate, audit) so the
+# selftest can positively assert Check 6 reads the phase names OUT of the dicts,
+# and the matching executionHistory lets Check 6B validate their provenance.
+data["workflowMode"] = "iterate"
+snapshot = data.get("policySnapshot")
+if isinstance(snapshot, dict):
+    snapshot["workflowMode"] = "iterate"
+
+execution = data.get("execution")
+if not isinstance(execution, dict):
+    execution = {}
+    data["execution"] = execution
+
+execution["completedPhaseClaims"] = [
+    {"phase": "validate", "agent": "bubbles.validate"},
+    {"phase": "audit", "agent": "bubbles.audit"},
+]
+execution["executionHistory"] = [
+    {
+        "agent": "bubbles.validate",
+        "runStartedAt": "2026-03-27T10:40:00Z",
+        "runCompletedAt": "2026-03-27T10:45:00Z",
+        "phasesExecuted": ["validate"],
+    },
+    {
+        "agent": "bubbles.audit",
+        "runStartedAt": "2026-03-27T10:50:00Z",
+        "runCompletedAt": "2026-03-27T10:56:00Z",
+        "phasesExecuted": ["audit"],
+    },
+]
+
+cert = data.get("certification")
+if isinstance(cert, dict):
+    cert["certifiedCompletedPhases"] = []
+
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
+}
+
 positive_feature_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
 negative_feature_dir="$tmp_root/specs/901-transition-guard-selftest-missing-owner"
 shared_positive_feature_dir="$tmp_root/specs/903-transition-guard-selftest-shared-pass"
@@ -1027,6 +1086,15 @@ cp -R "$positive_feature_dir" "$bug007_benign_dir"
   echo ""
   echo "The regression session re-runs the booking user flow end to end."
 } >> "$bug007_benign_dir/scopes.md"
+
+# Check 6 / Check 6B regression fixture (unhashable-dict crash). A state.json
+# with an EMPTY certifiedCompletedPhases and DICT-shaped completedPhaseClaims
+# previously crashed the guard with a Python TypeError and read every required
+# phase as missing (false G022). The mutator reshapes the passing base fixture
+# into that exact shape under workflowMode=iterate.
+dict_phase_claims_dir="$tmp_root/specs/933-transition-guard-selftest-dict-phase-claims"
+cp -R "$positive_feature_dir" "$dict_phase_claims_dir"
+mutate_dict_shaped_phase_claims "$dict_phase_claims_dir/state.json"
 
 echo "Running agent ownership lint precheck..."
 lint_log="$tmp_root/agent-ownership-lint.log"
@@ -1187,6 +1255,19 @@ else
   sed -n '1,220p' "$bug007_benign_log"
 fi
 assert_log_not_contains "$bug007_benign_log" "has no Shared Infrastructure Impact Sweep section" "BUG-007: benign 'session'+'flow' prose does not trigger the shared-infra blast-radius check (Check 8C)"
+
+# Check 6 / Check 6B — dict-shaped completedPhaseClaims must NOT crash the guard.
+# Regression for `TypeError: cannot use 'dict' as a dict key`. We assert on the
+# Check 6 / 6B log content only; the fixture's overall exit may be non-zero for
+# unrelated ceiling reasons (mirrors the G040 fixture convention above).
+echo "Running Check 6/6B dict-shaped phase-claim regression selftest..."
+dict_phase_claims_log="$tmp_root/dict-phase-claims.log"
+run_capture "$dict_phase_claims_log" bash "$GUARD_SCRIPT" "$dict_phase_claims_dir" >/dev/null
+assert_log_not_contains "$dict_phase_claims_log" "Traceback (most recent call last)" "Check 6/6B: dict-shaped completedPhaseClaims does NOT crash the guard with a Python Traceback"
+assert_log_not_contains "$dict_phase_claims_log" "unhashable type: 'dict'" "Check 6/6B: the unhashable-dict TypeError is not raised on dict-shaped completedPhaseClaims"
+assert_log_contains "$dict_phase_claims_log" "Required phase 'validate' recorded in execution/certification phase records" "Check 6: phase name 'validate' is read OUT of the dict-shaped completedPhaseClaims (empty certifiedCompletedPhases)"
+assert_log_contains "$dict_phase_claims_log" "Required phase 'audit' recorded in execution/certification phase records" "Check 6: phase name 'audit' is read OUT of the dict-shaped completedPhaseClaims (empty certifiedCompletedPhases)"
+assert_log_contains "$dict_phase_claims_log" "Phase 'validate' has specialist provenance from bubbles.validate" "Check 6B: dict-shaped claim is normalized to its phase name and validated for provenance (not silently swallowed)"
 
 echo "Running negative packet-field selftest..."
 negative_log="$tmp_root/negative-guard.log"
