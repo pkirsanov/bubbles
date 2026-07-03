@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUARD_SCRIPT="$SCRIPT_DIR/state-transition-guard.sh"
 OWNERSHIP_LINT_SCRIPT="$SCRIPT_DIR/agent-ownership-lint.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/guard-lib.sh"
 
 # This selftest already exercises the transition guard's own status, artifact,
 # scope, packet, timestamp, lockdown, and deferral checks. The delegated tail
@@ -175,8 +177,8 @@ Keep the fixture small while still exercising the real transition guard against 
 - [x] Documentation route metadata is recorded consistently across artifacts -> Evidence: report.md#summary
 EOF
 
-  sed -i "s|__SCENARIO_TEST__|$scenario_test|g" "$feature_dir/scopes.md"
-  sed -i "s|__BROADER_TEST__|$broader_test|g" "$feature_dir/scopes.md"
+  bubbles_sed_inplace "s|__SCENARIO_TEST__|$scenario_test|g" "$feature_dir/scopes.md"
+  bubbles_sed_inplace "s|__BROADER_TEST__|$broader_test|g" "$feature_dir/scopes.md"
 
   cat <<'EOF' > "$feature_dir/report.md"
 # Report
@@ -203,7 +205,7 @@ drwxr-xr-x 3 selftest selftest 4096 Mar 27 00:00 ..
 ```
 EOF
 
-  sed -i "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
+  bubbles_sed_inplace "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
 
   cat <<'EOF' > "$feature_dir/state.json"
 {
@@ -319,8 +321,8 @@ Keep the fixture small while still exercising the guard's shared auth bootstrap 
 - [x] Change Boundary is respected and zero excluded file families were changed -> Evidence: report.md#summary
 EOF
 
-  sed -i "s|__CANARY_TEST__|$canary_test|g" "$feature_dir/scopes.md"
-  sed -i "s|__BROADER_TEST__|$broader_test|g" "$feature_dir/scopes.md"
+  bubbles_sed_inplace "s|__CANARY_TEST__|$canary_test|g" "$feature_dir/scopes.md"
+  bubbles_sed_inplace "s|__BROADER_TEST__|$broader_test|g" "$feature_dir/scopes.md"
 
   cat <<'EOF' > "$feature_dir/report.md"
 # Report
@@ -345,7 +347,7 @@ drwxr-xr-x 3 selftest selftest 4096 Mar 27 00:00 ..
 ```
 EOF
 
-  sed -i "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
+  bubbles_sed_inplace "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
 
   cat <<'EOF' > "$feature_dir/state.json"
 {
@@ -442,7 +444,7 @@ Exercise the guard's negative shared auth fixture path by omitting blast-radius 
 - [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
 EOF
 
-  sed -i "s|__BROADER_TEST__|$canary_test|g" "$feature_dir/scopes.md"
+  bubbles_sed_inplace "s|__BROADER_TEST__|$canary_test|g" "$feature_dir/scopes.md"
 
   cat <<'EOF' > "$feature_dir/report.md"
 # Report
@@ -466,7 +468,7 @@ drwxr-xr-x 3 selftest selftest 4096 Mar 27 00:00 ..
 ```
 EOF
 
-  sed -i "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
+  bubbles_sed_inplace "s|__FEATURE_DIR__|$feature_dir|g" "$feature_dir/report.md"
 
   cat <<'EOF' > "$feature_dir/state.json"
 {
@@ -578,7 +580,7 @@ Keep the per-scope fixture minimal while still exercising _index.md parity and c
 - [x] Documentation route metadata is recorded consistently across artifacts -> Evidence: report.md#summary
 EOF
 
-  sed -i "s|__SCENARIO_TEST__|$scenario_test|g" "$scope_dir/scope.md"
+  bubbles_sed_inplace "s|__SCENARIO_TEST__|$scenario_test|g" "$scope_dir/scope.md"
 
   cat <<'EOF' > "$scope_dir/report.md"
 # Report
@@ -602,7 +604,7 @@ drwxr-xr-x 4 selftest selftest 4096 Mar 27 00:00 ..
 ```
 EOF
 
-  sed -i "s|__FEATURE_DIR__|$feature_dir|g" "$scope_dir/report.md"
+  bubbles_sed_inplace "s|__FEATURE_DIR__|$feature_dir|g" "$scope_dir/report.md"
 
   cat > "$feature_dir/state.json" <<EOF
 {
@@ -1384,7 +1386,7 @@ assert_log_contains "$lockdown_round_log" "lockdownState.round=3" "Negative fixt
 echo "Running negative child-workflow-policy selftest..."
 g064_log="$tmp_root/g064-guard.log"
 g064_timeout_seconds="${BUBBLES_G064_SELFTEST_TIMEOUT_SECONDS:-120}"
-g064_status="$(run_capture "$g064_log" timeout "$g064_timeout_seconds" env BUBBLES_REPO_ROOT="$g064_framework_root" bash "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
+g064_status="$(run_capture "$g064_log" bubbles_run_with_timeout "$g064_timeout_seconds" env BUBBLES_REPO_ROOT="$g064_framework_root" bash "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
 if [[ "$g064_status" -ne 0 ]]; then
   pass "Illegal child-workflow caller fixture fails the transition guard as expected"
 else
