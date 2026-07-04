@@ -40,6 +40,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-dod-validation` | 65 | KEEP | Auto-loaded discovery skill — DoD validation tiers. |
 | `bubbles-env-pollution-isolation` | 81 | KEEP | Test code MUST NOT write to prod paths. Gate G115. |
 | `bubbles-evidence-capture` | 71 | KEEP | Auto-loaded discovery skill — evidence-format standards. |
+| `bubbles-external-browser-auth-capture` | 63 | KEEP | Human-in-the-loop external-Playwright-browser capture behind interactive auth (Google/YouTube login, SSO, cookie/bot gates); YouTube-transcript worked example. Not the internal VS Code webview. |
 | `bubbles-feature-template` | 45 | KEEP | Canonical artifact templates (spec/design/scopes/report/uservalidation/state). |
 | `bubbles-fix-cycle-protocol` | 37 | KEEP | Fix-cycle round semantics, finding-set closure. |
 | `bubbles-flag-lifecycle` | 83 | KEEP | Flag introduce -> retire mechanics. Gate-adjacent. |
@@ -67,8 +68,8 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 
 ## Summary
 
-- **40 skills** — one row per real skill directory under `skills/` (every `skills/<name>/` that carries a `SKILL.md`, EXCLUDING any transient `__*` selftest probe such as the gitignored `__manifest_leak_probe/`). Post-`v6.0`-baseline additions include `bubbles-cinematic-design`, the `bubbles-isolated-ml-sidecar` / `bubbles-datastore-isolation` isolation-doctrine pair, and `bubbles-long-running-commands`. 0 deletions.
-- **Total LOC:** ~4,230.
+- **41 skills** — one row per real skill directory under `skills/` (every `skills/<name>/` that carries a `SKILL.md`, EXCLUDING any transient `__*` selftest probe such as the gitignored `__manifest_leak_probe/`). Post-`v6.0`-baseline additions include `bubbles-cinematic-design`, the `bubbles-isolated-ml-sidecar` / `bubbles-datastore-isolation` isolation-doctrine pair, `bubbles-long-running-commands`, and `bubbles-external-browser-auth-capture`. 0 deletions.
+- **Total LOC:** ~4,293.
 - **Pruning candidates** (POINTER-DELETE or CONSOLIDATE): **0**.
 - Every current skill carries substantive policy that an agent invokes at trigger time. The "thin pointers" the v6 design contemplated were not authored — every skill in the current set was already substantive when added.
 
