@@ -14,6 +14,8 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+## v7.18.0 — bubbles.journey (Cathy Curtis) + runtime-lease weighted admission + design-language skill
+
 ### Added
 
 - **`bubbles.journey` (Cathy Curtis)** — the cooperative-guided third stance alongside `bubbles.chaos` (stochastic) and `bubbles.redteam` (adversarial). Adds a `journey` phase, the `journey-refinement` workflow mode, an `experientialFriction` proactive `priorityScoring` dimension (scores user-discovered usability friction), and a `guidedJourney` execution tag. Activates structuring of `uservalidation.md` — acceptance remains human-owned; the agent never auto-checks human acceptance items (G057 unchanged). [IMP-001]
@@ -31,11 +33,9 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 - **Verification Non-goals tightened** to sharpen the surface boundaries between the verification agents. [IMP-004]
 - **Skills-First pointer backfill** applied to all 41 agents so every agent points at the relevant `SKILL.md` modules. INVENTORY reconciliation is now complete (see Added). [IMP-005]
 
-## v7.18.0 — runtime leases: resource-weighted admission (host-capacity OOM guard)
+### Runtime leases — resource-weighted admission (host-capacity OOM guard)
 
 **Theme:** Extends the already-shipped session-aware runtime-coordination capability (`runtime-leases.sh`) with the one dimension it lacked — host-capacity (resource-weight) admission — so two *different* heavy builds sharing one host can no longer OOM-kill each other (exit 137) or orphan-hang when one session removes another's mid-build container. The existing lease model coordinated ownership, compatibility, and exclusivity but had no RAM-weight budget; this adds an opt-in, fully backward-compatible weighted-admission gate. Disabled by default (`runtime.capacityWeight: 0`), so a fresh install is unchanged until a host operator sets a budget.
-
-### Runtime leases — weighted admission
 
 - **`bubbles/scripts/runtime-leases.sh`**:
   - New config under the `runtime` section of `bubbles.config.json`: `capacityWeight` (number, default `0` = admission DISABLED) and optional `weightClasses` (built-in default `{ light: 1, medium: 4, heavy: 8 }`).
