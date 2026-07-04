@@ -2935,9 +2935,11 @@ fi
 echo ""
 
 # =============================================================================
-# CHECKS 23-25: convergence cap (G082), compaction discipline (G083),
-# pre-existing deferral block (G084). Extracted to a guards/ fragment (M4 split)
-# and sourced in this shell scope so behavior is byte-identical.
+# CHECKS 23-25 + 40: convergence cap (G082), compaction discipline (G083),
+# pre-existing deferral block (G084), and session cap (G128, the aggregate
+# sibling of G082). Extracted to a guards/ fragment (M4 split) and sourced in
+# this shell scope so behavior is byte-identical; Check 40 (G128) is additive
+# and a NO-OP unless a sessionBudget is recorded.
 # =============================================================================
 source "$SCRIPT_DIR/guards/tail-convergence-gates.sh"
 

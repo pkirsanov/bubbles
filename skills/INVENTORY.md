@@ -33,6 +33,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-config-bundle-per-train` | 143 | KEEP | Per-train flag bundle authoring — G081 mechanics. |
 | `bubbles-config-sst` | 276 | KEEP | Configuration single-source-of-truth governance. Largest substantive skill. |
 | `bubbles-cross-platform-shell` | 94 | KEEP | GNU/BSD (Linux + macOS) shell portability — guard-lib helpers, pitfall→portable table, selftest graceful-degradation. |
+| `bubbles-datastore-isolation` | 133 | KEEP | Production stateful-store isolation doctrine — bundle-by-default + 4-part share-cleanly bar + stateful-vs-shared-safe split. Isolation-doctrine pair with `bubbles-isolated-ml-sidecar`. |
 | `bubbles-deployment-target-adapter` | 542 | KEEP | Adapter authoring rules — central to G074 / G081. Largest skill overall. |
 | `bubbles-docker-lifecycle-governance` | 50 | KEEP | Docker resource classes + cleanup safety + label-aware pruning. |
 | `bubbles-docker-port-standards` | 40 | KEEP | 10k Rule + Dual-URL standard. Concrete operator-visible rules. |
@@ -42,6 +43,8 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-feature-template` | 45 | KEEP | Canonical artifact templates (spec/design/scopes/report/uservalidation/state). |
 | `bubbles-fix-cycle-protocol` | 37 | KEEP | Fix-cycle round semantics, finding-set closure. |
 | `bubbles-flag-lifecycle` | 83 | KEEP | Flag introduce -> retire mechanics. Gate-adjacent. |
+| `bubbles-isolated-ml-sidecar` | 127 | KEEP | Compute-only Python/ML sidecar invariant — service-gated (protobuf) or bus-gated realization + python-compute-only-guard shape. Isolation-doctrine pair with `bubbles-datastore-isolation`. |
+| `bubbles-long-running-commands` | 110 | KEEP | Long-command discipline — background/await-notification + optional signal-file heartbeat; the anti-polling companion to terminal-discipline. |
 | `bubbles-observability-adapter` | 184 | KEEP | Adapter contract (4 verbs) + trace-driven defect discovery during live-category tests — phil-collins lineage. |
 | `bubbles-product-principle-discovery` | 111 | KEEP | Surface principles from evidence; non-fabricating ratification rules. |
 | `bubbles-propagation-policy` | 120 | KEEP | J-Roc policy + ledger authoring. |
@@ -64,8 +67,8 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 
 ## Summary
 
-- **35 skills** (34 v6.0 baseline + `bubbles-cinematic-design`), 0 deletions.
-- **Total LOC:** ~3,860.
+- **40 skills** — one row per real skill directory under `skills/` (every `skills/<name>/` that carries a `SKILL.md`, EXCLUDING any transient `__*` selftest probe such as the gitignored `__manifest_leak_probe/`). Post-`v6.0`-baseline additions include `bubbles-cinematic-design`, the `bubbles-isolated-ml-sidecar` / `bubbles-datastore-isolation` isolation-doctrine pair, and `bubbles-long-running-commands`. 0 deletions.
+- **Total LOC:** ~4,230.
 - **Pruning candidates** (POINTER-DELETE or CONSOLIDATE): **0**.
 - Every current skill carries substantive policy that an agent invokes at trigger time. The "thin pointers" the v6 design contemplated were not authored — every skill in the current set was already substantive when added.
 
@@ -76,5 +79,6 @@ If a future skill IS authored as a pure pointer (e.g. an external reference that
 ## Maintenance
 
 - Updated by `bubbles.create-skill` whenever a skill is added or removed.
+- Parity between this inventory and the real skill dirs is enforced by `bubbles/scripts/inventory-parity-check.sh` (wired into `framework-validate.sh` as a selftest + live check). It fails loud if a real skill (a `skills/<name>/` with a `SKILL.md`, excluding `__*` probes) has no row here, or if a row references a `skills/<name>/` that does not exist — so the count above cannot silently drift. [IMP-005]
 - Re-checked during `release-check.sh` (planned for v6.1).
 - Sized via `wc -l skills/<name>/SKILL.md` — keep accurate by running the inventory generator (planned: `bubbles/scripts/generate-skill-inventory.sh`).

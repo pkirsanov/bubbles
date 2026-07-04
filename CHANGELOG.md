@@ -12,6 +12,25 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
 
+## [Unreleased]
+
+### Added
+
+- **`bubbles.journey` (Cathy Curtis)** — the cooperative-guided third stance alongside `bubbles.chaos` (stochastic) and `bubbles.redteam` (adversarial). Adds a `journey` phase, the `journey-refinement` workflow mode, an `experientialFriction` proactive `priorityScoring` dimension (scores user-discovered usability friction), and a `guidedJourney` execution tag. Activates structuring of `uservalidation.md` — acceptance remains human-owned; the agent never auto-checks human acceptance items (G057 unchanged). [IMP-001]
+- **`readiness-review` synthesizer mode** — persists an advisory validate-owned `certification.readinessVerdict` (`ship | ship-with-notes | not-ready`) synthesized across spec/code/system/security/regression/redteam lenses, homed on `bubbles.system-review`. Advisory-to-release only; it is NEVER a `done` transition (G056 unchanged). [IMP-002]
+- **Autonomy dial** — `autonomy: full | guarded | interactive` convenience tag that sets `grillMode`/`socratic`/`clarify` together (explicit flags override). `full` is the default (100% autonomous). Registers the `system-review` and `clarify` phases, a conditional `clarify` activation, and a `grill` interrogate activation that is **DEFAULT-OFF**. [IMP-003]
+- **`dryRun: plan`** — a propose-only preview that resolves the full convergence plan and reports intended changes WITHOUT mutating code or state (extends `parallelScopes=dag-dry` to the whole loop). [IMP-003]
+- **`sessionBudget` caps** — `maxTotalConvergenceIterations | maxWallClockMinutes | maxToolCalls` (null = unbounded). The advisory config shipped first; it is **now mechanically enforced** by Gate G128 (see next bullet). [IMP-003]
+- **Gate G128 (`session_cap_enforcement_gate`)** — mechanically enforces the IMP-003 `sessionBudget` aggregate caps: the whole-session sibling of G082's per-`(specDir, agent)` convergence cap. Reads the recorded `sessionBudget` from `.specify/memory/bubbles.session.json`; when a non-null cap is present it blocks (finding `G128`, `blocked` envelope) once the AGGREGATE across all specs — summed convergence iterations, earliest→latest wall-clock minutes, or `toolCallCount` — exceeds its cap. **No-op by default** (no `sessionBudget`, or all-null caps → exit 0), so no existing repo is affected. No `--skip`/`--force`/`--ignore` bypass (matches G082). Guard `bubbles/scripts/session-cap-guard.sh` + hermetic selftest + persistent regression `tests/regression/test_22_session_cap_enforcement.sh`; wired into `state-transition-guard.sh` (Check 40) and `framework-validate.sh` (selftest + live guard). Gate count 108 → 109. [IMP-003]
+- **Parallel-scope isolation contract** plus **accessibility/i18n and migration advisory owners**. [IMP-004]
+- **`train` / `upkeep` / `propagate` prompt shims**, a `lessons.md` install seed, and the `improvements/` proposal surface + its `TEMPLATE`. [IMP-005]
+- **`skills/INVENTORY.md` reconciliation + inventory-parity guard** — INVENTORY reconciled to the true 40-skill count (adds the missing `bubbles-long-running-commands` row); new `bubbles/scripts/inventory-parity-check.sh` (+ hermetic selftest, wired into `framework-validate.sh`) fails loud if a real `skills/<name>/` (with a `SKILL.md`, excluding `__*` probes) lacks an INVENTORY row or a row references a missing dir. [IMP-005]
+
+### Changed
+
+- **Verification Non-goals tightened** to sharpen the surface boundaries between the verification agents. [IMP-004]
+- **Skills-First pointer backfill** applied to all 41 agents so every agent points at the relevant `SKILL.md` modules. INVENTORY reconciliation is now complete (see Added). [IMP-005]
+
 ## v7.18.0 — runtime leases: resource-weighted admission (host-capacity OOM guard)
 
 **Theme:** Extends the already-shipped session-aware runtime-coordination capability (`runtime-leases.sh`) with the one dimension it lacked — host-capacity (resource-weight) admission — so two *different* heavy builds sharing one host can no longer OOM-kill each other (exit 137) or orphan-hang when one session removes another's mid-build container. The existing lease model coordinated ownership, compatibility, and exclusivity but had no RAM-weight budget; this adds an opt-in, fully backward-compatible weighted-admission gate. Disabled by default (`runtime.capacityWeight: 0`), so a fresh install is unchanged until a host operator sets a budget.

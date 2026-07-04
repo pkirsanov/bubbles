@@ -1,0 +1,13 @@
+<!-- icon-name: cathy-trail -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- "you are here" start dot -->
+  <circle cx="12" cy="52" r="2.5"/>
+  <!-- winding journey trail (dashed footpath toward the goal) -->
+  <path d="M 12 52 C 26 48 20 36 32 33 C 42 30 38 24 44 23" stroke-dasharray="0.5 5"/>
+  <!-- destination map pin (teardrop) -->
+  <path d="M 44 6 C 37 6 33 11 33 17 C 33 25 44 33 44 33 C 44 33 55 25 55 17 C 55 11 51 6 44 6 Z"/>
+  <!-- goal marker inside the pin -->
+  <circle cx="44" cy="17" r="3"/>
+  <!-- captured-observation tick beside the trail (friction noted) -->
+  <path d="M 19 41 l 2.5 2.5 l 5 -6" stroke-width="1.5"/>
+</svg>

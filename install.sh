@@ -931,6 +931,20 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
+  # ── Scaffold: lessons.md (skill-evolution learning-loop seed) ─────
+  if [[ ! -f ".specify/memory/lessons.md" ]]; then
+    cat > ".specify/memory/lessons.md" <<'LESSONSEOF'
+# Lessons
+
+<!-- Skill-evolution learning loop: add one lesson per bullet line below (e.g. "- reproduce the failing scenario before writing the fix"). A lesson recorded 3+ times proposes a new/updated skill (see skillEvolution in bubbles/workflows.yaml); lines starting with '#' are ignored and the file auto-compacts past ~150 lines into lessons-archive.md. -->
+LESSONSEOF
+    ok "Created .specify/memory/lessons.md (skill-evolution seed)"
+    CREATED_COUNT=$((CREATED_COUNT + 1))
+  else
+    warn "Skipped .specify/memory/lessons.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
   # ── Scaffold: bubbles/docs/CROSS_PROJECT_SETUP.md ──────────────────────
   if [[ ! -f "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" ]]; then
     cat > "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" <<'CROSSEOF'
