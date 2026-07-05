@@ -15,6 +15,7 @@ Authored from a 4-pass agent-ecosystem audit (2026-07) of the Bubbles framework 
 | [IMP-003](IMP-003-autonomy-dial-and-safety-caps.md) | Autonomy dial + safety caps | 3 | A1, A2, A4 + grill/clarify | Single `autonomy:` level, session budget caps, dry-run/rollback, activates dormant grill + conditional clarify. |
 | [IMP-004](IMP-004-verification-boundaries-and-coverage-gaps.md) | Verification boundaries + coverage gaps | 4 | P4, A3, P5 | Tighten fuzzy agent boundaries; document parallel-scope isolation; name owners for a11y/i18n, migration/backward-compat, longitudinal perf. |
 | [IMP-005](IMP-005-framework-housekeeping.md) | Framework housekeeping | 5 | S1, S2, S3, D2, D3 | INVENTORY sync, Skills-First-Pointers standard, learning-loop seed, ops prompt-shims, improvements/ surface. |
+| [IMP-006](IMP-006-bubbles-journey-full-stack-tutorial.md) | `bubbles.journey` full-stack tutorial | 6 | J1, J2, J3 | Harden the journey agent contract: four-layer per-step verification (UI + API + telemetry + data), tutorial posture + replayable walkthrough, dev/validate-drive vs operate/prod-read-only plane governance (INV-12), internal verdict + Hidden Defects routing. Agent-contract applied; workflow wiring deferred; composes with (does not require) IMP-001 SCOPE-2/3/5. |
 
 ## Recommended implementation order
 
@@ -30,3 +31,4 @@ The framework's process integrity (anti-fabrication, gates, ownership, compactio
 - **A1** no session/cost cap · **A2** no run-level rollback/dry-run · **A3** parallel-scope shared-state contract · **A4** no single autonomy level
 - **S1** INVENTORY drift · **S2** Skills-First-Pointers coverage · **S3** learning-loop cold-start + user-blindness
 - **D1** no consolidated review mode · **D2** ops prompt-shim parity · **D3** improvements/ surface
+- **J1** journey internal-correctness blind spot (UI-only verify) · **J2** no journey tutorial posture · **J3** journey dev/validate-vs-operate plane ambiguity
