@@ -880,19 +880,14 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
-  # ── Scaffold: AGENTS.md (root-level guardrails) ──────────────────
-  # AGENTS.md is the newer VS Code convention for repo-wide AI rules.
-  # It complements copilot-instructions.md — both are loaded by GHCP.
-  if [[ ! -f "$CURRENT_REPO_ROOT/AGENTS.md" ]]; then
-    if [[ -f "$TEMPLATE_DIR/AGENTS.md.tmpl" ]]; then
-      apply_template "$TEMPLATE_DIR/AGENTS.md.tmpl" "$CURRENT_REPO_ROOT/AGENTS.md"
-      ok "Created AGENTS.md (root-level AI guardrails)"
-      CREATED_COUNT=$((CREATED_COUNT + 1))
-    fi
-  else
-    warn "Skipped AGENTS.md (already exists)"
-    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
-  fi
+  # NOTE (IMP-017): the root-level AGENTS.md scaffold was removed. It generated
+  # from templates/AGENTS.md.tmpl — a case-colliding duplicate of
+  # templates/agents.md.tmpl (the command-registry template) — so on
+  # case-insensitive filesystems (macOS/Windows) the two names collapsed to ONE
+  # physical file AND the scaffold wrote the WRONG content (the command
+  # registry, not repo guardrails). A correct starter-AGENTS.md scaffold is a
+  # SEPARATE future feature (deferred). The command-registry template is still
+  # scaffolded to .specify/memory/agents.md below.
 
   # ── Scaffold: terminal-discipline.instructions.md ─────────────────
   if [[ ! -f "${TARGET}/instructions/terminal-discipline.instructions.md" ]]; then
@@ -958,7 +953,6 @@ LESSONSEOF
 | File | Status |
 |------|--------|
 | `.github/copilot-instructions.md` | ✅ Created by bootstrap |
-| `AGENTS.md` | ✅ Created by bootstrap (root-level AI guardrails) |
 | `.github/instructions/terminal-discipline.instructions.md` | ✅ Created by bootstrap |
 | `.specify/memory/constitution.md` | ✅ Created by bootstrap |
 | `.specify/memory/agents.md` | ✅ Created by bootstrap |
@@ -1102,7 +1096,6 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   echo "     .specify/memory/.gitignore                      — Ignore runtime profile/proposal artifacts"
   echo "     .specify/metrics/.gitignore                     — Ignore runtime metrics artifacts"
   echo "     .github/copilot-instructions.md                 — Project policies"
-  echo "     AGENTS.md                                       — Root-level AI guardrails"
   echo "     .github/instructions/terminal-discipline...md   — CLI discipline"
   echo "     .github/bubbles-project.yaml                    — Scan patterns (auto-detected)"
   echo ""
