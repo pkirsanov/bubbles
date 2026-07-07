@@ -32,7 +32,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-cinematic-design` | 56 | KEEP | Opt-in design-language skill (premium/cinematic presets + pattern library) selected by `bubbles.ux`, applied by `bubbles.implement`; presets/patterns from the retired `bubbles.cinematic-designer` agent. Vendored only where `.github/bubbles-project.yaml` `designLanguages.enabled` lists it. |
 | `bubbles-config-bundle-per-train` | 143 | KEEP | Per-train flag bundle authoring — G081 mechanics. |
 | `bubbles-config-sst` | 276 | KEEP | Configuration single-source-of-truth governance. Largest substantive skill. |
-| `bubbles-cross-platform-shell` | 94 | KEEP | GNU/BSD (Linux + macOS) shell portability — guard-lib helpers, pitfall→portable table, selftest graceful-degradation. |
+| `bubbles-cross-platform-shell` | 132 | KEEP | GNU/BSD (Linux + macOS) shell portability — guard-lib helpers, pitfall→portable table, selftest graceful-degradation, + the `macos-portability-guard.sh` mechanical lint (reusable, caller-supplied surface; `# portable-ok:` pragma). |
 | `bubbles-datastore-isolation` | 133 | KEEP | Production stateful-store isolation doctrine — bundle-by-default + 4-part share-cleanly bar + stateful-vs-shared-safe split. Isolation-doctrine pair with `bubbles-isolated-ml-sidecar`. |
 | `bubbles-deployment-target-adapter` | 542 | KEEP | Adapter authoring rules — central to G074 / G081. Largest skill overall. |
 | `bubbles-docker-lifecycle-governance` | 50 | KEEP | Docker resource classes + cleanup safety + label-aware pruning. |
@@ -69,7 +69,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 ## Summary
 
 - **41 skills** — one row per real skill directory under `skills/` (every `skills/<name>/` that carries a `SKILL.md`, EXCLUDING any transient `__*` selftest probe such as the gitignored `__manifest_leak_probe/`). Post-`v6.0`-baseline additions include `bubbles-cinematic-design`, the `bubbles-isolated-ml-sidecar` / `bubbles-datastore-isolation` isolation-doctrine pair, `bubbles-long-running-commands`, and `bubbles-external-browser-auth-capture`. 0 deletions.
-- **Total LOC:** ~4,293.
+- **Total LOC:** ~4,331.
 - **Pruning candidates** (POINTER-DELETE or CONSOLIDATE): **0**.
 - Every current skill carries substantive policy that an agent invokes at trigger time. The "thin pointers" the v6 design contemplated were not authored — every skill in the current set was already substantive when added.
 
