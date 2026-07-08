@@ -304,6 +304,13 @@
     "html_quote": "Check yo'self before you wreck yo'self."
   },
   {
+    "name": "journey-refinement",
+    "alias": "walk-me-through-it",
+    "description": "Guided live-product walkthrough toward a goal — bubbles.journey verifies UI/API/telemetry/data at each step, captures friction, and routes refinements to owners",
+    "description_html": "Guided live-product walkthrough. Cathy Curtis walks you through the live product toward a goal, verifies each step across UI/API/telemetry/data, and routes refinements to their owners.",
+    "html_quote": "Come on, I'll walk you through it — and tell you straight what's broken."
+  },
+  {
     "name": "upkeep-backup-verify",
     "alias": "check-the-backup",
     "description": "Run scheduled backup verification (T1/T2/T3/T4). Calendar-driven via `config/upkeep-calendar.yaml`.",

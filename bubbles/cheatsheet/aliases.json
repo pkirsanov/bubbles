@@ -25,6 +25,11 @@
     "quote": "You want answers? Put it under the light."
   },
   {
+    "alias": "tell-me-straight",
+    "maps_to": "bubbles.journey",
+    "quote": "Come on, I'll walk you through it — and tell you straight what's broken."
+  },
+  {
     "alias": "worst-case-ontario",
     "maps_to": "bubbles.chaos",
     "quote": "Worst case Ontario, something breaks"

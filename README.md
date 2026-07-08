@@ -241,6 +241,9 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | <img src="icons/donny-ducttape.svg" width="20"> | `bubbles.simplify` | **Simplifier.** Cuts through the noise without weakening behavior or ownership boundaries. | Reducing complexity after implementation |
 | <img src="icons/tommy-rack.svg" width="20"> | `bubbles.devops` | **DevOps executor.** Owns CI/CD, build, deployment, monitoring, and observability execution once operational work is identified. | Shipping operational changes and delivery plumbing |
 | <img src="icons/sonny-ledger.svg" width="20"> | `bubbles.releases` | **Release packet planner.** Sonny "Iron Lung" Smith. Produces phase release packets, enforces Product Direction Surfaces trio + carry-forward, coordinates cross-product releases. | Bootstrap, refresh, extend, or coordinate release packets per phase |
+| <img src="icons/dvs-mic.svg" width="20"> | `bubbles.train` | **Release-train operator.** Detroit Velvet Smooth. Cuts, promotes, rolls back, and retires release trains; owns the feature-flag lifecycle. | Release-train lifecycle and flag operations |
+| <img src="icons/treena-broom.svg" width="20"> | `bubbles.upkeep` | **Operational hygiene owner.** Treena Lahey. Runs scheduled backup, restore-drill, patch, secret-rotation, and compliance sweeps. | Recurring calendar-driven upkeep |
+| <img src="icons/jroc-cap.svg" width="20"> | `bubbles.propagate` | **Cross-train propagator.** J-Roc. Forward-merges and backports fixes across release trains under policy + ledger. | Moving a fix across trains |
 
 ### <img src="icons/ted-badge.svg" width="24"> Diagnostic And Certification Routing
 
@@ -258,6 +261,7 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 | <img src="icons/green-bastard-outline.svg" width="20"> | `bubbles.code-review` | **Engineering-first code reviewer.** Reviews repositories, services, packages, modules, and paths strictly from a code perspective. | Reviewing code directly before deciding what to fix |
 | <img src="icons/green-bastard-mask.svg" width="20"> | `bubbles.redteam` | **Adversarial verifier.** Attacks finished results to falsify "done". Off by default. | Adversarial verification |
 | <img src="icons/orangie-fishbowl.svg" width="20"> | `bubbles.system-review` | **Holistic system reviewer.** Orangie sees everything from the fishbowl. Reviews the whole system. | Reviewing what the system feels like, does, and implies as a whole |
+| <img src="icons/cathy-trail.svg" width="20"> | `bubbles.journey` | **Guided walkthrough.** Cathy Curtis walks the live product with you toward a goal, verifies UI/API/telemetry/data at each step, and routes refinements. No sugar-coating. | Guided post-implementation verification of the finished product |
 | <img src="icons/gary-laser-eyes.svg" width="20"> | `bubbles.spec-review` | **Spec freshness auditor.** Checks whether artifacts still deserve trust before maintenance or execution. | Auditing stale or drifted specs |
 
 ### <img src="icons/camera-crew.svg" width="24"> Utilities
