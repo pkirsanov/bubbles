@@ -515,7 +515,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 20 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 21 shipped, 1 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
