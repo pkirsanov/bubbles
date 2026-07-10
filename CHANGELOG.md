@@ -14,6 +14,22 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+## v7.19.2 — manifest-scoped downstream agnosticity
+
+**Theme:** knb's v7.19.1 doctor exposed a downstream-only false positive: project-owned `bubbles-*` instructions and skills share the framework's discovery naming convention but are intentionally product/domain-specific. The agnosticity lint now distinguishes the installed framework payload from project extensions using `.github/bubbles/.manifest`.
+
+### Fixed
+
+- **Downstream managed-surface filtering.** When an install manifest exists, `agnosticity-lint.sh` scans only paths listed as framework-owned. Source checkouts have no install manifest and continue scanning every canonical portable surface.
+- **Project extensions remain project-owned.** Unmanifested `bubbles-*` agents, instructions, and skills may contain repository-specific topology or product names without being mistaken for upstream framework drift.
+- **Enforcement remains strict.** A manifested framework file with the same project-specific token still fails. The selftest includes both the exclusion case and its adversarial manifested twin.
+
+### Validation
+
+- Source full agnosticity scan is clean.
+- Hermetic agnosticity selftest proves unmanifested extension exclusion and manifested-surface enforcement.
+- All downstreams are re-upgraded to v7.19.2 and their built-in doctor results are checked.
+
 ## v7.19.1 — downstream doctor agnosticity and entry-point correction
 
 **Theme:** The first v7.19.0 downstream upgrade correctly installed the direct-runner architecture but its built-in doctor exposed eleven portable-surface agnosticity violations that the source release-check's narrower agnosticity target list did not cover. This patch removes every concrete project/browser-tool assumption, corrects the installer's first commands to goal-first guidance, and preserves the downstream upgrade guarantee that doctor is green immediately after install.

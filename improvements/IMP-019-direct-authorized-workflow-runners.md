@@ -1,6 +1,6 @@
 # IMP-019 — Direct Authorized Workflow Runners
 
-**Status:** APPLIED in v7.19.0; downstream doctor hardening shipped in v7.19.1 on 2026-07-09
+**Status:** APPLIED in v7.19.0; downstream doctor hardening shipped in v7.19.1-v7.19.2 on 2026-07-09
 **Surface:** framework control plane, agent routing, workflow execution, documentation, and downstream installer payload
 **Verified gaps addressed:** WRA1 (goal/workflow responsibility overlap), WRA2 (runner-to-runner subagent deadlock), WRA3 (no per-agent mode grants), WRA4 (public guidance named the wrong universal endpoint)
 
