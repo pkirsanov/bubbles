@@ -34,7 +34,7 @@ Bubbles is the supervisor that won't let them. One command turns a plain request
 You describe the outcome. Bubbles drives a crew of specialized agents to it, gates every step against proof, and stops only when the work genuinely holds up.
 
 ```
-/bubbles.workflow  ship the booking feature — competitive, tested, and done for real
+/bubbles.goal  ship the booking feature — competitive, tested, and done for real
 ```
 
 Stop babysitting your AI. Put it on the clock.
@@ -43,16 +43,16 @@ Stop babysitting your AI. Put it on the clock.
 
 Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work, plus a control plane that tracks certification authority, scenario contracts, workflow run-state, typed framework events, runtime lease safety, and framework-level validation.
 
-**One entry point. Just describe what you want:**
+**One outcome endpoint. Just describe what you want:**
 
 ```
-/bubbles.workflow  improve the booking feature to be competitive
-/bubbles.workflow  fix the calendar bug
-/bubbles.workflow  continue
-/bubbles.workflow  spend 2 hours on whatever needs attention
+/bubbles.goal  improve the booking feature to be competitive
+/bubbles.goal  fix the calendar bug
+/bubbles.goal  continue
+/bubbles.sprint  minutes: 120 goals: fix calendar; improve booking; validate release
 ```
 
-Workflow resolves your intent, picks the right mode, and drives specialists to completion. No need to memorize agents, modes, or parameters.
+Goal resolves the outcome and may execute zero, one, or several workflows plus direct specialist work. Use `/bubbles.workflow` when you want exactly one explicit or super-resolved mode, and `/bubbles.sprint` for several goals under a time budget.
 
 Think of it as a trailer park supervisor for your codebase. Except this one actually works.
 
@@ -181,7 +181,7 @@ specs/                                   # Feature/bug spec folders
   <img src="pictures/bazaar_v5_agent_icons_presentation.svg" width="900" alt="Bubbles Agent Network Presentation Layout">
 </p>
 
-Every agent has a job. Start with `/bubbles.workflow` — it figures out which specialists to call. Use `/bubbles.super` for framework ops and advice.
+Every agent has a job. Start with `/bubbles.goal` for an outcome, `/bubbles.workflow` for one known workflow mode, `/bubbles.sprint` for timed multi-goal work, or `/bubbles.super` when you want resolution and framework advice without execution.
 
 ### Artifact Ownership
 
@@ -197,7 +197,8 @@ Bubbles now enforces hard artifact ownership:
 
 Control-plane law:
 - Orchestrators dispatch work and keep it moving; they do not implement fixes directly.
-- Only orchestrators may invoke child workflows.
+- Workflow execution is default-deny: only agents listed in `workflowModeGrants` may run modes.
+- An authorized top-level runner interprets the mode and invokes specialist phase owners directly. Workflow-running orchestrators never invoke one another as subagents.
 - Owners and execution specialists produce concrete code, test, doc, or artifact deltas.
 - Diagnostic and certification agents finish with concrete result envelopes and owner-targeted packets instead of inline remediation.
 
@@ -210,21 +211,23 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 - Cross-cutting infrastructure and operational delivery work lives under `specs/_ops/OPS-*`.
 - Ops packets use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json`.
 
-### <img src="icons/bubbles-glasses.svg" width="24"> Start Here — Universal Entry Point
+### <img src="icons/bubbles-glasses.svg" width="24"> Start Here — Universal Goal Endpoint
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
-| <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **Universal entry point.** Accepts plain English, structured commands, or "continue". Resolves intent via `super`, picks work via `iterate`, drives all phases to completion. | **Always. Just describe what you want.** |
-| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **Framework ops & advice.** NLP resolver, command generator, framework health, framework validation, release hygiene, hooks, gates, upgrades, and repo-readiness guidance. Workflow delegates to it automatically for vague input. | Framework operations, advice without execution |
+| <img src="icons/tyrone-chain.svg" width="20"> | `bubbles.goal` | **Universal goal endpoint.** Achieves one outcome through any required workflows and specialist agents, looping until convergence or a real blocker. | **Default for plain-English outcomes.** |
+| <img src="icons/bubbles-glasses.svg" width="20"> | `bubbles.workflow` | **Single-mode workflow runner.** Executes exactly one explicit `mode:` or one mode resolved by `bubbles.super`. | Deterministic control over one workflow |
+| <img src="icons/lahey-badge.svg" width="20"> | `bubbles.super` | **Resolver & framework concierge.** Selects the authorized runner, mode, command, or framework action; does not execute product workflows. | Framework operations and routing advice |
 
 ### <img src="icons/jacob-hardhat.svg" width="24"> Orchestrators
 
 | Icon | Agent | Role | When to Use |
 |:----:|-------|------|-------------|
-| <img src="icons/tyrone-chain.svg" width="20"> | `bubbles.goal` | **Autonomous goal executor.** Give it one goal — feature, bug, ops, or hardening — and it plans, implements, tests, validates, remediates, and loops until full convergence. No hand-holding. | You want end-to-end autonomous delivery of a single goal |
 | <img src="icons/erica-doublestack.svg" width="20"> | `bubbles.sprint` | **Autonomous sprint controller.** Give it multiple goals + a time budget. Prioritizes, executes each via convergence loop, manages the clock, stops gracefully. | You have a backlog and a deadline |
 | <img src="icons/jacob-hardhat.svg" width="20"> | `bubbles.iterate` | **Work picker.** Selects the highest-priority next slice and runs one iteration. Also accepts plain English via `super` delegation. | Continuing existing spec work without choosing phases by hand |
 | <img src="icons/cory-cap.svg" width="20"> | `bubbles.bug` | **Bug orchestrator.** Reproduces, packets, routes, and drives the fix workflow until the defect is actually closed. | Investigating and routing bug work end to end |
+
+Granted domain runners include `bubbles.releases`, `bubbles.train`, `bubbles.upkeep`, `bubbles.propagate`, `bubbles.stabilize`, `bubbles.retro`, and `bubbles.journey`. Each may execute only its declared mode family; when invoked as a phase owner, it performs only that phase.
 
 ### <img src="icons/julian-glass.svg" width="24"> Owners And Executors
 
@@ -292,15 +295,15 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 **You don't need to know which agent, mode, or parameters to use. Just describe your goal.**
 
 ```
-# Describe your goal in plain English — workflow resolves the right mode and drives it:
-/bubbles.workflow  Build a user authentication system with JWT tokens
-/bubbles.workflow  improve the booking feature to be competitive
-/bubbles.workflow  fix the calendar bug in page builder
+# Describe one outcome in plain English — goal composes whatever is needed:
+/bubbles.goal  Build a user authentication system with JWT tokens
+/bubbles.goal  improve the booking feature to be competitive
+/bubbles.goal  fix the calendar bug in page builder
 
 # Continue from where you left off:
-/bubbles.workflow  continue
+/bubbles.goal  continue
 
-# Or use structured mode when you know exactly what you want:
+# Use workflow when you want exactly one mode:
 /bubbles.workflow  specs/042 mode: full-delivery tdd: true
 ```
 
@@ -467,11 +470,11 @@ Control-plane rules:
 - Every specialist invocation ends with a concrete result envelope: `completed_owned`, `completed_diagnostic`, `route_required`, or `blocked`.
 - Route-required outcomes carry owner-targeted packets with scope, scenario, or DoD references.
 - Diagnostic and certification phases route foreign-owned follow-up; they do not perform inline remediation.
-- Child workflows are orchestrator-only and bounded in depth.
+- Workflow modes execute only in an authorized top-level runner; nested workflow-runner dispatch is forbidden.
 - `scenario-manifest.json` carries stable `SCN-*` contracts, and validate replays linked live-system scenario proof before certification.
 - `uservalidation.md` remains human acceptance input; automation findings do not toggle it.
 
-Use `/bubbles.super` for framework operations (doctor, hooks, upgrade, metrics) or when you want command recommendations without execution. Workflow delegates to super automatically for vague input.
+Use `/bubbles.super` for framework operations or command recommendations without product-workflow execution. It resolves the authorized runner as well as the mode.
 
 ---
 
@@ -515,7 +518,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 21 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 22 shipped, 1 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
@@ -539,23 +542,23 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 
 > "Boys, we need a plan." — Here's what to type.
 
-**Start with `/bubbles.workflow` — or go fully autonomous with `/bubbles.goal` and `/bubbles.sprint`:**
+**Start with `/bubbles.goal`; use `/bubbles.workflow` for one mode and `/bubbles.sprint` for timed multi-goal work:**
 
 | I Want To... | Run This |
 |-------------|----------|
-| **Just describe what I want** | **`/bubbles.workflow  <describe it in plain English>`** |
-| **Handle everything autonomously** | **`/bubbles.goal  <describe your goal>`** |
+| **Just describe what I want** | **`/bubbles.goal  <describe your outcome>`** |
+| **Run exactly one workflow mode** | **`/bubbles.workflow  <target> mode: <mode>`** |
 | **Multiple goals + time budget** | **`/bubbles.sprint  minutes: N` + goal list** |
-| **Continue where I left off** | **`/bubbles.workflow  continue`** |
+| **Continue toward the active outcome** | **`/bubbles.goal  continue`** |
 | Explore an idea before writing code | `/bubbles.workflow  mode: brainstorm for <idea>` |
-| Start a new feature from scratch | `/bubbles.workflow  <describe feature>` |
-| Improve an existing feature | `/bubbles.workflow  improve <feature>` |
-| Fix a bug | `/bubbles.workflow  fix the <describe bug>` |
+| Start a new feature from scratch | `/bubbles.goal  <describe feature>` |
+| Improve an existing feature | `/bubbles.goal  improve <feature>` |
+| Fix a focused bug workflow | `/bubbles.bug  mode: fix <describe bug>` |
 | Run the full delivery pipeline | `/bubbles.workflow implement action:full-delivery target:spec for <feature>` |
 | Reconcile and redesign | `/bubbles.workflow  redesign-existing for <feature>` |
 | Harden the code quality | `/bubbles.workflow  harden <feature>` |
 | Break things on purpose | `/bubbles.workflow  chaos test <feature>` |
-| Spend time on whatever | `/bubbles.workflow  spend 2 hours on whatever needs attention` |
+| Spend time on several goals | `/bubbles.sprint  minutes: 120` + goal list |
 | Maximum assurance delivery | `/bubbles.workflow  <feature> mode: full-delivery` |
 | Show rework and hotspot patterns | `/bubbles.retro  week` |
 

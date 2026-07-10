@@ -2,7 +2,7 @@
   {
     "alias": "pull-the-strings",
     "maps_to": "bubbles.workflow",
-    "quote": "Bubbles is pulling the strings, boys."
+    "quote": "One plan at a time, boys. Bubbles is pulling the strings."
   },
   {
     "alias": "i-got-a-plan-boys",
@@ -182,7 +182,7 @@
   {
     "alias": "i-handle-things",
     "maps_to": "bubbles.goal",
-    "quote": "I handle things, that's what I do."
+    "quote": "Tell Tyrone the outcome. He handles things, that's what he does."
   },
   {
     "alias": "tyrone-got-this",

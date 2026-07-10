@@ -1,7 +1,23 @@
 [
   {
     "term": "workflow-only continuation",
-    "meaning": "Recap, status, and handoff point you back to `/bubbles.workflow ...` by default instead of raw `/bubbles.implement` or `/bubbles.test` commands."
+    "meaning": "When one root mode is already active, recap, status, and handoff preserve that mode and route back to its authorized runner instead of dropping into raw specialists."
+  },
+  {
+    "term": "universal goal endpoint",
+    "meaning": "`bubbles.goal` owns one requested outcome and may execute zero, one, or several authorized workflows plus direct specialist phases until convergence."
+  },
+  {
+    "term": "single-mode workflow runner",
+    "meaning": "`bubbles.workflow` executes exactly one explicit `mode:` or one mode resolved by `bubbles.super`; it does not decompose broad goals or run timed goal queues."
+  },
+  {
+    "term": "direct authorized runner",
+    "meaning": "The top-level agent granted a workflow mode interprets its phase order and invokes specialist owners directly. Workflow-running orchestrators never invoke one another as subagents."
+  },
+  {
+    "term": "workflow mode grant",
+    "meaning": "A default-deny entry in `bubbles/agent-capabilities.yaml::workflowModeGrants` declaring exactly which modes an orchestrator may execute. Gate G064 enforces it."
   },
   {
     "term": "continuation envelope",

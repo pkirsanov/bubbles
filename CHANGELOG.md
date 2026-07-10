@@ -14,6 +14,27 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+## v7.19.0 — direct authorized workflow runners
+
+**Theme:** A workflow is an execution contract, not a mandatory middle agent. `bubbles.goal` is now the universal one-outcome endpoint; `bubbles.workflow` runs exactly one explicit or super-resolved root mode; `bubbles.sprint` executes a timed queue of goals; and granted domain orchestrators run only their own mode families. The active top-level runner invokes specialist phase owners directly, eliminating the broken `goal → workflow → specialist` and `sprint → goal → specialist` subagent chains that VS Code's one-level delegation runtime cannot execute. [IMP-019]
+
+### Changed
+
+- **Clear runner boundaries.** Goal may compose zero, one, or several workflows for one outcome. Workflow is capped at one root mode and excludes the `autonomous-goal`, `autonomous-sprint`, and `iterate` meta modes. Sprint applies the goal contract directly to a prioritized queue under its time budget. Super resolves the authorized runner as well as the mode and does not execute product workflows.
+- **Domain workflow ownership.** Explicit grants allow bug, releases, train, upkeep, propagation, stabilize, retro, and journey orchestrators to execute only their declared workflow families when top-level. When invoked as a phase owner, each performs only that phase and returns a result envelope.
+- **Direct mapped-mode execution.** Trigger/remediation modes remain registry-defined, but the active authorized runner resolves them in the same top-level runtime and invokes their specialist phase owners directly with `executionModel: direct-authorized-runner`. Runner-to-runner subagent invocation and the parent-expanded fallback are retired for new execution.
+- **Control phases are runner-relative.** `analyze`, `discover`, `bootstrap`, and `finalize` now resolve through `activeWorkflowRunner` instead of being hard-coded to `bubbles.workflow`.
+
+### Enforcement
+
+- **Gate G064 repurposed in place** from `child_workflow_depth_gate` to `workflow_runner_authorization_gate`. `bubbles/agent-capabilities.yaml::workflowModeGrants` is default-deny; `bubbles/workflows.yaml::workflowExecutionPolicy` declares direct top-level execution, the grant source, and meta-mode owners.
+- **New `workflow-runner-grants-lint.sh` + hermetic selftest.** The lint rejects unknown modes, missing grants, non-orchestrator runners, ungranted intent routes, invalid meta-mode ownership, bad workflow root-mode limits, and positive nested-runner dispatch patterns. The selftest proves each failure class adversarially. Framework validation and state-transition Check 3H run the lint.
+- **Backward compatibility.** Historical `parent-expanded` execution-history records remain readable by the state guard. Existing mode registry keys and persisted `state.json.workflowMode` values are unchanged. New executions use only `direct-authorized-runner`.
+
+### Documentation
+
+- README, agent manual, workflow-mode guide, autonomous-execution guide, control-plane design/schema/rollout docs, effective-prompting guide, recipes, catalog, super agent knowledge, TPB vocabulary, Markdown cheat sheet, HTML cheat sheet, capability ledger, and generated competitive docs now share the same goal/workflow/sprint/super/domain-runner model.
+
 ## v7.18.0 — bubbles.journey (Cathy Curtis) + runtime-lease weighted admission + design-language skill
 
 ### Added
