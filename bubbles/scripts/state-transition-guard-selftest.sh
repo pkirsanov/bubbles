@@ -1602,8 +1602,8 @@ assert_log_contains "$g040_pos_mixed_log" "deferral language hit" "G040 Check 18
 # Regression guard for the raw-substring defect where bare-word markers embedded
 # inside legitimate identifiers/strings/comments false-triggered Check 14 and
 # mis-blocked completely legitimate code — e.g. `STUB` inside `BILLING_STUB_STRIPE`,
-# `HACK` inside `HACKATHON`, `TODO` inside `TODO_LIST`. Real-world proof: the
-# QuantitativeFinance gateway file services/gateway/src/domain/billing/provider.rs
+# `HACK` inside `HACKATHON`, `TODO` inside `TODO_LIST`. Real-world proof: a
+# gateway file at services/gateway/src/domain/billing/provider.rs
 # reported 24 bogus "TODO/STUB markers" where all 24 hits were the tested env-var
 # name `BILLING_STUB_STRIPE` and its doc comments — zero real markers.
 #

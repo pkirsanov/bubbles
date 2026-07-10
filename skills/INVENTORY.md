@@ -40,7 +40,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-dod-validation` | 65 | KEEP | Auto-loaded discovery skill — DoD validation tiers. |
 | `bubbles-env-pollution-isolation` | 81 | KEEP | Test code MUST NOT write to prod paths. Gate G115. |
 | `bubbles-evidence-capture` | 71 | KEEP | Auto-loaded discovery skill — evidence-format standards. |
-| `bubbles-external-browser-auth-capture` | 63 | KEEP | Human-in-the-loop external-Playwright-browser capture behind interactive auth (Google/YouTube login, SSO, cookie/bot gates); YouTube-transcript worked example. Not the internal VS Code webview. |
+| `bubbles-external-browser-auth-capture` | 63 | KEEP | Human-in-the-loop external automated-browser capture behind interactive auth (SSO/OAuth, cookie/bot gates), including transcript extraction. Not the internal VS Code webview. |
 | `bubbles-feature-template` | 45 | KEEP | Canonical artifact templates (spec/design/scopes/report/uservalidation/state). |
 | `bubbles-fix-cycle-protocol` | 37 | KEEP | Fix-cycle round semantics, finding-set closure. |
 | `bubbles-flag-lifecycle` | 83 | KEEP | Flag introduce -> retire mechanics. Gate-adjacent. |

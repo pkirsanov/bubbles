@@ -14,6 +14,23 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+## v7.19.1 — downstream doctor agnosticity and entry-point correction
+
+**Theme:** The first v7.19.0 downstream upgrade correctly installed the direct-runner architecture but its built-in doctor exposed eleven portable-surface agnosticity violations that the source release-check's narrower agnosticity target list did not cover. This patch removes every concrete project/browser-tool assumption, corrects the installer's first commands to goal-first guidance, and preserves the downstream upgrade guarantee that doctor is green immediately after install.
+
+### Fixed
+
+- **Portable browser language.** `bubbles.journey` and the external-browser auth-capture skill now refer to the configured browser-automation tool family generically rather than naming one concrete provider. Tool aliases still come from the active environment.
+- **Project-neutral examples.** Removed a concrete product name from the transition-guard selftest and replaced a product-specific shell path in the cross-platform skill with `scripts/*.sh`. Journey docs now use a generic portfolio analytics example.
+- **Installer guidance.** The install completion banner now recommends `/bubbles.goal <outcome>` as the universal endpoint and `/bubbles.workflow <target> mode: <mode>` for deterministic single-mode execution.
+- **macOS selftests.** `generate-installer-selftest.sh` uses a portable temp-file rewrite helper instead of GNU-only `sed -i`; `mode-resolver-selftest.sh` uses `bubbles_run_with_timeout` instead of raw `timeout`.
+- **Release diagnostics.** `framework-validate.sh` now prints failed check labels in its final summary, so large validation logs remain actionable even when terminal scrollback truncates the failure location.
+
+### Validation
+
+- Full source `agnosticity-lint.sh --quiet` returns clean.
+- v7.19.1 is re-run through framework validation and release-check before downstream re-upgrade.
+
 ## v7.19.0 — direct authorized workflow runners
 
 **Theme:** A workflow is an execution contract, not a mandatory middle agent. `bubbles.goal` is now the universal one-outcome endpoint; `bubbles.workflow` runs exactly one explicit or super-resolved root mode; `bubbles.sprint` executes a timed queue of goals; and granted domain orchestrators run only their own mode families. The active top-level runner invokes specialist phase owners directly, eliminating the broken `goal → workflow → specialist` and `sprint → goal → specialist` subagent chains that VS Code's one-level delegation runtime cannot execute. [IMP-019]

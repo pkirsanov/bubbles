@@ -1157,7 +1157,8 @@ else
   echo "     3. Create .specify/memory/constitution.md with your principles"
   echo ""
   echo "  Then try:"
-  echo "     /bubbles.workflow   — full orchestration"
+  echo "     /bubbles.goal <outcome>                 — universal one-outcome execution"
+  echo "     /bubbles.workflow <target> mode: <mode> — deterministic single-mode execution"
   echo "     /bubbles.status     — check spec progress"
   echo "     /bubbles.plan       — scope out a feature"
 fi

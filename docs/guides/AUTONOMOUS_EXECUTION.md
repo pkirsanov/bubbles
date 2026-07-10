@@ -104,7 +104,7 @@ Give Erica a list of goals and a time budget. She runs the show:
 /bubbles.sprint  minutes: 240
 1. Fix the calendar sync bug
 2. Add the deposit hold/release feature
-3. Improve Playwright test coverage for page builder
+3. Improve browser E2E test coverage for page builder
 
 /bubbles.sprint  minutes: 120
 1. Fix the flaky chaos probe
