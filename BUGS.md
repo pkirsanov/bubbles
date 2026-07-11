@@ -779,9 +779,11 @@ G036" (which is `red_green_traceability_gate`); corrected to "Gate G040"
   the registry-derived guard result, freezes the profile-aware audit-result and
   attempt contract, and preserves delivery verdict semantics. Current-session
   closeout evidence passes the 22-assertion contract selftest and 24-assertion
-  persistent audit-path regression. S05 is Not Started; no validate/finalize,
-  full-framework, release, propagation, downstream, overall fix, or bug closure
-  claim is made
+  persistent audit-path regression. S05 is Done: validate and finalize now
+  re-resolve and bind certification to the one current audit attempt, planning
+  promotion is status-only, and the focused cross-boundary regression passes
+  48/48. S06 is Not Started; no full-framework, release, propagation,
+  downstream, overall fix, or bug closure claim is made
 - **Discovered by:** top-level `bubbles.workflow` planning-only auto-escalation,
   parent finding `F151-AUDIT-005`
 - **Severity:** high — a valid planning-only workflow cannot complete its
@@ -2806,14 +2808,14 @@ No entry below is execution evidence or a claim that the fix exists.
 | S02 Registry/resolver foundation | `bubbles.implement` | S01 | Registry, schema, resolver, resolver selftest | Resolver selftest | Done — 56/56 focused assertions pass |
 | S03 Guard profile activation | `bubbles.implement` | S02 | Guard Checks 3/4/5/8/11, planning-check ledger, guard selftest | Guard selftest | Done — focused profile, adversary, compatibility, and A-F checks pass |
 | S04 Audit result contract | `bubbles.implement` | S03 | Audit 0-pre/A1, result lint, audit attempts | Audit contract selftest | Done — 22/22 contract and 24/24 persistent audit-path assertions pass |
-| S05 Validate/finalize coherence | `bubbles.implement` | S04 | Validate 2.11, phase engine, finalize, templates | Cross-boundary selftest | Not Started |
+| S05 Validate/finalize coherence | `bubbles.implement` | S04 | Validate 2.11, phase engine, finalize, templates | Cross-boundary selftest | Done — 48/48 focused assertions pass |
 | S06 Matrix and persistent regression | `bubbles.test` | S05 | 12 scenarios, 24-mode matrix, done controls, regression runner | `framework-validate` | Not Started |
 | S07 Documentation contract | `bubbles.docs` | S06 | Maintainer/operator docs and changelog | Docs/agnosticity validation | Not Started |
 | S08 Canonical release package | `bubbles.releases` with `bubbles.devops` for installer provenance | S07 | Version, derived registries, installer, release manifest | `release-check` | Not Started |
 | S09 GuestHost supported upgrade | `bubbles.devops` | S08 | Supported upgrade, installed manifest/checksums, byte parity | Installed provenance parity | Not Started |
 | S10 GuestHost audit/transition | `bubbles.audit`, then `bubbles.validate` for certification only | S09 | Spec 151 audit evidence and exact planning transition | Real consumer audit at `specs_hardened` | Not Started |
 
-The next eligible scope is S04. No later scope may start until every dependency
+The next eligible scope is S06. No later scope may start until every dependency
 has met its own unchecked DoD with execution-backed evidence.
 
 #### Approved Command And Test Taxonomy Contract
@@ -4024,14 +4026,15 @@ from S04.
 only its planned narrow contract selftest, persistent regression, and diff
 checks; framework-wide validation remains in S06.
 
-**S04 disposition:** terminal `route_required`; S04 is Done with no unresolved
-S04 findings. S05 remains Not Started. The next required owner is
-`bubbles.implement` for S05 only; no later scope or overall BUG-009 completion
-is claimed.
+**S04 disposition:** terminal `route_required`; S04 was Done with no unresolved
+S04 findings. At S04 closeout, S05 was Not Started and the next required owner
+was `bubbles.implement`; the successor execution is recorded below.
 
 #### S05 — Validate And Finalize Coherence
 
-- **Status:** Not Started
+- **Status:** Done — current-session cross-boundary regression passes 48/48;
+  resolver, audit-result, guard-compatibility, regression-quality,
+  agnosticity, and scoped diff checks pass; S06 remains Not Started
 - **Primary owner:** `bubbles.implement`
 - **Depends on:** S04
 **Change boundary:** `agents/bubbles.validate.agent.md` Step 2.11 and terminal
@@ -4076,12 +4079,254 @@ Then certification is blocked with no fallback result and no state rewrite beyon
 
 **Definition of Done:**
 
-- [ ] Runner, validate, audit, and finalize prove contract/digest/revision equality independently.
-- [ ] Only validate writes `certification.*` and the terminal status mirror.
-- [ ] Planning finalization changes only the exact planning status and leaves all delivery facts honestly incomplete.
-- [ ] Stale, contradictory, incomplete, duplicate, or over-ceiling results block with no guessed profile or prior-result reuse.
-- [ ] Delivery finalization and anti-fabrication remain behaviorally unchanged.
-- [ ] No file outside the S05 change boundary changed.
+- [x] Runner, validate, audit, and finalize prove contract/digest/revision equality independently. Evidence: [S05 cross-boundary regression evidence](#bug-009-s05-cross-boundary-regression-evidence) and [S05 resolver and audit contract evidence](#bug-009-s05-resolver-and-audit-contract-evidence).
+- [x] Only validate writes `certification.*` and the terminal status mirror. Evidence: [S05 cross-boundary regression evidence](#bug-009-s05-cross-boundary-regression-evidence).
+- [x] Planning finalization changes only the exact planning status and leaves all delivery facts honestly incomplete. Evidence: [S05 cross-boundary regression evidence](#bug-009-s05-cross-boundary-regression-evidence).
+- [x] Stale, contradictory, incomplete, duplicate, or over-ceiling results block with no guessed profile or prior-result reuse. Evidence: [S05 cross-boundary regression evidence](#bug-009-s05-cross-boundary-regression-evidence) and [S05 resolver and audit contract evidence](#bug-009-s05-resolver-and-audit-contract-evidence).
+- [x] Delivery finalization and anti-fabrication remain behaviorally unchanged. Evidence: [S05 cross-boundary regression evidence](#bug-009-s05-cross-boundary-regression-evidence).
+- [x] No file outside the S05 change boundary changed. Evidence: [S05 static, agnosticity, and change-boundary evidence](#bug-009-s05-static-agnosticity-and-change-boundary-evidence).
+
+##### BUG-009 S05 Cross-Boundary Regression Evidence
+
+**Phase:** `implement`
+
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash tests/regression/test_23_planning_audit_contract.sh`
+
+**Exit Code:** 0
+
+**Claim Source:** executed
+
+```text
+PASS: fixture is honestly unimplemented
+PASS: integrity adversary 'fake-test' is rejected
+PASS: integrity adversary 'fake-evidence' is rejected
+PASS: integrity adversary 'done-status' is rejected
+PASS: integrity adversary 'checked-dod' is rejected
+PASS: fixture passes artifact lint with real required fields and artifacts
+PASS: bypassing the production invocation is rejected
+PASS: Audit 0-pre resolves the canonical transition guard path
+PASS: Audit A1 consumes the profile-scoped state-transition guard verdict
+PASS: validate exposes the registry-bound audit certification boundary
+PASS: pre-audit validation cannot certify the planning ceiling
+PASS: validate owns the exact planning status mirror
+PASS: scope workflow exposes the registry-bound finalize boundary
+PASS: workflow phase engine independently binds finalization
+PASS: finalize delegates the terminal write to validate alone
+PASS: feature template initializes a neutral audit evidence pointer
+PASS: feature template initializes no audit attempts
+PASS: feature template does not pre-populate a positive planning result
+PASS: scope template initializes a neutral audit evidence pointer
+PASS: scope template initializes no audit attempts
+PASS: scope template does not pre-populate a positive planning result
+PASS: product-to-planning registry contract does not require G060 or force scenario-first TDD
+PASS: Audit 0-pre independently resolves the transition contract
+PASS: direct and Audit 0-pre/A1 paths each executed the production guard
+PASS: direct path records the canonical production invocation
+PASS: Audit path records the canonical production invocation
+PASS: Audit path records target, mode, and digest assertions
+PASS: pre-audit resolver and guard checks do not certify the ceiling
+PASS: planning guard no longer requires completed implementation DoD
+PASS: planning guard no longer requires Done implementation scopes
+PASS: planning guard accepts absent future implementation tests
+PASS: planning guard accepts honest zero-evidence reports
+PASS: real Audit 0-pre result and persisted attempt pass the S04 contract lint
+PASS: audit evidence alone does not certify or complete planning delivery state
+PASS: clean planning certification changes only both status mirrors to specs_hardened
+PASS: planning audit transcript contains no delivery or shipment approval language
+PASS: copied result block without real guard evidence is rejected
+PASS: stale audit digest is rejected against the real guard result
+PASS: stale audit revision is rejected at certification
+PASS: audit mode mismatch is rejected at certification
+PASS: over-ceiling planning certification is rejected
+PASS: multiple ACTIVE planning attempts block certification
+PASS: dangling current audit pointer blocks certification
+PASS: INCOMPLETE clean planning attempt cannot certify
+PASS: missing audit evidence reference blocks certification
+PASS: disappearing prior finding blocks certification
+PASS: planning shipment verdict is rejected by the real audit contract
+PASS: done-ceiling delivery path still strictly requires DoD, Done scopes, test files, and evidence
+GREEN_REGRESSION_VERDICT=PLANNING_AUDIT_CONTRACT_SATISFIED
+DIRECT_GUARD_EXIT=0
+AUDIT_0_PRE_A1_EXIT=0
+AUDIT_RESULT_LINT_EXIT=0
+test_23_planning_audit_contract: 48 passed, 0 failed
+```
+
+**Result:** PASS — validate and finalize independently bind the fresh contract
+and current audit evidence; pre-audit checks do not certify; planning promotion
+changes only the two status mirrors; every requested persistence/provenance
+adversary blocks; and the done-ceiling delivery control remains strict.
+
+##### BUG-009 S05 Resolver And Audit Contract Evidence
+
+**Phase:** `implement`
+
+**Commands:**
+
+```text
+cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/transition-contract-resolver-selftest.sh
+cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/audit-result-contract-lint-selftest.sh
+```
+
+**Exit Codes:** 0, 0
+
+**Claim Source:** executed
+
+```text
+== transition contract resolver selftest ==
+PASS: transitionAudit schema is closed to the designed profile and target fields
+PASS: schema accepts canonical bindings and rejects unknown profile, target, and selector fields
+PASS: product-to-planning resolves through the production resolver
+PASS: spec-scope-hardening resolves through the production resolver
+PASS: bugfix-fastlane resolves a delivery contract
+PASS: planning contract has normalized schema and feature path
+PASS: planning contract names the canonical persisted mode
+PASS: planning contract derives profile and target from the registry
+PASS: planning contract exposes current state and G073 source lockout
+PASS: planning contract carries the canonical registry reference
+PASS: planning contract carries deterministic SHA-256 identities
+PASS: scope hardening satisfies the planning profile invariants
+PASS: delivery mode retains explicit completion semantics
+PASS: resolver emits the complete sorted effective gate set
+PASS: resolver preserves the complete ordered phase list
+PASS: v6 planning form maps to the persisted canonical key
+PASS: persisted v5 and current v6 forms resolve byte-identical mode definitions
+PASS: persisted and v6-derived canonical modes produce byte-identical transition contracts
+PASS: repeated resolution is byte-stable
+PASS: contract digest is stable across idempotent resolution
+PASS: target revision is stable across idempotent resolution
+PASS: expectation flags only confirm and never alter the derived contract
+PASS: expected mode mismatch returns E009-TARGET-MISMATCH with exit 69 and empty stdout
+PASS: expected target mismatch returns E009-TARGET-MISMATCH with exit 69 and empty stdout
+PASS: stale digest mismatch returns E009-TARGET-MISMATCH with exit 69 and empty stdout
+PASS: caller profile flag returns E009-USAGE with exit 64 and empty stdout
+PASS: caller bypass flag returns E009-USAGE with exit 64 and empty stdout
+PASS: caller profile environment returns E009-USAGE with exit 64 and empty stdout
+PASS: missing feature argument returns E009-USAGE with exit 64 and empty stdout
+PASS: audit-owned state and report blocks do not invalidate their own target revision
+PASS: artifact mutation does not change the registry contract digest
+PASS: non-audit artifact mutation changes the target revision
+PASS: source layout resolves byte-identical contracts
+PASS: installed .github/bubbles layout resolves byte-identical contracts
+PASS: missing registry returns E009-REGISTRY-MISSING with exit 66 and empty stdout
+PASS: malformed state returns E009-STATE-MALFORMED with exit 65 and empty stdout
+PASS: unknown mode returns E009-MODE-UNKNOWN with exit 67 and empty stdout
+PASS: state policy mode mismatch returns E009-STATE-MODE-MISMATCH with exit 68 and empty stdout
+PASS: certification mirror mismatch returns E009-TARGET-MISMATCH with exit 69 and empty stdout
+PASS: terminal target mismatch returns E009-TARGET-MISMATCH with exit 69 and empty stdout
+PASS: missing delivery profile returns E009-AUDIT-PROFILE-MISSING with exit 70 and empty stdout
+PASS: missing designated planning profile returns E009-AUDIT-PROFILE-MISSING with exit 70 and empty stdout
+PASS: unsupported adjacent non-done mode returns E009-AUDIT-PROFILE-UNSUPPORTED with exit 71 and empty stdout
+PASS: unknown explicit profile returns E009-AUDIT-PROFILE-UNSUPPORTED with exit 71 and empty stdout
+PASS: malformed transition audit metadata returns E009-AUDIT-PROFILE-CONTRADICTION with exit 72 and empty stdout
+PASS: planning implementation phase contradiction returns E009-AUDIT-PROFILE-CONTRADICTION with exit 72 and empty stdout
+PASS: registry target contradiction returns E009-AUDIT-PROFILE-CONTRADICTION with exit 72 and empty stdout
+PASS: unsupported transition audit field returns E009-AUDIT-PROFILE-CONTRADICTION with exit 72 and empty stdout
+PASS: planning profile on delivery mode returns E009-AUDIT-PROFILE-CONTRADICTION with exit 72 and empty stdout
+PASS: every audit-bearing done mode has an explicit delivery binding
+PASS: exactly the two designed planning modes have planning bindings
+PASS: adjacent non-done audit modes receive no inferred profile
+PASS: all 22 adjacent non-done audit modes remain explicitly unsupported
+PASS: delivery phase-shape compatibility exceptions are a closed six-mode set
+PASS: all 27 audit-bearing done modes resolve through explicit delivery contracts
+PASS: all 22 adjacent non-done audit modes fail unsupported through the real resolver
+== transition contract resolver selftest summary ==
+passes=56
+failures=0
+skips=0
+transition-contract-resolver-selftest: PASS
+Running BUG-009 S04 audit result contract selftest...
+PASS: planning clean view is exact and profile-bound
+PASS: planning rework view names a concrete owner
+PASS: delivery refusal preserves DO_NOT_SHIP semantics
+PASS: metadata uncertainty is BLOCKED without fallback semantics
+PASS: source-edit lockout is BLOCKED on G073
+PASS: interruption leaves no current pointer or active verdict
+PASS: rework supersedes prior result and preserves the finding one-to-one
+PASS: duplicate AUDIT_RESULT_V1 block is rejected
+PASS: missing frozen field is rejected
+PASS: reordered frozen fields are rejected
+PASS: malformed collection is rejected
+PASS: planning shipment language is rejected
+PASS: planning PASS claim for non-applicable delivery check is rejected
+PASS: stale contract digest is rejected against guard provenance
+PASS: stale target revision is rejected against guard provenance
+PASS: delivery verdict drift is rejected
+PASS: ANSI/color output is rejected
+PASS: multiple ACTIVE attempts are rejected
+PASS: dangling currentAttemptId is rejected
+PASS: disappearing prior finding is rejected
+PASS: canonical audit agent passes structural contract lint
+PASS: Audit A1 wording is profile-scoped and registry-resolved
+audit-result-contract-lint-selftest: 22 passed, 0 failed
+```
+
+**Result:** PASS — registry identity, digest/revision stability, assertion-only
+matching, fail-closed resolver classes, current-attempt persistence, evidence
+binding, and finding carry-forward all pass through the canonical scripts.
+
+##### BUG-009 S05 Static, Agnosticity, And Change-Boundary Evidence
+
+**Phase:** `implement`
+
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash -n tests/regression/test_23_planning_audit_contract.sh && printf 'S05_SHELL_SYNTAX_EXIT=0\n' && bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_23_planning_audit_contract.sh && printf 'S05_REGRESSION_QUALITY_EXIT=0\n' && bash bubbles/scripts/cli.sh agnosticity && printf 'S05_AGNOSTICITY_EXIT=0\n' && git diff --check -- agents/bubbles.validate.agent.md agents/bubbles_shared/scope-workflow.md agents/bubbles_shared/workflow-phase-engine.md agents/bubbles_shared/feature-templates.md agents/bubbles_shared/scope-templates.md tests/regression/test_23_planning_audit_contract.sh && printf 'S05_DIFF_CHECK_EXIT=0\nS05_OWNED_STATUS_BEGIN\n' && git status --short -- agents/bubbles.validate.agent.md agents/bubbles_shared/scope-workflow.md agents/bubbles_shared/workflow-phase-engine.md agents/bubbles_shared/feature-templates.md agents/bubbles_shared/scope-templates.md tests/regression/test_23_planning_audit_contract.sh && printf 'S05_OWNED_STATUS_END\n'`
+
+**Exit Code:** 0
+
+**Claim Source:** executed
+
+```text
+S05_SHELL_SYNTAX_EXIT=0
+============================================================
+  BUBBLES REGRESSION QUALITY GUARD
+  Repo: /Users/pkirsanov/Projects/bubbles
+  Timestamp: 2026-07-11T17:46:11Z
+  Bugfix mode: true
+============================================================
+
+Scanning tests/regression/test_23_planning_audit_contract.sh
+Adversarial signal detected in tests/regression/test_23_planning_audit_contract.sh
+
+============================================================
+  REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+  Files scanned: 1
+  Files with adversarial signals: 1
+============================================================
+S05_REGRESSION_QUALITY_EXIT=0
+Scanning 456 portable file(s) for agnosticity drift
+Portable Bubbles surfaces are project-agnostic and tool-agnostic
+S05_AGNOSTICITY_EXIT=0
+S05_DIFF_CHECK_EXIT=0
+S05_OWNED_STATUS_BEGIN
+ M agents/bubbles.validate.agent.md
+ M agents/bubbles_shared/feature-templates.md
+ M agents/bubbles_shared/scope-templates.md
+ M agents/bubbles_shared/scope-workflow.md
+ M agents/bubbles_shared/workflow-phase-engine.md
+AM tests/regression/test_23_planning_audit_contract.sh
+S05_OWNED_STATUS_END
+```
+
+**Result:** PASS — shell syntax, adversarial regression quality, portability,
+and whitespace checks are clean. The current-session S05 source/test set is
+exactly the five planned contracts plus the existing regression; this BUGS.md
+record is the only additional owned artifact. Pre-existing S01-S04, eval,
+IMP-020, trust-doctor, schema, registry, and release-manifest changes remain
+untouched.
+
+**Additional guard compatibility:** `bash bubbles/scripts/state-transition-guard-selftest.sh`
+exited 0 in this session with its supported delivery positive, planning profile
+matrix, done-mode negative control, G073/G087/G091 adversaries, and all existing
+guard canaries passing.
+
+**Full framework validation:** **Claim Source:** not-run. The approved plan
+assigns `framework-validate`, the complete 24-mode/12-scenario matrix, and the
+persistent regression registration checkpoint to S06. S05 claims only its
+focused cross-boundary behavior and supporting compatibility checks.
+
+**S05 disposition:** terminal `route_required`; S05 is Done with no unresolved
+S05 findings. BUG-009 remains open, S06 remains Not Started, and the next
+required owner is `bubbles.test` for S06 only.
 
 #### S06 — Full Matrix And Persistent Regression
 

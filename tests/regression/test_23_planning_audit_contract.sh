@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# BUG-009 S01 adversarial RED contract.
+# BUG-009 planning audit and validate/finalize contract.
 #
 # This persistent regression stages an honest product-to-planning packet and
 # executes the canonical transition guard through both its direct boundary and
@@ -18,9 +18,14 @@ MODE_RESOLVER="$REPO_ROOT/bubbles/scripts/mode-resolver.sh"
 TRANSITION_RESOLVER="$REPO_ROOT/bubbles/scripts/transition-contract-resolver.sh"
 AUDIT_RESULT_LINT="$REPO_ROOT/bubbles/scripts/audit-result-contract-lint.sh"
 AUDIT_AGENT="$REPO_ROOT/agents/bubbles.audit.agent.md"
+VALIDATE_AGENT="$REPO_ROOT/agents/bubbles.validate.agent.md"
 VALIDATION_PROFILES="$REPO_ROOT/agents/bubbles_shared/validation-profiles.md"
+SCOPE_WORKFLOW="$REPO_ROOT/agents/bubbles_shared/scope-workflow.md"
+PHASE_ENGINE="$REPO_ROOT/agents/bubbles_shared/workflow-phase-engine.md"
+FEATURE_TEMPLATES="$REPO_ROOT/agents/bubbles_shared/feature-templates.md"
+SCOPE_TEMPLATES="$REPO_ROOT/agents/bubbles_shared/scope-templates.md"
 
-for required_file in "$GUARD" "$GUARD_LIB" "$ARTIFACT_LINT" "$MODE_RESOLVER" "$TRANSITION_RESOLVER" "$AUDIT_RESULT_LINT" "$AUDIT_AGENT" "$VALIDATION_PROFILES"; do
+for required_file in "$GUARD" "$GUARD_LIB" "$ARTIFACT_LINT" "$MODE_RESOLVER" "$TRANSITION_RESOLVER" "$AUDIT_RESULT_LINT" "$AUDIT_AGENT" "$VALIDATE_AGENT" "$VALIDATION_PROFILES" "$SCOPE_WORKFLOW" "$PHASE_ENGINE" "$FEATURE_TEMPLATES" "$SCOPE_TEMPLATES"; do
   if [[ ! -f "$required_file" ]]; then
     printf 'test_23_planning_audit_contract: required canonical surface missing: %s\n' "$required_file" >&2
     exit 2
@@ -242,7 +247,7 @@ EOF
   cat <<'EOF' > "$feature_dir/state.json"
 {
   "version": 3,
-  "status": "specs_hardened",
+  "status": "in_progress",
   "workflowMode": "product-to-planning",
   "planningOnly": true,
   "planMaturityOnly": true,
@@ -250,10 +255,17 @@ EOF
   "execution": {
     "currentScope": null,
     "currentPhase": "plan",
-    "completedPhaseClaims": ["analyze", "ux", "design", "plan"]
+    "completedPhaseClaims": ["analyze", "ux", "design", "plan"],
+    "pendingTransitionRequests": [],
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
   },
   "certification": {
-    "status": "specs_hardened",
+    "status": "in_progress",
     "certifiedCompletedPhases": ["analyze", "ux", "design", "plan"],
     "completedScopes": [],
     "scopeProgress": [
@@ -586,6 +598,16 @@ assert_lint_rejects() {
   fi
 }
 
+prepare_audit_adversary() {
+  local case_name="$1"
+  local case_dir="$WORKSPACE/$case_name"
+
+  cp -R "$HONEST_FIXTURE" "$case_dir"
+  cp "$AUDIT_TRANSCRIPT" "$case_dir/result.txt"
+  bubbles_sed_inplace "s|$HONEST_FIXTURE|$case_dir|g" "$case_dir/result.txt"
+  printf '%s\n' "$case_dir"
+}
+
 assert_invocation_count() {
   local invocation_log="$1"
   local expected="$2"
@@ -692,8 +714,12 @@ AUDIT_LOG="$WORKSPACE/audit-0-pre-a1.log"
 AUDIT_CONTRACT="$WORKSPACE/audit-transition-contract.json"
 AUDIT_TRANSCRIPT="$WORKSPACE/audit-result.txt"
 ARTIFACT_LINT_LOG="$WORKSPACE/artifact-lint.log"
+PRE_AUDIT_STATE="$WORKSPACE/pre-audit-state.json"
+PRE_AUDIT_SCOPES="$WORKSPACE/pre-audit-scopes.md"
 
 write_honest_planning_fixture "$HONEST_FIXTURE"
+cp "$HONEST_FIXTURE/state.json" "$PRE_AUDIT_STATE"
+cp "$HONEST_FIXTURE/scopes.md" "$PRE_AUDIT_SCOPES"
 git -C "$FIXTURE_REPO" init -q
 git -C "$FIXTURE_REPO" add -f tests/fixtures
 git -C "$FIXTURE_REPO" \
@@ -742,6 +768,19 @@ else
   fail 'Audit A1 no longer consumes the profile-scoped state-transition guard verdict'
 fi
 
+assert_contains "$VALIDATE_AGENT" '### Step 2.11A: Registry-Bound Audit Certification' 'validate exposes the registry-bound audit certification boundary'
+assert_contains "$VALIDATE_AGENT" 'A green guard before audit does not certify the ceiling.' 'pre-audit validation cannot certify the planning ceiling'
+assert_contains "$VALIDATE_AGENT" 'top-level `status` and `certification.status` become' 'validate owns the exact planning status mirror'
+assert_contains "$SCOPE_WORKFLOW" '#### Finalize Transition Boundary (BUG-009)' 'scope workflow exposes the registry-bound finalize boundary'
+assert_contains "$PHASE_ENGINE" '#### Registry-Bound Finalize Boundary' 'workflow phase engine independently binds finalization'
+assert_contains "$PHASE_ENGINE" 'Finalize itself writes no certification or status.' 'finalize delegates the terminal write to validate alone'
+assert_contains "$FEATURE_TEMPLATES" '"currentAttemptId": null' 'feature template initializes a neutral audit evidence pointer'
+assert_contains "$FEATURE_TEMPLATES" '"attempts": []' 'feature template initializes no audit attempts'
+assert_not_contains "$FEATURE_TEMPLATES" 'PLANNING_AUDIT_CLEAN' 'feature template does not pre-populate a positive planning result'
+assert_contains "$SCOPE_TEMPLATES" '"currentAttemptId": null' 'scope template initializes a neutral audit evidence pointer'
+assert_contains "$SCOPE_TEMPLATES" '"attempts": []' 'scope template initializes no audit attempts'
+assert_not_contains "$SCOPE_TEMPLATES" 'PLANNING_AUDIT_CLEAN' 'scope template does not pre-populate a positive planning result'
+
 if assert_planning_mode_does_not_require_tdd; then
   pass 'product-to-planning registry contract does not require G060 or force scenario-first TDD'
 else
@@ -769,6 +808,13 @@ assert_contains "$INVOCATION_LOG" "direct|$GUARD|$HONEST_FIXTURE" 'direct path r
 assert_contains "$INVOCATION_LOG" "audit-0-pre-a1|$GUARD|$HONEST_FIXTURE" 'Audit path records the canonical production invocation'
 assert_contains "$INVOCATION_LOG" '|--target-status|specs_hardened|--expect-workflow-mode|product-to-planning|--expect-contract-digest|sha256:' 'Audit path records target, mode, and digest assertions'
 
+if cmp -s "$PRE_AUDIT_STATE" "$HONEST_FIXTURE/state.json" \
+  && jq -e '.status == "in_progress" and .certification.status == "in_progress" and .execution.audit.currentAttemptId == null and (.execution.audit.attempts | length) == 0' "$HONEST_FIXTURE/state.json" >/dev/null; then
+  pass 'pre-audit resolver and guard checks do not certify the ceiling'
+else
+  fail 'pre-audit resolver or guard checks mutated certification state'
+fi
+
 if [[ "$DIRECT_EXIT" -eq 0 && "$AUDIT_EXIT" -eq 0 ]]; then
   assert_not_contains "$DIRECT_LOG" 'unchecked DoD item(s) remain' 'planning guard no longer requires completed implementation DoD'
   assert_not_contains "$DIRECT_LOG" "still marked 'Not Started'" 'planning guard no longer requires Done implementation scopes'
@@ -781,6 +827,30 @@ if [[ "$DIRECT_EXIT" -eq 0 && "$AUDIT_EXIT" -eq 0 ]]; then
   else
     fail 'real Audit 0-pre result failed the S04 contract lint'
     cat "$WORKSPACE/audit-result-lint.log" >&2
+  fi
+
+  if jq -e '.status == "in_progress" and .certification.status == "in_progress" and .certification.completedScopes == [] and .certification.scopeProgress[0].status == "not_started"' "$HONEST_FIXTURE/state.json" >/dev/null; then
+    pass 'audit evidence alone does not certify or complete planning delivery state'
+  else
+    fail 'audit evidence changed certification or delivery state before validate'
+  fi
+
+  PROMOTION_BEFORE="$WORKSPACE/planning-promotion-before.json"
+  PROMOTION_AFTER="$WORKSPACE/planning-promotion-after.json"
+  PROMOTION_BEFORE_REMAINDER="$WORKSPACE/planning-promotion-before-remainder.json"
+  PROMOTION_AFTER_REMAINDER="$WORKSPACE/planning-promotion-after-remainder.json"
+  cp "$HONEST_FIXTURE/state.json" "$PROMOTION_BEFORE"
+  jq '.status = "specs_hardened" | .certification.status = "specs_hardened"' "$PROMOTION_BEFORE" > "$PROMOTION_AFTER"
+  jq -S 'del(.status, .certification.status)' "$PROMOTION_BEFORE" > "$PROMOTION_BEFORE_REMAINDER"
+  jq -S 'del(.status, .certification.status)' "$PROMOTION_AFTER" > "$PROMOTION_AFTER_REMAINDER"
+  if jq -e '.status == "specs_hardened" and .certification.status == "specs_hardened" and .certification.completedScopes == [] and .certification.scopeProgress[0].status == "not_started"' "$PROMOTION_AFTER" >/dev/null \
+    && cmp -s "$PROMOTION_BEFORE_REMAINDER" "$PROMOTION_AFTER_REMAINDER" \
+    && cmp -s "$PRE_AUDIT_SCOPES" "$HONEST_FIXTURE/scopes.md" \
+    && grep -Eq '^- \[ \] ' "$HONEST_FIXTURE/scopes.md" \
+    && grep -Fq 'deliveryEvaluation: NOT_EVALUATED' "$AUDIT_TRANSCRIPT"; then
+    pass 'clean planning certification changes only both status mirrors to specs_hardened'
+  else
+    fail 'clean planning certification changed scope, DoD, completedScopes, delivery, or non-status state'
   fi
 
   if grep -Eiq 'SHIP_IT|SHIP_WITH_NOTES|DO_NOT_SHIP|approved for merge|merge-ready|releasable|deployable|delivered|shipped|delivery (passed|certified|approved)' "$AUDIT_TRANSCRIPT"; then
@@ -801,9 +871,101 @@ if [[ "$DIRECT_EXIT" -eq 0 && "$AUDIT_EXIT" -eq 0 ]]; then
   ' "$AUDIT_TRANSCRIPT" > "$STALE_RESULT"
   assert_lint_rejects "$STALE_RESULT" 'guard.contractDigest mismatch' 'stale audit digest is rejected against the real guard result'
 
+  STALE_REVISION="$WORKSPACE/stale-audit-revision.txt"
+  awk '
+    /^BEGIN AUDIT_RESULT_V1$/ { audit=1 }
+    audit && /^targetRevision: / { print "targetRevision: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"; next }
+    { print }
+  ' "$AUDIT_TRANSCRIPT" > "$STALE_REVISION"
+  assert_lint_rejects "$STALE_REVISION" 'guard.targetRevision mismatch' 'stale audit revision is rejected at certification'
+
+  MODE_MISMATCH="$WORKSPACE/audit-mode-mismatch.txt"
+  awk '
+    /^BEGIN AUDIT_RESULT_V1$/ { audit=1 }
+    audit && /^workflowMode: / { print "workflowMode: full-delivery"; next }
+    { print }
+  ' "$AUDIT_TRANSCRIPT" > "$MODE_MISMATCH"
+  assert_lint_rejects "$MODE_MISMATCH" 'guard.workflowMode mismatch' 'audit mode mismatch is rejected at certification'
+
+  OVER_CEILING="$WORKSPACE/audit-over-ceiling.txt"
+  awk '
+    /^BEGIN AUDIT_RESULT_V1$/ { audit=1 }
+    audit && /^statusCeiling: / { print "statusCeiling: done"; next }
+    audit && /^requestedStatus: / { print "requestedStatus: done"; next }
+    audit && /^certifiedStatus: / { print "certifiedStatus: done"; next }
+    { print }
+  ' "$AUDIT_TRANSCRIPT" > "$OVER_CEILING"
+  assert_lint_rejects "$OVER_CEILING" 'guard.targetStatus mismatch' 'over-ceiling planning certification is rejected'
+
+  MULTI_ACTIVE_DIR="$(prepare_audit_adversary s05-multiple-active)"
+  jq '(.execution.audit.attempts[0]) as $current | .execution.audit.attempts += [($current | .attemptId = "attempt-duplicate")]' "$MULTI_ACTIVE_DIR/state.json" > "$MULTI_ACTIVE_DIR/state.tmp"
+  mv "$MULTI_ACTIVE_DIR/state.tmp" "$MULTI_ACTIVE_DIR/state.json"
+  assert_lint_rejects "$MULTI_ACTIVE_DIR/result.txt" 'multiple ACTIVE audit attempts' 'multiple ACTIVE planning attempts block certification'
+
+  DANGLING_DIR="$(prepare_audit_adversary s05-dangling-current)"
+  jq '.execution.audit.currentAttemptId = "attempt-missing"' "$DANGLING_DIR/state.json" > "$DANGLING_DIR/state.tmp"
+  mv "$DANGLING_DIR/state.tmp" "$DANGLING_DIR/state.json"
+  assert_lint_rejects "$DANGLING_DIR/result.txt" 'dangling or does not point to ACTIVE' 'dangling current audit pointer blocks certification'
+
+  INCOMPLETE_DIR="$(prepare_audit_adversary s05-incomplete-current)"
+  jq '.execution.audit.currentAttemptId = null | .execution.audit.attempts[0].resultState = "INCOMPLETE"' "$INCOMPLETE_DIR/state.json" > "$INCOMPLETE_DIR/state.tmp"
+  mv "$INCOMPLETE_DIR/state.tmp" "$INCOMPLETE_DIR/state.json"
+  bubbles_sed_inplace 's/^resultState: ACTIVE$/resultState: INCOMPLETE/' "$INCOMPLETE_DIR/result.txt"
+  assert_lint_rejects "$INCOMPLETE_DIR/result.txt" 'planning clean field combination is inconsistent' 'INCOMPLETE clean planning attempt cannot certify'
+
+  MISSING_EVIDENCE_DIR="$(prepare_audit_adversary s05-missing-evidence)"
+  jq '.execution.audit.attempts[0].evidenceRef = "none"' "$MISSING_EVIDENCE_DIR/state.json" > "$MISSING_EVIDENCE_DIR/state.tmp"
+  mv "$MISSING_EVIDENCE_DIR/state.tmp" "$MISSING_EVIDENCE_DIR/state.json"
+  assert_lint_rejects "$MISSING_EVIDENCE_DIR/result.txt" 'ACTIVE attempt requires an evidenceRef' 'missing audit evidence reference blocks certification'
+
+  DISAPPEARING_DIR="$(prepare_audit_adversary s05-disappearing-finding)"
+  jq '(.execution.audit.attempts[0]) as $current | .execution.audit.attempts = [($current | .attemptId = "attempt-prior" | .resultState = "SUPERSEDED" | .addressedFindings = [] | .unresolvedFindings = ["F009-DISAPPEARING"]), $current]' "$DISAPPEARING_DIR/state.json" > "$DISAPPEARING_DIR/state.tmp"
+  mv "$DISAPPEARING_DIR/state.tmp" "$DISAPPEARING_DIR/state.json"
+  bubbles_sed_inplace 's/^supersedesAttemptId: none$/supersedesAttemptId: attempt-prior/' "$DISAPPEARING_DIR/result.txt"
+  assert_lint_rejects "$DISAPPEARING_DIR/result.txt" "prior finding 'F009-DISAPPEARING' disappeared" 'disappearing prior finding blocks certification'
+
   SHIPMENT_RESULT="$WORKSPACE/planning-shipment-result.txt"
   awk '/^BEGIN AUDIT_RESULT_V1$/ { print "workflow action: SHIP_IT" } { print }' "$AUDIT_TRANSCRIPT" > "$SHIPMENT_RESULT"
   assert_lint_rejects "$SHIPMENT_RESULT" 'shipment or positive delivery language' 'planning shipment verdict is rejected by the real audit contract'
+
+  DONE_FIXTURE="$FIXTURE_ROOT/910-bug009-done-delivery-control"
+  DONE_CONTRACT="$WORKSPACE/done-delivery-contract.json"
+  DONE_LOG="$WORKSPACE/done-delivery-guard.log"
+  cp -R "$HONEST_FIXTURE" "$DONE_FIXTURE"
+  jq '
+    .status = "in_progress"
+    | .workflowMode = "bugfix-fastlane"
+    | .planningOnly = false
+    | .planMaturityOnly = false
+    | .planningOnlyJustification = null
+    | .policySnapshot.workflowMode = "bugfix-fastlane"
+    | .certification.status = "in_progress"
+    | .execution.audit = {schemaVersion:"audit-run/v1",runId:null,currentAttemptId:null,attempts:[]}
+  ' "$DONE_FIXTURE/state.json" > "$DONE_FIXTURE/state.tmp"
+  mv "$DONE_FIXTURE/state.tmp" "$DONE_FIXTURE/state.json"
+  if bash "$TRANSITION_RESOLVER" "$DONE_FIXTURE" > "$DONE_CONTRACT" 2>/dev/null; then
+    DONE_MODE="$(jq -r '.workflowMode' "$DONE_CONTRACT")"
+    DONE_TARGET="$(jq -r '.targetStatus' "$DONE_CONTRACT")"
+    DONE_DIGEST="$(jq -r '.contractDigest' "$DONE_CONTRACT")"
+    set +e
+    bash "$GUARD" "$DONE_FIXTURE" --target-status "$DONE_TARGET" --expect-workflow-mode "$DONE_MODE" --expect-contract-digest "$DONE_DIGEST" > "$DONE_LOG" 2>&1
+    DONE_EXIT=$?
+    set -e
+    if [[ "$DONE_EXIT" -ne 0 ]] \
+      && grep -Fq 'UNCHECKED DoD items' "$DONE_LOG" \
+      && grep -Fq "still marked 'Not Started'" "$DONE_LOG" \
+      && grep -Fq 'Test Plan references non-existent file' "$DONE_LOG" \
+      && grep -Fq 'has ZERO evidence code blocks' "$DONE_LOG" \
+      && grep -Fq 'auditProfile: delivery-completion-v1' "$DONE_LOG" \
+      && grep -Fq 'failedChecks: [Check-4-completion,Check-5-all-done,Check-8-file-existence,Check-11-execution-evidence]' "$DONE_LOG"; then
+      pass 'done-ceiling delivery path still strictly requires DoD, Done scopes, test files, and evidence'
+    else
+      fail "done-ceiling delivery strictness changed (guard exit=$DONE_EXIT)"
+      cat "$DONE_LOG" >&2
+    fi
+  else
+    fail 'done-ceiling delivery control contract did not resolve'
+  fi
 
   if [[ "$FAIL_COUNT" -gt 0 ]]; then
     printf 'DISCRIMINATOR_MISMATCH: %s harness assertion(s) failed after a green guard result\n' "$FAIL_COUNT" >&2
