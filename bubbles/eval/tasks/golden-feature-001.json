@@ -1,13 +1,23 @@
 {
+  "schemaVersion": 2,
   "taskId": "golden-feature-001",
   "title": "Feature spec declares an Outcome Contract + Gherkin scenarios, no stub/placeholder",
-  "rationale": "A quality feature spec states the outcome it must achieve (Intent / Success Signal), encodes behavior as Gherkin scenarios, and contains no placeholder content. This rubric scores spec substance, not just file presence.",
+  "rationale": "A quality feature spec states a structured outcome contract, encodes coherent behavior as Gherkin, and passes an executable parser oracle that checks the relationship between the success signal and observable outcome. Token presence remains diagnostic and cannot certify the task by itself.",
   "passThreshold": 0.8,
   "judgeWeight": 0,
   "checks": [
-    { "id": "spec-exists", "type": "file-exists", "weight": 1, "path": "spec.md" },
-    { "id": "outcome-contract", "type": "contains", "weight": 3, "path": "spec.md", "pattern": "Outcome Contract|Success Signal" },
+    { "id": "spec-exists", "type": "file-exists", "required": true, "weight": 1, "path": "spec.md" },
+    { "id": "outcome-contract", "type": "contains", "weight": 2, "path": "spec.md", "pattern": "Outcome Contract|Success Signal" },
     { "id": "gherkin-scenarios", "type": "contains", "weight": 2, "path": "spec.md", "pattern": "Given|When|Then" },
-    { "id": "no-placeholder", "type": "not-contains", "weight": 2, "path": "spec.md", "pattern": "PLACEHOLDER|\\bTBD\\b|lorem ipsum|TODO:" }
+    { "id": "no-placeholder", "type": "not-contains", "required": true, "weight": 1, "path": "spec.md", "pattern": "PLACEHOLDER|\\bTBD\\b|lorem ipsum|TODO:" },
+    {
+      "id": "feature-contract-end-state",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": ["fixture-oracle.py", "feature"],
+      "timeoutSeconds": 5
+    }
   ]
 }

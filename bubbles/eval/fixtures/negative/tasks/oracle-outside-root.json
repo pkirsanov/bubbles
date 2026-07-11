@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-oracle-outside-root",
+  "passThreshold": 0.8,
+  "checks": [
+    {
+      "id": "outside-root",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 1,
+      "allowedRoot": "oracles",
+      "argv": ["../fixture-oracle.py", "bugfix"]
+    }
+  ]
+}

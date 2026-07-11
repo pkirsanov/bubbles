@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-missing-oracle",
+  "passThreshold": 0.8,
+  "checks": [
+    {
+      "id": "missing-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 1,
+      "allowedRoot": "oracles",
+      "argv": ["does-not-exist.py", "bugfix"]
+    }
+  ]
+}

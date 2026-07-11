@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bubbles.dev/eval/schemas/task-v2.schema.json",
+  "title": "Bubbles evaluation task v2",
+  "description": "Versioned, fail-closed quality evaluation task contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "taskId",
+    "checks",
+    "passThreshold"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "passThreshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "judgeWeight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0
+    },
+    "judgeTimeoutSeconds": {
+      "$ref": "#/$defs/timeoutSeconds"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/check"
+      },
+      "contains": {
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/$defs/executableOracleCheck"
+              },
+              {
+                "required": [
+                  "required"
+                ],
+                "properties": {
+                  "required": {
+                    "const": true
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/$defs/semanticEvaluatorCheck"
+              },
+              {
+                "required": [
+                  "required"
+                ],
+                "properties": {
+                  "required": {
+                    "const": true
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "minContains": 1
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "checks": {
+          "contains": {
+            "type": "object",
+            "anyOf": [
+              {
+                "not": {
+                  "required": [
+                    "weight"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "weight"
+                ],
+                "properties": {
+                  "weight": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
+              }
+            ]
+          },
+          "minContains": 1
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1
+    },
+    "timeoutSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 300,
+      "default": 30
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|[\\\\/])\\.\\.([\\\\/]|$)).+$"
+    },
+    "fileExistsCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "file-exists"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "containsCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "path",
+        "pattern"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "contains"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "notContainsCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "path",
+        "pattern"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "not-contains"
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "executableOracleCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "argv",
+        "allowedRoot"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "executable-oracle"
+        },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000]+$"
+          }
+        },
+        "allowedRoot": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "timeoutSeconds": {
+          "$ref": "#/$defs/timeoutSeconds"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "semanticEvaluatorCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "semantic-evaluator"
+        },
+        "rubric": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "$ref": "#/$defs/timeoutSeconds"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "unknownOptionalCheck": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "file-exists",
+              "contains",
+              "not-contains",
+              "executable-oracle",
+              "semantic-evaluator"
+            ]
+          }
+        },
+        "required": {
+          "const": false,
+          "default": false
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "check": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fileExistsCheck"
+        },
+        {
+          "$ref": "#/$defs/containsCheck"
+        },
+        {
+          "$ref": "#/$defs/notContainsCheck"
+        },
+        {
+          "$ref": "#/$defs/executableOracleCheck"
+        },
+        {
+          "$ref": "#/$defs/semanticEvaluatorCheck"
+        },
+        {
+          "$ref": "#/$defs/unknownOptionalCheck"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bubbles.dev/eval/schemas/evaluator-result.schema.json",
+  "title": "Bubbles evaluator result",
+  "description": "Fail-closed result contract shared by semantic evaluators and quality judges.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "score",
+    "verdict",
+    "rubricFindings",
+    "provenance"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "failed",
+        "error",
+        "unavailable"
+      ]
+    },
+    "score": {
+      "description": "Finite quality score for passed/failed results; null when evaluation errored or was unavailable.",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rubricFindings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "adapter",
+        "version"
+      ],
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "invocationId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "score": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

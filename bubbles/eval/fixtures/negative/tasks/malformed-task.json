@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-malformed-task",
+  "passThreshold": 0.8,
+  "checks": [

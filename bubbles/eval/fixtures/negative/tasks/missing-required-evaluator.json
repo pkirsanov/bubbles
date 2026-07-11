@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-missing-required-evaluator",
+  "passThreshold": 0.8,
+  "checks": [
+    {
+      "id": "tokens-only",
+      "type": "contains",
+      "required": true,
+      "weight": 1,
+      "path": "report.md",
+      "pattern": "PASS"
+    }
+  ]
+}

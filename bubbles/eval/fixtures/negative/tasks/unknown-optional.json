@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-unknown-optional",
+  "passThreshold": 0.8,
+  "checks": [
+    {
+      "id": "real-end-state",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 1,
+      "allowedRoot": "oracles",
+      "argv": ["fixture-oracle.py", "bugfix"]
+    },
+    {
+      "id": "unknown-optional",
+      "type": "future-optional-check",
+      "required": false,
+      "weight": 1
+    }
+  ]
+}

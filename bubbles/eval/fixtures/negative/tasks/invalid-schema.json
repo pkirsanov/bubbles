@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-invalid-schema",
+  "passThreshold": 1.5,
+  "checks": [
+    {
+      "id": "real-end-state",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 1,
+      "allowedRoot": "oracles",
+      "argv": ["fixture-oracle.py", "bugfix"]
+    }
+  ]
+}

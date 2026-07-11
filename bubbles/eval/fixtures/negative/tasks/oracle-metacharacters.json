@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-oracle-metacharacters",
+  "passThreshold": 0.8,
+  "checks": [
+    {
+      "id": "literal-argv",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 1,
+      "allowedRoot": "oracles",
+      "argv": [
+        "fixture-oracle.py",
+        "argv-literal",
+        "alpha;touch",
+        "$(touch injected)",
+        "space separated",
+        "a|b",
+        "x&&y"
+      ]
+    }
+  ]
+}

@@ -1,13 +1,23 @@
 {
+  "schemaVersion": 2,
   "taskId": "golden-bugfix-001",
   "title": "Bug fix produces real evidence + adversarial regression, no deferral language",
-  "rationale": "A quality bug fix records executed evidence, adds an adversarial regression that would fail if the bug returned, and never hides incomplete work behind deferral language. This rubric scores those qualities, not just whether gates passed.",
+  "rationale": "A quality bug fix records executed evidence, adds an adversarial regression that would fail if the bug returned, and passes an independent executable end-state oracle. Structural text checks remain diagnostic and cannot certify the task by themselves.",
   "passThreshold": 0.8,
   "judgeWeight": 0,
   "checks": [
-    { "id": "report-exists", "type": "file-exists", "weight": 1, "path": "report.md" },
-    { "id": "has-executed-evidence", "type": "contains", "weight": 2, "path": "report.md", "pattern": "exit code|Exit Code|PASS|passed" },
-    { "id": "adversarial-regression", "type": "contains", "weight": 3, "path": "report.md", "pattern": "adversarial|regression" },
-    { "id": "no-deferral-language", "type": "not-contains", "weight": 3, "path": "report.md", "pattern": "deferred|defer to|out of scope|TODO:|FIXME:|will address later" }
+    { "id": "report-exists", "type": "file-exists", "required": true, "weight": 1, "path": "report.md" },
+    { "id": "has-executed-evidence", "type": "contains", "weight": 1, "path": "report.md", "pattern": "exit code|Exit Code|PASS|passed" },
+    { "id": "adversarial-regression", "type": "contains", "weight": 1, "path": "report.md", "pattern": "adversarial|regression" },
+    { "id": "no-deferral-language", "type": "not-contains", "required": true, "weight": 1, "path": "report.md", "pattern": "deferred|defer to|out of scope|TODO:|FIXME:|will address later" },
+    {
+      "id": "bugfix-end-state",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": ["fixture-oracle.py", "bugfix"],
+      "timeoutSeconds": 5
+    }
   ]
 }

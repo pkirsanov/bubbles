@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 2,
+  "taskId": "negative-semantic-required",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "required-semantic",
+      "type": "semantic-evaluator",
+      "required": true,
+      "weight": 1,
+      "rubric": "Independently verify the executable end-state behavior.",
+      "timeoutSeconds": 3
+    }
+  ]
+}
