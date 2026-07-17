@@ -14,6 +14,25 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### Added
+
+- **Artifact-writer lease (`runtime writer-acquire`)** — a thin, reuse-first
+  convention over the EXISTING exclusive runtime lease (IMP-023 / BFW-03), NOT a
+  new lease system. Write-exclusivity is keyed on a spec/bug **target** (+ the
+  current worktree), so two agents cannot mutate the same owned source/tests/
+  report concurrently: a second writer on the same target is REFUSED with a
+  message naming the current owner (session + agent + lease id) that explicitly
+  forbids "reconciling" two live writers by appending evidence (the Feature-010
+  anti-pattern). Reuses the exclusive share-mode, TTL/stale, `attach --takeover`,
+  `heartbeat`, `release`, and `--resource` owned-path machinery unchanged.
+  Readers never take the lease; writers on different targets run concurrently.
+  `runtime-lease-selftest.sh` gains 7 cases (acquire; same-target refusal naming
+  the owner; reconcile-by-append forbidden; per-target isolation;
+  reader-inspects-without-acquiring; release-permits-next-owner; stale audited
+  takeover). Agent acquire-before-mutate wiring is a follow-up increment.
+  `docs/recipes/runtime-coordination.md` documents the convention. VERSION
+  intentionally not bumped; release versioning is left to release-check.
+
 ## v7.19.2 — manifest-scoped downstream agnosticity
 
 **Theme:** knb's v7.19.1 doctor exposed a downstream-only false positive: project-owned `bubbles-*` instructions and skills share the framework's discovery naming convention but are intentionally product/domain-specific. The agnosticity lint now distinguishes the installed framework payload from project extensions using `.github/bubbles/.manifest`.
