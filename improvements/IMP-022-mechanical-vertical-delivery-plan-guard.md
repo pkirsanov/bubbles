@@ -1,7 +1,7 @@
 # IMP-022 — Mechanical Vertical-Delivery Planning Guard
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Status:** IMPLEMENTED (core advisory guard, reuse-first, 2026-07-17) — `vertical-delivery-plan-guard.sh` mechanizes the EXISTING `bubbles.plan` Phase-4 "Horizontal Plan Detection" behavioral rule (VDP1/VDP2/VDP4): it flags a plan whose first consumer-visible increment is deferred behind 3+ leading foundation-only scopes. ADVISORY by default (warns, exit 0); blocks only on `verticalPlanGuard: block` opt-in. Risk-adjusted scope budget (VDP3), scenario/DoD conservation, and a formal G-number registration remain deferred.
+**Surface:** framework-health (G125) — reuse-first (mechanizes the existing Phase-4 rule; advisory-until-configured)
 **Motivation:** Multi-session convergence observations (2026-07, Research Lab Feature 010) — planning produced 14 sequential scopes (foundations first, UI at Scope 09, registry/consumer integration at Scope 13, real canaries at Scope 14). The plan passed every planning check while no early scope could deliver a registered, usable tool.
 **Verified gaps addressed:** vertical-slice preference is behavioral not mechanical (VDP1), no time-to-first-usable-outcome check (VDP2), no risk-adjusted scope budget (VDP3), consumer-timing deferral undetected (VDP4).
 
