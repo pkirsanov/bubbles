@@ -14,6 +14,26 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### Added
+
+- **Vertical-delivery plan guard (`vertical-delivery-plan-guard.sh`)** — a
+  reuse-first mechanization of the EXISTING `bubbles.plan` Phase-4 "Horizontal
+  Plan Detection" behavioral rule (IMP-022 / BFW-02), NOT a new planning concept.
+  It flags a horizontal plan whose first consumer-visible (usable) increment is
+  deferred behind 3-or-more leading foundation-only scopes (the Feature-010 shape
+  where the UI landed at scope 09 and consumer wiring at scope 13). Classification
+  is structural (a scope is consumer-visible when it references a route/`/api/`/
+  dashboard/frontend/navigation/CLI/operator surface; standard plan boilerplate
+  like "Components/files" never false-positives). **ADVISORY by default** (prints
+  a remediation warning, exits 0, so no existing repo or legitimate
+  foundation-first plan is blocked); exits non-zero ONLY when a project opts in
+  via `.github/bubbles-project.yaml` `verticalPlanGuard: block`. Supports both
+  the single-file `scopes.md` and per-scope-directory `scopes/NN-*/scope.md`
+  layouts. Hermetic `vertical-delivery-plan-guard-selftest.sh` (Feature-010-shaped
+  horizontal negative, vertical positive, block opt-in, below-threshold exempt,
+  no-consumer, per-dir layout) wired into `framework-validate.sh`. VERSION not
+  bumped.
+
 ## v7.19.2 — manifest-scoped downstream agnosticity
 
 **Theme:** knb's v7.19.1 doctor exposed a downstream-only false positive: project-owned `bubbles-*` instructions and skills share the framework's discovery naming convention but are intentionally product/domain-specific. The agnosticity lint now distinguishes the installed framework payload from project extensions using `.github/bubbles/.manifest`.
