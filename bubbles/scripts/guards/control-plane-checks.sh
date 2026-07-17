@@ -222,23 +222,28 @@ echo ""
 # CHECK 3E: Scenario-first TDD evidence (Gate G060)
 # =============================================================================
 echo "--- Check 3E: Scenario-first TDD Evidence (Gate G060) ---"
-# Layer 1 (control-plane policy activation): resolve the effective TDD mode from
-# the per-spec policySnapshot, then the repo SST config defaults, then the
-# framework default (scenario-first). Before this fix the mode was read ONLY from
-# policySnapshot.tdd.mode, so a missing snapshot (empirically ~93% of downstream
-# specs) left the SST default INERT and this gate silently skipped.
-effective_tdd_mode="$(resolve_effective_policy "$state_file" tdd mode scenario-first "$guard_repo_root")"
-effective_tdd_source="$(resolve_effective_policy_source "$state_file" tdd mode scenario-first "$guard_repo_root")"
+case "$transition_audit_profile" in
+  planning-maturity-v1)
+    if ! list_contains Check-3E-G060-red-green-evidence ${transition_not_applicable_checks[@]+"${transition_not_applicable_checks[@]}"}; then
+      transition_not_applicable_checks+=(Check-3E-G060-red-green-evidence)
+    fi
+    info "[G060] NOT_APPLICABLE: runtime RED-to-GREEN evidence is not evaluated for audit profile 'planning-maturity-v1' (reason: PROFILE_PLANNING_MATURITY)"
+    record_transition_gate_result G060 NOT_APPLICABLE NOT_APPLICABLE NOT_APPLICABLE NONE NOT_APPLICABLE PROFILE_PLANNING_MATURITY NON_ACTIONABLE "auditProfile=planning-maturity-v1" "delivery-completion-v1" NONE
+    ;;
+  delivery-completion-v1)
+    # Layer 1 (control-plane policy activation): resolve the effective TDD mode
+    # from the per-spec policySnapshot, repo SST defaults, then the framework
+    # default. Delivery policy and exemption behavior remain unchanged.
+    effective_tdd_mode="$(resolve_effective_policy "$state_file" tdd mode scenario-first "$guard_repo_root")"
+    effective_tdd_source="$(resolve_effective_policy_source "$state_file" tdd mode scenario-first "$guard_repo_root")"
 
-if [[ -z "$effective_tdd_mode" && ( "$state_workflow_mode" == "bugfix-fastlane" || "$state_workflow_mode" == "chaos-hardening" ) ]]; then
-  effective_tdd_mode="scenario-first"
-  effective_tdd_source="workflow-forced"
-fi
+    if [[ -z "$effective_tdd_mode" && ( "$state_workflow_mode" == "bugfix-fastlane" || "$state_workflow_mode" == "chaos-hardening" ) ]]; then
+      effective_tdd_mode="scenario-first"
+      effective_tdd_source="workflow-forced"
+    fi
 
-# Per-packet exemption support (per upstream fix proposal — artifact-only fastlanes)
-# Read policySnapshot.tdd.exempt + exemptReason from state.json.
-tdd_exempt="$({
-  python3 -c "
+    tdd_exempt="$({
+      python3 -c "
 import json
 try:
     with open('$state_file') as f:
@@ -248,10 +253,10 @@ try:
 except Exception:
     print('false')
 " 2>/dev/null
-} || echo "false")"
+    } || echo "false")"
 
-tdd_exempt_reason="$({
-  python3 -c "
+    tdd_exempt_reason="$({
+      python3 -c "
 import json
 try:
     with open('$state_file') as f:
@@ -262,66 +267,81 @@ try:
 except Exception:
     print('')
 " 2>/dev/null
-} || echo "")"
+    } || echo "")"
 
-# Eligible modes for opt-in exemption (artifact-only fastlanes + always-exempt docs/reconcile)
-tdd_exemption_eligible_modes="docs-only reconcile-to-doc validate-to-doc gaps-to-doc devops-to-doc bugfix-fastlane chaos-hardening stabilize-to-doc audit-to-doc"
-tdd_forbidden_reasons="n/a none exempt no tests skip skipped tbd todo"
+    tdd_exemption_eligible_modes="docs-only reconcile-to-doc validate-to-doc gaps-to-doc devops-to-doc bugfix-fastlane chaos-hardening stabilize-to-doc audit-to-doc"
+    tdd_forbidden_reasons="n/a none exempt no tests skip skipped tbd todo"
+    g060_failures_before="$failures"
+    g060_reason_code="SCENARIO_FIRST_NOT_REQUIRED"
 
-if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
-  if [[ "$tdd_exempt" == "true" ]]; then
-    # Validate exemption: mode eligible, reason present, reason substantive
-    mode_eligible="false"
-    for m in $tdd_exemption_eligible_modes; do
-      if [[ "$state_workflow_mode" == "$m" ]]; then
-        mode_eligible="true"
-        break
-      fi
-    done
+    if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
+      if [[ "$tdd_exempt" == "true" ]]; then
+        mode_eligible="false"
+        for m in $tdd_exemption_eligible_modes; do
+          if [[ "$state_workflow_mode" == "$m" ]]; then
+            mode_eligible="true"
+            break
+          fi
+        done
 
-    if [[ "$mode_eligible" != "true" ]]; then
-      fail "policySnapshot.tdd.exempt=true is not allowed for workflow mode '$state_workflow_mode' — exemption only permitted for: $tdd_exemption_eligible_modes (Gate G060)"
-    elif [[ -z "$tdd_exempt_reason" ]]; then
-      fail "policySnapshot.tdd.exempt=true requires a non-empty exemptReason (Gate G060)"
-    elif [[ "${#tdd_exempt_reason}" -lt 20 ]]; then
-      fail "policySnapshot.tdd.exemptReason must be at least 20 characters describing why no runtime test surface exists (Gate G060). Got: '$tdd_exempt_reason'"
-    else
-      # Reject stop-word reasons
-      reason_lc="$(echo "$tdd_exempt_reason" | tr '[:upper:]' '[:lower:]' | tr -d '[:punct:]' | xargs)"
-      is_stop_word="false"
-      for sw in $tdd_forbidden_reasons; do
-        if [[ "$reason_lc" == "$sw" ]]; then
-          is_stop_word="true"
-          break
+        if [[ "$mode_eligible" != "true" ]]; then
+          fail "policySnapshot.tdd.exempt=true is not allowed for workflow mode '$state_workflow_mode' — exemption only permitted for: $tdd_exemption_eligible_modes (Gate G060)"
+          g060_reason_code="TDD_EXEMPTION_INVALID"
+        elif [[ -z "$tdd_exempt_reason" ]]; then
+          fail "policySnapshot.tdd.exempt=true requires a non-empty exemptReason (Gate G060)"
+          g060_reason_code="TDD_EXEMPTION_INVALID"
+        elif [[ "${#tdd_exempt_reason}" -lt 20 ]]; then
+          fail "policySnapshot.tdd.exemptReason must be at least 20 characters describing why no runtime test surface exists (Gate G060). Got: '$tdd_exempt_reason'"
+          g060_reason_code="TDD_EXEMPTION_INVALID"
+        else
+          reason_lc="$(echo "$tdd_exempt_reason" | tr '[:upper:]' '[:lower:]' | tr -d '[:punct:]' | xargs)"
+          is_stop_word="false"
+          for sw in $tdd_forbidden_reasons; do
+            if [[ "$reason_lc" == "$sw" ]]; then
+              is_stop_word="true"
+              break
+            fi
+          done
+          if [[ "$is_stop_word" == "true" ]]; then
+            fail "policySnapshot.tdd.exemptReason is a stop-word ('$tdd_exempt_reason') — provide a substantive explanation (Gate G060)"
+            g060_reason_code="TDD_EXEMPTION_INVALID"
+          else
+            pass "Scenario-first TDD exempted under mode '$state_workflow_mode' — INFO[G060-EXEMPT] reason: $tdd_exempt_reason"
+            g060_reason_code="TDD_EXEMPTION_VALID"
+          fi
         fi
-      done
-      if [[ "$is_stop_word" == "true" ]]; then
-        fail "policySnapshot.tdd.exemptReason is a stop-word ('$tdd_exempt_reason') — provide a substantive explanation (Gate G060)"
       else
-        pass "Scenario-first TDD exempted under mode '$state_workflow_mode' — INFO[G060-EXEMPT] reason: $tdd_exempt_reason"
+        classify_red_green_ordering ${scope_files[@]+"${scope_files[@]}"} ${report_files[@]+"${report_files[@]}"}
+        if [[ "$BUBBLES_RED_GREEN_SEQUENCE" == "ORDER_VALID" ]]; then
+          pass "Scenario-first TDD red→green ordering is recorded in the scope/report artifacts (mode source: ${effective_tdd_source:-framework-default})"
+          g060_reason_code="RED_GREEN_ORDER_VALID"
+        elif policy_spec_grandfathered "$state_file" "$control_plane_policy_cutoff"; then
+          info "[G060-GRANDFATHERED] Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but this spec predates the ${control_plane_policy_cutoff} activation cutoff and carries no policySnapshot — red→green ordering not enforced retroactively (new specs and snapshot-bearing specs get full enforcement)"
+          g060_reason_code="RED_GREEN_EVIDENCE_GRANDFATHERED"
+        elif [[ "$BUBBLES_RED_GREEN_SEQUENCE" == "GREEN_PRECEDES_RED" ]]; then
+          fail "[G060] BLOCKED: Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but GREEN evidence precedes RED evidence — a failing proof MUST appear before a passing proof in the same report (Gate G060)"
+          g060_reason_code="GREEN_PRECEDES_RED"
+        else
+          fail "Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but no RED→GREEN ordering was found in the scope/report artifacts — a failing-proof (red) marker MUST appear on an earlier line than a passing-proof (green) marker in the same report; the word 'tdd' alone is not evidence (Gate G060)"
+          g060_reason_code="RED_GREEN_EVIDENCE_MISSING"
+        fi
       fi
-    fi
-  else
-    # Layer 2 (evidence integrity): require a real RED->GREEN ordering, not a
-    # keyword rubber-stamp. The previous grep passed merely because a report or
-    # template contained the word "tdd"/"scenario-first" — proving nothing about
-    # actual red-before-green ordering. detect_red_green_ordering passes ONLY when
-    # a failing-proof (RED) marker precedes a passing-proof (GREEN) marker in the
-    # SAME report.
-    if detect_red_green_ordering ${scope_files[@]+"${scope_files[@]}"} ${report_files[@]+"${report_files[@]}"}; then
-      pass "Scenario-first TDD red→green ordering is recorded in the scope/report artifacts (mode source: ${effective_tdd_source:-framework-default})"
-    elif policy_spec_grandfathered "$state_file" "$control_plane_policy_cutoff"; then
-      # Grandfather clause: a historical spec (createdAt before the cutoff, or
-      # missing) that never carried a policySnapshot is NOT retro-broken by the
-      # newly-activated enforcement — downgrade to INFO instead of a blocking fail.
-      info "[G060-GRANDFATHERED] Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but this spec predates the ${control_plane_policy_cutoff} activation cutoff and carries no policySnapshot — red→green ordering not enforced retroactively (new specs and snapshot-bearing specs get full enforcement)"
     else
-      fail "Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but no RED→GREEN ordering was found in the scope/report artifacts — a failing-proof (red) marker MUST appear on an earlier line than a passing-proof (green) marker in the same report; the word 'tdd' alone is not evidence (Gate G060)"
+      info "Effective TDD mode is '${effective_tdd_mode:-off}' — scenario-first evidence check not required"
+      g060_reason_code="SCENARIO_FIRST_NOT_REQUIRED"
     fi
-  fi
-else
-  info "Effective TDD mode is '${effective_tdd_mode:-off}' — scenario-first evidence check not required"
-fi
+
+    if [[ "$failures" -gt "$g060_failures_before" ]]; then
+      record_transition_gate_result G060 BLOCKED APPLICABLE NOT_APPLICABLE NONE POLICY_RESULT "$g060_reason_code" ACTION_REQUIRED "auditProfile=delivery-completion-v1" "ordered RED-before-GREEN evidence" PRODUCE_TDD_EVIDENCE
+    else
+      record_transition_gate_result G060 PASS APPLICABLE NOT_APPLICABLE NONE POLICY_RESULT "$g060_reason_code" NON_ACTIONABLE "auditProfile=delivery-completion-v1" "resolved delivery evidence policy" NONE
+    fi
+    ;;
+  *)
+    fail "Unexpected transition audit profile '$transition_audit_profile' at G060 (Gate G060)"
+    record_transition_gate_result G060 BLOCKED APPLICABLE NOT_APPLICABLE NONE INVALID_PROFILE AUDIT_PROFILE_UNSUPPORTED ACTION_REQUIRED "auditProfile=$transition_audit_profile" "planning-maturity-v1 or delivery-completion-v1" REVIEW_TRANSITION_CONTRACT
+    ;;
+esac
 echo ""
 
 # =============================================================================

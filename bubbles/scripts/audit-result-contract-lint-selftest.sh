@@ -5,10 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LINT="$SCRIPT_DIR/audit-result-contract-lint.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
+TRUST_METADATA="$SCRIPT_DIR/trust-metadata.sh"
 AGENT_CONTRACT="$REPO_ROOT/agents/bubbles.audit.agent.md"
 VALIDATION_PROFILES="$REPO_ROOT/agents/bubbles_shared/validation-profiles.md"
 
-for required_file in "$LINT" "$GUARD_LIB" "$AGENT_CONTRACT" "$VALIDATION_PROFILES"; do
+for required_file in "$LINT" "$GUARD_LIB" "$TRUST_METADATA" "$AGENT_CONTRACT" "$VALIDATION_PROFILES"; do
   if [[ ! -f "$required_file" ]]; then
     printf 'audit-result-contract-lint-selftest: FAIL: required file missing: %s\n' "$required_file" >&2
     exit 1
@@ -22,6 +23,7 @@ fi
 
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
+source "$TRUST_METADATA"
 
 LC_ALL=C
 export LC_ALL
@@ -129,9 +131,120 @@ write_transition_block() {
   local failure_count="${13}"
   local exit_status="${14}"
   local verdict="${15}"
+  local g040_status="PASS"
+  local g060_status="PASS"
+  local g060_applicability="APPLICABLE"
+  local g060_reason="RED_GREEN_ORDER_VALID"
+  local g073_status="PASS"
+  local g073_actionability="NON_ACTIONABLE"
+  local g073_outcome="AUDITED_PREEXISTING"
+  local g073_reason="PATH_AUDITED_EQUAL"
+  local g073_details='[]'
+  local gate_results=""
+  local gate_digest=""
+
+  if [[ "$profile" == "planning-maturity-v1" ]]; then
+    g060_status="NOT_APPLICABLE"
+    g060_applicability="NOT_APPLICABLE"
+    g060_reason="PROFILE_PLANNING_MATURITY"
+    if [[ "$not_applicable" != *Check-3E-G060-red-green-evidence* ]]; then
+      not_applicable="${not_applicable%]},Check-3E-G060-red-green-evidence]"
+    fi
+  elif [[ "$profile" == "UNRESOLVED" ]]; then
+    g060_status="BLOCKED"
+    g060_reason="AUDIT_PROFILE_UNSUPPORTED"
+  fi
+  if [[ "$failed_gates" == *G040* ]]; then
+    g040_status="BLOCKED"
+  fi
+  if [[ "$failed_gates" == *G073* ]]; then
+    g073_status="BLOCKED"
+    g073_actionability="ACTION_REQUIRED"
+    g073_outcome="NEW_OR_CHANGED"
+    g073_reason="LEGACY_DIRT_UNPROVEN"
+    g073_details='[{"actionability":"ACTION_REQUIRED","applicability":"APPLICABLE","evidenceIdentity":{"protectedPath":"src/changed.rs","stateClass":"UNSTAGED_ONLY"},"gateId":"G073","observed":"baselineDeclaration=absent","outcome":"LEGACY_NO_BASELINE","phraseDisposition":"NONE","reasonCode":"LEGACY_DIRT_UNPROVEN","remediationCode":"REVIEW_SOURCE_STATE","required":"authoritative planning source baseline","scanDisposition":"CLASSIFIED","status":"BLOCKED"}]'
+  elif [[ "$passed_gates" == *G073* ]]; then
+    g073_details='[{"actionability":"NON_ACTIONABLE","applicability":"APPLICABLE","evidenceIdentity":{"protectedPath":"src/preexisting.rs","stateClass":"UNSTAGED_ONLY"},"gateId":"G073","observed":"identity=equal","outcome":"AUDITED_PREEXISTING","phraseDisposition":"NONE","reasonCode":"PATH_AUDITED_EQUAL","remediationCode":"NONE","required":"exact identity equality","scanDisposition":"CLASSIFIED","status":"PASS"}]'
+  fi
+
+  gate_results="$(jq -cS -n \
+    --arg g040Status "$g040_status" \
+    --arg g060Status "$g060_status" \
+    --arg g060Applicability "$g060_applicability" \
+    --arg g060Reason "$g060_reason" \
+    --arg g073Status "$g073_status" \
+    --arg g073Actionability "$g073_actionability" \
+    --arg g073Outcome "$g073_outcome" \
+    --arg g073Reason "$g073_reason" \
+    --arg profile "$profile" \
+    --arg digest "$DIGEST" \
+    --argjson g073Details "$g073_details" \
+    '[
+      {
+        actionability: (if $g040Status == "BLOCKED" then "ACTION_REQUIRED" else "NON_ACTIONABLE" end),
+        applicability: "APPLICABLE",
+        completeEvidenceDigest: $digest,
+        completeEvidenceRef: ("transition-gate-results:" + $digest + "#G040"),
+        detailCount: 0,
+        details: [],
+        emittedDetailCount: 0,
+        evidenceIdentity: {},
+        gateId: "G040",
+        observed: "fixture=true",
+        omittedDetailCount: 0,
+        outcome: "CLASSIFICATION_COMPLETE",
+        phraseDisposition: "NONE",
+        reasonCode: "NO_DEFERRAL_LANGUAGE",
+        remediationCode: "NONE",
+        required: "blockingCount=0",
+        scanDisposition: "CLASSIFIED",
+        status: $g040Status
+      },
+      {
+        actionability: (if $g060Status == "BLOCKED" then "ACTION_REQUIRED" else "NON_ACTIONABLE" end),
+        applicability: $g060Applicability,
+        completeEvidenceDigest: $digest,
+        completeEvidenceRef: ("transition-gate-results:" + $digest + "#G060"),
+        detailCount: 0,
+        details: [],
+        emittedDetailCount: 0,
+        evidenceIdentity: {},
+        gateId: "G060",
+        observed: ("auditProfile=" + $profile),
+        omittedDetailCount: 0,
+        outcome: (if $g060Status == "NOT_APPLICABLE" then "NOT_APPLICABLE" else "POLICY_RESULT" end),
+        phraseDisposition: "NONE",
+        reasonCode: $g060Reason,
+        remediationCode: "NONE",
+        required: "resolved profile policy",
+        scanDisposition: (if $g060Status == "NOT_APPLICABLE" then "NOT_APPLICABLE" else "CLASSIFIED" end),
+        status: $g060Status
+      },
+      {
+        actionability: $g073Actionability,
+        applicability: "APPLICABLE",
+        completeEvidenceDigest: $digest,
+        completeEvidenceRef: ("transition-gate-results:" + $digest + "#G073"),
+        detailCount: ($g073Details | length),
+        details: $g073Details,
+        emittedDetailCount: ($g073Details | length),
+        evidenceIdentity: {},
+        gateId: "G073",
+        observed: "fixture=true",
+        omittedDetailCount: 0,
+        outcome: $g073Outcome,
+        phraseDisposition: "NONE",
+        reasonCode: $g073Reason,
+        remediationCode: "NONE",
+        required: "exact bound source state",
+        scanDisposition: "CLASSIFIED",
+        status: $g073Status
+      }
+    ]')"
+  gate_digest="sha256:$(printf '%s' "$gate_results" | bubbles_sha256_stdin)"
   cat > "$file" <<EOF
-BEGIN TRANSITION_GUARD_RESULT_V1
-schemaVersion: transition-guard-result/v1
+BEGIN TRANSITION_GUARD_RESULT_V2
+schemaVersion: transition-guard-result/v2
 workflowMode: $workflow_mode
 auditProfile: $profile
 targetStatus: $target_status
@@ -142,11 +255,14 @@ notApplicableChecks: $not_applicable
 passedGateIds: $passed_gates
 failedGateIds: $failed_gates
 failedChecks: $failed_checks
+gateResultsSchema: transition-gate-results/v1
+gateResultsDigest: $gate_digest
+gateResults: $gate_results
 blockingCode: $blocking_code
 failureCount: $failure_count
 exitStatus: $exit_status
 verdict: $verdict
-END TRANSITION_GUARD_RESULT_V1
+END TRANSITION_GUARD_RESULT_V2
 EOF
 }
 
@@ -203,6 +319,9 @@ append_audit_block() {
   local next_owner="${31}"
   local supersedes="${32}"
   local resume_phase="${33}"
+  if [[ "$audit_class" == "planning-maturity" && "$not_applicable" != *Check-3E-G060-red-green-evidence* ]]; then
+    not_applicable="${not_applicable%]},Check-3E-G060-red-green-evidence]"
+  fi
   cat >> "$file" <<EOF
 BEGIN AUDIT_RESULT_V1
 schemaVersion: audit-result/v1
@@ -383,6 +502,23 @@ mutate_result() {
   bubbles_sed_inplace "$expression" "$destination"
 }
 
+mutate_gate_results() {
+  local source="$1"
+  local destination="$2"
+  local filter="$3"
+  local original_json=""
+  local mutated_json=""
+  local mutated_digest=""
+  original_json="$(awk -F ': ' '/^gateResults: / { print substr($0, 14); exit }' "$source")"
+  mutated_json="$(printf '%s' "$original_json" | jq -cS "$filter")"
+  mutated_digest="sha256:$(printf '%s' "$mutated_json" | bubbles_sha256_stdin)"
+  awk -v gate_results="$mutated_json" -v gate_digest="$mutated_digest" '
+    /^gateResultsDigest: / { print "gateResultsDigest: " gate_digest; next }
+    /^gateResults: / { print "gateResults: " gate_results; next }
+    { print }
+  ' "$source" > "$destination"
+}
+
 printf 'Running BUG-009 S04 audit result contract selftest...\n'
 
 PLANNING_CLEAN="$WORKSPACE/planning-clean"
@@ -408,6 +544,40 @@ run_pass 'metadata uncertainty is BLOCKED without fallback semantics' "$METADATA
 run_pass 'source-edit lockout is BLOCKED on G073' "$SOURCE_LOCKOUT/result.txt"
 run_pass 'interruption leaves no current pointer or active verdict' "$INTERRUPTED/result.txt"
 run_pass 'rework supersedes prior result and preserves the finding one-to-one' "$REWORK_CLOSED/result.txt"
+pass 'transition-guard-result/v2 fixtures are the accepted current guard contract'
+
+V2_REORDERED="$WORKSPACE/v2-reordered.txt"
+awk '
+  /^gateResultsDigest: / { digest=$0; next }
+  /^gateResults: / { print; print digest; next }
+  { print }
+' "$PLANNING_CLEAN/result.txt" > "$V2_REORDERED"
+run_fail 'reordered V2 field is rejected' "$V2_REORDERED" "must be 'gateResultsDigest'"
+
+V2_NONCANONICAL="$WORKSPACE/v2-noncanonical.txt"
+cp "$PLANNING_CLEAN/result.txt" "$V2_NONCANONICAL"
+bubbles_sed_inplace 's/^gateResults: \[/gateResults: [ /' "$V2_NONCANONICAL"
+run_fail 'noncanonical gateResults is rejected' "$V2_NONCANONICAL" 'gateResults must be canonical jq -cS JSON'
+
+V2_BAD_DIGEST="$WORKSPACE/v2-bad-digest.txt"
+mutate_result "$PLANNING_CLEAN/result.txt" "$V2_BAD_DIGEST" 's/^gateResultsDigest: sha256:[0-9a-f]*$/gateResultsDigest: sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/'
+run_fail 'gateResultsDigest mismatch is rejected' "$V2_BAD_DIGEST" 'gateResultsDigest mismatch'
+
+PLANNING_G060_PASS="$WORKSPACE/planning-g060-pass.txt"
+mutate_gate_results "$PLANNING_CLEAN/result.txt" "$PLANNING_G060_PASS" 'map(if .gateId == "G060" then .status = "PASS" | .applicability = "APPLICABLE" | .reasonCode = "RED_GREEN_ORDER_VALID" else . end)'
+run_fail 'planning G060 pass rejected' "$PLANNING_G060_PASS" 'planning G060 pass rejected'
+
+DELIVERY_G060_NA="$WORKSPACE/delivery-g060-na.txt"
+mutate_gate_results "$DELIVERY_REFUSAL/result.txt" "$DELIVERY_G060_NA" 'map(if .gateId == "G060" then .status = "NOT_APPLICABLE" | .applicability = "NOT_APPLICABLE" | .reasonCode = "PROFILE_PLANNING_MATURITY" else . end)'
+run_fail 'delivery G060 N/A rejected' "$DELIVERY_G060_NA" 'delivery G060 N/A rejected'
+
+AUDITED_G073_ACTIONABLE="$WORKSPACE/audited-g073-actionable.txt"
+mutate_gate_results "$PLANNING_CLEAN/result.txt" "$AUDITED_G073_ACTIONABLE" 'map(if .gateId == "G073" then .details |= map(if .outcome == "AUDITED_PREEXISTING" then .actionability = "ACTION_REQUIRED" else . end) else . end)'
+run_fail 'audited G073 actionable rejected' "$AUDITED_G073_ACTIONABLE" 'audited G073 actionable rejected'
+
+FAILED_G073_BLOCKING="$WORKSPACE/failed-g073-blocking.txt"
+mutate_result "$SOURCE_LOCKOUT/result.txt" "$FAILED_G073_BLOCKING" 's/^blockingCode: SOURCE_EDIT_LOCKOUT$/blockingCode: PLANNING_GATE_FAILED/'
+run_fail 'failed G073 blockingCode rejected' "$FAILED_G073_BLOCKING" 'failed G073 must block as SOURCE_EDIT_LOCKOUT'
 
 DUPLICATE="$WORKSPACE/duplicate.txt"
 cp "$PLANNING_CLEAN/result.txt" "$DUPLICATE"

@@ -280,16 +280,15 @@ policy_spec_grandfathered() {
   return 1
 }
 
-# detect_red_green_ordering <file...>
-# Layer-2 G060 evidence integrity. Returns 0 only when a RED-stage (failing-proof)
-# marker appears on an EARLIER line than the FIRST GREEN-stage (passing-proof)
-# marker within the SAME file — proving red-was-captured-before-green ordering.
-# The literal word 'tdd'/'scenario-first' alone never matches (it is a rubber
-# stamp, not ordering evidence). Returns 1 when no such ordering exists.
-detect_red_green_ordering() {
+# classify_red_green_ordering <file...>
+# Sets BUBBLES_RED_GREEN_SEQUENCE to ORDER_VALID, GREEN_PRECEDES_RED, or
+# MISSING. The existing boolean wrapper below preserves every prior caller.
+classify_red_green_ordering() {
   local red_pattern green_pattern f red_line green_line
+  local green_precedes_red="false"
   red_pattern='red[ -]?stage|(^|[^a-z])red:|failing targeted|failing proof|failing test first|required red-stage|test fails|test result:[[:space:]]*failed|--- fail|[1-9][0-9]*[[:space:]]+(tests?[[:space:]]+)?failed'
   green_pattern='green[ -]?stage|(^|[^a-z])green:|now passes|passing|test result:[[:space:]]*ok|0[[:space:]]+failed|--- pass|[1-9][0-9]*[[:space:]]+(tests?[[:space:]]+)?passed'
+  BUBBLES_RED_GREEN_SEQUENCE="MISSING"
   for f in "$@"; do
     [[ -f "$f" ]] || continue
     red_line="$(grep -niE "$red_pattern" "$f" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
@@ -297,8 +296,26 @@ detect_red_green_ordering() {
     green_line="$(grep -niE "$green_pattern" "$f" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
     [[ -n "$green_line" ]] || continue
     if [[ "$red_line" =~ ^[0-9]+$ && "$green_line" =~ ^[0-9]+$ && "$red_line" -lt "$green_line" ]]; then
+      BUBBLES_RED_GREEN_SEQUENCE="ORDER_VALID"
       return 0
     fi
+    if [[ "$red_line" =~ ^[0-9]+$ && "$green_line" =~ ^[0-9]+$ && "$green_line" -lt "$red_line" ]]; then
+      green_precedes_red="true"
+    fi
   done
-  return 1
+  if [[ "$green_precedes_red" == "true" ]]; then
+    BUBBLES_RED_GREEN_SEQUENCE="GREEN_PRECEDES_RED"
+  fi
+  return 0
+}
+
+# detect_red_green_ordering <file...>
+# Layer-2 G060 evidence integrity. Returns 0 only when a RED-stage (failing-proof)
+# marker appears on an EARLIER line than the FIRST GREEN-stage (passing-proof)
+# marker within the SAME file — proving red-was-captured-before-green ordering.
+# The literal word 'tdd'/'scenario-first' alone never matches (it is a rubber
+# stamp, not ordering evidence). Returns 1 when no such ordering exists.
+detect_red_green_ordering() {
+  classify_red_green_ordering "$@"
+  [[ "$BUBBLES_RED_GREEN_SEQUENCE" == "ORDER_VALID" ]]
 }

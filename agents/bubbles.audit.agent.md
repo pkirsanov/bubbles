@@ -141,7 +141,7 @@ Follow [audit-bootstrap.md](bubbles_shared/audit-bootstrap.md). Additionally loa
 
 ### 0-pre. State Transition Guard (MANDATORY FIRST CHECK — Gate G023)
 
-**This check MUST run BEFORE all other audit checks.** Resolve the transition contract from artifact state, then invoke the same guard in assertion-only form with the registry-derived target, mode, and digest. Assertion-only means no state mutation and no audit-selected profile. The guard's single `TRANSITION_GUARD_RESULT_V1` record is the input to A1 and the audit result projection.
+**This check MUST run BEFORE all other audit checks.** Resolve the transition contract from artifact state, then invoke the same guard in assertion-only form with the registry-derived target, mode, and digest. Assertion-only means no state mutation and no audit-selected profile. The guard's single `TRANSITION_GUARD_RESULT_V2` record is the input to A1 and the audit result projection.
 
 ```bash
 transition_contract="$(bash bubbles/scripts/transition-contract-resolver.sh "{FEATURE_DIR}")"
