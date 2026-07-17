@@ -1,7 +1,7 @@
 # IMP-023 — Exclusive Spec/Artifact Writer Lease
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Status:** IMPLEMENTED (core primitive + convention, owner-directed 2026-07-16) — the `runtime writer-acquire` artifact-writer convention over the existing exclusive lease ships with a 7-case selftest; deep agent acquire-before-mutate wiring (agent-common orchestration) + the IMP-004 SCOPE-2 amendment remain a follow-up increment.
+**Surface:** framework-health (G125) — reuse-first (extends `runtime-leases.sh`; no new lease system)
 **Motivation:** Multi-session convergence observations (2026-07, Research Lab Feature 010) — overlapping `bubbles.implement` attempts and two concurrent `bubbles.test` replays ran against one dirty worktree. One owner restored files another owner had removed, validators changed after an independent replay, and `report.md` repeatedly appended "concurrent reconciliation" sections. No mechanism refused the second live writer.
 **Verified gaps addressed:** no artifact-writer exclusivity (WL1), shared-state contract is documented but unenforced (WL2), no stale/crash takeover for artifact writers (WL3).
 
