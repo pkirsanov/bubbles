@@ -1,7 +1,7 @@
 # IMP-025 — Fail-Loud Multi-Root Agent & Repository Binding
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Status:** IMPLEMENTED (preflight primitive, reuse-first, 2026-07-17) — `repo-binding-preflight.sh` fails loud (exit 1) when an agent's source-repo slug does not match the repository being edited, and passes for `--canonical-source` framework work (MR1). It REUSES the installer's existing repo-slug derivation (`install.sh` `mcp_repo_slug`) and reads a forward-compatible `targetRepoSlug` marker from `.github/bubbles/.install-source.json`. Installer/agent stamping of the marker + repo-qualified agent labels (MR2) + provenance-bearing handoff envelopes (MR3) remain the wiring follow-up.
+**Surface:** framework-health (G125) — reuse-first (reuses the installer repo-slug derivation; no per-machine absolute path; advisory when no marker)
 **Motivation:** Multi-session convergence observations (2026-07, Research Lab Feature 010) — the session edited the Research Lab repo while initially using GuestHost's `bubbles.analyst` and later QuantitativeFinance's `bubbles.goal`; Chronicle attributed the Research Lab work to the first workspace root (QuantitativeFinance). A session editing one repository ran an agent definition installed under a different workspace root, with no mechanical objection.
 **Verified gaps addressed:** no target↔agent-source binding check (MR1), no repository-qualified agent identity (MR2), handoff envelopes omit repo/agent provenance (MR3).
 

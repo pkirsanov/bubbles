@@ -188,6 +188,8 @@
     {"path": "bubbles/scripts/release-train-guard.sh", "sha256": "08c21cbacf95c3f3b8f44eabfe7822c5c69b775d007f58787ceeb930c881e053"},
     {"path": "bubbles/scripts/release-train-rollup-selftest.sh", "sha256": "48ab5a250def52612862a25b9b06bc6b138a0862c28c208e9bd0733475ce1f11"},
     {"path": "bubbles/scripts/release-train-rollup.sh", "sha256": "81f01c48befa492fb99c39313ab081469bd8b5660d57be36c9f4d551128cb198"},
+    {"path": "bubbles/scripts/repo-binding-preflight-selftest.sh", "sha256": "1971a75c1ada2168a26ee4ceb78d07e5a2ebf6721a4bba982f0de32afc7f4d13"},
+    {"path": "bubbles/scripts/repo-binding-preflight.sh", "sha256": "9bfafd78f34ab44d9c25ac384462b8e2e9bdd959047343762dd01b42fcfda712"},
     {"path": "bubbles/scripts/repo-drift-report-selftest.sh", "sha256": "7895a23bd5f13697bc308a131722da1490183d3f75b5c890e03f856290792698"},
     {"path": "bubbles/scripts/repo-drift-report.sh", "sha256": "dafae717c6a604346ee61b48c32b087cf549a7311e48b5be57112b30cc406baa"},
     {"path": "bubbles/scripts/repo-readiness.sh", "sha256": "3c65c511c957ee77dd31ce742afdb865fb1038ea3f66f53dbaf56a892744033e"},
