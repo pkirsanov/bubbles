@@ -33,6 +33,7 @@
 ### SCOPE-2 — parallel-scope isolation contract (A3)
 
 - Document (and optionally gate later) the shared-artifact rule for `parallelScopes=dag`: shared `state.json`/`spec.md`/`design.md`/`scenario-manifest.json` are ORCHESTRATOR-owned and written only by the parent between scope merges; worktree scopes may write only their own `scope.md`/`report.md` + code. Add a merge/conflict-resolution step + cleanup-on-abandon.
+- **Amendment (2026-07-17, IMP-023):** this documented contract is now MECHANIZED by the IMP-023 artifact-writer lease + `runtime writer-guard` (`bubbles/scripts/runtime-leases.sh`). IMP-004 SCOPE-2 keeps ownership of the *documented contract*; IMP-023 owns the *mechanism*. A child scope's write to shared `state.json`/`scenario-manifest.json`/`spec.md`/`design.md` (or another scope's report) is refused with a structured `blocked` envelope naming the parent owner — see `docs/recipes/runtime-coordination.md` (writer-guard) and IMP-023 SCOPE-3/5.
 
 ### SCOPE-3 — coverage-gap owners (P5; advisory-until-configured)
 

@@ -14,6 +14,49 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-023 Artifact-Writer Shared-State Guard + Structured Refusal (SCOPE-3/5/7)
+
+- **Parent-owned shared-state guard (`runtime writer-guard`).**
+  `bubbles/scripts/runtime-leases.sh` gains a `writer-guard` subcommand that
+  mechanizes the IMP-004 SCOPE-2 contract: a child scope (`--role child`, the
+  default) is refused when it writes a parent-owned `state.json` /
+  `scenario-manifest.json` / `spec.md` / `design.md` or another scope's
+  `scopes/<id>/report.md`, and is allowed to write its own report/scope/source/
+  tests; a `--role parent` orchestrator may write shared state. Reuses the
+  existing lease store, `slugify`, and lookup — no new lease system.
+- **Structured `blocked` refusal envelope (SCOPE-5).** Both the writer-acquire
+  conflict path and the writer-guard refusal now emit one machine-parseable
+  `writer-lease-refusal result=blocked reason=... route=... remediation=...`
+  line to stderr naming the owner, alongside the human sentence. The framework
+  never "reconciles" two live writers by appending evidence (the Feature-010
+  anti-pattern).
+- **IMP-004 SCOPE-2 amendment (SCOPE-7).** IMP-004 SCOPE-2 is amended in place to
+  cross-reference this lease + guard as its enforcement mechanism; IMP-004 keeps
+  the documented contract, IMP-023 owns the mechanism.
+
+Backed this session by the extended `runtime-lease-selftest.sh` (six new
+writer-guard/envelope cases, all cases pass), a regenerated
+`bubbles/release-manifest.json`, and green `framework-validate`. This entry does
+not assert downstream upgrade, consumer byte parity, certification, or the
+deferred SCOPE-6 deep agent-wiring increment.
+
+### IMP-025 Multi-Root Repo-Binding Marker Stamping (SCOPE-5)
+
+- **Installer stamps the repo-binding marker.** `install.sh` now writes a
+  repo-relative `targetRepoSlug` into `.github/bubbles/.install-source.json`
+  (derived by the SAME slug logic as the per-repo MCP server id), so
+  `repo-binding-preflight.sh` resolves it and ENFORCES agent↔repo binding
+  (exit 1 on a foreign workspace-root agent) instead of staying advisory. No
+  per-machine absolute path is committed — the marker is a repo-relative slug.
+- **Count-agnostic provenance invariant.** The installer-manifest I5 invariant
+  is renamed `provenance_records_required_fields` and derives its field count,
+  so adding a provenance field never again requires renaming the gate.
+- Backed by the extended `install-provenance-selftest.sh` (stamps the marker;
+  the freshly installed fixture's preflight resolves it and refuses a foreign
+  agent-source) plus the generate-installer and repo-binding-preflight
+  selftests, all green under `framework-validate`. This entry does not assert
+  downstream upgrade or the deferred SCOPE-2/3/4/6 wiring.
+
 ### BUG-013 Semantic Sensitive Client Storage Classification
 
 - **Operation-aware G028 Scan 2B.** Sensitive client storage is classified from

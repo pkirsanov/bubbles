@@ -712,6 +712,17 @@ fi
 INSTALL_VERSION="${VERSION:-$(bubbles_json_string_field "$RELEASE_MANIFEST_SOURCE" version)}"
 [[ -n "$INSTALL_VERSION" ]] || fail "Could not determine installed Bubbles version"
 
+# Repo-relative identity slug (IMP-025 SCOPE-5) — SAME derivation as the per-repo
+# MCP server id (mcp_repo_slug, above) and repo-binding-preflight.sh repo_slug_of.
+# Computed unconditionally here because mcp_repo_slug is only set inside the
+# python3 MCP-registration block, so the marker must be derived independently to
+# always be stamped. Repo-RELATIVE only (repo basename slug) — never an absolute
+# path. repo-binding-preflight.sh reads this targetRepoSlug marker to refuse a
+# foreign workspace-root agent editing this repo.
+TARGET_REPO_SLUG="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+TARGET_REPO_SLUG="$(printf '%s' "$TARGET_REPO_SLUG" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed -e 's/[^a-z0-9]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//')"
+[[ -n "$TARGET_REPO_SLUG" ]] || TARGET_REPO_SLUG="repo"
+
 cat > "${TARGET}/bubbles/.install-source.json" <<EOF
 {
   "installedVersion": "${INSTALL_VERSION}",
@@ -719,6 +730,7 @@ cat > "${TARGET}/bubbles/.install-source.json" <<EOF
   "sourceRef": "${SOURCE_REF}",
   "sourceGitSha": "${SOURCE_GIT_SHA}",
   "sourceDirty": ${SOURCE_DIRTY},
+  "targetRepoSlug": "${TARGET_REPO_SLUG}",
   "installedAt": "$(bubbles_current_timestamp)"
 }
 EOF
