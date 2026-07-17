@@ -57,6 +57,34 @@ regression, touched-shell portability scan, and regression-quality guard. This
 entry does not assert downstream installation, independent test-owner
 verification, certification, or BUG-012 closure.
 
+### BFW-01..05 Framework-improvement primitives (IMP-021..025)
+
+Five reuse-first framework primitives, each shipped as a self-contained script
+plus a hermetic selftest wired into `framework-validate`:
+
+- **BFW-01 / IMP-021 — risk-tier resolver.** `risk-tier-resolve.sh` classifies a
+  delivery surface as `rapid-tool-delivery` or `full-delivery`, fail-closed:
+  rapid only on a positive low-risk signal with no high-risk trigger (auth,
+  payment, secret, PII, DB migration, deploy/infra, cross-product proto).
+  Reuses the G128 budget vocabulary; registers no new mode.
+- **BFW-02 / IMP-022 — vertical-delivery plan guard.**
+  `vertical-delivery-plan-guard.sh` mechanizes the existing `bubbles.plan`
+  horizontal-plan-detection rule (advisory by default; blocks only under
+  `verticalPlanGuard: block`).
+- **BFW-03 / IMP-023 — exclusive artifact-writer lease.** `runtime
+  writer-acquire` is a thin convention over the existing exclusive lease in
+  `runtime-leases.sh`.
+- **BFW-04 / IMP-024 — in-window duplicate-evidence detection.**
+  `artifact-lint.sh` Check 3 rejects exact-duplicate evidence within one
+  certifying window (content fingerprint over the existing marker).
+- **BFW-05 / IMP-025 — repo-binding preflight.** `repo-binding-preflight.sh`
+  refuses mutable work when the active agent's source repo slug differs from the
+  repository being edited (reuses the installer's `mcp_repo_slug` derivation and
+  the `.install-source.json` marker).
+
+Each primitive is backed by its own passing selftest under `framework-validate`;
+heavier workflow integration is deferred to follow-up work.
+
 ## v7.20.0 — registry-bound planning transition audits
 
 **Theme:** Planning-only workflows now certify planning maturity through an
