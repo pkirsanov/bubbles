@@ -211,6 +211,24 @@ This is enforced by the artifact ownership contract in `agents/bubbles_shared/ar
 - Cross-cutting infrastructure and operational delivery work lives under `specs/_ops/OPS-*`.
 - Ops packets use `objective.md`, `design.md`, `scopes.md`, `runbook.md`, `report.md`, and `state.json`.
 
+### Planning Maturity Is Not Delivery
+
+Transition audits derive their target and evidence profile from the resolved
+workflow registry contract. Only `product-to-planning` and
+`spec-scope-hardening` bind `planning-maturity-v1`; both stop exactly at
+`specs_hardened`. A clean `PLANNING_AUDIT_CLEAN` result means the applicable
+planning and universal checks passed while delivery remains
+`NOT_EVALUATED`. It does not mean implemented, tested, merge-ready, releasable,
+deployable, delivered, or shipped.
+
+Done-ceiling modes use the separate `delivery-completion-v1` contract and keep
+the strict completion/evidence bar. Other non-done modes do not inherit
+planning semantics merely because their ceiling is below `done`; they remain
+unsupported by transition audit unless the registry explicitly binds a
+profile. See the [Agent Manual](docs/guides/AGENT_MANUAL.md#registry-bound-transition-audits),
+[Control Plane Design](docs/guides/CONTROL_PLANE_DESIGN.md#registry-bound-transition-audit-contract),
+and [Framework Operations](docs/recipes/framework-ops.md#inspect-and-operate-transition-audits).
+
 ### <img src="icons/bubbles-glasses.svg" width="24"> Start Here — Universal Goal Endpoint
 
 | Icon | Agent | Role | When to Use |

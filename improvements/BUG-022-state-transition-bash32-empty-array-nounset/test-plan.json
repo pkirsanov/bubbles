@@ -1,0 +1,273 @@
+{
+  "version": 1,
+  "specId": "BUG-022",
+  "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-17T06:18:09Z",
+  "ownershipStatus": "authoritative-bubbles.plan",
+  "scopes": [
+    {
+      "scopeId": "01-bash32-empty-array-result-integrity",
+      "scopeName": "Bash 3.2 Empty-Array Result Integrity",
+      "tests": [
+        {
+          "testId": "T-BUG-022-02",
+          "type": "regression-e2e-zero-elements",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001"],
+          "testTitle": "SCN-BUG-022-001: zero-element production paths preserve structured results",
+          "description": "Empty result serialization, scope/report discovery, first evidence comparison, blocked result, and untagged final lookup emit complete truthful results without abort.",
+          "command": "/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-03",
+          "type": "regression-e2e-one-element",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-002",
+          "scenarioIds": ["SCN-BUG-022-002"],
+          "testTitle": "SCN-BUG-022-002: first element is recorded exactly once",
+          "description": "First gate/check element is recorded exactly once from an empty accumulator.",
+          "command": "/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-04",
+          "type": "regression-e2e-multiple-elements",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-003",
+          "scenarioIds": ["SCN-BUG-022-003"],
+          "testTitle": "SCN-BUG-022-003: multiple elements preserve order and blocking semantics",
+          "description": "Multiple values preserve order, deduplication, counts, and failure semantics.",
+          "command": "/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-05",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-003",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-003"],
+          "testTitle": "Adversarial: every zero-state behavior family rejects reintroduction",
+          "description": "Ten named family mutants plus all 43 mapped one-site inventory mutants, including `PLANNING-CHANGE-BOUNDARY-SCOPE`, `CONTROL-PLANE-TDD-SCOPES`, and `CONTROL-PLANE-TDD-REPORTS`, run independently and are rejected through the staged production guard.",
+          "command": "/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-01",
+          "type": "mandatory-final-byte-red",
+          "category": "functional",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "RED: complete final regression bytes reject every unchanged zero-state family",
+          "description": "Complete final regression bytes fail against unchanged production only for inventoried zero-state families.",
+          "command": "jq_bin=\"$(command -v jq)\" && yq_bin=\"$(command -v yq)\" && /usr/bin/env -i HOME=\"$HOME\" PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:$(dirname \"$jq_bin\"):$(dirname \"$yq_bin\")\" /bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-06",
+          "type": "strict-mode-syntax-canary",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "sourceFiles": [
+            "bubbles/scripts/state-transition-guard.sh",
+            "bubbles/scripts/guards/planning-checks.sh",
+            "bubbles/scripts/guards/control-plane-checks.sh"
+          ],
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001"],
+          "testTitle": "All three production files parse while strict nounset and no-bypass invariants remain intact",
+          "description": "Stock Bash 3.2 parses all three production files; the main guard retains `set -euo pipefail`; the atomic repair surface contains no nounset suppression, unsafe indirection, sentinel, fallback result, or bypass.",
+          "command": "/bin/bash -n bubbles/scripts/state-transition-guard.sh && /bin/bash -n bubbles/scripts/guards/planning-checks.sh && /bin/bash -n bubbles/scripts/guards/control-plane-checks.sh && grep -n '^set -euo pipefail$' bubbles/scripts/state-transition-guard.sh && for file in bubbles/scripts/state-transition-guard.sh bubbles/scripts/guards/planning-checks.sh bubbles/scripts/guards/control-plane-checks.sh; do if grep -nE 'set[[:space:]]+\\+u' \"$file\"; then exit 1; fi; if grep -nE 'eval[[:space:]]' \"$file\"; then exit 1; fi; if grep -n -- '--no-nounset' \"$file\"; then exit 1; fi; if grep -n -- '--skip' \"$file\"; then exit 1; fi; if grep -n -- '--force' \"$file\"; then exit 1; fi; if grep -n -- 'EMPTY_ARRAY_SENTINEL' \"$file\"; then exit 1; fi; done",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-07",
+          "type": "managed-state-transition-canary",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-003"],
+          "testTitle": "Managed guard selftest preserves existing result semantics",
+          "description": "Existing guard semantics and result contract remain intact.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-08",
+          "type": "bug-019-compatibility",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "BUG-019 corrected system-Bash matrix returns 38 of 38",
+          "description": "Unchanged BUG-019 matrix returns 38/38 under corrected parser-aware system Bash.",
+          "command": "jq_bin=\"$(command -v jq)\" && yq_bin=\"$(command -v yq)\" && /usr/bin/env -i HOME=\"$HOME\" PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:$(dirname \"$jq_bin\"):$(dirname \"$yq_bin\")\" /bin/bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-09",
+          "type": "regression-quality",
+          "category": "functional",
+          "file": "bubbles/scripts/regression-quality-guard.sh",
+          "scenarioId": "SCN-BUG-022-003",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Regression has adversarial zero-state coverage and no bailout",
+          "description": "The physical regression has no silent-pass bailout and contains true zero-state adversaries.",
+          "command": "bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-10",
+          "type": "artifact-shape",
+          "category": "integration",
+          "file": "bubbles/scripts/artifact-lint.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Canonical packet shape and nonterminal honesty remain valid",
+          "description": "Packet structure, nonterminal honesty, report template, and checklist shape remain valid.",
+          "command": "bash bubbles/scripts/artifact-lint.sh improvements/BUG-022-state-transition-bash32-empty-array-nounset",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-11",
+          "type": "broader-e2e-regression",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Broader framework validation preserves all framework contracts",
+          "description": "Framework validation passes after focused ownership and provenance checks settle.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-12",
+          "type": "release-identity",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Canonical source, install provenance, and release identity agree",
+          "description": "Release owner proves canonical source/install/release identity after stable bytes.",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-13",
+          "type": "newer-macos-bash-lane",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Newer macOS Bash preserves the Bash 3.2 result contract",
+          "description": "An explicit newer macOS Bash prints its version and produces the same zero/one/multiple result contract.",
+          "command": "if [[ -x /opt/homebrew/bin/bash ]]; then /opt/homebrew/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh; elif [[ -x /opt/local/bin/bash ]]; then /opt/local/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh; else printf '%s\\n' 'required newer macOS Bash is unavailable'; exit 2; fi",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-14",
+          "type": "linux-bash-lane",
+          "category": "e2e-api",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Supported Linux Bash preserves the Bash 3.2 result contract",
+          "description": "A supported Linux runner prints platform/version and runs the identical regression bytes.",
+          "command": "bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-15",
+          "type": "structured-result-consumer-canary",
+          "category": "integration",
+          "file": "bubbles/scripts/audit-result-contract-lint-selftest.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-003"],
+          "testTitle": "Structured-result consumers accept the unchanged ordered grammar",
+          "description": "Existing consumers still accept the unchanged ordered result grammar, including exact empty lists.",
+          "command": "bash bubbles/scripts/audit-result-contract-lint-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-16",
+          "type": "portability-guard-selftest",
+          "category": "functional",
+          "file": "bubbles/scripts/macos-portability-guard-selftest.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001"],
+          "testTitle": "Canonical shell portability enforcement remains operational",
+          "description": "Canonical shell portability enforcement remains operational across macOS/BSD and Linux/GNU assumptions.",
+          "command": "bash bubbles/scripts/macos-portability-guard-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-17",
+          "type": "artifact-freshness",
+          "category": "integration",
+          "file": "bubbles/scripts/artifact-freshness-guard.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Active planning artifacts contain no stale executable scope inventory",
+          "description": "Active spec, design, and one-scope plan contain no stale executable planning inventory.",
+          "command": "bash bubbles/scripts/artifact-freshness-guard.sh improvements/BUG-022-state-transition-bash32-empty-array-nounset",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-18",
+          "type": "capability-proportionality",
+          "category": "integration",
+          "file": "bubbles/scripts/capability-foundation-guard.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "G094 accepts the single-capability repair structure",
+          "description": "G094 accepts the spec/design single-capability and single-implementation justification.",
+          "command": "bash bubbles/scripts/capability-foundation-guard.sh improvements/BUG-022-state-transition-bash32-empty-array-nounset",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-19",
+          "type": "scenario-traceability",
+          "category": "integration",
+          "file": "bubbles/scripts/traceability-guard.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Scenario, plan, DoD, physical regression, and report links agree",
+          "description": "Scenario, Markdown Test Plan, DoD, machine manifest, physical regression, and report evidence links agree.",
+          "command": "bash bubbles/scripts/traceability-guard.sh improvements/BUG-022-state-transition-bash32-empty-array-nounset",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-022-20",
+          "type": "install-source-only-provenance",
+          "category": "integration",
+          "file": "bubbles/scripts/install-provenance-selftest.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Managed guard bytes and source-only regression provenance agree",
+          "description": "Guard and managed selftest install byte-identically while `test_29` remains source-only and release-recorded.",
+          "command": "bash bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-022-21",
+          "type": "protected-byte-expansion-inventory",
+          "category": "functional",
+          "file": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "scenarioId": "SCN-BUG-022-001",
+          "scenarioIds": ["SCN-BUG-022-001", "SCN-BUG-022-002", "SCN-BUG-022-003"],
+          "testTitle": "Exact expansion inventory changes while protected bytes remain stable",
+          "description": "Exactly 43 mapped sites resolve across the three exact production paths: 40 main, `PLANNING-CHANGE-BOUNDARY-SCOPE`, `CONTROL-PLANE-TDD-SCOPES`, and `CONTROL-PLANE-TDD-REPORTS`; the one raw positive-count main control and every nonmapped/protected byte remain unchanged.",
+          "command": "/bin/bash tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}

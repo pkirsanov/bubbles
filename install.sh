@@ -145,6 +145,21 @@ fi
 
 [[ -f "$RELEASE_MANIFEST_SOURCE" ]] || fail "Missing release manifest in source payload. Run bubbles/scripts/generate-release-manifest.sh before installing."
 
+release_manifest_owns_managed_path() {
+  local relative_path="$1"
+
+  awk -v relative_path="$relative_path" '
+    BEGIN {
+      section_line="  \"managedFileChecksums\": ["
+      expected_prefix="    {\"path\": \"" relative_path "\", \"sha256\": \""
+    }
+    $0 == section_line { in_section=1; next }
+    in_section && ($0 == "  ]," || $0 == "  ]") { exit }
+    in_section && index($0, expected_prefix) == 1 { found=1; exit }
+    END { exit found ? 0 : 1 }
+  ' "$RELEASE_MANIFEST_SOURCE"
+}
+
 ADOPTION_PROFILES_SOURCE="$TEMP_DIR/bubbles/adoption-profiles.yaml"
 [[ -f "$ADOPTION_PROFILES_SOURCE" ]] || fail "Missing adoption profile registry in source payload."
 
@@ -307,7 +322,8 @@ chmod +x "${TARGET}"/bubbles/scripts/*.sh
 for installed_script in "${TARGET}"/bubbles/scripts/*.sh; do
   [[ -e "$installed_script" ]] || continue
   script_base="$(basename "$installed_script")"
-  if [[ ! -f "$TEMP_DIR/bubbles/scripts/$script_base" ]]; then
+  if [[ ! -f "$TEMP_DIR/bubbles/scripts/$script_base" ]] || \
+    ! release_manifest_owns_managed_path "bubbles/scripts/$script_base"; then
     rm -f "$installed_script"
   fi
 done
@@ -323,7 +339,8 @@ if [[ -d "$TEMP_DIR/bubbles/scripts/guards" ]]; then
   for installed_guard in "${TARGET}"/bubbles/scripts/guards/*.sh; do
     [[ -e "$installed_guard" ]] || continue
     guard_base="$(basename "$installed_guard")"
-    if [[ ! -f "$TEMP_DIR/bubbles/scripts/guards/$guard_base" ]]; then
+    if [[ ! -f "$TEMP_DIR/bubbles/scripts/guards/$guard_base" ]] || \
+      ! release_manifest_owns_managed_path "bubbles/scripts/guards/$guard_base"; then
       rm -f "$installed_guard"
     fi
   done

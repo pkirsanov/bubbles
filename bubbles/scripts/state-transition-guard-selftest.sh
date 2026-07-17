@@ -1608,6 +1608,13 @@ fi
 assert_log_contains "$positive_log" "Framework ownership lint passed" "Positive fixture exercises guard Check 3G"
 assert_log_contains "$positive_log" "TRANSITION PERMITTED" "Positive fixture reaches a permitted transition verdict"
 
+# BUG-022 managed zero-result canary: the real passing guard must serialize
+# empty failure collections without weakening nounset or the result grammar.
+assert_log_not_contains "$positive_log" "unbound variable" "BUG-022 empty result collections do not abort under nounset"
+assert_log_contains "$positive_log" "notApplicableChecks: []" "BUG-022 empty not-applicable checks serialize exactly"
+assert_log_contains "$positive_log" "failedGateIds: []" "BUG-022 empty failed gates serialize exactly"
+assert_log_contains "$positive_log" "failedChecks: []" "BUG-022 empty failed checks serialize exactly"
+
 # --- G053 Check 13B: shell (.sh) runtime-path recognition ---
 # Regression guard for the G053<->G093 alignment fix. The G093 delivery-delta
 # guard's path_family already classifies *.sh as `runtime`; G053 Check 13B's
@@ -1824,6 +1831,120 @@ assert_log_not_contains "$check8_cmd_log" \
   "references non-existent file" \
   "Check 8 does not false-BLOCK a command-wrapped .sh test whose file exists"
 
+# BUG-019 managed twins: compound MJS paths must remain whole while ordinary
+# suffixes and shell command contexts retain their existing behavior.
+echo "Running BUG-019 Check 8 compound-MJS compatibility selftest..."
+check8_mjs_dir="$tmp_root/specs/945-check8-compound-mjs"
+cp -R "$per_scope_positive_feature_dir" "$check8_mjs_dir"
+check8_spec_mjs="$check8_mjs_dir/tests/example.spec.mjs"
+check8_test_mjs="$check8_mjs_dir/tests/example.test.mjs"
+check8_spec_ts="$check8_mjs_dir/tests/example.spec.ts"
+check8_test_js="$check8_mjs_dir/tests/example.test.js"
+check8_mjs_shell="$check8_mjs_dir/tests/example.sh"
+mkdir -p "$check8_mjs_dir/tests"
+printf '%s\n' 'export const compoundSpec = true;' > "$check8_spec_mjs"
+printf '%s\n' 'export const compoundTest = true;' > "$check8_test_mjs"
+printf '%s\n' 'export const ordinarySpec = true;' > "$check8_spec_ts"
+printf '%s\n' 'export const ordinaryTest = true;' > "$check8_test_js"
+printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "shell control"' > "$check8_mjs_shell"
+chmod +x "$check8_mjs_shell"
+cat <<'EOF' > "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+# Scope 01: BUG-019 Compound MJS Compatibility
+
+**Status:** Done
+
+### Goal
+
+Prove Check 8 preserves complete compound MJS paths and existing controls.
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Regression E2E | `e2e-api` | `__SPEC_MJS__` | Compound spec MJS path remains complete. | `__SPEC_MJS__` | Yes |
+| Regression E2E | `e2e-api` | `__TEST_MJS__` | Compound test MJS path remains complete. | `__TEST_MJS__` | Yes |
+| Regression E2E | `e2e-api` | `__SPEC_TS__` | Ordinary spec TypeScript control remains complete. | `__SPEC_TS__` | Yes |
+| Regression E2E | `e2e-api` | `__TEST_JS__` | Ordinary test JavaScript control remains complete. | `__TEST_JS__` | Yes |
+| Regression E2E | `e2e-api` | `bash -n __SHELL__ && shellcheck -x __SHELL__` | Shell wrapper keeps the first accepted path. | `bash __SHELL__` | Yes |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] Documentation route metadata is recorded consistently across artifacts -> Evidence: report.md#summary
+EOF
+bubbles_sed_inplace "s|__SPEC_MJS__|$check8_spec_mjs|g" "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+bubbles_sed_inplace "s|__TEST_MJS__|$check8_test_mjs|g" "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+bubbles_sed_inplace "s|__SPEC_TS__|$check8_spec_ts|g" "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+bubbles_sed_inplace "s|__TEST_JS__|$check8_test_js|g" "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+bubbles_sed_inplace "s|__SHELL__|$check8_mjs_shell|g" "$check8_mjs_dir/scopes/01-index-parity-proof/scope.md"
+check8_mjs_log="$tmp_root/check8-compound-mjs.log"
+check8_mjs_status="$(run_capture "$check8_mjs_log" bash "$GUARD_SCRIPT" "$check8_mjs_dir")"
+if [[ "$check8_mjs_status" -eq 0 ]]; then
+  pass "BUG-019 compound-MJS compatibility fixture passes the transition guard"
+else
+  fail "BUG-019 compound-MJS compatibility fixture should pass the transition guard"
+  sed -n '1,220p' "$check8_mjs_log"
+fi
+assert_log_contains "$check8_mjs_log" "Test file exists: $check8_spec_mjs" "BUG-019 Check 8 preserves the complete .spec.mjs path"
+assert_log_contains "$check8_mjs_log" "Test file exists: $check8_test_mjs" "BUG-019 Check 8 preserves the complete .test.mjs path"
+assert_log_contains "$check8_mjs_log" "Test file exists: $check8_spec_ts" "BUG-019 Check 8 preserves the ordinary .spec.ts control"
+assert_log_contains "$check8_mjs_log" "Test file exists: $check8_test_js" "BUG-019 Check 8 preserves the ordinary .test.js control"
+assert_log_contains "$check8_mjs_log" "Test file exists: $check8_mjs_shell" "BUG-019 Check 8 preserves the command-wrapped shell control"
+assert_log_not_contains "$check8_mjs_log" "references non-existent file: ${check8_spec_mjs%.mjs}" "BUG-019 Check 8 never checks the shorter .spec prefix"
+assert_log_not_contains "$check8_mjs_log" "references non-existent file: ${check8_test_mjs%.mjs}" "BUG-019 Check 8 never checks the shorter .test prefix"
+
+# The negative twin uses an existing complete path so substring extraction
+# would become observable, but every declared context is intentionally inert.
+echo "Running BUG-019 Check 8 adversarial-context selftest..."
+check8_mjs_adversarial_dir="$tmp_root/specs/946-check8-compound-mjs-adversarial"
+cp -R "$per_scope_positive_feature_dir" "$check8_mjs_adversarial_dir"
+check8_mjs_adversarial_real="$check8_mjs_adversarial_dir/tests/example.spec.mjs"
+mkdir -p "$check8_mjs_adversarial_dir/tests"
+printf '%s\n' 'export const adversarialControl = true;' > "$check8_mjs_adversarial_real"
+cat <<'EOF' > "$check8_mjs_adversarial_dir/scopes/01-index-parity-proof/scope.md"
+# Scope 01: BUG-019 Adversarial Contexts
+
+**Status:** Done
+
+### Goal
+
+Prove unsupported suffixes, prose, and unrecognized commands stay inert.
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Adversarial Regression E2E | `e2e-api` | `__REAL_MJS__.backup` | Extension-prefix adversary is rejected. | `__REAL_MJS__.backup` | Yes |
+| Adversarial Regression E2E | `e2e-api` | `the prose token __REAL_MJS__ is illustrative` | Extension-shaped prose is inert. | `node --test __REAL_MJS__` | Yes |
+| Adversarial Regression E2E | `e2e-api` | `node --test __REAL_MJS__` | Unrecognized command wrapper is inert. | `node --test __REAL_MJS__` | Yes |
+| Adversarial Regression E2E | `e2e-api` | `bash -c __REAL_MJS__` | Shell command-string syntax is not interpreted. | `bash -c __REAL_MJS__` | Yes |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] Documentation route metadata is recorded consistently across artifacts -> Evidence: report.md#summary
+EOF
+bubbles_sed_inplace "s|__REAL_MJS__|$check8_mjs_adversarial_real|g" "$check8_mjs_adversarial_dir/scopes/01-index-parity-proof/scope.md"
+check8_mjs_adversarial_log="$tmp_root/check8-compound-mjs-adversarial.log"
+check8_mjs_adversarial_status="$(run_capture "$check8_mjs_adversarial_log" bash "$GUARD_SCRIPT" "$check8_mjs_adversarial_dir")"
+if [[ "$check8_mjs_adversarial_status" -eq 0 ]]; then
+  pass "BUG-019 adversarial-context fixture passes without accepting a test path"
+else
+  fail "BUG-019 adversarial-context fixture should pass without accepting a test path"
+  sed -n '1,220p' "$check8_mjs_adversarial_log"
+fi
+assert_log_contains "$check8_mjs_adversarial_log" \
+  "No concrete test file paths found in Test Plan" \
+  "BUG-019 invalid contexts reach the no-concrete-path branch"
+assert_log_not_contains "$check8_mjs_adversarial_log" \
+  "Test file exists:" \
+  "BUG-019 invalid contexts never reach the existing-file branch"
+assert_log_not_contains "$check8_mjs_adversarial_log" \
+  "references non-existent file" \
+  "BUG-019 invalid contexts never reach the missing-file branch"
+
 echo "Running positive shared-infrastructure selftest..."
 shared_positive_log="$tmp_root/shared-positive-guard.log"
 shared_positive_status="$(run_capture "$shared_positive_log" bash "$GUARD_SCRIPT" "$shared_positive_feature_dir")"
@@ -1907,6 +2028,11 @@ else
 fi
 assert_log_contains "$negative_log" "missing a concrete owning specialist" "Negative fixture triggers the concrete owner packet check"
 assert_log_contains "$negative_log" "Gate G063" "Negative fixture reports the new concrete-result gate"
+assert_log_not_contains "$negative_log" "unbound variable" "BUG-022 genuine failure does not abort under nounset"
+assert_log_contains "$negative_log" "BEGIN TRANSITION_GUARD_RESULT_V1" "BUG-022 genuine failure emits a result start"
+assert_log_contains "$negative_log" "END TRANSITION_GUARD_RESULT_V1" "BUG-022 genuine failure emits a result end"
+assert_log_contains "$negative_log" "exitStatus: 1" "BUG-022 genuine failure preserves a nonzero structured exit"
+assert_log_contains "$negative_log" "verdict: FAIL" "BUG-022 genuine failure preserves the failing verdict"
 
 echo "Running workflowMode contradiction selftest..."
 workflow_mode_log="$tmp_root/workflow-mode.log"

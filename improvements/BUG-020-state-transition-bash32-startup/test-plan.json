@@ -1,0 +1,312 @@
+{
+  "version": 1,
+  "specId": "BUG-020",
+  "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-16T23:59:23Z",
+  "scopes": [
+    {
+      "scopeId": "01-split-lane-bash32-startup-proof",
+      "scopeName": "Split-Lane Bash 3.2 Startup Proof",
+      "tests": [
+        {
+          "testId": "T-BUG-020-00",
+          "type": "red-regression",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Prospective RED: revised final test bytes fail at the historical fun-mode startup discriminator against the known pre-fix blob before any candidate patch",
+          "command": "red_root=\"$(mktemp -d \"${TMPDIR:-/tmp}/bubbles-bug020-red-XXXXXXXX\")\" && trap 'rm -rf \"$red_root\"' EXIT INT TERM && [[ \"$(git rev-parse HEAD:bubbles/scripts/fun-mode.sh)\" == \"7da650141188f120f5ac25d4f77fada91bc96e88\" ]] && mkdir -p \"$red_root/tests/regression\" && cp -R bubbles agents \"$red_root/\" && cp tests/regression/test_27_state_transition_bash32_startup.sh \"$red_root/tests/regression/\" && git archive --format=tar --output=\"$red_root/pre-fix.tar\" HEAD bubbles/scripts/fun-mode.sh && tar -xf \"$red_root/pre-fix.tar\" -C \"$red_root\" && rm -f \"$red_root/pre-fix.tar\" && shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh \"$red_root/tests/regression/test_27_state_transition_bash32_startup.sh\" && (cd \"$red_root\" && bash tests/regression/test_27_state_transition_bash32_startup.sh)",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-01",
+          "type": "functional-api-regression",
+          "category": "functional",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001"],
+          "description": "Parser-free API: Bash 3.2 disabled mode sources under nounset and keeps all seven public functions silent",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-02",
+          "type": "adversarial-functional-regression",
+          "category": "functional",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001"],
+          "description": "Parser-free API: Bash 3.2 enabled mode preserves events, unknown silence, pools, banner, prefix, and summary",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-03",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-002",
+          "scenarioIds": ["SCN-BUG-020-002"],
+          "description": "System-only guard: disabled fun mode reaches exact E009-REGISTRY-MISSING nonzero and never claims Check 8",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-04",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware Bash 3.2: disabled-fun passing fixture reaches Check 8 and one PASS result",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-05",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware Bash 3.2: enabled-fun passing fixture reaches Check 8 and preserves fun output without changing PASS",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-06",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware Bash 3.2: disabled-fun genuine finding retains Check-8-file-existence and nonzero FAIL",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-07",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware Bash 3.2: enabled-fun genuine finding retains the same failed check and exit while preserving fun output",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-08",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware newer Bash: disabled-fun passing fixture reaches Check 8 and one PASS result",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-09",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware newer Bash: enabled-fun passing fixture preserves fun output without changing PASS",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-10",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware newer Bash: disabled-fun genuine finding retains structured nonzero failure",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-11",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Parser-aware newer Bash: enabled-fun genuine finding retains failure plus enabled fun output",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-12",
+          "type": "functional-api-regression",
+          "category": "functional",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001"],
+          "description": "Newer-Bash API control: disabled and enabled modes preserve the same seven-function contract as Bash 3.2",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-13",
+          "type": "portability-blind-spot-regression",
+          "category": "functional",
+          "file": "tests/regression/test_27_state_transition_bash32_startup.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001"],
+          "description": "Root-cause guard: canonical fun-mode source rejects declare -A, local -n, and declare -n even when the generic 13-class lint is green",
+          "command": "shasum -a 256 tests/regression/test_27_state_transition_bash32_startup.sh && bash tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-14",
+          "type": "managed-guard-selftest",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-BUG-020-003",
+          "scenarioIds": ["SCN-BUG-020-003"],
+          "description": "Managed guard: parser-aware disabled/enabled pass and genuine-finding twins execute the canonical production guard",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-15",
+          "type": "regression-integrity",
+          "category": "functional",
+          "file": "bubbles/scripts/regression-quality-guard.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Regression integrity: persistent BUG-020 regression has adversarial signal, direct assertions, exact run counts, and no bailout",
+          "command": "bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-16",
+          "type": "shell-syntax",
+          "category": "functional",
+          "file": "authorized BUG-020 shell files",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Shell syntax: all five authorized shell surfaces parse under macOS system Bash",
+          "command": "/bin/bash -n bubbles/scripts/fun-mode.sh tests/regression/test_27_state_transition_bash32_startup.sh bubbles/scripts/state-transition-guard-selftest.sh bubbles/scripts/framework-validate.sh bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-17",
+          "type": "shell-portability",
+          "category": "functional",
+          "file": "bubbles/scripts/macos-portability-guard.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Shell portability: BUG-020-authored implementation and regression surfaces pass all 13 current classes while T-BUG-020-13 closes the known class gap",
+          "command": "bash bubbles/scripts/macos-portability-guard.sh bubbles/scripts/fun-mode.sh bubbles/scripts/state-transition-guard-selftest.sh tests/regression/test_27_state_transition_bash32_startup.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-18",
+          "type": "change-boundary-audit",
+          "category": "functional",
+          "file": "authorized and excluded BUG-020 paths",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Boundary: pre/post digests and scoped diffs preserve every excluded byte and constrain allowed shared-file hunks",
+          "command": "find improvements/BUG-012-g085-first-adoption-deadlock improvements/BUG-013-g028-sensitive-client-storage-classification improvements/BUG-018-traceability-test-plan-heading-depth improvements/BUG-019-state-transition-spec-mjs-path improvements/BUG-021-framework-validate-raw-timeout improvements/BUG-022-state-transition-bash32-empty-array-nounset improvements/IMP-020-agentic-evaluation-and-trust-hardening.md -type f -exec shasum -a 256 {} + && shasum -a 256 bubbles/scripts/state-transition-guard.sh bubbles/scripts/transition-contract-resolver.sh bubbles/scripts/implementation-reality-scan.sh bubbles/scripts/traceability-guard.sh bubbles/scripts/project-scan-setup.sh bubbles/scripts/macos-portability-guard.sh tests/regression/test_26_state_transition_spec_mjs_path.sh bubbles/release-manifest.json && git status --short -- bubbles/scripts/fun-mode.sh bubbles/scripts/state-transition-guard.sh bubbles/scripts/transition-contract-resolver.sh bubbles/scripts/state-transition-guard-selftest.sh tests/regression/test_26_state_transition_spec_mjs_path.sh tests/regression/test_27_state_transition_bash32_startup.sh bubbles/scripts/framework-validate.sh bubbles/scripts/install-provenance-selftest.sh bubbles/release-manifest.json improvements/BUG-020-state-transition-bash32-startup improvements/BUG-022-state-transition-bash32-empty-array-nounset && git diff --check -- bubbles/scripts/fun-mode.sh bubbles/scripts/state-transition-guard-selftest.sh tests/regression/test_27_state_transition_bash32_startup.sh bubbles/scripts/framework-validate.sh bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-19",
+          "type": "artifact-lint",
+          "category": "functional",
+          "file": "improvements/BUG-020-state-transition-bash32-startup",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Packet lint: shape, one-scope status, evidence metadata, checklist syntax, and state integrity pass",
+          "command": "bash bubbles/scripts/artifact-lint.sh improvements/BUG-020-state-transition-bash32-startup",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-20",
+          "type": "artifact-freshness",
+          "category": "functional",
+          "file": "improvements/BUG-020-state-transition-bash32-startup",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Packet freshness: active spec, design, and one-scope plan contain no stale executable planning content",
+          "command": "bash bubbles/scripts/artifact-freshness-guard.sh improvements/BUG-020-state-transition-bash32-startup",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-21",
+          "type": "capability-proportionality",
+          "category": "functional",
+          "file": "improvements/BUG-020-state-transition-bash32-startup",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "G094: capability foundation guard accepts the single-implementation justification",
+          "command": "bash bubbles/scripts/capability-foundation-guard.sh improvements/BUG-020-state-transition-bash32-startup",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-020-22",
+          "type": "traceability",
+          "category": "integration",
+          "file": "improvements/BUG-020-state-transition-bash32-startup",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Traceability: every scenario maps to physical test assertions, report destinations, and faithful DoD items",
+          "command": "bash bubbles/scripts/traceability-guard.sh improvements/BUG-020-state-transition-bash32-startup",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-23",
+          "type": "framework-integration",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Framework validation: full canonical framework validation includes BUG-020 after focused checks pass",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-24",
+          "type": "install-provenance",
+          "category": "integration",
+          "file": "bubbles/scripts/install-provenance-selftest.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Install provenance: settled fun-mode and managed selftest install byte-identically while test_27 remains source-only and release-recorded",
+          "command": "bash bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-25",
+          "type": "release-integration",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Release validation: generated metadata, source identity, install provenance, and release readiness are current and coherent",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-020-26",
+          "type": "certification-guard",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "scenarioId": "SCN-BUG-020-001",
+          "scenarioIds": ["SCN-BUG-020-001", "SCN-BUG-020-002", "SCN-BUG-020-003"],
+          "description": "Certification: final transition passes only after all behavior, release, finding-accounting, and evidence obligations are complete",
+          "command": "bash bubbles/scripts/state-transition-guard.sh improvements/BUG-020-state-transition-bash32-startup",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}

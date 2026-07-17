@@ -1,0 +1,580 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# BUG-013 persistent production-scanner regression for G028 Scan 2B.
+#
+# The fixture deliberately pairs operations that line-cooccurrence cannot
+# distinguish. Every assertion executes the canonical scanner; no classifier
+# behavior is reproduced in this test.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCANNER="$REPO_ROOT/bubbles/scripts/implementation-reality-scan.sh"
+SELFTEST="$REPO_ROOT/bubbles/scripts/implementation-reality-scan-selftest.sh"
+GUARD_LIB="$REPO_ROOT/bubbles/scripts/guard-lib.sh"
+
+for required_file in "$SCANNER" "$SELFTEST" "$GUARD_LIB"; do
+  if [[ ! -f "$required_file" ]]; then
+    printf 'test_24_g028_sensitive_client_storage: required canonical surface missing: %s\n' "$required_file" >&2
+    exit 2
+  fi
+done
+
+# shellcheck source=/dev/null
+source "$GUARD_LIB"
+
+WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug013-XXXXXXXX")"
+FIXTURE_REPO="$WORKSPACE/repo"
+FEATURE_DIR="$FIXTURE_REPO/specs/001-sensitive-storage"
+SOURCE_FILE="$FIXTURE_REPO/src/provider-client.js"
+DART_SOURCE_FILE="$FIXTURE_REPO/src/provider-preferences.dart"
+CONFIG_FILE="$FIXTURE_REPO/.github/bubbles-project.yaml"
+RUN_OUTPUT=""
+RUN_STATUS=0
+PASS_COUNT=0
+FAIL_COUNT=0
+
+cleanup() {
+  rm -rf "$WORKSPACE"
+}
+trap cleanup EXIT INT TERM
+
+pass() {
+  PASS_COUNT=$((PASS_COUNT + 1))
+  printf 'PASS: %s\n' "$1"
+}
+
+fail() {
+  FAIL_COUNT=$((FAIL_COUNT + 1))
+  printf 'FAIL: %s\n' "$1" >&2
+}
+
+assert_status() {
+  local expected="$1"
+  local label="$2"
+
+  if [[ "$RUN_STATUS" -eq "$expected" ]]; then
+    pass "$label"
+  else
+    fail "$label (expected exit $expected, got $RUN_STATUS)"
+  fi
+}
+
+assert_contains() {
+  local expected="$1"
+  local label="$2"
+
+  if printf '%s\n' "$RUN_OUTPUT" | grep -Fq -- "$expected"; then
+    pass "$label"
+  else
+    fail "$label (missing: $expected)"
+  fi
+}
+
+assert_not_contains() {
+  local forbidden="$1"
+  local label="$2"
+
+  if printf '%s\n' "$RUN_OUTPUT" | grep -Fq -- "$forbidden"; then
+    fail "$label (unexpected: $forbidden)"
+  else
+    pass "$label"
+  fi
+}
+
+line_for() {
+  local marker="$1"
+  grep -nF -- "$marker" "$SOURCE_FILE" | cut -d: -f1
+}
+
+line_for_file() {
+  local marker="$1"
+  local source_file="$2"
+  grep -nF -- "$marker" "$source_file" | cut -d: -f1
+}
+
+assert_finding() {
+  local line_number="$1"
+  local reason="$2"
+  local label="$3"
+
+  if printf '%s\n' "$RUN_OUTPUT" | awk -v line_number="$line_number" -v reason="$reason" '
+    index($0, "VIOLATION [SENSITIVE_CLIENT_STORAGE]") && $0 ~ (":" line_number "$") {
+      at_target = 1
+      next
+    }
+    at_target && index($0, "reason=" reason) {
+      found = 1
+    }
+    at_target && index($0, "VIOLATION [") {
+      at_target = 0
+    }
+    END { exit found ? 0 : 1 }
+  '; then
+    pass "$label"
+  else
+    fail "$label (line $line_number missing reason=$reason)"
+  fi
+}
+
+assert_no_finding() {
+  local line_number="$1"
+  local label="$2"
+
+  if printf '%s\n' "$RUN_OUTPUT" | grep -Eq "VIOLATION \[SENSITIVE_CLIENT_STORAGE\].*:${line_number}$"; then
+    fail "$label (unexpected finding at line $line_number)"
+  else
+    pass "$label"
+  fi
+}
+
+run_scanner() {
+  local output_file="$WORKSPACE/scanner-output.txt"
+  RUN_OUTPUT=""
+  RUN_STATUS=0
+
+  if (
+    cd "$FIXTURE_REPO" || exit 2
+    bubbles_run_with_timeout 180 bash "$SCANNER" "$FEATURE_DIR" --verbose
+  ) >"$output_file" 2>&1; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$output_file")"
+  printf '%s\n' "$RUN_OUTPUT"
+}
+
+write_valid_config() {
+  mkdir -p "$(dirname "$CONFIG_FILE")"
+  cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: providerCredential
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+}
+
+write_fixture() {
+  mkdir -p "$FEATURE_DIR" "$(dirname "$SOURCE_FILE")"
+  cat > "$FEATURE_DIR/scopes.md" <<'MARKDOWN'
+# Scope 1: Sensitive Storage Fixture
+
+**Status:** In Progress
+
+## Implementation Plan
+
+Exercise the production G028 scanner against one semantic storage matrix.
+
+### Implementation Files
+
+- `src/provider-client.js`
+- `src/provider-preferences.dart`
+MARKDOWN
+
+  cat > "$SOURCE_FILE" <<'JAVASCRIPT'
+const LITERAL_KEY = "marketProvider:twelvedata:apiKey";
+const KEY_ALIAS_ONE = LITERAL_KEY;
+const KEY_ALIAS_TWO = KEY_ALIAS_ONE;
+const SESSION_KEY = "marketProvider:twelvedata:apiKey";
+const UNKNOWN_SESSION_KEY = "marketProvider:unknown-vendor:apiKey";
+const CACHE_KEY = "marketCache:latestSnapshot";
+const PROVIDER_ID = "twelvedata";
+const OBJECT_SESSION_KEY = "providerCredential";
+
+export function literalDurableCredential() {
+  localStorage.setItem("marketProvider:twelvedata:apiKey", "BUG013_CREDENTIAL_VALUE_MUST_NOT_APPEAR");
+}
+
+export function aliasDurableCredential(providerCredential) {
+  localStorage.setItem(KEY_ALIAS_TWO, providerCredential);
+}
+
+function credentialStorageKey() {
+  return "providerCredentials";
+}
+
+export function helperIndirectDurableCredential(payload) {
+  const helperKey = credentialStorageKey();
+  localStorage.setItem(helperKey, payload);
+}
+
+function dynamicCredentialStorageKey(scope) {
+  return `${scope}:credentials`;
+}
+
+export function dynamicHelperDurableCredential(scope, payload) {
+  const dynamicDurableKey = dynamicCredentialStorageKey(scope);
+  localStorage.setItem(dynamicDurableKey, payload);
+}
+
+export function exactSessionCredential(providerCredential) {
+  sessionStorage.setItem(SESSION_KEY, providerCredential);
+}
+
+export function exactObjectSessionCredential(providerCredential) {
+  const providerRecord = { provider: PROVIDER_ID, apiKey: providerCredential };
+  sessionStorage.setItem(OBJECT_SESSION_KEY, JSON.stringify(providerRecord));
+}
+
+export function unknownSessionCredential(providerCredential) {
+  sessionStorage.setItem(UNKNOWN_SESSION_KEY, providerCredential);
+}
+
+export function dynamicSessionCredential(provider, providerCredential) {
+  const dynamicKey = `marketProvider:${provider}:apiKey`;
+  sessionStorage.setItem(dynamicKey, providerCredential);
+}
+
+export function durableInsteadOfSession(providerCredential) {
+  localStorage.setItem(SESSION_KEY, providerCredential);
+}
+
+export function unresolvedLocalStorageOperation(providerCredential) {
+  localStorage.persistCredential(SESSION_KEY, providerCredential);
+}
+
+export function forbiddenBearer(authBearerToken) {
+  sessionStorage.setItem(SESSION_KEY, authBearerToken);
+}
+
+export function forbiddenLoginSession(loginSessionSecret) {
+  sessionStorage.setItem(SESSION_KEY, loginSessionSecret);
+}
+
+export function forbiddenRefresh(refreshToken) {
+  sessionStorage.setItem(SESSION_KEY, refreshToken);
+}
+
+export function forbiddenPayment(paymentCardNumber) {
+  sessionStorage.setItem(SESSION_KEY, paymentCardNumber);
+}
+
+export function forbiddenCvv(cardCvv) {
+  sessionStorage.setItem(SESSION_KEY, cardCvv);
+}
+
+export function safeMarketCache(marketSnapshot) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify(marketSnapshot)); // No auth token, payment secret, or session credential is stored here.
+}
+
+export function safeRemoval(authToken) {
+  authToken && localStorage.removeItem("legacyAuthToken");
+}
+
+export function unsafeBeforeScrub(providerCredential) {
+  const unsafeRecord = { apiKey: providerCredential, price: 42 };
+  localStorage.setItem("marketCache:beforeScrub", JSON.stringify(unsafeRecord));
+}
+
+export function safeScrubbedRewrite(providerCredential, authBearerToken) {
+  const scrubbedRecord = { apiKey: providerCredential, authToken: authBearerToken, price: 42 };
+  delete scrubbedRecord.apiKey;
+  delete scrubbedRecord.authToken;
+  localStorage.setItem("marketCache:scrubbed", JSON.stringify(scrubbedRecord));
+}
+
+export function unsafeConditionalScrub(providerCredential, shouldScrub) {
+  const conditionalRecord = { apiKey: providerCredential, price: 42 };
+  if (shouldScrub) {
+    delete conditionalRecord.apiKey;
+  }
+  localStorage.setItem("marketCache:conditionalScrub", JSON.stringify(conditionalRecord));
+}
+
+const separateHelperRecord = { apiKey: providerCredential, price: 42 };
+
+function scrubSeparateHelperRecord() {
+  delete separateHelperRecord.apiKey;
+}
+
+export function unsafeSeparateHelperWrite() {
+  localStorage.setItem("marketCache:separateHelper", JSON.stringify(separateHelperRecord));
+}
+
+export function safeLoadedScrub(serializedRecord) {
+  const loadedRecord = JSON.parse(serializedRecord);
+  if (loadedRecord.apiKey || loadedRecord.refreshToken) {
+    delete loadedRecord.apiKey;
+    delete loadedRecord.refreshToken;
+    localStorage.setItem("marketCache:loadedScrubbed", JSON.stringify(loadedRecord));
+  }
+}
+
+export function unsafePartialLoadedScrub(serializedRecord) {
+  const partialLoadedRecord = JSON.parse(serializedRecord);
+  if (partialLoadedRecord.apiKey || partialLoadedRecord.refreshToken) {
+    delete partialLoadedRecord.apiKey;
+    localStorage.setItem("marketCache:partialLoadedScrub", JSON.stringify(partialLoadedRecord));
+  }
+}
+
+export function asyncBatchCredential(refreshToken, marketSnapshot) {
+  AsyncStorage.multiSet([
+    ["refreshToken", refreshToken],
+    ["marketCache:latest", JSON.stringify(marketSnapshot)],
+  ]);
+}
+
+export function indexedDbObjectStoreCredential(database, providerCredential) {
+  const transaction = database.transaction("credentials", "readwrite");
+  const credentialStore = transaction.objectStore("credentials");
+  credentialStore.put(providerCredential, SESSION_KEY);
+}
+JAVASCRIPT
+
+  cat > "$DART_SOURCE_FILE" <<'DART'
+Future<void> sharedPreferencesCredential(
+  SharedPreferences preferences,
+  String providerCredential,
+) async {
+  await preferences.setString(
+    "marketProvider:twelvedata:apiKey",
+    providerCredential,
+  );
+}
+DART
+
+  write_valid_config
+}
+
+assert_invalid_config() {
+  local label="$1"
+
+  run_scanner
+  assert_status 1 "$label exits with a blocking scanner verdict"
+  assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "$label reports config integrity"
+}
+
+write_fixture
+
+printf '%s\n' '=== BUG-013 production scanner semantic matrix ==='
+run_scanner
+assert_status 1 "semantic matrix retains blocking findings"
+assert_finding "$(line_for 'localStorage.setItem("marketProvider:twelvedata:apiKey"')" "DURABLE_CREDENTIAL_STORAGE" "literal durable credential is blocked"
+assert_finding "$(line_for 'localStorage.setItem(KEY_ALIAS_TWO')" "DURABLE_CREDENTIAL_STORAGE" "two-hop alias durable credential is blocked"
+assert_finding "$(line_for 'localStorage.setItem(helperKey')" "DURABLE_CREDENTIAL_STORAGE" "helper-indirected durable credential is blocked"
+assert_finding "$(line_for 'localStorage.setItem(dynamicDurableKey')" "DURABLE_CREDENTIAL_STORAGE" "dynamic credential-key indirection fails closed"
+assert_no_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, providerCredential)')" "exact configured same-tab market credential is allowed"
+assert_no_finding "$(line_for 'sessionStorage.setItem(OBJECT_SESSION_KEY')" "immutable object provider resolves to an exact configured session tuple"
+assert_finding "$(line_for 'sessionStorage.setItem(UNKNOWN_SESSION_KEY')" "SESSION_PROVIDER_UNKNOWN" "unknown provider is blocked distinctly"
+assert_finding "$(line_for 'sessionStorage.setItem(dynamicKey')" "SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "dynamic provider is blocked as unresolved"
+assert_finding "$(line_for 'localStorage.setItem(SESSION_KEY')" "DURABLE_CREDENTIAL_STORAGE" "configured tuple cannot authorize localStorage"
+assert_finding "$(line_for 'localStorage.persistCredential(SESSION_KEY')" "FORBIDDEN_SECRET_CLASS" "unknown localStorage methods fail closed before operation classification"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, authBearerToken)')" "FORBIDDEN_SECRET_CLASS" "bearer material cannot use the exception"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, loginSessionSecret)')" "FORBIDDEN_SECRET_CLASS" "login-session material cannot use the exception"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, refreshToken)')" "FORBIDDEN_SECRET_CLASS" "refresh material cannot use the exception"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, paymentCardNumber)')" "FORBIDDEN_SECRET_CLASS" "payment material cannot use the exception"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, cardCvv)')" "FORBIDDEN_SECRET_CLASS" "CVV material cannot use the exception"
+assert_no_finding "$(line_for 'localStorage.setItem(CACHE_KEY')" "comment vocabulary does not taint a market cache"
+assert_no_finding "$(line_for 'localStorage.removeItem')" "removeItem is cleanup rather than persistence"
+assert_finding "$(line_for 'localStorage.setItem("marketCache:beforeScrub"')" "DURABLE_CREDENTIAL_STORAGE" "credential-bearing object before scrub is blocked"
+assert_no_finding "$(line_for 'localStorage.setItem("marketCache:scrubbed"')" "proven scrubbed rewrite is clear"
+assert_finding "$(line_for 'localStorage.setItem("marketCache:conditionalScrub"')" "DURABLE_CREDENTIAL_STORAGE" "conditional scrub does not prove delete-before-write"
+assert_finding "$(line_for 'localStorage.setItem("marketCache:separateHelper"')" "DURABLE_CREDENTIAL_STORAGE" "separate cleanup helper does not prove execution before write"
+assert_no_finding "$(line_for 'localStorage.setItem("marketCache:loadedScrubbed"')" "all observed loaded credential fields are scrubbed"
+assert_finding "$(line_for 'localStorage.setItem("marketCache:partialLoadedScrub"')" "FORBIDDEN_SECRET_CLASS" "partial loaded-object scrub leaves high-trust material blocked"
+assert_finding "$(line_for 'AsyncStorage.multiSet([')" "FORBIDDEN_SECRET_CLASS" "real AsyncStorage batch credential persistence is blocked"
+assert_finding "$(line_for 'credentialStore.put(providerCredential, SESSION_KEY)')" "DURABLE_CREDENTIAL_STORAGE" "real IndexedDB object-store credential persistence is blocked"
+assert_finding "$(line_for_file 'await preferences.setString(' "$DART_SOURCE_FILE")" "DURABLE_CREDENTIAL_STORAGE" "real SharedPreferences instance credential persistence is blocked"
+assert_not_contains "BUG013_CREDENTIAL_VALUE_MUST_NOT_APPEAR" "diagnostics redact credential values"
+assert_contains "storage=localStorage" "diagnostics identify storage kind"
+assert_contains "operation=persist" "diagnostics identify operation kind"
+assert_contains "configMatch=exact" "diagnostics identify exact config match"
+
+printf '%s\n' '=== BUG-013 invalid project configuration matrix ==='
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: /absolute/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "absolute config path"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: ../src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "parent-traversing config path"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src//provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "non-normalized config path"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/*.js
+        storage: sessionStorage
+        key: marketProvider:*:apiKey
+        provider: '*'
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "wildcard config tuple"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "duplicate config tuple"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: unknown-vendor
+        credentialClass: third-party-market-data
+        privilege: low
+        lifetime: same-tab
+YAML
+assert_invalid_config "ambiguous provider boundary"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/provider-client.js
+        storage: sessionStorage
+        key: marketProvider:twelvedata:apiKey
+        provider: twelvedata
+        credentialClass: third-party-market-data
+        privilege: elevated
+        lifetime: same-tab
+        bypass: true
+YAML
+assert_invalid_config "unknown field and enum"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials:
+      - path: src/provider-client.js
+        storage sessionStorage
+        key: marketProvider:twelvedata:apiKey
+YAML
+assert_invalid_config "malformed YAML"
+
+printf '%s\n' '=== BUG-013 absent and empty config default-deny cases ==='
+rm -f "$CONFIG_FILE"
+run_scanner
+assert_status 1 "absent sensitive storage config remains default-deny"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, providerCredential)')" "SESSION_CREDENTIAL_UNAPPROVED" "absent config cannot approve a session credential"
+assert_not_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "absent config is not misreported as malformed"
+
+cat > "$CONFIG_FILE" <<'YAML'
+scans:
+  sensitiveClientStorage:
+    approvedSessionCredentials: []
+YAML
+run_scanner
+assert_status 1 "empty approval list remains default-deny"
+assert_finding "$(line_for 'sessionStorage.setItem(SESSION_KEY, providerCredential)')" "SESSION_CREDENTIAL_UNAPPROVED" "empty approval list cannot approve a session credential"
+assert_not_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "documented empty approval list is valid config"
+
+printf '%s\n' '=== BUG-013 parser-unavailable fail-closed case ==='
+write_valid_config
+NO_PYTHON_PATH="$WORKSPACE/no-python-path"
+mkdir -p "$NO_PYTHON_PATH"
+for tool_name in awk basename cat cut dirname find grep head sed sort tr wc; do
+  tool_path="$(command -v "$tool_name" 2>/dev/null || true)"
+  if [[ -n "$tool_path" ]]; then
+    ln -s "$tool_path" "$NO_PYTHON_PATH/$tool_name"
+  fi
+done
+PARSER_OUTPUT_FILE="$WORKSPACE/parser-unavailable.txt"
+if (
+  cd "$FIXTURE_REPO" || exit 2
+  env -i PATH="$NO_PYTHON_PATH" /bin/bash "$SCANNER" "$FEATURE_DIR" --verbose
+) >"$PARSER_OUTPUT_FILE" 2>&1; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
+RUN_OUTPUT="$(cat "$PARSER_OUTPUT_FILE")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 1 "parser-unavailable config fails closed"
+assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "parser-unavailable config reports integrity reason"
+
+printf '%s\n' '=== BUG-013 managed selftest sanitized macOS path ==='
+SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
+if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
+RUN_OUTPUT="$(cat "$SELFTEST_OUTPUT_FILE")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 0 "managed selftest runs with the system-only PATH"
+assert_contains "PORTABLE_WATCHDOG_FALLBACK=124" "managed selftest preserves watchdog exit 124"
+
+printf '%s\n' '=== BUG-013 regression summary ==='
+printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed\n' "$PASS_COUNT" "$FAIL_COUNT"
+if [[ "$FAIL_COUNT" -ne 0 ]]; then
+  exit 1
+fi
+printf '%s\n' 'BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED'

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "featureDir": "improvements/BUG-019-state-transition-spec-mjs-path",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-15T22:42:32Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-019-001",
+      "scope": "1",
+      "title": "Compound MJS test paths remain complete",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-019-01",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "testTitle": "Regression: compound MJS paths remain complete through production Check 8"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#red-production-path-regression",
+        "report.md#green-production-path-regression"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-019-002",
+      "scope": "1",
+      "title": "Existing compound controls retain complete paths",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-019-02",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "testTitle": "Regression: ordinary suffix, backtick, and command-wrapper controls remain compatible"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#green-production-path-regression",
+        "report.md#compatibility-and-portability-evidence"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-019-003",
+      "scope": "1",
+      "title": "Extension prefixes and prose are rejected",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-019-03",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "testTitle": "Regression: extension-prefix and prose candidates never reach Check 8 filesystem validation"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#red-production-path-regression",
+        "report.md#adversarial-regression-evidence"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    }
+  ]
+}

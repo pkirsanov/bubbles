@@ -1,0 +1,177 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+  "workflowMode": "bugfix-fastlane",
+  "status": "blocked",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentScope": 1,
+    "runStartedAt": "2026-07-17T04:34:09Z",
+    "runCompletedAt": "2026-07-17T04:35:31Z",
+    "executionModel": "direct-authorized-runner",
+    "completedPhaseClaims": [],
+    "invocationLedger": [],
+    "blocker": {
+      "code": "BUG020_DEPENDENCY_022_FOREIGN",
+      "reason": "The valid prospective RED is preserved at frozen test_27 SHA-256 5e82a2fb6f140a4529c0ff4d4ad2bc6d949dff34f61c7758931347f51b4a6c9d. Against candidate fun-mode SHA-256 edfc310d3a5182c680bd1ef79a2115e7be22b030b6da37e8acfbcf6ff2efa00e, the exact regression executed 10 guard cases, 4 API cases, and 224 assertions with zero fun-mode startup aborts and zero forbidden constructs, but exited 1 after three BUG-022-owned failed_check_ids[@] nounset observations produced zero Bash 3.2 structured-result markers and 30 dependent assertion failures. No source, test, guard, registration, release, sibling, DoD, scope-status, completed-phase, or certification byte was changed. Independent verification routes to bubbles.test; BUG020-DEPENDENCY-022 stays foreign at improvements/BUG-022-state-transition-bash32-empty-array-nounset and is currently routed there to bubbles.design.",
+      "nextRequiredOwner": "bubbles.test"
+    },
+    "nextRequiredOwner": "bubbles.test"
+  },
+  "certification": {
+    "status": "blocked",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Portable State-Transition Startup",
+        "status": "not_started",
+        "dependsOn": []
+      }
+    ],
+    "lockdownState": "open"
+  },
+  "policySnapshot": {
+    "grill": {"enabled": true, "source": "bugfix-fastlane"},
+    "tdd": {"enabled": true, "source": "bugfix-fastlane"},
+    "autoCommit": {"enabled": false, "source": "operator request"},
+    "lockdown": {"enabled": false, "source": "bugfix-fastlane"},
+    "regression": {"required": true, "adversarialRequired": true, "source": "bug policy"},
+    "validation": {"profile": "delivery-completion-v1", "source": "bugfix-fastlane"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T02:36:44Z",
+      "runCompletedAt": "2026-07-16T02:38:17Z",
+      "outcome": "route_required",
+      "summary": "Reconciled the authoritative design around one portable shared fun-mode implementation, unchanged nounset and Check 8 semantics, real Bash 3.2 plus newer-shell RED/GREEN coverage, consumer containment, canonical rollout and rollback, and routed enabled-mode planning parity to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T04:07:31Z",
+      "runCompletedAt": "2026-07-16T04:25:45Z",
+      "outcome": "route_required",
+      "summary": "Reconciled the canonical one-scope plan, report and acceptance templates, three-scenario manifest, 27-row Markdown/JSON test handoff, exact Bash 3.2 then newer-Bash false/true RED-GREEN order, genuine-finding preservation, portability-lint blind-spot regression, closed source boundary, and release/provenance validation. Artifact lint and freshness pass; traceability retains only the absent test-owned test_27 findings; G094 retains a foreign spec-owned justification gap. Preserved blocked certification and routed mandatory pre-fix RED immediately to bubbles.test, with bubbles.analyst required before source implementation."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T05:07:20Z",
+      "runCompletedAt": "2026-07-16T05:55:06Z",
+      "outcome": "route_required",
+      "summary": "Authored and integrity-checked the persistent final regression and ran the exact command against current dirty source. The current-source run is RED_INVALID_CURRENT_SOURCE_PARSER_BLOCKED: all eight guard cases and four API cases executed, all four Bash 3.2 guard cases stopped before Check 8 on missing yq, and intended gate_passed aborts were zero. Preserved blocked certification and every unchecked DoD item; routed parser and superseded-baseline reconciliation to bubbles.design while retaining plan-owned test-plan drift."
+    },
+    {
+      "agent": "bubbles.analyst",
+      "phasesExecuted": [
+        "analyze"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T06:01:47Z",
+      "runCompletedAt": "2026-07-16T06:09:58Z",
+      "outcome": "route_required",
+      "summary": "Added the evidence-grounded Single-Capability Justification required by G094, identifying state-transition-guard.sh as behavioral authority and fun-mode.sh as the existing optional implementation boundary. Preserved every requirement, scenario, non-goal, scope, DoD, and certification field; recorded that the dirty source rewrite preceded final regression bytes so mandatory final-byte RED remains unsatisfied; retained the current parser/guard blocker and routed design reconciliation to bubbles.design."
+    },
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T21:21:54Z",
+      "runCompletedAt": "2026-07-16T21:26:33Z",
+      "outcome": "route_required",
+      "summary": "Reconciled BUG-020 into parser-free fun-module, system-only resolver-precondition, parser-aware full-guard, and release/provenance boundaries; preserved parser and BUG-022 ownership; rejected retroactive final-byte RED; defined a prospective isolated test-before-patch restart with exact rollback; and routed the contradictory system-only Check 8 requirements to bubbles.analyst before planner reconciliation."
+    },
+    {
+      "agent": "bubbles.analyst",
+      "phasesExecuted": [
+        "analyze"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T23:31:23Z",
+      "runCompletedAt": "2026-07-16T23:34:46Z",
+      "outcome": "route_required",
+      "summary": "Reconciled BR-020-001, BR-020-005 through BR-020-007, three stable acceptance scenarios, the mandatory Outcome Contract, and non-goals so parser-free Bash 3.2 proves the canonical fun-mode API and normal E009-REGISTRY-MISSING refusal while parser-aware sanitized Bash proves Check 8 and structured results. Preserved BUG-022 ownership and prospective identical-test-byte TDD lineage; artifact lint, freshness, G094, and canonical traceability passed, while a scoped semantic parity check found planner-owned system-only Check 8 drift. Routed synchronized scenario, Test Plan, DoD, manifest, and evidence-template reconciliation to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T23:59:23Z",
+      "runCompletedAt": "2026-07-17T00:19:09Z",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "PLAN_REQUIREMENT_PARITY_RECONCILIATION_REQUIRED",
+        "BUG020-PLAN-001",
+        "BUG020-TDD-LINEAGE-RESTART",
+        "BUG020-REPORT-TEMPLATE-PARITY",
+        "BUG020-BUG022-OWNERSHIP"
+      ],
+      "unresolvedFindings": [
+        "BUG020-PROSPECTIVE-RED-001",
+        "BUG020-DEPENDENCY-022"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "Reconciled one active scope, three stable scenarios, 27 Markdown/JSON Test Plan rows, 27 matching unchecked DoD items, scenario-manifest links, report evidence destinations, and user acceptance text to the analyst-owned split-lane contract. Repaired duplicate/missing JSON row fields and stale path/order drift; preserved all historical report evidence append-only, BUG-022 ownership, blocked scope/status/certification, and zero completed phase claims. Routed the still-unexecuted prospective isolated final-test-byte RED to bubbles.test."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-020-state-transition-bash32-startup",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-17T04:34:09Z",
+      "runCompletedAt": "2026-07-17T04:35:31Z",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG020-PROSPECTIVE-RED-001"
+      ],
+      "unresolvedFindings": [
+        "BUG020-DEPENDENCY-022"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "Preserved the exact frozen test, current candidate, production guard, and BUG-022 state identities; executed all split lanes against the current candidate; confirmed zero BUG-020 startup aborts and zero forbidden constructs; made no source edit because the only aggregate failures were three explicit BUG-022-owned nounset observations and their 30 dependent assertions; passed Bash syntax, regression-quality, 13-class portability, artifact, freshness, G094, traceability, exact 27-row parity, and change-boundary checks; left shared registration and release checks untouched because the aggregate GREEN prerequisite was not met; and routed independent implementation verification to bubbles.test while preserving the foreign BUG-022 owner and path."
+    }
+  ],
+  "createdAt": "2026-07-16T02:09:08Z",
+  "updatedAt": "2026-07-17T04:35:31Z"
+}

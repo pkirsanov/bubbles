@@ -775,15 +775,29 @@ G036" (which is `red_green_traceability_gate`); corrected to "Gate G040"
 
 - **Filed:** 2026-07-10
 - **Disposition:** confirmed / analyst, UX, technical-design, and implementation
-  planning contracts complete; S01-S04 terminal. S04 binds Audit 0-pre/A1 to
+  planning contracts complete; S01-S08 terminal. S04 binds Audit 0-pre/A1 to
   the registry-derived guard result, freezes the profile-aware audit-result and
   attempt contract, and preserves delivery verdict semantics. Current-session
   closeout evidence passes the 22-assertion contract selftest and 24-assertion
   persistent audit-path regression. S05 is Done: validate and finalize now
   re-resolve and bind certification to the one current audit attempt, planning
   promotion is status-only, and the focused cross-boundary regression passes
-  48/48. S06 is Not Started; no full-framework, release, propagation,
-  downstream, overall fix, or bug closure claim is made
+  48/48. S06 is Done: its behavior matrix, persistent regression, canonical
+  framework validation, agnosticity, and change-boundary checks are green.
+  S07 is Done: the registry-bound transition contract, planning/delivery
+  vocabulary, audit attempt/resume semantics, exact-ceiling certification,
+  canonical-source-first release guidance, installed provenance checks, and
+  coherent rollback are published with current-session docs evidence. S08 is
+  Done: version `7.20.0`, truthful release notes, manifest-last regeneration,
+  hermetic install provenance, supported rollback, canonical release-check,
+  and change-boundary checks are green. S09 installed-snapshot provenance,
+  21-surface parity, integrity, doctor, and framework validation are green, but
+  S09 is blocked: after its exact GuestHost baseline passed, a concurrent
+  S10-shaped process changed Spec 151 `state.json` from `not_started` to
+  `specs_hardened` with audit/validate promotion fields. This invocation did
+  not start S10 and did not touch or revert the concurrent state. No commit,
+  tag, push, published release, propagation, downstream upgrade, clean S09,
+  overall fix, or bug closure claim is made
 - **Discovered by:** top-level `bubbles.workflow` planning-only auto-escalation,
   parent finding `F151-AUDIT-005`
 - **Severity:** high — a valid planning-only workflow cannot complete its
@@ -2809,13 +2823,13 @@ No entry below is execution evidence or a claim that the fix exists.
 | S03 Guard profile activation | `bubbles.implement` | S02 | Guard Checks 3/4/5/8/11, planning-check ledger, guard selftest | Guard selftest | Done — focused profile, adversary, compatibility, and A-F checks pass |
 | S04 Audit result contract | `bubbles.implement` | S03 | Audit 0-pre/A1, result lint, audit attempts | Audit contract selftest | Done — 22/22 contract and 24/24 persistent audit-path assertions pass |
 | S05 Validate/finalize coherence | `bubbles.implement` | S04 | Validate 2.11, phase engine, finalize, templates | Cross-boundary selftest | Done — 48/48 focused assertions pass |
-| S06 Matrix and persistent regression | `bubbles.test` | S05 | 12 scenarios, 24-mode matrix, done controls, regression runner | `framework-validate` | Not Started |
-| S07 Documentation contract | `bubbles.docs` | S06 | Maintainer/operator docs and changelog | Docs/agnosticity validation | Not Started |
-| S08 Canonical release package | `bubbles.releases` with `bubbles.devops` for installer provenance | S07 | Version, derived registries, installer, release manifest | `release-check` | Not Started |
-| S09 GuestHost supported upgrade | `bubbles.devops` | S08 | Supported upgrade, installed manifest/checksums, byte parity | Installed provenance parity | Not Started |
+| S06 Matrix and persistent regression | `bubbles.test` | S05 | 12 scenarios, 24-mode matrix, done controls, regression runner | `framework-validate` | Done — 48/48 persistent regression, 56/56 resolver matrix, 22/22 audit-result contract, canonical validation, agnosticity, and boundary checks pass |
+| S07 Documentation contract | `bubbles.docs` | S06 | Maintainer/operator docs and changelog | Docs/agnosticity validation | Done — docs contract, agnosticity, integrity, and boundary checks pass; manifest freshness routed to S08 |
+| S08 Canonical release package | `bubbles.releases` with `bubbles.devops` for installer provenance | S07 | Version, derived registries, installer, release manifest | `release-check` | Done — v7.20.0, manifest-last regeneration, install/rollback provenance, final release-check, and boundary checks pass |
+| S09 GuestHost supported upgrade | `bubbles.devops` | S08 | Supported upgrade, installed manifest/checksums, byte parity | Installed provenance parity | Blocked — installed snapshot passes; concurrent S10 mutation changed protected Spec 151 state |
 | S10 GuestHost audit/transition | `bubbles.audit`, then `bubbles.validate` for certification only | S09 | Spec 151 audit evidence and exact planning transition | Real consumer audit at `specs_hardened` | Not Started |
 
-The next eligible scope is S06. No later scope may start until every dependency
+The next eligible scope is S09. No later scope may start until every dependency
 has met its own unchecked DoD with execution-backed evidence.
 
 #### Approved Command And Test Taxonomy Contract
@@ -4330,7 +4344,8 @@ required owner is `bubbles.test` for S06 only.
 
 #### S06 — Full Matrix And Persistent Regression
 
-- **Status:** Not Started
+- **Status:** Done — executable matrix, persistent regression, canonical
+  framework validation, agnosticity, and change-boundary verification are green
 - **Primary owner:** `bubbles.test`
 - **Depends on:** S05
 **Change boundary:** `tests/regression/test_23_planning_audit_contract.sh`,
@@ -4380,17 +4395,275 @@ And the pre-fix red assertion is now green for the designed reason
 
 **Definition of Done:**
 
-- [ ] All 12 acceptance scenarios have behavior-level assertions through production paths.
-- [ ] The complete 24-mode non-done audit inventory and audit-bearing done inventory have explicit, design-consistent outcomes with zero planning leakage.
-- [ ] Planning positives, done negatives, planning-gate negatives, metadata mismatches, alias compatibility, and audit output contracts all pass.
-- [ ] The regression fails on pre-fix source and passes on fixed source without an early return, generated success record, or fake delivery artifact.
-- [ ] `bash bubbles/scripts/cli.sh framework-validate` exits zero with full output.
-- [ ] `bash bubbles/scripts/cli.sh agnosticity` exits zero with full output.
-- [ ] No file outside the S06 change boundary changed.
+- [x] All 12 acceptance scenarios have behavior-level assertions through production paths. Evidence: [S06 persistent A-L production-path evidence](#bug-009-s06-persistent-a-l-production-path-evidence).
+- [x] The complete 24-mode non-done audit inventory and audit-bearing done inventory have explicit, design-consistent outcomes with zero planning leakage. Evidence: [S06 registry-derived matrix evidence](#bug-009-s06-registry-derived-matrix-evidence).
+- [x] Planning positives, done negatives, planning-gate negatives, metadata mismatches, alias compatibility, and audit output contracts all pass. Evidence: [S06 transition guard evidence](#bug-009-s06-transition-guard-evidence) and [S06 audit-result contract evidence](#bug-009-s06-audit-result-contract-evidence).
+- [x] The regression fails on pre-fix source and passes on fixed source without an early return, generated success record, or fake delivery artifact. Evidence: [S01 terminal intentional RED evidence](#bug-009-s01-terminal-intentional-red-evidence), [S06 persistent A-L production-path evidence](#bug-009-s06-persistent-a-l-production-path-evidence), and [S06 regression integrity evidence](#bug-009-s06-regression-integrity-evidence).
+- [x] `bash bubbles/scripts/cli.sh framework-validate` exits zero with full output. Evidence: [S06 canonical framework validation evidence](#bug-009-s06-canonical-framework-validation-evidence).
+- [x] `bash bubbles/scripts/cli.sh agnosticity` exits zero with full output. Evidence: [S06 agnosticity evidence](#bug-009-s06-agnosticity-evidence).
+- [x] No file outside the S06 change boundary changed. Evidence: [S06 change-boundary evidence](#bug-009-s06-change-boundary-evidence).
+
+##### BUG-009 S06 Persistent A-L Production-Path Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash tests/regression/test_23_planning_audit_contract.sh' && bash tests/regression/test_23_planning_audit_contract.sh; exit_code=$?; printf 'EXIT_CODE=%s\n' "$exit_code"; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: fixture is honestly unimplemented
+PASS: integrity adversary 'fake-test' is rejected
+PASS: integrity adversary 'fake-evidence' is rejected
+PASS: bypassing the production invocation is rejected
+PASS: Audit 0-pre resolves the canonical transition guard path
+PASS: Audit A1 consumes the profile-scoped state-transition guard verdict
+PASS: direct and Audit 0-pre/A1 paths each executed the production guard
+PASS: real Audit 0-pre result and persisted attempt pass the S04 contract lint
+PASS: clean planning certification changes only both status mirrors to specs_hardened
+PASS: stale audit digest is rejected against the real guard result
+PASS: stale audit revision is rejected at certification
+PASS: done-ceiling delivery path still strictly requires DoD, Done scopes, test files, and evidence
+GREEN_REGRESSION_VERDICT=PLANNING_AUDIT_CONTRACT_SATISFIED
+DIRECT_GUARD_EXIT=0
+AUDIT_0_PRE_A1_EXIT=0
+AUDIT_RESULT_LINT_EXIT=0
+test_23_planning_audit_contract: 48 passed, 0 failed
+EXIT_CODE=0
+```
+
+**Result:** PASS — the persistent A-L regression executes the real resolver,
+guard, Audit 0-pre/A1, result lint, validate, and finalize contracts. All 48
+behavior assertions pass, including the honest planning positive, metadata and
+certification adversaries, and the unchanged done-ceiling delivery control.
+
+##### BUG-009 S06 Registry-Derived Matrix Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash bubbles/scripts/transition-contract-resolver-selftest.sh' && bash bubbles/scripts/transition-contract-resolver-selftest.sh; exit_code=$?; printf 'EXIT_CODE=%s\n' "$exit_code"; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: source layout resolves byte-identical contracts
+PASS: installed .github/bubbles layout resolves byte-identical contracts
+PASS: every audit-bearing done mode has an explicit delivery binding
+PASS: exactly the two designed planning modes have planning bindings
+PASS: adjacent non-done audit modes receive no inferred profile
+PASS: all 22 adjacent non-done audit modes remain explicitly unsupported
+PASS: delivery phase-shape compatibility exceptions are a closed six-mode set
+PASS: all 27 audit-bearing done modes resolve through explicit delivery contracts
+PASS: all 22 adjacent non-done audit modes fail unsupported through the real resolver
+== transition contract resolver selftest summary ==
+passes=56
+failures=0
+skips=0
+transition-contract-resolver-selftest: PASS
+EXIT_CODE=0
+```
+
+**Result:** PASS — effective registry resolution assigns the planning profile
+to exactly two designed modes, keeps all 22 adjacent non-done audit modes
+unsupported, and resolves all 27 audit-bearing done modes through explicit
+delivery contracts without planning leakage.
+
+##### BUG-009 S06 Transition Guard Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash bubbles/scripts/state-transition-guard-selftest.sh' && bash bubbles/scripts/state-transition-guard-selftest.sh; exit_code=$?; printf 'EXIT_CODE=%s\n' "$exit_code"; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: BUG-009 S03: honest product-to-planning packet passes via legacy one-argument invocation
+PASS: BUG-009 S03: both designed planning modes share the same explicit profile contract
+PASS: BUG-009 S03: mismatched target assertion blocks with guard exit 2
+PASS: BUG-009 S03: stale digest assertion blocks with guard exit 2
+PASS: BUG-009 S03: the honest incomplete packet fails under done-ceiling delivery semantics
+PASS: BUG-009 S03: delivery Check 4 completion remains blocking
+PASS: BUG-009 S03: delivery Check 5 all-Done remains blocking
+PASS: BUG-009 S03: delivery Check 8 file existence remains blocking
+PASS: BUG-009 S03: delivery Check 11 execution evidence remains blocking
+PASS: BUG-009 S03: broken Gherkin-to-DoD fidelity fails planning guard
+PASS: BUG-009 S03: G073 source-edit adversary blocks planning guard
+PASS: BUG-009 S03: G087 linkage adversary blocks the real planning guard
+PASS: BUG-009 S03: G091 chain adversary blocks the real planning guard
+state-transition-guard selftest passed.
+EXIT_CODE=0
+```
+
+**Result:** PASS — planning positives and planning-gate negatives remain active,
+metadata mismatches fail loud, and the honest fixture receives no exemption
+under done-ceiling delivery semantics.
+
+##### BUG-009 S06 Audit-Result Contract Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash bubbles/scripts/audit-result-contract-lint-selftest.sh' && bash bubbles/scripts/audit-result-contract-lint-selftest.sh; exit_code=$?; printf 'EXIT_CODE=%s\n' "$exit_code"; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: planning clean view is exact and profile-bound
+PASS: planning rework view names a concrete owner
+PASS: delivery refusal preserves DO_NOT_SHIP semantics
+PASS: metadata uncertainty is BLOCKED without fallback semantics
+PASS: source-edit lockout is BLOCKED on G073
+PASS: interruption leaves no current pointer or active verdict
+PASS: rework supersedes prior result and preserves the finding one-to-one
+PASS: planning shipment language is rejected
+PASS: stale contract digest is rejected against guard provenance
+PASS: stale target revision is rejected against guard provenance
+PASS: multiple ACTIVE attempts are rejected
+PASS: disappearing prior finding is rejected
+PASS: canonical audit agent passes structural contract lint
+PASS: Audit A1 wording is profile-scoped and registry-resolved
+audit-result-contract-lint-selftest: 22 passed, 0 failed
+EXIT_CODE=0
+```
+
+**Result:** PASS — all five result views, interruption/rework semantics,
+metadata freshness, finding closure, and planning/delivery vocabulary remain
+exact and profile-bound.
+
+##### BUG-009 S06 Regression Integrity Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_23_planning_audit_contract.sh' && bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_23_planning_audit_contract.sh; exit_code=$?; printf 'EXIT_CODE=%s\n' "$exit_code"; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+COMMAND: bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_23_planning_audit_contract.sh
+============================================================
+  BUBBLES REGRESSION QUALITY GUARD
+  Repo: /Users/pkirsanov/Projects/bubbles
+  Timestamp: 2026-07-11T19:56:19Z
+  Bugfix mode: true
+============================================================
+Scanning tests/regression/test_23_planning_audit_contract.sh
+Adversarial signal detected in tests/regression/test_23_planning_audit_contract.sh
+============================================================
+  REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+  Files scanned: 1
+  Files with adversarial signals: 1
+============================================================
+EXIT_CODE=0
+```
+
+**Result:** PASS — the preserved S01 evidence records the exact pre-fix RED,
+the current production-path regression is green, and the regression-quality
+guard confirms an adversarial bugfix signal with no bailout or proxy-test
+violation. The token-aware disabled-test scan also exited 0 with zero matches;
+the broader unbounded `xit(` pattern was rejected as a false positive because
+it matched an AWK `exit(` statement, not a test marker.
+
+##### BUG-009 S06 Canonical Framework Validation Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/cli.sh framework-validate`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (final window of the full unfiltered terminal run):**
+
+```text
+PASS: Case 7: CHANGELOG.md historical exclusion (exit 0)
+PASS: Case 8: docs/v6-mcp-design.md exclusion (exit 0)
+PASS: Case 9: missing VERSION fails (exit 1)
+PASS: Case 10: lapsed caught alongside a legit future deferral (exit 1)
+PASS: Case 11: own selftest path is excluded (exit 0)
+
+stale-deferral-lint-selftest: 11 pass, 0 fail
+PASS: Stale-deferral lint selftest
+
+==> Stale-deferral lint (live)
+[stale-deferral-lint] OK — no lapsed forward-references (current VERSION 7.19.2)
+PASS: Stale-deferral lint (live)
+
+Framework validation passed.
+```
+
+**Result:** PASS — the exact canonical command from
+`.specify/memory/agents.md` exited 0 after release-owned manifest
+reconciliation. The full run included the registered resolver, audit-result,
+transition-guard, persistent BUG-009 regression, release-manifest freshness,
+release-manifest selftest, registry, shellcheck, and portability checks. No S06
+repair was required.
+
+##### BUG-009 S06 Agnosticity Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: bash bubbles/scripts/cli.sh agnosticity' 'PURPOSE: BUG-009 S06 final portability and agnosticity proof' 'REPOSITORY: /Users/pkirsanov/Projects/bubbles' 'PLATFORM: macOS' 'EXPECTED_SCOPE: portable framework surfaces' '--- AGNOSTICITY OUTPUT BEGIN ---' && bash bubbles/scripts/cli.sh agnosticity; exit_code=$?; printf '%s\n' '--- AGNOSTICITY OUTPUT END ---' "FILES_REPORTED=456" "AGNOSTICITY_EXIT_CODE=$exit_code" 'S06_AGNOSTICITY_CHECK=COMPLETE'; exit "$exit_code"`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+COMMAND: bash bubbles/scripts/cli.sh agnosticity
+PURPOSE: BUG-009 S06 final portability and agnosticity proof
+REPOSITORY: /Users/pkirsanov/Projects/bubbles
+PLATFORM: macOS
+EXPECTED_SCOPE: portable framework surfaces
+--- AGNOSTICITY OUTPUT BEGIN ---
+Scanning 456 portable file(s) for agnosticity drift
+Portable Bubbles surfaces are project-agnostic and tool-agnostic
+--- AGNOSTICITY OUTPUT END ---
+FILES_REPORTED=456
+AGNOSTICITY_EXIT_CODE=0
+S06_AGNOSTICITY_CHECK=COMPLETE
+```
+
+**Result:** PASS — all 456 portable framework files pass the canonical
+agnosticity check on macOS.
+
+##### BUG-009 S06 Change-Boundary Evidence
+
+**Phase:** test
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'COMMAND: shasum -c /tmp/bubbles-bug009-s06-unrelated.sha1 plus exact S06 delta assertion' && shasum -c /tmp/bubbles-bug009-s06-unrelated.sha1 && actual_delta="$(git diff HEAD --numstat -- bubbles/scripts/framework-validate.sh tests/regression/test_23_planning_audit_contract.sh)" && expected_delta=$'1\t0\tbubbles/scripts/framework-validate.sh\n167\t5\ttests/regression/test_23_planning_audit_contract.sh' && [[ "$actual_delta" == "$expected_delta" ]] && printf '%s\n' 'PASS: S06 executable deltas remain exactly 1/0 and 167/5' 'PASS: no unrelated baseline hash changed' 'FILES_HASH_VERIFIED=23' 'S06_UNEXPECTED_PATHS=0' 'EXIT_CODE=0'`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (representative window from the complete 28-line comparison):**
+
+```text
+S06 mechanical unrelated-file preservation check
+PASS: unchanged agents/bubbles.redteam.agent.md sha1=6cdaaac9620b591156e5fcfafc0ac6f6a18f9867
+PASS: unchanged agents/bubbles.super.agent.md sha1=c1c46a79389b5a280e72c256e747c873982d710a
+PASS: unchanged agents/bubbles.validate.agent.md sha1=7352808dc641f1e366b93d88cfc88a10f6d481ae
+PASS: unchanged agents/bubbles_shared/agent-common.md sha1=a942ee689b843bcd9747aef27f8b2977e1f3fb79
+PASS: unchanged agents/bubbles_shared/feature-templates.md sha1=b69e466a1fc1be10e63b744e1f582a7adb9e1cca
+PASS: unchanged agents/bubbles_shared/scope-templates.md sha1=8060c09212e0db9e0ae6922fb91a4f91f747f282
+PASS: unchanged agents/bubbles_shared/scope-workflow.md sha1=5b1e43648759ac1eec555e69e60ee134df57b8ac
+PASS: unchanged agents/bubbles_shared/workflow-phase-engine.md sha1=fbcc305790751b1c376399461dc98bd3df270ac6
+PASS: unchanged bubbles/release-manifest.json sha1=af546ecdceeb335ab548d4c66c16ec8fb0cd2bc5
+PASS: unchanged bubbles/workflows.yaml sha1=8d7dea45baa2cd05563cec8ca4e4e74717b63cce
+PASS: unchanged docs/CATALOG.md sha1=1dfa34f563ea7e8bd09ce88fe7da4912155d8437
+PASS: unchanged bubbles/scripts/adversarial-aggregate-selftest.sh sha1=226ed99a5f1635b60842ea140e64ae39582fd6a7
+PASS: unchanged bubbles/scripts/adversarial-aggregate.sh sha1=7098666908cfa6239e6519447d6e865c4b041c59
+PASS: S06 executable deltas remain exactly 1/0 and 167/5
+PASS: no unrelated baseline hash changed
+FILES_HASH_VERIFIED=23
+S06_UNEXPECTED_PATHS=0
+EXIT_CODE=0
+```
+
+**Result:** PASS — every unrelated dirty or untracked file present before the
+BUGS.md evidence edit retained its exact byte hash, including the release-owned
+manifest and the three untracked IMP-020/eval files. The two S06 executable
+deltas remain exactly one registration addition in `framework-validate.sh` and
+167 additions/five deletions in `test_23`; all other listed S06 scripts remain
+clean. No index mutation was performed by this invocation.
+
+**S06 disposition:** terminal `completed_owned`. All seven S06 DoD items have
+current-session execution evidence, no S06 finding remains unresolved, and S07
+is now eligible. S07 remains Not Started; its required owner is `bubbles.docs`.
 
 #### S07 — Documentation Contract
 
-- **Status:** Not Started
+- **Status:** Done — documentation contract published and S07-owned checks pass
 - **Primary owner:** `bubbles.docs`
 - **Depends on:** S06
 **Change boundary:** `README.md`, `docs/guides/AGENT_MANUAL.md`,
@@ -4426,16 +4699,313 @@ And delivery, upgrade, rollback, result-version, and unsupported-profile behavio
 
 **Definition of Done:**
 
-- [ ] Managed docs describe the implemented registry/resolver/guard/audit/finalize contract with no contradictory legacy instruction.
-- [ ] Planning maturity cannot be read as implemented, tested, merge-ready, releasable, deployable, delivered, or shipped.
-- [ ] Delivery anti-fabrication and rollback instructions remain explicit.
-- [ ] `CHANGELOG.md` claims only behavior proven by S06 and leaves downstream verification to S10 evidence.
-- [ ] Framework validation and agnosticity pass after docs changes.
-- [ ] No file outside the S07 change boundary changed.
+- [x] Managed docs describe the implemented registry/resolver/guard/audit/finalize contract with no contradictory legacy instruction. Evidence: [S07 documentation behavior contract evidence](#bug-009-s07-documentation-behavior-contract-evidence).
+- [x] Planning maturity cannot be read as implemented, tested, merge-ready, releasable, deployable, delivered, or shipped. Evidence: [S07 planning-versus-delivery vocabulary evidence](#bug-009-s07-planning-versus-delivery-vocabulary-evidence).
+- [x] Delivery anti-fabrication and rollback instructions remain explicit. Evidence: [S07 coherent rollback evidence](#bug-009-s07-coherent-rollback-evidence).
+- [x] `CHANGELOG.md` claims only behavior proven by S06 and leaves downstream verification to S10 evidence. Evidence: [S07 changelog truth evidence](#bug-009-s07-changelog-truth-evidence).
+- [x] Framework validation and agnosticity pass after docs changes. Evidence: [S07 validation and S08 manifest classification evidence](#bug-009-s07-validation-and-s08-manifest-classification-evidence). Agnosticity, the supported core framework tier, links, docs registry, governance index, and scoped diff checks pass; the full aggregate is nonzero only for S08-owned release-manifest freshness and selftest checks.
+- [x] No file outside the S07 change boundary changed. Evidence: [S07 concurrent-change and boundary evidence](#bug-009-s07-concurrent-change-and-boundary-evidence).
+
+##### BUG-009 S07 Documentation Behavior Contract Evidence
+
+**Phase:** docs
+**Command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && fail_count=0; check_doc() { label="$1"; pattern="$2"; file="$3"; if grep -Fq -- "$pattern" "$file"; then printf 'PASS: %s\n' "$label"; else printf 'FAIL: %s\n' "$label"; fail_count=$((fail_count + 1)); fi; }; printf '%s\n' 'BUG-009 S07 documentation behavior contract' 'CHECK GROUP: registry and profile authority'; check_doc 'mode registry is documented as authority' '`bubbles/workflows/modes.yaml` is the authority' docs/guides/AGENT_MANUAL.md; check_doc 'exactly two planning modes are named' 'Only `product-to-planning` and `spec-scope-hardening` bind' docs/guides/AGENT_MANUAL.md; check_doc '22 adjacent non-done modes remain unsupported' 'All 22 adjacent non-done audit modes' docs/guides/AGENT_MANUAL.md; printf '%s\n' 'CHECK GROUP: resolver, guard, and applicability'; check_doc 'guard expectations are assertion-only' '`--expect-contract-digest` are equality assertions' docs/guides/AGENT_MANUAL.md; check_doc 'transition result v1 is documented' '`TRANSITION_GUARD_RESULT_V1`' docs/guides/CONTROL_PLANE_DESIGN.md; check_doc 'profile-specific check applicability is documented' 'Check 4 completion, Check 5 all-Done, Check 8' docs/guides/CONTROL_PLANE_DESIGN.md; printf '%s\n' 'CHECK GROUP: audit attempts and certification'; check_doc 'audit result v1 is documented' '`AUDIT_RESULT_V1`' docs/guides/AGENT_MANUAL.md; check_doc 'interruption leaves no reusable verdict' 'interruption therefore leaves no reusable active verdict' docs/guides/AGENT_MANUAL.md; check_doc 'resume phase is documented' '`resumeFromPhase`' docs/guides/AGENT_MANUAL.md; check_doc 'validate owns exact-ceiling mirrors' 'Validate alone may mirror top-level `status` and' docs/guides/AGENT_MANUAL.md; printf 'DOCUMENTATION_CONTRACT_FAILURES=%s\n' "$fail_count"; if [[ "$fail_count" -ne 0 ]]; then exit 1; fi; printf '%s\n' 'BUG-009 S07 documentation behavior contract: PASS'
+```
+
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S07 documentation behavior contract
+CHECK GROUP: registry and profile authority
+PASS: mode registry is documented as authority
+PASS: exactly two planning modes are named
+PASS: 22 adjacent non-done modes remain unsupported
+CHECK GROUP: resolver, guard, and applicability
+PASS: guard expectations are assertion-only
+PASS: transition result v1 is documented
+PASS: profile-specific check applicability is documented
+CHECK GROUP: audit attempts and certification
+PASS: audit result v1 is documented
+PASS: interruption leaves no reusable verdict
+PASS: resume phase is documented
+PASS: validate owns exact-ceiling mirrors
+DOCUMENTATION_CONTRACT_FAILURES=0
+BUG-009 S07 documentation behavior contract: PASS
+```
+
+**Result:** PASS — the detailed docs publish the implemented registry,
+resolver, guard applicability, result-version, audit attempt/resume, and
+validate-owned exact-ceiling contracts, including the 22-mode unsupported
+boundary.
+
+##### BUG-009 S07 Planning-Versus-Delivery Vocabulary Evidence
+
+**Phase:** docs
+**Command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && fail_count=0; check_doc() { label="$1"; pattern="$2"; file="$3"; if grep -Fq -- "$pattern" "$file"; then printf 'PASS: %s\n' "$label"; else printf 'FAIL: %s\n' "$label"; fail_count=$((fail_count + 1)); fi; }; printf '%s\n' 'BUG-009 S07 planning-versus-delivery vocabulary' 'CHECK: planning terminal status'; check_doc 'planning stops at specs_hardened' 'both stop exactly at' README.md; check_doc 'planning delivery is NOT_EVALUATED' '`NOT_EVALUATED`' README.md; printf '%s\n' 'CHECK: forbidden delivery implications'; check_doc 'not implemented or tested' 'It does not mean implemented, tested' README.md; check_doc 'not merge-ready or releasable' 'merge-ready, releasable' README.md; check_doc 'not deployable, delivered, or shipped' 'deployable, delivered, or shipped' README.md; printf '%s\n' 'CHECK: vocabulary separation'; check_doc 'planning verdict is PLANNING_AUDIT_CLEAN' '`PLANNING_AUDIT_CLEAN`' docs/guides/AGENT_MANUAL.md; check_doc 'planning never emits SHIP_IT' 'It never emits `SHIP_IT`' docs/guides/AGENT_MANUAL.md; check_doc 'delivery vocabulary remains explicit' '`REWORK_REQUIRED`, and `DO_NOT_SHIP`' docs/guides/AGENT_MANUAL.md; printf 'VOCABULARY_FAILURES=%s\n' "$fail_count"; if [[ "$fail_count" -ne 0 ]]; then exit 1; fi; printf '%s\n' 'BUG-009 S07 planning-versus-delivery vocabulary: PASS'
+```
+
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S07 planning-versus-delivery vocabulary
+CHECK: planning terminal status
+PASS: planning stops at specs_hardened
+PASS: planning delivery is NOT_EVALUATED
+CHECK: forbidden delivery implications
+PASS: not implemented or tested
+PASS: not merge-ready or releasable
+PASS: not deployable, delivered, or shipped
+CHECK: vocabulary separation
+PASS: planning verdict is PLANNING_AUDIT_CLEAN
+PASS: planning never emits SHIP_IT
+PASS: delivery vocabulary remains explicit
+VOCABULARY_FAILURES=0
+BUG-009 S07 planning-versus-delivery vocabulary: PASS
+```
+
+**Result:** PASS — the overview and manual make `specs_hardened` planning
+maturity and delivery `NOT_EVALUATED` unambiguously distinct from delivery
+ship/refusal vocabulary.
+
+##### BUG-009 S07 Coherent Rollback Evidence
+
+**Phase:** docs
+**Command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && fail_count=0; check_doc() { label="$1"; pattern="$2"; if grep -Fq -- "$pattern" docs/recipes/framework-ops.md; then printf 'PASS: %s\n' "$label"; else printf 'FAIL: %s\n' "$label"; fail_count=$((fail_count + 1)); fi; }; printf '%s\n' 'BUG-009 S07 coherent rollback contract' 'CHECK: rollback unit'; check_doc 'rollback is one canonical source change' 'Rollback the contract as one source change'; check_doc 'complete contract is reverted' 'Revert the complete canonical'; check_doc 'derived outputs are regenerated' 'regenerate derived'; check_doc 'release manifest is regenerated from reverted source' 'the release manifest from that reverted source'; check_doc 'release-check must pass' '`release-check`'; check_doc 'supported upgrade path distributes prior release' 'upgrade path'; printf '%s\n' 'CHECK: forbidden partial rollback'; check_doc 'planning-only exemption cannot remain' 'Do not leave only a planning exemption or prompt change'; check_doc 'audit history cannot be deleted' 'delete `execution.audit` history'; check_doc 'consumer state cannot be rewritten' 'rewrite consumer state'; check_doc 'old bytes cannot be hand-copied' 'hand-copy old'; printf 'ROLLBACK_FAILURES=%s\n' "$fail_count"; if [[ "$fail_count" -ne 0 ]]; then exit 1; fi; printf '%s\n' 'BUG-009 S07 coherent rollback contract: PASS'
+```
+
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S07 coherent rollback contract
+CHECK: rollback unit
+PASS: rollback is one canonical source change
+PASS: complete contract is reverted
+PASS: derived outputs are regenerated
+PASS: release manifest is regenerated from reverted source
+PASS: release-check must pass
+PASS: supported upgrade path distributes prior release
+CHECK: forbidden partial rollback
+PASS: planning-only exemption cannot remain
+PASS: audit history cannot be deleted
+PASS: consumer state cannot be rewritten
+PASS: old bytes cannot be hand-copied
+ROLLBACK_FAILURES=0
+BUG-009 S07 coherent rollback contract: PASS
+```
+
+**Result:** PASS — rollback is documented as one source-first contract revert,
+followed by derived regeneration, release validation, and supported
+installation; partial rollback and audit-history/state rewriting remain
+forbidden.
+
+##### BUG-009 S07 Changelog Truth Evidence
+
+**Phase:** docs
+**Command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && fail_count=0; check_doc() { label="$1"; pattern="$2"; if grep -Fq -- "$pattern" CHANGELOG.md; then printf 'PASS: %s\n' "$label"; else printf 'FAIL: %s\n' "$label"; fail_count=$((fail_count + 1)); fi; }; printf '%s\n' 'BUG-009 S07 changelog truth contract' 'CHECK: implemented behavior only'; check_doc 'entry is under Unreleased' '## [Unreleased]'; check_doc 'entry identifies BUG-009 source behavior' '### BUG-009 Planning Audit Fix'; check_doc 'registry binding is recorded' 'Registry-bound planning transition audit (BUG-009)'; check_doc 'guard/result contract is recorded' 'Profile-scoped guard and result contracts'; check_doc 'audit attempt/certification contract is recorded' 'Audit attempts and exact-ceiling certification'; check_doc 'S06 evidence is named' 'Source behavior above is backed by the BUG-009 S06'; printf '%s\n' 'CHECK: unexecuted claims excluded'; check_doc 'release packaging is not claimed' 'does not assert release packaging'; check_doc 'downstream upgrade is not claimed' 'downstream upgrade'; check_doc 'installed provenance is not claimed' 'installed-byte provenance'; check_doc 'consumer recertification is not claimed' 'consumer recertification'; check_doc 'BUG-009 closure is not claimed' 'BUG-009 closure'; printf 'CHANGELOG_FAILURES=%s\n' "$fail_count"; if [[ "$fail_count" -ne 0 ]]; then exit 1; fi; printf '%s\n' 'BUG-009 S07 changelog truth contract: PASS'
+```
+
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S07 changelog truth contract
+CHECK: implemented behavior only
+PASS: entry is under Unreleased
+PASS: entry identifies BUG-009 source behavior
+PASS: registry binding is recorded
+PASS: guard/result contract is recorded
+PASS: audit attempt/certification contract is recorded
+PASS: S06 evidence is named
+CHECK: unexecuted claims excluded
+PASS: release packaging is not claimed
+PASS: downstream upgrade is not claimed
+PASS: installed provenance is not claimed
+PASS: consumer recertification is not claimed
+PASS: BUG-009 closure is not claimed
+CHANGELOG_FAILURES=0
+BUG-009 S07 changelog truth contract: PASS
+```
+
+**Result:** PASS — the Unreleased note records only source behavior already
+proven by S06 and explicitly excludes release, installation, downstream, and
+bug-closure claims.
+
+##### BUG-009 S07 Validation And S08 Manifest Classification Evidence
+
+**Phase:** docs
+**Command 1:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/cli.sh framework-validate`
+**Exit Code 1:** 1
+**Command 2:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/cli.sh framework-validate --tier=core`
+**Exit Code 2:** 0
+**Command 3:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'BUG-009 S07 final agnosticity validation' 'COMMAND: bash bubbles/scripts/cli.sh agnosticity' 'REPOSITORY: canonical Bubbles source' 'SCOPE: final S07 documentation bytes' 'PLATFORM: macOS' '--- AGNOSTICITY OUTPUT BEGIN ---'; bash bubbles/scripts/cli.sh agnosticity; exit_code=$?; printf '%s\n' '--- AGNOSTICITY OUTPUT END ---' "AGNOSTICITY_EXIT_CODE=$exit_code" 'BUG-009 S07 final agnosticity validation complete'; exit "$exit_code"`
+**Exit Code 3:** 0
+**Command 4:** `cd /Users/pkirsanov/Projects/bubbles && printf '%s\n' 'BUG-009 S07 release-manifest selftest classification' 'COMMAND: bash bubbles/scripts/release-manifest-selftest.sh' 'EXPECTED_OWNER_IF_STALE: S08 bubbles.releases' '--- RELEASE MANIFEST SELFTEST BEGIN ---'; bash bubbles/scripts/release-manifest-selftest.sh; exit_code=$?; printf '%s\n' '--- RELEASE MANIFEST SELFTEST END ---' "RELEASE_MANIFEST_SELFTEST_EXIT_CODE=$exit_code" 'NO_MANIFEST_MUTATION_PERFORMED=true'; exit "$exit_code"`
+**Exit Code 4:** 1
+**Command 5:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && failures=0; printf '%s\n' 'BUG-009 S07 documentation integrity validation' 'CHECK 1: governance index'; bash bubbles/scripts/governance-index-lint.sh || failures=$((failures + 1)); printf '%s\n' 'CHECK 2: effective managed-doc paths'; bash bubbles/scripts/cli.sh docs-registry effective --paths-only || failures=$((failures + 1)); printf '%s\n' 'CHECK 3: new cross-document targets and anchors'; for target in docs/guides/AGENT_MANUAL.md docs/guides/CONTROL_PLANE_DESIGN.md docs/recipes/framework-ops.md; do if [[ -f "$target" ]]; then printf 'PASS: %s exists\n' "$target"; else printf 'FAIL: %s missing\n' "$target"; failures=$((failures + 1)); fi; done; for contract in 'docs/guides/AGENT_MANUAL.md:^## Registry-Bound Transition Audits$' 'docs/guides/CONTROL_PLANE_DESIGN.md:^### Registry-Bound Transition Audit Contract$' 'docs/recipes/framework-ops.md:^## Inspect And Operate Transition Audits$'; do file="${contract%%:*}"; pattern="${contract#*:}"; if grep -Eq "$pattern" "$file"; then printf 'PASS: %s anchor exists\n' "$file"; else printf 'FAIL: %s anchor missing\n' "$file"; failures=$((failures + 1)); fi; done; printf '%s\n' 'CHECK 4: S07 scoped diff whitespace'; if git diff --check -- README.md docs/guides/AGENT_MANUAL.md docs/guides/CONTROL_PLANE_DESIGN.md docs/recipes/framework-ops.md CHANGELOG.md BUGS.md; then printf '%s\n' 'PASS: scoped git diff --check'; else printf '%s\n' 'FAIL: scoped git diff --check'; failures=$((failures + 1)); fi; printf 'DOCUMENTATION_INTEGRITY_FAILURES=%s\n' "$failures"; if [[ "$failures" -ne 0 ]]; then exit 1; fi; printf '%s\n' 'BUG-009 S07 documentation integrity validation: PASS'
+```
+
+**Exit Code 5:** 0
+**Claim Source:** interpreted
+**Interpretation:** The full aggregate names exactly two failures, both on the
+release manifest. The direct manifest selftest reports exactly one issue,
+committed-manifest freshness, while all 15 manifest shape/provenance assertions
+pass. The S07-owned structural/core tier and agnosticity checks exit 0. Per the
+ordered BUG-009 plan, regeneration and release-manifest freshness belong to S08
+and no manifest mutation is permitted in S07.
+**Output (labeled windows from the complete unfiltered runs):**
+
+```text
+==> Stale-deferral lint (live)
+[stale-deferral-lint] OK — no lapsed forward-references (current VERSION 7.19.2)
+PASS: Stale-deferral lint (live)
+
+Framework validation failed with 2 failing check(s).
+Failed checks:
+  - Release manifest freshness
+  - Release manifest selftest
+
+Framework validation passed (130 self-only check(s) skipped under install-mode=source).
+Framework validation passed.
+
+BUG-009 S07 final agnosticity validation
+COMMAND: bash bubbles/scripts/cli.sh agnosticity
+REPOSITORY: canonical Bubbles source
+SCOPE: final S07 documentation bytes
+PLATFORM: macOS
+--- AGNOSTICITY OUTPUT BEGIN ---
+Scanning 456 portable file(s) for agnosticity drift
+Portable Bubbles surfaces are project-agnostic and tool-agnostic
+--- AGNOSTICITY OUTPUT END ---
+AGNOSTICITY_EXIT_CODE=0
+BUG-009 S07 final agnosticity validation complete
+
+Running release-manifest selftest...
+Scenario: release hygiene generates one complete trust manifest for downstream installs.
+Release manifest is stale. Run bubbles/scripts/generate-release-manifest.sh
+FAIL: Committed release manifest is current
+PASS: Release manifest exists
+PASS: Manifest records release version
+PASS: Manifest records source git SHA
+PASS: Manifest records trust docs digest
+PASS: Manifest records framework-managed file count (610)
+PASS: Managed checksum inventory includes framework agents
+PASS: Managed checksum inventory includes shared CLI surface
+PASS: Manifest records source-only file count (49)
+PASS: Source-only checksum inventory includes G094 regression test
+PASS: Manifest exposes foundation as a supported profile
+PASS: Manifest exposes delivery as a supported profile
+PASS: Manifest exposes Claude Code as a supported interop source
+PASS: Manifest exposes Roo Code as a supported interop source
+PASS: Manifest exposes Cursor as a supported interop source
+PASS: Manifest exposes Cline as a supported interop source
+release-manifest selftest failed with 1 issue(s).
+
+BUG-009 S07 documentation integrity validation
+CHECK 1: governance index
+governance-index-lint: scanned 169 governance doc(s)
+governance-index-lint: indexes consulted: 45
+governance-index-lint: PASS — zero orphan docs
+CHECK 2: effective managed-doc paths
+architecture: README.md
+api: docs/API.md
+development: README.md
+testing: docs/Testing.md
+deployment: docs/Deployment.md
+operations: docs/Operations.md
+CHECK 3: new cross-document targets and anchors
+PASS: docs/guides/AGENT_MANUAL.md exists
+PASS: docs/guides/CONTROL_PLANE_DESIGN.md exists
+PASS: docs/recipes/framework-ops.md exists
+PASS: docs/guides/AGENT_MANUAL.md anchor exists
+PASS: docs/guides/CONTROL_PLANE_DESIGN.md anchor exists
+PASS: docs/recipes/framework-ops.md anchor exists
+CHECK 4: S07 scoped diff whitespace
+PASS: scoped git diff --check
+DOCUMENTATION_INTEGRITY_FAILURES=0
+BUG-009 S07 documentation integrity validation: PASS
+```
+
+**Result:** PASS for the S07-owned documentation contract. The full aggregate
+is nonzero solely because the committed release manifest is stale; that
+derived-artifact regeneration and release-package validation remain S08-owned.
+No release manifest, version, installer, or downstream file was changed.
+
+##### BUG-009 S07 Concurrent-Change And Boundary Evidence
+
+**Phase:** docs
+**Command:** The executed command compared SHA-1 values for all 17 unrelated
+dirty/untracked concurrent files against the pre-closeout baseline, checked the
+three identifying IMP-020 Agent Manual strings, and rejected dirty paths outside
+the six S07 surfaces or the 17 known concurrent paths. The full literal command
+and output are preserved in the current terminal session.
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S07 final concurrent-change and boundary verification
+CHECK 1: unrelated concurrent file hashes
+PASS: unchanged agents/bubbles.redteam.agent.md sha1=6cdaaac9620b591156e5fcfafc0ac6f6a18f9867
+PASS: unchanged agents/bubbles.super.agent.md sha1=c1c46a79389b5a280e72c256e747c873982d710a
+PASS: unchanged agents/bubbles_shared/agent-common.md sha1=a942ee689b843bcd9747aef27f8b2977e1f3fb79
+PASS: unchanged bubbles/release-manifest.json sha1=af546ecdceeb335ab548d4c66c16ec8fb0cd2bc5
+PASS: unchanged bubbles/scripts/adversarial-resolve-selftest.sh sha1=3e3ee1ba528ae26db2fa9a7347aeae18acdf8539
+PASS: unchanged bubbles/scripts/adversarial-resolve.sh sha1=efbcb34ee7ebfa6731283415693f2c018d4ee2aa
+PASS: unchanged bubbles/workflows.yaml sha1=8d7dea45baa2cd05563cec8ca4e4e74717b63cce
+PASS: unchanged docs/CATALOG.md sha1=1dfa34f563ea7e8bd09ce88fe7da4912155d8437
+PASS: unchanged docs/guides/WORKFLOW_MODES.md sha1=6b8fda00a48d0a30e1d77a13f3ec6962312ea368
+PASS: unchanged docs/recipes/README.md sha1=d8594988ec64be3e00a58139321fc3a1210c9ddc
+PASS: unchanged docs/recipes/adversarial-verification.md sha1=bb408a8e64fb3813638fbf8c51aebd521d4fdca0
+PASS: unchanged docs/recipes/cross-model-review.md sha1=2517473ee32de403ecef602aec9d99b579e7e43f
+PASS: unchanged prompts/bubbles.redteam.prompt.md sha1=e31adaf1d7b1001a7bd03dda6d6a7ae419435d01
+PASS: unchanged skills/bubbles-workflow-mode-resolution/SKILL.md sha1=194e69ba66e2105190cf78a1f6443ac6d6671cd0
+PASS: unchanged bubbles/eval/schemas/adversarial-sample.schema.json sha1=fcb167e936669032dbfd8964b472f7c93ef02d2a
+PASS: unchanged bubbles/scripts/adversarial-aggregate-selftest.sh sha1=226ed99a5f1635b60842ea140e64ae39582fd6a7
+PASS: unchanged bubbles/scripts/adversarial-aggregate.sh sha1=7098666908cfa6239e6519447d6e865c4b041c59
+CHECK 2: overlapping Agent Manual preserves concurrent IMP-020 section
+PASS: IMP-020 Agent Manual section remains present
+CHECK 3: authorized S07 surface
+S07_UNEXPECTED_PATHS=0
+CONCURRENT_HASHES_VERIFIED=17
+TOTAL_BOUNDARY_FAILURES=0
+BUG-009 S07 final concurrent-change and boundary verification: PASS
+```
+
+**Result:** PASS — every unrelated concurrent file retained its exact baseline
+hash. The pre-existing IMP-020 section in `AGENT_MANUAL.md` remains present;
+S07 added only its isolated transition-audit section. The release manifest was
+not regenerated or edited by S07.
+
+**S07 disposition:** terminal `completed_owned`. All six S07 DoD items have
+current-session evidence. S08 is now eligible; its required owner is
+`bubbles.releases`, with `bubbles.devops` responsible for installer provenance.
 
 #### S08 — Canonical Version, Installer Provenance, And Release Package
 
-- **Status:** Not Started
+- **Status:** Done — v7.20.0 release package, manifest-last regeneration,
+  install provenance, supported rollback, and canonical release-check are green
 **Primary owner:** `bubbles.releases`; `bubbles.devops` owns installer/provenance
 mechanics
 - **Depends on:** S07
@@ -4476,16 +5046,328 @@ And a hermetic install contains byte-identical resolver, guard, agent, profile, 
 
 **Definition of Done:**
 
-- [ ] Version/changelog state follows repository policy and is backed by S06/S07 evidence.
-- [ ] Hermetic install proves every new/changed managed interface is copied, executable as needed, listed, checksummed, and byte-identical.
-- [ ] Derived registries are regenerated from source and `bubbles/release-manifest.json` is regenerated last, never hand-edited.
-- [ ] `bash bubbles/scripts/cli.sh release-check` exits zero with full output.
-- [ ] Rollback to the prior release is proven through the same installer/provenance path without history deletion or manual copying.
-- [ ] No downstream repository file changed in S08.
+- [x] Version/changelog state follows repository policy and is backed by S06/S07 evidence. Evidence: [S08 version and changelog truth evidence](#bug-009-s08-version-and-changelog-truth-evidence).
+- [x] Hermetic install proves every new/changed managed interface is copied, executable as needed, listed, checksummed, and byte-identical. Evidence: [S08 DevOps installer/provenance evidence](#bug-009-s08-devops-installerprovenance-evidence) and [S08 provenance fixture repair evidence](#bug-009-s08-provenance-fixture-repair-evidence).
+- [x] Derived registries are regenerated from source and `bubbles/release-manifest.json` is regenerated last, never hand-edited. Evidence: [S08 manifest-last regeneration evidence](#bug-009-s08-manifest-last-regeneration-evidence).
+- [x] `bash bubbles/scripts/cli.sh release-check` exits zero with full output. Evidence: [S08 canonical release-check evidence](#bug-009-s08-canonical-release-check-evidence).
+- [x] Rollback to the prior release is proven through the same installer/provenance path without history deletion or manual copying. Evidence: [S08 supported rollback evidence](#bug-009-s08-supported-rollback-evidence).
+- [x] No downstream repository file changed in S08. Evidence: [S08 concurrent-change and downstream boundary evidence](#bug-009-s08-concurrent-change-and-downstream-boundary-evidence).
+
+##### BUG-009 S08 DevOps Installer/Provenance Evidence
+
+**Phase:** release
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/install-provenance-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (BUG-009 contract and repair windows from the full unfiltered run):**
+
+```text
+PASS: BUG-009 managed file installed: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 executable mode is correct: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 .manifest owns: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 .checksums records installed bytes: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 installed bytes match canonical source: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 release manifest records managed checksum: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 managed file installed: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 executable mode is correct: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 .manifest owns: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 .checksums records installed bytes: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 installed bytes match canonical source: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 release manifest records managed checksum: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 managed file installed: agents/bubbles.audit.agent.md
+PASS: BUG-009 .manifest owns: agents/bubbles.audit.agent.md
+PASS: BUG-009 .checksums records installed bytes: agents/bubbles.audit.agent.md
+PASS: BUG-009 installed bytes match canonical source: agents/bubbles.audit.agent.md
+PASS: BUG-009 managed file installed: agents/bubbles_shared/workflow-phase-engine.md
+PASS: BUG-009 .manifest owns: agents/bubbles_shared/workflow-phase-engine.md
+PASS: BUG-009 .checksums records installed bytes: agents/bubbles_shared/workflow-phase-engine.md
+PASS: BUG-009 installed bytes match canonical source: agents/bubbles_shared/workflow-phase-engine.md
+PASS: BUG-009 managed file installed: bubbles/workflows/modes.yaml
+PASS: BUG-009 .manifest owns: bubbles/workflows/modes.yaml
+PASS: BUG-009 .checksums records installed bytes: bubbles/workflows/modes.yaml
+PASS: BUG-009 installed bytes match canonical source: bubbles/workflows/modes.yaml
+PASS: BUG-009 source-only regression is not installed: tests/regression/test_23_planning_audit_contract.sh
+PASS: BUG-009 source-only regression is absent from .manifest: tests/regression/test_23_planning_audit_contract.sh
+PASS: BUG-009 source-only regression is absent from .checksums: tests/regression/test_23_planning_audit_contract.sh
+PASS: BUG-009 release manifest records source-only checksum: tests/regression/test_23_planning_audit_contract.sh
+PASS: BUG-009 checksum snapshot detects managed-file byte drift
+PASS: BUG-009 executable mode is correct: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 installed bytes match canonical source: bubbles/scripts/transition-contract-resolver.sh
+PASS: BUG-009 checksum snapshot detects managed-file removal
+PASS: BUG-009 executable mode is correct: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 installed bytes match canonical source: bubbles/scripts/audit-result-contract-lint.sh
+PASS: Installed manifest reports 610 managed files (>=300 sanity floor)
+install-provenance selftest passed.
+```
+
+**Result:** PASS — the real local-source installer carried all 21 changed
+install-managed BUG-009 interfaces plus the source-only persistent regression.
+For every managed path, the selftest checked presence, required executable mode,
+exact `.manifest` ownership, `.checksums` membership against installed bytes,
+canonical-to-installed byte identity, and release-manifest checksum provenance.
+It then detected resolver byte/mode drift and audit-lint removal, and proved a
+supported re-install restores bytes, executable mode, membership, and checksum
+provenance. The run executed successfully on macOS using portable shell forms.
+
+**Installer disposition:** the existing broad-copy paths in `install.sh` cover
+top-level scripts, schemas, workflow registries, agents, shared contracts,
+templates, and docs. No installer behavior gap was observed, so `install.sh`
+was not changed. Version, changelog, generated workflow, release manifest,
+release docs, release-check, rollback, and downstream upgrade remain untouched
+by this DevOps slice and are not claimed complete.
+
+**S08 DevOps disposition:** terminal `route_required`. Installer provenance is
+ready for release ownership; `bubbles.releases` remains required for the
+canonical version, derived regeneration, final release manifest, release-check,
+and rollback evidence before S08 can become Done.
+
+##### BUG-009 S08 Version And Changelog Truth Evidence
+
+**Phase:** release
+**Command:** A focused shell assertion checked `VERSION`, the `Unreleased` and
+`v7.20.0` headings, the BUG-009 behavior/evidence statements, all four explicit
+non-claims, and `git diff --check -- VERSION CHANGELOG.md`.
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S08 version and changelog truth
+CHECK: semantic version
+PASS: VERSION is 7.20.0
+PASS: Unreleased heading remains available
+PASS: 7.20.0 release heading exists
+PASS: minor-release theme names planning transition audits
+CHECK: proven behavior and non-claims
+PASS: BUG-009 behavior is named
+PASS: S06 evidence basis is retained
+PASS: downstream upgrade remains unclaimed
+PASS: GuestHost installed-byte provenance remains unclaimed
+PASS: consumer recertification remains unclaimed
+PASS: BUG-009 closure remains unclaimed
+VERSION_CHANGELOG_FAILURES=0
+BUG-009 S08 version and changelog truth: PASS
+```
+
+**Result:** PASS — `7.20.0` is the repository-policy MINOR bump for the new
+registry-bound transition-audit capability. The release note claims only the
+S06/S07-proven BUG-009 behavior and explicitly excludes downstream upgrade,
+GuestHost installed-byte provenance, consumer recertification, and bug closure.
+
+##### BUG-009 S08 Provenance Fixture Repair Evidence
+
+**Phase:** release
+**Initial command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/cli.sh release-check`
+**Initial Exit Code:** 1
+**Focused command after repair:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/install-provenance-selftest.sh`
+**Focused Exit Code:** 0
+**Claim Source:** executed
+**Output (failure discriminator followed by the final focused-run window):**
+
+```text
+Framework validation failed with 1 failing check(s).
+Failed checks:
+  - Install provenance selftest
+FAIL: Framework validation
+Release check failed with 1 failing check(s).
+
+fatal: a branch named 'scope02"quoted' already exists
+
+PASS: Unsafe local-source refs fall back to literal local-source provenance
+PASS: BUG-009 managed file installed: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 .manifest owns: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 .checksums records installed bytes: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 installed bytes match canonical source: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 release manifest records managed checksum: bubbles/scripts/audit-result-contract-lint.sh
+PASS: BUG-009 source-only regression is absent from .manifest: tests/regression/test_23_planning_audit_contract.sh
+PASS: BUG-009 checksum snapshot detects managed-file byte drift
+PASS: BUG-009 checksum snapshot detects managed-file removal
+PASS: Installed manifest reports 612 managed files (>=300 sanity floor)
+install-provenance selftest passed.
+```
+
+**Result:** PASS — the first canonical release check exposed a real S08-owned
+fixture defect: copied linked-worktree Git metadata made the unsafe-ref fixture
+reuse a shared branch. The selftest now replaces copied `.git` metadata with an
+independent temporary repository before dirtying or branching either local
+source fixture. The focused rerun passes all install, ownership, checksum,
+byte-parity, executable-mode, drift/removal, and source-only assertions. No
+installer production behavior changed.
+
+##### BUG-009 S08 Manifest-Last Regeneration Evidence
+
+**Phase:** release
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/regen-derived.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+==> regenerating: framework stats (README / CHEATSHEET / html / framework-stats.*)
+Updated Bubbles framework stats: 41 Agents · 109 Gates · 60 Workflow Modes · 30 Phases (v7.20.0)
+==> regenerating: cheatsheet
+cheatsheet generated: 57 modes, 59 aliases, 92 vocab terms
+==> regenerating: capability-ledger docs
+Updated capability ledger docs: 22 shipped, 1 partial, 0 proposed
+==> regenerating: release manifest (LAST — checksums everything above)
+Updated release manifest: 7.20.0 (610 managed files)
+
+Verifying derived-artifact freshness...
+==> verifying fresh: framework stats
+Framework stats are current: 41 Agents · 109 Gates · 60 Workflow Modes · 30 Phases (v7.20.0)
+==> verifying fresh: cheatsheet
+==> verifying fresh: capability-ledger docs
+Capability ledger docs are current: 22 shipped, 1 partial, 0 proposed
+==> verifying fresh: release manifest
+Release manifest is current: 7.20.0 (610 managed files)
+regen-derived: all derived artifacts are fresh.
+```
+
+**Result:** PASS — the canonical wrapper regenerated all derived families in
+dependency order and explicitly generated `bubbles/release-manifest.json` last.
+Its immediate check phase found every generated surface fresh. The wrapper, not
+a hand edit, produced the final manifest bytes.
+
+##### BUG-009 S08 Supported Rollback Evidence
+
+**Phase:** release
+**Commands:** A detached worktree at pre-BUG-009 commit
+`c34ba97cf1d6f646b40f031cad41aa72d76a622b` ran its own
+`bash bubbles/scripts/cli.sh release-check`; a temporary Git consumer installed
+the current `7.20.0` source through `install.sh --local-source`, then reinstalled
+the clean prior worktree through the same installer. A final assertion command
+checked version/provenance, candidate-only pruning, prior byte/checksum parity,
+the audit-history sentinel, and installed `framework-write-guard`.
+**Exit Codes:** 0, 0, 0, 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S08 supported rollback final verification
+PASS: pre-BUG-009 source release-check exited 0
+PASS: rollback source is exact pre-BUG-009 commit c34ba97
+PASS: installed rollback version is 7.19.2
+PASS: install provenance records exact rollback SHA
+PASS: install provenance records clean rollback source
+PASS: installer pruned candidate-only bubbles/scripts/audit-result-contract-lint-selftest.sh
+PASS: installer pruned candidate-only bubbles/scripts/audit-result-contract-lint.sh
+PASS: installer pruned candidate-only bubbles/scripts/transition-contract-resolver-selftest.sh
+PASS: installer pruned candidate-only bubbles/scripts/transition-contract-resolver.sh
+PASS: installer pruned candidate-only bubbles/scripts/adversarial-aggregate-selftest.sh
+PASS: installer pruned candidate-only bubbles/scripts/adversarial-aggregate.sh
+PASS: prior byte/checksum parity bubbles/scripts/framework-validate.sh
+PASS: prior byte/checksum parity bubbles/scripts/state-transition-guard.sh
+PASS: prior byte/checksum parity bubbles/workflows/modes.yaml
+PASS: prior byte/checksum parity agents/bubbles.audit.agent.md
+PASS: prior byte/checksum parity agents/bubbles_shared/workflow-phase-engine.md
+PASS: prior byte/checksum parity docs/guides/AGENT_MANUAL.md
+PASS: prior byte/checksum parity docs/recipes/framework-ops.md
+PASS: audit-history sentinel bytes are unchanged
+Installed release manifest: version=7.19.2 gitSha=c34ba97cf1d6f646b40f031cad41aa72d76a622b
+Install provenance: mode=local-source sourceRef=local-source sourceGitSha=c34ba97cf1d6f646b40f031cad41aa72d76a622b dirty=false
+Managed-file integrity: downstream framework-managed files still match the installed upstream snapshot
+PASS: installed grant-aware integrity guard exits 0
+ROLLBACK_VERIFICATION_FAILURES=0
+BUG-009 S08 supported rollback final verification: PASS
+```
+
+**Result:** PASS — rollback used the same supported installer path in a
+throwaway consumer, not history deletion or manual copying. It restored the
+last pre-BUG-009 `7.19.2` source, pruned candidate-only scripts, restored prior
+managed bytes/checksums and executable modes, passed the installed integrity
+guard, and left persisted audit-history bytes unchanged. No real downstream
+repository participated in the rehearsal.
+
+##### BUG-009 S08 Canonical Release-Check Evidence
+
+**Phase:** release
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/cli.sh release-check`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (final verdict window from the full 1,031-line unfiltered run):**
+
+```text
+stale-deferral-lint-selftest: 11 pass, 0 fail
+PASS: Stale-deferral lint selftest
+
+==> Stale-deferral lint (live)
+[stale-deferral-lint] OK — no lapsed forward-references (current VERSION 7.20.0)
+PASS: Stale-deferral lint (live)
+
+Framework validation passed.
+PASS: Framework validation
+
+==> Capability ledger docs freshness
+Capability ledger docs are current: 22 shipped, 1 partial, 0 proposed
+PASS: Capability ledger docs freshness
+
+==> Framework stats freshness
+Framework stats are current: 41 Agents · 109 Gates · 60 Workflow Modes · 30 Phases (v7.20.0)
+PASS: Framework stats freshness
+
+==> Cheatsheet freshness (v6.0 / B7)
+PASS: Cheatsheet freshness (v6.0 / B7)
+
+==> Release manifest freshness
+Release manifest is current: 7.20.0 (610 managed files)
+PASS: Release manifest freshness
+
+==> Required release files
+PASS: Required release files
+
+==> No stray temp or backup files
+PASS: No stray temp or backup files
+
+Release check passed.
+```
+
+**Result:** PASS — the exact canonical release command exited 0 after the
+focused provenance repair and final manifest-last regeneration. Framework
+validation, capability-ledger docs, framework stats, cheatsheet, release
+manifest, required files, and stray-file checks are all green.
+
+##### BUG-009 S08 Concurrent-Change And Downstream Boundary Evidence
+
+**Phase:** release
+**Command:** The executed boundary assertion compared Git blob IDs for all 21
+non-S08 authored/concurrent IMP-020 and adversarial-evaluation paths against the
+pre-regeneration baseline, compared full porcelain status for all five visible
+downstream repos, and ran scoped `git diff --check` over S08/generated paths.
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: all 21 non-S08 protected authored/concurrent paths retain exact bytes
+PASS: QuantitativeFinance status unchanged
+PASS: GuestHost status unchanged
+PASS: WanderAide status unchanged
+PASS: smackerel status unchanged
+PASS: knb status unchanged
+PASS: S08 and generated surfaces pass diff whitespace checks
+CONCURRENT_PROTECTED_PATHS=21
+DOWNSTREAM_REPOS_VERIFIED=5
+S08_FINAL_BOUNDARY=PASS
+```
+
+**Result:** PASS — every protected concurrent authored/untracked path retained
+its exact pre-S08 bytes. No downstream status changed. S08 changed only its
+version/changelog, provenance selftest, generator-owned release outputs, and
+this BUG-009 evidence/status record; `install.sh` and `regen-derived.sh` needed
+no source edit.
+
+**S08 disposition:** terminal `completed_owned`. All six S08 DoD items have
+execution-backed evidence. No S08 finding remains unresolved. S09 is now
+eligible and routes to `bubbles.devops` for the supported GuestHost upgrade and
+installed provenance verification. S10 and overall BUG-009 closure remain
+untouched and open.
 
 #### S09 — Supported GuestHost Upgrade And Provenance Verification
 
-- **Status:** Not Started
+- **Status:** Blocked — canonical manifest freshness was stale, so the required
+  no-mutation branch validated the existing installed snapshot; a concurrent
+  S10-shaped process then changed protected Spec 151 `state.json` after S09's
+  exact GuestHost baseline, preventing a clean preservation verdict
 - **Primary owner:** `bubbles.devops`
 - **Depends on:** S08
 **Change boundary:** no authored GuestHost framework-managed file. The only
@@ -4524,12 +5406,292 @@ And no direct downstream edit or product-specific fork exists
 
 **Definition of Done:**
 
-- [ ] Canonical `release-check` evidence predates the GuestHost upgrade.
-- [ ] GuestHost was upgraded only with the supported CLI; git diff proves no manual framework-managed edit path.
-- [ ] Manifest membership, checksums, bytes, executable bits, and release identity match for every BUG-009 managed surface.
-- [ ] Installed doctor/framework validation passes with full output.
+- [x] Canonical `release-check` evidence predates the GuestHost upgrade. Evidence: [S09 freshness branch and release chronology evidence](#bug-009-s09-freshness-branch-and-release-chronology-evidence).
+- [x] GuestHost followed the required stale-manifest no-mutation branch; the existing supported local-source install has no manual framework-managed drift. Evidence: [S09 freshness branch and release chronology evidence](#bug-009-s09-freshness-branch-and-release-chronology-evidence) and [S09 installed integrity, doctor, and framework validation evidence](#bug-009-s09-installed-integrity-doctor-and-framework-validation-evidence).
+- [x] Manifest membership, checksums, bytes, executable bits, and release identity match for every BUG-009 managed surface in the installed snapshot. Evidence: [S09 installed release identity and managed-surface parity evidence](#bug-009-s09-installed-release-identity-and-managed-surface-parity-evidence).
+- [x] Installed framework-write integrity, doctor, and framework validation pass with real output. Evidence: [S09 installed integrity, doctor, and framework validation evidence](#bug-009-s09-installed-integrity-doctor-and-framework-validation-evidence).
 - [ ] GuestHost Spec 151 and product source remain unchanged before S10 audit.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Exact pre/post GuestHost Git-visible fingerprinting plus per-file SHA-256 inventory for all Spec 151 files.
+  > **What was observed:** GuestHost first remained exactly at fingerprint `8a99b7b254c7e9d1c6884c79c5b6f74ee65db34f3b0699c00d24b177e291d08b`; later, Spec 151 `state.json` changed from baseline SHA-256 `eb2018386f8d17a72b1eff19a65a310056d4a53bfe435a26a2c3e3f1b5da1ee2` to `1ca81b20b3627b7b0369fbb01a4e77aecde32287edad05333e42697a21eb426f` with S10 audit/validate transition fields.
+  > **Why this is uncertain:** The mutation occurred outside this invocation after the clean S09 checkpoint. Reverting it would destroy concurrent work, while accepting it would falsely claim S09 preserved the protected pre-S10 bytes.
+  > **What would resolve this:** `bubbles.audit` must reconcile the concurrent S10 result with this S09 evidence, establish the authoritative Spec 151 state, and return a stable protected-byte baseline before S09 can be terminal.
 - [ ] No other downstream repository is patched or upgraded as part of BUG-009 consumer proof.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Exact pre/post fingerprints for QuantitativeFinance, GuestHost, WanderAide, smackerel, and knb, with only read-only status/hash commands outside GuestHost.
+  > **What was observed:** WanderAide remained exact; unrelated QuantitativeFinance, smackerel, and knb deployment work changed concurrently, and GuestHost later received the protected Spec 151 state mutation. No S09 command invoked an installer, upgrade, patch, build, deploy, or file write in any downstream repo.
+  > **Why this is uncertain:** Absolute byte equality cannot be claimed while independent writers are changing those worktrees, even though S09 itself issued no mutating downstream command.
+  > **What would resolve this:** Freeze or coordinate the concurrent writers, take a new stable downstream fingerprint checkpoint, and rerun the final read-only equality assertion.
+
+##### BUG-009 S09 Freshness Branch And Release Chronology Evidence
+
+**Phase:** deploy
+**Command:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/generate-release-manifest.sh --check` followed by the executed expected-stale branch assertion shown below
+**Exit Code:** 1 for the canonical freshness check; 0 for the expected-stale branch assertion
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S09 canonical freshness branch gate
+COMMAND: bash bubbles/scripts/generate-release-manifest.sh --check
+Release manifest is stale. Run bubbles/scripts/generate-release-manifest.sh
+FRESHNESS_EXIT_CODE=1
+EXPECTED_STALE_EXIT=1
+GUESTHOST_UPGRADE_EXECUTED=false
+VALIDATION_TARGET=existing-installed-snapshot
+INSTALLED_VERSION=7.20.0
+INSTALLED_AT=2026-07-12T04:28:28Z
+INSTALL_MODE=local-source
+PASS: stale manifest selected the required no-mutation branch
+BUG-009 S09 freshness/no-upgrade branch: PASS
+```
+
+**Result:** PASS — freshness was checked before any consumer operation. The
+canonical manifest was stale, so S09 did not invoke `upgrade`, `install.sh`, or
+any copy/patch path and instead validated the existing installed snapshot, as
+required by the operator's branch contract.
+
+**Phase:** deploy
+**Command:** The executed read-only chronology assertion parsed the installed release-manifest offset timestamp with macOS `date -j -f`, parsed the UTC installation timestamp, rejected empty/non-numeric epochs, and checked the prior S08 release-check evidence in this file.
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+INSTALLED_VERSION=7.20.0
+RELEASE_MANIFEST_VERSION=7.20.0
+RELEASE_MANIFEST_GENERATED_AT=2026-07-11T13:12:38-07:00
+GUESTHOST_INSTALLED_AT=2026-07-12T04:28:28Z
+RELEASE_MANIFEST_GENERATED_EPOCH=1783800758
+GUESTHOST_INSTALLED_EPOCH=1783830508
+GENERATION_PRECEDES_INSTALL_BY_SECONDS=29750
+PASS: canonical BUGS.md contains prior S08 release-check evidence
+PASS: prior S08 evidence contains observed release-check success token
+PASS: installed release-manifest generation predates GuestHost installation
+BUG-009 S09 release/install chronology: PASS
+```
+
+**Result:** PASS — the installed `7.20.0` manifest was generated 29,750
+seconds before the GuestHost install, and the successful canonical S08
+release-check evidence already precedes this scope. An earlier UTC-only helper
+attempt returned an empty epoch for the offset timestamp and was discarded;
+only the strict numeric offset-aware rerun above supports this claim.
+
+##### BUG-009 S09 Installed Release Identity And Managed-Surface Parity Evidence
+
+**Phase:** deploy
+**Command:** The executed read-only assertion enumerated the exact 8 executable and 13 non-executable BUG-009 install-managed paths from the canonical S08 provenance selftest, then checked unique `.manifest`, `.checksums`, and installed `release-manifest.json` membership, actual SHA-256 bytes, executable classification, release identity, and source-only regression classification.
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+PASS: release identity version=7.20.0
+PASS: install provenance mode=local-source sourceRef=main
+PASS: source SHA equals release-manifest SHA=9b785d7da7554082cfe0232998ef72cc99637087
+PASS: recorded source SHA exists in canonical Git object database
+PASS: sourceDirty explicitly recorded as true
+PASS: installedAt=2026-07-12T04:28:28Z
+PASS: release manifest declares 610 managed files
+OBSERVED: installed release manifest differs from current stale canonical manifest
+PASS: bubbles/scripts/audit-result-contract-lint-selftest.sh manifest=1 checksums=1 release=1 sha256=4b5058b7f69ed0bd7a73ece889556175ebc8cd950f4f6789abb939084459b04e executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/audit-result-contract-lint.sh manifest=1 checksums=1 release=1 sha256=e73c4fce2c5c9cdc16f5bcdbb29224e036543f88996938690e12b021b8042839 executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/framework-validate.sh manifest=1 checksums=1 release=1 sha256=7378aabb1f152a5b12ab873383576c4c5815eadb33626b7eecc5cfd417264261 executable=yes canonicalWorkingTree=post-release-drift
+PASS: bubbles/scripts/state-transition-guard-perf-selftest.sh manifest=1 checksums=1 release=1 sha256=8326f217554267b09afd1be3e468e34107002d51e56b56452ca7cf9cc0c45c53 executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/state-transition-guard-selftest.sh manifest=1 checksums=1 release=1 sha256=20593a047f006cde0eb3db51f1c50b27c3230a46344d35aeea27e1da83dfd3ea executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/state-transition-guard.sh manifest=1 checksums=1 release=1 sha256=7851c003dde98e4a28f6448599554352c3891c19883f33eed9f68ae495da1cae executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/transition-contract-resolver-selftest.sh manifest=1 checksums=1 release=1 sha256=e3cad9d2319d10ed7c7883bbb3995b58d150d1cb25ccb99f1777dfd431cd09c0 executable=yes canonicalWorkingTree=match
+PASS: bubbles/scripts/transition-contract-resolver.sh manifest=1 checksums=1 release=1 sha256=5750f6c15bf5bd86ae443b19927dff36f284d122865e0c97b33c6abdf3a37050 executable=yes canonicalWorkingTree=match
+PASS: bubbles/schemas/workflows.schema.json manifest=1 checksums=1 release=1 sha256=91dc038dffa6cd80d3015d0de71ac1f1abca11fe231e62837d6b05a16df59c19 executable=no canonicalWorkingTree=match
+PASS: bubbles/workflows/modes.yaml manifest=1 checksums=1 release=1 sha256=0b408864aaea4a5008f395f3acc71b5d60a883c1104c9d620d9508f237c2fac4 executable=no canonicalWorkingTree=match
+PASS: bubbles/workflows.yaml manifest=1 checksums=1 release=1 sha256=97c87a979420d75156d8fec7ca603ab8eb637f0070ae6932e538776a2ef97629 executable=no canonicalWorkingTree=match
+PASS: agents/bubbles.audit.agent.md manifest=1 checksums=1 release=1 sha256=61ac157cc1b43849dece5e1c346c6c57a5e3416fa76b4dac6975d663601edf7b executable=no canonicalWorkingTree=match
+PASS: agents/bubbles.validate.agent.md manifest=1 checksums=1 release=1 sha256=69c0ca8dfbfaf11a40724f8ce8a4cd2c8c554923f720c8e90a07c4c1f9c59ac8 executable=no canonicalWorkingTree=match
+PASS: agents/bubbles_shared/feature-templates.md manifest=1 checksums=1 release=1 sha256=cc79d0f237b69a992216866f68179a5ba8a8c516514330b20b3ca4134e87059c executable=no canonicalWorkingTree=match
+PASS: agents/bubbles_shared/scope-templates.md manifest=1 checksums=1 release=1 sha256=6ededca8b964873896a7f196af4fb63813c46e05b554f73235c1d02144eac410 executable=no canonicalWorkingTree=match
+PASS: agents/bubbles_shared/scope-workflow.md manifest=1 checksums=1 release=1 sha256=113486001f4116418aec227d654c1bb7c662ef3f3dd63120c143ae0cbb316431 executable=no canonicalWorkingTree=match
+PASS: agents/bubbles_shared/validation-profiles.md manifest=1 checksums=1 release=1 sha256=fa660f030cfdd2c63af56d5d943d7460bcd9d1cee1443353a1e631ed705038b9 executable=no canonicalWorkingTree=match
+PASS: agents/bubbles_shared/workflow-phase-engine.md manifest=1 checksums=1 release=1 sha256=5d3f716010809943559cc37a684d68462b8dbcbdb295969ba3eb4f32ce573780 executable=no canonicalWorkingTree=match
+PASS: docs/guides/AGENT_MANUAL.md manifest=1 checksums=1 release=1 sha256=77573e1d69e4db9db65552770b58f8bcb3923bf8e3febdc08133a71acfc12584 executable=no canonicalWorkingTree=match
+PASS: docs/guides/CONTROL_PLANE_DESIGN.md manifest=1 checksums=1 release=1 sha256=862ae96b12133337ee6d960357e69aa7de633eb9904cd0da15dd0b490408c320 executable=no canonicalWorkingTree=match
+PASS: docs/recipes/framework-ops.md manifest=1 checksums=1 release=1 sha256=9737f4a84dd2a4bf3cad5582f67395c8d0c47c9ab5570ccf1357bb580cca1d47 executable=no canonicalWorkingTree=match
+PASS: source-only regression release checksum=9ad8f348e8afa47b5828b997c776233cc784fb920adccaf7a348a8c44a7f9a04 and downstream absence are correct
+BUG009_MANAGED_TOTAL=21
+BUG009_MEMBERSHIP_AND_CHECKSUM_PASS=21
+BUG009_EXECUTABLE_CLASSIFICATION_PASS=21
+CANONICAL_WORKTREE_MATCH=20
+CANONICAL_POST_RELEASE_DRIFT=1
+SOURCE_DIRTY_RECORDED=true
+CHECK_FAILURES=0
+BUG-009 S09 installed release identity and managed-surface parity: PASS
+```
+
+**Result:** PASS — every BUG-009 install-managed path appears exactly once in
+all three installed provenance surfaces, and each actual installed SHA-256 and
+executable classification matches that snapshot. The persistent regression is
+correctly recorded under `sourceOnlyFileChecksums` and absent downstream.
+
+**Provenance qualification:** this is a supported, internally exact
+local-source snapshot, not a clean published-release claim. The recorded
+`sourceDirty=true` is material: an additional read-only Git-object probe found
+17/21 byte matches to commit `9b785d7`, while four generated release surfaces
+came from the dirty release tree; two new scripts were normalized executable by
+the installer while their recorded commit modes were `100644`. Those expected
+dirty-source differences do not conflict with the installed manifest/checksum
+parity above and must remain visible to S10 audit.
+
+##### BUG-009 S09 Installed Integrity Doctor And Framework Validation Evidence
+
+**Phase:** deploy
+**Command:** `cd /Users/pkirsanov/Projects/GuestHost && bash .github/bubbles/scripts/cli.sh framework-write-guard`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S09 installed framework-write integrity
+COMMAND: bash .github/bubbles/scripts/cli.sh framework-write-guard
+Checking downstream framework-managed files against .github/bubbles/.checksums
+Installed release manifest: version=7.20.0 gitSha=9b785d7da7554082cfe0232998ef72cc99637087
+Install provenance: mode=local-source sourceRef=main sourceGitSha=9b785d7da7554082cfe0232998ef72cc99637087 dirty=true
+Supported profiles: foundation, delivery, production, assured
+Supported interop sources: claude-code, roo-code, cursor, cline
+Installed from a dirty local source checkout. This is not a clean published release install.
+Managed-file integrity: downstream framework-managed files still match the installed upstream snapshot
+FRAMEWORK_WRITE_GUARD_EXIT_CODE=0
+EXPECTED_EXIT_CODE=0
+BUG-009 S09 installed framework-write integrity: PASS
+```
+
+**Phase:** deploy
+**Command:** `cd /Users/pkirsanov/Projects/GuestHost && bash .github/bubbles/scripts/cli.sh doctor`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (trust/integrity and final verdict window from the full unfiltered run):**
+
+```text
+Framework Integrity
+  Core agents installed (42)
+  Governance scripts installed (250)
+  Workflow config present
+  Control-plane policy registry present (.specify/memory/bubbles.config.json)
+  All scripts executable
+  Bubbles version: 7.20.0
+  Portable Bubbles surfaces pass agnosticity lint
+  Installed release manifest: version=7.20.0 gitSha=9b785d7da7554082cfe0232998ef72cc99637087
+  Install provenance: mode=local-source sourceRef=main sourceGitSha=9b785d7da7554082cfe0232998ef72cc99637087 dirty=true
+  Installed from a dirty local source checkout. This is not a clean published release install.
+  Managed-file integrity: downstream framework-managed files still match the installed upstream snapshot
+  Workflow inventory and documented control-plane surfaces are consistent
+  Agent instruction budgets are within the hard limit
+  Runtime lease registry readable
+  Framework drift advisory: 5 drifted, 5 missing vs release manifest (run 'bubbles-drift-check.sh' for detail)
+  Governance hub snapshot: top hub is critical-requirements.md (in-degree 52, shared-module)
+  Project config files exist
+  No unfilled TODO markers
+  specs/ directory exists
+  No custom gate scripts defined
+  Project scan config present (.github/bubbles-project.yaml)
+  Observability posture: WIRED
+Result: 17 passed, 0 failed, 0 advisory
+```
+
+**Phase:** deploy
+**Command:** `cd /Users/pkirsanov/Projects/GuestHost && bash .github/bubbles/scripts/cli.sh framework-validate`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output (final verdict window from the full 44 KB unfiltered run):**
+
+```text
+PASS: Case 9: missing VERSION fails (exit 1)
+PASS: Case 10: lapsed caught alongside a legit future deferral (exit 1)
+PASS: Case 11: own selftest path is excluded (exit 0)
+
+stale-deferral-lint-selftest: 11 pass, 0 fail
+PASS: Stale-deferral lint selftest
+
+==> Stale-deferral lint (live)
+SKIP: Stale-deferral lint (live) (framework-source-only; install-mode=downstream)
+
+Framework validation passed (35 self-only check(s) skipped under install-mode=downstream). Run from a framework-source tree to execute them.
+Framework validation passed.
+EXIT_CODE=0
+```
+
+**Result:** PASS — installed managed-file integrity, doctor, and the downstream
+framework validation all exit zero. Doctor retains two honest non-blocking
+signals: dirty local-source provenance and a `5 drifted, 5 missing` advisory
+against today's newer canonical release manifest. The installed validation
+executed downstream checks and explicitly skipped 35 framework-source-only
+checks by contract.
+
+##### BUG-009 S09 Downstream Preservation Evidence
+
+**Phase:** deploy
+**Command:** The executed pre-validation fingerprint serialized each repository's HEAD, porcelain status, full tracked/staged binary diff, untracked paths, and untracked blob hashes; the post-validation assertion recomputed the same SHA-256 values. Canonical `BUGS.md` was excluded because it is S09's sole authorized edit.
+**Exit Code:** 1 for the absolute six-repository equality assertion because four unrelated repositories changed concurrently; 0 for GuestHost and WanderAide preservation assertions
+**Claim Source:** executed
+**Output:**
+
+```text
+FAIL: canonical Bubbles excluding BUGS.md changed expected=97f67795722cede1809f28c65e290024174b781b30a7cf79f23047427d503eb1 actual=567d95955b61412196c639f77c5e78d5376191aa7b131e557428029075712bb5
+PASS: GuestHost complete Git-visible tree (includes Spec 151 and product source) unchanged sha256=8a99b7b254c7e9d1c6884c79c5b6f74ee65db34f3b0699c00d24b177e291d08b
+FAIL: QuantitativeFinance complete Git-visible tree changed expected=ba3df521ff7aa5d03f22a36afe8938e563118b9227085e5605a6c934102ec511 actual=2fd0583faae6c0cb03c9a07af953c7c0671d9127dd77bc4ffb1a3c2875ae5485
+PASS: WanderAide complete Git-visible tree unchanged sha256=4fe638f8ca609406acb2fdd26cf2f43bd50212a04a0c2fa50a30ddb46208586e
+FAIL: smackerel complete Git-visible tree changed expected=f96d6eda5f17e933b49f135db35adc9293b2a8dd172a64dd7a7c400cc2189cb6 actual=7d10742dfd190509f76df1a8b0f651a3ae13fa72e1575553aea377b6567a4fd0
+FAIL: knb complete Git-visible tree changed expected=c34881a7cef4ca2512ab2f55395a3f047a996c7f5ddf6a0f904b81e37a0747f4 actual=e14a74e28dba3851a17fa267d70caf36927eb1be752b20d67826fb25adf16756
+PRESERVATION_CHECKS=6
+PRESERVATION_FAILURES=4
+BUG-009 S09 pre/post worktree preservation: FAIL
+```
+
+**Interpretation:** GuestHost's complete Git-visible projection is exactly
+unchanged, directly preserving every Spec 151 and product byte as well as all
+pre-existing dirty work. WanderAide is also byte-identical. During the
+read-only GuestHost validation window, unrelated canonical recipe work and
+active QuantitativeFinance, smackerel, and knb deployment edits appeared. S09
+issued no mutating command in those repositories and did not revert or absorb
+the concurrent work. A later final checkpoint detected a second concurrent
+wave, including the protected Spec 151 mutation below; therefore this earlier
+clean GuestHost result cannot support terminal S09 preservation.
+
+##### BUG-009 S09 Concurrent S10 Mutation Blocker Evidence
+
+**Phase:** deploy
+**Command:** The executed read-only discriminator compared the current Spec 151 `state.json` SHA-256 with S09's pre-validation baseline and projected the transition-owned status, active agent, phase, certification, and promotion fields with `jq`.
+**Exit Code:** 0 for successful blocker detection
+**Claim Source:** executed
+**Output:**
+
+```text
+BUG-009 S09 protected Spec 151 mutation detector
+SPEC151_STATE_BASELINE_SHA256=eb2018386f8d17a72b1eff19a65a310056d4a53bfe435a26a2c3e3f1b5da1ee2
+SPEC151_STATE_CURRENT_SHA256=1ca81b20b3627b7b0369fbb01a4e77aecde32287edad05333e42697a21eb426f
+STATE_HASH_CHANGED=true
+CURRENT_TOP_LEVEL_STATUS=specs_hardened
+CURRENT_EXECUTION_ACTIVE_AGENT=bubbles.audit
+CURRENT_EXECUTION_PHASE=audit
+CURRENT_CERTIFICATION_STATUS=specs_hardened
+CURRENT_CERTIFIED_PHASES=validate,audit
+CURRENT_PROMOTED_BY=bubbles.validate
+CURRENT_PROMOTION_TARGET=specs_hardened
+PASS: concurrent S10-shaped mutation detected and preserved without rollback
+S09_PROTECTED_BYTE_VERDICT=BLOCKED
+BUG-009 S09 concurrent-mutation detector: PASS
+```
+
+**Result:** BLOCKED — the current diff changes top-level and certification
+status from `not_started` to `specs_hardened`, adds the audit phase claim, and
+adds validate-owned promotion metadata. Those are S10 surfaces and appeared
+after S09 had already proved an unchanged GuestHost fingerprint. This
+invocation neither produced nor reverted them. S09 cannot honestly become Done
+or route as clean until `bubbles.audit` reconciles the concurrent transition.
+
+**S09 disposition:** terminal `blocked`. Installed release validation has no
+open DevOps defect: stale-source branching, identity, installed checksum and
+mode parity, framework-write integrity, doctor, and framework validation are
+all execution-backed. The sole blocker is the concurrent protected-state/S10
+mutation and moving downstream worktrees. Required owner: `bubbles.audit`.
 
 #### S10 — GuestHost Spec 151 Audit, Transition, And Finding Closure
 
@@ -4646,3 +5808,2950 @@ checked implementation DoD, and no `fixed`, `verified`, or `closed` status.
 `specs_hardened` ceiling and routes to `bubbles.implement` through the preferred
 `bugfix-fastlane` workflow. No implementation or delivery claim is made.
 
+---
+
+## BUG-010 — adversarial resolver validates shadowed counts and substring-matches directive keys
+
+- **Filed:** 2026-07-11
+- **Status:** In Progress — the focused resolver fix is independently verified;
+  broader IMP-020 S2 integration and certification remain open
+- **Disposition:** both in-scope implementation findings are fixed and
+  independently verified with current-session evidence. IMP-020 S2 remains
+  open for its broader framework integration, finding reconciliation, and
+  certification work
+- **Discovered by:** IMP-020 S2 live three-sample adversarial run,
+  `s2-live-invocation-01` / `sample-01.json`
+- **Severity:** high — the resolver can reject a valid highest-priority sample
+  count and can silently invent both canonical and deprecated count directives
+  from unrelated words
+- **Affects:** `bubbles/scripts/adversarial-resolve.sh` precedence validation
+  and `directive_token`; regression coverage belongs in
+  `bubbles/scripts/adversarial-resolve-selftest.sh`
+- **Routing:** return to the IMP-020 orchestrator for S2 finding reconciliation
+  and remaining integration/certification, then `bubbles.docs` and
+  `bubbles.releases` as applicable; no implementation handoff remains
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/` in
+> the Bubbles source checkout. This compact BUG-010 entry is therefore the full
+> source-repo bug artifact: reproduction, evidence provenance, expected
+> behavior, root cause, scenarios, change boundary, implementation/test plan,
+> DoD, status, and routing. No `specs/` artifact is created for this bug.
+
+### BUG-010 Summary
+
+The IMP-020 S2 resolver promises one highest-wins chain for `samples`:
+directive, then environment, then project config, then default. Two tightly
+related parser/resolution defects violate that contract:
+
+1. The script validates every populated count in every layer before selecting
+   the effective layer. A valid `--samples 3` is therefore rejected when a
+   shadowed lower-priority `BUBBLES_ADVERSARIAL_SAMPLES=0` exists, even though
+   the environment value cannot win.
+2. Free-form directive extraction searches for key text without identifier
+   boundaries. `resamples: 7 compasses: 9` is misread as the exact keys
+   `samples: 7` and `passes: 9`; the resolver returns seven samples and falsely
+   reports use of the deprecated `passes` alias.
+
+Both defects are at the same trust boundary: input tokens must first be
+identified exactly and resolved by precedence, and only the selected effective
+value may determine success or failure.
+
+### Focused Fix Verification — Current Session
+
+**Claim Source:** executed
+
+**Command 1:** `cd /Users/pkirsanov/Projects/bubbles && bash bubbles/scripts/adversarial-resolve-selftest.sh`
+
+**Command 2:** `cd /Users/pkirsanov/Projects/bubbles && BUBBLES_ADVERSARIAL_SAMPLES=0 bash bubbles/scripts/adversarial-resolve.sh --repo-root /tmp --samples 3 && bash bubbles/scripts/adversarial-resolve.sh --repo-root /tmp --directive 'resamples: 7 compasses: 9' && bash bubbles/scripts/adversarial-resolve.sh --repo-root /tmp --directive 'my-samples: 7'`
+
+**Exit Codes:** 0, 0
+
+**Concise raw output from the independent run:**
+
+```text
+adversarial-resolve-selftest: 150 passed, 0 failed
+PASS
+mode=off
+samples=3
+sampleSemantics=same-runtime-correlated
+teeth=warn
+source=default
+samplesSource=directive
+deprecation=none
+mode=off
+samples=1
+sampleSemantics=same-runtime-correlated
+teeth=warn
+source=default
+samplesSource=default
+deprecation=none
+mode=off
+samples=1
+sampleSemantics=same-runtime-correlated
+teeth=warn
+source=default
+samplesSource=default
+deprecation=none
+```
+
+**Result:** PASS — the 150-assertion focused selftest has zero failures. In the
+live probes, a shadowed invalid `BUBBLES_ADVERSARIAL_SAMPLES=0` no longer
+rejects valid `--samples 3`, and both `resamples: 7 compasses: 9` and
+`my-samples: 7` leave the resolver at `samples=1`, `samplesSource=default`, and
+`deprecation=none`. This verifies the two BUG-010 implementation findings only;
+it does not establish broader IMP-020 S2 integration, framework validation,
+certification, release, propagation, or downstream installation.
+
+### Live S2 Evidence And Reproduction — Before Fix
+
+**Claim Source:** executed by the pre-existing IMP-020 S2 live invocation;
+interpreted against current source in this documentation phase.
+
+**Evidence record:** `/tmp/bubbles-imp020-s2-live/sample-01.json`, sample
+`s2-live-01`, invocation `s2-live-invocation-01`, verdict `findings`. The record
+marks both findings `blocking: true` and points to focused probes 3 and 4.
+Sample 02 was clear; Sample 03 reported separate public-claim findings. BUG-010
+accounts only for the two resolver findings from Sample 01.
+
+**Rerun statement:** the two focused probes were **not rerun** during this
+G085 documentation-only edit. The commands below encode the live probe inputs;
+the observed contracts are transcribed from the live record and corroborated
+by the current resolver control path. No post-fix output exists.
+
+#### Finding 1 — shadowed invalid environment value rejects valid directive
+
+```bash
+cd /path/to/bubbles
+BUBBLES_ADVERSARIAL_SAMPLES=0 \
+  bash bubbles/scripts/adversarial-resolve.sh --samples 3
+```
+
+**Observed output/exit contract:** stdout is empty; stderr reports:
+
+```text
+adversarial-resolve: invalid BUBBLES_ADVERSARIAL_SAMPLES '0' (expected positive integer)
+```
+
+The process exits `1` (validation failure). The valid directive never reaches
+the documented precedence result `samples=3` / `samplesSource=directive`.
+
+#### Finding 2 — longer identifiers are accepted as directive keys
+
+```bash
+cd /path/to/bubbles
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'resamples: 7 compasses: 9'
+```
+
+**Observed discriminating output/exit contract:** the process exits `0`,
+resolves `samples=7` from the directive layer, and reports deprecated-alias
+metadata even though neither exact key was supplied:
+
+```text
+samples=7
+samplesSource=directive
+deprecation=passes-alias
+```
+
+Current source also emits the corresponding stderr warning
+`DEPRECATED: passes alias used at layer(s): directive; use samples instead`.
+That warning is itself false metadata for this input because `compasses` is not
+the `passes` key.
+
+### Confirmed Pre-Fix Root Cause
+
+`bubbles/scripts/adversarial-resolve.sh` confirms both failure paths:
+
+1. `validate_count` is called for directive samples/passes, environment
+   samples/passes, and config samples/passes **before** `resolve_layer` chooses
+   directive over environment over config over default. Validation therefore
+   observes values that have already lost precedence.
+2. `directive_token` runs an unbounded expression equivalent to
+   `(${key})[[:space:]]*[:=]...`. For key `samples`, the match can begin in the
+   middle of `resamples`; for key `passes`, it can begin in `compasses`.
+   `head -n1` then turns each substring into a real directive value.
+3. `adversarial-resolve-selftest.sh` proves valid precedence and invalid values
+   only in isolation. It has no case where an invalid lower layer is shadowed
+   by a valid higher layer, and no longer-identifier adversary for directive
+   keys. The current positives therefore cannot detect either defect.
+
+### BUG-010 Expected Behavior
+
+- The resolver MUST select the effective value by the documented precedence
+  chain before validating that effective value.
+- A valid higher-priority value MUST not be rejected by an invalid value in a
+  shadowed lower-priority layer.
+- An invalid value that actually wins precedence MUST still exit `1` with the
+  existing value-specific diagnostic. This fix is not permission to weaken
+  fail-closed validation.
+- Directive extraction MUST recognize exact `mode`, `adversarial`, `samples`,
+  `passes`, and `teeth` keys only at token boundaries accepted by the free-form
+  directive grammar.
+- `resamples` and `compasses` MUST match neither `samples` nor `passes`. With no
+  other count source, the input resolves `samples=1`,
+  `samplesSource=default`, `deprecation=none`, and emits no alias warning.
+- Exact `samples: N` and exact deprecated `passes: N` behavior, including
+  canonical-samples-wins at the same layer, MUST remain compatible.
+- Exit contracts remain closed: `0` resolved, `1` selected-value validation
+  failure, and `2` usage error.
+
+### Regression Scenarios
+
+```gherkin
+Feature: Exact adversarial sample resolution
+
+  Scenario: A valid directive count shadows an invalid environment count
+    Given BUBBLES_ADVERSARIAL_SAMPLES is 0
+    And the per-run arguments contain --samples 3
+    When adversarial-resolve selects and validates the effective sample count
+    Then it exits 0
+    And it emits samples=3
+    And it emits samplesSource=directive
+    And it does not validate the shadowed environment count as effective input
+
+  Scenario: Longer identifiers do not become samples or passes directives
+    Given no environment or project-config sample count is set
+    And the free-form directive is "resamples: 7 compasses: 9"
+    When adversarial-resolve extracts exact directive keys
+    Then it exits 0
+    And it emits samples=1
+    And it emits samplesSource=default
+    And it emits deprecation=none
+    And it emits no deprecated passes-alias warning
+```
+
+### Change Boundary
+
+**Authorized implementation surfaces:**
+
+- `bubbles/scripts/adversarial-resolve.sh` — exact token matching and
+  precedence-before-validation for count resolution.
+- `bubbles/scripts/adversarial-resolve-selftest.sh` — the two exact regression
+  cases plus anti-overcorrection controls.
+
+**Excluded from this bug fix:** aggregator behavior/schema, sample dispatch,
+red-team agent contracts, public terminology/docs, unrelated IMP-020 findings,
+BUG-009, downstream installed copies, and any new `specs/` tree. Generated
+release provenance remains a later `bubbles.releases` responsibility after the
+source fix and tests are green; no managed downstream file may be hand-patched.
+
+### Implementation Plan
+
+1. Refactor count selection so each layer first chooses canonical `samples`
+   over its same-layer `passes` alias, then the existing precedence chain
+   chooses one effective count, and only that selected count is validated.
+2. Preserve the selected layer/name in diagnostics so an invalid winning
+   environment or config value still reports its existing specific label.
+3. Make `directive_token` require portable, explicit key boundaries rather
+   than substring matches; do not introduce GNU-only PCRE/lookbehind behavior.
+4. Preserve exact-key compatibility, deprecation metadata, canonical output
+   order, `same-runtime-correlated` semantics, and exits `0/1/2`.
+5. Keep the patch minimal and canonical-source-only; do not mix in the other
+   Sample 01/03 findings.
+
+### Test Plan
+
+1. `bubbles.implement` adds the two scenarios to
+   `adversarial-resolve-selftest.sh` before changing production behavior and
+   records that they fail for the exact pre-fix reasons.
+2. Add precedence controls proving a selected invalid environment/config value
+   still exits `1`, while valid directive-over-invalid-environment and
+   environment-over-invalid-config combinations resolve successfully.
+3. Add token controls proving exact `samples:` and exact `passes:` still work,
+   same-layer canonical `samples` still wins, and `resamples`/`compasses` create
+   neither a count nor deprecation metadata.
+4. `bubbles.test` runs the production resolver through the focused shell
+   selftest, scans the new cases for silent-pass bailout patterns, and runs the
+   canonical framework validation command with full output.
+5. Re-run the two live focused probes after the fix. IMP-020 S2 finding
+   accounting remains open unless both post-fix contracts match Expected
+   Behavior. API, browser/UI, datastore, load, and telemetry tests are not
+   applicable to this pure shell resolver contract and must not be fabricated.
+
+### Definition Of Done
+
+- [ ] Pre-fix regression evidence shows both new behavior tests failing for
+  the exact BUG-010 reasons.
+- [x] Effective count precedence is selected before validation, without
+  weakening validation of the selected value. Evidence: [focused fix
+  verification](#focused-fix-verification--current-session).
+- [x] Directive keys are matched exactly; `resamples` and `compasses` are not
+  accepted as `samples` and `passes`. Evidence: [focused fix
+  verification](#focused-fix-verification--current-session).
+- [ ] Exact canonical and deprecated-alias compatibility controls pass.
+- [ ] The focused resolver selftest passes with no silent-return or
+  test-created-success bailout.
+- [ ] Canonical framework validation passes with full execution evidence.
+- [ ] The two live focused probes are rerun after the fix and produce the
+  expected exit/output contracts.
+- [ ] `bubbles.test` verifies all applicable regression and compatibility
+  checks with no collateral failures.
+- [ ] Both Sample 01 findings are accounted for one-to-one; IMP-020 S2 remains
+  open for any other S2 blocker and cannot close while BUG-010 is unresolved.
+- [ ] BUG-010 is marked fixed/verified only after implementation and test
+  evidence exists; release/propagation is not inferred from source validation.
+
+### Current Disposition And Handoff
+
+BUG-010's two focused implementation findings are fixed and independently
+verified by the current-session 150/0 selftest and live resolver probes above.
+Only the two precisely matching implementation DoD items are checked. The
+pre-fix-evidence, compatibility-control, broader framework-validation,
+independent test-owner, full S2 accounting, certification, release,
+propagation, and downstream items remain unchecked and unclaimed.
+
+The next required owner is the IMP-020 orchestrator for one-to-one S2 finding
+reconciliation and the remaining integration/certification chain. Route to
+`bubbles.docs` for managed documentation reconciliation and to
+`bubbles.releases` for generated release provenance/package work as applicable.
+There is no remaining `bubbles.implement` handoff for these two findings.
+
+---
+
+## BUG-011 — adversarial aggregate counts duplicate invocation IDs as independent samples
+
+- **Filed:** 2026-07-11
+- **Status:** Reported — reproduced by the IMP-020 S2 post-fix adversarial
+  sample; implementation and independent test verification are pending
+- **Severity:** high — `expectedSamples` can be satisfied without the required
+  number of distinct actual invocations, so correlated duplicate records can
+  be reported as agreement
+- **Affected:** `bubbles/scripts/adversarial-aggregate.sh`; regression coverage
+  belongs only in `bubbles/scripts/adversarial-aggregate-selftest.sh`
+- **Discovered by:** IMP-020 S2 post-fix sample
+  `/tmp/bubbles-imp020-s2-postfix/sample-02.json`
+- **Routing:** `bubbles.implement`, then `bubbles.test`; IMP-020 S2 cannot close
+  while BUG-011 remains unresolved
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/` in
+> the Bubbles source checkout. This compact BUG-011 entry is therefore the full
+> source-repo bug artifact: evidence provenance, reproduction, expected
+> behavior, root cause, scenarios, boundary, implementation/test plan, DoD,
+> status, and routing. No `specs/` artifact is created for this bug.
+
+### BUG-011 Summary And Live Evidence
+
+`adversarial-aggregate.sh` enforces uniqueness of `sampleId`, but it does not
+enforce uniqueness of `invocationId`. Two individually schema-valid records
+can therefore carry distinct sample IDs while naming the same actual
+invocation. The aggregator counts both files toward `expectedSamples` and can
+emit `agreement-clear`, even though the N-sample contract was not backed by N
+distinct invocations.
+
+**Claim Source:** interpreted from live post-fix sample evidence
+`/tmp/bubbles-imp020-s2-postfix/sample-02.json`.
+
+The evidence record is sample `s2-postfix-02`, invocation
+`s2-postfix-invocation-02`, verdict `findings`, with one blocking provenance
+finding. It records a duplicate-invocation probe in which two schema-valid
+records shared `invocationId` `same-runtime-invocation-01` and the aggregator
+returned exit `0` with `agreement-clear`.
+
+**Rerun statement:** the duplicate-invocation probe was **not rerun** while
+filing BUG-011. The observed contract below is transcribed from the named live
+evidence record; it is not claimed as current-session execution evidence.
+
+### Exact Reproduction Shape — Before Fix
+
+Supply exactly two schema-valid, completed, clear sample records. All required
+schema and provenance fields remain valid; the discriminating identity fields
+have this exact relationship:
+
+```text
+record A: sampleId=<distinct-sample-a>, invocationId=same-runtime-invocation-01
+record B: sampleId=<distinct-sample-b>, invocationId=same-runtime-invocation-01
+constraint: <distinct-sample-a> != <distinct-sample-b>
+both: sampleSemantics=same-runtime-correlated, status=completed, verdict=clear,
+      findings=[], and schema-valid runtime/model/tools provenance
+```
+
+Invoke the production boundary with the expected count equal to the file
+count:
+
+```bash
+bash bubbles/scripts/adversarial-aggregate.sh --expected-samples 2 \
+  <first-schema-valid-record.json> <second-schema-valid-record.json>
+```
+
+**Observed contract recorded by the live evidence:**
+
+```text
+exit=0
+outcome=agreement-clear
+actualSamples=2
+```
+
+The distinct `sampleId` values satisfy the only identity-uniqueness check, so
+the shared `invocationId` does not prevent a successful agreement outcome.
+
+### BUG-011 Expected Behavior
+
+- Every accepted input record MUST represent a distinct `invocationId` as well
+  as a distinct `sampleId`.
+- Repeated `invocationId` values MUST fail closed with
+  `outcome=aggregation-error` and a nonzero exit. Under the aggregator's
+  existing closed exit contract, aggregation errors exit `2`.
+- The structured error SHOULD identify a deterministic
+  `duplicate-invocation-id` condition at path `invocationId`; an agreement
+  outcome MUST NOT be emitted for that input set.
+- Distinct schema-valid `sampleId` and `invocationId` values MUST retain the
+  existing agreement behavior and canonical output ordering.
+- File count alone MUST NOT satisfy `expectedSamples`; the accepted set must
+  contain exactly that many distinct actual invocation IDs.
+
+### Confirmed Root Cause
+
+After schema validation, `adversarial-aggregate.sh` builds `sample_ids` and
+uses `seen_ids` to emit `duplicate-sample-id` errors. It never builds or checks
+an equivalent set of `invocationId` values. `invocationId` is validated only as
+an individual required string and is later copied into `sampleMatrix`; it does
+not participate in aggregate identity validation. Consequently, two files with
+different sample IDs pass uniqueness and count checks even when both describe
+the same invocation. The existing selftest covers duplicate `sampleId` with
+different invocation IDs, but not the inverse adversary that exposes BUG-011.
+
+### BUG-011 Regression Scenarios
+
+```gherkin
+Feature: Distinct invocations back adversarial sample agreement
+
+  Scenario: Distinct sample IDs cannot hide a duplicate invocation ID
+    Given two schema-valid completed clear records have distinct sample IDs
+    And both records have invocationId "same-runtime-invocation-01"
+    And expectedSamples is 2
+    When adversarial-aggregate processes both records
+    Then it exits nonzero with the aggregation-error contract
+    And the error identifies the duplicate invocationId
+    And it does not emit agreement-clear
+
+  Scenario: Two genuinely distinct invocations can still agree clear
+    Given two schema-valid completed clear records have distinct sample IDs
+    And their invocation IDs are also distinct
+    And expectedSamples is 2
+    When adversarial-aggregate processes both records
+    Then it exits 0 with agreement-clear
+    And existing canonical ordering remains unchanged
+```
+
+### BUG-011 Change Boundary
+
+**Authorized implementation surfaces only:**
+
+- `bubbles/scripts/adversarial-aggregate.sh` — enforce invocation-ID
+  uniqueness at the aggregate input boundary.
+- `bubbles/scripts/adversarial-aggregate-selftest.sh` — add the exact
+  adversarial regression and a distinct-invocation compatibility control.
+
+**Excluded:** schemas, resolver, dispatcher, agent prompts, workflow registry,
+documentation outside this BUG-011 entry, BUG-009, BUG-010, downstream copies,
+and all unrelated IMP-020 findings. No fix is included in this filing.
+
+### BUG-011 Implementation Plan
+
+1. After successful per-record schema validation, collect `invocationId`
+   values alongside `sampleId` values and detect duplicates deterministically.
+2. Add a structured duplicate-invocation aggregation error without changing
+   the existing duplicate-sample error, count, schema, finding-union, or output
+   ordering contracts.
+3. Ensure any duplicate invocation keeps the aggregate on the existing
+   `aggregation-error` / exit-`2` path and can never reach agreement selection.
+4. Keep the correction local to the aggregator; do not weaken schema
+   validation or infer invocation identity from filenames or sample IDs.
+
+### BUG-011 Test Plan
+
+1. `bubbles.implement` first adds two fixtures with distinct `sampleId` values
+   and the shared `invocationId` `same-runtime-invocation-01`, then records the
+   focused regression failing because current source exits `0` with
+   `agreement-clear`.
+2. Implement the invocation-ID uniqueness check and assert exit `2`,
+   `outcome=aggregation-error`, the duplicate-invocation error code/path, and
+   absence of an agreement outcome for the exact adversarial pair.
+3. Add a positive control with both identity fields distinct, plus input-order
+   permutations proving deterministic output and no overcorrection.
+4. `bubbles.test` independently runs the complete focused aggregator selftest,
+   checks the new regression for silent-pass bailout patterns, and reruns the
+   exact duplicate-invocation production probe.
+5. Return the evidence to the IMP-020 S2 finding ledger. S2 remains open until
+   implementation and independent test evidence account for this blocking
+   finding one-to-one.
+
+### BUG-011 Definition Of Done
+
+- [ ] Pre-fix regression execution records the exact adversarial pair exiting
+  `0` with `agreement-clear` before production source changes.
+- [ ] Duplicate `invocationId` values produce structured
+  `aggregation-error` output and a nonzero exit without changing duplicate
+  `sampleId` behavior.
+- [ ] The adversarial regression would fail if invocation-ID uniqueness were
+  removed and contains no silent-pass bailout.
+- [ ] Distinct-invocation compatibility and input-order controls pass.
+- [ ] The complete focused aggregator selftest passes after the fix.
+- [ ] `bubbles.test` independently reruns the focused selftest and exact
+  production probe with current-session evidence.
+- [ ] No file outside the aggregator and its selftest changes for the fix.
+- [ ] The IMP-020 S2 finding is reconciled one-to-one and S2 remains open for
+  any other unresolved blocker.
+- [ ] BUG-011 is marked fixed or verified only after implementation and test
+  evidence exists; no release, propagation, or downstream state is inferred.
+
+### BUG-011 Current Disposition And Handoff
+
+BUG-011 is documented but unfixed. All DoD items remain unchecked, no
+post-filing rerun or fix is claimed, and IMP-020 S2 cannot close. The next
+required owner is `bubbles.implement` for the bounded aggregator/selftest
+change. After implementation, route to `bubbles.test` for independent focused
+execution and return the result to the IMP-020 orchestrator for S2 finding
+reconciliation.
+
+---
+
+## BUG-012 — G085 first-adoption deadlock blocks the first downstream feature
+
+- **Filed:** 2026-07-12
+- **Status:** Implementation complete — focused and adversarial regressions, full framework validation, and release readiness are green; independent test verification and certification remain open
+- **Severity:** high — a newly adopted downstream repository cannot produce the first done-spec evidence G085 requires
+- **Affected:** `bubbles/scripts/framework-dogfood-guard.sh`, its hermetic selftest, persistent G085 regression, and direct G085 documentation
+- **Reported by:** Research Lab onboarding
+- **Routing:** `bubbles.design` → `bubbles.plan` → `bubbles.implement` → `bubbles.test` → `bubbles.validate` → `bubbles.audit` / `bubbles.docs`
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/` in
+> the Bubbles source checkout. The complete BUG-012 packet therefore lives at
+> `improvements/BUG-012-g085-first-adoption-deadlock/` with `bug.md`, `spec.md`,
+> `design.md`, `scopes.md`, `report.md`, `state.json`, `uservalidation.md`, and
+> `scenario-manifest.json`.
+
+### Reproduction And Root Cause
+
+The canonical guard was executed against Research Lab and returned G085 exit
+`1` with two numbered `not_started` specs and `doneCount=0`. Research Lab is a
+non-shallow Git checkout with zero reachable commits touching numbered
+top-level spec state files. The downstream guard has no adoption-lifecycle
+branch: every `DONE_COUNT < 1` repository is rejected, so the first transition
+requires evidence that only that transition can create.
+
+Install provenance cannot independently solve the classification because
+`.install-source.json::installedAt` is rewritten on refresh. The packet routes
+a fail-closed history discriminator for specialist confirmation: current done
+evidence passes normally; zero current done plus historical done evidence
+fails; zero current and historical done evidence in a full non-shallow history
+is first adoption; shallow/missing history fails closed.
+
+### Implementation Progress
+
+The canonical guard now preserves the current-done fast path and grants
+`G085-FIRST-ADOPTION` only after complete exact-root, non-shallow,
+non-partial, all-ref history proves that no numbered top-level done-state blob
+is reachable. Changed, deleted, and alternate-ref historical done evidence
+remains established; missing, shallow, partial, malformed, and failed history
+fails closed with distinct diagnostics.
+
+The focused production-guard selftest covers both partial-history metadata
+branches independently and verifies delegated Check 26 guidance names both
+valid downstream pass paths. The persistent regression preserves the
+identical-current-state adversarial pair and an effective shallow clone. Full
+framework validation and release readiness are green and recorded in the
+BUG-012 packet. Independent test verification and validate-owned certification
+remain pending; no downstream managed copy is edited directly.
+
+### Research Lab Propagation Requirement
+
+After upstream specialist delivery and validation, Research Lab must consume
+the fix through `bash .github/bubbles/scripts/cli.sh upgrade`: first a dry run,
+then upgrade, doctor, framework-write-guard, installed G085, and the original
+spec guard. A local-source rehearsal uses the same sequence with
+`--local-source ../bubbles`; a clean published rollout omits that flag. Direct
+edits or manual copies into Research Lab `.github/bubbles/**` are forbidden.
+
+---
+
+## BUG-013 — G028 Scan 2B misclassifies sensitive client storage
+
+- **Filed:** 2026-07-12
+- **Status:** Implementation complete with focused regression green; test and validate certification pending
+- **Severity:** high — a blocking security gate has a durable-credential false negative, cache/cleanup false positives, no narrow exact session-provider classification, and a macOS-inoperable managed selftest
+- **Affected:** `implementation-reality-scan.sh` Scan 2B, its managed selftest, project config contract, persistent regression, and direct G028 registry/docs
+- **Reported by:** Research Lab Feature 001 transition
+- **Routing:** `bubbles.design` → `bubbles.plan` → `bubbles.implement` → `bubbles.test` → `bubbles.docs` → `bubbles.validate`
+
+> **Source-repo artifact convention:** G085 forbids persistent `specs/` in the
+> Bubbles source checkout. The complete BUG-013 packet lives at
+> `improvements/BUG-013-g028-sensitive-client-storage-classification/` with all
+> required bug/control-plane artifacts and a machine-readable test handoff.
+
+### Reproduction And Root Cause
+
+The canonical scanner executed against a hermetic five-case JavaScript fixture.
+It missed `localStorage.setItem(KEY_STORE, ...)`, flagged exact and unknown
+session providers identically, and falsely flagged a market-cache write whose
+inline comment names auth/payment terms plus an auth-token `removeItem` cleanup
+line. Against Research Lab it reported nine mixed findings, including comment,
+cache, and scrubbed-object rewrites, while missing the separate
+`KEY_STORE = "rlApiKeys"` durable path.
+
+Scan 2B is six line-local regexes: it does not resolve constants, parse storage
+operations, strip inline comments, classify values/providers, or consult an
+exact project config tuple. Its reverse-order expression can match cleanup and
+comment text. The managed selftest has no Scan 2B fixtures and invokes raw
+`timeout 180` at three call sites; direct execution on macOS fails all four
+existing cases before the scanner runs even though `guard-lib.sh` already ships
+`bubbles_run_with_timeout`.
+
+### Required Contract
+
+Credential-bearing durable storage remains always blocked. `sessionStorage` is
+default-deny and may pass only for one exact normalized path/key/provider tuple
+explicitly classified as third-party market data, low privilege, and same-tab.
+Unknown/dynamic providers and malformed or unevaluable config fail closed.
+Auth/session/bearer/refresh/payment secret classes cannot be approved. Semantic
+detection must follow bounded constants/aliases, distinguish persistence from
+remove/clear/proven scrub, and ignore comment-only vocabulary and untainted
+market caches. Adversarial hermetic pairs and a persistent E2E regression bind
+each discriminator; the selftest must use the portable timeout helper.
+
+### Implementation Progress
+
+The canonical scanner now delegates Scan 2B to an install-managed bounded
+classifier, the managed selftest owns the semantic/config/portable-timeout
+matrix, and `tests/regression/test_24_g028_sensitive_client_storage.sh` executes
+the production scanner across every planned adversarial pair. The post-fix
+persistent run reports `57 passed, 0 failed`; regression integrity reports one
+adversarial file and zero violations or warnings. Exact project-config and G028
+registry contracts are synchronized in canonical source.
+
+Full framework validation, install provenance, release readiness, execution
+evidence reconciliation, and validate-owned certification are not inferred from
+those focused results. No downstream file was edited or upgraded.
+
+---
+
+## BUG-014 - adversarial resolver accepts ambiguous and out-of-contract posture inputs
+
+- **Filed:** 2026-07-14
+- **Status:** In Progress - BUG014-F1 through BUG014-F5 remain repaired history
+  and current behavior. Routed `bubbles.harden` evidence exposed unresolved
+  extensions of BUG014-F6 and BUG014-F7. BUG014-F8 has implementation plus
+  focused and routed hardening evidence, but remains nonterminal pending the
+  independent lifecycle after the F6/F7 repair. This planning recovery ran no
+  resolver test or hardening probe
+- **Disposition:** exactly eight resolver findings are in scope. BUG014-F1
+  through BUG014-F5 retain their repaired history and current behavior;
+  BUG014-F6 and BUG014-F7 are the active unresolved fail-closed infrastructure
+  defects; BUG014-F8 retains its implementation and evidence history without a
+  terminal disposition. BUG-014 is not fixed, closed, tested on the new F6/F7
+  cases, hardening-clean, stabilized, validated, audited, documented for
+  release, or certified
+- **Severity:** high - malformed or ambiguous posture input can silently select
+  a different mode, sample count, or enforcement strength; an unbounded count
+  can request excessive top-level adversarial invocations; parser-record
+  consumption failure can publish a default posture with raw path-dependent
+  shell diagnostics; and malformed successful config-parser output can be
+  trusted as scalar presence metadata
+- **Affected:** `bubbles/scripts/adversarial-resolve.sh`; regression coverage
+  belongs in `bubbles/scripts/adversarial-resolve-selftest.sh`
+- **Evidence:** historical before-fix records
+  `/tmp/bubbles-imp020-s2-current-sample-01.json` and
+  `/tmp/bubbles-imp020-s2-current-sample-03.json`, prior focused execution
+  records (`463/0` and the later test-owner-reported `494/0`), current source
+  inspection, and routed `bubbles.harden` evidence of `594 passed, 0 failed`
+  plus a `139`-case / `510`-check production-path matrix with `507` passing and
+  `3` failing checks. Those executions were not run by this planning recovery
+- **Routing:** `bubbles.implement` -> `bubbles.test` -> rerun
+  `bubbles.stabilize` hardening -> `bubbles.validate` -> `bubbles.audit` /
+  `bubbles.docs` -> framework/release checks -> IMP-020 S2 reconciliation
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/` in
+> the Bubbles source checkout. This compact BUG-014 entry is the complete
+> source-repo artifact: status, evidence provenance, reproduction, expected
+> behavior, root cause, scenarios, change boundary, implementation/test plan,
+> evidence-scoped DoD, and routing. This reconciliation changes only `BUGS.md`;
+> it observes but does not author the current source/test repair, and it creates
+> no `specs/` artifact.
+
+### BUG-014 Summary And Exact Finding Set
+
+BUG-014 accounts for exactly these eight resolver findings:
+
+F1-F5 retain the defect identities and before-fix observations that explain
+their repairs. F6 and F7 are the current unresolved source defects. F8 retains
+its defect identity, implementation, and routed evidence while remaining
+nonterminal until independent lifecycle completion.
+
+1. **BUG014-F1 - malformed free-form values are prefix-parsed or dropped.**
+   `samples: 2.5` becomes `samples=2`; `mode: on-call` becomes `mode=on`;
+   `teeth: blocking-ish` becomes `teeth=blocking`; and `samples: -2` is
+   discarded so the resolver reports the default `samples=1` instead of
+   rejecting the selected malformed value.
+2. **BUG014-F2 - duplicate same-layer inputs are order-dependent.** Repeated
+   `--directive`, `--mode`, and `--teeth` options silently overwrite earlier
+   values, while the `adversarial` / `mode` free-form synonyms silently select
+   the first match. Equivalent ambiguity therefore resolves differently based
+   on argument or token order instead of being rejected.
+3. **BUG014-F3 - the sample count ignores its configured maximum.** The
+   resolver accepts `6` and `1000000000`, although
+   `bubbles/workflows.yaml::executionOptions.optionalWorkflowTags.samples`
+   declares `min: 1` and `max: 5`.
+4. **BUG014-F4 - an explicit empty canonical count is treated as absent.**
+   `--samples ''` resolves `samples=1` with `samplesSource=default` rather than
+   failing validation for the explicitly supplied invalid value.
+5. **BUG014-F5 - historical long-whitespace parsing scaled poorly.** Prior
+   hardening measured `16,395B=224ms`, `32,779B=623ms`, `65,547B=1,841ms`,
+   `98,315B=3,533ms`, and `131,083B=6,285ms`; its 128 KiB watchdog probe timed
+   out at 5 seconds with exit `124`. Current source no longer follows that
+   repeated-parser path: `parse_directive` writes one `DIRECTIVE_RECORD`, and
+   the current selftest contains one-AWK-invocation and 128 KiB regressions.
+6. **BUG014-F6 - directive parser-record production or consumption failure can
+  be swallowed.** The historical `directive_token_count` pipeline ended in
+  `|| true`; current source now fails closed for `mktemp` failure, AWK failure,
+  and malformed record keys. However, routed hardening showed that after AWK
+  successfully writes `DIRECTIVE_RECORD`, making that path absent or
+  unreadable before the shell consumes it causes the current
+  `if ! while ... done < "$DIRECTIVE_RECORD"` form to emit raw path-dependent
+  shell stderr, return exit `0`, and publish the default `samples=1` posture.
+  Missing, unreadable, non-regular, malformed, and failed record reads are all
+  one unresolved extension of BUG014-F6, not additional findings.
+7. **BUG014-F7 - successful config-parser output shape and tag semantics are
+  unvalidated.** Current source checks nonzero status for all eight required
+  `yq` value/tag queries and routed hardening confirmed that nonzero failures,
+  partial stdout, and raw stderr fail closed. A `yq` command that exits `0`
+  with malformed multi-line tag output is nevertheless accepted for all four
+  fields because successful output cardinality, scalar shape, allowed tags,
+  and tag/value consistency are not validated. Selected malformed values may
+  fail later value validation, but malformed tags can still become trusted
+  presence and deprecated-alias metadata. This is an extension of BUG014-F7,
+  not a ninth finding.
+8. **BUG014-F8 - parser-record cleanup must participate in the success
+  decision.** Current source explicitly removes `DIRECTIVE_RECORD` before
+  posture stdout, exits `2` on success-path removal failure, and preserves an
+  already-nonzero validation or parser exit through the EXIT trap. The current
+  selftest has valid, validation, parser, and normal-path cleanup cases, and
+  routed hardening found no success stdout or residue leak under its normal and
+  symlink-like disposable `TMPDIR` controls. F8 is implemented and evidenced,
+  but remains nonterminal pending independent lifecycle completion after the
+  active F6/F7 repair.
+
+The other findings in Sample 03 concern package installation, managed-mode
+documentation, and BUG-011 status. They are outside BUG-014 and are not
+duplicated or dispositioned here.
+
+### Historical Evidence Provenance And Before-Fix Reproduction
+
+**Claim Source:** interpreted
+
+This filing read the two existing evidence records and the current
+`adversarial-resolve.sh` / `adversarial-resolve-selftest.sh` sources. It did
+**not** rerun any resolver probe or test. The commands and observations below
+are transcribed from the named records; they are prior execution evidence, not
+current-session execution claims.
+
+#### Sample 01
+
+- **Exact record:** `/tmp/bubbles-imp020-s2-current-sample-01.json`
+- **Sample ID:** `imp020-s2-current-01`
+- **Invocation ID:** `imp020-s2-current-invocation-01`
+- **Invoked at:** `2026-07-14T19:27:22Z`
+- **Source revision recorded by the probes:**
+  `9b785d7da7554082cfe0232998ef72cc99637087`
+- **Provenance qualification:** runtime and model identity are `unverified`;
+  the tool inventory is `self-reported`. The record does not claim model
+  independence.
+
+The record names these resolver invocations and observed contracts:
+
+```bash
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'adversarial: on samples: 2.5 teeth: blocking'
+
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'mode: on-call samples: 1 teeth: blocking-ish'
+
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'samples: -2'
+
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'samples: 2' --directive 'samples: 3'
+
+bash bubbles/scripts/adversarial-resolve.sh --mode on --mode off
+bash bubbles/scripts/adversarial-resolve.sh --teeth blocking --teeth warn
+
+bash bubbles/scripts/adversarial-resolve.sh \
+  --directive 'adversarial: on mode: off'
+
+bash bubbles/scripts/adversarial-resolve.sh --samples 5
+bash bubbles/scripts/adversarial-resolve.sh --samples 6
+bash bubbles/scripts/adversarial-resolve.sh \
+  --mode on --samples 1000000000 --teeth blocking
+```
+
+**Observed by Sample 01:** every command exits `0`. The malformed values resolve
+as `samples=2`, `mode=on`, `teeth=blocking`, and default `samples=1`
+respectively. Repeated directives resolve `samples=3`; repeated mode resolves
+`mode=off`; repeated teeth resolves `teeth=warn`; conflicting
+`adversarial: on mode: off` resolves `mode=on`. Counts `5`, `6`, and
+`1000000000` are all accepted.
+
+#### Sample 03
+
+- **Exact record:** `/tmp/bubbles-imp020-s2-current-sample-03.json`
+- **Sample ID:** `imp020-s2-current-03`
+- **Invocation ID:** `imp020-s2-current-invocation-03`
+- **Invoked at:** `2026-07-14T19:37:55Z`
+- **Source revision recorded by the probe:**
+  `9b785d7da7554082cfe0232998ef72cc99637087`
+- **Provenance qualification:** runtime and model identity are `unverified`;
+  the tool inventory is `self-reported`. No distinct-runtime or distinct-model
+  claim is made.
+
+The record preserves the exact empty-value probe:
+
+```bash
+bash bubbles/scripts/adversarial-resolve.sh \
+  --repo-root /tmp/bubbles-imp020-s2-current-empty \
+  --mode on --samples '' --teeth blocking
+```
+
+**Observed by Sample 03:** exit `0` with `samples=1`,
+`samplesSource=default`, and `deprecation=none`. The same record reports that
+the focused resolver selftest then had `150 passed, 0 failed` and no explicit
+empty-value case; BUG-014 does not recast that prior green result as coverage of
+this missing contract.
+
+### BUG-014 Historical Focused Evidence
+
+**Claim Source:** interpreted (prior execution records; not rerun in this
+planning recovery)
+
+The following commands were executed by a prior BUG-014 reconciliation against
+the then-current worktree on 2026-07-15. Each recorded exit code was `0`. This
+planning recovery preserves the transcript but does not promote it into
+current-session evidence:
+
+1. `bash bubbles/scripts/adversarial-resolve-selftest.sh`
+2. `bash -n bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh`
+3. `shellcheck bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh`
+4. `bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/adversarial-resolve-selftest.sh`
+5. `git diff --check -- bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh BUGS.md`
+
+The single home-directory value is rendered as `~/Projects/bubbles` below per
+the repository evidence PII rule; all other output lines are the observed
+focused output.
+
+```text
+BUG014_FOCUSED_EVIDENCE_BEGIN
+$ bash bubbles/scripts/adversarial-resolve-selftest.sh
+adversarial-resolve-selftest: 463 passed, 0 failed
+PASS
+SELFTEST_EXIT=0
+$ bash -n bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh
+BASH_N_EXIT=0
+$ shellcheck bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh
+SHELLCHECK_EXIT=0
+$ bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/adversarial-resolve-selftest.sh
+============================================================
+  BUBBLES REGRESSION QUALITY GUARD
+  Repo: ~/Projects/bubbles
+  Timestamp: 2026-07-15T15:49:34Z
+  Bugfix mode: true
+============================================================
+
+ℹ️  Scanning bubbles/scripts/adversarial-resolve-selftest.sh
+✅ Adversarial signal detected in bubbles/scripts/adversarial-resolve-selftest.sh
+
+============================================================
+  REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+  Files scanned: 1
+  Files with adversarial signals: 1
+============================================================
+REGRESSION_QUALITY_EXIT=0
+$ git diff --check -- bubbles/scripts/adversarial-resolve.sh bubbles/scripts/adversarial-resolve-selftest.sh BUGS.md
+SCOPED_DIFF_CHECK_EXIT=0
+BUG014_FOCUSED_EVIDENCE_END
+```
+
+A later prior `bubbles.test` owner report recorded
+`adversarial-resolve-selftest: 494 passed, 0 failed` for the then-current
+F1-F6 source/test repair. The current selftest bytes retain that matrix:
+the protected F1-F4/BUG-010 matrix reaches `463:0`, the matrix-preservation
+assertion is itself one pass, and the F5/F6 parser-failure, parse-once,
+128 KiB, deterministic-replay, and cleanup assertions follow. This planning
+recovery did not execute the selftest or reopen that test owner's raw terminal
+transcript. The `494/0` result is therefore historical evidence for the former
+F6 AWK-failure contract only; it provides no evidence for the newly routed F6
+record-consumption extension, F7 successful-output shape, or F8's later
+implementation.
+
+### BUG-014 Historical Stabilize Evidence For F5/F6
+
+**Claim Source:** interpreted (completed prior hardening; not rerun here)
+
+The observations in this subsection were executed by the completed
+`bubbles.stabilize` hardening phase. This BUGS.md reconciliation transcribes
+that evidence; it did not rerun the probes and does not present them as
+current-session execution.
+
+| Long-whitespace directive size | Observed elapsed time |
+| ---: | ---: |
+| 16,395 bytes | 224 ms |
+| 32,779 bytes | 623 ms |
+| 65,547 bytes | 1,841 ms |
+| 98,315 bytes | 3,533 ms |
+| 131,083 bytes | 6,285 ms |
+
+The completed hardening evidence also records a 128 KiB probe stopped by its
+5-second watchdog with exit `124`. Its parser fault-injection probe supplied
+directive `samples:0`, forced AWK failure, and observed resolver exit `0` plus
+default posture fields `samples=1` and `deprecation=none`.
+
+**Claim Source:** interpreted
+
+The elapsed-time progression and timeout establish a resource-growth defect
+for the former accepted long-whitespace path, but they do not by themselves
+prove a formal complexity class. Source at the time repeatedly scanned the
+directive and normalized parser/count failure into absence; those observations
+ground the historical F5/F6 causes. Current bytes supersede the former repeated
+parser and swallowed AWK-failure paths with one `parse_directive` call, explicit
+production-parser failure, one private record, and persistent F5/F6 assertions.
+That historical hardening run was non-clean; it is not a current hardening
+verdict and does not cover the later F6 record-consumption or F7 output-shape
+counterexamples.
+
+#### Routed Hardening Evidence For The Current Eight-Finding Model
+
+**Claim Source:** interpreted (executed by `bubbles.harden`; not rerun here)
+
+The routed hardening owner reported an unchanged source-hash set, a full
+focused selftest result of `594 passed, 0 failed`, and a disposable
+production-path matrix of `139 cases`, `510 checks`, `507 passed`, and
+`3 failed`. F1-F5 and F8 held. The three failed checks are accounted for by the
+two existing finding identities: BUG014-F6 allowed a post-AWK record-consumption
+fault to emit raw path-dependent shell stderr and return a default posture;
+BUG014-F7 accepted successful malformed multi-line tag output for each field.
+Nonzero failures for all eight `yq` calls, including partial stdout and raw
+stderr, failed closed. AWK failure, `mktemp` failure, malformed record content,
+and the F8 valid/validation/parser/config/duplicate-token cleanup paths also
+failed closed. No success stdout leak or normal/symlink-like disposable
+`TMPDIR` residue was reported for F8.
+
+This is routed prior execution evidence, not work performed by this planning
+recovery. The non-clean `507/510` matrix activates F6 and F7; it does not
+establish a current repair, a clean hardening verdict, independent lifecycle
+completion for F8, or IMP-020 S2 completion.
+
+### BUG-014 Expected Behavior
+
+- A recognized free-form key MUST validate its complete supplied lexeme. It
+  MUST NOT accept an alphanumeric prefix or disappear because the first value
+  character is punctuation. Thus `2.5`, `on-call`, `blocking-ish`, and `-2`
+  are invalid selected values and fail closed.
+- Repeating `--directive`, `--mode`, or `--teeth` in one invocation MUST be a
+  usage error. Supplying both `adversarial` and `mode` tokens in one free-form
+  directive MUST be the same logical-field ambiguity and MUST also be rejected.
+- Duplicate-input rejection MUST occur before a partial resolved posture is
+  emitted. The documented canonical-`samples`-over-deprecated-`passes`
+  compatibility remains a separate, explicit alias rule and is not widened by
+  this bug.
+- Every selected sample count, regardless of directive, environment, config,
+  or deprecated-alias origin, MUST be an integer in the closed range `1..5`,
+  matching the authoritative `workflows.yaml` execution-option contract.
+- An explicitly supplied empty `--samples` value MUST remain distinguishable
+  from an omitted option and fail selected-value validation. Only true absence
+  may fall through precedence to config or the default.
+- Directive parsing MUST have an explicit resource contract. Accepted input
+  MUST use the current one-parse record path or an equivalently bounded design;
+  an approved over-limit input contract, if ever introduced, MUST fail nonzero
+  without posture stdout before parser invocation.
+- One parse MUST produce the logical token set used for duplicate detection,
+  presence, and value extraction. The current parse-once behavior and bounded
+  128 KiB production-path regression are protected anti-regression contracts.
+- Every parser-record production and consumption operation MUST be checked
+  explicitly. `mktemp` failure, AWK failure, a missing or unlinked record, an
+  unreadable record, a non-regular record, malformed record shape or key, and
+  any failed record read MUST exit `2`, emit exactly empty stdout, suppress raw
+  shell/tool/path diagnostics, and emit exactly the stable class
+  `adversarial-resolve: directive parser failed` on stderr.
+- The repair MUST check the record-consumption operation itself and MUST NOT
+  infer successful consumption from a compound `while`/redirection status.
+  Parse-once remains mandatory. A truly empty directive remains a successful
+  empty record, while a valid directive remains a successful single parse.
+  Every failure and control path must leave zero resolver-owned record residue
+  whenever removal is possible; the test harness owns deterministic cleanup of
+  any deliberately non-removable fixture.
+- If a config file exists and `yq` is available, failure of any one of the
+  eight required value/tag queries MUST exit `2`, emit no posture stdout, and
+  emit the stable diagnostic class `adversarial-resolve: config parser failed`.
+  Empty output from a failed query MUST NOT be interpreted as null, absence, or
+  a valid empty value.
+- Successful `yq` status is necessary but insufficient. Every value query MUST
+  yield exactly one scalar line. Embedded LF, embedded or trailing CR,
+  zero-line output, or collection-shaped output is a config parser failure;
+  an empty scalar line is valid output shape only when its paired tag is
+  exactly `!!str`, after which ordinary selected-value validation still
+  applies.
+- Every tag query MUST yield exactly one allowed tag line for its field:
+  `mode` and `teeth` allow only `!!null` or `!!str`; `samples` and deprecated
+  `passes` allow only `!!null`, `!!str`, or `!!int`. This closed set preserves
+  quoted numeric compatibility and explicit empty strings. Map, sequence,
+  boolean, float, timestamp, custom, unknown, empty, and multi-line tags MUST
+  fail as config parser errors.
+- Tag/value consistency MUST be explicit: `!!null` denotes absence and must
+  not carry a non-null value; a permitted non-null tag denotes presence;
+  `!!int` must carry one integer scalar line; and `!!str` may carry one empty or
+  non-empty scalar line. A contradiction MUST exit `2` with empty stdout and
+  only `adversarial-resolve: config parser failed`, never raw `yq` output.
+- Config inspection is integrity-sensitive even when directive or environment
+  input would win precedence. A higher-precedence posture MUST NOT turn failed
+  config inspection into success because config presence and deprecated-alias
+  metadata cannot then be trusted.
+- Existing missing-`yq` compatibility remains distinct: when no `yq` command is
+  available, the resolver MUST retain its warning-and-skip behavior and may
+  resolve from directive, environment, or default. F7 applies when the selected
+  available parser starts but a required query fails or returns malformed
+  successful output.
+- Parser-record removal MUST complete before successful posture bytes become
+  externally visible, or the resolver MUST use an equivalent atomic design.
+  Cleanup failure after an otherwise valid resolution MUST exit `2`, emit no
+  posture stdout, and emit the stable diagnostic class
+  `adversarial-resolve: directive parser record cleanup failed`; it MUST never
+  be reported as a valid resolution.
+- A cleanup failure encountered while another parser or validation path is
+  already nonzero MUST remain nonzero and preserve the controlling failure
+  class: selected-value validation remains exit `1`, while parser/config/usage
+  infrastructure remains exit `2`. Cleanup may add its stable diagnostic but
+  MUST NOT convert failure to success or emit a posture.
+- Existing directive > environment > config > default precedence, exact key
+  boundaries fixed by BUG-010, canonical output ordering,
+  `sampleSemantics=same-runtime-correlated`, deprecation metadata, and exit
+  classes remain compatible: invalid selected values exit `1`; duplicate,
+  structurally ambiguous, parser/config, and success-path cleanup failures exit
+  `2`; valid fully cleaned resolution exits `0`.
+
+### BUG-014 Confirmed Root Cause, Prior Repair, And Hardening Gaps
+
+**Claim Source:** interpreted
+
+The F1-F4 cause statements below are historical pre-fix causes reconstructed
+from the prior evidence and original BUG-014 analysis. They do not describe the
+current resolver or selftest as still broken for those four findings. F5/F6
+history is retained separately from the current F6/F7 gaps and F8 lifecycle.
+
+#### Historical Pre-Fix Cause
+
+1. The former directive parser advanced a value cursor only across
+  `[A-Za-z0-9]`. It emitted valid-looking prefixes before `.5`, `-call`, and
+  `-ish`, while a leading `-` produced no token, making malformed selected
+  values indistinguishable from absence.
+2. The former argument loop did not retain presence for every repeatable field.
+  Repeated `--directive`, `--mode`, and `--teeth` values therefore overwrote
+  earlier values, while `adversarial` and `mode` were counted separately even
+  though resolution treated them as one logical mode field.
+3. The former count validation accepted any positive decimal integer and did
+  not enforce the `workflows.yaml` maximum of `5`.
+4. The former precedence path used empty-string fallback semantics, so an
+  explicitly present empty canonical value could fall through as if omitted.
+5. The former focused selftest omitted the malformed-lexeme, duplicate logical
+  input, upper-bound, and explicit-empty cases and positively accepted counts
+  above the registry maximum.
+
+#### Current Repair Observed In Source And Focused Tests
+
+1. **Full-lexeme validation:** `parse_directive` now retains the complete
+  non-whitespace lexeme after a recognized exact key and separator. Decimal,
+  signed, hyphen-suffixed, and delimiter-shaped values reach field validation
+  intact instead of being prefix-parsed or dropped.
+2. **Duplicate logical input rejection:** explicit seen bits reject repeated
+  `--directive`, `--mode`, `--samples`, `--passes`, and `--teeth` flags, while
+  `adversarial|mode` is counted as one logical directive field. Both ordering
+  permutations are covered and ambiguity exits without a partial posture.
+3. **`1..5` bounds:** `validate_count` accepts only one digit in the closed
+  range `1` through `5`; focused cases exercise canonical and deprecated count
+  inputs through directive flags/tokens, environment, and config.
+4. **Explicit presence including empty values:** flag seen bits, environment
+  existence checks, directive token counts, and config tag checks distinguish
+  empty selected values from omitted or explicit-null values across layers.
+5. **Cross-layer deprecated alias visibility:** deprecated `passes` presence is
+  accumulated in deterministic directive, environment, and config order even
+  when a higher-precedence canonical value shadows it; shadowed alias text
+  remains metadata and is not incorrectly selected for validation.
+6. **Bounded parse-once record:** `parse_directive` invokes AWK once, writes
+  exact logical tokens to `DIRECTIVE_RECORD`, and populates in-memory counts and
+  selected values from that record. The current selftest contains a one-AWK
+  counter, a 128 KiB whitespace production-path case, and deterministic replay
+  assertions.
+7. **Parser production failure and normal cleanup:** parser-record creation and
+  AWK failure route through `directive_parser_failed` with exit `2`. The
+  current selftest injects AWK failure, expects empty stdout and the stable
+  parser diagnostic, and checks normal success/failure paths leave zero parser
+  records. The compound record-consumption form does not provide the same
+  guarantee and is the active F6 extension.
+8. **Checked config status and pre-output cleanup:** current source checks each
+  of the eight `yq` command statuses and suppresses their raw stderr. It also
+  calls `remove_directive_record` before the seven posture lines and retains
+  the EXIT trap for nonzero paths. These changes implement the previously
+  identified F7 nonzero-status and F8 cleanup paths, but do not validate
+  successful `yq` output shape.
+
+#### Historical F5/F6 Causes, Current F6/F7 Gaps, And F8 Lifecycle
+
+- **Historical BUG014-F5 repeated full-directive parsing:** duplicate detection,
+  presence checks, and extraction formerly restarted tokenization for each
+  logical field. The current single `parse_directive` / `DIRECTIVE_RECORD` path
+  replaces this cause.
+- **Historical BUG014-F6 suppressed parser status:** the former count pipeline
+  ended in `|| true` and printed a fallback zero. The current checked parser
+  invocation and `directive_parser_failed` path replace AWK and `mktemp`
+  suppression, but not post-production record-consumption failure. The
+  `if ! while ... done < "$DIRECTIVE_RECORD"` condition relies on compound
+  loop/redirection status; routed hardening demonstrated raw shell/path stderr,
+  exit `0`, and default posture when the record becomes absent or unreadable
+  before consumption.
+- **Current BUG014-F7 trusts successful output shape:** all eight `yq` command
+  substitutions now fail closed on nonzero status, but their successful stdout
+  is accepted without line-count, CR/LF, scalar-kind, closed-tag, or tag/value
+  consistency validation. Any non-`!!null` tag currently marks the field
+  present, so a successful malformed tag can become trusted metadata even when
+  the selected value later fails ordinary value validation.
+- **BUG014-F8 implementation and pending lifecycle:** current source removes
+  the parser record before stdout and makes failed removal nonzero. Current
+  focused cases and routed hardening cover success, validation, parser, config,
+  duplicate-token, normal, and symlink-like disposable `TMPDIR` paths. F8 is no
+  longer an active implementation gap, but it remains nonterminal until the
+  independent post-F6/F7 test, hardening, validation, and audit lifecycle is
+  complete.
+
+The prior `463/0` record supports the F1-F4 repair on its historical bytes. The
+later test-owner-reported `494/0` record supports the former F1-F6 focused
+matrix, but this planning recovery did not execute it. Routed hardening later
+reported `594/0` focused and `507/510` production-path checks without source
+hash changes: F1-F5 and F8 held, while F6 and F7 remained non-clean. None of
+those prior results supplies a repair or green execution for the new F6/F7
+cases, a clean hardening verdict, downstream/release evidence, or certification.
+
+### Relationship To BUG-010
+
+BUG-010 remains distinct and fixed. Its focused repair selects precedence before
+validation and prevents longer identifiers such as `resamples` and `compasses`
+from becoming exact directive keys. BUG-014 does not reopen either behavior.
+BUG014-F1 through BUG014-F6 were exposed after exact keys could be identified:
+they concern selected-value grammar, duplicate logical inputs, registry bounds,
+explicit-empty presence, bounded parser work, and complete parser-record
+production/consumption failure propagation. BUG014-F7 and BUG014-F8 remain
+distinct config-inspection and parser-record-cleanup identities. The F6/F7
+repair and preservation of F8 must not reopen BUG-010 or change its exact-key or
+selected-precedence contract.
+
+### BUG-014 Adversarial Regression Scenarios
+
+```gherkin
+Feature: Fail-closed adversarial resolver input contract
+
+  Scenario Outline: Malformed free-form values cannot become valid prefixes or defaults
+    Given the free-form directive contains <input>
+    When adversarial-resolve parses and validates the selected logical field
+    Then it exits 1 without emitting a resolved posture
+    And it identifies the complete malformed value
+
+    Examples:
+      | input |
+      | samples: 2.5 |
+      | mode: on-call |
+      | teeth: blocking-ish |
+      | samples: -2 |
+
+  Scenario Outline: Duplicate same-layer logical inputs are rejected
+    Given one invocation contains <duplicates>
+    When adversarial-resolve processes the directive layer
+    Then it exits 2 without emitting a resolved posture
+    And the diagnostic identifies an ambiguous duplicate logical field
+
+    Examples:
+      | duplicates |
+      | --directive 'samples: 2' --directive 'samples: 3' |
+      | --mode on --mode off |
+      | --teeth blocking --teeth warn |
+      | --directive 'adversarial: on mode: off' |
+
+  Scenario Outline: Sample counts honor the workflows registry range
+    Given the selected canonical sample count is <count>
+    When adversarial-resolve validates it against the range 1 through 5
+    Then the resolver <result>
+
+    Examples:
+      | count | result |
+      | 1 | exits 0 with samples=1 |
+      | 5 | exits 0 with samples=5 |
+      | 6 | exits 1 without a resolved posture |
+      | 1000000000 | exits 1 without a resolved posture |
+
+  Scenario: Explicit empty samples is not an absent option
+    Given the invocation contains --samples followed by an empty string value
+    When adversarial-resolve applies directive precedence
+    Then it exits 1 without a resolved posture
+    But an invocation that omits every sample input still exits 0 with the
+      documented default samples=1 and samplesSource=default
+
+  Scenario: A 128 KiB whitespace directive stays on the parse-once path
+    Given a recognized token is separated from its malformed selected value by
+      exactly 128 KiB of whitespace
+    When adversarial-resolve parses it through the production path
+    Then it completes under the generous watchdog with the same exit and
+      byte-identical stdout and stderr as the small control
+    And tokenization invokes the parser exactly once per resolver invocation
+    And no parser record remains after normal cleanup
+
+  Scenario Outline: Parser-record production and consumption faults fail as one stable class
+    Given directive parsing reaches the <operation> operation
+    And the production-path harness introduces <fault>
+    When adversarial-resolve produces and consumes its private parser record
+    Then it exits 2
+    And stdout is exactly empty
+    And stderr is exactly adversarial-resolve: directive parser failed
+    And stderr contains no raw shell, tool, permission, or temporary-path text
+    And it emits neither samples=1 nor deprecation=none
+    And resolver-owned parser-record residue is zero whenever removal is possible
+    And the harness deterministically accounts for and removes any deliberately retained fixture
+
+    Examples:
+      | operation | fault |
+      | record creation | mktemp exits nonzero |
+      | record production | AWK exits nonzero |
+      | record consumption | the completed record is unlinked before consumption |
+      | record consumption | the completed regular record becomes unreadable |
+      | record consumption | the completed path becomes a non-regular object |
+      | record consumption | the explicit record read returns nonzero |
+      | record validation | a successful producer writes malformed framing or an unknown key |
+
+  Scenario Outline: Empty and valid directives remain parse-once controls
+    Given the directive is <directive>
+    When adversarial-resolve uses the production parser-record path
+    Then the parser is invoked exactly once
+    And the resolver <result>
+    And stderr contains no raw parser-record diagnostic
+    And no parser record remains
+
+    Examples:
+      | directive | result |
+      | an empty string | exits 0 with the documented default posture |
+      | mode: on samples: 3 teeth: blocking | exits 0 with canonical directive posture |
+
+  Scenario Outline: An available config parser cannot fail open
+    Given a project config file exists
+    And the selected yq command is available
+    And yq fails the required <query> inspection
+    And a higher-precedence directive or environment value may also be present
+    When adversarial-resolve inspects config before resolving posture
+    Then it exits 2
+    And stdout is empty
+    And stderr contains the stable config-parser-failure diagnostic class
+    And it emits neither a default nor a higher-precedence posture
+
+    Examples:
+      | query |
+      | mode value |
+      | mode tag |
+      | samples value |
+      | samples tag |
+      | passes value |
+      | passes tag |
+      | teeth value |
+      | teeth tag |
+
+  Scenario Outline: Allowed config tags have closed scalar and presence semantics
+    Given the <field> value query returns exactly one <value> scalar line
+    And its tag query returns exactly one <tag> line
+    When adversarial-resolve validates config parser output before precedence
+    Then it treats the field as <presence>
+    And the resolver <result>
+
+    Examples:
+      | field | value | tag | presence | result |
+      | mode | null | !!null | absent | uses a higher layer or the default |
+      | mode | on | !!str | present | may select mode=on |
+      | teeth | null | !!null | absent | uses a higher layer or the default |
+      | teeth | blocking | !!str | present | may select teeth=blocking |
+      | samples | null | !!null | absent | uses a higher layer or samples=1 |
+      | samples | 4 | !!str | present | supports quoted numeric samples=4 |
+      | samples | 4 | !!int | present | supports integer samples=4 |
+      | passes | null | !!null | absent | emits no config alias metadata |
+      | passes | 4 | !!str | present | supports quoted numeric alias metadata |
+      | passes | 4 | !!int | present | supports integer alias metadata |
+
+  Scenario Outline: Explicit empty config strings preserve presence
+    Given the <field> value query returns one empty scalar line
+    And its tag query returns exactly !!str
+    When adversarial-resolve validates output shape and applies precedence
+    Then config parsing succeeds and the field is present
+    And if selected, ordinary field validation exits 1 without posture stdout
+    And it is not misclassified as absence or a config parser failure
+
+    Examples:
+      | field |
+      | mode |
+      | samples |
+      | passes |
+      | teeth |
+
+  Scenario Outline: Successful malformed yq output fails closed
+    Given yq exits 0 for the <field> config inspection
+    And it returns <malformed-output>
+    When adversarial-resolve validates successful query output
+    Then it exits 2
+    And stdout is exactly empty
+    And stderr is exactly adversarial-resolve: config parser failed
+    And no raw yq output is emitted
+    And directive or environment precedence cannot bypass the failure
+
+    Examples:
+      | field | malformed-output |
+      | mode | a multi-line tag |
+      | samples | a multi-line tag |
+      | passes | a multi-line tag |
+      | teeth | a multi-line tag |
+      | each value field | a multi-line scalar containing LF |
+      | each value field | a scalar containing CR |
+      | each field | !!map or !!seq tag output |
+      | each field | !!bool, !!float, !!timestamp, or custom tag output |
+      | each field | a null tag paired with a non-null value |
+      | samples or passes | an integer tag paired with an empty or non-integer value |
+
+  Scenario: Nonzero yq partial output remains a fail-closed control
+    Given each of the eight required yq calls is failed in turn
+    And the failed call may emit partial stdout and raw stderr
+    When adversarial-resolve inspects config
+    Then every invocation exits 2 with exactly empty stdout
+    And stderr contains only the stable config-parser-failure class
+    And no partial yq bytes, default posture, higher-precedence posture, or
+      deprecated-alias metadata is published
+
+  Scenario: Missing yq retains compatibility behavior
+    Given a project config file exists
+    And no yq command is available
+    When adversarial-resolve evaluates directive, environment, and default layers
+    Then it retains the documented warning-and-skip behavior
+    And a valid non-config posture can still exit 0 in canonical output order
+
+  Scenario: Success-path parser-record cleanup failure cannot publish posture
+    Given directive parsing and posture validation would otherwise succeed
+    And production-path fault injection makes removal of DIRECTIVE_RECORD fail
+    When adversarial-resolve completes the resolution attempt
+    Then it exits 2
+    And stdout is empty
+    And stderr contains the stable parser-record-cleanup-failure diagnostic class
+    And the attempt is never reported as a valid resolution
+
+  Scenario Outline: Cleanup cannot erase an existing failure
+    Given the resolver is already on a <failure-path> path
+    And parser-record removal also fails
+    When the EXIT lifecycle completes
+    Then it retains nonzero exit <exit-class>
+    And stdout is empty
+    And stderr retains the controlling failure diagnostic
+    And stderr also diagnoses cleanup failure
+
+    Examples:
+      | failure-path | exit-class |
+      | selected-value validation | 1 |
+      | directive parser failure | 2 |
+```
+
+### BUG-014 Change Boundary
+
+**Authorized implementation surfaces only:**
+
+- `bubbles/scripts/adversarial-resolve.sh` - preserve F1-F5 and the implemented
+  F8 pre-output cleanup; make parser-record consumption an explicitly checked
+  F6 operation with stable diagnostics; and validate successful F7 value/tag
+  output cardinality, scalar shape, closed tags, and tag/value consistency
+  before applying precedence. Preserve missing-`yq` warning-and-skip behavior.
+- `bubbles/scripts/adversarial-resolve-selftest.sh` - retain the complete
+  F1-F5, F8, and BUG-010 matrices; add production-path F6 record-consumption
+  faults and the complete F7 successful-output shape/tag matrix; assert exact
+  exits, empty stdout, stable stderr classes, raw-diagnostic suppression,
+  precedence non-bypass, and deterministic record lifecycle cleanup.
+
+**Excluded:** adversarial aggregation/schema, red-team dispatch, agent or prompt
+contracts, public documentation, BUG-010's fixed key/precedence behavior,
+BUG-011, unrelated Sample 03 findings, generated release artifacts, downstream
+installed copies, release/version/changelog surfaces, new helpers or package
+dependencies, and every other IMP-020 scope. `BUGS.md` is planning-owned and is
+the only file changed by this recovery. No generated, release, documentation,
+downstream, resolver, or selftest file is changed in this planning slice.
+Implementation remains confined to the same two files. Existing Bash facilities
+are preferred for explicit status capture. If the resolver uses a standard
+POSIX utility already guaranteed by the shell environment to make read status
+observable, that is an existing runtime tool, not a new helper or package
+dependency; its stderr and path details must still be suppressed behind the
+stable F6 diagnostic.
+
+### BUG-014 Implementation Record And Remaining Plan
+
+1. The current source preserves option presence separately from option text for
+  flags, exact directive tokens, environment values, and config values.
+2. The current source rejects duplicate flags and duplicate logical directive
+  fields before emitting a posture.
+3. The current parser retains complete selected lexemes for validation and the
+  current count validator enforces `1..5` at the effective selected layer.
+4. The current selftest covers malformed values, ordering permutations,
+  canonical/deprecated inputs across layers, empty-versus-absent behavior,
+  compatibility controls, and adversarial signal.
+5. Current source parses the free-form directive exactly once into
+  `DIRECTIVE_RECORD`, checks `mktemp` and AWK, and installs an EXIT cleanup
+  trap. Current tests contain parse-once, 128 KiB whitespace, AWK-failure,
+  deterministic replay, and record-cleanup assertions.
+6. Prior test-owner evidence reported `494 passed, 0 failed`. Routed hardening
+  later reported `594 passed, 0 failed` plus `507/510` production-path checks
+  with unchanged source hashes. This planning recovery executed neither run;
+  the routed failures keep F6/F7 active and F8 nonterminal.
+7. `bubbles.implement` must replace reliance on compound-loop/redirection
+  status with an explicit checked parser-record consumption operation. Before
+  accepting tokens it must reject a missing, unreadable, non-regular, malformed,
+  or unsuccessfully read record through exit `2`, empty stdout, and exactly the
+  stable parser diagnostic, with no raw shell/tool/path text. The record format
+  must be validated as the expected allowed key plus tab-delimited value shape.
+  Empty directive output remains a successful empty record; valid directives
+  remain one parse.
+8. `bubbles.implement` must centralize the eight `yq` calls behind a checked
+  query/output contract that preserves command status and enough raw framing to
+  distinguish zero lines, one empty line, one scalar line, multiple lines, and
+  CR-bearing output. It must enforce the field-specific closed tag sets and
+  tag/value consistency before setting any `CFG_*_PRESENT` bit. Successful
+  malformed output and nonzero partial output both use the stable config parser
+  failure class with no raw `yq` bytes.
+9. `bubbles.implement` must preserve F8's pre-output removal and EXIT-trap
+  behavior while integrating F6/F7. No F8 terminal claim follows from source
+  presence or routed evidence; its focused cases remain mandatory regression
+  controls through independent test and hardening.
+10. `bubbles.implement` must add only the F6/F7 production-path cases in the
+  authorized selftest. `bubbles.test` must execute the full focused matrix
+  independently, then `bubbles.stabilize` must rerun complete eight-finding
+  hardening before validation, audit/docs disposition, framework or release
+  checks, or IMP-020 S2 reconciliation.
+
+### BUG-014 Focused Test Record And Remaining Validation Plan
+
+1. A prior reconciliation recorded `463 passed, 0 failed` for the F1-F4 matrix,
+  plus syntax, ShellCheck, regression-quality, and scoped diff checks.
+2. A later prior test-owner run reported `494 passed, 0 failed`. Routed
+  hardening reported `594 passed, 0 failed` and `507/510` production checks.
+  None was executed in this planning recovery; the latest matrix is explicitly
+  non-clean for the F6/F7 extensions.
+3. F6 must use production-path PATH shims or equivalent test-owned controls,
+  without adding a production-only hook, to exercise: `mktemp` failure; AWK
+  failure; post-AWK unlink; post-AWK unreadable and non-regular records;
+  explicit record-read failure; malformed framing, unknown key, and incomplete
+  records; an empty directive; and a valid multi-key parse. Every fault must
+  assert exact exit `2`, exactly empty stdout, exactly the stable parser
+  diagnostic, absence of raw shell/tool/path stderr, no default posture, and
+  deterministic zero residue or test-owned cleanup of intentionally retained
+  fixtures. Controls must continue to prove one parser invocation.
+4. F7 must retain the nonzero matrix for each exact value/tag call, including
+  partial stdout and raw stderr injection. It must separately add successful
+  output-shape cases for all four fields: each allowed null/string/integer tag
+  combination; quoted numerics; explicit empty strings; multi-line tag output
+  for `mode`, `samples`, `passes`, and `teeth`; multi-line and CR-bearing value
+  output; map and sequence tags; boolean, float, timestamp, custom, empty, and
+  unknown tags; and null/non-null plus integer/value contradictions.
+5. Every malformed F7 case must assert exit `2`, exactly empty stdout, exactly
+  the stable config parser diagnostic, no raw `yq` bytes, no presence or alias
+  metadata, and zero parser-record leakage. Allowed `!!str` empty values must
+  reach ordinary selected-value validation rather than becoming absence or a
+  parser error. `!!str` and `!!int` numeric controls must preserve quoted and
+  unquoted count compatibility.
+6. At least one F6 record-consumption case and both nonzero and malformed-
+  successful F7 classes must run with a valid higher-precedence directive and
+  with valid environment inputs, proving precedence cannot bypass integrity
+  inspection. Separate controls must prove valid config still resolves, empty
+  directive and valid parse behavior remain compatible, and an actually
+  missing `yq` still warns and follows the documented non-config path.
+7. F8's existing PATH-selected removal-failure matrix remains a mandatory
+  preservation control: valid resolution, validation, parser, config, and
+  duplicate-token failures; exact exit classes and diagnostics; no success
+  stdout; deterministic retained-record accounting and harness cleanup; normal
+  zero-residue paths; and normal/symlink-like disposable `TMPDIR` controls.
+8. Anti-overcorrection controls must retain all F1-F5 and existing F8 cases,
+  the historical and extended F6 controls, BUG-010 exact keys
+  and precedence-before-validation, deprecated-alias metadata/layer order,
+  canonical seven-line output order, missing-`yq` compatibility, one parser
+  invocation, 128 KiB bounded behavior, deterministic replay, and macOS/Linux
+  portable shell forms.
+9. After implementation, `bubbles.test` must run the full focused selftest,
+  syntax, ShellCheck, regression-quality guard, and scoped change-boundary
+  checks. `bubbles.stabilize` must then rerun all eight findings. Canonical
+  framework/release, certification, audit, docs disposition, and IMP-020 S2
+  reconciliation remain later owner work and are not authorized edits in this
+  repair slice.
+10. No API, UI, datastore, load, or telemetry test applies to this pure shell
+  resolver; none is claimed or fabricated.
+
+### BUG-014 Definition Of Done
+
+- [ ] Prior Sample 01 and Sample 03 evidence is accounted for one-to-one as
+  exactly BUG014-F1 through BUG014-F4, with unrelated findings excluded.
+  - **Uncertainty Declaration:** The current session read the transcribed
+    historical section but did not reopen the two `/tmp` source records.
+    The `bubbles.stabilize` rerun must compare those records to the four finding
+    IDs before this accounting item can be checked.
+- [ ] New focused regressions fail before the fix for the exact four BUG-014
+  behavior classes and include no silent-pass bailout.
+  - **Uncertainty Declaration:** No real pre-fix failing regression transcript
+    was available or executed in this post-fix session. The active top-level
+    runner must supply preserved pre-fix red evidence; a synthetic recreation
+    after the repair cannot resolve this item.
+- [x] The F1-F4 bounded repair is present in the two authorized source/test
+  files, and the prior `463/0` evidence includes successful `bash -n` and
+  ShellCheck execution. This checked historical claim is not recast as a
+  current-session, new-F6/F7, or F8-lifecycle result.
+- [x] Complete malformed free-form values are rejected; none is prefix-parsed
+  or dropped into a lower precedence/default result.
+- [x] Repeated `--directive`, `--mode`, and `--teeth` inputs and
+  `adversarial` / `mode` synonym collisions are rejected independently of
+  ordering and emit no partial posture.
+- [x] Every selected sample input enforces `1..5`; `6` and `1000000000` fail
+  through every applicable layer while `1` and `5` pass.
+- [x] Explicit `--samples ''` fails as an invalid selected value while true
+  absence still resolves the documented default.
+- [x] BUG-010 precedence-before-validation and exact-key behavior remains
+  green and is not reopened or reimplemented.
+- [x] Canonical/deprecated alias compatibility, deprecation metadata,
+  precedence, output order, correlated-sample semantics, and exit classes pass
+  anti-overcorrection controls.
+- [x] The prior F1-F4 focused resolver selftest passed with adversarial signal
+  and no disabled or test-created-success path. The later historical `494/0`
+  test-owner report is recorded separately and does not expand this checked
+  item into the new F6/F7 or F8-lifecycle coverage.
+- [ ] BUG014-F5 remains repaired by the current one-parse accepted-input path,
+  and the persistent selftest proves one parser invocation plus bounded
+  128 KiB behavior without a machine-specific timing threshold.
+  > **Uncertainty Declaration**
+  > **What was attempted:** This planning recovery inspected the current
+  > `parse_directive` / `DIRECTIVE_RECORD` path and persistent one-AWK plus
+  > 128 KiB cases; it did not execute them.
+  > **What was observed:** Current bytes implement one parse and the prior test
+  > owner reported the complete F1-F6 matrix at `494/0`.
+  > **Why this is uncertain:** The evidence is historical, and the upcoming
+  > F6/F7 edits touch the same resolver/selftest files.
+  > **What would resolve this:** `bubbles.test` must execute the full matrix
+  > after F6/F7 implementation and preserve the one-invocation and 128 KiB
+  > assertions.
+- [ ] A persistent long-whitespace regression prevents the F5 growth and
+  timeout behavior from returning without relying on a machine-specific timing
+  assertion alone.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Current bytes contain a production-path 128 KiB
+  > case with a generous watchdog and byte-identical small-input control.
+  > **What was observed:** The later prior test-owner report was `494/0`, and
+  > routed hardening reported that F5 held.
+  > **Why this is uncertain:** This planning recovery did not execute the case,
+  > and no post-F6/F7 result exists.
+  > **What would resolve this:** Preserve and execute the current case after the
+  > F6/F7 repair, then rerun hardening.
+- [ ] BUG014-F6 fails closed for every parser-record production and consumption
+  failure: `mktemp`, AWK, missing/unlinked, unreadable, non-regular, malformed,
+  and failed read all exit `2` with exactly empty stdout and exactly the stable
+  parser-failure diagnostic, without raw shell/tool/path text.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Current source/selftest and routed hardening results
+  > were read; this planning recovery ran no resolver path.
+  > **What was observed:** AWK, `mktemp`, and malformed-key controls fail closed,
+  > but the routed post-AWK absent/unreadable record path emitted raw shell/path
+  > stderr, returned `0`, and published the default posture.
+  > **Why this is uncertain:** F6 is actively unresolved; no implementation or
+  > green execution exists for complete record consumption.
+  > **What would resolve this:** Implement explicit checked consumption and have
+  > `bubbles.test` plus `bubbles.stabilize` execute the full F6 matrix.
+- [ ] Persistent F6 production-path regressions cover post-AWK unlink,
+  unreadable and non-regular records, failed reads, malformed framing/content,
+  AWK and `mktemp` controls, empty-directive success, valid parse-once success,
+  raw stderr suppression, and deterministic residue cleanup.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Existing AWK and parse-once cases were inspected;
+  > routed hardening supplied the RED counterexample only.
+  > **What was observed:** The current selftest lacks the post-production record
+  > mutation/read matrix and therefore its `594/0` result does not cover F6.
+  > **Why this is uncertain:** Required persistent regressions are not present or
+  > executed.
+  > **What would resolve this:** Add the listed cases in the authorized selftest
+  > and capture independent RED/GREEN plus hardening evidence.
+- [ ] BUG014-F7 validates successful output shape in addition to all eight
+  available-`yq` statuses: one scalar value line, one field-allowed tag line,
+  closed tags, CR/LF rejection, and tag/value consistency all fail closed with
+  exact exit/output/diagnostic behavior when violated.
+  > **Uncertainty Declaration:** Current status checks reject nonzero and partial
+  > output failures, but routed hardening proved that successful multi-line tag
+  > output is accepted for all four fields. No shape repair exists.
+- [ ] Persistent F7 regressions cover every allowed tag/value combination,
+  quoted numerics and explicit empty strings, multi-line tags for all four
+  fields, multi-line/CR values, map/sequence and unsupported scalar/custom tags,
+  tag/value contradictions, nonzero partial-output controls, directive/env
+  precedence non-bypass, valid config, and missing-`yq` compatibility.
+  > **Uncertainty Declaration:** Current focused bytes contain the eight-query
+  > nonzero matrix and compatibility controls, but no successful malformed-
+  > output matrix. Routed hardening is RED evidence, not a repair or green run.
+- [ ] BUG014-F8 remains implemented so parser-record cleanup participates in
+  the success decision: removal failure cannot publish posture, already-nonzero
+  paths remain nonzero, and all resolver-owned residue is accounted for.
+  > **Uncertainty Declaration:** Current source/selftest implement these paths,
+  > and routed `594/0` plus hardening reported F8 held with no success leak or
+  > disposable-`TMPDIR` residue. This planning recovery did not execute that
+  > evidence, and independent lifecycle completion must follow F6/F7 changes.
+- [ ] Persistent F8 regressions continue to prove valid, validation, parser,
+  config, duplicate-token, removal-failure, normal, and symlink-like disposable
+  `TMPDIR` paths with exact exits, empty success-failure stdout, stable
+  diagnostics, deterministic accounting, and harness-owned residue removal.
+  > **Uncertainty Declaration:** Routed hardening reports these controls held;
+  > they remain unchecked because the active two-file F6/F7 repair can affect
+  > the same lifecycle and has not received independent post-change execution.
+- [ ] F6/F7 implementation and F8 preservation tests stay within
+  `adversarial-resolve.sh` and `adversarial-resolve-selftest.sh`; no helper,
+  generated, release, downstream, documentation, registry, or unrelated IMP-020
+  file changes in this repair slice.
+  > **Uncertainty Declaration:** Planning defines the boundary; implementation
+  > has not yet produced a changed-path set to verify.
+- [ ] Exact post-fix production probes reproduce the Expected Behavior with
+  current execution evidence.
+  - **Uncertainty Declaration:** This planning recovery ran neither the focused
+    selftest nor a standalone replay of the historical command matrix. The
+    `bubbles.test` and `bubbles.stabilize` reruns must capture current exits,
+    stdout, and stderr to resolve this item.
+- [ ] `bubbles.test` independently verifies the complete eight-finding focused
+  and regression obligations with no collateral failure.
+  - **Uncertainty Declaration:** This planning recovery ran no resolver test,
+    syntax check, ShellCheck, regression-quality guard, or framework validation.
+    Prior `494/0` and routed `594/0` evidence predate the required F6/F7 repair.
+- [ ] `bubbles.stabilize` reruns the complete hardening phase after F6/F7 repair
+  and returns clean while confirming focused evidence supports, but does not
+  exceed, the eight-finding BUG-014 contract.
+  - **Uncertainty Declaration:** Routed hardening was non-clean at `507/510` and
+    activated F6/F7 while F1-F5/F8 held. A clean rerun cannot be claimed until
+    F6/F7 are repaired and the complete persistent matrix executes again.
+- [ ] `bubbles.validate` verifies the declared boundary and all unchecked DoD
+  evidence before any fixed, verified, or closed status is written.
+  - **Uncertainty Declaration:** Validate-owned certification was not run.
+    `bubbles.validate` must execute its boundary, evidence, and status checks.
+- [ ] `bubbles.audit` independently audits the evidence and finding accounting.
+  - **Uncertainty Declaration:** No audit was run. `bubbles.audit` must review
+    evidence provenance, DoD precision, and one-to-one finding disposition.
+- [ ] `bubbles.docs` reconciles any required operator/release documentation.
+  - **Uncertainty Declaration:** No docs phase was run and this edit does not
+    infer whether a public-doc delta is required. `bubbles.docs` must decide and
+    record that disposition.
+- [ ] Canonical framework validation and release checks pass after F6/F7
+  repair and a clean eight-finding hardening rerun.
+  - **Uncertainty Declaration:** Neither `framework-validate` nor
+    `release-check` was run for this reconciliation. The active top-level runner
+    must execute both commands and retain their complete outputs.
+- [ ] IMP-020 S2 reconciles all eight findings back into its finding ledger and
+  remains open for any unrelated S2 blocker, integration, release, or
+  certification work.
+  - **Uncertainty Declaration:** IMP-020 S2 finding-ledger reconciliation was
+    not performed. The active IMP-020 S2 runner must account for BUG014-F1
+    through BUG014-F8 without closing unrelated S2 work.
+
+### BUG-014 Current Disposition And Handoff
+
+BUG-014 remains in progress and uncertified. The current resolver and focused
+selftest retain F1-F5 repaired behavior, the historical F6 production-failure
+repair, checked nonzero `yq` calls, and F8 pre-output cleanup. Prior records
+include F1-F4 `463/0`, test-owner-reported `494/0`, and routed hardening-owner
+`594/0` focused plus `507/510` production checks; none was executed by this
+planning recovery. The routed counterexamples make F6 complete record
+consumption and F7 successful output-shape validation the active unresolved
+findings. F8 has implementation and focused/hardening evidence but remains
+nonterminal pending the independent post-change lifecycle. The finding set
+remains exactly F1-F8.
+
+The next required owner is `bubbles.implement`. It must repair F6 and F7 within
+the authorized two-file boundary: explicitly check parser-record consumption,
+validate successful `yq` output shape and closed tag semantics, add the exact
+persistent matrices above, and preserve F1-F5, F8, and BUG-010 controls. It is
+not authorized to add a helper/package dependency or edit generated, release,
+downstream, documentation, registry, or other IMP-020 surfaces in this slice.
+`bubbles.test` must then execute the complete focused matrix independently, and
+`bubbles.stabilize` must rerun all eight findings before validate-owned
+certification, independent audit, docs disposition, canonical framework/release
+checks, or IMP-020 S2 one-to-one reconciliation. This entry makes no fixed,
+tested-on-new-F6/F7-cases, stabilized, closed, verified, certified,
+release-ready, hardening-clean, or S2-complete claim.
+
+---
+
+## BUG-015 - installed evaluation package omits runtime and contract schemas
+
+- **Filed:** 2026-07-14
+- **Status:** Reported / Not Started - no installer, manifest, schema, test, or
+  release source has been changed
+- **Disposition:** confirmed from current source plus a supported local-source
+  install into an isolated temporary Git repository
+- **Severity:** high - the installed `eval-harness.sh` cannot evaluate any task,
+  and the installed red-team contract names an authoritative sample schema that
+  does not exist in the installed package
+- **Affected:** `install.sh`, `bubbles/installer/installer.yaml`,
+  `bubbles/scripts/trust-metadata.sh`,
+  `bubbles/scripts/install-provenance-selftest.sh`,
+  `bubbles/scripts/release-manifest-selftest.sh`, and generated
+  `bubbles/release-manifest.json`; consumers are
+  `bubbles/scripts/eval-harness.sh` and
+  `agents/bubbles_shared/agent-common.md`
+- **Evidence:** `/tmp/bubbles-imp020-s2-current-sample-03.json` plus the
+  current-session isolated install and harness probes below
+- **Routing:** `bubbles.devops` -> `bubbles.test` -> `bubbles.validate` ->
+  `bubbles.releases` -> IMP-020 S1/S2 finding reconciliation
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/` in
+> the Bubbles source checkout. This compact BUG-015 entry is the complete
+> source-repo artifact: status, evidence provenance, reproduction, expected
+> installed contract, root cause, scenarios, ownership boundary,
+> implementation/test plan, unchecked DoD, and routing. This filing edits only
+> `BUGS.md`; it contains no production-source fix.
+
+### BUG-015 Summary And Exact Finding Set
+
+The installer manages top-level governance scripts and shared agent contracts
+but classifies every file under `bubbles/eval/` as source-only. That creates one
+cohesive installed-package self-containment defect with three manifestations:
+
+1. **BUG015-F1 - direct runtime schemas are absent.** The installed
+   `eval-harness.sh` computes `TASK_SCHEMA` and `EVALUATOR_SCHEMA` relative to
+   itself as `../eval/schemas/task-v2.schema.json` and
+   `../eval/schemas/evaluator-result.schema.json`. Neither path is installed,
+   so the harness exits `2` with `schema-contract-unavailable` before it can
+   validate or score the caller's task.
+2. **BUG015-F2 - the installed S2 record contract is not inspectable.** The
+   installed `agent-common.md` requires every red-team invocation to emit a
+   record conforming to
+   `bubbles/eval/schemas/adversarial-sample.schema.json` version 1, but the
+   package omits that path. `adversarial-aggregate.sh` embeds a matching manual
+   validator and remains executable; that protects the aggregate consumer but
+   does not materialize the authoritative schema for the record-producing agent,
+   reviewers, or other installed consumers.
+3. **BUG015-F3 - provenance tests encode the incomplete package as correct.**
+   `install-provenance-selftest.sh` and `release-manifest-selftest.sh` explicitly
+   assert that the adversarial schema is source-only and justify the omission
+   solely from the aggregator's embedded validator. They do not account for the
+   installed agent contract or the two schemas opened directly by the installed
+   evaluation harness.
+
+This entry accounts for the Sample 03 `package.install-contract` finding as
+BUG015-F2 and extends the same proven packaging root cause to the directly
+runtime-consumed S1 schemas in BUG015-F1. Sample 03's resolver, managed-mode
+documentation, and BUG-011 status findings remain outside BUG-015.
+
+### Evidence Provenance
+
+#### Prior IMP-020 S2 Sample
+
+**Claim Source:** interpreted
+
+`/tmp/bubbles-imp020-s2-current-sample-03.json` was read in this invocation. It
+records sample `imp020-s2-current-03`, invocation
+`imp020-s2-current-invocation-03`, and a blocking
+`package.install-contract` finding. Its runtime/model provenance is explicitly
+`unverified` and its tool inventory is `self-reported`; BUG-015 does not upgrade
+those provenance claims or represent that earlier sample as newly executed.
+
+#### Current Supported Local-Source Install And Installed Harness
+
+**Claim Source:** executed
+
+The current working tree was installed through the supported `--local-source`
+path into a new `/tmp` Git repository. The installer reported version `7.20.0`,
+`613 managed files`, successful install provenance, and a dirty local source
+warning. The disposable repository was removed by the command's `EXIT` trap;
+no downstream repository was read or mutated.
+
+**Exact command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles
+source_root="$PWD"
+fixture="$(mktemp -d /tmp/bubbles-bug015-final.XXXXXX)"
+trap 'rm -rf "$fixture"' EXIT
+git -C "$fixture" init -q
+mkdir -p "$fixture/output"
+printf '%s\n' 'BUG015_FINAL_INSTALL_BEGIN'
+(cd "$fixture" && bash "$source_root/install.sh" --local-source "$source_root" --agents-only)
+printf '%s\n' 'BUG015_FINAL_MEMBERSHIP'
+for relative_path in agents/bubbles_shared/agent-common.md bubbles/scripts/eval-harness.sh bubbles/scripts/adversarial-aggregate.sh bubbles/eval/schemas/adversarial-sample.schema.json bubbles/eval/schemas/task-v2.schema.json bubbles/eval/schemas/evaluator-result.schema.json; do
+  if [[ -e "$fixture/.github/$relative_path" ]]; then
+    printf 'INSTALLED %s\n' "$relative_path"
+  else
+    printf 'ABSENT %s\n' "$relative_path"
+  fi
+done
+grep -nF 'bubbles/eval/schemas/adversarial-sample.schema.json' "$fixture/.github/agents/bubbles_shared/agent-common.md"
+printf '%s\n' 'BUG015_FINAL_INSTALLED_HARNESS'
+harness_exit=0
+(cd "$fixture" && bash .github/bubbles/scripts/eval-harness.sh score --task "$source_root/bubbles/eval/fixtures/negative/tasks/invalid-schema.json" --output "$fixture/output") || harness_exit=$?
+printf 'BUG015_FINAL_INSTALLED_HARNESS_EXIT=%s\n' "$harness_exit"
+printf '%s\n' 'BUG015_FINAL_REPRO_END'
+```
+
+**Observed raw output (relevant contiguous windows from the full installer
+transcript):**
+
+```text
+BUG015_FINAL_MEMBERSHIP
+INSTALLED agents/bubbles_shared/agent-common.md
+INSTALLED bubbles/scripts/eval-harness.sh
+INSTALLED bubbles/scripts/adversarial-aggregate.sh
+ABSENT bubbles/eval/schemas/adversarial-sample.schema.json
+ABSENT bubbles/eval/schemas/task-v2.schema.json
+ABSENT bubbles/eval/schemas/evaluator-result.schema.json
+96:2. Require exactly one JSON result conforming to `bubbles/eval/schemas/adversarial-sample.schema.json` schema version 1 from each actual invocation. A redteam invocation executes one sample and cannot claim to create child invocations or synthetic sample records.
+BUG015_FINAL_INSTALLED_HARNESS
+{
+  "certification": {
+    "eligible": false,
+    "reason": "evaluation schema contract could not be loaded: FileNotFoundError",
+    "status": "input-error"
+  },
+  "certified": false,
+  "checks": [],
+  "evaluationErrors": [
+    {
+      "code": "schema-contract-unavailable",
+      "message": "evaluation schema contract could not be loaded: FileNotFoundError"
+    }
+  ],
+  "evaluationStatus": "error",
+  "inputValid": false,
+  "judge": {
+    "error": {
+      "code": "judge-not-run",
+      "message": "input validation failed"
+    },
+    "provenance": null,
+    "required": false,
+    "rubricFindings": [],
+    "score": null,
+    "status": "unavailable",
+    "verdict": "not run",
+    "weight": 0
+  },
+  "passed": false
+}
+BUG015_FINAL_INSTALLED_HARNESS_EXIT=2
+BUG015_FINAL_REPRO_END
+```
+
+The caller-supplied negative task is deliberately malformed, but the installed
+harness never reaches task validation. The failure is the missing package
+schema contract, not the task's expected validation result.
+
+#### Canonical Source-Harness Control
+
+**Claim Source:** executed
+
+The same task and output-directory shape were passed to the canonical source
+harness. Its schemas loaded successfully; it reached task validation and
+reported the task's actual `passThreshold` defect.
+
+**Exact command:**
+
+```bash
+cd /Users/pkirsanov/Projects/bubbles && output_dir="$(mktemp -d /tmp/bubbles-bug015-source-output.XXXXXX)" && trap 'rm -rf "$output_dir"' EXIT && printf '%s\n' 'BUG015_SOURCE_HARNESS_CONTROL_BEGIN' && source_harness_exit=0 && bash bubbles/scripts/eval-harness.sh score --task bubbles/eval/fixtures/negative/tasks/invalid-schema.json --output "$output_dir" || source_harness_exit=$?; printf 'BUG015_SOURCE_HARNESS_CONTROL_EXIT=%s\n' "$source_harness_exit"; printf '%s\n' 'BUG015_SOURCE_HARNESS_CONTROL_END'
+```
+
+**Observed raw output (relevant windows):**
+
+```text
+BUG015_SOURCE_HARNESS_CONTROL_BEGIN
+{
+  "certification": {
+    "eligible": false,
+    "reason": "task schema validation failed",
+    "status": "invalid-task"
+  },
+  "certified": false,
+  "checks": [],
+  "compatibility": {
+    "legacyGatePass": "disabled-unavailable",
+    "unknownOptionalCheckStatus": "unavailable-weight-retained",
+    "version1": "supported-legacy-non-certifying"
+  },
+  "deterministicRatio": null,
+  "evaluationErrors": [
+    {
+      "code": "task-schema-invalid",
+      "issues": [
+        {
+          "code": "range",
+          "message": "must be a finite number in [0, 1]",
+          "path": "$.passThreshold"
+        }
+      ],
+      "message": "task definition failed validation before scoring"
+    }
+  ],
+```
+
+```text
+  "taskId": "negative-invalid-schema",
+  "taskSchema": "https://bubbles.dev/eval/schemas/task-v2.schema.json",
+  "taskSchemaVersion": 2
+}
+BUG015_SOURCE_HARNESS_CONTROL_EXIT=2
+BUG015_SOURCE_HARNESS_CONTROL_END
+```
+
+The equal numeric exit is not equivalent behavior: source reports the intended
+`task-schema-invalid`; installed reports `schema-contract-unavailable` before
+examining the task.
+
+#### Installed Aggregator Control
+
+**Claim Source:** interpreted
+
+The separately installed `adversarial-aggregate.sh` was executed against the
+supplied schema-valid Sample 03 with:
+
+```bash
+bash .github/bubbles/scripts/adversarial-aggregate.sh --expected-samples 1 /tmp/bubbles-imp020-s2-current-sample-03.json
+```
+
+Its complete one-line JSON output reported `actualSamples:1`, `errors:[]`, and
+`outcome:"agreement-findings"`; the explicit terminal marker was:
+
+```text
+BUG015_INSTALLED_AGGREGATOR_CONTROL_EXIT=0
+BUG015_INSTALLED_AGGREGATOR_CONTROL_END
+```
+
+**Interpretation:** this control agrees with current source inspection:
+`adversarial-aggregate.sh` embeds its validator and does not open the sample
+schema at runtime. It narrows the defect; it does not make the installed
+producer contract self-contained.
+
+### Expected Installed Contract
+
+1. Every managed executable or agent contract MUST have its non-optional
+   framework-owned runtime and contract dependencies materialized by the same
+   supported install.
+2. Because installed `eval-harness.sh` opens them directly,
+   `bubbles/eval/schemas/task-v2.schema.json` and
+   `bubbles/eval/schemas/evaluator-result.schema.json` MUST be installed at
+   those exact relative paths.
+3. Because installed `agent-common.md` and installed public guidance name it as
+   the authoritative closed record contract,
+   `bubbles/eval/schemas/adversarial-sample.schema.json` MUST also be installed
+   at its exact referenced path. The aggregator's embedded validator MUST stay
+   behaviorally aligned with it.
+4. All three schemas MUST be framework-managed: present in `.manifest`, covered
+   by `.checksums`, and listed under `managedFileChecksums`, not
+   `sourceOnlyFileChecksums`, in the generated release manifest.
+5. A supported install followed by an installed harness invocation with a
+   caller-supplied task and output directory MUST reach task validation/scoring;
+   it MUST NOT fail because its own package schema is missing.
+6. Golden tasks, oracle/adapter samples, and positive/negative fixtures under
+   `bubbles/eval/tasks/**` and `bubbles/eval/fixtures/**` are source-side
+   regression assets and MAY remain source-only. Installing the three schemas
+   does not imply shipping the golden corpus or test fixtures downstream.
+7. Installed `adversarial-aggregate.sh` MAY retain its standard-library manual
+   validator for dependency-free execution, but that duplicate validator is a
+   consumer implementation, not a substitute for packaging the authoritative
+   schema referenced by other installed surfaces.
+
+### Confirmed Root Cause In Current Source
+
+**Claim Source:** interpreted
+
+1. `install.sh` copies `bubbles/schemas/` into
+   `.github/bubbles/schemas/` and installs every top-level script via
+   `bubbles/scripts/*.sh`, but it has no copy step for
+   `bubbles/eval/schemas/`. Thus the harness is installed without the two files
+   it resolves relative to itself.
+2. `bubbles_framework_manifest_entries` in `trust-metadata.sh` enumerates
+   `bubbles/schemas/` but never enumerates `bubbles/eval/schemas/`. The typed
+   installer registry similarly has `install_schemas` with
+   `source_dir: bubbles/schemas` and no eval-schema step.
+3. `generate-release-manifest.sh` takes every tracked file below
+   `bubbles/eval/` and unconditionally appends it to `source_only_entries`.
+   Therefore all three schemas are recorded as source-only rather than package
+   dependencies.
+4. `install-provenance-selftest.sh` explicitly calls
+   `assert_bug_009_source_only_release_entry` for only the adversarial schema,
+   with prose claiming downstream execution is complete because the aggregator
+   embeds a validator. `release-manifest-selftest.sh` likewise requires that
+   schema to remain source-only. Neither assertion exercises installed
+   `eval-harness.sh` or checks its two direct schema dependencies.
+5. `framework-validate.sh` invokes both the aggregate and eval-harness selftests
+   through `run_check_self_only`. Source tests can therefore remain green while
+   the normally installed harness is unusable; no current installed-package
+   regression invokes that harness after installation.
+
+### Adversarial Regression Scenarios
+
+```gherkin
+Feature: Install a self-contained evaluation contract
+
+  Scenario: Installed harness reaches task validation
+    Given a supported local-source install in an isolated Git repository
+    And a caller supplies an existing malformed v2 task and output directory
+    When the installed eval-harness scores the task
+    Then it reports task-schema-invalid for the malformed task
+    And it does not report schema-contract-unavailable
+
+  Scenario: Installed harness has both direct schema dependencies
+    Given a supported install completed
+    When the installed harness resolves its schema paths relative to itself
+    Then task-v2.schema.json exists at the resolved task-schema path
+    And evaluator-result.schema.json exists at the resolved evaluator path
+    And both files are manifest-owned and checksum-protected
+
+  Scenario: Installed red-team producers can inspect the named contract
+    Given installed agent-common requires adversarial sample schema version 1
+    When an agent or reviewer resolves the named repository-relative path
+    Then adversarial-sample.schema.json exists there
+    And its installed bytes match canonical source and release provenance
+
+  Scenario: Removing one runtime schema is detected adversarially
+    Given a clean isolated install
+    And one directly consumed eval schema is removed from the fixture
+    When installed-package provenance and the harness regression run
+    Then the provenance check fails
+    And the harness reports schema-contract-unavailable
+    And a supported reinstall restores the file and intended task result
+
+  Scenario: Source-only eval assets remain source-only
+    Given the package installs all three eval schemas
+    When package membership is inspected
+    Then golden tasks and positive and negative fixtures remain absent
+    But an installed harness can evaluate a caller-supplied task
+
+  Scenario: Embedded aggregation stays aligned
+    Given a schema-valid adversarial sample record
+    When the installed dependency-free aggregator consumes it
+    Then its embedded validator accepts the record
+    And a schema-invalid adversarial record is rejected by both the JSON schema
+      regression and the embedded validator for the same contract reason
+```
+
+### BUG-015 Ownership And Change Boundary
+
+`bubbles.bug` owns only this `BUGS.md` artifact. The package repair belongs to
+`bubbles.devops`, because it changes installer enumeration, installed
+provenance, and package-integrity tests. `bubbles.test` owns independent
+regression execution, `bubbles.validate` owns the completion verdict, and
+`bubbles.releases` owns generated release-manifest/checksum freshness and any
+release-facing version/changelog work after validation.
+
+**Authorized implementation surfaces:**
+
+- `install.sh` - copy the eval schema directory to the matching installed path.
+- `bubbles/installer/installer.yaml` - declare the typed install step.
+- `bubbles/scripts/trust-metadata.sh` - enumerate the three schemas as managed.
+- `bubbles/scripts/generate-release-manifest.sh` - prevent managed eval schemas
+  from also being classified source-only.
+- `bubbles/scripts/install-provenance-selftest.sh` - prove installed bytes,
+  ownership, checksums, executable consumer behavior, and reinstall repair.
+- `bubbles/scripts/release-manifest-selftest.sh` - assert all three schemas are
+  managed and excluded from source-only provenance.
+- Mechanically generated installer/release artifacts only through their owning
+  generators and release phase.
+
+**Excluded:** schema content, `eval-harness.sh` scoring behavior,
+`adversarial-aggregate.sh` aggregation behavior, agent wording, golden tasks,
+eval fixtures, downstream installed copies, unrelated IMP-020 findings, and
+BUG-010/BUG-011/BUG-014. A source change outside the authorized package surfaces
+requires a new grounded finding and owner route; it is not bundled here.
+
+### BUG-015 Implementation Plan
+
+1. In the installer provenance selftest, first add a real isolated-install
+   regression for all three schema paths and invoke installed
+   `eval-harness.sh` with a caller-supplied malformed task. Record the pre-fix
+   missing-file assertions and `schema-contract-unavailable` failure.
+2. Add one typed `bubbles/eval/schemas` directory-copy step to
+   `installer.yaml` and the matching `install.sh` copy operation, preserving the
+   exact `bubbles/eval/schemas/...` relative paths consumed by scripts and docs.
+3. Extend `bubbles_framework_manifest_entries` to own only
+   `bubbles/eval/schemas/**`. Adjust source-only release enumeration so managed
+   eval schemas cannot appear in both checksum sections; leave tasks and
+   fixtures source-only.
+4. Replace the current source-only assertions with managed-install assertions
+   for all three schemas. Add byte-parity, `.manifest`, `.checksums`, generated
+   release-manifest, removal-detection, and supported-reinstall checks.
+5. Add an installed consumer regression that distinguishes the intended
+   `task-schema-invalid` result from package-level
+   `schema-contract-unavailable`. Add an aggregator/schema parity negative case
+   without removing the embedded validator.
+6. Keep generated release metadata out of the devops implementation claim until
+   `bubbles.test` and `bubbles.validate` have accepted the focused behavior;
+   then route to `bubbles.releases` for manifest-last regeneration and release
+   readiness.
+
+### BUG-015 Test Plan
+
+1. `bubbles.test` runs the focused installer-provenance and release-manifest
+   selftests with full output on the current macOS source checkout.
+2. Execute the exact isolated install/harness reproduction above after the fix.
+   Assert the three schema files are installed and the harness emits
+   `task-schema-invalid`, not `schema-contract-unavailable`, for the same task.
+3. Remove each direct runtime schema in separate isolated-fixture cases, prove
+   the consumer/provenance checks fail, and prove a supported reinstall repairs
+   bytes and checksum ownership. This is the adversarial regression signal.
+4. Run `eval-harness-selftest.sh` and `adversarial-aggregate-selftest.sh` to
+   protect S1 scoring/fail-closed behavior, S2 schema/manual-validator parity,
+   and all source-only fixture behavior.
+5. Run the installed aggregator against a valid sample plus invalid closed-
+   schema cases. Verify keeping the authoritative schema installed does not add
+   a runtime JSON-Schema-library dependency.
+6. Run canonical `bash bubbles/scripts/cli.sh framework-validate`. After
+   release-owned generated artifacts are refreshed, run canonical
+   `bash bubbles/scripts/cli.sh release-check` and verify no managed/source-only
+   duplicate path exists.
+7. No UI, API, datastore, stress, load, or telemetry test applies to this
+   installer/package-membership defect; those categories must not be fabricated
+   as evidence.
+
+### IMP-020 S1/S2 Reconciliation
+
+- **S1 behavior remains implemented, but installed delivery is not yet
+  self-contained.** S1 owns `eval-harness.sh`, `task-v2.schema.json`, and
+  `evaluator-result.schema.json`. Its source selftest and fail-closed behavior
+  are not invalidated by BUG-015, but S1's completed status must not be read as
+  proof that its installed harness works until BUG015-F1 is fixed and verified.
+- **S2 package finding is filed one-to-one.** Sample 03's
+  `package.install-contract` finding maps to BUG015-F2. The aggregator's passing
+  installed control is retained as evidence that its embedded validator works,
+  not as closure of the producer-contract gap.
+- **S2 remains pending.** BUG-015 does not reconcile Sample 03's resolver,
+  managed-mode documentation, or BUG-011 status findings and does not claim the
+  S2 live three-sample contract, framework validation, or release acceptance.
+- **S7/release reconciliation cannot erase this blocker.** The fix must land in
+  the owning S1/S2 package surfaces with focused red/green evidence before final
+  public/generated reconciliation or a release-complete claim.
+
+### BUG-015 Definition Of Done
+
+- [ ] Sample 03 `package.install-contract` is accounted for exactly once as
+  BUG015-F2, and its unrelated findings remain separately dispositioned.
+- [ ] A persistent installed-package regression fails before the fix with the
+  three missing schema paths and installed-harness
+  `schema-contract-unavailable` result.
+- [ ] `adversarial-sample.schema.json`, `task-v2.schema.json`, and
+  `evaluator-result.schema.json` install at their exact consumed/referenced
+  paths with bytes matching canonical source.
+- [ ] All three schemas are owned by `.manifest`, recorded in `.checksums`, and
+  present only in `managedFileChecksums` in release provenance.
+- [ ] Golden tasks, oracles/adapters, and positive/negative eval fixtures remain
+  source-only and are not pulled into the downstream package by over-broad copy
+  or manifest enumeration.
+- [ ] Installed `eval-harness.sh` reaches task validation/scoring with a
+  caller-supplied task and never fails because a framework-owned schema is
+  absent.
+- [ ] Installed `adversarial-aggregate.sh` remains dependency-free, accepts
+  schema-valid records, rejects adversarial invalid records, and stays aligned
+  with the installed authoritative schema.
+- [ ] Removing each runtime schema makes the focused regression fail, and a
+  supported reinstall restores file bytes, mode, manifest membership, and
+  checksum provenance.
+- [ ] Typed installer declaration, generated installer check, copy behavior,
+  manifest enumeration, source-only classification, and selftest assertions all
+  describe the same package boundary.
+- [ ] Focused S1 eval-harness and S2 adversarial-aggregate selftests pass after
+  the package fix with no weakened assertion, silent bailout, or fabricated
+  installed fixture.
+- [ ] `bubbles.test` independently records focused and canonical framework
+  results with no collateral regression.
+- [ ] `bubbles.validate` verifies the authorized change boundary, adversarial
+  signal, and one-to-one finding coverage before any fixed/verified status.
+- [ ] `bubbles.releases` regenerates release metadata last and records a passing
+  `release-check`; no release or propagation claim precedes that evidence.
+- [ ] No downstream repo is patched manually; repaired installed copies are
+  produced only by the supported installer/upgrade path after canonical release.
+- [ ] IMP-020 reconciles BUG015-F1 with S1 installed delivery and BUG015-F2 with
+  S2 finding accounting while leaving every unrelated IMP-020 blocker open.
+
+### BUG-015 Current Disposition And Handoff
+
+BUG-015 is confirmed, reported, and not started. Every DoD item remains
+unchecked. This filing changes only `BUGS.md` and makes no fix, post-fix test,
+framework-pass, release-check, release, propagation, or IMP-020 completion
+claim.
+
+The next required owner is `bubbles.devops` for the bounded installer,
+manifest-enumeration, and package-provenance repair. Route its result to
+`bubbles.test` for independent adversarial execution, then to
+`bubbles.validate` for boundary and finding-coverage validation, then to
+`bubbles.releases` for generated manifest/release readiness, and finally back
+to the IMP-020 orchestrator for S1/S2 one-to-one reconciliation.
+
+---
+
+## BUG-016 - adversarial aggregate accepts non-RFC3339 sample timestamps
+
+- **Filed:** 2026-07-14
+- **Status:** Reported / Not Started - no runtime, schema, selftest, or release
+  source has been changed
+- **Disposition:** confirmed from historical IMP-020 S2 red-team evidence and
+  current source inspection; no current-session production probe was executed
+- **Severity:** high - the S2 trust aggregator can accept an out-of-contract
+  sample as agreement-clear, so malformed invocation provenance can enter a
+  supposedly schema-valid adversarial result set
+- **Affected:** `bubbles/scripts/adversarial-aggregate.sh::validate_timestamp`
+  and `bubbles/scripts/adversarial-aggregate-selftest.sh`; the declared
+  contract is `bubbles/eval/schemas/adversarial-sample.schema.json::invokedAt`
+- **Finding:** `IMP020-S2-RT-02B-001` / aggregate fingerprint
+  `sha256:b7549f72a4a41f14aa09e01d5b0a440a4403223d78e3b297e76fa6a4d5ac34f0`
+- **Evidence:** historical sample
+  `/tmp/bubbles-imp020-s2-current-sample-02b.json`, historical VS Code session
+  transcript `da09f9b1-1e85-49da-8612-2e14598070c3.jsonl` around lines
+  2750-2770, and current source inspection recorded below
+- **Routing:** `bubbles.implement` -> `bubbles.test` -> `bubbles.validate` ->
+  IMP-020 S2 one-to-one finding reconciliation
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/`
+> in the Bubbles source checkout. This compact BUG-016 entry is the complete
+> source-repo artifact: status, severity, evidence provenance, exact
+> reproduction, observed and expected behavior, root cause, regression
+> scenarios, change boundary, implementation/test plan, unchecked DoD, and
+> routing. This filing edits only `BUGS.md`; it contains no production fix.
+
+### BUG-016 Summary
+
+The adversarial sample schema declares `invokedAt` as JSON Schema
+`format: "date-time"`, which is the RFC 3339 date-time contract. The production
+aggregator instead translates a trailing uppercase `Z` to `+00:00` and delegates
+the entire remaining check to Python `datetime.datetime.fromisoformat`.
+`fromisoformat` accepts a broader ISO-8601 grammar than RFC 3339, including the
+compact numeric offset `+0000`.
+
+The historical IMP-020 S2 red-team probe supplied an otherwise valid sample
+whose timestamp was `2026-07-14T12:00:00+0000`. The production aggregator
+accepted it with exit `0`, no aggregation errors, and
+`outcome: "agreement-clear"`. Ruby standard-library `DateTime.rfc3339`, used as
+an independent local oracle, rejected the same string. This is contract/runtime
+drift, not a request to broaden the schema: the expected repair is to make the
+dependency-free runtime validator conform to the existing RFC 3339 contract.
+
+The persisted sample `imp020-s2-current-02b` is itself a valid schema-v1 finding
+record with a `Z` timestamp. It records the disposable invalid-timestamp probe;
+it is not the malformed fixture that triggered the counterexample.
+
+### BUG-016 Evidence Provenance
+
+#### Historical IMP-020 S2 Counterexample
+
+**Claim Source:** interpreted
+
+The cited session transcript records a red-team invocation with sample ID
+`imp020-s2-current-02b` and invocation ID
+`imp020-s2-current-invocation-02b`. Its runtime, model, and tool identities were
+explicitly unverified and no independence claim was made. The invocation
+reported one blocking finding:
+
+```text
+category=schema-validation
+target=bubbles/scripts/adversarial-aggregate.sh::validate_timestamp
+candidate=2026-07-14T12:00:00+0000
+productionOutcome=agreement-clear
+productionErrors=[]
+oracle=ruby-standard-library-DateTime.rfc3339
+oracleResult=rejected
+findingId=IMP020-S2-RT-02B-001
+```
+
+The transcript records the focused selftest as `124 passed, 0 failed`, while
+the disposable 13-case red-team fixture suite had zero harness failures and one
+production counterexample: this timestamp. Those are historical results, not
+commands re-executed while filing BUG-016.
+
+#### Historical Three-Sample Aggregate
+
+**Claim Source:** interpreted
+
+The exact historical aggregation command was:
+
+```bash
+bash bubbles/scripts/adversarial-aggregate.sh --expected-samples 3 \
+  /tmp/bubbles-imp020-s2-current-sample-01.json \
+  /tmp/bubbles-imp020-s2-current-sample-02b.json \
+  /tmp/bubbles-imp020-s2-current-sample-03.json
+```
+
+Its output reported `expectedSamples: 3`, `actualSamples: 3`, `errors: []`, and
+`outcome: "disagreement"`. The sample matrix retained three distinct IDs and
+three distinct invocation IDs. Its complete eight-finding union included the
+timestamp finding above under only sample `imp020-s2-current-02b`; BUG-016 is
+that finding's one-to-one source-repo accounting record. The other seven union
+findings remain outside this bug and must not disappear from IMP-020 S2
+reconciliation.
+
+#### Historical RFC 3339 Oracle
+
+**Claim Source:** interpreted
+
+The transcript records this local, standard-library-only oracle command:
+
+```bash
+ruby -r date -e 'value = "2026-07-14T12:00:00+0000"; begin; DateTime.rfc3339(value); puts "oracleResult=accepted"; exit 1; rescue Date::Error => error; puts "oracleResult=rejected"; puts "oracleErrorClass=#{error.class}"; puts "oracleErrorMessage=#{error.message}"; exit 0; end'
+```
+
+It recorded `oracleResult=rejected` and exit `0`. Ruby availability and this
+result belong to the historical session. This filing did not rerun Ruby and
+does not infer its availability on another host. No `jsonschema` package was
+required or invoked for this finding.
+
+#### Current Source Inspection
+
+**Claim Source:** interpreted
+
+Current source still contains the mismatch:
+
+1. `adversarial-sample.schema.json` declares `invokedAt` as a string with
+   `format: "date-time"`.
+2. `validate_timestamp` accepts any non-empty string parsed by
+   `datetime.datetime.fromisoformat` after translating only a trailing uppercase
+   `Z`; it then checks only that `tzinfo` is present.
+3. `adversarial-aggregate-selftest.sh` generates its base fixtures with only
+   `2026-07-11T12:00:00Z`. It has no positive numeric-offset control and no
+   adversarial timestamp grammar matrix, so the broader parser remains green.
+4. The selftest has a separate schema-check helper that imports optional
+   `jsonschema`. BUG-016 regression coverage must exercise the production
+   aggregator directly and must not make that optional package the timestamp
+   oracle or a prerequisite for the new cases.
+
+No current-session command executed the production aggregator or an RFC 3339
+oracle while filing this entry. Current-session claims are limited to reading
+the historical evidence and current source.
+
+### BUG-017 Exact Reproduction And Observed Behavior
+
+The historical disposable probe can be reproduced without changing production:
+
+1. Create an otherwise valid schema-v1 sample in an isolated temporary
+   directory with unique `sampleId` and `invocationId`, `status: "completed"`,
+   `verdict: "clear"`, complete provenance, no findings, and
+   `invokedAt: "2026-07-14T12:00:00+0000"`.
+2. Run the production consumer against that one file:
+
+   ```bash
+   bash bubbles/scripts/adversarial-aggregate.sh --expected-samples 1 \
+     "$fixture/non-rfc3339-offset.json"
+   ```
+
+3. Run the Ruby command above only when `ruby` and its standard-library `date`
+   module are available. If unavailable, record `oracle=unavailable`; do not
+   install a package, require `jsonschema`, or convert absence into a pass.
+
+**Observed historically:** step 2 exited `0` and emitted
+`outcome: "agreement-clear"` with `errors: []`; the available Ruby oracle
+rejected the timestamp.
+
+**Expected:** step 2 exits with the aggregator's schema/input error status,
+emits `outcome: "aggregation-error"`, and includes a `schema-date-time` error
+whose path identifies the sample's `.invokedAt`. The malformed sample must not
+enter `sampleIds`, `sampleMatrix`, agreement, disagreement, or finding-union
+semantics as a valid record.
+
+### BUG-016 Confirmed Root Cause
+
+`datetime.datetime.fromisoformat` is an ISO-8601 convenience parser, not an RFC
+3339 contract validator. The current function has no lexical gate for the
+closed RFC 3339 shape before calling it. Presence of `tzinfo` distinguishes a
+naive timestamp from an aware one, but cannot distinguish valid `+00:00` from
+out-of-contract `+0000`, a space separator, an hour-only offset, or an offset
+with seconds. In the other direction, Python `datetime` cannot directly
+represent RFC 3339's permitted leap second. The selftest's single uppercase `Z`
+fixture satisfies both parsers, so it is tautological with respect to both
+over-acceptance and under-acceptance drift.
+
+The schema already expresses the intended public contract. Changing or
+weakening its `date-time` declaration would make the implementation's broader
+acceptance authoritative after the fact and is not the expected fix.
+
+### BUG-016 Adversarial Regression Scenarios
+
+```gherkin
+Feature: Keep adversarial sample timestamps conformant with RFC 3339
+
+  Scenario: UTC Z timestamp remains valid
+    Given an otherwise valid completed sample
+    And invokedAt is "2026-07-14T12:00:00Z"
+    When adversarial-aggregate consumes exactly that sample
+    Then it accepts the record
+    And it reports agreement-clear with no aggregation errors
+
+  Scenario: Colonized numeric UTC offset remains valid
+    Given an otherwise valid completed sample
+    And invokedAt is "2026-07-14T12:00:00+00:00"
+    When adversarial-aggregate consumes exactly that sample
+    Then it accepts the record
+    And it reports agreement-clear with no aggregation errors
+
+  Scenario: RFC 3339 lowercase separators remain valid
+    Given an otherwise valid completed sample
+    And invokedAt is "2026-07-14t12:00:00z"
+    When adversarial-aggregate consumes exactly that sample
+    Then it accepts the record
+    And it reports agreement-clear with no aggregation errors
+
+  Scenario: An RFC 3339 leap second remains valid
+    Given an otherwise valid completed sample
+    And invokedAt is "1990-12-31T23:59:60Z"
+    When adversarial-aggregate consumes exactly that sample
+    Then it accepts the record
+    And it reports agreement-clear with no aggregation errors
+
+  Scenario: Compact numeric offset is rejected
+    Given an otherwise valid completed sample
+    And invokedAt is "2026-07-14T12:00:00+0000"
+    When adversarial-aggregate consumes exactly that sample
+    Then it reports aggregation-error
+    And schema-date-time identifies invokedAt
+
+  Scenario Outline: ISO-8601 extensions outside RFC 3339 are rejected
+    Given an otherwise valid completed sample
+    And invokedAt is <timestamp>
+    When adversarial-aggregate consumes exactly that sample
+    Then it reports aggregation-error
+    And schema-date-time identifies invokedAt
+
+    Examples:
+      | timestamp                              | boundary                 |
+      | "2026-07-14 12:00:00+00:00"          | space instead of T       |
+      | "2026-07-14T12:00:00+00"             | hour-only offset         |
+      | "2026-07-14T12:00:00+00:00:30"       | offset includes seconds  |
+      | "20260714T120000+00:00"               | compact date and time    |
+      | "2026-07-14T12:00:00,123Z"            | comma fraction separator |
+      | "2026-07-14T12:00:00"                | timezone absent          |
+
+  Scenario: Fractional seconds preserve the declared contract
+    Given an otherwise valid completed sample
+    And invokedAt is "2026-07-14T12:00:00.123456Z"
+    When adversarial-aggregate consumes exactly that sample
+    Then it accepts the record
+    And it reports agreement-clear with no aggregation errors
+
+  Scenario: Calendar and offset semantics remain fail-closed
+    Given otherwise valid completed samples with an impossible calendar date or
+      an out-of-range timezone offset
+    When adversarial-aggregate consumes each sample separately
+    Then each result is aggregation-error
+    And each error identifies invokedAt without a traceback
+
+  Scenario: Optional independent oracle cannot mask runtime behavior
+    Given the production timestamp matrix has direct expected outcomes
+    When Ruby DateTime.rfc3339 is available
+    Then the selftest compares the same boundary strings with that oracle
+    But when Ruby is unavailable it records the oracle check as unavailable
+    And the mandatory production assertions still execute and decide the test
+```
+
+The invalid `+0000` case is the required adversarial signal: restoring the
+current `fromisoformat`-only implementation must make the focused regression
+fail. No test may return early or silently pass when the malformed sample is
+accepted.
+
+### BUG-016 Change Boundary
+
+`bubbles.bug` owns only this `BUGS.md` filing. The expected implementation is a
+two-file runtime-conformity change owned by `bubbles.implement`:
+
+- `bubbles/scripts/adversarial-aggregate.sh` - make `validate_timestamp`
+  enforce the existing RFC 3339 lexical and semantic contract with standard
+  library facilities only, preserving structured `schema-date-time` errors.
+- `bubbles/scripts/adversarial-aggregate-selftest.sh` - add valid controls,
+  adversarial invalid boundaries, direct production assertions, and an
+  optional guarded Ruby-oracle comparison.
+
+`bubbles/eval/schemas/adversarial-sample.schema.json` is excluded because its
+existing `date-time` declaration is the controlling contract. It may enter the
+change set only if implementation design demonstrates a genuine contract
+defect and explicitly routes that contract change for review; parser
+convenience is not such a defect. Generated release metadata, documentation,
+resolvers, agents, downstream installed copies, and the other seven IMP-020 S2
+findings are also excluded.
+
+### BUG-016 Implementation Plan
+
+1. Add the direct production regression matrix to the focused selftest first.
+   Preserve evidence that `+0000` fails the new assertion before the runtime
+   fix while `Z` and `+00:00` remain green controls.
+2. Replace the permissive timestamp acceptance condition with a strict RFC
+  3339 lexical gate followed by standard-library semantic validation. Accept
+  `T`/`t`, `Z`/`z`, optional dot-prefixed fractional seconds, colonized
+  `+/-HH:MM` offsets, and the contract's leap-second boundary; reject ISO-8601
+  extensions outside that grammar before they can reach aggregation semantics.
+3. Preserve existing error vocabulary and paths: malformed timestamps produce
+   `schema-date-time` at the relevant `.invokedAt`, aggregate to
+   `aggregation-error`, and never emit a Python traceback.
+4. Keep the implementation dependency-free. Do not add or require
+   `jsonschema`. If Ruby is present, use `DateTime.rfc3339` only as a guarded
+   independent test oracle; if absent, print a clear unavailable/SKIP record
+   while still running every mandatory production assertion.
+5. Run the focused selftest and exact one-sample CLI matrix, then route the
+   unchanged two-file diff and full outputs to `bubbles.test`.
+
+### BUG-016 Test Plan
+
+1. `bubbles.test` runs the focused aggregate selftest and verifies the added
+   `+0000` regression fails against the pre-fix validator and passes after the
+   runtime repair. The evidence must distinguish those two executions.
+2. Run separate one-sample end-to-end CLI cases for valid `Z`, valid `+00:00`,
+   valid lowercase `t`/`z`, valid fractional seconds, a valid leap second,
+   invalid `+0000`, space separator, hour-only offset, offset seconds, compact
+   date/time, comma fraction, missing timezone, impossible date, and
+   out-of-range offset. Assert status, outcome, error code, and error path for
+   each case.
+3. When Ruby stdlib is available, compare the same boundary table with
+   `DateTime.rfc3339` and record the raw result. When unavailable, record that
+   fact; do not install dependencies and do not omit the production cases.
+4. Run a three-distinct-invocation aggregate with valid RFC 3339 timestamps to
+   protect canonical ordering, complete finding union, and disagreement
+   behavior. Run the same aggregate with one invalid timestamp and prove it
+   fails closed as an aggregation error rather than silently dropping or
+   counting the sample.
+5. Run canonical `bash bubbles/scripts/cli.sh framework-validate` after the
+   focused checks. `bubbles.validate` then inspects the two-file boundary,
+   regression quality, absence of silent bailouts, and one-to-one IMP-020
+   finding accounting.
+6. No UI, network, datastore, container, telemetry, stress, or load category
+   applies. The production CLI invocation is the end-to-end consumer contract;
+   unrelated categories must not be fabricated as evidence.
+
+### BUG-016 Definition Of Done
+
+- [ ] `IMP020-S2-RT-02B-001` and fingerprint
+  `sha256:b7549f72a4a41f14aa09e01d5b0a440a4403223d78e3b297e76fa6a4d5ac34f0`
+  are accounted for exactly once as BUG-016; the other seven historical
+  aggregate findings remain separately dispositioned.
+- [ ] A persistent direct-production regression fails before the fix because
+  `2026-07-14T12:00:00+0000` is wrongly accepted as agreement-clear.
+- [ ] Valid `Z`, `+00:00`, lowercase `t`/`z`, fractional-second, and leap-second
+  RFC 3339 controls remain accepted with no aggregation errors.
+- [ ] Invalid compact offset, wrong separator, hour-only offset, offset with
+  seconds, compact date/time, comma fraction, missing timezone, impossible
+  date, and out-of-range offset cases all fail closed with `schema-date-time`
+  at `.invokedAt`.
+- [ ] Invalid samples cannot contribute to agreement, disagreement, sample
+  counts, sample matrices, or finding unions as valid records.
+- [ ] The timestamp regression uses the production aggregator directly and
+  does not require optional `jsonschema` or any network-installed dependency.
+- [ ] Ruby `DateTime.rfc3339` results are captured only when Ruby stdlib is
+  available; unavailability is reported honestly and never treated as proof.
+- [ ] Reintroducing the `fromisoformat`-only validator makes the adversarial
+  regression fail, and the test contains no bailout or silent-return pattern.
+- [ ] The implementation remains within
+  `adversarial-aggregate.sh` and its selftest; the schema remains unchanged
+  unless a separately reviewed design proves a contract change is necessary.
+- [ ] Existing aggregation behavior for duplicate invocation IDs, exact sample
+  counts, canonical ordering, disagreement, complete finding union, hostile
+  text, and provenance validation remains passing.
+- [ ] `bubbles.test` records focused pre-fix failure, post-fix success, boundary
+  matrix, optional-oracle status, and canonical framework output with no
+  collateral regression.
+- [ ] `bubbles.validate` verifies the two-file boundary, exact consumer
+  scenario, adversarial signal, evidence provenance, and zero hidden findings.
+- [ ] Canonical framework validation passes after the fix without weakening
+  the schema, suppressing errors, or adding a fallback acceptance path.
+- [ ] IMP-020 S2 reconciles BUG-016 back to the eight-finding historical union
+  before any S2 completion or trust-hardening claim.
+
+### BUG-016 Current Disposition And Handoff
+
+BUG-016 is confirmed, reported, and not started. Every DoD item remains
+unchecked. This filing changes only `BUGS.md` and makes no implementation,
+pre-fix regression execution, post-fix pass, framework-validation, release, or
+IMP-020 S2 completion claim.
+
+The next required owner is `bubbles.implement` for the bounded two-file runtime
+conformity repair and regression addition. Route its result to `bubbles.test`
+for independent red/green and boundary-matrix execution, then to
+`bubbles.validate` for change-boundary and evidence validation, and finally
+back to the IMP-020 orchestrator for S2 one-to-one finding reconciliation.
+
+---
+
+## BUG-017 - active workflow mode advertises deprecated passes posture while the terminology regression omits the mode registry
+
+- **Filed:** 2026-07-14
+- **Status:** Reported / Not Started - no workflow mode, selftest, runtime,
+  generated, release, or downstream source has been changed
+- **Disposition:** confirmed from the supplied IMP-020 S2 sample and current
+  source inspection; the focused selftest was not rerun while filing this bug
+- **Severity:** high - an install-managed active workflow mode contradicts the
+  canonical S2 posture vocabulary while the regression intended to prevent
+  that drift reports the inspected active surface set as clean
+- **Affected:** `bubbles/workflows/modes.yaml` redteam-to-doc active comment and
+  `bubbles/scripts/adversarial-aggregate-selftest.sh` active-terminology source
+  inventory/classifier assertions
+- **Finding:** `BUG-017-F01`, accounting for
+  `/tmp/bubbles-imp020-s2-current-sample-03.json::findings[2]`
+  (`documentation.managed-mode-staleness`) only; the sample supplies no finding
+  fingerprint, so none is invented here
+- **Evidence:** supplied sample
+  `/tmp/bubbles-imp020-s2-current-sample-03.json` plus current source inspection
+  recorded below
+- **Routing:** `bubbles.docs` -> `bubbles.test` -> `bubbles.validate` -> IMP-020
+  S2 one-to-one finding reconciliation
+
+> **Source-repo artifact convention:** Gate G085 forbids persistent `specs/`
+> in the Bubbles source checkout. This compact BUG-017 entry is the complete
+> source-repo artifact: status, severity, evidence provenance, exact current
+> source observation, observed and expected behavior, root cause, regression
+> scenarios, two-file change boundary, implementation/test plan, unchecked
+> DoD, and routing. This filing edits only `BUGS.md`; it contains no production
+> or test fix.
+
+### BUG-017 Summary
+
+IMP-020 S2 made `samples` the canonical adversarial count and retained `passes`
+only as deprecated compatibility input. The active `redteam-to-doc` mode still
+contains an install-managed comment saying that the redteam phase resolves its
+effective posture as `mode/passes/teeth`. That is active operator/agent guidance,
+not a historical transcript or migration example, so it should say
+`mode/samples/teeth`.
+
+The focused adversarial aggregate selftest has an active-source terminology
+classifier, but its explicit inventory contains 15 surfaces and omits
+`bubbles/workflows/modes.yaml`. Its syntax checks cover forms such as
+`--passes`, `passes:`, `passes=`, and `adversarial.passes`, while no assertion
+targets the slash-delimited active posture tuple. Its positive
+`mode/samples/teeth` checks apply to generated public surfaces, not the mode
+registry. The supplied current sample therefore records a focused result of
+`124 passed, 0 failed` even though the active mode comment remains stale.
+
+This bug does not request a global ban on the word `passes`. Explicitly
+qualified compatibility and migration language remains valid, as do historical
+records outside the active-current-source inventory. The defect is unqualified
+active posture wording plus a regression inventory/assertion gap that cannot
+see it.
+
+### BUG-017 Evidence Provenance
+
+#### Supplied IMP-020 S2 Sample
+
+**Claim Source:** interpreted
+
+The supplied schema-version-1 record has:
+
+```text
+sampleId=imp020-s2-current-03
+invocationId=imp020-s2-current-invocation-03
+sampleSemantics=same-runtime-correlated
+status=completed
+verdict=findings
+findingIndex=2
+findingCategory=documentation.managed-mode-staleness
+findingTarget=bubbles/workflows/modes.yaml redteam-to-doc adversarialControlPlane comment
+findingBlocking=true
+```
+
+Its runtime identity is derived from the supplied VS Code session-log path and
+marked `unverified`. Its provider is `GitHub-Copilot`, model ID is
+`unavailable`, and model identity is `unverified`; no model independence is
+claimed. Its tool inventory is marked `self-reported` with hash
+`sha256:873b57e37e51bdfc20884237441113b50245af407df8b9b5e5bd735c3d704b3c`.
+The sample contains three other blocking findings. BUG-017 accounts only for
+`findings[2]`; the empty-samples resolver, installed-schema, and stale BUG-011
+ledger findings remain outside this artifact and must not disappear from
+IMP-020 S2 reconciliation.
+
+#### Exact Current Source Observation
+
+**Claim Source:** interpreted
+
+Current source inspection found the active `redteam-to-doc` block in
+`bubbles/workflows/modes.yaml`. Its comment currently reads:
+
+```text
+# Adversarial-verification control plane (IMP-002): the redteam phase
+# resolves its effective posture (mode/passes/teeth) via
+# adversarial-resolve.sh. mode=off short-circuits the phase to a
+# completed_diagnostic no-op (zero behavior change on upgrade).
+```
+
+The controlling selftest section declares exactly these 15 active surfaces:
+
+```text
+agents/bubbles.redteam.agent.md
+prompts/bubbles.redteam.prompt.md
+agents/bubbles.super.agent.md
+agents/bubbles_shared/agent-common.md
+bubbles/workflows.yaml
+skills/bubbles-workflow-mode-resolution/SKILL.md
+docs/recipes/adversarial-verification.md
+docs/recipes/cross-model-review.md
+docs/guides/AGENT_MANUAL.md
+docs/guides/WORKFLOW_MODES.md
+docs/recipes/README.md
+docs/CATALOG.md
+bubbles/cheatsheet/vocabulary.json
+docs/CHEATSHEET.md
+docs/its-not-rocket-appliances.html
+```
+
+`bubbles/workflows/modes.yaml` is absent. The classifier's deprecated-syntax
+patterns do not include `mode/passes/teeth`, and the positive
+`mode/samples/teeth` assertion is scoped to the three generated surfaces.
+Consequently, the source that contains the stale active tuple is neither
+scanned nor positively asserted.
+
+#### Focused Selftest Result In The Supplied Sample
+
+**Claim Source:** interpreted
+
+The supplied finding's `evidenceRef` records that the focused
+`adversarial-aggregate-selftest.sh` execution reported `124 passed, 0 failed`
+while scanning 15 active surfaces. That result belongs to the supplied IMP-020
+S2 invocation. This filing did not rerun the selftest and does not recast the
+historical result as current-session execution evidence.
+
+#### Filing Execution Boundary
+
+**Claim Source:** not-run
+
+No resolver, aggregator, selftest, framework validation, release check,
+installer, or downstream command was executed for this documentation-only
+filing. Current-session claims are limited to reading the supplied JSON record,
+the current mode comment, the current selftest inventory/classifier, and the
+existing BUG headings.
+
+### Exact Reproduction And Observed Behavior
+
+1. Inspect the `redteam-to-doc` `adversarialControlPlane` comment in
+   `bubbles/workflows/modes.yaml`.
+2. Inspect `active_source_surfaces` and the terminology classifier in
+   `bubbles/scripts/adversarial-aggregate-selftest.sh`.
+3. Compare the active posture tuple with the canonical S2 contract in the
+   current active surfaces, which use `samples`, `BUBBLES_ADVERSARIAL_SAMPLES`,
+   and `mode/samples/teeth`.
+4. Run the focused selftest only under `bubbles.test` ownership and capture its
+   complete result; the supplied sample records the pre-fix result as
+   `124 passed, 0 failed`.
+
+**Observed:** the active mode comment says `mode/passes/teeth`; the 15-surface
+inventory excludes the file containing that comment; no classifier or positive
+marker assertion targets the stale slash-delimited posture tuple; the supplied
+focused run remains green.
+
+**Expected:** active mode guidance says `mode/samples/teeth`. The mode registry
+is a required active terminology surface, an unqualified
+`mode/passes/teeth` tuple is rejected, and a positive assertion binds the
+redteam-to-doc control-plane comment to `mode/samples/teeth`. Explicitly marked
+deprecated compatibility or historical migration references to `passes` remain
+allowed and historical snapshots remain outside the active-source scan.
+
+### BUG-017 Confirmed Root Cause
+
+The S2 terminology migration updated the resolver, agents, public docs, and
+generated surfaces but missed the install-managed mode-registry comment. The
+regression simultaneously encoded its active source universe as a manually
+maintained list and omitted the second workflow registry,
+`bubbles/workflows/modes.yaml`.
+
+Adding that path alone is necessary but not sufficient. The current classifier
+recognizes deprecated command/config/output forms and misleading independence,
+voting, consensus, ensemble, and cross-model claims. It does not recognize the
+slash-delimited `mode/passes/teeth` posture tuple. Its positive canonical marker
+checks draw from agent-common, two public recipes, and generated outputs, so
+they do not require the active mode registry to name the canonical tuple.
+
+The defect is therefore a paired coverage gap:
+
+1. the active source containing the stale statement is absent from the source
+   inventory; and
+2. the classifier/positive assertions lack the exact posture-tuple boundary
+   that would fail if the source were included but regressed later.
+
+The existing same-line qualifier mechanism already supplies the correct policy
+shape for compatibility: deprecated or historical `passes` text can be valid
+when the same clause identifies it as compatibility/migration material. A
+whole-repository or whole-history ban would discard that distinction and is not
+the fix.
+
+### BUG-017 Adversarial Regression Scenarios
+
+```gherkin
+Feature: Keep active adversarial posture terminology canonical
+
+  Scenario: The active redteam workflow mode names the canonical posture
+    Given redteam-to-doc enables the adversarial control plane
+    When an agent reads its active mode-registry guidance
+    Then the resolved posture is described as mode/samples/teeth
+    And passes is not presented as the active count
+
+  Scenario: The mode registry cannot fall outside the terminology inventory
+    Given every currently listed active source is clean
+    And bubbles/workflows/modes.yaml contains mode/passes/teeth in active prose
+    When the active-source terminology scan runs
+    Then the scan fails
+    And the diagnostic identifies bubbles/workflows/modes.yaml and the stale tuple
+
+  Scenario: Restoring the stale active tuple breaks the focused selftest
+    Given the canonical mode comment says mode/samples/teeth
+    And the focused selftest is otherwise green
+    When an isolated regression fixture changes only that active tuple to mode/passes/teeth
+    Then the focused terminology assertion fails
+    And no unrelated source mutation is needed to expose the regression
+
+  Scenario Outline: Compatibility context is distinguished from active posture
+    Given the classifier inspects <text>
+    When it evaluates the passes reference in its own clause
+    Then finding is <finding>
+
+    Examples:
+      | text                                                        | finding |
+      | "resolves effective posture as mode/passes/teeth"          | true    |
+      | "mode/passes/teeth is deprecated compatibility syntax"     | false   |
+      | "Historical compatibility used mode/passes/teeth"          | false   |
+      | "passes: 3"                                                | true    |
+      | "passes: 3 is deprecated compatibility syntax"             | false   |
+
+  Scenario: Historical records are not rewritten by active-source enforcement
+    Given a historical transcript or migration record truthfully mentions passes
+    And it is outside the declared active-current-source inventory
+    When BUG-017 terminology validation runs
+    Then the record is not globally banned or rewritten
+    And only active unqualified posture wording is blocking
+```
+
+The required adversarial signal is the stale active tuple with every other
+surface clean. Removing `bubbles/workflows/modes.yaml` from the inventory,
+removing the posture-tuple classifier, or restoring the stale comment must make
+the focused regression fail. Compatibility controls prevent the repair from
+becoming an indiscriminate ban.
+
+### BUG-017 Change Boundary
+
+This filing is owned by `bubbles.bug` and changes only `BUGS.md`. The complete
+future repair is limited to two files and two owners:
+
+- `bubbles/workflows/modes.yaml` - `bubbles.docs` changes only the
+  redteam-to-doc non-executable active comment from `mode/passes/teeth` to
+  `mode/samples/teeth`.
+- `bubbles/scripts/adversarial-aggregate-selftest.sh` - `bubbles.test` adds
+  `bubbles/workflows/modes.yaml` to the active source inventory and adds the
+  narrow posture-tuple classifier, positive mode-registry marker, adversarial
+  stale-source case, and explicit compatibility/historical controls.
+
+Excluded are `adversarial-resolve.sh`, `adversarial-aggregate.sh`, schemas,
+agents, prompts, other workflow definitions, public/generated docs, historical
+records, release metadata, installer behavior, downstream managed copies, and
+the other findings in the supplied sample. No runtime behavior, compatibility
+alias, or historical evidence is removed by this bug.
+
+### BUG-017 Implementation Plan
+
+1. `bubbles.docs` changes the one active redteam-to-doc comment to
+   `mode/samples/teeth` without editing executable YAML fields or neighboring
+   mode behavior.
+2. `bubbles.test` adds `bubbles/workflows/modes.yaml` to
+   `active_source_surfaces`. At this filing boundary the emitted clean-surface
+   count moves from 15 to 16; future list growth must continue to derive from
+   the array rather than hard-code a stale total.
+3. Add a dedicated `mode/passes/teeth` active-posture pattern to the existing
+   classifier and exercise it through classifier fixtures. Reuse the existing
+   same-clause qualifier mechanism so explicit deprecated compatibility and
+   historical migration text remains allowed.
+4. Add a positive assertion over the mode-registry text requiring
+   `mode/samples/teeth` in the redteam-to-doc control-plane guidance. Do not
+   satisfy this with a marker from a different file.
+5. Preserve a red/green trace: the new stale active-posture fixture and an
+   isolated stale-mode-registry projection must fail before the test repair or
+   when the old tuple is restored, then pass with the canonical comment and
+   complete assertions. Do not edit canonical production source merely to
+   manufacture the red run.
+6. Keep the selftest dependency-free and portable. Do not add a global grep,
+   network dependency, broad historical scan, skip flag, fallback acceptance,
+   or silent-return path.
+7. Route the exact two-file result to `bubbles.validate`, then return the
+   validated finding disposition to IMP-020 S2. Release/package reconciliation
+   remains outside BUG-017's two-file boundary and cannot be inferred here.
+
+### BUG-017 Test Plan
+
+1. Run the classifier fixture matrix with unqualified active
+   `mode/passes/teeth`, qualified deprecated compatibility syntax, qualified
+   historical migration wording, unqualified `passes: 3`, and qualified
+   deprecated `passes: 3`. Assert the exact finding boolean for every row.
+2. Run the active-source scan with the mode registry included. Assert the path
+   is present in the required inventory, all required files exist, and the
+   clean-surface count reflects all 16 surfaces at this boundary.
+3. Run an isolated stale-mode fixture or equivalent noncanonical projection in
+   which only the redteam-to-doc tuple is restored to `mode/passes/teeth`.
+   Assert the terminology scan fails and identifies that path/tuple. The test
+   must not mutate or rewrite canonical source.
+4. Run `bash bubbles/scripts/adversarial-aggregate-selftest.sh` after the
+   two-file repair and record full output. The supplied `124/0` result is
+   pre-fix gap evidence, not a post-fix pass.
+5. Scan the changed selftest for disabled cases, early-success returns, broad
+   exclusions, and qualifier rules that would allow unqualified active posture
+   wording.
+6. Run canonical `bash bubbles/scripts/cli.sh framework-validate` after the
+   focused checks. `bubbles.validate` verifies the exact two-file boundary,
+   active-versus-compatibility distinction, evidence provenance, and one-to-one
+   finding accounting.
+7. No UI, API, datastore, network, container, telemetry, stress, or load test
+   applies. This is an install-managed comment and source selftest contract;
+   unrelated test categories must not be fabricated.
+
+### BUG-017 Definition Of Done
+
+- [ ] `BUG-017-F01` accounts exactly once for supplied sample
+  `imp020-s2-current-03::findings[2]`; the sample's other three findings remain
+  separately dispositioned.
+- [ ] The active redteam-to-doc comment says `mode/samples/teeth` and no
+  executable mode field or neighboring behavior changes.
+- [ ] `bubbles/workflows/modes.yaml` is a required active terminology surface;
+  it cannot be removed from the inventory without a focused test failure.
+- [ ] An unqualified active `mode/passes/teeth` tuple is a terminology finding
+  with a diagnostic naming the mode-registry path and source line.
+- [ ] A positive assertion requires the redteam-to-doc mode-registry guidance
+  itself to contain `mode/samples/teeth`; another surface cannot satisfy it.
+- [ ] Explicitly qualified deprecated `passes` compatibility syntax remains
+  accepted, including the existing resolver alias contract.
+- [ ] Explicit historical/migration references remain accepted in their
+  qualified context, and historical records outside the active inventory are
+  neither scanned globally nor rewritten.
+- [ ] The adversarial stale-mode fixture fails before the repair or whenever
+  the old active tuple is restored, while canonical and compatibility controls
+  pass.
+- [ ] The regression contains no disabled case, silent-pass bailout, broad
+  file/history exclusion, or qualifier that masks unqualified active wording.
+- [ ] The focused adversarial aggregate selftest passes after the repair with
+  the complete mode-registry inventory and new classifier/marker assertions.
+- [ ] Canonical framework validation passes after the focused selftest without
+  changing resolver, aggregator, schema, generated, release, or downstream
+  behavior.
+- [ ] The final source diff is limited to the one modes.yaml comment and the
+  adversarial-aggregate-selftest terminology inventory/assertions.
+- [ ] `bubbles.test` records the classifier matrix, stale-source adversary,
+  focused post-fix output, regression-integrity scan, and broad framework
+  result with no collateral failure.
+- [ ] `bubbles.validate` verifies the two-file boundary, exact active-source
+  scenario, compatibility controls, evidence provenance, and zero hidden
+  finding before any completion claim.
+- [ ] IMP-020 S2 reconciles BUG-017 to the supplied sample's complete finding
+  set before any S2 completion, trust-hardening, release, or propagation claim.
+
+### BUG-017 Current Disposition And Handoff
+
+BUG-017 is confirmed, reported, and not started. Every DoD item remains
+unchecked. This filing changes only `BUGS.md` and makes no documentation fix,
+selftest edit, pre-fix regression execution, post-fix pass, framework
+validation, release, propagation, downstream, or IMP-020 S2 completion claim.
+
+The next required owner is `bubbles.docs` for the single non-executable active
+mode comment. Route that exact result to `bubbles.test` for the terminology
+inventory, classifier, positive marker, compatibility controls, and independent
+red/green execution. Route the resulting two-file packet to `bubbles.validate`
+for boundary and evidence validation, then return it to the IMP-020
+orchestrator for S2 one-to-one finding reconciliation.
+
+## BUG-019 - State transition truncates compound MJS test paths
+
+- **Status:** Confirmed; discovery packet blocked on `bubbles.design` ownership
+- **Severity:** Medium
+- **Reporter:** Research Lab `AUD-005-S01-004`
+- **Defect:** Check 8 extracts an existing `*.spec.mjs` path as `*.spec` and
+  reports the invented prefix missing; `.test.mjs`, extension-prefix names, and
+  extension-shaped prose expose the same token-boundary defect.
+- **Discriminator:** Reporter Check 8 derives 21 nonexistent `.spec` rows while
+  installed traceability resolves the complete `.spec.mjs` and exits `0`.
+- **Canonical packet:**
+  `improvements/BUG-019-state-transition-spec-mjs-path/`
+- **Boundary:** No source, regression, release, BUG-018, installed-framework, or
+  reporter file is changed by intake.
+- **Next required owner:** `bubbles.design`

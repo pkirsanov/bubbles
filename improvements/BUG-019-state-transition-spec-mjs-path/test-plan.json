@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "specId": "BUG-019",
+  "featureDir": "improvements/BUG-019-state-transition-spec-mjs-path",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-16T05:03:49Z",
+  "scopes": [
+    {
+      "scopeId": "01-whole-token-compound-test-path-extraction",
+      "scopeName": "Whole-Token Compound Test Path Extraction",
+      "tests": [
+        {
+          "testId": "T-BUG-019-00",
+          "type": "red-regression",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-003"],
+          "description": "Final regression bytes fail before source repair because production Check 8 reports .spec/.test prefixes and accepts prefix/prose substrings",
+          "command": "bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-01",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "description": "Regression: compound MJS paths remain complete through production Check 8",
+          "command": "bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-02",
+          "type": "regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-019-002",
+          "description": "Regression: ordinary suffix, backtick, and command-wrapper controls remain compatible",
+          "command": "bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-03",
+          "type": "adversarial-regression-e2e",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-019-003",
+          "description": "Regression: extension-prefix and prose candidates never reach Check 8 filesystem validation",
+          "command": "bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-04",
+          "type": "managed-guard-selftest",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Compound, control, and adversarial twins plus existing bare-shell, placeholder-only, and command-wrapper cases execute the production guard",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-05",
+          "type": "regression-integrity",
+          "category": "functional",
+          "file": "bubbles/scripts/regression-quality-guard.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Persistent regression has adversarial signal, direct assertions, and no silent-pass bailout",
+          "command": "bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-06",
+          "type": "shell-syntax",
+          "category": "functional",
+          "file": "changed BUG-019 shell files",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Every changed shell file parses under macOS system Bash",
+          "command": "/bin/bash -n bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh tests/regression/test_26_state_transition_spec_mjs_path.sh bubbles/scripts/framework-validate.sh bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-07",
+          "type": "shell-portability",
+          "category": "functional",
+          "file": "bubbles/scripts/macos-portability-guard.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Every changed shell file contains none of the mechanically forbidden GNU/Bash-only forms",
+          "command": "bash bubbles/scripts/macos-portability-guard.sh bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh tests/regression/test_26_state_transition_spec_mjs_path.sh bubbles/scripts/framework-validate.sh bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-08",
+          "type": "system-bash-production-regression",
+          "category": "e2e-api",
+          "file": "tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Mandatory jq and yq resolve fail-loud; system directories remain first so the harness and nested production guard select the platform system Bash; the unchanged complete matrix executes",
+          "command": "jq_bin=\"$(command -v jq)\" && yq_bin=\"$(command -v yq)\" && /usr/bin/env -i HOME=\"$HOME\" PATH=\"/usr/bin:/bin:/usr/sbin:/sbin:$(dirname \"$jq_bin\"):$(dirname \"$yq_bin\")\" /bin/bash tests/regression/test_26_state_transition_spec_mjs_path.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-09",
+          "type": "install-provenance",
+          "category": "integration",
+          "file": "bubbles/scripts/install-provenance-selftest.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Guard and managed selftest install byte-identically while test_26 remains source-only and release-recorded",
+          "command": "bash bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-10",
+          "type": "framework-integration",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Registered BUG-019 regression and all existing framework checks pass",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-11",
+          "type": "release-integration",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Generated metadata, install provenance, source identity, and release readiness are current",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-12",
+          "type": "artifact-lint",
+          "category": "functional",
+          "file": "improvements/BUG-019-state-transition-spec-mjs-path",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Required packet shape, evidence metadata, checklist syntax, and state integrity pass",
+          "command": "bash bubbles/scripts/artifact-lint.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-13",
+          "type": "artifact-freshness",
+          "category": "functional",
+          "file": "improvements/BUG-019-state-transition-spec-mjs-path",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "No stale active or executable superseded planning content remains",
+          "command": "bash bubbles/scripts/artifact-freshness-guard.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-14",
+          "type": "capability-proportionality",
+          "category": "functional",
+          "file": "improvements/BUG-019-state-transition-spec-mjs-path",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "G094 accepts the design's single-implementation justification",
+          "command": "bash bubbles/scripts/capability-foundation-guard.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-019-15",
+          "type": "traceability",
+          "category": "integration",
+          "file": "improvements/BUG-019-state-transition-spec-mjs-path",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "Every scenario maps to its primary production regression, report evidence, and faithful DoD item",
+          "command": "bash bubbles/scripts/traceability-guard.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-16",
+          "type": "transition-contract",
+          "category": "integration",
+          "file": "bubbles/scripts/transition-contract-resolver.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "bugfix-fastlane resolves the current delivery-completion contract without caller-selected policy",
+          "command": "bash bubbles/scripts/transition-contract-resolver.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": true
+        },
+        {
+          "testId": "T-BUG-019-17",
+          "type": "certification-guard",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "scenarioId": "SCN-BUG-019-001",
+          "scenarioIds": ["SCN-BUG-019-001", "SCN-BUG-019-002", "SCN-BUG-019-003"],
+          "description": "The production transition guard preserves Check 8 file-existence enforcement and passes only after every delivery obligation has evidence",
+          "command": "bash bubbles/scripts/state-transition-guard.sh improvements/BUG-019-state-transition-spec-mjs-path",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}

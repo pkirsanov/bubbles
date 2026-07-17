@@ -1,0 +1,344 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.regression",
+    "currentPhase": "regression",
+    "currentScope": 1,
+    "runStartedAt": "2026-07-15T23:16:41Z",
+    "completedAt": "2026-07-16T00:05:47Z",
+    "executionModel": "direct-authorized-runner",
+    "completedPhaseClaims": [
+      "implement",
+      "test",
+      "regression",
+      "simplify"
+    ],
+    "invocationLedger": [],
+    "blocker": {
+      "code": "FOREIGN_BROAD_VALIDATION_FAILURES",
+      "reason": "BUG-012 executable bytes remain exact, but canonical framework validation and release readiness exit 1 on foreign current-tree work: BUG-019's registered compound-MJS regression is red and routes to bubbles.implement, while BUG-018, BUG-019, and IMP-020 leave five release-manifest checksum rows stale. Source owners must stabilize before bubbles.releases reconciles the manifest and bubbles.regression executes the broad checks again.",
+      "nextRequiredOwner": "bubbles.implement"
+    },
+    "nextRequiredOwner": "bubbles.implement"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "First-Adoption-Aware G085 Enforcement",
+        "status": "in_progress",
+        "dependsOn": []
+      }
+    ],
+    "lockdownState": "open"
+  },
+  "policySnapshot": {
+    "grill": {
+      "enabled": true,
+      "source": "workflow-forced"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "workflow-forced"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "user-request"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "workflow-forced"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "workflow-forced"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "workflow-forced"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-13T00:37:00Z",
+      "runCompletedAt": "2026-07-13T00:41:23Z",
+      "outcome": "route_required",
+      "summary": "Reconciled G085 around a fail-closed all-ref Git-history discriminator and routed planning-owned artifact reconciliation to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "blocked",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-13T03:47:43Z",
+      "runCompletedAt": "2026-07-13T03:51:51Z",
+      "outcome": "route_required",
+      "summary": "Reconciled one vertical G085 scope, checked-by-default user validation, scenario and test handoffs, and fail-closed implementation routing to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-13T21:38:42Z",
+      "runCompletedAt": "2026-07-13T23:34:54Z",
+      "outcome": "route_required",
+      "summary": "Freshly re-executed T-BUG-012-01 through T-BUG-012-09, reconciled implementation-owned evidence and guard shape, preserved nonterminal certification state, and routed transition-guard planning findings to bubbles.plan before independent verification."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-13T22:39:39Z",
+      "runCompletedAt": "2026-07-13T23:54:39Z",
+      "outcome": "route_required",
+      "summary": "Independently re-executed all ten current BUG-012 test rows and four scenario contracts, preserved concurrent planning work and nonterminal certification state, and routed a non-certifying handoff to bubbles.validate."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-13T23:50:06Z",
+      "runCompletedAt": "2026-07-14T00:00:57Z",
+      "outcome": "route_required",
+      "summary": "Closed the five transition-guard planning findings, synchronized ten Markdown/JSON mappings including dedicated source-invariance coverage, preserved implementation/test evidence and nonterminal certification, and routed the finalized four unchecked DoD items to bubbles.test."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T04:25:39Z",
+      "runCompletedAt": "2026-07-14T05:10:09Z",
+      "outcome": "route_required",
+      "summary": "Freshly reconciled three finalized independent-test items, preserved concurrent and downstream work, left the stale G085 consumer-reference item unchecked, and routed the exact production-source defect to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T05:42:19Z",
+      "runCompletedAt": "2026-07-14T06:54:21Z",
+      "outcome": "route_required",
+      "summary": "Updated only the authorized non-executable Check 26 G085 wrapper comment, regenerated the canonical release manifest, recorded fresh implementation evidence, preserved certification and later findings, and routed final Consumer Impact reconciliation to bubbles.test."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-14T08:31:40Z",
+      "outcome": "route_required",
+      "summary": "Independently reran the repaired exact Consumer Impact sweep, verified focused 71/71 and persistent 16/16 results, completed canonical framework and release checks, reconciled all four finalized test-owned items, preserved dirty source and certification bytes, and routed to bubbles.regression."
+    },
+    {
+      "agent": "bubbles.regression",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-14T09:14:00Z",
+      "outcome": "route_required",
+      "summary": "Re-executed focused 71/71 and persistent 16/16 G085 baselines, adversarial integrity, G044 baseline/conflict checks, traceability, and full framework validation; found no regressions, preserved protected bytes and certification, and routed to bubbles.simplify."
+    },
+    {
+      "agent": "bubbles.simplify",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-14T13:07:31Z",
+      "outcome": "route_required",
+      "summary": "Reviewed the G085 delta across reuse, quality, and efficiency and authored no source or test edit because no material production simplification survived the fail-closed safety bar. Preserved a concurrent persistent-regression cleanup, validated the current bytes with focused 71/71, persistent 16/16, regression-quality, and diff checks, preserved BUG-013 and certification bytes, and routed to bubbles.gaps."
+    },
+    {
+      "agent": "bubbles.simplify",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-14T13:54:14Z",
+      "outcome": "route_required",
+      "summary": "Authored the narrow persistent-regression workspace cleanup, verified 16/16 behavior plus zero new temp roots, retained the 71/71 focused matrix, regression-quality and portability checks, cleared a transient observability collision with an isolated 12/12 rerun, and routed the sole durable broad-suite finding BUG012-SIMPLIFY-003 to bubbles.gaps without changing certification."
+    },
+    {
+      "agent": "bubbles.gaps",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T14:04:50Z",
+      "runCompletedAt": "2026-07-14T14:50:11Z",
+      "outcome": "route_required",
+      "summary": "Classified the sole broad-suite failure as a missing canonical stale-reference raw-evidence contract, repaired MD010 with provenance-preserving metadata, verified focused 71/71 and persistent 16/16 G085 behavior plus packet coherence, preserved all lifecycle blockers and certification bytes, and routed the required Scope 1 Change Boundary expansion to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T14:59:44Z",
+      "runCompletedAt": "2026-07-14T15:16:34Z",
+      "outcome": "route_required",
+      "summary": "Expanded Scope 1 only for the canonical stale-reference lint, its adversarial selftest, and required generated manifest hashes; added a fail-closed structured report-evidence scenario and three synchronized test rows; preserved all checked evidence, lifecycle findings, packet status, concurrent work, and certification; routed implementation to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T21:01:01Z",
+      "runCompletedAt": "2026-07-14T21:50:04Z",
+      "outcome": "route_required",
+      "summary": "Reconciled the concurrent streaming fail-closed report-evidence classifier and Cases 12-19, captured current-session RED/GREEN plus G085, portability, packet, live-scan, and manifest-hash evidence, preserved the original report prefix and certification bytes, and routed independent T-BUG-012-11 through T-BUG-012-13 verification to bubbles.test."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-14T22:04:45Z",
+      "runCompletedAt": "2026-07-14T22:54:36Z",
+      "outcome": "route_required",
+      "summary": "Independently passed T-BUG-012-11, current G085 canaries, portability, test-integrity scans, and both BUG-012 manifest hash comparisons; canonical framework and release checks remained red on exactly two concurrent IMP-020 manifest mismatches, so no test completion claim was added and generated manifest reconciliation routed to bubbles.releases."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-15T00:49:28Z",
+      "outcome": "route_required",
+      "summary": "After bubbles.releases reconciled the two IMP-020 manifest rows, independently reran T-BUG-012-12 and T-BUG-012-13 to green, proved all 664 manifest checksum entries and both exact BUG-012 scanner hashes, confirmed focused G085 74/74 and persistent 19/19 behavior, preserved certification and unrelated dirty work, and routed fresh amended-byte verification to bubbles.regression."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-15T01:04:56Z",
+      "outcome": "route_required",
+      "summary": "Detected that both IMP-020 resolver files changed concurrently after the green T-BUG-012-12 and T-BUG-012-13 runs; re-audited all 664 manifest entries, found exactly those two renewed mismatches while both BUG-012 scanner rows remained exact, preserved prior evidence and certification, and routed current generated-manifest reconciliation back to bubbles.releases."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runCompletedAt": "2026-07-15T02:37:04Z",
+      "outcome": "route_required",
+      "summary": "After final release-manifest reconciliation, freshly passed T-BUG-012-11, focused G085 74/74, persistent G085 19/19, regression-quality validation, T-BUG-012-12, and T-BUG-012-13; proved all 664 manifest entries and both exact BUG-012 scanner hashes; preserved a stable 942-file non-owned tree and certification bytes; and routed fresh amended-byte verification to bubbles.regression."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-15T20:41:52Z",
+      "runCompletedAt": "2026-07-15T21:18:45Z",
+      "outcome": "route_required",
+      "summary": "After release-owned manifest reconciliation, independently reran exactly T-BUG-012-12 and T-BUG-012-13 to green, passed the canonical manifest check, audited all 664 checksum rows with exact unique scanner hashes, preserved nonterminal certification, and routed amended-byte regression to bubbles.regression."
+    },
+    {
+      "agent": "bubbles.regression",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-15T22:01:21Z",
+      "runCompletedAt": "2026-07-15T22:15:57Z",
+      "outcome": "route_required",
+      "summary": "Freshly passed scanner 19/19, focused G085 74/74, persistent G085 19/19, all-required regression quality, portability, packet, traceability, and protected-byte checks; withheld the regression verdict because a foreign release-check chain remained live in install-provenance-selftest.sh; and routed the two missing serial broad commands back to bubbles.regression."
+    },
+    {
+      "agent": "bubbles.regression",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-15T23:16:41Z",
+      "runCompletedAt": "2026-07-16T00:05:47Z",
+      "outcome": "route_required",
+      "summary": "Waited for the foreign release lane to clear, proved BUG-012 executable identity so focused checks did not repeat, then ran canonical framework-validate and release-check serially. Both exited 1 on foreign BUG-019's 13-failure registered regression and five BUG-018/BUG-019/IMP-020 manifest deltas; preserved BUG-012, certification, release inputs, and foreign dirty work, and routed the first functional repair to bubbles.implement."
+    }
+  ],
+  "updatedAt": "2026-07-16T00:05:47Z"
+}

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "featureDir": "improvements/BUG-021-framework-validate-raw-timeout",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-16T06:09:29Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-021-001",
+      "scope": "1",
+      "title": "Framework validation runs both deadline-bearing checks without GNU timeout",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-021-01",
+          "file": "tests/regression/test_28_framework_validate_portable_timeout.sh",
+          "testTitle": "SCN-BUG-021-001: system-only PATH runs both deadline-bearing checks via watchdog"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#bug-reproduction---before-fix",
+        "report.md#final-byte-red-regression",
+        "report.md#portable-timeout-production-regression",
+        "report.md#provider-and-canary-controls"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-021-002",
+      "scope": "1",
+      "title": "Portable timeout outcomes remain observable and exact",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-021-02",
+          "file": "tests/regression/test_28_framework_validate_portable_timeout.sh",
+          "testTitle": "SCN-BUG-021-002: helper outcomes remain distinct through run_check aggregation"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#root-cause-evidence",
+        "report.md#final-byte-red-regression",
+        "report.md#portable-timeout-production-regression",
+        "report.md#adversarial-reintroduction"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    }
+  ]
+}

@@ -69,17 +69,17 @@ list_contains() {
 
 record_passed_gate() {
   local gate_id="$1"
-  list_contains "$gate_id" "${passed_gate_ids[@]}" || passed_gate_ids+=("$gate_id")
+  list_contains "$gate_id" ${passed_gate_ids[@]+"${passed_gate_ids[@]}"} || passed_gate_ids+=("$gate_id")
 }
 
 record_failed_gate() {
   local gate_id="$1"
-  list_contains "$gate_id" "${failed_gate_ids[@]}" || failed_gate_ids+=("$gate_id")
+  list_contains "$gate_id" ${failed_gate_ids[@]+"${failed_gate_ids[@]}"} || failed_gate_ids+=("$gate_id")
 }
 
 record_failed_check() {
   local check_id="$1"
-  list_contains "$check_id" "${failed_check_ids[@]}" || failed_check_ids+=("$check_id")
+  list_contains "$check_id" ${failed_check_ids[@]+"${failed_check_ids[@]}"} || failed_check_ids+=("$check_id")
 }
 
 record_gate_ids_from_message() {
@@ -121,12 +121,12 @@ emit_transition_result() {
   local effective_passed_gate_ids=()
 
   if [[ "$verdict" == "PASS" ]]; then
-    for gate_id in "${transition_required_gate_ids[@]}"; do
+    for gate_id in ${transition_required_gate_ids[@]+"${transition_required_gate_ids[@]}"}; do
       record_passed_gate "$gate_id"
     done
   fi
-  for gate_id in "${passed_gate_ids[@]}"; do
-    if ! list_contains "$gate_id" "${failed_gate_ids[@]}"; then
+  for gate_id in ${passed_gate_ids[@]+"${passed_gate_ids[@]}"}; do
+    if ! list_contains "$gate_id" ${failed_gate_ids[@]+"${failed_gate_ids[@]}"}; then
       effective_passed_gate_ids+=("$gate_id")
     fi
   done
@@ -138,11 +138,11 @@ emit_transition_result() {
   printf 'targetStatus: %s\n' "$transition_target_status"
   printf 'contractDigest: %s\n' "$transition_contract_digest"
   printf 'targetRevision: %s\n' "$transition_target_revision"
-  printf 'applicableCheckClasses: %s\n' "$(format_result_list "${transition_applicable_check_classes[@]}")"
-  printf 'notApplicableChecks: %s\n' "$(format_result_list "${transition_not_applicable_checks[@]}")"
-  printf 'passedGateIds: %s\n' "$(format_result_list "${effective_passed_gate_ids[@]}")"
-  printf 'failedGateIds: %s\n' "$(format_result_list "${failed_gate_ids[@]}")"
-  printf 'failedChecks: %s\n' "$(format_result_list "${failed_check_ids[@]}")"
+  printf 'applicableCheckClasses: %s\n' "$(format_result_list ${transition_applicable_check_classes[@]+"${transition_applicable_check_classes[@]}"})"
+  printf 'notApplicableChecks: %s\n' "$(format_result_list ${transition_not_applicable_checks[@]+"${transition_not_applicable_checks[@]}"})"
+  printf 'passedGateIds: %s\n' "$(format_result_list ${effective_passed_gate_ids[@]+"${effective_passed_gate_ids[@]}"})"
+  printf 'failedGateIds: %s\n' "$(format_result_list ${failed_gate_ids[@]+"${failed_gate_ids[@]}"})"
+  printf 'failedChecks: %s\n' "$(format_result_list ${failed_check_ids[@]+"${failed_check_ids[@]}"})"
   printf 'blockingCode: %s\n' "$blocking_code"
   printf 'failureCount: %s\n' "$failure_count"
   printf 'exitStatus: %s\n' "$exit_status"
@@ -555,13 +555,13 @@ else
   report_files+=("$feature_dir/report.md")
 fi
 
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   build_scope_analysis_units "$scope_path"
 done
 
 if [[ ${#scope_analysis_files[@]} -eq 0 ]]; then
-  scope_analysis_files=("${scope_files[@]}")
-  for scope_path in "${scope_files[@]}"; do
+  scope_analysis_files=(${scope_files[@]+"${scope_files[@]}"})
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     scope_analysis_labels+=("${scope_path#$feature_dir/}")
   done
 fi
@@ -591,7 +591,7 @@ relative_artifact_path() {
 count_gherkin_scenarios() {
   local total=0
   local scope_path=""
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
     total=$((total + $(grep -cE '^[[:space:]]*Scenario( Outline)?:' "$scope_path" || true)))
   done
@@ -634,7 +634,7 @@ if [[ "$scope_layout" == "per-scope-directory" ]]; then
   fi
 
   missing_scope_reports=0
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     scope_report_path="$(dirname "$scope_path")/report.md"
     if [[ -f "$scope_report_path" ]]; then
       pass "Scope report exists: ${scope_report_path#$feature_dir/}"
@@ -1001,7 +1001,7 @@ echo ""
 echo "--- Check 4: DoD Completion (Zero Unchecked) ---"
 total_checked=0
 total_unchecked=0
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   total_checked=$((total_checked + $(grep -cE '^\- \[x\] ' "$scope_path" || true)))
   total_unchecked=$((total_unchecked + $(grep -cE '^\- \[ \] ' "$scope_path" || true)))
@@ -1019,7 +1019,7 @@ elif [[ "$total_unchecked" -gt 0 ]]; then
   record_failed_check Check-4-completion
   fail "Resolved scope artifacts have $total_unchecked UNCHECKED DoD items — ALL must be [x] for 'done'"
   shown_unchecked=0
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
     while IFS= read -r unchecked_line; do
       [[ -n "$unchecked_line" ]] || continue
@@ -1053,7 +1053,7 @@ _c4a_dod_header_re='^#{1,4}.*Definition of Done|^#{1,4}.*DoD'
 _c4a_heading_re='^#{1,4} '
 _c4a_listitem_re='^\- '
 _c4a_checkbox_re='^\- \[(x| )\] '
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
   # Extract lines inside DoD sections and check for non-checkbox list items
@@ -1112,7 +1112,7 @@ echo ""
 # =============================================================================
 echo "--- Check 4B: Scope Status Canonicality (Gate G041) ---"
 non_canonical_statuses=0
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
   # Find all **Status:** lines. Blockquote (>-prefixed) lines are header/summary
@@ -1164,7 +1164,7 @@ not_started_scopes=0
 in_progress_scopes=0
 blocked_scopes=0
 done_scopes=0
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   # Count per-scope statuses over the canonical status lines only (blockquote
   # summary lines excluded via the shared helper — BUG-006 / IMP-009).
@@ -1183,7 +1183,7 @@ if [[ "$total_scopes" -eq 0 ]]; then
   fail "Resolved scope artifacts have no scope status markers"
 elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
   info "NOT_APPLICABLE: Check-5-all-done — planning maturity permits canonical incomplete implementation scopes"
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
     if bubbles_status_lines "$scope_path" | grep -Eq '\*\*Status:\*\*.*Done' \
       && grep -Eq '^\- \[ \] ' "$scope_path"; then
@@ -1242,7 +1242,7 @@ if [[ "$scope_layout" == "per-scope-directory" ]] && [[ -f "$scope_index_file" ]
   index_parity_failures=0
   index_parity_checked=0
   # Each scope.md path looks like: .../scopes/NN-name/scope.md
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
     scope_dir_name="$(basename "$(dirname "$scope_path")")"
     # Strip leading "NN-" prefix to get the scope's natural-language identifier
@@ -1310,7 +1310,7 @@ elif [[ -f "$state_file" ]]; then
     [[ -n "$entry" ]] || continue
     found=0
     # Match completedScopes entry against any scope directory by suffix
-    for scope_path in "${scope_files[@]}"; do
+    for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
       scope_dir_name="$(basename "$(dirname "$scope_path")")"
       scope_dir_num="${scope_dir_name%%-*}"
       # Accept either full directory name match or numeric-prefix match
@@ -1360,7 +1360,7 @@ echo ""
 # =============================================================================
 echo "--- Check 5A: SLA Stress Coverage ---"
 sla_scope_count=0
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
   if grep -Eiq 'latency|throughput|p95|p99|response time|sla|slo' "$scope_path"; then
@@ -2030,16 +2030,128 @@ echo ""
 # CHECK 8: Test file existence — verify Test Plan files exist on disk
 # =============================================================================
 echo "--- Check 8: Test File Existence ---"
+
+_check8_candidate_has_supported_suffix() {
+  local candidate="$1"
+  local stem=""
+  local basename_stem=""
+
+  case "$candidate" in
+    ""|*[!A-Za-z0-9._/-]*) return 1 ;;
+  esac
+
+  case "$candidate" in
+    *.spec.mjs) stem="${candidate%.spec.mjs}" ;;
+    *.test.mjs) stem="${candidate%.test.mjs}" ;;
+    *.spec) stem="${candidate%.spec}" ;;
+    *.test) stem="${candidate%.test}" ;;
+    *.rs) stem="${candidate%.rs}" ;;
+    *.ts) stem="${candidate%.ts}" ;;
+    *.tsx) stem="${candidate%.tsx}" ;;
+    *.js) stem="${candidate%.js}" ;;
+    *.jsx) stem="${candidate%.jsx}" ;;
+    *.sh) stem="${candidate%.sh}" ;;
+    *.bash) stem="${candidate%.bash}" ;;
+    *.bats) stem="${candidate%.bats}" ;;
+    *.py) stem="${candidate%.py}" ;;
+    *.go) stem="${candidate%.go}" ;;
+    *.java) stem="${candidate%.java}" ;;
+    *.scala) stem="${candidate%.scala}" ;;
+    *.dart) stem="${candidate%.dart}" ;;
+    *) return 1 ;;
+  esac
+
+  basename_stem="${stem##*/}"
+  [[ -n "$basename_stem" ]]
+}
+
+_check8_path_prefix_before_control() {
+  local lexical_token="$1"
+  local token_pattern='^([A-Za-z0-9._/-]+)(&&|\|\||;|$)'
+
+  CHECK8_TOKEN_CANDIDATE=""
+  if [[ "$lexical_token" =~ $token_pattern ]]; then
+    CHECK8_TOKEN_CANDIDATE="${BASH_REMATCH[1]}"
+    return 0
+  fi
+  return 1
+}
+
+_check8_candidate_from_block() {
+  local block="$1"
+  local bare_path_pattern='^[A-Za-z0-9._/-]+$'
+  local candidate=""
+  local first_word=""
+  local token=""
+  local token_index=0
+  local options_open=1
+  local -a block_words
+
+  CHECK8_CANDIDATE=""
+  while [[ "$block" == [[:blank:]]* ]]; do block="${block#?}"; done
+  while [[ "$block" == *[[:blank:]] ]]; do block="${block%?}"; done
+  [[ -n "$block" ]] || return 1
+
+  IFS=$' \t' read -r -a block_words <<< "$block"
+  first_word="${block_words[0]:-}"
+
+  if [[ "$block" =~ $bare_path_pattern ]]; then
+    candidate="$block"
+  elif [[ "$first_word" == "bash" || "$first_word" == "sh" ]]; then
+    token_index=1
+    while [[ "$token_index" -lt "${#block_words[@]}" ]]; do
+      token="${block_words[$token_index]}"
+      if [[ "$options_open" -eq 1 ]]; then
+        case "$token" in
+          --)
+            options_open=0
+            token_index=$((token_index + 1))
+            continue
+            ;;
+          -c|-[A-Za-z]*c[A-Za-z]*)
+            return 1
+            ;;
+          -*)
+            token_index=$((token_index + 1))
+            continue
+            ;;
+        esac
+      fi
+      case "$token" in
+        '&&'*|'||'*|';'*) return 1 ;;
+      esac
+      if _check8_path_prefix_before_control "$token"; then
+        candidate="$CHECK8_TOKEN_CANDIDATE"
+      fi
+      break
+    done
+  elif _check8_path_prefix_before_control "$first_word"; then
+    case "$CHECK8_TOKEN_CANDIDATE" in
+      *.sh|*.bash|*.bats) candidate="$CHECK8_TOKEN_CANDIDATE" ;;
+    esac
+  fi
+
+  if _check8_candidate_has_supported_suffix "$candidate"; then
+    CHECK8_CANDIDATE="$candidate"
+    return 0
+  fi
+  return 1
+}
+
 test_files_in_plan=()
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   while IFS= read -r line; do
-    # Extract the file-path TOKEN from within a backtick block, not the whole
-    # block. Test Plans routinely reference tests as COMMANDS
-    # (`bash tests/x.sh`, `bash -n a.sh && shellcheck a.sh`, `./run.sh test`),
-    # so capturing the entire backtick block would treat the command string as
-    # a bogus non-existent "path" and false-BLOCK. Isolate the path token.
-    path="$(echo "$line" | grep -oE '`[^`]*`' | grep -oE '[A-Za-z0-9._/-]+\.(spec|test|rs|ts|tsx|js|jsx|sh|bash|bats|py|go|java|scala|dart)\b' | head -1 || true)"
+    path=""
+    backtick_marker='`'
+    while IFS= read -r backtick_block; do
+      block="${backtick_block#"$backtick_marker"}"
+      block="${block%"$backtick_marker"}"
+      if _check8_candidate_from_block "$block"; then
+        path="$CHECK8_CANDIDATE"
+        break
+      fi
+    done < <(printf '%s\n' "$line" | grep -oE '`[^`]*`' || true)
     if [[ -n "$path" ]] && [[ "$path" != "[path]" ]] && [[ ! "$path" =~ ^\[ ]]; then
       test_files_in_plan+=("$path")
     fi
@@ -2236,7 +2348,7 @@ _c9_evidence_marker_re='(→[[:space:]]*Evidence:|Evidence:)'
 _c9_report_link_re='\[[^]]+\]\([^)]*report\.md(#[A-Za-z0-9_.-]+)?\)'
 _c9_inline_evidence_re='(Executed:|Command:|Evidence|```|Exit Code:|Raw Output)'
 
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   scope_dir="$(dirname "$scope_path")"
   while IFS= read -r line; do
@@ -2339,7 +2451,7 @@ echo ""
 # CHECK 10: Template placeholder detection
 # =============================================================================
 echo "--- Check 10: Template Placeholder Detection ---"
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[cmd\]|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$scope_path"; } || true)"
   if [[ "$template_hits" -gt 0 ]]; then
@@ -2349,7 +2461,7 @@ for scope_path in "${scope_files[@]}"; do
   fi
 done
 
-for report_path in "${report_files[@]}"; do
+for report_path in ${report_files[@]+"${report_files[@]}"}; do
   [[ -f "$report_path" ]] || continue
   report_template_hits="$({ grep -cnE '\[ACTUAL terminal output|\[exact cmd\]|\[actual exit code\]|\[ACTUAL output|\[command \+ output|\[PASTE VERBATIM terminal output|\[PASTE VERBATIM.*output here' "$report_path"; } || true)"
   if [[ "$report_template_hits" -gt 0 ]]; then
@@ -2395,7 +2507,7 @@ _c11_sig_vi_re='[0-9]+ (passed|failed|errors?|warnings?|skipped|ignored|tests?)'
 _c11_sig_vii_re='(HTTP/|status.*[0-9]{3}|curl |GET /|POST /|PUT /|DELETE /|Content-Type)'
 _c11_sig_viii_re='(^[dl-][rwx-]{9} |^[0-9]+:|^\$ |^> )'
 
-for report_path in "${report_files[@]}"; do
+for report_path in ${report_files[@]+"${report_files[@]}"}; do
   if [[ ! -f "$report_path" ]]; then
     fail "Missing report file: $(relative_artifact_path "$report_path")"
     continue
@@ -2512,7 +2624,7 @@ echo ""
 # CHECK 12: Duplicate evidence detection
 # =============================================================================
 echo "--- Check 12: Duplicate Evidence Detection ---"
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   evidence_hashes=()
   in_evidence=0
@@ -2527,7 +2639,7 @@ for scope_path in "${scope_files[@]}"; do
       in_evidence=0
       if [[ -n "$current_evidence" ]]; then
         evidence_hash="$(echo "$current_evidence" | md5sum | cut -d' ' -f1)"
-        for prev_hash in "${evidence_hashes[@]}"; do
+        for prev_hash in ${evidence_hashes[@]+"${evidence_hashes[@]}"}; do
           if [[ "$evidence_hash" == "$prev_hash" ]]; then
             fail "Duplicate evidence blocks detected in $(relative_artifact_path "$scope_path") — COPY-PASTE FABRICATION"
             duplicate_found="true"
@@ -2597,7 +2709,7 @@ if [[ "$requires_impl_delta" == "true" ]]; then
   code_diff_git_signals=0
   code_diff_runtime_paths=0
 
-  for rpt_path in "${report_files[@]}"; do
+  for rpt_path in ${report_files[@]+"${report_files[@]}"}; do
     [[ -f "$rpt_path" ]] || continue
 
     if grep -qE '^### Code Diff Evidence' "$rpt_path"; then
@@ -2635,7 +2747,7 @@ echo ""
 # =============================================================================
 echo "--- Check 14: Implementation Completeness ---"
 impl_files=()
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   while IFS= read -r line; do
     path="$(echo "$line" | grep -oE '`[^`]+\.(rs|ts|tsx|js|jsx|py|go|java)\b[^`]*`' | sed 's/`//g' | head -1 || true)"
@@ -2859,7 +2971,7 @@ else
     !in_block && !skip { print }
   '
 
-  for scope_path in "${scope_files[@]}"; do
+  for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
 
     # Count deferral language hits (case-insensitive), excluding inside code fence blocks
@@ -2887,7 +2999,7 @@ else
   done
 
   # Also scan report files for deferral language
-  for rpt_path in "${report_files[@]}"; do
+  for rpt_path in ${report_files[@]+"${report_files[@]}"}; do
     [[ -f "$rpt_path" ]] || continue
     report_deferral_hits="$({
       awk "$deferral_strip_awk" "$rpt_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
@@ -2926,7 +3038,7 @@ if [[ -f "$PROJECT_CONFIG" ]]; then
 fi
 env_dep_hits=0
 
-for rpt_path in "${report_files[@]}"; do
+for rpt_path in ${report_files[@]+"${report_files[@]}"}; do
   [[ -f "$rpt_path" ]] || continue
   env_hits="$(grep -ciE "$env_dep_pattern" "$rpt_path" 2>/dev/null || true)"
   if [[ "$env_hits" -gt 0 ]]; then
@@ -2940,7 +3052,7 @@ for rpt_path in "${report_files[@]}"; do
 done
 
 # Also scan scope files for evidence blocks mentioning env-dependent failures
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
   env_evidence_hits="$(grep -ciE "$env_dep_pattern" "$scope_path" 2>/dev/null || true)"
   if [[ "$env_evidence_hits" -gt 0 ]]; then
@@ -2964,7 +3076,7 @@ echo ""
 # (Formerly tagged G049 — consolidated into G021 anti_fabrication_gate.)
 # =============================================================================
 echo "--- Check 20: Evidence Similarity Detection (Gate G021) ---"
-for scope_path in "${scope_files[@]}"; do
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
   # Collect all evidence blocks as separate entries
@@ -3221,10 +3333,11 @@ source "$SCRIPT_DIR/guards/tail-convergence-gates.sh"
 # The guard is source-aware. In the Bubbles source repository, persistent
 # `specs/` are forbidden and dogfood evidence comes from framework
 # validation, hermetic selftests, release manifests, and downstream or
-# fixture specs. In downstream/fixture repositories, the traditional
-# evidence model still applies: at least one numbered spec at status
-# `done` demonstrates the installed framework can drive work to
-# certification.
+# fixture specs. In downstream/fixture repositories, G085-CURRENT-DONE
+# passes on current numbered state evidence with exact top-level `status:
+# done`. G085-FIRST-ADOPTION passes only when the required current-state
+# and complete-history evidence is proven; missing or incomplete evidence
+# fails closed.
 if [[ "${BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST:-0}" == "1" ]]; then
   echo "--- Check 26-39: Delegated Tail Gates (selftest fast path) ---"
   info "State-transition selftest fast path enabled; delegated gates G085-G095, G097, and G098-G100 are covered by their dedicated selftests in framework-validate"
@@ -3342,7 +3455,7 @@ if [[ "$failures" -gt 0 ]]; then
   transition_blocking_code="DELIVERY_COMPLETION_FAILED"
   if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
     transition_blocking_code="PLANNING_GATE_FAILED"
-    if list_contains G073 "${failed_gate_ids[@]}"; then
+    if list_contains G073 ${failed_gate_ids[@]+"${failed_gate_ids[@]}"}; then
       transition_blocking_code="SOURCE_EDIT_LOCKOUT"
     fi
   fi

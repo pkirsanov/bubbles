@@ -1,0 +1,162 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+  "workflowMode": "bugfix-fastlane",
+  "status": "blocked",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "runStartedAt": "2026-07-16T04:51:29Z",
+    "runCompletedAt": "2026-07-16T05:37:41Z",
+    "completedPhaseClaims": [],
+    "invocationLedger": [],
+    "blocker": {
+      "code": "T_BUG_018_14_RELEASE_MANIFEST_FAILURE",
+      "reason": "Independent bubbles.test confirmed the shared lane was clear and executed exactly one serial current-tree T-BUG-018-14 framework validation. The command exited 1 with exactly two failed check labels: Release manifest freshness and Release manifest selftest. A read-only current-manifest audit found nine stale managed checksum rows across concurrent IMP-020, BUG-018, BUG-019/020, and shared registration/provenance inputs; BUG-018 test_25 and BUG-019 test_26 remain untracked and absent from source-only inventory. T-BUG-018-15, T-BUG-018-16, and T-BUG-018-18 were not run. All 37 Feature 007 packet-owned findings remain unresolved and are not classified as BUG-018 failures. bubbles.releases is the next owner after the concurrent source/test set is stable and tracked. Certification, terminal status, completed scope state, downstream managed bytes, release metadata, Git index, commits, and source/test bytes remain unchanged.",
+      "nextRequiredOwner": "bubbles.releases"
+    },
+    "nextRequiredOwner": "bubbles.releases"
+  },
+  "certification": {
+    "status": "blocked",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Heading-Aware Traceability Extraction And Diagnostics",
+        "status": "not_started",
+        "dependsOn": []
+      }
+    ],
+    "lockdownState": "open"
+  },
+  "policySnapshot": {
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "operator request"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-15T22:05:24Z",
+      "runCompletedAt": "2026-07-15T22:13:34Z",
+      "outcome": "route_required",
+      "summary": "Reconciled the discovery design around exact heading-aware extraction, explicit missing-versus-empty status, expected no-match control flow, Bash 3.2 portability, isolated production-path tests, and canonical registration/release ownership; routed planning artifacts to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-15T22:21:30Z",
+      "runCompletedAt": "2026-07-15T22:33:17Z",
+      "outcome": "route_required",
+      "summary": "Reconciled one vertical scope with four-scenario manifest parity, 17-row Markdown/JSON Test Plan and DoD parity, explicit evidence anchors, consumer and isolation boundaries, and implementation routing. Artifact lint, freshness, G094, focused sync, and active-prose checks passed; traceability retained 10 implementation-owned missing-test failures and zero Gherkin-to-DoD gaps."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-15T22:42:44Z",
+      "runCompletedAt": "2026-07-15T23:06:55Z",
+      "outcome": "route_required",
+      "summary": "Authored the failing-first production-path regression, repaired exact level-2/level-3 Test Plan extraction and expected no-match control flow, expanded the managed selftest, registered source-only and install-provenance consumers, passed all safe focused and packet checks, preserved certification and downstream managed bytes, and routed two boundary-conflicting planned commands plus release prerequisites to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "bootstrap",
+        "planning"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-15T23:13:49Z",
+      "runCompletedAt": "2026-07-15T23:22:55Z",
+      "outcome": "route_required",
+      "summary": "Reconciled BUG018-IMPLEMENT-001 and BUG018-IMPLEMENT-002 into 20 exact Markdown/JSON/DoD rows, preserved all four scenarios and existing implementation evidence, separated framework/install/release checks, retained the untracked source-only release prerequisite, and routed corrected implementation checks to bubbles.implement without changing status or certification."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-15T23:29:57Z",
+      "runCompletedAt": "2026-07-15T23:38:55Z",
+      "outcome": "route_required",
+      "summary": "Executed all four reconciled implementation rows; repaired caller-root relative feature resolution and added the dedicated Research-Lab-shaped persistent fixture; passed the 55-assertion default and Bash 3.2 regressions, managed selftest, regression-quality, corrected shell/registration contracts, direct canaries, packet governance, isolation, diff checks, and editor diagnostics. Exact T-BUG-018-17 now reaches the normal summary but remains nonzero on 37 Feature 007 packet-owned findings, whose state routes to bubbles.bug. Preserved certification, downstream managed bytes, release metadata, Git index, and commits; broad framework/install/release/installed checks were not duplicated while the shared lane was occupied and the source-only regression remained untracked."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T03:48:42Z",
+      "runCompletedAt": "2026-07-16T04:15:59Z",
+      "outcome": "route_required",
+      "summary": "Executed and recorded the corrected T-BUG-018-17 Research Lab source-compatibility assertion. The canonical source guard resolves 32 scenario contracts, recognizes every linked test, announces and summarizes all nine scopes, and reaches the normal 37-finding verdict without BUG-018 path, extractor, or silent-exit failures. Preserved all 37 Feature 007 findings as unresolved, left T-BUG-018-14/15/16/18 unchecked, confirmed the shared lane is currently clear, and routed one serial T-BUG-018-14 framework validation to bubbles.test while release/install readiness remains gated by untracked and unsettled source inputs."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "featureDir": "improvements/BUG-018-traceability-test-plan-heading-depth",
+      "statusBefore": "blocked",
+      "statusAfter": "blocked",
+      "runStartedAt": "2026-07-16T04:51:29Z",
+      "runCompletedAt": "2026-07-16T05:37:41Z",
+      "outcome": "route_required",
+      "summary": "Confirmed no competing framework/release/install-provenance process, executed exactly one serial T-BUG-018-14 framework validation, and observed exit 1 with only release-manifest freshness and release-manifest selftest in the final failed-check list. Audited nine exact stale managed checksum rows and confirmed BUG-018 test_25 plus BUG-019 test_26 remain untracked and absent from source-only inventory. Preserved the 37 Feature 007 findings as foreign unresolved work, did not run T-BUG-018-15/16/18, changed no source/test/release/downstream/certification bytes, and routed generated-manifest reconciliation to bubbles.releases after source/test stabilization."
+    }
+  ],
+  "updatedAt": "2026-07-16T05:37:41Z"
+}

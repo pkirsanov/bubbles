@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "featureDir": "improvements/BUG-012-g085-first-adoption-deadlock",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-07-14T14:59:44Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-012-001",
+      "scope": "1",
+      "title": "Only proven current-done or genuine first-adoption evidence passes",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-012-04",
+          "file": "tests/regression/test_04_framework_dogfooding.sh",
+          "testTitle": "S3 exactly one downstream done numbered spec - PASS; S4 genuine first adoption - PASS"
+        },
+        {
+          "file": "bubbles/scripts/framework-dogfood-guard-selftest.sh",
+          "testTitle": "S4 one done numbered spec; S5 genuine first adoption; S15 ignored non-numbered and nested done; S16 delegated G085 guidance names both pass paths"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#test-evidence",
+        "report.md#supplemental-full-matrix-and-release-evidence",
+        "report.md#independent-current-byte-g085-verification---2026-07-15"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-012-002",
+      "scope": "1",
+      "title": "Removed current done evidence remains an established-repository violation",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-012-05",
+          "file": "tests/regression/test_04_framework_dogfooding.sh",
+          "testTitle": "Regression: identical current states diverge on reachable historical done"
+        },
+        {
+          "file": "bubbles/scripts/framework-dogfood-guard-selftest.sh",
+          "testTitle": "changed and deleted historical done remain established"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#test-evidence",
+        "report.md#supplemental-full-matrix-and-release-evidence",
+        "report.md#independent-current-byte-g085-verification---2026-07-15"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-012-003",
+      "scope": "1",
+      "title": "Incomplete or invalid evidence fails closed with distinct diagnostics",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-012-06",
+          "file": "tests/regression/test_04_framework_dogfooding.sh",
+          "testTitle": "Regression: incomplete history never receives bootstrap success"
+        },
+        {
+          "file": "bubbles/scripts/framework-dogfood-guard-selftest.sh",
+          "testTitle": "S3 empty inventory; S6 malformed current; S10 unavailable or nested root; S11 shallow; S12a extensions.partialClone; S12b promisor; S13 traversal failures; S14 malformed historical"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#test-evidence",
+        "report.md#supplemental-full-matrix-and-release-evidence",
+        "report.md#independent-current-byte-g085-verification---2026-07-15"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-012-004",
+      "scope": "1",
+      "title": "Canonical source-repository evidence remains invariant",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-012-10",
+          "file": "tests/regression/test_04_framework_dogfooding.sh",
+          "testTitle": "S1 source repo without specs/ - PASS; S2 source repo with specs/ - VIOLATION"
+        },
+        {
+          "file": "bubbles/scripts/framework-dogfood-guard-selftest.sh",
+          "testTitle": "S0 source repo without specs/; S1 source repo specs/ violation; S2 missing release manifest"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scenario-contract-evidence",
+        "report.md#test-evidence",
+        "report.md#supplemental-full-matrix-and-release-evidence",
+        "report.md#independent-current-byte-g085-verification---2026-07-15"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-012-005",
+      "scope": "1",
+      "title": "Structured historical execution evidence is distinct from live policy text",
+      "requiredTestType": "e2e-api",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-012-11",
+          "file": "bubbles/scripts/stale-deferral-lint-selftest.sh",
+          "testTitle": "Case 12 structured report evidence passes; Cases 13-19 retain live and fail-closed stale-reference detection"
+        },
+        {
+          "testId": "T-BUG-012-12",
+          "file": "bubbles/scripts/cli.sh",
+          "testTitle": "Framework validation passes with preserved BUG-012 historical evidence and live stale-reference scanning"
+        },
+        {
+          "testId": "T-BUG-012-13",
+          "file": "bubbles/scripts/cli.sh",
+          "testTitle": "Release check accepts only current scanner and selftest manifest hashes"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#stale-reference-contract-discriminator-evidence",
+        "report.md#independent-current-byte-g085-verification---2026-07-15"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    }
+  ]
+}

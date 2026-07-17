@@ -14,6 +14,79 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### BUG-013 Semantic Sensitive Client Storage Classification
+
+- **Operation-aware G028 Scan 2B.** Sensitive client storage is classified from
+  storage operations, bounded immutable key aliases, credential-shaped values,
+  and scrub state rather than physical-line word co-occurrence. Durable
+  credential access remains blocking, while comments, noncredential caches,
+  remove/clear operations, and proven all-field scrubbed rewrites do not become
+  persistence findings.
+- **One closed session credential classification.** Project config can classify
+  one exact repo-relative path, `sessionStorage` key, and provider only as
+  `third-party-market-data`, `low`, and `same-tab`. Unknown/dynamic providers,
+  durable storage, high-trust auth/session/payment classes, wildcards,
+  traversal, duplicates, malformed config, and unavailable parsing fail closed.
+- **Portable managed validation.** The managed selftest uses
+  `bubbles_run_with_timeout`, exercises the no-`timeout`/no-`gtimeout` watchdog
+  path with exit `124`, and the source-only BUG-013 regression preserves every
+  semantic adversarial pair through the production scanner.
+
+The source behavior above is backed by the current-session managed selftest,
+sanitized macOS-path run, `57 passed, 0 failed` persistent regression, and
+regression-integrity guard. This entry does not assert downstream upgrade,
+consumer byte parity, certification, or BUG-013 closure.
+
+### BUG-012 G085 First-Adoption Classification
+
+- **Two explicit downstream pass paths.** G085 retains the current-done fast
+  path and now admits a genuine first adoption only when current numbered
+  states exist, current done is zero, complete local Git history is proven,
+  and no numbered top-level done-state blob is reachable from any local ref.
+- **Established evidence remains durable.** A prior done state that was changed
+  or deleted still blocks bootstrap re-entry with its commit and path, while
+  state payloads remain private.
+- **Unknown history fails closed.** Missing or nested Git roots, shallow or
+  partial repositories, failed object traversal, and malformed current or
+  historical state receive distinct integrity diagnostics. No mutable adoption
+  marker, install timestamp, network lookup, cache, or bypass was introduced.
+
+The source behavior above is backed by the current-session `71 passed, 0
+failed` production-guard selftest, `16 passed, 0 failed` persistent adversarial
+regression, touched-shell portability scan, and regression-quality guard. This
+entry does not assert downstream installation, independent test-owner
+verification, certification, or BUG-012 closure.
+
+## v7.20.0 — registry-bound planning transition audits
+
+**Theme:** Planning-only workflows now certify planning maturity through an
+explicit registry-derived audit contract without fabricating delivery
+completion, while done-ceiling workflows retain their strict delivery bar.
+
+### BUG-009 Planning Audit Fix
+
+- **Registry-bound planning transition audit (BUG-009).** Workflow registry
+  entries now bind transition-audit policy explicitly. Only
+  `product-to-planning` and `spec-scope-hardening` use
+  `planning-maturity-v1` at `specs_hardened`; audit-bearing `done` modes use
+  `delivery-completion-v1`, and adjacent non-done modes fail unsupported
+  unless explicitly bound.
+- **Profile-scoped guard and result contracts.** The read-only transition
+  resolver derives the target/profile/digest/revision, guard inputs are
+  assertion-only, and the ordered `TRANSITION_GUARD_RESULT_V1` names applicable
+  and non-applicable checks. Honest incomplete planning no longer has to invent
+  delivery artifacts, while done-ceiling completion checks remain strict.
+- **Audit attempts and exact-ceiling certification.** `AUDIT_RESULT_V1` and
+  `execution.audit` preserve interruption, supersession, resume, provenance,
+  and one-to-one finding accounting. `PLANNING_AUDIT_CLEAN` certifies planning
+  only, with delivery `NOT_EVALUATED`; validate alone may promote the two status
+  mirrors to exactly `specs_hardened`.
+
+Source behavior above is backed by the BUG-009 S06 framework validation,
+agnosticity, resolver/guard/audit contract, and persistent regression evidence.
+This release entry does not assert downstream upgrade, GuestHost installed-byte
+provenance, consumer recertification, or BUG-009 closure.
+
 ## v7.19.2 — manifest-scoped downstream agnosticity
 
 **Theme:** knb's v7.19.1 doctor exposed a downstream-only false positive: project-owned `bubbles-*` instructions and skills share the framework's discovery naming convention but are intentionally product/domain-specific. The agnosticity lint now distinguishes the installed framework payload from project extensions using `.github/bubbles/.manifest`.
