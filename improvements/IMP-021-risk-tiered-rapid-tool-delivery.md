@@ -1,7 +1,7 @@
 # IMP-021 — Risk-Tiered Rapid Tool-Delivery Mode
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Status:** IMPLEMENTED (eligibility resolver primitive, reuse-first, 2026-07-17) — `risk-tier-resolve.sh` mechanizes SCOPE-1: a FAIL-CLOSED classifier that resolves `rapid-tool-delivery` ONLY on a positive low-risk signal AND no high-risk trigger (auth/payments/secrets/PII/DB-migration/deploy/prod/host-singleton/cross-product), so risky work can never be self-labeled low-risk. Reuse-first: it adds NO budget mechanism (Gate G128 already provides aggregate budgets) and does NOT itself register a mode — defaulting an existing focused mode + setting G128 budgets + wiring this router (SCOPE-2..5) is the follow-up.
+**Surface:** framework-health (G125) — reuse-first (resolver only; reuses G128 budgets; fail-closed to `full-delivery`)
 **Motivation:** Multi-session convergence observations (2026-07, Research Lab Feature 010) — a build-free static tool was driven through the maximum-assurance `full-delivery` chain, accumulating a roughly day-long parent session, ~1,277 unique tool calls, 14 sequential scopes, and 11k+ planning/evidence lines before a single increment was marked complete.
 **Verified gaps addressed:** no risk-tiered delivery path (RTD1), maximum-assurance default for low-risk work (RTD2), no bounded rapid convergence envelope (RTD3).
 
