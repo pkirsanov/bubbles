@@ -14,6 +14,24 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### Added
+
+- **Terminal same-session re-verification (`artifact-lint.sh` Check 3)** — a
+  reuse-first mechanization of the anti-churn rule (IMP-024 / BFW-04): within the
+  current certifying window (opt-in — active ONLY when exactly one
+  `<!-- bubbles:certifying-window-begin -->` marker is present, so grandfathered
+  marker-less reports are untouched), an EXACT-duplicate evidence block is
+  flagged as a redundant re-verification of an already-verified identical result
+  and MUST be a citation, not a re-pasted fresh block (the Feature-010 loop where
+  one identical matrix was re-documented across six report sections). Reuses the
+  EXISTING certifying-window infrastructure — no new evidence store. Fingerprints
+  block CONTENT with `shasum -a 256`, so different-dimension re-runs
+  (chaos/security/gaps — different output) are NEVER flagged and the
+  `baseline_already_green` no-skip rule is preserved; pre-marker prior-window
+  history is not counted. `artifact-lint-selftest.sh` gains T5–T8 (identical
+  re-paste flagged; distinct blocks pass; marker-less opt-out; pre-window
+  identical not counted) — 17/17 assertions pass. VERSION intentionally not bumped.
+
 ## v7.19.2 — manifest-scoped downstream agnosticity
 
 **Theme:** knb's v7.19.1 doctor exposed a downstream-only false positive: project-owned `bubbles-*` instructions and skills share the framework's discovery naming convention but are intentionally product/domain-specific. The agnosticity lint now distinguishes the installed framework payload from project extensions using `.github/bubbles/.manifest`.
@@ -914,7 +932,6 @@ The v6.1 review correctly flagged that the framework's two biggest files were mo
 
 ## v6.0.0 — MCP-aware framework, mode collapse, structurally-impossible bug classes
 
-
 > *"It ain't rocket appliances, boys."* — Sunnyvale Trailer Park Operator Newsletter, June 2026
 
 **Theme:** v6.0 is a subtractive release that collapses 55 v5 workflow modes to 15 v6 primitives + tag grammar, makes the v5.2 advisory paths default-on for evidence/diff/envelope gates, ships an MCP server for agent-native integration, and renders adapter/gitignore/missing-chmod bug classes structurally impossible. **Zero breaking changes** for operators on v5.x: every v5 mode name keeps working through the full v6 cycle, and every state.json schema stays compatible.
@@ -1007,13 +1024,13 @@ Full upgrade recipe: [`docs/recipes/upgrade-to-v6.md`](docs/recipes/upgrade-to-v
 #### Changes
 
 - **`agents/bubbles_shared/workflow-execution-loops.md`** — new "Phase 0.11: Parallel Phase Fan-Out (v6.0 / B10)" section. Defines:
-    - The 5-condition DAG that determines whether two phases MAY be dispatched in parallel (no data dependency, no status-promotion ordering, no shared mutable singleton, no finding-ownership conflict, both read-only OR both idempotent).
-    - Canonical parallel-eligible phase shapes (e.g. `bubbles.security` + `bubbles.test` against the same spec, per-spec `bubbles.docs` across N specs, per-scope `bubbles.test` with disjoint test files).
-    - Canonical sequential-only phase shapes (`bubbles.implement` + `bubbles.implement` same spec, any pair around a `state.json` write).
-    - 5 determinism guarantees (stable phase-name-sorted output ordering, stable finding ordering, latest-`at`-timestamp aggregation, per-phase temp-directory isolation, same-DAG-same-envelope-sequence selftest).
-    - Failure-handling rules (no-kill, full-aggregation, never mask partial-success).
-    - Operator opt-in via `BUBBLES_PARALLEL_PHASES=1`.
-    - 4-item anti-pattern checklist.
+  - The 5-condition DAG that determines whether two phases MAY be dispatched in parallel (no data dependency, no status-promotion ordering, no shared mutable singleton, no finding-ownership conflict, both read-only OR both idempotent).
+  - Canonical parallel-eligible phase shapes (e.g. `bubbles.security` + `bubbles.test` against the same spec, per-spec `bubbles.docs` across N specs, per-scope `bubbles.test` with disjoint test files).
+  - Canonical sequential-only phase shapes (`bubbles.implement` + `bubbles.implement` same spec, any pair around a `state.json` write).
+  - 5 determinism guarantees (stable phase-name-sorted output ordering, stable finding ordering, latest-`at`-timestamp aggregation, per-phase temp-directory isolation, same-DAG-same-envelope-sequence selftest).
+  - Failure-handling rules (no-kill, full-aggregation, never mask partial-success).
+  - Operator opt-in via `BUBBLES_PARALLEL_PHASES=1`.
+  - 4-item anti-pattern checklist.
 
 #### Why opt-in, not default-on, in v6.0
 
@@ -1130,14 +1147,14 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 #### Changes
 
 - **`bubbles/schemas/result-envelope.schema.json`** — three compatibility fixes:
-    - `additionalProperties` flipped to `true` (was `false`) so agents can carry richer fields (`roleClass`, `featureDir`, `scopeIds`, `dodItems`, `packetRef`, `artifactsCreated`, `artifactsUpdated`, etc.) without schema drift.
-    - `nextRequiredOwner` accepted as an alias for `nextOwner` when `outcome=route_required`. Either field satisfies the conditional `required` clause via `anyOf`.
-    - `blockedReason` accepted as an alias for `blocker.reason` when `outcome=blocked`, same `anyOf` pattern.
-    - Both `nextOwner` and `nextRequiredOwner` accept `["string", "null"]` so template envelopes that show null placeholders for non-routing outcomes parse cleanly.
+  - `additionalProperties` flipped to `true` (was `false`) so agents can carry richer fields (`roleClass`, `featureDir`, `scopeIds`, `dodItems`, `packetRef`, `artifactsCreated`, `artifactsUpdated`, etc.) without schema drift.
+  - `nextRequiredOwner` accepted as an alias for `nextOwner` when `outcome=route_required`. Either field satisfies the conditional `required` clause via `anyOf`.
+  - `blockedReason` accepted as an alias for `blocker.reason` when `outcome=blocked`, same `anyOf` pattern.
+  - Both `nextOwner` and `nextRequiredOwner` accept `["string", "null"]` so template envelopes that show null placeholders for non-routing outcomes parse cleanly.
 - **`bubbles/scripts/result-envelope-validate.sh`** — three modes instead of two:
-    - `--advisory` (was the v5.2 default) — never block.
-    - no args (v6.0 default) — block on **malformed** envelopes only; warn on missing.
-    - `--strict` (v6.1+ opt-in) — block on missing OR malformed.
+  - `--advisory` (was the v5.2 default) — never block.
+  - no args (v6.0 default) — block on **malformed** envelopes only; warn on missing.
+  - `--strict` (v6.1+ opt-in) — block on missing OR malformed.
 - **NEW** `bubbles/scripts/result-envelope-validate-selftest.sh` — 12 assertions covering all three modes plus the schema-compatibility fixes plus a deliberately-invalid `outcome` fixture that fails in every mode (truly invalid envelope is always blocking).
 - **`bubbles/scripts/framework-validate.sh`** — the advisory invocation is upgraded to v6.0 default mode and the new selftest is registered after the diff-evidence-guard selftest.
 
@@ -1156,13 +1173,13 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 #### Changes
 
 - **`bubbles/scripts/diff-evidence-guard.sh`** — promotion rules rewritten:
-    - `state.json.modernization.diffEvidence == "advisory"` → advisory mode (explicit opt-out).
-    - `state.json.modernization.diffEvidence == "enforce"` → strict mode (explicit opt-in).
-    - `state.json.modernization` missing or empty → strict mode by default (v6.0 / B2).
-    - **Grandfather:** pre-cutoff (`< 2026-06-04`) spec with NO `modernization` block at all → advisory (legacy compatibility). Touching `state.json` demotes to v6 policy.
-    - `--strict` flag and `BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` still force strict.
-    - Pre-existing bug fix: the FAIL/WARN output used backticks (`` `{p}` ``) inside the bash heredoc, which collapsed them via command substitution. Switched to single quotes.
-    - Pre-existing bug fix: `Path(sf).relative_to(repo_root)` failed when `sf` was already a relative path. Use `str(Path(sf).resolve()).removeprefix(...)` instead.
+  - `state.json.modernization.diffEvidence == "advisory"` → advisory mode (explicit opt-out).
+  - `state.json.modernization.diffEvidence == "enforce"` → strict mode (explicit opt-in).
+  - `state.json.modernization` missing or empty → strict mode by default (v6.0 / B2).
+  - **Grandfather:** pre-cutoff (`< 2026-06-04`) spec with NO `modernization` block at all → advisory (legacy compatibility). Touching `state.json` demotes to v6 policy.
+  - `--strict` flag and `BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` still force strict.
+  - Pre-existing bug fix: the FAIL/WARN output used backticks (`` `{p}` ``) inside the bash heredoc, which collapsed them via command substitution. Switched to single quotes.
+  - Pre-existing bug fix: `Path(sf).relative_to(repo_root)` failed when `sf` was already a relative path. Use `str(Path(sf).resolve()).removeprefix(...)` instead.
 - **NEW** `bubbles/scripts/diff-evidence-guard-selftest.sh` — 7 assertions covering all promotion paths: enforce/advisory choice in state.json, v6 default-on, v5 grandfather clause, `--strict` and env-var overrides, and a real-committed-path-claim positive case.
 - **`bubbles/scripts/framework-validate.sh`** — registers the new B2 selftest after the B1 bridge selftest.
 
@@ -1180,6 +1197,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 #### Changes
 
 - **`bubbles/scripts/evidence-tool-log-bridge.sh`** — gains `--format=text|json`. JSON mode emits:
+
     ```json
     {
       "spec":           "<spec-slug>",
@@ -1193,6 +1211,7 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
       "matches":        [{"scopeFile":..., "line":N, "dodBody":..., "cmd":..., "ts":..., "overlapTokens":[...]}, ...]
     }
     ```
+
 - **NEW** `bubbles/scripts/evidence-tool-log-bridge-selftest.sh` — 8 assertions covering text mode (no log + with log), JSON mode (no log + with log), valid-JSON output, unknown-format rejection, missing-arg rejection, and MCP catalog wiring.
 - **`bubbles/mcp/tools/query_tool_log.json`** — `argsTemplate` now appends `--format=json` so the MCP tool returns a parseable envelope. `successExitCodes` tightened to `[0]` (was `[0, 1]`; the bridge no longer signals coverage gaps via exit code).
 - **`bubbles/scripts/framework-validate.sh`** — registers the new bridge selftest after `tool-log-selftest`.
@@ -1213,10 +1232,10 @@ The v5.2 / F5 advisory mode is preserved verbatim under `--advisory` for operato
 - **NEW** `bubbles/workflows/aliases.yaml` — the v5 → v6 alias map. 55 entries cover every mode in `bubbles/workflows.yaml`. 15 canonical primitives (`analyze`, `plan`, `implement`, `test`, `validate`, `fix`, `ship`, `propagate`, `upkeep`, `review`, `improve`, `docs`, `iterate`, `resume`, `framework-health`). Tag grammar: `action:<verb>`, `task:<task-name>`, `target:<thing>`, `train:<name>`, `edge:<direction>`, `lifecycle:<state>`.
 - **NEW** `bubbles/scripts/mode-alias-selftest.sh` — 11 assertions covering: parse + non-empty, 1:1 coverage with workflows.yaml, no unknown v5 references, every primitive canonical, tuple uniqueness, full v6→v5 round-trip (55 modes), byte-identical resolution (subset by default; full set under `BUBBLES_MODE_ALIAS_FULL_PARITY=1`), plus three adversarial fixtures (unknown primitive, unknown tag, duplicate tuple).
 - **`bubbles/scripts/mode-resolver.sh`** — extended with:
-    - `--list-aliases` (TSV: v5-name<TAB>primitive<TAB>tag-set)
-    - `--resolve-v6 <primitive> [tag:val ...]` (v6 form → v5 mode name)
-    - Bare-arg dispatch accepts both `<v5-mode>` (with one-line deprecation hint pointing at the v6 form) and `<primitive> tag:val [tag:val ...]` (v6 form, resolves internally to v5 and prints the v5 resolution).
-    - Honors `BUBBLES_WORKFLOW_ALIASES_FILE` env var (used by selftest fixtures).
+  - `--list-aliases` (TSV: v5-name<TAB>primitive<TAB>tag-set)
+  - `--resolve-v6 <primitive> [tag:val ...]` (v6 form → v5 mode name)
+  - Bare-arg dispatch accepts both `<v5-mode>` (with one-line deprecation hint pointing at the v6 form) and `<primitive> tag:val [tag:val ...]` (v6 form, resolves internally to v5 and prints the v5 resolution).
+  - Honors `BUBBLES_WORKFLOW_ALIASES_FILE` env var (used by selftest fixtures).
 - **`bubbles/scripts/framework-validate.sh`** — registers the new `mode-alias-selftest` selftest after `mode-resolver-selftest`.
 - **`bubbles/scripts/trust-metadata.sh`** — enumerates `bubbles/workflows/**` into the release manifest so downstream installs receive the alias map.
 - **`install.sh`** — copies `bubbles/workflows/` to `${TARGET}/bubbles/workflows/` during downstream install (mirrors the v5.2.1 / B7 patterns).
@@ -1323,11 +1342,13 @@ v5.2.1 closes this gap.
 Anti-fabrication monotonically stronger. Markdown evidence path stays valid for the entire v5.2 cycle. No mode rename. No agent contract change. No state.json schema change. Pure mechanical upgrade via `install.sh --local-source`.
 
 ### F1 — Tool-log primary evidence path
+
 - `bubbles/scripts/state-transition-guard.sh` Check 9 now accepts a 4th evidence path: a tool-call log entry whose `cmd` shares ≥2 distinct alpha-tokens with the DoD line body AND has `exitCode == 0`. Agents that wrap their gate-relevant commands via `tool-log.sh` no longer need to inline ≥10-line raw output under every DoD item — the structured log is cryptographic-hash-grade evidence that the command actually ran.
 - The existing markdown paths (cases 1–3: inline `Evidence:` marker, anchor link, inline evidence block) remain valid. F1 is strictly additive: a DoD item with EITHER a markdown evidence block OR a matching tool-log entry passes.
 - Anti-fabrication invariant: a DoD with NEITHER still fails.
 
 ### F2 — Diff-evidence-guard auto-strict for new specs
+
 - `bubbles/scripts/diff-evidence-guard.sh` now auto-promotes to `--strict` mode when:
   - `state.json.modernization.diffEvidence == "enforce"`, OR
   - the spec's first commit is on/after `2026-06-04` (v5.2 cutoff).
@@ -1335,11 +1356,13 @@ Anti-fabrication monotonically stronger. Markdown evidence path stays valid for 
 - The `BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` env var and `--strict` flag continue to override (always force strict).
 
 ### F3 — Tool-call schema v2 (additive, backward-compatible)
+
 - `bubbles/schemas/tool-call.schema.json` adds `schemaVersion` (1|2) and `framework` provenance block (`{name, version, sourceGitSha}`).
 - `bubbles/scripts/tool-log.sh` writes `schemaVersion: 2` on every new entry and resolves framework provenance from `.github/bubbles/.version` (downstream repos) or repo `VERSION` (the framework repo itself) plus `.github/bubbles/.install-source.json` `sourceGitSha`.
 - Schema explicitly accepts both v1 (no `schemaVersion`) and v2 records. Existing logs continue to validate. Migration is forward-only.
 
 ### F4 — Gate registry consolidation
+
 - New canonical file: `bubbles/registry/gates.yaml` (extracted verbatim from the workflows.yaml `gates:` block).
 - New generator: `bubbles/scripts/generate-gates-block.sh` with three modes:
   - default — splice registry into `bubbles/workflows.yaml` (byte-identical when in sync).
@@ -1350,25 +1373,30 @@ Anti-fabrication monotonically stronger. Markdown evidence path stays valid for 
 - `framework-validate` runs both the drift `--check` and the round-trip selftest.
 
 ### F5 — Result-envelope validator (advisory in v5.2, blocking in v6)
+
 - New script: `bubbles/scripts/result-envelope-validate.sh`. Scans every `agents/*.agent.md` for fenced JSON blocks tagged as `result_envelope:` or under a `## Result Envelope` heading and validates each against `bubbles/schemas/result-envelope.schema.json`.
 - Advisory in v5.2: missing block warns, malformed block warns, always exit 0. v6 flips to blocking (`--strict` exits 1).
 - Runs in `framework-validate` to surface drift early.
 
 ### F6 — Code-search auto-select with cache
+
 - `bubbles/scripts/code-search.sh` persists the chosen backend (`rg` or `grep`) to `.specify/runtime/code-search.tool` on first call. Subsequent invocations skip the `command -v rg` probe.
 - `BUBBLES_CODE_SEARCH_BACKEND=rg|grep` override is honored and does NOT mutate the cache (one-shot override).
 
 ### F7 — Model-tier warning written to tool-call log
+
 - `bubbles/scripts/model-tier-advisory.sh` now writes a structured `model-tier-warning` entry to the tool-call log when active model < floor.
 - Entry shape: `schemaVersion: 2`, `tags: ["model-tier-warning"]`, plus a `modelTier` sub-object with `{mode, phase, floor, active, severity: "warn"}`. Survives operator scrollback and is queryable alongside command evidence.
 - Stdout text is unchanged.
 
 ### F8 — Selftests
+
 - New: `bubbles/scripts/gates-registry-selftest.sh` (5 assertions for F4).
 - New: `bubbles/scripts/v5.2-selftest.sh` (aggregate for F1/F3/F6/F7; 8 assertions including v1↔v2 schema backward-compat, cache persistence, warning-only-when-below-floor).
 - All v5.2 selftests wired into `framework-validate.sh`.
 
 ### F9 — Release
+
 - VERSION → `5.2.0`. Downstream upgrade is `install.sh --local-source` with no manual steps. Migration steps (per repo, all optional): opt specs into `diffEvidence: enforce` in `state.json.modernization`; start emitting v2 tool-call records.
 
 ### Backward Compatibility
@@ -1428,41 +1456,51 @@ v5.2 strengthens evidence/diff/envelope enforcement during sweeps. If sweeps can
 **Theme:** Structured tool-call provenance, machine-verifiable result envelopes, query-able gate registry, model-tier policy advisory. Sets up v6's MCP migration by replacing prose-based plumbing with typed artifacts. Anti-fabrication is monotonically stronger; no existing gate softened.
 
 ### M1 — Structured tool-call evidence log
+
 - **New:** `bubbles/scripts/tool-log.sh` wraps any command, streams stdout/stderr to the caller AND records a JSONL entry to `.specify/runtime/tool-calls.jsonl` with `{ts, sessionId, agent, spec, scope, cmd, exitCode, durationMs, stdoutHash, stderrHash, tags}`.
 - **New:** `bubbles/schemas/tool-call.schema.json` defines the record shape.
 - **New:** `bubbles/scripts/tool-log-selftest.sh` (4 cases, all PASS) — exit-code preservation, session continuity, hash recording, schema validation.
 - **No-bypass design:** there is no `--no-log` flag. Anti-fabrication invariant — every wrap MUST record.
 
 ### M2 — Evidence ↔ tool-log bridge (advisory in v5.1, primary in v5.2)
+
 - **New:** `bubbles/scripts/evidence-tool-log-bridge.sh` reports DoD ↔ tool-call coverage for a spec. Heuristic matcher: ≥2 non-stopword token overlap between DoD body and recorded `cmd`, plus `exitCode == 0`.
 - **Advisory only in v5.1.** Existing ≥10-line raw-output evidence path remains valid. v5.2 promotes tool-log to a primary structured evidence path — at which point DoD items with a passing tool-log entry no longer require inline ≥10-line output.
 
 ### M3 — JSON result envelopes
+
 - **New:** `bubbles/schemas/result-envelope.schema.json` — typed shape for the `RESULT-ENVELOPE` every Bubbles agent emits. Fields: `agent`, `outcome` (one of `completed_owned`/`completed_diagnostic`/`route_required`/`blocked`), `findings[]`, `addressedFindings[]`, `unresolvedFindings[]`, `nextOwner`, `blocker`, `continuation`, `toolCalls[]`.
 - Markdown envelope stays for human readability. JSON envelope is additive — workflow agent will start consuming it instead of grepping prose in v6.
 
 ### M5 — Diff-aware DoD evidence guard
+
 - **New:** `bubbles/scripts/diff-evidence-guard.sh` cross-references DoD claims of `add`/`create`/`new` against `git diff <baseSha>..HEAD`. When a DoD item names a file path it claims to have added but the path isn't in the diff, the guard reports a mismatch.
 - Advisory in v5.1 (`BUBBLES_DIFF_EVIDENCE_GUARD_STRICT=1` to flip blocking). Catches the "claimed done, didn't change code" failure mode that survives prose-evidence inspection.
 
 ### M6 — Gate registry query helper
+
 - **New:** `bubbles/scripts/gate-meta.sh` exposes `list` / `count` / `exists` / `name` / `description` / `json` queries against the canonical `gates:` block. Becomes the single read interface as v5.2/v6 prepare to migrate gate metadata to `bubbles/registry/gates.yaml` — callers won't change.
 
 ### M7 — Model-tier policy (advisory)
+
 - **New:** `bubbles/workflows.yaml` `modeDefaults.modelFloor` per-phase declarations. Defaults: `sonnet-class` for analyze/design/plan/implement/validate/audit/chaos/review/retro/spec-review; `opus-class` for security; unset for mechanical phases like `test`.
 - **New:** `bubbles/scripts/model-tier-advisory.sh check --mode <m> --phase <p>` reads `BUBBLES_ACTIVE_MODEL` and warns when below floor. Advisory in v5.1; v6 S9 promotes to blocking.
 
 ### M8 — Code-search facade
+
 - **New:** `bubbles/scripts/code-search.sh` delegates to `rg` when present, falls back to `grep`. Stable output across backends, 400-line cap (override with `--no-cap`). Saves agents from reinventing `grep`/`find` per repo and reduces token cost of exploration.
 
 ### M9 — Schema-validated control-plane manifests
+
 - **New schemas:** `scenario-manifest.schema.json` (SCN-* contract manifests under `specs/*/scenario-manifest.json`), `propagation-policy.schema.json` (J-Roc's `propagation-policy.yaml`), `result-envelope.schema.json` (M3).
 - `bubbles/scripts/yaml-schema-validate.sh` now also discovers and validates every `specs/*/scenario-manifest.json` plus `propagation-policy.yaml` when present. Drift in those manifests becomes a commit-time failure.
 
 ### Framework validation wiring
+
 - `framework-validate.sh` now runs in order: registry-consistency-selftest → yaml-schema-validate → cheatsheet-drift-selftest → **tool-log-selftest (new)** → existing chain.
 
 ### Downstream impact
+
 - Pure additive. No mode rename, no agent contract change, no state.json schema change.
 - Agents may adopt `tool-log.sh` wrapping incrementally; no policy mandate yet.
 - Mechanical upgrade: `install.sh --local-source <v5.1.0-checkout>`.
@@ -1484,6 +1522,7 @@ Downstream impact: pure mechanical upgrade. After running `install.sh --local-so
 **Anti-fabrication invariant preserved.** This release adds 4 new selftests, fixes 4 registry-drift bugs, and tightens 1 installer regression — all without relaxing any gate.
 
 ### Registry Consistency (H1, H2, H3)
+
 - **New:** `bubbles/scripts/registry-consistency-selftest.sh` — validates every `Gxxx` referenced in `workflows.yaml`, scripts, agents, and docs resolves to a gate defined in `bubbles/workflows.yaml` `gates:` block. Allows documented "former Gxxx" history mentions and custom-gate `G100+` range. Also lints `state-transition-guard.sh` for duplicate `CHECK <id>` labels.
 - **Fixed:** added missing gate definitions G071 (`execution_only_validation_gate`), G072 (`evidence_provenance_gate`), G073 (`planning_only_source_edit_lockout_gate`) — referenced in 28 `requiredGates:` lists and 4 shared-module governance docs but never defined.
 - **Fixed:** `state-transition-guard.sh` CHECK 20 now correctly references Gate G021 instead of the consolidated former G049.
@@ -1491,10 +1530,12 @@ Downstream impact: pure mechanical upgrade. After running `install.sh --local-so
 - **Fixed:** renamed duplicate `CHECK 3B` (Validate certification → CHECK 3H) and corrected the misnumbered `# CHECK 4` comment block in `state-transition-guard.sh`.
 
 ### YAML Schema Validation (H4)
+
 - **New:** `bubbles/schemas/{workflows,capability-ledger,adoption-profiles}.schema.json` — Draft-07 JSON Schemas for the three YAML registries that caused the strict-parser failures in the v5.0 downstream upgrade cycle.
 - **New:** `bubbles/scripts/yaml-schema-validate.sh` — validates each YAML against its schema using PyYAML + jsonschema. Skips gracefully if dependencies unavailable; passes deterministically when present. Catches yesterday's "unquoted colon in YAML string" bug class at commit time.
 
 ### Installer Regression Fixtures (H5)
+
 - **Extended:** `bubbles/scripts/install-provenance-selftest.sh` with 9 new post-install assertions covering the latent bugs found in the v5.0.0 downstream upgrade:
   - Adapters directory `.github/bubbles/adapters/observability/` is created.
   - `none.sh` and `prometheus.sh` are installed and executable.
@@ -1503,22 +1544,28 @@ Downstream impact: pure mechanical upgrade. After running `install.sh --local-so
   - Manifest reports >= 300 managed files (sanity floor against enumeration regression).
 
 ### Manifest Enumeration Purity (H6)
+
 - **New:** `bubbles/scripts/release-manifest-purity-selftest.sh` — plants untracked files inside framework directories, regenerates the manifest, and asserts the untracked files do NOT appear. Locks in the `git ls-files` fix added to `trust-metadata.sh`.
 
 ### Cheatsheet Drift Check (H7)
+
 - **New:** `bubbles/scripts/cheatsheet-drift-selftest.sh` — diff-only check that every workflow mode and TPB vocabulary term present in `docs/CHEATSHEET.md` also appears in `docs/its-not-rocket-appliances.html`. Catches the v5.0 drift class where mode/vocab updates landed in MD but not HTML.
 - **Fixed:** backfilled 4 workflow modes (`simplify-to-doc`, `spec-review-to-doc`, `release-planning-to-doc`, `idea-to-release-completion`) and 17 TPB vocabulary terms into the HTML cheatsheet so both surfaces are aligned. v6 replaces this with a generator (S5 in modernization plan).
 
 ### Pre-Push Hook for Source Repo (H8)
+
 - **New:** `bubbles/scripts/hooks/pre-push.sh` + `bubbles/scripts/install-bubbles-hooks.sh`. Framework maintainers can install a pre-push hook that runs `framework-validate.sh` and `release-check.sh` before allowing any push. Idempotent and appends to any existing hook rather than replacing it. NO bypass flags.
 
 ### Honest Stats (H9)
+
 - Gate count badge in `README.md` and `docs/generated/framework-stats.*` regenerated to reflect 101 gates (was 98 with 3 missing definitions). Counts now equal the actual `gates:` block size and the selftest enforces no dead refs.
 
 ### Framework Validation Wiring
+
 - `framework-validate.sh` now runs in order: registry-consistency-selftest → yaml-schema-validate → cheatsheet-drift-selftest → existing checks → release-manifest-purity-selftest → existing tail.
 
 ### Downstream Impact
+
 - Pure framework hardening. Downstream upgrade is mechanical (`install.sh --local-source`).
 - No mode renames. No agent contract changes. No state.json schema changes.
 
@@ -1617,6 +1664,7 @@ The full production-cycle layer: cross-train propagation, multi-train portfolio 
 ### TPB vocabulary
 
 J-Roc joins the cast. The full bench in v5:
+
 - DVS — single-train lifecycle (cut, promote, rollback, retire)
 - **J-Roc — cross-train propagation (NEW)**
 - Treena Lahey — recurring upkeep (backup, restore drill, BCDR, patch, secret rotation, flag cleanup, compliance sweep)
@@ -1635,17 +1683,21 @@ J-Roc joins the cast. The full bench in v5:
 New trunk-based release-train model + recurring operational upkeep layer. Adds 2 agents, 11 workflow modes, 11 gates (G110-G120), 6 skills, 3 instructions, 2 schema templates, 2 recipes, 4 scripts.
 
 **New agents:**
+
 - **`bubbles.train`** (Detroit Velvet Smooth) — release-train lifecycle operator. Cuts candidates, promotes between slots, rollback pointer-swap, retires trains. Owns feature-flag lifecycle. New icon: `icons/dvs-mic.svg` (single-prop velvet curtain + cardioid mic on stand). Quote: *"Smoooth as silk, gentlemen. The train rolls on schedule."*
 - **`bubbles.upkeep`** (Treena Lahey) — recurring operational hygiene owner. Calendar-driven dispatcher for backup verify, restore drill, BCDR drill, patch cycle, secret rotation, flag-cleanup audit, compliance sweep. New icon: `icons/treena-broom.svg` (single-prop broom + apron tie). Quote: *"Trailer don't clean itself, Jim. Never has."*
 
 **New workflow modes** (`bubbles/workflows.yaml`):
+
 - `release-train-cut`, `release-train-promote`, `release-train-rollback`, `release-train-retire` (status ceilings: `train_cut`, `train_promoted`, `train_rolled_back`, `train_retired`)
 - `upkeep-backup-verify`, `upkeep-restore-drill`, `upkeep-bcdr-drill`, `upkeep-patch-cycle`, `upkeep-secret-rotation`, `upkeep-flag-cleanup`, `upkeep-compliance-sweep` (status ceilings: `backup_verified`, `restore_verified`, `bcdr_verified`, `patched`, `secrets_rotated`, `flags_audited`, `compliance_swept`)
 
 **New gates (G110-G120):**
+
 - G110 release-train-discipline, G111 flag-default-off-on-other-trains, G112 backup-evidence-required, G113 restore-drill-evidence, G114 bcdr-evidence, G115 env-pollution-isolation, G116 offsite-backup-required-for-prod-trains, G117 audit-trail-immutable, G118 backup-retention-declared, G119 secret-rotation-recorded, G120 pii-classification-declared
 
 **New skills** (`bubbles/skills/`):
+
 - `bubbles-release-train-model/` — trunk + trains + flags + phases doctrine
 - `bubbles-upkeep-cadence/` — daily/weekly/monthly/quarterly playbook + ledger schema
 - `bubbles-backup-bcdr-doctrine/` — 4-tier model (T1 ZFS / T2 host-local / T3 USB / T4 cloud), `OFFSITE_BACKEND` swap contract, RTO/RPO definitions
@@ -1654,39 +1706,47 @@ New trunk-based release-train model + recurring operational upkeep layer. Adds 2
 - `bubbles-flag-lifecycle/` — naming discipline, retirement triggers, "flag dies + 1 cycle" rule
 
 **New instructions** (`bubbles/instructions/`, all `applyTo: "**"`):
+
 - `bubbles-release-trains.instructions.md` — non-negotiable train rules
 - `bubbles-upkeep-operations.instructions.md` — calendar discipline + ledger immutability
 - `bubbles-env-pollution-isolation.instructions.md` — extends test-env-isolation
 
 **New scripts** (`bubbles/scripts/`):
+
 - `release-train-guard.sh` — validates train registry + flag default-off (G110, G111)
 - `release-train-flag-audit.sh` — overdue flag cleanup advisory
 - `upkeep-calendar.sh` — calendar-driven due-task lister
 - `env-pollution-scan.sh` — test-code → prod-surface write detector (G115)
 
 **New schema templates** (`bubbles/templates/`):
+
 - `release-trains.yaml.tmpl` — per-repo train registry schema
 - `upkeep-calendar.yaml.tmpl` — per-repo upkeep cadence schema
 
 **New recipes** (`bubbles/docs/recipes/`):
+
 - `release-train-lifecycle.md` — cut + promote + rollback + retire operator recipe
 - `upkeep-monthly.md` — monthly operator checklist + quarterly drill walkthrough
 
 **Boundary model — B2 cooperative (anti-drift, anti-fabrication):**
+
 - One writer per surface (`bubbles.train` owns `release-trains.yaml`, flag bundles, train-state fields; `bubbles.upkeep` owns `upkeep-calendar.yaml`, upkeep ledger, runbook, compliance report).
 - Read access is open: `bubbles.train` reads upkeep ledger for promote-freshness gating (G112/G113); `bubbles.upkeep` reads train config + knb manifest for restore-test scoping.
 - All writes flow through owner via packet — no inference, no fabrication.
 
 **Compliance (C1 + C3):**
+
 - 4 new compliance gates (G117-G120) baked into existing audit surface.
 - New quarterly `upkeep-compliance-sweep` mode generates `docs/Compliance_Report.md`; `bubbles.upkeep` gathers evidence, `bubbles.audit` certifies. Treena cannot certify her own work.
 
 **Cheatsheet + vocabulary updates:**
+
 - `docs/CHEATSHEET.md` — added DVS + Treena rows; added 17 new TPB vocabulary entries (release train, cut, promote, slot, train phase, dark code, flag retirement, drift, upkeep cycle, near-line backup, offsite backup, restore drill, BCDR drill, RTO/RPO, OFFSITE_BACKEND, upkeep ledger, pollution isolation, compliance sweep)
 - `docs/its-not-rocket-appliances.html` — matching DVS + Treena cards + 17 vocabulary cards
 - `docs/guides/AUTONOMOUS_EXECUTION.md` — 3 new TPB vocabulary terms
 
 **Registry updates:**
+
 - `bubbles/agent-capabilities.yaml` — registered `bubbles.train` + `bubbles.upkeep` with `readOnlyAccess` cooperative boundary; added to executionClaimWriters
 - `bubbles/agent-ownership.yaml` — added 9 new artifact entries (release-trains-config, feature-flag-bundles, release-train-state, release-trains-doc, upkeep-calendar, upkeep-ledger, upkeep-runbook, compliance-report) + 9 new routingRules entries
 
@@ -1822,6 +1882,7 @@ This is the **v4.0.0 final** release. It consolidates the work shipped across al
 The new `.github/skills/bubbles-*` skills are thin discovery shims that auto-load by description match in Copilot, Claude, Cursor, and other skill-aware tools. They route agents to the authoritative governance modules in `agents/bubbles_shared/*.md` without duplicating policy text. The 14 skills:
 
 **Policy skills (alpha.1)**
+
 - `bubbles-skills-first-discovery` — top-level situation-to-skill map
 - `bubbles-anti-fabrication` — pre-DoD-checkbox honesty enforcement
 - `bubbles-evidence-capture` — ≥10-line raw-output evidence shape
@@ -1833,6 +1894,7 @@ The new `.github/skills/bubbles-*` skills are thin discovery shims that auto-loa
 - `bubbles-scope-workflow-runtime` — scope layout, Test Plan ↔ DoD parity
 
 **Workflow + template skills (alpha.3)**
+
 - `bubbles-workflow-execution-loops` — per-round synchronous dispatch-and-wait
 - `bubbles-workflow-mode-resolution` — natural-language intent routing + template inheritance
 - `bubbles-fix-cycle-protocol` — finding-set closure + cherry-pick prevention
@@ -2006,7 +2068,7 @@ Bubbles framework v3.8.0 — 21 improvements landed across runtime coordination,
 
 ### Fixed
 
-- **Workflow registry consistency (Fix 1+6 for v3.8.0 release)** — `bubbles/scripts/workflow-registry-consistency.sh` `mode_inventory()` and `bubbles/scripts/generate-framework-stats.sh` `count_workflow_modes()` are now section-aware: the awk only collects 2-indent keys nested under the top-level `modes:` section. The previous awk inspected every 2-indent key in the file and used the `description:`-as-next-line heuristic alone, which incorrectly captured `outcomeStates.done` and `outcomeStates.blocked` (both have `description:` as the next field) and would have captured any future top-level section that adopted the same indentation+description convention. The new `phaseRelevance:` config block inside `modes:` is correctly excluded by the surviving description heuristic. Regenerated `agents/bubbles.workflow.agent.md` `Supported options:` to enumerate the canonical 35 delivery modes (alphabetical, `|`-separated, line ends exactly at the closing backtick so the `^- \`mode: ([^\`]+)\`$` regex in `supported_options_inventory()` matches), with the explanatory note moved to a follow-up indented bullet. Regenerated `docs/generated/framework-stats.json` workflowModes count from 34 → 35. Net: `workflow-registry-consistency.sh`, `cli.sh doctor` Check 9, and `workflow-surface-selftest.sh` all flip from FAIL → PASS.
+- **Workflow registry consistency (Fix 1+6 for v3.8.0 release)** — `bubbles/scripts/workflow-registry-consistency.sh` `mode_inventory()` and `bubbles/scripts/generate-framework-stats.sh` `count_workflow_modes()` are now section-aware: the awk only collects 2-indent keys nested under the top-level `modes:` section. The previous awk inspected every 2-indent key in the file and used the `description:`-as-next-line heuristic alone, which incorrectly captured `outcomeStates.done` and `outcomeStates.blocked` (both have `description:` as the next field) and would have captured any future top-level section that adopted the same indentation+description convention. The new `phaseRelevance:` config block inside `modes:` is correctly excluded by the surviving description heuristic. Regenerated `agents/bubbles.workflow.agent.md` `Supported options:` to enumerate the canonical 35 delivery modes (alphabetical, `|`-separated, line ends exactly at the closing backtick so the `^- \`mode: ([^\`]+)\`$` regex in `supported_options_inventory()` matches), with the explanatory note moved to a follow-up indented bullet. Regenerated `docs/generated/framework-stats.json` workflowModes count from 34 → 35. Net: `workflow-registry-consistency.sh`,`cli.sh doctor` Check 9, and `workflow-surface-selftest.sh` all flip from FAIL → PASS.
 - **Release manifest regenerated to reflect v3.8 framework changes (Fix 2/3/4)** — ran `bubbles/scripts/generate-release-manifest.sh` to refresh `bubbles/release-manifest.json` for the current source SHA and the expanded managed-file set (318 files; previously stale at 299). The manifest now covers the T2D/T2E/T2F/T2G/T2H/T3B selftest scripts (`regression-quality-guard-selftest.sh`, `regression-baseline-guard-selftest.sh`, `traceability-guard-selftest.sh`, `artifact-freshness-guard-selftest.sh`, `agent-ownership-lint-selftest.sh`, `agnosticity-lint-selftest.sh`, `instruction-budget-lint-selftest.sh`, `value-selection-lint-selftest.sh`, `governance-index-lint-selftest.sh`, `orchestrator-tool-frontmatter-lint-selftest.sh`, `trajectory-inspector-selftest.sh`, `gate-id-grep-selftest.sh`) and other v3.8-era additions. Net: `release-manifest-freshness`, `committed-release-manifest-current`, and `release-manifest-selftest` framework-validate checks all flip from FAIL → PASS.
 - **Trust doctor selftest (Fix 5)** — root cause was cascade from Fix 1+6: `trust-doctor-selftest.sh` runs `cli.sh doctor` inside a command substitution under `set -euo pipefail`. When doctor's Check 9 (`workflow-registry-consistency.sh`) exited non-zero, doctor exited non-zero, the `$(...)` capture aborted the script via `set -e` before any assertion ran (selftest always exited 1 with no PASS/FAIL output beyond the scenario header). With the registry consistency fix in place, doctor passes and the selftest now runs all 20 assertions PASS. No script change required to `trust-doctor-selftest.sh` itself — preserves the original trust signaling without weakening any guarantee.
 - **Autonomous orchestrator capability-claim audit (T1D-B10)** — audited the four top-level orchestrator agents (`bubbles.goal`, `bubbles.sprint`, `bubbles.workflow`, `bubbles.iterate`) and confirmed all major capability claims (single-goal 7-phase convergence loop with `max_iterations: 10` matching `bubbles/workflows.yaml` `maxConvergenceIterations`, time-budget enforcement and 15-minute wrap-up reserve in `autonomous-sprint`, mode-driven phase dispatch with `runSubagent` delegation in `workflow`, priority-driven work picker with `WORK-ENVELOPE` contract in `iterate`, `agent` tool alias in frontmatter on all four files, never-stop escape hatches, parent-expansion fallback when nested `runSubagent` is unavailable, G042 Anti-Manipulation Policy enforcement in `workflow`) match the advertised behavior in `bubbles/workflows.yaml`. Capability ledger baseline preserved at **6 shipped, 1 partial, 0 proposed** — the umbrella `workflow-orchestration` row already covers these orchestrators as sub-capabilities; no flip required. No `bubbles/workflows.yaml` mode-definition drift found (`autonomous-goal` and `autonomous-sprint` mode entries are complete with `statusCeiling: done`, full `phaseOrder`, comprehensive `requiredGates`, and full `constraints` blocks). Reconciled 8 narrow `drift_doc_only` typos in agent files: corrected `Anti-Fabrication (Gate G042)` → `Anti-Fabrication (Gate G021)` in `bubbles.goal.agent.md` and `bubbles.sprint.agent.md` (G021 is the canonical anti-fabrication gate; G042 is `artifact_ownership_enforcement_gate`); fixed duplicate `G028, G028` → `G028, G029` in COMPLETION GATES references in `bubbles.workflow.agent.md`, `bubbles.iterate.agent.md` (also added missing `G027`), `bubbles.audit.agent.md` (also added `G029` callout to the gate description), `bubbles.implement.agent.md` (both `G028+G028` paired-scan reference and the COMPLETION GATES list), and `bubbles.test.agent.md`. Validation: `bubbles/scripts/cli.sh doctor` baseline preserved (15 passed / 1 pre-existing workflow-registry failure / 0 advisory — no NEW failures introduced); `bubbles/scripts/agent-ownership-lint.sh` exit 0; `bubbles/scripts/agnosticity-lint.sh` exit 0 (194 portable files clean). (#improvement-T1D-B10)
@@ -2219,11 +2281,13 @@ The `bubbles.ux` agent (running under `/bubbles.goal` orchestration) was observe
 Major architectural evolution implementing the unified control-plane design across the entire framework:
 
 **New registries and schemas:**
+
 - `bubbles/agent-capabilities.yaml` — Machine-readable agent class, phase ownership, artifact ownership, user-interaction permissions, and execution/certification write authority for all 33 agents.
 - `bubbles/agent-ownership.yaml` v2 — Extended with `state.json` ownership (validate-owned), `scenario-manifest.json`, `lockdown-approvals.json`, `invalidation-ledger.json`, `transition-requests.json`, `rework-queue.json` ownership blocks, certified field declarations, and expanded routing rules.
 - `.specify/memory/bubbles.config.json` v2 — Central execution policy registry with defaults for grill, TDD, auto-commit, lockdown, regression immutability, and validation certification. Mode overrides for `bugfix-fastlane` and `chaos-hardening`. Managed by `bubbles policy` CLI.
 
 **New gates (G054–G064):**
+
 - `G054 capability_delegation_gate` — Foreign-owned work must route through registered specialist.
 - `G055 policy_provenance_gate` — Active modes must record value plus source provenance.
 - `G056 validate_certification_gate` — Only validate may certify promotion state.
@@ -2237,12 +2301,14 @@ Major architectural evolution implementing the unified control-plane design acro
 - `G064 child_workflow_depth_gate` — Only orchestrators may invoke child workflows, and workflow nesting depth is bounded.
 
 **State model v3:**
+
 - `state.json` version 3 with `execution.*` (runtime claims) and `certification.*` (validate-owned authority) split. Top-level `status` mirrors `certification.status`.
 - `policySnapshot` records effective grill/TDD/auto-commit/lockdown/regression/validation settings with provenance per run.
 - `transitionRequests` and `reworkQueue` for structured specialist-to-validate routing.
 - `scenario-manifest.json` template with stable `SCN-*` IDs, Gherkin hashes, linked tests, evidence refs, lockdown/regression flags.
 
 **Guard script updates:**
+
 - `state-transition-guard.sh` — New checks: 3A (policy provenance G055), 3B (certification state G056), 3C (scenario manifest G057), 3D (lockdown/regression G058/G059), 3E (TDD evidence G060), 3F (transition/rework closure G061), 3G (framework ownership/result contract integrity G062/G063/G064). Revert logic clears `certifiedCompletedPhases`, `completedPhaseClaims`, and legacy `completedPhases`.
 - `state-transition-guard-selftest.sh` — Creates temporary docs-only fixtures to exercise the real promotion guard, including a positive path, a negative packet-field path for G063, and an illegal child-workflow caller path for G064.
 - `artifact-lint.sh` — v3 schema validation with `execution`/`certification`/`policySnapshot` required fields. Backward-compatible v2 fallback. Nested array extraction for certification-scoped `completedScopes` and `certifiedCompletedPhases`.
@@ -2251,9 +2317,11 @@ Major architectural evolution implementing the unified control-plane design acro
 - `agent-ownership-lint.sh` — Extended to validate `agent-capabilities.yaml`, `state.json` ownership, `scenario-manifest.json` ownership, `certificationWriter`, orchestrator-only child workflows, and RESULT-ENVELOPE coverage across primary prompt surfaces.
 
 **CLI:**
+
 - `bubbles policy status|get|set|reset` — Manage control-plane defaults and provenance from the CLI.
 
 **Prompt migrations (all 33 agents updated where applicable):**
+
 - Orchestrators (workflow, iterate, bug) updated to use `execution.currentPhase`/`certification.status` split and route final closure through validate.
 - Planning agents (analyst, ux, design, plan, security) updated to use v3 state template and execution-only metadata writes.
 - Execution agents (implement, test, docs, chaos) record `execution.completedPhaseClaims` only; never write `certification.*`.
@@ -2265,6 +2333,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `bubbles.super` front-door policy is now explicit: use it for vague intent and prompt translation, but bypass it when the exact specialist or workflow mode is already known.
 
 **Workflow mode updates:**
+
 - Added `full-delivery` convergence loop — a maximum-assurance workflow mode that repeats the full improvement and certification chain until validate can legitimately certify `done` or records an explicit blocker. Supports optional `improvementPrelude` and `improvementPreludeRounds` tags for bounded analyst/UX/design/plan refresh passes ahead of implementation rounds.
 - Added `specReview: once-before-implement` — a one-shot execution tag that runs `bubbles.spec-review` before legacy implementation/improvement work so stale or redundant active specs are reconciled once instead of rediscovered every retry round. `improve-existing`, `reconcile-to-doc`, `redesign-existing`, and `full-delivery` now default this hook on.
 - `bugfix-fastlane` and `chaos-hardening` now force `scenario-first` TDD by default (`forceTddMode: scenario-first`).
@@ -2275,6 +2344,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - G054–G064 wired into delivery enforcement, with G062/G063/G064 enforced by framework lint and promotion-time guard checks.
 
 **Shared governance docs:**
+
 - `feature-templates.md` — v3 state.json template, scenario-manifest.json template, policySnapshot structure.
 - `scope-templates.md` — v3 state snippet, scenario contract evidence sections.
 - `scope-workflow.md` — Execution/certification split, validate-owned finalize, phase recording responsibility, status ceiling examples updated.
@@ -2282,6 +2352,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `project-config-contract.md` — Anti-fabrication checklist updated for certification-owned fields.
 
 **Skills and instructions:**
+
 - `bubbles-agents.instructions.md` — Control Plane Requirements section added.
 - `bubbles-skills.instructions.md` — Skill-level control-plane guidance.
 - `bubbles-skill-authoring/SKILL.md` — References control-plane artifacts.
@@ -2289,6 +2360,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - `bubbles-test-integrity/SKILL.md` — Durable scenario contracts and live-test linkage.
 
 **Docs and cheat sheets:**
+
 - `docs/guides/CONTROL_PLANE_DESIGN.md` — Full architecture design document.
 - `docs/guides/CONTROL_PLANE_ROLLOUT.md` — Phased rollout plan mapping all 11 requested changes.
 - `docs/guides/CONTROL_PLANE_SCHEMAS.md` — Schema definitions for all 8 control-plane surfaces.
@@ -2297,6 +2369,7 @@ Major architectural evolution implementing the unified control-plane design acro
 - All recipes updated from `grillFirst` to `grillMode`.
 
 **Install system:**
+
 - `install.sh` now installs `agent-ownership.yaml` and `agent-capabilities.yaml` alongside `workflows.yaml`.
 - Bootstrap scaffolds `.specify/memory/bubbles.config.json` from the Bubbles source.
 - Framework manifest includes YAML registry files.

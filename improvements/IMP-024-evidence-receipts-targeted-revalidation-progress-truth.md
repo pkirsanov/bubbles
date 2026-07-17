@@ -1,7 +1,7 @@
 # IMP-024 — Evidence Receipts, Targeted Revalidation, and Execution-Progress Truth
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Status:** IMPLEMENTED (core rule, reuse-first, 2026-07-17) — the terminal same-session re-verification rule ships as in-window EXACT-duplicate-evidence detection in `artifact-lint.sh` (Check 3), reusing the EXISTING `<!-- bubbles:certifying-window-begin -->` marker (no new evidence store). Targeted invalidation (ER2, full) + execution-progress substates (ER3) remain deferred.
+**Surface:** framework-health (G125) — reuse-first (extends the existing certifying-window infrastructure; no new store)
 **Motivation:** Multi-session convergence observations (2026-07, Research Lab Feature 010) — Scope 01's `report.md` exceeded 2,000 lines and grew during review through repeated owner/test reconciliation. A green independent replay was invalidated because an untracked validator changed afterward and the earlier evidence lacked its identity, so the framework conservatively restarted the implement/test handoff. Meanwhile the implementation and focused tests were green while the scope and feature still displayed `not_started`, hiding real progress without permitting certification.
 **Verified gaps addressed:** unbounded report growth despite evidence-by-reference (ER1), all-or-nothing revalidation on any byte change (ER2), no truthful execution-progress substate distinct from certification (ER3).
 
