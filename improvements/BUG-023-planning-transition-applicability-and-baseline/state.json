@@ -1,0 +1,253 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test-red",
+    "currentScope": null,
+    "runStartedAt": null,
+    "runCompletedAt": "2026-07-17T21:20:52Z",
+    "runTimestampStatus": "completion-observed-current-session-start-unavailable",
+    "executionModel": "direct-specialist-invocation",
+    "sessionLogId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+    "planningRecordedAt": "2026-07-17T20:20:41Z",
+    "completedPhaseClaims": ["plan"],
+    "invocationLedger": [
+      {
+        "order": 1,
+        "agent": "bubbles.analyst",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "spec.md",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 2,
+        "agent": "bubbles.ux",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "spec.md#ui-wireframes",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 3,
+        "agent": "bubbles.design",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed-and-exit-0-design-profile-check",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "design.md",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 4,
+        "agent": "bubbles.plan",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session",
+        "invocationId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-17T20:39:55Z",
+        "ownedArtifact": "scopes.md|scenario-manifest.json|test-plan.json|report.md|uservalidation.md|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 5,
+        "agent": "bubbles.test",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-17T21:20:52Z",
+        "ownedArtifact": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh|report.md#test-evidence|state.json.execution",
+        "outcome": "route_required"
+      }
+    ],
+    "planningScopeDag": {
+      "source": "scopes.md",
+      "scopeCount": 5,
+      "allScopesStatus": "not_started",
+      "scopes": [
+        {"scope": 1, "id": "01-baseline-capture-equality-mutation-foundation", "dependsOn": [], "foundation": true},
+        {"scope": 2, "id": "02-g073-provenance-retry-legacy", "dependsOn": [1], "foundation": false},
+        {"scope": 3, "id": "03-g060-profile-applicability", "dependsOn": [2], "foundation": false},
+        {"scope": 4, "id": "04-g040-accepted-contexts", "dependsOn": [3], "foundation": false},
+        {"scope": 5, "id": "05-g040-blocking-compatibility-closure", "dependsOn": [4], "foundation": false}
+      ]
+    },
+    "planningContract": {
+      "scenarioCount": 17,
+      "testPlanRowCount": 44,
+      "allDodUnchecked": true,
+      "frozenRegressionPath": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "nextAction": "production-implementation",
+      "traceability": {
+        "status": "frozen-test-present-causal-red-captured",
+        "failureCount": null,
+        "distinctMissingFiles": [],
+        "scenarioToTestMappingsPassed": 17,
+        "gherkinToDodMappingsPassed": 17
+      }
+    },
+    "testRed": {
+      "testFile": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "sha256": "sha256:a5e693adda580bf561c4d3700bdabaa103993e2f61dc523e71fb3efd98ba2b31",
+      "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "exitCode": 1,
+      "claimSource": "executed",
+      "classification": "causal-bug-contract-failure",
+      "causalProven": true,
+      "passControls": 46,
+      "causalFailures": 256,
+      "causalFailuresByGate": {
+        "G040": 79,
+        "G060": 15,
+        "G073": 162
+      },
+      "controlFailures": 0,
+      "harnessFailures": 0,
+      "guardRuns": 17,
+      "baselineRuns": 51,
+      "syntaxExit": 0,
+      "regressionQualityExit": 0,
+      "portabilityExit": 0,
+      "skipMarkerMatches": 0,
+      "liveMockPatternMatches": 0,
+      "recordedAt": "2026-07-17T21:20:52Z"
+    },
+    "blocker": null,
+    "blockerHistory": [
+      {
+        "code": "RUNSUBAGENT_CAPABILITY_UNAVAILABLE",
+        "status": "superseded",
+        "recordedBy": "bubbles.bug",
+        "recordedAt": "2026-07-17T19:21:28Z",
+        "reason": "The original top-level bubbles.bug runtime had no VS Code agent/runSubagent tool, so it could not invoke the mandatory owner chain in that invocation.",
+        "originalNextRequiredOwner": "bubbles.analyst",
+        "resolvedAt": "2026-07-17T20:20:41Z",
+        "resolution": "The operator confirmed completed analyst, UX, and design owner dispatches and directly invoked bubbles.plan; unavailable prior run IDs and timestamps were not reconstructed."
+      }
+    ],
+    "unresolvedFindings": [
+      {
+        "findingId": "BUG-023-RED-G060",
+        "classification": "implementation",
+        "owner": "bubbles.implement",
+        "reason": "planning-maturity-v1 currently evaluates and blocks absent runtime RED-to-GREEN evidence instead of emitting G060 NOT_APPLICABLE/PROFILE_PLANNING_MATURITY.",
+        "target": "bubbles/scripts/guards/control-plane-checks.sh|transition-guard-result/v2",
+        "requiredAction": "Implement the frozen profile-bound G060 applicability contract without changing delivery ordering behavior."
+      },
+      {
+        "findingId": "BUG-023-RED-G040",
+        "classification": "implementation",
+        "owner": "bubbles.implement",
+        "reason": "Canonical G040 currently blocks safe-only title, noun, structured-label, and present-surface phrase matrices and emits no finite per-line V2 classification.",
+        "target": "bubbles/scripts/guards/g040-deferral-classifier.sh|bubbles/scripts/state-transition-guard.sh",
+        "requiredAction": "Implement the frozen finite G040 classifier, blocking precedence, metadata-only details, and V2 serialization."
+      },
+      {
+        "findingId": "BUG-023-RED-G073",
+        "classification": "implementation",
+        "owner": "bubbles.implement",
+        "reason": "The authoritative planning-source-baseline helper/result and exact G073 baseline comparison contract are absent; all staged, unstaged, mixed, untracked, rename, delete, mutation, provenance, retry, and race vectors remain RED.",
+        "target": "bubbles/scripts/planning-source-baseline.sh|bubbles/scripts/guards/g073-source-state.sh|bubbles/scripts/state-transition-guard.sh",
+        "requiredAction": "Implement the frozen authoritative capture, immutable binding, exact comparison, fail-closed provenance, retry reuse, legacy, and V2 result contracts."
+      }
+    ],
+    "nextRequiredOwner": "bubbles.implement"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "G060 Planning Applicability",
+        "status": "not_started",
+        "dependsOn": ["bubbles.analyst", "bubbles.ux", "bubbles.design", "bubbles.plan"]
+      },
+      {
+        "scope": 2,
+        "name": "G040 Contextual Deferral Classification",
+        "status": "not_started",
+        "dependsOn": ["scope-1-planning-reconciliation"]
+      },
+      {
+        "scope": 3,
+        "name": "G073 Run-Start Source Attribution",
+        "status": "not_started",
+        "dependsOn": ["scope-1-planning-reconciliation"]
+      }
+    ],
+    "lockdownState": "open",
+    "invalidationLedger": []
+  },
+  "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "operator request"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["select", "bootstrap"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "absent",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-17T19:15:28Z",
+      "runCompletedAt": "2026-07-17T19:21:28Z",
+      "outcome": "route_required",
+      "summary": "Created and linted the complete nine-artifact BUG-023 intake packet for the G060 planning applicability, G040 lexical context, and G073 run-start attribution defects; confirmed the three concrete canonical decision paths; reserved six scenarios and test_30; preserved downstream managed copies and all delivery/certification claims; recorded zero subagent invocations because runSubagent is unavailable; and routed the mandatory canonical planning chain beginning with bubbles.analyst."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-17T20:39:55Z",
+      "timestampStatus": "start-not-recoverable-without-fabrication",
+      "outcome": "route_required",
+      "summary": "Reconciled the final 17-scenario contract into a five-scope foundation-first DAG with 44 Markdown/JSON Test Plan rows, exact Gherkin parity, unchecked DoD/evidence anchors, user acceptance, and execution-only state metadata; artifact, JSON, parity, DAG, and diagnostics checks pass; canonical traceability routes the single absent frozen regression file to bubbles.test for final-byte RED."
+    }
+  ],
+  "createdAt": "2026-07-17T19:15:28Z",
+  "updatedAt": "2026-07-17T19:21:28Z"
+}
