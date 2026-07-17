@@ -14,6 +14,18 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-018 + IMP-019 packets finalized (deliver-then-delete cleanup)
+
+- `macos-portability-guard.sh` + its hermetic selftest (the 13-class GNU/BSD
+  pitfall lint — helper-aware, `# portable-ok:` pragma, caller-supplied surface,
+  wired into `framework-validate`) shipped earlier and is green under
+  framework-validate; the IMP-018 proposal packet is now removed per the
+  deliver-then-delete improvements lifecycle (durable record: the shipped guard
+  + selftest + this entry).
+- IMP-019 (direct authorized workflow runners, shipped v7.19.0–v7.19.2) packet
+  is likewise removed; its durable record is the v7.19.x entries below and the
+  shipped control-plane/routing changes.
+
 ### IMP-023 Artifact-Writer Shared-State Guard + Structured Refusal (SCOPE-3/5/7)
 
 - **Parent-owned shared-state guard (`runtime writer-guard`).**
