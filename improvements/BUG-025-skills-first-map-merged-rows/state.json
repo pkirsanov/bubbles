@@ -1,0 +1,78 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-025-skills-first-map-merged-rows",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "documentation",
+    "currentScope": 1,
+    "runStartedAt": "2026-07-17T23:59:05Z",
+    "runCompletedAt": "2026-07-17T23:59:05Z",
+    "executionModel": "direct-authorized-runner",
+    "completedPhaseClaims": [],
+    "invocationLedger": [],
+    "nextRequiredOwner": "bubbles.design"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "lockdownState": "open"
+  },
+  "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "artifact-creation invocation boundary"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["discovery", "documentation"],
+      "featureDir": "improvements/BUG-025-skills-first-map-merged-rows",
+      "statusBefore": "absent",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-17T23:59:05Z",
+      "runCompletedAt": "2026-07-17T23:59:05Z",
+      "outcome": "route_required",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "BUG025-F001-SCOPE-FEATURE-MERGE",
+        "BUG025-F002-FIX-SKILL-MERGE",
+        "BUG025-F003-STRUCTURAL-REGRESSION-MISSING",
+        "BUG025-F004-CERTIFICATION-OPEN"
+      ],
+      "nextRequiredOwner": "bubbles.design",
+      "summary": "Created the complete nine-artifact BUG-025 intake packet from interpreted current-source evidence, defined one focused structural-map scope with exact row/cardinality/uniqueness/target/separator and merged-row adversarial requirements, left every delivery and certification item open, and changed no source, test, generated manifest, shared index, commit, push, or downstream file."
+    }
+  ],
+  "createdAt": "2026-07-17T23:59:05Z",
+  "updatedAt": "2026-07-17T23:59:05Z"
+}

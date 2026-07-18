@@ -1,0 +1,82 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-023-result-envelope-outcome-contract-drift",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "documentation",
+    "currentScope": 1,
+    "runStartedAt": "2026-07-17T23:59:05Z",
+    "runCompletedAt": "2026-07-17T23:59:05Z",
+    "executionModel": "direct-authorized-runner",
+    "completedPhaseClaims": [],
+    "invocationLedger": [],
+    "nextRequiredOwner": "bubbles.design"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "lockdownState": "open"
+  },
+  "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "artifact-creation invocation boundary"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["discovery", "documentation"],
+      "featureDir": "improvements/BUG-023-result-envelope-outcome-contract-drift",
+      "statusBefore": "absent",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-17T23:59:05Z",
+      "runCompletedAt": "2026-07-17T23:59:05Z",
+      "outcome": "route_required",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "BUG023-F001-OUTCOME-SET-DRIFT",
+        "BUG023-F002-DIAGNOSTIC-OMITTED",
+        "BUG023-F003-LEGACY-ACTIVE-RESULT",
+        "BUG023-F004-FEATURE-TEMPLATE-STALE",
+        "BUG023-F005-FIX-CYCLE-STALE",
+        "BUG023-F006-STATUS-SKILL-STALE",
+        "BUG023-F007-PARITY-REGRESSION-MISSING",
+        "BUG023-F008-CERTIFICATION-OPEN"
+      ],
+      "nextRequiredOwner": "bubbles.design",
+      "summary": "Created the complete nine-artifact BUG-023 intake packet from interpreted current-source evidence, defined one focused contract scope with exact scenario/test parity and adversarial regression requirements, left all delivery and certification claims open, and changed no source, test, generated manifest, shared index, commit, or downstream file."
+    }
+  ],
+  "createdAt": "2026-07-17T23:59:05Z",
+  "updatedAt": "2026-07-17T23:59:05Z"
+}

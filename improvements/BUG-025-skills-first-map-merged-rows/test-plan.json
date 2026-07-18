@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "specId": "BUG-025",
+  "featureDir": "improvements/BUG-025-skills-first-map-merged-rows",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-07-17T23:59:05Z",
+  "ownershipStatus": "intake-awaiting-bubbles.plan",
+  "scopes": [
+    {
+      "scopeId": "01-skills-first-map-structural-integrity",
+      "scopeName": "Skills-First Map Structural Integrity",
+      "tests": [
+        {
+          "testId": "T-BUG-025-01",
+          "type": "mandatory-pre-fix-red",
+          "category": "functional",
+          "file": "tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "RED: current canonical map contains two merged rows",
+          "description": "Final test bytes reject both current merged physical rows.",
+          "command": "bash tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-02",
+          "type": "canonical-row-target-parity",
+          "category": "functional",
+          "file": "tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001"],
+          "testTitle": "Canonical row, situation, and target parity",
+          "description": "Every canonical row has two cells, four named situations are independent, and all targets resolve.",
+          "command": "bash tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-03",
+          "type": "cardinality-separator-fixtures",
+          "category": "functional",
+          "file": "tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "scenarioId": "SCN-BUG-025-002",
+          "scenarioIds": ["SCN-BUG-025-002"],
+          "testTitle": "Cardinality and separator fixtures fail specifically",
+          "description": "Merged, extra-cell, missing-leading, and missing-trailing separator fixtures fail closed.",
+          "command": "bash tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-04",
+          "type": "duplicate-target-fixtures",
+          "category": "functional",
+          "file": "tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "scenarioId": "SCN-BUG-025-002",
+          "scenarioIds": ["SCN-BUG-025-002"],
+          "testTitle": "Duplicate situations and invalid targets fail specifically",
+          "description": "Duplicate normalized situations, unknown or duplicate targets fail; a valid multi-target row passes.",
+          "command": "bash tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-05",
+          "type": "adversarial-source-mutations",
+          "category": "functional",
+          "file": "tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "Independent source re-merges are rejected",
+          "description": "Each repaired source pair is re-merged independently in a disposable copy and rejected.",
+          "command": "bash tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-06",
+          "type": "regression-quality",
+          "category": "functional",
+          "file": "bubbles/scripts/regression-quality-guard.sh",
+          "scenarioId": "SCN-BUG-025-002",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "Regression has adversarial signals and no bailout",
+          "description": "Bugfix quality guard recognizes real structural adversaries and no silent pass paths.",
+          "command": "bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_32_skills_first_map_merged_rows.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-07",
+          "type": "install-provenance",
+          "category": "integration",
+          "file": "bubbles/scripts/install-provenance-selftest.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "Managed skill and source-only regression retain provenance",
+          "description": "Install provenance classifies final skill and regression bytes correctly.",
+          "command": "bash bubbles/scripts/install-provenance-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-08",
+          "type": "framework-regression",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "Full framework validation preserves skills-first contracts",
+          "description": "Framework validation passes after focused map checks.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": false
+        },
+        {
+          "testId": "T-BUG-025-09",
+          "type": "release-readiness",
+          "category": "integration",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-BUG-025-001",
+          "scenarioIds": ["SCN-BUG-025-001", "SCN-BUG-025-002"],
+          "testTitle": "Release identity matches final canonical bytes",
+          "description": "Generated release identity matches final skill and test inputs.",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": false
+        }
+      ]
+    }
+  ]
+}

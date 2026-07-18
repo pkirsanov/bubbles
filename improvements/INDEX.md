@@ -8,6 +8,8 @@ Authored from a 4-pass agent-ecosystem audit (2026-07) of the Bubbles framework 
 
 IMP-021..025 are a second batch, authored from **multi-session convergence observations (2026-07, Research Lab Feature 010)** — a real long-running session in which a build-free static tool was driven through the maximum-assurance chain, concurrent writers collided in one worktree, a report grew past 2,000 lines, and a session edited one repository using another root's agent. They address delivery-weight ergonomics, concurrency safety, evidence bounds, and multi-root binding. They are PROPOSED (proposal-first per G125); none has been implemented.
 
+IMP-026 has separate provenance: a 2026-07-17 comparative review of the MIT-licensed `mattpocock/skills` repository and tutorial transcript against the canonical Bubbles skill, agent, planning, review, handoff, and compaction contracts. Its Bubbles gap claims were independently re-checked against local source; the external material is a design input, not execution evidence.
+
 ## Proposals
 
 | IMP | Title | Priority | Verified gaps | Summary |
@@ -21,6 +23,7 @@ IMP-021..025 are a second batch, authored from **multi-session convergence obser
 | [IMP-021](IMP-021-risk-tiered-rapid-tool-delivery.md) | Risk-tiered rapid tool-delivery mode | — | RTD1, RTD2, RTD3 | New `rapid-tool-delivery` mode gated by a mechanical low-risk resolver: short `select→implement→test→validate→docs→finalize` chain, non-null G128 budgets (reuses the shipped gate, no competing gate), a vertical-slice planning envelope, and deterministic risk-tiered routing. Preserves every universal integrity gate; `full-delivery` stays the default. Composes with IMP-022. |
 | [IMP-022](IMP-022-mechanical-vertical-delivery-plan-guard.md) | Mechanical vertical-delivery plan guard | — | VDP1–VDP4 | New `bubbles.plan` gate enforcing time-to-first-usable-outcome, a risk-adjusted scope budget (≤3 increments / ≤5 active scopes for low-risk), horizontal-sequence detection, consumer-timing, and scenario-ID/DoD conservation, with actionable remediation + a Feature-010-shaped 14-scope negative fixture. Advisory-until-configured. Composes with IMP-021. |
 | [IMP-024](IMP-024-evidence-receipts-targeted-revalidation-progress-truth.md) | Evidence receipts + targeted revalidation + progress truth | — | ER1–ER3 | Binds `report.md` to bounded immutable receipts + a certifying window (reuses `tool-log.sh`), input-closure targeted invalidation (only intersecting receipts invalidate; unknown stays conservative), and honest execution substates (`implemented`/`independently_verified`) distinct from validate-owned certification. Preserves G083/G005/G009/G056/G057. |
+| [IMP-026](IMP-026-interaction-discipline-and-context-efficient-planning.md) | Interaction discipline and context-efficient planning | Proposed | ID1–ID8 | Adapts the strongest interaction ideas from an MIT-licensed external skills workflow without replacing Bubbles governance: facts-vs-decisions grilling, expand/migrate/contract wide refactors, reference-first redacted handoffs, orthogonal review verdicts, invocation/context-load classification, fresh-context scope fit, optional tracker projection, and isolated design experiments. |
 
 ## Recommended implementation order
 
@@ -29,6 +32,8 @@ IMP-001 → IMP-002 → IMP-003 → IMP-004 → IMP-005. IMP-001 and IMP-002 are
 IMP-020 is independently owner-approved and follows its internal dependency order **S1 → S2 → S3 → S4 → S5 → S6 → S7**. It must not be implemented as one undifferentiated change: evaluator failure semantics precede sample aggregation; trust metadata precedes effective-bundle hashing and held-out execution; documentation/release reconciliation closes the sequence.
 
 The Feature-010 batch originally spanned IMP-021..025. **IMP-023** (writer-lease concurrency safety) and **IMP-025** (multi-root agent/repo binding) are now delivered. The remaining PROPOSED items are **IMP-021 + IMP-022** (risk-tiered delivery + vertical-plan guard, one planning/delivery pair) → **IMP-024** (evidence bounds + progress truth), unprioritized pending owner review. IMP-023 amended IMP-004 SCOPE-2 rather than superseding it.
+
+IMP-026 is independently reviewable. Its recommended internal order is **SCOPE-1 → SCOPE-2 → SCOPE-3 → SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8**; the first four tighten existing contracts, while the latter four add metadata or optional capability surfaces that require dedicated schema and enforcement tests.
 
 ## Net assessment
 
@@ -52,3 +57,4 @@ The completed 2026-07-10 adversarial review qualifies that earlier assessment: s
 - **WL1** the existing lease covers runtime capacity not spec artifacts · **WL2** the parent-owned shared-state contract is documented but unenforced · **WL3** no stale/crash takeover for artifact writers  _(IMP-023 — Feature-010 convergence observations; PROPOSED.)_
 - **ER1** unbounded report growth despite evidence-by-reference · **ER2** all-or-nothing revalidation on any byte change · **ER3** no execution-progress substate distinct from certification  _(IMP-024 — Feature-010 convergence observations; PROPOSED.)_
 - **MR1** no target↔agent-source binding check · **MR2** agent identity not repository-qualified · **MR3** handoff envelopes omit repo/agent provenance  _(IMP-025 — Feature-010 convergence observations; PROPOSED.)_
+- **ID1** interactive grill does not separate researched facts from operator decisions · **ID2** no expand/migrate/contract exception for wide mechanical refactors · **ID3** handoff contract can duplicate durable truth and lacks explicit redaction · **ID4** code-review reranking can mask an orthogonal failed axis · **ID5** skill authoring does not classify invocation/context cost · **ID6** scope sizing lacks a fresh-specialist-context assertion · **ID7** backlog exports have no configured tracker projection contract · **ID8** no isolated runnable design-question contract  _(IMP-026 — external-skills comparative review, proposed 2026-07-17.)_

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "featureDir": "improvements/BUG-023-result-envelope-outcome-contract-drift",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-07-17T23:59:05Z",
+  "ownershipStatus": "intake-awaiting-bubbles.plan",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-023-001",
+      "scope": "1",
+      "title": "Active outcome guidance has exact canonical parity",
+      "requiredTestType": "functional",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-023-02",
+          "file": "tests/regression/test_30_result_envelope_outcome_contract_drift.sh",
+          "testTitle": "Canonical active outcome set and cardinality parity"
+        },
+        {
+          "testId": "T-BUG-023-03",
+          "file": "tests/regression/test_30_result_envelope_outcome_contract_drift.sh",
+          "testTitle": "Adjacent skills use current observation and status semantics"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#source-inspection-evidence",
+        "report.md#planned-regression-contract"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-023-002",
+      "scope": "1",
+      "title": "Legacy status prose cannot authorize a new write",
+      "requiredTestType": "functional",
+      "linkedTests": [
+        {
+          "testId": "T-BUG-023-04",
+          "file": "tests/regression/test_30_result_envelope_outcome_contract_drift.sh",
+          "testTitle": "Marked read-only prose passes while active legacy mutations fail"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#source-inspection-evidence",
+        "report.md#planned-regression-contract"
+      ],
+      "regressionRequired": true,
+      "lockdown": false
+    }
+  ]
+}
