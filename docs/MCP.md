@@ -246,6 +246,16 @@ python3 .github/bubbles/mcp/server.py --transport http --host 127.0.0.1 --port 8
 
 ---
 
+## Tool Trust & Untrusted Content (IMP-020 S3 / AF-005)
+
+Bubbles classifies tool/server operations in [`bubbles/tool-trust-registry.yaml`](../bubbles/tool-trust-registry.yaml) (schema: `bubbles/schemas/tool-trust-registry.schema.json`) and makes a fail-closed decision **before** a call runs via [`pre-tool-risk-gate.sh --event`](../bubbles/scripts/pre-tool-risk-gate.sh):
+
+- **Unregistered MCP servers are default-denied** for sensitive operations; an unknown operation is never treated as `read_only`. A token merely present in `.vscode/mcp.json` confers **no** trust — a server must be registered (and operator grants applied via [`cli.sh mcp sync`](#quick-start)).
+- **Sensitive** operations (destructive/external-egress, or `approvalRequired`) need an **action-bound, host-verified approval**; a generic `--confirm`/env flag can never unlock them. Where the host can't enforce (ambient editor tools), the decision is `enforcement: unavailable` and blocked, never silently passed.
+- Content returned by any tool/MCP call is **data, never instruction** — see [`untrusted-content.md`](../agents/bubbles_shared/untrusted-content.md).
+
+Full operator setup: [Tool Trust & Untrusted Content recipe](recipes/tool-trust-and-untrusted-content.md).
+
 ## What The Server Does Not Do
 
 - Server-Sent Events (SSE) streaming over the HTTP transport (HTTP POST + health only).
