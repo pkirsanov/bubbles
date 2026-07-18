@@ -1,6 +1,6 @@
 # IMP-020 — Agentic Evaluation and Trust Hardening
 
-**Status:** IN PROGRESS — S1 implemented and validated; S2-S7 pending. Repository owner approval recorded 2026-07-10.
+**Status:** IN PROGRESS — S1 and S2 implemented and validated; S3-S7 pending. Repository owner approval recorded 2026-07-10. (S2 delivered under the v7.20.0 convergence commit `cb13053`: `adversarial-resolve.sh` canonical `samples` + deprecated `passes` alias + `sampleSemantics=same-runtime-correlated`; `adversarial-aggregate.sh` deterministic union/agreement/disagreement + selftest wired into `framework-validate` as "Adversarial aggregate selftest (IMP-020 / S2)"; `adversarial-sample.schema.json`; honest terminology in `bubbles.redteam`/`bubbles.super`/`agent-common.md`; `docs/recipes/cross-model-review.md` reframed as "Unavailable Capability And Migration Note". All five S2 acceptance criteria verified met 2026-07-17.)
 **Surface:** framework-health (G125) — approved implementation program with independently landable scopes
 **Motivation:** completed adversarial review of Bubbles evaluation validity, validator semantics, tool/content trust boundaries, effective instruction load, and outcome-level benchmarking
 **Verified gaps addressed:** AF-001, AF-002, AF-003, AF-004, AF-005, AF-006, FIN-001
