@@ -14,6 +14,16 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-023 writer-lease — SCOPE-6 integration wired; packet finalized
+
+- SCOPE-6 wires the writer-lease/guard into the agent contract:
+  `scope-workflow.md` (acquire-before-mutate for `parallelScopes=dag` — parent
+  `writer-acquire`, child `writer-guard`, nested-subagent + multi-repo behavior,
+  handoff-envelope lease target, pre-tool-risk owned_mutation) and
+  `workflow-execution-loops.md` (the sequential-only shared-state rule is now
+  mechanized by the writer-guard). With SCOPE-1–7 complete, the IMP-023 proposal
+  packet is removed per the deliver-then-delete lifecycle.
+
 ### IMP-018 + IMP-019 packets finalized (deliver-then-delete cleanup)
 
 - `macos-portability-guard.sh` + its hermetic selftest (the 13-class GNU/BSD

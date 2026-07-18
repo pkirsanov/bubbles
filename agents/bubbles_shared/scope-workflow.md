@@ -189,7 +189,13 @@ Under `parallelScopes=dag`, DAG-independent scopes execute concurrently in separ
 
 **Cleanup on abandon:** if a worktree scope fails or is abandoned, the parent drops that worktree and its branch — no partial shared-state mutation survives (mirroring `gitIsolation` whole-run rollback).
 
-This is a documented contract; a mechanical gate is a possible future step, not added here.
+**Acquire-before-mutate enforcement (IMP-023 writer-lease).** This contract is MECHANIZED — no longer advisory. Integration points:
+
+- **Parent dispatch:** before the first mutable write the parent acquires the target lease — `runtime writer-acquire --target <spec-dir> --paths source,tests,report`.
+- **Child worktree scope:** before writing, a child runs `runtime writer-guard --target <spec-dir> --path <relpath> --role child --scope <id>`; a child write to `state.json` / `scenario-manifest.json` / `spec.md` / `design.md` or another scope's `report.md` is REFUSED with a structured `blocked` envelope naming the parent — never a reconcile-by-append. The parent writes shared state with `--role parent`.
+- **Nested subagents:** the parent holds the target lease; a dispatched child gets a scoped worktree lease for its own scope only.
+- **Multi-repo runs:** the lease is keyed by repository root — a cross-repo scenario holds exactly one writer lease per repo.
+- **Handoff / continuation + pre-tool risk:** a handoff/continuation envelope records the held lease target so a resumed run re-acquires (or refuses on a live conflict); an `owned_mutation` against a held spec target is expected to hold the lease. The lease is opt-in / no-op for single-writer runs and only refuses a SECOND live writer. See `docs/recipes/runtime-coordination.md` (writer-guard).
 
 ### Legacy Format Migration (MANDATORY Before Starting Work)
 
