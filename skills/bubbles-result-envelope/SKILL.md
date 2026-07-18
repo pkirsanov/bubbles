@@ -42,9 +42,25 @@ intent: <one-line natural-language goal>
 preferredWorkflowMode: <mode-from-workflows.yaml>
 tags: [<routing-tag>, ...]
 reason: <why this is the next step>
+provenance:                          # binding provenance (IMP-025 MR3)
+  repositoryRoot: <git-toplevel-of-edited-repo>
+  agentSourceRoot: <repo-slug the active agent was installed for>
+  frameworkVersion: <installed Bubbles version>
 ```
 
 The orchestrator routes continuation envelopes through `bubbles.workflow`, not directly to a specialist.
+
+**Binding provenance (multi-root, IMP-025 MR3).** The `provenance` block lets a resumed
+session verify it is still bound to the intended repository + agent source. On resume, the
+orchestrator MUST validate that the envelope's `agentSourceRoot` still matches the
+`repositoryRoot` being edited (reuse `bubbles/scripts/repo-binding-preflight.sh
+--repo-root <repositoryRoot> --agent-source <agentSourceRoot>`); a mismatch is a REFUSE
+(the resumed run is bound to a different workspace root than the handoff assumed). Canonical
+framework-source work sets `agentSourceRoot` to the framework slug and passes via
+`--canonical-source`. Omitting the block is permitted only for single-root sessions where
+the marker is absent (the preflight is advisory there); populate it whenever the
+`.install-source.json` `targetRepoSlug` marker exists. See
+[docs/guides/AI_ENVIRONMENT.md](../../docs/guides/AI_ENVIRONMENT.md) (Multi-Root Workspaces).
 
 ## Outcome vocabulary (canonical)
 | Outcome | When to use |

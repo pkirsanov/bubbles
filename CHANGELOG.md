@@ -14,6 +14,39 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-025 fail-loud multi-root agent/repo binding — completed; packet finalized
+
+- All six scopes of the multi-root agent↔repository binding improvement are
+  resolved and the proposal packet is removed per the deliver-then-delete
+  lifecycle:
+  - **SCOPE-1 + SCOPE-5** (shipped earlier): `repo-binding-preflight.sh`
+    (fail-loud agent-source↔target-repo binding) + `install.sh` stamping the
+    repo-relative `targetRepoSlug` marker into `.install-source.json`.
+  - **SCOPE-3 (MR3)** — continuation/handoff envelopes now carry a `provenance`
+    block (`repositoryRoot` / `agentSourceRoot` / `frameworkVersion`). The
+    result-envelope contract (`skills/bubbles-result-envelope`), the handoff
+    agent, and the `CONTINUATION` input class (`workflow-delegation-core.md`)
+    require re-validating the repo↔agent binding on resume via
+    `repo-binding-preflight.sh` — a mismatch is a REFUSE.
+  - **SCOPE-4 (MR1)** — `docs/guides/AI_ENVIRONMENT.md` gains a "Multi-Root
+    Workspaces" section separating what Bubbles controls mechanically (per-repo
+    MCP id + marker + preflight + envelope provenance) from the upstream VS Code
+    Chronicle attribution limitation (attributes multi-root work to the first
+    workspace root), which Bubbles cannot fix unilaterally.
+  - **SCOPE-6** — `repo-binding-preflight-selftest.sh` adds T8/T8b (per-repo MCP
+    id slug-derivation compatibility — no regression to the v7.19.x unique-id
+    fix); cross-repo repo-qualified `goal` nodes stay covered by the existing
+    `scenario-compile-lint` "clean cross-repo DAG passes" case.
+  - **SCOPE-2 (MR2) — resolved mechanically; cosmetic label declined.** Injecting
+    a per-repo ` [repo: <slug>]` qualifier into installed agent `description`
+    lines was implemented, then reverted: it violates the framework's
+    managed-file byte-identity integrity invariant (the `install-provenance`
+    selftest's "installed bytes match canonical source" / BUG-009 check failed
+    for the qualified agents), which would weaken drift/tamper detection. The MR2
+    disambiguation intent is instead met by the stronger mechanical surfaces
+    (unique per-repo MCP id + preflight + marker), documented in the SCOPE-4
+    section.
+
 ### IMP-017 template case-collision fix — packet finalized
 
 - The case-collision bug fix (removed the case-colliding `templates/AGENTS.md.tmpl`
