@@ -14,6 +14,16 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-017 template case-collision fix — packet finalized
+
+- The case-collision bug fix (removed the case-colliding `templates/AGENTS.md.tmpl`
+  index entry, corrected `install.sh` to stop scaffolding the wrong root
+  `AGENTS.md`, added `case-collision-guard.sh` + hermetic selftest wired into
+  `framework-validate`) is delivered and green. SCOPE-1–3 complete; SCOPE-4
+  (authoring a CORRECT starter-`AGENTS.md` guardrails scaffold) is explicitly a
+  SEPARATE future proposal, out of scope for this bug fix. The IMP-017 packet is
+  removed per the deliver-then-delete lifecycle.
+
 ### IMP-023 writer-lease — SCOPE-6 integration wired; packet finalized
 
 - SCOPE-6 wires the writer-lease/guard into the agent contract:
