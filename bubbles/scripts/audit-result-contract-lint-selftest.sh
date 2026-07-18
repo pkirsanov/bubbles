@@ -5,10 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LINT="$SCRIPT_DIR/audit-result-contract-lint.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
+TRUST_METADATA="$SCRIPT_DIR/trust-metadata.sh"
 AGENT_CONTRACT="$REPO_ROOT/agents/bubbles.audit.agent.md"
 VALIDATION_PROFILES="$REPO_ROOT/agents/bubbles_shared/validation-profiles.md"
 
-for required_file in "$LINT" "$GUARD_LIB" "$AGENT_CONTRACT" "$VALIDATION_PROFILES"; do
+for required_file in "$LINT" "$GUARD_LIB" "$TRUST_METADATA" "$AGENT_CONTRACT" "$VALIDATION_PROFILES"; do
   if [[ ! -f "$required_file" ]]; then
     printf 'audit-result-contract-lint-selftest: FAIL: required file missing: %s\n' "$required_file" >&2
     exit 1
@@ -22,6 +23,8 @@ fi
 
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
+# shellcheck source=/dev/null
+source "$TRUST_METADATA"
 
 LC_ALL=C
 export LC_ALL
@@ -113,6 +116,149 @@ attempt_json() {
     "$attempt_id" "$result_state" "$revision" "$digest" "$profile" "$target_status" "$verdict" "$outcome" "$evidence_ref" "$addressed" "$unresolved"
 }
 
+token_list_add() {
+  local value="$1"
+  local item="$2"
+  local inner="${value#\[}"
+  inner="${inner%\]}"
+  case ",$inner," in
+    *",$item,"*) printf '%s' "$value"; return 0 ;;
+  esac
+  if [[ -n "$inner" ]]; then
+    printf '[%s,%s]' "$inner" "$item"
+  else
+    printf '[%s]' "$item"
+  fi
+}
+
+token_list_json() {
+  local value="$1"
+  local inner="${value#\[}"
+  inner="${inner%\]}"
+  if [[ -z "$inner" ]]; then
+    printf '%s' '[]'
+  else
+    printf '%s\n' "$inner" | jq -Rc 'split(",")'
+  fi
+}
+
+list_contains() {
+  local value="$1"
+  local needle="$2"
+  local inner="${value#\[}"
+  inner="${inner%\]}"
+  case ",$inner," in
+    *",$needle,"*) return 0 ;;
+  esac
+  return 1
+}
+
+field_value() {
+  local block_file="$1"
+  local field="$2"
+  awk -v prefix="$field: " 'index($0, prefix) == 1 { print substr($0, length(prefix) + 1); exit }' "$block_file"
+}
+
+build_transition_gate_results() {
+  local profile="$1"
+  local passed_gates="$2"
+  local failed_gates="$3"
+  local passed_json=""
+  local failed_json=""
+  passed_json="$(token_list_json "$passed_gates")"
+  failed_json="$(token_list_json "$failed_gates")"
+
+  jq -cS -n \
+    --arg profile "$profile" \
+    --arg completeDigest "$DIGEST" \
+    --argjson passed "$passed_json" \
+    --argjson failed "$failed_json" '
+      def evidence_identity($path; $state): {
+        artifactPath: "NONE",
+        auditProfile: $profile,
+        baselineDigest: (if $profile == "planning-maturity-v1" then $completeDigest else "NONE" end),
+        evidenceSequenceDigest: $completeDigest,
+        indexIdentityDigest: "NONE",
+        lineNumber: null,
+        protectedPath: $path,
+        relationIdentityDigest: "NONE",
+        repositoryId: "NONE",
+        runId: "NONE",
+        specId: "specs/900-audit-fixture",
+        startHead: "NONE",
+        stateClass: $state,
+        statementDigest: "NONE",
+        transitionContractDigest: $completeDigest,
+        worktreeIdentityDigest: "NONE"
+      };
+      def detail($gate; $status; $outcome; $reason; $action; $path; $state): {
+        actionability: $action,
+        applicability: "APPLICABLE",
+        completeEvidenceDigest: $completeDigest,
+        completeEvidenceRef: ("transition-gate-results:" + $completeDigest + "#" + $gate),
+        detailCount: 0,
+        emittedDetailCount: 0,
+        evidenceIdentity: evidence_identity($path; $state),
+        gateId: $gate,
+        observed: ("reason=" + $reason),
+        omittedDetailCount: 0,
+        outcome: $outcome,
+        phraseDisposition: "NONE",
+        reasonCode: $reason,
+        remediationCode: (if $action == "NON_ACTIONABLE" then "NONE" else "ROUTE_PROTECTED_PATH_OWNER" end),
+        required: "closed gate contract",
+        scanDisposition: "CLASSIFIED",
+        status: $status
+      };
+      def gate($gate; $status):
+        (if $gate == "G060" and $profile == "planning-maturity-v1" then
+           {applicability:"NOT_APPLICABLE", actionability:"NON_ACTIONABLE", outcome:"NONE", reason:"PROFILE_PLANNING_MATURITY", remediation:"NONE", scan:"NONE", phrase:"NONE", details:[]}
+         elif $gate == "G060" and $status == "PASS" then
+           {applicability:"APPLICABLE", actionability:"NON_ACTIONABLE", outcome:"NONE", reason:"RED_GREEN_ORDER_VALID", remediation:"NONE", scan:"NONE", phrase:"NONE", details:[]}
+         elif $gate == "G060" then
+           {applicability:"APPLICABLE", actionability:"ACTION_REQUIRED", outcome:"NONE", reason:"RED_GREEN_EVIDENCE_MISSING", remediation:"PRODUCE_ORDERED_DELIVERY_EVIDENCE", scan:"NONE", phrase:"NONE", details:[]}
+         elif $gate == "G073" and $status == "PASS" then
+           {applicability:"APPLICABLE", actionability:"NON_ACTIONABLE", outcome:"AUDITED_PREEXISTING", reason:"PATH_AUDITED_EQUAL", remediation:"NONE", scan:"CLASSIFIED", phrase:"NONE", details:[detail("G073"; "PASS"; "AUDITED_PREEXISTING"; "PATH_AUDITED_EQUAL"; "NON_ACTIONABLE"; "src/preexisting.rs"; "UNSTAGED_ONLY")]}
+         elif $gate == "G073" then
+           {applicability:"APPLICABLE", actionability:"ACTION_REQUIRED", outcome:"NEW_OR_CHANGED", reason:"PATH_APPEARED_AFTER_CAPTURE", remediation:"ROUTE_PROTECTED_PATH_OWNER", scan:"CLASSIFIED", phrase:"NONE", details:[detail("G073"; "BLOCKED"; "NEW_OR_CHANGED"; "PATH_APPEARED_AFTER_CAPTURE"; "ACTION_REQUIRED"; "src/changed.rs"; "UNTRACKED")]}
+         elif $gate == "G040" and $status == "PASS" then
+           {applicability:"APPLICABLE", actionability:"NON_ACTIONABLE", outcome:"NONE", reason:"NO_CONTRACT_MATCH", remediation:"NONE", scan:"NO_MATCH", phrase:"NONE", details:[]}
+         elif $gate == "G040" then
+           {applicability:"APPLICABLE", actionability:"ACTION_REQUIRED", outcome:"NONE", reason:"EXISTING_TRUE_DEFERRAL", remediation:"ROUTE_ARTIFACT_OWNER", scan:"CLASSIFIED", phrase:"BLOCKING", details:[]}
+         elif $status == "PASS" then
+           {applicability:"APPLICABLE", actionability:"NON_ACTIONABLE", outcome:"NONE", reason:"GATE_PASS", remediation:"NONE", scan:"NONE", phrase:"NONE", details:[]}
+         else
+           {applicability:"APPLICABLE", actionability:"ACTION_REQUIRED", outcome:"NONE", reason:"GATE_BLOCKED", remediation:"ROUTE_ARTIFACT_OWNER", scan:"NONE", phrase:"NONE", details:[]}
+         end) as $shape
+        | {
+            actionability: $shape.actionability,
+            applicability: $shape.applicability,
+            completeEvidenceDigest: $completeDigest,
+            completeEvidenceRef: ("transition-gate-results:" + $completeDigest + "#" + $gate),
+            detailCount: ($shape.details | length),
+            details: $shape.details,
+            emittedDetailCount: ($shape.details | length),
+            evidenceIdentity: evidence_identity("NONE"; "NONE"),
+            gateId: $gate,
+            observed: ("reason=" + $shape.reason),
+            omittedDetailCount: 0,
+            outcome: $shape.outcome,
+            phraseDisposition: $shape.phrase,
+            reasonCode: $shape.reason,
+            remediationCode: $shape.remediation,
+            required: "closed gate contract",
+            scanDisposition: $shape.scan,
+            status: (if $shape.applicability == "NOT_APPLICABLE" then "NOT_APPLICABLE" else $status end)
+          };
+      [
+        ($passed[] | gate(.; "PASS")),
+        ($failed[] | gate(.; "BLOCKED")),
+        (if $profile == "planning-maturity-v1" then gate("G060"; "NOT_APPLICABLE") else empty end)
+      ]
+      | unique_by(.gateId)
+      | sort_by(.gateId)'
+}
+
 write_transition_block() {
   local file="$1"
   local workflow_mode="$2"
@@ -129,9 +275,24 @@ write_transition_block() {
   local failure_count="${13}"
   local exit_status="${14}"
   local verdict="${15}"
+  local gate_results=""
+  local gate_results_digest=""
+
+  if [[ "$profile" == "planning-maturity-v1" ]]; then
+    not_applicable="$(token_list_add "$not_applicable" Check-3E-G060-red-green-evidence)"
+  elif [[ "$profile" == "delivery-completion-v1" ]] \
+    && ! list_contains "$passed_gates" G060 \
+    && ! list_contains "$failed_gates" G060; then
+    passed_gates="$(token_list_add "$passed_gates" G060)"
+  fi
+  if [[ "$profile" == "planning-maturity-v1" ]] && list_contains "$failed_gates" G073; then
+    blocking_code="SOURCE_EDIT_LOCKOUT"
+  fi
+  gate_results="$(build_transition_gate_results "$profile" "$passed_gates" "$failed_gates")"
+  gate_results_digest="sha256:$(printf '%s' "$gate_results" | bubbles_sha256_stdin)"
   cat > "$file" <<EOF
-BEGIN TRANSITION_GUARD_RESULT_V1
-schemaVersion: transition-guard-result/v1
+BEGIN TRANSITION_GUARD_RESULT_V2
+schemaVersion: transition-guard-result/v2
 workflowMode: $workflow_mode
 auditProfile: $profile
 targetStatus: $target_status
@@ -142,11 +303,14 @@ notApplicableChecks: $not_applicable
 passedGateIds: $passed_gates
 failedGateIds: $failed_gates
 failedChecks: $failed_checks
+gateResultsSchema: transition-gate-results/v1
+gateResultsDigest: $gate_results_digest
+gateResults: $gate_results
 blockingCode: $blocking_code
 failureCount: $failure_count
 exitStatus: $exit_status
 verdict: $verdict
-END TRANSITION_GUARD_RESULT_V1
+END TRANSITION_GUARD_RESULT_V2
 EOF
 }
 
@@ -203,6 +367,13 @@ append_audit_block() {
   local next_owner="${31}"
   local supersedes="${32}"
   local resume_phase="${33}"
+  if [[ "$audit_class" == "planning-maturity" ]]; then
+    not_applicable="$(token_list_add "$not_applicable" Check-3E-G060-red-green-evidence)"
+  elif [[ "$audit_class" == "delivery-completion" ]] \
+    && ! list_contains "$passed_gates" G060 \
+    && ! list_contains "$failed_gates" G060; then
+    passed_gates="$(token_list_add "$passed_gates" G060)"
+  fi
   cat >> "$file" <<EOF
 BEGIN AUDIT_RESULT_V1
 schemaVersion: audit-result/v1
@@ -383,6 +554,36 @@ mutate_result() {
   bubbles_sed_inplace "$expression" "$destination"
 }
 
+replace_transition_field() {
+  local source="$1"
+  local destination="$2"
+  local field="$3"
+  local value="$4"
+  local temporary="$destination.tmp"
+  cp "$source" "$destination"
+  awk -v field="$field" -v value="$value" '
+    $0 == "BEGIN TRANSITION_GUARD_RESULT_V2" { active=1 }
+    active && index($0, field ": ") == 1 { print field ": " value; active=0; next }
+    { print }
+  ' "$destination" > "$temporary"
+  mv "$temporary" "$destination"
+}
+
+replace_transition_gate_results() {
+  local source="$1"
+  local destination="$2"
+  local filter="$3"
+  local current=""
+  local replacement=""
+  local digest=""
+  current="$(awk -F ': ' '$1 == "gateResults" { print substr($0, index($0, ": ") + 2); exit }' "$source")"
+  replacement="$(printf '%s' "$current" | jq -cS "$filter")"
+  digest="sha256:$(printf '%s' "$replacement" | bubbles_sha256_stdin)"
+  replace_transition_field "$source" "$destination" gateResults "$replacement"
+  replace_transition_field "$destination" "$destination.digest" gateResultsDigest "$digest"
+  mv "$destination.digest" "$destination"
+}
+
 printf 'Running BUG-009 S04 audit result contract selftest...\n'
 
 PLANNING_CLEAN="$WORKSPACE/planning-clean"
@@ -454,6 +655,49 @@ awk '
   { print }
 ' "$PLANNING_CLEAN/result.txt" > "$STALE_REVISION"
 run_fail 'stale target revision is rejected against guard provenance' "$STALE_REVISION" 'guard.targetRevision mismatch'
+
+V2_SCHEMA="$WORKSPACE/v2-schema.txt"
+replace_transition_field "$PLANNING_CLEAN/result.txt" "$V2_SCHEMA" schemaVersion transition-guard-result/v1
+run_fail 'transition-guard-result/v2 schema mismatch is rejected' "$V2_SCHEMA" 'transition.schemaVersion mismatch'
+
+V2_REORDERED="$WORKSPACE/v2-reordered.txt"
+awk '
+  $0 == "BEGIN TRANSITION_GUARD_RESULT_V2" { active=1 }
+  $0 == "END TRANSITION_GUARD_RESULT_V2" { active=0 }
+  active && /^workflowMode: / { workflow=$0; next }
+  active && /^auditProfile: / { print; print workflow; next }
+  { print }
+' "$PLANNING_CLEAN/result.txt" > "$V2_REORDERED"
+run_fail 'reordered V2 field is rejected' "$V2_REORDERED" "transition field 3 must be 'workflowMode'"
+
+NONCANONICAL_RESULTS="$WORKSPACE/noncanonical-gate-results.txt"
+current_gate_results="$(field_value "$PLANNING_CLEAN/result.txt" gateResults)"
+noncanonical_gate_results=" $current_gate_results"
+noncanonical_digest="sha256:$(printf '%s' "$noncanonical_gate_results" | bubbles_sha256_stdin)"
+replace_transition_field "$PLANNING_CLEAN/result.txt" "$NONCANONICAL_RESULTS" gateResults "$noncanonical_gate_results"
+replace_transition_field "$NONCANONICAL_RESULTS" "$NONCANONICAL_RESULTS.digest" gateResultsDigest "$noncanonical_digest"
+mv "$NONCANONICAL_RESULTS.digest" "$NONCANONICAL_RESULTS"
+run_fail 'noncanonical gateResults is rejected' "$NONCANONICAL_RESULTS" 'noncanonical gateResults JSON is forbidden'
+
+BAD_RESULTS_DIGEST="$WORKSPACE/bad-gate-results-digest.txt"
+replace_transition_field "$PLANNING_CLEAN/result.txt" "$BAD_RESULTS_DIGEST" gateResultsDigest 'sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+run_fail 'gateResultsDigest mismatch is rejected' "$BAD_RESULTS_DIGEST" 'gateResultsDigest mismatch'
+
+PLANNING_G060_PASS="$WORKSPACE/planning-g060-pass.txt"
+mutate_result "$PLANNING_CLEAN/result.txt" "$PLANNING_G060_PASS" 's/^passedGateIds: \[G040,G068,G073,G087,G091\]$/passedGateIds: [G040,G060,G068,G073,G087,G091]/'
+run_fail 'planning G060 pass rejected' "$PLANNING_G060_PASS" 'planning G060 pass rejected'
+
+DELIVERY_G060_NA="$WORKSPACE/delivery-g060-na.txt"
+replace_transition_gate_results "$DELIVERY_REFUSAL/result.txt" "$DELIVERY_G060_NA" 'map(if .gateId == "G060" then .status = "NOT_APPLICABLE" | .applicability = "NOT_APPLICABLE" | .reasonCode = "PROFILE_PLANNING_MATURITY" | .actionability = "NON_ACTIONABLE" else . end)'
+run_fail 'delivery G060 N/A rejected' "$DELIVERY_G060_NA" 'delivery G060 N/A rejected'
+
+AUDITED_G073_ACTIONABLE="$WORKSPACE/audited-g073-actionable.txt"
+replace_transition_gate_results "$PLANNING_CLEAN/result.txt" "$AUDITED_G073_ACTIONABLE" 'map(if .gateId == "G073" then .details |= map(if .outcome == "AUDITED_PREEXISTING" then .actionability = "ACTION_REQUIRED" else . end) else . end)'
+run_fail 'audited G073 actionable rejected' "$AUDITED_G073_ACTIONABLE" 'audited G073 actionable rejected'
+
+FAILED_G073_CODE="$WORKSPACE/failed-g073-code.txt"
+replace_transition_field "$SOURCE_LOCKOUT/result.txt" "$FAILED_G073_CODE" blockingCode TRANSITION_GUARD_FAILED
+run_fail 'failed G073 blockingCode rejected' "$FAILED_G073_CODE" 'failed G073 blockingCode rejected'
 
 DELIVERY_DRIFT="$WORKSPACE/delivery-drift.txt"
 mutate_result "$DELIVERY_REFUSAL/result.txt" "$DELIVERY_DRIFT" 's/^deliveryEvaluation: REFUSED$/deliveryEvaluation: NOT_EVALUATED/'

@@ -133,15 +133,15 @@ assert_transition_result() {
     -v expected_verdict="$expected_verdict" \
     -v expected_exit="$expected_exit" '
     BEGIN {
-      field_count = split("schemaVersion workflowMode auditProfile targetStatus contractDigest targetRevision applicableCheckClasses notApplicableChecks passedGateIds failedGateIds failedChecks blockingCode failureCount exitStatus verdict", fields, " ")
+      field_count = split("schemaVersion workflowMode auditProfile targetStatus contractDigest targetRevision applicableCheckClasses notApplicableChecks passedGateIds failedGateIds failedChecks gateResultsSchema gateResultsDigest gateResults blockingCode failureCount exitStatus verdict", fields, " ")
     }
-    $0 == "BEGIN TRANSITION_GUARD_RESULT_V1" {
+    $0 == "BEGIN TRANSITION_GUARD_RESULT_V2" {
       begin_count++
       active = 1
       field_index = 0
       next
     }
-    $0 == "END TRANSITION_GUARD_RESULT_V1" {
+    $0 == "END TRANSITION_GUARD_RESULT_V2" {
       end_count++
       active = 0
       next
@@ -157,7 +157,7 @@ assert_transition_result() {
     }
     END {
       if (begin_count != 1 || end_count != 1 || field_index != field_count) invalid = 1
-      if (values["schemaVersion"] != "transition-guard-result/v1") invalid = 1
+      if (values["schemaVersion"] != "transition-guard-result/v2") invalid = 1
       if (values["workflowMode"] != expected_mode) invalid = 1
       if (values["auditProfile"] != expected_profile) invalid = 1
       if (values["targetStatus"] != expected_target) invalid = 1
@@ -166,6 +166,9 @@ assert_transition_result() {
       for (field_number = 7; field_number <= 11; field_number++) {
         if (values[fields[field_number]] !~ /^\[[A-Za-z0-9,-]*\]$/) invalid = 1
       }
+      if (values["gateResultsSchema"] != "transition-gate-results/v1") invalid = 1
+      if (values["gateResultsDigest"] !~ /^sha256:[0-9a-f]+$/ || length(values["gateResultsDigest"]) != 71) invalid = 1
+      if (values["gateResults"] !~ /^\[.*\]$/) invalid = 1
       if (values["failureCount"] !~ /^[0-9]+$/) invalid = 1
       failure_count = values["failureCount"] + 0
       if (expected_verdict == "PASS" && (failure_count != 0 || values["blockingCode"] != "none")) invalid = 1
@@ -184,7 +187,7 @@ assert_transition_result() {
   else
     fail "$label"
     echo "--- invalid transition result: $log_file ---"
-    sed -n '/BEGIN TRANSITION_GUARD_RESULT_V1/,/END TRANSITION_GUARD_RESULT_V1/p' "$log_file"
+    sed -n '/BEGIN TRANSITION_GUARD_RESULT_V2/,/END TRANSITION_GUARD_RESULT_V2/p' "$log_file"
     echo "--- end invalid transition result ---"
   fi
 }
@@ -2029,8 +2032,8 @@ fi
 assert_log_contains "$negative_log" "missing a concrete owning specialist" "Negative fixture triggers the concrete owner packet check"
 assert_log_contains "$negative_log" "Gate G063" "Negative fixture reports the new concrete-result gate"
 assert_log_not_contains "$negative_log" "unbound variable" "BUG-022 genuine failure does not abort under nounset"
-assert_log_contains "$negative_log" "BEGIN TRANSITION_GUARD_RESULT_V1" "BUG-022 genuine failure emits a result start"
-assert_log_contains "$negative_log" "END TRANSITION_GUARD_RESULT_V1" "BUG-022 genuine failure emits a result end"
+assert_log_contains "$negative_log" "BEGIN TRANSITION_GUARD_RESULT_V2" "BUG-022 genuine failure emits a result start"
+assert_log_contains "$negative_log" "END TRANSITION_GUARD_RESULT_V2" "BUG-022 genuine failure emits a result end"
 assert_log_contains "$negative_log" "exitStatus: 1" "BUG-022 genuine failure preserves a nonzero structured exit"
 assert_log_contains "$negative_log" "verdict: FAIL" "BUG-022 genuine failure preserves the failing verdict"
 
@@ -2080,7 +2083,7 @@ assert_log_contains "$planning_positive_log" "Workflow mode 'product-to-planning
 assert_log_contains "$planning_positive_log" "planMaturityOnly=true is not claiming delivery-done status" "planMaturityOnly is allowed below done"
 
 echo "Running BUG-009 S03 guard profile activation matrix..."
-s03_not_applicable='[Check-4-completion,Check-5-all-done,Check-8-file-existence,Check-11-execution-evidence]'
+s03_not_applicable='[Check-4-completion,Check-5-all-done,Check-8-file-existence,Check-11-execution-evidence,Check-3E-G060-red-green-evidence]'
 
 s03_planning_log="$tmp_root/s03-planning-pass.log"
 s03_planning_status="$(run_capture "$s03_planning_log" bash "$GUARD_SCRIPT" "$s03_planning_feature_dir")"

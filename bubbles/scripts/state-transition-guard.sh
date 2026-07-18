@@ -37,6 +37,9 @@ source "$SCRIPT_DIR/fun-mode.sh"
 # node_modules / target / build caches) into bounded, observable failures.
 # ─────────────────────────────────────────────────────────────────────────────
 source "$SCRIPT_DIR/guard-lib.sh"
+source "$SCRIPT_DIR/trust-metadata.sh"
+source "$SCRIPT_DIR/guards/g040-deferral-classifier.sh"
+source "$SCRIPT_DIR/guards/g073-source-state.sh"
 
 # Shared scan helpers (IMP-009): bubbles_status_lines centralizes the BUG-006
 # blockquote exclusion used by Check 4B + Check 5 so they stay in lockstep.
@@ -54,6 +57,7 @@ transition_required_gate_ids=()
 passed_gate_ids=()
 failed_gate_ids=()
 failed_check_ids=()
+transition_gate_results_json='[]'
 
 list_contains() {
   local needle="$1"
@@ -80,6 +84,19 @@ record_failed_gate() {
 record_failed_check() {
   local check_id="$1"
   list_contains "$check_id" ${failed_check_ids[@]+"${failed_check_ids[@]}"} || failed_check_ids+=("$check_id")
+}
+
+record_transition_gate_result_json() {
+  local result_json="$1"
+  local gate_id=""
+
+  gate_id="$(printf '%s' "$result_json" | jq -r '.gateId // empty')"
+  [[ "$gate_id" =~ ^G[0-9][0-9][0-9]$ ]] || return 1
+  transition_gate_results_json="$(
+    printf '%s' "$transition_gate_results_json" |
+      jq -cS --arg gateId "$gate_id" --argjson result "$result_json" \
+        '[.[] | select(.gateId != $gateId)] + [$result] | sort_by(.gateId)'
+  )"
 }
 
 record_gate_ids_from_message() {
@@ -118,6 +135,8 @@ emit_transition_result() {
   local failure_count="$3"
   local exit_status="$4"
   local gate_id
+  local gate_results_digest=""
+  local gate_results_json=""
   local effective_passed_gate_ids=()
 
   if [[ "$verdict" == "PASS" ]]; then
@@ -131,8 +150,11 @@ emit_transition_result() {
     fi
   done
 
-  printf '%s\n' 'BEGIN TRANSITION_GUARD_RESULT_V1'
-  printf '%s\n' 'schemaVersion: transition-guard-result/v1'
+  gate_results_json="$(printf '%s' "$transition_gate_results_json" | jq -cS 'sort_by(.gateId)')"
+  gate_results_digest="sha256:$(printf '%s' "$gate_results_json" | bubbles_sha256_stdin)"
+
+  printf '%s\n' 'BEGIN TRANSITION_GUARD_RESULT_V2'
+  printf '%s\n' 'schemaVersion: transition-guard-result/v2'
   printf 'workflowMode: %s\n' "$transition_workflow_mode"
   printf 'auditProfile: %s\n' "$transition_audit_profile"
   printf 'targetStatus: %s\n' "$transition_target_status"
@@ -143,11 +165,14 @@ emit_transition_result() {
   printf 'passedGateIds: %s\n' "$(format_result_list ${effective_passed_gate_ids[@]+"${effective_passed_gate_ids[@]}"})"
   printf 'failedGateIds: %s\n' "$(format_result_list ${failed_gate_ids[@]+"${failed_gate_ids[@]}"})"
   printf 'failedChecks: %s\n' "$(format_result_list ${failed_check_ids[@]+"${failed_check_ids[@]}"})"
+  printf '%s\n' 'gateResultsSchema: transition-gate-results/v1'
+  printf 'gateResultsDigest: %s\n' "$gate_results_digest"
+  printf 'gateResults: %s\n' "$gate_results_json"
   printf 'blockingCode: %s\n' "$blocking_code"
   printf 'failureCount: %s\n' "$failure_count"
   printf 'exitStatus: %s\n' "$exit_status"
   printf 'verdict: %s\n' "$verdict"
-  printf '%s\n' 'END TRANSITION_GUARD_RESULT_V1'
+  printf '%s\n' 'END TRANSITION_GUARD_RESULT_V2'
 }
 
 block_contract() {
@@ -814,9 +839,113 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
 
   # Check if git is available and the target feature lives inside a repo.
   if [[ -n "$git_repo_root" ]]; then
+    g073_baseline_declared="false"
+    if [[ "$transition_audit_profile" == "planning-maturity-v1" ]] \
+      && jq -e '(.execution | type) == "object" and (.execution | has("planningSourceBaseline"))' "$state_file" >/dev/null 2>&1; then
+      g073_baseline_declared="true"
+    fi
+
+    if [[ "$g073_baseline_declared" == "true" ]]; then
+      g073_feature_identity="${feature_abs#"$git_repo_root"/}"
+      g073_evaluation_json="$(g073_source_state_evaluate \
+        "$git_repo_root" \
+        "$g073_feature_identity" \
+        "$state_workflow_mode" \
+        "$transition_audit_profile" \
+        "$transition_contract_digest" \
+        "$state_file")"
+      g073_run_id="$(jq -r '.execution.planningSourceBaseline.runId // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_repository_id="$(jq -r '.execution.planningSourceBaseline.repositoryId // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_start_head="$(jq -r '.execution.planningSourceBaseline.startHead // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_baseline_digest="$(jq -r '.execution.planningSourceBaseline.payloadDigest // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_complete_digest="sha256:$(printf '%s' "$g073_evaluation_json" | bubbles_sha256_stdin)"
+      g073_result_json="$(
+        printf '%s' "$g073_evaluation_json" |
+          jq -cS \
+            --arg specId "$g073_feature_identity" \
+            --arg runId "$g073_run_id" \
+            --arg repositoryId "$g073_repository_id" \
+            --arg startHead "$g073_start_head" \
+            --arg transitionContractDigest "$transition_contract_digest" \
+            --arg baselineDigest "$g073_baseline_digest" \
+            --arg auditProfile "$transition_audit_profile" \
+            --arg completeEvidenceDigest "$g073_complete_digest" '
+              def evidence_identity($source): {
+                artifactPath: "NONE",
+                auditProfile: $auditProfile,
+                baselineDigest: $baselineDigest,
+                evidenceSequenceDigest: "NONE",
+                indexIdentityDigest: "NONE",
+                lineNumber: null,
+                protectedPath: ($source.protectedPath // "NONE"),
+                relationIdentityDigest: "NONE",
+                repositoryId: $repositoryId,
+                runId: $runId,
+                specId: $specId,
+                startHead: $startHead,
+                stateClass: ($source.stateClass // "NONE"),
+                statementDigest: "NONE",
+                transitionContractDigest: $transitionContractDigest,
+                worktreeIdentityDigest: "NONE"
+              };
+              . as $evaluation
+              | ($evaluation.details // []) as $details
+              | {
+                  actionability: $evaluation.actionability,
+                  applicability: "APPLICABLE",
+                  completeEvidenceDigest: $completeEvidenceDigest,
+                  completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                  detailCount: ($details | length),
+                  details: [
+                    $details[]
+                    | . + {
+                        completeEvidenceDigest: $completeEvidenceDigest,
+                        completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                        detailCount: 0,
+                        emittedDetailCount: 0,
+                        evidenceIdentity: evidence_identity(.evidenceIdentity),
+                        omittedDetailCount: 0
+                      }
+                  ],
+                  emittedDetailCount: ([20, ($details | length)] | min),
+                  evidenceIdentity: evidence_identity({}),
+                  gateId: "G073",
+                  observed: $evaluation.observed,
+                  omittedDetailCount: ([0, (($details | length) - 20)] | max),
+                  outcome: $evaluation.outcome,
+                  phraseDisposition: "NONE",
+                  reasonCode: $evaluation.reasonCode,
+                  remediationCode: (if $evaluation.status == "PASS" then "NONE" elif $evaluation.outcome == "INVALID_BASELINE" then "RESTORE_FRAMEWORK_PROVENANCE" else "ROUTE_PROTECTED_PATH_OWNER" end),
+                  required: "exact bound planning source baseline",
+                  scanDisposition: "CLASSIFIED",
+                  status: $evaluation.status
+                }'
+      )"
+      record_transition_gate_result_json "$g073_result_json"
+
+      g073_detail_rows=0
+      while IFS=$'\t' read -r g073_detail_status g073_detail_outcome g073_detail_reason g073_detail_path g073_detail_state; do
+        [[ -n "$g073_detail_status" ]] || continue
+        if [[ "$g073_detail_rows" -lt 20 ]]; then
+          if [[ "$g073_detail_status" == "PASS" ]]; then
+            pass "G073 audited pre-existing source state: path=$g073_detail_path state=$g073_detail_state reason=$g073_detail_reason (Gate G073)"
+          else
+            fail "G073 source attribution blocked: outcome=$g073_detail_outcome path=$g073_detail_path state=$g073_detail_state reason=$g073_detail_reason (Gate G073)"
+          fi
+        fi
+        g073_detail_rows=$((g073_detail_rows + 1))
+      done < <(printf '%s' "$g073_evaluation_json" | jq -r '.details[]? | [.status, .outcome, .reasonCode, .evidenceIdentity.protectedPath, .evidenceIdentity.stateClass] | @tsv')
+
+      if [[ "$(printf '%s' "$g073_evaluation_json" | jq -r '.status')" == "PASS" ]]; then
+        pass "Declared planning source baseline is valid and exact protected-state equality was audited (Gate G073)"
+      elif [[ "$g073_detail_rows" -eq 0 ]]; then
+        fail "Declared planning source baseline is invalid and no exclusions were applied (Gate G073)"
+      fi
+    else
     # Get source code files modified in the working tree + staged + last commit
     # relative to the repo root, then filter for implementation file extensions
     source_code_violations=0
+    g073_legacy_blocked_paths=""
     source_code_pattern='\.(go|rs|py|ts|tsx|js|jsx|sql|proto|yaml|yml|toml|json|css|scss|html)$'
     # Exclude specs/ docs/ .github/ .specify/ paths — those are allowed
     allowed_path_pattern='^(specs/|docs/|\.github/|\.specify/|CHANGELOG|README|LICENSE|VERSION)'
@@ -877,6 +1006,7 @@ except Exception:
           fi
           fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but staged file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
+          g073_legacy_blocked_paths="${g073_legacy_blocked_paths}${g073_legacy_blocked_paths:+$'\n'}${changed_file}"
         fi
       fi
     done < <(git -C "$git_repo_root" diff --cached --name-only 2>/dev/null || true)
@@ -892,6 +1022,7 @@ except Exception:
           fi
           fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but working tree file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
+          g073_legacy_blocked_paths="${g073_legacy_blocked_paths}${g073_legacy_blocked_paths:+$'\n'}${changed_file}"
         fi
       fi
     done < <(git -C "$git_repo_root" diff --name-only 2>/dev/null || true)
@@ -916,6 +1047,113 @@ except Exception:
       pass "No undeclared source code edits detected under mode '$state_workflow_mode' (ceiling: $ceiling_label)"
     else
       fail "Found $source_code_violations source code file(s) modified under mode '$state_workflow_mode' that are NOT declared in deliverableFiles[] — declare them in state.json or use a delivery mode (ceiling: $ceiling_label)"
+    fi
+
+    g073_legacy_status="PASS"
+    g073_legacy_reason="BASELINE_ABSENT_LEGACY"
+    g073_legacy_actionability="NON_ACTIONABLE"
+    g073_legacy_details='[]'
+    if [[ "$source_code_violations" -gt 0 ]]; then
+      g073_legacy_status="BLOCKED"
+      g073_legacy_reason="LEGACY_DIRT_UNPROVEN"
+      g073_legacy_actionability="ACTION_REQUIRED"
+      g073_legacy_head="$(git -C "$git_repo_root" rev-parse --verify 'HEAD^{commit}' 2>/dev/null || true)"
+      g073_legacy_snapshot="$(g073_source_state_snapshot "$git_repo_root" "$g073_legacy_head" 2>/dev/null || printf '%s' '[]')"
+      g073_legacy_paths_json="$(printf '%s\n' "$g073_legacy_blocked_paths" | jq -Rsc 'split("\n") | map(select(length > 0)) | unique')"
+      g073_legacy_details="$(
+        printf '%s' "$g073_legacy_snapshot" |
+          jq -cS --argjson blockedPaths "$g073_legacy_paths_json" '
+            [
+              .[]
+              | select(.path as $path | $blockedPaths | index($path))
+              | {
+                  actionability: "ACTION_REQUIRED",
+                  applicability: "APPLICABLE",
+                  evidenceIdentity: {
+                    protectedPath: .path,
+                    stateClass: .stateClass
+                  },
+                  gateId: "G073",
+                  observed: ("path=" + .path + ";stateClass=" + .stateClass),
+                  outcome: "LEGACY_NO_BASELINE",
+                  phraseDisposition: "NONE",
+                  reasonCode: "LEGACY_DIRT_UNPROVEN",
+                  remediationCode: "RESOLVE_LEGACY_WORKTREE_LOCKOUT",
+                  required: "whole-worktree source edit lockout",
+                  scanDisposition: "CLASSIFIED",
+                  status: "BLOCKED"
+                }
+            ]
+            | unique_by(.evidenceIdentity.protectedPath)
+            | sort_by(.evidenceIdentity.protectedPath)'
+      )"
+    fi
+    g073_legacy_evaluation_json="$(jq -cS -n \
+      --arg status "$g073_legacy_status" \
+      --arg reasonCode "$g073_legacy_reason" \
+      --arg actionability "$g073_legacy_actionability" \
+      --argjson details "$g073_legacy_details" \
+      '{actionability: $actionability, details: $details, outcome: "LEGACY_NO_BASELINE", reasonCode: $reasonCode, status: $status}')"
+    g073_legacy_complete_digest="sha256:$(printf '%s' "$g073_legacy_evaluation_json" | bubbles_sha256_stdin)"
+    g073_legacy_result_json="$(
+      printf '%s' "$g073_legacy_evaluation_json" |
+        jq -cS \
+          --arg specId "${feature_abs#"$git_repo_root"/}" \
+          --arg transitionContractDigest "$transition_contract_digest" \
+          --arg auditProfile "$transition_audit_profile" \
+          --arg completeEvidenceDigest "$g073_legacy_complete_digest" '
+            def evidence_identity($source): {
+              artifactPath: "NONE",
+              auditProfile: $auditProfile,
+              baselineDigest: "NONE",
+              evidenceSequenceDigest: "NONE",
+              indexIdentityDigest: "NONE",
+              lineNumber: null,
+              protectedPath: ($source.protectedPath // "NONE"),
+              relationIdentityDigest: "NONE",
+              repositoryId: "NONE",
+              runId: "NONE",
+              specId: $specId,
+              startHead: "NONE",
+              stateClass: ($source.stateClass // "NONE"),
+              statementDigest: "NONE",
+              transitionContractDigest: $transitionContractDigest,
+              worktreeIdentityDigest: "NONE"
+            };
+            . as $evaluation
+            | ($evaluation.details // []) as $details
+            | {
+                actionability: $evaluation.actionability,
+                applicability: "APPLICABLE",
+                completeEvidenceDigest: $completeEvidenceDigest,
+                completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                detailCount: ($details | length),
+                details: [
+                  $details[]
+                  | . + {
+                      completeEvidenceDigest: $completeEvidenceDigest,
+                      completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                      detailCount: 0,
+                      emittedDetailCount: 0,
+                      evidenceIdentity: evidence_identity(.evidenceIdentity),
+                      omittedDetailCount: 0
+                    }
+                ],
+                emittedDetailCount: ([20, ($details | length)] | min),
+                evidenceIdentity: evidence_identity({}),
+                gateId: "G073",
+                observed: ("unprovenPathCount=" + (($details | length) | tostring)),
+                omittedDetailCount: ([0, (($details | length) - 20)] | max),
+                outcome: "LEGACY_NO_BASELINE",
+                phraseDisposition: "NONE",
+                reasonCode: $evaluation.reasonCode,
+                remediationCode: (if $evaluation.status == "PASS" then "NONE" else "RESOLVE_LEGACY_WORKTREE_LOCKOUT" end),
+                required: "whole-worktree source edit lockout",
+                scanDisposition: "CLASSIFIED",
+                status: $evaluation.status
+              }'
+    )"
+    record_transition_gate_result_json "$g073_legacy_result_json"
     fi
   else
     info "Git not available or target feature is not in a repo — skipping source code edit lockout check"
@@ -2939,81 +3177,185 @@ echo "--- Check 18: Deferral Language Scan (Gate G040) ---"
 if [[ "$state_status" == "done_with_concerns" && "$(json_first_bool "legacyStatusCompatibility" "$state_file" || true)" == "true" ]]; then
   info "Check 18 skipped: state.json status is legacy read-only 'done_with_concerns' with legacyStatusCompatibility:true (Gate G040/G092)"
 else
-  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|placeholder|temporary workaround'
-  # Strategy (i): exclude schema-canonical follow-up field names mandated
-  # by completion-governance.md AND the canonical "Follow-Up Narrative"
-  # section heading itself. Both are schema-structural usage, not deferred-
-  # work prose. grep -ivE is case-insensitive so all case variants
-  # (followupowner, FollowUpOwner, follow-up narrative, FOLLOW-UP
-  # NARRATIVE, etc.) are covered.
-  #
-  # v4.1.0: lockdownContract.patterns allowlist. When a deferral-language
-  # line carries a lockdown tag from workflows.yaml.lockdownContract.patterns
-  # the line is honest deferral (external actor gating runtime evidence)
-  # and exits G040 cleanly. The tags themselves embed the FR citation
-  # (e.g. [lockdown-deferred-FR-020]) so the schema-level requiredFields
-  # contract is satisfied by the tag itself. For [awaiting-*] tags the
-  # author MUST still cite the FR / condition / unblocker / expectedActivation
-  # nearby — that contract is enforced by skill/instruction docs and via
-  # routine artifact-lint review, not by this regex (multi-line context
-  # analysis would slow the guard substantially).
-  deferral_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred|no issues deferred or skipped|followUpOwner|followUpAction|followUpTarget|followUps|follow-up narrative|follow-up section|\[lockdown-deferred-fr-[0-9]+\]|\[lockdown-deferred-[a-z0-9-]+-fr-[0-9]+\]|\[awaiting-operator-commit\]|\[awaiting-third-party-approval\]|\[awaiting-cutover-window\]|\[awaiting-regulator-review\]'
-  total_deferral_hits=0
+  g040_scan_file() {
+    local artifact="$1"
+    local artifact_kind="$2"
+    local artifact_path=""
+    local artifact_within_feature=""
+    local feature_within_repo=""
+    local line_number=0
+    local in_fence=0
+    local in_skip=0
+    local raw_line=""
+    local statement_digest=""
 
-  # Strategy (iii): the awk filter strips fenced code AND content between
-  # bubbles:g040-skip-begin / bubbles:g040-skip-end sentinel markers.
-  # Marker lines themselves are dropped via `next` so they are never fed
-  # to the grep.
-  deferral_strip_awk='
-    /^```/ || /^    ```/ { in_block = !in_block; next }
-    /<!-- bubbles:g040-skip-begin -->/ { skip = 1; next }
-    /<!-- bubbles:g040-skip-end -->/ { skip = 0; next }
-    !in_block && !skip { print }
-  '
+    artifact_within_feature="$(relative_artifact_path "$artifact")"
+    feature_within_repo="${feature_abs#"$guard_repo_root/"}"
+    if [[ "$feature_within_repo" != "$feature_abs" ]]; then
+      artifact_path="$feature_within_repo/$artifact_within_feature"
+    else
+      artifact_path="$artifact_within_feature"
+    fi
+    while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
+      line_number=$((line_number + 1))
+      case "$raw_line" in
+        *'<!-- bubbles:g040-skip-begin -->'*) in_skip=1; continue ;;
+        *'<!-- bubbles:g040-skip-end -->'*) in_skip=0; continue ;;
+      esac
+      if [[ "$raw_line" == '```'* || "$raw_line" == '    ```'* ]]; then
+        if [[ "$in_fence" -eq 0 ]]; then in_fence=1; else in_fence=0; fi
+        continue
+      fi
+      [[ "$in_fence" -eq 0 && "$in_skip" -eq 0 && -n "$raw_line" ]] || continue
+      g040_classify_statement "$raw_line" || return 1
+      statement_digest="sha256:$(printf '%s' "$raw_line" | bubbles_sha256_stdin)"
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$artifact_kind" "$artifact_path" "$line_number" "$statement_digest" \
+        "$G040_SCAN_DISPOSITION" "$G040_PHRASE_DISPOSITION" "$G040_REASON_CODE" \
+        >> "$g040_rows_file"
+    done < "$artifact"
+  }
+
+  g040_rows_file="$(mktemp "${TMPDIR:-/tmp}/bubbles-g040-rows.XXXXXXXX")"
+  g040_details_file="$(mktemp "${TMPDIR:-/tmp}/bubbles-g040-details.XXXXXXXX")"
+  g040_blocking_scope_count=0
+  g040_blocking_report_count=0
+  g040_blocking_total=0
+  g040_complete_digest=""
+  g040_details_json='[]'
+  g040_result_json=''
 
   for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
-
-    # Count deferral language hits (case-insensitive), excluding inside code fence blocks
-    # We scan outside code blocks only to avoid false positives from test descriptions or docs
-    deferral_hits="$({
-      awk "$deferral_strip_awk" "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
-    } || true)"
-
-    if [[ "$deferral_hits" -gt 0 ]]; then
-      fail "Scope artifact contains $deferral_hits deferral language hit(s): ${scope_path#$feature_dir/} — SPEC CANNOT BE DONE WITH DEFERRED WORK (Gate G040)"
-      fun_message deferral_blocks_done
-      total_deferral_hits=$((total_deferral_hits + deferral_hits))
-
-      # Show first 5 matching lines for visibility
-      shown_lines=0
-      while IFS= read -r deferral_line; do
-        [[ -n "$deferral_line" ]] || continue
-        echo "   → $deferral_line"
-        shown_lines=$((shown_lines + 1))
-        if [[ "$shown_lines" -ge 5 ]]; then
-          break
-        fi
-      done < <(awk "$deferral_strip_awk" "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" || true)
-    fi
+    g040_scan_file "$scope_path" scope
   done
-
-  # Also scan report files for deferral language
   for rpt_path in ${report_files[@]+"${report_files[@]}"}; do
     [[ -f "$rpt_path" ]] || continue
-    report_deferral_hits="$({
-      awk "$deferral_strip_awk" "$rpt_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
-    } || true)"
-
-    if [[ "$report_deferral_hits" -gt 0 ]]; then
-      fail "Report artifact contains $report_deferral_hits deferral language hit(s): ${rpt_path#$feature_dir/} — evidence of deferred work (Gate G040)"
-      total_deferral_hits=$((total_deferral_hits + report_deferral_hits))
-    fi
+    g040_scan_file "$rpt_path" report
   done
 
-  if [[ "$total_deferral_hits" -eq 0 ]]; then
-    pass "Zero deferral language found in scope and report artifacts (Gate G040)"
+  g040_blocking_scope_count="$(awk -F '\t' '$1 == "scope" && $6 == "BLOCKING" { count++ } END { print count + 0 }' "$g040_rows_file")"
+  g040_blocking_report_count="$(awk -F '\t' '$1 == "report" && $6 == "BLOCKING" { count++ } END { print count + 0 }' "$g040_rows_file")"
+  g040_blocking_total=$((g040_blocking_scope_count + g040_blocking_report_count))
+  g040_complete_digest="sha256:$(LC_ALL=C sort -t $'\t' -k2,2 -k3,3n -k7,7 "$g040_rows_file" | bubbles_sha256_stdin)"
+
+  python3 - "$g040_rows_file" "$g040_complete_digest" > "$g040_details_file" <<'PY'
+import json
+import sys
+
+rows_file, complete_digest = sys.argv[1:3]
+details = []
+with open(rows_file, encoding="utf-8") as handle:
+    for raw in handle:
+        kind, path, line, digest, scan, phrase, reason = raw.rstrip("\n").split("\t")
+        status = "BLOCKED" if phrase == "BLOCKING" else "PASS"
+        actionability = "ACTION_REQUIRED" if status == "BLOCKED" else "NON_ACTIONABLE"
+        details.append({
+            "actionability": actionability,
+            "applicability": "APPLICABLE",
+            "completeEvidenceDigest": complete_digest,
+            "completeEvidenceRef": "transition-gate-results:{}#G040".format(complete_digest),
+            "detailCount": 0,
+            "emittedDetailCount": 0,
+            "evidenceIdentity": {
+                "artifactPath": path,
+                "auditProfile": "NONE",
+                "baselineDigest": "NONE",
+                "evidenceSequenceDigest": complete_digest,
+                "indexIdentityDigest": "NONE",
+                "lineNumber": int(line),
+                "protectedPath": "NONE",
+                "relationIdentityDigest": "NONE",
+                "repositoryId": "NONE",
+                "runId": "NONE",
+                "specId": "NONE",
+                "startHead": "NONE",
+                "stateClass": "NONE",
+                "statementDigest": digest,
+                "transitionContractDigest": complete_digest,
+                "worktreeIdentityDigest": "NONE",
+            },
+            "gateId": "G040",
+            "observed": "classified-line",
+            "omittedDetailCount": 0,
+            "outcome": "NONE",
+            "phraseDisposition": phrase,
+            "reasonCode": reason,
+            "remediationCode": "ROUTE_ARTIFACT_OWNER" if status == "BLOCKED" else "NONE",
+            "required": "finite context-aware deferral classification",
+            "scanDisposition": scan,
+            "status": status,
+        })
+details.sort(key=lambda item: (
+    item["evidenceIdentity"]["artifactPath"].encode("utf-8"),
+    item["evidenceIdentity"]["lineNumber"],
+    item["reasonCode"],
+))
+print(json.dumps(details, sort_keys=True, separators=(",", ":")))
+PY
+  g040_details_json="$(cat "$g040_details_file")"
+
+  if [[ "$g040_blocking_scope_count" -gt 0 ]]; then
+    fail "Scope artifact contains $g040_blocking_scope_count deferral language hit(s) from classified line(s) — SPEC CANNOT BE DONE WITH DEFERRED WORK (Gate G040)"
+    fun_message deferral_blocks_done
   fi
+  if [[ "$g040_blocking_report_count" -gt 0 ]]; then
+    fail "Report artifact contains $g040_blocking_report_count deferral language hit(s) from classified line(s) — evidence of deferred work (Gate G040)"
+  fi
+
+  g040_result_json="$(jq -cS -n \
+    --arg status "$(if [[ "$g040_blocking_total" -gt 0 ]]; then printf BLOCKED; else printf PASS; fi)" \
+    --arg actionability "$(if [[ "$g040_blocking_total" -gt 0 ]]; then printf ACTION_REQUIRED; else printf NON_ACTIONABLE; fi)" \
+    --arg reasonCode "$(if [[ "$g040_blocking_total" -gt 0 ]]; then printf EXISTING_TRUE_DEFERRAL; else printf NO_CONTRACT_MATCH; fi)" \
+    --arg remediationCode "$(if [[ "$g040_blocking_total" -gt 0 ]]; then printf ROUTE_ARTIFACT_OWNER; else printf NONE; fi)" \
+    --arg auditProfile "$transition_audit_profile" \
+    --arg completeEvidenceDigest "$g040_complete_digest" \
+    --argjson details "$g040_details_json" '
+      {
+        actionability: $actionability,
+        applicability: "APPLICABLE",
+        completeEvidenceDigest: $completeEvidenceDigest,
+        completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G040"),
+        detailCount: ($details | length),
+        details: $details,
+        emittedDetailCount: ([20, ($details | length)] | min),
+        evidenceIdentity: {
+          artifactPath: "NONE",
+          auditProfile: $auditProfile,
+          baselineDigest: "NONE",
+          evidenceSequenceDigest: $completeEvidenceDigest,
+          indexIdentityDigest: "NONE",
+          lineNumber: null,
+          protectedPath: "NONE",
+          relationIdentityDigest: "NONE",
+          repositoryId: "NONE",
+          runId: "NONE",
+          specId: "NONE",
+          startHead: "NONE",
+          stateClass: "NONE",
+          statementDigest: "NONE",
+          transitionContractDigest: $completeEvidenceDigest,
+          worktreeIdentityDigest: "NONE"
+        },
+        gateId: "G040",
+        observed: ("blockingCount=" + (($details | map(select(.status == "BLOCKED")) | length) | tostring)),
+        omittedDetailCount: ([0, (($details | length) - 20)] | max),
+        outcome: "NONE",
+        phraseDisposition: "NONE",
+        reasonCode: $reasonCode,
+        remediationCode: $remediationCode,
+        required: "finite context-aware deferral classification",
+        scanDisposition: "CLASSIFIED",
+        status: $status
+      }')"
+  record_transition_gate_result_json "$g040_result_json"
+  if [[ "$g040_blocking_total" -eq 0 ]]; then
+    pass "Zero classified deferral lines found in scope and report artifacts (Gate G040)"
+    record_passed_gate G040
+  else
+    record_failed_gate G040
+  fi
+  rm -f "$g040_rows_file" "$g040_details_file"
 fi
 echo ""
 

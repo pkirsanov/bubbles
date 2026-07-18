@@ -467,8 +467,8 @@ transition_result_field() {
   local result_file="$1"
   local field="$2"
   awk -v prefix="$field: " '
-    $0 == "BEGIN TRANSITION_GUARD_RESULT_V1" { active=1; next }
-    $0 == "END TRANSITION_GUARD_RESULT_V1" { exit }
+    $0 == "BEGIN TRANSITION_GUARD_RESULT_V2" { active=1; next }
+    $0 == "END TRANSITION_GUARD_RESULT_V2" { exit }
     active && index($0, prefix) == 1 { print substr($0, length(prefix) + 1); exit }
   ' "$result_file"
 }
@@ -527,7 +527,7 @@ write_real_audit_projection() {
     }' "$state_file" > "$state_tmp"
   mv "$state_tmp" "$state_file"
 
-  awk '/^BEGIN TRANSITION_GUARD_RESULT_V1$/,/^END TRANSITION_GUARD_RESULT_V1$/' "$guard_log" > "$transcript"
+  awk '/^BEGIN TRANSITION_GUARD_RESULT_V2$/,/^END TRANSITION_GUARD_RESULT_V2$/' "$guard_log" > "$transcript"
   cat >> "$transcript" <<EOF
 AUDIT RESULT
 target: $feature_dir
@@ -861,7 +861,7 @@ if [[ "$DIRECT_EXIT" -eq 0 && "$AUDIT_EXIT" -eq 0 ]]; then
 
   FAKE_RESULT="$WORKSPACE/fake-result-without-guard.txt"
   awk '/^BEGIN AUDIT_RESULT_V1$/,/^END AUDIT_RESULT_V1$/' "$AUDIT_TRANSCRIPT" > "$FAKE_RESULT"
-  assert_lint_rejects "$FAKE_RESULT" 'exactly one TRANSITION_GUARD_RESULT_V1 begin marker' 'copied result block without real guard evidence is rejected'
+  assert_lint_rejects "$FAKE_RESULT" 'exactly one TRANSITION_GUARD_RESULT_V2 begin marker' 'copied result block without real guard evidence is rejected'
 
   STALE_RESULT="$WORKSPACE/stale-audit-result.txt"
   awk '

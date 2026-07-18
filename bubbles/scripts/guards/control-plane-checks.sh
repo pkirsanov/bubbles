@@ -230,6 +230,66 @@ echo "--- Check 3E: Scenario-first TDD Evidence (Gate G060) ---"
 effective_tdd_mode="$(resolve_effective_policy "$state_file" tdd mode scenario-first "$guard_repo_root")"
 effective_tdd_source="$(resolve_effective_policy_source "$state_file" tdd mode scenario-first "$guard_repo_root")"
 
+g060_record_result() {
+  local status="$1"
+  local applicability="$2"
+  local reason_code="$3"
+  local actionability="$4"
+  local remediation_code="$5"
+  local complete_digest=""
+  local result_json=""
+
+  complete_digest="sha256:$(printf 'G060\n%s\n%s\n%s\n%s\n' \
+    "$transition_audit_profile" "$status" "$applicability" "$reason_code" |
+    bubbles_sha256_stdin)"
+  result_json="$(jq -cS -n \
+    --arg status "$status" \
+    --arg applicability "$applicability" \
+    --arg reasonCode "$reason_code" \
+    --arg actionability "$actionability" \
+    --arg remediationCode "$remediation_code" \
+    --arg auditProfile "$transition_audit_profile" \
+    --arg completeEvidenceDigest "$complete_digest" '
+      {
+        actionability: $actionability,
+        applicability: $applicability,
+        completeEvidenceDigest: $completeEvidenceDigest,
+        completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G060"),
+        detailCount: 0,
+        details: [],
+        emittedDetailCount: 0,
+        evidenceIdentity: {
+          artifactPath: "NONE",
+          auditProfile: $auditProfile,
+          baselineDigest: "NONE",
+          evidenceSequenceDigest: $completeEvidenceDigest,
+          indexIdentityDigest: "NONE",
+          lineNumber: null,
+          protectedPath: "NONE",
+          relationIdentityDigest: "NONE",
+          repositoryId: "NONE",
+          runId: "NONE",
+          specId: "NONE",
+          startHead: "NONE",
+          stateClass: "NONE",
+          statementDigest: "NONE",
+          transitionContractDigest: $completeEvidenceDigest,
+          worktreeIdentityDigest: "NONE"
+        },
+        gateId: "G060",
+        observed: ("reason=" + $reasonCode),
+        omittedDetailCount: 0,
+        outcome: "NONE",
+        phraseDisposition: "NONE",
+        reasonCode: $reasonCode,
+        remediationCode: $remediationCode,
+        required: "profile-bound RED-before-GREEN evidence",
+        scanDisposition: "NONE",
+        status: $status
+      }')"
+  record_transition_gate_result_json "$result_json"
+}
+
 if [[ -z "$effective_tdd_mode" && ( "$state_workflow_mode" == "bugfix-fastlane" || "$state_workflow_mode" == "chaos-hardening" ) ]]; then
   effective_tdd_mode="scenario-first"
   effective_tdd_source="workflow-forced"
@@ -268,7 +328,11 @@ except Exception:
 tdd_exemption_eligible_modes="docs-only reconcile-to-doc validate-to-doc gaps-to-doc devops-to-doc bugfix-fastlane chaos-hardening stabilize-to-doc audit-to-doc"
 tdd_forbidden_reasons="n/a none exempt no tests skip skipped tbd todo"
 
-if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
+if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
+  info "[G060] NOT_APPLICABLE — planning-maturity-v1 does not evaluate runtime RED→GREEN evidence"
+  transition_not_applicable_checks+=("Check-3E-G060-red-green-evidence")
+  g060_record_result NOT_APPLICABLE NOT_APPLICABLE PROFILE_PLANNING_MATURITY NON_ACTIONABLE NONE
+elif [[ "$effective_tdd_mode" == "scenario-first" ]]; then
   if [[ "$tdd_exempt" == "true" ]]; then
     # Validate exemption: mode eligible, reason present, reason substantive
     mode_eligible="false"
@@ -299,6 +363,8 @@ if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
         fail "policySnapshot.tdd.exemptReason is a stop-word ('$tdd_exempt_reason') — provide a substantive explanation (Gate G060)"
       else
         pass "Scenario-first TDD exempted under mode '$state_workflow_mode' — INFO[G060-EXEMPT] reason: $tdd_exempt_reason"
+        record_passed_gate G060
+        g060_record_result PASS APPLICABLE RED_GREEN_ORDER_VALID NON_ACTIONABLE NONE
       fi
     fi
   else
@@ -310,6 +376,8 @@ if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
     # SAME report.
     if detect_red_green_ordering ${scope_files[@]+"${scope_files[@]}"} ${report_files[@]+"${report_files[@]}"}; then
       pass "Scenario-first TDD red→green ordering is recorded in the scope/report artifacts (mode source: ${effective_tdd_source:-framework-default})"
+      record_passed_gate G060
+      g060_record_result PASS APPLICABLE RED_GREEN_ORDER_VALID NON_ACTIONABLE NONE
     elif policy_spec_grandfathered "$state_file" "$control_plane_policy_cutoff"; then
       # Grandfather clause: a historical spec (createdAt before the cutoff, or
       # missing) that never carried a policySnapshot is NOT retro-broken by the
@@ -317,6 +385,15 @@ if [[ "$effective_tdd_mode" == "scenario-first" ]]; then
       info "[G060-GRANDFATHERED] Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but this spec predates the ${control_plane_policy_cutoff} activation cutoff and carries no policySnapshot — red→green ordering not enforced retroactively (new specs and snapshot-bearing specs get full enforcement)"
     else
       fail "Effective TDD mode is scenario-first (source: ${effective_tdd_source:-repo-default}) but no RED→GREEN ordering was found in the scope/report artifacts — a failing-proof (red) marker MUST appear on an earlier line than a passing-proof (green) marker in the same report; the word 'tdd' alone is not evidence (Gate G060)"
+      record_failed_gate G060
+      if detect_red_green_ordering ${scope_files[@]+"${scope_files[@]}"} ${report_files[@]+"${report_files[@]}"}; then
+        g060_record_result BLOCKED APPLICABLE GREEN_PRECEDES_RED ACTION_REQUIRED PRODUCE_ORDERED_DELIVERY_EVIDENCE
+      elif grep -qiE 'green[ -]?stage|(^|[^a-z])green:|now passes|passing|test result:[[:space:]]*ok|0[[:space:]]+failed|--- pass|[1-9][0-9]*[[:space:]]+(tests?[[:space:]]+)?passed' \
+        ${scope_files[@]+"${scope_files[@]}"} ${report_files[@]+"${report_files[@]}"} 2>/dev/null; then
+        g060_record_result BLOCKED APPLICABLE GREEN_PRECEDES_RED ACTION_REQUIRED PRODUCE_ORDERED_DELIVERY_EVIDENCE
+      else
+        g060_record_result BLOCKED APPLICABLE RED_GREEN_EVIDENCE_MISSING ACTION_REQUIRED PRODUCE_ORDERED_DELIVERY_EVIDENCE
+      fi
     fi
   fi
 else

@@ -51,6 +51,11 @@
 #        non-empty dependents[] of {source,provenance,line} objects.
 #   T22. `tools/call` for `graph_neighbors` with an obviously-unknown node
 #        returns a structured error result (isError=true), never a crash.
+#   T23. `tools/call` for `capture_planning_source_baseline` captures a bound
+#        baseline through the real Bash twin in a disposable repository.
+#   T24. Repeating the capture through MCP reuses the exact run and payload.
+#   T25. Closing through MCP records CLOSED_COMPLETED without changing the
+#        immutable sidecar identity.
 #
 # Exit 0 = all assertions pass. Exit 1 = at least one failed.
 
@@ -97,6 +102,7 @@ required_tools=(
   list_open_findings
   check_observability
   graph_neighbors
+  capture_planning_source_baseline
 )
 
 # T4 is a static pre-check that doesn't require server boot.
@@ -118,10 +124,56 @@ fi
 # The runtime harness drives the server over stdio with a sequence of JSON-RPC
 # messages and asserts on every response in one shot. We script it inline in
 # Python so the framing logic stays inside the harness.
-harness_out="$(mktemp -t bubbles-mcp-selftest.XXXXXX)"
-trap 'rm -f "$harness_out"' EXIT INT TERM
+harness_workspace="$(mktemp -d -t bubbles-mcp-selftest.XXXXXX)"
+harness_out="$harness_workspace/replies.json"
+baseline_repo="$harness_workspace/baseline-repository"
+baseline_feature_rel="specs/900-mcp-planning-source-baseline"
+baseline_feature="$baseline_repo/$baseline_feature_rel"
+trap 'rm -rf "$harness_workspace"' EXIT INT TERM
 
-python3 - "$SERVER" "$harness_out" <<'PY_HARNESS'
+mkdir -p "$baseline_feature" "$baseline_repo/src" "$baseline_repo/.specify/memory" "$baseline_repo/bubbles"
+ln -s "$REPO_ROOT/bubbles/scripts" "$baseline_repo/bubbles/scripts"
+ln -s "$REPO_ROOT/bubbles/mcp" "$baseline_repo/bubbles/mcp"
+cp "$REPO_ROOT/bubbles/workflows.yaml" "$baseline_repo/bubbles/workflows.yaml"
+ln -s "$REPO_ROOT/agents" "$baseline_repo/agents"
+ln -s "$REPO_ROOT/prompts" "$baseline_repo/prompts"
+git -C "$baseline_repo" init -q
+git -C "$baseline_repo" config user.name 'Bubbles MCP Selftest'
+git -C "$baseline_repo" config user.email 'bubbles-mcp-selftest@example.invalid'
+cat > "$baseline_repo/.gitignore" <<'EOF'
+.specify/runtime/
+EOF
+cat > "$baseline_repo/.specify/memory/bubbles.config.json" <<'EOF'
+{
+  "version": 2,
+  "defaults": {
+    "grill": {"mode": "off", "source": "repo-default"},
+    "tdd": {"mode": "scenario-first", "source": "repo-default"},
+    "lockdown": {"default": false, "source": "repo-default"},
+    "regression": {"immutability": "protected-scenarios", "source": "repo-default"},
+    "validation": {"certificationRequired": true, "source": "workflow-forced"}
+  }
+}
+EOF
+cat > "$baseline_feature/state.json" <<'EOF'
+{
+  "version": 3,
+  "status": "in_progress",
+  "workflowMode": "product-to-planning",
+  "planningOnly": true,
+  "planMaturityOnly": true,
+  "execution": {"planningSourceBaselineHistory": []},
+  "certification": {"status": "in_progress"},
+  "policySnapshot": {"workflowMode": "product-to-planning"}
+}
+EOF
+printf '%s\n' 'committed baseline bytes' > "$baseline_repo/src/baseline.rs"
+git -C "$baseline_repo" add -A
+git -C "$baseline_repo" commit -q -m 'test: seed MCP baseline fixture'
+printf '%s\n' 'staged pre-run bytes' > "$baseline_repo/src/baseline.rs"
+git -C "$baseline_repo" add -- src/baseline.rs
+
+python3 - "$SERVER" "$harness_out" "$baseline_repo" "$baseline_feature_rel" <<'PY_HARNESS'
 import json
 import os
 import subprocess
@@ -129,6 +181,8 @@ import sys
 
 SERVER = sys.argv[1]
 OUT = sys.argv[2]
+BASELINE_REPO = sys.argv[3]
+BASELINE_FEATURE = sys.argv[4]
 
 
 def frame(msg):
@@ -166,7 +220,11 @@ proc = subprocess.Popen(
     [sys.executable, SERVER],
     stdin=subprocess.PIPE,
     stdout=subprocess.PIPE,
-    env=dict(os.environ, BUBBLES_MCP_LOG_LEVEL="ERROR"),
+  env=dict(
+    os.environ,
+    BUBBLES_MCP_LOG_LEVEL="ERROR",
+    BUBBLES_MCP_REPO_ROOT=BASELINE_REPO,
+  ),
 )
 msgs = [
     {"jsonrpc": "2.0", "id": 1, "method": "initialize",
@@ -212,6 +270,20 @@ msgs = [
     {"jsonrpc": "2.0", "id": 20, "method": "tools/call",
      "params": {"name": "graph_neighbors",
                 "arguments": {"node": "definitely-not-a-real-node-xyz.sh"}}},
+    {"jsonrpc": "2.0", "id": 21, "method": "tools/call",
+     "params": {"name": "capture_planning_source_baseline",
+          "arguments": {"action": "capture",
+                  "feature_dir": BASELINE_FEATURE}}},
+    {"jsonrpc": "2.0", "id": 22, "method": "tools/call",
+     "params": {"name": "capture_planning_source_baseline",
+          "arguments": {"action": "capture",
+                  "feature_dir": BASELINE_FEATURE}}},
+    {"jsonrpc": "2.0", "id": 23, "method": "tools/call",
+     "params": {"name": "capture_planning_source_baseline",
+          "arguments": {"action": "close",
+                  "feature_dir": BASELINE_FEATURE,
+                  "outcome_option": "--outcome",
+                  "outcome": "completed"}}},
 ]
 for m in msgs:
     proc.stdin.write(frame(m))
@@ -219,7 +291,7 @@ proc.stdin.flush()
 proc.stdin.close()
 
 replies = {}
-for _ in range(20):  # 20 IDs (notifications/initialized has no reply)
+for _ in range(23):  # 23 IDs (notifications/initialized has no reply)
     r = read_frame(proc.stdout)
     if r is None:
         break
@@ -525,6 +597,82 @@ if [[ "$ok" == "YES" ]]; then
   pass "T22: graph_neighbors unknown node returned a structured error result"
 else
   fail "T22: graph_neighbors unknown node did not return structured error: $gn_bad_reply"
+fi
+
+if python3 - "$harness_out" "$baseline_repo" "$baseline_feature_rel" <<'PY_BASELINE'
+import json
+from pathlib import Path
+import sys
+
+replies_path, repo_path, feature_rel = sys.argv[1:4]
+with open(replies_path, encoding="utf-8") as handle:
+    replies = json.load(handle)
+
+fields = [
+    "schemaVersion", "status", "reasonCode", "runId", "featureDir",
+    "workflowMode", "auditProfile", "repositoryId", "startHead",
+    "transitionContractDigest", "payloadDigest", "protectedEntryCount",
+    "exitStatus",
+]
+
+
+def result_values(reply_id, expected_status, expected_reason, expected_action):
+    reply = replies[str(reply_id)]
+    result = reply["result"]
+    assert result.get("isError") is False
+    assert result.get("_meta", {}).get("exitCode") == 0
+    text = result["content"][0]["text"]
+    assert repo_path not in text
+    assert "planning-source-baseline.sh {} {}".format(expected_action, feature_rel) in text
+    lines = text.splitlines()
+    start = lines.index("BEGIN PLANNING_SOURCE_BASELINE_RESULT_V1")
+    finish = lines.index("END PLANNING_SOURCE_BASELINE_RESULT_V1")
+    body = lines[start + 1:finish]
+    assert len(body) == len(fields)
+    values = {}
+    for index, field in enumerate(fields):
+        prefix = field + ": "
+        assert body[index].startswith(prefix)
+        values[field] = body[index][len(prefix):]
+    assert values["schemaVersion"] == "planning-source-baseline-result/v1"
+    assert values["status"] == expected_status
+    assert values["reasonCode"] == expected_reason
+    assert values["featureDir"] == feature_rel
+    assert values["workflowMode"] == "product-to-planning"
+    assert values["auditProfile"] == "planning-maturity-v1"
+    assert values["exitStatus"] == "0"
+    return values
+
+
+captured = result_values(21, "BASELINE_CAPTURED", "BASELINE_CAPTURED", "capture")
+reused = result_values(22, "BASELINE_REUSED", "BASELINE_REUSED", "capture")
+closed = result_values(23, "BASELINE_CLOSED", "BASELINE_CLOSED_COMPLETED", "close")
+assert captured["runId"] == reused["runId"] == closed["runId"]
+assert captured["payloadDigest"] == reused["payloadDigest"] == closed["payloadDigest"]
+assert captured["protectedEntryCount"] == reused["protectedEntryCount"] == closed["protectedEntryCount"] == "1"
+
+repo = Path(repo_path)
+state_path = repo / feature_rel / "state.json"
+with state_path.open(encoding="utf-8") as handle:
+    state = json.load(handle)
+reference = state["execution"]["planningSourceBaseline"]
+assert reference["lifecycle"] == "CLOSED_COMPLETED"
+assert reference["runId"] == captured["runId"]
+assert reference["payloadDigest"] == captured["payloadDigest"]
+sidecar_path = repo / reference["artifactRef"]
+with sidecar_path.open(encoding="utf-8") as handle:
+    sidecar = json.load(handle)
+assert sidecar["schemaVersion"] == "planning-source-baseline/v1"
+assert sidecar["payload"]["runId"] == captured["runId"]
+assert sidecar["payloadDigest"] == captured["payloadDigest"]
+assert len(sidecar["payload"]["entries"]) == 1
+PY_BASELINE
+then
+  pass "T23: planning baseline MCP tool captures through the real Bash twin"
+  pass "T24: repeated MCP capture reuses the exact run and immutable payload"
+  pass "T25: MCP close records CLOSED_COMPLETED with the original sidecar identity"
+else
+  fail "T23-T25: planning baseline MCP capture/reuse/close lifecycle contract failed"
 fi
 
 echo

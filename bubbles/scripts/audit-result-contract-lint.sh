@@ -3,14 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
+TRUST_METADATA="$SCRIPT_DIR/trust-metadata.sh"
 
-if [[ ! -f "$GUARD_LIB" ]]; then
-  printf 'audit-result-contract-lint: FAIL [DEPENDENCY]: guard-lib.sh is unavailable\n' >&2
+if [[ ! -f "$GUARD_LIB" || ! -f "$TRUST_METADATA" ]]; then
+  printf 'audit-result-contract-lint: FAIL [DEPENDENCY]: guard-lib.sh or trust-metadata.sh is unavailable\n' >&2
   exit 2
 fi
 
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
+# shellcheck source=/dev/null
+source "$TRUST_METADATA"
 
 LC_ALL=C
 export LC_ALL
@@ -63,6 +66,9 @@ TRANSITION_FIELDS=(
   passedGateIds
   failedGateIds
   failedChecks
+  gateResultsSchema
+  gateResultsDigest
+  gateResults
   blockingCode
   failureCount
   exitStatus
@@ -252,6 +258,93 @@ expected_profile_for_class() {
   esac
 }
 
+validate_transition_gate_results() {
+  local gate_schema="$1"
+  local gate_digest="$2"
+  local gate_results="$3"
+  local profile="$4"
+  local not_applicable="$5"
+  local passed_gates="$6"
+  local failed_gates="$7"
+  local outer_blocking_code="$8"
+  local canonical_results=""
+  local expected_digest=""
+  local g060_status=""
+
+  [[ "$gate_schema" == "transition-gate-results/v1" ]] || fail GUARD_SCHEMA "gateResultsSchema must be transition-gate-results/v1"
+  if ! printf '%s' "$gate_results" | jq -e '
+    type == "array"
+    and ([.[].gateId] | length == (unique | length))
+    and all(.[ ];
+      (.gateId | test("^G[0-9]{3}$"))
+      and (.status == "PASS" or .status == "BLOCKED" or .status == "NOT_APPLICABLE")
+      and (.applicability == "APPLICABLE" or .applicability == "NOT_APPLICABLE" or .applicability == "NONE")
+      and (.actionability == "ACTION_REQUIRED" or .actionability == "NON_ACTIONABLE")
+      and (.details | type == "array")
+      and (.detailCount | type == "number" and . >= 0)
+      and (.emittedDetailCount | type == "number" and . >= 0 and . <= 20)
+      and (.omittedDetailCount | type == "number" and . >= 0)
+      and (.completeEvidenceDigest | test("^sha256:[0-9a-f]{64}$"))
+      and (.completeEvidenceRef | type == "string" and length > 0)
+      and (.evidenceIdentity | type == "object")
+      and (.reasonCode | type == "string" and length > 0)
+    )
+  ' >/dev/null 2>&1; then
+    fail GUARD_SCHEMA 'gateResults must be a unique, closed, complete transition-gate-results/v1 array'
+  fi
+  canonical_results="$(printf '%s' "$gate_results" | jq -cS '.')"
+  [[ "$canonical_results" == "$gate_results" ]] || fail GUARD_SCHEMA 'noncanonical gateResults JSON is forbidden'
+  expected_digest="sha256:$(printf '%s' "$gate_results" | bubbles_sha256_stdin)"
+  [[ "$gate_digest" == "$expected_digest" ]] || fail GUARD_SCHEMA "gateResultsDigest mismatch: observed '$gate_digest', expected '$expected_digest'"
+
+  case "$profile" in
+    planning-maturity-v1)
+      list_has_prefix "$not_applicable" Check-3E-G060-red-green-evidence || fail PROFILE 'planning G060 must be named in notApplicableChecks'
+      ! list_contains "$passed_gates" G060 || fail PROFILE 'planning G060 pass rejected: G060 cannot appear in passedGateIds'
+      ! list_contains "$failed_gates" G060 || fail PROFILE 'planning G060 cannot appear in failedGateIds'
+      [[ "$(printf '%s' "$gate_results" | jq -r '[.[] | select(.gateId == "G060" and .status == "NOT_APPLICABLE" and .applicability == "NOT_APPLICABLE" and .reasonCode == "PROFILE_PLANNING_MATURITY" and .actionability == "NON_ACTIONABLE")] | length')" -eq 1 ]] \
+        || fail PROFILE 'planning G060 pass rejected: expected one NOT_APPLICABLE/PROFILE_PLANNING_MATURITY result'
+      ;;
+    delivery-completion-v1)
+      [[ "$(printf '%s' "$gate_results" | jq -r '[.[] | select(.gateId == "G060")] | length')" -eq 1 ]] \
+        || fail PROFILE 'delivery result must contain exactly one G060 gate result'
+      g060_status="$(printf '%s' "$gate_results" | jq -r '.[] | select(.gateId == "G060") | .status')"
+      [[ "$g060_status" != "NOT_APPLICABLE" ]] || fail PROFILE 'delivery G060 N/A rejected'
+      if [[ "$g060_status" == "PASS" ]]; then
+        list_contains "$passed_gates" G060 || fail PROFILE 'delivery G060 PASS must appear in passedGateIds'
+      else
+        [[ "$g060_status" == "BLOCKED" ]] && list_contains "$failed_gates" G060 \
+          || fail PROFILE 'delivery G060 BLOCKED must appear in failedGateIds'
+      fi
+      ;;
+    UNRESOLVED)
+      [[ "$gate_results" == "[]" ]] || fail PROFILE 'unresolved transition cannot emit evaluated gate results'
+      ;;
+    *)
+      fail PROFILE "unsupported transition audit profile '$profile'"
+      ;;
+  esac
+
+  if list_contains "$passed_gates" G073; then
+    [[ "$(printf '%s' "$gate_results" | jq -r '[.[] | select(.gateId == "G073" and .status == "PASS")] | length')" -eq 1 ]] \
+      || fail LOCKOUT 'passed G073 requires one PASS gate result'
+  fi
+  if list_contains "$failed_gates" G073; then
+    [[ "$(printf '%s' "$gate_results" | jq -r '[.[] | select(.gateId == "G073" and .status == "BLOCKED")] | length')" -eq 1 ]] \
+      || fail LOCKOUT 'failed G073 requires one BLOCKED gate result'
+    if [[ "$profile" == "planning-maturity-v1" ]]; then
+      [[ "$outer_blocking_code" == "SOURCE_EDIT_LOCKOUT" ]] || fail LOCKOUT 'failed G073 blockingCode rejected: planning G073 must map to SOURCE_EDIT_LOCKOUT'
+    fi
+  fi
+  if ! printf '%s' "$gate_results" | jq -e '
+    [.. | objects | select(.gateId? == "G073" and .outcome? == "AUDITED_PREEXISTING")
+      | select(.status? != "PASS" or .actionability? != "NON_ACTIONABLE")]
+    | length == 0
+  ' >/dev/null; then
+    fail LOCKOUT 'audited G073 actionable rejected: audited pre-existing rows must be PASS/NON_ACTIONABLE'
+  fi
+}
+
 validate_agent_contract() {
   local agent_file="$1"
   local block_file
@@ -278,7 +371,7 @@ validate_agent_contract() {
     '--target-status' \
     '--expect-workflow-mode' \
     '--expect-contract-digest' \
-    'TRANSITION_GUARD_RESULT_V1' \
+    'TRANSITION_GUARD_RESULT_V2' \
     'assertion-only'; do
     [[ "$preflight" == *"$token"* ]] || fail AGENT_PREFLIGHT "Audit 0-pre is missing '$token'"
   done
@@ -337,6 +430,7 @@ validate_result_contract() {
   local addressed_findings unresolved_findings next_required_owner supersedes_attempt_id resume_from_phase
   local guard_schema guard_workflow_mode guard_profile guard_target_status guard_digest guard_revision
   local guard_classes guard_not_applicable guard_passed_gates guard_failed_gates guard_failed_checks
+  local guard_gate_schema guard_gate_digest guard_gate_results
   local guard_blocking_code guard_failure_count guard_exit_status guard_verdict
   local human_key expected_human observed_human
 
@@ -346,23 +440,23 @@ validate_result_contract() {
 
   [[ "$(marker_count "$result_file" 'BEGIN AUDIT_RESULT_V1')" -eq 1 ]] || fail SCHEMA 'result must contain exactly one AUDIT_RESULT_V1 begin marker'
   [[ "$(marker_count "$result_file" 'END AUDIT_RESULT_V1')" -eq 1 ]] || fail SCHEMA 'result must contain exactly one AUDIT_RESULT_V1 end marker'
-  [[ "$(marker_count "$result_file" 'BEGIN TRANSITION_GUARD_RESULT_V1')" -eq 1 ]] || fail GUARD_SCHEMA 'result must contain exactly one TRANSITION_GUARD_RESULT_V1 begin marker'
-  [[ "$(marker_count "$result_file" 'END TRANSITION_GUARD_RESULT_V1')" -eq 1 ]] || fail GUARD_SCHEMA 'result must contain exactly one TRANSITION_GUARD_RESULT_V1 end marker'
+  [[ "$(marker_count "$result_file" 'BEGIN TRANSITION_GUARD_RESULT_V2')" -eq 1 ]] || fail GUARD_SCHEMA 'result must contain exactly one TRANSITION_GUARD_RESULT_V2 begin marker'
+  [[ "$(marker_count "$result_file" 'END TRANSITION_GUARD_RESULT_V2')" -eq 1 ]] || fail GUARD_SCHEMA 'result must contain exactly one TRANSITION_GUARD_RESULT_V2 end marker'
 
   audit_block="$(mktemp "${TMPDIR:-/tmp}/bubbles-audit-result.XXXXXXXX")"
   transition_block="$(mktemp "${TMPDIR:-/tmp}/bubbles-transition-result.XXXXXXXX")"
   human_block="$(mktemp "${TMPDIR:-/tmp}/bubbles-audit-human.XXXXXXXX")"
   trap 'rm -f "$audit_block" "$transition_block" "$human_block"' EXIT INT TERM
   extract_block "$result_file" 'BEGIN AUDIT_RESULT_V1' 'END AUDIT_RESULT_V1' "$audit_block"
-  extract_block "$result_file" 'BEGIN TRANSITION_GUARD_RESULT_V1' 'END TRANSITION_GUARD_RESULT_V1' "$transition_block"
+  extract_block "$result_file" 'BEGIN TRANSITION_GUARD_RESULT_V2' 'END TRANSITION_GUARD_RESULT_V2' "$transition_block"
   awk '
-    $0 == "END TRANSITION_GUARD_RESULT_V1" { active=1; next }
+    $0 == "END TRANSITION_GUARD_RESULT_V2" { active=1; next }
     $0 == "BEGIN AUDIT_RESULT_V1" { exit }
     active { print }
   ' "$result_file" > "$human_block"
 
   validate_ordered_block "$audit_block" 'BEGIN AUDIT_RESULT_V1' 'END AUDIT_RESULT_V1' audit
-  validate_ordered_block "$transition_block" 'BEGIN TRANSITION_GUARD_RESULT_V1' 'END TRANSITION_GUARD_RESULT_V1' transition
+  validate_ordered_block "$transition_block" 'BEGIN TRANSITION_GUARD_RESULT_V2' 'END TRANSITION_GUARD_RESULT_V2' transition
 
   schema_version="$(field_value "$audit_block" schemaVersion)"
   run_id="$(field_value "$audit_block" runId)"
@@ -409,13 +503,16 @@ validate_result_contract() {
   guard_passed_gates="$(field_value "$transition_block" passedGateIds)"
   guard_failed_gates="$(field_value "$transition_block" failedGateIds)"
   guard_failed_checks="$(field_value "$transition_block" failedChecks)"
+  guard_gate_schema="$(field_value "$transition_block" gateResultsSchema)"
+  guard_gate_digest="$(field_value "$transition_block" gateResultsDigest)"
+  guard_gate_results="$(field_value "$transition_block" gateResults)"
   guard_blocking_code="$(field_value "$transition_block" blockingCode)"
   guard_failure_count="$(field_value "$transition_block" failureCount)"
   guard_exit_status="$(field_value "$transition_block" exitStatus)"
   guard_verdict="$(field_value "$transition_block" verdict)"
 
   assert_equal schemaVersion "$schema_version" 'audit-result/v1'
-  assert_equal transition.schemaVersion "$guard_schema" 'transition-guard-result/v1'
+  assert_equal transition.schemaVersion "$guard_schema" 'transition-guard-result/v2'
   [[ "$run_id" =~ ^[-A-Za-z0-9._:]+$ ]] || fail ENUM "runId is malformed"
   [[ "$attempt_id" =~ ^[-A-Za-z0-9._:]+$ ]] || fail ENUM "attemptId is malformed"
   [[ -n "$target" && "$target" != "none" && "$target" != *'['* ]] || fail ENUM 'target is malformed'
@@ -455,6 +552,15 @@ validate_result_contract() {
   done
   assert_collection_disjoint addressedFindings "$addressed_findings" unresolvedFindings "$unresolved_findings"
   assert_collection_disjoint notApplicableChecks "$not_applicable_checks" failedChecks "$failed_checks"
+  validate_transition_gate_results \
+    "$guard_gate_schema" \
+    "$guard_gate_digest" \
+    "$guard_gate_results" \
+    "$guard_profile" \
+    "$guard_not_applicable" \
+    "$guard_passed_gates" \
+    "$guard_failed_gates" \
+    "$guard_blocking_code"
 
   expected_profile="$(expected_profile_for_class "$audit_class")"
   if [[ "$audit_class" != "UNRESOLVED" ]]; then

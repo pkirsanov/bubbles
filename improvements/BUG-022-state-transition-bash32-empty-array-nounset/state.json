@@ -9,17 +9,18 @@
     "activeAgent": "bubbles.test",
     "currentPhase": "test",
     "currentScope": 1,
-    "runStartedAt": "2026-07-17T15:03:59Z",
-    "runCompletedAt": "2026-07-17T15:30:26Z",
+    "runStartedAt": null,
+    "runCompletedAt": "2026-07-18T02:55:01Z",
+    "runTimestampStatus": "start-not-captured-before-concurrent-packet-rewrite",
     "executionModel": "direct-authorized-runner",
     "completedPhaseClaims": [],
     "invocationLedger": [],
     "blocker": {
-      "code": "NEWER_MACOS_BASH_LANE_INTERRUPTED",
-      "reason": "Independent bubbles.test execution reused frozen test_29 SHA-256 4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17 and addressed TEST-022-005 at exit 0 under stock macOS Bash 3.2.57: CURRENT_SOURCE_GREEN, 306 of 306 assertions, 43 of 43 mapped one-site mutant rejections, 40 main plus three sourced-module sites guarded with zero mapped raw sites, zero control/harness/unrelated-abort failures, BUG-019 compatibility 38 of 38, and all selected focused checks green. Three explicit Homebrew Bash 5.3.15 attempts ended at exit 130 before a final summary, so TEST-022-007 remains open with bubbles.test. Linux was not executed or claimed. No DoD, completion, status, release, or certification claim is authorized by this test record.",
-      "nextRequiredOwner": "bubbles.test"
+      "code": "CONCURRENT_BUG023_RESULT_V2_COLLISION",
+      "reason": "Independent bubbles.test execution verified frozen test_29 SHA-256 4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17 and the 40 + 1 + 2 guarded inventory, but the main guard concurrently drifted from implementation-recorded a920046b45d388b7ad5750f44358f23e600d49ab037eee78bc8dfed4cb1ff538 to b6d808203caa459993ce9f885b17393796efca2f66713dd05cae5b36376d1e36 during runtime execution, then to 6c7de8515cc1e5f8cd012614a5a0a0375499ba5300fed040af437edf07b9799d after evidence recording; control-plane-checks.sh also moved to f4061d9f41066b31f8803337752268c4e135a17eda4c3383e7b94446ef91222b. The producer emits TRANSITION_GUARD_RESULT_V2 while frozen BUG-022 and BUG-019 consumers require V1: stock Bash 3.2 and Homebrew Bash 5.3 each exit 2 with 22 repaired-reference control errors; BUG-019 passes 36 of 38; managed selftest exits 1 with 10 issues; structured-result canary exits 2. Linux was unavailable and not claimed. Report/state were concurrently replaced with an earlier snapshot during this run; the replacement was preserved and foreign history was not reconstructed. No DoD, completion, release, or certification claim is authorized.",
+      "nextRequiredOwner": "bubbles.implement"
     },
-    "nextRequiredOwner": "bubbles.test"
+    "nextRequiredOwner": "bubbles.implement"
   },
   "certification": {
     "status": "blocked",
@@ -156,52 +157,6 @@
       "summary": "Implementation preflight verified that bugfix-fastlane permits implementation and the production guard still matches the valid-RED hash, but found two blocking ownership/integrity conflicts: the physical test_29 hash no longer matches the final-byte RED hash, and the three sourced-module sites routed by test/state are absent from the exact design/scopes implementation surface. Did not edit any source, test, planning, protected, concurrent, release, sibling, or downstream surface; observed BUG-021 test_28 changing concurrently between hash reads; made no partial 40-site repair; and routed design reconciliation first, followed by planning synchronization and test-owned RED recapture."
     },
     {
-      "agent": "bubbles.design",
-      "phasesExecuted": [
-        "bootstrap"
-      ],
-      "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
-      "statusBefore": "blocked",
-      "statusAfter": "blocked",
-      "runStartedAt": "2026-07-17T06:09:18Z",
-      "runCompletedAt": "2026-07-17T06:13:51Z",
-      "outcome": "route_required",
-      "addressedFindings": [
-        "DESIGN-022-001-SOURCED-MODULE-SURFACE-OMITTED",
-        "BUG022-RELEASE-TEMP-001"
-      ],
-      "unresolvedFindings": [
-        "PLAN-022-003-SOURCED-MODULE-BOUNDARY-OMITTED",
-        "TEST-022-006-FINAL-BYTE-HASH-DRIFT"
-      ],
-      "nextRequiredOwner": "bubbles.plan",
-      "summary": "Reconciled design authority to one active atomic three-file/43-site contract, directly resolved all 40 main, one planning-module, and two control-plane-module tuples plus the raw positive-count control against unchanged production bytes, isolated stale appended design copies, removed only the confirmed design-owned temp duplicate blocking broad release validation, preserved physical test_29 hash drift as test-owned fresh-RED work after planning, kept all planning/source/test/release/status/certification surfaces nonterminal, and routed exact plan synchronization to bubbles.plan."
-    },
-    {
-      "agent": "bubbles.plan",
-      "phasesExecuted": [
-        "bootstrap",
-        "planning"
-      ],
-      "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
-      "statusBefore": "blocked",
-      "statusAfter": "blocked",
-      "runStartedAt": "2026-07-17T06:18:09Z",
-      "runCompletedAt": "2026-07-17T06:25:29Z",
-      "outcome": "route_required",
-      "addressedFindings": [
-        "DESIGN-022-001-SOURCED-MODULE-SURFACE-OMITTED",
-        "BUG022-RELEASE-TEMP-001",
-        "PLAN-022-003-SOURCED-MODULE-BOUNDARY-OMITTED",
-        "PLAN-022-002-REGRESSION-QUALITY-COMMAND"
-      ],
-      "unresolvedFindings": [
-        "TEST-022-006-FINAL-BYTE-HASH-DRIFT"
-      ],
-      "nextRequiredOwner": "bubbles.test",
-      "summary": "Reconciled Scope 1 and test-plan.json to the design-owned atomic 40 + 1 + 2 production contract; mapped PLANNING-CHANGE-BOUNDARY-SCOPE, CONTROL-PLANE-TDD-SCOPES, and CONTROL-PLANE-TDD-REPORTS with their zero-cardinality rationale through implementation, containment, rollback, tests, and unchecked DoD; preserved the raw positive-count control and pre-resolution formatter classification; corrected T-BUG-022-06 and the physical-path T-BUG-022-09 command; retained 21 Markdown/JSON rows, 21 matching unchecked test DoD items, three stable scenarios, and unchanged manifest links; passed artifact lint, freshness, G094, traceability, strict JSON/Markdown parity, editor diagnostics, diff checks, corrected command execution, three-file inventory, and nonterminal state invariants; preserved physical test_29 as test-owned bytes with no current RED claim; and routed fresh causal RED to bubbles.test without source, test, release, completion, or certification mutation."
-    },
-    {
       "agent": "bubbles.test",
       "phasesExecuted": [
         "test"
@@ -209,80 +164,29 @@
       "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
       "statusBefore": "blocked",
       "statusAfter": "blocked",
-      "runStartedAt": "2026-07-17T06:29:10Z",
-      "runCompletedAt": "2026-07-17T06:47:36Z",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-18T02:55:01Z",
+      "timestampStatus": "start-not-captured-before-concurrent-packet-rewrite",
       "outcome": "route_required",
       "addressedFindings": [
-        "DESIGN-022-001-SOURCED-MODULE-SURFACE-OMITTED",
-        "PLAN-022-003-SOURCED-MODULE-BOUNDARY-OMITTED",
-        "PLAN-022-002-REGRESSION-QUALITY-COMMAND",
-        "TEST-022-006-FINAL-BYTE-HASH-DRIFT"
+        "TEST-022-FROZEN-BYTE-INTEGRITY",
+        "TEST-022-ARRAY-INVENTORY-PRESERVED",
+        "TEST-022-CONTRACT-INDEPENDENT-CHECKS"
       ],
       "unresolvedFindings": [
-        "IMPLEMENT-022-001-MAIN-GUARD-RAW-SITES",
-        "IMPLEMENT-022-002-SOURCED-MODULE-RAW-SITES",
-        "TEST-022-005-IDENTICAL-BYTE-GREEN"
+        "TEST-022-005-IDENTICAL-BYTE-GREEN",
+        "TEST-022-BUG023-V2-CONSUMER-COLLISION",
+        "TEST-022-STRUCTURED-CONSUMER-CANARY",
+        "TEST-022-LINUX-LANE-UNAVAILABLE",
+        "TEST-022-MANAGED-REGISTRATION-MISSING",
+        "TEST-022-INSTALL-PROVENANCE-ASSERTIONS-MISSING",
+        "TEST-022-PACKET-STATE-CONCURRENT-REWRITE",
+        "TEST-022-FOREIGN-SOURCE-MOVED-DURING-TEST"
       ],
       "nextRequiredOwner": "bubbles.implement",
-      "summary": "Retained one complete nonduplicated Bash-3.2-parseable test_29 at frozen SHA-256 4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17; executed the exact T-BUG-022-01 command first against unchanged 40 + 1 + 2 production bytes; captured VALID_PRE_FIX_RED at exit 1 under stock macOS Bash 3.2.57 with 11 canonical fixtures, 11 repaired-reference controls, 10 family mutants, 43 of 43 site-mutant rejections, and zero harness, control, or unrelated-abort failures; ran identical bytes under explicit macOS Bash 5.3.15 as comparison only; preserved expected BUG-019 pre-repair 27/38 compatibility RED; passed regression quality, three-file syntax/strict-mode, portability, artifact, freshness, G094, traceability, parity, and corrected 44-identity collision checks; retained all diagnostic probe failures and their corrected reruns; made no Linux claim; kept every DoD, status, and certification field unchanged; and routed the atomic three-file repair to bubbles.implement."
-    },
-    {
-      "agent": "bubbles.implement",
-      "phasesExecuted": [
-        "implement"
-      ],
-      "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
-      "statusBefore": "blocked",
-      "statusAfter": "blocked",
-      "runStartedAt": "2026-07-17T07:02:29Z",
-      "runCompletedAt": "2026-07-17T07:10:44Z",
-      "outcome": "route_required",
-      "addressedFindings": [
-        "DESIGN-022-001-SOURCED-MODULE-SURFACE-OMITTED",
-        "PLAN-022-003-SOURCED-MODULE-BOUNDARY-OMITTED",
-        "PLAN-022-002-REGRESSION-QUALITY-COMMAND",
-        "TEST-022-006-FINAL-BYTE-HASH-DRIFT",
-        "IMPLEMENT-022-001-MAIN-GUARD-RAW-SITES",
-        "IMPLEMENT-022-002-SOURCED-MODULE-RAW-SITES"
-      ],
-      "unresolvedFindings": [
-        "TEST-022-005-IDENTICAL-BYTE-GREEN"
-      ],
-      "nextRequiredOwner": "bubbles.test",
-      "summary": "Reconciled exact root, persisted bugfix-fastlane done ceiling, frozen test/source/packet/sibling/release hashes, packet ownership, and the absence of active harness processes; reused frozen test_29 bytes under stock Bash 3.2.57 and observed CURRENT_SOURCE_GREEN with 306 of 306 assertions, 11 canonical fixtures, 11 repaired-reference controls, 10 family mutants, 43 of 43 independently rejected site mutants, and zero primary, control, harness, or unrelated failures; reconstructed all three accepted pre-edit source hashes by reversing exactly 40 + 1 + 2 guarded tokens in memory, proving every nonmapped byte and the raw positive-count control unchanged; passed all three Bash 3.2 syntax checks, strict/no-bypass scan, BUG-019 38 of 38 compatibility, regression quality, portability, artifact, freshness, G094, traceability, and corrected 21-row parity; preserved all prior design, planning, RED, sibling, release, DoD, scope, completion, and certification bytes; and routed independent identical-byte GREEN closure to bubbles.test."
-    },
-    {
-      "agent": "bubbles.test",
-      "phasesExecuted": [
-        "test"
-      ],
-      "featureDir": "improvements/BUG-022-state-transition-bash32-empty-array-nounset",
-      "statusBefore": "blocked",
-      "statusAfter": "blocked",
-      "runStartedAt": "2026-07-17T15:03:59Z",
-      "runCompletedAt": "2026-07-17T15:30:26Z",
-      "outcome": "blocked",
-      "addressedFindings": [
-        "TEST-022-001-MISSING-REGRESSION",
-        "TEST-022-002-FINAL-BYTE-RED",
-        "TEST-022-003-HARNESS-INTEGRITY",
-        "TEST-022-004-NEWER-COMPARISON",
-        "DESIGN-022-001-SOURCED-MODULE-SURFACE-OMITTED",
-        "BUG022-RELEASE-TEMP-001",
-        "PLAN-022-003-SOURCED-MODULE-BOUNDARY-OMITTED",
-        "PLAN-022-002-REGRESSION-QUALITY-COMMAND",
-        "TEST-022-006-FINAL-BYTE-HASH-DRIFT",
-        "IMPLEMENT-022-001-MAIN-GUARD-RAW-SITES",
-        "IMPLEMENT-022-002-SOURCED-MODULE-RAW-SITES",
-        "TEST-022-005-IDENTICAL-BYTE-GREEN"
-      ],
-      "unresolvedFindings": [
-        "TEST-022-007-NEWER-MACOS-LANE-INTERRUPTED"
-      ],
-      "nextRequiredOwner": "bubbles.test",
-      "summary": "Independently ran the exact frozen T-BUG-022-01 bytes under stock macOS Bash 3.2.57 and addressed TEST-022-005 with CURRENT_SOURCE_GREEN at 306 of 306 assertions, all zero/one/empty-string/multiple paths, 43 of 43 site-mutant rejections, and zero primary, control, harness, or unrelated-abort failures; independently passed BUG-019 at 38 of 38 plus regression-quality, three-file syntax/strict/no-bypass, physical and selftest portability, artifact lint, freshness, G094, traceability, corrected 21-row parity, and test-integrity checks; preserved all protected packet, production, test, sibling, registration, installer, and release bytes; made no Linux claim; recorded three explicit newer-macOS-Bash attempts ending at exit 130 without a final summary as TEST-022-007; kept every DoD, scope, top-level status, completion claim, release, and certification field nonterminal; and retained bubbles.test as the exact required owner."
+      "summary": "Verified the frozen test_29 identity and 40 + 1 + 2 guarded array inventory; ran parser-aware stock Bash 3.2 and explicit Homebrew Bash 5.3, both of which exited 2 with 22 repaired-reference V1/V2 delimiter control errors; observed unchanged BUG-019 at 36 of 38, managed guard selftest at exit 1 with 10 V1 parser issues, and structured-result canary at exit 2; passed strict-mode syntax, physical and selftest portability, regression quality, artifact freshness, G094, traceability, generic install provenance, exact 21-row parity, skip scan, and live-mock scan; made no Linux claim; preserved the concurrently replaced report/state snapshot without reconstructing foreign history; detected further foreign source movement to main hash 6c7de8515cc1e5f8cd012614a5a0a0375499ba5300fed040af437edf07b9799d and control-plane hash f4061d9f41066b31f8803337752268c4e135a17eda4c3383e7b94446ef91222b after runtime execution while confirming the BUG-022 array inventory remained intact; changed no source, test, registration, provenance, release, sibling, downstream, DoD, scope, completion, or certification bytes; and routed the active BUG-023 V2 producer/consumer collision to its registered bubbles.implement owner."
     }
   ],
   "createdAt": "2026-07-16T05:27:32Z",
-  "updatedAt": "2026-07-17T15:30:26Z"
+  "updatedAt": "2026-07-18T02:55:01Z"
 }
