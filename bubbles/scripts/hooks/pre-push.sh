@@ -13,6 +13,13 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SCRIPT_DIR="$REPO_ROOT/bubbles/scripts"
+source "$SCRIPT_DIR/hooks/git-env-sanitize.sh"
+
+# Git exports repository-local variables to hooks. Clear them before the
+# framework selftests create nested repositories, or their Git commands can
+# mutate the repository being pushed instead of their disposable fixtures.
+bubbles_unset_git_local_env
+cd "$REPO_ROOT"
 
 echo "🫧 bubbles pre-push: running framework validation..."
 

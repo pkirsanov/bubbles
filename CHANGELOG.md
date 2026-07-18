@@ -216,6 +216,7 @@ heavier workflow integration is deferred to follow-up work.
 - **Snap-confined `yq` can resolve transition contracts.** Transition-contract and guard fixtures use a HOME-accessible temporary root, matching the existing mode-resolver contract instead of writing YAML under inaccessible `/tmp` paths.
 - **G064 authorization stays inside the transition-guard budget.** The workflow-runner grants lint parses each YAML registry once and performs repeated lookups over JSON, reducing the measured source-repo run from 35.3 seconds to 1.8 seconds while preserving every default-deny adversarial case.
 - **Evaluator error taxonomy is asserted correctly.** A zero-exit adapter that emits invalid JSON is tested as `judge-malformed-json`; genuine nonzero adapters remain `judge-nonzero`.
+- **Source pre-push validation isolates nested Git fixtures.** The maintainer hook clears Git's exported repository-local environment before framework selftests run, preventing fixture `git init` and installer operations from mutating the worktree index being pushed. A poisoned-environment selftest verifies both variable removal and nested-repository resolution.
 
 ### Validation
 
@@ -224,6 +225,7 @@ heavier workflow integration is deferred to follow-up work.
 - Transition-contract resolver: 56/56 assertions.
 - Planning-audit persistent regression: 48/48 assertions.
 - Transition-guard performance: 6,036-line fixture in 19 seconds with exact evidence semantics preserved.
+- Git hook environment sanitization: 3/3 assertions.
 
 ## v7.20.0 — registry-bound planning transition audits
 
