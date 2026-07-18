@@ -24,6 +24,32 @@
 
 ## Delivered Improvements
 
+### IMP-006 — `bubbles.journey` full-stack tutorial + internal-correctness verification
+
+- **Problem:** guided-journey walkthroughs recorded only a user-facing verdict
+  per step, so a green UI could pass over a sick trace or an un-persisted write
+  (J1); the walk was not framed as a tutorial (J2); and the dev/validate-drive
+  vs operate/prod-read-only plane boundary was ambiguous (J3).
+- **Delivered:** additive, behavior-preserving hardening of the journey agent
+  contract (SCOPE-1–6, applied to `agents/bubbles.journey.agent.md`,
+  `prompts/bubbles.journey.prompt.md`, `docs/recipes/guided-journey.md`):
+  four-layer per-step verification (UI + API + telemetry + data via the
+  validate-plane `observability-endpoint-resolve.sh` resolver), NON-NEGOTIABLE
+  plane governance (INV-12 — drive/mutate validate-plane only, prod read-only),
+  tutorial posture + replayable `uservalidation.md` walkthrough (G057 human-
+  acceptance boundary preserved), three added Skills-First pointers, and an
+  expanded Output Contract carrying the four evidence lanes + a dual
+  friction/internal verdict with a Hidden Defects (UI-passed, backend-failed →
+  route to `bubbles.bug`) section.
+- **Durable home:** [`docs/recipes/guided-journey.md`](recipes/guided-journey.md)
+  + the journey agent contract + this entry.
+- **Scope boundary:** SCOPE-7 (downstream propagation) is record-only /
+  operator-gated (`install.sh --local-source` re-sync), not executed by the IMP.
+  Workflow wiring (a `journey` phase / `journey-refinement` mode /
+  `experientialFriction` scoring) is IMP-001's domain — IMP-006 is independently
+  landable and does NOT require it (G125: no auto-mutation of `bubbles/*` config).
+- **Status:** delivered (SCOPE-1–6 applied, SCOPE-7 record-only), green.
+
 ### IMP-017 — Template case-collision fix
 
 - **Problem:** a case-only filename collision (`AGENTS.md` vs `templates/AGENTS.md.tmpl`)

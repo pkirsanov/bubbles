@@ -14,6 +14,19 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-006 journey full-stack tutorial hardening — packet finalized
+
+- The `bubbles.journey` agent-contract hardening (SCOPE-1–6: four-layer per-step
+  verification [UI + API + telemetry + data], INV-12 plane governance, tutorial
+  posture + replayable walkthrough, three Skills-First pointers, expanded Output
+  Contract with a dual friction/internal verdict + Hidden Defects routing) is
+  applied to `agents/bubbles.journey.agent.md`, the prompt shim, and the
+  `guided-journey` recipe, and is green under framework-validate. SCOPE-7
+  (downstream propagation) is operator-gated record-only; the deferred workflow
+  wiring is IMP-001's domain (IMP-006 is independently landable and G125-clean).
+  Harvested to `docs/Framework_Improvements_Delivered.md`; the IMP-006 packet is
+  removed per the deliver-then-delete lifecycle.
+
 ### IMP-025 fail-loud multi-root agent/repo binding — completed; packet finalized
 
 - All six scopes of the multi-root agent↔repository binding improvement are
