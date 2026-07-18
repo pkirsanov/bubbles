@@ -37,6 +37,8 @@ source "$SCRIPT_DIR/fun-mode.sh"
 # node_modules / target / build caches) into bounded, observable failures.
 # ─────────────────────────────────────────────────────────────────────────────
 source "$SCRIPT_DIR/guard-lib.sh"
+source "$SCRIPT_DIR/trust-metadata.sh"
+source "$SCRIPT_DIR/guards/g073-source-state.sh"
 
 # Shared scan helpers (IMP-009): bubbles_status_lines centralizes the BUG-006
 # blockquote exclusion used by Check 4B + Check 5 so they stay in lockstep.
@@ -54,6 +56,7 @@ transition_required_gate_ids=()
 passed_gate_ids=()
 failed_gate_ids=()
 failed_check_ids=()
+transition_gate_results_json='[]'
 
 list_contains() {
   local needle="$1"
@@ -80,6 +83,19 @@ record_failed_gate() {
 record_failed_check() {
   local check_id="$1"
   list_contains "$check_id" ${failed_check_ids[@]+"${failed_check_ids[@]}"} || failed_check_ids+=("$check_id")
+}
+
+record_transition_gate_result_json() {
+  local result_json="$1"
+  local gate_id=""
+
+  gate_id="$(printf '%s' "$result_json" | jq -r '.gateId // empty')"
+  [[ "$gate_id" =~ ^G[0-9][0-9][0-9]$ ]] || return 1
+  transition_gate_results_json="$(
+    printf '%s' "$transition_gate_results_json" |
+      jq -cS --arg gateId "$gate_id" --argjson result "$result_json" \
+        '[.[] | select(.gateId != $gateId)] + [$result] | sort_by(.gateId)'
+  )"
 }
 
 record_gate_ids_from_message() {
@@ -118,6 +134,8 @@ emit_transition_result() {
   local failure_count="$3"
   local exit_status="$4"
   local gate_id
+  local gate_results_digest=""
+  local gate_results_json=""
   local effective_passed_gate_ids=()
 
   if [[ "$verdict" == "PASS" ]]; then
@@ -131,8 +149,11 @@ emit_transition_result() {
     fi
   done
 
-  printf '%s\n' 'BEGIN TRANSITION_GUARD_RESULT_V1'
-  printf '%s\n' 'schemaVersion: transition-guard-result/v1'
+  gate_results_json="$(printf '%s' "$transition_gate_results_json" | jq -cS 'sort_by(.gateId)')"
+  gate_results_digest="sha256:$(printf '%s' "$gate_results_json" | bubbles_sha256_stdin)"
+
+  printf '%s\n' 'BEGIN TRANSITION_GUARD_RESULT_V2'
+  printf '%s\n' 'schemaVersion: transition-guard-result/v2'
   printf 'workflowMode: %s\n' "$transition_workflow_mode"
   printf 'auditProfile: %s\n' "$transition_audit_profile"
   printf 'targetStatus: %s\n' "$transition_target_status"
@@ -143,11 +164,14 @@ emit_transition_result() {
   printf 'passedGateIds: %s\n' "$(format_result_list ${effective_passed_gate_ids[@]+"${effective_passed_gate_ids[@]}"})"
   printf 'failedGateIds: %s\n' "$(format_result_list ${failed_gate_ids[@]+"${failed_gate_ids[@]}"})"
   printf 'failedChecks: %s\n' "$(format_result_list ${failed_check_ids[@]+"${failed_check_ids[@]}"})"
+  printf '%s\n' 'gateResultsSchema: transition-gate-results/v1'
+  printf 'gateResultsDigest: %s\n' "$gate_results_digest"
+  printf 'gateResults: %s\n' "$gate_results_json"
   printf 'blockingCode: %s\n' "$blocking_code"
   printf 'failureCount: %s\n' "$failure_count"
   printf 'exitStatus: %s\n' "$exit_status"
   printf 'verdict: %s\n' "$verdict"
-  printf '%s\n' 'END TRANSITION_GUARD_RESULT_V1'
+  printf '%s\n' 'END TRANSITION_GUARD_RESULT_V2'
 }
 
 block_contract() {
@@ -814,9 +838,113 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
 
   # Check if git is available and the target feature lives inside a repo.
   if [[ -n "$git_repo_root" ]]; then
+    g073_baseline_declared="false"
+    if [[ "$transition_audit_profile" == "planning-maturity-v1" ]] \
+      && jq -e '(.execution | type) == "object" and (.execution | has("planningSourceBaseline"))' "$state_file" >/dev/null 2>&1; then
+      g073_baseline_declared="true"
+    fi
+
+    if [[ "$g073_baseline_declared" == "true" ]]; then
+      g073_feature_identity="${feature_abs#"$git_repo_root"/}"
+      g073_evaluation_json="$(g073_source_state_evaluate \
+        "$git_repo_root" \
+        "$g073_feature_identity" \
+        "$state_workflow_mode" \
+        "$transition_audit_profile" \
+        "$transition_contract_digest" \
+        "$state_file")"
+      g073_run_id="$(jq -r '.execution.planningSourceBaseline.runId // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_repository_id="$(jq -r '.execution.planningSourceBaseline.repositoryId // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_start_head="$(jq -r '.execution.planningSourceBaseline.startHead // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_baseline_digest="$(jq -r '.execution.planningSourceBaseline.payloadDigest // "NONE"' "$state_file" 2>/dev/null || printf '%s' NONE)"
+      g073_complete_digest="sha256:$(printf '%s' "$g073_evaluation_json" | bubbles_sha256_stdin)"
+      g073_result_json="$(
+        printf '%s' "$g073_evaluation_json" |
+          jq -cS \
+            --arg specId "$g073_feature_identity" \
+            --arg runId "$g073_run_id" \
+            --arg repositoryId "$g073_repository_id" \
+            --arg startHead "$g073_start_head" \
+            --arg transitionContractDigest "$transition_contract_digest" \
+            --arg baselineDigest "$g073_baseline_digest" \
+            --arg auditProfile "$transition_audit_profile" \
+            --arg completeEvidenceDigest "$g073_complete_digest" '
+              def evidence_identity($source): {
+                artifactPath: "NONE",
+                auditProfile: $auditProfile,
+                baselineDigest: $baselineDigest,
+                evidenceSequenceDigest: "NONE",
+                indexIdentityDigest: "NONE",
+                lineNumber: null,
+                protectedPath: ($source.protectedPath // "NONE"),
+                relationIdentityDigest: "NONE",
+                repositoryId: $repositoryId,
+                runId: $runId,
+                specId: $specId,
+                startHead: $startHead,
+                stateClass: ($source.stateClass // "NONE"),
+                statementDigest: "NONE",
+                transitionContractDigest: $transitionContractDigest,
+                worktreeIdentityDigest: "NONE"
+              };
+              . as $evaluation
+              | ($evaluation.details // []) as $details
+              | {
+                  actionability: $evaluation.actionability,
+                  applicability: "APPLICABLE",
+                  completeEvidenceDigest: $completeEvidenceDigest,
+                  completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                  detailCount: ($details | length),
+                  details: [
+                    $details[]
+                    | . + {
+                        completeEvidenceDigest: $completeEvidenceDigest,
+                        completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                        detailCount: 0,
+                        emittedDetailCount: 0,
+                        evidenceIdentity: evidence_identity(.evidenceIdentity),
+                        omittedDetailCount: 0
+                      }
+                  ],
+                  emittedDetailCount: ([20, ($details | length)] | min),
+                  evidenceIdentity: evidence_identity({}),
+                  gateId: "G073",
+                  observed: $evaluation.observed,
+                  omittedDetailCount: ([0, (($details | length) - 20)] | max),
+                  outcome: $evaluation.outcome,
+                  phraseDisposition: "NONE",
+                  reasonCode: $evaluation.reasonCode,
+                  remediationCode: (if $evaluation.status == "PASS" then "NONE" elif $evaluation.outcome == "INVALID_BASELINE" then "RESTORE_FRAMEWORK_PROVENANCE" else "ROUTE_PROTECTED_PATH_OWNER" end),
+                  required: "exact bound planning source baseline",
+                  scanDisposition: "CLASSIFIED",
+                  status: $evaluation.status
+                }'
+      )"
+      record_transition_gate_result_json "$g073_result_json"
+
+      g073_detail_rows=0
+      while IFS=$'\t' read -r g073_detail_status g073_detail_outcome g073_detail_reason g073_detail_path g073_detail_state; do
+        [[ -n "$g073_detail_status" ]] || continue
+        if [[ "$g073_detail_rows" -lt 20 ]]; then
+          if [[ "$g073_detail_status" == "PASS" ]]; then
+            pass "G073 audited pre-existing source state: path=$g073_detail_path state=$g073_detail_state reason=$g073_detail_reason (Gate G073)"
+          else
+            fail "G073 source attribution blocked: outcome=$g073_detail_outcome path=$g073_detail_path state=$g073_detail_state reason=$g073_detail_reason (Gate G073)"
+          fi
+        fi
+        g073_detail_rows=$((g073_detail_rows + 1))
+      done < <(printf '%s' "$g073_evaluation_json" | jq -r '.details[]? | [.status, .outcome, .reasonCode, .evidenceIdentity.protectedPath, .evidenceIdentity.stateClass] | @tsv')
+
+      if [[ "$(printf '%s' "$g073_evaluation_json" | jq -r '.status')" == "PASS" ]]; then
+        pass "Declared planning source baseline is valid and exact protected-state equality was audited (Gate G073)"
+      elif [[ "$g073_detail_rows" -eq 0 ]]; then
+        fail "Declared planning source baseline is invalid and no exclusions were applied (Gate G073)"
+      fi
+    else
     # Get source code files modified in the working tree + staged + last commit
     # relative to the repo root, then filter for implementation file extensions
     source_code_violations=0
+    g073_legacy_blocked_paths=""
     source_code_pattern='\.(go|rs|py|ts|tsx|js|jsx|sql|proto|yaml|yml|toml|json|css|scss|html)$'
     # Exclude specs/ docs/ .github/ .specify/ paths — those are allowed
     allowed_path_pattern='^(specs/|docs/|\.github/|\.specify/|CHANGELOG|README|LICENSE|VERSION)'
@@ -877,6 +1005,7 @@ except Exception:
           fi
           fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but staged file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
+          g073_legacy_blocked_paths="${g073_legacy_blocked_paths}${g073_legacy_blocked_paths:+$'\n'}${changed_file}"
         fi
       fi
     done < <(git -C "$git_repo_root" diff --cached --name-only 2>/dev/null || true)
@@ -892,6 +1021,7 @@ except Exception:
           fi
           fail "Mode '$state_workflow_mode' (ceiling: $ceiling_label) forbids source code edits, but working tree file modified: $changed_file (add to deliverableFiles[] in state.json if intentional)"
           source_code_violations=$((source_code_violations + 1))
+          g073_legacy_blocked_paths="${g073_legacy_blocked_paths}${g073_legacy_blocked_paths:+$'\n'}${changed_file}"
         fi
       fi
     done < <(git -C "$git_repo_root" diff --name-only 2>/dev/null || true)
@@ -916,6 +1046,113 @@ except Exception:
       pass "No undeclared source code edits detected under mode '$state_workflow_mode' (ceiling: $ceiling_label)"
     else
       fail "Found $source_code_violations source code file(s) modified under mode '$state_workflow_mode' that are NOT declared in deliverableFiles[] — declare them in state.json or use a delivery mode (ceiling: $ceiling_label)"
+    fi
+
+    g073_legacy_status="PASS"
+    g073_legacy_reason="BASELINE_ABSENT_LEGACY"
+    g073_legacy_actionability="NON_ACTIONABLE"
+    g073_legacy_details='[]'
+    if [[ "$source_code_violations" -gt 0 ]]; then
+      g073_legacy_status="BLOCKED"
+      g073_legacy_reason="LEGACY_DIRT_UNPROVEN"
+      g073_legacy_actionability="ACTION_REQUIRED"
+      g073_legacy_head="$(git -C "$git_repo_root" rev-parse --verify 'HEAD^{commit}' 2>/dev/null || true)"
+      g073_legacy_snapshot="$(g073_source_state_snapshot "$git_repo_root" "$g073_legacy_head" 2>/dev/null || printf '%s' '[]')"
+      g073_legacy_paths_json="$(printf '%s\n' "$g073_legacy_blocked_paths" | jq -Rsc 'split("\n") | map(select(length > 0)) | unique')"
+      g073_legacy_details="$(
+        printf '%s' "$g073_legacy_snapshot" |
+          jq -cS --argjson blockedPaths "$g073_legacy_paths_json" '
+            [
+              .[]
+              | select(.path as $path | $blockedPaths | index($path))
+              | {
+                  actionability: "ACTION_REQUIRED",
+                  applicability: "APPLICABLE",
+                  evidenceIdentity: {
+                    protectedPath: .path,
+                    stateClass: .stateClass
+                  },
+                  gateId: "G073",
+                  observed: ("path=" + .path + ";stateClass=" + .stateClass),
+                  outcome: "LEGACY_NO_BASELINE",
+                  phraseDisposition: "NONE",
+                  reasonCode: "LEGACY_DIRT_UNPROVEN",
+                  remediationCode: "RESOLVE_LEGACY_WORKTREE_LOCKOUT",
+                  required: "whole-worktree source edit lockout",
+                  scanDisposition: "CLASSIFIED",
+                  status: "BLOCKED"
+                }
+            ]
+            | unique_by(.evidenceIdentity.protectedPath)
+            | sort_by(.evidenceIdentity.protectedPath)'
+      )"
+    fi
+    g073_legacy_evaluation_json="$(jq -cS -n \
+      --arg status "$g073_legacy_status" \
+      --arg reasonCode "$g073_legacy_reason" \
+      --arg actionability "$g073_legacy_actionability" \
+      --argjson details "$g073_legacy_details" \
+      '{actionability: $actionability, details: $details, outcome: "LEGACY_NO_BASELINE", reasonCode: $reasonCode, status: $status}')"
+    g073_legacy_complete_digest="sha256:$(printf '%s' "$g073_legacy_evaluation_json" | bubbles_sha256_stdin)"
+    g073_legacy_result_json="$(
+      printf '%s' "$g073_legacy_evaluation_json" |
+        jq -cS \
+          --arg specId "${feature_abs#"$git_repo_root"/}" \
+          --arg transitionContractDigest "$transition_contract_digest" \
+          --arg auditProfile "$transition_audit_profile" \
+          --arg completeEvidenceDigest "$g073_legacy_complete_digest" '
+            def evidence_identity($source): {
+              artifactPath: "NONE",
+              auditProfile: $auditProfile,
+              baselineDigest: "NONE",
+              evidenceSequenceDigest: "NONE",
+              indexIdentityDigest: "NONE",
+              lineNumber: null,
+              protectedPath: ($source.protectedPath // "NONE"),
+              relationIdentityDigest: "NONE",
+              repositoryId: "NONE",
+              runId: "NONE",
+              specId: $specId,
+              startHead: "NONE",
+              stateClass: ($source.stateClass // "NONE"),
+              statementDigest: "NONE",
+              transitionContractDigest: $transitionContractDigest,
+              worktreeIdentityDigest: "NONE"
+            };
+            . as $evaluation
+            | ($evaluation.details // []) as $details
+            | {
+                actionability: $evaluation.actionability,
+                applicability: "APPLICABLE",
+                completeEvidenceDigest: $completeEvidenceDigest,
+                completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                detailCount: ($details | length),
+                details: [
+                  $details[]
+                  | . + {
+                      completeEvidenceDigest: $completeEvidenceDigest,
+                      completeEvidenceRef: ("transition-gate-results:" + $completeEvidenceDigest + "#G073"),
+                      detailCount: 0,
+                      emittedDetailCount: 0,
+                      evidenceIdentity: evidence_identity(.evidenceIdentity),
+                      omittedDetailCount: 0
+                    }
+                ],
+                emittedDetailCount: ([20, ($details | length)] | min),
+                evidenceIdentity: evidence_identity({}),
+                gateId: "G073",
+                observed: ("unprovenPathCount=" + (($details | length) | tostring)),
+                omittedDetailCount: ([0, (($details | length) - 20)] | max),
+                outcome: "LEGACY_NO_BASELINE",
+                phraseDisposition: "NONE",
+                reasonCode: $evaluation.reasonCode,
+                remediationCode: (if $evaluation.status == "PASS" then "NONE" else "RESOLVE_LEGACY_WORKTREE_LOCKOUT" end),
+                required: "whole-worktree source edit lockout",
+                scanDisposition: "CLASSIFIED",
+                status: $evaluation.status
+              }'
+    )"
+    record_transition_gate_result_json "$g073_legacy_result_json"
     fi
   else
     info "Git not available or target feature is not in a repo — skipping source code edit lockout check"
