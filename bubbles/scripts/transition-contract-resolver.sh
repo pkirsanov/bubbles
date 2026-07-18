@@ -148,7 +148,8 @@ if ! MODE_NAME="$workflow_mode" yq -e '.modes[strenv(MODE_NAME)] | type == "!!ma
   fail 67 E009-MODE-UNKNOWN "persisted workflow mode is absent from the canonical registry"
 fi
 
-tmp_base="${TMPDIR:-/tmp}"
+tmp_base="${TMPDIR:-$HOME/.cache}"
+mkdir -p "$tmp_base"
 tmp_dir="$(mktemp -d "$tmp_base/bubbles-transition-contract.XXXXXX")"
 cleanup() {
   rm -rf "$tmp_dir"

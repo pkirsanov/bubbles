@@ -323,7 +323,7 @@ BUBBLES_EVAL_JUDGE=/usr/bin/printf "$BASH_BIN" "$HARNESS" score --task "$judge_t
 assert_exit "$rc" 1 'exact /usr/bin/printf hollow judge output fails closed'
 assert_field "$judge_printf_result" evaluationStatus '"error"' 'invalid printf judge output reports evaluation error'
 assert_field "$judge_printf_result" judge.status '"error"' 'invalid printf judge attempt cannot disappear'
-assert_code "$judge_printf_result" judge-nonzero 'invalid printf judge output has nonzero adapter code'
+assert_code "$judge_printf_result" judge-malformed-json 'invalid printf judge output has malformed-JSON adapter code'
 
 for judge_mode in nonzero timeout invalid-output malformed-json missing-provenance nan infinity out-of-range; do
   judge_result="$TMPDIR/judge-$judge_mode.json"

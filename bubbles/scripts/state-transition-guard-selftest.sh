@@ -13,7 +13,9 @@ source "$SCRIPT_DIR/guard-lib.sh"
 # them out of this cumulative fixture suite to avoid repeated heavy scans.
 export BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1
 
-tmp_root="$(mktemp -d)"
+selftest_tmp_base="${TMPDIR:-$HOME/.cache}"
+mkdir -p "$selftest_tmp_base"
+tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXXXX")"
 failures=0
 
 cleanup() {

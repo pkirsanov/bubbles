@@ -26,7 +26,9 @@ done
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
 
-WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-transition-contract-selftest.XXXXXX")"
+selftest_tmp_base="${TMPDIR:-$HOME/.cache}"
+mkdir -p "$selftest_tmp_base"
+WORKSPACE="$(mktemp -d "$selftest_tmp_base/bubbles-transition-contract-selftest.XXXXXX")"
 cleanup() {
   rm -rf "$WORKSPACE"
 }

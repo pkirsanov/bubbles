@@ -35,7 +35,9 @@ done
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
 
-WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug009-s03-XXXXXXXX")"
+selftest_tmp_base="${TMPDIR:-$HOME/.cache}"
+mkdir -p "$selftest_tmp_base"
+WORKSPACE="$(mktemp -d "$selftest_tmp_base/bubbles-bug009-s03-XXXXXXXX")"
 FIXTURE_REPO="$WORKSPACE/repo"
 FIXTURE_ROOT="$FIXTURE_REPO/tests/fixtures"
 mkdir -p "$FIXTURE_ROOT"
