@@ -1,0 +1,58 @@
+{
+  "name": "capture_planning_source_baseline",
+  "description": "Capture, reuse, or close the authoritative planning-source baseline for a planning-maturity feature. The Bash twin resolves repository identity, HEAD, workflow mode, audit profile, transition-contract digest, protected paths, and observed source identities internally; callers cannot supply or override them. Use action='capture' before planning writes. Use action='close' with outcome_option='--outcome' and outcome='completed' or 'aborted' when the planning run ends.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["capture", "close"],
+        "description": "Baseline lifecycle action. Capture creates or reuses the active baseline; close closes the active baseline without recapturing."
+      },
+      "feature_dir": {
+        "type": "string",
+        "description": "Repository-relative feature directory containing state.json."
+      },
+      "outcome_option": {
+        "type": "string",
+        "enum": ["--outcome"],
+        "description": "Required transport token for action='close'; omit for action='capture'."
+      },
+      "outcome": {
+        "type": "string",
+        "enum": ["completed", "aborted"],
+        "description": "Closed planning-run outcome. Required for action='close'; omit for action='capture'."
+      }
+    },
+    "required": ["action", "feature_dir"],
+    "oneOf": [
+      {
+        "properties": {
+          "action": {"const": "capture"}
+        },
+        "not": {
+          "anyOf": [
+            {"required": ["outcome_option"]},
+            {"required": ["outcome"]}
+          ]
+        }
+      },
+      {
+        "properties": {
+          "action": {"const": "close"}
+        },
+        "required": ["outcome_option", "outcome"]
+      }
+    ],
+    "additionalProperties": false
+  },
+  "script": "planning-source-baseline.sh",
+  "argsTemplate": ["${action}", "${feature_dir}", "${outcome_option?}", "${outcome?}"],
+  "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false
+  },
+  "successExitCodes": [0]
+}

@@ -1,0 +1,840 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implementation-owned-lifecycle-integrations-stable-routed-to-test",
+    "currentScope": null,
+    "runStartedAt": null,
+    "runCompletedAt": "2026-07-18T04:26:22Z",
+    "runTimestampStatus": "planner-start-not-captured-without-fabrication",
+    "executionModel": "direct-specialist-invocation",
+    "sessionLogId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+    "planningRecordedAt": "2026-07-17T20:20:41Z",
+    "completedPhaseClaims": ["plan"],
+    "invocationLedger": [
+      {
+        "order": 1,
+        "agent": "bubbles.analyst",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "spec.md",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 2,
+        "agent": "bubbles.ux",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "spec.md#ui-wireframes",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 3,
+        "agent": "bubbles.design",
+        "dispatchType": "workflow-specialist",
+        "provenance": "operator-confirmed-and-exit-0-design-profile-check",
+        "invocationId": null,
+        "runStartedAt": null,
+        "runCompletedAt": null,
+        "ownedArtifact": "design.md",
+        "outcome": "completed_owned"
+      },
+      {
+        "order": 4,
+        "agent": "bubbles.plan",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session",
+        "invocationId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-17T20:39:55Z",
+        "ownedArtifact": "scopes.md|scenario-manifest.json|test-plan.json|report.md|uservalidation.md|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 5,
+        "agent": "bubbles.test",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-17T21:20:52Z",
+        "ownedArtifact": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh|report.md#test-evidence|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 6,
+        "agent": "bubbles.test",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "ade6f188-360d-43e1-a6bf-dbc4868eb157",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-18T00:18:48Z",
+        "ownedArtifact": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh|report.md#test-integrity-remediation|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 7,
+        "agent": "bubbles.plan",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-18T03:33:14Z",
+        "ownedArtifact": "scopes.md|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 8,
+        "agent": "bubbles.test",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+        "runStartedAt": "2026-07-18T03:37:54Z",
+        "runCompletedAt": "2026-07-18T03:56:03Z",
+        "ownedArtifact": "report.md#current-byte-identity-reconciliation---2026-07-18|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 9,
+        "agent": "bubbles.implement",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-18T04:05:02Z",
+        "ownedArtifact": "report.md#implementation-owner-producer-reconciliation---2026-07-18|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 10,
+        "agent": "bubbles.plan",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-18T04:16:30Z",
+        "ownedArtifact": "scopes.md|test-plan.json|state.json.execution",
+        "outcome": "route_required"
+      },
+      {
+        "order": 11,
+        "agent": "bubbles.implement",
+        "dispatchType": "direct-specialist",
+        "provenance": "current-session-executed",
+        "invocationId": "2a39a392-ab02-4af7-9040-059be46eaeaf",
+        "runStartedAt": null,
+        "runCompletedAt": "2026-07-18T04:26:22Z",
+        "ownedArtifact": "bubbles/mcp/tools/capture_planning_source_baseline.json|bubbles/scripts/framework-validate.sh|report.md#implementation-owned-lifecycle-integration---2026-07-18|state.json.execution",
+        "outcome": "route_required"
+      }
+    ],
+    "planningScopeDag": {
+      "source": "scopes.md",
+      "scopeCount": 5,
+      "allScopesStatus": "not_started",
+      "scopes": [
+        {"scope": 1, "id": "01-baseline-capture-equality-mutation-foundation", "dependsOn": [], "foundation": true},
+        {"scope": 2, "id": "02-g073-provenance-retry-legacy", "dependsOn": [1], "foundation": false},
+        {"scope": 3, "id": "03-g060-profile-applicability", "dependsOn": [1, 2], "foundation": false},
+        {"scope": 4, "id": "04-g040-accepted-contexts", "dependsOn": [1, 3], "foundation": false},
+        {"scope": 5, "id": "05-g040-blocking-compatibility-closure", "dependsOn": [1, 4], "foundation": false}
+      ]
+    },
+    "planningContract": {
+      "scenarioCount": 17,
+      "testPlanRowCount": 44,
+      "allDodUnchecked": true,
+      "frozenRegressionPath": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "nextAction": "implementation-owner-lifecycle-integration-completion",
+      "traceability": {
+        "status": "green-at-tested-snapshot-current-producer-unverified-after-drift",
+        "failureCount": 0,
+        "distinctMissingFiles": [],
+        "scenarioToTestMappingsPassed": 17,
+        "gherkinToDodMappingsPassed": 17
+      }
+    },
+    "packetArtifactAudit": {
+      "observedAt": "2026-07-18T00:53:15Z",
+      "visibleFilesBeforeReportRecovery": [
+        "bug.md",
+        "scenario-manifest.json",
+        "state.json",
+        "uservalidation.md"
+      ],
+      "restoredTestOwnedEvidenceFile": {
+        "path": "report.md",
+        "source": "VS Code Local History entry YXaL.md",
+        "sourceSha256": "sha256:8a865a9da4f7b6566279892bf74bb95898b9f27293cbc920cd41cfbbbf407b4f"
+      },
+      "restoredPlanningEvidenceFiles": [
+        {
+          "path": "scopes.md",
+          "source": "VS Code Local History entry c5Uj.md",
+          "sourceSha256": "sha256:c275f21aad1b837646361e584ceaea67b827c3c18cfa9fd225e4cc174a238e48",
+          "byteComparison": "identical"
+        },
+        {
+          "path": "test-plan.json",
+          "source": "VS Code Local History entry rZ5E.json",
+          "sourceSha256": "sha256:62ef4dd7a1206e87a6a3e89eb30c275744cd1bbf17c9bca89b418f816c3e4a39",
+          "byteComparison": "identical"
+        }
+      ],
+      "missingRequiredPlanningFiles": [],
+      "recoverablePlanningSnapshots": [
+        {"path": "spec.md", "sha256": "sha256:d643bdb418046f573e2104dc31a99dcaa5b99981a96d2f678b0b5d6036f6a37f", "owner": "bubbles.analyst"},
+        {"path": "design.md", "sha256": "sha256:ca3bda6607c789a8ebd6cb398a2ff6e91286c7690b7a4fbed8f08124ef61373e", "owner": "bubbles.design"},
+        {"path": "scopes.md", "sha256": "sha256:c275f21aad1b837646361e584ceaea67b827c3c18cfa9fd225e4cc174a238e48", "owner": "bubbles.plan"},
+        {"path": "test-plan.json", "sha256": "sha256:62ef4dd7a1206e87a6a3e89eb30c275744cd1bbf17c9bca89b418f816c3e4a39", "owner": "bubbles.plan"}
+      ],
+      "artifactLintExit": 0,
+      "artifactLintIssueCount": 0,
+      "artifactLintWarningCount": 1,
+      "traceabilityExit": 0,
+      "traceabilityResult": "PASSED",
+      "traceabilityWarningCount": 0,
+      "jsonParseExit": 0,
+      "scopeCount": 5,
+      "scenarioManifestCount": 17,
+      "scenarioToTestMappingFailures": 0,
+      "markdownTestPlanRowCount": 44,
+      "jsonTestPlanRowCount": 44,
+      "dodTestItemCount": 44,
+      "allDodUnchecked": true,
+      "editorDiagnosticCount": 0,
+      "frozenRegressionSha256": "sha256:3db995523b1dd182c55a0dd01aa20776884a8a64a246c709da5055f358e2bd81",
+      "recoveryObservedAt": "2026-07-18T03:20:53Z",
+      "recoveredArtifactCount": 8,
+      "unavailableSnapshots": [],
+      "freshnessExit": 0,
+      "g094Exit": 0,
+      "containmentBaselineExit": 2,
+      "containmentBaselineMismatchPaths": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/guards/control-plane-checks.sh"
+      ],
+      "recoveryDisposition": "route_required",
+      "nextRequiredOwner": "bubbles.implement",
+      "implementationAuthorized": false
+    },
+    "testIntegrityDecision": {
+      "decision": "REFROZEN_SEMANTICALLY_IDENTICAL_EOF_NORMALIZATION",
+      "recordedBy": "bubbles.test",
+      "recordedAt": "2026-07-18T00:18:48Z",
+      "originalBytesRecovered": true,
+      "originalRecoverySource": "VS Code Local History entry pfKm.sh",
+      "byteComparison": "The only difference between a5e693... and 3db995... is one trailing newline after the final exit 0; no scenario, fixture, assertion, control, or expected outcome changed.",
+      "restorationAttempt": "The approved apply_patch surface rejected the no-final-newline marker; no shell file write or production edit was used.",
+      "contractAssessment": "same 17-scenario behavioral contract; neither weakened, altered, nor expanded",
+      "syntaxExit": 0,
+      "portabilityExit": 0,
+      "regressionQualityExit": 0,
+      "skipMarkerMatches": 0,
+      "liveMockPatternMatches": 0
+    },
+    "testRedHistory": [
+      {
+        "status": "superseded",
+        "supersededAt": "2026-07-18T00:18:48Z",
+        "supersededReason": "A silent implementation invocation added only an EOF newline to the test and introduced pre-existing untracked helper candidates. The original test bytes were recovered and compared exactly; the semantic contract is unchanged, while the current pre-fix production worktree produces different G073 counts because those helper candidates now execute partially.",
+        "testFile": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+        "sha256": "sha256:a5e693adda580bf561c4d3700bdabaa103993e2f61dc523e71fb3efd98ba2b31",
+        "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+        "exitCode": 1,
+        "claimSource": "executed",
+        "classification": "causal-bug-contract-failure",
+        "causalProven": true,
+        "passControls": 46,
+        "causalFailures": 256,
+        "causalFailuresByGate": {"G040": 79, "G060": 15, "G073": 162},
+        "controlFailures": 0,
+        "harnessFailures": 0,
+        "guardRuns": 17,
+        "baselineRuns": 51,
+        "recordedAt": "2026-07-17T21:20:52Z"
+      }
+    ],
+    "testRed": {
+      "testFile": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "sha256": "sha256:3db995523b1dd182c55a0dd01aa20776884a8a64a246c709da5055f358e2bd81",
+      "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "evidenceCaptureCommand": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh; matrix_exit=$?; printf 'FULL_MATRIX_EXIT=%s\\n' \"$matrix_exit\"; if [[ \"$matrix_exit\" -eq 1 ]]; then exit 0; else exit \"$matrix_exit\"; fi",
+      "exitCode": 1,
+      "evidenceCaptureExitCode": 0,
+      "claimSource": "executed",
+      "classification": "causal-bug-contract-failure",
+      "causalProven": true,
+      "passControls": 270,
+      "causalFailures": 202,
+      "causalFailuresByGate": {
+        "G040": 79,
+        "G060": 15,
+        "G073": 108
+      },
+      "controlFailures": 0,
+      "harnessFailures": 0,
+      "guardRuns": 66,
+      "baselineRuns": 65,
+      "syntaxExit": 0,
+      "regressionQualityExit": 0,
+      "portabilityExit": 0,
+      "skipMarkerMatches": 0,
+      "liveMockPatternMatches": 0,
+      "fullOutputLineCount": 961,
+      "fullOutputSha256": "sha256:5c83a226f015df52e61212364d0949d63fce8febf5e10278dff7f39e42292da9",
+      "recordedAt": "2026-07-18T00:18:48Z"
+    },
+    "currentByteReconciliation": {
+      "recordedBy": "bubbles.test",
+      "runStartedAt": "2026-07-18T03:37:54Z",
+      "runCompletedAt": "2026-07-18T03:56:03Z",
+      "testFile": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "testSha256": "sha256:3db995523b1dd182c55a0dd01aa20776884a8a64a246c709da5055f358e2bd81",
+      "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+      "evidenceCaptureCommand": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh; matrix_exit=$?; printf 'FULL_MATRIX_EXIT=%s\\n' \"$matrix_exit\"; if [[ \"$matrix_exit\" -eq 1 ]]; then exit 0; else exit \"$matrix_exit\"; fi",
+      "matrixExitCode": 0,
+      "evidenceCaptureExitCode": 0,
+      "claimSource": "executed",
+      "testedSnapshotClassification": "GREEN",
+      "currentTreeClassification": "UNVERIFIED_AFTER_PROTECTED_PRODUCER_DRIFT",
+      "passControls": 575,
+      "causalFailures": 0,
+      "causalFailuresByGate": {
+        "G040": 0,
+        "G060": 0,
+        "G073": 0
+      },
+      "controlFailures": 0,
+      "harnessFailures": 0,
+      "guardRuns": 66,
+      "baselineRuns": 65,
+      "v2SchemaHealth": "green-canonical-digest-bound-producer-and-consumer-mutation-controls",
+      "fullOutputLineCount": 1024,
+      "fullOutputSha256": "sha256:d288af109b4bf027b36d1d5b8332f7dcb2a60171b5495c0246d8d190c7a0df0e",
+      "focusedChecks": {
+        "syntaxExit": 0,
+        "regressionQualityExit": 0,
+        "focusedPortabilityExit": 0,
+        "plannedBroadPortabilityStatus": "FAIL_13_CLASSES_ACROSS_267_FILES_EXIT_NOT_SEPARATELY_PRINTED",
+        "skipMarkerMatches": 0,
+        "liveMockPatternMatches": 0,
+        "artifactLintExit": 0,
+        "artifactLintWarningCount": 1,
+        "freshnessExit": 0,
+        "g094Exit": 0,
+        "traceabilityExit": 0,
+        "strictParityExit": 0,
+        "markdownTestPlanRowCount": 44,
+        "jsonTestPlanRowCount": 44,
+        "dodTestItemCount": 44,
+        "reportAnchorCount": 44,
+        "scenarioCount": 17,
+        "fieldMismatchCount": 0
+      },
+      "testedSourceSha256": {
+        "bubbles/scripts/state-transition-guard.sh": "sha256:426ecb1806370220b8bd9d72f7f67dc0731d81c68141f1bdd89ecca9d469f96c",
+        "bubbles/scripts/guards/control-plane-checks.sh": "sha256:f4061d9f41066b31f8803337752268c4e135a17eda4c3383e7b94446ef91222b",
+        "bubbles/scripts/guards/g040-deferral-classifier.sh": "sha256:28f8f81ea0c3dc752207efefee2e3de05295e0fecd810f4915c1315e1ac530be",
+        "bubbles/scripts/guards/g073-source-state.sh": "sha256:edc097d224c953d0a2349f9cffeb50bdcd6d8e43ace1060515f066a52da69baa",
+        "bubbles/scripts/planning-source-baseline.sh": "sha256:e2eabd0093d8de3b8adc81cf45aa8e98804f45839c1fabaf21fa5f8ebc24890b"
+      },
+      "latestObservedSourceSha256": {
+        "bubbles/scripts/state-transition-guard.sh": "sha256:c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857",
+        "bubbles/scripts/guards/control-plane-checks.sh": "sha256:f4061d9f41066b31f8803337752268c4e135a17eda4c3383e7b94446ef91222b",
+        "bubbles/scripts/guards/g040-deferral-classifier.sh": "sha256:28f8f81ea0c3dc752207efefee2e3de05295e0fecd810f4915c1315e1ac530be",
+        "bubbles/scripts/guards/g073-source-state.sh": "sha256:edc097d224c953d0a2349f9cffeb50bdcd6d8e43ace1060515f066a52da69baa",
+        "bubbles/scripts/planning-source-baseline.sh": "sha256:e2eabd0093d8de3b8adc81cf45aa8e98804f45839c1fabaf21fa5f8ebc24890b"
+      },
+      "protectedProducerMovedDuringRun": true,
+      "movedPaths": [
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "finalFenceObservedAt": "2026-07-18T03:56:03Z",
+      "finalTargetedProcessScan": "CLEAR",
+      "frameworkValidation": "not-run-protected-producer-moved-before-broad-validation",
+      "implementationAuthorized": false,
+      "addressedFindings": [
+        "BUG-023-RECOVERY-CONTAINMENT-BASELINE-STALE",
+        "BUG-023-RED-G040",
+        "BUG-023-RED-G060",
+        "BUG-023-RED-G073"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST",
+        "BUG-023-T040-OVERBROAD-PORTABILITY-SURFACE",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "evidenceRef": "report.md#current-byte-identity-reconciliation---2026-07-18"
+    },
+    "implementationReconciliation": {
+      "recordedBy": "bubbles.implement",
+      "recordedAt": "2026-07-18T04:05:02Z",
+      "classification": "PARTIAL_IMPLEMENTATION_WITH_FOREIGN_OVERLAP_AND_CONCURRENT_DRIFT",
+      "sourceEditsApplied": [],
+      "testedGuardSnapshot": {
+        "source": "VS Code Local History entry WANz.sh",
+        "sha256": "sha256:426ecb1806370220b8bd9d72f7f67dc0731d81c68141f1bdd89ecca9d469f96c"
+      },
+      "currentGuardSnapshot": {
+        "source": "VS Code Local History entry QgeF.sh and current worktree",
+        "sha256": "sha256:c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857",
+        "lineCount": 3824,
+        "stableAcrossImplementationFences": true
+      },
+      "exactProducerDelta": {
+        "available": true,
+        "changedLineCount": 2,
+        "classification": "G040_HUMAN_MESSAGE_COMPATIBILITY_ONLY",
+        "machineContractChanged": false
+      },
+      "focusedChecks": {
+        "bashSyntaxExit": 0,
+        "auditResultContractSelftestExit": 0,
+        "auditResultContractSelftestPassed": 30,
+        "auditResultContractSelftestFailed": 0,
+        "frozenMatrixRun": false,
+        "frameworkValidationRun": false
+      },
+      "integrationSurfaceCounts": {
+        "mcpDescriptor": 0,
+        "workflowCaptureReference": 0,
+        "capabilityRegistration": 0,
+        "baselineSelftest": 0,
+        "frameworkValidateBaselineSelftestWiring": 0
+      },
+      "concurrentMovement": {
+        "detected": true,
+        "path": "bubbles/scripts/state-transition-guard-selftest.sh",
+        "fenceASha256": "sha256:eb3f309f612cc2f1a94e903afc7dd6b18fc626d46287119f2c4b0c1601e622c9",
+        "fenceBSha256": "sha256:5bfd966c00e76cd7c363e6476f48bcd896f8b57d87cd89aab40edeec374b1e63",
+        "targetedProcessScan": "ACTIVE",
+        "sourceWorkStopped": true
+      },
+      "implementationAuthorized": false,
+      "addressedFindings": [
+        "BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST",
+        "BUG-023-V2-CONSUMER-HELPER-AND-JSON-VALIDATION"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "BUG-023-IMPLEMENTATION-LIFECYCLE-INTEGRATION-INCOMPLETE",
+        "BUG-023-T040-OVERBROAD-PORTABILITY-SURFACE",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "evidenceRef": "report.md#implementation-owner-producer-reconciliation---2026-07-18"
+    },
+    "implementationLifecycleIntegration": {
+      "recordedBy": "bubbles.implement",
+      "recordedAt": "2026-07-18T04:26:22Z",
+      "classification": "IMPLEMENTATION_OWNED_LIFECYCLE_SURFACES_COHERENT_STABLE_ROUTE_TEST",
+      "sourceEditsApplied": [
+        "bubbles/mcp/tools/capture_planning_source_baseline.json",
+        "bubbles/scripts/framework-validate.sh"
+      ],
+      "changedFileSha256": {
+        "bubbles/mcp/tools/capture_planning_source_baseline.json": "sha256:b92569f2683bd73f45f736d924d7e3b5f66ffeb89f1e2209e45b5c890ad20b29",
+        "bubbles/scripts/framework-validate.sh": "sha256:afb89b189d6e37367eb5ccd2a3f91eeb773817c0a02ad3b2dfdb8a31e9b260d9"
+      },
+      "catalogContract": {
+        "toolName": "capture_planning_source_baseline",
+        "script": "planning-source-baseline.sh",
+        "catalogCount": 1,
+        "captureArgvRender": "capture <feature-dir>",
+        "closeArgvRender": "close <feature-dir> --outcome completed|aborted",
+        "callerSuppliedObservedIdentities": [],
+        "catalogStaticExit": 0
+      },
+      "frameworkValidateRegistration": {
+        "baselineSelftestRegistrationCount": 1,
+        "baselineSelftestPresenceContract": "file-present-runs-through-run_check",
+        "persistentRegressionRegistrationCount": 1,
+        "bug021RegistrationPreserved": true,
+        "bug022RegistrationPreserved": true,
+        "registrationContractExit": 0,
+        "bashSyntaxExit": 0
+      },
+      "integrationSurfaceCounts": {
+        "mcpDescriptor": 1,
+        "frameworkValidateBaselineSelftestWiring": 1,
+        "frameworkValidatePersistentRegressionWiring": 1,
+        "workflowCaptureReference": 0,
+        "capabilityRegistration": 0,
+        "baselineSelftest": 0
+      },
+      "focusedChecks": {
+        "descriptorStaticExit": 0,
+        "catalogStaticExit": 0,
+        "frameworkSyntaxExit": 0,
+        "registrationContractExit": 0,
+        "targetDiffCheckExit": 0,
+        "editorDiagnosticCount": 0,
+        "frozenMatrixRun": false,
+        "frameworkValidationRun": false
+      },
+      "stableIdentityFence": {
+        "bubbles/scripts/state-transition-guard.sh": "sha256:c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857",
+        "bubbles/scripts/guards/control-plane-checks.sh": "sha256:f4061d9f41066b31f8803337752268c4e135a17eda4c3383e7b94446ef91222b",
+        "bubbles/scripts/guards/g040-deferral-classifier.sh": "sha256:28f8f81ea0c3dc752207efefee2e3de05295e0fecd810f4915c1315e1ac530be",
+        "bubbles/scripts/guards/g073-source-state.sh": "sha256:edc097d224c953d0a2349f9cffeb50bdcd6d8e43ace1060515f066a52da69baa",
+        "bubbles/scripts/planning-source-baseline.sh": "sha256:e2eabd0093d8de3b8adc81cf45aa8e98804f45839c1fabaf21fa5f8ebc24890b",
+        "bubbles/scripts/state-transition-guard-selftest.sh": "sha256:5bfd966c00e76cd7c363e6476f48bcd896f8b57d87cd89aab40edeec374b1e63",
+        "bubbles/scripts/audit-result-contract-lint.sh": "sha256:e4583cd29ebc258552b618ffa5316d599f700faf87eabbea7f797ee218201365",
+        "bubbles/scripts/audit-result-contract-lint-selftest.sh": "sha256:cf46803a6923e1f6db073be15a797ff43c174828d9972a33bdb0d03aaa2a2d41",
+        "tests/regression/test_30_planning_transition_applicability_and_baseline.sh": "sha256:3db995523b1dd182c55a0dd01aa20776884a8a64a246c709da5055f358e2bd81",
+        "targetedProcessScan": "CLEAR",
+        "movementDetected": false
+      },
+      "addressedFindings": [
+        "BUG-023-IMPLEMENTATION-MCP-DESCRIPTOR-ABSENT",
+        "BUG-023-IMPLEMENTATION-FRAMEWORK-REGISTRATIONS-ABSENT"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "BUG-023-TEST-OWNED-LIFECYCLE-SURFACES-OPEN",
+        "BUG-023-WORKFLOW-BASELINE-LIFECYCLE-REFERENCE-MISSING",
+        "BUG-023-CAPABILITY-REGISTRATION-MISSING",
+        "BUG-023-MANAGED-DOCS-AND-PROJECTION-MISSING",
+        "BUG-023-RELEASE-MANIFEST-REGENERATION-OPEN",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "implementationOwnedIntegrationCoherent": true,
+      "nextRequiredOwner": "bubbles.test",
+      "evidenceRef": "report.md#implementation-owned-lifecycle-integration---2026-07-18"
+    },
+    "productionContainment": {
+      "testPassAlteredProductionSource": false,
+      "beforeAndAfterSha256": {
+        "bubbles/scripts/guards/g040-deferral-classifier.sh": "sha256:28f8f81ea0c3dc752207efefee2e3de05295e0fecd810f4915c1315e1ac530be",
+        "bubbles/scripts/guards/g073-source-state.sh": "sha256:edc097d224c953d0a2349f9cffeb50bdcd6d8e43ace1060515f066a52da69baa",
+        "bubbles/scripts/planning-source-baseline.sh": "sha256:e2eabd0093d8de3b8adc81cf45aa8e98804f45839c1fabaf21fa5f8ebc24890b",
+        "bubbles/scripts/state-transition-guard.sh": "sha256:a920046b45d388b7ad5750f44358f23e600d49ab037eee78bc8dfed4cb1ff538",
+        "bubbles/scripts/guards/control-plane-checks.sh": "sha256:08f09b51c0733b796e9a4a750cd1536a7b709934019f9df4e123706991566f4c"
+      },
+      "preExistingUntrackedImplementationCandidates": [
+        "bubbles/scripts/guards/g040-deferral-classifier.sh",
+        "bubbles/scripts/guards/g073-source-state.sh",
+        "bubbles/scripts/planning-source-baseline.sh"
+      ],
+      "currentByteReconciliation": {
+        "testedSnapshotStableBeforeAndAfterMatrix": true,
+        "testPassAlteredProductionSource": false,
+        "protectedProducerMovedAfterMatrix": true,
+        "movedPath": "bubbles/scripts/state-transition-guard.sh",
+        "testedSha256": "sha256:426ecb1806370220b8bd9d72f7f67dc0731d81c68141f1bdd89ecca9d469f96c",
+        "latestObservedSha256": "sha256:c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857",
+        "finalFenceObservedAt": "2026-07-18T03:56:03Z",
+        "finalTargetedProcessScan": "CLEAR",
+        "owner": "bubbles.implement",
+        "disposition": "route_required"
+      }
+    },
+    "blocker": {
+      "code": "BUG-023-TEST-OWNED-LIFECYCLE-SURFACES-OPEN",
+      "status": "active",
+      "recordedBy": "bubbles.implement",
+      "recordedAt": "2026-07-18T04:26:22Z",
+      "reason": "The implementation-owned MCP descriptor and framework-validation registrations are coherent and stable at SHA-256 b92569f2683bd73f45f736d924d7e3b5f66ffeb89f1e2209e45b5c890ad20b29 and afb89b189d6e37367eb5ccd2a3f91eeb773817c0a02ad3b2dfdb8a31e9b260d9. Static descriptor, catalog-loader, argv-render, registration-order, uniqueness, Bash syntax, diff containment, diagnostics, and identity-fence checks exited zero. The dedicated baseline selftest is absent and test-owned MCP/install-provenance/current-consumer verification has not run; no frozen-matrix or framework-validation GREEN claim is made.",
+      "implementationAuthorized": false,
+      "nextRequiredOwner": "bubbles.test"
+    },
+    "blockerHistory": [
+      {
+        "code": "RUNSUBAGENT_CAPABILITY_UNAVAILABLE",
+        "status": "superseded",
+        "recordedBy": "bubbles.bug",
+        "recordedAt": "2026-07-17T19:21:28Z",
+        "reason": "The original top-level bubbles.bug runtime had no VS Code agent/runSubagent tool, so it could not invoke the mandatory owner chain in that invocation.",
+        "originalNextRequiredOwner": "bubbles.analyst",
+        "resolvedAt": "2026-07-17T20:20:41Z",
+        "resolution": "The operator confirmed completed analyst, UX, and design owner dispatches and directly invoked bubbles.plan; unavailable prior run IDs and timestamps were not reconstructed."
+      },
+      {
+        "code": "BUG_PACKET_REQUIRED_ARTIFACTS_MISSING",
+        "status": "resolved",
+        "recordedBy": "bubbles.test",
+        "recordedAt": "2026-07-18T00:18:48Z",
+        "reason": "All required planning artifacts are present. bubbles.plan restored scopes.md and test-plan.json from the exact owner-authored VS Code Local History snapshots, proved both recorded SHA-256 identities and byte equality, and passed packet lint, traceability, structural parity, JSON, and editor diagnostics.",
+        "implementationAuthorized": true,
+        "resolvedAt": "2026-07-18T00:53:15Z",
+        "supersededBy": "G094_PLANNING_MARKERS_NOT_MECHANICALLY_RECOGNIZED"
+      },
+      {
+        "code": "G094_PLANNING_MARKERS_NOT_MECHANICALLY_RECOGNIZED",
+        "status": "resolved",
+        "recordedBy": "bubbles.bug",
+        "recordedAt": "2026-07-18T03:20:53Z",
+        "reason": "The recovered scopes.md did not expose a mechanically recognized foundation:true marker or Depends On declaration naming the foundation.",
+        "implementationAuthorized": false,
+        "originalNextRequiredOwner": "bubbles.plan",
+        "resolvedAt": "2026-07-18T03:33:14Z",
+        "resolution": "bubbles.plan added the canonical Tags marker to Scope 1 and additive foundation references to every overlay dependency while preserving the strict immediate-dependency chain; Gate G094 exited 0."
+      },
+      {
+        "code": "BUG-023-RECOVERY-CONTAINMENT-BASELINE-STALE",
+        "status": "superseded",
+        "recordedBy": "bubbles.plan",
+        "recordedAt": "2026-07-18T03:33:14Z",
+        "reason": "Gate G094 passed, but the recorded RED containment hashes did not identify the current protected bytes.",
+        "implementationAuthorized": false,
+        "originalNextRequiredOwner": "bubbles.test",
+        "resolvedAt": "2026-07-18T03:47:33Z",
+        "resolution": "bubbles.test double-observed the six exact identities and completed the full frozen matrix at GREEN against guard SHA-256 426ecb1806370220b8bd9d72f7f67dc0731d81c68141f1bdd89ecca9d469f96c; a later producer write superseded this with BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST."
+      },
+      {
+        "code": "BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST",
+        "status": "resolved-for-implementation-reconciliation",
+        "recordedBy": "bubbles.test",
+        "recordedAt": "2026-07-18T03:52:08Z",
+        "reason": "state-transition-guard.sh moved after the frozen matrix and the current bytes lacked an exact delta classification.",
+        "originalNextRequiredOwner": "bubbles.implement",
+        "resolvedAt": "2026-07-18T04:05:02Z",
+        "resolution": "bubbles.implement recovered the exact tested WANz.sh snapshot and current QgeF.sh snapshot from VS Code Local History. The complete delta is two G040 human-message substitutions, the current guard remained stable at c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857 across both implementation fences, and no matrix verdict was inferred."
+      },
+      {
+        "code": "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "status": "stabilized-for-test-owner-reconciliation",
+        "recordedBy": "bubbles.implement",
+        "recordedAt": "2026-07-18T04:05:02Z",
+        "reason": "The test-owned state-transition-guard-selftest.sh moved during the prior implementation reconciliation while a foreign process was active.",
+        "originalNextRequiredOwner": "bubbles.implement",
+        "resolvedAt": "2026-07-18T04:26:22Z",
+        "resolution": "The current selftest identity 5bfd966c00e76cd7c363e6476f48bcd896f8b57d87cd89aab40edeec374b1e63 stayed stable across the pre-edit and post-code fences and the final targeted process scan was clear. Test verdict and semantic reconciliation remain owned by bubbles.test."
+      }
+    ],
+    "unresolvedFindings": [
+      {
+        "findingId": "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED",
+        "classification": "control-plane-schema-warning",
+        "owner": "bubbles.validate",
+        "reason": "Artifact lint passes with one warning that certification.scopeProgress is deprecated under the current canonical state schema.",
+        "target": "improvements/BUG-023-planning-transition-applicability-and-baseline/state.json#certification.scopeProgress",
+        "requiredAction": "Reconcile the validate-owned certification field only if the current schema requires migration; packet recovery intentionally leaves certification content unchanged."
+      },
+      {
+        "findingId": "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "classification": "evidence-integrity-protected-consumer-drift",
+        "owner": "bubbles.test",
+        "reason": "bubbles/scripts/state-transition-guard-selftest.sh moved from SHA-256 eb3f309f612cc2f1a94e903afc7dd6b18fc626d46287119f2c4b0c1601e622c9 to 5bfd966c00e76cd7c363e6476f48bcd896f8b57d87cd89aab40edeec374b1e63 during this phase while another managed selftest and guard process were active.",
+        "target": "bubbles/scripts/state-transition-guard-selftest.sh",
+        "requiredAction": "After bubbles.implement completes source lifecycle integration, publish one stable test-owned selftest identity; do not attribute a test verdict to either identity from this implementation phase."
+      },
+      {
+        "findingId": "BUG-023-TEST-OWNED-LIFECYCLE-SURFACES-OPEN",
+        "classification": "test-owned-lifecycle-verification-gap",
+        "owner": "bubbles.test",
+        "reason": "The dedicated planning-source-baseline selftest is absent, and MCP real-dispatch plus install-provenance coverage has not been extended for the new descriptor/helper lifecycle.",
+        "target": "bubbles/scripts/planning-source-baseline-selftest.sh|bubbles/scripts/mcp-server-selftest.sh|bubbles/scripts/install-provenance-selftest.sh|bubbles/scripts/state-transition-guard-selftest.sh",
+        "requiredAction": "Publish stable test-owned selftest bytes and execute the planned lifecycle, MCP/direct-twin, installed-copy, and current-consumer checks without changing the frozen test_30 contract."
+      },
+      {
+        "findingId": "BUG-023-WORKFLOW-BASELINE-LIFECYCLE-REFERENCE-MISSING",
+        "classification": "workflow-orchestration-integration-gap",
+        "owner": "framework agent/documentation owner",
+        "reason": "The workflow agent does not yet require authoritative baseline capture before planning writes or lifecycle close at planning-run termination.",
+        "target": "agents/bubbles.workflow.agent.md",
+        "requiredAction": "Add the design-specified capture-before-write, resume reuse, and close orchestration boundary without duplicating baseline logic."
+      },
+      {
+        "findingId": "BUG-023-CAPABILITY-REGISTRATION-MISSING",
+        "classification": "framework-capability-registration-gap",
+        "owner": "framework capability owner",
+        "reason": "The authoritative planning-source baseline capability and its direct Bash and MCP consumers are absent from the capability ledger.",
+        "target": "bubbles/capability-ledger.yaml",
+        "requiredAction": "Register the source-backed capability and real consumers using the capability ledger schema and freshness contract."
+      },
+      {
+        "findingId": "BUG-023-MANAGED-DOCS-AND-PROJECTION-MISSING",
+        "classification": "managed-documentation-publication-gap",
+        "owner": "bubbles.docs",
+        "reason": "The operating baseline, state-gate, scope-workflow, control-plane schema, generated capability projection, and changelog surfaces do not yet publish the reconciled lifecycle contract.",
+        "target": "agents/bubbles_shared/operating-baseline.md|agents/bubbles_shared/state-gates.md|agents/bubbles_shared/scope-workflow.md|docs/guides/CONTROL_PLANE_SCHEMAS.md|docs/generated/competitive-capabilities.md|CHANGELOG.md",
+        "requiredAction": "Synchronize managed documentation and regenerate the capability projection from the capability owner result."
+      },
+      {
+        "findingId": "BUG-023-RELEASE-MANIFEST-REGENERATION-OPEN",
+        "classification": "release-derived-artifact-gap",
+        "owner": "bubbles.releases",
+        "reason": "The release manifest does not yet carry regenerated checksums for the new descriptor and lifecycle surfaces.",
+        "target": "bubbles/release-manifest.json",
+        "requiredAction": "Regenerate the release manifest from canonical source after test, workflow, capability, and docs owners complete their surfaces."
+      }
+    ],
+    "nextRequiredOwner": "bubbles.test"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "G060 Planning Applicability",
+        "status": "not_started",
+        "dependsOn": ["bubbles.analyst", "bubbles.ux", "bubbles.design", "bubbles.plan"]
+      },
+      {
+        "scope": 2,
+        "name": "G040 Contextual Deferral Classification",
+        "status": "not_started",
+        "dependsOn": ["scope-1-planning-reconciliation"]
+      },
+      {
+        "scope": 3,
+        "name": "G073 Run-Start Source Attribution",
+        "status": "not_started",
+        "dependsOn": ["scope-1-planning-reconciliation"]
+      }
+    ],
+    "lockdownState": "open",
+    "invalidationLedger": []
+  },
+  "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "operator request"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["select", "bootstrap"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "absent",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-17T19:15:28Z",
+      "runCompletedAt": "2026-07-17T19:21:28Z",
+      "outcome": "route_required",
+      "summary": "Created and linted the complete nine-artifact BUG-023 intake packet for the G060 planning applicability, G040 lexical context, and G073 run-start attribution defects; confirmed the three concrete canonical decision paths; reserved six scenarios and test_30; preserved downstream managed copies and all delivery/certification claims; recorded zero subagent invocations because runSubagent is unavailable; and routed the mandatory canonical planning chain beginning with bubbles.analyst."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-17T20:39:55Z",
+      "timestampStatus": "start-not-recoverable-without-fabrication",
+      "outcome": "route_required",
+      "summary": "Reconciled the final 17-scenario contract into a five-scope foundation-first DAG with 44 Markdown/JSON Test Plan rows, exact Gherkin parity, unchecked DoD/evidence anchors, user acceptance, and execution-only state metadata; artifact, JSON, parity, DAG, and diagnostics checks pass; canonical traceability routes the single absent frozen regression file to bubbles.test for final-byte RED."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-18T03:33:14Z",
+      "timestampStatus": "start-not-recoverable-without-fabrication",
+      "outcome": "route_required",
+      "summary": "Repaired the canonical G094 planning markers without changing behavior, scenarios, Test Plan rows, DoD state, evidence, source, tests, implementation authorization, or certification; preserved the five-scope strict dependency chain with additive direct foundation references; and routed the stale protected-source containment baseline to bubbles.test for current-byte identity and reproduction reconciliation."
+    },
+    {
+      "agent": "bubbles.test",
+      "phasesExecuted": ["test"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-18T03:37:54Z",
+      "runCompletedAt": "2026-07-18T03:56:03Z",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG-023-RECOVERY-CONTAINMENT-BASELINE-STALE",
+        "BUG-023-RED-G040",
+        "BUG-023-RED-G060",
+        "BUG-023-RED-G073"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST",
+        "BUG-023-T040-OVERBROAD-PORTABILITY-SURFACE",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "Double-observed the frozen test and five protected producer/helper identities, executed the exact 17-scenario matrix against state-transition-guard.sh SHA-256 426ecb1806370220b8bd9d72f7f67dc0731d81c68141f1bdd89ecca9d469f96c, and observed GREEN with 575 pass controls, zero G040/G060/G073 causal failures, zero control/harness failures, 66 guard runs, 65 baseline runs, and green V2 consumer mutation controls. Passed Bash 3.2 syntax, adversarial regression quality, focused six-file portability, skip/mock scans, artifact lint, freshness, G094, traceability, and strict 44-row parity. The exact 267-file portability command reported all 13 repository-wide classes. Before framework validation, the protected guard moved to c00c9cfad5354b9ab8318428f167e72af3dd1b443608dcfd2143a66f20162857 while another guard process was active, so the later bytes remain unverified, implementation authorization stays false, broad validation was not run, and ownership routes to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": ["implement"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-18T04:05:02Z",
+      "timestampStatus": "start-not-captured-without-fabrication",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG-023-PROTECTED-PRODUCER-MOVED-DURING-TEST",
+        "BUG-023-V2-CONSUMER-HELPER-AND-JSON-VALIDATION"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "BUG-023-IMPLEMENTATION-LIFECYCLE-INTEGRATION-INCOMPLETE",
+        "BUG-023-T040-OVERBROAD-PORTABILITY-SURFACE",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "nextRequiredOwner": "bubbles.workflow",
+      "summary": "Recovered the exact tested and current guard snapshots from VS Code Local History and proved the complete drift is two G040 human-message substitutions; current guard c00c9c remained stable across both implementation fences; all eight current shell files passed Bash syntax and the strict V2 audit consumer passed 30/30 mutation cases; applied no source or test edit; classified the broader implementation as partial because five planned lifecycle integration surfaces are absent; then stopped when the test-owned managed selftest changed identity during an active foreign test process."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-18T04:16:30Z",
+      "timestampStatus": "start-not-captured-without-fabrication",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG-023-T040-OVERBROAD-PORTABILITY-SURFACE"
+      ],
+      "unresolvedFindings": [
+        "BUG-023-MANAGED-SELFTEST-MOVED-DURING-IMPLEMENTATION-RECONCILIATION",
+        "BUG-023-IMPLEMENTATION-LIFECYCLE-INTEGRATION-INCOMPLETE",
+        "BUG-023-RECOVERY-STATE-SCOPEPROGRESS-DEPRECATED"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "Narrowed T-BUG-023-040 in scopes.md and test-plan.json to the exact six-file design boundary; the corrected portability command scanned six files and passed all 13 classes; preserved 17 scenarios, 44 Markdown rows, 44 JSON rows, 44 unchecked test DoD items, report anchors, frozen test bytes, historical evidence, lifecycle findings, status, and certification; and routed the remaining source integration directly to bubbles.implement."
+    }
+  ],
+  "createdAt": "2026-07-17T19:15:28Z",
+  "updatedAt": "2026-07-18T04:16:30Z"
+}

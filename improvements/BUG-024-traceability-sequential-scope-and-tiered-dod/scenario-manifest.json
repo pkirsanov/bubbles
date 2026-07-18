@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "featureDir": "improvements/BUG-024-traceability-sequential-scope-and-tiered-dod",
+  "generatedBy": "bubbles.plan",
+  "ownershipStatus": "plan-reconciled-route-to-test-red",
+  "scenarioHashAlgorithm": "sha256(scope-tab-id-tab-title-newline)",
+  "scenarioSetHash": "sha256:36a52b0ac11c5f8c1656f4a2bc51b90240c986eef0daf8cd270551af1b9508ee",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-BUG-024-001",
+      "scope": "1",
+      "title": "exact descendant omission preserves current and prerequisites",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-001","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-001 exact descendant omission preserves current and prerequisites"}],
+      "evidenceRefs": ["report.md#t-bug-024-001"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-002",
+      "scope": "1",
+      "title": "completed prerequisite gaps remain blocking",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-002","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-002 completed prerequisite gaps remain blocking"}],
+      "evidenceRefs": ["report.md#t-bug-024-002"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-003",
+      "scope": "1",
+      "title": "independent and non-not-started descendants stay visible",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-003","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-003 independent and non-not-started descendants stay visible"}],
+      "evidenceRefs": ["report.md#t-bug-024-003"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-004",
+      "scope": "1",
+      "title": "canonical certification registry resolves exact aliases",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-004","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-004 canonical certification registry resolves exact aliases"}],
+      "evidenceRefs": ["report.md#t-bug-024-004"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-005",
+      "scope": "1",
+      "title": "execution registry precedence cross-checks certification",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-005","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-005 execution registry precedence cross-checks certification"}],
+      "evidenceRefs": ["report.md#t-bug-024-005"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-006",
+      "scope": "1",
+      "title": "malformed identities types dependencies and cycles refuse",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-006","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-006 malformed identities types dependencies and cycles refuse"}],
+      "evidenceRefs": ["report.md#t-bug-024-006"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-007",
+      "scope": "1",
+      "title": "unsafe paths filesystem drift and completion mismatch refuse",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-007","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-007 unsafe paths filesystem drift and completion mismatch refuse"}],
+      "evidenceRefs": ["report.md#t-bug-024-007"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-008",
+      "scope": "1",
+      "title": "terminal and final contexts refuse reduced evaluation",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-008","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-008 terminal and final contexts refuse reduced evaluation"}],
+      "evidenceRefs": ["report.md#t-bug-024-008"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-009",
+      "scope": "1",
+      "title": "the CLI context surface is closed",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-009","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-009 the CLI context surface is closed"}],
+      "evidenceRefs": ["report.md#t-bug-024-009"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-010",
+      "scope": "1",
+      "title": "per-directory and single-file mapping is proof-based",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-010","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-010 per-directory and single-file mapping is proof-based"}],
+      "evidenceRefs": ["report.md#t-bug-024-010"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-011",
+      "scope": "1",
+      "title": "no-scenario findings follow applicability",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-011","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-011 no-scenario findings follow applicability"}],
+      "evidenceRefs": ["report.md#t-bug-024-011"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-012",
+      "scope": "1",
+      "title": "DoD starts at depths one through four retain deeper tiers",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-012","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-012 DoD starts at depths one through four retain deeper tiers"}],
+      "evidenceRefs": ["report.md#t-bug-024-012"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-013",
+      "scope": "1",
+      "title": "DoD boundaries false starts and failure states are distinct",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-013","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-013 DoD boundaries false starts and failure states are distinct"}],
+      "evidenceRefs": ["report.md#t-bug-024-013"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-014",
+      "scope": "2",
+      "title": "one projection feeds every traceability pass",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-017","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-014 one projection feeds every traceability pass"}],
+      "evidenceRefs": ["report.md#t-bug-024-017","report.md#t-bug-024-023","report.md#t-bug-024-026","report.md#t-bug-024-031"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-015",
+      "scope": "2",
+      "title": "terminal Check 4A and Check 22 share DoD semantics",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-018","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-015 terminal Check 4A and Check 22 share DoD semantics"}],
+      "evidenceRefs": ["report.md#t-bug-024-018","report.md#t-bug-024-024"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-016",
+      "scope": "2",
+      "title": "BUG-018 Test Plan behavior and bytes stay unchanged",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-019","file":"tests/regression/test_25_traceability_test_plan_heading_depth.sh","testTitle":"SCN-BUG-024-016 BUG-018 Test Plan behavior and bytes stay unchanged"}],
+      "evidenceRefs": ["report.md#t-bug-024-019"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-017",
+      "scope": "2",
+      "title": "managed and final consumers remain all-scope",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-020","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-017 managed and final consumers remain all-scope"}],
+      "evidenceRefs": ["report.md#t-bug-024-020","report.md#t-bug-024-023","report.md#t-bug-024-024","report.md#t-bug-024-025","report.md#t-bug-024-026"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-018",
+      "scope": "2",
+      "title": "shell behavior is portable across supported Bash runtimes",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-021","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-018 shell behavior is portable across supported Bash runtimes"}],
+      "evidenceRefs": ["report.md#t-bug-024-021","report.md#t-bug-024-027","report.md#t-bug-024-032"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    },
+    {
+      "scenarioId": "SCN-BUG-024-019",
+      "scope": "2",
+      "title": "canonical release and supported downstream replay agree",
+      "requiredTestType": "functional",
+      "linkedTests": [{"testId":"T-BUG-024-022","file":"tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh","testTitle":"SCN-BUG-024-019 canonical release and supported downstream replay agree"}],
+      "evidenceRefs": ["report.md#t-bug-024-022","report.md#t-bug-024-033","report.md#t-bug-024-034","report.md#t-bug-024-035","report.md#t-bug-024-036","report.md#t-bug-024-037","report.md#t-bug-024-038","report.md#t-bug-024-039","report.md#t-bug-024-040"],
+      "regressionRequired": true,
+      "adversarialRegressionRequired": true,
+      "lockdown": false
+    }
+  ]
+}

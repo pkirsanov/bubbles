@@ -1,0 +1,255 @@
+{
+  "version": 3,
+  "featureDir": "improvements/BUG-024-traceability-sequential-scope-and-tiered-dod",
+  "workflowMode": "bugfix-fastlane",
+  "status": "in_progress",
+  "releaseTrain": "framework-next",
+  "flagsIntroduced": [],
+  "execution": {
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "plan",
+    "currentScope": null,
+    "runStartedAt": null,
+    "runCompletedAt": "2026-07-18T22:02:24Z",
+    "runTimestampStatus": "plan-start-not-captured-without-fabrication",
+    "executionModel": "top-level-goal-direct-authorized-specialist",
+    "completedPhaseClaims": [],
+    "invocationLedger": [],
+    "planningContract": {
+      "scopeCount": 2,
+      "scenarioCount": 19,
+      "testPlanRowCount": 41,
+      "markdownTestPlanRowCount": 41,
+      "testDodItemCount": 41,
+      "reportAnchorCount": 41,
+      "allDodUnchecked": true,
+      "scenarioHashAlgorithm": "sha256(scope-tab-id-tab-title-newline)",
+      "scenarioSetHash": "sha256:36a52b0ac11c5f8c1656f4a2bc51b90240c986eef0daf8cd270551af1b9508ee",
+      "scopes": [
+        {
+          "scope": 1,
+          "scopeId": "01-applicable-universe-and-dod-extraction-foundation",
+          "name": "Applicable-Universe And DoD-Extraction Foundation",
+          "status": "not_started",
+          "dependsOn": [],
+          "foundation": true,
+          "scopeKind": "runtime-behavior"
+        },
+        {
+          "scope": 2,
+          "scopeId": "02-guard-integration-terminal-parity-and-canonical-delivery",
+          "name": "Guard Integration, Terminal Parity, And Canonical Delivery",
+          "status": "not_started",
+          "dependsOn": [1],
+          "foundation": false,
+          "scopeKind": "runtime-behavior"
+        }
+      ],
+      "reservedRegressionPath": "tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh",
+      "reservedRegressionExists": false,
+      "sourceEditsApplied": [],
+      "testEditsApplied": []
+    },
+    "planningValidation": {
+      "synchronizationExit": 0,
+      "activeScopeCount": 2,
+      "scenarioCount": 19,
+      "markdownTestPlanRowCount": 41,
+      "jsonTestPlanRowCount": 41,
+      "testDodItemCount": 41,
+      "reportAnchorCount": 41,
+      "scenarioContractMismatchCount": 0,
+      "scenarioSetHash": "sha256:36a52b0ac11c5f8c1656f4a2bc51b90240c986eef0daf8cd270551af1b9508ee",
+      "artifactLintExit": 0,
+      "artifactLintWarnings": ["deprecated certification.scopeProgress retained unchanged by planning ownership"],
+      "artifactFreshnessExit": 0,
+      "capabilityFoundationG094Exit": 0,
+      "capabilityFoundationDisposition": "grandfathered because state.json.createdAt is absent",
+      "traceabilityExit": 1,
+      "traceabilityFailureCount": 39,
+      "traceabilityWarningCount": 0,
+      "traceabilityOpenClasses": {
+        "manifestLinksToAbsentTest31": 18,
+        "selectedRowsResolvingToAbsentTest31UnderCurrentMatcher": 19,
+        "knownTieredDodExtractorFailures": 2
+      },
+      "editorDiagnosticCount": 0,
+      "gitDiffCheckExit": 0,
+      "sourceTestsRun": false,
+      "deliveryEvidenceClaimed": false
+    },
+    "reproduction": {
+      "command": "cd /Users/pkirsanov/Projects/research-lab && bash ../bubbles/bubbles/scripts/traceability-guard.sh specs/007-technical-analysis-decision-lab",
+      "exitCode": 1,
+      "claimSource": "executed",
+      "failureCount": 37,
+      "warningCount": 0,
+      "scenarioCount": 32,
+      "testRowCount": 90,
+      "scenarioMappingCount": 22,
+      "reportReferenceCount": 4,
+      "dodFidelityScenarioCount": 0,
+      "evidenceRef": "report.md#bug-reproduction---before-fix"
+    },
+    "addressedFindings": [
+      {
+        "findingId": "BUG024-P001-FOUNDATION-ORDERING",
+        "resolution": "Replaced the one-scope intake with exactly two runtime-behavior scopes; Scope 1 is foundation:true and Scope 2 depends on Scope 1.",
+        "evidenceRef": "scopes.md#scope-inventory"
+      },
+      {
+        "findingId": "BUG024-P002-TEST-MATRIX-DRIFT",
+        "resolution": "Expanded to 19 scenario contracts and 41 synchronized Markdown/machine/DoD/report rows covering every design-derived adversary.",
+        "evidenceRef": "scopes.md#execution-outline"
+      },
+      {
+        "findingId": "BUG024-P003-CHANGE-BOUNDARY-DRIFT",
+        "resolution": "Bound BUG-024 to surgical traceability/state-transition regions, managed/source-only registration and provenance, owner-managed docs/release, and protected all concurrent bytes.",
+        "evidenceRef": "scopes.md#shared-change-boundary"
+      }
+    ],
+    "unresolvedFindings": [
+      {
+        "findingId": "BUG024-T001-FINAL-BYTE-RED-REQUIRED",
+        "classification": "test-final-byte-causal-red-required",
+        "owner": "bubbles.test",
+        "target": "tests/regression/test_31_traceability_sequential_scope_and_tiered_dod.sh",
+        "reason": "The reserved source-only regression is intentionally physically absent and no causal RED has been captured against a stable unchanged producer identity.",
+        "requiredAction": "Create complete final regression bytes, freeze test and producer hashes, execute the full matrix against unchanged production, and record causal RED before any production mutation."
+      },
+      {
+        "findingId": "BUG024-F001-SEQUENTIAL-SCOPE-APPLICABILITY",
+        "classification": "production-traceability-applicability-defect",
+        "owner": "bubbles.implement",
+        "target": "bubbles/scripts/traceability-guard.sh#scope_files|scope_analysis_files|G057|G059",
+        "reason": "Per-directory filesystem discovery is reused as the applicable scope set and ignores current scope, status, dependencies, and completed scope state.",
+        "requiredAction": "After valid test-owned causal RED, implement the reconciled ApplicableUniverse and project it through every traceability pass within the surgical boundary."
+      },
+      {
+        "findingId": "BUG024-F002-TIERED-DOD-BOUNDARY",
+        "classification": "production-markdown-section-boundary-defect",
+        "owner": "bubbles.implement",
+        "target": "bubbles/scripts/traceability-guard.sh#extract_dod_items|G068",
+        "reason": "The extractor exits on every level-1 through level-4 heading and therefore truncates level-2/level-3 DoD sections at accepted nested tier headings.",
+        "requiredAction": "After valid test-owned causal RED, implement selected-depth DoD extraction and Check 4A/22 parity without changing BUG-018 Test Plan behavior or G068 thresholds."
+      }
+    ],
+    "blocker": {
+      "code": "BUG024-TEST-FINAL-BYTE-RED-REQUIRED",
+      "status": "active",
+      "reason": "Planning is reconciled, but the reserved physical regression and stable-source causal RED do not exist; production mutation remains unauthorized.",
+      "implementationAuthorized": false,
+      "nextRequiredOwner": "bubbles.test"
+    },
+    "nextRequiredOwner": "bubbles.test"
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "State-Bound Sequential Applicability And Heading-Aware DoD",
+        "status": "not_started",
+        "dependsOn": []
+      }
+    ],
+    "lockdownState": "open",
+    "invalidationLedger": []
+  },
+  "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
+    "grill": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "tdd": {
+      "enabled": true,
+      "source": "bugfix-fastlane"
+    },
+    "autoCommit": {
+      "enabled": false,
+      "source": "operator request"
+    },
+    "lockdown": {
+      "enabled": false,
+      "source": "bugfix-fastlane"
+    },
+    "regression": {
+      "required": true,
+      "adversarialRequired": true,
+      "source": "bug policy"
+    },
+    "validation": {
+      "profile": "delivery-completion-v1",
+      "source": "bugfix-fastlane"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["select", "bootstrap"],
+      "featureDir": "improvements/BUG-024-traceability-sequential-scope-and-tiered-dod",
+      "statusBefore": "absent",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": null,
+      "timestampStatus": "timestamps-not-captured-without-fabrication",
+      "outcome": "route_required",
+      "addressedFindings": ["BUG024-INTAKE-COMPLETE", "BUG024-RELATED-018"],
+      "unresolvedFindings": ["BUG024-F001-SEQUENTIAL-SCOPE-APPLICABILITY", "BUG024-F002-TIERED-DOD-BOUNDARY"],
+      "nextRequiredOwner": "bubbles.design",
+      "summary": "Created the complete nine-artifact BUG-024 intake packet; reproduced the canonical 37-finding Feature 007 result once; confirmed unconditional per-directory scope loading and fixed any-heading DoD termination; reserved only the free test_31 path in planning artifacts; changed no source, test, release, existing bug, or Research Lab byte; and routed design ownership to bubbles.design."
+    },
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": ["bootstrap"],
+      "featureDir": "improvements/BUG-024-traceability-sequential-scope-and-tiered-dod",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": "2026-07-18T21:27:24Z",
+      "runCompletedAt": "2026-07-18T21:39:25Z",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG024-D001-ONE-UNIVERSE-DESIGN",
+        "BUG024-D002-TIERED-DOD-DESIGN",
+        "BUG024-D003-STATE-TRANSITION-OVERLAP"
+      ],
+      "unresolvedFindings": [
+        "BUG024-F001-SEQUENTIAL-SCOPE-APPLICABILITY",
+        "BUG024-F002-TIERED-DOD-BOUNDARY",
+        "BUG024-P001-FOUNDATION-ORDERING",
+        "BUG024-P002-TEST-MATRIX-DRIFT",
+        "BUG024-P003-CHANGE-BOUNDARY-DRIFT"
+      ],
+      "nextRequiredOwner": "bubbles.plan",
+      "summary": "Reconciled design.md around one state-bound ApplicableUniverse, fail-closed version-3 registry compatibility, all-scope terminal consumers, depth-aware DoD extraction across existing depths 1-4, state-transition Check 4A/22 parity, exact CLI exits, proof-based single-file mapping, G094 foundation ordering, managed/source-only delivery, and rollback boundaries; preserved status, certification, DoD, evidence, source, tests, release metadata, protected concurrent files, and all downstream bytes; routed plan-owned reconciliation to bubbles.plan."
+    },
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "featureDir": "improvements/BUG-024-traceability-sequential-scope-and-tiered-dod",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "runStartedAt": null,
+      "runCompletedAt": "2026-07-18T22:02:24Z",
+      "timestampStatus": "start-not-captured-without-fabrication",
+      "outcome": "route_required",
+      "addressedFindings": [
+        "BUG024-P001-FOUNDATION-ORDERING",
+        "BUG024-P002-TEST-MATRIX-DRIFT",
+        "BUG024-P003-CHANGE-BOUNDARY-DRIFT"
+      ],
+      "unresolvedFindings": [
+        "BUG024-T001-FINAL-BYTE-RED-REQUIRED",
+        "BUG024-F001-SEQUENTIAL-SCOPE-APPLICABILITY",
+        "BUG024-F002-TIERED-DOD-BOUNDARY"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "Reconciled exactly two single-file runtime scopes with Scope 1 foundation:true and Scope 2 dependent; expanded to 19 hashed scenario contracts and 41 synchronized non-live CLI test rows, DoD items, and not-run anchors; assigned final-byte RED, implementation, managed tests, docs, release, and supported upgrade to distinct owners; preserved all status, certification, completed phase claims, source, tests, release metadata, concurrent bug packets, and Research Lab bytes; routed physical test creation and stable-source causal RED to bubbles.test."
+    }
+  ]
+}
