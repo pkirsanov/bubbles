@@ -228,7 +228,7 @@ if [[ -z "$audit_profile" ]]; then
   fi
   fail 71 E009-AUDIT-PROFILE-UNSUPPORTED "resolved mode has no supported transition audit contract"
 fi
-if [[ "$audit_profile" != "planning-maturity-v1" && "$audit_profile" != "delivery-completion-v1" ]]; then
+if [[ "$audit_profile" != "planning-maturity-v1" && "$audit_profile" != "delivery-completion-v1" && "$audit_profile" != "delivery-completion-fast-v1" ]]; then
   fail 71 E009-AUDIT-PROFILE-UNSUPPORTED "resolved mode declares an unknown transition audit profile"
 fi
 if [[ "$transition_target" != "statusCeiling" ]]; then
@@ -251,6 +251,13 @@ if [[ "$audit_profile" == "planning-maturity-v1" ]]; then
     || has_phase implement \
     || has_phase test; then
     fail 72 E009-AUDIT-PROFILE-CONTRADICTION "planning profile invariants contradict the resolved mode"
+  fi
+elif [[ "$audit_profile" == "delivery-completion-fast-v1" ]]; then
+  # Fast delivery lane (IMP-100 Phase 2 R4): full implement+test+validate
+  # assurance and a `done` ceiling, but no heavyweight `audit` phase — used by
+  # rapid-tool-delivery, whose phase order intentionally omits audit.
+  if [[ "$status_ceiling" != "done" ]] || ! has_phase validate || ! has_phase implement || ! has_phase test; then
+    fail 72 E009-AUDIT-PROFILE-CONTRADICTION "fast delivery profile ceiling or required phases contradict the resolved mode"
   fi
 else
   if [[ "$status_ceiling" != "done" ]] || ! has_phase validate || ! has_phase audit; then

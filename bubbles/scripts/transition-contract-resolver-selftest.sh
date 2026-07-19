@@ -236,7 +236,7 @@ schema_contract_tests() {
     | $contract.type == "object"
       and $contract.required == ["profile", "target"]
       and $contract.additionalProperties == false
-      and (($contract.properties.profile.enum | sort) == (["delivery-completion-v1", "planning-maturity-v1"] | sort))
+      and (($contract.properties.profile.enum | sort) == (["delivery-completion-fast-v1", "delivery-completion-v1", "planning-maturity-v1"] | sort))
       and $contract.properties.target.const == "statusCeiling"
   ' "$SCHEMA" >/dev/null 2>&1; then
     pass "transitionAudit schema is closed to the designed profile and target fields"
@@ -361,6 +361,31 @@ assert_json "$planning_contract" '.contractRef == "bubbles/workflows/modes.yaml#
 assert_json "$planning_contract" '(.contractDigest | test("^sha256:[0-9a-f]{64}$")) and (.targetRevision | test("^sha256:[0-9a-f]{64}$"))' "planning contract carries deterministic SHA-256 identities"
 assert_json "$hardening_contract" '.workflowMode == "spec-scope-hardening" and .auditProfile == "planning-maturity-v1" and .targetStatus == "specs_hardened" and .sourceEditLockoutRequired == true' "scope hardening satisfies the planning profile invariants"
 assert_json "$delivery_contract" '.workflowMode == "bugfix-fastlane" and .auditProfile == "delivery-completion-v1" and .targetStatus == "done"' "delivery mode retains explicit completion semantics"
+
+# Fast delivery lane (IMP-100 Phase 2 R4): rapid-tool-delivery has a `done`
+# ceiling and full implement+test+validate assurance but NO `audit` phase, so it
+# uses delivery-completion-fast-v1. Under delivery-completion-v1 it would fail
+# E009-AUDIT-PROFILE-CONTRADICTION (the audit phase is required) — this proves
+# the fast profile resolves the real mode cleanly.
+rapid_feature="$WORKSPACE/specs/018-rapid-tool-delivery"
+write_feature "$rapid_feature" rapid-tool-delivery
+rapid_contract="$WORKSPACE/rapid-contract.json"
+if bash "$RESOLVER" "$rapid_feature" > "$rapid_contract"; then
+  pass "rapid-tool-delivery resolves through the fast delivery profile"
+else
+  fail_test "rapid-tool-delivery resolves through the fast delivery profile"
+fi
+assert_json "$rapid_contract" '.workflowMode == "rapid-tool-delivery" and .auditProfile == "delivery-completion-fast-v1" and .statusCeiling == "done" and .targetStatus == "done"' "rapid-tool-delivery uses the fast delivery profile over a done ceiling"
+
+# The fast profile still enforces implement+test+validate: drop `test` and it
+# must fail the contradiction check (no silent assurance relaxation).
+fast_missing_test_root="$WORKSPACE/fast-missing-test-layout"
+fast_missing_test_framework="$(copy_framework_layout installed "$fast_missing_test_root")"
+yq -i '.modes["rapid-tool-delivery"].phaseOrder = ["select", "implement", "validate", "docs", "finalize"]' "$fast_missing_test_framework/workflows/modes.yaml"
+rapid_missing_test_feature="$WORKSPACE/specs/019-rapid-missing-test"
+write_feature "$rapid_missing_test_feature" rapid-tool-delivery
+assert_failure "fast profile missing test phase" 72 E009-AUDIT-PROFILE-CONTRADICTION \
+  bash "$fast_missing_test_framework/scripts/transition-contract-resolver.sh" "$rapid_missing_test_feature"
 
 expected_planning_mode="$WORKSPACE/product-to-planning.resolved.yaml"
 bash "$MODE_RESOLVER" --grandfather product-to-planning > "$expected_planning_mode" 2> "$WORKSPACE/product-to-planning.resolved.err"
