@@ -42,15 +42,13 @@ Every change satisfies the §7 coherence guardrails or is rejected. This is one 
 
 ## 3. Phase 0 — Stabilize the state machine (foundation; unblocks everything)
 
-**Reconciliation 2026-07-18 (verified against source + green tests): 8 of 11 Phase-0 defects are ALREADY DONE** and are removed from this plan — BUG-012 (`test_04` green; first-adoption classifier in `framework-dogfood-guard.sh`), BUG-013 (`test_24`), BUG-018 (`test_25`; `## `+`### Test Plan` both recognized), BUG-019 (`test_26`), BUG-020 (`test_27`), BUG-021 (`test_28`; `framework-validate.sh` sources `guard-lib.sh` + `bubbles_run_with_timeout`), BUG-022 (`test_29`), and BUG-025 (`test_32`; fixed + pushed this session, commit `de4ba40`). Three remain:
+**Reconciliation 2026-07-18 (verified against source + green tests): 10 of 11 Phase-0 defects are DONE** and removed from this plan. Already fixed before this session: BUG-012 (`test_04`), BUG-013 (`test_24`), BUG-018 (`test_25`), BUG-019 (`test_26`), BUG-020 (`test_27`), BUG-021 (`test_28`), BUG-022 (`test_29`). Fixed + pushed this session: BUG-025 (`test_32`, `de4ba40`), BUG-024 (`test_31`, `7f35de1`), BUG-023 (`test_30`, `e2c7536`). **One remains:**
 
 | Defect | Status | Root cause | Fix direction | Guard test |
 |---|---|---|---|---|
-| **BUG-023** result-envelope outcome-contract drift | in_progress (concurrent WIP stashed; take over) | the result-envelope skill omits `completed_diagnostic`, presents `done_with_concerns` as a NEW outcome, and ships stale status-writing guidance that conflicts with the authoritative modules + G092 | reconcile every guidance surface to exactly `completed_owned` / `completed_diagnostic` / `route_required` / `blocked`; **resolve the folder-number collision** (this vs the historical planning-transition BUG-023) | test_30 |
-| **BUG-024** create-skill placeholder stubs | in_progress (concurrent WIP stashed; take over) | `bubbles.create-skill.agent.md` requires `When NOT to use` / `Works well with` stubs even when the interview has no content → violates the framework's own no-stubs bar | emit those sections only when concrete verified content exists; omit cleanly otherwise | test_31 |
 | **BUG-026** traceability sequential-scope + tiered-DoD | in_progress (owned; spec + design done, no code yet) | guard analyzes a per-scope-dir packet as one all-scope universe even when validated v3 state names one current sequential scope; also rejects plan-owned tiered DoD that artifact-lint accepts | new `scope-universe-resolver.py` (stdlib) + one shared bash-3.2-safe DoD helper consumed by traceability G068 and transition Check 4A/22; omit only exact `not_started` transitive descendants | test_33 |
 
-**Done when:** BUG-023 / BUG-024 / BUG-026 terminal; `framework-validate` green on the committed tree.
+**Done when:** BUG-026 terminal; `framework-validate` green on the committed tree.
 
 ---
 
