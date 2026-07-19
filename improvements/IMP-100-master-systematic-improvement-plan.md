@@ -38,6 +38,15 @@ Every change satisfies the §7 coherence guardrails or is rejected. This is one 
 | IMP-005 framework housekeeping | SCOPE-1 done; rest proposed | 6 | Reuse-first |
 | BUG-012…BUG-026 | ✅ all 11 done | 0 | Honest (state machine) |
 
+### Reconciliation 2026-07-19 (verified against source — the plan understated completion)
+
+A source audit (grep the defining identifier of each SCOPE; done ⇔ present + green selftest) shows the true remaining surface is smaller than the phase structure implies:
+
+- **✅ DONE (verified):** Phase 0 (all 11 defects). Phase 1 core — SCOPE-1 `risk-tier-resolve` (`riskClass`/`minimumAssurance`), SCOPE-2/3 `rapid-tool-delivery` mode + per-mode G128 budget, SCOPE-5 NL routing, SCOPE-6 advisory→mechanical wording. Phase 4 SCOPE-7 vertical-delivery-plan-guard **blocking mode** (`verticalPlanGuard: block` opt-in already works). Phase 5 SCOPE-1/2 `readiness-review` mode + validate-owned `readinessVerdict`. Phase 6 IMP-001 `journey` phase/agent + `guidedJourney` + `experientialFriction`.
+- **⛔ GENUINELY REMAINING (absent in source):** Phase 1 SCOPE-4 risk-adjusted scope budget (≤3 increments/≤5 scopes bound to the tier — NOT in `vertical-delivery-plan-guard.sh`). Phase 2 execution substates (`implemented`/`independently_verified`/`needs_reverification`) + evidence receipts; R4 terminal states `delivered_fast`/`delivered_prototype`. Phase 3 assurance-gated deploy (`minimumAssurance` in release reconciliation + adapter preflight prototype-refusal). Phase 4 R6 `workBoundary`. Phase 6 IMP-020 S4–S7 (held-out eval / effective-bundle) + IMP-005 SCOPE-2–5.
+- **Method:** each remaining item is a multi-file vertical (schema/field + mechanical guard + hermetic selftest wired into `framework-validate` + agent contract) per the §10 guardrails; verify-before-implement to avoid re-doing shipped work.
+
+
 ---
 
 ## 3. Phase 0 — Stabilize the state machine (foundation; unblocks everything) ✅ COMPLETE
