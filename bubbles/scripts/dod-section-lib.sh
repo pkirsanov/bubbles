@@ -12,6 +12,10 @@
 # equal to the start depth. Headings inside fenced code blocks (``` or ~~~) or
 # HTML comments (<!-- ... -->) are inert. Depths 5 and 6 never START a section.
 #
+# Checkbox grammar matches the owning guards exactly: `- [x] ` / `- [ ] ` with a
+# single trailing space (no `- [X]`); the depth-aware boundary is the only
+# behavior the guards did not already have.
+#
 # Emitted record protocol (tab-delimited, internal/versioned; consumers MUST
 # require exactly one terminal STATUS record and reject malformed output):
 #   SECTION  <start-line>  <depth>          <visible-title>
@@ -93,10 +97,10 @@ dod_section_parse() {
 
       # --- column-zero list content inside an open DoD section ---
       if (in_dod && raw ~ /^- /) {
-        if (raw ~ /^- \[[ xX]\][[:space:]]/) {
-          if (raw ~ /^- \[[xX]\][[:space:]]/) { checked = "checked" } else { checked = "unchecked" }
+        if (raw ~ /^- \[[ x]\] /) {
+          if (raw ~ /^- \[x\] /) { checked = "checked" } else { checked = "unchecked" }
           item = raw
-          sub(/^- \[[ xX]\][[:space:]]+/, "", item)
+          sub(/^- \[[ x]\] /, "", item)
           printf "CHECKBOX\t%d\t%s\t%s\n", NR, checked, item
           printf "LIST\t%d\tcheckbox\t%s\n", NR, raw
           row_count++

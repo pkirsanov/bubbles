@@ -3,6 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/dod-section-lib.sh"
+
 if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
   # shellcheck source=/dev/null
   source "$SCRIPT_DIR/fun-mode.sh"
@@ -295,14 +298,15 @@ extract_test_rows() {
 
 extract_dod_items() {
   local scope_path="$1"
-  awk '
-    /^#{1,4}.*Definition of Done|^#{1,4}.*DoD/ {in_dod=1; next}
-    /^#{1,4} / {if (in_dod) exit}
-    in_dod && /^- \[(x| )\] / {
-      sub(/^- \[(x| )\] /, "", $0)
-      print
-    }
-  ' "$scope_path"
+  # BUG-026: route through the shared DoD section parser so the tiered-DoD
+  # boundary is correct (nested tier subheadings are retained through depth 6
+  # and the section ends only at a same-or-shallower heading) and identical to
+  # state-transition Check 4A/22. Emits the checkbox item text after the marker,
+  # one per line — the same shape the previous inline awk produced, without the
+  # depth-4-tier false boundary that made valid DoDs look rowless (BUG026-F002).
+  dod_section_parse "$scope_path" | awk -F'\t' '
+    $1 == "CHECKBOX" { out = $4; for (i = 5; i <= NF; i++) out = out "\t" $i; print out }
+  '
 }
 
 scenario_matches_dod() {
