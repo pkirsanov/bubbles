@@ -1282,15 +1282,15 @@ executionOptions:
     maxTotalConvergenceIterations:
       type: integer
       default: null
-      meaning: Aggregate cap on convergence iterations across ALL specs in one goal/sprint session. null = unbounded (today). Advisory — orchestrators self-enforce and stop with a blocked RESULT-ENVELOPE when exceeded.
+      meaning: Aggregate cap on convergence iterations across ALL specs in one goal/sprint session. null = unbounded (default, opt-in). When non-null, MECHANICALLY enforced by Gate G128 (session-cap-guard.sh, state-transition Check 40) — the orchestrator also self-enforces and stops with a blocked RESULT-ENVELOPE when exceeded.
     maxWallClockMinutes:
       type: integer
       default: null
-      meaning: Aggregate wall-clock budget for the whole session. null = unbounded. Advisory.
+      meaning: Aggregate wall-clock budget for the whole session. null = unbounded (default, opt-in). When non-null, mechanically enforced by Gate G128 (session-cap-guard.sh).
     maxToolCalls:
       type: integer
       default: null
-      meaning: Aggregate tool-call budget for the whole session. null = unbounded. Advisory.
+      meaning: Aggregate tool-call budget for the whole session. null = unbounded (default, opt-in). When non-null, mechanically enforced by Gate G128 (session-cap-guard.sh).
 
   defaultPolicyBehavior:
     scenarioTddDefault: scenario-first
