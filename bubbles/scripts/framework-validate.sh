@@ -246,6 +246,7 @@ run_check "Workflow registry consistency" bash "$SCRIPT_DIR/workflow-registry-co
 run_check "Mode resolver validate" bash "$SCRIPT_DIR/mode-resolver.sh" --validate
 run_check "Mode resolver selftest" bash "$SCRIPT_DIR/mode-resolver-selftest.sh"
 run_check "Risk-tier resolver selftest (BFW-01 / IMP-021)" bash "$SCRIPT_DIR/risk-tier-resolve-selftest.sh"
+run_check "Rapid-tool-delivery mode selftest (IMP-100 Phase 1)" bash "$SCRIPT_DIR/rapid-tool-delivery-mode-selftest.sh"
 run_check "Transition contract resolver selftest (BUG-009 S02)" bash "$SCRIPT_DIR/transition-contract-resolver-selftest.sh"
 run_check "Audit result contract lint selftest (BUG-009 S04)" bash "$SCRIPT_DIR/audit-result-contract-lint-selftest.sh"
 run_check "Mode alias selftest (v6.0 / B4)" bash "$SCRIPT_DIR/mode-alias-selftest.sh"
