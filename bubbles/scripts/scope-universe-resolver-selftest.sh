@@ -45,20 +45,20 @@ write_state "$d" '{
   "certification": {
     "status": "in_progress",
     "scopeProgress": [
-      {"scope": 1, "status": "done", "dependsOn": []},
-      {"scope": 2, "status": "in_progress", "dependsOn": ["1"]},
-      {"scope": 3, "status": "not_started", "dependsOn": ["2"]},
-      {"scope": 4, "status": "in_progress", "dependsOn": ["2"]}
+      {"scope": 1, "status": "done", "dependsOn": [], "scopeDir": "scopes/01-foundation"},
+      {"scope": 2, "status": "in_progress", "dependsOn": ["1"], "scopeDir": "scopes/02-current"},
+      {"scope": 3, "status": "not_started", "dependsOn": ["2"], "scopeDir": "scopes/03-later"},
+      {"scope": 4, "status": "in_progress", "dependsOn": ["2"], "scopeDir": "scopes/04-parallel"}
     ]
   },
   "execution": {"currentScope": 2, "currentPhase": "implement"}
 }'
 out="$(run_resolver "$d")"; rc=$?
 if [[ "$rc" -eq 0 ]]; then pass "happy path resolves (exit 0)"; else fail "happy path exit $rc"; fi
-printf '%s\n' "$out" | grep -qE '^RECORD	2	in_progress	true	' && pass "scope 2 marked isCurrent" || fail "scope 2 not marked current"
-printf '%s\n' "$out" | grep -qE '^RECORD	3	not_started	false	true	false$' && pass "not_started descendant (3) omitted (applicable=false)" || fail "scope 3 omission wrong"
-printf '%s\n' "$out" | grep -qE '^RECORD	4	in_progress	false	true	true$' && pass "in_progress descendant (4) stays applicable" || fail "scope 4 applicability wrong"
-printf '%s\n' "$out" | grep -qE '^RECORD	1	done	false	false	true$' && pass "prerequisite (1) stays applicable" || fail "scope 1 applicability wrong"
+printf '%s\n' "$out" | awk -F'\t' '$1=="RECORD"&&$2=="2"&&$4=="true"{f=1}END{exit !f}' && pass "scope 2 marked isCurrent" || fail "scope 2 not marked current"
+printf '%s\n' "$out" | awk -F'\t' '$1=="RECORD"&&$2=="3"&&$5=="true"&&$6=="false"&&$7=="scopes/03-later"{f=1}END{exit !f}' && pass "not_started descendant (3) omitted (applicable=false), scopeDir emitted" || fail "scope 3 omission/scopeDir wrong"
+printf '%s\n' "$out" | awk -F'\t' '$1=="RECORD"&&$2=="4"&&$5=="true"&&$6=="true"&&$7=="scopes/04-parallel"{f=1}END{exit !f}' && pass "in_progress descendant (4) stays applicable" || fail "scope 4 applicability wrong"
+printf '%s\n' "$out" | awk -F'\t' '$1=="RECORD"&&$2=="1"&&$5=="false"&&$6=="true"&&$7=="scopes/01-foundation"{f=1}END{exit !f}' && pass "prerequisite (1) stays applicable" || fail "scope 1 applicability wrong"
 
 # helper: assert a fixture refuses with exit 2
 assert_refuse() {

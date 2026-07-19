@@ -214,7 +214,7 @@
     {"path": "bubbles/scripts/scan-lib.sh", "sha256": "fda29b69d671ad71c4235e8359001923f5b4b7ea36df97e63d1d4b580ba55262"},
     {"path": "bubbles/scripts/scenario-compile-lint-selftest.sh", "sha256": "b8be4de402a695b9baa323947b9819e32d61c823b76ee0fa882d19a31f89b6ba"},
     {"path": "bubbles/scripts/scenario-compile-lint.sh", "sha256": "8725d99302ed01d34731ec4c273ecd2c2ad0ac16ae4604176c8db76f1c9ccfbd"},
-    {"path": "bubbles/scripts/scope-universe-resolver-selftest.sh", "sha256": "42b4e8cf484ee7cc6b6876c4671d6f7125738d1687ba1906c2054f9c8dba0952"},
+    {"path": "bubbles/scripts/scope-universe-resolver-selftest.sh", "sha256": "8c912bd8230079655c430f579a7ba479d2975f66619af6c860b9e860e3533f4a"},
     {"path": "bubbles/scripts/session-cap-guard-selftest.sh", "sha256": "f455cff89dcf6f41d612a0158fa9bf42c97e3a5af94cbbbf3e543890ce84984d"},
     {"path": "bubbles/scripts/session-cap-guard.sh", "sha256": "3d75e4fc075d99009a41a767eac255e073412065faaf16379ee619bff9d04e0f"},
     {"path": "bubbles/scripts/shellcheck-lint-selftest.sh", "sha256": "237fe09f70f8160ca2d94e21c4e1e41e5a55ebe7daa4ea1b9c5ac30dbb7c77d9"},
@@ -245,7 +245,7 @@
     {"path": "bubbles/scripts/trace-contract-guard-selftest.sh", "sha256": "b879b980ade803b53b167278a0e905dbd3af5d1d121cd914416606f229397b3e"},
     {"path": "bubbles/scripts/trace-contract-guard.sh", "sha256": "5b6fbff0cef9d4edb98520214cba2c253de654edc33d30613b36ef2cdf022b68"},
     {"path": "bubbles/scripts/traceability-guard-selftest.sh", "sha256": "691b022fe8a7c4018844c7c74484d108fc3472ce6f0ea917b72e68882306d12f"},
-    {"path": "bubbles/scripts/traceability-guard.sh", "sha256": "e74579f25eaf291a967a2f6c7d7508e71d7f599d9f7d13360a328db35ee07242"},
+    {"path": "bubbles/scripts/traceability-guard.sh", "sha256": "58fad6182e6499e215cfafb921c7b901aeb1d4cc2822fdcbdd13957c3bb9a470"},
     {"path": "bubbles/scripts/trajectory-inspector-selftest.sh", "sha256": "1d08d42fec7495b878f54ed7d4fd2ff6664e035c7adec3f5070e1ffac48faf99"},
     {"path": "bubbles/scripts/trajectory-inspector.sh", "sha256": "c47dd5cee19e54fdb830d999f31e419ee7265c08957cc3c6b425c231dfd3e4b1"},
     {"path": "bubbles/scripts/transition-contract-resolver-selftest.sh", "sha256": "148bea61bc8d21181c66bd87690e91e37b6c4f4ab82fef345bd80c3d39da6bf5"},
@@ -271,7 +271,7 @@
     {"path": "bubbles/scripts/workflow-runner-grants-lint.sh", "sha256": "307c83ea760d6c254b20b88715ecafdd193a1631de0d7e664223152b88d3ca5c"},
     {"path": "bubbles/scripts/workflow-surface-selftest.sh", "sha256": "4a625ac2dde244d0ec72bf36ebc1876bf48b2155b8cffe1df66cdbc63a6db296"},
     {"path": "bubbles/scripts/yaml-schema-validate.sh", "sha256": "c4d97c524e8ae9cc860ada1b95cda08c71cc3c2ac470bac40cd91cb5b8f21fee"},
-    {"path": "bubbles/scripts/scope-universe-resolver.py", "sha256": "33534e84fcc438ce9e630e8b1dad721b197ea2c80bb3c70005f37a809a93c922"},
+    {"path": "bubbles/scripts/scope-universe-resolver.py", "sha256": "f9fe5663a11fda3bdc56c5cb2d3863801164a7443506a90a3d9cd5f4ecbe2d54"},
     {"path": "bubbles/scripts/guards/control-plane-checks.sh", "sha256": "08f09b51c0733b796e9a4a750cd1536a7b709934019f9df4e123706991566f4c"},
     {"path": "bubbles/scripts/guards/planning-checks.sh", "sha256": "904fa6205820351ff059741f7939b4a7fac0040d35e00f33a3b3642822eb998f"},
     {"path": "bubbles/scripts/guards/sensitive-client-storage-scan.py", "sha256": "77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3"},
@@ -642,7 +642,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "1f2a046c7d0a0aebc6f2b8e9a9ed45c57adfb6461c518c0a91d992d22bce2a8d"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "275531535b0c216042c6b6e89db133fe8314ccf2cf36e48c4fbf3ccc6ea4bb6c"}
   ],
-  "sourceOnlyFileCount": 59,
+  "sourceOnlyFileCount": 60,
   "sourceOnlyFileChecksums": [
     {"path": "bubbles/eval/README.md", "sha256": "2c376e2b04f5fa115b13b0910cb23997a3349344631c2db929c799de117736cc"},
     {"path": "bubbles/eval/fixtures/negative/hollow-report/report.md", "sha256": "dd058caeee3e2a7dc549b1fd754b21c9d49e4b8558d85188bebd962c61ff6aa8"},
@@ -702,6 +702,7 @@
     {"path": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh", "sha256": "4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17"},
     {"path": "tests/regression/test_30_result_envelope_outcome_contract.sh", "sha256": "85741156167233ad29bb35a706933cb9ceefb75463e5e07e5f8f1369e0829636"},
     {"path": "tests/regression/test_31_create_skill_placeholder_stubs.sh", "sha256": "09c70b3c894fd5d2acd202cc401256ab0087ad2aeb108bb2bf483eed1e2e98be"},
-    {"path": "tests/regression/test_32_skills_first_map_merged_rows.sh", "sha256": "e45d04d60a3fcc49e4a9c9f7237361d5558908b313aed9f6a6f24d1f482e41d1"}
+    {"path": "tests/regression/test_32_skills_first_map_merged_rows.sh", "sha256": "e45d04d60a3fcc49e4a9c9f7237361d5558908b313aed9f6a6f24d1f482e41d1"},
+    {"path": "tests/regression/test_33_traceability_current_scope_universe.sh", "sha256": "fc7f458032ed163c703c14619339943c8a4fdd059fc168a80f7449c97928ca9e"}
   ]
 }

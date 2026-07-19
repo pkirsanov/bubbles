@@ -158,11 +158,19 @@ def build_registry(entries, label):
             if dep in depends:
                 die(entry_label + " dependsOn has a duplicate edge: " + repr(dep))
             depends.append(dep)
+        scope_dir = entry.get("scopeDir")
+        if scope_dir is not None:
+            if not isinstance(scope_dir, str) or not scope_dir.strip():
+                die(entry_label + " scopeDir must be a non-empty string when present")
+            scope_dir = scope_dir.strip().rstrip("/")
+        else:
+            scope_dir = ""
         records.append(
             {
                 "canonicalId": canonical_id,
                 "status": status,
                 "dependsOn": depends,
+                "scopeDir": scope_dir,
                 "aliases": aliases_for(entry, canonical_id),
                 "isCurrent": False,
                 "isDescendant": False,
@@ -325,13 +333,14 @@ def main(argv):
     for record in canonical:
         applicable = not (record["isDescendant"] and record["status"] == "not_started")
         lines.append(
-            "RECORD\t%s\t%s\t%s\t%s\t%s"
+            "RECORD\t%s\t%s\t%s\t%s\t%s\t%s"
             % (
                 record["canonicalId"],
                 record["status"],
                 "true" if record["isCurrent"] else "false",
                 "true" if record["isDescendant"] else "false",
                 "true" if applicable else "false",
+                record["scopeDir"],
             )
         )
     sys.stdout.write("\n".join(lines) + "\n")
