@@ -25,17 +25,17 @@ Every change satisfies the §7 coherence guardrails or is rejected. This is one 
 | IMP-003 autonomy dial + session budgets | proposed (G128 gate ✅) | 1 (budgets) + 4 (dry-run/rollback) | Bounded |
 | IMP-024 evidence receipts + progress substates | terminal rule only | 2 | Honest |
 | Terminal states `done`/`delivered_fast`/`delivered_prototype` (R4) | new | 2 + 3 | Proportional/Honest |
-| Assurance-gated deploy (R5) | new | 3 | Proportional |
-| IMP-022 vertical-delivery plan guard | advisory core only | 4 | Bounded |
+| Assurance-gated deploy (R5) | DECISION (`assurance-resolve`) + DERIVATION (`assurance-derive`) + choke-#2 refusal ✅; emitter + chokes #3–5 remaining | 3 | Proportional |
+| IMP-022 vertical-delivery plan guard | SCOPE-1/2/6/7 ✅; SCOPE-3/4/5 remaining | 4 | Bounded |
 | IMP-026 interaction discipline + context-efficient planning | proposed | 2 + 4 + 5 | Bounded/Honest |
-| IMP-004 verification boundaries + coverage gaps | proposed | 4 | Bounded |
-| Work-boundary / anti-wander (R6) | new | 4 | Bounded |
+| IMP-004 verification boundaries + coverage gaps | ✅ COMPLETE (SCOPE-1/2/3) | 4 | Bounded |
+| Work-boundary / anti-wander (R6) | ✅ COMPLETE (resolver + envelope + diagnostic Non-goals + orchestration wiring) | 4 | Bounded |
 | Pre-push validation cost (R7/R8/R9) | new | 5 | Proportional (dogfooded) |
 | IMP-002 readiness-review + diagnostic-agent overlap (R10) | proposed | 5 | Proportional |
 | Gate consolidation (R11) | ongoing (8 done) | 5 | Reuse-first |
 | IMP-020 agentic evaluation + trust hardening | S1–S3 done, S4–S7 pending | 6 | Honest |
 | IMP-001 journey agent (voice-of-user) | proposed | 6 | Honest |
-| IMP-005 framework housekeeping | SCOPE-1 done; rest proposed | 6 | Reuse-first |
+| IMP-005 framework housekeeping | ✅ COMPLETE (SCOPE-1–5) | 6 | Reuse-first |
 | BUG-012…BUG-026 | ✅ all 11 done | 0 | Honest (state machine) |
 
 ### Reconciliation 2026-07-19 (verified against source — the plan understated completion)
