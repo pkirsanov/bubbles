@@ -61,6 +61,7 @@ handoffs:
 - Production code (non-test) → invoke `bubbles.implement`
 
 **Non-goals:**
+- **Cross-`workBoundary` drift (do NOT wander):** a finding outside the active work boundary — a different repository, or a spec/path the feature's `workBoundary` excludes — is route-ONLY; never apply an inline fix outside the boundary even when it looks trivial (in-boundary test/code fixes are still owned here). Consult `work-boundary-resolve.sh` (dispositions `route-cross-repo` / `refuse-cross-repo`) and emit `route_required` for the owning repo/spec.
 - Implementing new feature scope without a feature folder and required artifacts
 - Silencing failing tests without addressing root cause
 - Coverage delta versus a prior baseline (→ bubbles.regression); test owns coverage adequacy (is coverage sufficient for the scenarios?)
