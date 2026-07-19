@@ -21,7 +21,7 @@ agent: bubbles.<name>
 mode: <workflow-mode>
 spec: specs/<NNN-feature>
 scope: SCOPE-<id>          # if applicable
-outcome: completed_owned | route_required | blocked | done_with_concerns
+outcome: completed_owned | completed_diagnostic | route_required | blocked
 addressedFindings:
   - <finding-id>: <one-line resolution + evidence ref>
 unresolvedFindings:
@@ -63,24 +63,28 @@ the marker is absent (the preflight is advisory there); populate it whenever the
 [docs/guides/AI_ENVIRONMENT.md](../../docs/guides/AI_ENVIRONMENT.md) (Multi-Root Workspaces).
 
 ## Outcome vocabulary (canonical)
+State-modifying and diagnostic agents MUST end with EXACTLY ONE of these four outcomes (per `agents/bubbles_shared/validation-core.md` and `evidence-rules.md`; enforced by `bubbles/scripts/audit-result-contract-lint.sh`):
 | Outcome | When to use |
 |---------|-------------|
-| `completed_owned` | All owned DoD items `[x]` with evidence, no unresolved findings, all gates pass |
+| `completed_owned` | A state-modifying agent finished its owned work: all owned DoD items `[x]` with evidence, no unresolved findings, all gates pass |
+| `completed_diagnostic` | A read-only/analysis agent (audit, review, regression, security, …) finished its diagnostic pass: findings packaged for owners, no owned DoD to check |
 | `route_required` | Found work that belongs to another specialist; package it as a finding with `nextRequiredOwner` |
 | `blocked` | Cannot proceed; external dependency, missing input, or mechanical gate refuses |
-| `done_with_concerns` | Spec-defined "ship but flag" outcome; `followUpOwner`/`followUpAction`/`followUpTarget` fields populated; NOT a deferral |
+
+`done_with_concerns` is **legacy read-only compatibility only** (pre-G092 specs carrying `legacyStatusCompatibility:true`); it is **not** a valid new RESULT-ENVELOPE outcome. To ship non-blocking notes, validate certifies `done` with an `observations[]` array (severity `low`/`medium`), or a diagnostic agent surfaces observation-shaped findings (`followUpOwner`/`followUpAction`) for the orchestrator to attach — see [completion-governance.md](../../agents/bubbles_shared/completion-governance.md#legacy-status-done_with_concerns). Anything warranting `high` severity is `blocked`, not a concern.
 
 ## Finding accounting (NON-NEGOTIABLE)
 Every finding raised in this invocation MUST appear in EXACTLY ONE of:
 - `addressedFindings` (fixed in this scope, evidence linked)
 - `unresolvedFindings` (routed to owner)
-- structured `followUps[]` (only under `done_with_concerns`)
+- `observations[]` (non-blocking `low`/`medium` notes attached to `completed_owned` or a validate-certified `done`, per completion-governance.md — never used to launder a gate failure)
 
 A finding that disappears between rounds is the cherry-pick anti-pattern and is blocked by the workflow agent's post-fix-cycle verification.
 
 ## Common mistakes
 - **Claiming `completed_owned` while leaving unchecked DoD items** — guard rejects this.
-- **Marking `done_with_concerns` to dodge a fixable bug** — `done_with_concerns` is for genuinely out-of-scope follow-ups with explicit owners, not for shipping known regressions.
+- **A diagnostic agent emitting `completed_owned`** — read-only/analysis agents own no DoD; they emit `completed_diagnostic`.
+- **Emitting `done_with_concerns` as a current outcome** — it is legacy-read-only; use `completed_owned`/`completed_diagnostic` with `observations[]` for non-blocking notes, or `blocked` for anything a gate would refuse. Never use an observation to dodge a fixable bug.
 - **Setting `nextRequiredOwner` to `bubbles.workflow`** — workflow is the dispatcher, not the next owner. Name the actual specialist.
 - **Using `@bubbles.X` in envelope or output** — the slash convention applies everywhere: `/bubbles.X` only.
 

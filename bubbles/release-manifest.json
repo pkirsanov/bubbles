@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "version": "7.20.1",
-  "gitSha": "de4ba40a57d68b5ab56b0550eeb15aa1d7af0157",
-  "generatedAt": "2026-07-18T19:15:18-07:00",
+  "gitSha": "7f35de138314c073a1a122a88dd149d5ab1e41ed",
+  "generatedAt": "2026-07-18T19:29:31-07:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
@@ -625,7 +625,7 @@
     {"path": "skills/bubbles-release-packet-template/SKILL.md", "sha256": "101ec0e1a7c73209efd518346e2816103ff5708f33458e91f127119e0fdf52b3"},
     {"path": "skills/bubbles-release-train-model/SKILL.md", "sha256": "ea771c343434499ea67ab36d9aeef6ccc806a5db8670e8d1a7ff409a87a10d01"},
     {"path": "skills/bubbles-repo-readiness/SKILL.md", "sha256": "5504316f449a89ebd784530887377bd559abb257ea43f486429ec47a688347ae"},
-    {"path": "skills/bubbles-result-envelope/SKILL.md", "sha256": "296f91050d2c123788393631170accf366482c48908e2b1d4a1b1393b09e1e02"},
+    {"path": "skills/bubbles-result-envelope/SKILL.md", "sha256": "1f2459bcd86f82eca2cbc19b2e49e9baa4725a8dc7800f383b5a43c7b6b82c31"},
     {"path": "skills/bubbles-scope-workflow-runtime/SKILL.md", "sha256": "8a8dbff5e752e3582b0fce9ed77fcb1fa3c99644039c49e044d1ae702e58851d"},
     {"path": "skills/bubbles-skill-authoring/SKILL.md", "sha256": "9ed379453a8dde8571a87591cb7543e78165b79d2838e1b47347e589c0234372"},
     {"path": "skills/bubbles-skills-first-discovery/SKILL.md", "sha256": "b17b147d3d07d84760a7aecaa1095a9619b3feb871e05baefcb23a741c502bc8"},
@@ -638,7 +638,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "1f2a046c7d0a0aebc6f2b8e9a9ed45c57adfb6461c518c0a91d992d22bce2a8d"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "275531535b0c216042c6b6e89db133fe8314ccf2cf36e48c4fbf3ccc6ea4bb6c"}
   ],
-  "sourceOnlyFileCount": 58,
+  "sourceOnlyFileCount": 59,
   "sourceOnlyFileChecksums": [
     {"path": "bubbles/eval/README.md", "sha256": "2c376e2b04f5fa115b13b0910cb23997a3349344631c2db929c799de117736cc"},
     {"path": "bubbles/eval/fixtures/negative/hollow-report/report.md", "sha256": "dd058caeee3e2a7dc549b1fd754b21c9d49e4b8558d85188bebd962c61ff6aa8"},
@@ -696,6 +696,7 @@
     {"path": "tests/regression/test_27_state_transition_bash32_startup.sh", "sha256": "42e8a0b74587d70ccca2d9fca222a30c68f3213d770115069f4106d2adb5dab0"},
     {"path": "tests/regression/test_28_framework_validate_portable_timeout.sh", "sha256": "62f724f731d7e4c000fab97e4ced4ffd7c0003450ebaaa6c4cca397d119e3d78"},
     {"path": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh", "sha256": "4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17"},
+    {"path": "tests/regression/test_30_result_envelope_outcome_contract.sh", "sha256": "85741156167233ad29bb35a706933cb9ceefb75463e5e07e5f8f1369e0829636"},
     {"path": "tests/regression/test_31_create_skill_placeholder_stubs.sh", "sha256": "09c70b3c894fd5d2acd202cc401256ab0087ad2aeb108bb2bf483eed1e2e98be"},
     {"path": "tests/regression/test_32_skills_first_map_merged_rows.sh", "sha256": "e45d04d60a3fcc49e4a9c9f7237361d5558908b313aed9f6a6f24d1f482e41d1"}
   ]
