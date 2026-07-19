@@ -36,19 +36,17 @@ Every change satisfies the §7 coherence guardrails or is rejected. This is one 
 | IMP-020 agentic evaluation + trust hardening | S1–S3 done, S4–S7 pending | 6 | Honest |
 | IMP-001 journey agent (voice-of-user) | proposed | 6 | Honest |
 | IMP-005 framework housekeeping | SCOPE-1 done; rest proposed | 6 | Reuse-first |
-| BUG-012…BUG-026 | blocked / in_progress | 0 | Honest (state machine) |
+| BUG-012…BUG-026 | ✅ all 11 done | 0 | Honest (state machine) |
 
 ---
 
-## 3. Phase 0 — Stabilize the state machine (foundation; unblocks everything)
+## 3. Phase 0 — Stabilize the state machine (foundation; unblocks everything) ✅ COMPLETE
 
-**Reconciliation 2026-07-18 (verified against source + green tests): 10 of 11 Phase-0 defects are DONE** and removed from this plan. Already fixed before this session: BUG-012 (`test_04`), BUG-013 (`test_24`), BUG-018 (`test_25`), BUG-019 (`test_26`), BUG-020 (`test_27`), BUG-021 (`test_28`), BUG-022 (`test_29`). Fixed + pushed this session: BUG-025 (`test_32`, `de4ba40`), BUG-024 (`test_31`, `7f35de1`), BUG-023 (`test_30`, `e2c7536`). **One remains:**
+**Reconciliation 2026-07-19 (verified against source + green tests): all 11 Phase-0 defects are DONE.** Already fixed before this session: BUG-012 (`test_04`), BUG-013 (`test_24`), BUG-018 (`test_25`), BUG-019 (`test_26`), BUG-020 (`test_27`), BUG-021 (`test_28`), BUG-022 (`test_29`). Fixed + pushed this session: BUG-025 (`test_32`, `de4ba40`), BUG-024 (`test_31`, `7f35de1`), BUG-023 (`test_30`, `e2c7536`), and **BUG-026** (below).
 
-| Defect | Status | Root cause | Fix direction | Guard test |
-|---|---|---|---|---|
-| **BUG-026** traceability sequential-scope + tiered-DoD | in_progress (owned; spec + design done, no code yet) | guard analyzes a per-scope-dir packet as one all-scope universe even when validated v3 state names one current sequential scope; also rejects plan-owned tiered DoD that artifact-lint accepts | new `scope-universe-resolver.py` (stdlib) + one shared bash-3.2-safe DoD helper consumed by traceability G068 and transition Check 4A/22; omit only exact `not_started` transitive descendants | test_33 |
+**BUG-026** traceability sequential-scope + tiered-DoD — DONE (`a620393` + predecessors). Root cause: the guard analyzed a per-scope-dir packet as one all-scope universe even when validated v3 state named one current sequential scope, and it rejected plan-owned tiered DoD that artifact-lint accepts. Fix (shipped): new stdlib fail-closed `scope-universe-resolver.py` + shared bash-3.2-safe `dod-section-lib.sh` consumed by traceability G068 / transition Check 4A/22; `traceability-guard.sh --current-scope` filters to the applicable universe, omitting only exact `not_started` transitive descendants. Regression: `dod-section-lib-selftest` 10/10, `scope-universe-resolver-selftest` 16/16, `test_33` 9/9.
 
-**Done when:** BUG-026 terminal; `framework-validate` green on the committed tree.
+**Done:** BUG-026 terminal; `framework-validate` green on the committed tree (`FRAMEWORK_VALIDATE_EXIT=0`, 2026-07-19).
 
 ---
 
@@ -135,4 +133,4 @@ Low-risk work reaches a validated increment via `rapid-tool-delivery` with mater
 
 ## 12. Recommended execution order
 
-Phase 0 (partly in flight) → **Phase 1 (highest-leverage, lowest-risk: register `rapid-tool-delivery`)** → 2 → 3 → 4 → 5 → 6. Deliver each phase as a real vertical increment (a registered mode, a wired guard, a passing selftest), never as another parked primitive.
+Phase 0 (✅ complete) → **Phase 1 (highest-leverage, lowest-risk: register `rapid-tool-delivery`)** → 2 → 3 → 4 → 5 → 6. Deliver each phase as a real vertical increment (a registered mode, a wired guard, a passing selftest), never as another parked primitive.

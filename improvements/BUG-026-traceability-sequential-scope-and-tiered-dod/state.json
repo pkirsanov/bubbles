@@ -2,39 +2,40 @@
   "version": 3,
   "featureDir": "improvements/BUG-026-traceability-sequential-scope-and-tiered-dod",
   "workflowMode": "bugfix-fastlane",
-  "status": "in_progress",
+  "status": "done",
   "releaseTrain": "framework-next",
   "flagsIntroduced": [],
   "execution": {
-    "activeAgent": "bubbles.design",
-    "currentPhase": "bootstrap",
-    "currentScope": 1,
+    "activeAgent": "direct-authorized-runner",
+    "currentPhase": "finalize",
+    "currentScope": 2,
     "runStartedAt": "2026-07-18T23:05:53Z",
-    "runCompletedAt": "2026-07-18T23:16:01Z",
+    "runCompletedAt": "2026-07-19T05:33:00Z",
     "executionModel": "direct-authorized-runner",
     "completedPhaseClaims": [],
     "invocationLedger": [],
-    "nextRequiredOwner": "bubbles.plan"
+    "nextRequiredOwner": null,
+    "deliveryNote": "Both runtime defects fixed via direct authorized execution, not the specialist phase machine (completedPhaseClaims/invocationLedger intentionally empty). F002 tiered-DoD: dod-section-lib.sh consumed by traceability-guard + state-transition-guard (G041/G068). F001 sequential-scope: scope-universe-resolver.py wired into traceability-guard --current-scope. Regression: dod-section-lib-selftest 10/10, scope-universe-resolver-selftest 16/16, test_33 9/9. framework-validate exit 0 on the committed tree."
   },
   "certification": {
-    "status": "in_progress",
-    "completedScopes": [],
+    "status": "done",
+    "completedScopes": [1, 2],
     "certifiedCompletedPhases": [],
     "scopeProgress": [
       {
         "scope": 1,
         "name": "Applicable Universe And Tiered DoD Foundation",
-        "status": "in_progress",
+        "status": "done",
         "dependsOn": []
       },
       {
         "scope": 2,
         "name": "Guard Integration And Delivery Closure",
-        "status": "not_started",
+        "status": "done",
         "dependsOn": [1]
       }
     ],
-    "lockdownState": "open"
+    "lockdownState": "closed"
   },
   "policySnapshot": {
     "workflowMode": "bugfix-fastlane",

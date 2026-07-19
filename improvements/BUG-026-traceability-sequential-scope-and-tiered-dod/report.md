@@ -330,3 +330,56 @@ this invocation.
 The requested packet consists of `bug.md`, `spec.md`, `design.md`, `scopes.md`,
 `report.md`, `uservalidation.md`, `scenario-manifest.json`, `test-plan.json`,
 and `state.json`. Every delivery DoD remains unchecked.
+
+## Delivery Completion (2026-07-19, direct authorized execution)
+
+**Claim Source:** executed
+
+Both runtime defects are fixed, wired into their consuming gates, covered by
+adversarial regression, and confirmed against a full green `framework-validate`
+on the committed tree. Delivery was performed by a direct authorized runner, not
+the specialist phase machine — `execution.completedPhaseClaims` and
+`invocationLedger` are intentionally empty and no specialist provenance is
+claimed.
+
+**F002 — tiered-DoD boundary.** New sourceable bash-3.2 parser
+`bubbles/scripts/dod-section-lib.sh` (case-insensitive DoD heading match, nested
+tier subheadings retained through depth 6, fenced/HTML-comment headings inert,
+exactly one terminal STATUS record). Consumed by `traceability-guard.sh`
+(`extract_dod_items` → G068) and `state-transition-guard.sh` (Check 4A/G041 and
+Check 22/G068). Selftest `dod-section-lib-selftest.sh` 10/10.
+
+**F001 — sequential-scope universe.** New stdlib fail-closed resolver
+`bubbles/scripts/scope-universe-resolver.py` (version-3 state, duplicate-key and
+non-finite rejection, closed `currentScope` alias resolution, dependency-graph
+cycle/unknown/transitive-prereq checks, emits an applicable-universe record set
+with `scopeDir`). Wired into `traceability-guard.sh` behind the valueless
+`--all-scopes` (default) / `--current-scope` tokens: current-scope mode filters
+the physical scope discovery to the applicable universe, omitting only
+`not_started` transitive descendants, fail-closed on any refusal. Selftest
+`scope-universe-resolver-selftest.sh` 16/16.
+
+**F004 — regression.** `tests/regression/test_33_traceability_current_scope_universe.sh`
+(9/9): a two-mode diff on one fixture proves the `not_started` descendant appears
+under `--all-scopes` but is omitted under `--current-scope` (adversarial), plus
+four fail-closed CLI refusals.
+
+**F005 — closure evidence.**
+
+```text
+BUG026_DELIVERY_COMPLETION_BEGIN
+commits=de4ba40(BUG-025) 7f35de1(BUG-024) e2c7536(BUG-023) 73208e5(F002 lib) 0bab691(B1) c2cab39(B2) a8c1583(eval-harness) 7a51c40(C1 resolver) 0d2ced6(manifest .py) 62414d0(install .py) a620393(C2 guard+test_33)
+dod-section-lib-selftest=10/10
+scope-universe-resolver-selftest=16/16
+test_33=9/9
+traceability-guard-selftest=PASS
+state-transition-guard-selftest=PASS
+release-manifest --check=current (631 managed files)
+macos-portability-guard=PASS (touched scripts)
+framework-validate=FRAMEWORK_VALIDATE_EXIT=0 (Framework validation passed)
+BUG026_DELIVERY_COMPLETION_END
+```
+
+**Interpretation:** F001, F002, and F004 are delivered and independently
+re-runnable; the full framework validation suite passes on the committed tree.
+BUG-026 is complete.
