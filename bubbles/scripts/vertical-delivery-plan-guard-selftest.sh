@@ -164,6 +164,38 @@ else
   fail "T11 absent state.json should impose no budget (rc=$rc)"
 fi
 
+# ── T12: Feature-010-shaped 14-scope HORIZONTAL plan (11 foundation layers →
+#         first consumer at scope 12) → advisory HORIZONTAL PLAN + remediation,
+#         exit 0. The negative fixture at the real pathological scale (IMP-022 SCOPE-6).
+d="$TMP_ROOT/t12"; mkdir -p "$d"
+{ for n in 1 2 3 4 5 6 7 8 9 10 11; do foundation_scope "$n" "layer$n"; echo; done; \
+  consumer_scope 12 "profile"; echo; consumer_scope 13 "settings"; echo; consumer_scope 14 "admin"; } > "$d/scopes.md"
+out="$("$GUARD" "$d" 2>&1)" && rc=0 || rc=$?
+if [[ "$rc" -eq 0 ]] \
+  && printf '%s\n' "$out" | grep -q 'HORIZONTAL PLAN' \
+  && printf '%s\n' "$out" | grep -q 'first consumer-visible increment is scope 12 of 14' \
+  && printf '%s\n' "$out" | grep -q 'Remediation: restructure'; then
+  pass "T12 Feature-010-shaped 14-scope horizontal plan warns with remediation (exit 0)"
+else
+  fail "T12 Feature-010 14-scope horizontal plan should warn with remediation (rc=$rc)"
+fi
+
+# ── T13: vertical TWIN of the same 14 scopes (early consumer at scope 1, work
+#         reorganized) → clean, exit 0, NOT flagged. Proves the guard rewards a
+#         reorganized-but-equivalent vertical plan (IMP-022 SCOPE-6 positive twin).
+d="$TMP_ROOT/t13"; mkdir -p "$d"
+{ consumer_scope 1 "profile"; echo; \
+  for n in 2 3 4 5 6 7 8 9 10 11 12; do foundation_scope "$n" "layer$n"; echo; done; \
+  consumer_scope 13 "settings"; echo; consumer_scope 14 "admin"; } > "$d/scopes.md"
+out="$("$GUARD" "$d" 2>&1)" && rc=0 || rc=$?
+if [[ "$rc" -eq 0 ]] \
+  && printf '%s\n' "$out" | grep -q 'first usable increment is early' \
+  && ! printf '%s\n' "$out" | grep -q 'HORIZONTAL PLAN'; then
+  pass "T13 vertical twin (same 14 scopes, early consumer) passes clean (exit 0)"
+else
+  fail "T13 vertical twin should pass clean (rc=$rc)"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "vertical-delivery-plan-guard-selftest FAILED with $FAILURES issue(s)."
