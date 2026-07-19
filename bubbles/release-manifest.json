@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "version": "7.20.1",
-  "gitSha": "e6575fb5b32f22d1f6844e832fd9e262fe7493fd",
-  "generatedAt": "2026-07-18T23:08:04Z",
+  "gitSha": "de4ba40a57d68b5ab56b0550eeb15aa1d7af0157",
+  "generatedAt": "2026-07-18T19:15:18-07:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
@@ -460,7 +460,7 @@
     {"path": "agents/bubbles.clarify.agent.md", "sha256": "0e85a2284feb9447205058b5b9232c484aac659becd5788347870ddf829536ac"},
     {"path": "agents/bubbles.code-review.agent.md", "sha256": "59189b05e3e0b9496b2544498bf5a9142748aab164c0e3080b1151c15accde86"},
     {"path": "agents/bubbles.commands.agent.md", "sha256": "b21f4f03d8bc03ce603ccb61cb38e8784a3d4e69984a88a99fecf81bbdbd1901"},
-    {"path": "agents/bubbles.create-skill.agent.md", "sha256": "abec8c859a36e8578e5101875786da7e3afbe9d5662aacf5ef14e3b364eb085f"},
+    {"path": "agents/bubbles.create-skill.agent.md", "sha256": "ccd97472ec53d6ff2c63bd8f49e991e9623981f7dcf5c99096998a8606077180"},
     {"path": "agents/bubbles.design.agent.md", "sha256": "d91ce125ec3f6ee0b17e2e3220688811c8a402a53576d2ed2b23d0026d8ae04a"},
     {"path": "agents/bubbles.devops.agent.md", "sha256": "ed0af43e5799e12da27d99cc402482238d4ba5ff2dde678ec76d348f76622f6e"},
     {"path": "agents/bubbles.docs.agent.md", "sha256": "3e9470506c1e355992229ac7bb3b9ce03b726cf6b38b3b0d6f19b4c48dcdad11"},
@@ -638,7 +638,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "1f2a046c7d0a0aebc6f2b8e9a9ed45c57adfb6461c518c0a91d992d22bce2a8d"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "275531535b0c216042c6b6e89db133fe8314ccf2cf36e48c4fbf3ccc6ea4bb6c"}
   ],
-  "sourceOnlyFileCount": 57,
+  "sourceOnlyFileCount": 58,
   "sourceOnlyFileChecksums": [
     {"path": "bubbles/eval/README.md", "sha256": "2c376e2b04f5fa115b13b0910cb23997a3349344631c2db929c799de117736cc"},
     {"path": "bubbles/eval/fixtures/negative/hollow-report/report.md", "sha256": "dd058caeee3e2a7dc549b1fd754b21c9d49e4b8558d85188bebd962c61ff6aa8"},
@@ -696,6 +696,7 @@
     {"path": "tests/regression/test_27_state_transition_bash32_startup.sh", "sha256": "42e8a0b74587d70ccca2d9fca222a30c68f3213d770115069f4106d2adb5dab0"},
     {"path": "tests/regression/test_28_framework_validate_portable_timeout.sh", "sha256": "62f724f731d7e4c000fab97e4ced4ffd7c0003450ebaaa6c4cca397d119e3d78"},
     {"path": "tests/regression/test_29_state_transition_bash32_empty_array_nounset.sh", "sha256": "4fba2c2f117f7a5c1cc514833af9960aa4ce190add4ba1da21b5b16549156c17"},
+    {"path": "tests/regression/test_31_create_skill_placeholder_stubs.sh", "sha256": "09c70b3c894fd5d2acd202cc401256ab0087ad2aeb108bb2bf483eed1e2e98be"},
     {"path": "tests/regression/test_32_skills_first_map_merged_rows.sh", "sha256": "e45d04d60a3fcc49e4a9c9f7237361d5558908b313aed9f6a6f24d1f482e41d1"}
   ]
 }
