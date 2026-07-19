@@ -76,7 +76,8 @@ dod_section_parse() {
       if (raw ~ /^#+[[:space:]]/) {
         d = 0
         while (substr(raw, d + 1, 1) == "#") { d++ }
-        is_dod = (d >= 1 && d <= 4 && (raw ~ /Definition of Done/ || raw ~ /DoD/))
+        lower = tolower(raw)
+        is_dod = (d >= 1 && d <= 4 && (lower ~ /definition of done/ || lower ~ /dod/))
 
         if (in_dod && d <= dod_depth) {
           # boundary: the open section ends at a same-or-shallower heading
