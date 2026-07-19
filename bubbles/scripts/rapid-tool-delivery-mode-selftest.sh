@@ -98,6 +98,29 @@ else
   fail "high-risk surface did not escalate to full-delivery (got: $(printf '%s' "$high_out" | grep '^tier=' || true))"
 fi
 
+# --- (6) R4 fast-lane terminal: delivered_fast is a recognized terminal-for-mode ---
+IS_TERMINAL="$SCRIPT_DIR/is-terminal-for-mode.sh"
+if printf '%s\n' "$resolved" | yq -e '(.terminalAliases // []) | contains(["delivered_fast"])' >/dev/null 2>&1; then
+  pass "declares delivered_fast as a terminal alias (R4 fast-lane terminal)"
+else
+  fail "rapid-tool-delivery should declare terminalAliases: [ delivered_fast ]"
+fi
+if bash "$IS_TERMINAL" delivered_fast rapid-tool-delivery >/dev/null 2>&1; then
+  pass "is-terminal-for-mode recognizes delivered_fast as terminal-for-mode"
+else
+  fail "is-terminal-for-mode should recognize delivered_fast for rapid-tool-delivery"
+fi
+if bash "$IS_TERMINAL" "done" rapid-tool-delivery >/dev/null 2>&1; then
+  pass "is-terminal-for-mode still recognizes the done ceiling"
+else
+  fail "is-terminal-for-mode should still recognize done for rapid-tool-delivery"
+fi
+if ! bash "$IS_TERMINAL" in_progress rapid-tool-delivery >/dev/null 2>&1; then
+  pass "is-terminal-for-mode treats in_progress as non-terminal"
+else
+  fail "is-terminal-for-mode should NOT treat in_progress as terminal for rapid-tool-delivery"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "rapid-tool-delivery-mode-selftest FAILED with $FAILURES issue(s)."

@@ -288,6 +288,7 @@ modes:
     description: Risk-proportional fast lane for a single low-risk, build-free tool increment. Inherits the full delivery integrity contract (every universal gate, anti-fabrication, per-DoD-item raw evidence, tests-for-all-scenarios, implementation reality scan) and relaxes ONLY the heavyweight mandatory planning chain. Eligibility is resolved mechanically by risk-tier-resolve.sh; any high-risk trigger (auth/payments/secrets/PII/DB-migration/deploy/prod/host-singleton/cross-product) escalates to full-delivery. Bounded by a non-null session budget (Gate G128).
     inherits: [ base-delivery, delivery-gate-baseline, delivery-quality-constraints ]
     transitionAudit: { profile: delivery-completion-fast-v1, target: statusCeiling }
+    terminalAliases: [ delivered_fast ]
     phaseOrder: [ select, implement, test, validate, docs, finalize ]
     requiredGates: [ G002, G060 ]
     sessionBudget:
