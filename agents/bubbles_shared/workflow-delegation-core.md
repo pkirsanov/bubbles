@@ -20,6 +20,24 @@ Classify incoming workflow requests into exactly one of these buckets before Pha
 4. `CONTINUE` — generic keep-going language with no recoverable active workflow target. Resolve through `bubbles.super` and route to `bubbles.goal` or `bubbles.iterate`; the workflow runner does not pick unrelated work.
 5. `FRAMEWORK` — framework operations such as doctor, hooks, upgrade, status, metrics, lessons, gates, or install. Delegate to `bubbles.super` and consume a `FRAMEWORK-ENVELOPE`.
 
+### Work-Boundary Preflight (R6 — anti-wandering)
+
+The binding re-validation in the `CONTINUATION` bucket runs on **resume**. Extend the SAME repo↔agent check to **initial mutable start**, not only on resume: before the FIRST mutable action of any classified request (`STRUCTURED`, or a `VAGUE` request after `bubbles.super` resolution), run `bubbles/scripts/repo-binding-preflight.sh` (`--canonical-source` for framework work) so a fresh session bound to the wrong workspace root REFUSES before editing — the resume path is not the only entry that can be mis-bound.
+
+At **each specialist dispatch**, before handing candidate work to a phase owner, consult the work-boundary resolver against the feature's declared boundary and honor the returned `disposition`:
+
+```
+bubbles/scripts/work-boundary-resolve.sh --feature-dir <FEATURE_DIR> --candidate-repo <slug> \
+    [--candidate-spec <id>] [--candidate-path <path>]
+```
+
+- `disposition=in-boundary` → dispatch inline as normal.
+- `disposition=route-same-repo` → an unrelated same-repo finding: FILE/route it; do not fix it inline in this scope.
+- `disposition=route-cross-repo` → a different-repo finding under `crossRepoPolicy: authorized`: route to the owning repo (route-only, never inline).
+- `disposition=refuse-cross-repo` → a different-repo finding under the default forbidden policy: REFUSE; surface the boundary + remediation instead of editing the other repo. This is the direct stop for the "started on repo A, wandered into fixing repo B" failure.
+
+Backward-compatible: a feature with no declared `workBoundary` (or no `state.json`) resolves `in-boundary` (no behavior change); a present-but-malformed boundary exits 2 (fail-closed). The resolver COMPOSES with — does not replace — `repo-binding-preflight.sh`: preflight verifies the repo↔agent binding, the resolver classifies each candidate change against the boundary.
+
 ### ⛔ Literal `mode:` Gate (MANDATORY — NON-NEGOTIABLE)
 
 Before applying the classification contract, perform this literal substring check:
