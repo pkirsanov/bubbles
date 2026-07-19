@@ -249,6 +249,7 @@ run_check "Risk-tier resolver selftest (BFW-01 / IMP-021)" bash "$SCRIPT_DIR/ris
 run_check "Rapid-tool-delivery mode selftest (IMP-100 Phase 1)" bash "$SCRIPT_DIR/rapid-tool-delivery-mode-selftest.sh"
 run_check "Work-boundary resolver selftest (IMP-100 Phase 4 R6)" bash "$SCRIPT_DIR/work-boundary-resolve-selftest.sh"
 run_check "Assurance deploy-eligibility resolver selftest (IMP-100 Phase 2 R4d / Phase 3)" bash "$SCRIPT_DIR/assurance-resolve-selftest.sh"
+run_check "Assurance level derivation resolver selftest (IMP-100 Phase 3 choke #1)" bash "$SCRIPT_DIR/assurance-derive-selftest.sh"
 run_check "Transition contract resolver selftest (BUG-009 S02)" bash "$SCRIPT_DIR/transition-contract-resolver-selftest.sh"
 run_check "Audit result contract lint selftest (BUG-009 S04)" bash "$SCRIPT_DIR/audit-result-contract-lint-selftest.sh"
 run_check "Mode alias selftest (v6.0 / B4)" bash "$SCRIPT_DIR/mode-alias-selftest.sh"
