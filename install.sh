@@ -311,6 +311,15 @@ info "Installing governance scripts..."
 mkdir -p "${TARGET}/bubbles/scripts"
 cp "$TEMP_DIR"/bubbles/scripts/*.sh "${TARGET}/bubbles/scripts/"
 chmod +x "${TARGET}"/bubbles/scripts/*.sh
+# Top-level Python framework scripts (e.g. scope-universe-resolver.py, BUG-026)
+# are manifest-managed like the *.sh scripts and MUST be installed too, or a
+# downstream guard that invokes them would hit a missing file. The *.sh glob
+# above does not match them; the guard `[[ -f ]]` handles the no-match case.
+for py_script in "$TEMP_DIR"/bubbles/scripts/*.py; do
+  [[ -f "$py_script" ]] || continue
+  cp "$py_script" "${TARGET}/bubbles/scripts/"
+  chmod +x "${TARGET}/bubbles/scripts/$(basename "$py_script")"
+done
 # Prune stale framework scripts: remove any installed bubbles/scripts/*.sh that
 # no longer exists in the source payload. .github/bubbles/scripts/ is a
 # framework-managed directory (project-owned scripts live in top-level scripts/),
