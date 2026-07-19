@@ -1452,6 +1452,7 @@ s03_g068_dir="$tmp_root/specs/918-bug009-s03-g068-negative"
 s03_delivery_checked_dir="$tmp_root/specs/919-bug009-s03-delivery-checked-evidence"
 g060_planning_na_dir="$tmp_root/specs/928-bug026-g060-planning-not-applicable"
 g060_delivery_enforced_dir="$tmp_root/specs/929-bug026-g060-delivery-enforced"
+g040_planning_na_dir="$tmp_root/specs/930-g040-planning-not-applicable"
 g040_pos_deferred_dir="$tmp_root/specs/920-g040-positive-deferred-prose"
 g040_pos_skip_for_now_dir="$tmp_root/specs/921-g040-positive-skip-for-now"
 g040_neg_followup_fields_dir="$tmp_root/specs/922-g040-negative-schema-yaml-only"
@@ -1511,6 +1512,13 @@ cp -R "$s03_planning_feature_dir" "$g060_planning_na_dir"
 set_fixture_tdd_scenario_first "$g060_planning_na_dir/state.json"
 cp -R "$positive_feature_dir" "$g060_delivery_enforced_dir"
 set_fixture_tdd_scenario_first "$g060_delivery_enforced_dir/state.json"
+# G040 Check 18 planning-maturity exemption: an honest planning packet carrying a
+# forward-looking domain label ("Authorized Outcome Follow-Up") the context-free
+# deferral regex would otherwise flag. Under planning maturity Check 18 is
+# NOT_APPLICABLE so this must not block plan hardening. Delivery-side G040
+# enforcement stays covered by the g040_pos_* fixtures.
+cp -R "$s03_planning_feature_dir" "$g040_planning_na_dir"
+printf '\nThe Authorized Outcome Follow-Up surface is a planned MVP capability of this executable-capability graph.\n' >> "$g040_planning_na_dir/scopes.md"
 emit_per_scope_fixture "$per_scope_positive_feature_dir" "Done" "scope-1-index-parity-proof"
 mutate_delivery_contract "$per_scope_positive_feature_dir/state.json"
 emit_per_scope_fixture "$index_parity_negative_feature_dir" "In Progress" "scope-1-index-parity-proof"
@@ -2303,6 +2311,26 @@ assert_log_contains "$g060_delivery_log" "failedGateIds: [G060]" "BUG-026 G060: 
 assert_transition_result "$g060_delivery_log" \
   autonomous-goal delivery-completion-v1 "done" '[]' FAIL 1 \
   "BUG-026 G060: delivery enforcement failure emits one complete blocked-by-gate result"
+
+echo "Running G040 Check 18 planning-maturity exemption (deferral scan honors the audit profile)..."
+# Planning-maturity exemption: a product-to-planning/specs_hardened packet whose
+# scope carries a forward-looking domain label ("Authorized Outcome Follow-Up")
+# that the context-free deferral regex would otherwise flag. Under planning
+# maturity Check 18 is NOT_APPLICABLE, so G040 no longer blocks plan hardening.
+# Delivery-side G040 enforcement remains covered by the g040_pos_* cases below.
+g040_planning_log="$tmp_root/g040-planning-not-applicable.log"
+g040_planning_status="$(run_capture "$g040_planning_log" bash "$GUARD_SCRIPT" "$g040_planning_na_dir")"
+if [[ "$g040_planning_status" -eq 0 ]]; then
+  pass "G040 Check 18: planning-maturity packet with a forward-looking domain label (Authorized Outcome Follow-Up) is not blocked by the deferral scan"
+else
+  fail "G040 Check 18: planning-maturity should not be blocked by the deferral scan (observed $g040_planning_status)"
+  sed -n '1,260p' "$g040_planning_log"
+fi
+assert_log_contains "$g040_planning_log" "NOT_APPLICABLE: Check-18 deferral-language scan" "G040 Check 18: deferral scan is explicitly non-applicable under planning maturity"
+assert_log_not_contains "$g040_planning_log" "deferral language hit" "G040 Check 18: planning maturity emits no deferral enforcement failure"
+assert_transition_result "$g040_planning_log" \
+  product-to-planning planning-maturity-v1 specs_hardened "$s03_not_applicable" PASS 0 \
+  "G040 Check 18: planning maturity with a forward-looking domain label still emits one complete passing result"
 
 s03_checked_log="$tmp_root/s03-checked-evidence.log"
 s03_checked_status="$(run_capture "$s03_checked_log" bash "$GUARD_SCRIPT" "$s03_checked_evidence_dir")"

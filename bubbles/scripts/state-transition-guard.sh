@@ -2912,7 +2912,18 @@ echo ""
 # =============================================================================
 echo "--- Check 18: Deferral Language Scan (Gate G040) ---"
 
-if [[ "$state_status" == "done_with_concerns" && "$(json_first_bool "legacyStatusCompatibility" "$state_file" || true)" == "true" ]]; then
+if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
+  # A planning-maturity transition (e.g. -> specs_hardened) certifies a PLAN,
+  # not a delivered implementation. A planning-only spec (product-to-planning /
+  # planMaturityOnly) describes future work by nature and legitimately uses
+  # forward-looking domain terminology — e.g. a real MVP-surface / feature name
+  # such as "Authorized Outcome Follow-Up". The context-free deferral scan would
+  # flag such legitimate domain labels as "deferred work", so it is category-
+  # inappropriate here and is deferred to the delivery-completion (done)
+  # transition — matching how Check 4 (DoD completion) and Check 3E (scenario-
+  # first TDD, Gate G060) treat this profile. Delivery enforcement is unchanged.
+  info "NOT_APPLICABLE: Check-18 deferral-language scan — planning maturity describes a plan of future work, so forward-looking domain terminology is category-appropriate; deferral-language enforcement is deferred to the delivery-completion transition (Gate G040)"
+elif [[ "$state_status" == "done_with_concerns" && "$(json_first_bool "legacyStatusCompatibility" "$state_file" || true)" == "true" ]]; then
   info "Check 18 skipped: state.json status is legacy read-only 'done_with_concerns' with legacyStatusCompatibility:true (Gate G040/G092)"
 else
   deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|placeholder|temporary workaround'
