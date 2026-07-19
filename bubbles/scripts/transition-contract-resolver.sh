@@ -192,11 +192,18 @@ allow_implementation_json="$(yq -o=json -I=0 '.constraints.allowImplementationFo
 mode_class_json="$(yq -o=json -I=0 '.constraints.modeClass' "$resolved_mode_file")"
 phase_order_json="$(yq -o=json -I=0 '.phaseOrder // []' "$resolved_mode_file")"
 required_gates_json="$(yq -o=json -I=0 '.requiredGates // []' "$resolved_mode_file")"
+# terminalAliases: additional terminal-for-mode statuses beyond the ceiling
+# (e.g. a fast-tier mode whose ceiling is `done` but that may also honestly
+# terminate at `delivered_fast`). is-terminal-for-mode.sh already honors these;
+# the transition contract must likewise accept them as legal terminal statuses.
+terminal_aliases_json="$(yq -o=json -I=0 '.terminalAliases // []' "$resolved_mode_file")"
 
 if [[ -z "$status_ceiling" \
   || "$(printf '%s' "$phase_order_json" | jq -r 'type')" != "array" \
   || "$(printf '%s' "$required_gates_json" | jq -r 'type')" != "array" \
+  || "$(printf '%s' "$terminal_aliases_json" | jq -r 'type')" != "array" \
   || "$(printf '%s' "$phase_order_json" | jq -r 'all(.[]; type == "string")')" != "true" \
+  || "$(printf '%s' "$terminal_aliases_json" | jq -r 'all(.[]; type == "string")')" != "true" \
   || "$(printf '%s' "$required_gates_json" | jq -r 'all(.[]; type == "string" and test("^G[0-9]{3}$"))')" != "true" ]]; then
   fail 72 E009-AUDIT-PROFILE-CONTRADICTION "resolved mode lacks a valid ceiling, phase order, or gate set"
 fi
@@ -270,7 +277,12 @@ case "$current_status" in
   not_started|in_progress|blocked|"$target_status")
     ;;
   *)
-    fail 69 E009-TARGET-MISMATCH "current terminal state contradicts the registry-derived target"
+    # A declared terminalAlias is a legal terminal-for-mode status (consistent
+    # with is-terminal-for-mode.sh), so a mode may honestly stop at an alias
+    # (e.g. `delivered_fast`) instead of its nominal ceiling.
+    if ! printf '%s' "$terminal_aliases_json" | jq -e --arg s "$current_status" 'index($s) != null' >/dev/null 2>&1; then
+      fail 69 E009-TARGET-MISMATCH "current terminal state contradicts the registry-derived target"
+    fi
     ;;
 esac
 if [[ "$audit_profile" == "planning-maturity-v1" && "$current_status" == "done" ]]; then

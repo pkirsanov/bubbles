@@ -483,6 +483,29 @@ terminal_mismatch_feature="$WORKSPACE/specs/014-terminal-mismatch"
 write_feature "$terminal_mismatch_feature" product-to-planning docs_updated
 assert_failure "terminal target mismatch" 69 E009-TARGET-MISMATCH bash "$RESOLVER" "$terminal_mismatch_feature"
 
+# A declared terminalAlias is a legal terminal-for-mode status: a mode may
+# honestly stop at an alias (e.g. `delivered_fast`) instead of its ceiling,
+# matching is-terminal-for-mode.sh. Reuse an existing delivery mode + inject
+# the alias into a copied registry (avoids the un-aliased new-mode trap).
+alias_terminal_root="$WORKSPACE/alias-terminal-layout"
+alias_terminal_framework="$(copy_framework_layout installed "$alias_terminal_root")"
+yq -i '.modes.bugfix-fastlane.terminalAliases = ["delivered_fast"]' "$alias_terminal_framework/workflows/modes.yaml"
+alias_terminal_feature="$WORKSPACE/specs/016-alias-terminal"
+write_feature "$alias_terminal_feature" bugfix-fastlane delivered_fast
+alias_terminal_contract="$WORKSPACE/alias-terminal-contract.json"
+if bash "$alias_terminal_framework/scripts/transition-contract-resolver.sh" "$alias_terminal_feature" > "$alias_terminal_contract"; then
+  pass "declared terminalAlias is accepted as a legal terminal status"
+else
+  fail_test "declared terminalAlias is accepted as a legal terminal status"
+fi
+assert_json "$alias_terminal_contract" '.currentStatus == "delivered_fast" and .workflowMode == "bugfix-fastlane" and .statusCeiling == "done"' "alias-terminal contract carries the alias current status over the done ceiling"
+
+# Without the alias declared, the same non-ceiling terminal status is rejected
+# (the alias must be explicit + registry-declared — no silent target widening).
+undeclared_alias_feature="$WORKSPACE/specs/017-undeclared-alias"
+write_feature "$undeclared_alias_feature" bugfix-fastlane delivered_fast
+assert_failure "undeclared terminal alias" 69 E009-TARGET-MISMATCH bash "$RESOLVER" "$undeclared_alias_feature"
+
 missing_profile_root="$WORKSPACE/missing-profile-layout"
 missing_profile_framework="$(copy_framework_layout installed "$missing_profile_root")"
 yq -i 'del(.modes.bugfix-fastlane.transitionAudit)' "$missing_profile_framework/workflows/modes.yaml"
