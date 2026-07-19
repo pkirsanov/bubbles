@@ -46,6 +46,11 @@ provenance:                          # binding provenance (IMP-025 MR3)
   repositoryRoot: <git-toplevel-of-edited-repo>
   agentSourceRoot: <repo-slug the active agent was installed for>
   frameworkVersion: <installed Bubbles version>
+workBoundary:                        # immutable task scope (IMP-100 R6, optional)
+  repositoryRoots: [<repo-slug>, ...]      # the ONLY repos this task may modify
+  specTargets: [specs/<NNN-feature>, ...]  # optional: the in-scope specs
+  allowedPaths: [<glob>, ...]              # optional: in-scope paths (dir/**, dir/, exact)
+  crossRepoPolicy: forbidden               # forbidden (default) | authorized
 ```
 
 The orchestrator routes continuation envelopes through `bubbles.workflow`, not directly to a specialist.
@@ -61,6 +66,21 @@ framework-source work sets `agentSourceRoot` to the framework slug and passes vi
 the marker is absent (the preflight is advisory there); populate it whenever the
 `.install-source.json` `targetRepoSlug` marker exists. See
 [docs/guides/AI_ENVIRONMENT.md](../../docs/guides/AI_ENVIRONMENT.md) (Multi-Root Workspaces).
+
+**Work boundary (anti-wandering, IMP-100 R6).** The optional `workBoundary` block declares
+the immutable scope of the requested task so a session cannot drift into unrelated work (the
+"works on repo A, starts fixing repo B" failure mode). Before touching any candidate change,
+the orchestrator consults `bubbles/scripts/work-boundary-resolve.sh --feature-dir <spec>
+--candidate-repo <slug> [--candidate-spec <id>] [--candidate-path <path>]`, which classifies
+the candidate as `in-boundary` (proceed inline), `route-same-repo` (unrelated same-repo →
+file/route a finding, never inline-fix), `route-cross-repo` (a different repo, allowed ONLY
+when `crossRepoPolicy: authorized`), or `refuse-cross-repo` (a different repo under the
+default `forbidden` policy → REFUSE). The block is opt-in + backward-compatible: absent it,
+every candidate resolves `in-boundary`. A present-but-malformed boundary is fail-closed
+(exit 2). It composes with `repo-binding-preflight.sh` (which guards the agent-source install
+binding); the boundary guards the per-task ALLOWED SCOPE. Unrelated same-repo findings are
+filed/routed; different-repo findings are route-only unless the user authorized a cross-repo
+scenario.
 
 ## Outcome vocabulary (canonical)
 State-modifying and diagnostic agents MUST end with EXACTLY ONE of these four outcomes (per `agents/bubbles_shared/validation-core.md` and `evidence-rules.md`; enforced by `bubbles/scripts/audit-result-contract-lint.sh`):
