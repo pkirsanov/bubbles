@@ -228,6 +228,12 @@ fi
 if [[ -x "$SCRIPT_DIR/eval-harness-selftest.sh" ]]; then
   run_check_self_only "Golden-task eval harness selftest (v6.1 / R11)" bash "$SCRIPT_DIR/eval-harness-selftest.sh"
 fi
+if [[ -x "$SCRIPT_DIR/eval-heldout-guard-selftest.sh" ]]; then
+  run_check "Held-out eval isolation guard selftest (IMP-100 Phase 6 / IMP-020 S4)" bash "$SCRIPT_DIR/eval-heldout-guard-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/effective-bundle-measure-selftest.sh" ]]; then
+  run_check "Effective prompt-bundle measurement selftest (IMP-100 Phase 6 / IMP-020 S5)" bash "$SCRIPT_DIR/effective-bundle-measure-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh" ]]; then
   run_check "Guard reliability perf selftest (v6.1 / R1 / BUG-001)" bash "$SCRIPT_DIR/state-transition-guard-perf-selftest.sh"
 fi
