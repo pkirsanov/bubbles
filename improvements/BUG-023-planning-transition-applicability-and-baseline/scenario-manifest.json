@@ -1,0 +1,349 @@
+{
+    "version": 1,
+    "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+    "generatedBy": "bubbles.plan",
+    "generatedAt": "2026-07-17T20:20:41Z",
+    "ownershipStatus": "planned",
+    "scenarios": [
+        {
+            "scenarioId": "SCN-BUG-023-001",
+            "scope": "3",
+            "title": "planning maturity records G060 as not applicable",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-001",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-001 planning_g060_not_applicable"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-001",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-002",
+            "scope": "3",
+            "title": "delivery blocks absent RED-to-GREEN evidence",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-002",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-002 delivery_missing_evidence_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-002",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-003",
+            "scope": "3",
+            "title": "delivery blocks out-of-order evidence",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-003",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-003 delivery_green_before_red_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-003",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-004",
+            "scope": "4",
+            "title": "title-like domain label is accepted",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-004",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-004 g040_title_domain_label_accepts"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-004",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-005",
+            "scope": "4",
+            "title": "follow-up projection is a domain noun",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-005",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-005 g040_followup_projection_accepts"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-005",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-006",
+            "scope": "4",
+            "title": "Follow-Up is an accepted structured label",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-006",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-006 g040_structured_label_accepts"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-006",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-007",
+            "scope": "4",
+            "title": "active present-surface statement is accepted",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-007",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-007 g040_present_surface_accepts"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-007",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-008",
+            "scope": "5",
+            "title": "work-disposition verbs remain blocking",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-008",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-008 g040_work_disposition_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-008",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-009",
+            "scope": "5",
+            "title": "future scheduling remains blocking",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-009",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-009 g040_future_schedule_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-009",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-010",
+            "scope": "5",
+            "title": "fix or address later remains blocking",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-010",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-010 g040_fix_address_later_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-010",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-011",
+            "scope": "5",
+            "title": "blocking intent overrides an accepted label",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-011",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-011 g040_blocking_precedence_wins"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-011",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-012",
+            "scope": "1",
+            "title": "authoritative capture precedes planning writes",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-012",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-012 baseline_capture_precedes_writes"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-012",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-013",
+            "scope": "1",
+            "title": "unchanged pre-run dirt is audited and excluded",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-013",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-013 baseline_six_states_audited"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-013",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-014",
+            "scope": "1",
+            "title": "new or mutated protected dirt blocks",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-014",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-014 baseline_eight_mutations_block"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-014",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-015",
+            "scope": "2",
+            "title": "invalid baseline provenance blocks",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-015",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-015 baseline_invalid_provenance_blocks"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-015",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-016",
+            "scope": "2",
+            "title": "retry cannot bless post-start dirt",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-016",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-016 baseline_retry_reuses_original"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-016",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        },
+        {
+            "scenarioId": "SCN-BUG-023-017",
+            "scope": "2",
+            "title": "legacy packet retains whole-worktree lockout",
+            "requiredTestType": "e2e-api",
+            "linkedTests": [
+                {
+                    "testId": "T-BUG-023-017",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "testTitle": "SCN-BUG-023-017 legacy_without_baseline_locks_worktree"
+                }
+            ],
+            "evidenceRefs": [
+                "report.md#t-bug-023-017",
+                "report.md#t-bug-023-032",
+                "report.md#t-bug-023-041"
+            ],
+            "regressionRequired": true,
+            "lockdown": false
+        }
+    ]
+}

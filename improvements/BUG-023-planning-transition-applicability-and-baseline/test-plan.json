@@ -1,0 +1,890 @@
+{
+    "version": 1,
+    "specId": "BUG-023",
+    "featureDir": "improvements/BUG-023-planning-transition-applicability-and-baseline",
+    "generatedBy": "bubbles.plan",
+    "generatedAt": "2026-07-17T20:20:41Z",
+    "ownershipStatus": "planned",
+    "scopes": [
+        {
+            "scopeId": "01-baseline-capture-equality-mutation-foundation",
+            "scopeName": "Baseline Capture, Equality, And Mutation Foundation",
+            "dependsOn": [],
+            "foundation": true,
+            "tests": [
+                {
+                    "testId": "T-BUG-023-012",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012"
+                    ],
+                    "testTitle": "SCN-BUG-023-012 baseline_capture_precedes_writes",
+                    "description": "Persistent pre-write capture, immutable binding, rejected observations, and reuse regression.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-012",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-012"
+                },
+                {
+                    "testId": "T-BUG-023-013",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-013",
+                    "scenarioIds": [
+                        "SCN-BUG-023-013"
+                    ],
+                    "testTitle": "SCN-BUG-023-013 baseline_six_states_audited",
+                    "description": "Persistent six-state equality, audited visibility, and preservation regression.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-013",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-013"
+                },
+                {
+                    "testId": "T-BUG-023-014",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-014",
+                    "scenarioIds": [
+                        "SCN-BUG-023-014"
+                    ],
+                    "testTitle": "SCN-BUG-023-014 baseline_eight_mutations_block",
+                    "description": "Persistent eight-mutation exact-path and reason regression.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-014",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-014"
+                },
+                {
+                    "testId": "T-BUG-023-018",
+                    "type": "managed-lifecycle-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012"
+                    ],
+                    "testTitle": "Managed baseline lifecycle selftest",
+                    "description": "Atomicity, reuse, close, schema, digest, races, and path preservation.",
+                    "command": "bash bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-018"
+                },
+                {
+                    "testId": "T-BUG-023-019",
+                    "type": "mcp-direct-twin-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/mcp-server-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012"
+                    ],
+                    "testTitle": "MCP catalog dispatches the baseline Bash twin",
+                    "description": "Catalog load and real dispatch to the same Bash twin.",
+                    "command": "bash bubbles/scripts/mcp-server-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-019"
+                },
+                {
+                    "testId": "T-BUG-023-020",
+                    "type": "broader-transition-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012"
+                    ],
+                    "testTitle": "Transition guard baseline foundation canary",
+                    "description": "Existing transition behavior remains coherent with the new foundation.",
+                    "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-020"
+                },
+                {
+                    "testId": "T-BUG-023-021",
+                    "type": "source-state-matrix-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-013",
+                    "scenarioIds": [
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014"
+                    ],
+                    "testTitle": "G073 source-state identity matrix",
+                    "description": "Identity, relation, commit delta, and race matrix.",
+                    "command": "bash bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-021"
+                },
+                {
+                    "testId": "T-BUG-023-022",
+                    "type": "guard-integration-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-013",
+                    "scenarioIds": [
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014"
+                    ],
+                    "testTitle": "G073 exact comparison guard integration",
+                    "description": "G073 detail, outer code, sorting, and overflow integration.",
+                    "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-022"
+                },
+                {
+                    "testId": "T-BUG-023-023",
+                    "type": "consumer-compatibility-regression",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_23_planning_audit_contract.sh",
+                    "scenarioId": "SCN-BUG-023-013",
+                    "scenarioIds": [
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014"
+                    ],
+                    "testTitle": "BUG-009 consumer compatibility for G073",
+                    "description": "BUG-009 compatibility and no audited-row warning drift.",
+                    "command": "bash tests/regression/test_23_planning_audit_contract.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-023"
+                }
+            ]
+        },
+        {
+            "scopeId": "02-g073-provenance-retry-legacy",
+            "scopeName": "G073 Provenance, Retry, And Legacy Semantics",
+            "dependsOn": [
+                "01-baseline-capture-equality-mutation-foundation"
+            ],
+            "foundation": false,
+            "tests": [
+                {
+                    "testId": "T-BUG-023-015",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-015",
+                    "scenarioIds": [
+                        "SCN-BUG-023-015"
+                    ],
+                    "testTitle": "SCN-BUG-023-015 baseline_invalid_provenance_blocks",
+                    "description": "Complete invalid-provenance matrix blocks before exclusions without repair.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-015",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-015"
+                },
+                {
+                    "testId": "T-BUG-023-016",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-016",
+                    "scenarioIds": [
+                        "SCN-BUG-023-016"
+                    ],
+                    "testTitle": "SCN-BUG-023-016 baseline_retry_reuses_original",
+                    "description": "Original run, reference, digest, and sidecar remain authoritative on retry.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-016",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-016"
+                },
+                {
+                    "testId": "T-BUG-023-017",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-017",
+                    "scenarioIds": [
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "SCN-BUG-023-017 legacy_without_baseline_locks_worktree",
+                    "description": "Legacy dirty-worktree lockout remains and no baseline is synthesized.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-017",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-017"
+                },
+                {
+                    "testId": "T-BUG-023-024",
+                    "type": "adversarial-baseline-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-015",
+                    "scenarioIds": [
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Malformed adversarial baseline lifecycle matrix",
+                    "description": "Invalid reasons, retry, path safety, races, and absent-key legacy split.",
+                    "command": "bash bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-024"
+                },
+                {
+                    "testId": "T-BUG-023-025",
+                    "type": "result-schema-mutation-selftest",
+                    "category": "functional",
+                    "file": "bubbles/scripts/audit-result-contract-lint-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-015",
+                    "scenarioIds": [
+                        "SCN-BUG-023-015"
+                    ],
+                    "testTitle": "V2 result and schema mutations are rejected",
+                    "description": "Field order, JSON, digest, applicability, actionability, and lockout checks.",
+                    "command": "bash bubbles/scripts/audit-result-contract-lint-selftest.sh",
+                    "liveSystem": false,
+                    "evidenceRef": "report.md#t-bug-023-025"
+                },
+                {
+                    "testId": "T-BUG-023-026",
+                    "type": "legacy-consumer-regression",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_23_planning_audit_contract.sh",
+                    "scenarioId": "SCN-BUG-023-017",
+                    "scenarioIds": [
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "BUG-009 legacy no-baseline behavior remains compatible",
+                    "description": "Existing no-baseline planning-audit behavior remains compatible.",
+                    "command": "bash tests/regression/test_23_planning_audit_contract.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-026"
+                }
+            ]
+        },
+        {
+            "scopeId": "03-g060-profile-applicability",
+            "scopeName": "G060 Profile Applicability Without Delivery Relaxation",
+            "dependsOn": [
+                "02-g073-provenance-retry-legacy"
+            ],
+            "foundation": false,
+            "tests": [
+                {
+                    "testId": "T-BUG-023-001",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001"
+                    ],
+                    "testTitle": "SCN-BUG-023-001 planning_g060_not_applicable",
+                    "description": "Planning G060 records one N/A result without false pass or failure.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-001",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-001"
+                },
+                {
+                    "testId": "T-BUG-023-002",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-002",
+                    "scenarioIds": [
+                        "SCN-BUG-023-002"
+                    ],
+                    "testTitle": "SCN-BUG-023-002 delivery_missing_evidence_blocks",
+                    "description": "Missing delivery evidence blocks full-delivery.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-002",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-002"
+                },
+                {
+                    "testId": "T-BUG-023-003",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-003",
+                    "scenarioIds": [
+                        "SCN-BUG-023-003"
+                    ],
+                    "testTitle": "SCN-BUG-023-003 delivery_green_before_red_blocks",
+                    "description": "GREEN-before-RED blocks bugfix-fastlane.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-003",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-003"
+                },
+                {
+                    "testId": "T-BUG-023-027",
+                    "type": "delivery-matrix-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003"
+                    ],
+                    "testTitle": "G060 planning and six-case delivery matrix",
+                    "description": "Both delivery modes missing, out-of-order, ordered, plus planning N/A.",
+                    "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-027"
+                },
+                {
+                    "testId": "T-BUG-023-028",
+                    "type": "audit-consumer-regression",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_23_planning_audit_contract.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003"
+                    ],
+                    "testTitle": "BUG-009 distinguishes planning N/A from delivery",
+                    "description": "Audit accepts planning N/A and rejects delivery N/A.",
+                    "command": "bash tests/regression/test_23_planning_audit_contract.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-028"
+                }
+            ]
+        },
+        {
+            "scopeId": "04-g040-accepted-contexts",
+            "scopeName": "G040 Accepted Contexts",
+            "dependsOn": [
+                "03-g060-profile-applicability"
+            ],
+            "foundation": false,
+            "tests": [
+                {
+                    "testId": "T-BUG-023-004",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-004",
+                    "scenarioIds": [
+                        "SCN-BUG-023-004"
+                    ],
+                    "testTitle": "SCN-BUG-023-004 g040_title_domain_label_accepts",
+                    "description": "Title and domain label variants pass through real Check 18.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-004",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-004"
+                },
+                {
+                    "testId": "T-BUG-023-005",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-005",
+                    "scenarioIds": [
+                        "SCN-BUG-023-005"
+                    ],
+                    "testTitle": "SCN-BUG-023-005 g040_followup_projection_accepts",
+                    "description": "Noun-compound variants pass through real Check 18.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-005",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-005"
+                },
+                {
+                    "testId": "T-BUG-023-006",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-006",
+                    "scenarioIds": [
+                        "SCN-BUG-023-006"
+                    ],
+                    "testTitle": "SCN-BUG-023-006 g040_structured_label_accepts",
+                    "description": "Heading, table, and field labels pass through real Check 18.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-006",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-006"
+                },
+                {
+                    "testId": "T-BUG-023-007",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-007",
+                    "scenarioIds": [
+                        "SCN-BUG-023-007"
+                    ],
+                    "testTitle": "SCN-BUG-023-007 g040_present_surface_accepts",
+                    "description": "Both present-surface contract sentences and variants pass.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-007",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-007"
+                },
+                {
+                    "testId": "T-BUG-023-029",
+                    "type": "managed-classifier-canary",
+                    "category": "integration",
+                    "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-004",
+                    "scenarioIds": [
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007"
+                    ],
+                    "testTitle": "G040 accepted-context managed classifier canary",
+                    "description": "Structural, accepted, no-match, disclosure, sorting, and overflow behavior.",
+                    "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-029"
+                },
+                {
+                    "testId": "T-BUG-023-030",
+                    "type": "cross-platform-canary",
+                    "category": "functional",
+                    "file": "bubbles/scripts/macos-portability-guard.sh",
+                    "scenarioId": "SCN-BUG-023-004",
+                    "scenarioIds": [
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007"
+                    ],
+                    "testTitle": "G040 classifier is macOS and Linux portable",
+                    "description": "Bash 3.2 syntax and macOS/GNU forbidden-form scan.",
+                    "command": "bash bubbles/scripts/macos-portability-guard.sh bubbles/scripts tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "liveSystem": false,
+                    "evidenceRef": "report.md#t-bug-023-030"
+                },
+                {
+                    "testId": "T-BUG-023-031",
+                    "type": "broader-consumer-regression",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_23_planning_audit_contract.sh",
+                    "scenarioId": "SCN-BUG-023-004",
+                    "scenarioIds": [
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007"
+                    ],
+                    "testTitle": "BUG-009 consumes accepted G040 V2 details",
+                    "description": "Existing planning audit remains compatible with V2 G040.",
+                    "command": "bash tests/regression/test_23_planning_audit_contract.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-031"
+                }
+            ]
+        },
+        {
+            "scopeId": "05-g040-blocking-compatibility-closure",
+            "scopeName": "G040 Blocking Precedence And Compatibility Closure",
+            "dependsOn": [
+                "04-g040-accepted-contexts"
+            ],
+            "foundation": false,
+            "tests": [
+                {
+                    "testId": "T-BUG-023-008",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-008",
+                    "scenarioIds": [
+                        "SCN-BUG-023-008"
+                    ],
+                    "testTitle": "SCN-BUG-023-008 g040_work_disposition_blocks",
+                    "description": "Work-disposition matrix through real Check 18.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-008",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-008"
+                },
+                {
+                    "testId": "T-BUG-023-009",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-009",
+                    "scenarioIds": [
+                        "SCN-BUG-023-009"
+                    ],
+                    "testTitle": "SCN-BUG-023-009 g040_future_schedule_blocks",
+                    "description": "Future and next-cycle scheduling matrix.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-009",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-009"
+                },
+                {
+                    "testId": "T-BUG-023-010",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-010",
+                    "scenarioIds": [
+                        "SCN-BUG-023-010"
+                    ],
+                    "testTitle": "SCN-BUG-023-010 g040_fix_address_later_blocks",
+                    "description": "Fix and address token-window plus window+1 matrix.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-010",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-010"
+                },
+                {
+                    "testId": "T-BUG-023-011",
+                    "type": "regression-e2e",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-011",
+                    "scenarioIds": [
+                        "SCN-BUG-023-011"
+                    ],
+                    "testTitle": "SCN-BUG-023-011 g040_blocking_precedence_wins",
+                    "description": "Same-line blocker precedence and metadata-only evidence.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh --scenario SCN-BUG-023-011",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-011"
+                },
+                {
+                    "testId": "T-BUG-023-032",
+                    "type": "full-frozen-matrix",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Complete frozen BUG-023 behavioral matrix",
+                    "description": "All scenarios and adversarial controls with unchanged pre-RED digest.",
+                    "command": "bash tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-032"
+                },
+                {
+                    "testId": "T-BUG-023-033",
+                    "type": "managed-transition-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Managed transition selftest covers BUG-023",
+                    "description": "Complete G040, G060, G073 and V2 integration.",
+                    "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-033"
+                },
+                {
+                    "testId": "T-BUG-023-034",
+                    "type": "managed-baseline-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Managed baseline selftest covers BUG-023",
+                    "description": "Lifecycle, identity, provenance, race, and legacy matrix.",
+                    "command": "bash bubbles/scripts/planning-source-baseline-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-034"
+                },
+                {
+                    "testId": "T-BUG-023-035",
+                    "type": "result-schema-consumer-selftest",
+                    "category": "functional",
+                    "file": "bubbles/scripts/audit-result-contract-lint-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "V2 result schema and consumer mutations are rejected",
+                    "description": "Field, digest, applicability, actionability, and lockout rejection.",
+                    "command": "bash bubbles/scripts/audit-result-contract-lint-selftest.sh",
+                    "liveSystem": false,
+                    "evidenceRef": "report.md#t-bug-023-035"
+                },
+                {
+                    "testId": "T-BUG-023-036",
+                    "type": "mcp-consumer-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/mcp-server-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-012",
+                    "scenarioIds": [
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-016"
+                    ],
+                    "testTitle": "MCP consumes the baseline Bash twin",
+                    "description": "Catalog and real capture, reuse, and close dispatch.",
+                    "command": "bash bubbles/scripts/mcp-server-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-036"
+                },
+                {
+                    "testId": "T-BUG-023-037",
+                    "type": "installer-parity-selftest",
+                    "category": "integration",
+                    "file": "bubbles/scripts/install-provenance-selftest.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Installer preserves all BUG-023 managed bytes",
+                    "description": "Managed files and descriptors match manifest/checksum identity.",
+                    "command": "bash bubbles/scripts/install-provenance-selftest.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-037"
+                },
+                {
+                    "testId": "T-BUG-023-038",
+                    "type": "existing-audit-regression",
+                    "category": "e2e-api",
+                    "file": "tests/regression/test_23_planning_audit_contract.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "BUG-009 remains compatible with fresh V2 output",
+                    "description": "Existing audit consumer compatibility under V2.",
+                    "command": "bash tests/regression/test_23_planning_audit_contract.sh",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-038"
+                },
+                {
+                    "testId": "T-BUG-023-039",
+                    "type": "regression-quality",
+                    "category": "functional",
+                    "file": "bubbles/scripts/regression-quality-guard.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Frozen regression has no silent-pass bailout",
+                    "description": "Production-path assertions and adversarial coverage are mandatory.",
+                    "command": "bash bubbles/scripts/regression-quality-guard.sh --bugfix tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "liveSystem": false,
+                    "evidenceRef": "report.md#t-bug-023-039"
+                },
+                {
+                    "testId": "T-BUG-023-040",
+                    "type": "cross-platform-portability",
+                    "category": "functional",
+                    "file": "bubbles/scripts/macos-portability-guard.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "BUG-023 shell surface is portable",
+                    "description": "macOS Bash 3.2 and Linux equivalence plus forbidden-form scan.",
+                    "command": "bash bubbles/scripts/macos-portability-guard.sh bubbles/scripts tests/regression/test_30_planning_transition_applicability_and_baseline.sh",
+                    "liveSystem": false,
+                    "evidenceRef": "report.md#t-bug-023-040"
+                },
+                {
+                    "testId": "T-BUG-023-041",
+                    "type": "canonical-framework-regression",
+                    "category": "e2e-api",
+                    "file": "bubbles/scripts/cli.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Canonical framework validation preserves all contracts",
+                    "description": "Broader framework suite and managed wiring.",
+                    "command": "bash bubbles/scripts/cli.sh framework-validate",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-041"
+                },
+                {
+                    "testId": "T-BUG-023-042",
+                    "type": "canonical-release-check",
+                    "category": "integration",
+                    "file": "bubbles/scripts/cli.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Canonical release identity includes BUG-023 bytes",
+                    "description": "Manifest, generated assets, version, and provenance cohere.",
+                    "command": "bash bubbles/scripts/cli.sh release-check",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-042"
+                },
+                {
+                    "testId": "T-BUG-023-043",
+                    "type": "supported-downstream-upgrade",
+                    "category": "e2e-api",
+                    "file": ".github/bubbles/scripts/cli.sh",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-002",
+                        "SCN-BUG-023-003",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-005",
+                        "SCN-BUG-023-006",
+                        "SCN-BUG-023-007",
+                        "SCN-BUG-023-008",
+                        "SCN-BUG-023-009",
+                        "SCN-BUG-023-010",
+                        "SCN-BUG-023-011",
+                        "SCN-BUG-023-012",
+                        "SCN-BUG-023-013",
+                        "SCN-BUG-023-014",
+                        "SCN-BUG-023-015",
+                        "SCN-BUG-023-016",
+                        "SCN-BUG-023-017"
+                    ],
+                    "testTitle": "Supported upgrade propagates canonical BUG-023 bytes",
+                    "description": "Downstream owner uses only the installed framework CLI after release.",
+                    "command": "bash .github/bubbles/scripts/cli.sh upgrade",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-043"
+                },
+                {
+                    "testId": "T-BUG-023-044",
+                    "type": "downstream-qf-discriminator",
+                    "category": "e2e-api",
+                    "file": "specs/097-tenant-entity-ownership-kernel",
+                    "scenarioId": "SCN-BUG-023-001",
+                    "scenarioIds": [
+                        "SCN-BUG-023-001",
+                        "SCN-BUG-023-004",
+                        "SCN-BUG-023-013"
+                    ],
+                    "testTitle": "QF Spec 097 reruns the target-aware planning transition",
+                    "description": "Fresh downstream run distinguishes G060 N/A, G040 acceptance, and G073 audited equality.",
+                    "command": "bash .github/bubbles/scripts/state-transition-guard.sh specs/097-tenant-entity-ownership-kernel",
+                    "liveSystem": true,
+                    "evidenceRef": "report.md#t-bug-023-044"
+                }
+            ]
+        }
+    ]
+}
