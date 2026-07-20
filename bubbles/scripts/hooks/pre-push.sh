@@ -28,6 +28,27 @@ if [[ ! -x "$SCRIPT_DIR/framework-validate.sh" ]]; then
   exit 0
 fi
 
+# Proportional validation (IMP-100 Phase 5 / R8): a maintainer may opt into the
+# fast structural CORE tier for routine local pushes via BUBBLES_PREPUSH_TIER=core.
+# The DEFAULT stays the FULL validate + release-check — the release gate is never
+# silently weakened (CI does not run the full suite). A core-tier push MUST be
+# followed by a full validate + release-check before cutting a release.
+PREPUSH_TIER="${BUBBLES_PREPUSH_TIER:-full}"
+
+if [[ "$PREPUSH_TIER" == "core" ]]; then
+  echo "🫧 bubbles pre-push: tier=core (fast structural gate — full validate + release-check still required before a release)"
+  if ! bash "$SCRIPT_DIR/framework-validate.sh" --tier=core >/tmp/bubbles-pre-push-validate.log 2>&1; then
+    echo "❌ framework-validate (core tier) failed. Full log: /tmp/bubbles-pre-push-validate.log"
+    echo "    Tail:"
+    tail -30 /tmp/bubbles-pre-push-validate.log | sed 's/^/      /'
+    echo ""
+    echo "    Fix the failures and retry the push. There is no bypass."
+    exit 1
+  fi
+  echo "✅ framework-validate (core tier) passed — run a FULL validate + release-check before cutting a release."
+  exit 0
+fi
+
 if ! bash "$SCRIPT_DIR/framework-validate.sh" >/tmp/bubbles-pre-push-validate.log 2>&1; then
   echo "❌ framework-validate failed. Full log: /tmp/bubbles-pre-push-validate.log"
   echo "    Tail:"
