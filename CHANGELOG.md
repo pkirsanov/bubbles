@@ -14,6 +14,44 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-100 systematic improvement program — COMPLETE (consolidated plan retired)
+
+The IMP-100 master systematic-improvement program (Phases 0–6, absorbing
+IMP-001/002/003/004/005/020/021/022/024/026 + BUG-012…026) is delivered and green
+under `framework-validate`. Its consolidated planning doc
+(`improvements/IMP-100-master-systematic-improvement-plan.md`) is retired; the
+shipped work lives in the framework, its hermetic selftests, and git history.
+
+Shipped (each a mechanical guard/primitive + hermetic selftest wired into `framework-validate`):
+
+- **Phase 2 — honest visible progress.** `execution-substate-guard.sh`
+  (`execution.substate` `implemented`/`independently_verified`/`needs_reverification`,
+  namespace-separated from validate-owned certification); `tool-log.sh`
+  input-closure receipts + `evidence-receipt-check.sh` targeted invalidation
+  (an unrelated change invalidates nothing; a behavior change invalidates exactly
+  the intersecting receipts). IMP-024 SCOPE-1–6.
+- **Phase 3 — assurance-gated deploy (framework contract).** `assurance-resolve` /
+  `assurance-derive` / `assurance-certification-check` / `release-assurance-gate` /
+  `deploy-manifest-assurance-lint` (chokes #1–#5, framework half); the distinct
+  terminal status is resolved-by-design via `certification.assurance.level`.
+- **Phase 4 — bounded work.** `scope-context-fit-lint.sh` (G037 contextFit),
+  `expand-migrate-contract-guard.sh` (safe wide-refactor DAG),
+  `plan-dependency-depth-guard.sh` (DAG horizontal detection); IMP-022 SCOPE-5
+  covered by traceability G068.
+- **Phase 5 — proportional validation.** `--tier=core` opt-in pre-push fast path
+  (`BUBBLES_PREPUSH_TIER=core`); the default stays the full validate + release-check.
+- **Phase 6 — trust / eval.** `eval-heldout-guard.sh` (held-out isolation, AF-004),
+  `effective-bundle-measure.sh` (AF-006), `forecast-eval-check.sh` (FIN-001).
+
+Deliberately deferred (recorded, not lost): **R7 full-suite selftest
+parallelization + R9 shared install fixture / release-check dedup** — full-tier
+performance optimizations; the routine-speed goal is met by `--tier=core`, and
+parallelizing the critical validation harness is a risky refactor kept out of
+scope to preserve keep-green. **Downstream (knb-owned per the deployment
+boundary):** the concrete knb assurance deploy-adapter that emits the
+build-manifest attestation and calls `deploy-manifest-assurance-lint.sh` in
+preflight (requires a knb framework upgrade first).
+
 ### IMP-006 journey full-stack tutorial hardening — packet finalized
 
 - The `bubbles.journey` agent-contract hardening (SCOPE-1–6: four-layer per-step
