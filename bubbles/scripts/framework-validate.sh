@@ -425,6 +425,10 @@ if [[ -x "$SCRIPT_DIR/release-train-rollup-selftest.sh" ]]; then
   run_check "Release train rollup selftest" bash "$SCRIPT_DIR/release-train-rollup-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/release-assurance-gate-selftest.sh" ]]; then
+  run_check "Release assurance gate selftest (IMP-100 Phase 3 choke #3)" bash "$SCRIPT_DIR/release-assurance-gate-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/observability-adapter-lint-selftest.sh" ]]; then
   run_check "Observability adapter lint selftest" bash "$SCRIPT_DIR/observability-adapter-lint-selftest.sh"
 fi
