@@ -280,3 +280,19 @@ is unavailable/non-certifying.
 
 This focused selftest is the validation scope described here; it is not, by
 itself, a claim that full framework validation ran or passed.
+
+## Related Eval Tooling (IMP-020 S4–S6)
+
+Beyond the golden-task harness, these generic eval tools compose with it:
+
+- **Held-out isolation (AF-004)** — `bubbles/scripts/eval-heldout-guard.sh`
+  enforces that a held-out benchmark (`bubbles/eval/held-out/`) is disjoint from
+  this development corpus and substantive. See `held-out/README.md`.
+- **Effective prompt bundle (AF-006)** — `bubbles/scripts/effective-bundle-measure.sh`
+  measures an agent's transitively-loaded `bubbles_shared` closure (bytes / lines /
+  files + skill pointers).
+- **Forecast eval (FIN-001)** — `bubbles/scripts/forecast-eval-check.sh` is the
+  generic, product-agnostic forecast core: temporal-integrity / leakage detection
+  (`predictedAt` < `resolvedAt`) plus Brier scoring over probabilistic predictions
+  vs binary outcomes. It carries no product data; a product's forecast task uses it
+  as an executable-oracle.
