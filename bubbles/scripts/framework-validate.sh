@@ -324,6 +324,7 @@ run_check "Capability foundation guard selftest" bash "$SCRIPT_DIR/capability-fo
 run_check "State linkage backfill selftest" bash "$SCRIPT_DIR/state-linkage-backfill-selftest.sh"
 run_check "Planning packet linkage guard selftest" bash "$SCRIPT_DIR/planning-packet-linkage-guard-selftest.sh"
 run_check "Vertical-delivery plan guard selftest (BFW-02 / IMP-022)" bash "$SCRIPT_DIR/vertical-delivery-plan-guard-selftest.sh"
+run_check "Plan dependency-depth guard selftest (IMP-100 Phase 4 / IMP-022 SCOPE-3+4)" bash "$SCRIPT_DIR/plan-dependency-depth-guard-selftest.sh"
 run_check "Design-experiment guard selftest (IMP-100 Phase 4 / IMP-026 SCOPE-8)" bash "$SCRIPT_DIR/design-experiment-guard-selftest.sh"
 run_check "Work-tracker projection selftest (IMP-100 Phase 4 / IMP-026 SCOPE-7)" bash "$SCRIPT_DIR/work-tracker-project-selftest.sh"
 run_check "Scope context-fit lint selftest (IMP-100 Phase 4 / IMP-026 SCOPE-6)" bash "$SCRIPT_DIR/scope-context-fit-lint-selftest.sh"
