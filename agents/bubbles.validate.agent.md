@@ -263,6 +263,10 @@ history, and a spec with no `certification.assurance` block remains valid
 3. Record `certification.assurance = { "level": <achievedLevel>, "missingForFull": [<gaps or empty>] }`
    verbatim from that output. `assurance-derive.sh` is fail-closed and derives
    DOWN, so never record a higher level than the evidence supports.
+4. Confirm the recorded block is internally consistent by running, via
+   `run_in_terminal`, `bash bubbles/scripts/assurance-certification-check.sh --feature-dir <FEATURE_DIR>`
+   (it REFUSES a block whose `level` and `missingForFull` contradict the
+   derivation invariants). A refusal means the record was mangled — re-derive.
 
 This makes the achieved assurance level auditable at certification and available
 to the deploy choke points (`assurance-resolve.sh` decides deploy-eligibility
