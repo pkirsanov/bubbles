@@ -217,6 +217,16 @@ A scope is a DURABLE unit of work: a fresh specialist, handed ONLY the spec's du
 
 **Mechanical enforcement.** `bubbles/scripts/scope-context-fit-lint.sh <feature-dir>` flags any scope body containing an unambiguous chat/session-replay dependency (a curated phrase set; ordinary requirement language like "the user asked for" never false-positives). Advisory by default (exit 0 + warning); blocking (exit 1) only under `.github/bubbles-project.yaml` `scopeContextFitGuard: block`. No bypass flag. This is the G037 `contextFit` dimension.
 
+### Wide-Refactor Sequencing (`expand→migrate→contract`)
+
+A wide refactor — renaming / moving / replacing a widely-consumed route, symbol, contract, or schema — is safe ONLY when removal of the old form is SEQUENCED after every consumer has moved. Plan it in three phases and tag each scope's `refactorPhase` in `state.json`:
+
+- **expand** — add the new form ALONGSIDE the old (both work); depends on nothing else in this refactor.
+- **migrate** — move each consumer batch onto the new form; each migrate scope `dependsOn` the expand scope.
+- **contract** — remove the old form; the contract scope `dependsOn` **all** migrate scopes.
+
+Opt in with a top-level `"refactorPattern": "expand-migrate-contract"` in `state.json`. **Mechanical enforcement:** `bubbles/scripts/expand-migrate-contract-guard.sh <feature-dir>` verifies the invariants over the existing `dependsOn` DAG (every scope carries a valid `refactorPhase`; at least one of each phase; every migrate depends on ≥1 expand; every contract depends on ALL migrates; no expand depends on a migrate/contract scope). It COMPOSES with G043 (consumer trace) + G044 (regression) — those prove consumers are updated; this proves the removal runs last. Advisory by default; blocking under `.github/bubbles-project.yaml` `expandMigrateContractGuard: block`. No integration-branch bypass.
+
 ### Legacy Format Migration (MANDATORY Before Starting Work)
 
 **When an agent encounters a spec with `scopes.md` (single-file) that has 6+ scopes, it MUST refactor to the per-scope directory layout before starting implementation.**
