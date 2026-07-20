@@ -208,6 +208,15 @@ A **design-experiment** is a DISPOSABLE git worktree for throwaway exploration �
 
 **Mechanical enforcement.** `bubbles/scripts/design-experiment-guard.sh --worktree <dir>` REFUSES (exit 1) when a `.design-experiment`-marked worktree contains completion/certification leakage — a `state.json` with a terminal `status`/`certification.status` (`done` / `delivered_fast` / `delivered_prototype` / `specs_hardened`) or a non-empty `completedScopes`, or a checked DoD item (`- [x]`) in a `scope.md` / `scopes.md`. A clean exploration (or a directory with no marker) passes (exit 0). The check is advisory-until-adopted (a workflow may invoke it before merge or certification); there is no bypass flag — a design-experiment becomes deliverable only by being re-planned as a normal scope.
 
+### Scope Context-Fit (`contextFit` — single-specialist-context)
+
+A scope is a DURABLE unit of work: a fresh specialist, handed ONLY the spec's durable artifacts (`spec.md` / `design.md` / the scope body / referenced files), MUST be able to execute it WITHOUT replaying the chat/session that produced it. A scope whose instructions say "as discussed above", "per our chat", or "earlier in this session" cannot be executed from a clean context — the ephemeral conversation is gone.
+
+- **Self-contained by construction.** Restate the decision inline, or reference a durable anchor (a `spec.md` FR / a `design.md` section / a scenario ID / a file path) — never the conversation.
+- **Not a length rule.** This is orthogonal to the G037 size discipline: a short scope can still be context-unfit (if it leans on chat), and a long scope can be perfectly self-contained. There is no hardcoded token count.
+
+**Mechanical enforcement.** `bubbles/scripts/scope-context-fit-lint.sh <feature-dir>` flags any scope body containing an unambiguous chat/session-replay dependency (a curated phrase set; ordinary requirement language like "the user asked for" never false-positives). Advisory by default (exit 0 + warning); blocking (exit 1) only under `.github/bubbles-project.yaml` `scopeContextFitGuard: block`. No bypass flag. This is the G037 `contextFit` dimension.
+
 ### Legacy Format Migration (MANDATORY Before Starting Work)
 
 **When an agent encounters a spec with `scopes.md` (single-file) that has 6+ scopes, it MUST refactor to the per-scope directory layout before starting implementation.**
