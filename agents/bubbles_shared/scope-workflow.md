@@ -197,6 +197,17 @@ Under `parallelScopes=dag`, DAG-independent scopes execute concurrently in separ
 - **Multi-repo runs:** the lease is keyed by repository root — a cross-repo scenario holds exactly one writer lease per repo.
 - **Handoff / continuation + pre-tool risk:** a handoff/continuation envelope records the held lease target so a resumed run re-acquires (or refuses on a live conflict); an `owned_mutation` against a held spec target is expected to hold the lease. The lease is opt-in / no-op for single-writer runs and only refuses a SECOND live writer. See `docs/recipes/runtime-coordination.md` (writer-guard).
 
+### Isolated Design-Experiment Contract (`.design-experiment`)
+
+A **design-experiment** is a DISPOSABLE git worktree for throwaway exploration — a spike, proof-of-concept, or "what if" probe whose purpose is LEARNING, not delivery. It composes with the `parallelScopes=dag` / `gitIsolation` worktree model above but adds one hard rule: **a design-experiment's outputs can NEVER satisfy DoD, tests, integration, or certification, and the worktree is DELETED after its findings are captured.**
+
+- **Marker.** A design-experiment worktree carries a `.design-experiment` marker file at its root (created when the experiment worktree is spun up). The marker's presence is what makes the isolation rules below apply; absent the marker, a worktree is a normal delivery worktree.
+- **Throwaway by construction.** Nothing produced inside a design-experiment counts toward completion: it MUST NOT be merged to the trunk, MUST NOT flip DoD checkboxes, MUST NOT write `certification.*` terminal state or `completedScopes`, and MUST NOT be cited as test/integration evidence. It is learning, not delivery.
+- **Capture then delete.** When the experiment concludes, the parent DISTILLS its findings into the durable `spec.md` / `design.md` (a decision, a rejected alternative, a measured number), then DELETES the worktree and its branch (mirroring `gitIsolation` whole-run rollback). No partial experiment state survives.
+- **No certification path.** Because a design-experiment can't satisfy DoD/test/certification, it can't be a scope, can't close a scope, and can't be a spec's delivery vehicle. Real work the experiment informed is planned + delivered as a normal scope afterward.
+
+**Mechanical enforcement.** `bubbles/scripts/design-experiment-guard.sh --worktree <dir>` REFUSES (exit 1) when a `.design-experiment`-marked worktree contains completion/certification leakage — a `state.json` with a terminal `status`/`certification.status` (`done` / `delivered_fast` / `delivered_prototype` / `specs_hardened`) or a non-empty `completedScopes`, or a checked DoD item (`- [x]`) in a `scope.md` / `scopes.md`. A clean exploration (or a directory with no marker) passes (exit 0). The check is advisory-until-adopted (a workflow may invoke it before merge or certification); there is no bypass flag — a design-experiment becomes deliverable only by being re-planned as a normal scope.
+
 ### Legacy Format Migration (MANDATORY Before Starting Work)
 
 **When an agent encounters a spec with `scopes.md` (single-file) that has 6+ scopes, it MUST refactor to the per-scope directory layout before starting implementation.**
