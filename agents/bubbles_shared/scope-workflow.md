@@ -227,6 +227,16 @@ A wide refactor — renaming / moving / replacing a widely-consumed route, symbo
 
 Opt in with a top-level `"refactorPattern": "expand-migrate-contract"` in `state.json`. **Mechanical enforcement:** `bubbles/scripts/expand-migrate-contract-guard.sh <feature-dir>` verifies the invariants over the existing `dependsOn` DAG (every scope carries a valid `refactorPhase`; at least one of each phase; every migrate depends on ≥1 expand; every contract depends on ALL migrates; no expand depends on a migrate/contract scope). It COMPOSES with G043 (consumer trace) + G044 (regression) — those prove consumers are updated; this proves the removal runs last. Advisory by default; blocking under `.github/bubbles-project.yaml` `expandMigrateContractGuard: block`. No integration-branch bypass.
 
+### Execution Substates (`execution.substate` — honest progress before certification)
+
+A scope makes visible progress DURING execution, before any certifying agent runs. That progress lives in `state.json` at `execution.substate`, a closed vocabulary written by the EXECUTION agents (`bubbles.implement` / `bubbles.test`):
+
+- **`implemented`** — the code/tests for the scope are written.
+- **`independently_verified`** — a separate check (a different agent or run) confirmed the behavior.
+- **`needs_reverification`** — a later change invalidated a prior verification.
+
+These are NOT terminal statuses and NOT certification. `bubbles.implement` and `bubbles.test` MUST NOT write `certification.*` — only `bubbles.validate` owns certification. The three substate words may NEVER appear in a terminal-status or certification-status field. **Mechanical enforcement:** `bubbles/scripts/execution-substate-guard.sh <feature-dir>` (BLOCKING) validates the vocabulary and the namespace separation; a `state.json` without `execution.substate` passes untouched.
+
 ### Legacy Format Migration (MANDATORY Before Starting Work)
 
 **When an agent encounters a spec with `scopes.md` (single-file) that has 6+ scopes, it MUST refactor to the per-scope directory layout before starting implementation.**

@@ -51,6 +51,7 @@ handoffs:
 - Test code — test files across all required test types
 - `report.md` — append test execution evidence to existing sections
 - `scenario-manifest.json` — update evidence links only
+- `state.json` — execution progress ONLY (`execution.substate: independently_verified`, or `needs_reverification` when a change invalidated a prior verification); MUST NOT write `certification.*` (route to `bubbles.validate`). Enforced by `execution-substate-guard.sh`.
 
 **Foreign artifacts (MUST invoke the owner, never edit directly):**
 - `spec.md` → invoke `bubbles.analyst`
