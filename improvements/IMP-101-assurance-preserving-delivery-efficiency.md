@@ -31,6 +31,14 @@ and roadmap record.
 - **SUPPLY-101 prerequisite documentation (sub-part).** `docs/guides/INSTALLATION.md`
   prerequisites now list `tar` and a SHA-256 utility, which `install.sh`
   preflight hard-requires. Source-authenticating install remains deferred.
+- **SCOPE-10 management-truth enforcement (bounded core).** New
+  `bubbles/scripts/management-truth-lint.sh` (+ hermetic selftest, wired
+  source-only into framework-validate) mechanically fails if any
+  `docs/recipes/*.md` is unlinked from the catalog index or any
+  `adoption-profiles.yaml` id is absent from the installer `--profile` help,
+  locking in the DOC-101 recipe and profile fixes so they cannot silently
+  re-drift. Registry-generated count prose and a machine-readable
+  bug-disposition ledger remain deferred.
 
 **Deferred - reserved owner decisions required before implementation:**
 
@@ -52,8 +60,9 @@ and roadmap record.
   reject currently-passing over-budget agents); **SCOPE-7** one-pass parallel
   validation (refactor of the critical validation harness; the
   `BUBBLES_PREPUSH_TIER=core` opt-in already ships as a partial mitigation);
-  **SCOPE-8** signed installation; **SCOPE-10** generated management truth plus a
-  machine-readable bug-disposition ledger; **SCOPE-11** full gate-strength
+  **SCOPE-8** signed installation; **SCOPE-10 remainder** (registry-generated
+  count prose plus a machine-readable bug-disposition ledger; the recipe- and
+  profile-catalog enforcement core is shipped above); **SCOPE-11** full gate-strength
   taxonomy across all 109 gates; **SCOPE-12** modular CLI/guard decomposition
   (3,232-line `cli.sh` + 3,466-line guard); **SCOPE-13** dispatch-failure
   checkpointing; **SCOPE-14** held-out efficiency benchmark (depends on the
