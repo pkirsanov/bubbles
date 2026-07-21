@@ -212,7 +212,7 @@ gates:
   G072:
     name: evidence_provenance_gate
     description: >-
-      ABSOLUTE BLOCKING gate. Every evidence block recording the outcome of a command MUST include a `**Claim Source:**` tag with one of three values: `executed` (command actually ran in this session), `interpreted` (command ran but the DoD claim requires inferring meaning from output), or `not-run` (command was not executed — DoD item MUST stay `[ ]` with an Uncertainty Declaration). Evidence labeled `executed` but containing summaries, predictions, or paraphrased output instead of raw terminal text is fabrication. Validate-owned remediation MUST downgrade mislabeled evidence and require re-execution. Enforced by bubbles.validate evidence review plus state-transition-guard.sh Check 12.
+      ABSOLUTE BLOCKING gate. Every evidence block recording the outcome of a command MUST include a `**Claim Source:**` tag with one of three values: `executed` (command actually ran in this session), `interpreted` (command ran but the DoD claim requires inferring meaning from output), or `not-run` (command was not executed — DoD item MUST stay `[ ]` with an Uncertainty Declaration). Evidence labeled `executed` but containing summaries, predictions, or paraphrased output instead of raw terminal text is fabrication. Validate-owned remediation MUST downgrade mislabeled evidence and require re-execution. Enforced by bubbles.validate evidence review. No mechanical guard check currently scans the `**Claim Source:**` tag (state-transition-guard.sh Check 12 is duplicate and fabrication detection, not provenance-tag enforcement); a DoD-level mechanical enforcer for this tag is a tracked improvement.
   G073:
     name: planning_only_source_edit_lockout_gate
     description: >-

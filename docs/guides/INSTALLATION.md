@@ -7,7 +7,8 @@
 ## Prerequisites
 
 - A git repository
-- `curl` and `bash` (available on macOS, Linux, WSL)
+- `curl`, `tar`, and `bash` (available on macOS, Linux, WSL)
+- A SHA-256 utility (`sha256sum` or `shasum`) for install provenance checksums
 - VS Code with GitHub Copilot Chat extension
 
 > **Source repo note:** this guide is for downstream project repos. Do not run `install.sh` inside the Bubbles source repository itself; maintainers should edit the framework directly and validate with `bash bubbles/scripts/cli.sh framework-validate` or `bash bubbles/scripts/cli.sh release-check`.
