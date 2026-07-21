@@ -3337,6 +3337,24 @@ source "$SCRIPT_DIR/guards/tail-delegated-gates.sh"
 fi
 
 # =============================================================================
+# CHECK 40: Claim-Source provenance (IMP-101 SCOPE-1 / gate G072)
+# Delegates to the standalone claim-source-lint.sh in an ISOLATED subprocess —
+# its own `set -e` can never abort this guard. Advisory-until-opt-in: the lint
+# exits non-zero ONLY when `claimSourceProvenanceGuard: block` is set in
+# .github/bubbles-project.yaml, so a transition is failed here only when the
+# operator has explicitly opted in. Otherwise findings print but do not block.
+# =============================================================================
+if [[ -x "$SCRIPT_DIR/claim-source-lint.sh" ]]; then
+  echo "--- Check 40: Claim-Source provenance (G072) ---"
+  if bash "$SCRIPT_DIR/claim-source-lint.sh" "$feature_dir"; then
+    pass "Claim-Source provenance: execution-evidence blocks carry a valid tag (or advisory)"
+  else
+    fail "Claim-Source provenance findings under claimSourceProvenanceGuard: block (G072)"
+  fi
+  echo ""
+fi
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"

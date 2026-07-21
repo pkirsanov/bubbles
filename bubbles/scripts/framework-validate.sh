@@ -556,6 +556,17 @@ if [[ -x "$SCRIPT_DIR/gate-strength-lint.sh" ]]; then
   run_check_self_only "Gate-strength taxonomy (live)" bash "$SCRIPT_DIR/gate-strength-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/claim-source-lint-selftest.sh" ]]; then
+  run_check "Claim-Source lint selftest" bash "$SCRIPT_DIR/claim-source-lint-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/claim-source-lint.sh" ]]; then
+  # Source-only: scans the framework's OWN report.md evidence blocks for the
+  # G072 Claim-Source provenance tag. Advisory-until-opt-in, so it never blocks
+  # here; the state-transition-guard invokes the same lint on every transition.
+  run_check_self_only "Claim-Source provenance lint (live)" bash "$SCRIPT_DIR/claim-source-lint.sh" "$REPO_ROOT"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0

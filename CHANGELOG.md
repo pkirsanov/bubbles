@@ -87,6 +87,15 @@ Shipped (validated + green):
   conditional-noop / external-enforcement) and publishes the counts, so the flat
   gate total no longer hides where assurance comes from. The current registry
   resolves to 78 / 7 / 15 / 4 / 5.
+- **SCOPE-1 mechanical Claim-Source provenance enforcer.** New
+  `claim-source-lint.sh` (+ hermetic selftest) flags any execution-evidence
+  block (a `**Exit Code:**` block) in report.md that lacks a valid
+  `**Claim Source:**` tag (executed/interpreted/not-run) — the G072 taxonomy
+  that previously had no mechanical check. Wired into framework-validate AND
+  invoked by the state-transition-guard on every transition (Check 40),
+  advisory-until-opt-in via `claimSourceProvenanceGuard: block` so it never
+  rejects historical artifacts. The durable raw-evidence RECEIPT backend
+  (repo objects vs signed CI artifacts) remains an owner decision.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -117,10 +126,9 @@ Resolved — blocked on external input (cannot be completed inside this repo):
 
 Deferred — genuine future work needing dedicated, careful effort (explicitly NOT dismissed):
 
-- **SCOPE-1 claim-bound evidence receipts + a mechanical G072 DoD-tag enforcer** —
-  gated on the owner's durable evidence-backend decision (repo objects vs signed
-  CI artifacts) and a careful change to the 3,466-line evidence path that must not
-  reject currently-valid specs.
+- **SCOPE-1 remainder** — the durable raw-evidence RECEIPT backend (repo
+  content-addressed objects vs signed CI artifacts) is an owner decision; the
+  mechanical Claim-Source provenance enforcer shipped above.
 - **SCOPE-5 registry-derived execution contract** — the newer modes
   (`rapid-tool-delivery`, `readiness-review`, `journey-refinement`) escape the
   guard's Check-6 specialist requirement, but `modes.yaml` declares `requiredGates`,
