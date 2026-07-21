@@ -533,6 +533,18 @@ if [[ -x "$SCRIPT_DIR/stale-deferral-lint.sh" ]]; then
   run_check_self_only "Stale-deferral lint (live)" bash "$SCRIPT_DIR/stale-deferral-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/management-truth-lint-selftest.sh" ]]; then
+  run_check "Management-truth lint selftest" bash "$SCRIPT_DIR/management-truth-lint-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/management-truth-lint.sh" ]]; then
+  # Live scan is source-only: it checks the framework's OWN recipe catalog
+  # (docs/recipes/README.md) and installer --profile help against the live
+  # adoption-profiles.yaml. Downstream repos have their own docs, so the
+  # catalog-completeness comparison is meaningful only here.
+  run_check_self_only "Management-truth lint (live)" bash "$SCRIPT_DIR/management-truth-lint.sh" "$REPO_ROOT"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0
