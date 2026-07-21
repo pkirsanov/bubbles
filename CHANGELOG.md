@@ -138,7 +138,12 @@ Resolved — recommend NOT building (over-engineering / redundant; reversible fr
 
 Resolved — blocked on external input (cannot be completed inside this repo):
 
-- **SCOPE-8 signed installation** — requires operator signing infrastructure/keys.
+- **SCOPE-8 signed installation** — the signed-digest path requires operator
+  signing infrastructure/keys (external). The keyless payload-vs-`managedFileChecksums`
+  verification is implementable (install.sh already carries `sha256_file` and an
+  install-provenance selftest), but it modifies the installer copy flow — the
+  highest-blast-radius, hardest-to-fully-test file — so it warrants a dedicated,
+  install-run-tested increment rather than the tail of a multi-item pass.
 - **SCOPE-9 remainder** — choosing the migration date/version and activating
   `--require-assurance` in the concrete knb deploy adapter are operator/knb
   decisions per the deployment boundary; the framework mechanism shipped above.
