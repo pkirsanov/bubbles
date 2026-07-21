@@ -109,6 +109,12 @@ Shipped (validated + green):
   default informational (never blocks), advisory or blocking per
   `effectiveBundleBudget: block`. This resolves the earlier false-rejection
   concern: the framework ships no arbitrary default limit.
+- **SCOPE-9 mandatory-assurance mechanism (DEPLOY-101).**
+  `deploy-manifest-assurance-lint.sh` gained `--require-assurance`, which turns
+  an ABSENT assurance block from a backward-compatible no-op into a refusal,
+  closing the fail-open window. Default off (backward-compatible); the operator
+  or CI activates it after their assurance-migration date — the date stays the
+  operator's decision per the deployment boundary. Selftest cases T17/T18 added.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -126,10 +132,9 @@ Resolved — recommend NOT building (over-engineering / redundant; reversible fr
 Resolved — blocked on external input (cannot be completed inside this repo):
 
 - **SCOPE-8 signed installation** — requires operator signing infrastructure/keys.
-- **SCOPE-9 mandatory assurance migration** — requires the owner's migration
-  date/version decision; the concrete adapter is knb-owned per the deployment
-  boundary. The framework-side contract already ships
-  (`deploy-manifest-assurance-lint.sh`, IMP-100 Phase 3).
+- **SCOPE-9 remainder** — choosing the migration date/version and activating
+  `--require-assurance` in the concrete knb deploy adapter are operator/knb
+  decisions per the deployment boundary; the framework mechanism shipped above.
 - **SCOPE-14 held-out efficiency benchmark** — requires an operator-supplied
   held-out task corpus (per `eval-heldout-guard.sh`); results cannot be fabricated,
   and it is moot once compact packets are not built.
