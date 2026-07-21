@@ -36,7 +36,7 @@ bash .github/bubbles/scripts/mcp-server-selftest.sh
 | Cursor | `.cursor/mcp.json` (workspace) or `~/.cursor/mcp.json` (global) | `.github/bubbles/mcp/clients/cursor.json` |
 | Cline | `cline_mcp_settings.json` | `.github/bubbles/mcp/clients/cline.json` |
 
-Restart your client. The `bubbles-<repo-slug>` server should appear with 10 annotated tools, 5 static resources, 2 resource templates, and 37 prompts.
+Restart your client. The `bubbles-<repo-slug>` server should appear with 12 annotated tools, 5 static resources, 2 resource templates, and 41 prompts.
 
 ---
 

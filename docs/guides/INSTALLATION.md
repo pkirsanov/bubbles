@@ -30,8 +30,8 @@ curl -fsSL https://raw.githubusercontent.com/pkirsanov/bubbles/main/install.sh |
 ```
 
 This installs:
-- 34 agent definitions → `.github/agents/bubbles.*.agent.md`
-- 34 prompt shims → `.github/prompts/bubbles.*.prompt.md`
+- 41 agent definitions → `.github/agents/bubbles.*.agent.md`
+- 41 prompt shims → `.github/prompts/bubbles.*.prompt.md`
 - Shared governance docs → `.github/agents/bubbles_shared/`
 - Shared portable instructions → `.github/instructions/bubbles-*.instructions.md`
 - Shared portable governance skills → `.github/skills/bubbles-*/SKILL.md`
@@ -40,7 +40,6 @@ This installs:
 - Governance scripts → `.github/bubbles/scripts/*.sh`
 
 And with `--bootstrap`, also creates:
-- `AGENTS.md` — root-level AI guardrails (newer VS Code convention)
 - `.github/copilot-instructions.md` — project policies and commands
 - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules
 - `.specify/memory/constitution.md` — project governance principles

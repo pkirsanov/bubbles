@@ -47,7 +47,7 @@ Maintained for the Bubbles framework source repository. This checkout does not h
 See [terminal-discipline.instructions.md](instructions/terminal-discipline.instructions.md) (auto-loaded via `applyTo: "**"`) for:
 - No piping/redirecting output into files — use IDE file tools
 - No truncating command output (`head`, `tail`, filters) — always full output
-- Always use `./bubbles.sh` — no direct tool invocation
+- Always use `bash bubbles/scripts/cli.sh` (source repo) — no direct tool invocation
 
 ---
 

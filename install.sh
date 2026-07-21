@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "  REF                Git ref to install (default: main)"
       echo "  --bootstrap        Scaffold project config files after install"
-      echo "  --profile ID       Select bootstrap adoption profile (foundation, delivery, or assured)"
+      echo "  --profile ID       Select bootstrap adoption profile (foundation, delivery, production, or assured)"
       echo "  --cli ./foo.sh     Set CLI entrypoint (auto-detected if omitted)"
       echo "  --name \"My Proj\"   Set project name (auto-detected if omitted)"
       echo "  --agents-only      Skip shared instructions and skills"
