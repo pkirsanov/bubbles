@@ -567,6 +567,17 @@ if [[ -x "$SCRIPT_DIR/claim-source-lint.sh" ]]; then
   run_check_self_only "Claim-Source provenance lint (live)" bash "$SCRIPT_DIR/claim-source-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/effective-bundle-budget-selftest.sh" ]]; then
+  run_check "Effective-bundle budget selftest" bash "$SCRIPT_DIR/effective-bundle-budget-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/effective-bundle-budget.sh" ]]; then
+  # Source-only: measures the framework's OWN agent bundles against an OPTIONAL
+  # effectiveBundleMaxBytes budget. With no budget configured it is purely
+  # informational (never blocks); opt-in blocking is per .github/bubbles-project.yaml.
+  run_check_self_only "Effective-bundle budget (live)" bash "$SCRIPT_DIR/effective-bundle-budget.sh" "$REPO_ROOT"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0

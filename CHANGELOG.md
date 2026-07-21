@@ -103,6 +103,12 @@ Shipped (validated + green):
   and `journey-refinement` are correctly left unlisted — they set
   `allowImplementationForFindings: false` and run review/journey phases, so a
   delivery-specialist requirement would be wrong for them.
+- **SCOPE-6 opt-in effective-context budget (CTX-101).** New
+  `effective-bundle-budget.sh` (+ hermetic selftest) measures each agent's
+  transitive bundle and enforces an OPTIONAL `effectiveBundleMaxBytes` ceiling —
+  default informational (never blocks), advisory or blocking per
+  `effectiveBundleBudget: block`. This resolves the earlier false-rejection
+  concern: the framework ships no arbitrary default limit.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -110,9 +116,6 @@ Resolved — recommend NOT building (over-engineering / redundant; reversible fr
   path (compact packets, delta planning, risk-proportional routing) with unproven
   benefit; it adds a second delivery model and its own risk surface. Not pursued
   without demonstrated need.
-- **SCOPE-6 blocking context budgets** — the effective-bundle measurement already
-  ships report-only (`effective-bundle-measure.sh`); making it blocking risks
-  false rejection of currently-valid agents. Advisory measurement retained.
 - **SCOPE-7 one-pass parallel validation** — routine-speed is already met by the
   shipped `--tier=core` opt-in; parallelizing the critical validation harness is
   churn risk against keep-green.
