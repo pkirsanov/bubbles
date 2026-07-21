@@ -74,10 +74,12 @@ Shipped (validated + green):
   `**Claim Source:**` tag.
 - **SUPPLY-101 prerequisite docs.** Added `tar` and a SHA-256 utility to the
   install prerequisites (both hard-required by `install.sh` preflight).
-- **SCOPE-10 management-truth enforcement core.** New `management-truth-lint.sh`
+- **SCOPE-10 management-truth enforcement.** New `management-truth-lint.sh`
   (+ hermetic selftest, wired source-only into `framework-validate`) fails if any
-  recipe is unlinked from the catalog or any adoption profile is absent from the
-  installer help — locking the DOC-101 fixes against silent re-drift.
+  recipe is unlinked from the catalog, any adoption profile is absent from the
+  installer help, or a documented inventory count (agents, prompt shims, MCP
+  tools, prompts) disagrees with the live inventory — locking the DOC-101 count
+  and catalog fixes against silent re-drift.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -117,8 +119,9 @@ Deferred — genuine future work needing dedicated, careful effort (explicitly N
   guard's Check-6 specialist requirement, but `modes.yaml` declares `requiredGates`,
   not specialist phases, so a correct fix must FIRST add authoritative per-mode
   phase declarations; a hardcoded guess would impose unverifiable enforcement.
-- **SCOPE-10 remainder** — registry-generated count prose and a machine-readable
-  bug-disposition ledger (the recipe/profile catalog-enforcement core shipped above).
+- **SCOPE-10 remainder** — a machine-readable bug-disposition ledger making
+  `BUGS.md`/changelog/issue-status generated views (the catalog, profile, and
+  documented-count enforcement shipped above).
 - **SCOPE-11 gate-strength taxonomy** — classifying all 109 gates requires verifying
   each gate's actual enforcer; a superficial pass would be inaccurate.
 - **SCOPE-13 host dispatch-failure checkpointing** — resilience work touching the
