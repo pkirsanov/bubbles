@@ -545,6 +545,17 @@ if [[ -x "$SCRIPT_DIR/management-truth-lint.sh" ]]; then
   run_check_self_only "Management-truth lint (live)" bash "$SCRIPT_DIR/management-truth-lint.sh" "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/gate-strength-lint-selftest.sh" ]]; then
+  run_check "Gate-strength lint selftest" bash "$SCRIPT_DIR/gate-strength-lint-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/gate-strength-lint.sh" ]]; then
+  # Source-only: publishes the enforcement-strength taxonomy of the framework's
+  # OWN gate registry and fails only if a gate cannot be classified (a registry
+  # parse problem). Downstream repos carry the same registry via managed sync.
+  run_check_self_only "Gate-strength taxonomy (live)" bash "$SCRIPT_DIR/gate-strength-lint.sh" "$REPO_ROOT"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0

@@ -80,6 +80,13 @@ Shipped (validated + green):
   installer help, or a documented inventory count (agents, prompt shims, MCP
   tools, prompts) disagrees with the live inventory — locking the DOC-101 count
   and catalog fixes against silent re-drift.
+- **SCOPE-11 gate-strength taxonomy (published).** New `gate-strength-lint.sh`
+  (+ hermetic selftest, wired source-only into `framework-validate`)
+  deterministically classifies every registered gate by declared enforcement
+  strength (mechanical-blocking / mechanical-advisory / behavioral-contract /
+  conditional-noop / external-enforcement) and publishes the counts, so the flat
+  gate total no longer hides where assurance comes from. The current registry
+  resolves to 78 / 7 / 15 / 4 / 5.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -122,8 +129,9 @@ Deferred — genuine future work needing dedicated, careful effort (explicitly N
 - **SCOPE-10 remainder** — a machine-readable bug-disposition ledger making
   `BUGS.md`/changelog/issue-status generated views (the catalog, profile, and
   documented-count enforcement shipped above).
-- **SCOPE-11 gate-strength taxonomy** — classifying all 109 gates requires verifying
-  each gate's actual enforcer; a superficial pass would be inaccurate.
+- **SCOPE-11 remainder** — the per-gate enforcer-reconciliation audit (verifying
+  each gate's declared enforcer against the check that actually runs, e.g. the
+  G072/Check-12 mismatch); the deterministic strength taxonomy + counts shipped above.
 - **SCOPE-13 host dispatch-failure checkpointing** — resilience work touching the
   core orchestration runners.
 
