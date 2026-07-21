@@ -1458,6 +1458,17 @@ if [[ -n "$state_workflow_mode" ]]; then
     bugfix-fastlane)
       required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit")
       ;;
+    rapid-tool-delivery)
+      # IMP-101 SCOPE-5 (FLOW-101): this delivery mode was absent from the table,
+      # so Check 6 imposed no specialist-completion requirement on it. Its
+      # required specialists are its own declared phaseOrder in modes.yaml
+      # ([select, implement, test, validate, docs, finalize]) minus the select/
+      # finalize bookends. The read-only modes readiness-review and
+      # journey-refinement are intentionally NOT listed: they set
+      # allowImplementationForFindings:false and run review/journey phases, so a
+      # delivery-specialist requirement would be incorrect for them.
+      required_specialists=("implement" "test" "validate" "docs")
+      ;;
     chaos-hardening)
       required_specialists=("chaos" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "docs")
       ;;

@@ -96,6 +96,13 @@ Shipped (validated + green):
   advisory-until-opt-in via `claimSourceProvenanceGuard: block` so it never
   rejects historical artifacts. The durable raw-evidence RECEIPT backend
   (repo objects vs signed CI artifacts) remains an owner decision.
+- **SCOPE-5 mode specialist-enforcement gap (FLOW-101).** `state-transition-guard.sh`
+  Check 6 now enforces specialist completion for `rapid-tool-delivery`
+  (implement/test/validate/docs, derived from its declared `phaseOrder`), which
+  previously escaped the check entirely. The read-only modes `readiness-review`
+  and `journey-refinement` are correctly left unlisted — they set
+  `allowImplementationForFindings: false` and run review/journey phases, so a
+  delivery-specialist requirement would be wrong for them.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -129,11 +136,10 @@ Deferred — genuine future work needing dedicated, careful effort (explicitly N
 - **SCOPE-1 remainder** — the durable raw-evidence RECEIPT backend (repo
   content-addressed objects vs signed CI artifacts) is an owner decision; the
   mechanical Claim-Source provenance enforcer shipped above.
-- **SCOPE-5 registry-derived execution contract** — the newer modes
-  (`rapid-tool-delivery`, `readiness-review`, `journey-refinement`) escape the
-  guard's Check-6 specialist requirement, but `modes.yaml` declares `requiredGates`,
-  not specialist phases, so a correct fix must FIRST add authoritative per-mode
-  phase declarations; a hardcoded guess would impose unverifiable enforcement.
+- **SCOPE-5 remainder** — replacing the guard's hardcoded mode→specialist case
+  table with full `phaseOrder`-derived generation (deduplication) is a
+  no-functional-change refactor of the critical guard, deferred as churn-risk;
+  the concrete enforcement gap (rapid-tool-delivery) shipped above.
 - **SCOPE-10 remainder** — a machine-readable bug-disposition ledger making
   `BUGS.md`/changelog/issue-status generated views (the catalog, profile, and
   documented-count enforcement shipped above).
