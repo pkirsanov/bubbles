@@ -115,6 +115,13 @@ Shipped (validated + green):
   closing the fail-open window. Default off (backward-compatible); the operator
   or CI activates it after their assurance-migration date — the date stays the
   operator's decision per the deployment boundary. Selftest cases T17/T18 added.
+- **SCOPE-13 dispatch-failure checkpointing (HOST-101).** The shared
+  orchestration contract (`workflow-orchestration-core.md`) now requires the
+  orchestrator, on a `runSubagent` dispatch failure (e.g. the BUG-003
+  thinking-block mutation), to checkpoint completed findings/phases, treat the
+  failed dispatch as not-run, and resume — never counting a non-returning
+  dispatch as a passed phase or a closed finding. Bubbles cannot repair the host
+  serializer, so this is the framework-side resilience contract.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -154,8 +161,6 @@ Deferred — genuine future work needing dedicated, careful effort (explicitly N
 - **SCOPE-11 remainder** — the per-gate enforcer-reconciliation audit (verifying
   each gate's declared enforcer against the check that actually runs, e.g. the
   G072/Check-12 mismatch); the deterministic strength taxonomy + counts shipped above.
-- **SCOPE-13 host dispatch-failure checkpointing** — resilience work touching the
-  core orchestration runners.
 
 Owner decisions this proposal reserved (recorded for future action): the
 compact-packet principle, the durable evidence-backend policy, the compact rollout
