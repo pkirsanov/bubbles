@@ -122,6 +122,17 @@ Shipped (validated + green):
   failed dispatch as not-run, and resume — never counting a non-returning
   dispatch as a passed phase or a closed finding. Bubbles cannot repair the host
   serializer, so this is the framework-side resilience contract.
+- **SCOPE-8 keyless payload-integrity verification (INSTALL-101).** New
+  `verify-payload-integrity.sh` (+ hermetic selftest, wired source-only into
+  `framework-validate`) verifies every installed framework file against the
+  canonical `managedFileChecksums` sha256 in the release manifest; `install.sh`
+  now calls it immediately after the copy flow, before it stamps + snapshots the
+  install. A corrupt / truncated / partially-extracted payload — which the
+  self-referential `.checksums` snapshot (computed FROM the installed bytes)
+  cannot detect — now fails loud instead of silently installing a broken
+  framework. INTEGRITY only, not authenticity: the signed-manifest path (which
+  would also defeat a coordinated file+manifest tamper) needs operator keys and
+  stays deferred below.
 
 Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
 
@@ -138,12 +149,12 @@ Resolved — recommend NOT building (over-engineering / redundant; reversible fr
 
 Resolved — blocked on external input (cannot be completed inside this repo):
 
-- **SCOPE-8 signed installation** — the signed-digest path requires operator
-  signing infrastructure/keys (external). The keyless payload-vs-`managedFileChecksums`
-  verification is implementable (install.sh already carries `sha256_file` and an
-  install-provenance selftest), but it modifies the installer copy flow — the
-  highest-blast-radius, hardest-to-fully-test file — so it warrants a dedicated,
-  install-run-tested increment rather than the tail of a multi-item pass.
+- **SCOPE-8 signed installation** — the keyless payload-vs-`managedFileChecksums`
+  integrity check SHIPPED above (`verify-payload-integrity.sh`, called by
+  `install.sh` after the copy flow, with a hermetic selftest). The remaining
+  signed-digest path — which would additionally defeat a coordinated tamper of
+  BOTH a managed file and its manifest entry — requires operator signing
+  infrastructure/keys (external) and stays deferred.
 - **SCOPE-9 remainder** — choosing the migration date/version and activating
   `--require-assurance` in the concrete knb deploy adapter are operator/knb
   decisions per the deployment boundary; the framework mechanism shipped above.

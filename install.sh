@@ -690,6 +690,28 @@ if [[ "$AGENTS_ONLY" != "true" ]]; then
   bubbles_prune_managed_skill_orphans
 fi
 
+# ── Payload integrity verification (IMP-101 SCOPE-8) ────────────────
+# Every managed file has now been copied. The .checksums snapshot written below
+# is computed FROM the installed bytes, so it cannot detect a payload that
+# arrived corrupt (truncated download, failed extraction, partial disk write, a
+# single tampered file). Before we stamp + snapshot the install, verify every
+# installed framework file against the CANONICAL sha256 recorded in the release
+# manifest's managedFileChecksums. INTEGRITY only, not authenticity: a
+# coordinated tamper of BOTH a file AND its manifest entry needs a signed
+# manifest (keys the operator does not hold at install time; deferred) — this
+# closes the corruption / incomplete-download / single-file-tamper class at zero
+# key-management cost. The verifier is a managed script already copied above;
+# guard on its presence so an older payload lacking it never breaks the install.
+PAYLOAD_VERIFIER="$TEMP_DIR/bubbles/scripts/verify-payload-integrity.sh"
+if [[ -f "$PAYLOAD_VERIFIER" ]]; then
+  info "Verifying payload integrity against release manifest..."
+  if bash "$PAYLOAD_VERIFIER" --target "$TARGET" --manifest "$RELEASE_MANIFEST_SOURCE" --quiet; then
+    ok "Payload integrity verified against release manifest"
+  else
+    fail "Payload integrity check failed — installed framework files do not match the release manifest checksums (corruption or incomplete download). Re-run the installer; if this persists, the downloaded payload is corrupt or was modified in transit."
+  fi
+fi
+
 # ── Version stamp ───────────────────────────────────────────────────
 if [[ -f "$TEMP_DIR/VERSION" ]]; then
   cp "$TEMP_DIR/VERSION" "${TARGET}/bubbles/.version"
