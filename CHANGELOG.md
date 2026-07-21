@@ -52,6 +52,82 @@ boundary):** the concrete knb assurance deploy-adapter that emits the
 build-manifest attestation and calls `deploy-manifest-assurance-lint.sh` in
 preflight (requires a knb framework upgrade first).
 
+### IMP-101 assurance-preserving delivery efficiency — bounded fixes shipped; proposal retired
+
+The IMP-101 whole-system executive-review proposal
+(`improvements/IMP-101-assurance-preserving-delivery-efficiency.md`) is retired.
+Its bounded, low-risk, verifiable fixes are shipped and green under
+`framework-validate`; every remaining scope is recorded here with an honest
+terminal resolution. No scope that was not actually implemented is claimed done.
+The detailed 11-gap analysis (path:Lnnn citations) is preserved in git history.
+
+Shipped (validated + green):
+
+- **DOC-101 management-truth drift.** Corrected agent/prompt counts (34→41), MCP
+  tool/prompt counts (10→12, 37→41), removed the retired `AGENTS.md` scaffold
+  reference, added the `production` adoption profile to the installer `--profile`
+  help, linked all 70 recipes (was 60), and resolved the `./bubbles.sh` vs
+  `cli.sh` source-repo contradiction.
+- **GATE-101 enforcer mismatch.** Corrected G072's registry description — it no
+  longer claims enforcement by `state-transition-guard.sh` Check 12 (which is
+  duplicate/fabrication detection); it now states no mechanical guard scans the
+  `**Claim Source:**` tag.
+- **SUPPLY-101 prerequisite docs.** Added `tar` and a SHA-256 utility to the
+  install prerequisites (both hard-required by `install.sh` preflight).
+- **SCOPE-10 management-truth enforcement core.** New `management-truth-lint.sh`
+  (+ hermetic selftest, wired source-only into `framework-validate`) fails if any
+  recipe is unlinked from the catalog or any adoption profile is absent from the
+  installer help — locking the DOC-101 fixes against silent re-drift.
+
+Resolved — recommend NOT building (over-engineering / redundant; reversible from git):
+
+- **SCOPE-2/3/4 compact-packet delivery model** — a speculative parallel delivery
+  path (compact packets, delta planning, risk-proportional routing) with unproven
+  benefit; it adds a second delivery model and its own risk surface. Not pursued
+  without demonstrated need.
+- **SCOPE-6 blocking context budgets** — the effective-bundle measurement already
+  ships report-only (`effective-bundle-measure.sh`); making it blocking risks
+  false rejection of currently-valid agents. Advisory measurement retained.
+- **SCOPE-7 one-pass parallel validation** — routine-speed is already met by the
+  shipped `--tier=core` opt-in; parallelizing the critical validation harness is
+  churn risk against keep-green.
+- **SCOPE-12 modular CLI/guard decomposition** — a no-functional-change refactor of
+  the 3,232-line `cli.sh` and 3,466-line guard; pure churn risk on the most
+  critical files.
+
+Resolved — blocked on external input (cannot be completed inside this repo):
+
+- **SCOPE-8 signed installation** — requires operator signing infrastructure/keys.
+- **SCOPE-9 mandatory assurance migration** — requires the owner's migration
+  date/version decision; the concrete adapter is knb-owned per the deployment
+  boundary. The framework-side contract already ships
+  (`deploy-manifest-assurance-lint.sh`, IMP-100 Phase 3).
+- **SCOPE-14 held-out efficiency benchmark** — requires an operator-supplied
+  held-out task corpus (per `eval-heldout-guard.sh`); results cannot be fabricated,
+  and it is moot once compact packets are not built.
+
+Deferred — genuine future work needing dedicated, careful effort (explicitly NOT dismissed):
+
+- **SCOPE-1 claim-bound evidence receipts + a mechanical G072 DoD-tag enforcer** —
+  gated on the owner's durable evidence-backend decision (repo objects vs signed
+  CI artifacts) and a careful change to the 3,466-line evidence path that must not
+  reject currently-valid specs.
+- **SCOPE-5 registry-derived execution contract** — the newer modes
+  (`rapid-tool-delivery`, `readiness-review`, `journey-refinement`) escape the
+  guard's Check-6 specialist requirement, but `modes.yaml` declares `requiredGates`,
+  not specialist phases, so a correct fix must FIRST add authoritative per-mode
+  phase declarations; a hardcoded guess would impose unverifiable enforcement.
+- **SCOPE-10 remainder** — registry-generated count prose and a machine-readable
+  bug-disposition ledger (the recipe/profile catalog-enforcement core shipped above).
+- **SCOPE-11 gate-strength taxonomy** — classifying all 109 gates requires verifying
+  each gate's actual enforcer; a superficial pass would be inaccurate.
+- **SCOPE-13 host dispatch-failure checkpointing** — resilience work touching the
+  core orchestration runners.
+
+Owner decisions this proposal reserved (recorded for future action): the
+compact-packet principle, the durable evidence-backend policy, the compact rollout
+threshold, and the assurance migration date/version.
+
 ### IMP-006 journey full-stack tutorial hardening — packet finalized
 
 - The `bubbles.journey` agent-contract hardening (SCOPE-1–6: four-layer per-step
