@@ -28,6 +28,16 @@
 # a file that IS present at the target but whose bytes differ from the manifest
 # is a hard FAILURE.
 #
+# RELATIONSHIP TO bubbles-drift-check.sh (NOT redundant — complementary):
+#   - bubbles-drift-check.sh is the ON-DEMAND, post-install "am I drifted?" check
+#     (doctor / pre-push). It also compares installed files against
+#     managedFileChecksums, but it REQUIRES python3 (advisory-skips when python3
+#     is absent) and treats a manifest path missing on disk as DRIFT/MISSING.
+#   - THIS verifier is the INSTALL-TIME gate: pure bash + awk, so it verifies
+#     even when python3 is absent (install.sh explicitly supports that path), and
+#     it SKIPS absent entries so a legitimate --agents-only or opt-in-gated-skill
+#     install is never falsely failed. Deleting either one reopens a real gap.
+#
 # Usage:
 #   verify-payload-integrity.sh [--target DIR] [--manifest FILE] [--quiet]
 #
