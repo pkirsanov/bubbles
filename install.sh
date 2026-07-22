@@ -277,6 +277,27 @@ bubbles_prune_managed_skill_orphans() {
   done < <(grep -oE '^skills/[^/]+/' "$PRE_INSTALL_MANIFEST" | sort -u | sed -e 's#^skills/##' -e 's#/$##')
 }
 
+bubbles_prune_managed_tree_orphans() {
+  # $1 = framework-managed directory relative to ${TARGET} and ${TEMP_DIR}.
+  # Files absent from the new source or its managed checksum contract are stale
+  # and must not survive an upgrade. This mirrors the scripts/ + guards/ prune.
+  local relative_dir="$1"
+  local installed_root="${TARGET}/${relative_dir}"
+  local installed_file
+  local relative_path
+
+  [[ -d "$installed_root" ]] || return 0
+  while IFS= read -r installed_file; do
+    [[ -f "$installed_file" ]] || continue
+    relative_path="${installed_file#${TARGET}/}"
+    if [[ ! -f "$TEMP_DIR/$relative_path" ]] || \
+      ! release_manifest_owns_managed_path "$relative_path"; then
+      rm -f "$installed_file"
+      info "Pruned orphan framework file: $relative_path"
+    fi
+  done < <(find "$installed_root" -type f 2>/dev/null | LC_ALL=C sort)
+}
+
 # ── Install agents ──────────────────────────────────────────────────
 info "Installing agents..."
 mkdir -p "${TARGET}/agents/bubbles_shared"
@@ -353,6 +374,18 @@ if [[ -d "$TEMP_DIR/bubbles/scripts/guards" ]]; then
       rm -f "$installed_guard"
     fi
   done
+fi
+
+# bubbles/scripts/hooks/ contains the framework-maintainer hook payload used by
+# install-bubbles-hooks.sh. The top-level scripts glob is non-recursive, so this
+# managed tree needs an explicit copy + prune just like guards/.
+if [[ -d "$TEMP_DIR/bubbles/scripts/hooks" ]]; then
+  info "Installing framework hook payload..."
+  mkdir -p "${TARGET}/bubbles/scripts/hooks"
+  cp -R "$TEMP_DIR"/bubbles/scripts/hooks/. "${TARGET}/bubbles/scripts/hooks/"
+  find "${TARGET}/bubbles/scripts/hooks" -type f -name '*.sh' -exec chmod +x {} \;
+  bubbles_prune_managed_tree_orphans "bubbles/scripts/hooks"
+  ok "$(find "${TARGET}/bubbles/scripts/hooks" -type f 2>/dev/null | wc -l) framework hook file(s) installed"
 fi
 ok "$(ls "${TARGET}"/bubbles/scripts/*.sh | wc -l) scripts installed$([[ -d "${TARGET}/bubbles/scripts/guards" ]] && echo " (+$(ls "${TARGET}"/bubbles/scripts/guards/*.sh 2>/dev/null | wc -l) guard fragments)")"
 
@@ -534,6 +567,17 @@ if [[ -d "$TEMP_DIR/bubbles/installer" ]]; then
   ok "$(find "${TARGET}/bubbles/installer" -type f 2>/dev/null | wc -l) installer manifest file(s) installed"
 fi
 
+# bubbles/cheatsheet/ is the managed source registry consumed by the installed
+# generate-cheatsheet.sh. The generated docs are not a substitute for these
+# inputs; downstream regeneration and freshness checks require the registry.
+if [[ -d "$TEMP_DIR/bubbles/cheatsheet" ]]; then
+  info "Installing cheatsheet registry..."
+  mkdir -p "${TARGET}/bubbles/cheatsheet"
+  cp -R "$TEMP_DIR"/bubbles/cheatsheet/. "${TARGET}/bubbles/cheatsheet/"
+  bubbles_prune_managed_tree_orphans "bubbles/cheatsheet"
+  ok "$(find "${TARGET}/bubbles/cheatsheet" -type f 2>/dev/null | wc -l) cheatsheet registry file(s) installed"
+fi
+
 # Framework-health proposals are downstream-local scratch by default. Keep this
 # outside --bootstrap so normal upgrades also preserve the documented behavior.
 # .gitignore lives at the repo root (cwd), NOT under .github/.
@@ -704,8 +748,14 @@ fi
 # guard on its presence so an older payload lacking it never breaks the install.
 PAYLOAD_VERIFIER="$TEMP_DIR/bubbles/scripts/verify-payload-integrity.sh"
 if [[ -f "$PAYLOAD_VERIFIER" ]]; then
+  PAYLOAD_INSTALL_PROFILE="full"
+  [[ "$AGENTS_ONLY" == "true" ]] && PAYLOAD_INSTALL_PROFILE="agents-only"
   info "Verifying payload integrity against release manifest..."
-  if bash "$PAYLOAD_VERIFIER" --target "$TARGET" --manifest "$RELEASE_MANIFEST_SOURCE" --quiet; then
+  if bash "$PAYLOAD_VERIFIER" \
+    --target "$TARGET" \
+    --manifest "$RELEASE_MANIFEST_SOURCE" \
+    --install-profile "$PAYLOAD_INSTALL_PROFILE" \
+    --quiet; then
     ok "Payload integrity verified against release manifest"
   else
     fail "Payload integrity check failed — installed framework files do not match the release manifest checksums (corruption or incomplete download). Re-run the installer; if this persists, the downloaded payload is corrupt or was modified in transit."
