@@ -33,6 +33,7 @@
 #   2  usage error or missing schema
 
 set -euo pipefail
+umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -60,6 +61,8 @@ MODE="v6-default"  # v6.0 / B3 default: malformed blocks, missing warns.
 SESSION_ID=""
 SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
+VALIDATED_PACKET_FILE=""
+VALIDATED_PACKET=""
 SCENARIO_FILE=""
 NODE_ID=""
 while [[ $# -gt 0 ]]; do
@@ -110,18 +113,25 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
         exit 2
     fi
     [[ -f "$REPOSITORY_BINDING" ]] || { echo "result-envelope-validate: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 2; }
+    VALIDATED_PACKET_FILE="$(mktemp)" || { echo "result-envelope-validate: unable to create immutable packet snapshot" >&2; exit 2; }
+    trap 'rm -f "$VALIDATED_PACKET_FILE"' EXIT INT TERM
+    cp -- "$BINDING_PACKET_FILE" "$VALIDATED_PACKET_FILE" || {
+        echo "result-envelope-validate: unable to capture binding packet" >&2
+        exit 2
+    }
+    chmod 600 "$VALIDATED_PACKET_FILE"
     set +e
     if [[ -n "$SCENARIO_FILE" ]]; then
         BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
             --session-id "$SESSION_ID" \
             --session-control-file "$SESSION_CONTROL_FILE" \
-            --packet-file "$BINDING_PACKET_FILE" \
+            --packet-file "$VALIDATED_PACKET_FILE" \
             --scenario-file "$SCENARIO_FILE" --node-id "$NODE_ID" 2>&1)"
     else
         BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
             --session-id "$SESSION_ID" \
             --session-control-file "$SESSION_CONTROL_FILE" \
-            --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+            --packet-file "$VALIDATED_PACKET_FILE" 2>&1)"
     fi
     BINDING_RC=$?
     set -e
@@ -129,6 +139,7 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
         printf '%s\n' "$BINDING_OUTPUT" >&2
         exit "$BINDING_RC"
     fi
+    VALIDATED_PACKET="$(cat -- "$VALIDATED_PACKET_FILE")" || exit 2
 fi
 
 [[ -f "$SCHEMA" ]] || { echo "result-envelope-validate: schema missing at $SCHEMA" >&2; exit 2; }
@@ -143,7 +154,7 @@ AGENTS_DIR="$AGENTS_DIR" \
 SCHEMA="$SCHEMA" \
 MODE="$MODE" \
 BINDING_REQUIRED="$BINDING_REQUIRED" \
-BINDING_PACKET_FILE="$BINDING_PACKET_FILE" \
+VALIDATED_PACKET="$VALIDATED_PACKET" \
 python3 - <<'PY'
 import json, os, re, sys
 from pathlib import Path
@@ -152,7 +163,7 @@ agents_dir = Path(os.environ['AGENTS_DIR'])
 schema_path = Path(os.environ['SCHEMA'])
 mode = os.environ.get('MODE', 'v6-default')  # advisory | v6-default | strict
 binding_required = os.environ.get('BINDING_REQUIRED', 'false') == 'true'
-binding_packet_file = os.environ.get('BINDING_PACKET_FILE', '')
+validated_packet = os.environ.get('VALIDATED_PACKET', '')
 
 try:
     import jsonschema
@@ -161,7 +172,7 @@ except Exception:
     sys.exit(0)
 
 schema = json.loads(schema_path.read_text())
-binding_packet = json.loads(Path(binding_packet_file).read_text()) if binding_required else None
+binding_packet = json.loads(validated_packet) if binding_required else None
 binding_schema_path = schema_path.parent / 'repository-binding.schema.json'
 schema_store = {}
 if binding_schema_path.is_file():
@@ -177,6 +188,7 @@ PROVENANCE_FIELDS = (
     'sessionId',
     'decisionId',
     'controlRevision',
+    'controlPathDigest',
     'authority',
     'transition',
     'scopeKind',

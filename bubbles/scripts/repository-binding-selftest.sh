@@ -14,7 +14,7 @@ set -o pipefail
 umask 077
 export LC_ALL=C
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SCRIPT_DIR="${BUBBLES_REPOSITORY_BINDING_SOURCE_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)}"
 RESOLVER="$SCRIPT_DIR/repository-binding.sh"
 SCHEMA="$SCRIPT_DIR/../schemas/repository-binding.schema.json"
 PROMPT_CONTRACT="$SCRIPT_DIR/../../agents/bubbles_shared/repository-binding-preflight.md"
@@ -120,6 +120,7 @@ cases_red=0
 cases_run=0
 case_failure_baseline=0
 red_case_ids=""
+failed_assertion_lines=""
 
 LAST_OUTPUT=""
 LAST_RC=0
@@ -278,9 +279,16 @@ fail_assertion() {
   local case_id="$1"
   local description="$2"
   local detail="$3"
+  local failure_line=""
   assertions_failed=$((assertions_failed + 1))
-  printf '  FAIL [%s] behavioralContract=%s detail=%s\n' \
-    "$case_id" "$description" "$detail"
+  failure_line="FAIL [$case_id] behavioralContract=$description detail=$detail"
+  if [[ -n "$failed_assertion_lines" ]]; then
+    failed_assertion_lines="$failed_assertion_lines
+$failure_line"
+  else
+    failed_assertion_lines="$failure_line"
+  fi
+  printf '  %s\n' "$failure_line"
 }
 
 assert_rc_zero() {
@@ -331,6 +339,20 @@ assert_excludes() {
   fi
   case "$LAST_OUTPUT" in
     *"$forbidden"*) fail_assertion "$case_id" "$description" "forbiddenOutput=$forbidden" ;;
+    *) pass_assertion "$case_id" "$description" ;;
+  esac
+}
+
+assert_excludes_control_value() {
+  local case_id="$1"
+  local description="$2"
+  local forbidden="$3"
+  if [[ "$LAST_INTERFACE_AVAILABLE" -ne 1 ]]; then
+    fail_assertion "$case_id" "$description" "productionInterfaceUnavailable=true"
+    return
+  fi
+  case "$LAST_OUTPUT" in
+    *"$forbidden"*) fail_assertion "$case_id" "$description" "controlBytesReflected=true" ;;
     *) pass_assertion "$case_id" "$description" ;;
   esac
 }
@@ -443,6 +465,33 @@ invoke_binding() {
   printf 'EXIT [%s] %s\n' "$case_id" "$LAST_RC"
 }
 
+invoke_binding_control_adversary() {
+  local case_id="$1"
+  local behavior="$2"
+  local invocation_cwd="$3"
+  shift 3
+
+  printf 'COMMAND [%s] cwd=%s bash %s <control-character-adversary>\n' \
+    "$case_id" "$invocation_cwd" "$RESOLVER"
+
+  if [[ ! -f "$RESOLVER" ]]; then
+    LAST_INTERFACE_AVAILABLE=0
+    LAST_RC=127
+    LAST_OUTPUT="REPOSITORY-BINDING RED case=$case_id behavioralContract=$behavior missingProductionInterface=bubbles/scripts/repository-binding.sh"
+  else
+    LAST_INTERFACE_AVAILABLE=1
+    LAST_OUTPUT="$({
+      cd -P -- "$invocation_cwd" || exit 125
+      bash "$RESOLVER" "$@"
+    } 2>&1)"
+    LAST_RC=$?
+  fi
+
+  printf 'OUTPUT_JSON [%s] ' "$case_id"
+  printf '%s' "$LAST_OUTPUT" | jq -Rs .
+  printf 'EXIT [%s] %s\n' "$case_id" "$LAST_RC"
+}
+
 reset_diagnostics() {
   DIAGNOSTIC_CHAT_CWD=""
   DIAGNOSTIC_HOST_REPOSITORY=""
@@ -456,10 +505,14 @@ write_actionable_packet() {
   local revision="$3"
   local repository_root="$4"
   local repository_alias="$5"
+  local control_source="${6:-$CONTROL_FILE}"
   local decision_id="rb:$session_id:$revision"
   local authority="durable-work-boundary"
   local transition="continued"
   local target_kind="inherited-boundary"
+  local control_path_digest=""
+
+  control_path_digest="$(jq -r '.controlPathDigest // empty' "$control_source" 2>/dev/null || true)"
 
   if [[ -f "$CONTROL_FILE" ]] && jq -e \
       --arg session "$session_id" \
@@ -479,6 +532,7 @@ write_actionable_packet() {
     --arg alias "$repository_alias" \
     --arg session "$session_id" \
     --arg decision "$decision_id" \
+    --arg controlPathDigest "$control_path_digest" \
     --arg authority "$authority" \
     --arg transition "$transition" \
     --arg targetKind "$target_kind" \
@@ -490,6 +544,7 @@ write_actionable_packet() {
         sessionId: $session,
         decisionId: $decision,
         controlRevision: $revision,
+        controlPathDigest: $controlPathDigest,
         authority: $authority,
         transition: $transition,
         scopeKind: "command",
@@ -507,15 +562,26 @@ write_valid_control() {
   local repository_root="$3"
   local repository_alias="$4"
   local decision_id="rb:$session_id:1"
+  local control_digest
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    control_digest="$(printf '%s' "$control_file" | sha256sum | awk '{print $1}')" || return 1
+  elif command -v shasum >/dev/null 2>&1; then
+    control_digest="$(printf '%s' "$control_file" | shasum -a 256 | awk '{print $1}')" || return 1
+  else
+    return 1
+  fi
 
   jq -n \
     --arg session "$session_id" \
+    --arg controlPathDigest "sha256:$control_digest" \
     --arg root "$repository_root" \
     --arg alias "$repository_alias" \
     --arg decision "$decision_id" \
     '{
       schemaVersion: 1,
       sessionId: $session,
+      controlPathDigest: $controlPathDigest,
       revision: 1,
       currentBinding: {
         repositoryRoot: $root,
@@ -954,6 +1020,7 @@ assert_binding_field_contract() {
     repositoryResolution.sessionId \
     repositoryResolution.decisionId \
     repositoryResolution.controlRevision \
+    repositoryResolution.controlPathDigest \
     repositoryResolution.authority \
     repositoryResolution.transition \
     repositoryResolution.scopeKind \
@@ -982,19 +1049,20 @@ assert_binding_field_contract() {
       expected[3] = "repositoryResolution.sessionId"
       expected[4] = "repositoryResolution.decisionId"
       expected[5] = "repositoryResolution.controlRevision"
-      expected[6] = "repositoryResolution.authority"
-      expected[7] = "repositoryResolution.transition"
-      expected[8] = "repositoryResolution.scopeKind"
-      expected[9] = "repositoryResolution.scopeId"
-      expected[10] = "repositoryResolution.targetKind"
-      expected[11] = "repositoryResolution.pathVisibility"
-      expected[12] = "repositoryResolution.actionable"
-      for (field_index = 1; field_index <= 12; field_index++) {
+      expected[6] = "repositoryResolution.controlPathDigest"
+      expected[7] = "repositoryResolution.authority"
+      expected[8] = "repositoryResolution.transition"
+      expected[9] = "repositoryResolution.scopeKind"
+      expected[10] = "repositoryResolution.scopeId"
+      expected[11] = "repositoryResolution.targetKind"
+      expected[12] = "repositoryResolution.pathVisibility"
+      expected[13] = "repositoryResolution.actionable"
+      for (field_index = 1; field_index <= 13; field_index++) {
         if (found[expected[field_index]]) print expected[field_index]
       }
       for (name in found) {
         known = 0
-        for (field_index = 1; field_index <= 12; field_index++) {
+        for (field_index = 1; field_index <= 13; field_index++) {
           if (name == expected[field_index]) known = 1
         }
         if (!known) print "UNEXPECTED:" name
@@ -1021,7 +1089,7 @@ assert_result_schema_exact_binding() {
       (
         .properties.repositoryResolution.additionalProperties == false
         and ((.properties.repositoryResolution.required | sort) ==
-          (["sessionId", "decisionId", "controlRevision", "authority", "transition",
+          (["sessionId", "decisionId", "controlRevision", "controlPathDigest", "authority", "transition",
             "scopeKind", "scopeId", "targetKind", "pathVisibility", "actionable"] | sort))
       )
     )'
@@ -1119,6 +1187,7 @@ write_handoff_envelope() {
   local session_id=""
   local decision_id=""
   local revision=""
+  local control_path_digest=""
   local authority=""
   local transition=""
   local scope_kind=""
@@ -1132,6 +1201,7 @@ write_handoff_envelope() {
   session_id="$(jq -r '.repositoryResolution.sessionId' "$packet_file")"
   decision_id="$(jq -r '.repositoryResolution.decisionId' "$packet_file")"
   revision="$(jq -r '.repositoryResolution.controlRevision' "$packet_file")"
+  control_path_digest="$(jq -r '.repositoryResolution.controlPathDigest' "$packet_file")"
   authority="$(jq -r '.repositoryResolution.authority' "$packet_file")"
   transition="$(jq -r '.repositoryResolution.transition' "$packet_file")"
   scope_kind="$(jq -r '.repositoryResolution.scopeKind' "$packet_file")"
@@ -1151,6 +1221,7 @@ write_handoff_envelope() {
     "  sessionId: $session_id" \
     "  decisionId: $decision_id" \
     "  controlRevision: $revision" \
+    "  controlPathDigest: $control_path_digest" \
     "  authority: $authority" \
     "  transition: $transition" \
     "  scopeKind: $scope_kind" \
@@ -1169,12 +1240,16 @@ write_goal_node_packet() {
   local repository_root="$4"
   local repository_alias="$5"
   local scope_id="$6"
+  local control_path_digest
+
+  control_path_digest="$(jq -r '.controlPathDigest // empty' "$CONTROL_FILE" 2>/dev/null || true)"
 
   jq -n \
     --arg root "$repository_root" \
     --arg alias "$repository_alias" \
     --arg session "$session_id" \
     --arg decision "rb:$session_id:$revision:node:$scope_id" \
+    --arg controlPathDigest "$control_path_digest" \
     --arg scope "$scope_id" \
     --argjson revision "$revision" \
     '{
@@ -1184,6 +1259,7 @@ write_goal_node_packet() {
         sessionId: $session,
         decisionId: $decision,
         controlRevision: $revision,
+        controlPathDigest: $controlPathDigest,
         authority: "scoped-scenario-node",
         transition: "scoped-override",
         scopeKind: "goal-node",
@@ -1203,6 +1279,7 @@ finish_named_suite() {
   printf 'assertionsPass=%s assertionsFail=%s assertionsSkip=%s\n' \
     "$assertions_passed" "$assertions_failed" "$assertions_skipped"
   if [[ "$assertions_failed" -ne 0 ]]; then
+    printf 'failedAssertions:\n%s\n' "$failed_assertion_lines"
     printf 'repository-binding %s verdict=RED unresolvedBehavioralContracts=%s\n' \
       "$suite_name" "$assertions_failed"
     return 1
@@ -1323,6 +1400,25 @@ run_state_propagation_suite() {
   local prior_history=""
   local variant=""
   local variant_file=""
+  local compactor_source=""
+  local result_validator_source=""
+  local outside_dir=""
+  local outside_file=""
+  local outside_baseline=""
+  local attacker_root=""
+  local attack_bin=""
+  local real_bash=""
+  local packet_seed=""
+  local attack_payload=""
+  local packet_hardlink=""
+  local capture_proof=""
+  local attack_kind=""
+  local consumer=""
+  local selected_session=""
+  local selected_baseline=""
+  local attacker_session=""
+  local attacker_baseline=""
+  local original_path=""
 
   echo "=== IMP-103 S2 repository-binding state propagation selftest ==="
   echo "SUITE state-propagation"
@@ -1689,6 +1785,245 @@ run_state_propagation_suite() {
   assert_contains "$case_id" "legacy stdout retains the compact result" '"agent":"bubbles.test"'
   assert_files_equal "$case_id" "legacy stdout-only compaction performs zero repository-local mutation" \
     "$session_baseline" "$session_file"
+  end_case "$case_id"
+
+  case_id="RB-PROPAGATION-PACKET-SNAPSHOT-SINGLE-READ"
+  begin_case "$case_id" "Compactor and runtime result validation consume one validated immutable packet snapshot and never validate a path then reread substitutable bytes."
+  repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/selected-repo")"
+  attacker_root="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/attacker-repo")"
+  establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" \
+    --workspace-root "$repo_a" --workspace-root "$attacker_root"
+  packet_file="$CASE_DIR/caller-packet.json"
+  packet_seed="$CASE_DIR/captured-packet.seed.json"
+  write_actionable_packet "$packet_file" "$SESSION_ID" 1 "$repo_a" "selected-repo" || \
+    fatal_fixture "$case_id" "cannot write caller-owned packet"
+  cp "$packet_file" "$packet_seed" || fatal_fixture "$case_id" "cannot preserve packet seed"
+  raw_file="$CASE_DIR/actionable-result.md"
+  write_handoff_envelope "$raw_file" "$packet_seed"
+
+  selected_session="$repo_a/.specify/memory/bubbles.session.json"
+  attacker_session="$attacker_root/.specify/memory/bubbles.session.json"
+  mkdir -p "$(dirname "$selected_session")" "$(dirname "$attacker_session")" || \
+    fatal_fixture "$case_id" "cannot create packet-attack session directories"
+  jq -n --arg raw "$raw_file" '{
+    sentinel: "selected-session",
+    envelopesReceived: [{rawPointer: $raw}]
+  }' >"$selected_session" || fatal_fixture "$case_id" "cannot seed selected session"
+  jq -n --arg raw "$raw_file" '{
+    sentinel: "attacker-session",
+    envelopesReceived: [{rawPointer: $raw}]
+  }' >"$attacker_session" || fatal_fixture "$case_id" "cannot seed attacker session"
+  selected_baseline="$CASE_DIR/selected-session.baseline.json"
+  attacker_baseline="$CASE_DIR/attacker-session.baseline.json"
+  cp "$selected_session" "$selected_baseline" || \
+    fatal_fixture "$case_id" "cannot preserve selected session baseline"
+  cp "$attacker_session" "$attacker_baseline" || \
+    fatal_fixture "$case_id" "cannot preserve attacker session baseline"
+
+  result_repo="$(create_result_validator_fixture "$case_id" packet-attack "$packet_seed")"
+  attack_bin="$CASE_DIR/packet-attack-bin"
+  real_bash="$(command -v bash)"
+  mkdir -p "$attack_bin" || fatal_fixture "$case_id" "cannot create packet attack bin"
+  cat >"$attack_bin/bash" <<EOF
+#!$real_bash
+set -euo pipefail
+if [[ "\${1:-}" == */repository-binding.sh && "\${2:-}" == "validate-packet" && -n "\${BUBBLES_PACKET_ATTACK_KIND:-}" ]]; then
+  packet_snapshot=""
+  next_is_packet=false
+  for arg in "\$@"; do
+    if [[ "\$next_is_packet" == true ]]; then
+      packet_snapshot="\$arg"
+      break
+    fi
+    if [[ "\$arg" == "--packet-file" ]]; then
+      next_is_packet=true
+    fi
+  done
+  [[ -n "\$packet_snapshot" ]]
+  [[ "\$packet_snapshot" != "\$BUBBLES_PACKET_ATTACK_CALLER" ]]
+  [[ ! -e "\$BUBBLES_PACKET_ATTACK_PROOF" ]]
+  cmp -s "\$BUBBLES_PACKET_ATTACK_CALLER" "\$packet_snapshot"
+  packet_mode="\$(stat -c '%a' "\$packet_snapshot" 2>/dev/null || stat -f '%Lp' "\$packet_snapshot")"
+  [[ "\$packet_mode" == "600" ]]
+  case "\$BUBBLES_PACKET_ATTACK_KIND" in
+    in-place)
+      cp "\$BUBBLES_PACKET_ATTACK_PAYLOAD" "\$BUBBLES_PACKET_ATTACK_CALLER"
+      ;;
+    replace)
+      mv "\$BUBBLES_PACKET_ATTACK_PAYLOAD" "\$BUBBLES_PACKET_ATTACK_CALLER"
+      ;;
+    *)
+      printf 'unexpected packet attack kind: %s\n' "\$BUBBLES_PACKET_ATTACK_KIND" >&2
+      exit 2
+      ;;
+  esac
+  printf 'byte-identical-private-copy-mode-0600\n' >"\$BUBBLES_PACKET_ATTACK_PROOF"
+fi
+exec "$real_bash" "\$@"
+EOF
+  chmod 700 "$attack_bin/bash" || fatal_fixture "$case_id" "cannot activate packet attack wrapper"
+
+  for consumer in compactor result-validator; do
+    for attack_kind in in-place replace; do
+      cp "$packet_seed" "$packet_file" || fatal_fixture "$case_id" "cannot restore caller packet"
+      cp "$selected_baseline" "$selected_session" || \
+        fatal_fixture "$case_id" "cannot restore selected session"
+      cp "$attacker_baseline" "$attacker_session" || \
+        fatal_fixture "$case_id" "cannot restore attacker session"
+      attack_payload="$CASE_DIR/$consumer-$attack_kind-attacker.packet.json"
+      packet_hardlink="$CASE_DIR/$consumer-$attack_kind-original.packet.json"
+      capture_proof="$CASE_DIR/$consumer-$attack_kind-capture.proof"
+      jq --arg root "$attacker_root" \
+        '.repositoryRoot = $root | .repositoryAlias = "attacker-repo"' \
+        "$packet_seed" >"$attack_payload" || fatal_fixture "$case_id" "cannot write attacker packet"
+      ln "$packet_file" "$packet_hardlink" || fatal_fixture "$case_id" "cannot hardlink caller packet"
+
+      export BUBBLES_PACKET_ATTACK_KIND="$attack_kind"
+      export BUBBLES_PACKET_ATTACK_CALLER="$packet_file"
+      export BUBBLES_PACKET_ATTACK_PAYLOAD="$attack_payload"
+      export BUBBLES_PACKET_ATTACK_PROOF="$capture_proof"
+      original_path="$PATH"
+      PATH="$attack_bin:$PATH"
+      if [[ "$consumer" == "compactor" ]]; then
+        invoke_real_script "$case_id" "$attack_kind caller packet attack cannot redirect compaction" \
+          "$repo_a" "$CONTEXT_COMPACTOR" --session-id "$SESSION_ID" \
+          --session-control-file "$CONTROL_FILE" --binding-packet-file "$packet_file" "$raw_file"
+      else
+        invoke_real_script "$case_id" "$attack_kind caller packet attack cannot redirect result validation" \
+          "$result_repo" "$result_repo/bubbles/scripts/result-envelope-validate.sh" --strict \
+          --session-id "$SESSION_ID" --session-control-file "$CONTROL_FILE" \
+          --binding-packet-file "$packet_file"
+      fi
+      PATH="$original_path"
+      unset BUBBLES_PACKET_ATTACK_KIND BUBBLES_PACKET_ATTACK_CALLER \
+        BUBBLES_PACKET_ATTACK_PAYLOAD BUBBLES_PACKET_ATTACK_PROOF
+
+      assert_rc_zero "$case_id" "$consumer accepts its captured packet after $attack_kind caller mutation"
+      if [[ "$(cat "$capture_proof" 2>/dev/null)" == "byte-identical-private-copy-mode-0600" ]]; then
+        pass_assertion "$case_id" "$consumer $attack_kind attack observes one distinct byte-identical mode-0600 capture"
+      else
+        fail_assertion "$case_id" "$consumer $attack_kind attack observes one distinct byte-identical mode-0600 capture" \
+          "captureProof=missing-or-invalid"
+      fi
+      assert_json_scalar "$case_id" "$consumer $attack_kind attack mutates the caller path after capture" \
+        "$packet_file" '.repositoryRoot' "$attacker_root"
+      if { [[ "$attack_kind" == "in-place" && "$packet_file" -ef "$packet_hardlink" ]] ||
+           [[ "$attack_kind" == "replace" && ! "$packet_file" -ef "$packet_hardlink" ]]; }; then
+        pass_assertion "$case_id" "$consumer $attack_kind attack uses the intended inode semantics"
+      else
+        fail_assertion "$case_id" "$consumer $attack_kind attack uses the intended inode semantics" \
+          "inodeSemanticsMismatch=true"
+      fi
+
+      if [[ "$consumer" == "compactor" ]]; then
+        assert_output_json_scalar "$case_id" "$attack_kind mutation cannot change the compacted repository root" \
+          '.repositoryRoot' "$repo_a"
+        assert_json_scalar "$case_id" "$attack_kind mutation stamps only the selected repository session" \
+          "$selected_session" '(.envelopesReceived[0].compactedAt // "") | length > 0' "true"
+        assert_files_equal "$case_id" "$attack_kind mutation leaves attacker repository state byte-identical" \
+          "$attacker_baseline" "$attacker_session"
+      else
+        assert_excludes "$case_id" "$attack_kind mutation executes result validation without a dependency skip" 'SKIP'
+      fi
+    done
+  done
+
+  compactor_source="$(cat "$CONTEXT_COMPACTOR")"
+  result_validator_source="$(cat "$RESULT_VALIDATOR")"
+  assert_text_excludes "$case_id" \
+    "compactor never rereads the caller packet path with jq after validate-packet returns" \
+    "$compactor_source" 'jq -r '\''.repositoryRoot'\'' "$BINDING_PACKET_FILE"'
+  assert_text_excludes "$case_id" \
+    "compactor comparison never rereads the caller packet file after validation" \
+    "$compactor_source" '"$BINDING_PACKET_FILE" >/dev/null'
+  assert_text_contains "$case_id" \
+    "compactor consumes an immutable normalized packet snapshot exported by validation" \
+    "$compactor_source" 'VALIDATED_PACKET'
+  assert_text_excludes "$case_id" \
+    "result validator Python phase never rereads binding_packet_file" \
+    "$result_validator_source" 'Path(binding_packet_file).read_text()'
+  assert_text_contains "$case_id" \
+    "result validator consumes validated immutable packet bytes from the validation step" \
+    "$result_validator_source" 'VALIDATED_PACKET'
+  end_case "$case_id"
+
+  case_id="RB-PROPAGATION-COMPACTOR-MIRROR-SYMLINK-REFUSAL"
+  begin_case "$case_id" "Context compaction refuses symlinked .specify, memory, or bubbles.session.json components before repository-local mirror writes."
+  repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/selected-repo")"
+  establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" --workspace-root "$repo_a"
+  packet_file="$CASE_DIR/current-packet.json"
+  capture_packet_from_last_output "$packet_file" || \
+    fatal_fixture "$case_id" "cannot capture compactor symlink packet"
+  raw_file="$CASE_DIR/actionable-result.md"
+  write_handoff_envelope "$raw_file" "$packet_file"
+
+  outside_dir="$CASE_DIR/outside-specify-target"
+  mkdir -p "$outside_dir/memory" || fatal_fixture "$case_id" "cannot create outside .specify target"
+  session_file="$outside_dir/memory/bubbles.session.json"
+  jq -n --arg raw "$raw_file" '{
+    sentinel: "outside-specify-must-not-change",
+    envelopesReceived: [{rawPointer: $raw}]
+  }' >"$session_file" || fatal_fixture "$case_id" "cannot seed outside .specify session"
+  outside_baseline="$CASE_DIR/outside-specify.baseline.json"
+  cp "$session_file" "$outside_baseline" || fatal_fixture "$case_id" "cannot capture outside .specify baseline"
+  ln -s "$outside_dir" "$repo_a/.specify" || fatal_fixture "$case_id" "cannot link .specify"
+  invoke_real_script "$case_id" "compactor refuses symlinked .specify before compactedAt write" \
+    "$repo_a" "$CONTEXT_COMPACTOR" --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --binding-packet-file "$packet_file" "$raw_file"
+  assert_rc_nonzero "$case_id" "symlinked .specify refuses context compaction"
+  assert_files_equal "$case_id" "symlinked .specify leaves external session bytes unchanged" \
+    "$outside_baseline" "$session_file"
+  if [[ -L "$repo_a/.specify" ]]; then
+    pass_assertion "$case_id" "refused .specify symlink remains untouched"
+  else
+    fail_assertion "$case_id" "refused .specify symlink remains untouched" "symlinkReplaced=true"
+  fi
+  rm -rf "$repo_a/.specify" "$outside_dir" || fatal_fixture "$case_id" "cannot reset .specify adversary"
+
+  outside_dir="$CASE_DIR/outside-memory-target"
+  mkdir -p "$repo_a/.specify" "$outside_dir" || fatal_fixture "$case_id" "cannot create memory adversary"
+  session_file="$outside_dir/bubbles.session.json"
+  jq -n --arg raw "$raw_file" '{
+    sentinel: "outside-memory-must-not-change",
+    envelopesReceived: [{rawPointer: $raw}]
+  }' >"$session_file" || fatal_fixture "$case_id" "cannot seed outside memory session"
+  outside_baseline="$CASE_DIR/outside-memory.baseline.json"
+  cp "$session_file" "$outside_baseline" || fatal_fixture "$case_id" "cannot capture outside memory baseline"
+  ln -s "$outside_dir" "$repo_a/.specify/memory" || fatal_fixture "$case_id" "cannot link memory"
+  invoke_real_script "$case_id" "compactor refuses symlinked memory before compactedAt write" \
+    "$repo_a" "$CONTEXT_COMPACTOR" --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --binding-packet-file "$packet_file" "$raw_file"
+  assert_rc_nonzero "$case_id" "symlinked memory refuses context compaction"
+  assert_files_equal "$case_id" "symlinked memory leaves external session bytes unchanged" \
+    "$outside_baseline" "$session_file"
+  if [[ -L "$repo_a/.specify/memory" ]]; then
+    pass_assertion "$case_id" "refused memory symlink remains untouched"
+  else
+    fail_assertion "$case_id" "refused memory symlink remains untouched" "symlinkReplaced=true"
+  fi
+  rm -rf "$repo_a/.specify" "$outside_dir" || fatal_fixture "$case_id" "cannot reset memory adversary"
+
+  outside_file="$CASE_DIR/outside-session.json"
+  outside_baseline="$CASE_DIR/outside-session.baseline.json"
+  mkdir -p "$repo_a/.specify/memory" || fatal_fixture "$case_id" "cannot create session-file adversary"
+  jq -n --arg raw "$raw_file" '{
+    sentinel: "outside-session-must-not-change",
+    envelopesReceived: [{rawPointer: $raw}]
+  }' >"$outside_file" || fatal_fixture "$case_id" "cannot seed outside session file"
+  cp "$outside_file" "$outside_baseline" || fatal_fixture "$case_id" "cannot capture outside session baseline"
+  ln -s "$outside_file" "$repo_a/.specify/memory/bubbles.session.json" || \
+    fatal_fixture "$case_id" "cannot link session file"
+  invoke_real_script "$case_id" "compactor refuses symlinked bubbles.session.json before compactedAt write" \
+    "$repo_a" "$CONTEXT_COMPACTOR" --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --binding-packet-file "$packet_file" "$raw_file"
+  assert_rc_nonzero "$case_id" "symlinked bubbles.session.json refuses context compaction"
+  assert_files_equal "$case_id" "symlinked session file leaves external bytes unchanged" \
+    "$outside_baseline" "$outside_file"
+  if [[ -L "$repo_a/.specify/memory/bubbles.session.json" ]]; then
+    pass_assertion "$case_id" "refused session-file symlink remains untouched"
+  else
+    fail_assertion "$case_id" "refused session-file symlink remains untouched" "symlinkReplaced=true"
+  fi
   end_case "$case_id"
 
   case_id="RB-PROPAGATION-CONSUMERS-REFUSE-NONCURRENT"
@@ -2165,6 +2500,45 @@ run_classification_discovery_suite() {
     assert_excludes "$case_id" "$variant decision emits no selected-root sentinel" "$sentinel_b"
     assert_excludes "$case_id" "$variant decision emits no substituted-root sentinel" "$sentinel_a"
   done
+  end_case "$case_id"
+
+  case_id="RB-DISCOVERY-SPECS-SYMLINK-ESCAPE"
+  begin_case "$case_id" "discover-specs refuses a symlinked specs root and excludes any symlinked child whose physical path escapes the selected canonical repository."
+  repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/selected-repo")"
+  establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" --workspace-root "$repo_a"
+  packet_file="$CASE_DIR/current-packet.json"
+  capture_packet_from_last_output "$packet_file" || \
+    fatal_fixture "$case_id" "cannot capture discovery packet"
+
+  outside_specs="$CASE_DIR/outside-specs"
+  mkdir -p "$outside_specs/901-external-spec" || \
+    fatal_fixture "$case_id" "cannot create external specs root"
+  ln -s "$outside_specs" "$repo_a/specs" || \
+    fatal_fixture "$case_id" "cannot create specs-root symlink"
+  invoke_binding "$case_id" "a symlinked specs root cannot become the discovery authority" \
+    "$WORKSPACE_DIR" discover-specs --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --packet-file "$packet_file" --mode full-delivery
+  assert_rc_nonzero "$case_id" "symlinked specs root refuses discovery"
+  assert_excludes "$case_id" "symlinked specs root emits no escaped spec entry" \
+    "$repo_a/specs/901-external-spec"
+  rm "$repo_a/specs" || fatal_fixture "$case_id" "cannot reset specs-root symlink"
+
+  outside_child="$CASE_DIR/outside-child-spec"
+  mkdir -p "$repo_a/specs/900-contained-spec" "$outside_child" || \
+    fatal_fixture "$case_id" "cannot create child-symlink discovery fixture"
+  ln -s "$outside_child" "$repo_a/specs/902-escaped-child" || \
+    fatal_fixture "$case_id" "cannot create escaped child spec symlink"
+  invoke_binding "$case_id" "an escaped child spec is refused or excluded while contained specs remain discoverable" \
+    "$WORKSPACE_DIR" discover-specs --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --packet-file "$packet_file" --mode full-delivery
+  if [[ "$LAST_RC" -ne 0 ]]; then
+    pass_assertion "$case_id" "escaped child spec causes fail-closed discovery refusal"
+  else
+    assert_contains "$case_id" "contained sibling remains discoverable when escaped child is excluded" \
+      "$repo_a/specs/900-contained-spec"
+  fi
+  assert_excludes "$case_id" "escaped child spec path is never emitted" \
+    "$repo_a/specs/902-escaped-child"
   end_case "$case_id"
 
   case_id="RB-REGISTRY-ROOT-SCOPED-AUTO-DISCOVERY"
@@ -2864,11 +3238,15 @@ run_front_doors_goal_nodes_goal_cases() {
   assert_output_regex "$case_id" "missing-root refusal identifies canonical repositoryRoot" \
     'repositoryRoot|canonical.*root'
 
+  establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" \
+    --workspace-root "$repo_a" --workspace-root "$repo_b" --workspace-root "$repo_c"
+
   jq -n \
     --arg rootA "$repo_a" \
     --arg rootB "$repo_b" \
     --arg rootC "$repo_c" \
     --arg session "$SESSION_ID" \
+    --arg controlPathDigest "$(jq -r '.controlPathDigest' "$CONTROL_FILE")" \
     '{
       version: 1,
       scenarioId: "canonical-repository-roots",
@@ -2888,7 +3266,8 @@ run_front_doors_goal_nodes_goal_cases() {
           id: "deliver-b", type: "delivery", repo: "node-b", mode: "full-delivery", dependsOn: [],
           repositoryResolution: {
             sessionId: $session, decisionId: ("rb:" + $session + ":1:node:deliver-b"),
-            controlRevision: 1, authority: "scoped-scenario-node", transition: "scoped-override",
+            controlRevision: 1, controlPathDigest: $controlPathDigest,
+            authority: "scoped-scenario-node", transition: "scoped-override",
             scopeKind: "goal-node", scopeId: "deliver-b", targetKind: "goal-node",
             pathVisibility: "local", actionable: true
           }
@@ -2897,7 +3276,8 @@ run_front_doors_goal_nodes_goal_cases() {
           id: "verify-c", type: "verification", repo: "node-c", mode: "validate-only", dependsOn: ["deliver-b"],
           repositoryResolution: {
             sessionId: $session, decisionId: ("rb:" + $session + ":1:node:verify-c"),
-            controlRevision: 1, authority: "scoped-scenario-node", transition: "scoped-override",
+            controlRevision: 1, controlPathDigest: $controlPathDigest,
+            authority: "scoped-scenario-node", transition: "scoped-override",
             scopeKind: "goal-node", scopeId: "verify-c", targetKind: "goal-node",
             pathVisibility: "local", actionable: true
           }
@@ -2925,6 +3305,7 @@ run_front_doors_goal_nodes_goal_cases() {
     --arg rootB "$repo_b" \
     --arg rootC "$repo_c" \
     --arg session "$SESSION_ID" \
+    --arg controlPathDigest "$(jq -r '.controlPathDigest' "$CONTROL_FILE")" \
     '{
       version: 1,
       scenarioId: "declared-node-b-repository",
@@ -2945,6 +3326,7 @@ run_front_doors_goal_nodes_goal_cases() {
           sessionId: $session,
           decisionId: ("rb:" + $session + ":1:node:deliver-b"),
           controlRevision: 1,
+          controlPathDigest: $controlPathDigest,
           authority: "scoped-scenario-node",
           transition: "scoped-override",
           scopeKind: "goal-node",
@@ -3041,6 +3423,7 @@ run_front_doors_goal_nodes_goal_cases() {
     --arg rootB "$repo_b" \
     --arg rootC "$repo_c" \
     --arg session "$SESSION_ID" \
+    --arg controlPathDigest "$(jq -r '.controlPathDigest' "$CONTROL_FILE")" \
     '{
       version: 1,
       scenarioId: "scoped-order-invariance",
@@ -3060,7 +3443,8 @@ run_front_doors_goal_nodes_goal_cases() {
           id: "node-b", type: "delivery", repo: "node-b", mode: "full-delivery", dependsOn: [],
           repositoryResolution: {
             sessionId: $session, decisionId: ("rb:" + $session + ":1:node:node-b"),
-            controlRevision: 1, authority: "scoped-scenario-node", transition: "scoped-override",
+            controlRevision: 1, controlPathDigest: $controlPathDigest,
+            authority: "scoped-scenario-node", transition: "scoped-override",
             scopeKind: "goal-node", scopeId: "node-b", targetKind: "goal-node",
             pathVisibility: "local", actionable: true
           }
@@ -3069,7 +3453,8 @@ run_front_doors_goal_nodes_goal_cases() {
           id: "node-c", type: "verification", repo: "node-c", mode: "validate-only", dependsOn: ["node-b"],
           repositoryResolution: {
             sessionId: $session, decisionId: ("rb:" + $session + ":1:node:node-c"),
-            controlRevision: 1, authority: "scoped-scenario-node", transition: "scoped-override",
+            controlRevision: 1, controlPathDigest: $controlPathDigest,
+            authority: "scoped-scenario-node", transition: "scoped-override",
             scopeKind: "goal-node", scopeId: "node-c", targetKind: "goal-node",
             pathVisibility: "local", actionable: true
           }
@@ -3133,6 +3518,7 @@ run_front_doors_goal_nodes_goal_cases() {
   jq -n \
     --arg missingRoot "$WORKSPACE_DIR/missing-node-repo" \
     --arg session "$SESSION_ID" \
+    --arg controlPathDigest "$(jq -r '.controlPathDigest' "$CONTROL_FILE")" \
     '{
       version: 1,
       scenarioId: "unresolved-node",
@@ -3153,6 +3539,7 @@ run_front_doors_goal_nodes_goal_cases() {
           sessionId: $session,
           decisionId: ("rb:" + $session + ":1:node:node-missing"),
           controlRevision: 1,
+          controlPathDigest: $controlPathDigest,
           authority: "scoped-scenario-node",
           transition: "scoped-override",
           scopeKind: "goal-node",
@@ -3301,6 +3688,13 @@ run_all_suites() {
   local aggregate_child_rc=0
   local aggregate_passes=0
   local aggregate_failures=0
+  local aggregate_failed_suites=""
+  local aggregate_failed_cases=""
+  local aggregate_failed_assertions=""
+  local aggregate_output_file=""
+  local aggregate_red_cases=""
+  local aggregate_assertion_lines=""
+  local aggregate_harness_snapshot="$TMP_ROOT/repository-binding-selftest.snapshot.sh"
   local -a aggregate_suites=(
     foundation
     shared-infrastructure-canary
@@ -3312,14 +3706,46 @@ run_all_suites() {
 
   echo "=== IMP-103 repository-binding aggregate selftest ==="
   printf 'AGGREGATE ORDER %s\n' "${aggregate_suites[*]}"
+  cp -- "${BASH_SOURCE[0]}" "$aggregate_harness_snapshot" || {
+    echo "repository-binding aggregate: unable to capture immutable harness snapshot" >&2
+    return 2
+  }
+  chmod 700 "$aggregate_harness_snapshot"
   for aggregate_suite in "${aggregate_suites[@]}"; do
     printf '\n=== AGGREGATE CHILD START suite=%s ===\n' "$aggregate_suite"
-    if bash "$SCRIPT_DIR/repository-binding-selftest.sh" "--suite=$aggregate_suite"; then
+    aggregate_output_file="$TMP_ROOT/aggregate-$aggregate_suite.out"
+    if BUBBLES_REPOSITORY_BINDING_SOURCE_DIR="$SCRIPT_DIR" \
+      bash "$aggregate_harness_snapshot" "--suite=$aggregate_suite" \
+        >"$aggregate_output_file" 2>&1; then
+      cat "$aggregate_output_file"
       aggregate_passes=$((aggregate_passes + 1))
       printf '=== AGGREGATE CHILD PASS suite=%s ===\n' "$aggregate_suite"
     else
       aggregate_child_rc=$?
+      cat "$aggregate_output_file"
       aggregate_failures=$((aggregate_failures + 1))
+      if [[ -n "$aggregate_failed_suites" ]]; then
+        aggregate_failed_suites="$aggregate_failed_suites,$aggregate_suite"
+      else
+        aggregate_failed_suites="$aggregate_suite"
+      fi
+      aggregate_red_cases="$(awk -F= '/^redCases=/{value=$2} END{print value}' "$aggregate_output_file")"
+      if [[ -n "$aggregate_red_cases" ]]; then
+        if [[ -n "$aggregate_failed_cases" ]]; then
+          aggregate_failed_cases="$aggregate_failed_cases;$aggregate_suite:$aggregate_red_cases"
+        else
+          aggregate_failed_cases="$aggregate_suite:$aggregate_red_cases"
+        fi
+      fi
+      aggregate_assertion_lines="$(awk '/^  FAIL \[/{sub(/^  /, ""); print}' "$aggregate_output_file")"
+      if [[ -n "$aggregate_assertion_lines" ]]; then
+        if [[ -n "$aggregate_failed_assertions" ]]; then
+          aggregate_failed_assertions="$aggregate_failed_assertions
+$aggregate_assertion_lines"
+        else
+          aggregate_failed_assertions="$aggregate_assertion_lines"
+        fi
+      fi
       printf '=== AGGREGATE CHILD FAIL suite=%s exit=%s ===\n' \
         "$aggregate_suite" "$aggregate_child_rc"
     fi
@@ -3329,8 +3755,11 @@ run_all_suites() {
   printf 'suitesRun=%s suitesPass=%s suitesFail=%s\n' \
     "${#aggregate_suites[@]}" "$aggregate_passes" "$aggregate_failures"
   if [[ "$aggregate_failures" -ne 0 ]]; then
-    printf 'repository-binding aggregate verdict=RED failedSuites=%s\n' \
-      "$aggregate_failures"
+    printf 'repository-binding aggregate verdict=RED failedSuites=%s failedSuiteNames=%s failedCases=%s\n' \
+      "$aggregate_failures" "$aggregate_failed_suites" "${aggregate_failed_cases:-unknown}"
+    if [[ -n "$aggregate_failed_assertions" ]]; then
+      printf 'aggregate failed assertions:\n%s\n' "$aggregate_failed_assertions"
+    fi
     return 1
   fi
   echo "repository-binding aggregate verdict=PASS"
@@ -3930,6 +4359,107 @@ assert_rc_nonzero "$case_id" "non-owned shared control parent refuses"
 assert_file_absent "$case_id" "non-owned parent refusal writes no control" "$CONTROL_FILE"
 end_case "$case_id"
 
+# RB-CONTROL-AUTHORITY-PATH-VALIDATION ---------------------------------------
+case_id="RB-CONTROL-AUTHORITY-PATH-VALIDATION"
+begin_case "$case_id" "validate-packet accepts authority only from one canonical external owner-private control path whose identity is bound to packet provenance."
+repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/selected-repo")"
+repo_b="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/other-repository")"
+establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" \
+  --workspace-root "$repo_a" --workspace-root "$repo_b"
+packet_file="$CASE_DIR/current-packet.json"
+capture_packet_from_last_output "$packet_file" || \
+  fatal_fixture "$case_id" "cannot capture control-path packet"
+control_baseline="$CASE_DIR/authoritative-control.baseline.json"
+cp "$CONTROL_FILE" "$control_baseline" || \
+  fatal_fixture "$case_id" "cannot capture authoritative control"
+
+real_parent="$CASE_DIR/real-control-parent"
+linked_parent="$CASE_DIR/linked-control-parent"
+mkdir -p "$real_parent" || fatal_fixture "$case_id" "cannot create real control parent"
+chmod 700 "$real_parent" || fatal_fixture "$case_id" "cannot privatize real control parent"
+cp "$CONTROL_FILE" "$real_parent/repository-binding.json" || \
+  fatal_fixture "$case_id" "cannot copy symlink-path control"
+ln -s "$real_parent" "$linked_parent" || fatal_fixture "$case_id" "cannot link control parent"
+invoke_binding "$case_id" "validate-packet rejects a control path with symlink components" \
+  "$WORKSPACE_DIR" validate-packet --session-id "$SESSION_ID" \
+  --session-control-file "$linked_parent/repository-binding.json" --packet-file "$packet_file"
+assert_rc_nonzero "$case_id" "symlink-component control authority refuses"
+
+nonprivate_parent="$CASE_DIR/nonprivate-validation-parent"
+mkdir -p "$nonprivate_parent" || fatal_fixture "$case_id" "cannot create non-private validation parent"
+chmod 755 "$nonprivate_parent" || fatal_fixture "$case_id" "cannot expose validation parent"
+cp "$CONTROL_FILE" "$nonprivate_parent/repository-binding.json" || \
+  fatal_fixture "$case_id" "cannot copy parent-mode control"
+invoke_binding "$case_id" "validate-packet rejects authority below a non-private parent" \
+  "$WORKSPACE_DIR" validate-packet --session-id "$SESSION_ID" \
+  --session-control-file "$nonprivate_parent/repository-binding.json" --packet-file "$packet_file"
+assert_rc_nonzero "$case_id" "non-private control parent refuses during packet validation"
+
+private_parent="$CASE_DIR/private-validation-parent"
+mkdir -p "$private_parent" || fatal_fixture "$case_id" "cannot create private validation parent"
+chmod 700 "$private_parent" || fatal_fixture "$case_id" "cannot privatize validation parent"
+cp "$CONTROL_FILE" "$private_parent/repository-binding.json" || \
+  fatal_fixture "$case_id" "cannot copy file-mode control"
+chmod 644 "$private_parent/repository-binding.json" || \
+  fatal_fixture "$case_id" "cannot expose validation control file"
+invoke_binding "$case_id" "validate-packet rejects a non-private control file" \
+  "$WORKSPACE_DIR" validate-packet --session-id "$SESSION_ID" \
+  --session-control-file "$private_parent/repository-binding.json" --packet-file "$packet_file"
+assert_rc_nonzero "$case_id" "non-private control file refuses during packet validation"
+
+mkdir -p "$repo_b/private-control" || fatal_fixture "$case_id" "cannot create repository-contained control parent"
+chmod 700 "$repo_b/private-control" || fatal_fixture "$case_id" "cannot privatize repository-contained parent"
+cp "$CONTROL_FILE" "$repo_b/private-control/repository-binding.json" || \
+  fatal_fixture "$case_id" "cannot copy repository-contained control"
+invoke_binding "$case_id" "validate-packet rejects authority contained in any repository, not only the packet root" \
+  "$WORKSPACE_DIR" validate-packet --session-id "$SESSION_ID" \
+  --session-control-file "$repo_b/private-control/repository-binding.json" --packet-file "$packet_file"
+assert_rc_nonzero "$case_id" "control authority contained in another repository refuses"
+
+assert_schema_contract "$case_id" \
+  "actionable provenance carries canonical control-file identity or an equivalent immutable authority-path identity" \
+  '[.. | objects | keys[]]
+   | any(. == "sessionControlFile" or . == "controlFileIdentity" or . == "controlPathDigest")'
+assert_files_equal "$case_id" "control-path adversaries leave original authority byte-identical" \
+  "$control_baseline" "$CONTROL_FILE"
+end_case "$case_id"
+
+# RB-CONTROL-CHARACTER-REFUSAL ----------------------------------------------
+case_id="RB-CONTROL-CHARACTER-REFUSAL"
+begin_case "$case_id" "Repository roots, aliases, and diagnostic values containing C0 controls refuse before line-oriented output."
+repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/normal-repository")"
+control_index=0
+for control_value in $'newline\nvalue' $'carriage\rvalue' $'tab\tvalue' $'escape\033value' $'c0\001value'; do
+  control_index=$((control_index + 1))
+  CONTROL_FILE="$CONTROL_DIR/control-$control_index.json"
+  SESSION_ID="session-$case_id-$control_index"
+  invoke_binding_control_adversary "$case_id" "diagnostic C0 values refuse before line-oriented output" \
+    "$WORKSPACE_DIR" preflight --session-id "$SESSION_ID" \
+    --session-control-file "$CONTROL_FILE" --expected-control-revision 0 \
+    --request-class TARGETLESS_MODE --repository-root "$repo_a" \
+    --diagnostic-chat-cwd "$control_value" --workspace-root "$repo_a"
+  assert_rc_nonzero "$case_id" "diagnostic control-character form $control_index refuses"
+  assert_excludes_control_value "$case_id" \
+    "diagnostic control-character form $control_index is never reflected raw" "$control_value"
+  assert_file_absent "$case_id" "diagnostic control-character form $control_index writes no control" \
+    "$CONTROL_FILE"
+done
+
+CONTROL_FILE="$CONTROL_DIR/root-control.json"
+SESSION_ID="session-$case_id-root"
+controlled_root="$WORKSPACE_DIR/repository"$'\t'"alias"
+repo_controlled="$(create_eligible_repo "$case_id" "$controlled_root")"
+invoke_binding_control_adversary "$case_id" "repository root and derived alias with C0 controls refuse" \
+  "$WORKSPACE_DIR" preflight --session-id "$SESSION_ID" \
+  --session-control-file "$CONTROL_FILE" --expected-control-revision 0 \
+  --request-class TARGETLESS_MODE --repository-root "$repo_controlled" \
+  --workspace-root "$repo_controlled"
+assert_rc_nonzero "$case_id" "control-character repository root and alias refuse"
+assert_excludes_control_value "$case_id" \
+  "control-character repository root is never reflected raw" "$repo_controlled"
+assert_file_absent "$case_id" "control-character repository root writes no control" "$CONTROL_FILE"
+end_case "$case_id"
+
 # RB-SESSION-ISOLATION-NO-MIRROR-INHERITANCE ---------------------------------
 case_id="RB-SESSION-ISOLATION-NO-MIRROR-INHERITANCE"
 begin_case "$case_id" "A distinct session cannot consume another session's external control authority."
@@ -3990,20 +4520,35 @@ assert_control_fingerprint_unchanged "$case_id" \
   "malformed control is not rewritten" "$baseline"
 end_case "$case_id"
 
-# RB-SCHEMA-MALFORMED-EXPLICIT-REPAIR ----------------------------------------
-case_id="RB-SCHEMA-MALFORMED-EXPLICIT-REPAIR"
-begin_case "$case_id" "Explicit valid repository intent atomically repairs malformed current-session control state."
+# RB-MALFORMED-REPAIR-ABA-REFUSAL -------------------------------------------
+case_id="RB-MALFORMED-REPAIR-ABA-REFUSAL"
+begin_case "$case_id" "Malformed existing control cannot be repaired from revision 0 because recreating revision/decision 1 would make an old packet current again."
 repo_a="$(create_eligible_repo "$case_id" "$WORKSPACE_DIR/prior-work-repo")"
-printf '%s\n' '{"schemaVersion":1,"sessionId":"malformed","revision":0,"transitionHistory":[]}' >"$CONTROL_FILE"
-invoke_binding "$case_id" "explicit valid root replaces malformed control without ambient inference" \
+establish_explicit_binding "$case_id" "$WORKSPACE_DIR" "$repo_a" --workspace-root "$repo_a"
+packet_file="$CASE_DIR/revision-one-packet.json"
+capture_packet_from_last_output "$packet_file" || \
+  fatal_fixture "$case_id" "cannot retain the original revision-one packet"
+jq 'del(.currentBinding.repositoryAlias)' "$CONTROL_FILE" >"$CASE_DIR/malformed-control.json" || \
+  fatal_fixture "$case_id" "cannot create malformed control adversary"
+mv "$CASE_DIR/malformed-control.json" "$CONTROL_FILE" || \
+  fatal_fixture "$case_id" "cannot install malformed control adversary"
+control_baseline="$CASE_DIR/malformed-control.baseline.json"
+cp "$CONTROL_FILE" "$control_baseline" || \
+  fatal_fixture "$case_id" "cannot preserve malformed control baseline"
+invoke_binding "$case_id" "explicit revision-zero repair cannot reset malformed append-only authority" \
   "$WORKSPACE_DIR" preflight \
   --session-id "$SESSION_ID" --session-control-file "$CONTROL_FILE" \
   --expected-control-revision 0 --request-class TARGETLESS_MODE \
   --repository-root "$repo_a" --workspace-root "$repo_a"
-assert_rc_zero "$case_id" "explicit malformed-state repair succeeds"
-assert_contains "$case_id" "explicit malformed-state repair reports establishment" \
-  "source=explicit-repositoryRoot affinity=established"
-assert_control "$case_id" "$repo_a" "1"
+assert_rc_nonzero "$case_id" "malformed existing control refuses explicit repair from revision 0"
+assert_output_regex "$case_id" "malformed repair refusal is fail-closed" \
+  'BOUNDARY_MALFORMED|trusted recovery|monotonic provenance'
+assert_files_equal "$case_id" "malformed repair refusal preserves the malformed authority bytes" \
+  "$control_baseline" "$CONTROL_FILE"
+invoke_binding "$case_id" "retained revision-one packet cannot become current through ABA repair" \
+  "$WORKSPACE_DIR" validate-packet --session-id "$SESSION_ID" \
+  --session-control-file "$CONTROL_FILE" --packet-file "$packet_file"
+assert_rc_nonzero "$case_id" "old revision-one packet remains unusable after refused repair"
 end_case "$case_id"
 
 # RB-SCHEMA-DEFINITIONS-AND-CONSTRAINTS --------------------------------------
@@ -4035,7 +4580,7 @@ refusal_instance="$CASE_DIR/refusal-valid.json"
 invalid_instance="$CASE_DIR/packet-invalid.json"
 write_valid_control "$control_instance" "$SESSION_ID" "$repo_a" "prior-work-repo" || \
   fatal_fixture "$case_id" "cannot author schema control instance"
-write_actionable_packet "$actionable_instance" "$SESSION_ID" 1 "$repo_a" "prior-work-repo" || \
+write_actionable_packet "$actionable_instance" "$SESSION_ID" 1 "$repo_a" "prior-work-repo" "$control_instance" || \
   fatal_fixture "$case_id" "cannot author schema actionable instance"
 jq '.repositoryRoot = "<redacted-local-root>"
     | .repositoryResolution.pathVisibility = "redacted"

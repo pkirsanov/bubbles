@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 # Portable awk: the 3-arg match($0, /re/, arr) form used below is a GNU awk
 # extension that BSD/macOS awk rejects. Prefer gawk when present (the framework's
@@ -68,6 +69,9 @@ EOF
 SESSION_ID=""
 SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
+VALIDATED_PACKET_FILE=""
+VALIDATED_PACKET=""
+COMPACTOR_SESSION_FILE=""
 SCENARIO_FILE=""
 NODE_ID=""
 raw_file=""
@@ -128,18 +132,25 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
     exit 2
   fi
   [[ -f "$REPOSITORY_BINDING" ]] || { echo "context-compactor: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 2; }
+  VALIDATED_PACKET_FILE="$(mktemp)" || { echo "context-compactor: unable to create immutable packet snapshot" >&2; exit 2; }
+  trap 'rm -f "$VALIDATED_PACKET_FILE"' EXIT INT TERM
+  cp -- "$BINDING_PACKET_FILE" "$VALIDATED_PACKET_FILE" || {
+    echo "context-compactor: unable to capture binding packet" >&2
+    exit 2
+  }
+  chmod 600 "$VALIDATED_PACKET_FILE"
   set +e
   if [[ -n "$SCENARIO_FILE" ]]; then
     BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
       --session-id "$SESSION_ID" \
       --session-control-file "$SESSION_CONTROL_FILE" \
-      --packet-file "$BINDING_PACKET_FILE" \
+      --packet-file "$VALIDATED_PACKET_FILE" \
       --scenario-file "$SCENARIO_FILE" --node-id "$NODE_ID" 2>&1)"
   else
     BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
       --session-id "$SESSION_ID" \
       --session-control-file "$SESSION_CONTROL_FILE" \
-      --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+      --packet-file "$VALIDATED_PACKET_FILE" 2>&1)"
   fi
   BINDING_RC=$?
   set -e
@@ -147,7 +158,40 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
     printf '%s\n' "$BINDING_OUTPUT" >&2
     exit "$BINDING_RC"
   fi
-  BINDING_REPOSITORY_ROOT="$(jq -r '.repositoryRoot' "$BINDING_PACKET_FILE")"
+  VALIDATED_PACKET="$(cat -- "$VALIDATED_PACKET_FILE")" || exit 2
+  BINDING_REPOSITORY_ROOT="$(jq -r '.repositoryRoot' <<< "$VALIDATED_PACKET")"
+fi
+
+path_has_symlink_component() {
+  local path="$1"
+  local remainder
+  local component
+  local cursor=""
+
+  [[ "$path" == /* ]] || return 0
+  remainder="${path#/}"
+  while [[ -n "$remainder" ]]; do
+    if [[ "$remainder" == */* ]]; then
+      component="${remainder%%/*}"
+      remainder="${remainder#*/}"
+    else
+      component="$remainder"
+      remainder=""
+    fi
+    [[ -n "$component" && "$component" != "." && "$component" != ".." ]] || return 0
+    cursor="$cursor/$component"
+    [[ ! -L "$cursor" ]] || return 0
+    [[ -e "$cursor" ]] || return 1
+  done
+  return 1
+}
+
+if [[ "$BINDING_REQUIRED" == true ]]; then
+  COMPACTOR_SESSION_FILE="$BINDING_REPOSITORY_ROOT/.specify/memory/bubbles.session.json"
+  if path_has_symlink_component "$COMPACTOR_SESSION_FILE"; then
+    echo "context-compactor: repository session path must not traverse symlink components" >&2
+    exit 1
+  fi
 fi
 
 if [[ ! -f "$raw_file" ]]; then
@@ -342,6 +386,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
   session_id_v="$(extract_binding_scalar sessionId "$raw_file")"
   decision_id_v="$(extract_binding_scalar decisionId "$raw_file")"
   control_revision_v="$(extract_binding_scalar controlRevision "$raw_file")"
+  control_path_digest_v="$(extract_binding_scalar controlPathDigest "$raw_file")"
   authority_v="$(extract_binding_scalar authority "$raw_file")"
   transition_v="$(extract_binding_scalar transition "$raw_file")"
   scope_kind_v="$(extract_binding_scalar scopeKind "$raw_file")"
@@ -351,7 +396,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
   actionable_v="$(extract_binding_scalar actionable "$raw_file")"
 
   if [[ -z "$repository_root_v" || -z "$repository_alias_v" || -z "$session_id_v" ||
-        -z "$decision_id_v" || -z "$control_revision_v" || -z "$authority_v" ||
+        -z "$decision_id_v" || -z "$control_revision_v" || -z "$control_path_digest_v" || -z "$authority_v" ||
         -z "$transition_v" || -z "$scope_kind_v" || -z "$scope_id_v" ||
       -z "$target_kind_v" || -z "$path_visibility_v" || -z "$actionable_v" ]] ||
      ! jq -e \
@@ -360,6 +405,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
        --arg session "$session_id_v" \
        --arg decision "$decision_id_v" \
        --arg revision "$control_revision_v" \
+      --arg control_path_digest "$control_path_digest_v" \
        --arg authority "$authority_v" \
        --arg transition "$transition_v" \
        --arg scope_kind "$scope_kind_v" \
@@ -372,6 +418,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
         .repositoryResolution.sessionId == $session and
         .repositoryResolution.decisionId == $decision and
         (.repositoryResolution.controlRevision | tostring) == $revision and
+        .repositoryResolution.controlPathDigest == $control_path_digest and
         .repositoryResolution.authority == $authority and
         .repositoryResolution.transition == $transition and
         .repositoryResolution.scopeKind == $scope_kind and
@@ -380,7 +427,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
         .repositoryResolution.targetKind == $target_kind and
         .repositoryResolution.pathVisibility == $visibility and
         (.repositoryResolution.actionable | tostring) == $actionable' \
-       "$BINDING_PACKET_FILE" >/dev/null 2>&1; then
+      <<< "$VALIDATED_PACKET" >/dev/null 2>&1; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_CONFLICT actionable=false\n' >&2
     exit 1
   fi
@@ -423,6 +470,7 @@ emit_nullable_binding() {
     printf '"sessionId":%s,' "$(emit "$session_id_v")"
     printf '"decisionId":%s,' "$(emit "$decision_id_v")"
     printf '"controlRevision":%s,' "$control_revision_v"
+    printf '"controlPathDigest":%s,' "$(emit "$control_path_digest_v")"
     printf '"authority":%s,' "$(emit "$authority_v")"
     printf '"transition":%s,' "$(emit "$transition_v")"
     printf '"scopeKind":%s,' "$(emit "$scope_kind_v")"
@@ -436,6 +484,7 @@ emit_nullable_binding() {
     printf '"sessionId":%s,' "$(emit "$session_id_v")"
     printf '"decisionId":%s,' "$(emit "$decision_id_v")"
     printf '"controlRevision":%s,' "$control_revision_v"
+    printf '"controlPathDigest":%s,' "$(emit "$control_path_digest_v")"
     printf '"authority":%s,' "$(emit "$authority_v")"
     printf '"transition":%s,' "$(emit "$transition_v")"
     printf '"scopeKind":%s,' "$(emit "$scope_kind_v")"
@@ -475,10 +524,10 @@ if command -v jq >/dev/null 2>&1 && [[ "$BINDING_REQUIRED" == true ]]; then
   # actionable packet. Unbound use remains a pure stdout transformation.
   _comp_repo_root="$BINDING_REPOSITORY_ROOT"
   if [[ -n "$_comp_repo_root" ]]; then
-    _comp_session_file="$_comp_repo_root/.specify/memory/bubbles.session.json"
+    _comp_session_file="$COMPACTOR_SESSION_FILE"
     if [[ -f "$_comp_session_file" ]]; then
       _comp_now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-      _comp_tmp="$(mktemp 2>/dev/null || true)"
+      _comp_tmp="$(mktemp "$(dirname "$_comp_session_file")/.bubbles-session.XXXXXX" 2>/dev/null || true)"
       if [[ -n "$_comp_tmp" ]]; then
         if jq \
             --arg rawPointer "$raw_abs" \

@@ -24,11 +24,18 @@ usage() {
 Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
          [--convergence-iteration <N> --spec-dir <path>] \
-         [--session-id <id> --session-control-file <path> --binding-packet-file <path>]
+         --session-id <id> --session-control-file <path> --binding-packet-file <path>
 
 Required:
   --phase <name>       Phase the orchestrator is entering or closing
                        (e.g. phase_2_plan, phase_3_execute).
+
+Required repository binding:
+  --session-id <id>    Current interactive session id.
+  --session-control-file <path>
+                       Host-private authoritative session control record.
+  --binding-packet-file <path>
+                       Current local actionable repository binding packet.
 
 Optional:
   --scope-id <id>      Scope being worked, when applicable.
@@ -44,13 +51,6 @@ Optional:
   --spec-dir <path>    Spec directory (repo-relative) that the
                        convergence iteration refers to. Paired with
                        --convergence-iteration.
-  --session-id <id>    Current interactive session id. Required together
-                       with both binding file options for repository-sensitive
-                       snapshots.
-  --session-control-file <path>
-                       Host-private authoritative session control record.
-  --binding-packet-file <path>
-                       Current local actionable repository binding packet.
   -h, --help           Print this usage and exit.
 
 Behavior:
@@ -66,8 +66,8 @@ Behavior:
   - Prior records are NEVER touched. The array grows monotonically.
   - Two consecutive `--mode start` calls for the same phase + scope are
     intentionally allowed to support resume-after-crash flows.
-  - Repo root is detected via $BUBBLES_REPO_ROOT (preferred) or by
-    walking up from $PWD looking for `.specify/memory/`.
+  - The repository root comes only from the validated actionable packet.
+    PWD and BUBBLES_REPO_ROOT are never repository authority.
 
 Hard dependency:
   - `jq` is required. If `jq` is missing the script exits non-zero
@@ -187,13 +187,9 @@ case "$MODE" in
     ;;
 esac
 
-BINDING_REQUIRED=false
-if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE" ]]; then
-  BINDING_REQUIRED=true
-  [[ -n "$SESSION_ID" ]] || { echo "state-snapshot: --session-id is required for repository-sensitive snapshots" >&2; exit 2; }
-  [[ -n "$SESSION_CONTROL_FILE" ]] || { echo "state-snapshot: --session-control-file is required for repository-sensitive snapshots" >&2; exit 2; }
-  [[ -n "$BINDING_PACKET_FILE" ]] || { echo "state-snapshot: --binding-packet-file is required for repository-sensitive snapshots" >&2; exit 2; }
-fi
+[[ -n "$SESSION_ID" ]] || { echo "state-snapshot: --session-id is required for repository-local snapshots" >&2; exit 2; }
+[[ -n "$SESSION_CONTROL_FILE" ]] || { echo "state-snapshot: --session-control-file is required for repository-local snapshots" >&2; exit 2; }
+[[ -n "$BINDING_PACKET_FILE" ]] || { echo "state-snapshot: --binding-packet-file is required for repository-local snapshots" >&2; exit 2; }
 
 # --- jq dependency check ---------------------------------------------------
 
@@ -203,47 +199,41 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 3
 fi
 
-# --- Repo root resolution --------------------------------------------------
+# --- Validated repository root ---------------------------------------------
 
-resolve_repo_root() {
-  if [[ -n "${BUBBLES_REPO_ROOT:-}" ]]; then
-    printf '%s' "$BUBBLES_REPO_ROOT"
-    return 0
-  fi
-  local dir
-  dir="$(pwd)"
-  while [[ "$dir" != "/" ]]; do
-    if [[ -d "$dir/.specify/memory" ]]; then
-      printf '%s' "$dir"
-      return 0
-    fi
-    dir="$(dirname "$dir")"
-  done
-  return 1
+[[ -f "$REPOSITORY_BINDING" ]] || { echo "state-snapshot: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 3; }
+NORMALIZED_PACKET_FILE=""
+TMP_FILE=""
+CONV_TMP=""
+
+cleanup_temp_files() {
+  [[ -z "$NORMALIZED_PACKET_FILE" ]] || rm -f "$NORMALIZED_PACKET_FILE"
+  [[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
+  [[ -z "$CONV_TMP" ]] || rm -f "$CONV_TMP"
 }
 
-if [[ "$BINDING_REQUIRED" == true ]]; then
-  [[ -f "$REPOSITORY_BINDING" ]] || { echo "state-snapshot: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 3; }
-  set +e
-  BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" mirror-session \
-    --session-id "$SESSION_ID" \
-    --session-control-file "$SESSION_CONTROL_FILE" \
-    --packet-file "$BINDING_PACKET_FILE" 2>&1)"
-  BINDING_RC=$?
-  set -e
-  if [[ "$BINDING_RC" -ne 0 ]]; then
-    printf '%s\n' "$BINDING_OUTPUT" >&2
-    exit "$BINDING_RC"
-  fi
-  REPO_ROOT="$(jq -r '.repositoryRoot' "$BINDING_PACKET_FILE")"
-else
-  REPO_ROOT="$(resolve_repo_root || true)"
-  if [[ -z "$REPO_ROOT" ]]; then
-    echo "state-snapshot: unable to resolve repo root (no .specify/memory found)." >&2
-    echo "  Set BUBBLES_REPO_ROOT explicitly or run from inside a Bubbles repo." >&2
-    exit 4
-  fi
+trap cleanup_temp_files EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+NORMALIZED_PACKET_FILE="$(mktemp)"
+cp -- "$BINDING_PACKET_FILE" "$NORMALIZED_PACKET_FILE" || {
+  echo "state-snapshot: unable to read binding packet" >&2
+  exit 2
+}
+chmod 600 "$NORMALIZED_PACKET_FILE"
+set +e
+BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" mirror-session \
+  --session-id "$SESSION_ID" \
+  --session-control-file "$SESSION_CONTROL_FILE" \
+  --packet-file "$NORMALIZED_PACKET_FILE" 2>&1)"
+BINDING_RC=$?
+set -e
+if [[ "$BINDING_RC" -ne 0 ]]; then
+  printf '%s\n' "$BINDING_OUTPUT" >&2
+  exit "$BINDING_RC"
 fi
+REPO_ROOT="$(jq -r '.repositoryRoot' "$NORMALIZED_PACKET_FILE")"
 
 SESSION_DIR="$REPO_ROOT/.specify/memory"
 SESSION_FILE="$SESSION_DIR/bubbles.session.json"
@@ -266,8 +256,7 @@ NEXT_TURN="$(jq '
 
 # Append a new record. We use --argjson for ints, --arg for strings, and
 # pass scope_id / note as strings that may be empty (mapped to null below).
-TMP_FILE="$(mktemp)"
-trap 'rm -f "$TMP_FILE"' EXIT INT TERM
+TMP_FILE="$(mktemp "$SESSION_DIR/.bubbles.session.json.update.XXXXXX")"
 
 jq \
   --argjson turn "$NEXT_TURN" \
@@ -295,6 +284,7 @@ jq \
   ' "$SESSION_FILE" > "$TMP_FILE"
 
 mv "$TMP_FILE" "$SESSION_FILE"
+TMP_FILE=""
 
 # --- Convergence loop update (Gate G082) -----------------------------------
 #
@@ -307,8 +297,7 @@ mv "$TMP_FILE" "$SESSION_FILE"
 # This array is consumed by `bubbles/scripts/convergence-cap-guard.sh`
 # which enforces `maxConvergenceIterations` (default 10) per Gate G082.
 if [[ -n "$CONV_ITER" && -n "$SPEC_DIR" ]]; then
-  CONV_TMP="$(mktemp)"
-  trap 'rm -f "$CONV_TMP"' EXIT INT TERM
+  CONV_TMP="$(mktemp "$SESSION_DIR/.bubbles.session.json.convergence.XXXXXX")"
   jq \
     --arg specDir "$SPEC_DIR" \
     --arg agent "$AGENT_NAME" \
@@ -328,8 +317,8 @@ if [[ -n "$CONV_ITER" && -n "$SPEC_DIR" ]]; then
     | $root + { convergenceLoops: $updated }
     ' "$SESSION_FILE" > "$CONV_TMP"
   mv "$CONV_TMP" "$SESSION_FILE"
+  CONV_TMP=""
 fi
-trap - EXIT INT TERM
 
 # Echo a one-line summary to stdout for orchestrator log capture.
 if [[ -n "$CONV_ITER" && -n "$SPEC_DIR" ]]; then
