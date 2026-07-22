@@ -19,6 +19,8 @@
 #   agnosticity [--staged]        Check portable Bubbles surfaces for drift
 #   guard <spec>                  Run state transition guard on a spec
 #   runtime-selftest              Run runtime lease selftest coverage
+#   repository-binding-selftest [--suite=foundation]
+#                                 Run repository-binding foundation selftests
 #   finding-closure-selftest      Run finding-set closure selftest coverage
 #   scan <spec>                   Run implementation reality scan on a spec
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
@@ -1170,6 +1172,8 @@ Commands:
   guard <spec>                  Run state transition guard on a spec
   guard-selftest                Run the transition guard selftest suite
   runtime-selftest              Run the runtime lease selftest suite
+  repository-binding-selftest [--suite=foundation]
+                                Run repository-binding foundation selftests
   finding-closure-selftest      Run the finding-set closure selftest suite
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
@@ -1482,6 +1486,11 @@ cmd_session() {
 
 cmd_trajectory() {
   bash "$SCRIPT_DIR/trajectory-inspector.sh" --repo-root "$REPO_ROOT" "$@"
+}
+
+cmd_repository_binding_selftest() {
+  BUBBLES_REPOSITORY_BINDING_CLI_BOUNDARY=1 \
+    bash "$SCRIPT_DIR/repository-binding-selftest.sh" "$@"
 }
 
 cmd_lint() {
@@ -3195,6 +3204,7 @@ main() {
     guard)              cmd_guard "$@" ;;
     guard-selftest)     cmd_guard_selftest "$@" ;;
     runtime-selftest)   cmd_runtime_selftest "$@" ;;
+    repository-binding-selftest) cmd_repository_binding_selftest "$@" ;;
     finding-closure-selftest) cmd_finding_closure_selftest "$@" ;;
     workflow-selftest)  cmd_workflow_selftest "$@" ;;
     scan)               cmd_scan "$@" ;;
