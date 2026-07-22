@@ -1,14 +1,21 @@
-# IMP-022 - Durable Work-Repository Boundary
+# IMP-103 - Durable Work-Repository Boundary
 
-**Status:** OWNER-APPROVED - IMPLEMENTATION PLAN READY (requirements, operator UX, technical design, and dependency-ordered scopes; runtime behavior not yet applied) - direct repository-owner approval recorded 2026-07-21
-**Surface:** framework-health (G125), workflow mode `full-delivery` - approved requirements and design packet; no framework runtime/source mutation in this invocation
-**Motivation:** in a multi-root workspace, a targetless Bubbles mode can currently discover work relative to ambient process context even after the session already resolved and completed work in another repository
+**Status:** S1-S4 IMPLEMENTATION COMMITTED AT REPLAY SHAS `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; S2 SNAPSHOT CORRECTIVE AND S3 MIGRATOR CORRECTIVE REMAIN REQUIRED BEFORE S5; S5 IS DEPENDENCY-READY ONLY AFTER THOSE CORRECTIONS; FULL VALIDATION, GENERATED/RELEASE CLOSURE, AND PUSH VERIFICATION REMAIN UNCLAIMED - direct repository-owner approval recorded 2026-07-21
+**Surface:** framework-health (G125), workflow mode `full-delivery` - approved requirements/design packet plus committed repository-binding foundation, propagation, classification/discovery, front-door, continuation, goal-node, and G129 registration surfaces; corrective consumer completeness and S5 release closure remain incomplete
+**Motivation:** before S1-S4, a targetless Bubbles mode in a multi-root workspace could discover work relative to ambient process context even after the session had already resolved and completed work in another repository
 **Verified gaps addressed:** SRA1 missing first-class work-repository identity in inputs and envelopes; SRA2 missing durable same-session work-boundary semantics; SRA3 contradictory targetless-mode classification and repository-unscoped auto-discovery; SRA4 unsafe ambient/fallback authority and provenance loss across dispatch, handoff, and compaction
-**Implementation authorization:** this direct owner request preserves authorization for the normal `full-delivery` continuation beginning with `bubbles.plan`. Approval does not claim that implementation, tests, framework validation, release checks, generated artifacts, or downstream propagation have occurred.
+**Implementation status:** S1 is committed at `7405944`, S2 at `76b290e`, S3 at `f8f1a52`, and S4 at `8e329a3`. The S1-S4 focused suites executed and S4 was independently certified, but this packet does not convert those external execution facts into item-level DoD evidence or check any box. The S2 `state-snapshot.sh`/selftest TOCTOU correction and S3 mode-migrator/selftest consumer-completeness correction remain pending before S5 can start.
+**Validation accounting:** The focused S1-S4 execution and S4 certification are recorded as live status only. The corrective S2/S3 cases, S5 `--suite=all` aggregate, full `framework-validate`, `release-check`, generated-artifact freshness, final release-manifest reconciliation, release-owner decision, and resulting push have not been verified by this packet and remain unclaimed.
+
+## Packet Identity History
+
+`IMP-103` is the canonical identity. The tracked deletion of `improvements/IMP-022-session-repository-affinity.md` and addition of this file are one canonical rename because `IMP-022` belongs to another delivered capability. The S1 commit at `7405944` was initially mislabeled `IMP-022` in its commit subject; no history rewrite is required, and S1-S4 are interpreted as IMP-103 delivery commits.
 
 ## Change Boundary
 
-This packet is the G085 source-repository authority for business behavior, operator UX, acceptance scenarios, and technical design. It does not implement or modify scripts, tests, agent prompts, workflow registries, runtime session state, generated release artifacts, `VERSION`, `CHANGELOG`, or downstream repositories.
+This packet remains the G085 source-repository authority for business behavior, operator UX, acceptance scenarios, technical design, scope boundaries, corrective prerequisites, and release ordering. S1-S4 live at the replay SHAs above. Before S5, only the S2 snapshot corrective and S3 migrator corrective families named below may change for IMP-103. S5 may then update only its explicitly named docs, catalog, capability, generator, generated-output, installer, and release-decision families. `docs/governance-index.md` is unrelated IMP-020 work and is outside the IMP-103 boundary.
+
+This invocation changes only the canonical packet rename/status/boundary surfaces under `improvements/`. It does not mutate source, tests, docs, generated files, release metadata, downstream repositories, or execution evidence.
 
 The capability resolves which repository a command targets. It does not expand what an agent may modify after resolution. Existing framework-source ownership, downstream installed-file immutability, artifact ownership, release-train ownership, deployment ownership, and command-specific authorization remain fully in force.
 
@@ -18,20 +25,22 @@ The capability resolves which repository a command targets. It does not expand w
 
 The repository owner supplied the following incident narrative. It is accepted here as operator-provided evidence; this requirements revision does not claim to have replayed the session or independently counted its file events.
 
-- Chat/session `80331f88-4cab-4248-964c-2837994bb35b` was created with chat CWD `<chat-cwd-repo>`.
+- Chat/session `80331f88-4cab-4248-964c-2837994bb35b` was created with chat CWD `<chat-cwd-repository-root>`.
 - Its first request explicitly asked to pick up Smackerel work. Turns 0-16 operated on Smackerel through absolute paths and reported 13 completed Smackerel rounds.
 - Turn 17 contained an explicit `mode:` invocation but no repository or spec target.
 - Turn 17 initialized QuantitativeFinance spec discovery and produced 45 QuantitativeFinance file events and zero Smackerel file events.
 - Host metadata was internally inconsistent: `repository` reportedly named EmailAnalyzer, chat CWD named QuantitativeFinance, and prior successfully resolved work was Smackerel. Generic host repository metadata therefore cannot be work-target authority.
 
-### Canonical Source Contradiction Re-Checked By The Parent
+### Pre-Implementation Canonical Source Contradiction
+
+The bullets below record the baseline contradiction that S1-S4 were designed to remove. They are historical problem evidence, not a description of current source behavior.
 
 - `agents/bubbles_shared/workflow-delegation-core.md` classifies input as `STRUCTURED` only when literal `mode:` is present **with concrete spec targets**.
 - `agents/bubbles.workflow.agent.md` Phase 0 normally stops when no specs resolve, but explicitly exempts `stochastic-quality-sweep` and `iterate`, allowing them to auto-discover all folders under an unqualified `specs/` path.
 - `bubbles/workflows/modes.yaml` declares `stochastic-quality-sweep.constraints.autoDiscoverAllSpecs: true` and describes the default pool as all specs under `specs/`; `iterate` carries the same unqualified auto-discovery posture.
 - The workflow prompt's literal hard-gate and Phase 0 language also imply that `mode:` alone can pass into execution. That conflicts with the delegation core's `mode:` plus concrete-target definition.
 - `bubbles.super` `RESOLUTION-ENVELOPE`, `bubbles.iterate` `WORK-ENVELOPE`, workflow `CONTINUATION-ENVELOPE`, agent `RESULT-ENVELOPE`, and goal-scenario repo/node contracts do not share one mandatory canonical `repositoryRoot` plus work-boundary provenance contract.
-- `bubbles/scripts/state-snapshot.sh` persists turn/phase/scope/mode/agent information but does not currently provide the authoritative same-session work-repository binding required by this packet. Repository-root discovery used to locate a state file is not equivalent to selecting the work repository.
+- At that baseline, `bubbles/scripts/state-snapshot.sh` persisted turn/phase/scope/mode/agent information but did not provide the authoritative same-session work-repository binding required by this packet. Repository-root discovery used to locate a state file was not equivalent to selecting the work repository.
 
 ## Problem
 
@@ -320,7 +329,7 @@ An invocation containing `mode:` with no concrete repository/spec/bug/ops target
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 1. Receive mode=stochastic-quality-sweep with no repo/spec target    │
+│ 1. Receive mode: stochastic-quality-sweep with no repo/spec target   │
 └──────────────────────────────────────────────────────────────────────┘
 ▼ classify
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -433,11 +442,11 @@ The following sections are the active implementation architecture for the approv
 
 ## Design Brief
 
-### Current State
+### Pre-Implementation Current State (Historical Baseline)
 
-Repository-sensitive routing is distributed across prompt prose. `workflow-delegation-core.md` requires `mode:` plus concrete targets for `STRUCTURED`, while `bubbles.workflow.agent.md` admits `mode:` alone and lets `stochastic-quality-sweep` and `iterate` discover an unqualified `specs/` pool. `bubbles.super`, `bubbles.iterate`, state snapshots, compaction, and goal scenarios each carry only part of the context required to keep work in one repository.
+Before S1-S4, repository-sensitive routing was distributed across prompt prose. `workflow-delegation-core.md` required `mode:` plus concrete targets for `STRUCTURED`, while `bubbles.workflow.agent.md` admitted `mode:` alone and let `stochastic-quality-sweep` and `iterate` discover an unqualified `specs/` pool. `bubbles.super`, `bubbles.iterate`, state snapshots, compaction, and goal scenarios each carried only part of the context required to keep work in one repository.
 
-The existing `.specify/memory/bubbles.session.json` is repository-local and is found only after `BUBBLES_REPO_ROOT` or `$PWD` selects a repository. It can remain a useful ignored runtime mirror, but it cannot answer which repository should be opened first in a multi-root session.
+At that baseline, `.specify/memory/bubbles.session.json` was repository-local and found only after `BUBBLES_REPO_ROOT` or `$PWD` selected a repository. It could remain a useful ignored runtime mirror, but it could not answer which repository should be opened first in a multi-root session.
 
 ### Target State
 
@@ -455,9 +464,9 @@ The authoritative durable record lives in host-private, session-scoped control-p
 
 ### Patterns To Avoid
 
-- The current `bubbles.workflow.agent.md` `mode:`-only hard gate and unqualified `specs/` exception; it contradicts the shared classifier and permits preflight bypass.
-- The current `bubbles.super.agent.md` and `bubbles.iterate.agent.md` practice of receiving or scanning an all-repository `specs/` listing before repository selection.
-- The current `state-snapshot.sh` and `cli.sh` fallback from missing explicit root/session identity to repository-local state or process identity; those are downstream state consumers, not work-target authorities.
+- The pre-implementation `bubbles.workflow.agent.md` `mode:`-only hard gate and unqualified `specs/` exception; it contradicted the shared classifier and permitted preflight bypass.
+- The pre-implementation `bubbles.super.agent.md` and `bubbles.iterate.agent.md` practice of receiving or scanning an all-repository `specs/` listing before repository selection.
+- The pre-implementation `state-snapshot.sh` and `cli.sh` fallback from missing explicit root/session identity to repository-local state or process identity; those were downstream state consumers, not work-target authorities.
 - Prompt-only repository inference duplicated across agents; prose cannot provide atomic transitions, conflict detection, or a mechanically guarded discovery boundary.
 
 ### Resolved Decisions
@@ -475,7 +484,9 @@ The authoritative durable record lives in host-private, session-scoped control-p
 
 None. The requirements and operator UX determine the remaining technical choices.
 
-## Current Truth
+## Pre-Implementation Current Truth
+
+This table records the source baseline used to design S1-S4. It is retained for traceability and does not override the implemented-state summary at the top of this packet.
 
 | Surface | Current source truth | Design consequence |
 |---|---|---|
@@ -587,7 +598,7 @@ Each `repos[]` entry in a compiled goal scenario adds canonical `repositoryRoot`
 
 ### Mechanical Conformance Adapter
 
-A new repository-binding conformance guard is wired into `framework-validate.sh` and registered at the next available gate ID (currently G129). It derives direct runners from `workflowModeGrants`, adds the explicit repo-scanning utility inventory, and verifies:
+The repository-binding conformance guard and hermetic selftest are implemented. G129 registration is committed with S3 at `f8f1a52`, and the S4 consumer activation is committed at `8e329a3`. S5 must still reconcile and verify the generated top-level gate block and `framework-validate.sh` wiring, then execute full validation; their presence in an unverified worktree is not release evidence. The guard derives direct runners from `workflowModeGrants`, adds the explicit repo-scanning utility inventory, and verifies:
 
 - each consumer references the shared preflight contract;
 - no consumer performs repository-local discovery before the preflight anchor;
@@ -818,7 +829,7 @@ Mirror drift is reported after successful preflight with control revision and al
 | `bubbles/scripts/repository-binding.sh` | New resolver/control/discovery/mirror reference implementation. |
 | `bubbles/schemas/repository-binding.schema.json` | Shared control-record and packet definitions. |
 | Repository-binding conformance guard and selftests | Hermetic matrix, source-consumer ordering, and no-bypass enforcement; wired into framework validation. |
-| `bubbles/registry/gates.yaml` and generated gate block | Register the next available blocking gate for repository-preflight conformance. |
+| `bubbles/registry/gates.yaml` and generated gate block | G129 is registered in the canonical registry; S5 must regenerate and verify the top-level gate block from that source. |
 
 ### Routing, Prompt, And Envelope Consumers
 
@@ -949,7 +960,7 @@ None. `bubbles.plan` may choose scope boundaries and exact regression filenames,
 
 ### SCN-001 - Incident 80331f88 Targetless Sweep Honors Smackerel Boundary
 
-Given chat/session `80331f88-4cab-4248-964c-2837994bb35b` has chat CWD `<chat-cwd-repo>`
+Given chat/session `80331f88-4cab-4248-964c-2837994bb35b` has chat CWD `<chat-cwd-repository-root>`
 And its first request successfully resolved "pick up Smackerel work" to the canonical Smackerel repository
 And turns 0-16 used that durable Smackerel work boundary and reported 13 completed Smackerel rounds
 And host `repository` metadata reports EmailAnalyzer
@@ -1168,7 +1179,7 @@ No unresolved business, UX, or technical-design requirement remains in this pack
 
 ## Executable Implementation Plan (G085 Source-Repository Pattern)
 
-This section is the `bubbles.plan`-owned execution inventory for IMP-022. It intentionally stays inside this improvement packet: the canonical Bubbles source repository must not gain a persistent `specs/` directory. All statuses and DoD items begin unchecked because this planning invocation performs no implementation or test execution.
+This section is the `bubbles.plan`-owned execution inventory for IMP-103. It intentionally stays inside this improvement packet: the canonical Bubbles source repository must not gain a persistent `specs/` directory. Status summaries record the supplied replay commits, focused-suite execution, and S4 certification facts; every DoD item remains unchecked because this invocation performs no implementation or scope-test execution.
 
 ### Execution Outline
 
@@ -1180,7 +1191,7 @@ This section is the `bubbles.plan`-owned execution inventory for IMP-022. It int
 4. **S4 - Front Doors, Envelopes, And Goal Nodes:** propagate one validated decision through every repository-sensitive front door, dispatch/result/continuation surface, and scoped cross-repository node.
 5. **S5 - Documentation, Generated Surfaces, And Release Closure:** reconcile managed docs and capability state, regenerate derived/release artifacts only after source and docs are final, then run full framework and release validation.
 
-No scope may start until every listed dependency is complete with current-session evidence. S1 is tagged `foundation:true`; S2-S5 are overlays on that foundation. S3 and S4 are separate implementation checkpoints but form one publishability boundary: no release may contain S3 targetless discovery semantics without S4 front-door propagation and the enabled conformance gate.
+The dependency order remains authoritative: S1 is tagged `foundation:true`; S2-S5 are overlays on that foundation. S1-S4 are committed at `7405944`, `76b290e`, `f8f1a52`, and `8e329a3`; their focused suites executed, and S4 was independently certified. S3 and S4 form one committed publishability boundary with G129 registered. Formal packet DoD remains unchecked because this status reconciliation does not attach the required item-level evidence. S5 cannot start until the S2 snapshot TOCTOU correction and S3 migrator consumer-completeness correction are committed and their focused corrective cases execute successfully.
 
 #### New Types And Signatures
 
@@ -1204,11 +1215,11 @@ No scope may start until every listed dependency is complete with current-sessio
 
 | Scope | Name | Tags | Depends On | Primary owners | Status |
 |---|---|---|---|---|---|
-| S1 | Repository Binding Foundation | `foundation:true`, `runtime-behavior` | None | `bubbles.implement`, `bubbles.test` | Not Started |
-| S2 | Session Mirror And Provenance | `runtime-behavior`, `shared-infrastructure` | S1 | `bubbles.implement`, `bubbles.test` | Not Started |
-| S3 | Classification And Scoped Discovery | `runtime-behavior`, `regression` | S1, S2 | `bubbles.implement`, `bubbles.test` | Not Started |
-| S4 | Front Doors, Envelopes, And Goal Nodes | `runtime-behavior`, `propagation` | S1, S2, S3 | `bubbles.implement`, `bubbles.test` | Not Started |
-| S5 | Documentation, Generated Surfaces, And Release Closure | `release` | S1, S2, S3, S4 | `bubbles.docs`, `bubbles.devops`, `bubbles.releases` | Not Started |
+| S1 | Repository Binding Foundation | `foundation:true`, `runtime-behavior` | None | `bubbles.implement`, `bubbles.test` | Committed at `7405944`; focused suite executed; packet DoD remains unchecked |
+| S2 | Session Mirror And Provenance | `runtime-behavior`, `shared-infrastructure` | S1 | `bubbles.implement`, `bubbles.test` | Committed at `76b290e`; focused suite executed; `state-snapshot.sh` plus selftest TOCTOU corrective remains required before S5 |
+| S3 | Classification And Scoped Discovery | `runtime-behavior`, `regression` | S1, S2 | `bubbles.implement`, `bubbles.test` | Committed at `f8f1a52` with G129 registered; focused suite executed; migrator plus selftest consumer-completeness corrective remains required before S5 |
+| S4 | Front Doors, Envelopes, And Goal Nodes | `runtime-behavior`, `propagation` | S1, S2, S3 | `bubbles.implement`, `bubbles.test` | Committed at `8e329a3`; focused suite executed and independently certified; packet DoD remains unchecked |
+| S5 | Documentation, Generated Surfaces, And Release Closure | `release` | S1, S2, S3, S4 plus S2/S3 correctives | `bubbles.docs`, `bubbles.devops`, `bubbles.releases` | Dependency-ready only after both corrective commits and focused reruns; aggregate/framework/generated/release/push closure remains unverified |
 
 ### Artifact Ownership And Routing
 
@@ -1217,24 +1228,24 @@ No scope may start until every listed dependency is complete with current-sessio
 | This IMP's scope definitions, dependencies, Test Plans, and DoD text | `bubbles.plan` | Execution agents may only update status/checkmarks and attach their own evidence; plan changes route back to `bubbles.plan`. |
 | Resolver, schemas, CLI integration, shared runtime modules, agent/prompt behavior, validators, and conformance guard | `bubbles.implement` | Implement only the active scope and preserve the exact requirements/design in this packet. |
 | Hermetic selftests, persistent regressions, adversarial fixtures, and canary assertions | `bubbles.test` | Tests must execute production scripts/contracts and may not replace internal behavior with mocks. |
-| Gate registration and `framework-validate` wiring | `bubbles.devops` | Wire only after the corresponding focused tests exist and pass. |
+| G129 generated-block and `framework-validate` reconciliation | `bubbles.devops` | Preserve committed registry authority; regenerate the top-level block and verify aggregate/live-guard wiring only after the two pre-S5 correctives pass. |
 | Managed guides, recipes, operator docs, and capability prose | `bubbles.docs` | Claims must describe implemented behavior and use redacted example roots. |
 | Capability status/provenance review | Capability owner plus `bubbles.audit` | A capability cannot be marked shipped from this packet or docs alone. |
 | Derived docs/checksums and release manifest | Generator owner plus `bubbles.releases` | Regenerate after source and managed docs are final; never hand-edit generated output. |
-| `VERSION`, `CHANGELOG.md`, and release notes | `bubbles.releases` | Touch only when the current source-repo release convention requires a versioned release closure for IMP-022; otherwise record the no-bump decision and leave them unchanged. |
+| `VERSION`, `CHANGELOG.md`, and release notes | `bubbles.releases` | Touch only when the current source-repo release convention requires a versioned release closure for IMP-103; otherwise record the no-bump decision and leave them unchanged. |
 | Downstream installed framework copies | No direct writer | Updated only from a validated canonical release through the normal install/upgrade path. |
 
 ### Strict Change Boundary
 
-**Allowed only when the owning scope is active:** the exact source, prompt, schema, test, managed-doc, generator, and release families named in that scope's Files And Owners table.
+**Allowed only when the owning scope or named pre-S5 corrective is active:** the exact source, prompt, schema, test, managed-doc, generator, and release families named in that scope's Files And Owners table.
 
-**Excluded throughout S1-S4:** downstream repositories; product runtime or product-owned config; real downstream `.specify/memory/bubbles.session.json` files; real host session-control records; operator secrets; unrelated Bubbles workflows or agents; managed docs; capability/generated surfaces; `VERSION`; `CHANGELOG.md`; release notes; and `bubbles/release-manifest.json`. S5 may change only its named docs/generated/release surfaces after S1-S4 source and tests are frozen. `improvements/INDEX.md` remains unchanged because adding execution detail does not change IMP-022's owner-approved top-level summary.
+**Remaining pre-S5 corrective boundary:** S2 may change only `bubbles/scripts/state-snapshot.sh` and `bubbles/scripts/state-snapshot-selftest.sh`; S3 may change only `bubbles/scripts/migrate-modes-v5-to-v6.sh` and `bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh`. Downstream repositories, product runtime/config, real session state, operator secrets, unrelated workflows/agents, and S5 docs/generated/release surfaces remain excluded until both correctives are committed and revalidated. S5 may then change only its named families. `docs/governance-index.md` belongs to IMP-020 and is explicitly excluded. `improvements/INDEX.md` remains unchanged because the canonical IMP identity and owner-approved summary do not require an index rewrite.
 
 Every scope must classify its actual changed paths against this boundary before completion. Collateral edits are removed or the plan returns to `bubbles.plan`; they are not silently absorbed.
 
 ### Shared Infrastructure Impact Sweep
 
-IMP-022 changes protected bootstrap/session/handoff machinery. The following contracts require explicit blast-radius evidence before broad validation:
+IMP-103 changes protected bootstrap/session/handoff machinery. The following contracts require explicit blast-radius evidence before broad validation:
 
 | Protected surface | Downstream contract at risk | Independent canary assertion | Restore path |
 |---|---|---|---|
@@ -1293,7 +1304,7 @@ The persistent source-repo regression entry point is `tests/regression/test_repo
 
 ## S1 - Repository Binding Foundation
 
-**Status:** Not Started
+**Status:** Implementation committed at `7405944`; focused suite executed; formal packet DoD evidence remains unchecked
 **Tags:** `foundation:true`, `runtime-behavior`
 **Depends On:** None
 
@@ -1329,6 +1340,7 @@ Then aliases of one worktree deduplicate, distinct worktrees remain distinct, an
 | `agents/bubbles_shared/repository-binding-preflight.md` (new) | `bubbles.implement` | single shared prompt contract; no duplicated authority heuristics |
 | `bubbles/scripts/cli.sh` | `bubbles.implement` | expose the named focused selftest command and forward `--suite` unchanged |
 | `bubbles/scripts/repository-binding-selftest.sh` (new) | `bubbles.test` | hermetic production-function matrix and suite selection |
+| `tests/regression/test_repository_binding.sh` (new) | `bubbles.test` | persistent S1 regression wrapper that delegates to the real CLI and foundation suite |
 
 ### Implementation Plan
 
@@ -1348,7 +1360,7 @@ Then aliases of one worktree deduplicate, distinct worktrees remain distinct, an
 
 ### Rollback / Restore
 
-S1 has no enabled repository-sensitive consumers. Revert the S1 source/test/CLI additions as one unit; leave any temporary or private control records untouched as inert local data. A rollback must not add a CWD/workspace fallback. Existing commands remain on their pre-feature behavior only until S3/S4 activation, and no release may claim IMP-022.
+S1 has no enabled repository-sensitive consumers. Revert the S1 source/test/CLI additions as one unit; leave any temporary or private control records untouched as inert local data. A rollback must not add a CWD/workspace fallback. Existing commands remain on their pre-feature behavior only until S3/S4 activation, and no release may claim IMP-103.
 
 ### Definition Of Done
 
@@ -1361,7 +1373,7 @@ S1 has no enabled repository-sensitive consumers. Revert the S1 source/test/CLI 
 
 ## S2 - Session Mirror And Provenance Propagation
 
-**Status:** Not Started
+**Status:** Implementation committed at `76b290e` and focused suite executed; `state-snapshot.sh` plus selftest TOCTOU corrective remains pending before S5; formal packet DoD evidence remains unchecked
 **Tags:** `runtime-behavior`, `shared-infrastructure`
 **Depends On:** S1
 
@@ -1393,7 +1405,8 @@ And validation refuses that projection as execution authority.
 
 | Files | Owner | Responsibility |
 |---|---|---|
-| `bubbles/scripts/state-snapshot.sh`, `state-snapshot-selftest.sh` | `bubbles.implement`, `bubbles.test` | post-selection mirror, additive preservation, supplied session/binding requirement |
+| `bubbles/scripts/state-snapshot.sh` | `bubbles.implement` | corrective TOCTOU contract: capture one private immutable packet copy, validate/mirror that copy, and derive the snapshot root only from the same validated bytes; never re-read caller-mutable packet authority |
+| `bubbles/scripts/state-snapshot-selftest.sh` | `bubbles.test` | adversarially mutate or replace the caller packet after capture and prove snapshot destination/decision remain bound to the validated copy; retain additive-field and fail-loud cases |
 | `bubbles/scripts/context-compactor.sh`, `context-compactor-selftest.sh` | `bubbles.implement`, `bubbles.test` | non-droppable binding fields and redacted projection behavior |
 | `bubbles/schemas/result-envelope.schema.json` | `bubbles.implement` | reusable binding reference and conditional actionable packet requirements |
 | `bubbles/scripts/result-envelope-validate.sh`, `result-envelope-validate-selftest.sh` | `bubbles.implement`, `bubbles.test` | exact packet/revision validation and redacted non-actionability |
@@ -1401,11 +1414,12 @@ And validation refuses that projection as execution authority.
 
 ### Implementation Plan
 
-1. Add repository binding fields additively to local session and result contracts; preserve immediately preceding non-binding mirror data only for telemetry.
-2. Require callers to supply the selected root and validated decision before snapshot, compaction, or actionable result operations.
-3. Mirror after control commit, preserve unrelated fields, detect same-session drift, and make repair one-way from control to mirror.
-4. Preserve every required binding field through compaction and enforce local/actionable versus public/redacted projections.
-5. Run the shared-infrastructure canary before the state-propagation suite and compare seeded unrelated fields independently of writer output.
+1. Complete the snapshot corrective by capturing one private immutable packet copy before validation, then use those exact validated bytes for mirror and repository-root selection so a caller-side packet swap cannot create a validation/use race.
+2. Add repository binding fields additively to local session and result contracts; preserve immediately preceding non-binding mirror data only for telemetry.
+3. Require callers to supply the selected root and validated decision before snapshot, compaction, or actionable result operations.
+4. Mirror after control commit, preserve unrelated fields, detect same-session drift, and make repair one-way from control to mirror.
+5. Preserve every required binding field through compaction and enforce local/actionable versus public/redacted projections.
+6. Run the shared-infrastructure canary and the adversarial snapshot packet-swap case before the state-propagation suite; compare seeded unrelated fields independently of writer output.
 
 ### Test Plan
 
@@ -1414,6 +1428,7 @@ And validation refuses that projection as execution authority.
 | T2.1 | Integration / `integration` | S2-G1, SCN-019 | `repository-binding-selftest.sh`: mirror absent/old/other-session/drift/preserve-unrelated matrix | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=state-propagation` | Yes; real snapshot and mirror files in temporary repos |
 | T2.2 | E2E control plane / `e2e-api` | S2-G2, S2-G3, SCN-015, SCN-016 | Real result validator and compactor round trip; stale/substituted/redacted negatives | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=state-propagation` | Yes; real production consumers, no internal mocks |
 | T2.3 | Canary / `functional` | Shared Infrastructure Impact Sweep | Independent snapshot/compactor/result consumer contract checks, including legacy unrelated fields | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=shared-infrastructure-canary` | No external system; real shared infrastructure in hermetic fixtures |
+| T2.4 | Corrective regression / `functional` | S2-G1, S2-G2 | `state-snapshot-selftest.sh`: caller-owned packet mutation/replacement after private capture cannot change the validated root or snapshot destination | `bash bubbles/scripts/state-snapshot-selftest.sh` | No external system; real snapshot/binding scripts in a temporary repository |
 
 ### Rollback / Restore
 
@@ -1425,13 +1440,14 @@ Revert S2's additive readers/writers and schema references together. Do not dele
 - [ ] **Test T2.1:** mirror and distinct-session cases pass with current-session raw evidence.
 - [ ] **Test T2.2:** local actionable round trips and stale/substituted/redacted packet refusals pass.
 - [ ] **Test T2.3:** the independent shared-infrastructure canary passes before broad propagation checks and proves preserved bootstrap/session contracts.
+- [ ] **Test T2.4:** the snapshot TOCTOU adversary passes and proves validation and use consume one byte-identical private packet copy.
 - [ ] Rollback rehearsal on a temporary fixture proves older readers ignore additive fields and no cleanup rewrites prior session history.
 - [ ] The S2 changed-path report contains only the listed state/schema/validator/test families.
 - [ ] Build Quality Gate: focused suites are warning-free, no evidence field is silently defaulted, and zero real downstream state is read or written.
 
 ## S3 - Workflow Classification And Repository-Scoped Discovery
 
-**Status:** Not Started
+**Status:** Implementation and G129 registration committed at `f8f1a52`; focused suite executed; mode migrator plus selftest consumer-completeness corrective remains pending before S5; formal packet DoD evidence remains unchecked
 **Tags:** `runtime-behavior`, `regression`
 **Depends On:** S1, S2
 
@@ -1466,13 +1482,15 @@ And only B sentinels appear after the exact `DISCOVERY SCOPE` line.
 | `agents/bubbles_shared/workflow-delegation-core.md`, `workflow-input-bootstrap.md`, `workflow-execution-loops.md`, `workflow-phase-engine.md`, `operating-baseline.md` | `bubbles.implement` | explicit targetless class, mandatory preflight ordering, no raw repository scans |
 | `bubbles/workflows/modes.yaml` | `bubbles.implement` | preflight-required semantics for sweep/iterate and resolved-root discovery contract |
 | `bubbles/scripts/repository-binding-conformance-guard.sh`, `repository-binding-conformance-guard-selftest.sh` (new) | `bubbles.implement`, `bubbles.test` | source ordering/consumer/field/no-ambient enforcement and adversarial fixtures |
-| `bubbles/registry/gates.yaml` | `bubbles.devops` | reserve/register the next available blocking gate ID; no handwritten duplicate generated block |
+| `bubbles/registry/gates.yaml` | `bubbles.devops` | G129 registration committed at `f8f1a52`; preserve the registry as source of truth and do not handwrite a duplicate generated block |
 | `bubbles/scripts/workflow-delegation-selftest.sh`, `repository-binding-selftest.sh` | `bubbles.test` | mode classification and scoped discovery regressions |
 | `tests/regression/test_repository_binding.sh` (new) | `bubbles.test` | persistent incident and preflight-order regression through production code |
+| `bubbles/scripts/migrate-modes-v5-to-v6.sh` | `bubbles.implement` | required S3 consumer correction: migrate executable legacy mode references while preserving every `DISCOVERY SCOPE` evidence line byte-for-byte |
+| `bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh` | `bubbles.test` | adversarial migration fixture with a legacy mode token inside `DISCOVERY SCOPE` and migratable tokens beside it; assert exact evidence-line byte identity and adjacent migration |
 
 ### Consumer Impact Sweep
 
-The classifier value and discovery root are contract changes. Search and reconcile workflow hard gates, Phase 0 wording, delegation/bootstrap modules, mode registry descriptions, stochastic/iterate loops, work-picker inputs, status/recap scans, tests, schemas, examples, and generated mode text. Reject stale claims that `mode:` alone is `STRUCTURED`, raw `specs/` is an executable root, auto-discovery can choose a repository, or workspace/CWD order is a tie-breaker.
+The classifier value and discovery root are contract changes. Search and reconcile workflow hard gates, Phase 0 wording, delegation/bootstrap modules, mode registry descriptions, stochastic/iterate loops, work-picker inputs, status/recap scans, migration tooling, tests, schemas, examples, and generated mode text. Reject stale claims that `mode:` alone is `STRUCTURED`, raw `specs/` is an executable root, auto-discovery can choose a repository, workspace/CWD order is a tie-breaker, or a mode migration may rewrite `DISCOVERY SCOPE` evidence.
 
 ### Implementation Plan
 
@@ -1481,6 +1499,7 @@ The classifier value and discovery root are contract changes. Search and reconci
 3. Route sweep/iterate discovery through `discover-specs`; remove all preflight exceptions and unqualified executable `specs/` semantics.
 4. Implement the conformance guard and adversarial source fixtures, but enable its blocking live-consumer check only when S4 ports every required front door.
 5. Re-run the same incident inputs green: boundary -> Smackerel-role only; no boundary -> refusal; QuantitativeFinance-role discovery count -> zero in both branches.
+6. Correct the v5-to-v6 mode migrator so executable legacy references still migrate while any `DISCOVERY SCOPE` line remains byte-identical; prove the distinction with an adversarial selftest fixture.
 
 ### Test Plan
 
@@ -1490,10 +1509,11 @@ The classifier value and discovery root are contract changes. Search and reconci
 | T3.2 | E2E control plane / `e2e-api` | S3-G1, SCN-001, SCN-002 | `RB-INCIDENT-80331F88-BOUNDARY` and `RB-INCIDENT-80331F88-UNBOUND-REFUSAL` through real preflight/discovery | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=classification-discovery` | Yes; production resolver/classifier/discovery in temporary repos |
 | T3.3 | Integration regression / `integration` | S3-G3, SCN-011, SCN-014 | Sweep and iterate sentinel pools plus preflight event-order tripwires | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=classification-discovery` | Yes; real mode/discovery paths, instrumented side effects |
 | T3.4 | Conformance / `functional` | Consumer Impact Sweep | Passing source fixture plus mode-only-structured, raw-specs, missing-anchor, and dropped-field negatives | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=conformance` | No; hermetic source fixtures |
+| T3.5 | Migration consumer regression / `functional` | S3-G3, SCN-014 | `migrate-modes-v5-to-v6-selftest.sh`: adversarial `DISCOVERY SCOPE` line is byte-identical while adjacent executable legacy mode references migrate | `bash bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh` | No; hermetic migration fixture |
 
 ### Rollback / Restore
 
-S3 is not independently publishable without S4. If it must be reverted after local activation, retain the S1/S2 foundation and fail closed by disabling targetless auto-discovery and requiring explicit repository plus concrete target. Never restore ambient `specs/` resolution or first-root fallback. Revert the unenabled gate registration if its consumer set is incomplete.
+S3 is not independently publishable without S4. If S3/S4 must be reverted, retain the S1/S2 foundation and fail closed by disabling targetless auto-discovery and requiring explicit repository plus concrete target. Never restore ambient `specs/` resolution or first-root fallback. Any G129 registry rollback must be atomic with its committed S3/S4 consumer boundary; generated projections must then be regenerated from the reverted registry.
 
 ### Definition Of Done
 
@@ -1502,13 +1522,14 @@ S3 is not independently publishable without S4. If it must be reverted after loc
 - [ ] **Test T3.2:** paired red/green incident cases pass with Smackerel-role selection or no-boundary refusal and zero QuantitativeFinance-role discovery.
 - [ ] **Test T3.3:** stochastic and iterate discovery enumerate only the resolved root after `PREFLIGHT_COMMITTED`.
 - [ ] **Test T3.4:** conformance adversarial fixtures fail for every prohibited bypass while the clean fixture passes.
+- [ ] **Test T3.5:** the migrator adversary preserves the complete `DISCOVERY SCOPE` line byte-for-byte while migrating adjacent executable legacy mode references.
 - [ ] Consumer Impact Sweep evidence reports zero stale executable mode-only-structured, unqualified discovery, workspace-first, or ambient-authority references outside historical/design discussion.
 - [ ] The S3 changed-path report contains only the listed classifier/mode/guard/test families.
 - [ ] Build Quality Gate: focused tests, shell portability, registry schema validation, and red-to-green evidence are clean; no full `framework-validate` or `release-check` is claimed in this scope.
 
 ## S4 - Front-Door, Envelope, And Goal-Node Propagation Overlays
 
-**Status:** Not Started
+**Status:** Implementation committed at `8e329a3`; focused suite executed and independently certified; formal packet DoD evidence remains unchecked
 **Tags:** `runtime-behavior`, `propagation`
 **Depends On:** S1, S2, S3
 
@@ -1587,9 +1608,10 @@ Revert each front-door overlay only with its packet producers/consumers and conf
 
 ## S5 - Documentation, Capability, Generated Artifacts, Validation, And Release
 
-**Status:** Not Started
+**Status:** Dependency-ready only after the S2 snapshot and S3 migrator correctives are committed and revalidated; existing documentation/generated/release worktree content is unverified and does not start or complete S5
 **Tags:** `release`
 **Depends On:** S1, S2, S3, S4
+**Entry Gate:** T2.4 and T3.5 plus their affected focused suites must execute successfully after the corrective commits.
 
 ### Gherkin And Adversarial Scenarios
 
@@ -1613,22 +1635,27 @@ And no implementation claim relies on this planning packet alone.
 | Files | Owner | Responsibility |
 |---|---|---|
 | `docs/guides/CONTROL_PLANE_DESIGN.md`, `CONTROL_PLANE_SCHEMAS.md`, `WORKFLOW_MODES.md`, relevant workflow/handoff/iterate/goal recipes | `bubbles.docs` | operator contract, examples, remediation, and path-redaction guidance |
-| `bubbles/capability-ledger.yaml` | Capability owner plus `bubbles.audit` | repository-binding capability state, complete consumer inventory, validation provenance |
+| `agents/bubbles_shared/quality-gates.md`, `skills/bubbles-quality-gates-catalog/SKILL.md` | `bubbles.docs`, catalog owner | G129 quality-gate narrative and catalog entry derived from the registered gate; no shipped claim before release closure |
+| `bubbles/capability-ledger.yaml`, `bubbles/scripts/capability-ledger-selftest.sh`, `capability-freshness-selftest.sh`, `competitive-docs-selftest.sh` | Capability owner plus `bubbles.audit`, `bubbles.test` | repository-binding capability state, complete consumer inventory, generated-doc count/freshness contracts, and validation provenance |
 | `bubbles/scripts/framework-validate.sh` | `bubbles.devops` | wire focused behavior/conformance selftests and live source guard after tests exist |
-| Canonical generated gates/modes/cheatsheets/docs/stats/checksums | Generator owner plus `bubbles.docs` | regenerate from canonical registries/docs after source and docs freeze |
+| `bubbles/installer/installer.yaml`, `bubbles/scripts/generate-installer.sh`, `bubbles/scripts/generate-installer-selftest.sh` | `bubbles.devops`, `bubbles.test` | declare exact IMP-103 distribution coverage and prove missing/non-covering installer artifacts fail loud |
+| `bubbles/workflows.yaml` generated top-level G129 gate block | Registry/generator owner plus `bubbles.devops` | regenerate from `bubbles/registry/gates.yaml`; inspect the generated block and never hand-edit it as a second source |
+| `docs/generated/competitive-capabilities.md`, `docs/generated/interop-migration-matrix.md`, `README.md`, `docs/CHEATSHEET.md` | Generator owner plus `bubbles.docs` | regenerate capability and quality-gate projections after canonical sources freeze |
+| `docs/generated/framework-stats.json`, `docs/generated/framework-stats.md`, `docs/its-not-rocket-appliances.html` | Generator owner plus `bubbles.docs` | final framework statistics and HTML outputs generated after the gate/capability inventory is final |
 | `bubbles/release-manifest.json` | `bubbles.releases` | regenerate last among file-inventory artifacts after all included files are final |
-| `VERSION`, `CHANGELOG.md`, release notes | `bubbles.releases` | update only if required by the current release convention and release classification |
-| Installer inventory/distribution sources | `bubbles.releases`, `bubbles.devops` | include the new module/script/schema/guard/docs in canonical distribution |
+| `VERSION`, `CHANGELOG.md`, release notes | `bubbles.releases` | record the release owner's explicit bump/no-bump and publish/no-publish decision; update only when required by the current release convention |
 
 ### Implementation Plan
 
-1. `bubbles.docs` reconciles managed docs and recipes against executed behavior, using aliases/placeholders in committed examples.
-2. The capability owner and `bubbles.audit` verify real consumers before changing capability state or provenance.
-3. `bubbles.devops` wires the already-green focused selftests and live conformance guard into `framework-validate`.
-4. After source and managed docs stop changing, run canonical generators in dependency order; inspect generated diffs rather than hand-editing them.
-5. Regenerate `bubbles/release-manifest.json` only after all source/docs/generated files are final.
-6. `bubbles.releases` applies the current release convention: if IMP-022 is closing in a versioned release, update `VERSION`, `CHANGELOG.md`, and release notes consistently; otherwise leave them untouched and record that release decision.
-7. Run the focused all-suite, agnosticity, full framework validation, and release readiness in that order. Any failure returns to the owning scope/owner and invalidates later release evidence.
+1. Require the S2 snapshot and S3 migrator corrective commits plus their exact focused reruns before S5 begins.
+2. `bubbles.docs` reconciles managed docs, recipes, `quality-gates.md`, and the quality-gates catalog against executed behavior, using aliases/placeholders in committed examples.
+3. The capability owner and `bubbles.audit` verify real consumers and the capability/generated-doc selftests before changing capability state or provenance.
+4. After independent current-scope evidence establishes the focused selftests are green, `bubbles.devops` reconciles the live conformance guard and aggregate wiring in `framework-validate`.
+5. Reconcile installer inventory, generator, and adversarial generator selftest so every IMP-103 distribution artifact is structurally covered.
+6. After source and managed docs stop changing, run canonical generators in dependency order, including the top-level G129 block, capability projections, README/CHEATSHEET counts, final stats, and HTML; inspect generated diffs rather than hand-editing them.
+7. Regenerate `bubbles/release-manifest.json` only after all source/docs/generated/installer files are final.
+8. `bubbles.releases` records the explicit release-owner decision: update `VERSION`, `CHANGELOG.md`, and release notes consistently for a versioned release, or leave them untouched with a recorded no-bump/no-publish decision.
+9. Run the focused all-suite, agnosticity, full framework validation, and release readiness in that order. Any failure returns to the owning scope/owner and invalidates later release evidence and push readiness.
 
 ### Test Plan
 
@@ -1638,6 +1665,8 @@ And no implementation claim relies on this planning packet alone.
 | T5.2 | Agnosticity / `functional` | Privacy, portability, ownership | Source remains project-agnostic; no local path/product fixture leakage beyond historical packet text | `bash bubbles/scripts/cli.sh agnosticity` | No |
 | T5.3 | Framework validation / `framework` | All behavior and consumer wiring | Canonical full framework suite with repository-binding selftests/guard wired | `bash bubbles/scripts/cli.sh framework-validate` | No external product runtime; canonical source validation |
 | T5.4 | Release readiness / `release` | Generated, installer, manifest, release convention | Canonical release checks after all regeneration and release metadata decisions | `bash bubbles/scripts/cli.sh release-check` | No external product runtime; canonical release validation |
+| T5.5 | Capability/generated-doc contracts / `functional` | Capability state and generated projection truth | Capability ledger, freshness, and competitive generated-doc selftests use generated counts and current IMP-103 consumers | `bash bubbles/scripts/capability-ledger-selftest.sh`; `bash bubbles/scripts/capability-freshness-selftest.sh`; `bash bubbles/scripts/competitive-docs-selftest.sh` | No; canonical source/generated contracts |
+| T5.6 | Installer distribution / `functional` | Exact IMP-103 install payload | Installer generator selftest rejects missing source artifacts and non-covering install-step mappings | `bash bubbles/scripts/generate-installer-selftest.sh` | No; hermetic installer fixtures |
 
 ### Rollback / Restore
 
@@ -1650,15 +1679,18 @@ Release rollback uses the normal version/artifact pointer path and preserves hos
 - [ ] **Test T5.2:** agnosticity passes and committed/generated surfaces contain no actionable operator-local root.
 - [ ] **Test T5.3:** full `framework-validate` passes with current-session raw evidence after generated reconciliation.
 - [ ] **Test T5.4:** `release-check` passes with current-session raw evidence after the final release-manifest and release-convention decision.
+- [ ] **Test T5.5:** capability-ledger, freshness, and competitive generated-doc selftests pass against generated counts and the final consumer inventory.
+- [ ] **Test T5.6:** installer generator/selftest proves every required IMP-103 artifact exists and is covered by its declared install step.
+- [ ] The generated top-level G129 block, README/CHEATSHEET gate counts, capability projections, final stats JSON/Markdown, and final HTML are regenerated from canonical sources and inspected together.
 - [ ] Release-manifest regeneration is demonstrably later than the final source/docs change; generated files were not hand-edited.
-- [ ] `VERSION`/`CHANGELOG.md`/release-note changes either match the current release convention or remain untouched with the release owner's recorded no-bump decision.
+- [ ] The release owner records the bump/no-bump and publish/no-publish decision; any `VERSION`/`CHANGELOG.md`/release-note changes match that decision and the current release convention.
 - [ ] Final changed-path classification shows no downstream repository edits, no real session-state writes, and no files outside S1-S5's declared families.
 - [ ] Build Quality Gate: all focused/full checks are warning-free, generated freshness is clean, every finding is accounted for, and implementation/release claims cite executed evidence rather than packet prose.
 
-## Plan Readiness Verdict
+## Delivery Status Verdict
 
-**READY FOR S1 IMPLEMENTATION.** The approved requirements, UX, technical design, dependency graph, exact regression ownership, hermetic evidence model, shared-infrastructure canary, rollback paths, and artifact owners are complete. No business or design clarification is required. S2-S5 remain dependency-blocked until their predecessors satisfy every unchecked DoD item with actual execution evidence.
+**S1-S4 COMMITTED AT `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; FOCUSED SUITES EXECUTED; S4 INDEPENDENTLY CERTIFIED; S2 SNAPSHOT AND S3 MIGRATOR CORRECTIVES REMAIN; S5 IS NOT YET READY; RELEASE CLOSURE IS UNVERIFIED.** G129 is registered in committed S3, and the S4 front-door/packet/goal-node boundary is committed. This packet does not import external focused runs as checkbox evidence, so every unchecked DoD item remains unchecked. S5 can begin only after the two named correctives are committed and their focused cases rerun. The S5 `--suite=all` aggregate, full `framework-validate`, generated gate/capability/installer/stats/HTML reconciliation, `release-check`, final release manifest, release-owner decision, and resulting push remain unverified.
 
 ## Next Required Owner
 
-`bubbles.implement` owns S1 - Repository Binding Foundation. It must work only in the S1 file boundary, coordinate test authorship with `bubbles.test`, preserve the red-to-green case IDs, and return a result envelope before S2 can start. No downstream repository propagation is authorized in S1.
+`bubbles.implement` is the next required owner: first complete the S2 `state-snapshot.sh` TOCTOU correction within its two-file boundary, then complete the S3 `migrate-modes-v5-to-v6.sh` consumer correction within its two-file boundary. `bubbles.test` then owns the exact T2.4 and T3.5 adversarial executions plus the affected focused reruns. Only after both corrections are committed and green may S5 route to `bubbles.docs`, `bubbles.devops`, `bubbles.audit`, and finally `bubbles.releases`. No full-validation, generated/release, push, or downstream-propagation claim is authorized before that sequence closes.
