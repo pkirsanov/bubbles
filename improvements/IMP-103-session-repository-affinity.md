@@ -1,10 +1,10 @@
 # IMP-103 - Durable Work-Repository Boundary
 
-**Status:** S1-S4 IMPLEMENTATION COMMITTED AT REPLAY SHAS `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; S2 SNAPSHOT CORRECTIVE AND S3 MIGRATOR CORRECTIVE REMAIN REQUIRED BEFORE S5; S5 IS DEPENDENCY-READY ONLY AFTER THOSE CORRECTIONS; FULL VALIDATION, GENERATED/RELEASE CLOSURE, AND PUSH VERIFICATION REMAIN UNCLAIMED - direct repository-owner approval recorded 2026-07-21
+**Status:** S1-S4 IMPLEMENTATION COMMITTED AT REPLAY SHAS `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; EXPANDED S2 CORRECTIVE AND S3 MIGRATOR CORRECTIVE REMAIN REQUIRED BEFORE S5; S5 IS DEPENDENCY-READY ONLY AFTER THOSE CORRECTIONS; FULL VALIDATION, GENERATED/RELEASE CLOSURE, AND PUSH VERIFICATION REMAIN UNCLAIMED - direct repository-owner approval recorded 2026-07-21
 **Surface:** framework-health (G125), workflow mode `full-delivery` - approved requirements/design packet plus committed repository-binding foundation, propagation, classification/discovery, front-door, continuation, goal-node, and G129 registration surfaces; corrective consumer completeness and S5 release closure remain incomplete
 **Motivation:** before S1-S4, a targetless Bubbles mode in a multi-root workspace could discover work relative to ambient process context even after the session had already resolved and completed work in another repository
 **Verified gaps addressed:** SRA1 missing first-class work-repository identity in inputs and envelopes; SRA2 missing durable same-session work-boundary semantics; SRA3 contradictory targetless-mode classification and repository-unscoped auto-discovery; SRA4 unsafe ambient/fallback authority and provenance loss across dispatch, handoff, and compaction
-**Implementation status:** S1 is committed at `7405944`, S2 at `76b290e`, S3 at `f8f1a52`, and S4 at `8e329a3`. The S1-S4 focused suites executed and S4 was independently certified, but this packet does not convert those external execution facts into item-level DoD evidence or check any box. The S2 `state-snapshot.sh`/selftest TOCTOU correction and S3 mode-migrator/selftest consumer-completeness correction remain pending before S5 can start.
+**Implementation status:** S1 is committed at `7405944`, S2 at `76b290e`, S3 at `f8f1a52`, and S4 at `8e329a3`. The S1-S4 focused suites executed and S4 was independently certified, but this packet does not convert those external execution facts into item-level DoD evidence or check any box. The expanded S2 corrective covers the pending `state-snapshot.sh`/selftest TOCTOU correction, immutable private packet snapshots in `context-compactor.sh` and `result-envelope-validate.sh`, symlink-safe selected-repository session mutation in `context-compactor.sh`, dynamic adversarial regressions in `repository-binding-selftest.sh`, and removal of only the unused helper in `result-envelope-validate-selftest.sh`; the S3 mode-migrator/selftest consumer-completeness correction also remains pending. S5 cannot start until both corrective sets are committed and independently revalidated.
 **Validation accounting:** The focused S1-S4 execution and S4 certification are recorded as live status only. The corrective S2/S3 cases, S5 `--suite=all` aggregate, full `framework-validate`, `release-check`, generated-artifact freshness, final release-manifest reconciliation, release-owner decision, and resulting push have not been verified by this packet and remain unclaimed.
 
 ## Packet Identity History
@@ -13,9 +13,9 @@
 
 ## Change Boundary
 
-This packet remains the G085 source-repository authority for business behavior, operator UX, acceptance scenarios, technical design, scope boundaries, corrective prerequisites, and release ordering. S1-S4 live at the replay SHAs above. Before S5, only the S2 snapshot corrective and S3 migrator corrective families named below may change for IMP-103. S5 may then update only its explicitly named docs, catalog, capability, generator, generated-output, installer, and release-decision families. `docs/governance-index.md` is unrelated IMP-020 work and is outside the IMP-103 boundary.
+This packet remains the G085 source-repository authority for business behavior, operator UX, acceptance scenarios, technical design, scope boundaries, corrective prerequisites, and release ordering. S1-S4 live at the replay SHAs above. Before S5, only the expanded S2 corrective and S3 migrator corrective families named below may change for IMP-103. S5 may then update only its explicitly named docs, catalog, capability, generator, generated-output, installer, and release-decision families. `docs/governance-index.md` is unrelated IMP-020 work and is outside the IMP-103 boundary.
 
-This invocation changes only the canonical packet rename/status/boundary surfaces under `improvements/`. It does not mutate source, tests, docs, generated files, release metadata, downstream repositories, or execution evidence.
+This invocation changes only this canonical IMP-103 planning packet under `improvements/`. It does not mutate source, tests, docs, generated files, release metadata, downstream repositories, or execution evidence.
 
 The capability resolves which repository a command targets. It does not expand what an agent may modify after resolution. Existing framework-source ownership, downstream installed-file immutability, artifact ownership, release-train ownership, deployment ownership, and command-specific authorization remain fully in force.
 
@@ -1191,7 +1191,7 @@ This section is the `bubbles.plan`-owned execution inventory for IMP-103. It int
 4. **S4 - Front Doors, Envelopes, And Goal Nodes:** propagate one validated decision through every repository-sensitive front door, dispatch/result/continuation surface, and scoped cross-repository node.
 5. **S5 - Documentation, Generated Surfaces, And Release Closure:** reconcile managed docs and capability state, regenerate derived/release artifacts only after source and docs are final, then run full framework and release validation.
 
-The dependency order remains authoritative: S1 is tagged `foundation:true`; S2-S5 are overlays on that foundation. S1-S4 are committed at `7405944`, `76b290e`, `f8f1a52`, and `8e329a3`; their focused suites executed, and S4 was independently certified. S3 and S4 form one committed publishability boundary with G129 registered. Formal packet DoD remains unchecked because this status reconciliation does not attach the required item-level evidence. S5 cannot start until the S2 snapshot TOCTOU correction and S3 migrator consumer-completeness correction are committed and their focused corrective cases execute successfully.
+The dependency order remains authoritative: S1 is tagged `foundation:true`; S2-S5 are overlays on that foundation. S1-S4 are committed at `7405944`, `76b290e`, `f8f1a52`, and `8e329a3`; their focused suites executed, and S4 was independently certified. S3 and S4 form one committed publishability boundary with G129 registered. Formal packet DoD remains unchecked because this status reconciliation does not attach the required item-level evidence. S5 cannot start until the expanded S2 corrective and S3 migrator consumer-completeness corrective are committed and independently revalidated by their exact corrective cases plus affected focused suites.
 
 #### New Types And Signatures
 
@@ -1216,7 +1216,7 @@ The dependency order remains authoritative: S1 is tagged `foundation:true`; S2-S
 | Scope | Name | Tags | Depends On | Primary owners | Status |
 |---|---|---|---|---|---|
 | S1 | Repository Binding Foundation | `foundation:true`, `runtime-behavior` | None | `bubbles.implement`, `bubbles.test` | Committed at `7405944`; focused suite executed; packet DoD remains unchecked |
-| S2 | Session Mirror And Provenance | `runtime-behavior`, `shared-infrastructure` | S1 | `bubbles.implement`, `bubbles.test` | Committed at `76b290e`; focused suite executed; `state-snapshot.sh` plus selftest TOCTOU corrective remains required before S5 |
+| S2 | Session Mirror And Provenance | `runtime-behavior`, `shared-infrastructure` | S1 | `bubbles.implement`, `bubbles.test` | Committed at `76b290e`; focused suite executed; expanded snapshot-single-read, compactor symlink-refusal, snapshot TOCTOU, and focused selftest-lint corrective remains required before S5 |
 | S3 | Classification And Scoped Discovery | `runtime-behavior`, `regression` | S1, S2 | `bubbles.implement`, `bubbles.test` | Committed at `f8f1a52` with G129 registered; focused suite executed; migrator plus selftest consumer-completeness corrective remains required before S5 |
 | S4 | Front Doors, Envelopes, And Goal Nodes | `runtime-behavior`, `propagation` | S1, S2, S3 | `bubbles.implement`, `bubbles.test` | Committed at `8e329a3`; focused suite executed and independently certified; packet DoD remains unchecked |
 | S5 | Documentation, Generated Surfaces, And Release Closure | `release` | S1, S2, S3, S4 plus S2/S3 correctives | `bubbles.docs`, `bubbles.devops`, `bubbles.releases` | Dependency-ready only after both corrective commits and focused reruns; aggregate/framework/generated/release/push closure remains unverified |
@@ -1239,7 +1239,7 @@ The dependency order remains authoritative: S1 is tagged `foundation:true`; S2-S
 
 **Allowed only when the owning scope or named pre-S5 corrective is active:** the exact source, prompt, schema, test, managed-doc, generator, and release families named in that scope's Files And Owners table.
 
-**Remaining pre-S5 corrective boundary:** S2 may change only `bubbles/scripts/state-snapshot.sh` and `bubbles/scripts/state-snapshot-selftest.sh`; S3 may change only `bubbles/scripts/migrate-modes-v5-to-v6.sh` and `bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh`. Downstream repositories, product runtime/config, real session state, operator secrets, unrelated workflows/agents, and S5 docs/generated/release surfaces remain excluded until both correctives are committed and revalidated. S5 may then change only its named families. `docs/governance-index.md` belongs to IMP-020 and is explicitly excluded. `improvements/INDEX.md` remains unchanged because the canonical IMP identity and owner-approved summary do not require an index rewrite.
+**Remaining pre-S5 corrective boundary:** S2 may change only `bubbles/scripts/state-snapshot.sh`, `bubbles/scripts/state-snapshot-selftest.sh`, `bubbles/scripts/context-compactor.sh`, `bubbles/scripts/result-envelope-validate.sh`, `bubbles/scripts/repository-binding-selftest.sh`, and `bubbles/scripts/result-envelope-validate-selftest.sh`; S3 may change only `bubbles/scripts/migrate-modes-v5-to-v6.sh` and `bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh`. Within that S2 family, production changes are limited to one immutable private binding-packet capture per consumer, validation and `repositoryRoot` extraction from those same captured bytes, and symlink-safe selected-repository session mutation in the compactor; test changes are limited to dynamic mutation/replacement and symlink-component adversaries plus removal of the unused `run_validator` helper without changing selftest behavior. Downstream repositories, product runtime/config, real session state, operator secrets, unrelated concurrency behavior, unrelated workflows/agents, IMP-102, and S5 docs/generated/release surfaces remain excluded until both corrective sets are committed and independently revalidated. S5 may then change only its named families. `docs/governance-index.md` belongs to IMP-020 and is explicitly excluded. `improvements/INDEX.md` remains unchanged because the canonical IMP identity and owner-approved summary do not require an index rewrite.
 
 Every scope must classify its actual changed paths against this boundary before completion. Collateral edits are removed or the plan returns to `bubbles.plan`; they are not silently absorbed.
 
@@ -1252,7 +1252,7 @@ IMP-103 changes protected bootstrap/session/handoff machinery. The following con
 | `bubbles/scripts/cli.sh` top-level bootstrap | Existing commands, help, and repository-neutral operations still dispatch without repository-local discovery | Existing CLI smoke cases plus the new command's argument/refusal cases execute through the real CLI | Revert only the named command dispatch/help additions; the resolver remains directly unreachable rather than falling back. |
 | Host-private control record and locking | One session/revision/root is atomic; failed writes and competing switches cannot partially replace it | A separate test process supplies independently constructed records and races two real writers; at most one commit is accepted | Revert the active scope commit; preserve private records as inert additive data and require explicit `repositoryRoot` on re-entry. |
 | `state-snapshot.sh` and ignored session mirror | Existing fields/append-only arrays survive; mirror remains post-selection and non-authoritative | Seed unrelated snapshot fields independently, mirror a decision, reread through the real snapshot consumer, and compare preserved structure | Revert mirror read/write integration; do not delete or rewrite existing ignored state. Older readers ignore additive fields. |
-| `context-compactor.sh`, continuation, recap, and handoff | Binding fields survive same-session reduction; redacted copies cannot resume | Feed an independently authored actionable packet through the real compactor and validator; assert exact local round trip and non-actionable public projection | Revert the consumer overlay while retaining the schema; repository-sensitive resume stays blocked rather than inferring context. |
+| `context-compactor.sh`, continuation, recap, and handoff | Binding fields survive same-session reduction; validation and root extraction consume one immutable private packet snapshot; selected-repository session mutation cannot traverse symlinked `.specify`, `memory`, or session-file components; redacted copies cannot resume | Feed an independently authored actionable packet through the real compactor and validator, dynamically mutate or replace the caller packet after capture, and exercise symlinked `.specify`, `memory`, and session-file components while asserting exact local round trip, refusal before outside-tree mutation, and non-actionable public projection | Revert the consumer overlay while retaining the schema; repository-sensitive resume stays blocked rather than inferring context. |
 | Workflow classifier and auto-discovery | Existing targeted modes retain target rules; targetless sweep/iterate cannot scan ambient `specs/` | Run targeted, targetless-bound, targetless-unbound, and sole-root cases with preflight/discovery event tripwires | If S3/S4 must be backed out, disable targetless auto-discovery and require explicit repository plus target; never restore ambient discovery. |
 | Dispatch/result/goal-node propagation | Direct runners validate inherited decisions; node order never mutates top-level affinity | Derive runners from `workflowModeGrants`, exercise one top-level runner and both goal-node orders, and compare the control revision after each node | Revert only the affected overlay; any unported repository-sensitive consumer fails closed before local work. |
 
@@ -1373,7 +1373,7 @@ S1 has no enabled repository-sensitive consumers. Revert the S1 source/test/CLI 
 
 ## S2 - Session Mirror And Provenance Propagation
 
-**Status:** Implementation committed at `76b290e` and focused suite executed; `state-snapshot.sh` plus selftest TOCTOU corrective remains pending before S5; formal packet DoD evidence remains unchecked
+**Status:** Implementation committed at `76b290e` and focused suite executed; expanded S2 corrective remains pending before S5; formal packet DoD evidence remains unchecked
 **Tags:** `runtime-behavior`, `shared-infrastructure`
 **Depends On:** S1
 
@@ -1392,6 +1392,7 @@ And the mirror never selects or switches a repository.
 Given a result, continuation, handoff, or compacted packet carries repository provenance
 When a consumer validates it against current session control state
 Then exact session/root/decision/revision equality is required
+And each shell consumer validates one immutable private packet capture and extracts `repositoryRoot` from those same bytes
 And stale or substituted packets refuse before repository-local reads.
 
 **S2-G3 - Public projection cannot resume work (SCN-016)**
@@ -1401,25 +1402,36 @@ When it is projected into committed or public output
 Then the root becomes `<redacted-local-root>`, visibility becomes redacted, and actionable becomes false
 And validation refuses that projection as execution authority.
 
-### Files And Owners
+**S2-G4 - Compactor session mutation remains inside the selected repository (SCN-016)**
+
+Given the selected repository contains a symlink at its `.specify`, `memory`, or session-file path component
+When compaction attempts to update the repository-local session mirror
+Then the compactor refuses before following that component
+And no file outside the selected canonical repository is created, replaced, or mutated.
+
+### Corrective Files And Owners
 
 | Files | Owner | Responsibility |
 |---|---|---|
 | `bubbles/scripts/state-snapshot.sh` | `bubbles.implement` | corrective TOCTOU contract: capture one private immutable packet copy, validate/mirror that copy, and derive the snapshot root only from the same validated bytes; never re-read caller-mutable packet authority |
 | `bubbles/scripts/state-snapshot-selftest.sh` | `bubbles.test` | adversarially mutate or replace the caller packet after capture and prove snapshot destination/decision remain bound to the validated copy; retain additive-field and fail-loud cases |
-| `bubbles/scripts/context-compactor.sh`, `context-compactor-selftest.sh` | `bubbles.implement`, `bubbles.test` | non-droppable binding fields and redacted projection behavior |
-| `bubbles/schemas/result-envelope.schema.json` | `bubbles.implement` | reusable binding reference and conditional actionable packet requirements |
-| `bubbles/scripts/result-envelope-validate.sh`, `result-envelope-validate-selftest.sh` | `bubbles.implement`, `bubbles.test` | exact packet/revision validation and redacted non-actionability |
-| `bubbles/scripts/repository-binding-selftest.sh` | `bubbles.test` | state-propagation and independent canary suites |
+| `bubbles/scripts/context-compactor.sh` | `bubbles.implement` | capture one private immutable packet copy, validate and extract `repositoryRoot` from the same bytes, preserve non-droppable binding fields and redacted projection behavior, and refuse symlinked `.specify`, `memory`, or session-file components before selected-repository session mutation |
+| `bubbles/scripts/result-envelope-validate.sh` | `bubbles.implement` | capture one private immutable packet copy and use only those bytes for binding validation and `repositoryRoot` extraction while retaining exact packet/revision and redacted non-actionability behavior |
+| `bubbles/scripts/repository-binding-selftest.sh` | `bubbles.test` | state-propagation and independent canary suites plus dynamic adversarial packet mutation/replacement and compactor symlink-component regressions that execute production behavior rather than source-string proxies |
+| `bubbles/scripts/result-envelope-validate-selftest.sh` | `bubbles.test` | remove only the unused `run_validator` helper that triggers SC2317 and preserve every existing case and assertion |
 
 ### Implementation Plan
 
 1. Complete the snapshot corrective by capturing one private immutable packet copy before validation, then use those exact validated bytes for mirror and repository-root selection so a caller-side packet swap cannot create a validation/use race.
-2. Add repository binding fields additively to local session and result contracts; preserve immediately preceding non-binding mirror data only for telemetry.
-3. Require callers to supply the selected root and validated decision before snapshot, compaction, or actionable result operations.
-4. Mirror after control commit, preserve unrelated fields, detect same-session drift, and make repair one-way from control to mirror.
-5. Preserve every required binding field through compaction and enforce local/actionable versus public/redacted projections.
-6. Run the shared-infrastructure canary and the adversarial snapshot packet-swap case before the state-propagation suite; compare seeded unrelated fields independently of writer output.
+2. In `context-compactor.sh` and `result-envelope-validate.sh`, capture the caller-owned binding packet exactly once into a private immutable file, validate that file, and extract `repositoryRoot` only from that same capture; do not validate one path and reread substitutable caller bytes.
+3. In `context-compactor.sh`, verify the selected repository's `.specify`, `memory`, and session-file path components without following symlinks and refuse before any outside-tree mutation.
+4. Extend `repository-binding-selftest.sh` with dynamic production-path adversaries that replace or mutate the caller packet after private capture and that test symlinked `.specify`, `memory`, and session-file components; source-string-only assertions cannot satisfy these regressions.
+5. Remove only the unused `run_validator` helper from `result-envelope-validate-selftest.sh`, retaining all existing test cases, assertions, and behavior.
+6. Retain the already-committed additive repository binding fields in local session and result contracts; preserve immediately preceding non-binding mirror data only for telemetry without reopening schema files in this corrective.
+7. Require callers to supply the selected root and validated decision before snapshot, compaction, or actionable result operations.
+8. Mirror after control commit, preserve unrelated fields, detect same-session drift, and make repair one-way from control to mirror.
+9. Preserve every required binding field through compaction and enforce local/actionable versus public/redacted projections.
+10. Run the shared-infrastructure canary, T2.4-T2.7 exact corrective checks, and the affected state-propagation suite before S5; compare seeded unrelated fields independently of writer output.
 
 ### Test Plan
 
@@ -1429,6 +1441,9 @@ And validation refuses that projection as execution authority.
 | T2.2 | E2E control plane / `e2e-api` | S2-G2, S2-G3, SCN-015, SCN-016 | Real result validator and compactor round trip; stale/substituted/redacted negatives | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=state-propagation` | Yes; real production consumers, no internal mocks |
 | T2.3 | Canary / `functional` | Shared Infrastructure Impact Sweep | Independent snapshot/compactor/result consumer contract checks, including legacy unrelated fields | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=shared-infrastructure-canary` | No external system; real shared infrastructure in hermetic fixtures |
 | T2.4 | Corrective regression / `functional` | S2-G1, S2-G2 | `state-snapshot-selftest.sh`: caller-owned packet mutation/replacement after private capture cannot change the validated root or snapshot destination | `bash bubbles/scripts/state-snapshot-selftest.sh` | No external system; real snapshot/binding scripts in a temporary repository |
+| T2.5 | Corrective regression / `functional` | S2-G2, SCN-015, SCN-016 | `repository-binding-selftest.sh`: `RB-PROPAGATION-PACKET-SNAPSHOT-SINGLE-READ` dynamically mutates/replaces caller-owned packet bytes after capture and proves both `context-compactor.sh` and `result-envelope-validate.sh` validate and extract the root from one private snapshot; source-string-only proxies do not count | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=state-propagation` | No external system; real production consumers and mutable caller packet in hermetic fixtures |
+| T2.6 | Corrective security regression / `functional` | S2-G4, SCN-016 | `repository-binding-selftest.sh`: `RB-PROPAGATION-COMPACTOR-MIRROR-SYMLINK-REFUSAL` exercises symlinked `.specify`, `memory`, and session-file components and proves refusal with zero outside-selected-repository mutation | `bash bubbles/scripts/cli.sh repository-binding-selftest --suite=state-propagation` | No external system; real compactor and filesystem components in hermetic fixtures |
+| T2.7 | Focused shell lint / `functional` | S2 corrective hygiene | `result-envelope-validate-selftest.sh`: existing behavior suite remains unchanged after deleting only unused `run_validator`; focused ShellCheck reports zero SC2317 findings | `shellcheck -x bubbles/scripts/result-envelope-validate-selftest.sh`; `bash bubbles/scripts/result-envelope-validate-selftest.sh` | No; focused static lint plus existing real selftest behavior |
 
 ### Rollback / Restore
 
@@ -1441,8 +1456,11 @@ Revert S2's additive readers/writers and schema references together. Do not dele
 - [ ] **Test T2.2:** local actionable round trips and stale/substituted/redacted packet refusals pass.
 - [ ] **Test T2.3:** the independent shared-infrastructure canary passes before broad propagation checks and proves preserved bootstrap/session contracts.
 - [ ] **Test T2.4:** the snapshot TOCTOU adversary passes and proves validation and use consume one byte-identical private packet copy.
+- [ ] **Test T2.5:** the dynamic packet-snapshot adversary passes for both compactor and result validator, proving validation and `repositoryRoot` extraction consume one byte-identical private capture rather than a source-string proxy.
+- [ ] **Test T2.6:** the compactor symlink adversary passes for `.specify`, `memory`, and session-file components and proves zero mutation outside the selected repository.
+- [ ] **Test T2.7:** focused ShellCheck is clean and the unchanged result-envelope validator selftest behavior remains green after removal of only the unused helper.
 - [ ] Rollback rehearsal on a temporary fixture proves older readers ignore additive fields and no cleanup rewrites prior session history.
-- [ ] The S2 changed-path report contains only the listed state/schema/validator/test families.
+- [ ] The S2 corrective changed-path report contains only `bubbles/scripts/state-snapshot.sh`, `bubbles/scripts/state-snapshot-selftest.sh`, `bubbles/scripts/context-compactor.sh`, `bubbles/scripts/result-envelope-validate.sh`, `bubbles/scripts/repository-binding-selftest.sh`, and `bubbles/scripts/result-envelope-validate-selftest.sh`; no unrelated concurrency, release, docs, generated, IMP-102, or other file family changes are present.
 - [ ] Build Quality Gate: focused suites are warning-free, no evidence field is silently defaulted, and zero real downstream state is read or written.
 
 ## S3 - Workflow Classification And Repository-Scoped Discovery
@@ -1647,7 +1665,7 @@ And no implementation claim relies on this planning packet alone.
 
 ### Implementation Plan
 
-1. Require the S2 snapshot and S3 migrator corrective commits plus their exact focused reruns before S5 begins.
+1. Require the expanded S2 corrective and S3 migrator corrective commits plus independent execution of their exact corrective cases and affected focused suites before S5 begins.
 2. `bubbles.docs` reconciles managed docs, recipes, `quality-gates.md`, and the quality-gates catalog against executed behavior, using aliases/placeholders in committed examples.
 3. The capability owner and `bubbles.audit` verify real consumers and the capability/generated-doc selftests before changing capability state or provenance.
 4. After independent current-scope evidence establishes the focused selftests are green, `bubbles.devops` reconciles the live conformance guard and aggregate wiring in `framework-validate`.
@@ -1689,8 +1707,8 @@ Release rollback uses the normal version/artifact pointer path and preserves hos
 
 ## Delivery Status Verdict
 
-**S1-S4 COMMITTED AT `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; FOCUSED SUITES EXECUTED; S4 INDEPENDENTLY CERTIFIED; S2 SNAPSHOT AND S3 MIGRATOR CORRECTIVES REMAIN; S5 IS NOT YET READY; RELEASE CLOSURE IS UNVERIFIED.** G129 is registered in committed S3, and the S4 front-door/packet/goal-node boundary is committed. This packet does not import external focused runs as checkbox evidence, so every unchecked DoD item remains unchecked. S5 can begin only after the two named correctives are committed and their focused cases rerun. The S5 `--suite=all` aggregate, full `framework-validate`, generated gate/capability/installer/stats/HTML reconciliation, `release-check`, final release manifest, release-owner decision, and resulting push remain unverified.
+**S1-S4 COMMITTED AT `7405944`, `76b290e`, `f8f1a52`, AND `8e329a3`; FOCUSED SUITES EXECUTED; S4 INDEPENDENTLY CERTIFIED; EXPANDED S2 AND S3 MIGRATOR CORRECTIVES REMAIN; S5 IS NOT YET READY; RELEASE CLOSURE IS UNVERIFIED.** G129 is registered in committed S3, and the S4 front-door/packet/goal-node boundary is committed. This packet does not import external focused runs as checkbox evidence, so every unchecked DoD item remains unchecked. S5 can begin only after the expanded S2 corrective and existing S3 migrator corrective are committed and independently revalidated through their exact corrective cases and affected focused suites. The S5 `--suite=all` aggregate, full `framework-validate`, generated gate/capability/installer/stats/HTML reconciliation, `release-check`, final release manifest, release-owner decision, and resulting push remain unverified.
 
 ## Next Required Owner
 
-`bubbles.implement` is the next required owner: first complete the S2 `state-snapshot.sh` TOCTOU correction within its two-file boundary, then complete the S3 `migrate-modes-v5-to-v6.sh` consumer correction within its two-file boundary. `bubbles.test` then owns the exact T2.4 and T3.5 adversarial executions plus the affected focused reruns. Only after both corrections are committed and green may S5 route to `bubbles.docs`, `bubbles.devops`, `bubbles.audit`, and finally `bubbles.releases`. No full-validation, generated/release, push, or downstream-propagation claim is authorized before that sequence closes.
+`bubbles.implement` is the next required owner: complete the expanded S2 corrective within its six-file boundary, including the state-snapshot TOCTOU repair, immutable private packet captures in the compactor and result validator, compactor symlink-safe mutation, and removal of only the unused result-validator selftest helper; then complete the S3 `migrate-modes-v5-to-v6.sh` consumer correction within its two-file boundary. `bubbles.test` owns T2.4-T2.7 and T3.5 adversarial execution plus the affected focused reruns. Only after both corrective sets are committed and independently green may S5 route to `bubbles.docs`, `bubbles.devops`, `bubbles.audit`, and finally `bubbles.releases`. No full-validation, generated/release, push, or downstream-propagation claim is authorized before that sequence closes.
