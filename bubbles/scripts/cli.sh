@@ -19,8 +19,8 @@
 #   agnosticity [--staged]        Check portable Bubbles surfaces for drift
 #   guard <spec>                  Run state transition guard on a spec
 #   runtime-selftest              Run runtime lease selftest coverage
-#   repository-binding-selftest [--suite=foundation]
-#                                 Run repository-binding foundation selftests
+#   repository-binding-selftest [--suite=foundation|all]
+#                                 Run focused or aggregate repository-binding selftests
 #   finding-closure-selftest      Run finding-set closure selftest coverage
 #   scan <spec>                   Run implementation reality scan on a spec
 #   regression-quality [args...]  Run bailout/adversarial regression quality scan on test files or dirs
@@ -80,6 +80,30 @@ CONTROL_PLANE_EVENT_FILE="$CONTROL_PLANE_RUNTIME_DIR/framework-events.jsonl"
 CONTROL_PLANE_RUN_STATE_FILE="$CONTROL_PLANE_RUNTIME_DIR/workflow-runs.json"
 ACTION_RISK_REGISTRY_FILE="$FRAMEWORK_DIR/action-risk-registry.yaml"
 ADOPTION_PROFILES_FILE="$FRAMEWORK_DIR/adoption-profiles.yaml"
+
+configure_repository_binding_test_root() {
+  local test_root="${BUBBLES_REPOSITORY_BINDING_TEST_ROOT:-}"
+
+  [[ "${CURRENT_BUBBLES_COMMAND:-}" == "repository-binding-selftest" ]] || return 0
+  if [[ -z "$test_root" ]]; then
+    test_root="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-repository-binding-cli.XXXXXX")" || {
+      echo "repository-binding-selftest: unable to create hermetic CLI bookkeeping root" >&2
+      return 2
+    }
+  elif [[ "$test_root" != /* ]]; then
+    echo "repository-binding-selftest: BUBBLES_REPOSITORY_BINDING_TEST_ROOT must be absolute" >&2
+    return 2
+  fi
+
+  mkdir -p "$test_root/.specify/memory" "$test_root/.specify/runtime" || return 2
+  test_root="$(cd -P -- "$test_root" && pwd -P)" || return 2
+  SESSION_FILE="$test_root/.specify/memory/bubbles.session.json"
+  CONTROL_PLANE_RUNTIME_DIR="$test_root/.specify/runtime"
+  CONTROL_PLANE_RUNTIME_FILE="$CONTROL_PLANE_RUNTIME_DIR/resource-leases.json"
+  CONTROL_PLANE_EVENT_FILE="$CONTROL_PLANE_RUNTIME_DIR/framework-events.jsonl"
+  CONTROL_PLANE_RUN_STATE_FILE="$CONTROL_PLANE_RUNTIME_DIR/workflow-runs.json"
+  printf 'repository-binding-selftest: CLI bookkeepingRoot=%s\n' "$test_root"
+}
 
 # ── Colors ──────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
@@ -1172,8 +1196,8 @@ Commands:
   guard <spec>                  Run state transition guard on a spec
   guard-selftest                Run the transition guard selftest suite
   runtime-selftest              Run the runtime lease selftest suite
-  repository-binding-selftest [--suite=foundation]
-                                Run repository-binding foundation selftests
+  repository-binding-selftest [--suite=foundation|all]
+                                Run focused or aggregate repository-binding selftests
   finding-closure-selftest      Run the finding-set closure selftest suite
   workflow-selftest             Run workflow command-surface smoke checks
   scan <spec>                   Run implementation reality scan on a spec
@@ -3188,6 +3212,7 @@ main() {
   CURRENT_BUBBLES_ARGS="$*"
   COMMAND_START_MS="$(current_epoch_ms)"
   CLI_RECORDING_ACTIVE=true
+  configure_repository_binding_test_root || return $?
   begin_cli_run_state
   trap 'record_cli_completion $?' EXIT
 

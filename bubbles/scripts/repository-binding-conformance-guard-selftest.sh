@@ -71,6 +71,8 @@ write_binding_contract() {
 Call `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED` before
 repository-local work. After `PREFLIGHT_COMMITTED`, call
 `repository-binding.sh discover-specs` with the current actionable decision.
+When dispatched for an owned phase, validate the inherited actionable packet
+with `repository-binding.sh validate-packet` before repository-local work.
 
 - repositoryRoot
 - repositoryAlias
@@ -93,11 +95,33 @@ write_binding_fields() {
   write_binding_contract "$target" "## Repository Binding Producer And Consumer Contract"
 }
 
+append_valid_compaction_contract() {
+  local target="$1"
+  cat >>"$target" <<'EOF'
+
+## Context Compaction Discipline (Orchestrator Agents)
+
+Repository-sensitive compaction calls `context-compactor.sh` with
+`--binding-packet-file`, preserves the exact nested `repositoryResolution`, and
+calls `repository-binding.sh validate-packet` before resume.
+EOF
+}
+
+append_valid_orchestrator_compaction_contract() {
+  local target="$1"
+  cat >>"$target" <<'EOF'
+
+Repository-sensitive compaction runs `context-compactor.sh` with
+`--session-id`, `--session-control-file`, and `--binding-packet-file`; resume
+calls `repository-binding.sh validate-packet` before repository-local work.
+EOF
+}
+
 stage_clean_fixture() {
   local fixture_id="$1"
   local root="$TMP_ROOT/$fixture_id"
 
-  mkdir -p "$root/agents/bubbles_shared" "$root/bubbles/workflows" \
+  mkdir -p "$root/agents/bubbles_shared" "$root/bubbles/scripts" "$root/bubbles/workflows" \
     "$root/skills/bubbles-result-envelope" || return 1
   cat >"$root/agents/bubbles.workflow.agent.md" <<'EOF'
 ## Execution Model
@@ -107,11 +131,38 @@ stage_clean_fixture() {
 Execute `repository-binding.sh preflight`, then record `PREFLIGHT_COMMITTED`.
 After `PREFLIGHT_COMMITTED`, call `repository-binding.sh discover-specs`.
 
+### Phase -1: Intent Resolution (MANDATORY — runs before Phase 0)
+
+Classify requests as `STRUCTURED`, `TARGETLESS_MODE`, `CONTINUATION`, or `VAGUE`.
+If `mode:` is present without a concrete target, classify the request as `TARGETLESS_MODE`.
+
 ### Phase 0: Resolve Inputs
 
 Read state.json only after repository binding commits.
+
+#### FRAMEWORK-ENVELOPE Consumer Contract
+
+Validate with `repository-binding.sh validate-packet` and require the returned
+binding to remain unchanged.
+
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.controlRevision
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
 EOF
   cat >"$root/agents/bubbles.iterate.agent.md" <<'EOF'
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Execute `repository-binding.sh preflight`, then record `PREFLIGHT_COMMITTED`.
+
 ## Execution Flow
 
 ### Repository Binding Preflight
@@ -127,17 +178,51 @@ EOF
 ### Subagent Response Contract (when invoked via `runSubagent`)
 
 Resolution is two-stage. Resolve repository intent from bounded candidate descriptors only; do not receive a cross-repository specs listing.
-Execute repository binding and require `PREFLIGHT_COMMITTED`.
+Execute repository binding with `--resolved-natural-language-root` and require `PREFLIGHT_COMMITTED`.
 After `PREFLIGHT_COMMITTED`, resolve work only under `resolvedRepositoryRoot/specs`.
+
+#### FRAMEWORK-ENVELOPE Repository Binding Contract
+
+Validate with `repository-binding.sh validate-packet` before operation execution.
+
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.controlRevision
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
 EOF
   write_binding_contract "$root/agents/bubbles.recap.agent.md" "## CONTINUATION-ENVELOPE"
   write_binding_contract "$root/agents/bubbles.status.agent.md" "## CONTINUATION-ENVELOPE"
   write_binding_contract "$root/agents/bubbles.handoff.agent.md" '## Step 1: The "Handoff" Prompt'
   write_binding_contract "$root/agents/bubbles_shared/agent-common.md" \
     "## Workflow-Only Continuation Convention (NON-NEGOTIABLE)"
+  cat >>"$root/agents/bubbles_shared/agent-common.md" <<'EOF'
+
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Direct top-level invocation executes `repository-binding.sh preflight` and
+requires `PREFLIGHT_COMMITTED`. Dispatched phase-owner invocation executes
+`repository-binding.sh validate-packet` against authoritative host-private session control.
+Stale and root-substituted packets refuse with zero repository-local side effects.
+EOF
   write_binding_contract "$root/skills/bubbles-result-envelope/SKILL.md" \
     "## Repository Binding (repository-sensitive invocations)"
   cat >"$root/bubbles/agent-capabilities.yaml" <<'EOF'
+agents:
+  bubbles.implement:
+    class: execution-owner
+    ownsPhases: [ implement ]
+  bubbles.bug:
+    class: orchestrator
+    ownsPhases: [ bug-discovery ]
+
 workflowModeGrants:
   defaultAllowed: false
   agents:
@@ -166,37 +251,81 @@ workflowModeGrants:
     bubbles.journey:
       modes: [ journey-refinement ]
 EOF
+  cat >"$root/agents/bubbles.implement.agent.md" <<'EOF'
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Follow [agent-common.md](bubbles_shared/agent-common.md#repository-binding-entry-contract-non-negotiable).
+Direct invocation runs `repository-binding.sh preflight` and requires
+`PREFLIGHT_COMMITTED`. Dispatched invocation runs
+`repository-binding.sh validate-packet` before repository-local work.
+
+## Agent Identity
+
+Implementation owner.
+
+## Execution Flow
+
+Repository-local work starts here.
+EOF
   for runner in \
     bubbles.bug bubbles.releases bubbles.train bubbles.upkeep bubbles.propagate \
     bubbles.stabilize bubbles.retro bubbles.journey; do
     write_binding_contract "$root/agents/$runner.agent.md" "## Repository Binding (NON-NEGOTIABLE)"
+    printf '\n## User Input\n\nRepository-local input begins after preflight.\n' >>"$root/agents/$runner.agent.md"
   done
   cat >"$root/agents/bubbles.goal.agent.md" <<'EOF'
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
+
+## PHASE ROUTER (EXECUTE TOP-TO-BOTTOM)
+
+phase_1_understand:
+  do: understand the goal
+
 ## Goal Scenario Compilation (Cross-Repo / Multi-Phase)
 
 ### Repository Binding For Goal Nodes
 
 Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
-Each node uses `scopeKind: goal-node` and sets `scopeId` to the node id.
+Each node uses `scopeKind: goal-node` and sets `scopeId` to the node id, then calls
+`repository-binding.sh validate-packet --scenario-file <compiled-scenario.json>
+--node-id <node-id>` before dispatch.
 After every node, verify the top-level root and revision remain byte-identical.
 EOF
   cat >"$root/agents/bubbles.sprint.agent.md" <<'EOF'
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
+
+## PHASE ROUTER (EXECUTE TOP-TO-BOTTOM)
+
+phase_1_parse_and_estimate:
+  do: build the queue
+
 ## Sprint Scenario Execution (Cross-Repo / Multi-Phase Missions)
 
 ### Repository Binding For Sprint Nodes
 
 Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
-Each node uses `scopeKind: goal-node` and sets `scopeId` to the node id.
+Each node uses `scopeKind: goal-node` and sets `scopeId` to the node id, then calls
+`repository-binding.sh validate-packet --scenario-file <compiled-scenario.json>
+--node-id <node-id>` before dispatch.
 After every node, verify the top-level root and revision remain byte-identical.
 EOF
+  append_valid_orchestrator_compaction_contract "$root/agents/bubbles.workflow.agent.md"
+  append_valid_orchestrator_compaction_contract "$root/agents/bubbles.iterate.agent.md"
+  append_valid_orchestrator_compaction_contract "$root/agents/bubbles.goal.agent.md"
+  append_valid_orchestrator_compaction_contract "$root/agents/bubbles.sprint.agent.md"
   cat >"$root/agents/bubbles_shared/scenario-compile.md" <<'EOF'
 ## Scenario DAG Schema
 
 repos:
   - id: product
     repositoryRoot: <canonical-absolute-git-root>
+    repositoryAlias: <safe-local-display-alias>
 
-Every repository declaration carries its canonical repositoryRoot.
+Every repository declaration carries its canonical repositoryRoot and safe repositoryAlias.
 EOF
   cat >"$root/agents/bubbles_shared/workflow-delegation-core.md" <<'EOF'
 ## Workflow Delegation Core
@@ -210,6 +339,10 @@ Repository preflight commits `PREFLIGHT_COMMITTED` before repository-local work.
 - Without `mode:`, `CONTINUATION` and `VAGUE` retain their semantics after preflight.
 
 Chat CWD, prompt source, active editor, tool CWD, and host repository metadata are diagnostic-only and never authority.
+
+### Envelope Consumption Rules
+
+FRAMEWORK-ENVELOPE binding is validated with `repository-binding.sh validate-packet` before reporting.
 EOF
   cat >"$root/agents/bubbles_shared/workflow-execution-loops.md" <<'EOF'
 ## Workflow Execution Loops
@@ -225,6 +358,18 @@ EOF
 ## Repository Authority Baseline
 
 Prompt source, chat CWD, active editor, tool CWD, host repository metadata, workspace declaration order, the first workspace root, and recent work are diagnostic-only. They can never establish, switch, repair, or override repository authority.
+
+## Context Compaction Discipline (Orchestrator Agents)
+
+Repository-sensitive compaction calls `context-compactor.sh` with
+`--binding-packet-file`, preserves the exact nested `repositoryResolution`, and
+calls `repository-binding.sh validate-packet` before resume.
+EOF
+  cat >"$root/bubbles/scripts/context-compactor.sh" <<'EOF'
+#!/usr/bin/env bash
+REPOSITORY_BINDING="repository-binding.sh"
+"$REPOSITORY_BINDING" validate-packet --packet-file "$BINDING_PACKET_FILE"
+printf '"repositoryResolution":{'
 EOF
   cat >"$root/bubbles/workflows/modes.yaml" <<'EOF'
 modes:
@@ -397,6 +542,66 @@ assert_guard_exit "$case_id" "continuation field-drop fixture fails" 1
 assert_guard_reports "$case_id" "continuation field-drop failure is identified" "RB-CONFORMANCE-BINDING-FIELDS-DROPPED"
 end_case "$case_id"
 
+case_id="RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED"
+begin_case "$case_id" "A compaction contract that omits bound invocation and exact packet validation on resume is rejected."
+fixture="$(stage_clean_fixture compaction-resume-unported)" || exit 2
+cat >"$fixture/agents/bubbles_shared/operating-baseline.md" <<'EOF'
+## Repository Authority Baseline
+
+Ambient signals are diagnostic-only and never repository authority.
+
+## Context Compaction Discipline (Orchestrator Agents)
+
+Run `context-compactor.sh <raw-result-file>` and continue from its summary.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "unbound compaction/resume fixture fails" 1
+assert_guard_reports "$case_id" "compaction/resume omission is identified" "RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-ORCHESTRATOR-COMPACTION-UNBOUND"
+begin_case "$case_id" "A repository-sensitive orchestrator that retains the legacy unbound compactor command is rejected."
+fixture="$(stage_clean_fixture orchestrator-compaction-unbound)" || exit 2
+cat >>"$fixture/agents/bubbles.iterate.agent.md" <<'EOF'
+
+Use `bash bubbles/scripts/context-compactor.sh <raw-envelope-file>` and continue.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "unbound orchestrator compaction fixture fails" 1
+assert_guard_reports "$case_id" "unbound orchestrator compaction is identified" "RB-CONFORMANCE-ORCHESTRATOR-COMPACTION-UNBOUND"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-FRAMEWORK-FIELDS-DROPPED"
+begin_case "$case_id" "A FRAMEWORK-ENVELOPE producer that drops one exact binding field is rejected."
+fixture="$(stage_clean_fixture framework-fields-dropped)" || exit 2
+cat >"$fixture/agents/bubbles.super.agent.md" <<'EOF'
+### Subagent Response Contract (when invoked via `runSubagent`)
+
+Resolution is two-stage. Resolve repository intent from bounded candidate descriptors only; do not receive a cross-repository specs listing.
+Execute repository binding and require `PREFLIGHT_COMMITTED`.
+After `PREFLIGHT_COMMITTED`, resolve work only under `resolvedRepositoryRoot/specs`.
+
+#### FRAMEWORK-ENVELOPE Repository Binding Contract
+
+Validate with `repository-binding.sh validate-packet` before operation execution.
+
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "FRAMEWORK field-drop fixture fails" 1
+assert_guard_reports "$case_id" "FRAMEWORK field-drop failure is identified" "RB-CONFORMANCE-BINDING-FIELDS-DROPPED"
+end_case "$case_id"
+
 case_id="RB-CONFORMANCE-RESULT-FIELDS-DROPPED"
 begin_case "$case_id" "The result-envelope skill dropping one exact binding field is rejected."
 fixture="$(stage_clean_fixture result-fields-dropped)" || exit 2
@@ -437,6 +642,146 @@ assert_guard_exit "$case_id" "registry-derived unported runner fixture fails" 1
 assert_guard_reports "$case_id" "unported runner failure is identified" "RB-CONFORMANCE-DIRECT-RUNNER-UNPORTED"
 end_case "$case_id"
 
+case_id="RB-CONFORMANCE-REGISTRY-RUNNER-LATE-PREFLIGHT"
+begin_case "$case_id" "A workflowModeGrants-derived runner whose repository work precedes preflight is rejected even when a later subsection contains every anchor."
+fixture="$(stage_clean_fixture registry-runner-late-preflight)" || exit 2
+cat >"$fixture/agents/bubbles.goal.agent.md" <<'EOF'
+## PHASE ROUTER (EXECUTE TOP-TO-BOTTOM)
+
+phase_1_understand:
+  do: read files and classify the goal
+
+## Goal Scenario Compilation (Cross-Repo / Multi-Phase)
+
+### Repository Binding For Goal Nodes
+
+Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
+Each node uses `scopeKind: goal-node`, sets `scopeId`, and verifies the top-level
+root and revision remain byte-identical.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "late direct-runner preflight fixture fails" 1
+assert_guard_reports "$case_id" "late direct-runner failure is identified" "RB-CONFORMANCE-DIRECT-RUNNER-UNPORTED"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-PHASE-OWNER-PACKET-VALIDATION-MISSING"
+begin_case "$case_id" "A capabilities-derived phase owner that can read local state without validating an inherited packet is rejected."
+fixture="$(stage_clean_fixture phase-owner-validation-missing)" || exit 2
+cat >"$fixture/agents/bubbles.implement.agent.md" <<'EOF'
+## Repository Binding Entry Contract (NON-NEGOTIABLE)
+
+Follow [agent-common.md](bubbles_shared/agent-common.md#repository-binding-entry-contract-non-negotiable).
+Direct invocation runs `repository-binding.sh preflight` and requires
+`PREFLIGHT_COMMITTED`.
+
+## Agent Identity
+
+Implementation owner.
+
+## Execution Flow
+
+Read repository-local state.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "missing inherited-packet validation fixture fails" 1
+assert_guard_reports "$case_id" "phase-owner packet failure is identified" "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-DUAL-ROLE-BUG-PACKET-VALIDATION-MISSING"
+begin_case "$case_id" "A workflowModeGrants runner that also owns bug-discovery must retain inherited-packet validation as well as top-level preflight."
+fixture="$(stage_clean_fixture dual-role-bug-validation-missing)" || exit 2
+cat >"$fixture/agents/bubbles.bug.agent.md" <<'EOF'
+## Repository Binding (NON-NEGOTIABLE)
+
+Top-level bug workflow execution runs `repository-binding.sh preflight` and
+requires `PREFLIGHT_COMMITTED` before repository-local work.
+
+## User Input
+
+Bug discovery begins here.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "dual-role bubbles.bug without inherited validation fails" 1
+assert_guard_reports "$case_id" "dual-role bubbles.bug failure is identified" "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-SHARED-ENTRY-CONTRACT-MISSING"
+begin_case "$case_id" "Phase-owner links cannot pass when the reusable shared top-level-or-inherited entry contract is absent."
+fixture="$(stage_clean_fixture shared-entry-contract-missing)" || exit 2
+cat >"$fixture/agents/bubbles_shared/agent-common.md" <<'EOF'
+## Workflow-Only Continuation Convention (NON-NEGOTIABLE)
+
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.controlRevision
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "missing shared entry contract fixture fails" 1
+assert_guard_reports "$case_id" "missing shared entry contract is identified" "RB-CONFORMANCE-SHARED-ENTRY-CONTRACT-MISSING"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-WORKFLOW-ACTIVE-MODE-ONLY-STRUCTURED"
+begin_case "$case_id" "The workflow agent active classifier cannot prefer STRUCTURED or omit TARGETLESS_MODE while the shared classifier remains correct."
+fixture="$(stage_clean_fixture workflow-active-mode-only-structured)" || exit 2
+cat >"$fixture/agents/bubbles.workflow.agent.md" <<'EOF'
+## Execution Model
+
+### Repository Binding Preflight
+
+Execute `repository-binding.sh preflight`, then record `PREFLIGHT_COMMITTED`.
+After `PREFLIGHT_COMMITTED`, call `repository-binding.sh discover-specs`.
+
+### Phase -1: Intent Resolution (MANDATORY — runs before Phase 0)
+
+If classification is ambiguous, prefer STRUCTURED.
+
+### Phase 0: Resolve Inputs
+
+Read state.json only after repository binding commits.
+
+#### FRAMEWORK-ENVELOPE Consumer Contract
+
+Validate with `repository-binding.sh validate-packet` and preserve the exact binding.
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.controlRevision
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
+EOF
+append_valid_orchestrator_compaction_contract "$fixture/agents/bubbles.workflow.agent.md"
+run_guard "$fixture"
+assert_guard_exit "$case_id" "workflow active classifier fixture fails" 1
+assert_guard_reports "$case_id" "workflow active classifier failure is identified" "RB-CONFORMANCE-WORKFLOW-CLASSIFIER-MISSING"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-WORKFLOW-ACTIVE-RAW-SPECS"
+begin_case "$case_id" "The workflow agent cannot retain an executable raw specs auto-discovery instruction behind a valid preflight subsection."
+fixture="$(stage_clean_fixture workflow-active-raw-specs)" || exit 2
+cat >>"$fixture/agents/bubbles.workflow.agent.md" <<'EOF'
+
+Auto-discover all spec folders under `specs/` when no targets are provided.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "workflow active raw-specs fixture fails" 1
+assert_guard_reports "$case_id" "workflow active raw-specs failure is identified" "RB-CONFORMANCE-ACTIVE-RAW-SPECS"
+end_case "$case_id"
+
 case_id="RB-CONFORMANCE-SCENARIO-REPOSITORY-ROOT-DROPPED"
 begin_case "$case_id" "A scenario contract that drops canonical repositoryRoot is rejected."
 fixture="$(stage_clean_fixture scenario-repository-root-dropped)" || exit 2
@@ -446,14 +791,31 @@ cat >"$fixture/agents/bubbles_shared/scenario-compile.md" <<'EOF'
 repos:
   - id: product
     role: product
+    repositoryAlias: <safe-local-display-alias>
 EOF
 run_guard "$fixture"
 assert_guard_exit "$case_id" "scenario repositoryRoot-drop fixture fails" 1
 assert_guard_reports "$case_id" "scenario repositoryRoot-drop failure is identified" "RB-CONFORMANCE-SCENARIO-REPOSITORY-ROOT-DROPPED"
 end_case "$case_id"
 
+case_id="RB-CONFORMANCE-SCENARIO-REPOSITORY-ALIAS-DROPPED"
+begin_case "$case_id" "A scenario contract that drops declaration-bound repositoryAlias is rejected."
+fixture="$(stage_clean_fixture scenario-repository-alias-dropped)" || exit 2
+cat >"$fixture/agents/bubbles_shared/scenario-compile.md" <<'EOF'
+## Scenario DAG Schema
+
+repos:
+  - id: product
+    role: product
+    repositoryRoot: <canonical-absolute-git-root>
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "scenario repositoryAlias-drop fixture fails" 1
+assert_guard_reports "$case_id" "scenario repositoryAlias-drop failure is identified" "RB-CONFORMANCE-SCENARIO-REPOSITORY-ALIAS-DROPPED"
+end_case "$case_id"
+
 case_id="RB-CONFORMANCE-GOAL-NODE-CONTRACT-DROPPED"
-begin_case "$case_id" "A goal executor that drops node scope and top-level invariance is rejected."
+begin_case "$case_id" "A goal executor that drops declaration-bound packet validation, node scope, and top-level invariance is rejected."
 fixture="$(stage_clean_fixture goal-node-contract-dropped)" || exit 2
 cat >"$fixture/agents/bubbles.goal.agent.md" <<'EOF'
 ## Goal Scenario Compilation (Cross-Repo / Multi-Phase)
@@ -464,7 +826,7 @@ Execute `repository-binding.sh preflight` and require `PREFLIGHT_COMMITTED`.
 Dispatch nodes using their symbolic repo id.
 EOF
 run_guard "$fixture"
-assert_guard_exit "$case_id" "goal-node scope/invariance-drop fixture fails" 1
+assert_guard_exit "$case_id" "goal-node declaration/scope/invariance-drop fixture fails" 1
 assert_guard_reports "$case_id" "goal-node contract failure is identified" "RB-CONFORMANCE-GOAL-NODE-CONTRACT-DROPPED"
 end_case "$case_id"
 
@@ -588,6 +950,7 @@ Historical defect: workspace declaration order selected the repository before re
 Rejected design option: the first workspace root would establish repository authority.
 Legacy behavior used recent work to choose the repository.
 EOF
+append_valid_compaction_contract "$fixture/agents/bubbles_shared/operating-baseline.md"
 run_guard "$fixture"
 assert_guard_exit "$case_id" "historical and rejected-design discussion passes" 0
 end_case "$case_id"
@@ -602,6 +965,7 @@ Workspace declaration order must never select a repository.
 The first workspace root is forbidden repository authority.
 Recent work cannot establish or override repository authority.
 EOF
+append_valid_compaction_contract "$fixture/agents/bubbles_shared/operating-baseline.md"
 run_guard "$fixture"
 assert_guard_exit "$case_id" "explicit ambient-authority denials pass" 0
 end_case "$case_id"

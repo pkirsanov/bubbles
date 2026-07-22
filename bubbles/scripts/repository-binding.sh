@@ -28,7 +28,10 @@ preflight_usage() {
 Usage: repository-binding.sh preflight \
   --session-id <id> --session-control-file <external-path> \
   --request-class <class> --workspace-root <root> [--workspace-root <root> ...] \
-  [--repository-root <root> | --target <exact-path> | --binding-packet-file <file>] \
+  [--repository-root <root> | --target <exact-path> | \
+   --resolved-natural-language-root <declared-root> | --binding-packet-file <file>] \
+  [--diagnostic-chat-cwd <path>] [--diagnostic-host-repository <path>] \
+  [--diagnostic-active-editor <path>] [--diagnostic-tool-cwd <path>] \
   [--expected-control-revision <N>]
 EOF
 }
@@ -37,6 +40,7 @@ packet_usage() {
   cat <<'EOF'
 Usage: repository-binding.sh validate-packet \
   --session-id <id> --session-control-file <path> --packet-file <path> \
+  [--scenario-file <compiled-scenario.json> --node-id <node-id>] \
   [--emit-redacted-projection]
 EOF
 }
@@ -170,6 +174,30 @@ canonical_file_location() {
   fi
 }
 
+path_has_symlink_component() {
+  local path="$1"
+  local remainder
+  local component
+  local cursor=""
+
+  [[ "$path" == /* ]] || return 0
+  remainder="${path#/}"
+  while [[ -n "$remainder" ]]; do
+    if [[ "$remainder" == */* ]]; then
+      component="${remainder%%/*}"
+      remainder="${remainder#*/}"
+    else
+      component="$remainder"
+      remainder=""
+    fi
+    [[ -n "$component" && "$component" != "." && "$component" != ".." ]] || return 0
+    cursor="$cursor/$component"
+    [[ ! -L "$cursor" ]] || return 0
+    [[ -e "$cursor" ]] || return 1
+  done
+  return 1
+}
+
 foundation_eligible() {
   local root="$1"
 
@@ -249,7 +277,7 @@ ensure_private_control_parent() {
     mkdir -p "$control_dir" || return 1
     chmod 700 "$control_dir" || return 1
   fi
-  [[ -d "$control_dir" && -w "$control_dir" && -x "$control_dir" ]] || return 1
+  [[ -d "$control_dir" && -O "$control_dir" && -w "$control_dir" && -x "$control_dir" ]] || return 1
   permissions="$(ls -ld "$control_dir" 2>/dev/null)" || return 1
   permissions="${permissions%% *}"
   case "$permissions" in
@@ -366,10 +394,9 @@ control_is_valid() {
   ' "$control_file" >/dev/null 2>&1
 }
 
-packet_shape_is_valid() {
-  local packet_file="$1"
+packet_json_is_valid() {
+  local packet_json="$1"
 
-  [[ -f "$packet_file" ]] || return 1
   jq -e '
     def exact_keys($expected): (keys | sort) == ($expected | sort);
     def nonempty_string: type == "string" and length > 0;
@@ -454,19 +481,38 @@ packet_shape_is_valid() {
           and $resolution.decisionId == ("rb:" + $resolution.sessionId + ":" + ($resolution.controlRevision | tostring) + ":node:" + $resolution.scopeId))
        ))
     )
-  ' "$packet_file" >/dev/null 2>&1
+  ' <<< "$packet_json" >/dev/null 2>&1
+}
+
+packet_shape_is_valid() {
+  local packet_file="$1"
+  local packet_json
+
+  [[ -f "$packet_file" ]] || return 1
+  packet_json="$(cat -- "$packet_file")" || return 1
+  packet_json_is_valid "$packet_json"
 }
 
 emit_refusal() {
   local reason="$1"
   local trusted_status="$2"
   local trusted_root="$3"
+  local signal
 
   printf 'REPOSITORY PREFLIGHT REFUSED reason=%s affinity=unchanged repoLocalSideEffects=zero\n' "$reason"
   printf 'REPOSITORY-REFUSAL\n'
   printf 'outcome: refused\n'
   printf 'reasonCode: %s\n' "$reason"
-  printf 'observedSignals: []\n'
+  if [[ "$(jq -r 'length' <<< "$ACTIVE_OBSERVED_SIGNALS_JSON")" == "0" ]]; then
+    printf 'observedSignals: []\n'
+  else
+    printf 'observedSignals:\n'
+    while IFS= read -r signal; do
+      printf 'observedSignals[].kind: %s\n' "$(jq -r '.kind' <<< "$signal")"
+      printf 'observedSignals[].repository: %s\n' "$(jq -r '.repository' <<< "$signal")"
+      printf 'observedSignals[].authority: diagnostic-only\n'
+    done < <(jq -c '.[]' <<< "$ACTIVE_OBSERVED_SIGNALS_JSON")
+  fi
   printf 'trustedBoundaryState.status: %s\n' "$trusted_status"
   printf 'trustedBoundaryState.repository: %s\n' "$trusted_root"
   printf 'requiredInput.field: repositoryRoot\n'
@@ -666,6 +712,8 @@ emit_decision() {
   printf ' source=%s affinity=%s' "$source" "$transition"
   [[ -n "$compatibility" ]] && printf ' compatibility=%s' "$compatibility"
   printf '\n'
+  printf 'PREFLIGHT_COMMITTED decision=%s revision=%s repository=%s root=%s\n' \
+    "$decision_id" "$revision" "$alias" "$root"
 
   jq -cn \
     --arg root "$root" \
@@ -694,14 +742,14 @@ emit_decision() {
     }'
 }
 
-emit_redacted_projection() {
-  local packet_file="$1"
+emit_redacted_projection_json() {
+  local packet_json="$1"
 
   jq -c '
     .repositoryRoot = "<redacted-local-root>"
     | .repositoryResolution.pathVisibility = "redacted"
     | .repositoryResolution.actionable = false
-  ' "$packet_file"
+  ' <<< "$packet_json"
 }
 
 collect_workspace_roots() {
@@ -764,19 +812,36 @@ resolve_target_root() {
   esac
 }
 
+packet_json_conflicts_with_control() {
+  local packet_json="$1"
+  local control_file="$2"
+  local expected_session="$3"
+  local packet_revision
+
+  packet_json_is_valid "$packet_json" || return 2
+  [[ "$(jq -r '.repositoryResolution.actionable' <<< "$packet_json")" == "true" ]] || return 3
+  [[ "$(jq -r '.repositoryResolution.pathVisibility' <<< "$packet_json")" == "local" ]] || return 3
+  [[ "$(jq -r '.repositoryResolution.sessionId' <<< "$packet_json")" == "$expected_session" ]] || return 1
+  [[ "$(jq -r '.repositoryRoot' <<< "$packet_json")" == "$(jq -r '.currentBinding.repositoryRoot' "$control_file")" ]] || return 1
+  packet_revision="$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")"
+  [[ "$packet_revision" == "$(jq -r '.revision' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryResolution.decisionId' <<< "$packet_json")" == "$(jq -r '.currentBinding.lastDecisionId' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryAlias' <<< "$packet_json")" == "$(jq -r '.currentBinding.repositoryAlias' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryResolution.authority' <<< "$packet_json")" == "$(jq -r --argjson revision "$packet_revision" '.transitionHistory[] | select(.revision == $revision) | .authority' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryResolution.transition' <<< "$packet_json")" == "$(jq -r --argjson revision "$packet_revision" '.transitionHistory[] | select(.revision == $revision) | .transition' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryResolution.targetKind' <<< "$packet_json")" == "$(jq -r --argjson revision "$packet_revision" '.transitionHistory[] | select(.revision == $revision) | .targetKind' "$control_file")" ]] || return 1
+  return 0
+}
+
 packet_conflicts_with_control() {
   local packet_file="$1"
   local control_file="$2"
   local expected_session="$3"
+  local packet_json
 
-  packet_shape_is_valid "$packet_file" || return 2
-  [[ "$(jq -r '.repositoryResolution.actionable' "$packet_file")" == "true" ]] || return 3
-  [[ "$(jq -r '.repositoryResolution.pathVisibility' "$packet_file")" == "local" ]] || return 3
-  [[ "$(jq -r '.repositoryResolution.sessionId' "$packet_file")" == "$expected_session" ]] || return 1
-  [[ "$(jq -r '.repositoryRoot' "$packet_file")" == "$(jq -r '.currentBinding.repositoryRoot' "$control_file")" ]] || return 1
-  [[ "$(jq -r '.repositoryResolution.controlRevision' "$packet_file")" == "$(jq -r '.revision' "$control_file")" ]] || return 1
-  [[ "$(jq -r '.repositoryResolution.decisionId' "$packet_file")" == "$(jq -r '.currentBinding.lastDecisionId' "$control_file")" ]] || return 1
-  return 0
+  [[ -f "$packet_file" ]] || return 2
+  packet_json="$(cat -- "$packet_file")" || return 2
+  packet_json_conflicts_with_control "$packet_json" "$control_file" "$expected_session"
 }
 
 preflight() {
@@ -786,8 +851,10 @@ preflight() {
   local workspace_candidates=""
   local explicit_root=""
   local target=""
+  local resolved_natural_language_root=""
   local binding_packet=""
   local expected_revision=""
+  local explicit_intent_count=0
   local workspace_result
   local canonical_roots
   local eligible_roots
@@ -801,6 +868,10 @@ preflight() {
   local target_kind=""
   local source=""
   local compatibility=""
+  local diagnostic_chat_cwd=""
+  local diagnostic_host_repository=""
+  local diagnostic_active_editor=""
+  local diagnostic_tool_cwd=""
   local target_rc=0
   local canonical_control_file=""
   local packet_rc=0
@@ -815,7 +886,12 @@ preflight() {
       --workspace-root) shift; [[ $# -gt 0 ]] || { fail_usage '--workspace-root requires a value'; return 2; }; workspace_candidates="$(append_unique_line "$workspace_candidates" "$1")" ;;
       --repository-root) shift; [[ $# -gt 0 ]] || { fail_usage '--repository-root requires a value'; return 2; }; explicit_root="$1" ;;
       --target) shift; [[ $# -gt 0 ]] || { fail_usage '--target requires a value'; return 2; }; target="$1" ;;
+      --resolved-natural-language-root) shift; [[ $# -gt 0 ]] || { fail_usage '--resolved-natural-language-root requires a value'; return 2; }; resolved_natural_language_root="$1" ;;
       --binding-packet-file) shift; [[ $# -gt 0 ]] || { fail_usage '--binding-packet-file requires a value'; return 2; }; binding_packet="$1" ;;
+      --diagnostic-chat-cwd) shift; [[ $# -gt 0 ]] || { fail_usage '--diagnostic-chat-cwd requires a value'; return 2; }; diagnostic_chat_cwd="$1" ;;
+      --diagnostic-host-repository) shift; [[ $# -gt 0 ]] || { fail_usage '--diagnostic-host-repository requires a value'; return 2; }; diagnostic_host_repository="$1" ;;
+      --diagnostic-active-editor) shift; [[ $# -gt 0 ]] || { fail_usage '--diagnostic-active-editor requires a value'; return 2; }; diagnostic_active_editor="$1" ;;
+      --diagnostic-tool-cwd) shift; [[ $# -gt 0 ]] || { fail_usage '--diagnostic-tool-cwd requires a value'; return 2; }; diagnostic_tool_cwd="$1" ;;
       --expected-control-revision) shift; [[ $# -gt 0 ]] || { fail_usage '--expected-control-revision requires a value'; return 2; }; expected_revision="$1" ;;
       -h|--help) preflight_usage; return 0 ;;
       *) fail_usage "unknown preflight option: $1"; return 2 ;;
@@ -828,10 +904,24 @@ preflight() {
   valid_request_class "$request_class" || { fail_usage 'preflight requires a supported --request-class'; return 2; }
   [[ -n "$workspace_candidates" ]] || { fail_usage 'preflight requires at least one --workspace-root'; return 2; }
   [[ -z "$expected_revision" || "$expected_revision" =~ ^[0-9]+$ ]] || { fail_usage '--expected-control-revision must be an integer'; return 2; }
-  if [[ -n "$explicit_root" && -n "$target" ]]; then
-    fail_usage '--repository-root and --target are mutually exclusive'
+  [[ -n "$explicit_root" ]] && explicit_intent_count=$((explicit_intent_count + 1))
+  [[ -n "$target" ]] && explicit_intent_count=$((explicit_intent_count + 1))
+  [[ -n "$resolved_natural_language_root" ]] && explicit_intent_count=$((explicit_intent_count + 1))
+  if [[ "$explicit_intent_count" -gt 1 ]]; then
+    fail_usage '--repository-root, --target, and --resolved-natural-language-root are mutually exclusive'
     return 2
   fi
+  ACTIVE_OBSERVED_SIGNALS_JSON="$(jq -cn \
+    --arg chatCwd "$diagnostic_chat_cwd" \
+    --arg hostRepository "$diagnostic_host_repository" \
+    --arg activeEditor "$diagnostic_active_editor" \
+    --arg toolCwd "$diagnostic_tool_cwd" \
+    '[
+      {kind: "chat-cwd", repository: $chatCwd},
+      {kind: "host-repository", repository: $hostRepository},
+      {kind: "active-editor", repository: $activeEditor},
+      {kind: "tool-cwd", repository: $toolCwd}
+    ] | map(select(.repository != "") | . + {authority: "diagnostic-only"})')" || return 3
 
   workspace_result="$(collect_workspace_roots "$workspace_candidates")"
   canonical_roots="${workspace_result%%$'\n---ELIGIBLE---\n'*}"
@@ -840,6 +930,10 @@ preflight() {
     fail_usage '--session-control-file must be an absolute, non-symlink external path'
     return 2
   }
+  if path_has_symlink_component "$control_file"; then
+    fail_usage '--session-control-file must not traverse symlink components'
+    return 2
+  fi
   control_path_is_external "$canonical_control_file" "$canonical_roots" || {
     fail_usage '--session-control-file must be external to workspace repositories'
     return 2
@@ -880,6 +974,20 @@ preflight() {
     authority="explicit-repository-root"
     target_kind="repository-root"
     source="explicit-repositoryRoot"
+  elif [[ -n "$resolved_natural_language_root" ]]; then
+    if [[ ! -d "$resolved_natural_language_root" ]]; then
+      emit_refusal EXPLICIT_REPOSITORY_ROOT_NOT_FOUND "$trusted_status" "$trusted_root"
+      return $?
+    fi
+    selected_root="$(canonical_git_root "$resolved_natural_language_root" || true)"
+    if [[ -z "$selected_root" ]] || ! foundation_eligible "$selected_root" || \
+       ! contains_line "$eligible_roots" "$selected_root"; then
+      emit_refusal EXPLICIT_REPOSITORY_ROOT_INELIGIBLE "$trusted_status" "$trusted_root"
+      return $?
+    fi
+    authority="resolved-natural-language"
+    target_kind="natural-language"
+    source="concrete-target"
   elif [[ -n "$target" ]]; then
     selected_root="$(resolve_target_root "$target" "$eligible_roots")" || target_rc=$?
     case "$target_rc" in
@@ -904,6 +1012,14 @@ preflight() {
     fail_usage '--session-control-file must be external to workspace repositories'
     return 2
   }
+  if [[ -z "$expected_revision" ]] && {
+       [[ -n "$selected_root" ]] ||
+       [[ "$trusted_status" == "valid" ]] ||
+       { [[ "$trusted_status" == "absent" ]] && [[ "$(line_count "$eligible_roots")" == "1" ]]; }
+     }; then
+    emit_refusal BOUNDARY_CONFLICT "$trusted_status" "$trusted_root"
+    return $?
+  fi
   ensure_private_control_parent "$control_file" || {
     printf 'repository-binding: session control directory must be private, writable, and searchable\n' >&2
     return 3
@@ -920,6 +1036,10 @@ preflight() {
     if ! control_is_valid "$control_file"; then
       if [[ -z "$selected_root" ]]; then
         emit_refusal BOUNDARY_MALFORMED malformed none
+        return $?
+      fi
+      if [[ "$expected_revision" != "0" ]]; then
+        emit_refusal BOUNDARY_CONFLICT malformed none
         return $?
       fi
     else
@@ -1008,35 +1128,83 @@ preflight() {
   emit_decision "$control_file" "$authority" "$transition" "$target_kind" "$source" "$compatibility"
 }
 
+goal_node_declaration_json() {
+  local scenario_file="$1"
+  local node_id="$2"
+
+  [[ -f "$scenario_file" ]] || return 1
+  jq -ce --arg nodeId "$node_id" '
+    (.nodes // [] | map(select(.id == $nodeId))) as $nodes
+    | select(($nodes | length) == 1)
+    | $nodes[0] as $node
+    | (.repos // [] | map(select(.id == $node.repo))) as $repos
+    | select(($repos | length) == 1)
+    | $repos[0] as $repo
+    | select($repo.repositoryRoot | type == "string" and length > 0)
+    | select($repo.repositoryAlias | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$"))
+    | select($node.repositoryResolution | type == "object")
+    | select($node.repositoryResolution.authority == "scoped-scenario-node")
+    | select($node.repositoryResolution.transition == "scoped-override")
+    | select($node.repositoryResolution.scopeKind == "goal-node")
+    | select($node.repositoryResolution.scopeId == $node.id)
+    | select($node.repositoryResolution.targetKind == "goal-node")
+    | select($node.repositoryResolution.pathVisibility == "local")
+    | select($node.repositoryResolution.actionable == true)
+    | {
+        repositoryRoot: $repo.repositoryRoot,
+        repositoryAlias: $repo.repositoryAlias,
+        repositoryResolution: $node.repositoryResolution
+      }
+  ' "$scenario_file"
+}
+
 validate_packet_internal() {
   local session_id="$1"
   local control_file="$2"
   local packet_file="$3"
   local output_mode="$4"
+  local expected_goal_node_declaration="${5:-}"
   local packet_rc
   local root
   local scope_kind
   local scope_id
   local canonical_control_file
+  local packet_json
 
   if ! control_is_valid "$control_file"; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_MALFORMED actionable=false\n'
     return 1
   fi
-  if ! packet_shape_is_valid "$packet_file"; then
+  packet_json="$(cat -- "$packet_file" 2>/dev/null)" || packet_json=""
+  if ! packet_json_is_valid "$packet_json"; then
     printf 'REPOSITORY PACKET REFUSED reason=PACKET_MALFORMED actionable=false\n'
     return 1
   fi
-  if [[ "$(jq -r '.repositoryResolution.actionable' "$packet_file")" != "true" || \
-        "$(jq -r '.repositoryResolution.pathVisibility' "$packet_file")" != "local" ]]; then
+  if [[ "$(jq -r '.repositoryResolution.actionable' <<< "$packet_json")" != "true" || \
+        "$(jq -r '.repositoryResolution.pathVisibility' <<< "$packet_json")" != "local" ]]; then
     printf 'REPOSITORY PACKET REFUSED reason=PACKET_NONACTIONABLE actionable=false pathVisibility=%s redacted=%s\n' \
-      "$(jq -r '.repositoryResolution.pathVisibility' "$packet_file")" \
-      "$(jq -r '.repositoryRoot == "<redacted-local-root>"' "$packet_file")"
+      "$(jq -r '.repositoryResolution.pathVisibility' <<< "$packet_json")" \
+      "$(jq -r '.repositoryRoot == "<redacted-local-root>"' <<< "$packet_json")"
     return 1
   fi
-  root="$(jq -r '.repositoryRoot' "$packet_file")"
-  scope_kind="$(jq -r '.repositoryResolution.scopeKind' "$packet_file")"
-  scope_id="$(jq -r '.repositoryResolution.scopeId // empty' "$packet_file")"
+  root="$(jq -r '.repositoryRoot' <<< "$packet_json")"
+  scope_kind="$(jq -r '.repositoryResolution.scopeKind' <<< "$packet_json")"
+  scope_id="$(jq -r '.repositoryResolution.scopeId // empty' <<< "$packet_json")"
+  if [[ "$scope_kind" == "goal-node" && -z "$expected_goal_node_declaration" ]]; then
+    printf 'REPOSITORY PACKET REFUSED reason=GOAL_NODE_DECLARATION_REQUIRED actionable=false scopeId=%s\n' \
+      "$scope_id"
+    return 1
+  fi
+  if [[ -n "$expected_goal_node_declaration" ]] && ! jq -e \
+      --argjson expected "$expected_goal_node_declaration" \
+      '.repositoryRoot == $expected.repositoryRoot and
+       .repositoryAlias == $expected.repositoryAlias and
+       .repositoryResolution == $expected.repositoryResolution' \
+      <<< "$packet_json" >/dev/null 2>&1; then
+    printf 'REPOSITORY PACKET REFUSED reason=GOAL_NODE_REPOSITORY_MISMATCH actionable=false scopeId=%s\n' \
+      "$scope_id"
+    return 1
+  fi
   canonical_control_file="$(canonical_file_location "$control_file" 2>/dev/null || true)"
   if [[ -z "$canonical_control_file" ]] || ! control_path_is_external "$canonical_control_file" "$root"; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_MALFORMED actionable=false\n'
@@ -1052,25 +1220,26 @@ validate_packet_internal() {
     return 1
   fi
   if [[ "$scope_kind" == "goal-node" ]]; then
-    if [[ "$(jq -r '.repositoryResolution.sessionId' "$packet_file")" != "$session_id" || \
-          "$(jq -r '.repositoryResolution.controlRevision' "$packet_file")" != "$(jq -r '.revision' "$control_file")" ]]; then
+    if [[ "$(jq -r '.repositoryResolution.sessionId' <<< "$packet_json")" != "$session_id" || \
+          "$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")" != "$(jq -r '.revision' "$control_file")" ]]; then
       printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_CONFLICT actionable=false scopeId=%s\n' "$scope_id"
       return 1
     fi
     if [[ "$output_mode" == "visible" ]]; then
       printf 'REPOSITORY PACKET SCOPED actionable=true repository=%s root=%s decision=%s revision=%s scopeKind=goal-node scopeId=%s\n' \
-        "$(jq -r '.repositoryAlias' "$packet_file")" \
+        "$(jq -r '.repositoryAlias' <<< "$packet_json")" \
         "$root" \
-        "$(jq -r '.repositoryResolution.decisionId' "$packet_file")" \
-        "$(jq -r '.repositoryResolution.controlRevision' "$packet_file")" \
+        "$(jq -r '.repositoryResolution.decisionId' <<< "$packet_json")" \
+        "$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")" \
         "$scope_id"
     elif [[ "$output_mode" != "silent" ]]; then
       printf 'repository-binding: invalid packet validation output mode\n' >&2
       return 2
     fi
+    VALIDATED_PACKET_JSON="$packet_json"
     return 0
   fi
-  packet_conflicts_with_control "$packet_file" "$control_file" "$session_id"
+  packet_json_conflicts_with_control "$packet_json" "$control_file" "$session_id"
   packet_rc=$?
   if [[ "$packet_rc" -ne 0 ]]; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_CONFLICT actionable=false\n'
@@ -1078,14 +1247,15 @@ validate_packet_internal() {
   fi
   if [[ "$output_mode" == "visible" ]]; then
     printf 'REPOSITORY PACKET VALID actionable=true repository=%s root=%s decision=%s revision=%s\n' \
-      "$(jq -r '.repositoryAlias' "$packet_file")" \
-      "$(jq -r '.repositoryRoot' "$packet_file")" \
-      "$(jq -r '.repositoryResolution.decisionId' "$packet_file")" \
-      "$(jq -r '.repositoryResolution.controlRevision' "$packet_file")"
+      "$(jq -r '.repositoryAlias' <<< "$packet_json")" \
+      "$(jq -r '.repositoryRoot' <<< "$packet_json")" \
+      "$(jq -r '.repositoryResolution.decisionId' <<< "$packet_json")" \
+      "$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")"
   elif [[ "$output_mode" != "silent" ]]; then
     printf 'repository-binding: invalid packet validation output mode\n' >&2
     return 2
   fi
+  VALIDATED_PACKET_JSON="$packet_json"
   return 0
 }
 
@@ -1093,13 +1263,19 @@ validate_packet() {
   local session_id=""
   local control_file=""
   local packet_file=""
+  local scenario_file=""
+  local node_id=""
+  local goal_node_declaration=""
   local emit_redacted=false
+  local output_mode="visible"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --session-id) shift; [[ $# -gt 0 ]] || { fail_usage '--session-id requires a value'; return 2; }; session_id="$1" ;;
       --session-control-file) shift; [[ $# -gt 0 ]] || { fail_usage '--session-control-file requires a value'; return 2; }; control_file="$1" ;;
       --packet-file) shift; [[ $# -gt 0 ]] || { fail_usage '--packet-file requires a value'; return 2; }; packet_file="$1" ;;
+      --scenario-file) shift; [[ $# -gt 0 ]] || { fail_usage '--scenario-file requires a value'; return 2; }; scenario_file="$1" ;;
+      --node-id) shift; [[ $# -gt 0 ]] || { fail_usage '--node-id requires a value'; return 2; }; node_id="$1" ;;
       --emit-redacted-projection) emit_redacted=true ;;
       -h|--help) packet_usage; return 0 ;;
       *) fail_usage "unknown validate-packet option: $1"; return 2 ;;
@@ -1107,12 +1283,24 @@ validate_packet() {
     shift
   done
   valid_session_id "$session_id" || { fail_usage 'validate-packet requires a safe --session-id'; return 2; }
-  [[ -n "$control_file" && -n "$packet_file" ]] || { fail_usage 'validate-packet requires control and packet files'; return 2; }
+  [[ -n "$control_file" && -n "${packet_file:-}" ]] || { fail_usage 'validate-packet requires control and packet files'; return 2; }
+  if [[ -n "$scenario_file" && -z "$node_id" ]] || [[ -z "$scenario_file" && -n "$node_id" ]]; then
+    fail_usage 'goal-node validation requires both --scenario-file and --node-id'
+    return 2
+  fi
+  if [[ -n "$scenario_file" ]]; then
+    goal_node_declaration="$(goal_node_declaration_json "$scenario_file" "$node_id" 2>/dev/null || true)"
+    if [[ -z "$goal_node_declaration" ]]; then
+      printf 'REPOSITORY PACKET REFUSED reason=GOAL_NODE_DECLARATION_INVALID actionable=false scopeId=%s\n' \
+        "$node_id"
+      return 1
+    fi
+  fi
+  [[ "$emit_redacted" == true ]] && output_mode="silent"
+  validate_packet_internal "$session_id" "$control_file" "$packet_file" "$output_mode" \
+    "$goal_node_declaration" || return $?
   if [[ "$emit_redacted" == true ]]; then
-    validate_packet_internal "$session_id" "$control_file" "$packet_file" silent || return $?
-    emit_redacted_projection "$packet_file"
-  else
-    validate_packet_internal "$session_id" "$control_file" "$packet_file" visible
+    emit_redacted_projection_json "$VALIDATED_PACKET_JSON"
   fi
 }
 
@@ -1153,7 +1341,7 @@ discover_specs() {
   local root
   local specs_root
   local candidate
-  root="$(jq -r '.repositoryRoot' "$PARSED_PACKET_FILE")"
+  root="$(jq -r '.repositoryRoot' <<< "$VALIDATED_PACKET_JSON")"
   specs_root="$root/specs"
   printf 'DISCOVERY SCOPE mode=%s root=%s\n' "$PARSED_MODE" "$specs_root"
   [[ -d "$specs_root" ]] || return 0
@@ -1176,10 +1364,19 @@ mirror_session() {
   local session_file
   local temp_file
   local timestamp
-  root="$(jq -r '.repositoryRoot' "$PARSED_PACKET_FILE")"
+  root="$(jq -r '.repositoryRoot' <<< "$VALIDATED_PACKET_JSON")"
   session_dir="$root/.specify/memory"
   session_file="$session_dir/bubbles.session.json"
+  if path_has_symlink_component "$session_file"; then
+    printf 'REPOSITORY MIRROR REFUSED reason=SESSION_MIRROR_SYMLINK repoLocalSideEffects=zero\n'
+    return 1
+  fi
   mkdir -p "$session_dir" || return 3
+  if path_has_symlink_component "$session_file" || \
+     [[ "$(physical_directory "$session_dir" 2>/dev/null || true)" != "$session_dir" ]]; then
+    printf 'REPOSITORY MIRROR REFUSED reason=SESSION_MIRROR_SYMLINK repoLocalSideEffects=zero\n'
+    return 1
+  fi
   if [[ -f "$session_file" ]] && ! jq -e 'type == "object"' "$session_file" >/dev/null 2>&1; then
     printf 'REPOSITORY MIRROR REFUSED reason=SESSION_MIRROR_MALFORMED repoLocalSideEffects=zero\n'
     return 1
@@ -1195,13 +1392,13 @@ mirror_session() {
   timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   temp_file="$(mktemp "$session_dir/.bubbles-session.XXXXXX")" || return 3
   if [[ -f "$session_file" ]]; then
-    jq --argjson binding "$(cat "$PARSED_PACKET_FILE")" --arg timestamp "$timestamp" \
+    jq --argjson binding "$VALIDATED_PACKET_JSON" --arg timestamp "$timestamp" \
       '.repositoryBindingMirror = ($binding + {
          mirroredControlRevision: $binding.repositoryResolution.controlRevision,
          mirroredAt: $timestamp
        })' "$session_file" > "$temp_file" || { rm -f "$temp_file"; return 3; }
   else
-    jq -n --argjson binding "$(cat "$PARSED_PACKET_FILE")" --arg timestamp "$timestamp" \
+    jq -n --argjson binding "$VALIDATED_PACKET_JSON" --arg timestamp "$timestamp" \
       '{repositoryBindingMirror: ($binding + {
          mirroredControlRevision: $binding.repositoryResolution.controlRevision,
          mirroredAt: $timestamp
@@ -1209,8 +1406,8 @@ mirror_session() {
   fi
   mv "$temp_file" "$session_file" || { rm -f "$temp_file"; return 3; }
   printf 'REPOSITORY MIRROR UPDATED repository=%s revision=%s\n' \
-    "$(jq -r '.repositoryAlias' "$PARSED_PACKET_FILE")" \
-    "$(jq -r '.repositoryResolution.controlRevision' "$PARSED_PACKET_FILE")"
+    "$(jq -r '.repositoryAlias' <<< "$VALIDATED_PACKET_JSON")" \
+    "$(jq -r '.repositoryResolution.controlRevision' <<< "$VALIDATED_PACKET_JSON")"
 }
 
 main() {
@@ -1228,6 +1425,8 @@ main() {
 }
 
 ACTIVE_LOCK_DIR=""
+ACTIVE_OBSERVED_SIGNALS_JSON="[]"
+VALIDATED_PACKET_JSON=""
 PARSED_SESSION_ID=""
 PARSED_CONTROL_FILE=""
 PARSED_PACKET_FILE=""

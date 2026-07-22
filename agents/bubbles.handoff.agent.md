@@ -40,6 +40,8 @@ VS Code GitHub Copilot does not have a built-in one-shot chat handoff command. U
 
 ## Step 1: The "Handoff" Prompt
 
+Before collecting any repository-local file, state, test, or evidence reference, execute `bubbles/scripts/repository-binding.sh preflight` and require the current local actionable packet plus `PREFLIGHT_COMMITTED`. If an actionable packet was inherited, validate it first with `bubbles/scripts/repository-binding.sh validate-packet`; stale, substituted, malformed, or redacted packets refuse before collection.
+
 Run this prompt in your **current** Copilot chat window when the context gets too long.
 
 ```markdown
@@ -60,7 +62,7 @@ The single code block must contain:
 7.  **Evidence References:** (List of evidence already recorded in report.md — section anchors and what they prove)
 8.  **Baseline Health:** (Pre-change baseline test counts if captured: total/passing/failing/skipped)
 9.  **Recommended Workflow Continuation:** (Exact `/bubbles.workflow ...` command to run next)
-10. **Continuation Envelope:** (Machine-readable continuation packet with target, intent, preferredWorkflowMode, tags, and reason. Preserve the exact active workflow mode when one is already in progress; do not collapse workflow continuation into raw specialist follow-ups. In a multi-root workspace, also carry a `provenance` block — `repositoryRoot`, `agentSourceRoot`, `frameworkVersion` — so the resumed session can re-validate its repo↔agent binding via `repo-binding-preflight.sh`; a binding mismatch on resume is a REFUSE. See [bubbles-result-envelope](../skills/bubbles-result-envelope/SKILL.md) and IMP-025 MR3.)
+10. **Continuation Envelope:** (Machine-readable continuation packet with target, intent, preferredWorkflowMode, tags, and reason. Preserve the exact active workflow mode when one is already in progress; do not collapse workflow continuation into raw specialist follow-ups. Carry the current decision unchanged as `repositoryRoot`, `repositoryAlias`, `repositoryResolution.sessionId`, `repositoryResolution.decisionId`, `repositoryResolution.controlRevision`, `repositoryResolution.authority`, `repositoryResolution.transition`, `repositoryResolution.scopeKind`, `repositoryResolution.scopeId`, `repositoryResolution.targetKind`, `repositoryResolution.pathVisibility`, and `repositoryResolution.actionable`. A separate `provenance` block may also carry `agentSourceRoot` and `frameworkVersion`; the resumed session validates the actionable packet and re-runs `repo-binding-preflight.sh`, and any mismatch is a REFUSE. See [bubbles-result-envelope](../skills/bubbles-result-envelope/SKILL.md) and IMP-025 MR3.)
 11. **Code Context:** (Brief snippet of last change, **no nested code fences**)
 
 At the very end of the block, include this exact restoration command (still inside the same code block):

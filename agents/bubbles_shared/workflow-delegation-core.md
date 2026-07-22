@@ -80,7 +80,7 @@ Before applying the classification contract, perform this literal substring chec
 
 - `RESOLUTION-ENVELOPE` provides the resolved workflow mode, targets, and optional tags for Phase 0.
 - `WORK-ENVELOPE` provides the resolved spec, scope, workflow mode, and work type for Phase 0.
-- `FRAMEWORK-ENVELOPE` is terminal for framework operations; report the result and stop instead of entering the workflow phase engine.
+- `FRAMEWORK-ENVELOPE` is terminal for framework operations, but it is still repository-sensitive: carry the exact `repositoryRoot`, `repositoryAlias`, and complete `repositoryResolution` unchanged; run `bubbles/scripts/repository-binding.sh validate-packet` and compare with the dispatch packet before reporting. Stale, substituted, malformed, cross-scope, public, or redacted framework envelopes refuse. Only after exact validation may the runner report the result and stop instead of entering the workflow phase engine.
 
 ### Continuation Preservation Rules
 

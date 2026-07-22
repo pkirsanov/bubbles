@@ -372,6 +372,11 @@ check_super_prebinding_input() {
   check_text_order "$relative_path" "$section" \
     "PREFLIGHT_COMMITTED" "resolvedRepositoryRoot/specs" \
     "preflight-must-precede-bound-spec-resolution"
+  case "$section" in
+    *'--resolved-natural-language-root'*) ;;
+    *) report_failure "RB-CONFORMANCE-SUPER-NATURAL-LANGUAGE-UNPORTED" "$relative_path" \
+         "resolved-natural-language-production-option-absent" ;;
+  esac
 }
 
 workflow_mode_grant_agents() {
@@ -389,6 +394,57 @@ workflow_mode_grant_agents() {
   ' "$file"
 }
 
+phase_owner_agents() {
+  local file="$1"
+  awk '
+    $0 == "agents:" { in_agents = 1; next }
+    in_agents && /^  [A-Za-z0-9_.-]+:[[:space:]]*$/ {
+      agent = $0
+      sub(/^[[:space:]]+/, "", agent)
+      sub(/:[[:space:]]*$/, "", agent)
+      next
+    }
+    in_agents && /^    ownsPhases:[[:space:]]*\[[^]]+\][[:space:]]*$/ &&
+      $0 !~ /\[[[:space:]]*\]/ {
+      print agent
+    }
+  ' "$file"
+}
+
+line_list_contains() {
+  local lines="$1"
+  local expected="$2"
+  local line=""
+
+  while IFS= read -r line; do
+    [[ "$line" == "$expected" ]] && return 0
+  done <<< "$lines"
+  return 1
+}
+
+first_runner_work_position() {
+  local file="$1"
+  awk '
+    /^[[:space:]]*phase_[[:alnum:]_-]+:[[:space:]]*$/ ||
+    /^#{2,3}[[:space:]]+(PHASE ROUTER|Phase[[:space:]-]|Execution Flow|Natural Language Input Resolution|Pre-Flight|User Input|Inputs)/ {
+      print NR ":1"
+      exit
+    }
+  ' "$file"
+}
+
+position_precedes() {
+  local first="$1"
+  local second="$2"
+  local first_line="${first%%:*}"
+  local first_column="${first#*:}"
+  local second_line="${second%%:*}"
+  local second_column="${second#*:}"
+
+  [[ "$first_line" -lt "$second_line" ]] || \
+    { [[ "$first_line" -eq "$second_line" ]] && [[ "$first_column" -lt "$second_column" ]]; }
+}
+
 check_direct_runners() {
   local relative_path="bubbles/agent-capabilities.yaml"
   local file="$root/$relative_path"
@@ -396,6 +452,9 @@ check_direct_runners() {
   local runner=""
   local runner_path=""
   local runner_section=""
+  local preflight_position=""
+  local commit_position=""
+  local first_work_position=""
   local runner_count=0
 
   require_file "$relative_path" || return
@@ -416,22 +475,139 @@ check_direct_runners() {
       continue
     fi
     runner_section="$(repository_binding_sections "$root/$runner_path")"
+    preflight_position="$(first_position "$root/$runner_path" "repository-binding.sh preflight")"
+    commit_position="$(first_position "$root/$runner_path" "PREFLIGHT_COMMITTED")"
+    first_work_position="$(first_runner_work_position "$root/$runner_path")"
     if [[ "$runner_section" == *'repository-binding.sh preflight'* && \
-          "$runner_section" == *'PREFLIGHT_COMMITTED'* ]]; then
-      continue
-    fi
-    if [[ "$runner_section" == *'repository-binding.sh validate-packet'* && \
-          "$runner_section" == *'repositoryResolution'* ]]; then
-      continue
+          "$runner_section" == *'PREFLIGHT_COMMITTED'* && \
+         -n "$preflight_position" && -n "$commit_position" && \
+         -n "$first_work_position" ]] && \
+       position_precedes "$preflight_position" "$commit_position" && \
+       position_precedes "$commit_position" "$first_work_position"; then
+        continue
     fi
     report_failure "RB-CONFORMANCE-DIRECT-RUNNER-UNPORTED" "$runner_path" \
-      "runner=$runner missing-top-level-preflight-or-inherited-packet-contract"
+      "runner=$runner top-level-preflight-must-precede-work preflight=${preflight_position:-missing} commit=${commit_position:-missing} firstWork=${first_work_position:-missing}"
   done <<< "$runners"
 
   if [[ "$runner_count" -eq 0 ]]; then
     report_failure "RB-CONFORMANCE-DIRECT-RUNNER-UNPORTED" "$relative_path" \
       "workflowModeGrants-derived-inventory-empty"
   fi
+}
+
+check_phase_owner_entry_contracts() {
+  local relative_path="bubbles/agent-capabilities.yaml"
+  local file="$root/$relative_path"
+  local direct_runners=""
+  local phase_owners=""
+  local owner=""
+  local owner_path=""
+  local owner_section=""
+  local entry_position=""
+  local preflight_position=""
+  local commit_position=""
+  local validation_position=""
+  local first_work_position=""
+  local owner_is_direct="false"
+  local owner_count=0
+
+  require_file "$relative_path" || return
+  direct_runners="$(workflow_mode_grant_agents "$file")"
+  phase_owners="$(phase_owner_agents "$file")"
+  if [[ -z "$phase_owners" ]]; then
+    report_failure "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED" "$relative_path" \
+      "capabilities-derived-phase-owner-inventory-empty"
+    return
+  fi
+
+  while IFS= read -r owner; do
+    [[ -n "$owner" ]] || continue
+    owner_count=$((owner_count + 1))
+    owner_is_direct="false"
+    line_list_contains "$direct_runners" "$owner" && owner_is_direct="true"
+
+    owner_path="agents/$owner.agent.md"
+    if [[ ! -f "$root/$owner_path" ]]; then
+      report_failure "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED" "$owner_path" \
+        "capabilities-derived-phase-owner-file-absent"
+      continue
+    fi
+
+    owner_section="$(repository_binding_sections "$root/$owner_path")"
+    entry_position="$(first_position "$root/$owner_path" "## Repository Binding Entry Contract (NON-NEGOTIABLE)")"
+    preflight_position="$(first_position "$root/$owner_path" "repository-binding.sh preflight")"
+    commit_position="$(first_position "$root/$owner_path" "PREFLIGHT_COMMITTED")"
+    validation_position="$(first_position "$root/$owner_path" "repository-binding.sh validate-packet")"
+    first_work_position="$(first_runner_work_position "$root/$owner_path")"
+
+    if [[ "$owner_is_direct" == "true" ]]; then
+      if { [[ "$owner_section" == *'repository-binding.sh validate-packet'* ]] && \
+           { [[ "$owner_section" == *'inherited'* ]] || \
+             [[ "$owner_section" == *'phase invocation'* ]] || \
+             [[ "$owner_section" == *'dispatched'* ]]; }; } || \
+         [[ "$owner_section" == *'agent-common.md#repository-binding-entry-contract-non-negotiable'* ]]; then
+        continue
+      fi
+      report_failure "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED" "$owner_path" \
+        "owner=$owner dualRole=true inherited-packet-validation=missing"
+      continue
+    fi
+
+    if [[ "$owner_section" == *'agent-common.md#repository-binding-entry-contract-non-negotiable'* && \
+          "$owner_section" == *'repository-binding.sh preflight'* && \
+          "$owner_section" == *'PREFLIGHT_COMMITTED'* && \
+          "$owner_section" == *'repository-binding.sh validate-packet'* && \
+          -n "$entry_position" && -n "$preflight_position" && \
+          -n "$commit_position" && -n "$validation_position" ]] && \
+       position_precedes "$entry_position" "$preflight_position" && \
+       position_precedes "$preflight_position" "$commit_position" && \
+       position_precedes "$entry_position" "$validation_position"; then
+      if [[ -z "$first_work_position" ]] || \
+         { position_precedes "$commit_position" "$first_work_position" && \
+           position_precedes "$validation_position" "$first_work_position"; }; then
+        continue
+      fi
+    fi
+
+    report_failure "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED" "$owner_path" \
+      "owner=$owner entry=${entry_position:-missing} preflight=${preflight_position:-missing} commit=${commit_position:-missing} validate=${validation_position:-missing} firstWork=${first_work_position:-missing}"
+  done <<< "$phase_owners"
+
+  if [[ "$owner_count" -eq 0 ]]; then
+    report_failure "RB-CONFORMANCE-PHASE-OWNER-ENTRY-UNPORTED" "$relative_path" \
+      "capabilities-derived-phase-owner-inventory-empty"
+  fi
+}
+
+check_shared_entry_contract() {
+  local relative_path="agents/bubbles_shared/agent-common.md"
+  local file="$root/$relative_path"
+  local section=""
+  local required_text=""
+
+  require_file "$relative_path" || return
+  section="$(markdown_subtree "$file" "## Repository Binding Entry Contract (NON-NEGOTIABLE)")"
+  if [[ -z "$section" ]]; then
+    report_failure "RB-CONFORMANCE-SHARED-ENTRY-CONTRACT-MISSING" "$relative_path" \
+      "shared-entry-contract-absent"
+    return
+  fi
+  for required_text in \
+    'Direct top-level invocation' \
+    'repository-binding.sh preflight' \
+    'PREFLIGHT_COMMITTED' \
+    'Dispatched phase-owner invocation' \
+    'repository-binding.sh validate-packet' \
+    'host-private session control' \
+    'root-substituted' \
+    'zero repository-local side effects'; do
+    case "$section" in
+      *"$required_text"*) ;;
+      *) report_failure "RB-CONFORMANCE-SHARED-ENTRY-CONTRACT-MISSING" "$relative_path" \
+           "missing-contract=$required_text" ;;
+    esac
+  done
 }
 
 check_scenario_repository_roots() {
@@ -453,6 +629,13 @@ check_scenario_repository_roots() {
         "canonical-repositoryRoot-contract-absent"
       ;;
   esac
+  case "$section" in
+    *'repositoryAlias: <safe-local-display-alias>'*) ;;
+    *)
+      report_failure "RB-CONFORMANCE-SCENARIO-REPOSITORY-ALIAS-DROPPED" "$relative_path" \
+        "repositoryAlias-contract-absent"
+      ;;
+  esac
 }
 
 check_goal_node_contract() {
@@ -469,7 +652,13 @@ check_goal_node_contract() {
       "goal-node-section-absent heading=$heading"
     return
   fi
-  for required_text in 'scopeKind: goal-node' 'scopeId' 'byte-identical'; do
+  for required_text in \
+    'scopeKind: goal-node' \
+    'scopeId' \
+    'validate-packet' \
+    '--scenario-file' \
+    '--node-id' \
+    'byte-identical'; do
     case "$section" in
       *"$required_text"*) ;;
       *)
@@ -477,6 +666,89 @@ check_goal_node_contract() {
           "missing-contract=$required_text"
         ;;
     esac
+  done
+}
+
+check_compaction_resume_contract() {
+  local contract_path="agents/bubbles_shared/operating-baseline.md"
+  local script_path="bubbles/scripts/context-compactor.sh"
+  local contract_file="$root/$contract_path"
+  local script_file="$root/$script_path"
+  local section=""
+  local required_text=""
+
+  require_file "$contract_path" || return
+  require_file "$script_path" || return
+  section="$(markdown_subtree "$contract_file" "## Context Compaction Discipline (Orchestrator Agents)")"
+  if [[ -z "$section" ]]; then
+    report_failure "RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED" "$contract_path" \
+      "compaction-contract-absent"
+    return
+  fi
+
+  for required_text in '--binding-packet-file' 'repositoryResolution' 'validate-packet'; do
+    case "$section" in
+      *"$required_text"*) ;;
+      *)
+        report_failure "RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED" "$contract_path" \
+          "missing-contract=$required_text"
+        ;;
+    esac
+  done
+  for required_text in 'validate-packet' '"repositoryResolution":{'; do
+    if ! grep -Fq -- "$required_text" "$script_file"; then
+      report_failure "RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED" "$script_path" \
+        "missing-production-marker=$required_text"
+    fi
+  done
+}
+
+check_framework_envelope_consumer_rule() {
+  local relative_path="agents/bubbles_shared/workflow-delegation-core.md"
+  local file="$root/$relative_path"
+  local section=""
+  local required_text=""
+
+  require_file "$relative_path" || return
+  section="$(markdown_subtree "$file" "### Envelope Consumption Rules")"
+  if [[ -z "$section" ]]; then
+    report_failure "RB-CONFORMANCE-FRAMEWORK-ENVELOPE-UNPORTED" "$relative_path" \
+      "envelope-consumption-section-absent"
+    return
+  fi
+  for required_text in 'FRAMEWORK-ENVELOPE' 'validate-packet'; do
+    case "$section" in
+      *"$required_text"*) ;;
+      *)
+        report_failure "RB-CONFORMANCE-FRAMEWORK-ENVELOPE-UNPORTED" "$relative_path" \
+          "missing-contract=$required_text"
+        ;;
+    esac
+  done
+}
+
+check_orchestrator_compaction_contracts() {
+  local relative_path=""
+  local file=""
+  local required_text=""
+
+  for relative_path in \
+    agents/bubbles.workflow.agent.md \
+    agents/bubbles.iterate.agent.md \
+    agents/bubbles.goal.agent.md \
+    agents/bubbles.sprint.agent.md; do
+    file="$root/$relative_path"
+    require_file "$relative_path" || continue
+    if grep -Fq 'context-compactor.sh <raw-envelope-file>' "$file"; then
+      report_failure "RB-CONFORMANCE-ORCHESTRATOR-COMPACTION-UNBOUND" "$relative_path" \
+        "legacy-unbound-compactor-command-active"
+    fi
+    for required_text in '--binding-packet-file' 'validate-packet'; do
+      if ! grep -Fq -- "$required_text" "$file"; then
+        report_failure "RB-CONFORMANCE-ORCHESTRATOR-COMPACTION-UNBOUND" "$relative_path" \
+          "missing-contract=$required_text"
+      fi
+    done
   done
 }
 
@@ -547,6 +819,54 @@ check_classifier() {
   if [[ "$found_targetless" -ne 1 ]]; then
     report_failure "RB-CONFORMANCE-CLASSIFIER-MISSING" "$relative_path" "TARGETLESS_MODE-contract-absent"
   fi
+}
+
+check_workflow_active_classification() {
+  local relative_path="agents/bubbles.workflow.agent.md"
+  local file="$root/$relative_path"
+  local section=""
+  local targetless_marker="\`TARGETLESS_MODE\`"
+  local targetless_rule="If \`mode:\` is present without a concrete target, classify the request as \`TARGETLESS_MODE\`."
+
+  require_file "$relative_path" || return
+  section="$(markdown_subtree "$file" "### Phase -1: Intent Resolution (MANDATORY — runs before Phase 0)")"
+  if [[ -z "$section" ]]; then
+    report_failure "RB-CONFORMANCE-WORKFLOW-CLASSIFIER-MISSING" "$relative_path" \
+      "active-phase-minus-one-classifier-absent"
+    return
+  fi
+  case "$section" in
+    *"$targetless_marker"*) ;;
+    *) report_failure "RB-CONFORMANCE-WORKFLOW-CLASSIFIER-MISSING" "$relative_path" \
+         "active-TARGETLESS_MODE-contract-absent" ;;
+  esac
+  if printf '%s\n' "$section" | grep -Fq 'prefer STRUCTURED'; then
+    report_failure "RB-CONFORMANCE-MODE-ONLY-STRUCTURED" "$relative_path" \
+      "active-ambiguity-fallback-prefers-STRUCTURED"
+  fi
+  case "$section" in
+    *"$targetless_rule"*) ;;
+    *) report_failure "RB-CONFORMANCE-MODE-ONLY-STRUCTURED" "$relative_path" \
+         "active-mode-only-targetless-rule-absent" ;;
+  esac
+}
+
+check_active_unqualified_specs_instructions() {
+  local relative_path="$1"
+  local file="$root/$relative_path"
+  local line=""
+
+  require_file "$relative_path" || return
+  while IFS= read -r line; do
+    if printf '%s\n' "$line" | grep -Eiq \
+      '(resolve|search|scan|discover|auto-discover|enumerate|create|cross-reference|execute).*`specs/'; then
+      if ! printf '%s\n' "$line" | grep -Eiq \
+        'resolvedRepositoryRoot|forbidden|never|must not|wrong|non-executable|example|input:'; then
+        report_failure "RB-CONFORMANCE-ACTIVE-RAW-SPECS" "$relative_path" \
+          "active-unqualified-specs-instruction"
+      fi
+    fi
+  done <"$file"
 }
 
 check_scoped_discovery() {
@@ -708,7 +1028,10 @@ check_mode_contract() {
 }
 
 check_classifier
+check_workflow_active_classification
 check_scoped_discovery
+check_active_unqualified_specs_instructions "agents/bubbles.workflow.agent.md"
+check_active_unqualified_specs_instructions "agents/bubbles.iterate.agent.md"
 check_discovery_order "agents/bubbles_shared/workflow-input-bootstrap.md"
 check_discovery_order "agents/bubbles_shared/workflow-execution-loops.md"
 check_discovery_order "agents/bubbles_shared/workflow-phase-engine.md"
@@ -721,11 +1044,18 @@ check_exact_binding_section "agents/bubbles.recap.agent.md" "## CONTINUATION-ENV
 check_exact_binding_section "agents/bubbles.status.agent.md" "## CONTINUATION-ENVELOPE"
 check_exact_binding_section "agents/bubbles.handoff.agent.md" '## Step 1: The "Handoff" Prompt'
 check_exact_binding_section "agents/bubbles_shared/agent-common.md" "## Workflow-Only Continuation Convention (NON-NEGOTIABLE)"
+check_exact_binding_section "agents/bubbles.super.agent.md" "#### FRAMEWORK-ENVELOPE Repository Binding Contract"
+check_exact_binding_section "agents/bubbles.workflow.agent.md" "#### FRAMEWORK-ENVELOPE Consumer Contract"
+check_framework_envelope_consumer_rule
+check_orchestrator_compaction_contracts
 check_result_binding_contract
 check_direct_runners
+check_shared_entry_contract
+check_phase_owner_entry_contracts
 check_scenario_repository_roots
 check_goal_node_contract "agents/bubbles.goal.agent.md" "## Goal Scenario Compilation (Cross-Repo / Multi-Phase)"
 check_goal_node_contract "agents/bubbles.sprint.agent.md" "## Sprint Scenario Execution (Cross-Repo / Multi-Phase Missions)"
+check_compaction_resume_contract
 check_ambient_authority
 check_mode_contract "stochastic-quality-sweep"
 check_mode_contract "iterate"

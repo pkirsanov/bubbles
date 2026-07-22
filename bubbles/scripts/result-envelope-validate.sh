@@ -23,9 +23,9 @@
 #   result-envelope-validate.sh [mode] \
 #     --session-id <id> \
 #     --session-control-file <path> \
-#     --binding-packet-file <path>                # validate repository-sensitive
-#                                                # envelopes against the exact
-#                                                # current actionable packet
+#     --binding-packet-file <path> \
+#     [--scenario-file <path> --node-id <id>]     # goal-node bindings derive
+#                                                # their exact declaration
 #
 # Exit codes:
 #   0  no blocking findings
@@ -60,6 +60,8 @@ MODE="v6-default"  # v6.0 / B3 default: malformed blocks, missing warns.
 SESSION_ID=""
 SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
+SCENARIO_FILE=""
+NODE_ID=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --strict) MODE="strict"; shift;;
@@ -79,6 +81,16 @@ while [[ $# -gt 0 ]]; do
             BINDING_PACKET_FILE="$2"
             shift 2
             ;;
+        --scenario-file)
+            [[ $# -ge 2 ]] || { echo "result-envelope-validate: --scenario-file requires a value" >&2; exit 2; }
+            SCENARIO_FILE="$2"
+            shift 2
+            ;;
+        --node-id)
+            [[ $# -ge 2 ]] || { echo "result-envelope-validate: --node-id requires a value" >&2; exit 2; }
+            NODE_ID="$2"
+            shift 2
+            ;;
     -h|--help)
       sed -n '1,30p' "$0" >&2
       exit 0
@@ -93,12 +105,24 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
     [[ -n "$SESSION_ID" ]] || { echo "result-envelope-validate: --session-id is required with repository binding" >&2; exit 2; }
     [[ -n "$SESSION_CONTROL_FILE" ]] || { echo "result-envelope-validate: --session-control-file is required with repository binding" >&2; exit 2; }
     [[ -n "$BINDING_PACKET_FILE" ]] || { echo "result-envelope-validate: --binding-packet-file is required with repository binding" >&2; exit 2; }
+    if [[ -n "$SCENARIO_FILE" && -z "$NODE_ID" ]] || [[ -z "$SCENARIO_FILE" && -n "$NODE_ID" ]]; then
+        echo "result-envelope-validate: goal-node validation requires both --scenario-file and --node-id" >&2
+        exit 2
+    fi
     [[ -f "$REPOSITORY_BINDING" ]] || { echo "result-envelope-validate: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 2; }
     set +e
-    BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
-        --session-id "$SESSION_ID" \
-        --session-control-file "$SESSION_CONTROL_FILE" \
-        --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+    if [[ -n "$SCENARIO_FILE" ]]; then
+        BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
+            --session-id "$SESSION_ID" \
+            --session-control-file "$SESSION_CONTROL_FILE" \
+            --packet-file "$BINDING_PACKET_FILE" \
+            --scenario-file "$SCENARIO_FILE" --node-id "$NODE_ID" 2>&1)"
+    else
+        BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
+            --session-id "$SESSION_ID" \
+            --session-control-file "$SESSION_CONTROL_FILE" \
+            --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+    fi
     BINDING_RC=$?
     set -e
     if [[ "$BINDING_RC" -ne 0 ]]; then

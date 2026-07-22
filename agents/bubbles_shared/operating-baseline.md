@@ -170,10 +170,12 @@ Compact eagerly, before the next dispatch. Do not wait for the model to start tr
 ### How To Compact
 
 1. For each raw RESULT-ENVELOPE older than the latest 2 (which stay in working memory verbatim):
-   - Run `bash bubbles/scripts/context-compactor.sh <raw-result-file>` against the saved raw envelope.
+  - For a repository-sensitive result, first validate the current actionable packet, then run `bash bubbles/scripts/context-compactor.sh --session-id <session-id> --session-control-file <control-file> --binding-packet-file <packet-file> <raw-result-file>` against the saved raw envelope. The compactor refuses a repository-sensitive result when any binding input is omitted, stale, substituted, redacted, or malformed.
+  - For a legacy result with no repository binding fields, run `bash bubbles/scripts/context-compactor.sh <raw-result-file>`.
    - Append the resulting single-line JSON record to `compactedHistory[]` in `.specify/memory/bubbles.session.json`.
 2. After appending, DELETE that raw envelope from in-context working memory. Keep only the latest 2 raw envelopes plus the full `compactedHistory` ledger in scope.
 3. The compactor is idempotent — re-running it on the same input file produces a byte-identical record. Re-compacting is safe.
+4. Before repository-local work resumes from a compacted record, reconstruct the packet from `repositoryRoot`, `repositoryAlias`, and the nested `repositoryResolution`, then run `bubbles/scripts/repository-binding.sh validate-packet` against the current control record. A failed validation is a refusal before reads or dispatch. Never reconstruct repository identity from CWD, prompt text, workspace order, or the flattened compatibility fields.
 
 ### What MUST Be Preserved (Non-Negotiable)
 
@@ -181,6 +183,7 @@ Compact eagerly, before the next dispatch. Do not wait for the model to start tr
 - All `nextRequiredOwner` chain entries — orchestrators rely on these for routing decisions.
 - All `blockedReason` strings — never collapse a blocked finding into "all good".
 - All artifact paths (`artifactsCreated`, `artifactsUpdated`).
+- The exact current repository decision: `repositoryRoot`, `repositoryAlias`, and every nested `repositoryResolution` field (`sessionId`, `decisionId`, `controlRevision`, `authority`, `transition`, `scopeKind`, `scopeId`, `targetKind`, `pathVisibility`, `actionable`).
 - The `rawPointer` field — every compact record MUST point back to the original raw envelope file so an operator (or audit) can drill in.
 
 Truncation may only affect verbose narrative or evidence prose, never the structural routing fields above.

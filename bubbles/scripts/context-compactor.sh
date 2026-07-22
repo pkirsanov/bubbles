@@ -18,6 +18,10 @@ if command -v gawk >/dev/null 2>&1; then awk() { command gawk "$@"; }; fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_BINDING="$SCRIPT_DIR/repository-binding.sh"
+GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
+[[ -f "$GUARD_LIB" ]] || { echo "context-compactor: guard-lib.sh missing at $GUARD_LIB" >&2; exit 2; }
+# shellcheck source=/dev/null
+source "$GUARD_LIB"
 
 usage() {
   cat <<'EOF'
@@ -42,6 +46,11 @@ Behavior:
   - Extracts: agent, outcome, featureDir, scopeIds, dodItems,
     artifactsCreated, artifactsUpdated, evidenceRefs, nextRequiredOwner,
     blockedReason, timestamp, rawPointer.
+  - With repository binding, preserves repositoryRoot, repositoryAlias, and
+    the exact nested repositoryResolution packet for validation on resume.
+    Legacy flattened binding fields remain present for existing readers.
+  - Without repository binding, emits stdout only and performs no
+    repository-local session mutation.
   - Long evidence values are truncated to the first 5 lines with a
     "...N more lines" sentinel; the rawPointer field preserves the path
     back to the original raw envelope so an operator can drill in.
@@ -59,6 +68,8 @@ EOF
 SESSION_ID=""
 SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
+SCENARIO_FILE=""
+NODE_ID=""
 raw_file=""
 
 while [[ $# -gt 0 ]]; do
@@ -76,6 +87,16 @@ while [[ $# -gt 0 ]]; do
     --binding-packet-file)
       [[ $# -ge 2 ]] || { echo "context-compactor: --binding-packet-file requires a value" >&2; exit 2; }
       BINDING_PACKET_FILE="$2"
+      shift 2
+      ;;
+    --scenario-file)
+      [[ $# -ge 2 ]] || { echo "context-compactor: --scenario-file requires a value" >&2; exit 2; }
+      SCENARIO_FILE="$2"
+      shift 2
+      ;;
+    --node-id)
+      [[ $# -ge 2 ]] || { echo "context-compactor: --node-id requires a value" >&2; exit 2; }
+      NODE_ID="$2"
       shift 2
       ;;
     -h|--help)
@@ -102,12 +123,24 @@ if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE
   [[ -n "$SESSION_ID" ]] || { echo "context-compactor: --session-id is required with repository binding" >&2; exit 2; }
   [[ -n "$SESSION_CONTROL_FILE" ]] || { echo "context-compactor: --session-control-file is required with repository binding" >&2; exit 2; }
   [[ -n "$BINDING_PACKET_FILE" ]] || { echo "context-compactor: --binding-packet-file is required with repository binding" >&2; exit 2; }
+  if [[ -n "$SCENARIO_FILE" && -z "$NODE_ID" ]] || [[ -z "$SCENARIO_FILE" && -n "$NODE_ID" ]]; then
+    echo "context-compactor: goal-node validation requires both --scenario-file and --node-id" >&2
+    exit 2
+  fi
   [[ -f "$REPOSITORY_BINDING" ]] || { echo "context-compactor: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 2; }
   set +e
-  BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
-    --session-id "$SESSION_ID" \
-    --session-control-file "$SESSION_CONTROL_FILE" \
-    --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+  if [[ -n "$SCENARIO_FILE" ]]; then
+    BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
+      --session-id "$SESSION_ID" \
+      --session-control-file "$SESSION_CONTROL_FILE" \
+      --packet-file "$BINDING_PACKET_FILE" \
+      --scenario-file "$SCENARIO_FILE" --node-id "$NODE_ID" 2>&1)"
+  else
+    BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" validate-packet \
+      --session-id "$SESSION_ID" \
+      --session-control-file "$SESSION_CONTROL_FILE" \
+      --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+  fi
   BINDING_RC=$?
   set -e
   if [[ "$BINDING_RC" -ne 0 ]]; then
@@ -280,14 +313,14 @@ truncate_text() {
 file_timestamp() {
   local f="$1"
   local epoch
-  if epoch="$(stat -c %Y "$f" 2>/dev/null)"; then
-    date -u -d "@$epoch" '+%Y-%m-%dT%H:%M:%SZ'
-  elif epoch="$(stat -f %m "$f" 2>/dev/null)"; then
-    date -u -r "$epoch" '+%Y-%m-%dT%H:%M:%SZ'
-  else
+  epoch="$(bubbles_file_mtime_epoch "$f")" || {
     echo "context-compactor: unable to read mtime of $f" >&2
     exit 1
+  }
+  if date -u -d "@$epoch" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null; then
+    return 0
   fi
+  date -u -r "$epoch" '+%Y-%m-%dT%H:%M:%SZ'
 }
 
 agent_v="$(extract_any "$raw_file" agent Agent)"
@@ -313,7 +346,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
   transition_v="$(extract_binding_scalar transition "$raw_file")"
   scope_kind_v="$(extract_binding_scalar scopeKind "$raw_file")"
   scope_id_v="$(extract_binding_scalar scopeId "$raw_file")"
-    target_kind_v="$(extract_binding_scalar targetKind "$raw_file")"
+  target_kind_v="$(extract_binding_scalar targetKind "$raw_file")"
   path_visibility_v="$(extract_binding_scalar pathVisibility "$raw_file")"
   actionable_v="$(extract_binding_scalar actionable "$raw_file")"
 
@@ -331,7 +364,7 @@ if [[ "$BINDING_REQUIRED" == true ]]; then
        --arg transition "$transition_v" \
        --arg scope_kind "$scope_kind_v" \
        --arg scope_id "$scope_id_v" \
-      --arg target_kind "$target_kind_v" \
+        --arg target_kind "$target_kind_v" \
        --arg visibility "$path_visibility_v" \
        --arg actionable "$actionable_v" \
        '.repositoryRoot == $root and
@@ -386,6 +419,20 @@ emit_nullable_binding() {
   if [[ "$BINDING_REQUIRED" == true ]]; then
     printf '"repositoryRoot":%s,' "$(emit "$repository_root_v")"
     printf '"repositoryAlias":%s,' "$(emit "$repository_alias_v")"
+    printf '"repositoryResolution":{'
+    printf '"sessionId":%s,' "$(emit "$session_id_v")"
+    printf '"decisionId":%s,' "$(emit "$decision_id_v")"
+    printf '"controlRevision":%s,' "$control_revision_v"
+    printf '"authority":%s,' "$(emit "$authority_v")"
+    printf '"transition":%s,' "$(emit "$transition_v")"
+    printf '"scopeKind":%s,' "$(emit "$scope_kind_v")"
+    printf '"scopeId":%s,' "$(emit_nullable_binding "$scope_id_v")"
+    printf '"targetKind":%s,' "$(emit "$target_kind_v")"
+    printf '"pathVisibility":%s,' "$(emit "$path_visibility_v")"
+    printf '"actionable":%s' "$actionable_v"
+    printf '},'
+    # Retain the original flattened fields for additive compatibility with
+    # readers introduced before resumable repository packets.
     printf '"sessionId":%s,' "$(emit "$session_id_v")"
     printf '"decisionId":%s,' "$(emit "$decision_id_v")"
     printf '"controlRevision":%s,' "$control_revision_v"
@@ -423,24 +470,10 @@ emit_nullable_binding() {
 # running the compactor against a one-off raw envelope file outside any
 # repo (e.g., to inspect a saved transition packet). We swallow any
 # failure on stderr and exit 0.
-if command -v jq >/dev/null 2>&1; then
-  # Bound compaction derives its write target only from the validated packet.
-  # Legacy compaction retains the established environment/walk-up behavior.
-  if [[ "$BINDING_REQUIRED" == true ]]; then
-    _comp_repo_root="$BINDING_REPOSITORY_ROOT"
-  elif [[ -n "${BUBBLES_REPO_ROOT:-}" && -d "$BUBBLES_REPO_ROOT/.specify/memory" ]]; then
-    _comp_repo_root="$BUBBLES_REPO_ROOT"
-  else
-    _comp_repo_root=""
-    _comp_search_dir="$(dirname "$raw_abs")"
-    while [[ "$_comp_search_dir" != "/" && -n "$_comp_search_dir" ]]; do
-      if [[ -d "$_comp_search_dir/.specify/memory" ]]; then
-        _comp_repo_root="$_comp_search_dir"
-        break
-      fi
-      _comp_search_dir="$(dirname "$_comp_search_dir")"
-    done
-  fi
+if command -v jq >/dev/null 2>&1 && [[ "$BINDING_REQUIRED" == true ]]; then
+  # A repository-local mutation derives its target only from the validated
+  # actionable packet. Unbound use remains a pure stdout transformation.
+  _comp_repo_root="$BINDING_REPOSITORY_ROOT"
   if [[ -n "$_comp_repo_root" ]]; then
     _comp_session_file="$_comp_repo_root/.specify/memory/bubbles.session.json"
     if [[ -f "$_comp_session_file" ]]; then
