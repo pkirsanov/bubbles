@@ -2472,10 +2472,10 @@ run_front_doors_goal_nodes_goal_cases() {
 run_conformance_suite() {
   local case_id="RB-CONFORMANCE-GUARD-FIXTURES"
 
-  echo "=== IMP-103 S3-S4 repository-binding conformance selftest ==="
+  echo "=== IMP-103 S3 repository-binding conformance selftest ==="
   echo "SUITE conformance"
   echo "PRODUCTION guard=$CONFORMANCE_GUARD selftest=$CONFORMANCE_SELFTEST"
-  begin_case "$case_id" "The hermetic conformance matrix requires a clean pass and rejects every prohibited source bypass."
+  begin_case "$case_id" "The S3 hermetic conformance matrix requires a clean pass and rejects every prohibited classifier or discovery bypass."
   invoke_real_script "$case_id" "repository-binding conformance fixtures execute" \
     "$WORKSPACE_DIR" "$CONFORMANCE_SELFTEST"
   assert_real_selftest_green "$case_id" "repository-binding conformance fixtures all satisfy expected pass/fail outcomes"

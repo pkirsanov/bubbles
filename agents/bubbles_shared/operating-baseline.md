@@ -2,6 +2,12 @@
 
 Use this file for shared operating behavior instead of duplicating the same session/loading/loop prose in prompts.
 
+## Repository Authority Baseline
+
+Prompt source, chat CWD, process CWD, active editor, tool CWD, recent file access, workspace declaration order, and host repository metadata are diagnostic-only. They cannot establish, switch, repair, break ties for, or override repository authority.
+
+Repository authority is limited to valid explicit repository or concrete target intent, one valid durable same-session work boundary, or the sole eligible repository in a true single-repository workspace. Every repository-sensitive command requires repository-binding preflight before repository-local state, relative expansion, scans, selection, commands, or dispatch; unresolved multi-root authority refuses with zero repository-local side effects.
+
 ## Project-Agnostic Indirection
 
 Agents MUST resolve project-specific commands, ports, paths, and policy details through `.specify/memory/agents.md`, `.specify/memory/constitution.md`, and `.github/copilot-instructions.md`. Do not hardcode project-specific values into portable prompts.
