@@ -14,6 +14,25 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### Gate G095 hardened — file-on-discovery, no report-and-wait
+
+Strengthened the Discovered-Issue Disposition contract (Gate G095) so agents
+FILE findings the instant they are observed instead of reporting them to the
+user for authorization. `operating-baseline.md` adds a `status-adjusted`
+disposition (immediate spec/scope/DoD status flip — `status` off `done` /
+`requiresRevalidation:true` / unchecked `- [ ]` — when a finding invalidates a
+completion claim) plus an explicit "File on discovery — not report-and-wait"
+rule: `bug-filed`/`spec-filed`/`ops-filed` mean the artifact exists on disk this
+turn, `routed` means a concrete packet was emitted this turn, and handing the
+user an unfiled findings list ("recommend filing", "should be filed",
+"defer to a future workflow") is forbidden. The mechanical guard
+`discovered-issue-disposition-guard.sh` gained report-and-wait / defer-filing
+forbidden phrases (with two new adversarial selftest cases S7/S8), and the
+stochastic-sweep loop (`workflow-execution-loops.md`, `bubbles.workflow.agent.md`)
+now forbids report-and-wait on filing even for discovery-only rounds. Skills
+`bubbles-fix-cycle-protocol` and `bubbles-quality-gates-catalog` and the gate
+registry (`gates.yaml` G095) updated to match.
+
 ### IMP-100 systematic improvement program — COMPLETE (consolidated plan retired)
 
 The IMP-100 master systematic-improvement program (Phases 0–6, absorbing
