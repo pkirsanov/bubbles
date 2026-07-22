@@ -16,11 +16,15 @@ set -euo pipefail
 # See: agents/bubbles_shared/operating-baseline.md
 #      → "Per-Turn State Snapshot"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOSITORY_BINDING="$SCRIPT_DIR/repository-binding.sh"
+
 usage() {
   cat <<'EOF'
 Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
-         [--convergence-iteration <N> --spec-dir <path>]
+         [--convergence-iteration <N> --spec-dir <path>] \
+         [--session-id <id> --session-control-file <path> --binding-packet-file <path>]
 
 Required:
   --phase <name>       Phase the orchestrator is entering or closing
@@ -40,6 +44,13 @@ Optional:
   --spec-dir <path>    Spec directory (repo-relative) that the
                        convergence iteration refers to. Paired with
                        --convergence-iteration.
+  --session-id <id>    Current interactive session id. Required together
+                       with both binding file options for repository-sensitive
+                       snapshots.
+  --session-control-file <path>
+                       Host-private authoritative session control record.
+  --binding-packet-file <path>
+                       Current local actionable repository binding packet.
   -h, --help           Print this usage and exit.
 
 Behavior:
@@ -76,6 +87,9 @@ NOTE=""
 MODE="start"
 CONV_ITER=""
 SPEC_DIR=""
+SESSION_ID=""
+SESSION_CONTROL_FILE=""
+BINDING_PACKET_FILE=""
 
 if [[ $# -eq 0 ]]; then
   usage >&2
@@ -118,6 +132,21 @@ while [[ $# -gt 0 ]]; do
       SPEC_DIR="$2"
       shift 2
       ;;
+    --session-id)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --session-id requires a value" >&2; exit 2; }
+      SESSION_ID="$2"
+      shift 2
+      ;;
+    --session-control-file)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --session-control-file requires a value" >&2; exit 2; }
+      SESSION_CONTROL_FILE="$2"
+      shift 2
+      ;;
+    --binding-packet-file)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --binding-packet-file requires a value" >&2; exit 2; }
+      BINDING_PACKET_FILE="$2"
+      shift 2
+      ;;
     *)
       echo "state-snapshot: unknown argument: $1" >&2
       usage >&2
@@ -158,6 +187,14 @@ case "$MODE" in
     ;;
 esac
 
+BINDING_REQUIRED=false
+if [[ -n "$SESSION_ID" || -n "$SESSION_CONTROL_FILE" || -n "$BINDING_PACKET_FILE" ]]; then
+  BINDING_REQUIRED=true
+  [[ -n "$SESSION_ID" ]] || { echo "state-snapshot: --session-id is required for repository-sensitive snapshots" >&2; exit 2; }
+  [[ -n "$SESSION_CONTROL_FILE" ]] || { echo "state-snapshot: --session-control-file is required for repository-sensitive snapshots" >&2; exit 2; }
+  [[ -n "$BINDING_PACKET_FILE" ]] || { echo "state-snapshot: --binding-packet-file is required for repository-sensitive snapshots" >&2; exit 2; }
+fi
+
 # --- jq dependency check ---------------------------------------------------
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -185,11 +222,27 @@ resolve_repo_root() {
   return 1
 }
 
-REPO_ROOT="$(resolve_repo_root || true)"
-if [[ -z "$REPO_ROOT" ]]; then
-  echo "state-snapshot: unable to resolve repo root (no .specify/memory found)." >&2
-  echo "  Set BUBBLES_REPO_ROOT explicitly or run from inside a Bubbles repo." >&2
-  exit 4
+if [[ "$BINDING_REQUIRED" == true ]]; then
+  [[ -f "$REPOSITORY_BINDING" ]] || { echo "state-snapshot: repository binding validator missing at $REPOSITORY_BINDING" >&2; exit 3; }
+  set +e
+  BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" mirror-session \
+    --session-id "$SESSION_ID" \
+    --session-control-file "$SESSION_CONTROL_FILE" \
+    --packet-file "$BINDING_PACKET_FILE" 2>&1)"
+  BINDING_RC=$?
+  set -e
+  if [[ "$BINDING_RC" -ne 0 ]]; then
+    printf '%s\n' "$BINDING_OUTPUT" >&2
+    exit "$BINDING_RC"
+  fi
+  REPO_ROOT="$(jq -r '.repositoryRoot' "$BINDING_PACKET_FILE")"
+else
+  REPO_ROOT="$(resolve_repo_root || true)"
+  if [[ -z "$REPO_ROOT" ]]; then
+    echo "state-snapshot: unable to resolve repo root (no .specify/memory found)." >&2
+    echo "  Set BUBBLES_REPO_ROOT explicitly or run from inside a Bubbles repo." >&2
+    exit 4
+  fi
 fi
 
 SESSION_DIR="$REPO_ROOT/.specify/memory"
