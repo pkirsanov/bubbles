@@ -195,9 +195,9 @@ Before any final completion claim, confirm:
 - test and evidence gates are satisfied
 - no required live-stack gaps remain
 
-## Gate Family Reference (G082–G128)
+## Gate Family Reference (G082–G129)
 
-> **Range:** the canonical gate set runs G001–G128 (G096 is burned; G101 is the
+> **Range:** the canonical gate set runs G001–G129 (G096 is burned; G101 is the
 > release-delivery reconciliation gate; G102–G109 is a reserved gap). The
 > sections above narrate the foundational gates
 > (G001–G081) by topic. This reference covers the later gate families so the
@@ -242,10 +242,11 @@ Before any final completion claim, confirm:
 **Cross-train propagation (G121–G123)** — `bubbles.propagate`; `propagation-policy-guard.sh`:
 - **G121** propagation policy declared · **G122** receiving-train validation required · **G123** propagation ledger recorded (append-only).
 
-**Incident, framework-health, model-tier, capability-consumer, session-cap (G124–G128)**:
+**Incident, framework-health, model-tier, capability-consumer, session-cap, repository affinity (G124–G129)**:
 - **G124** `incident_severity_declared_gate` — `incident-fastlane` classifies each finding's severity; an incident routes rollback to `bubbles.train`.
 - **G125** `framework_health_evidence_gate` — `bubbles.retro target: framework` emits a proposal under `improvements/` and never mutates framework files (`retro-framework-health.sh`).
 - **G126** `model_tier_floor_gate` — high-stakes phases enforce a model floor when declared (`model-tier-advisory.sh`).
 - **G127** `capability_consumer_freshness_gate` — every `state: shipped` capability in `capability-ledger.yaml` declares a non-empty `consumers:` list whose paths exist (`capability-consumer-freshness.sh`).
 - **G128** `session_cap_enforcement_gate` — BLOCKING; the aggregate (whole-session) sibling of G082. Mechanically enforces the `sessionBudget` caps (`maxTotalConvergenceIterations`/`maxWallClockMinutes`/`maxToolCalls`) recorded in `.specify/memory/bubbles.session.json`; default-off (all caps null → no-op), enforced only when a cap is set AND measurable, RFC3339 wall-clock math via jq (GNU/BSD-identical), no `--skip`/`--force` bypass, invoked as state-transition Check 40 (`session-cap-guard.sh`).
+- **G129** `repository_binding_classification_discovery_conformance_gate` — BLOCKING; rejects ambient repository inference by requiring an actionable same-session repository decision before repository-local state/discovery/dispatch, normalizing explicit roots before binding, treating the repo-local session snapshot as a post-selection mirror only, refusing unbound multi-root targetless work, confining discovery to `resolvedRepositoryRoot/specs`, preserving exact session/root/decision/revision and scoped goal-node provenance, redacting public projections, and retaining upstream-first ownership. Enforced by `repository-binding.sh` plus `repository-binding-conformance-guard.sh`; no bypass.
 - no fabricated, deferred, or contradictory claims remain
