@@ -12,7 +12,7 @@
 <p align="center">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-41-58a6ff?style=flat-square" alt="41 agents">
-  <img src="https://img.shields.io/badge/gates-109-3fb950?style=flat-square" alt="109 gates">
+  <img src="https://img.shields.io/badge/gates-110-3fb950?style=flat-square" alt="110 gates">
   <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_46_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+46 v5 aliases)">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
@@ -59,7 +59,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <table>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>41 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
-<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>109 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
+<tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>110 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
 <tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 46 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
@@ -199,6 +199,8 @@ Control-plane law:
 - Orchestrators dispatch work and keep it moving; they do not implement fixes directly.
 - Workflow execution is default-deny: only agents listed in `workflowModeGrants` may run modes.
 - An authorized top-level runner interprets the mode and invokes specialist phase owners directly. Workflow-running orchestrators never invoke one another as subagents.
+- Repository-sensitive front doors commit one canonical work repository before local state, target expansion, `specs/` discovery, repository commands, or specialist dispatch. Explicit target intent outranks the same-session durable boundary; only a true single-repository inventory may auto-bind.
+- A mode-only invocation is `TARGETLESS_MODE`, not repository authority. Multi-root ambiguity refuses, and local actionable packets are distinct from redacted non-actionable public projections.
 - Owners and execution specialists produce concrete code, test, doc, or artifact deltas.
 - Diagnostic and certification agents finish with concrete result envelopes and owner-targeted packets instead of inline remediation.
 
@@ -504,7 +506,7 @@ Bubbles enforces a strict quality system. This isn't optional.
 Every piece of evidence must come from **actual terminal execution**. Writing "tests pass" without running tests is fabrication. Fabrication is detected and rejected.
 
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_START -->
-### 109 Quality Gates
+### 110 Quality Gates
 <!-- GENERATED:FRAMEWORK_STATS_GATES_HEADING_END -->
 Every scope must pass all applicable gates before completion. Gates check everything from test coverage to evidence integrity to DoD completeness.
 
@@ -536,7 +538,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 22 shipped, 1 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 22 shipped, 2 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
@@ -544,9 +546,9 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 61 workflow modes explained</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 <tr><td><a href="docs/guides/INTEROP_MIGRATION.md">Interop Migration Guide</a></td><td>Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems</td></tr>
-<tr><td><a href="docs/guides/CONTROL_PLANE_DESIGN.md">Control Plane Design</a></td><td>Proposed architecture for registry-driven delegation, validate-owned certification, lockdown, and scenario contracts</td></tr>
+<tr><td><a href="docs/guides/CONTROL_PLANE_DESIGN.md">Control Plane Design</a></td><td>Architecture for repository binding, registry-driven delegation, validate-owned certification, lockdown, and scenario contracts</td></tr>
 <tr><td><a href="docs/guides/CONTROL_PLANE_ROLLOUT.md">Control Plane Rollout</a></td><td>Phased implementation plan for the control-plane redesign across all requested changes</td></tr>
-<tr><td><a href="docs/guides/CONTROL_PLANE_SCHEMAS.md">Control Plane Schemas</a></td><td>Proposed schema set for capability registry, policy defaults, scenario manifests, certification state, and rework packets</td></tr>
+<tr><td><a href="docs/guides/CONTROL_PLANE_SCHEMAS.md">Control Plane Schemas</a></td><td>Active and extension schemas for repository decisions, capability registry, policy defaults, scenario manifests, certification state, and rework packets</td></tr>
 <tr><td><a href="docs/recipes/">Recipes</a></td><td>Common problems → solutions</td></tr>
 <tr><td><a href="docs/guides/INSTALLATION.md">Installing in Your Repo</a></td><td>Step-by-step setup guide</td></tr>
 <tr><td><a href="docs/examples/">Spec Examples</a></td><td>Annotated reference examples for common patterns</td></tr>

@@ -201,6 +201,29 @@ Owner decisions this proposal reserved (recorded for future action): the
 compact-packet principle, the durable evidence-backend policy, the compact rollout
 threshold, and the assurance migration date/version.
 
+### IMP-103 durable work-repository boundary — release closure reconciled; kept unreleased/partial
+
+- Adds durable same-session repository affinity for repository-sensitive work,
+  with authority resolved as explicit target > persisted boundary > sole eligible
+  root. Targetless multi-root ambiguity refuses instead of choosing from ambient
+  workspace context, and targetless `mode:` requests enter `TARGETLESS_MODE` before
+  mode-specific target handling.
+- Scopes repository-local discovery to the resolved root and
+  propagates the exact actionable binding packet through dispatch, result,
+  continuation, handoff, and
+  compaction; keeps explicit cross-repository goal-node targets node-scoped; and
+  makes public redacted projections non-actionable. Repository selection preserves
+  upstream-first ownership of canonical framework source.
+- Registers blocking gate G129 and includes focused repository-binding regression
+  and source-conformance coverage.
+- Release-owner decision (S5B closure): NO `VERSION` bump — `VERSION` stays
+  `7.20.2` and the capability stays `state: partial` / `releaseIntroduced:
+  unreleased` under `[Unreleased]`, not published or tagged. Rationale: a partial,
+  unreleased capability is not assigned a release version, and a MINOR bump would
+  falsely assert release. Generated capability/gate projections, installer
+  coverage, and the release manifest are reconciled to the certified S4H/S5A
+  sources in this closure.
+
 ### IMP-006 journey full-stack tutorial hardening — packet finalized
 
 - The `bubbles.journey` agent-contract hardening (SCOPE-1–6: four-layer per-step
