@@ -59,20 +59,8 @@ jobs:
           for path in "${changed_files[@]}"; do
             after="$(git show "$head:$path" 2>/dev/null || true)"
             before="$(git show "$base:$path" 2>/dev/null || true)"
-            after_status="$(echo "$after" | python3 -c 'import json,sys
-try:
-  d=json.loads(sys.stdin.read())
-  s=d.get("status","")
-  print(s if isinstance(s,str) else "")
-except Exception:
-  pass' 2>/dev/null || true)"
-            before_status="$(echo "$before" | python3 -c 'import json,sys
-try:
-  d=json.loads(sys.stdin.read())
-  s=d.get("status","")
-  print(s if isinstance(s,str) else "")
-except Exception:
-  pass' 2>/dev/null || true)"
+            after_status="$(echo "$after" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); s=d.get("status",""); print(s if isinstance(s,str) else "")' 2>/dev/null || true)"
+            before_status="$(echo "$before" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); s=d.get("status",""); print(s if isinstance(s,str) else "")' 2>/dev/null || true)"
             if [[ "$after_status" == "done" ]] && [[ "$before_status" != "done" ]]; then
               promoted_features+=("$(dirname "$path")")
             fi

@@ -185,6 +185,13 @@ run_check_self_only "Inventory parity check (live, IMP-005)" bash "$SCRIPT_DIR/i
 # included), and the guard no-ops gracefully outside a git work tree.
 run_check "Case-collision guard selftest (IMP-017)" bash "$SCRIPT_DIR/case-collision-guard-selftest.sh"
 run_check "Case-collision guard (live, IMP-017)" bash "$SCRIPT_DIR/case-collision-guard.sh" --repo-root "$REPO_ROOT"
+# Workflow YAML validity (IMP-102 / SCOPE-3): live scan of every
+# .github/workflows/*.yml|*.yaml PLUS an always-on adversarial red fixture
+# reproducing the col-0 python-continuation defect that silently disabled the
+# CI state-transition anti-fabrication chain. Not source-only — a workflow
+# GitHub cannot load is a defect in ANY repo; it no-ops when no workflows /
+# no PyYAML are present.
+run_check "Workflow YAML validity selftest (IMP-102 / SCOPE-3)" bash "$SCRIPT_DIR/workflow-yaml-validity-selftest.sh"
 # macOS/WSL portability guard: run its HERMETIC selftest (green + one red fixture
 # per class + self-portability), NOT a scan of the framework's own scripts (which
 # intentionally use raw timeout/sed -i mediated by guard-lib + the PATH shim).
