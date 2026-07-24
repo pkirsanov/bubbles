@@ -13,6 +13,7 @@ Every repository-sensitive producer retains the current actionable packet withou
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind

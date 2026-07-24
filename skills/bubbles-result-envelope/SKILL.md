@@ -23,6 +23,7 @@ Before consuming or emitting a repository-sensitive result, validate the inherit
 - `repositoryResolution.sessionId`
 - `repositoryResolution.decisionId`
 - `repositoryResolution.controlRevision`
+- `repositoryResolution.controlPathDigest`
 - `repositoryResolution.authority`
 - `repositoryResolution.transition`
 - `repositoryResolution.scopeKind`

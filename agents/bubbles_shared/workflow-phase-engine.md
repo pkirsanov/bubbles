@@ -13,6 +13,7 @@ Every repository-sensitive consumer requires all of these fields unchanged:
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind

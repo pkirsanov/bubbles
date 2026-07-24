@@ -79,6 +79,7 @@ with `repository-binding.sh validate-packet` before repository-local work.
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -150,6 +151,7 @@ binding to remain unchanged.
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -190,6 +192,7 @@ Validate with `repository-binding.sh validate-packet` before operation execution
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -542,6 +545,42 @@ assert_guard_exit "$case_id" "continuation field-drop fixture fails" 1
 assert_guard_reports "$case_id" "continuation field-drop failure is identified" "RB-CONFORMANCE-BINDING-FIELDS-DROPPED"
 end_case "$case_id"
 
+case_id="RB-CONFORMANCE-CONTROL-PATH-DIGEST-DROPPED"
+begin_case "$case_id" "A repository-binding contract that drops only controlPathDigest is rejected."
+fixture="$(stage_clean_fixture control-path-digest-dropped)" || exit 2
+cat >"$fixture/agents/bubbles.recap.agent.md" <<'EOF'
+## CONTINUATION-ENVELOPE
+
+- repositoryRoot
+- repositoryAlias
+- repositoryResolution.sessionId
+- repositoryResolution.decisionId
+- repositoryResolution.controlRevision
+- repositoryResolution.authority
+- repositoryResolution.transition
+- repositoryResolution.scopeKind
+- repositoryResolution.scopeId
+- repositoryResolution.targetKind
+- repositoryResolution.pathVisibility
+- repositoryResolution.actionable
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "control-path digest field-drop fixture fails" 1
+assert_guard_reports "$case_id" "control-path digest failure is identified" "missing-field=repositoryResolution.controlPathDigest"
+end_case "$case_id"
+
+case_id="RB-CONFORMANCE-STATE-SNAPSHOT-UNBOUND"
+begin_case "$case_id" "A repository-local state-snapshot invocation without the complete binding triplet is rejected."
+fixture="$(stage_clean_fixture state-snapshot-unbound)" || exit 2
+cat >>"$fixture/agents/bubbles.goal.agent.md" <<'EOF'
+
+Every iteration runs `bash bubbles/scripts/state-snapshot.sh --convergence-iteration <N> --spec-dir <specDir>`.
+EOF
+run_guard "$fixture"
+assert_guard_exit "$case_id" "unbound state-snapshot fixture fails" 1
+assert_guard_reports "$case_id" "unbound state-snapshot failure is identified" "RB-CONFORMANCE-STATE-SNAPSHOT-UNBOUND"
+end_case "$case_id"
+
 case_id="RB-CONFORMANCE-COMPACTION-RESUME-UNPORTED"
 begin_case "$case_id" "A compaction contract that omits bound invocation and exact packet validation on resume is rejected."
 fixture="$(stage_clean_fixture compaction-resume-unported)" || exit 2
@@ -613,6 +652,7 @@ cat >"$fixture/skills/bubbles-result-envelope/SKILL.md" <<'EOF'
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -716,6 +756,7 @@ cat >"$fixture/agents/bubbles_shared/agent-common.md" <<'EOF'
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -756,6 +797,7 @@ Validate with `repository-binding.sh validate-packet` and preserve the exact bin
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind
@@ -872,6 +914,7 @@ repository-local work. After `PREFLIGHT_COMMITTED`, call
 - repositoryResolution.sessionId
 - repositoryResolution.decisionId
 - repositoryResolution.controlRevision
+- repositoryResolution.controlPathDigest
 - repositoryResolution.authority
 - repositoryResolution.transition
 - repositoryResolution.scopeKind

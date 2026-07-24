@@ -65,13 +65,15 @@ write_clean() {
   ]
 }
 JSON
-  jq --arg root "$REPO_ROOT" --arg session "scenario-selftest" '
+  jq --arg root "$REPO_ROOT" --arg session "scenario-selftest" \
+    --arg controlPathDigest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" '
     .repos |= map(. + {repositoryRoot: $root, repositoryAlias: .id})
     | .nodes |= map(. + {
         repositoryResolution: {
           sessionId: $session,
           decisionId: ("rb:" + $session + ":1:node:" + .id),
           controlRevision: 1,
+          controlPathDigest: $controlPathDigest,
           authority: "scoped-scenario-node",
           transition: "scoped-override",
           scopeKind: "goal-node",
@@ -241,13 +243,15 @@ write_covered() {
   ]
 }
 JSON
-  jq --arg root "$REPO_ROOT" --arg session "coverage-selftest" '
+  jq --arg root "$REPO_ROOT" --arg session "coverage-selftest" \
+    --arg controlPathDigest "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" '
     .repos |= map(. + {repositoryRoot: $root, repositoryAlias: .id})
     | .nodes |= map(. + {
         repositoryResolution: {
           sessionId: $session,
           decisionId: ("rb:" + $session + ":1:node:" + .id),
           controlRevision: 1,
+          controlPathDigest: $controlPathDigest,
           authority: "scoped-scenario-node",
           transition: "scoped-override",
           scopeKind: "goal-node",

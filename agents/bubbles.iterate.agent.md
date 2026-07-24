@@ -217,6 +217,7 @@ When `bubbles.iterate` is invoked by `bubbles.workflow` (or another orchestrator
 - **repositoryResolution.sessionId:** <exact session id>
 - **repositoryResolution.decisionId:** <exact decision id>
 - **repositoryResolution.controlRevision:** <exact control revision>
+- **repositoryResolution.controlPathDigest:** <exact canonical external control-path digest>
 - **repositoryResolution.authority:** <exact authority>
 - **repositoryResolution.transition:** <exact transition>
 - **repositoryResolution.scopeKind:** command
@@ -307,7 +308,7 @@ When accumulating subagent `RESULT-ENVELOPE`s across the iterate work loop, foll
 
 ## Convergence Cap (Gate G082 — MANDATORY)
 
-The iterate work loop is bounded by `maxConvergenceIterations` in `bubbles/workflows.yaml` (default 10). The cap is mechanically enforced by `bubbles/scripts/convergence-cap-guard.sh` (registered as Gate `G082` and invoked as Check 23 inside `bubbles/scripts/state-transition-guard.sh`). Every iteration of this loop MUST record progress by calling `bash bubbles/scripts/state-snapshot.sh --convergence-iteration <N> --spec-dir <specDir>` with `BUBBLES_AGENT_NAME=bubbles.iterate` in env. When the guard reports the cap exceeded for a given spec, this agent MUST emit a `blocked` RESULT-ENVELOPE whose `unresolvedFindings[]` includes finding `G082` and MUST NOT start another iteration for that spec in the same session.
+The iterate work loop is bounded by `maxConvergenceIterations` in `bubbles/workflows.yaml` (default 10). The cap is mechanically enforced by `bubbles/scripts/convergence-cap-guard.sh` (registered as Gate `G082` and invoked as Check 23 inside `bubbles/scripts/state-transition-guard.sh`). Every iteration of this loop MUST record progress by calling `bash bubbles/scripts/state-snapshot.sh --convergence-iteration <N> --spec-dir <specDir> --session-id <session-id> --session-control-file <control-file> --binding-packet-file <packet-file>` with `BUBBLES_AGENT_NAME=bubbles.iterate` in env. When the guard reports the cap exceeded for a given spec, this agent MUST emit a `blocked` RESULT-ENVELOPE whose `unresolvedFindings[]` includes finding `G082` and MUST NOT start another iteration for that spec in the same session.
 
 ## In-Loop Compaction Discipline (Gate G083 — MANDATORY)
 

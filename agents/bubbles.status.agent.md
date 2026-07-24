@@ -340,6 +340,7 @@ When status can identify a concrete continuation target, append:
 - repositoryResolution.sessionId: <exact session id>
 - repositoryResolution.decisionId: <exact decision id>
 - repositoryResolution.controlRevision: <exact control revision>
+- repositoryResolution.controlPathDigest: <exact canonical external control-path digest>
 - repositoryResolution.authority: <exact authority>
 - repositoryResolution.transition: <exact transition>
 - repositoryResolution.scopeKind: command

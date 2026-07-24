@@ -107,6 +107,7 @@ nodes:
       sessionId: <host-session-id>
       decisionId: rb:<session-id>:<control-revision>:node:<node-id>
       controlRevision: <current-command-revision>
+      controlPathDigest: sha256:<canonical-external-control-path-digest>
       authority: scoped-scenario-node
       transition: scoped-override
       scopeKind: goal-node
@@ -127,6 +128,7 @@ Each node dispatch and node result derives its root and safe alias from the refe
 - `repositoryResolution.sessionId`
 - `repositoryResolution.decisionId`
 - `repositoryResolution.controlRevision`
+- `repositoryResolution.controlPathDigest`
 - `repositoryResolution.authority`
 - `repositoryResolution.transition`
 - `repositoryResolution.scopeKind`

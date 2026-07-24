@@ -143,6 +143,7 @@ binding_field_contract() {
     repositoryResolution.sessionId \
     repositoryResolution.decisionId \
     repositoryResolution.controlRevision \
+    repositoryResolution.controlPathDigest \
     repositoryResolution.authority \
     repositoryResolution.transition \
     repositoryResolution.scopeKind \
@@ -175,19 +176,20 @@ binding_fields_in_text() {
       expected[3] = "repositoryResolution.sessionId"
       expected[4] = "repositoryResolution.decisionId"
       expected[5] = "repositoryResolution.controlRevision"
-      expected[6] = "repositoryResolution.authority"
-      expected[7] = "repositoryResolution.transition"
-      expected[8] = "repositoryResolution.scopeKind"
-      expected[9] = "repositoryResolution.scopeId"
-      expected[10] = "repositoryResolution.targetKind"
-      expected[11] = "repositoryResolution.pathVisibility"
-      expected[12] = "repositoryResolution.actionable"
-      for (field_index = 1; field_index <= 12; field_index++) {
+      expected[6] = "repositoryResolution.controlPathDigest"
+      expected[7] = "repositoryResolution.authority"
+      expected[8] = "repositoryResolution.transition"
+      expected[9] = "repositoryResolution.scopeKind"
+      expected[10] = "repositoryResolution.scopeId"
+      expected[11] = "repositoryResolution.targetKind"
+      expected[12] = "repositoryResolution.pathVisibility"
+      expected[13] = "repositoryResolution.actionable"
+      for (field_index = 1; field_index <= 13; field_index++) {
         if (found[expected[field_index]]) print expected[field_index]
       }
       for (name in found) {
         known = 0
-        for (field_index = 1; field_index <= 12; field_index++) {
+        for (field_index = 1; field_index <= 13; field_index++) {
           if (name == expected[field_index]) known = 1
         }
         if (!known) print "UNEXPECTED:" name
@@ -202,10 +204,17 @@ check_exact_binding_text() {
   local contract="$3"
   local expected=""
   local actual=""
+  local field=""
 
   expected="$(binding_field_contract)"
   actual="$(binding_fields_in_text "$text")"
   if [[ "$actual" != "$expected" ]]; then
+    while IFS= read -r field; do
+      if ! printf '%s\n' "$actual" | grep -Fxq "$field"; then
+        report_failure "RB-CONFORMANCE-BINDING-FIELDS-DROPPED" "$relative_path" \
+          "missing-field=$field"
+      fi
+    done <<< "$expected"
     report_failure "RB-CONFORMANCE-BINDING-FIELDS-DROPPED" "$relative_path" \
       "$contract expected=$(printf '%s' "$expected" | tr '\n' ',') actual=$(printf '%s' "$actual" | tr '\n' ',')"
   fi
@@ -925,6 +934,7 @@ check_binding_fields() {
     repositoryResolution.sessionId \
     repositoryResolution.decisionId \
     repositoryResolution.controlRevision \
+    repositoryResolution.controlPathDigest \
     repositoryResolution.authority \
     repositoryResolution.transition \
     repositoryResolution.scopeKind \
@@ -938,6 +948,29 @@ check_binding_fields() {
         report_failure "RB-CONFORMANCE-BINDING-FIELDS-DROPPED" "$relative_path" "missing-field=$field"
         ;;
     esac
+  done
+}
+
+check_state_snapshot_invocations() {
+  local relative_path=""
+  local line=""
+
+  for relative_path in \
+    agents/bubbles_shared/operating-baseline.md \
+    agents/bubbles.goal.agent.md \
+    agents/bubbles.iterate.agent.md \
+    agents/bubbles.sprint.agent.md \
+    agents/bubbles.workflow.agent.md; do
+    require_file "$relative_path" || continue
+    while IFS= read -r line; do
+      [[ "$line" == *'state-snapshot.sh'* ]] || continue
+      if [[ "$line" != *'--session-id'* || \
+            "$line" != *'--session-control-file'* || \
+            "$line" != *'--binding-packet-file'* ]]; then
+        report_failure "RB-CONFORMANCE-STATE-SNAPSHOT-UNBOUND" "$relative_path" \
+          "state-snapshot-call-missing-complete-binding-triplet"
+      fi
+    done < "$root/$relative_path"
   done
 }
 
@@ -1056,6 +1089,7 @@ check_scenario_repository_roots
 check_goal_node_contract "agents/bubbles.goal.agent.md" "## Goal Scenario Compilation (Cross-Repo / Multi-Phase)"
 check_goal_node_contract "agents/bubbles.sprint.agent.md" "## Sprint Scenario Execution (Cross-Repo / Multi-Phase Missions)"
 check_compaction_resume_contract
+check_state_snapshot_invocations
 check_ambient_authority
 check_mode_contract "stochastic-quality-sweep"
 check_mode_contract "iterate"

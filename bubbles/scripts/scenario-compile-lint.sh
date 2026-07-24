@@ -228,10 +228,11 @@ if [[ "${NODE_COUNT:-0}" -gt 0 ]]; then
       .nodes[$index].repositoryResolution as $resolution
       | ($resolution | type == "object")
       and (($resolution | keys | sort) ==
-        (["sessionId", "decisionId", "controlRevision", "authority", "transition",
+        (["sessionId", "decisionId", "controlRevision", "controlPathDigest", "authority", "transition",
           "scopeKind", "scopeId", "targetKind", "pathVisibility", "actionable"] | sort))
       and ($resolution.sessionId | type == "string" and length > 0)
       and ($resolution.controlRevision | type == "number" and . >= 1 and floor == .)
+      and ($resolution.controlPathDigest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
       and $resolution.decisionId ==
         ("rb:" + $resolution.sessionId + ":" + ($resolution.controlRevision | tostring) + ":node:" + $nodeId)
       and $resolution.authority == "scoped-scenario-node"

@@ -15,8 +15,9 @@ repository-owned command, or dispatches a specialist.
 The preflight order is fixed:
 
 1. Parse only repository intent, concrete target syntax, and request class.
-2. Require the host-supplied `sessionId`, external `sessionControlFile`, and
-   declared `workspaceRoots` inventory.
+2. Require the host-supplied `sessionId`, external `sessionControlFile`,
+  caller-observed `expectedControlRevision`, and declared `workspaceRoots`
+  inventory.
 3. Canonicalize and deduplicate eligible Git worktree roots.
 4. Reconcile the external session control record and any carried binding packet.
 5. Resolve exactly one root using the authority order below.
@@ -26,16 +27,29 @@ The preflight order is fixed:
 
 ### Required Host Context
 
+On VS Code agent surfaces, materialize this context with the installed
+`repository-binding-host-context.sh`, passing the host's per-chat
+`{{VSCODE_TARGET_SESSION_LOG}}` value and every declared workspace folder. The
+adapter derives a stable opaque session id and private external control path;
+it does not select a repository. Other hosts must provide an equivalent explicit
+adapter contract or refuse before repository-local work.
+
 - `sessionId` is an opaque identifier supplied by the active interactive host
   session. It must not be derived from a repository file, process ID, CWD,
   prompt location, or host repository metadata.
 - `sessionControlFile` is an absolute private path outside every candidate
   repository. Its path is never propagated in work packets.
+- `expectedControlRevision` is the integer revision observed by the host adapter:
+  `0` when the control record is absent, otherwise the current record revision
+  after session/path identity checks. Callers pass it verbatim as
+  `--expected-control-revision`; they never infer, increment, or repair it.
 - `workspaceRoots` contains only host-declared candidate folders. Inventory
   order is discarded after canonicalization and is never selection authority.
 
 Missing, malformed, non-private, or repository-local host context fails loud.
-There is no ambient fallback and no bypass.
+There is no ambient fallback and no bypass. A control revision changed after the
+adapter observation is a compare-and-swap refusal; rerun the adapter to obtain a
+fresh observation before retrying.
 
 ### Canonical Identity And Eligibility
 
@@ -87,7 +101,7 @@ or stale inherited authority refuses; recency never chooses a winner.
 An actionable command decision carries:
 
 - canonical `repositoryRoot` and safe `repositoryAlias`;
-- `sessionId`, `decisionId`, and exact `controlRevision`;
+- `sessionId`, `decisionId`, exact `controlRevision`, and the canonical external `controlPathDigest`;
 - `authority`, `transition`, and `targetKind`;
 - `scopeKind: command`, `scopeId: null`;
 - `pathVisibility: local`, `actionable: true`.

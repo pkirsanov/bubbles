@@ -104,6 +104,7 @@ Repository-sensitive continuation is actionable only when it also carries this e
 - `repositoryResolution.sessionId`
 - `repositoryResolution.decisionId`
 - `repositoryResolution.controlRevision`
+- `repositoryResolution.controlPathDigest`
 - `repositoryResolution.authority`
 - `repositoryResolution.transition`
 - `repositoryResolution.scopeKind`

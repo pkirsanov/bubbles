@@ -64,6 +64,25 @@ fail_usage() {
   return 2
 }
 
+sha256_text() {
+  local value="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$value" | sha256sum | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$value" | shasum -a 256 | awk '{print $1}'
+  else
+    return 1
+  fi
+}
+
+control_path_digest() {
+  local digest
+
+  digest="$(sha256_text "$1")" || return 1
+  printf 'sha256:%s' "$digest"
+}
+
 physical_directory() {
   (cd -P -- "$1" 2>/dev/null && pwd -P)
 }
@@ -214,6 +233,24 @@ repository_alias() {
   basename "$1"
 }
 
+contains_control_char() {
+  case "$1" in
+    *[[:cntrl:]]*) return 0 ;;
+  esac
+  return 1
+}
+
+workspace_candidates_have_control() {
+  local candidates="$1"
+  local candidate
+
+  while IFS= read -r candidate; do
+    [[ -n "$candidate" ]] || continue
+    contains_control_char "$candidate" && return 0
+  done <<< "$candidates"
+  return 1
+}
+
 contains_line() {
   local lines="$1"
   local expected="$2"
@@ -270,13 +307,22 @@ control_path_is_external() {
 ensure_private_control_parent() {
   local control_file="$1"
   local control_dir
-  local permissions
 
   control_dir="$(dirname "$control_file")"
   if [[ ! -e "$control_dir" ]]; then
     mkdir -p "$control_dir" || return 1
     chmod 700 "$control_dir" || return 1
   fi
+  private_control_parent_is_valid "$control_file"
+}
+
+private_control_parent_is_valid() {
+  local control_file="$1"
+  local control_dir
+  local permissions
+
+  control_dir="$(dirname "$control_file")"
+  path_has_symlink_component "$control_dir" && return 1
   [[ -d "$control_dir" && -O "$control_dir" && -w "$control_dir" && -x "$control_dir" ]] || return 1
   permissions="$(ls -ld "$control_dir" 2>/dev/null)" || return 1
   permissions="${permissions%% *}"
@@ -298,6 +344,14 @@ control_file_is_private() {
     -rw-------*) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+control_record_matches_path() {
+  local control_file="$1"
+  local expected_digest
+
+  expected_digest="$(control_path_digest "$control_file")" || return 1
+  [[ "$(jq -r '.controlPathDigest // empty' "$control_file" 2>/dev/null)" == "$expected_digest" ]]
 }
 
 valid_session_id() {
@@ -358,9 +412,10 @@ control_is_valid() {
       and (.timestamp | timestamp);
     . as $record
     | type == "object"
-    and exact_keys(["schemaVersion", "sessionId", "revision", "currentBinding", "transitionHistory"])
+    and exact_keys(["schemaVersion", "sessionId", "controlPathDigest", "revision", "currentBinding", "transitionHistory"])
     and .schemaVersion == 1
     and (.sessionId | safe_session)
+    and (.controlPathDigest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
     and (.revision | type == "number" and . >= 1 and floor == .)
     and (.currentBinding | type == "object"
          and exact_keys(["repositoryRoot", "repositoryAlias", "establishedDecisionId",
@@ -435,10 +490,11 @@ packet_json_is_valid() {
     and exact_keys(["repositoryRoot", "repositoryAlias", "repositoryResolution"])
     and ($packet.repositoryAlias | nonempty_string)
     and ($resolution | type == "object"
-         and exact_keys(["sessionId", "decisionId", "controlRevision", "authority", "transition",
+         and exact_keys(["sessionId", "decisionId", "controlRevision", "controlPathDigest", "authority", "transition",
                          "scopeKind", "scopeId", "targetKind", "pathVisibility", "actionable"]))
     and ($resolution.sessionId | safe_session)
     and ($resolution.controlRevision | type == "number" and . >= 1 and floor == .)
+    and ($resolution.controlPathDigest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
     and ($resolution.actionable | type == "boolean")
     and (
       (($packet.repositoryRoot | absolute_path)
@@ -561,7 +617,10 @@ write_control_record() {
   local established_authority
   local established_at
   local control_dir
+  local control_digest
   local temporary_file
+
+  control_digest="$(control_path_digest "$control_file")" || return 1
 
   if [[ -n "$old_control" ]]; then
     old_revision="$(jq -r '.revision' "$old_control")"
@@ -588,6 +647,7 @@ write_control_record() {
   if [[ -n "$old_control" ]]; then
     jq \
       --argjson revision "$new_revision" \
+      --arg controlPathDigest "$control_digest" \
       --arg decision "$decision_id" \
       --arg root "$selected_root" \
       --arg alias "$selected_alias" \
@@ -600,7 +660,8 @@ write_control_record() {
       --arg transition "$transition" \
       --arg targetKind "$target_kind" \
       --arg timestamp "$timestamp" \
-      '.revision = $revision
+      '.controlPathDigest = $controlPathDigest
+       | .revision = $revision
        | .currentBinding = {
            repositoryRoot: $root,
            repositoryAlias: $alias,
@@ -627,6 +688,7 @@ write_control_record() {
   else
     jq -n \
       --arg session "$session_id" \
+      --arg controlPathDigest "$control_digest" \
       --argjson revision "$new_revision" \
       --arg decision "$decision_id" \
       --arg root "$selected_root" \
@@ -638,6 +700,7 @@ write_control_record() {
       '{
         schemaVersion: 1,
         sessionId: $session,
+        controlPathDigest: $controlPathDigest,
         revision: $revision,
         currentBinding: {
           repositoryRoot: $root,
@@ -691,6 +754,7 @@ emit_decision() {
   local session_id
   local revision
   local decision_id
+  local control_digest
   local headline="BOUND"
   local previous_alias=""
 
@@ -699,6 +763,7 @@ emit_decision() {
   session_id="$(jq -r '.sessionId' "$control_file")"
   revision="$(jq -r '.revision' "$control_file")"
   decision_id="$(jq -r '.currentBinding.lastDecisionId' "$control_file")"
+  control_digest="$(jq -r '.controlPathDigest' "$control_file")"
   case "$transition" in
     switched)
       headline="SWITCHED"
@@ -721,6 +786,7 @@ emit_decision() {
     --arg session "$session_id" \
     --arg decision "$decision_id" \
     --argjson revision "$revision" \
+    --arg controlPathDigest "$control_digest" \
     --arg authority "$authority" \
     --arg transition "$transition" \
     --arg targetKind "$target_kind" \
@@ -731,6 +797,7 @@ emit_decision() {
         sessionId: $session,
         decisionId: $decision,
         controlRevision: $revision,
+        controlPathDigest: $controlPathDigest,
         authority: $authority,
         transition: $transition,
         scopeKind: "command",
@@ -825,6 +892,7 @@ packet_json_conflicts_with_control() {
   [[ "$(jq -r '.repositoryRoot' <<< "$packet_json")" == "$(jq -r '.currentBinding.repositoryRoot' "$control_file")" ]] || return 1
   packet_revision="$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")"
   [[ "$packet_revision" == "$(jq -r '.revision' "$control_file")" ]] || return 1
+  [[ "$(jq -r '.repositoryResolution.controlPathDigest' <<< "$packet_json")" == "$(jq -r '.controlPathDigest' "$control_file")" ]] || return 1
   [[ "$(jq -r '.repositoryResolution.decisionId' <<< "$packet_json")" == "$(jq -r '.currentBinding.lastDecisionId' "$control_file")" ]] || return 1
   [[ "$(jq -r '.repositoryAlias' <<< "$packet_json")" == "$(jq -r '.currentBinding.repositoryAlias' "$control_file")" ]] || return 1
   [[ "$(jq -r '.repositoryResolution.authority' <<< "$packet_json")" == "$(jq -r --argjson revision "$packet_revision" '.transitionHistory[] | select(.revision == $revision) | .authority' "$control_file")" ]] || return 1
@@ -899,6 +967,23 @@ preflight() {
     shift
   done
 
+  # Reject C0 control characters in any repository, alias-bearing, or diagnostic
+  # value before emitting any line-oriented output or creating control state. A
+  # control byte cannot name a real repository root or alias, and reflecting it
+  # could smuggle control sequences into downstream output. Workspace roots are
+  # checked per entry so the newline joiner is never treated as adversarial.
+  if contains_control_char "$explicit_root" || \
+     contains_control_char "$target" || \
+     contains_control_char "$resolved_natural_language_root" || \
+     contains_control_char "$diagnostic_chat_cwd" || \
+     contains_control_char "$diagnostic_host_repository" || \
+     contains_control_char "$diagnostic_active_editor" || \
+     contains_control_char "$diagnostic_tool_cwd" || \
+     workspace_candidates_have_control "$workspace_candidates"; then
+    printf 'REPOSITORY PREFLIGHT REFUSED reason=CONTROL_CHARACTER_INPUT affinity=unchanged repoLocalSideEffects=zero\n'
+    return 2
+  fi
+
   valid_session_id "$session_id" || { fail_usage 'preflight requires a safe --session-id'; return 2; }
   [[ -n "$control_file" ]] || { fail_usage 'preflight requires --session-control-file'; return 2; }
   valid_request_class "$request_class" || { fail_usage 'preflight requires a supported --request-class'; return 2; }
@@ -944,7 +1029,7 @@ preflight() {
     return 2
   }
   if [[ -f "$control_file" ]]; then
-    if control_is_valid "$control_file"; then
+    if control_is_valid "$control_file" && control_record_matches_path "$control_file"; then
       trusted_root="$(jq -r '.currentBinding.repositoryRoot' "$control_file")"
       if [[ "$(jq -r '.sessionId' "$control_file")" != "$session_id" ]]; then
         trusted_status="conflicting"
@@ -1033,15 +1118,9 @@ preflight() {
   acquire_lock "$control_file" "$trusted_status" "$trusted_root" || return 1
 
   if [[ -f "$control_file" ]]; then
-    if ! control_is_valid "$control_file"; then
-      if [[ -z "$selected_root" ]]; then
-        emit_refusal BOUNDARY_MALFORMED malformed none
-        return $?
-      fi
-      if [[ "$expected_revision" != "0" ]]; then
-        emit_refusal BOUNDARY_CONFLICT malformed none
-        return $?
-      fi
+    if ! control_is_valid "$control_file" || ! control_record_matches_path "$control_file"; then
+      emit_refusal BOUNDARY_MALFORMED malformed none
+      return $?
     else
       if [[ "$(jq -r '.sessionId' "$control_file")" != "$session_id" ]]; then
         emit_refusal BOUNDARY_CONFLICT conflicting "$(jq -r '.currentBinding.repositoryRoot' "$control_file")"
@@ -1143,6 +1222,7 @@ goal_node_declaration_json() {
     | select($repo.repositoryRoot | type == "string" and length > 0)
     | select($repo.repositoryAlias | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$"))
     | select($node.repositoryResolution | type == "object")
+    | select($node.repositoryResolution.controlPathDigest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
     | select($node.repositoryResolution.authority == "scoped-scenario-node")
     | select($node.repositoryResolution.transition == "scoped-override")
     | select($node.repositoryResolution.scopeKind == "goal-node")
@@ -1171,7 +1251,15 @@ validate_packet_internal() {
   local canonical_control_file
   local packet_json
 
-  if ! control_is_valid "$control_file"; then
+  canonical_control_file="$(canonical_file_location "$control_file" 2>/dev/null || true)"
+  if [[ -z "$canonical_control_file" ]] || path_has_symlink_component "$control_file" || \
+     ! private_control_parent_is_valid "$canonical_control_file" || \
+     ! control_file_is_private "$canonical_control_file"; then
+    printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_MALFORMED actionable=false\n'
+    return 1
+  fi
+  control_file="$canonical_control_file"
+  if ! control_is_valid "$control_file" || ! control_record_matches_path "$control_file"; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_MALFORMED actionable=false\n'
     return 1
   fi
@@ -1205,8 +1293,7 @@ validate_packet_internal() {
       "$scope_id"
     return 1
   fi
-  canonical_control_file="$(canonical_file_location "$control_file" 2>/dev/null || true)"
-  if [[ -z "$canonical_control_file" ]] || ! control_path_is_external "$canonical_control_file" "$root"; then
+  if ! control_path_is_external "$control_file" "$root"; then
     printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_MALFORMED actionable=false\n'
     return 1
   fi
@@ -1221,7 +1308,8 @@ validate_packet_internal() {
   fi
   if [[ "$scope_kind" == "goal-node" ]]; then
     if [[ "$(jq -r '.repositoryResolution.sessionId' <<< "$packet_json")" != "$session_id" || \
-          "$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")" != "$(jq -r '.revision' "$control_file")" ]]; then
+          "$(jq -r '.repositoryResolution.controlRevision' <<< "$packet_json")" != "$(jq -r '.revision' "$control_file")" || \
+          "$(jq -r '.repositoryResolution.controlPathDigest' <<< "$packet_json")" != "$(jq -r '.controlPathDigest' "$control_file")" ]]; then
       printf 'REPOSITORY PACKET REFUSED reason=BOUNDARY_CONFLICT actionable=false scopeId=%s\n' "$scope_id"
       return 1
     fi
@@ -1341,12 +1429,28 @@ discover_specs() {
   local root
   local specs_root
   local candidate
+  local canonical_candidate
   root="$(jq -r '.repositoryRoot' <<< "$VALIDATED_PACKET_JSON")"
   specs_root="$root/specs"
+  # A specs root that is itself a symlink can redirect the entire discovery
+  # scope outside the committed canonical repository. Refuse fail-closed and
+  # emit no discovery scope or spec entries.
+  if [[ -L "$specs_root" ]]; then
+    printf 'REPOSITORY DISCOVERY REFUSED reason=SPECS_ROOT_SYMLINK affinity=unchanged repoLocalSideEffects=zero\n'
+    return 1
+  fi
   printf 'DISCOVERY SCOPE mode=%s root=%s\n' "$PARSED_MODE" "$specs_root"
   [[ -d "$specs_root" ]] || return 0
   for candidate in "$specs_root"/*; do
     [[ -d "$candidate" ]] || continue
+    # Exclude any child whose canonical target escapes the selected repository
+    # root (for example a child symlinked outside the repository); contained
+    # siblings remain discoverable and the escaped path is never emitted.
+    canonical_candidate="$(canonical_existing_path "$candidate" 2>/dev/null || true)"
+    if [[ -z "$canonical_candidate" ]] || \
+       ! physical_path_is_contained "$canonical_candidate" "$root"; then
+      continue
+    fi
     printf '%s\n' "$candidate"
   done
 }

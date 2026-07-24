@@ -195,6 +195,7 @@ When `bubbles.super` is invoked by another agent via `runSubagent` (not directly
 - **repositoryResolution.sessionId:** <exact session id>
 - **repositoryResolution.decisionId:** <exact decision id>
 - **repositoryResolution.controlRevision:** <exact control revision>
+- **repositoryResolution.controlPathDigest:** <exact canonical external control-path digest>
 - **repositoryResolution.authority:** <exact authority>
 - **repositoryResolution.transition:** <exact transition>
 - **repositoryResolution.scopeKind:** command
@@ -247,6 +248,7 @@ The exact binding field set is:
 - `repositoryResolution.sessionId`
 - `repositoryResolution.decisionId`
 - `repositoryResolution.controlRevision`
+- `repositoryResolution.controlPathDigest`
 - `repositoryResolution.authority`
 - `repositoryResolution.transition`
 - `repositoryResolution.scopeKind`
@@ -262,6 +264,7 @@ The exact binding field set is:
 - **repositoryResolution.sessionId:** <exact session id>
 - **repositoryResolution.decisionId:** <exact decision id>
 - **repositoryResolution.controlRevision:** <exact control revision>
+- **repositoryResolution.controlPathDigest:** <exact canonical external control-path digest>
 - **repositoryResolution.authority:** <exact authority>
 - **repositoryResolution.transition:** <exact transition>
 - **repositoryResolution.scopeKind:** command

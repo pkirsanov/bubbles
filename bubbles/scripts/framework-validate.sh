@@ -305,6 +305,16 @@ run_check_self_only "Framework-validate tiering selftest (IMP-012)" bash "$SCRIP
 run_check_self_only "Install provenance selftest" bash "$SCRIPT_DIR/install-provenance-selftest.sh"
 run_check_self_only "Trust doctor selftest" bash "$SCRIPT_DIR/trust-doctor-selftest.sh"
 run_check "Repo-binding preflight selftest (BFW-05 / IMP-025)" bash "$SCRIPT_DIR/repo-binding-preflight-selftest.sh"
+# The aggregate reports each focused IMP-103 suite, including the conformance
+# guard selftest. Do not add a second standalone conformance-selftest run here.
+run_check "Repository work-boundary aggregate selftest (IMP-103 / G129)" \
+  bash "$SCRIPT_DIR/cli.sh" repository-binding-selftest --suite=all
+run_check "Repository host-context bridge selftest (IMP-103 / G129)" \
+  bash "$SCRIPT_DIR/repository-binding-host-context-selftest.sh"
+# The live guard checks canonical source consumers and therefore has no valid
+# downstream equivalent; hermetic aggregate coverage still runs downstream.
+run_check_self_only "Repository work-boundary conformance guard (live, G129)" \
+  bash "$SCRIPT_DIR/repository-binding-conformance-guard.sh" --root "$REPO_ROOT"
 run_check "Finding closure selftest" bash "$SCRIPT_DIR/finding-closure-selftest.sh"
 run_check "Super surface selftest" bash "$SCRIPT_DIR/super-surface-selftest.sh"
 run_check "Workflow delegation selftest" bash "$SCRIPT_DIR/workflow-delegation-selftest.sh"
