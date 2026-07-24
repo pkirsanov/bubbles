@@ -258,6 +258,7 @@ fi
 run_check "Workflow registry consistency" bash "$SCRIPT_DIR/workflow-registry-consistency.sh" --quiet
 run_check "Mode resolver validate" bash "$SCRIPT_DIR/mode-resolver.sh" --validate
 run_check "Mode resolver selftest" bash "$SCRIPT_DIR/mode-resolver-selftest.sh"
+run_check "Mode-resolver phase-multiplicity selftest (IMP-102 / SCOPE-2)" bash "$SCRIPT_DIR/mode-resolver-phase-multiplicity-selftest.sh"
 run_check "Risk-tier resolver selftest (BFW-01 / IMP-021)" bash "$SCRIPT_DIR/risk-tier-resolve-selftest.sh"
 run_check "Rapid-tool-delivery mode selftest (IMP-100 Phase 1)" bash "$SCRIPT_DIR/rapid-tool-delivery-mode-selftest.sh"
 run_check "Work-boundary resolver selftest (IMP-100 Phase 4 R6)" bash "$SCRIPT_DIR/work-boundary-resolve-selftest.sh"
