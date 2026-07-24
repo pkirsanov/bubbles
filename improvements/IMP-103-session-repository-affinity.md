@@ -1780,6 +1780,97 @@ Red and green use the same named cases and inputs. The red run executes from an 
 
 Revert S4H as one atomic corrective, including adapter, path-bound schema/runtime fields, explicit packet consumers, focused tests, and framework wiring. Leave host-private controls and ignored repository mirrors untouched as inert additive state. Repository-sensitive VS Code work then remains blocked for lack of valid host context; rollback must never restore CWD, process ID, repository-local state, workspace order, or host repository metadata as authority. Generated and release surfaces remain at the prior committed baseline because S4H does not touch them.
 
+### Rollback Rehearsal Evidence
+
+This rehearsal was executed against a temporary, isolated fixture representing the fully rolled-back S4H state and then torn down; the real working tree and committed history were never mutated.
+
+**Rolled-back state (pre-S4H ref):** `6e2b570` — the commit immediately before S4H `a4999ad` (`git rev-parse a4999ad^` = `6e2b570`). Checked out via a throwaway detached worktree, this is S4H reverted as one atomic corrective: the host adapter `bubbles/scripts/repository-binding-host-context.sh` is absent there, and `bubbles/scripts/repository-binding.sh` is the pre-S4H resolver — so no valid host context can be established and repository-sensitive VS Code work stays blocked, exactly as the Rollback / Restore contract requires.
+
+**Commands (exact):**
+
+```bash
+# 1. Rolled-back fixture (S4H reverted): detached worktree at the pre-S4H ref.
+#    In it the host adapter is ABSENT and the resolver is the pre-S4H version:
+#      ls .../repository-binding-host-context.sh -> "No such file or directory" (CONFIRMED absent)
+git worktree add --detach /tmp/s4h-rollback-rehearsal 6e2b570
+
+# 2. Two eligible downstream-shaped git-repo workspace roots + an owner-private (0700) control dir.
+for r in rootA rootB; do
+  mkdir -p /tmp/s4h-rehearsal-fixtures/$r/.github/agents /tmp/s4h-rehearsal-fixtures/$r/.github/bubbles
+  touch /tmp/s4h-rehearsal-fixtures/$r/.github/bubbles/release-manifest.json
+  git -C /tmp/s4h-rehearsal-fixtures/$r init -q
+done
+mkdir -p /tmp/s4h-rehearsal-fixtures/controls && chmod 700 /tmp/s4h-rehearsal-fixtures/controls
+#    plus two INERT additive-state files left on disk, untouched by the refused op:
+#      controls/prior-session-control.json  (host-private control, DIFFERENT session)
+#      controls/ignored-repo-mirror.json    (ignored repository mirror)
+
+# 3. Rolled-back preflight: TARGETLESS multi-root with ambient signals DELIBERATELY present,
+#    diagnostic host metadata pointed at a DIFFERENT root than the chat CWD, control file ABSENT.
+bash /tmp/s4h-rollback-rehearsal/bubbles/scripts/repository-binding.sh preflight \
+  --session-id S4H-ROLLBACK-REHEARSAL \
+  --session-control-file /tmp/s4h-rehearsal-fixtures/controls/control-absent.json \
+  --request-class TARGETLESS_MODE \
+  --workspace-root /tmp/s4h-rehearsal-fixtures/rootA \
+  --workspace-root /tmp/s4h-rehearsal-fixtures/rootB \
+  --diagnostic-chat-cwd /tmp/s4h-rehearsal-fixtures/rootA \
+  --diagnostic-host-repository /tmp/s4h-rehearsal-fixtures/rootB \
+  --diagnostic-active-editor /tmp/s4h-rehearsal-fixtures/rootB
+
+# 5. Teardown (fixture removed; real tree/HEAD unchanged; pre-existing baseline worktree untouched).
+git worktree remove --force /tmp/s4h-rollback-rehearsal && git worktree prune
+rm -rf /tmp/s4h-rehearsal-fixtures
+```
+
+**Raw fail-closed refusal (rolled-back resolver, `PREFLIGHT_EXIT=1`) — ambient signals present but never authority, no repository selected from CWD / root order / host metadata:**
+
+```text
+REPOSITORY PREFLIGHT REFUSED reason=TARGETLESS_MULTI_ROOT_UNBOUND affinity=unchanged repoLocalSideEffects=zero
+REPOSITORY-REFUSAL
+outcome: refused
+reasonCode: TARGETLESS_MULTI_ROOT_UNBOUND
+observedSignals:
+observedSignals[].kind: chat-cwd
+observedSignals[].repository: /tmp/s4h-rehearsal-fixtures/rootA
+observedSignals[].authority: diagnostic-only
+observedSignals[].kind: host-repository
+observedSignals[].repository: /tmp/s4h-rehearsal-fixtures/rootB
+observedSignals[].authority: diagnostic-only
+observedSignals[].kind: active-editor
+observedSignals[].repository: /tmp/s4h-rehearsal-fixtures/rootB
+observedSignals[].authority: diagnostic-only
+trustedBoundaryState.status: absent
+trustedBoundaryState.repository: none
+requiredInput.field: repositoryRoot
+requiredInput.requirement: one eligible canonical repository root
+remediation.input.repositoryRoot: <canonical-repository-root>
+affinity: unchanged
+repoLocalSideEffects: zero
+PREFLIGHT_EXIT=1
+```
+
+**Raw inert-controls / zero-side-effect proof (before == after the refused op):**
+
+```text
+=== [PRE] control-absent path absent? ===
+ABSENT (expected): /tmp/s4h-rehearsal-fixtures/controls/control-absent.json
+=== [PRE] sha256 of inert additive-state files ===
+aad3e516e1c44a46908dc5e3f7101a24840c5d1249940d4d47816f727771d4e5  controls/prior-session-control.json
+4d15f510dc358ec3059d3b1c5131c9737869038f3c0cda184dfb9ee9bb19543e  controls/ignored-repo-mirror.json
+=== [POST] control-absent path still absent? (refusal wrote no external control record) ===
+ABSENT (expected)
+=== [POST] sha256 of inert additive-state files (byte-identical => inert, not mutated) ===
+aad3e516e1c44a46908dc5e3f7101a24840c5d1249940d4d47816f727771d4e5  controls/prior-session-control.json
+4d15f510dc358ec3059d3b1c5131c9737869038f3c0cda184dfb9ee9bb19543e  controls/ignored-repo-mirror.json
+=== [POST] controls dir listing (only the 2 inert files; NO control-absent.json) ===
+-rw-r--r-- ... ignored-repo-mirror.json
+-rw-r--r-- ... prior-session-control.json
+```
+
+**Teardown / real-tree integrity:** the temporary worktree and fixture were removed (`git worktree remove --force` + `git worktree prune` + `rm -rf`); the pre-existing `/tmp/bubbles-s4h-baseline` worktree was not touched; the real repository stayed at HEAD `a4999ad` with exactly the 15 dirty S5A/S5B files, and this packet-only evidence commit is the sole addition.
+
+**Conclusion (DoD #11):** in the fully rolled-back S4H state the resolver fails closed with `TARGETLESS_MULTI_ROOT_UNBOUND` (`affinity=unchanged`, `repoLocalSideEffects=zero`, nonzero exit), treats every ambient CWD / root-order / host-repository / active-editor signal as `diagnostic-only` (never authority — no ambient fallback), selects no repository (`trustedBoundaryState.repository: none`), writes no external control record (the control path stays absent), and leaves the pre-existing host-private control and ignored repository mirror byte-identical and inert. The rolled-back state therefore fails closed with zero repo-local side effects and inert private controls/mirrors, satisfying DoD #11.
+
 ### Definition Of Done
 
 - [ ] The host adapter supplies stable same-chat identity, a private external control location, caller-observed revision, and order-independent workspace inventory without reading session-log contents or selecting a repository.
@@ -1792,7 +1883,7 @@ Revert S4H as one atomic corrective, including adapter, path-bound schema/runtim
 - [ ] **Test T4H.7 (finding S4H-F-DISCOVERY-SYMLINK):** the `classification-discovery` suite runs green including `RB-DISCOVERY-SPECS-SYMLINK-ESCAPE`, with paired red-to-green evidence from an isolated clean baseline proving a symlinked `specs` root refuses and an escaped child spec fails closed or is excluded while never emitting the escaped child path.
 - [ ] Paired red/green evidence uses identical named inputs and demonstrates behavior failure at `bc984e6`, not only missing-file detection.
 - [ ] Changed-path evidence contains only the exact S4H files; capability, generated, installer, release, IMP-102, governance-index, and unrelated resolver changes are absent.
-- [ ] Rollback rehearsal in a temporary fixture leaves private controls/mirrors inert and fails closed without ambient fallback.
+- [x] Rollback rehearsal in a temporary fixture leaves private controls/mirrors inert and fails closed without ambient fallback. Evidence: S4H `### Rollback Rehearsal Evidence` above (pre-S4H ref `6e2b570`; rolled-back `preflight` refuses `TARGETLESS_MULTI_ROOT_UNBOUND`, `affinity=unchanged`, `repoLocalSideEffects=zero`, ambient signals `diagnostic-only`; control-absent path stays absent and both inert control/mirror files are sha256-unchanged).
 - [ ] `bubbles.audit` independently certifies the committed S4H behavior, evidence, and changed-path boundary before S5A begins.
 - [ ] Build Quality Gate: focused host/resolver/propagation/conformance checks are warning-free, no skipped cases or bypasses exist, and no full S5/generated/release/push claim is made.
 
