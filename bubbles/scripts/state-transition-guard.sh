@@ -839,15 +839,15 @@ if [[ "$ceiling_forbids_code" == "true" ]]; then
     #   - recursive glob (trailing '/**'): "<product>/home-lab/tests/**"
     deliverable_files_list=""
     if command -v python3 &>/dev/null; then
-      deliverable_files_list="$(python3 -c "
-import json
+      deliverable_files_list="$(python3 -c '
+import json, sys
 try:
-    d=json.load(open('$state_file'))
-    for f in (d.get('deliverableFiles') or []):
+    d=json.load(open(sys.argv[1]))
+    for f in (d.get("deliverableFiles") or []):
         if isinstance(f,str) and f.strip():
             print(f.strip())
 except Exception:
-    pass" 2>/dev/null || true)"
+    pass' "$state_file" 2>/dev/null || true)"
     fi
 
     is_deliverable_file() {
@@ -1578,7 +1578,7 @@ if [[ -n "$state_workflow_mode" ]]; then
 
   if [[ ${#planning_required_agents[@]} -gt 0 ]]; then
     execution_history_agents="$({
-      python3 -c "import json; data=json.load(open('$state_file')); execution=(data.get('execution') or {}); history=(execution.get('executionHistory') or data.get('executionHistory') or []); print('\\n'.join((entry.get('agent') or '') for entry in history if isinstance(entry, dict) and entry.get('agent')))"
+      python3 -c 'import json, sys; data=json.load(open(sys.argv[1])); execution=(data.get("execution") or {}); history=(execution.get("executionHistory") or data.get("executionHistory") or []); print("\n".join((entry.get("agent") or "") for entry in history if isinstance(entry, dict) and entry.get("agent")))' "$state_file"
     } || true)"
 
     missing_planning_agents=0
@@ -1612,40 +1612,40 @@ if [[ -n "$state_workflow_mode" ]]; then
   # + optional provenanceMode/expandedBy/expansionReason/expansionEvidenceRef).
   # Emits one line per (agent, phase) with provenanceMode and parent-expansion metadata.
   execution_history_block="$({
-    python3 -c "
+    python3 -c '
 import json, sys, os
-spec_dir = os.path.dirname('$state_file')
-with open('$state_file') as f:
+spec_dir = os.path.dirname(sys.argv[1])
+with open(sys.argv[1]) as f:
     data = json.load(f)
-history = data.get('execution', {}).get('executionHistory', data.get('executionHistory', []))
+history = data.get("execution", {}).get("executionHistory", data.get("executionHistory", []))
 for entry in history:
-    agent = entry.get('agent', '')
-    phases = entry.get('phasesExecuted', [])
-    provenance = entry.get('provenanceMode', 'specialist')
-    expanded_by = entry.get('expandedBy', '')
-    reason = (entry.get('expansionReason', '') or '').replace('\\t', ' ').replace('\\n', ' ')
-    ev_ref = (entry.get('expansionEvidenceRef', '') or '').replace('\\t', ' ')
+    agent = entry.get("agent", "")
+    phases = entry.get("phasesExecuted", [])
+    provenance = entry.get("provenanceMode", "specialist")
+    expanded_by = entry.get("expandedBy", "")
+    reason = (entry.get("expansionReason", "") or "").replace("\t", " ").replace("\n", " ")
+    ev_ref = (entry.get("expansionEvidenceRef", "") or "").replace("\t", " ")
     for p in phases:
-        print(f'{agent}\\t{p}\\t{provenance}\\t{expanded_by}\\t{reason}\\t{ev_ref}')
-" 2>/dev/null
+        print(f"{agent}\t{p}\t{provenance}\t{expanded_by}\t{reason}\t{ev_ref}")
+' "$state_file" 2>/dev/null
   } || true)"
 
   if [[ -n "$execution_history_block" ]]; then
     claimed_phases="$({
-      python3 -c "
-import json
-with open('$state_file') as f:
+      python3 -c '
+import json, sys
+with open(sys.argv[1]) as f:
     data = json.load(f)
-claims = data.get('execution', {}).get('completedPhaseClaims', [])
-certified = data.get('certification', {}).get('certifiedCompletedPhases', [])
+claims = data.get("execution", {}).get("completedPhaseClaims", [])
+certified = data.get("certification", {}).get("certifiedCompletedPhases", [])
 def _phase_name(entry):
     if isinstance(entry, str):
         return entry
     if isinstance(entry, dict):
-        candidate = entry.get('phase')
+        candidate = entry.get("phase")
         if isinstance(candidate, str):
             return candidate
-        candidate = entry.get('name')
+        candidate = entry.get("name")
         if isinstance(candidate, str):
             return candidate
     return None
@@ -1656,7 +1656,7 @@ for entry in list(claims) + list(certified):
         names.append(resolved)
 for p in set(names):
     print(p)
-" 2>/dev/null
+' "$state_file" 2>/dev/null
     } || true)"
 
     # Orchestrator allowlist for parent-expansion (sourced from workflows.yaml is future work;
