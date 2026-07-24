@@ -14,6 +14,28 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-104 — G021 anti-fabrication covers conversational execution-narration + operator-pasted context
+
+Extended gate **G021** (`anti_fabrication_gate`) to close two facets a live
+`bubbles.goal` session exhibited. **AF-NARRATION:** first-person execution or
+delegation claims in agent narration ("dispatched to X", "mid-flight", "resuming
+from session state", "tests pass") that have no matching in-session tool call,
+dispatch, or file read are fabrication, independent of whether any artifact is
+written. **AF-BORROWED-CONTEXT:** operator-supplied context (pasted screenshots,
+terminal scrollback, another repository's logs or session state) is diagnostic
+input only and MUST NOT be restated as the agent's own execution evidence or
+used to infer a work mandate. The canonical G021 `description` in
+`bubbles/registry/gates.yaml` gained the clause and was regenerated verbatim into
+`bubbles/workflows.yaml` via `generate-gates-block.sh` (never hand-edited); the
+runtime prose clause was added to `bubbles.goal`, `bubbles.sprint`, and
+`operating-baseline.md`, and `quality-gates.md` plus the
+`bubbles-quality-gates-catalog` skill carry the rationale / quick-ref. This
+COMPOSES WITH (does not duplicate) G129/IMP-103, which governs repository-
+selection authority. Scope discipline: G021 Check 12 stays artifact-scoped — the
+narration / borrowed-context facet is a self-check / G020 cross-agent-verification
+obligation, not a new mechanical scanner. Tracked in
+`improvements/IMP-104-af-narration-borrowed-context.md`.
+
 ### Gate G095 hardened — file-on-discovery, no report-and-wait
 
 Strengthened the Discovered-Issue Disposition contract (Gate G095) so agents

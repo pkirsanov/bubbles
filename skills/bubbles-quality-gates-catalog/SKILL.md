@@ -21,6 +21,7 @@ Gates G073, G090, G022, G041, G040, G008A, G009, G056 received non-breaking refi
 ## High-frequency gate IDs (memorize these)
 | Gate | Topic | Enforced by |
 |------|-------|-------------|
+| G021 | Anti-fabrication — fabricated evidence + conversational execution-narration (AF-NARRATION) + operator-pasted context treated as own evidence/mandate (AF-BORROWED-CONTEXT) | `state-transition-guard.sh` Check 12 (artifact-scoped) + G020 self-check; composes with G129/IMP-103 |
 | G023 | State transition guard envelope | `state-transition-guard.sh` |
 | G024 | Spec cannot be `done` until all scopes `Done` | `state-transition-guard.sh`, `artifact-lint.sh` |
 | G025 | Per-DoD-item inline raw evidence ≥10 lines | `artifact-lint.sh`, `state-transition-guard.sh` |

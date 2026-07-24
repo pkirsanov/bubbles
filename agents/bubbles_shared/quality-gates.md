@@ -64,6 +64,8 @@ Block completion when any of these occur:
 - **provenance fabrication:** labeling evidence as `executed` when the DoD claim requires interpretation of the output
 - **missing provenance:** evidence blocks without `**Claim Source:**` tags (treated as `interpreted` by default)
 - **build-once-deploy-many violation (Gate G081, advisory in framework / blocking in opted-in product repos):** deployment manifests pinned by mutable tag instead of `sha256:<digest>`, CI workflows that fuse build with deploy, adapter `apply.sh` that builds locally or skips signature verification (see state-gates.md and bubbles-deployment-target-adapter skill)
+- **execution-narration fabrication (Gate G021, AF-NARRATION):** a first-person execution or delegation claim in agent narration ("dispatched to X", "mid-flight", "resuming from session state", "tests pass") with no matching in-session tool call, dispatch, or file read — fabrication independent of whether any artifact is written. This facet is a self-check / G020 cross-agent-verification obligation; G021 Check 12 stays artifact-scoped.
+- **borrowed-context fabrication (Gate G021, AF-BORROWED-CONTEXT):** restating operator-supplied context (pasted screenshots, terminal scrollback, another repository's logs, or another session's state) as the agent's own execution evidence, or using it to infer a work mandate. Such context is diagnostic input only; repository-selection authority is governed separately by G129/IMP-103.
 
 ## Test Execution Gate
 
