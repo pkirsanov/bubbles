@@ -224,6 +224,18 @@ if [[ -x "$SCRIPT_DIR/generate-modes-block.sh" ]]; then
   run_check "Modes split no-duplication (v6.1 / S2)" bash "$SCRIPT_DIR/generate-modes-block.sh" --check
 fi
 run_check "Gates registry selftest (v5.2 / F4)" bash "$SCRIPT_DIR/gates-registry-selftest.sh"
+# IMP-102 / SCOPE-9: gate-coverage map — advisory generated doc mapping every
+# gate to its enforcing surface(s) (modes / state-transition-guard / framework-
+# validate scripts / CI). --check keeps the committed doc fresh; the selftest
+# proves the freshness check catches drift. Source-only: the map reflects THIS
+# repo's own scripts/guard/CI surfaces, so it is meaningful only in the source
+# checkout (the generator + selftest SKIP gracefully when inputs are absent).
+if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map.sh" ]]; then
+  run_check_self_only "Gate-coverage map drift (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map.sh" --check
+fi
+if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
+  run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/mode-family-inventory-selftest.sh" ]]; then
   run_check "Mode-family inventory selftest (v6.1 / R5)" bash "$SCRIPT_DIR/mode-family-inventory-selftest.sh"
 fi

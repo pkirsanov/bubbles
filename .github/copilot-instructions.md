@@ -59,9 +59,24 @@ Full workflow rules, artifact templates, and verification gates are in:
 - [agent-common.md](agents/bubbles_shared/agent-common.md) — Anti-Fabrication Policy, Execution Evidence Standard, Canonical Test Taxonomy
 - [scope-workflow.md](agents/bubbles_shared/scope-workflow.md) — Scope templates, artifact structure, phase execution flow
 
-### Required Artifacts (BLOCKING)
+### Source-Repo Evidence Model (G085 — no persistent `specs/`)
 
-Before feature work begins, ALL artifacts must exist in `specs/[feature]/`:
+This is the canonical Bubbles **source** checkout. Per gate **G085**
+(`bubbles/scripts/framework-dogfood-guard.sh`, wired into `framework-validate.sh`
+and invoked as state-transition-guard Check 26), the source repo **MUST NOT**
+keep persistent repo-local `specs/` execution packets. Its dogfood evidence
+comes from `framework-validate.sh`, the hermetic `*selftest.sh` suite,
+`bubbles/release-manifest.json`, and downstream or fixture specs — **not** from a
+committed `specs/` tree. Framework changes here are proven by
+`bash bubbles/scripts/cli.sh framework-validate` and `release-check`, not by a
+spec folder.
+
+### Downstream Artifact Workflow (consumer repos)
+
+The `specs/`-based artifact workflow below governs **downstream consumer repos**
+that install Bubbles (and the framework's own hermetic fixture repos) — it does
+**not** create a persistent `specs/` tree in this source repo. In a consumer
+repo, before feature work begins ALL artifacts must exist in `specs/[feature]/`:
 
 | Artifact | Purpose |
 |----------|---------|
@@ -72,9 +87,9 @@ Before feature work begins, ALL artifacts must exist in `specs/[feature]/`:
 | uservalidation.md | User acceptance |
 | state.json | Execution state |
 
-### Work Classification
+#### Work Classification (consumer repos)
 
-All work MUST be organized under feature or bug folders:
+All consumer-repo work MUST be organized under feature or bug folders:
 - Features: `specs/NNN-feature-name/`
 - Bugs: `specs/[feature]/bugs/BUG-NNN-description/`
 
@@ -84,8 +99,8 @@ All work MUST be organized under feature or bug folders:
 
 ```
 Source code:     agents/, prompts/, bubbles/, templates/, docs/
-Tests:           bubbles/scripts/*selftest.sh, specs/, docs/examples/
-Specs:           specs/
+Tests:           bubbles/scripts/*selftest.sh, tests/regression/, docs/examples/
+Specs:           none persisted in source repo (G085); consumer repos use specs/NNN-feature/
 Config:          bubbles/workflows.yaml, bubbles/agent-capabilities.yaml, bubbles/agent-ownership.yaml, .specify/memory/
 ```
 
@@ -118,22 +133,22 @@ ls -la [every-test-file-in-test-plan]
 # 2. Verify no incomplete work markers
 grep -r "TODO\|FIXME\|HACK\|STUB" [changed-files]
 
-# 3. Run tests
-./bubbles.sh test
+# 3. Run framework validation (source repo has no ./bubbles.sh product CLI)
+bash bubbles/scripts/cli.sh framework-validate
 
-# 4. Run artifact lint
-bash .github/bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
+# 4. Run artifact lint (downstream/fixture spec dir)
+bash bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
 
 # 5. Run implementation reality scan
-bash .github/bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
+bash bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
 
 # 6. Run state transition guard
-bash .github/bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
+bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
 
 # 7. Audit live-system tests for interception before claiming they are real-stack
 grep -rn 'page\.route\|context\.route\|route(\|intercept(\|cy\.intercept\|msw\|nock\|wiremock\|responses' [live-system-test-files]
 
 # 8. Audit required regressions for silent-pass bailout patterns
-bash .github/bubbles/scripts/regression-quality-guard.sh [required-e2e-files]
-bash .github/bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh [required-e2e-files]
+bash bubbles/scripts/regression-quality-guard.sh --bugfix [required-e2e-files]
 ```
