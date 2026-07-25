@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# IMP-102 SCOPE-5: Bubbles requires bash 4.0+ — the framework uses associative
+# arrays (declare -A) pervasively (12+ scripts, plus many selftests below). On
+# stock macOS bash 3.2 these constructs fail; the shipped command surface must
+# fail LOUDLY and EARLY (before sourcing any helper or running any declare -A
+# selftest) instead of silently masking the breakage from installers/doctor/CI.
+if [[ -z "${BASH_VERSINFO:-}" ]] || (( ${BASH_VERSINFO[0]:-0} < 4 )); then
+  printf 'ERROR: Bubbles requires bash 4.0+ (found %s). Install a newer bash (e.g. `brew install bash` on macOS) and re-run.\n' "${BASH_VERSION:-unknown}" >&2
+  exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/guard-lib.sh"
 if [[ "$(basename "$(dirname "$SCRIPT_DIR")")" == "bubbles" && "$(basename "$(dirname "$(dirname "$SCRIPT_DIR")")")" == ".github" ]]; then
@@ -197,6 +207,11 @@ run_check "Workflow YAML validity selftest (IMP-102 / SCOPE-3)" bash "$SCRIPT_DI
 # intentionally use raw timeout/sed -i mediated by guard-lib + the PATH shim).
 macos_portability_guard_timeout_seconds="${BUBBLES_MACOS_PORTABILITY_GUARD_SELFTEST_TIMEOUT_SECONDS:-120}"
 run_check "macOS portability guard selftest (bubbles-cross-platform-shell)" bubbles_run_with_timeout "$macos_portability_guard_timeout_seconds" bash "$SCRIPT_DIR/macos-portability-guard-selftest.sh"
+# Bash baseline guard (IMP-102 / SCOPE-5): proves the shipped command surface
+# (cli.sh, framework-validate.sh) fails LOUDLY and EARLY on bash < 4 instead of
+# silently masking declare -A breakage — positive static + functional + an
+# adversarial guard-removed fixture that must break the static check.
+run_check "Bash baseline guard selftest (IMP-102 / SCOPE-5)" bash "$SCRIPT_DIR/bash-baseline-guard-selftest.sh"
 run_check_self_only "Installer manifest check (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer.sh"
 run_check_self_only "Installer manifest selftest (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer-selftest.sh"
 run_check_self_only "Payload integrity verifier selftest (IMP-101 / SCOPE-8)" bash "$SCRIPT_DIR/verify-payload-integrity-selftest.sh"

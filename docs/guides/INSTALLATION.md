@@ -7,7 +7,7 @@
 ## Prerequisites
 
 - A git repository
-- `curl`, `tar`, and `bash` (available on macOS, Linux, WSL)
+- `curl`, `tar`, and `bash` **4.0 or newer** (Linux/WSL ship bash 4+; macOS ships bash 3.2 as `/bin/bash`, so install a newer one with `brew install bash` — the Bubbles command surface fails loudly on bash < 4)
 - A SHA-256 utility (`sha256sum` or `shasum`) for install provenance checksums
 - VS Code with GitHub Copilot Chat extension
 

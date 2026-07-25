@@ -1,7 +1,7 @@
 # Bubbles Source Repo Command Registry
 
 > Generated: 2026-04-05
-> Platform: bash on Linux, macOS, or WSL
+> Platform: bash 4.0+ on Linux, macOS, or WSL (macOS: `brew install bash`; the command surface fails loudly on bash < 4)
 > Repo Type: Bubbles framework source repository
 > Tech Stack: Bash, Markdown, YAML, agent and prompt definitions
 

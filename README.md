@@ -70,9 +70,9 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 ## Install
 
-One command. No dependencies beyond `curl` and `bash`.
+One command. No dependencies beyond `curl` and `bash` **4.0+**.
 
-**Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2. No Windows CMD/PowerShell support.
+**Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2 (bash 4.0+ — on macOS install a newer bash with `brew install bash`, since stock `/bin/bash` is 3.2). No Windows CMD/PowerShell support.
 
 **Source repo note:** these installer commands are for downstream project repos. Do not run `install.sh` inside the Bubbles source repository itself; maintainers should edit the framework directly and validate with `bash bubbles/scripts/cli.sh framework-validate` or `bash bubbles/scripts/cli.sh release-check`. The Bubbles source repo also does not keep persistent `specs/` packets for its own work; durable behavior belongs in docs, scripts, agents, workflows, generated manifests, and release notes.
 

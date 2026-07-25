@@ -51,6 +51,16 @@
 
 set -uo pipefail
 
+# IMP-102 SCOPE-5: Bubbles requires bash 4.0+ — the framework uses associative
+# arrays (declare -A) pervasively (12+ scripts). On stock macOS bash 3.2 these
+# constructs fail; previously cli.sh sourced them under `set -uo pipefail` WITHOUT
+# `-e` and returned exit 0, silently MASKING the breakage from installers/doctor/
+# CI. Fail LOUDLY and EARLY (before sourcing any declare -A script) instead.
+if [[ -z "${BASH_VERSINFO:-}" ]] || (( ${BASH_VERSINFO[0]:-0} < 4 )); then
+  printf 'ERROR: Bubbles requires bash 4.0+ (found %s). Install a newer bash (e.g. `brew install bash` on macOS) and re-run.\n' "${BASH_VERSION:-unknown}" >&2
+  exit 1
+fi
+
 # Source fun mode support
 source "$(dirname "${BASH_SOURCE[0]}")/fun-mode.sh"
 
