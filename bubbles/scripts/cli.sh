@@ -661,6 +661,20 @@ begin_cli_run_state() {
   CURRENT_RUN_POSTURE="$(classify_run_posture "${CURRENT_BUBBLES_COMMAND:-unknown}" "${CURRENT_BUBBLES_ARGS:-}")"
   CURRENT_RISK_CLASS="$(command_effective_risk_class "${CURRENT_BUBBLES_COMMAND:-unknown}" "${CURRENT_BUBBLES_ARGS:-}")"
 
+  # Read-only (pure observation) commands MUST NOT open, lock, or mutate the
+  # run-state registry. `bubbles status`, `specs`, `dod`, etc. only inspect
+  # state, so recording them as active/recent runs churns the shared registry
+  # file on every invocation and risks clobbering a concurrent owning command's
+  # run-state (the registry write is itself an unlocked read-modify-write). Only
+  # owning/mutating commands are tracked as runs. The append-only framework-event
+  # audit log below still records every command, read-only included.
+  if [[ "$CURRENT_RISK_CLASS" == "read_only" ]]; then
+    CURRENT_RUN_STATE_TRACKED=false
+    record_framework_event "framework_command_started" "pending" 0 "args=${CURRENT_BUBBLES_ARGS:-}" "$CURRENT_RISK_CLASS" "$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")" "$CURRENT_RUN_ID"
+    return 0
+  fi
+  CURRENT_RUN_STATE_TRACKED=true
+
   ensure_run_state_registry
   active_lines="$(run_state_lines activeRuns)"
   new_line="$(build_run_record_line "$CURRENT_RUN_ID" 'active' "$CURRENT_RUN_STARTED_AT" "$CURRENT_RUN_STARTED_AT" '' 'pending' 0 "$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")" "$(runtime_attachment_for_session "$CURRENT_SESSION_ID")" "$CURRENT_RUN_POSTURE" "$CURRENT_RISK_CLASS")"
@@ -685,6 +699,11 @@ complete_cli_run_state() {
   local target runtime_attachment active_lines recent_lines line updated_recent completed_line
 
   [[ -n "${CURRENT_RUN_ID:-}" ]] || return 0
+
+  # Read-only commands never opened a run-state record (see begin_cli_run_state);
+  # do not create one on completion either, so pure observation leaves run-state
+  # untouched end to end.
+  [[ "${CURRENT_RUN_STATE_TRACKED:-true}" == true ]] || return 0
 
   ensure_run_state_registry
   target="$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")"

@@ -206,7 +206,192 @@ NORMALIZED_PACKET_FILE=""
 TMP_FILE=""
 CONV_TMP=""
 
+# --- Exclusive session-file lock (concurrency safety) ----------------------
+#
+# One state-snapshot run performs a read-modify-`mv` on bubbles.session.json in
+# up to three places: the mirror-session subprocess (which sets
+# `.repositoryBindingMirror`), the turnSnapshots append, and the convergenceLoops
+# update. Without a lock, two concurrent state-snapshot runs both read the same
+# session file and both `mv` their result, silently discarding one update. A lost
+# convergenceLoops update under-counts iterations and weakens Gate G082/G128
+# convergence-cap enforcement. A single exclusive lock, held from before
+# mirror-session through the final update, serializes the whole interaction so no
+# update is lost.
+#
+# Lock strategy is flock-first. `flock` (util-linux) is a kernel-managed,
+# race-free advisory lock: the kernel serializes concurrent acquirers, so there
+# is NO stale-detect/break window in which two runs could both enter the critical
+# section. It is the PRIMARY path (Linux/CI/selftest). `flock` is absent only on
+# stock macOS; there we fall back to a mkdir mutex whose stale/defensive break is
+# made ATOMIC via a rename-claim (renaming a directory is atomic, so exactly one
+# breaker wins and no live/fresh lock is ever destroyed), still using the holder
+# pid + lock-dir mtime to DECIDE staleness and recover a lock left behind by a
+# SIGKILLed holder instead of spinning forever.
+SESSION_LOCK_DIR=""
+SESSION_LOCK_PID_FILE=""
+SESSION_LOCK_FILE=""
+SESSION_LOCK_MODE=""
+SESSION_LOCK_HELD=false
+
+# Detect flock once at acquire time; release routes on SESSION_LOCK_MODE (the
+# strategy actually used), never on a re-probe.
+session_lock_have_flock() {
+  command -v flock >/dev/null 2>&1
+}
+
+_lock_trace() { [[ -z "${BUBBLES_LOCK_TRACE:-}" ]] || printf '%s %s %s %s\n' "$(date +%s.%N)" "$1" "$$" "$SESSION_LOCK_MODE" >> "$BUBBLES_LOCK_TRACE" 2>/dev/null || true; } # LOCKTRACE-DEBUG
+
+session_lock_mtime_epoch() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || printf '%s' '0'
+}
+
+# Returns 0 = stale (safe to break), 1 = held by a live, non-stale holder.
+session_lock_is_stale() {
+  local pid='' mtime now age max
+  [[ -d "$SESSION_LOCK_DIR" ]] || return 0
+
+  if [[ -f "$SESSION_LOCK_PID_FILE" ]]; then
+    pid="$(cat "$SESSION_LOCK_PID_FILE" 2>/dev/null || true)"
+  fi
+  pid="${pid//[[:space:]]/}"
+
+  max=600
+  mtime="$(session_lock_mtime_epoch "$SESSION_LOCK_DIR")"
+  now="$(date -u +%s 2>/dev/null || printf '%s' '0')"
+  age=-1
+  if [[ "$mtime" =~ ^[0-9]+$ && "$now" =~ ^[0-9]+$ ]]; then
+    age=$(( now - mtime ))
+  fi
+
+  if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+    # A holder pid is recorded: a dead holder is stale immediately; a live holder
+    # is stale only if the lock has outlived the age cap (defensive).
+    if ! kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+    if (( age > max )); then
+      return 0
+    fi
+    return 1
+  fi
+
+  # No holder pid recorded yet. mkdir wins the lock, THEN the holder records its
+  # pid, so there is a brief window where the dir exists with no pid file. Do NOT
+  # break a freshly created lock (that window is an in-flight acquirer, not a
+  # crash) — only a lock dir aged past the stale threshold with no live holder is
+  # genuinely stale. This closes the acquire/pid-write TOCTOU that would
+  # otherwise let two waiters both break each other's fresh lock and lose an
+  # update. A truly wedged pid-less lock is still recovered by acquire's bounded
+  # max-wait defensive break.
+  if (( age > max )); then
+    return 0
+  fi
+  return 1
+}
+
+# Take the exclusive session lock. flock-first (race-free); mkdir mutex only
+# where flock is unavailable.
+acquire_session_lock() {
+  if session_lock_have_flock; then
+    acquire_session_lock_flock
+  else
+    acquire_session_lock_mkdir
+  fi
+}
+
+# PRIMARY path: kernel-managed flock on a dedicated lock file next to the session
+# file. flock is race-free — the kernel blocks concurrent acquirers until the
+# holder releases, so there is no stale-detect/break step and therefore no window
+# in which two runs could both hold the lock (the exact residual race the mkdir
+# mutex had). A BOUNDED `-w` timeout stops a genuinely wedged holder from
+# deadlocking THIS run forever; on timeout we fail loudly and non-zero rather
+# than silently proceeding unlocked. A fixed FD (9) is used so the `exec 9>`
+# redirection works on every bash (the dynamic `exec {fd}>` form needs bash
+# >=4.1; the flock path only runs where flock exists, but a fixed FD keeps it
+# version-independent). The lock FILE is created once and never unlinked (see
+# release_session_lock).
+acquire_session_lock_flock() {
+  local flock_wait=120
+  exec 9>"$SESSION_LOCK_FILE" || {
+    echo "state-snapshot: unable to open session lock file: $SESSION_LOCK_FILE" >&2
+    exit 3
+  }
+  if ! flock -x -w "$flock_wait" 9; then
+    echo "state-snapshot: timed out after ${flock_wait}s acquiring the exclusive session lock." >&2
+    echo "  Lock file: $SESSION_LOCK_FILE" >&2
+    echo "  Another state-snapshot run appears wedged holding it; refusing to proceed unlocked." >&2
+    exec 9>&- || true
+    exit 3
+  fi
+  SESSION_LOCK_MODE="flock"
+  SESSION_LOCK_HELD=true
+  _lock_trace ACQUIRE # LOCKTRACE-DEBUG
+}
+
+# FALLBACK path (stock macOS, no flock): mkdir mutex. Staleness is DECIDED by
+# session_lock_is_stale (holder pid liveness + lock-dir mtime) exactly as before;
+# only the BREAK mechanism is hardened. A bare `rm -rf "$SESSION_LOCK_DIR"` can
+# delete a lock another process is concurrently (re)acquiring — a transient
+# DOUBLE-ACQUIRE that lets two runs enter the critical section and lose one `mv`.
+# Instead we ATOMICALLY CLAIM the stale lock by renaming it to a unique path:
+# renaming a directory is atomic, so exactly ONE concurrent breaker's `mv`
+# succeeds; every loser's `mv` fails and it simply loops to re-check. Only the
+# winner removes the CLAIMED (renamed) dir, so a live/fresh lock is never
+# destroyed out from under its holder.
+acquire_session_lock_mkdir() {
+  local waited=0
+  local max_wait=600
+  local claim
+  while true; do
+    if mkdir "$SESSION_LOCK_DIR" 2>/dev/null; then
+      printf '%s\n' "$$" > "$SESSION_LOCK_PID_FILE" 2>/dev/null || true
+      SESSION_LOCK_MODE="mkdir"
+      SESSION_LOCK_HELD=true
+      _lock_trace ACQUIRE # LOCKTRACE-DEBUG
+      return 0
+    fi
+    if session_lock_is_stale; then
+      _lock_trace BREAK-STALE # LOCKTRACE-DEBUG
+      claim="$SESSION_LOCK_DIR.stale.$$.${RANDOM}"
+      if mv "$SESSION_LOCK_DIR" "$claim" 2>/dev/null; then
+        rm -rf "$claim" 2>/dev/null || true
+      fi
+      continue
+    fi
+    waited=$(( waited + 1 ))
+    if (( waited > max_wait )); then
+      # A live holder has exceeded the wait budget; break it defensively — but
+      # STILL atomically (rename-claim), so a concurrent fresh acquirer's lock is
+      # never destroyed out from under it.
+      _lock_trace BREAK-DEFENSIVE # LOCKTRACE-DEBUG
+      claim="$SESSION_LOCK_DIR.stale.$$.${RANDOM}"
+      if mv "$SESSION_LOCK_DIR" "$claim" 2>/dev/null; then
+        rm -rf "$claim" 2>/dev/null || true
+      fi
+      continue
+    fi
+    sleep 0.1
+  done
+}
+
+release_session_lock() {
+  [[ "$SESSION_LOCK_HELD" == true ]] || return 0
+  _lock_trace RELEASE # LOCKTRACE-DEBUG
+  if [[ "$SESSION_LOCK_MODE" == "flock" ]]; then
+    # Release by closing the FD (drops the kernel lock). The lock FILE is
+    # deliberately LEFT in place: unlinking it would let a new acquirer create
+    # and lock a fresh inode while an old holder still holds the previous one —
+    # reintroducing a race. flock keys on the open file description, not the path.
+    exec 9>&- || true
+  else
+    rm -f "$SESSION_LOCK_PID_FILE" 2>/dev/null || true
+    rmdir "$SESSION_LOCK_DIR" 2>/dev/null || rm -rf "$SESSION_LOCK_DIR" 2>/dev/null || true
+  fi
+  SESSION_LOCK_HELD=false
+}
+
 cleanup_temp_files() {
+  release_session_lock
   [[ -z "$NORMALIZED_PACKET_FILE" ]] || rm -f "$NORMALIZED_PACKET_FILE"
   [[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
   [[ -z "$CONV_TMP" ]] || rm -f "$CONV_TMP"
@@ -222,6 +407,27 @@ cp -- "$BINDING_PACKET_FILE" "$NORMALIZED_PACKET_FILE" || {
   exit 2
 }
 chmod 600 "$NORMALIZED_PACKET_FILE"
+
+# Resolve the repository-local session file from the caller-normalized packet and
+# take the exclusive session lock BEFORE mirror-session runs. mirror-session
+# (repository-binding.sh) performs its own read-modify-`mv` on this same session
+# file, so the lock must span from here through the turnSnapshots +
+# convergenceLoops updates below for concurrent runs to be lose-update-free.
+# The authoritative repository root is still the packet's `.repositoryRoot`
+# (the same value mirror-session validates and uses); locking only proceeds for a
+# well-formed absolute root, so a malformed packet falls through to the existing
+# mirror-session refusal below without creating a spurious lock.
+REPO_ROOT="$(jq -r '.repositoryRoot' "$NORMALIZED_PACKET_FILE")"
+SESSION_DIR="$REPO_ROOT/.specify/memory"
+SESSION_FILE="$SESSION_DIR/bubbles.session.json"
+SESSION_LOCK_DIR="$SESSION_FILE.lock"
+SESSION_LOCK_PID_FILE="$SESSION_LOCK_DIR/holder.pid"
+SESSION_LOCK_FILE="$SESSION_FILE.flock"
+if [[ -n "$REPO_ROOT" && "$REPO_ROOT" == /* ]]; then
+  mkdir -p "$SESSION_DIR"
+  acquire_session_lock
+fi
+
 set +e
 BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" mirror-session \
   --session-id "$SESSION_ID" \
@@ -233,10 +439,6 @@ if [[ "$BINDING_RC" -ne 0 ]]; then
   printf '%s\n' "$BINDING_OUTPUT" >&2
   exit "$BINDING_RC"
 fi
-REPO_ROOT="$(jq -r '.repositoryRoot' "$NORMALIZED_PACKET_FILE")"
-
-SESSION_DIR="$REPO_ROOT/.specify/memory"
-SESSION_FILE="$SESSION_DIR/bubbles.session.json"
 
 mkdir -p "$SESSION_DIR"
 
@@ -319,6 +521,11 @@ if [[ -n "$CONV_ITER" && -n "$SPEC_DIR" ]]; then
   mv "$CONV_TMP" "$SESSION_FILE"
   CONV_TMP=""
 fi
+
+# Release the exclusive session lock now that every read-modify-write critical
+# section (mirror-session mirror, turnSnapshots, convergenceLoops) has completed.
+# (The EXIT trap also releases it; this frees it promptly on the happy path.)
+release_session_lock
 
 # Echo a one-line summary to stdout for orchestrator log capture.
 if [[ -n "$CONV_ITER" && -n "$SPEC_DIR" ]]; then

@@ -405,6 +405,10 @@ if [[ -x "$SCRIPT_DIR/state-snapshot-selftest.sh" ]]; then
   run_check "State snapshot selftest" bash "$SCRIPT_DIR/state-snapshot-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/runtime-concurrency-selftest.sh" ]]; then
+  run_check "Runtime concurrency selftest (IMP-102 / SCOPE-8)" bash "$SCRIPT_DIR/runtime-concurrency-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/implementation-reality-scan-selftest.sh" ]]; then
   run_check "Implementation reality scan selftest" bash "$SCRIPT_DIR/implementation-reality-scan-selftest.sh"
 fi
