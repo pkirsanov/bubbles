@@ -7477,8 +7477,10 @@ release-ready, hardening-clean, or S2-complete claim.
 ## BUG-015 - installed evaluation package omits runtime and contract schemas
 
 - **Filed:** 2026-07-14
-- **Status:** Reported / Not Started - no installer, manifest, schema, test, or
-  release source has been changed
+- **Status:** Partially resolved (IMP-102 SCOPE-6, 2026-07-25) - BUG015-F1 fixed
+  by reclassifying the eval-harness pair to source-only in the generated
+  manifest so it is no longer shipped downstream; BUG015-F2 and BUG015-F3 remain
+  open (see disposition below)
 - **Disposition:** confirmed from current source plus a supported local-source
   install into an isolated temporary Git repository
 - **Severity:** high - the installed `eval-harness.sh` cannot evaluate any task,
@@ -7964,14 +7966,39 @@ requires a new grounded finding and owner route; it is not bundled here.
 
 ### BUG-015 Current Disposition And Handoff
 
-BUG-015 is confirmed, reported, and not started. Every DoD item remains
-unchecked. This filing changes only `BUGS.md` and makes no fix, post-fix test,
-framework-pass, release-check, release, propagation, or IMP-020 completion
-claim.
+**Update 2026-07-25 (IMP-102 SCOPE-6 - BUG015-F1 resolved).** BUG015-F1 is
+resolved. Evidence in this working tree established that the golden-task eval
+harness is framework-source-only: its selftest is wired through
+`run_check_self_only` (SKIPPED in downstream `framework-validate`), and the
+entire `bubbles/eval/` payload it consumes (including
+`bubbles/eval/schemas/task-v2.schema.json` and
+`bubbles/eval/schemas/evaluator-result.schema.json`) is already classified
+source-only. `bubbles/scripts/generate-release-manifest.sh` now reclassifies
+`bubbles/scripts/eval-harness.sh` and `bubbles/scripts/eval-harness-selftest.sh`
+out of the managed set and into `sourceOnlyFileChecksums`, so the regenerated
+`bubbles/release-manifest.json` no longer owns them as managed. `install.sh`'s
+existing managed-script prune (`release_manifest_owns_managed_path`) therefore
+removes the harness pair from every downstream install, eliminating the broken
+`../eval/schemas/...` relative reference that previously made `eval-harness.sh`
+exit 2 with `schema-contract-unavailable`. No downstream-run script invokes the
+harness at runtime (`eval-heldout-guard.sh` names it only in comments;
+`forecast-eval-check.sh` is standalone), so the demotion creates no dangling
+reference. This was chosen over promoting the two schemas into the managed set
+because downstream never runs the harness at all, so demotion is the smaller,
+self-consistent change (the whole eval subsystem stays source-only).
 
-The next required owner is `bubbles.devops` for the bounded installer,
-manifest-enumeration, and package-provenance repair. Route its result to
-`bubbles.test` for independent adversarial execution, then to
+**Still open (NOT in IMP-102 SCOPE-6 scope).** BUG015-F2 (the installed
+`agent-common.md` red-team contract still names
+`bubbles/eval/schemas/adversarial-sample.schema.json`, which remains
+source-only while `adversarial-aggregate.sh` keeps its embedded validator) and
+BUG015-F3 (the `install-provenance-selftest.sh` /
+`release-manifest-selftest.sh` provenance assertions that document the
+source-only eval classification) are unrelated to the eval-harness runtime
+schema reference fixed here and are deliberately left untouched.
+
+The next required owner for the still-open findings is `bubbles.devops` for the
+bounded installer, manifest-enumeration, and package-provenance repair. Route
+its result to `bubbles.test` for independent adversarial execution, then to
 `bubbles.validate` for boundary and finding-coverage validation, then to
 `bubbles.releases` for generated manifest/release readiness, and finally back
 to the IMP-020 orchestrator for S1/S2 one-to-one reconciliation.

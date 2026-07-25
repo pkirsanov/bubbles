@@ -3158,20 +3158,40 @@ cmd_upgrade() {
     return
   fi
 
-  # Download and run install.sh
+  # Download and run install.sh. cli.sh runs `set -uo pipefail` WITHOUT `-e`, so a
+  # failed install does NOT abort this function on its own; each branch's exit
+  # status MUST be captured explicitly (IMP-102 SCOPE-6). Without this, a broken
+  # install fell through to the unconditional "✅ Upgrade complete." + `fun_summary
+  # pass` below, reporting success for a failed upgrade. The curl|bash branch
+  # relies on `pipefail` so a curl failure (not just the bash side) is also caught.
   proj_root="$(project_root)"
+  local install_rc=0
   if [[ -n "$local_source" ]]; then
-    bash "$local_source/install.sh" --local-source "$local_source"
+    bash "$local_source/install.sh" --local-source "$local_source" || install_rc=$?
   elif [[ -n "${BUBBLES_SOURCE_OVERRIDE_DIR:-}" ]]; then
     export BUBBLES_SOURCE_OVERRIDE_DIR
-    bash "$BUBBLES_SOURCE_OVERRIDE_DIR/install.sh" "$target_version"
+    bash "$BUBBLES_SOURCE_OVERRIDE_DIR/install.sh" "$target_version" || install_rc=$?
   else
-    curl -fsSL "https://raw.githubusercontent.com/${repo}/${target_version}/install.sh" | bash -s -- "$target_version"
+    curl -fsSL "https://raw.githubusercontent.com/${repo}/${target_version}/install.sh" | bash -s -- "$target_version" || install_rc=$?
   fi
 
-  # Run doctor to validate
+  if [[ "$install_rc" -ne 0 ]]; then
+    echo "❌ Upgrade failed: install.sh exited $install_rc" >&2
+    fun_summary fail
+    return "$install_rc"
+  fi
+
+  # Run doctor to validate. A non-zero doctor result means the upgrade landed an
+  # inconsistent framework state; surface it and stop rather than declaring
+  # success. Doctor runs ONLY after a clean install (guaranteed by the guard above).
   echo ""
-  cmd_doctor
+  local doctor_rc=0
+  cmd_doctor || doctor_rc=$?
+  if [[ "$doctor_rc" -ne 0 ]]; then
+    echo "❌ Upgrade incomplete: doctor validation failed (exit $doctor_rc)" >&2
+    fun_summary fail
+    return "$doctor_rc"
+  fi
 
   # Staleness recommendations
   echo ""

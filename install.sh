@@ -751,10 +751,16 @@ if [[ -f "$PAYLOAD_VERIFIER" ]]; then
   PAYLOAD_INSTALL_PROFILE="full"
   [[ "$AGENTS_ONLY" == "true" ]] && PAYLOAD_INSTALL_PROFILE="agents-only"
   info "Verifying payload integrity against release manifest..."
+  # --require-manifest: this is a REAL install, and install.sh already refused to
+  # proceed without a source manifest (see the RELEASE_MANIFEST_SOURCE preflight).
+  # Passing the flag makes the verifier fail hard (never green-skip) if the manifest
+  # is somehow absent at verify time — closing the incomplete-payload gap where a
+  # missing manifest would otherwise return an advisory exit 0 (IMP-102 SCOPE-6).
   if bash "$PAYLOAD_VERIFIER" \
     --target "$TARGET" \
     --manifest "$RELEASE_MANIFEST_SOURCE" \
     --install-profile "$PAYLOAD_INSTALL_PROFILE" \
+    --require-manifest \
     --quiet; then
     ok "Payload integrity verified against release manifest"
   else
