@@ -121,6 +121,17 @@ while IFS= read -r regression_test_path; do
   source_only_entries+=("$regression_relative_path")
 done < <(find "$REPO_ROOT/tests/regression" -maxdepth 1 -type f -name '*.sh' 2>/dev/null | LC_ALL=C sort)
 
+# IMP-102 / SCOPE-10: the per-agent effective-bundle budget file is a source-repo
+# artifact consumed ONLY by agent-bundle-size-budget.sh --check, which
+# framework-validate runs via run_check_self_only (source-only). Downstream installs
+# carry agents under .github/agents and never run the live budget check, so the
+# committed ceilings are integrity-tracked here but NOT shipped downstream.
+agent_bundle_budget_entry="bubbles/agent-bundle-budgets.json"
+if [[ -f "$REPO_ROOT/$agent_bundle_budget_entry" ]] &&
+  bubbles_manifest_entry_is_tracked "$REPO_ROOT" "$agent_bundle_budget_entry"; then
+  source_only_entries+=("$agent_bundle_budget_entry")
+fi
+
 # Keep the source-only inventory deterministically sorted. The demoted eval-harness
 # pair lives under bubbles/scripts/, which sorts between bubbles/eval/** and
 # tests/regression/**, so it must be merged into sort order rather than appended.

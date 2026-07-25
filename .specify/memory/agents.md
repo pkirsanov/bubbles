@@ -95,6 +95,17 @@ bash bubbles/scripts/cli.sh repo-readiness .
 bash bubbles/scripts/cli.sh run-state --all
 ```
 
+### Proportional Validation Tracks
+
+`framework-validate` is tiered (IMP-012, opt-in and non-breaking — the default runs every check). Match the depth to the moment:
+
+| Track | Command | When to use |
+|-------|---------|-------------|
+| Quick signal | `bash bubbles/scripts/cli.sh framework-validate --tier=core` | Fast structural/lint/generator subset for routine local iteration. Also available on the pre-push hook via `BUBBLES_PREPUSH_TIER=core`. |
+| Assured / promotion default | `bash bubbles/scripts/cli.sh framework-validate` (= `--tier=full`, the default) | Every check — the full assured suite. This is the default and the required gate before cutting a release (`release-check` runs it in full). |
+
+`--list-tier=core` / `--list-tier=full` dry-list which checks a tier would run or skip without executing anything (see `framework-validate-tier-selftest.sh`). A `--tier=core` push is a fast local signal only — a full validate + `release-check` is still required before a release; the release gate is never silently weakened.
+
 ---
 
 ## IV. Code Patterns

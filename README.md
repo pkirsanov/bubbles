@@ -39,6 +39,17 @@ You describe the outcome. Bubbles drives a crew of specialized agents to it, gat
 
 Stop babysitting your AI. Put it on the clock.
 
+## Why It's Different: Mechanical Certification Integrity
+
+Plenty of tools *ask* an AI to "be thorough." Bubbles is different because "done" is a **mechanically enforced verdict, not a claim.** The moat is a guard chain that treats fabricated progress as the default failure mode and refuses to let it through:
+
+- **Evidence gates** — every Definition-of-Done item must carry raw, captured command output (real exit codes, real test counts). A narrative "all tests pass" with no terminal output is rejected as fabrication, not accepted as proof.
+- **Adversarial fixtures** — a bug fix's regression test must include a case that *fails if the bug comes back*. Tautological tests, silent-pass early-returns, and mock-swapped "live" tests are caught and refused.
+- **The anti-fabrication guard chain** — heuristics scan for the tells of invented evidence (sub-10-line blocks, verbatim templates, batch-checked items, copy-pasted output) and revert the work to `in_progress` when they fire.
+- **The state-transition guard** — the single mechanical gate between `in_progress` and `done`. It re-derives DoD completeness, scope status, and evidence provenance from the artifacts themselves; if the proof doesn't hold, the transition is refused — there is no override flag.
+
+That is the genuine differentiator: not that Bubbles *tells* your AI to do good work, but that it **cannot mark work done until the proof mechanically holds up.**
+
 ## How It Works
 
 Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work, plus a control plane that tracks certification authority, scenario contracts, workflow run-state, typed framework events, runtime lease safety, and framework-level validation.

@@ -638,6 +638,21 @@ if [[ -x "$SCRIPT_DIR/effective-bundle-budget.sh" ]]; then
   run_check_self_only "Effective-bundle budget (live)" bash "$SCRIPT_DIR/effective-bundle-budget.sh" "$REPO_ROOT"
 fi
 
+# IMP-102 / SCOPE-10: ratcheting PER-AGENT effective-bundle size budget. The
+# hermetic selftest runs everywhere (it builds its own fixtures + guards the
+# real-tree sync case). The live --check is source-only: it measures the
+# framework's OWN agents against the committed per-agent ceilings in
+# bubbles/agent-bundle-budgets.json, which is a source-repo artifact (classified
+# source-only in the release manifest, not shipped downstream where agents/ lives
+# under .github/agents). Mirrors the effective-bundle-budget wiring above.
+if [[ -x "$SCRIPT_DIR/agent-bundle-size-budget-selftest.sh" ]]; then
+  run_check "Agent bundle-size budget selftest (IMP-102 / SCOPE-10)" bash "$SCRIPT_DIR/agent-bundle-size-budget-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/agent-bundle-size-budget.sh" ]]; then
+  run_check_self_only "Agent bundle-size budget (ratcheting per-agent, IMP-102 / SCOPE-10)" bash "$SCRIPT_DIR/agent-bundle-size-budget.sh" --check --repo-root "$REPO_ROOT"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0

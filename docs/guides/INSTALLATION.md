@@ -40,6 +40,8 @@ This installs:
 - Agent registries → `.github/bubbles/agent-ownership.yaml`, `.github/bubbles/agent-capabilities.yaml`
 - Governance scripts → `.github/bubbles/scripts/*.sh`
 
+> **Source-only media is not shipped.** The downstream install payload is exactly the set of files tracked in `bubbles/release-manifest.json` (agents, prompts, shared docs, instructions, skills, workflow config, registries, and governance scripts — copied under `.github/` above). Repo-root media such as `pictures/` (~411 MiB of README/branding art) is **source-only**: it has zero release-manifest entries and is never copied by `install.sh`, so it does not ride along in a downstream install even though it lives in the source-archive tarball.
+
 And with `--bootstrap`, also creates:
 - `.github/copilot-instructions.md` — project policies and commands
 - `.github/instructions/terminal-discipline.instructions.md` — CLI discipline rules

@@ -226,3 +226,26 @@ All scopes are gated behind owner approval per G125; none auto-mutates `bubbles/
 - Two read-only rounds at `HEAD 59fb6a0` (clean tree). `framework-validate` and `release-check` both PASS at this SHA — every finding above sits *outside* those checks by construction, which is the point.
 - Round 2 added: an adversarial falsification pass (all 11 round-1 findings CONFIRMED-SHARPENED, H11 partial only on the BUGS sub-claim) and a fresh code-review of under-covered surfaces (guards, schemas, generators, portability), which produced the RCE (SCOPE-4), the additional portability breakage (SCOPE-5), and the session-snapshot race (SCOPE-8).
 - No files were modified during review. This proposal itself is the only artifact produced, and per G125 it does not mutate `bubbles/*` until the owner approves.
+
+---
+
+## Appendix C — SCOPE-10 delivery notes (as-applied)
+
+This records what SCOPE-10 actually landed and one deliberate deferral, so the decision is traceable in the IMP-102 context.
+
+**Applied**
+- **Ratcheting per-agent bundle-size budget** — `bubbles/scripts/agent-bundle-size-budget.sh` (+ hermetic selftest) enforces per-agent effective-bundle ceilings recorded in `bubbles/agent-bundle-budgets.json`; wired into `framework-validate` (selftest always; live `--check` source-only) and integrity-tracked as a source-only `release-manifest.json` entry.
+- **Payload boundary documented** — `docs/guides/INSTALLATION.md` now states the downstream install payload is exactly the release-manifest-tracked set and that repo-root media (`pictures/`, ~411 MiB) is source-only with zero manifest entries, never copied by `install.sh`. Verified: 0 manifest entries and 0 references in `install.sh` / `generate-release-manifest.sh` / `trust-metadata.sh`. The media is left in-tree; only the shipped payload is the manifest set.
+- **Proportional validation tracks documented** — `.specify/memory/agents.md` documents the existing `framework-validate --tier=core|full` tiering (implemented under IMP-012, tested by `framework-validate-tier-selftest.sh`): `--tier=core` = quick local signal, `--tier=full` (the default) = the assured/promotion track and the required pre-release gate.
+- **Positioning** — `README.md` now leads with the mechanical certification-integrity moat (evidence gates, adversarial fixtures, the anti-fabrication guard chain, the state-transition guard). No fabricated benchmark numbers were added.
+
+**Deferred — validation single-run reuse (recommended follow-up, NOT implemented)**
+
+The prepush hook runs the full `framework-validate` and then `release-check`, and `release-check` re-invokes `framework-validate` — so a default push executes the full validate **twice**. The tempting optimization is to have `framework-validate` write a `.specify/runtime/framework-validate-pass.<HEAD_SHA>` marker on success and have `release-check` skip its own re-run when a fresh marker matches HEAD.
+
+This was assessed and **deliberately deferred** as *risky orchestration*, not a clean/low-risk change, because a HEAD-sha-keyed marker can produce a **false PASS on the release gate**:
+- **Dirty-tree false-positive.** The marker keys on `HEAD`, but `framework-validate` routinely runs against an uncommitted working tree (this SCOPE-10 branch is itself dirty). Between a marker-writing validate and a marker-honoring `release-check`, the tree can change with `HEAD` unchanged — `release-check` would then skip a validate that should have re-run and failed. A short TTL narrows but does not close this window.
+- **Tier confusion.** The prepush core-tier fast path runs `--tier=core` (a subset). A marker would have to encode the tier and have `release-check` honor only a `full` marker, or a fast core push could satisfy the full release gate — exactly the "release gate silently weakened" hazard the hook explicitly warns against.
+- **Blast radius on a never-bypassed gate.** The change edits `release-check` (whose own comment reads that the release gate is never weakened) to *conditionally skip* a check. Getting the freshness/tier/keying logic subtly wrong short-circuits a safety gate — worse than the ~1× validate time it saves.
+
+A correct implementation would key the marker to a **content hash** (tracked + untracked), not `HEAD`, and gate strictly on tier — a larger, higher-risk change than the payload/budget/doc work in this scope. Recommended as a separate, dedicated follow-up (owning agent: release/devops) with its own regression proving both the skip-on-fresh-marker and the `--force`/stale-marker re-run paths. Until then the double-run stands: it is redundant compute, not a correctness risk.
