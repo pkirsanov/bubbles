@@ -233,6 +233,9 @@ fi
 if [[ -x "$SCRIPT_DIR/control-plane-rce-selftest.sh" ]]; then
   run_check "Control-plane RCE selftest (IMP-102 / SCOPE-4 — no shell interpolation into python3 -c)" bash "$SCRIPT_DIR/control-plane-rce-selftest.sh"
 fi
+if [[ -x "$SCRIPT_DIR/evidence-admission-hardening-selftest.sh" ]]; then
+  run_check "Evidence-admission hardening selftest (IMP-102 / SCOPE-1)" bash "$SCRIPT_DIR/evidence-admission-hardening-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/tool-capture-shim-selftest.sh" ]]; then
   run_check "Tool-capture shim selftest (v6.1 / R2)" bash "$SCRIPT_DIR/tool-capture-shim-selftest.sh"
 fi
