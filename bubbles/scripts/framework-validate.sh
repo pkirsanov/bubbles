@@ -281,6 +281,9 @@ fi
 if [[ -x "$SCRIPT_DIR/mcp-http-transport-selftest.sh" ]]; then
   run_check "MCP HTTP transport selftest (v6.1 / R9)" bash "$SCRIPT_DIR/mcp-http-transport-selftest.sh"
 fi
+if [[ -x "$SCRIPT_DIR/mcp-trust-boundary-selftest.sh" ]]; then
+  run_check "MCP trust-boundary selftest (IMP-102 / SCOPE-7)" bash "$SCRIPT_DIR/mcp-trust-boundary-selftest.sh"
+fi
 run_check "Workflow registry consistency" bash "$SCRIPT_DIR/workflow-registry-consistency.sh" --quiet
 run_check "Mode resolver validate" bash "$SCRIPT_DIR/mode-resolver.sh" --validate
 run_check "Mode resolver selftest" bash "$SCRIPT_DIR/mode-resolver-selftest.sh"
