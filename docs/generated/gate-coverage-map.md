@@ -21,7 +21,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 - Referenced by ≥1 workflow mode: **65**
 - Not referenced by any mode: **45**
   - of those, enforced by state-transition-guard: **33**
-  - of those, enforced by a framework-validate script: **34**
+  - of those, enforced by a framework-validate script: **36**
   - of those, enforced in CI: **33**
 - Gates with NO detected MECHANICAL surface (may be agent-behavior-enforced; REVIEW): **5** — G038, G066, G071, G078, G079
 
@@ -68,8 +68,8 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G040 | incomplete_work_language_gate | 25 | Check 18 | 4 | guard |
 | G041 | dod_format_integrity_gate | 0 | Check 4A, Check 4B | 2 | guard |
 | G042 | artifact_ownership_enforcement_gate | 0 | Check 3G | 1 | guard |
-| G043 | consumer_trace_gate | 0 | ref | 1 | guard |
-| G044 | comprehensive_regression_gate | 25 | — | 6 | — |
+| G043 | consumer_trace_gate | 0 | ref | 2 | guard |
+| G044 | comprehensive_regression_gate | 25 | — | 7 | — |
 | G047 | idor_auth_bypass_gate | 25 | — | 2 | — |
 | G048 | silent_decode_failure_gate | 25 | — | 2 | — |
 | G051 | test_env_dependency_gate | 25 | Check 19 | 2 | guard |
@@ -85,9 +85,9 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G063 | concrete_result_gate | 0 | Check 3G | 2 | guard |
 | G064 | workflow_runner_authorization_gate | 0 | Check 3H | 6 | guard |
 | G066 | phase_claim_provenance_gate | 0 | — | — | — |
-| G067 | shared_infrastructure_blast_radius_gate | 0 | ref | — | guard |
+| G067 | shared_infrastructure_blast_radius_gate | 0 | ref | 1 | guard |
 | G068 | dod_gherkin_content_fidelity_gate | 0 | Check 22 | 6 | guard |
-| G069 | collateral_change_containment_gate | 0 | ref | — | guard |
+| G069 | collateral_change_containment_gate | 0 | ref | 1 | guard |
 | G070 | outcome_contract_gate | 0 | — | 1 | — |
 | G071 | execution_only_validation_gate | 0 | — | — | — |
 | G072 | evidence_provenance_gate | 0 | Check 40 | 3 | guard |
@@ -150,15 +150,15 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G038 | failure_recovery_containment_gate | — | — | — | — |
 | G041 | dod_format_integrity_gate | Check 4A, Check 4B | 2 | guard | evidence-admission-hardening-selftest.sh, v4.1.0-selftest.sh |
 | G042 | artifact_ownership_enforcement_gate | Check 3G | 1 | guard | agent-ownership-lint.sh |
-| G043 | consumer_trace_gate | ref | 1 | guard | expand-migrate-contract-guard.sh |
+| G043 | consumer_trace_gate | ref | 2 | guard | expand-migrate-contract-guard.sh, imp021-interaction-contracts-selftest.sh |
 | G052 | artifact_freshness_guard_gate | Check 13A | — | guard | — |
 | G053 | implementation_delta_evidence_gate | Check 13B | 3 | guard | delivery-implementation-delta-guard-selftest.sh, delivery-implementation-delta-guard.sh, state-transition-guard-selftest.sh |
 | G063 | concrete_result_gate | Check 3G | 2 | guard | agent-ownership-lint.sh, state-transition-guard-selftest.sh |
 | G064 | workflow_runner_authorization_gate | Check 3H | 6 | guard | agent-ownership-lint.sh, framework-validate.sh, scenario-compile-lint-selftest.sh, scenario-compile-lint.sh, state-transition-guard-selftest.sh, workflow-runner-grants-lint.sh |
 | G066 | phase_claim_provenance_gate | — | — | — | — |
-| G067 | shared_infrastructure_blast_radius_gate | ref | — | guard | — |
+| G067 | shared_infrastructure_blast_radius_gate | ref | 1 | guard | imp021-interaction-contracts-selftest.sh |
 | G068 | dod_gherkin_content_fidelity_gate | Check 22 | 6 | guard | audit-result-contract-lint-selftest.sh, capability-freshness-selftest.sh, dod-section-lib.sh, evidence-admission-hardening-selftest.sh, state-transition-guard-selftest.sh, traceability-guard.sh |
-| G069 | collateral_change_containment_gate | ref | — | guard | — |
+| G069 | collateral_change_containment_gate | ref | 1 | guard | imp021-interaction-contracts-selftest.sh |
 | G070 | outcome_contract_gate | — | 1 | — | scenario-compile-lint.sh |
 | G071 | execution_only_validation_gate | — | — | — | — |
 | G072 | evidence_provenance_gate | Check 40 | 3 | guard | claim-source-lint.sh, framework-validate.sh, gate-strength-lint.sh |

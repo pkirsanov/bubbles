@@ -64,6 +64,15 @@ It produces a concise **Grill Report** with these sections:
 - When the user is actually asking for clarification of existing artifacts, route to `bubbles.clarify` instead of duplicating its job.
 - When the user is really asking for stronger scenarios and DoD, route findings to `bubbles.plan`.
 
+## Interactive Mode: Facts vs. Decisions
+
+The autonomous challenge behavior above is the DEFAULT and is unchanged. This section STRENGTHENS only explicitly interactive or guarded runs (`mode: interactive`, or when policy requires a human decision). In those runs, classify every unresolved node as a **fact** or a **decision** and handle each accordingly:
+
+- **Facts (agent researches — never asks the operator):** anything verifiable directly from code, tools, primary sources, or existing artifacts. The agent MUST research these itself; it MUST NOT ask the operator for information it can verify. Record the classification reason and the evidence source. Genuine uncertainty routes to a single bounded question rather than silent inference.
+- **Decisions (operator judgment):** trade-offs the operator must own. Present them **one at a time, in dependency order**, each with a recommended answer and the concrete consequence of choosing differently. Do not dump a decision list; a downstream decision waits until its prerequisite decision is settled.
+- **No routing before confirmation:** do NOT route the findings or enact the resulting plan until the operator explicitly confirms that shared understanding has been reached. Confirmation is a distinct step — it is not implied by the operator answering the last question.
+- **Ownership preserved:** the grill still only records findings and routing packets. `bubbles.analyst` / `bubbles.ux` / `bubbles.design` / `bubbles.plan` remain the owners of their canonical artifacts; an interactive session never writes those artifacts directly.
+
 ## Inputs
 
 ```text

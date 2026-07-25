@@ -34,6 +34,14 @@ description: Create a manual handoff packet for moving a long session into a new
 
 **MANDATORY:** Follow all patterns in [agent-common.md](bubbles_shared/agent-common.md).
 
+## Reference-First + Redaction Contract (NON-NEGOTIABLE)
+
+The handoff packet carries the LIVE THREAD, not a copy of durable truth. Keep it small and safe:
+
+- **Reference, don't restate.** Point to `spec.md`, `design.md`, `scopes.md`, `report.md`, run-state (`state.json`), commits, and diffs **by path or identifier**. Do NOT paste their settled content into the packet — the resumed session re-reads them from the repo. Copy ONLY the live thread: current goal, active phase/scope, unresolved decisions/findings, the latest executable evidence result, and the exact continuation envelope.
+- **Redact secrets.** Before presenting the packet, remove secrets, credentials, tokens, private keys, personal identifiers (PII), and deployment-specific sensitive values (hostnames, IPs, tailnet identity, real user/home paths). Reference a secret's LOCATION (config key / secret-store path), never its value.
+- **Preserve what resume needs.** Compaction MUST NOT erase blockers, the next-owner routing, or the evidence/routing references anti-fabrication depends on. Shorten prose; never drop provenance. If a durable anchor and the live thread disagree, the durable artifact wins and the disagreement is recorded as an unresolved finding.
+
 ---
 
 VS Code GitHub Copilot does not have a built-in one-shot chat handoff command. Use this workflow to carry a long session into a fresh chat.
@@ -51,6 +59,10 @@ We are migrating this session to a new context window to save tokens. Please gen
 
 The output must be a single fenced code block containing **everything**, with **no text outside the block**. Do **not** add any preface, postscript, headings, or blank lines outside the code block. The response must begin with the opening fence and end with the closing fence.
 
+**Reference, do not restate:** for any item below that names files, specs, designs, scopes, reports, run-state, commits, or diffs, list them by **path or identifier only** — do NOT paste their settled content. The resumed session re-reads them from the repo.
+
+**Redact before output:** remove every secret, credential, token, private key, PII value, and deployment-specific sensitive value (hostnames, IPs, tailnet identity, real user/home paths). Reference a secret by its location (config key / secret-store path), never its value. Never drop blockers, next-owner routing, or evidence references.
+
 The single code block must contain:
 
 1.  **Project Goal:** (1 sentence summary)
@@ -63,7 +75,7 @@ The single code block must contain:
 8.  **Baseline Health:** (Pre-change baseline test counts if captured: total/passing/failing/skipped)
 9.  **Recommended Workflow Continuation:** (Exact `/bubbles.workflow ...` command to run next)
 10. **Continuation Envelope:** (Machine-readable continuation packet with target, intent, preferredWorkflowMode, tags, and reason. Preserve the exact active workflow mode when one is already in progress; do not collapse workflow continuation into raw specialist follow-ups. Carry the current decision unchanged as `repositoryRoot`, `repositoryAlias`, `repositoryResolution.sessionId`, `repositoryResolution.decisionId`, `repositoryResolution.controlRevision`, `repositoryResolution.controlPathDigest`, `repositoryResolution.authority`, `repositoryResolution.transition`, `repositoryResolution.scopeKind`, `repositoryResolution.scopeId`, `repositoryResolution.targetKind`, `repositoryResolution.pathVisibility`, and `repositoryResolution.actionable`. A separate `provenance` block may also carry `agentSourceRoot` and `frameworkVersion`; the resumed session validates the actionable packet and re-runs `repo-binding-preflight.sh`, and any mismatch is a REFUSE. See [bubbles-result-envelope](../skills/bubbles-result-envelope/SKILL.md) and IMP-025 MR3.)
-11. **Code Context:** (Brief snippet of last change, **no nested code fences**)
+11. **Code Context:** (Brief snippet of last change, **no nested code fences**, secrets/PII redacted)
 
 At the very end of the block, include this exact restoration command (still inside the same code block):
 
