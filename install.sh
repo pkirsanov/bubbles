@@ -427,6 +427,22 @@ if [[ -d "$TEMP_DIR/bubbles/schemas" ]]; then
   ok "$(find "${TARGET}/bubbles/schemas" -type f 2>/dev/null | wc -l) schema file(s) installed"
 fi
 
+# ── Install the managed adversarial-sample record schema (BUG015-F2) ──
+# The installed agents/bubbles_shared/agent-common.md red-team contract names
+# bubbles/eval/schemas/adversarial-sample.schema.json as the authoritative record
+# schema (version 1). It is manifest-managed (trust-metadata.sh), so it MUST ship
+# downstream at its exact referenced path or record-producing agents and reviewers
+# cannot resolve it. Copy ONLY this single file — task-v2/evaluator-result stay
+# source-only (BUG015-F1 demoted the eval-harness that consumes them), so this is
+# never a whole-directory copy of bubbles/eval/schemas/.
+ADVERSARIAL_SAMPLE_SCHEMA="bubbles/eval/schemas/adversarial-sample.schema.json"
+if [[ -f "$TEMP_DIR/$ADVERSARIAL_SAMPLE_SCHEMA" ]]; then
+  info "Installing adversarial-sample record schema..."
+  mkdir -p "${TARGET}/bubbles/eval/schemas"
+  cp "$TEMP_DIR/$ADVERSARIAL_SAMPLE_SCHEMA" "${TARGET}/$ADVERSARIAL_SAMPLE_SCHEMA"
+  ok "adversarial-sample record schema installed"
+fi
+
 # ── Install registry (v5.2.1 / F4 installer fix) ──────────────────────
 # bubbles/registry/gates.yaml is canonical for gate definitions starting
 # in v5.2. generate-gates-block.sh splices it back into workflows.yaml.

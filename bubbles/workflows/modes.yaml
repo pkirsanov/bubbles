@@ -529,7 +529,7 @@ modes:
       requireNoDefaultsNoFallbacks: true
       requireIntegrationCompleteness: true
       # Adversarial-verification control plane (IMP-002): the redteam phase
-      # resolves its effective posture (mode/passes/teeth) via
+      # resolves its effective posture (mode/samples/teeth) via
       # adversarial-resolve.sh. mode=off short-circuits the phase to a
       # completed_diagnostic no-op (zero behavior change on upgrade).
       adversarialControlPlane: true

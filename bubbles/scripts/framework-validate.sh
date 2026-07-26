@@ -189,6 +189,13 @@ run_check "Inventory parity check selftest (IMP-005)" bash "$SCRIPT_DIR/inventor
 # Live parity check is framework-source-only: skills/INVENTORY.md is a source-repo
 # artifact and is not vendored into downstream install trees.
 run_check_self_only "Inventory parity check (live, IMP-005)" bash "$SCRIPT_DIR/inventory-parity-check.sh" "$REPO_ROOT"
+# Skill invocation/description-load classification (IMP-021 SCOPE-5): a hermetic
+# selftest proving the report sums auto-discovery description bytes and flags a
+# class-less skill row, PLUS a live source-only report (skills/INVENTORY.md is a
+# source-repo artifact) that prints the aggregate always-loaded description load
+# report-only (exit 0, no threshold) and fails only if a real row omits its class.
+run_check "Skill description-load report selftest (IMP-021 SCOPE-5)" bash "$SCRIPT_DIR/skill-description-load-selftest.sh"
+run_check_self_only "Skill description-load report (live, IMP-021 SCOPE-5)" bash "$SCRIPT_DIR/skill-description-load.sh" --repo-root "$REPO_ROOT" --summary
 # Case-collision guard (IMP-017): the hermetic selftest PLUS a live scan of the
 # repo's tracked files. The live check is deliberately NOT source-only — a
 # case-only duplicate path is a defect in ANY git repo (downstream installs

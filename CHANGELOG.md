@@ -14,6 +14,34 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-021 SCOPE-5 — skill invocation/context-load classification
+
+Landed the last open scope of IMP-021 (ID5): every skill now carries an
+authoring decision — `auto-discovery-required` (a broadly-triggered
+policy/discovery skill the model should always be able to surface) or
+`explicit-invocation-sufficient` (a narrow skill reached only via a specific
+agent/recipe) — recorded in `skills/INVENTORY.md` alongside a new `DescBytes`
+column (the byte length of each skill's `description:` frontmatter). The class
+is a recorded authoring judgment, NOT unsupported SKILL.md frontmatter: this VS
+Code harness auto-loads every skill `description:`, so the classification
+informs future pruning and supplements — never replaces — `bubbles-skills-first-discovery`.
+A new report `bubbles/scripts/skill-description-load.sh` computes each skill's
+description bytes LIVE and prints the aggregate always-loaded description load
+**report-only (exit 0, no threshold — a blocking budget is deferred until
+calibration evidence supports one)**; it fails only when a real skill row omits
+its `Invocation` class or numeric `DescBytes` (input validation, complementary
+to `inventory-parity-check.sh`), and honors an optional advisory
+`skillDescriptionLoadMaxBytes` in `.github/bubbles-project.yaml` without ever
+blocking. Current baseline: 24 `auto-discovery-required` (8,714 bytes) + 17
+`explicit-invocation-sufficient` (7,109 bytes) = 15,823 bytes across 41 skills.
+Proven by the hermetic `bubbles/scripts/skill-description-load-selftest.sh` (sums
+auto bytes; flags a class-less / byte-less row; live source-only column check),
+wired into `framework-validate.sh` beside the inventory-parity checks. The
+`bubbles-skill-authoring` skill gained the invocation-class / verb-led,
+one-trigger-per-branch description authoring rule. IMP-021 is now fully
+implemented (SCOPE-1/2/3/4 shipped; SCOPE-6/7/8 shipped via IMP-026) and the
+`improvements/IMP-021-*.md` packet is retired (IMP-102-delete precedent).
+
 ### IMP-104 — G021 anti-fabrication covers conversational execution-narration + operator-pasted context
 
 Extended gate **G021** (`anti_fabrication_gate`) to close two facets a live

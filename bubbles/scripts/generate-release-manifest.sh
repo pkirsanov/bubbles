@@ -108,10 +108,29 @@ for eval_script in "${eval_source_only_scripts[@]}"; do
   bubbles_manifest_entry_is_tracked "$REPO_ROOT" "$eval_script" || continue
   source_only_entries+=("$eval_script")
 done
+# BUG015-F2: the adversarial-sample record schema is now MANAGED (installed)
+# because the managed agent-common.md red-team contract names it as the
+# authoritative record schema. bubbles_framework_manifest_entries() enumerates it
+# in the managed set above, so it MUST NOT also be swept into source-only here — a
+# path in BOTH checksum sections is a provenance defect (install-provenance and
+# release-manifest selftests reject it). The other two eval schemas (task-v2 /
+# evaluator-result) stay source-only: BUG015-F1 demoted the eval-harness itself,
+# which downstream never runs.
+eval_managed_schemas=(
+  "bubbles/eval/schemas/adversarial-sample.schema.json"
+)
 while IFS= read -r eval_source_path; do
   [[ -f "$eval_source_path" ]] || continue
   eval_relative_path="${eval_source_path#$REPO_ROOT/}"
   bubbles_manifest_entry_is_tracked "$REPO_ROOT" "$eval_relative_path" || continue
+  eval_entry_is_managed=false
+  for eval_managed_schema in "${eval_managed_schemas[@]}"; do
+    if [[ "$eval_relative_path" == "$eval_managed_schema" ]]; then
+      eval_entry_is_managed=true
+      break
+    fi
+  done
+  [[ "$eval_entry_is_managed" == true ]] && continue
   source_only_entries+=("$eval_relative_path")
 done < <(find "$REPO_ROOT/bubbles/eval" -type f 2>/dev/null | LC_ALL=C sort)
 while IFS= read -r regression_test_path; do
