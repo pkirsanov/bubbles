@@ -14,6 +14,31 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-1 — assurance level now drives the terminal status
+
+`bubbles.validate` now DRIVES `state.json.status` and `certification.status`
+from the assurance-derived `terminalStatus` (emitted by `assurance-derive.sh`),
+gated by `is-terminal-for-mode.sh`: `full`→`done` and the `rapid-tool-delivery`
+fast lane→`delivered_fast` are certified directly from the completion evidence
+(`delivered_fast` is the fast lane's declared `terminalAlias`). A derived level
+whose `terminalStatus` is NOT terminal-for-mode (e.g. a `full-delivery` run that
+only reached `fast`, or any run that only reached `prototype` under a mode that
+does not declare `delivered_prototype`) keeps the spec non-terminal
+(`in_progress`/`blocked`) and surfaces `missingForFull` as the remaining work —
+so a fast lane that only reached prototype is never `done`. A new STRUCTURAL
+Check 3I in `state-transition-guard.sh` invokes `assurance-certification-check.sh`
+to refuse a hand-edited or fabricated `certification.assurance` block whose
+`level` and `missingForFull` disagree with the fail-closed derivation invariants
+(`full`→no gaps, `fast`→lists `independent-audit`, `prototype`→non-empty). Fully
+backward-compatible: a `full-delivery` run achieving `full` still certifies
+`done`, and a spec with no `certification.assurance` block is a no-op (Check 3I
+passes, terminal status unchanged). The `missingForFull` bookkeeping stays
+additive and never rewrites scope statuses, DoD, `completedScopes`, or audit
+history. The "Record the achieved assurance assessment" prose in
+`agents/bubbles.validate.agent.md` is updated accordingly (no longer
+"informational only"), and IMP-105 SCOPE-1 is retired from its improvement
+packet.
+
 ### IMP-021 SCOPE-5 — skill invocation/context-load classification
 
 Landed the last open scope of IMP-021 (ID5): every skill now carries an

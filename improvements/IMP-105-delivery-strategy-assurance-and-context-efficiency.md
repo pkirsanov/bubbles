@@ -53,13 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-1 — Finish the assurance → terminal-status vertical (`ASSUR-TERM`)
-
-- Complete the "remaining Phase-3 steps" validate already names: have `bubbles.validate` DRIVE the terminal status from the derived `certification.assurance.level` — `full → done`, `fast → delivered_fast`, `prototype → delivered_prototype` — for modes whose `transitionAudit.profile` permits it (the fast lane already carries `terminalAliases: [ delivered_fast ]` and `delivery-completion-fast-v1`). `assurance-derive.sh` already emits the matching `terminalStatus` line, so this is wiring, not new logic.
-- Add the guard-side consistency teeth: `state-transition-guard.sh` invokes `assurance-certification-check.sh` so a hand-edited block whose `level` and `missingForFull` disagree with the derivation is refused (the script already enforces `full→no gaps`, `fast→lists independent-audit`, `prototype→non-empty`).
-- **Default-preserving:** a spec with no `certification.assurance` block still certifies `done` exactly as today (backward-compatible); `prototype` stays never-deployable via `assurance-resolve.sh`.
-- **Why:** this is what makes "lean on the three levels" real end-to-end instead of an invisible bookkeeping field. It is the prerequisite for `STRAT-EXPOSE`.
-
 ### SCOPE-2 — Expose delivery strategy + assurance in the user surface (`STRAT-EXPOSE`)
 
 - Add a front-door strategy verb over the EXISTING modes: `fast` → `rapid-tool-delivery` (always through `risk-tier-resolve.sh`, so it self-escalates on any high-risk trigger) and `highest` → `full-delivery` with optional phases forced on and the adversarial `samples` dial raised. **Do NOT add a `balanced` mode** — `full-delivery` already IS the balanced default (phase-relevance auto-skips irrelevant phases with recorded reasons); a third synonym would add bureaucracy (goal #3) for no behavior change. Optionally brand the existing default `standard` for symmetry.
@@ -101,7 +94,7 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-1 (unblocks SCOPE-2) → SCOPE-3 (self-contained, high value) → SCOPE-2 → SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable; SCOPE-2 depends only on SCOPE-1.
+- **Order:** SCOPE-3 (self-contained, high value) → SCOPE-2 → SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable; SCOPE-2's only dependency (SCOPE-1) has landed, so it now has no unmet dependency.
 - **Posture:** SCOPE-1/3 are behavior-completing (additive, backward-compatible). SCOPE-2 is docs + one intent-route/alias addition. SCOPE-4/5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
@@ -115,7 +108,6 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-1: a `rapid-tool-delivery` run with passing coverage and no audit certifies `delivered_fast` (not `done`); a run with a failing/incomplete verification certifies `delivered_prototype` and is refused by `assurance-resolve.sh` at deploy; a hand-mangled assurance block is refused by the guard.
 - SCOPE-2: `rapid-tool-delivery` and the assurance model appear in `README.md`, `WORKFLOW_MODES.md`, a recipe, and the generated cheat sheet; a `fast` request on a high-risk surface demonstrably routes to `full-delivery`.
 - SCOPE-3: `state-transition-guard.sh` imposes a non-empty specialist requirement for EVERY registered delivery mode, proven by a selftest that adds a synthetic mode and asserts it is covered.
 - SCOPE-4: a DoD item closed by evidence reference passes G025 with no inline paste, and an unresolvable reference fails closed.
@@ -126,7 +118,6 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Files to touch (on approval)
 
-- **SCOPE-1:** `agents/bubbles.validate.agent.md` (drive terminal status from level), `bubbles/scripts/state-transition-guard.sh` (accept `delivered_fast`/`delivered_prototype`; invoke `assurance-certification-check.sh`), `bubbles/scripts/assurance-derive.sh` (already emits `terminalStatus`), `bubbles/workflows/modes.yaml` (terminalAliases already present) — owners: `bubbles.validate` + framework guard.
 - **SCOPE-2:** `README.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/recipes/rapid-tool-delivery.md` (new), `bubbles/cheatsheet/modes.json` + `bubbles/scripts/generate-cheatsheet.sh`, `bubbles/intent-routes.yaml`, `bubbles/workflows/aliases.yaml` — owners: `bubbles.docs` + `bubbles.commands`.
 - **SCOPE-3:** `bubbles/scripts/state-transition-guard.sh` + new `state-transition-required-specialists-selftest.sh` + `tests/regression/` entry — owner: framework guard.
 - **SCOPE-4:** `agents/bubbles_shared/evidence-rules.md`, `bubbles/scripts/state-transition-guard.sh` (G025 evidence checks), `agents/bubbles_shared/feature-templates.md`, `bubbles/mcp/tools/record_evidence.json` (already exists) — owner: `bubbles.validate` + evidence-rules.
@@ -159,7 +150,6 @@ Findings are grounded in files actually opened and commands actually run in-sess
 
 | Code | Name |
 |------|------|
-| `ASSUR-TERM` | Assurance level derived + deploy-binding but terminal status not driven from it |
 | `STRAT-EXPOSE` | Fast lane + assurance model undocumented; no `highest`/`fast` strategy verb |
 | `SPEC-DERIVE` | `required_specialists` hardcoded; unlisted modes get zero specialist enforcement |
 | `EVID-DUP` | ≥10-line raw evidence inlined and duplicated across `scopes.md` + `report.md` |

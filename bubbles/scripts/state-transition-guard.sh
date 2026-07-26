@@ -1000,6 +1000,31 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 3I: Assurance Certification Consistency (IMP-105 SCOPE-1)
+# =============================================================================
+echo "--- Check 3I: Assurance Certification Consistency ---"
+assurance_cert_check_script="$SCRIPT_DIR/assurance-certification-check.sh"
+if [[ -f "$assurance_cert_check_script" ]]; then
+  _c3i_rc=0
+  bubbles_run_with_timeout 30 bash "$assurance_cert_check_script" --feature-dir "$feature_dir" >/tmp/bubbles-assurance-cert-check.$$ 2>&1 || _c3i_rc=$?
+  if [[ "$_c3i_rc" -eq 124 ]]; then
+    fail "Assurance certification consistency check TIMED OUT after 30s — cannot certify the recorded assurance block"
+  elif [[ "$_c3i_rc" -eq 0 ]]; then
+    pass "Recorded certification.assurance block is internally consistent (or absent — backward-compatible no-op)"
+  else
+    fail "Recorded certification.assurance block is internally inconsistent — full has no gaps, fast must list independent-audit, prototype must be non-empty"
+    while IFS= read -r lint_line; do
+      [[ -n "$lint_line" ]] || continue
+      echo "   → $lint_line"
+    done < /tmp/bubbles-assurance-cert-check.$$
+  fi
+  rm -f /tmp/bubbles-assurance-cert-check.$$
+else
+  warn "Assurance certification consistency check script not found at $assurance_cert_check_script — skipping (advisory)"
+fi
+echo ""
+
+# =============================================================================
 # CHECK 4: ALL DoD items must be checked [x] — ZERO unchecked allowed
 # =============================================================================
 echo "--- Check 4: DoD Completion (Zero Unchecked) ---"
