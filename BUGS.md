@@ -8769,16 +8769,32 @@ orchestrator for S2 one-to-one finding reconciliation.
 
 ## BUG-019 - State transition truncates compound MJS test paths
 
-- **Status:** Confirmed; discovery packet blocked on `bubbles.design` ownership
+- **Disposition:** fixed (shipped) — the fix AND its adversarial regression
+  landed together in commit `cb13053d` (release v7.20.0, 2026-07-17,
+  "feat(framework): v7.20.0 convergence — planning audits, adversarial
+  verification, BUG-012..022"). Per Gate G095 this is a resolved
+  discovered-issue, not an open framework defect.
 - **Severity:** Medium
 - **Reporter:** Research Lab `AUD-005-S01-004`
-- **Defect:** Check 8 extracts an existing `*.spec.mjs` path as `*.spec` and
-  reports the invented prefix missing; `.test.mjs`, extension-prefix names, and
-  extension-shaped prose expose the same token-boundary defect.
-- **Discriminator:** Reporter Check 8 derives 21 nonexistent `.spec` rows while
-  installed traceability resolves the complete `.spec.mjs` and exits `0`.
-- **Canonical packet:**
-  `improvements/BUG-019-state-transition-spec-mjs-path/`
-- **Boundary:** No source, regression, release, BUG-018, installed-framework, or
-  reporter file is changed by intake.
-- **Next required owner:** `bubbles.design`
+- **Defect (historical):** Check 8 extracted an existing `*.spec.mjs` path as
+  `*.spec` and reported the invented prefix missing; `.test.mjs`,
+  extension-prefix names, and extension-shaped prose exposed the same
+  token-boundary defect.
+- **Discriminator (historical):** Reporter Check 8 derived 21 nonexistent
+  `.spec` rows while installed traceability resolved the complete `.spec.mjs`
+  and exited `0`.
+- **Fix (landed):** `bubbles/scripts/state-transition-guard.sh` helper
+  `_check8_candidate_has_supported_suffix()` (≈L2021–2052) case-orders
+  `*.spec.mjs` / `*.test.mjs` (≈L2031–2032) strictly BEFORE `*.spec` / `*.test`
+  (≈L2033–2034), so a `.spec.mjs` path strips to its full stem and is never
+  truncated to a `.spec` prefix — exactly the defect this bug describes.
+- **Evidence:** the Check 8 case-ordering cited above; the 12 green BUG-019
+  assertions in `bubbles/scripts/state-transition-guard-selftest.sh` (8
+  compound-MJS compatibility + 4 adversarial-context — e.g. "preserves the
+  complete .spec.mjs path", "never checks the shorter .spec prefix", "invalid
+  contexts never reach the existing-file branch"); `state-transition-guard
+  selftest passed` at exit `0`, independently re-confirmed 2026-07-26.
+- **Canonical packet:** MOOT — the previously-referenced
+  `improvements/BUG-019-state-transition-spec-mjs-path/` was never created and
+  is absent on disk; the fix went straight into the v7.20.0 convergence commit,
+  so no separate `bubbles.design` intake packet was ever needed.
