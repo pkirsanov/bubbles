@@ -14,6 +14,36 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-3 — Check 6 fail-open hole closed via derived specialist fallback
+
+`state-transition-guard.sh` Check 6 (Gate G022, specialist-phase completion)
+built `required_specialists` from a hardcoded ~30-arm `case "$state_workflow_mode"`
+guarded by `if [[ ${#required_specialists[@]} -gt 0 ]]` — so a mode ABSENT from
+that table received ZERO specialist-completion enforcement (the historical
+`rapid-tool-delivery` fail-open bug). The hardcoded per-mode table is KEPT
+(authoritative for listed modes; zero regression), and a derived FALLBACK now
+gives any UNLISTED mode a non-empty requirement: the intersection of the mode's
+resolved `phaseOrder` (via `mode-resolver.sh`) with the canonical
+delivery-specialist set (`implement test regression simplify gaps harden
+stabilize security validate audit chaos docs`). Control/planning/conditional
+phases (`select finalize discover analyze bootstrap interrogate releases devops
+redteam bug review journey`) are excluded by that intersection. Two additional
+guards prevent over-requiring: the fallback derives ONLY for
+`delivery-completion-v1`/`delivery-completion-fast-v1` audit profiles (planning-
+maturity modes declare a delivery `phaseOrder` as a PLAN, not executed phases),
+and it SKIPS `requiresTopLevelRuntime` dispatcher modes (their `phaseOrder` is a
+dispatch plan run by child workflows). A new hermetic selftest
+(`state-transition-required-specialists-selftest.sh`, registered in
+`framework-validate.sh`) extracts the live fallback block between BEGIN/END
+sentinels and proves: an unlisted delivery mode derives a non-empty set, a
+dispatcher mode derives empty despite a core-bearing `phaseOrder`, a planning
+mode derives empty via the profile gate, and a no-core `phaseOrder` derives
+empty. NOTE: the orchestrator's registry-wide shadow-compare found the IMP doc's
+literal "phaseOrder minus select/finalize" recipe would have OVER-required ~20
+modes plus both dispatcher modes (`iterate`, `stochastic-quality-sweep`), so the
+safe fallback-only design was chosen; FULL replacement of the hardcoded table
+with per-mode shadow-compare is deferred to IMP-105 SCOPE-7.
+
 ### IMP-105 SCOPE-1 — assurance level now drives the terminal status
 
 `bubbles.validate` now DRIVES `state.json.status` and `certification.status`

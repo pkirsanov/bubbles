@@ -375,6 +375,7 @@ run_check "Continuation routing selftest" bash "$SCRIPT_DIR/continuation-routing
 planning_provenance_timeout_seconds="${BUBBLES_WORKFLOW_PLANNING_PROVENANCE_SELFTEST_TIMEOUT_SECONDS:-120}"
 run_check "Workflow planning provenance selftest" bubbles_run_with_timeout "$planning_provenance_timeout_seconds" bash "$SCRIPT_DIR/workflow-planning-provenance-selftest.sh"
 run_check "Transition guard selftest" bash "$SCRIPT_DIR/state-transition-guard-selftest.sh"
+run_check "Required-specialists fallback selftest (IMP-105 / SCOPE-3 — Check 6 fail-open closure)" bash "$SCRIPT_DIR/state-transition-required-specialists-selftest.sh"
 run_check_self_only "BUG-009 planning audit contract regression" bash "$REPO_ROOT/tests/regression/test_23_planning_audit_contract.sh"
 run_check_self_only "BUG-013 sensitive client storage regression" bash "$REPO_ROOT/tests/regression/test_24_g028_sensitive_client_storage.sh"
 run_check_self_only "BUG-018 traceability Test Plan heading-depth regression" bash "$REPO_ROOT/tests/regression/test_25_traceability_test_plan_heading_depth.sh"

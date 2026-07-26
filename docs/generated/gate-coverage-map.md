@@ -49,7 +49,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G019 | sequential_spec_completion_gate | 25 | — | — | — |
 | G020 | cross_agent_verification_gate | 25 | — | 1 | — |
 | G021 | anti_fabrication_gate | 25 | Check 20 | 3 | guard |
-| G022 | specialist_completion_gate | 25 | Check 6B | 3 | guard |
+| G022 | specialist_completion_gate | 25 | Check 6B | 4 | guard |
 | G023 | state_transition_guard_gate | 25 | — | — | — |
 | G024 | all_scopes_done_before_spec_done_gate | 25 | ref | 3 | guard |
 | G025 | per_dod_item_raw_evidence_gate | 25 | — | 2 | — |
@@ -65,7 +65,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G036 | red_green_traceability_gate | 2 | — | — | — |
 | G037 | scope_size_discipline_gate | 0 | — | 1 | — |
 | G038 | failure_recovery_containment_gate | 0 | — | — | — |
-| G040 | incomplete_work_language_gate | 25 | Check 18 | 4 | guard |
+| G040 | incomplete_work_language_gate | 25 | Check 18 | 5 | guard |
 | G041 | dod_format_integrity_gate | 0 | Check 4A, Check 4B | 2 | guard |
 | G042 | artifact_ownership_enforcement_gate | 0 | Check 3G | 1 | guard |
 | G043 | consumer_trace_gate | 0 | ref | 2 | guard |
@@ -86,7 +86,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G064 | workflow_runner_authorization_gate | 0 | Check 3H | 6 | guard |
 | G066 | phase_claim_provenance_gate | 0 | — | — | — |
 | G067 | shared_infrastructure_blast_radius_gate | 0 | ref | 1 | guard |
-| G068 | dod_gherkin_content_fidelity_gate | 0 | Check 22 | 6 | guard |
+| G068 | dod_gherkin_content_fidelity_gate | 0 | Check 22 | 7 | guard |
 | G069 | collateral_change_containment_gate | 0 | ref | 1 | guard |
 | G070 | outcome_contract_gate | 0 | — | 1 | — |
 | G071 | execution_only_validation_gate | 0 | — | — | — |
@@ -157,7 +157,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G064 | workflow_runner_authorization_gate | Check 3H | 6 | guard | agent-ownership-lint.sh, framework-validate.sh, scenario-compile-lint-selftest.sh, scenario-compile-lint.sh, state-transition-guard-selftest.sh, workflow-runner-grants-lint.sh |
 | G066 | phase_claim_provenance_gate | — | — | — | — |
 | G067 | shared_infrastructure_blast_radius_gate | ref | 1 | guard | imp021-interaction-contracts-selftest.sh |
-| G068 | dod_gherkin_content_fidelity_gate | Check 22 | 6 | guard | audit-result-contract-lint-selftest.sh, capability-freshness-selftest.sh, dod-section-lib.sh, evidence-admission-hardening-selftest.sh, state-transition-guard-selftest.sh, traceability-guard.sh |
+| G068 | dod_gherkin_content_fidelity_gate | Check 22 | 7 | guard | audit-result-contract-lint-selftest.sh, capability-freshness-selftest.sh, dod-section-lib.sh, evidence-admission-hardening-selftest.sh, state-transition-guard-selftest.sh, state-transition-required-specialists-selftest.sh, +1 more |
 | G069 | collateral_change_containment_gate | ref | 1 | guard | imp021-interaction-contracts-selftest.sh |
 | G070 | outcome_contract_gate | — | 1 | — | scenario-compile-lint.sh |
 | G071 | execution_only_validation_gate | — | — | — | — |
