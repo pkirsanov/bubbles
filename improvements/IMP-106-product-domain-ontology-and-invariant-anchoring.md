@@ -71,44 +71,34 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
 - Treat the `domainModel:` block (delivered by Gate G130) as the **single product-level source of truth** for entities, relationships, and invariants, and thread it across phases by **generalizing the existing capability-foundation layer-ownership table** (`agents/bubbles_shared/capability-foundation.md`) from its trigger-gated multi-provider scope to an always-available product-domain surface:
   - **Analyst** references the shared model instead of re-deriving it; new domain concepts are *proposed* into it.
   - **Design** `## Data Model` **extends** the shared model (new entities/invariants are **promoted up**, not siloed in one feature).
-  - **Plan** maps each `SCN-*` scenario to the domain concept(s) it touches (see SCOPE-3).
+  - **Plan** maps each `SCN-*` scenario to the domain concept(s) it touches.
   - **Validate** runs G130 against the shared model.
   - **Docs** publish the narrative counterpart to `docs/DomainModel.md` (Facet B); the constitution's ratified Business Invariants (Facet C) remain the top-level safety list that Facet-A invariants refine by `INV-*` id.
 - Add a **lightweight consistency lint** `bubbles/scripts/domain-model-consistency.sh` (proposed Gate **G131**, advisory-until-configured): a feature's `## Data Model` entities either reference the shared `domainModel:` or the lint nudges to promote them; a declared invariant referenced by an Outcome-Contract Hard Constraint must exist in the shared model. **Feed G044 a real model:** the regression conflict sweep gains a structured target ("does this spec's declared transition contradict the shared state machine?") instead of grepping prose.
 - **Why:** this is the operator's literal ask — *"the business domain defined and kept in place for planning, design, implementation and validation"* — realized as a promotion of machinery Bubbles already has, not a new parallel system. **Quality:** unchanged floor; adds cross-feature domain coherence that is currently only an LLM judgment.
 
-### SCOPE-3 — Business-domain lineage as typed edges in existing artifacts (`DOM-LINEAGE`, no new gate — reuse)
-
-- **Do NOT build a graph database.** Extend the artifacts that already carry lineage:
-  - Add an optional **`invariantRefs: ["INV-..."]`** field to each scenario in `scenario-manifest.json` (the schema is already `additionalProperties: true`), linking each `SCN-*` to the domain invariant(s) it exercises. This makes both directions answerable by lint — *"which test proves invariant X"* and *"which requirement justifies this scope"* — with no new store.
-  - Reuse the existing **edge-confidence tags** (declared/inferred/ambiguous) in `traceability-guard.sh` for these new edges.
-  - Extend `post-cert-spec-edit-guard.sh` / `bubbles.spec-review` so that **editing an invariant's `rule` text flags every scenario/scope with a matching `invariantRefs` for re-verification** — realizing Zep's "a source changed → dependent facts must be re-examined" on the artifacts Bubbles already owns, and reusing the scenario-manifest `lockdown → replaced` lifecycle that already exists for scenario supersession.
-- **Why:** delivers the useful half of the provenance talk (bidirectional traceability + mutation survival) at the cost of a schema field and a lint extension, not a Graphiti-scale build. **Quality:** strengthens provenance; anti-fabrication unchanged.
-
 ---
 
 ## Migration / rollout
 
-- **Order:** SCOPE-3 (small schema + lint extension) → SCOPE-2 (threading + consistency lint). Each is independently landable.
-- **Posture:** every scope ships **inert**. A repo with no `domainModel:` block gets a clean no-op from G131 and no new scenario-manifest fields — identical to how `trace-contract-guard.sh` (G080) is a no-op until `traceContracts` is configured. Blocking enforcement is grandfathered by `state.json.createdAt` (G097's proven cutoff mechanism), so only newly-created specs on opted-in repos are ever blocked.
+- **Order:** SCOPE-2 (threading + consistency lint) is independently landable.
+- **Posture:** every scope ships **inert**. A repo with no `domainModel:` block gets a clean no-op from G131 — identical to how `trace-contract-guard.sh` (G080) is a no-op until `traceContracts` is configured. Blocking enforcement is grandfathered by `state.json.createdAt` (G097's proven cutoff mechanism), so only newly-created specs on opted-in repos are ever blocked.
 - All framework edits are authored **upstream-first** (canonical `bubbles/` source) and reach downstream repos only via `install.sh` / upgrade. This proposal mutates **no** framework file; it is a G125 proposal-first document.
 
 ## Risks & mitigations
 
 - **R1** A `domainModel:` block becomes bureaucratic overhead on projects that don't need it. → It is 100% opt-in and proportional; the framework ships it inert. Recommend it in docs only for domains with real structural invariants (payments, bookings, trading, healthcare), never mandate it.
-- **R2** The domain model drifts from the code over time (a stale ontology — the expert-systems failure Coyle warns about). → G130 keys the check to `enforcedBy`/`provedBy` **pointers into real code/tests**, so a drifted invariant with a dead pointer fails loudly rather than lying; SCOPE-3's re-verification flag catches rule edits.
+- **R2** The domain model drifts from the code over time (a stale ontology — the expert-systems failure Coyle warns about). → G130 keys the check to `enforcedBy`/`provedBy` **pointers into real code/tests**, so a drifted invariant with a dead pointer fails loudly rather than lying.
 - **R3** Scope creep toward RDF/OWL/graph-DB. → Explicit non-goal (below). The entire design is declarative YAML + a bash guard + a JSON-schema field; both source talks and IMP-105 warn that the heavyweight path does not scale.
 - **R4** Duplicating Gherkin in the domain model. → The `domainModel:` block is **only** for static structural constraints (enum/state-machine/disjointness/cardinality) that scenarios can't mechanically encode; the lint should nudge against invariants that merely restate a scenario.
 
 ## Acceptance criteria (when implemented)
 
 - **SCOPE-2:** a feature introducing a new entity is nudged to promote it into the shared `domainModel:`; a spec declaring a transition that contradicts the shared state machine is surfaced by the consistency lint / G044.
-- **SCOPE-3:** a scenario carries `invariantRefs`; a lint answers both lineage directions; editing an invariant's `rule` flags its linked scenarios for re-verification; `scenario-manifest.schema.json` validates the new field.
 
 ## Files to touch (on approval)
 
 - **SCOPE-2:** `agents/bubbles_shared/capability-foundation.md` (generalize the layer-ownership threading to the product-domain SST), `agents/bubbles_shared/feature-templates.md` (`## Data Model` references the shared model), new `bubbles/scripts/domain-model-consistency.sh` (proposed **G131**, advisory), `agents/bubbles_shared/e2e-regression.md` (feed G044 the model) — owners: `bubbles.plan` + `bubbles.design` + framework.
-- **SCOPE-3:** `bubbles/schemas/scenario-manifest.schema.json` (add optional `invariantRefs`), `bubbles/scripts/traceability-guard.sh` (edge-confidence tags for invariant edges), `bubbles/scripts/post-cert-spec-edit-guard.sh` (re-verification flag on invariant edit), `agents/bubbles.spec-review.agent.md` — owners: `bubbles.plan` + framework guard + `bubbles.spec-review`.
 
 ---
 

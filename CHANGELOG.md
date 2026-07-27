@@ -31,6 +31,32 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-106 SCOPE-3 — business-domain lineage via scenario invariantRefs (DOM-LINEAGE)
+
+Scenarios may now carry an **OPTIONAL** `invariantRefs: [INV-*]` array in
+`scenario-manifest.json` (`bubbles/schemas/scenario-manifest.schema.json`,
+**additive** — each id matches `^INV-[A-Z0-9-]+$`, NOT part of `required`),
+linking a `SCN-*` scenario to the `domainModel.invariants[].id`(s) it exercises
+so lineage is answerable both directions. `post-cert-spec-edit-guard.sh` gains an
+**advisory** re-verification flag: when a referenced invariant's `rule` text in
+the `domainModel:` block changes AFTER certification, every scenario/scope whose
+`invariantRefs` includes that id is surfaced for re-verification — it compares
+the domain-model source as-of-certification (git) against the working tree,
+mirroring G088's post-certifiedAt edit-detection, and NEVER changes the exit
+code. `traceability-guard.sh` reuses its existing declared/inferred/ambiguous
+edge-confidence tags for the new scenario→invariant edge (a minimal advisory
+`info` line; an `invariantRefs` edge is always `declared` because the reference
+is explicit). `agents/bubbles.spec-review.agent.md` gains a Domain-Invariant
+Lineage check so spec-review surfaces domain-rule drift, not just spec-text
+drift. Everything is **advisory and a strict no-op** unless a repo declares BOTH
+a `domainModel:` block AND scenarios carrying `invariantRefs` — **no new gate**
+(reuses the existing scenario-manifest artifact, `post-cert-spec-edit-guard.sh`,
+and `traceability-guard.sh`), no gate weakened, and existing scenario manifests
++ guard selftests are unaffected. New adversarial cases in
+`post-cert-spec-edit-guard-selftest.sh` prove: editing a referenced invariant's
+rule flags its scenario; no `domainModel:`/`invariantRefs` is a no-op; and
+editing an unrelated invariant does not flag a non-referencing scenario.
+
 ### IMP-106 SCOPE-4 — docs/DomainModel.md registered as an optional managed doc (DOM-DOC)
 
 `docs/DomainModel.md` is now a **registered managed doc** in
