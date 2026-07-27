@@ -40,7 +40,7 @@ The domain "ontology" is **not one artifact** — it is three facets with differ
 | Facet | What it holds | Authoritative home | Owner | Load pattern |
 |-------|---------------|--------------------|-------|--------------|
 | **A — Checkable model** | entities, enums, state machines, invariants + `enforcedBy`/`provedBy` | `.github/bubbles-project.yaml` `domainModel:` **inline by default**; `domainModel: { $ref: config/domain-model.yaml }` once it outgrows ~a screenful (matches the existing `config/<project>.yaml` SST pattern) | `bubbles.validate` (guard-consumed) | on demand, by the phase that needs it (G130/G131) |
-| **B — Narrative** | glossary, entity graph/diagram, *why* rules exist, relationships | new managed doc `docs/DomainModel.md` (registered in `docs-registry.yaml`, `required: false`) — SCOPE-4 | `bubbles.docs` | on demand (human reference) |
+| **B — Narrative** | glossary, entity graph/diagram, *why* rules exist, relationships | managed doc `docs/DomainModel.md` (registered in `docs-registry.yaml`, `required: false`) | `bubbles.docs` | on demand (human reference) |
 | **C — Ratified safety invariants** | the short "never double-charge / PII encrypted" list | `.specify/memory/constitution.md` → Business Invariants (**unchanged**) | human / owner | Tier-1 always-loaded (kept short) |
 
 Ratified decisions behind this table:
@@ -73,7 +73,7 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
   - **Design** `## Data Model` **extends** the shared model (new entities/invariants are **promoted up**, not siloed in one feature).
   - **Plan** maps each `SCN-*` scenario to the domain concept(s) it touches (see SCOPE-3).
   - **Validate** runs G130 against the shared model.
-  - **Docs** publish the narrative counterpart to `docs/DomainModel.md` (Facet B, SCOPE-4); the constitution's ratified Business Invariants (Facet C) remain the top-level safety list that Facet-A invariants refine by `INV-*` id.
+  - **Docs** publish the narrative counterpart to `docs/DomainModel.md` (Facet B); the constitution's ratified Business Invariants (Facet C) remain the top-level safety list that Facet-A invariants refine by `INV-*` id.
 - Add a **lightweight consistency lint** `bubbles/scripts/domain-model-consistency.sh` (proposed Gate **G131**, advisory-until-configured): a feature's `## Data Model` entities either reference the shared `domainModel:` or the lint nudges to promote them; a declared invariant referenced by an Outcome-Contract Hard Constraint must exist in the shared model. **Feed G044 a real model:** the regression conflict sweep gains a structured target ("does this spec's declared transition contradict the shared state machine?") instead of grepping prose.
 - **Why:** this is the operator's literal ask — *"the business domain defined and kept in place for planning, design, implementation and validation"* — realized as a promotion of machinery Bubbles already has, not a new parallel system. **Quality:** unchanged floor; adds cross-feature domain coherence that is currently only an LLM judgment.
 
@@ -85,18 +85,11 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
   - Extend `post-cert-spec-edit-guard.sh` / `bubbles.spec-review` so that **editing an invariant's `rule` text flags every scenario/scope with a matching `invariantRefs` for re-verification** — realizing Zep's "a source changed → dependent facts must be re-examined" on the artifacts Bubbles already owns, and reusing the scenario-manifest `lockdown → replaced` lifecycle that already exists for scenario supersession.
 - **Why:** delivers the useful half of the provenance talk (bidirectional traceability + mutation survival) at the cost of a schema field and a lint extension, not a Graphiti-scale build. **Quality:** strengthens provenance; anti-fabrication unchanged.
 
-### SCOPE-4 — Register the narrative domain doc as an optional managed doc (`DOM-DOC`, no new gate — docs-registry)
-
-- Register a new managed doc **`docs/DomainModel.md`** in `bubbles/docs-registry.yaml` with `owner: bubbles.docs`, **`required: false`** (first-class **only** when a project configures `domainModel:` — advisory-until-configured, consistent with the rest of IMP-106), `publishSources: [feature, ops]`, and `requiredSections`: **Domain Glossary · Entity Graph · Lifecycles And State Machines · Business Rules And Invariants · Authoritative References**. Cross-link it from `docs/Architecture.md` (an Authoritative-References pointer) so the *how-it's-built* doc points at the *what-the-business-is* doc without duplicating it.
-- This is **Facet B**: the human-readable source of truth. The `docs-registry.yaml` policy (`publishManagedDocsOnCloseout`, `removeObsoleteContent`, `mergeDuplicateContentIntoManagedDocs`, `unmanagedDocsRequireExplicitTarget`) then keeps it current, deduplicated, and obsolete-content-free on every closeout — which is precisely why it must be a *registered* managed doc, not a stray `docs/*.md`.
-- The **Business Rules And Invariants** section references the Facet-A `domainModel.invariants` by `INV-*` id and the Facet-C constitution invariants by name; it **never re-encodes** the machine-checkable rules (narrative + pointer only — no duplication, so the two cannot drift into contradiction).
-- **Why:** gives humans one durable, discoverable, auto-maintained place to read the domain, distinct from per-feature specs and from Architecture.md. **Quality:** additive; `required: false` keeps it inert for non-opted-in repos.
-
 ---
 
 ## Migration / rollout
 
-- **Order:** SCOPE-4 (docs-registry entry — pure config, no code) → SCOPE-3 (small schema + lint extension) → SCOPE-2 (threading + consistency lint). Each is independently landable.
+- **Order:** SCOPE-3 (small schema + lint extension) → SCOPE-2 (threading + consistency lint). Each is independently landable.
 - **Posture:** every scope ships **inert**. A repo with no `domainModel:` block gets a clean no-op from G131 and no new scenario-manifest fields — identical to how `trace-contract-guard.sh` (G080) is a no-op until `traceContracts` is configured. Blocking enforcement is grandfathered by `state.json.createdAt` (G097's proven cutoff mechanism), so only newly-created specs on opted-in repos are ever blocked.
 - All framework edits are authored **upstream-first** (canonical `bubbles/` source) and reach downstream repos only via `install.sh` / upgrade. This proposal mutates **no** framework file; it is a G125 proposal-first document.
 
@@ -106,19 +99,16 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
 - **R2** The domain model drifts from the code over time (a stale ontology — the expert-systems failure Coyle warns about). → G130 keys the check to `enforcedBy`/`provedBy` **pointers into real code/tests**, so a drifted invariant with a dead pointer fails loudly rather than lying; SCOPE-3's re-verification flag catches rule edits.
 - **R3** Scope creep toward RDF/OWL/graph-DB. → Explicit non-goal (below). The entire design is declarative YAML + a bash guard + a JSON-schema field; both source talks and IMP-105 warn that the heavyweight path does not scale.
 - **R4** Duplicating Gherkin in the domain model. → The `domainModel:` block is **only** for static structural constraints (enum/state-machine/disjointness/cardinality) that scenarios can't mechanically encode; the lint should nudge against invariants that merely restate a scenario.
-- **R5** A new managed doc (`docs/DomainModel.md`, SCOPE-4) adds a governance surface. → It is registered **`required: false`** — not required and not published until a repo configures `domainModel:`, so non-opted-in repos see nothing. The narrative references the machine model by `INV-*` id and never re-encodes rules, so narrative and config cannot drift into contradiction.
 
 ## Acceptance criteria (when implemented)
 
 - **SCOPE-2:** a feature introducing a new entity is nudged to promote it into the shared `domainModel:`; a spec declaring a transition that contradicts the shared state machine is surfaced by the consistency lint / G044.
 - **SCOPE-3:** a scenario carries `invariantRefs`; a lint answers both lineage directions; editing an invariant's `rule` flags its linked scenarios for re-verification; `scenario-manifest.schema.json` validates the new field.
-- **SCOPE-4:** `docs/DomainModel.md` is a registered managed doc with the five required sections; it is `required: false` (a repo with no `domainModel:` is unaffected); `docs/Architecture.md` carries an Authoritative-References cross-link; the narrative references `INV-*` ids without re-encoding rules.
 
 ## Files to touch (on approval)
 
 - **SCOPE-2:** `agents/bubbles_shared/capability-foundation.md` (generalize the layer-ownership threading to the product-domain SST), `agents/bubbles_shared/feature-templates.md` (`## Data Model` references the shared model), new `bubbles/scripts/domain-model-consistency.sh` (proposed **G131**, advisory), `agents/bubbles_shared/e2e-regression.md` (feed G044 the model) — owners: `bubbles.plan` + `bubbles.design` + framework.
 - **SCOPE-3:** `bubbles/schemas/scenario-manifest.schema.json` (add optional `invariantRefs`), `bubbles/scripts/traceability-guard.sh` (edge-confidence tags for invariant edges), `bubbles/scripts/post-cert-spec-edit-guard.sh` (re-verification flag on invariant edit), `agents/bubbles.spec-review.agent.md` — owners: `bubbles.plan` + framework guard + `bubbles.spec-review`.
-- **SCOPE-4:** `bubbles/docs-registry.yaml` (register `docs/DomainModel.md`, `required: false`, the five required sections), an optional `docs/DomainModel.md` starter scaffold, and an Authoritative-References cross-link in `docs/Architecture.md` — owner: `bubbles.docs`.
 
 ---
 
@@ -155,91 +145,3 @@ Findings are grounded in files actually opened in-session. `requirement-mechanis
 | `DOM-SST` | The domain model is re-derived per feature (`design.md → ## Data Model`); the cross-phase Domain Capability Model is trigger-gated + existence-checked only; no always-available, product-level domain source of truth is threaded through plan/design/implement/validate, so G044 has no model to diff against. |
 | `DOM-LINEAGE` | Requirement/invariant → scenario → test → code lineage is point-to-point gate checks; `scenario-manifest.json` has a `lockdown/replaced` lifecycle for scenarios but no invariant edges, so a business-rule change does not flag dependent scopes/tests for re-verification. |
 | `DOM-DOC` | The domain model's human-readable narrative (glossary, entity graph, rule rationale) has no durable home; it is redrawn per feature in `design.md → ## Data Model`. No managed, auto-maintained project-level domain doc exists — `docs/Architecture.md` covers system shape (how it's built), not the business model (what it is). |
-
----
-
-## Appendix A — `docs/DomainModel.md` starter scaffold (SCOPE-4)
-
-Concrete five-section scaffold for the **Facet-B** managed doc. On approval, this lifts into `templates/DomainModel.md.tmpl` (alongside `templates/constitution.md.tmpl`) and the section names register in `docs-registry.yaml` per SCOPE-4. It is **embedded here, not created as a framework file**, to keep IMP-106 proposal-first — it mutates no `templates/*` until approved.
-
-Its discipline mirrors the ratified storage architecture: **narrative + pointers only.** The enforceable rule lives in **Facet-A** config (`domainModel:`, Gate G130); the ratified safety list lives in **Facet-C** (`constitution.md` → Business Invariants). This doc never re-encodes either — so the three homes cannot drift into contradiction. Diagrams are the human view; on any conflict, the config wins.
-
-````markdown
-# {{PROJECT_NAME}} — Domain Model
-
-> **Facet B** (human-readable narrative) of the product domain model.
-> Managed doc — owner: `bubbles.docs`; kept current on closeout by the docs-registry policy.
-> **Authoritative sources this doc points at (never copies):**
-> - Formal, machine-checkable rules → `.github/bubbles-project.yaml` `domainModel:` (Facet A, Gate G130)
-> - Ratified top-level safety invariants → `.specify/memory/constitution.md` → Business Invariants (Facet C)
->
-> This doc holds the *why* and the *shape*; the config holds the *enforceable rule*. On any conflict, the config wins.
-
----
-
-## Domain Glossary
-
-The shared vocabulary every spec, design, and test uses for this domain. One row per term.
-
-| Term | Definition (plain English) | Aliases / terms to avoid | Related entities |
-|------|----------------------------|--------------------------|------------------|
-| Order | A customer's confirmed purchase request | "cart" (pre-confirmation only) | Payment, Refund |
-| <Term> | <what it means in this business> | <synonyms; terms NOT to use> | <Entity, Entity> |
-
-> **TODO:** Replace the example row with this project's real terms.
-
----
-
-## Entity Graph
-
-Entities and their relationships. Keep this a picture, not a schema — field-level shape lives in each feature's `design.md → ## Data Model`; enforceable constraints live in Facet-A config.
-
-```mermaid
-erDiagram
-    ORDER  ||--o{ PAYMENT : "settled by"
-    ORDER  ||--o| REFUND  : "at most one (INV-ONE-REFUND-PER-ORDER)"
-    BUYER  ||--o{ ORDER   : places
-```
-
----
-
-## Lifecycles And State Machines
-
-For each entity with a lifecycle, its legal states and transitions. The **authoritative** allowed-states / terminal set is `domainModel.entities.<Entity>.states` / `.terminal` in Facet-A config; this diagram is the human view.
-
-```mermaid
-stateDiagram-v2
-    [*] --> created
-    created --> paid
-    paid --> shipped
-    paid --> refunded
-    shipped --> refunded
-    refunded --> [*]
-```
-
----
-
-## Business Rules And Invariants
-
-A narrative index that **points at** the authoritative definition — it does not re-encode the formal rule (no duplication → no drift). One row per invariant.
-
-| Invariant | Why it matters (rationale) | Authoritative rule | Enforced by | Proven by |
-|-----------|----------------------------|--------------------|-------------|-----------|
-| `INV-ONE-REFUND-PER-ORDER` | A double refund pays a customer twice — direct financial loss | Facet-A `domainModel.invariants[INV-ONE-REFUND-PER-ORDER]` | db-unique-index | `tests/refund_test.rs::second_refund_rejected` |
-| `INV-...` | <business consequence if violated> | Facet-A `domainModel.invariants[INV-...]` | <mechanism> | <test id/path> |
-
-**Ratified safety invariants (Facet C) this model refines** — from `constitution.md` → Business Invariants:
-
-- "Bookings must never result in double-charges" → refined by `INV-ONE-REFUND-PER-ORDER`, `INV-...`
-
----
-
-## Authoritative References
-
-The hub tying the three homes together. Keep these links current.
-
-- **Facet A (formal rules):** `.github/bubbles-project.yaml` `domainModel:` (or `config/domain-model.yaml` when `$ref`'d) — enforced by Gate G130.
-- **Facet C (ratified safety invariants):** `.specify/memory/constitution.md` → Business Invariants.
-- **System architecture (how it's built):** `docs/Architecture.md`.
-- **Feature views (per-feature deltas):** `specs/<NNN-feature>/design.md → ## Data Model`.
-````

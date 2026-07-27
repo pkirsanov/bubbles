@@ -31,6 +31,27 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-106 SCOPE-4 — docs/DomainModel.md registered as an optional managed doc (DOM-DOC)
+
+`docs/DomainModel.md` is now a **registered managed doc** in
+`bubbles/docs-registry.yaml` (`owner: bubbles.docs`, **`required: false`**,
+`publishSources: [feature, ops]`) with five required sections — **Domain Glossary
+· Entity Graph · Lifecycles And State Machines · Business Rules And Invariants ·
+Authoritative References**. Because it is registered, the docs-registry closeout
+policy (`publishManagedDocsOnCloseout`, `removeObsoleteContent`,
+`mergeDuplicateContentIntoManagedDocs`) keeps it current and deduplicated on every
+closeout **once a repo opts into a `domainModel:` block** (Facet A). A starter
+scaffold ships as new **`templates/DomainModel.md.tmpl`** (Facet-B narrative —
+glossary, an `erDiagram` entity graph, state machines, an `INV-*`-referencing rules
+index, and an Authoritative-References hub), consumed downstream when a repo opts
+in. `required: false` keeps the doc **inert** for non-opted-in repos — including
+this Bubbles source repo, which ships no product domain of its own and therefore
+does **not** create `docs/DomainModel.md`. The narrative references Facet-A `INV-*`
+ids without re-encoding the machine-checkable rules, so narrative and config cannot
+drift into contradiction. The `docs/Architecture.md` Authoritative-References
+cross-link is a downstream concern (the framework source repo ships no product
+docs).
+
 ### IMP-106 SCOPE-1 — domain-invariant correspondence gate (G130, DOM-INVARIANT)
 
 New **advisory-until-configured** Gate **G130** reuses the proven G097
