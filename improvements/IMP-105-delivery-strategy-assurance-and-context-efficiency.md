@@ -53,11 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-6 — Risk-proportional mandatory sweeps (`SWEEP-PROP`)
-
-- Apply the Shared-Infra / Change-Boundary / Consumer-Impact / Canary sweep requirements CONDITIONALLY, keyed to `risk-tier-resolve.sh` and the scope's declared changed surface, instead of unconditionally on every scope.
-- **Why:** cuts non-delivery ceremony on trivial surfaces (goal #3). **Quality:** unchanged — the sweeps still fire on exactly the high-fan-out / consumer-facing / shared-infra surfaces that need them; a low-risk build-free scope simply stops carrying inapplicable subsections.
-
 ### SCOPE-7 — Unify the registry ontology + generate derived tables (`ONT-UNIFY`)
 
 - Introduce (or grow an existing registry into) one typed `delivery-policy` model whose primitives are `Intent`, `DeliveryStrategy`, `WorkflowMode`, `RiskClass`, `Phase`, `Gate`, `Artifact`, `AgentOwner`, `EvidenceClaim`, `AchievedAssurance`, `ReleaseAssuranceFloor`, `TerminalState`, with machine-checkable invariants expressed declaratively (the OWL-style constraints the talk highlights, WITHOUT RDF or a graph DB): `prototype` disjoint from `deployable`; exactly one owner per artifact section; only `bubbles.validate` writes certification; `fast` may be missing only `independent-audit`; high/unknown risk requires `full`; required specialists = `phaseOrder` minus control phases; a mode has exactly one transition profile. GENERATE the currently-hand-maintained tables (the gates block already is; extend to mode→specialist and docs/cheatsheet) and shadow-compare generated output against current source before any cutover.
@@ -72,25 +67,22 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
-- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-6 is opt-in / advisory-until-configured (it ships inert and is activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
+- **Order:** SCOPE-7 → SCOPE-8. Each is independently landable.
+- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
 ## Risks & mitigations
 
 - **R1** Driving distinct terminal statuses (SCOPE-1) could surprise downstream tooling that only expects `done`. → `is-terminal-for-mode.sh` already treats `delivered_fast`/`delivered_prototype` as terminal-for-mode; keep the no-block-status behavior backward-compatible (a missing assurance block still yields `done`), and land guard consistency (`assurance-certification-check.sh`) in the same change.
 - **R2** Deriving `required_specialists` (SCOPE-3) could change enforcement for a mode that currently relies on the empty default. → That "reliance" is the bug; add a hermetic selftest + persistent regression so the derived set is proven for every registered delivery mode before cutover.
-- **R3** Conditional sweeps (SCOPE-6) could skip a sweep that was actually needed. → Key the condition to `risk-tier-resolve.sh` (fail-closed to full on unknown), so ambiguity keeps the sweep.
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-6: a low-risk build-free scope carries no inapplicable sweep subsections while a shared-infra scope still requires them.
 - SCOPE-7: mode→specialist and the gates/cheatsheet tables are generated from one canonical model and pass `--check`; shadow-compare shows byte-identical or reviewed diffs.
 - SCOPE-8: a documented framework release-train cadence exists.
 
 ## Files to touch (on approval)
 
-- **SCOPE-6:** `agents/bubbles_shared/feature-templates.md`, `agents/bubbles_shared/scope-workflow.md`, `bubbles/scripts/risk-tier-resolve.sh` — owners: `bubbles.plan` + framework.
 - **SCOPE-7:** new `bubbles/registry/delivery-policy.yaml` (or an extension of an existing registry), `bubbles/scripts/generate-*.sh`, `bubbles/scripts/workflow-registry-consistency.sh` — owner: framework.
 - **SCOPE-8:** `CHANGELOG.md` (Versioning Scheme), a maintainer release-cadence note — owner: maintainer.
 

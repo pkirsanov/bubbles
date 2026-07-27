@@ -14,6 +14,29 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-6 — risk-proportional sweep application made explicit (risk-tier-keyed)
+
+The scope sweeps (Shared-Infrastructure Impact Sweep, Change Boundary, Consumer
+Impact Sweep, Canary rows) in `agents/bubbles_shared/feature-templates.md` were
+ALREADY conditional on change-kind — each fires only when its specific trigger
+(shared fixtures / harnesses / bootstrap-auth-session-storage contracts, narrow
+repairs / risky refactors, route/path/contract/identifier/UI renames-removals,
+high-fan-out shared infrastructure) is present in the scope's changed surface.
+This scope makes that conditionality EXPLICIT and keys it to
+`bubbles/scripts/risk-tier-resolve.sh` `riskClass`: a `low` result (a positive
+build-free/static/isolated signal AND zero high-risk triggers) carries ONLY the
+sweeps whose triggers actually fire and no inapplicable sweep subsection; a
+`high` or `unknown` result (any
+auth/payments/secrets/PII/DB-migration/deploy/prod/host-singleton/cross-product
+trigger, or a shared-fixture/rename/removal/risky-refactor change) requires every
+applicable sweep — `unknown` is fail-closed and treated as high, so ambiguity
+never skips a sweep. Added the framing paragraph to `feature-templates.md`, a
+one-line risk-tier cross-reference in `scope-workflow.md`, and excised the
+delivered SCOPE-6 proposal from
+`improvements/IMP-105-delivery-strategy-assurance-and-context-efficiency.md`.
+Additive, default-preserving, no sweep weakened; advisory guidance the planner
+follows — no gate, script, agent, mode, or workflow behavior changed.
+
 ### IMP-105 SCOPE-5 — phase-local context-loading guidance + measured-budget activation (opt-in, eval-gated)
 
 The effective-bundle machinery ALREADY exists and is INERT (advisory-until-configured):

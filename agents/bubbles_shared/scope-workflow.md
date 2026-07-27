@@ -278,6 +278,7 @@ Use these rules for every scope status change.
   - If the scope renames/removes any route, path, contract, identifier, or UI target, the DoD includes a consumer impact sweep item and the affected consumer flows are validated
   - If the scope changes shared fixtures, harnesses, or bootstrap/auth/session/storage infrastructure, the DoD includes a Shared Infrastructure Impact Sweep, an independent canary suite item, and a rollback/restore item
   - If the scope is a narrow repair or risky refactor, the DoD includes a Change Boundary item and evidence that zero excluded file families changed
+  - These sweep conditions are risk-proportional — `bubbles/scripts/risk-tier-resolve.sh` `riskClass` keys them (low → only triggered sweeps fire; high/unknown → all applicable sweeps required, fail-closed); see feature-templates.md → "Risk-proportional sweep application (SWEEP-PROP)"
    - Matching raw evidence is present in the scope's `report.md` (must contain legitimate terminal output signals per command-backed block)
   - Scope entry in `state.json` is updated in `certification.scopeProgress` and `certification.completedScopes`
   - `certification.completedScopes` matches the actual set of Done scopes exactly — no stale omissions, no extra carried-forward entries
