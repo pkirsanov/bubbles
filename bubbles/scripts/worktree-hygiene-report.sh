@@ -214,7 +214,7 @@ flush_record() {
     MERGED)     note="reapable (merged + clean)" ;;
     PRUNABLE)   note="reapable (directory gone)" ;;
     LEASE-HELD) note="SKIP — live writer-lease" ;;
-    EXPERIMENT) note="report-only (SCOPE-1); .design-experiment marker" ;;
+    EXPERIMENT) note="lingering — disposable, reapable via --heal (.design-experiment marker)" ;;
     DIRTY)      note="never auto-reap (uncommitted changes)" ;;
     UNMERGED)   note="triage — never auto-reap (unique commits)" ;;
   esac

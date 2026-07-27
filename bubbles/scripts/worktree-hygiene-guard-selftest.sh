@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
-# Hermetic selftest for the IMP-107 / SCOPE-1 worktree-hygiene report + reaper.
+# Hermetic selftest for the IMP-107 worktree-hygiene report + reaper (SCOPE-1)
+# and the lingering design-experiment detection + reap (SCOPE-3).
 # ---------------------------------------------------------------------------
 # Synthesizes a throwaway git repo with one linked worktree in EACH hygiene
 # state (merged / unmerged / dirty / prunable / lease-held / experiment) — each
-# materially different, so the assertions are non-tautological — and asserts:
+# materially different, so the assertions are non-tautological — where the
+# lease-held worktree ALSO carries a `.design-experiment` marker so it doubles
+# as a LEASE-HELD (still-live) design-experiment. It asserts:
 #   (a) worktree-hygiene-report.sh classifies every worktree correctly;
+#   (d) design-experiment-guard.sh --lingering (SCOPE-3) flags a marked,
+#       NON-lease-held worktree, --strict exits 1, a LEASE-HELD experiment is
+#       NOT flagged (still live), and the DEFAULT leakage-REFUSE mode is
+#       byte-unchanged (a regression guard);
 #   (b) worktree-reap.sh in DRY-RUN lists only merged+prunable and removes
 #       nothing;
 #   (c) worktree-reap.sh --yes removes ONLY merged+prunable (and their merged
-#       local branches) and LEAVES unmerged/dirty/lease-held/experiment intact.
+#       local branches) and LEAVES unmerged/dirty/lease-held/experiment intact;
+#   (e) worktree-reap.sh --experiments --yes (SCOPE-3) removes the lingering
+#       EXPERIMENT worktree + its branch but LEAVES a lease-held experiment.
 # The lease-held worktree is synthesized by GENUINELY acquiring an IMP-023
 # writer-lease via runtime-leases.sh (with a hand-written-registry fallback,
 # clearly WARNed, if that environment lacks a dependency).
@@ -17,6 +26,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPORT_SH="$SCRIPT_DIR/worktree-hygiene-report.sh"
 REAP_SH="$SCRIPT_DIR/worktree-reap.sh"
+GUARD_SH="$SCRIPT_DIR/design-experiment-guard.sh"
 LEASES_SH="$SCRIPT_DIR/runtime-leases.sh"
 
 FAILURES=0
@@ -102,6 +112,13 @@ if [[ "$lease_mode" == "approximated" ]]; then
        "(the report still consumes runtime-leases.sh summary to classify it)."
 fi
 
+# Also mark WT_LEASE as a design-experiment: it now doubles as a LEASE-HELD
+# design-experiment (marker + live lease) — the fixture SCOPE-3 needs to prove a
+# lease-held experiment is NOT lingering and is NEVER reaped. Lease precedence in
+# the report keeps it classified LEASE-HELD (not EXPERIMENT), so the summary
+# counts below are unchanged (still 1 lease-held, 1 experiment).
+: > "$WT_LEASE/.design-experiment"
+
 # class_of <machine-output> <path>  ->  classification token (or empty)
 class_of() {
   printf '%s\n' "$1" | awk -F'\t' -v p="$2" '$2 == p { print $1; exit }'
@@ -137,6 +154,55 @@ fi
 BUBBLES_REPO_ROOT="$REPO" bash "$REPORT_SH" >/dev/null 2>&1
 rc=$?
 if [[ "$rc" -eq 0 ]]; then pass "a8 report exits 0 (advisory)"; else fail "a8 report exit $rc (expected 0)"; fi
+
+# =====================================================================
+# (d) design-experiment-guard.sh --lingering (IMP-107 SCOPE-3) + a regression
+#     proving the DEFAULT (non --lingering) leakage-REFUSE mode is unchanged.
+#     Runs BEFORE any reaping, so WT_EXP / WT_LEASE are still pristine.
+# =====================================================================
+
+# d1: --lingering flags a marked, NON-lease-held worktree (WT_EXP) and, being
+#     advisory, exits 0.
+ling_out="$(bash "$GUARD_SH" --lingering --worktree "$WT_EXP" 2>&1)"; ling_rc=$?
+if printf '%s\n' "$ling_out" | grep -q "LINGERING" && [[ "$ling_rc" -eq 0 ]]; then
+  pass "d1 --lingering flags a marked non-lease worktree (advisory exit 0)"
+else
+  fail "d1 --lingering on marked non-lease worktree (rc=$ling_rc): $ling_out"
+fi
+
+# d2: --lingering --strict turns the same finding into a hard failure (exit 1).
+bash "$GUARD_SH" --lingering --strict --worktree "$WT_EXP" >/dev/null 2>&1; ling_strict_rc=$?
+if [[ "$ling_strict_rc" -eq 1 ]]; then
+  pass "d2 --lingering --strict exits 1 on a lingering experiment"
+else
+  fail "d2 --lingering --strict expected exit 1, got $ling_strict_rc"
+fi
+
+# d3: a LEASE-HELD experiment (WT_LEASE: marker + a live lease) is NOT flagged
+#     as lingering — it is still live. Reuses the same runtime-leases.sh path.
+lease_ling_out="$(bash "$GUARD_SH" --lingering --worktree "$WT_LEASE" 2>&1)"; lease_ling_rc=$?
+if printf '%s\n' "$lease_ling_out" | grep -q "LEASE-HELD" \
+  && ! printf '%s\n' "$lease_ling_out" | grep -q "LINGERING" && [[ "$lease_ling_rc" -eq 0 ]]; then
+  pass "d3 lease-held experiment is NOT flagged lingering (still live)"
+else
+  fail "d3 lease-held experiment lingering check (rc=$lease_ling_rc): $lease_ling_out"
+fi
+
+# d4 (regression): the DEFAULT (non --lingering) leakage-REFUSE behavior is
+#     unchanged — (i) no marker -> no-op exit 0, (ii) marked+clean -> PASS exit
+#     0, (iii) marked + a leaked terminal status -> REFUSE exit 1.
+LEAK_DIR="$TMP_ROOT/exp-leak"
+mkdir -p "$LEAK_DIR"
+: > "$LEAK_DIR/.design-experiment"
+printf '{ "status": "done", "completedScopes": [] }\n' > "$LEAK_DIR/state.json"
+bash "$GUARD_SH" --worktree "$REPO"      >/dev/null 2>&1; def_nomark_rc=$?
+bash "$GUARD_SH" --worktree "$WT_EXP"    >/dev/null 2>&1; def_clean_rc=$?
+bash "$GUARD_SH" --worktree "$LEAK_DIR"  >/dev/null 2>&1; def_leak_rc=$?
+if [[ "$def_nomark_rc" -eq 0 && "$def_clean_rc" -eq 0 && "$def_leak_rc" -eq 1 ]]; then
+  pass "d4 default leakage-REFUSE behavior unchanged (no-op=0, clean=0, leak=1)"
+else
+  fail "d4 default behavior regressed (no-op=$def_nomark_rc clean=$def_clean_rc leak=$def_leak_rc)"
+fi
 
 # =====================================================================
 # (b) DRY-RUN reaper lists only merged+prunable and removes nothing
@@ -211,6 +277,28 @@ if [[ -d "$WT_EXP" ]] && git -C "$REPO" show-ref --verify --quiet refs/heads/exp
   pass "c6 EXPERIMENT worktree and branch left intact"
 else
   fail "c6 EXPERIMENT worktree/branch was disturbed"
+fi
+
+# =====================================================================
+# (e) --experiments --yes reaps the lingering EXPERIMENT (WT_EXP) + its branch
+#     but LEAVES the lease-held experiment (WT_LEASE) intact. Runs AFTER the
+#     SCOPE-1 reap in (c), which already cleared merged+prunable.
+# =====================================================================
+BUBBLES_REPO_ROOT="$REPO" bash "$REAP_SH" --experiments --yes >/dev/null 2>&1
+rc=$?
+if [[ "$rc" -eq 0 ]]; then pass "e0 reaper --experiments --yes exits 0"; else fail "e0 reaper --experiments --yes exit $rc"; fi
+
+# Lingering EXPERIMENT worktree + its (merged) branch removed.
+if [[ ! -d "$WT_EXP" ]] && ! git -C "$REPO" show-ref --verify --quiet refs/heads/exp-wt; then
+  pass "e1 lingering EXPERIMENT worktree and branch reaped"
+else
+  fail "e1 lingering EXPERIMENT worktree/branch not fully reaped"
+fi
+# Lease-held experiment left intact (never disturb a live run).
+if [[ -d "$WT_LEASE" ]] && git -C "$REPO" show-ref --verify --quiet refs/heads/lease-wt; then
+  pass "e2 lease-held experiment worktree and branch left intact"
+else
+  fail "e2 lease-held experiment worktree/branch was disturbed"
 fi
 
 echo

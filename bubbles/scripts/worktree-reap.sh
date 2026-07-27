@@ -6,23 +6,31 @@
 # plus their fully-merged LOCAL branches. It is DRY-RUN BY DEFAULT: without
 # `--yes` it prints exactly what it WOULD do and touches nothing.
 #
-# Hard safety invariants (IMP-107 R1-R5):
-#   * REFUSES to reap UNMERGED / DIRTY / LEASE-HELD / EXPERIMENT worktrees — it
-#     only reports them. A live IMP-023 writer-lease (LEASE-HELD) is re-checked
-#     at action time, so a concurrent live run can never be disturbed.
+# Hard safety invariants (IMP-107 R1-R6):
+#   * REFUSES to reap UNMERGED / DIRTY / LEASE-HELD worktrees — it only reports
+#     them. A live IMP-023 writer-lease (LEASE-HELD) is re-checked at action
+#     time, so a concurrent live run can never be disturbed.
 #   * Local branch deletion uses `git branch -d` (SAFE delete — git itself
 #     refuses a non-merged branch). It NEVER uses `git branch -D`.
-#   * Worktree removal uses `git worktree remove` WITHOUT `--force` (git itself
-#     refuses a dirty worktree). It NEVER passes `--force`.
+#   * MERGED / PRUNABLE worktree removal uses `git worktree remove` WITHOUT
+#     `--force` (git itself refuses a dirty worktree) — the non-experiment path
+#     NEVER passes `--force`.
 #   * Remote branches are NEVER touched unless `--remote` is given, and even then
 #     only AFTER the local safe-delete of that same branch has succeeded.
-#   * There is NO `--skip` / `--force` / bypass flag. `--yes` means "act"; it is
-#     not a safety override.
+#   * There is NO `--skip` / bypass flag. `--yes` means "act"; it is not a safety
+#     override. `--experiments` opts into the disposable-experiment path below.
 #
-# SCOPE-1 note: EXPERIMENT (`.design-experiment`) worktrees are report-only here
-# by design — reaping lingering experiments is IMP-107 SCOPE-3, and the marked-
-# worktree identity signal is SCOPE-5. SCOPE-1 reaps ONLY provably merged-and-
-# clean (or directory-gone) worktrees.
+# IMP-107 SCOPE-3 note: lingering EXPERIMENT (`.design-experiment`) worktrees are
+# reaped ONLY under an explicit `--experiments` (which `cli.sh doctor --heal`
+# passes) — report-only otherwise, preserving SCOPE-1 behavior. A
+# `.design-experiment` marker DECLARES the worktree disposable/throwaway by
+# construction, so its own untracked marker (and any throwaway probe content)
+# would otherwise block a non-force `git worktree remove`; the experiment path is
+# therefore the SOLE `--force` case — and even then it is skipped when LEASE-HELD
+# (re-checked at action time) and its branch is removed only by the SAME safe
+# `git branch -d` (never `-D`, so a branch with unique commits is retained, never
+# lost). UNMERGED / DIRTY / LEASE-HELD stay report-only. The marked-worktree
+# identity signal for HUMAN worktrees is SCOPE-5.
 #
 # Portable to bash 3.2 (macOS) + GNU/BSD git. Always exits 0.
 set -uo pipefail
@@ -42,27 +50,33 @@ LEASES_SH="$SCRIPT_DIR/runtime-leases.sh"
 
 usage() {
   cat <<'EOF'
-Usage: worktree-reap.sh [--yes] [--remote] [--help]
+Usage: worktree-reap.sh [--yes] [--experiments] [--remote] [--help]
 
 Safely reap MERGED + PRUNABLE git worktrees (and their fully-merged LOCAL
 branches). DRY-RUN BY DEFAULT — pass --yes to actually act.
 
-  --yes       Perform the reap. Without it, print what WOULD be reaped and stop.
-  --remote    ALSO delete the merged branch on origin, and ONLY after the local
-              safe-delete of that same branch succeeded (network opt-in).
-  --help      Show this help and exit 0.
+  --yes           Perform the reap. Without it, print what WOULD be reaped and stop.
+  --experiments   ALSO reap lingering EXPERIMENT (`.design-experiment`) worktrees
+                  (IMP-107 SCOPE-3) — disposable by construction, skipped when
+                  LEASE-HELD. `cli.sh doctor --heal` passes this.
+  --remote        ALSO delete the merged branch on origin, and ONLY after the
+                  local safe-delete of that same branch succeeded (network opt-in).
+  --help          Show this help and exit 0.
 
-NEVER reaps UNMERGED / DIRTY / LEASE-HELD / EXPERIMENT worktrees (report-only).
-Uses `git worktree remove` (no --force) and `git branch -d` (no -D). A live
-writer-lease is re-checked at action time. No --skip / --force / bypass flag.
+NEVER reaps UNMERGED / DIRTY / LEASE-HELD worktrees (report-only). Uses
+`git branch -d` (never -D). MERGED/PRUNABLE use `git worktree remove` (no
+--force); a lingering EXPERIMENT is the sole `--force` case (its marker declares
+it disposable). A live writer-lease is re-checked at action time. No bypass flag.
 EOF
 }
 
 APPLY=false
 REMOTE=false
+EXPERIMENTS=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --yes) APPLY=true; shift ;;
+    --experiments) EXPERIMENTS=true; shift ;;
     --remote) REMOTE=true; shift ;;
     -h | --help) usage; exit 0 ;;
     *) echo "worktree-reap: unknown option: $1" >&2; usage >&2; exit 2 ;;
@@ -123,7 +137,11 @@ machine="$(BUBBLES_REPO_ROOT="$REPO_ROOT" bash "$REPORT_SH" --porcelain 2>/dev/n
 reaped=0 skipped=0
 
 if [[ "$APPLY" == true ]]; then
-  echo "[worktree-reap] APPLYING — reaping MERGED + PRUNABLE worktrees under $REPO_ROOT"
+  if [[ "$EXPERIMENTS" == true ]]; then
+    echo "[worktree-reap] APPLYING — reaping MERGED + PRUNABLE + lingering EXPERIMENT worktrees under $REPO_ROOT"
+  else
+    echo "[worktree-reap] APPLYING — reaping MERGED + PRUNABLE worktrees under $REPO_ROOT"
+  fi
   # Clear dir-gone (prunable) admin entries first, so a lingering PRUNABLE
   # branch is no longer reported as "checked out" and can be safely deleted.
   git -C "$REPO_ROOT" worktree prune >/dev/null 2>&1 || true
@@ -178,8 +196,41 @@ while IFS=$'\t' read -r cls path branch _; do
         reaped=$((reaped + 1))
       fi
       ;;
+    EXPERIMENT)
+      # Lingering design-experiment (IMP-107 SCOPE-3): reaped ONLY when the
+      # operator explicitly opts in via --experiments (doctor --heal passes it).
+      # Report-only otherwise, preserving SCOPE-1 behavior.
+      if [[ "$EXPERIMENTS" != true ]]; then
+        echo "  keep  EXPERIMENT $path — report-only (pass --experiments or 'doctor --heal' to reap lingering experiments)"
+        skipped=$((skipped + 1)); continue
+      fi
+      if [[ "$APPLY" == false ]]; then
+        echo "  [dry-run] would reap EXPERIMENT $path (branch=${branch:-<detached>}; lingering .design-experiment, disposable)"
+        reaped=$((reaped + 1))
+        continue
+      fi
+      # NEVER disturb a live run: a lease can appear after the report ran.
+      if still_lease_held "$path"; then
+        echo "  SKIP  $path — became LEASE-HELD (live run); left intact"
+        skipped=$((skipped + 1)); continue
+      fi
+      # A `.design-experiment` marker declares the worktree disposable/throwaway
+      # by construction; its own untracked marker would block a non-force
+      # removal, so the experiment path is the SOLE `--force` case. The branch
+      # is still removed only by SAFE `git branch -d` (a branch with unique
+      # exploration commits is retained, never lost).
+      if git -C "$REPO_ROOT" worktree remove --force "$path" >/dev/null 2>&1; then
+        local_outcome="$(delete_local_branch "$branch")"
+        echo "  REAPED EXPERIMENT $path (branch=${branch:-<detached>}, $local_outcome)"
+        maybe_delete_remote_branch "$branch" "$local_outcome"
+        reaped=$((reaped + 1))
+      else
+        echo "  SKIP  $path — 'git worktree remove --force' declined (left intact)"
+        skipped=$((skipped + 1))
+      fi
+      ;;
     *)
-      echo "  keep  $cls $path — report-only (never auto-reaped in SCOPE-1)"
+      echo "  keep  $cls $path — report-only (never auto-reaped)"
       skipped=$((skipped + 1))
       ;;
   esac

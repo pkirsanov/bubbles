@@ -31,6 +31,31 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-107 SCOPE-3 — lingering design-experiment worktree detection + reap (WT-EXPERIMENT-LINGER)
+
+`design-experiment-guard.sh` gains an additive `--lingering` mode that closes the
+"capture then DELETE" half of the design-experiment contract: a
+`.design-experiment`-marked worktree that still exists after its run should have
+finalized is now itself a finding (previously only completion/certification
+LEAKAGE was checkable — never the mandated post-capture removal). It reuses
+`runtime-leases.sh` to skip a LEASE-HELD (still-live) experiment. Advisory-first
+contract: it PRINTS the LINGERING finding and exits 0 by default; `--strict`
+makes a lingering experiment a hard failure (exit 1) for a finalize/CI step. The
+default (non-`--lingering`) leakage-REFUSE behavior is byte-unchanged (proven by
+a regression case in `worktree-hygiene-guard-selftest.sh`).
+
+Lingering experiments are now surfaced in `worktree-hygiene-report.sh`
+(a "lingering — disposable, reapable via --heal" annotation) and reaped by
+`worktree-reap.sh` under a new explicit `--experiments` opt, which `cli.sh doctor
+--heal` now passes. Experiments are reaped ONLY under that explicit opt, are
+skipped when LEASE-HELD (re-checked at action time), and their branch is removed
+only by the same safe `git branch -d` (never `-D`). A `.design-experiment`
+marker declares the worktree disposable by construction, so the experiment path
+is the sole `git worktree remove --force` case (its own untracked marker would
+otherwise block a non-force removal); the MERGED/PRUNABLE path still never passes
+`--force`. UNMERGED / DIRTY / LEASE-HELD stay report-only, and the doctor
+advisory stays tally-neutral. No new gate id; no gate weakened.
+
 ### IMP-106 SCOPE-2 — domain model as threaded project-level SST + consistency nudge (G131, DOM-SST)
 
 New **advisory** Gate **G131** (`bubbles/scripts/domain-model-consistency.sh` +
