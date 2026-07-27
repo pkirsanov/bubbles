@@ -6,13 +6,47 @@ Bubbles uses **MAJOR.MINOR.PATCH** (semver-style):
 
 | Part | When to bump | Who bumps | Examples |
 |------|-------------|-----------|----------|
-| **PATCH** (3rd) | Every commit — auto-bumped by pre-commit hook | Hook (automatic) | Policy tweaks, doc fixes, skill updates, script fixes, single-gate additions |
+| **PATCH** (3rd) | Batched fixes released deliberately by the maintainer (not auto-bumped per commit) | Manual (`echo X.Y.Z > VERSION` before the release commit) | Policy tweaks, doc fixes, skill updates, script fixes, single-gate additions |
 | **MINOR** (2nd) | New capabilities, new agents, new gates, new workflow modes, structural changes to governance | Manual (`echo X.Y.0 > VERSION` before commit) | New agent added, new workflow mode, new gate family, taxonomy expansion |
 | **MAJOR** (1st) | Breaking changes to installer, state.json schema, agent protocol, or downstream contract | Manual (`echo X.0.0 > VERSION` before commit) | state.json v3→v4, installer flag removal, agent handoff protocol change |
 
-The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJOR, manually set the VERSION file before committing — the hook will then increment PATCH from the new base.
+VERSION is bumped **deliberately by the maintainer**, not automatically per
+commit — the installed pre-commit hook runs the drift/PII/artifact checks only
+and does NOT touch VERSION.
+
+**Release cadence (META-CHURN):** compatible policy, prose, doc, and skill
+improvements are **batched into periodic framework release trains** — a single
+deliberate MINOR (or PATCH) bump covers the many improvements committed since the
+last release, rather than a separate version bump per commit. Each version bump
+is a downstream upgrade event, so batching compatible changes into one deliberate
+release keeps downstream re-sync churn low. Reserve an **immediate standalone
+bump** for a correctness-critical single-gate fix that downstream repos must pick
+up right away.
+
+To cut a release, set the VERSION file before the release commit: `echo X.Y.0 >
+VERSION` for a MINOR release or `echo X.0.0 > VERSION` for a MAJOR release (use
+`echo X.Y.Z > VERSION` for a batched PATCH release). If an auto-bump PATCH hook
+is installed in a given checkout, reserve it for correctness-critical fixes — the
+default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
+
+### IMP-105 SCOPE-8 — batched release-cadence policy (META-CHURN)
+
+The **Versioning Scheme** section now documents a **batched release-train
+cadence**: compatible policy/prose/doc/skill improvements are grouped into
+periodic, deliberate version bumps — one MINOR (or PATCH) release covering the
+many improvements committed since the last release — rather than a separate
+version bump per commit. Because each version bump is a downstream upgrade event,
+batching compatible changes into one deliberate release reduces downstream
+re-sync churn; an **immediate standalone bump** is reserved for a
+correctness-critical single-gate fix that downstream repos must pick up right
+away. This scope also **reconciles the previously-inaccurate "auto-increments
+PATCH on every commit" line** with reality — the installed pre-commit hook runs
+the drift/PII/artifact checks only and does NOT touch VERSION (which currently
+reads 7.20.3), so bumps are maintainer-driven and deliberate, not automatic per
+commit. Docs-only change (`CHANGELOG.md`); no script, agent, gate, mode, or
+workflow behavior changed.
 
 ### IMP-105 SCOPE-7 — mode→specialist table unified into a canonical registry (ONT-UNIFY)
 
