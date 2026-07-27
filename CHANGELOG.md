@@ -31,6 +31,8 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## v7.21.0 — assurance-driven terminal status + domain invariants (G130/G131) + canonical required-specialists + worktree lifecycle
+
 ### IMP-107 SCOPE-5 — supported worktree spawn + .bubbles-worktree marker (WT-HARNESS)
 
 New `bubbles/scripts/worktree-spawn.sh` is the CANONICAL create path for a

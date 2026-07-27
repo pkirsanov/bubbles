@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "version": "7.20.3",
-  "gitSha": "3907d6a72e50e4703e692bd28d0f81a2f008a655",
-  "generatedAt": "2026-07-27T13:59:00+00:00",
+  "version": "7.21.0",
+  "gitSha": "fa1f6a7e873aabdfcd8c788984e11b333f576048",
+  "generatedAt": "2026-07-27T14:25:19+00:00",
   "capabilityLedgerVersion": 1,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
   "supportedInteropSources": ["claude-code", "roo-code", "cursor", "cline"],
   "validatedSurfaces": ["framework-validate", "release-check", "release-manifest-selftest", "install-provenance-selftest", "finding-closure-selftest", "interop-import-selftest", "trust-doctor-selftest"],
-  "docsDigest": "4f78ca8f4332d1fe356235b4dbbd0cd674cb483266cc311ef824cbedf4751d23",
+  "docsDigest": "6b01bc87320f41bff17a394b323e1db95748782f43736f4251fed7f88a3e89eb",
   "managedFileCount": 714,
   "managedFileChecksums": [
     {"path": "bubbles/scripts/action-risk-registry-lint.sh", "sha256": "a4728a5b86849b6d39652e79b266344e320b4bbb26751569ca8dc164acb3c9c0"},
