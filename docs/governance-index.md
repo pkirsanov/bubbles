@@ -186,6 +186,7 @@ end-to-end flows.
 - [ops-packet-work.md](recipes/ops-packet-work.md)
 - [outcome-first-specs.md](recipes/outcome-first-specs.md)
 - [parallel-scopes.md](recipes/parallel-scopes.md)
+- [parallel-worktrees.md](recipes/parallel-worktrees.md)
 - [plan-only.md](recipes/plan-only.md)
 - [post-impl-hardening.md](recipes/post-impl-hardening.md)
 - [propagate-changes.md](recipes/propagate-changes.md)

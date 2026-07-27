@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# worktree-hygiene-report.sh (IMP-107 / SCOPE-1 + SCOPE-3 + SCOPE-4 — gaps WT-TEARDOWN, WT-STALE)
+# worktree-hygiene-report.sh (IMP-107 / SCOPE-1 + SCOPE-3 + SCOPE-4 + SCOPE-5 — gaps WT-TEARDOWN, WT-STALE, WT-HARNESS)
 # ---------------------------------------------------------------------------
 # ADVISORY, READ-ONLY worktree-hygiene detector. Enumerates the repo's LINKED
 # git worktrees and classifies each so the create->merge->DROP contract that is
@@ -56,6 +56,15 @@
 #   worktree-hygiene-branches: S stale local branches (age>=Ad or ahead>=B), T stashes
 # `cli.sh doctor` greps the FIRST line only (its tally is unaffected by SCOPE-4).
 # There is NO --skip / --force / bypass flag.
+#
+# SCOPE-5 (gap WT-HARNESS) additionally RECOGNIZES the `.bubbles-worktree`
+# marker stamped by worktree-spawn.sh: each worktree detail line (DEFAULT mode
+# only) carries a `framework-created=yes|no` tag so an operator can see which
+# worktrees the framework created. This is SURFACING ONLY — it is NOT emitted in
+# --porcelain (the reaper's input contract is byte-unchanged) and does NOT alter
+# any CLASS or summary line. The marker is the safe identity signal: a
+# framework-created worktree is auto-reapable only via the SAME MERGED/PRUNABLE
+# core, while an UNMARKED (human-owned) un-merged worktree is always report-only.
 #
 # Portable to bash 3.2 (macOS) + GNU/BSD git; uses only git + POSIX text tools.
 set -uo pipefail
@@ -277,6 +286,10 @@ flush_record() {
 
   local disp_branch="$branch"
   [[ -n "$disp_branch" ]] || disp_branch="(detached)"
+  # SCOPE-5 (WT-HARNESS): a `.bubbles-worktree` marker => framework-created.
+  # Surfaced in the DEFAULT detail line only (never in --porcelain).
+  local fw="no"
+  [[ -f "$path/.bubbles-worktree" ]] && fw="yes"
   local note="triage — never auto-reap"
   case "$cls" in
     MERGED)     note="reapable (merged + clean)" ;;
@@ -290,8 +303,8 @@ flush_record() {
   machine_lines="${machine_lines}${machine_lines:+
 }$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s' "$cls" "$path" "$branch" "$ahead" "$behind" "$dirty" "$age")"
   detail_lines="${detail_lines}${detail_lines:+
-}$(printf '  %-11s %s  branch=%s  ahead=%s behind=%s  dirty=%s  age=%sd  -> %s' \
-    "$cls" "$path" "$disp_branch" "$ahead" "$behind" "$dirty" "$age" "$note")"
+}$(printf '  %-11s %s  branch=%s  ahead=%s behind=%s  dirty=%s  age=%sd  framework-created=%s  -> %s' \
+    "$cls" "$path" "$disp_branch" "$ahead" "$behind" "$dirty" "$age" "$fw" "$note")"
 }
 
 wt_path="" wt_head="" wt_branch="" wt_detached=0 wt_prunable=0 record_idx=0

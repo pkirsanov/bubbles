@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# worktree-reap.sh (IMP-107 / SCOPE-1 — gap WT-TEARDOWN)
+# worktree-reap.sh (IMP-107 / SCOPE-1 — gap WT-TEARDOWN; SCOPE-5 marker note — gap WT-HARNESS)
 # ---------------------------------------------------------------------------
 # Explicit, SAFE-BY-CONSTRUCTION worktree reaper. It reaps ONLY the reapable set
 # surfaced by worktree-hygiene-report.sh — `MERGED` and `PRUNABLE` worktrees —
@@ -31,6 +31,17 @@
 # `git branch -d` (never `-D`, so a branch with unique commits is retained, never
 # lost). UNMERGED / DIRTY / LEASE-HELD stay report-only. The marked-worktree
 # identity signal for HUMAN worktrees is SCOPE-5.
+#
+# IMP-107 SCOPE-5 note (gap WT-HARNESS): worktree-spawn.sh stamps a
+# `.bubbles-worktree` marker { runId, mode, baseSha, createdAt, sessionId } on a
+# framework-created worktree, which worktree-hygiene-report.sh surfaces as
+# `framework-created=yes|no`. That marker is the SAFE IDENTITY SIGNAL for HUMAN
+# worktrees: an UNMARKED, un-merged, non-prunable worktree is human-owned and
+# stays REPORT-ONLY here — it is never reaped. The marker only REINFORCES this
+# SCOPE-1 safety core; it is NEVER a new reason to force-reap an un-merged
+# worktree. The reap set is unchanged: MERGED + PRUNABLE (+ lingering EXPERIMENT
+# under --experiments). This note is documentation only; the reaper logic is
+# SCOPE-1.
 #
 # Portable to bash 3.2 (macOS) + GNU/BSD git. Always exits 0.
 set -uo pipefail

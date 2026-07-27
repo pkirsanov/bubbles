@@ -31,6 +31,27 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-107 SCOPE-5 — supported worktree spawn + .bubbles-worktree marker (WT-HARNESS)
+
+New `bubbles/scripts/worktree-spawn.sh` is the CANONICAL create path for a
+run/task worktree (replacing ad-hoc `git worktree add`): it runs `git worktree
+add -b <branch> <path> <base>` and stamps a `.bubbles-worktree` marker recording
+`{ runId, mode, baseSha, createdAt, sessionId }` at the worktree root
+(`--experiment` ALSO stamps the existing `.design-experiment` marker, composing
+with SCOPE-3). The hygiene report (`worktree-hygiene-report.sh`) now RECOGNIZES
+that marker and surfaces it as a `framework-created=yes|no` tag on each worktree
+detail line (DEFAULT mode only — `--porcelain` and every summary line are
+byte-unchanged), so an operator can see which worktrees the framework created.
+The marker is the safe identity signal: an UNMARKED (human-owned) un-merged,
+non-prunable worktree stays report-only and is NEVER auto-reaped. New
+`docs/recipes/parallel-worktrees.md` documents the spawn→work→reap loop, when to
+prefer in-tree-on-`main` (the zero-sprawl default) over isolated worktrees, and
+the guarantee that every spawned (marked) worktree has a matching safe reap.
+Closes the loop the framework opened (ad-hoc `git worktree add` debris, gap
+WT-HARNESS). ADDITIVE — the SCOPE-1/2 reaper SAFETY CORE (MERGED/PRUNABLE-only)
+is unchanged, both SCOPE-1 and SCOPE-2 selftests remain green, and the new
+`worktree-spawn-selftest.sh` is wired into `framework-validate.sh`.
+
 ### IMP-107 SCOPE-2 — mechanized gitIsolation finalize-reap (WT-TEARDOWN)
 
 The gitIsolation / `parallelScopes=dag` run/scope finalize teardown — the "the

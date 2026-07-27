@@ -132,6 +132,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | Recipe | Problem → Solution |
 |--------|-------------------|
 | [Parallel Scope Execution](parallel-scopes.md) | "My spec has independent scopes and I want to run them concurrently via worktrees" |
+| [Parallel Worktrees](parallel-worktrees.md) | "I parallelize many workflows on one repo and need a supported spawn+marker so worktrees get safely reaped, not left as debris" |
 
 ## Data-Driven Workflows (Retro → Action)
 
