@@ -17,12 +17,12 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 
 ## Coverage Summary
 
-- Gates defined: **111**
+- Gates defined: **112**
 - Referenced by ≥1 workflow mode: **65**
-- Not referenced by any mode: **46**
-  - of those, enforced by state-transition-guard: **34**
-  - of those, enforced by a framework-validate script: **37**
-  - of those, enforced in CI: **34**
+- Not referenced by any mode: **47**
+  - of those, enforced by state-transition-guard: **35**
+  - of those, enforced by a framework-validate script: **38**
+  - of those, enforced in CI: **35**
 - Gates with NO detected MECHANICAL surface (may be agent-behavior-enforced; REVIEW): **5** — G038, G066, G071, G078, G079
 
 ## All Gates
@@ -69,7 +69,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G041 | dod_format_integrity_gate | 0 | Check 4A, Check 4B | 2 | guard |
 | G042 | artifact_ownership_enforcement_gate | 0 | Check 3G | 1 | guard |
 | G043 | consumer_trace_gate | 0 | ref | 2 | guard |
-| G044 | comprehensive_regression_gate | 25 | — | 7 | — |
+| G044 | comprehensive_regression_gate | 25 | — | 8 | — |
 | G047 | idor_auth_bypass_gate | 25 | — | 2 | — |
 | G048 | silent_decode_failure_gate | 25 | — | 2 | — |
 | G051 | test_env_dependency_gate | 25 | Check 19 | 2 | guard |
@@ -90,7 +90,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G069 | collateral_change_containment_gate | 0 | ref | 1 | guard |
 | G070 | outcome_contract_gate | 0 | — | 1 | — |
 | G071 | execution_only_validation_gate | 0 | — | — | — |
-| G072 | evidence_provenance_gate | 0 | Check 40 | 3 | guard |
+| G072 | evidence_provenance_gate | 0 | Check 40 | 4 | guard |
 | G073 | planning_only_source_edit_lockout_gate | 30 | Check 3B | 6 | guard |
 | G074 | workflow_mode_consistency_gate | 3 | ref | — | guard |
 | G075 | scope_index_parity_gate | 0 | ref | — | guard |
@@ -139,7 +139,8 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G127 | capability_consumer_freshness_gate | 0 | — | 4 | — |
 | G128 | session_cap_enforcement_gate | 0 | Check 40 | 7 | guard |
 | G129 | repository_binding_classification_discovery_conformance_gate | 0 | — | 1 | — |
-| G130 | domain_invariant_correspondence_gate | 0 | Check 41 | 3 | guard |
+| G130 | domain_invariant_correspondence_gate | 0 | Check 41 | 4 | guard |
+| G131 | domain_model_consistency_gate | 0 | Check 42 | 3 | guard |
 
 ## Gates Not Referenced By Any Mode
 
@@ -162,7 +163,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G069 | collateral_change_containment_gate | ref | 1 | guard | imp021-interaction-contracts-selftest.sh |
 | G070 | outcome_contract_gate | — | 1 | — | scenario-compile-lint.sh |
 | G071 | execution_only_validation_gate | — | — | — | — |
-| G072 | evidence_provenance_gate | Check 40 | 3 | guard | claim-source-lint.sh, framework-validate.sh, gate-strength-lint.sh |
+| G072 | evidence_provenance_gate | Check 40 | 4 | guard | claim-source-lint.sh, domain-model-consistency.sh, framework-validate.sh, gate-strength-lint.sh |
 | G075 | scope_index_parity_gate | ref | — | guard | — |
 | G076 | phantom_scope_detection_gate | ref | — | guard | — |
 | G077 | execution_history_plausibility_gate | ref | — | guard | — |
@@ -192,5 +193,6 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G127 | capability_consumer_freshness_gate | — | 4 | — | capability-consumer-freshness-selftest.sh, capability-consumer-freshness.sh, framework-validate.sh, scaffold-gate-selftest.sh |
 | G128 | session_cap_enforcement_gate | Check 40 | 7 | guard | framework-validate.sh, rapid-tool-delivery-mode-selftest.sh, risk-tier-resolve.sh, scaffold-gate-selftest.sh, session-cap-guard-selftest.sh, session-cap-guard.sh, +1 more |
 | G129 | repository_binding_classification_discovery_conformance_gate | — | 1 | — | framework-validate.sh |
-| G130 | domain_invariant_correspondence_gate | Check 41 | 3 | guard | domain-invariant-guard-selftest.sh, domain-invariant-guard.sh, framework-validate.sh |
+| G130 | domain_invariant_correspondence_gate | Check 41 | 4 | guard | domain-invariant-guard-selftest.sh, domain-invariant-guard.sh, domain-model-consistency.sh, framework-validate.sh |
+| G131 | domain_model_consistency_gate | Check 42 | 3 | guard | domain-model-consistency-selftest.sh, domain-model-consistency.sh, framework-validate.sh |
 

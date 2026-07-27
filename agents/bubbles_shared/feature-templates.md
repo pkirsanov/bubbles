@@ -55,7 +55,7 @@ Summarize architecture intent, supported surfaces, and key constraints.
 Components, data flow, integrations, and ownership boundaries.
 
 ## Data Model
-Entities, relationships, migrations, and lifecycle constraints.
+Entities, relationships, migrations, and lifecycle constraints. When the project declares a `domainModel:` SST (the optional block in `.github/bubbles-project.yaml`, a sibling of `traceContracts:`), this section SHOULD **reference and extend** that shared model rather than siloing a per-feature model — promote new entities and invariants UP into `domainModel.entities` / `domainModel.invariants`. Gate **G131** (advisory) nudges on drift: a `## Data Model` entity not present in the shared model, or an Outcome-Contract Hard Constraint naming an `INV-*` not declared in `domainModel.invariants`.
 
 ## API/Contracts
 Endpoints, request/response shapes, error model, and versioning.

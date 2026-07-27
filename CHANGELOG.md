@@ -31,6 +31,35 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-106 SCOPE-2 — domain model as threaded project-level SST + consistency nudge (G131, DOM-SST)
+
+New **advisory** Gate **G131** (`bubbles/scripts/domain-model-consistency.sh` +
+`domain-model-consistency-selftest.sh`) promotes the OPTIONAL `domainModel:`
+block (delivered by G130) to a **threaded, product-level source of truth** and
+nudges a feature that siloes its domain: it surfaces (1) a `design.md ## Data
+Model` entity NOT promoted to the shared `domainModel.entities`, and (2) an
+Outcome-Contract Hard Constraint referencing an `INV-*` id NOT declared in
+`domainModel.invariants` (so G130 can anchor it). It is **advisory by default** —
+findings are printed and it exits 0, so it never breaks a green tree — and
+**blocks (exit 1) ONLY** when a repo sets `domainModelConsistencyGuard: block` in
+`.github/bubbles-project.yaml` (the same advisory-until-opt-in shape as the G072
+`claimSourceProvenanceGuard: block` key). It is **INERT (clean no-op, exit 0) on
+any repo without a `domainModel:` block** — including this Bubbles source repo,
+which declares none. Parsing prefers mikefarah `yq` (v4) with a bounded awk/grep
+fallback. Registered as `G131` in `bubbles/registry/gates.yaml` (regenerated
+`workflows.yaml` gates block), wired into `framework-validate.sh` (dedicated
+selftest) and the state-transition-guard delegated tail
+(`guards/tail-delegated-gates.sh`, Check 42, isolated subprocess exactly like
+G130, self-gating its blocking via the opt-in). Companion threading is additive:
+`agents/bubbles_shared/capability-foundation.md` generalizes its layer-ownership
+table to thread the always-available product-domain SST across Analyst → Design →
+Plan → Validate → Docs; `agents/bubbles_shared/feature-templates.md` notes the
+`## Data Model` should reference/extend the shared model (G131 nudges on drift);
+and `agents/bubbles_shared/e2e-regression.md` gives G044's "contradictory business
+rules" sweep a structured target (diff a declared transition against the shared
+`domainModel` state machine). No existing gate is weakened; there is no
+`--skip`/`--force`/bypass.
+
 ### IMP-106 SCOPE-3 — business-domain lineage via scenario invariantRefs (DOM-LINEAGE)
 
 Scenarios may now carry an **OPTIONAL** `invariantRefs: [INV-*]` array in
