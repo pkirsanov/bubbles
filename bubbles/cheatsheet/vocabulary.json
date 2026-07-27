@@ -4,6 +4,10 @@
     "meaning": "When one root mode is already active, recap, status, and handoff preserve that mode and route back to its authorized runner instead of dropping into raw specialists."
   },
   {
+    "term": "evidence by reference",
+    "meaning": "A `[x]` DoD item may cite already-captured evidence instead of re-pasting ≥10 raw lines: a `report.md#anchor` link (resolved to a ≥10-non-blank-line block) or a `record_evidence` tool-log entry in `.specify/runtime/tool-calls.jsonl`. Opt-in and fail-closed — inline evidence stays fully valid; an unresolvable anchor or missing log entry does not satisfy the item."
+  },
+  {
     "term": "universal goal endpoint",
     "meaning": "`bubbles.goal` owns one requested outcome and may execute zero, one, or several authorized workflows plus direct specialist phases until convergence."
   },

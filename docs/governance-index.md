@@ -190,6 +190,7 @@ end-to-end flows.
 - [post-impl-hardening.md](recipes/post-impl-hardening.md)
 - [propagate-changes.md](recipes/propagate-changes.md)
 - [quality-sweep.md](recipes/quality-sweep.md)
+- [rapid-tool-delivery.md](recipes/rapid-tool-delivery.md)
 - [reconcile-redesign-existing-feature.md](recipes/reconcile-redesign-existing-feature.md)
 - [regression-check.md](recipes/regression-check.md)
 - [readiness-review.md](recipes/readiness-review.md)

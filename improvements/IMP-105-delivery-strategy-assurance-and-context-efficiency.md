@@ -53,11 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-4 — Evidence by reference, not by paste (`EVID-DUP`)
-
-- Extend the EXISTING evidence infrastructure (`bubbles/mcp/tools/record_evidence.json` → `.specify/runtime/tool-calls.jsonl`, the `rawPointer` convention in `context-compactor.sh`, and the `evidence://` URI already used in adversarial samples) so a DoD item may cite an evidence ID/pointer instead of inlining ≥10 raw lines twice. `agents/bubbles_shared/evidence-rules.md` and the G025 checks in `state-transition-guard.sh` accept a resolvable evidence reference as equivalent to inline output, preserving the `**Claim Source:**` provenance tag.
-- **Default-preserving:** inline ≥10-line evidence remains fully valid; reference is an OPT-IN that reduces duplication. **Why:** cuts the double-carry of evidence across `scopes.md` + `report.md`. **Quality:** provenance strengthens (one content-addressed source of truth), anti-fabrication is unchanged — the referenced record must still be real executed output.
-
 ### SCOPE-5 — Phase-local lazy context loading + measured budgets (`CTX-BUNDLE`)
 
 - Give the orchestrator a compact policy kernel plus registry-read access, and LAZY-LOAD the heavy authoring reference (`project-config-contract.md`, `feature-templates.md`, `scope-workflow.md`) only when the active phase is planning/authoring. The bootstrap-profile tiering in `agents/bubbles_shared/operating-baseline.md` ("Context Loading Profiles") is the existing seam.
@@ -83,8 +78,8 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
-- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-4/5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
+- **Order:** SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
+- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
 ## Risks & mitigations
@@ -92,12 +87,10 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 - **R1** Driving distinct terminal statuses (SCOPE-1) could surprise downstream tooling that only expects `done`. → `is-terminal-for-mode.sh` already treats `delivered_fast`/`delivered_prototype` as terminal-for-mode; keep the no-block-status behavior backward-compatible (a missing assurance block still yields `done`), and land guard consistency (`assurance-certification-check.sh`) in the same change.
 - **R2** Deriving `required_specialists` (SCOPE-3) could change enforcement for a mode that currently relies on the empty default. → That "reliance" is the bug; add a hermetic selftest + persistent regression so the derived set is proven for every registered delivery mode before cutover.
 - **R3** Lazy context loading (SCOPE-5) could drop a contract an orchestrator silently depended on. → Evidence-gate with a held-out eval and the existing `effective-bundle-budget.sh`; never set a blocking budget until the eval shows zero gate-detection regression.
-- **R4** Evidence-by-reference (SCOPE-4) could weaken anti-fabrication if a reference is unresolvable. → Fail-closed: an unresolvable or empty reference is treated as `not-run` (DoD stays `[ ]`); the referenced record must be real executed output with a `**Claim Source:**` tag.
-- **R5** Conditional sweeps (SCOPE-6) could skip a sweep that was actually needed. → Key the condition to `risk-tier-resolve.sh` (fail-closed to full on unknown), so ambiguity keeps the sweep.
+- **R4** Conditional sweeps (SCOPE-6) could skip a sweep that was actually needed. → Key the condition to `risk-tier-resolve.sh` (fail-closed to full on unknown), so ambiguity keeps the sweep.
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-4: a DoD item closed by evidence reference passes G025 with no inline paste, and an unresolvable reference fails closed.
 - SCOPE-5: measured orchestrator effective bundle drops materially (target 40–60%) with the held-out eval showing no gate-detection regression.
 - SCOPE-6: a low-risk build-free scope carries no inapplicable sweep subsections while a shared-infra scope still requires them.
 - SCOPE-7: mode→specialist and the gates/cheatsheet tables are generated from one canonical model and pass `--check`; shadow-compare shows byte-identical or reviewed diffs.
@@ -105,7 +98,6 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Files to touch (on approval)
 
-- **SCOPE-4:** `agents/bubbles_shared/evidence-rules.md`, `bubbles/scripts/state-transition-guard.sh` (G025 evidence checks), `agents/bubbles_shared/feature-templates.md`, `bubbles/mcp/tools/record_evidence.json` (already exists) — owner: `bubbles.validate` + evidence-rules.
 - **SCOPE-5:** `agents/bubbles.workflow.agent.md`, `agents/bubbles_shared/operating-baseline.md` (Context Loading Profiles), the phase `*-bootstrap.md` modules, `bubbles/scripts/effective-bundle-budget.sh` (already measures) — owner: framework.
 - **SCOPE-6:** `agents/bubbles_shared/feature-templates.md`, `agents/bubbles_shared/scope-workflow.md`, `bubbles/scripts/risk-tier-resolve.sh` — owners: `bubbles.plan` + framework.
 - **SCOPE-7:** new `bubbles/registry/delivery-policy.yaml` (or an extension of an existing registry), `bubbles/scripts/generate-*.sh`, `bubbles/scripts/workflow-registry-consistency.sh` — owner: framework.

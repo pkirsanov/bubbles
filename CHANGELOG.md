@@ -14,6 +14,29 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-4 — evidence-by-reference documented (avoids ≥10-line double-paste)
+
+The transition guard ALREADY supported evidence-by-reference; this scope only
+DOCUMENTS that already-shipped capability so agents and humans can discover it —
+**NO guard change**. Two reference paths were already wired and fail-closed in
+`bubbles/scripts/state-transition-guard.sh` Check 9: (1) a Markdown
+`report.md#anchor` reference resolved by `resolve_evidence_by_reference`
+(v4.1.0), which follows `- [x] <item> → Evidence: [<anchor>](report.md#<anchor>)`
+and requires a ≥10-non-blank-line block under that anchor; and (2) a structured
+tool-log path via `_tool_log_covers_dod_item` (v5.2 / F1), where the
+`record_evidence` MCP tool writes `.specify/runtime/tool-calls.jsonl` and the
+guard covers a matching DoD item (names the spec, `exitCode == 0`, command
+shares ≥2 alpha-tokens with the item body). Both let the same terminal output
+live once (in `report.md` or the tool-log) instead of being carried twice across
+`scopes.md` + `report.md`. Documented in
+`agents/bubbles_shared/evidence-rules.md` (new "Evidence by Reference" section)
+and `agents/bubbles_shared/feature-templates.md` (reference option added to the
+DoD template). Inline ≥10-line evidence remains fully valid
+(default-preserving); references are fail-closed — an unresolvable anchor, a
+<10-line block, or a missing/mismatched tool-log entry does NOT satisfy the
+item, and the `**Claim Source:**` tag is still required. SCOPE-4 is excised from
+the IMP-105 improvements plan.
+
 ### IMP-105 SCOPE-2 — delivery strategy + achieved-assurance model exposed in the user surface
 
 The already-shipped `rapid-tool-delivery` fast lane and the two-axis assurance

@@ -1403,6 +1403,10 @@
     <div class="wf-desc">When one root mode is already active, recap, status, and handoff preserve that mode and route back to its authorized runner instead of dropping into raw specialists.</div>
   </div>
   <div class="workflow-card">
+    <div class="wf-name">evidence by reference</div>
+    <div class="wf-desc">A <code>[x]</code> DoD item may cite already-captured evidence instead of re-pasting ≥10 raw lines: a <code>report.md#anchor</code> link (resolved to a ≥10-non-blank-line block) or a <code>record_evidence</code> tool-log entry in <code>.specify/runtime/tool-calls.jsonl</code>. Opt-in and fail-closed — inline evidence stays fully valid; an unresolvable anchor or missing log entry does not satisfy the item.</div>
+  </div>
+  <div class="workflow-card">
     <div class="wf-name">universal goal endpoint</div>
     <div class="wf-desc"><code>bubbles.goal</code> owns one requested outcome and may execute zero, one, or several authorized workflows plus direct specialist phases until convergence.</div>
   </div>

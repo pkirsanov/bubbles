@@ -258,6 +258,7 @@ Some TPB characters carry different agent roles when their narrative context leg
 |------|---------|
 <!-- GENERATED:CHEATSHEET_VOCABULARY_START - run `bash bubbles/scripts/generate-cheatsheet.sh` -->
 | `workflow-only continuation` | When one root mode is already active, recap, status, and handoff preserve that mode and route back to its authorized runner instead of dropping into raw specialists. |
+| `evidence by reference` | A `[x]` DoD item may cite already-captured evidence instead of re-pasting ≥10 raw lines: a `report.md#anchor` link (resolved to a ≥10-non-blank-line block) or a `record_evidence` tool-log entry in `.specify/runtime/tool-calls.jsonl`. Opt-in and fail-closed — inline evidence stays fully valid; an unresolvable anchor or missing log entry does not satisfy the item. |
 | `universal goal endpoint` | `bubbles.goal` owns one requested outcome and may execute zero, one, or several authorized workflows plus direct specialist phases until convergence. |
 | `single-mode workflow runner` | `bubbles.workflow` executes exactly one explicit `mode:` or one mode resolved by `bubbles.super`; it does not decompose broad goals or run timed goal queues. |
 | `direct authorized runner` | The top-level agent granted a workflow mode interprets its phase order and invokes specialist owners directly. Workflow-running orchestrators never invoke one another as subagents. |

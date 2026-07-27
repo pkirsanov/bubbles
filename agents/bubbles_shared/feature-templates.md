@@ -178,6 +178,12 @@ All DoD entries MUST be markdown checkboxes (`- [ ]` or `- [x]`). Non-checkbox D
 Record raw execution evidence in the matching report file:
 - single-file mode: `report.md`
 - per-scope mode: `scopes/NN-name/report.md`
+
+Each `- [x]` item MUST be backed by real ≥10-line raw execution evidence, provided by ANY ONE of these equivalent forms (see evidence-rules.md → "Evidence by Reference"):
+- Inline (default): a ≥10-line raw output block directly under the item.
+- Reference: `- [x] <item> → Evidence: [<anchor>](report.md#<anchor>)` resolving to a ≥10-line block under that anchor in `report.md`.
+- Tool-log: wrap the command with the `record_evidence` MCP tool (writes `.specify/runtime/tool-calls.jsonl`); the guard then covers the matching item automatically.
+An unresolvable anchor, a <10-line block, or a missing/mismatched tool-log entry is fail-closed (the item stays unproven). The `**Claim Source:**` tag is required in every form.
 ```
 
 ## report.md Template
