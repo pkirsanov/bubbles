@@ -66,42 +66,9 @@ Each bullet was re-checked against a real file.
 
 Every scope is **additive**, **default-preserving**, and **advisory-until-configured** (a repo with no `domainModel:` block is a clean no-op — identical to `traceContracts`). None removes a gate or lowers the quality floor. Scopes are independently landable and ordered by leverage.
 
-### SCOPE-1 — Anchor product business-invariants mechanically (`DOM-INVARIANT`, proposed Gate **G130**)
-
-- Add an **optional project-owned `domainModel:` block** to `.github/bubbles-project.yaml` (sibling to `traceContracts:`), where a project declares the **static structural constraints that prose and Gherkin cannot mechanically express**:
-
-  ```yaml
-  # .github/bubbles-project.yaml (OPTIONAL — absent = clean no-op)
-  domainModel:
-    entities:
-      Order:   { states: [created, paid, shipped, refunded], terminal: [refunded] }
-      Refund:  {}
-    invariants:
-      - id: INV-ORDER-STATUS-ENUM
-        rule: "Order.status ∈ {created, paid, shipped, refunded}"
-        kind: enumeration
-        enforcedBy: [db-constraint, type]          # where the product enforces it
-        provedBy: ["tests/order_status_test.rs::rejects_unknown_status"]
-      - id: INV-ONE-REFUND-PER-ORDER
-        rule: "at most one completed Refund per Order"
-        kind: cardinality
-        enforcedBy: [db-unique-index]
-        provedBy: ["tests/refund_test.rs::second_refund_rejected"]
-      - id: INV-PAYEE-DISJOINT
-        rule: "a payout Payee is a Buyer, never a SupportRep"
-        kind: disjointness
-        enforcedBy: [type]
-        provedBy: ["tests/payout_test.rs::payee_cannot_be_support_rep"]
-  ```
-
-  **Storage (Facet A):** inline in `.github/bubbles-project.yaml` by default; when the model outgrows ~a screenful, move it to a dedicated `config/domain-model.yaml` (matching the existing `config/<project>.yaml` SST pattern) and reference it with `domainModel: { $ref: config/domain-model.yaml }`. The guard resolves either form identically.
-
-- Add a new **advisory-until-configured guard** `bubbles/scripts/domain-invariant-guard.sh` (Gate **G130**) that **reuses the proven G097 design verbatim** — it does **NOT** evaluate business logic itself. For every declared invariant it requires **either** (a) code evidence of an `enforcedBy` mechanism in the scope's implementation files, **or** (b) at least one linked `provedBy` test that is a genuine **adversarial** assertion (rejects the violating input — leaning on Bubbles' existing adversarial-regression discipline and the G097 "adversarial-assertion nudge"). An invariant with **neither** enforcing mechanism **nor** a proving test produces a blocking finding; a legitimate naming/scoping difference is cleared by one **justification** line. Grandfather by `state.json.createdAt` exactly as G097 does, so a framework upgrade never retroactively blocks closed work.
-- **Why:** turns the existing prose Hard Constraints / Business Invariants into checkable anchors, closing the same "shape-not-semantics" hole G097 closed — but for the *domain*, not just auth. **Correctly scoped:** Bubbles does not become a runtime rule engine; the product's own types/DB-constraints/tests remain the enforcer, and the guard only proves that enforcement **exists and is pinned to the declared rule**. **Quality:** strictly improves — a fabricated "business rule implemented ✅" now fails unless a real enforcing mechanism or adversarial test is present.
-
 ### SCOPE-2 — Promote the domain model to a threaded project-level SST (`DOM-SST`, proposed Gate **G131**, advisory)
 
-- Treat the `domainModel:` block (SCOPE-1) as the **single product-level source of truth** for entities, relationships, and invariants, and thread it across phases by **generalizing the existing capability-foundation layer-ownership table** (`agents/bubbles_shared/capability-foundation.md`) from its trigger-gated multi-provider scope to an always-available product-domain surface:
+- Treat the `domainModel:` block (delivered by Gate G130) as the **single product-level source of truth** for entities, relationships, and invariants, and thread it across phases by **generalizing the existing capability-foundation layer-ownership table** (`agents/bubbles_shared/capability-foundation.md`) from its trigger-gated multi-provider scope to an always-available product-domain surface:
   - **Analyst** references the shared model instead of re-deriving it; new domain concepts are *proposed* into it.
   - **Design** `## Data Model` **extends** the shared model (new entities/invariants are **promoted up**, not siloed in one feature).
   - **Plan** maps each `SCN-*` scenario to the domain concept(s) it touches (see SCOPE-3).
@@ -129,29 +96,26 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
 
 ## Migration / rollout
 
-- **Order:** SCOPE-1 (self-contained, highest value) → SCOPE-4 (docs-registry entry — pure config, no code) → SCOPE-3 (small schema + lint extension) → SCOPE-2 (threading + consistency lint). Each is independently landable.
-- **Posture:** every scope ships **inert**. A repo with no `domainModel:` block gets a clean no-op from G130/G131 and no new scenario-manifest fields — identical to how `trace-contract-guard.sh` (G080) is a no-op until `traceContracts` is configured. Blocking enforcement is grandfathered by `state.json.createdAt` (G097's proven cutoff mechanism), so only newly-created specs on opted-in repos are ever blocked.
+- **Order:** SCOPE-4 (docs-registry entry — pure config, no code) → SCOPE-3 (small schema + lint extension) → SCOPE-2 (threading + consistency lint). Each is independently landable.
+- **Posture:** every scope ships **inert**. A repo with no `domainModel:` block gets a clean no-op from G131 and no new scenario-manifest fields — identical to how `trace-contract-guard.sh` (G080) is a no-op until `traceContracts` is configured. Blocking enforcement is grandfathered by `state.json.createdAt` (G097's proven cutoff mechanism), so only newly-created specs on opted-in repos are ever blocked.
 - All framework edits are authored **upstream-first** (canonical `bubbles/` source) and reach downstream repos only via `install.sh` / upgrade. This proposal mutates **no** framework file; it is a G125 proposal-first document.
 
 ## Risks & mitigations
 
 - **R1** A `domainModel:` block becomes bureaucratic overhead on projects that don't need it. → It is 100% opt-in and proportional; the framework ships it inert. Recommend it in docs only for domains with real structural invariants (payments, bookings, trading, healthcare), never mandate it.
-- **R2** G130 could hard-block on a legitimate naming/scoping difference (the exact failure mode G097 was designed around). → Adopt G097's **warn-and-require-justification** semantics verbatim: an invariant is cleared by code evidence **or** an adversarial test **or** one justification line; only "named with none of the three" blocks. Grandfather by `createdAt`.
-- **R3** The domain model drifts from the code over time (a stale ontology — the expert-systems failure Coyle warns about). → G130 keys the check to `enforcedBy`/`provedBy` **pointers into real code/tests**, so a drifted invariant with a dead pointer fails loudly rather than lying; SCOPE-3's re-verification flag catches rule edits.
-- **R4** Scope creep toward RDF/OWL/graph-DB. → Explicit non-goal (below). The entire design is declarative YAML + a bash guard + a JSON-schema field; both source talks and IMP-105 warn that the heavyweight path does not scale.
-- **R5** Duplicating Gherkin in the domain model. → The `domainModel:` block is **only** for static structural constraints (enum/state-machine/disjointness/cardinality) that scenarios can't mechanically encode; the lint should nudge against invariants that merely restate a scenario.
-- **R6** A new managed doc (`docs/DomainModel.md`, SCOPE-4) adds a governance surface. → It is registered **`required: false`** — not required and not published until a repo configures `domainModel:`, so non-opted-in repos see nothing. The narrative references the machine model by `INV-*` id and never re-encodes rules, so narrative and config cannot drift into contradiction.
+- **R2** The domain model drifts from the code over time (a stale ontology — the expert-systems failure Coyle warns about). → G130 keys the check to `enforcedBy`/`provedBy` **pointers into real code/tests**, so a drifted invariant with a dead pointer fails loudly rather than lying; SCOPE-3's re-verification flag catches rule edits.
+- **R3** Scope creep toward RDF/OWL/graph-DB. → Explicit non-goal (below). The entire design is declarative YAML + a bash guard + a JSON-schema field; both source talks and IMP-105 warn that the heavyweight path does not scale.
+- **R4** Duplicating Gherkin in the domain model. → The `domainModel:` block is **only** for static structural constraints (enum/state-machine/disjointness/cardinality) that scenarios can't mechanically encode; the lint should nudge against invariants that merely restate a scenario.
+- **R5** A new managed doc (`docs/DomainModel.md`, SCOPE-4) adds a governance surface. → It is registered **`required: false`** — not required and not published until a repo configures `domainModel:`, so non-opted-in repos see nothing. The narrative references the machine model by `INV-*` id and never re-encodes rules, so narrative and config cannot drift into contradiction.
 
 ## Acceptance criteria (when implemented)
 
-- **SCOPE-1:** on an opted-in repo, a declared invariant with no enforcing mechanism and no adversarial test fails G130; the same invariant with a real `provedBy` adversarial test passes; a repo with no `domainModel:` block is a clean no-op; a pre-cutoff `createdAt` spec is WARN-only. Proven by a hermetic selftest with adversarial fixtures (matching `requirement-mechanism-guard-selftest.sh`).
 - **SCOPE-2:** a feature introducing a new entity is nudged to promote it into the shared `domainModel:`; a spec declaring a transition that contradicts the shared state machine is surfaced by the consistency lint / G044.
 - **SCOPE-3:** a scenario carries `invariantRefs`; a lint answers both lineage directions; editing an invariant's `rule` flags its linked scenarios for re-verification; `scenario-manifest.schema.json` validates the new field.
 - **SCOPE-4:** `docs/DomainModel.md` is a registered managed doc with the five required sections; it is `required: false` (a repo with no `domainModel:` is unaffected); `docs/Architecture.md` carries an Authoritative-References cross-link; the narrative references `INV-*` ids without re-encoding rules.
 
 ## Files to touch (on approval)
 
-- **SCOPE-1:** `agents/bubbles_shared/project-config-contract.md` (document the `domainModel:` block next to `traceContracts:`, incl. the inline-vs-`config/domain-model.yaml` `$ref` storage rule), `agents/bubbles_shared/feature-templates.md` (link Hard Constraints → declared invariant IDs), new `bubbles/scripts/domain-invariant-guard.sh` + `bubbles/scripts/domain-invariant-guard-selftest.sh`, `bubbles/registry/gates.yaml` (register **G130**), `bubbles/scripts/state-transition-guard.sh` (wire G130 as a certification check, grandfathered), `tests/regression/` entry — owners: `bubbles.validate` + framework guard.
 - **SCOPE-2:** `agents/bubbles_shared/capability-foundation.md` (generalize the layer-ownership threading to the product-domain SST), `agents/bubbles_shared/feature-templates.md` (`## Data Model` references the shared model), new `bubbles/scripts/domain-model-consistency.sh` (proposed **G131**, advisory), `agents/bubbles_shared/e2e-regression.md` (feed G044 the model) — owners: `bubbles.plan` + `bubbles.design` + framework.
 - **SCOPE-3:** `bubbles/schemas/scenario-manifest.schema.json` (add optional `invariantRefs`), `bubbles/scripts/traceability-guard.sh` (edge-confidence tags for invariant edges), `bubbles/scripts/post-cert-spec-edit-guard.sh` (re-verification flag on invariant edit), `agents/bubbles.spec-review.agent.md` — owners: `bubbles.plan` + framework guard + `bubbles.spec-review`.
 - **SCOPE-4:** `bubbles/docs-registry.yaml` (register `docs/DomainModel.md`, `required: false`, the five required sections), an optional `docs/DomainModel.md` starter scaffold, and an Authoritative-References cross-link in `docs/Architecture.md` — owner: `bubbles.docs`.
@@ -181,7 +145,7 @@ Every scope is **additive**, **default-preserving**, and **advisory-until-config
 
 ## Verification posture / honesty disclosure
 
-Findings are grounded in files actually opened in-session. `requirement-mechanism-guard.sh` was read end-to-end and confirmed to be **G097** with the exact warn-and-justify + `createdAt`-grandfather design SCOPE-1 reuses. The highest registered gate was verified as **G129**, so G130/G131 are free. This proposal did **not** read every one of the ~200 scripts or all gate descriptions; it read the load-bearing correspondence/traceability/config surfaces end-to-end. No `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` file is mutated by this proposal (G125 proposal-first). Confidence: `DOM-INVARIANT` HIGH (direct G097 precedent + prose-surface confirmation), `DOM-SST` HIGH (capability-foundation threading + per-feature Data Model confirmed), `DOM-LINEAGE` MEDIUM (schema extension is straightforward; the re-verification flag is design-level and effort-dependent); `DOM-DOC` HIGH (the docs-registry managed-doc pattern is proven and directly reused).
+Findings are grounded in files actually opened in-session. `requirement-mechanism-guard.sh` was read end-to-end and confirmed to be **G097** with the exact warn-and-justify + `createdAt`-grandfather design Gate G130 reuses. The highest registered gate was verified as **G129**, so G130/G131 are free. This proposal did **not** read every one of the ~200 scripts or all gate descriptions; it read the load-bearing correspondence/traceability/config surfaces end-to-end. No `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` file is mutated by this proposal (G125 proposal-first). Confidence: `DOM-INVARIANT` HIGH (direct G097 precedent + prose-surface confirmation), `DOM-SST` HIGH (capability-foundation threading + per-feature Data Model confirmed), `DOM-LINEAGE` MEDIUM (schema extension is straightforward; the re-verification flag is design-level and effort-dependent); `DOM-DOC` HIGH (the docs-registry managed-doc pattern is proven and directly reused).
 
 ## Legend (gap codes)
 

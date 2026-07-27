@@ -13,7 +13,7 @@ State the user pain, system gap, and why now. Keep it user-visible and testable.
 ## Outcome Contract
 **Intent:** [1-3 sentences: what outcome should be achieved from the user/system perspective]
 **Success Signal:** [Observable, testable proof that the outcome was achieved — not "tests pass" but "user can do X and sees Y"]
-**Hard Constraints:** [Business invariants that must hold regardless of implementation approach — these survive model upgrades]
+**Hard Constraints:** [Business invariants that must hold regardless of implementation approach — these survive model upgrades. A Hard Constraint MAY name a declared `domainModel.invariants[].id` (`INV-*`), which Gate G130 then checks is enforced-by-code or proved-by an adversarial test.]
 **Failure Condition:** [What would make this feature a failure even if all tests pass]
 
 ## Goals

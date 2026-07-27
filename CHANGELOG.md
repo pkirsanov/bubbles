@@ -31,6 +31,32 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-106 SCOPE-1 — domain-invariant correspondence gate (G130, DOM-INVARIANT)
+
+New **advisory-until-configured** Gate **G130** reuses the proven G097
+(`requirement-mechanism-guard.sh`) *warn-and-require-justification* design and
+applies it to PRODUCT **domain invariants** instead of named security/contract
+mechanisms. A repo opts in via an OPTIONAL `domainModel:` block in
+`.github/bubbles-project.yaml` (a **sibling of `traceContracts:`**, inline or
+`domainModel: { $ref: config/domain-model.yaml }`) declaring entity
+`states`/`terminal` sets and `invariants[]` (`id`, `rule`, `kind`
+[`enumeration`|`cardinality`|`disjointness`|`state-machine`], `enforcedBy`,
+`provedBy`). For each declared invariant the gate requires ONE of: (a)
+`enforcedBy` code evidence in the scope's declared implementation files, (b) an
+adversarial `provedBy` test that rejects the violating input, OR (c) a disclosed
+justification line (a `## Domain-Invariant Justifications` section or an
+`Invariant-Justification: <INV-id> — <reason>` line) — otherwise a blocking
+finding. Grandfathered by `state.json.createdAt`. The gate is **INERT (clean
+no-op, exit 0) on any repo without a `domainModel:` block** — including this
+Bubbles source repo, which declares none. New
+`bubbles/scripts/domain-invariant-guard.sh` +
+`domain-invariant-guard-selftest.sh` +
+`tests/regression/test_34_domain_invariant.sh`, registered as `G130` in
+`bubbles/registry/gates.yaml` (regenerated `workflows.yaml` gates block), wired
+into `framework-validate.sh` (dedicated selftest) and the state-transition-guard
+delegated tail (`guards/tail-delegated-gates.sh`, Check 41, isolated subprocess
+exactly like G097). There is no `--skip`/`--force`/bypass.
+
 ### IMP-105 SCOPE-8 — batched release-cadence policy (META-CHURN)
 
 The **Versioning Scheme** section now documents a **batched release-train
