@@ -466,6 +466,7 @@ Bubbles supports 61 workflow modes plus optional execution tags. Here are the mo
 |------|-------------|----------|
 | `full-delivery` | Convergence loop: implement → test → regression → simplify → gaps → harden → stabilize → devops → security → validate → audit → chaos → docs — repeats until certified done | All features (default) |
 | `bugfix-fastlane` | Reproduce → fix → test → regression → simplify → stabilize → devops → security → validate → audit | Bug fixes |
+| `rapid-tool-delivery` | Risk-proportional fast lane for one low-risk, build-free tool increment; keeps the full integrity contract, escalates to full-delivery on any high-risk trigger | Quick low-risk tool work |
 | `value-first-e2e-batch` | Prioritized delivery with the full quality chain per batch | Large features |
 | `chaos-hardening` | Chaos → fix → regression → hardening → validate → audit | Resilience work |
 | `harden-gaps-to-doc` | Harden → gaps → test → docs | Quality sweeps |
@@ -477,6 +478,8 @@ Bubbles supports 61 workflow modes plus optional execution tags. Here are the mo
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
 See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 61 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
+
+**Delivery strategy & achieved assurance.** The `rapid-tool-delivery` fast lane ships a single low-risk, build-free tool increment with fewer phases but the full integrity contract, self-escalating to `full-delivery` on any high-risk trigger. Separately, `bubbles.validate` *derives* an achieved-assurance level from evidence — `full` (→ `done`), `fast` (→ `delivered_fast`, the audit-less fast-lane result), or `prototype` (→ `delivered_prototype`, which never ships). Assurance is requestable, never declarable. See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md#delivery-strategy--achieved-assurance).
 
 For engineering-only code review work that should not enter the spec workflow, use `bubbles.code-review` with a review profile from `bubbles/code-review.yaml`.
 

@@ -230,6 +230,7 @@ Some TPB characters carry different agent roles when their narrative context leg
 | `migration-shipped-pending-cutover` | migration-shipped-not-cutover | Migration code shipped but cutover not executed; terminal status `delivered_pending_activation` until operator cutover. |
 | `redteam-to-doc` | prove-it | Adversarial red-team attack on a finished result (Green Bastard); finding-owned remediation chain then validate/audit/docs. Off by default. |
 | `production-adversarial-probe` | this-is-my-park-now | Bounded, armed, read-only chaos-monkey probing of a LIVE system (Green Bastard on a leash). Requires arming + target allowlist; restore-or-fix; never certifies. |
+| `rapid-tool-delivery` | in-and-out-legit | Risk-proportional fast lane for one low-risk, build-free tool increment — fewer phases, full integrity contract; escalates to full-delivery on any high-risk trigger; certifies `delivered_fast` |
 <!-- GENERATED:CHEATSHEET_MODES_END -->
 
 **Optional execution tags:** `grillMode`, `tdd` (inner-loop red→green only), `backlogExport` (off|tasks|issues), `specReview` (off|once-before-implement), `socratic`, `socraticQuestions`, `gitIsolation`, `autoCommit` (off|scope|dod), `maxScopeMinutes`, `maxDodMinutes`, `microFixes`
@@ -348,6 +349,11 @@ Some TPB characters carry different agent roles when their narrative context leg
 | `autonomy dial` | The `autonomy` execution tag with three levels — full, guarded, interactive. full = 100% autonomous (default); guarded = grill on ambiguity plus a conditional clarify gate; interactive = socratic plus on-demand grill. A convenience alias that sets grillMode, socratic, and clarify together; explicit flags override. |
 | `session budget` | Advisory aggregate caps for a goal/sprint session: sessionBudget.maxTotalConvergenceIterations, maxWallClockMinutes, and maxToolCalls. null = unbounded (today). Orchestrators self-enforce and stop with a blocked envelope when a cap is hit. |
 | `dry-run plan` | `dryRun: plan` resolves the full convergence plan and reports intended changes WITHOUT mutating code or state — a propose-only preview that extends parallelScopes=dag-dry to the whole loop. |
+| `delivery strategy` | How much scope-appropriate process runs. Two lanes ship today: `full-delivery` (default, maximum-assurance — already the balanced default via phase-relevance auto-skip) and `rapid-tool-delivery` (the low-risk build-free fast lane). Orthogonal to achieved assurance; there is deliberately no `balanced` mode. |
+| `achieved assurance` | The evidence-derived result of a delivery, DERIVED by `bubbles.validate` via `assurance-derive.sh` (fail-closed — any incompleteness derives down). Three levels: `full`→`done`, `fast`→`delivered_fast`, `prototype`→`delivered_prototype`. Requestable, never declarable — not a quality slider the user picks. |
+| `delivered_fast` | Terminal status for `fast` achieved assurance: implementation complete + full test coverage + all tests passing, but NO independent audit (`missingForFull = [independent-audit]`). Terminal only for `rapid-tool-delivery`. |
+| `rapid-tool-delivery` | Risk-proportional fast lane for one low-risk, build-free tool increment. Keeps the full integrity contract, relaxes only the heavyweight planning chain, and `risk-tier-resolve.sh` fail-closed-escalates any high-risk trigger (auth/payments/secrets/PII/DB-migration/deploy/prod/host-singleton/cross-product) to `full-delivery`. Certifies `delivered_fast`. |
+| `prototype assurance` | The fail-closed assurance floor: verification incomplete or failing (missing coverage OR a failing test). Maps to `delivered_prototype` — never deployable, never terminal under normal delivery modes. A derived result, not a user-chosen tier; a throwaway POC is an intent (`.design-experiment`), not the bottom of a quality ladder. |
 <!-- GENERATED:CHEATSHEET_VOCABULARY_END -->
 
 ---

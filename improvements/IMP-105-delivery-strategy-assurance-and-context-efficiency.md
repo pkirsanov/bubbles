@@ -53,12 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-2 — Expose delivery strategy + assurance in the user surface (`STRAT-EXPOSE`)
-
-- Add a front-door strategy verb over the EXISTING modes: `fast` → `rapid-tool-delivery` (always through `risk-tier-resolve.sh`, so it self-escalates on any high-risk trigger) and `highest` → `full-delivery` with optional phases forced on and the adversarial `samples` dial raised. **Do NOT add a `balanced` mode** — `full-delivery` already IS the balanced default (phase-relevance auto-skips irrelevant phases with recorded reasons); a third synonym would add bureaucracy (goal #3) for no behavior change. Optionally brand the existing default `standard` for symmetry.
-- Document the assurance model (`full`/`fast`/`prototype`, "requestable not declarable", `prototype` never ships) and the fast lane in `README.md`, `docs/guides/WORKFLOW_MODES.md`, a new `docs/recipes/rapid-tool-delivery.md`, and the generated cheat sheet (via `bubbles/cheatsheet/modes.json` + `generate-cheatsheet.sh`).
-- **Why:** the operator asked to lean on the model; today it is unreachable because it is undocumented. **Quality:** unchanged — `fast` remains risk-gated and inherits the full integrity contract (proven by `rapid-tool-delivery-mode-selftest.sh`).
-
 ### SCOPE-4 — Evidence by reference, not by paste (`EVID-DUP`)
 
 - Extend the EXISTING evidence infrastructure (`bubbles/mcp/tools/record_evidence.json` → `.specify/runtime/tool-calls.jsonl`, the `rawPointer` convention in `context-compactor.sh`, and the `evidence://` URI already used in adversarial samples) so a DoD item may cite an evidence ID/pointer instead of inlining ≥10 raw lines twice. `agents/bubbles_shared/evidence-rules.md` and the G025 checks in `state-transition-guard.sh` accept a resolvable evidence reference as equivalent to inline output, preserving the `**Claim Source:**` provenance tag.
@@ -89,8 +83,8 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-2 → SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable; SCOPE-2's only dependency (SCOPE-1) has landed, so it now has no unmet dependency.
-- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-2 is docs + one intent-route/alias addition. SCOPE-4/5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
+- **Order:** SCOPE-4 → SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
+- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-4/5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
 ## Risks & mitigations
@@ -103,7 +97,6 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-2: `rapid-tool-delivery` and the assurance model appear in `README.md`, `WORKFLOW_MODES.md`, a recipe, and the generated cheat sheet; a `fast` request on a high-risk surface demonstrably routes to `full-delivery`.
 - SCOPE-4: a DoD item closed by evidence reference passes G025 with no inline paste, and an unresolvable reference fails closed.
 - SCOPE-5: measured orchestrator effective bundle drops materially (target 40–60%) with the held-out eval showing no gate-detection regression.
 - SCOPE-6: a low-risk build-free scope carries no inapplicable sweep subsections while a shared-infra scope still requires them.
@@ -112,7 +105,6 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Files to touch (on approval)
 
-- **SCOPE-2:** `README.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/recipes/rapid-tool-delivery.md` (new), `bubbles/cheatsheet/modes.json` + `bubbles/scripts/generate-cheatsheet.sh`, `bubbles/intent-routes.yaml`, `bubbles/workflows/aliases.yaml` — owners: `bubbles.docs` + `bubbles.commands`.
 - **SCOPE-4:** `agents/bubbles_shared/evidence-rules.md`, `bubbles/scripts/state-transition-guard.sh` (G025 evidence checks), `agents/bubbles_shared/feature-templates.md`, `bubbles/mcp/tools/record_evidence.json` (already exists) — owner: `bubbles.validate` + evidence-rules.
 - **SCOPE-5:** `agents/bubbles.workflow.agent.md`, `agents/bubbles_shared/operating-baseline.md` (Context Loading Profiles), the phase `*-bootstrap.md` modules, `bubbles/scripts/effective-bundle-budget.sh` (already measures) — owner: framework.
 - **SCOPE-6:** `agents/bubbles_shared/feature-templates.md`, `agents/bubbles_shared/scope-workflow.md`, `bubbles/scripts/risk-tier-resolve.sh` — owners: `bubbles.plan` + framework.

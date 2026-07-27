@@ -14,6 +14,27 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-2 — delivery strategy + achieved-assurance model exposed in the user surface
+
+The already-shipped `rapid-tool-delivery` fast lane and the two-axis assurance
+model are now documented in the user surface — NO behavior change, NO new mode,
+no `balanced` mode. The **delivery strategy** axis (`full-delivery` default vs
+the low-risk, build-free `rapid-tool-delivery` fast lane) and the orthogonal
+**achieved assurance** axis (`full`→`done`, `fast`→`delivered_fast`,
+`prototype`→`delivered_prototype`) are now described in
+`docs/guides/WORKFLOW_MODES.md` (a new "Delivery Strategy & Achieved Assurance"
+section, a `rapid-tool-delivery` Fast-Track subsection, and a Mode Quick
+Reference row), `README.md`, a new `docs/recipes/rapid-tool-delivery.md`, and
+the generated cheat sheet (`bubbles/cheatsheet/modes.json` +
+`vocabulary.json`). The docs make explicit that achieved assurance is
+validate-DERIVED from evidence (`assurance-derive.sh`, fail-closed),
+requestable but never declarable; that the fast lane self-escalates to
+`full-delivery` on any high-risk trigger via `risk-tier-resolve.sh`; and that
+`prototype` never ships. A symmetric front-door strategy verb was added to
+`bubbles/intent-routes.yaml` (`highest` / `maximum rigor` → `full-delivery`)
+alongside the existing fast-lane phrases. No script, agent, mode, gate, or
+workflow behavior changed.
+
 ### IMP-105 SCOPE-3 — Check 6 fail-open hole closed via derived specialist fallback
 
 `state-transition-guard.sh` Check 6 (Gate G022, specialist-phase completion)

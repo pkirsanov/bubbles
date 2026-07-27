@@ -55,6 +55,7 @@ Control-plane law also requires owner-only remediation and concrete result envel
 | [Set Up a New Project](setup-project.md) | "I just installed Bubbles and need to get my project ready" |
 | [New Feature](new-feature.md) | "I have a feature idea and need to take it from concept to shipped code" |
 | [Fix a Bug](fix-a-bug.md) | "Something's broken and I need to fix it properly" |
+| [Rapid Tool Delivery](rapid-tool-delivery.md) | "I have a small, low-risk, build-free tool change and want the fast lane" |
 | [Resume Work](resume-work.md) | "I was working on something yesterday, need to pick up where I left off" |
 
 ## Autonomous Execution (v3.5)
