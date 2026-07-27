@@ -14,6 +14,34 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-5 — phase-local context-loading guidance + measured-budget activation (opt-in, eval-gated)
+
+The effective-bundle machinery ALREADY exists and is INERT (advisory-until-configured):
+`bubbles/scripts/effective-bundle-measure.sh` reports an agent's static
+transitive-closure `totalBytes`, and `bubbles/scripts/effective-bundle-budget.sh`
+flags over-budget agents only when a downstream repo sets `effectiveBundleMaxBytes`
+(advisory, exit 0) and `effectiveBundleBudget: block` (blocking, exit 1) in
+`.github/bubbles-project.yaml` — **NO script, agent, mode, gate, or workflow
+behavior changed here**. This scope DOCUMENTS (1) a **Phase-Local Authoring
+Reference** profile in `agents/bubbles_shared/operating-baseline.md` — naming
+`project-config-contract.md`, `scope-workflow.md`, and `feature-templates.md` as
+specialist-owned authoring reference (load-bearing for
+`bubbles.plan`/`bubbles.analyst`/`bubbles.design`/`bubbles.implement`) that a
+purely-routing orchestrator MAY reference from the phase `*-bootstrap.md` profiles
+rather than its always-loaded closure — and (2) the effective-bundle **budget
+activation path** plus the measured baseline. Measured this session with
+`effective-bundle-measure.sh`: `bubbles.workflow` ≈ **491,622 bytes** (the largest
+orchestrator bundle; the closure includes `operating-baseline.md`, so authoring
+this very guidance nudged it up from a pre-edit ≈ 487,640 B); the three heaviest
+shared modules — `project-config-contract.md` / `scope-workflow.md` /
+`feature-templates.md` — total ≈ **123 KB / ~25%** of the closure. **The actual bundle-reducing refactor
+and any BLOCKING budget are OPT-IN, per-repo, and eval-gated (R3) — NOT applied in
+this session**, because the heavy modules are load-bearing `MANDATORY` references
+and a blind removal risks an orchestrator routing regression that
+`framework-validate` (which exercises scripts/selftests, not LLM routing) cannot
+detect. **No `.agent.md` reference was rewired.** SCOPE-5 is excised from the
+IMP-105 improvements plan.
+
 ### IMP-105 SCOPE-4 — evidence-by-reference documented (avoids ≥10-line double-paste)
 
 The transition guard ALREADY supported evidence-by-reference; this scope only

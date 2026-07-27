@@ -53,12 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-5 — Phase-local lazy context loading + measured budgets (`CTX-BUNDLE`)
-
-- Give the orchestrator a compact policy kernel plus registry-read access, and LAZY-LOAD the heavy authoring reference (`project-config-contract.md`, `feature-templates.md`, `scope-workflow.md`) only when the active phase is planning/authoring. The bootstrap-profile tiering in `agents/bubbles_shared/operating-baseline.md` ("Context Loading Profiles") is the existing seam.
-- Gate the result with the ALREADY-SHIPPED `bubbles/scripts/effective-bundle-budget.sh` (`effectiveBundleMaxBytes` in `.github/bubbles-project.yaml`), set only AFTER a held-out task evaluation confirms no quality regression. Target a measured 40–60% reduction in the orchestrator effective bundle.
-- **Why:** the router loads ~55 KB of downstream-onboarding reference (plus template text) it does not need to route a phase. **Quality:** identical rules, loaded on demand; the budget is evidence-gated so it can never silently drop a required contract.
-
 ### SCOPE-6 — Risk-proportional mandatory sweeps (`SWEEP-PROP`)
 
 - Apply the Shared-Infra / Change-Boundary / Consumer-Impact / Canary sweep requirements CONDITIONALLY, keyed to `risk-tier-resolve.sh` and the scope's declared changed surface, instead of unconditionally on every scope.
@@ -78,27 +72,24 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-5 → SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
-- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-5/6 are opt-in / advisory-until-configured (they ship inert and are activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
+- **Order:** SCOPE-6 → SCOPE-7 → SCOPE-8. Each is independently landable.
+- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-6 is opt-in / advisory-until-configured (it ships inert and is activated per repo). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
 ## Risks & mitigations
 
 - **R1** Driving distinct terminal statuses (SCOPE-1) could surprise downstream tooling that only expects `done`. → `is-terminal-for-mode.sh` already treats `delivered_fast`/`delivered_prototype` as terminal-for-mode; keep the no-block-status behavior backward-compatible (a missing assurance block still yields `done`), and land guard consistency (`assurance-certification-check.sh`) in the same change.
 - **R2** Deriving `required_specialists` (SCOPE-3) could change enforcement for a mode that currently relies on the empty default. → That "reliance" is the bug; add a hermetic selftest + persistent regression so the derived set is proven for every registered delivery mode before cutover.
-- **R3** Lazy context loading (SCOPE-5) could drop a contract an orchestrator silently depended on. → Evidence-gate with a held-out eval and the existing `effective-bundle-budget.sh`; never set a blocking budget until the eval shows zero gate-detection regression.
-- **R4** Conditional sweeps (SCOPE-6) could skip a sweep that was actually needed. → Key the condition to `risk-tier-resolve.sh` (fail-closed to full on unknown), so ambiguity keeps the sweep.
+- **R3** Conditional sweeps (SCOPE-6) could skip a sweep that was actually needed. → Key the condition to `risk-tier-resolve.sh` (fail-closed to full on unknown), so ambiguity keeps the sweep.
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-5: measured orchestrator effective bundle drops materially (target 40–60%) with the held-out eval showing no gate-detection regression.
 - SCOPE-6: a low-risk build-free scope carries no inapplicable sweep subsections while a shared-infra scope still requires them.
 - SCOPE-7: mode→specialist and the gates/cheatsheet tables are generated from one canonical model and pass `--check`; shadow-compare shows byte-identical or reviewed diffs.
 - SCOPE-8: a documented framework release-train cadence exists.
 
 ## Files to touch (on approval)
 
-- **SCOPE-5:** `agents/bubbles.workflow.agent.md`, `agents/bubbles_shared/operating-baseline.md` (Context Loading Profiles), the phase `*-bootstrap.md` modules, `bubbles/scripts/effective-bundle-budget.sh` (already measures) — owner: framework.
 - **SCOPE-6:** `agents/bubbles_shared/feature-templates.md`, `agents/bubbles_shared/scope-workflow.md`, `bubbles/scripts/risk-tier-resolve.sh` — owners: `bubbles.plan` + framework.
 - **SCOPE-7:** new `bubbles/registry/delivery-policy.yaml` (or an extension of an existing registry), `bubbles/scripts/generate-*.sh`, `bubbles/scripts/workflow-registry-consistency.sh` — owner: framework.
 - **SCOPE-8:** `CHANGELOG.md` (Versioning Scheme), a maintainer release-cadence note — owner: maintainer.
