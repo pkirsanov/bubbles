@@ -2160,6 +2160,34 @@ except Exception:
     fi
   fi
 
+  # Worktree hygiene advisory (IMP-107 / SCOPE-1) — informational, non-blocking.
+  # Surfaces lingering MERGED/PRUNABLE worktree debris every doctor run WITHOUT
+  # ever changing the pass/fail tally (advisory only, like the runtime-leases
+  # advisory it mirrors). `--heal` reaps ONLY the MERGED/PRUNABLE set via
+  # worktree-reap.sh (dry-run otherwise). Reuses the IMP-023 writer-lease so a
+  # LEASE-HELD worktree is skipped and a concurrent live run is never disturbed.
+  if [[ -x "$SCRIPT_DIR/worktree-hygiene-report.sh" ]]; then
+    local wt_summary wt_line wt_merged wt_prunable
+    wt_summary="$(bash "$SCRIPT_DIR/worktree-hygiene-report.sh" 2>/dev/null || true)"
+    wt_line="$(printf '%s\n' "$wt_summary" | sed -n 's/^worktree-hygiene: //p' | tail -1)"
+    if [[ -n "$wt_line" ]]; then
+      wt_merged="$(printf '%s\n' "$wt_line" | sed -nE 's/.*\(([0-9]+) merged.*/\1/p')"
+      wt_prunable="$(printf '%s\n' "$wt_line" | sed -nE 's/.*, ([0-9]+) prunable.*/\1/p')"
+      wt_merged="${wt_merged:-0}"
+      wt_prunable="${wt_prunable:-0}"
+      if [[ "$wt_merged" -eq 0 && "$wt_prunable" -eq 0 ]]; then
+        echo -e "  ${GREEN}✅${NC} Worktree hygiene: ${wt_line}"
+      else
+        echo -e "  ${YELLOW}⚠️${NC}  Worktree hygiene: ${wt_line} — run 'worktree-reap.sh' (dry-run) or 'doctor --heal'"
+        if [[ "$heal" == "true" ]]; then
+          bash "$SCRIPT_DIR/worktree-reap.sh" --yes >/dev/null 2>&1 || true
+          echo -e "  ${GREEN}🔧${NC} Reaped ${wt_merged} merged + ${wt_prunable} prunable worktree(s)"
+          healed=$((healed + 1))
+        fi
+      fi
+    fi
+  fi
+
   echo ""
   echo -e "${BOLD}Adoption Profile Progress${NC}"
   echo -e "${DIM}Profile guidance is advisory and separate from trust or certification.${NC}"
