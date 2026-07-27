@@ -31,6 +31,32 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-107 SCOPE-4 — stale-branch + stash surfacing keyed to the trunk policy (WT-STALE)
+
+`worktree-hygiene-report.sh` now surfaces (advisory, report-only) two things the
+trunk-based policy never had a detector for: (1) stale / long-lived LOCAL
+branches — a branch with unique commits (ahead>0) that is older than a threshold
+(default 14 days, from its last-commit date) OR diverged beyond an ahead-count vs
+trunk (default 200) — giving
+`instructions/bubbles-release-trains.instructions.md`'s "no long-lived feature
+branches" rule the detector it lacked; and (2) lingering stashes with age. Each
+flagged branch shows name, age, ahead/behind, and whether it can still
+fast-forward into trunk (ff=yes|no|no-common-base — the last two expose a branch
+stranded on an orphaned base after a history rewrite). The trunk branch and any
+branch checked out in a live worktree are excluded. Thresholds are configurable
+via `--branch-age-days` / `--branch-ahead` or the flat
+`.github/bubbles-project.yaml` keys `worktreeBranchAgeDays` /
+`worktreeBranchAheadLimit` (flag > yaml > default); the default is
+inert-friendly (a repo with only a fresh trunk and no stashes is a clean no-op).
+
+Nothing is ever auto-dropped: this is SURFACING ONLY. `worktree-reap.sh` consumes
+only the `--porcelain` worktree lines (UNCHANGED by SCOPE-4), so a branch or a
+stash is structurally never reaped; `doctor --heal` stays scoped to
+merged/prunable/experiment worktrees and never touches branches or stashes; and
+the doctor advisory stays tally-neutral. A second machine summary line
+(`worktree-hygiene-branches: …`) carries the branch/stash counts. No new gate id;
+no gate weakened.
+
 ### IMP-107 SCOPE-3 — lingering design-experiment worktree detection + reap (WT-EXPERIMENT-LINGER)
 
 `design-experiment-guard.sh` gains an additive `--lingering` mode that closes the

@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
-# Hermetic selftest for the IMP-107 worktree-hygiene report + reaper (SCOPE-1)
-# and the lingering design-experiment detection + reap (SCOPE-3).
+# Hermetic selftest for the IMP-107 worktree-hygiene report + reaper (SCOPE-1),
+# the lingering design-experiment detection + reap (SCOPE-3), and the
+# stale-branch + stash surfacing (SCOPE-4).
 # ---------------------------------------------------------------------------
 # Synthesizes a throwaway git repo with one linked worktree in EACH hygiene
 # state (merged / unmerged / dirty / prunable / lease-held / experiment) — each
 # materially different, so the assertions are non-tautological — where the
 # lease-held worktree ALSO carries a `.design-experiment` marker so it doubles
-# as a LEASE-HELD (still-live) design-experiment. It asserts:
+# as a LEASE-HELD (still-live) design-experiment. For SCOPE-4 it also creates two
+# standalone local branches (a fresh one and an old/diverged one) plus a real
+# stash. It asserts:
 #   (a) worktree-hygiene-report.sh classifies every worktree correctly;
 #   (d) design-experiment-guard.sh --lingering (SCOPE-3) flags a marked,
 #       NON-lease-held worktree, --strict exits 1, a LEASE-HELD experiment is
 #       NOT flagged (still live), and the DEFAULT leakage-REFUSE mode is
 #       byte-unchanged (a regression guard);
+#   (f) SCOPE-4 stale-branch + stash SURFACING: the old/diverged branch is
+#       flagged with age+ahead, the fresh branch is NOT (non-tautological),
+#       trunk is excluded, the stash is surfaced, the thresholds are
+#       configurable, and --porcelain is UNCHANGED (no branch/stash leakage);
 #   (b) worktree-reap.sh in DRY-RUN lists only merged+prunable and removes
 #       nothing;
 #   (c) worktree-reap.sh --yes removes ONLY merged+prunable (and their merged
 #       local branches) and LEAVES unmerged/dirty/lease-held/experiment intact;
 #   (e) worktree-reap.sh --experiments --yes (SCOPE-3) removes the lingering
-#       EXPERIMENT worktree + its branch but LEAVES a lease-held experiment.
+#       EXPERIMENT worktree + its branch but LEAVES a lease-held experiment;
+#   (g) SCOPE-4 REPORT-ONLY proof: the (c)/(e) reaper runs drop NEITHER the
+#       stale/fresh local branches NOR the stash.
 # The lease-held worktree is synthesized by GENUINELY acquiring an IMP-023
 # writer-lease via runtime-leases.sh (with a hand-written-registry fallback,
 # clearly WARNed, if that environment lacks a dependency).
@@ -119,6 +128,36 @@ fi
 # counts below are unchanged (still 1 lease-held, 1 experiment).
 : > "$WT_LEASE/.design-experiment"
 
+# --- SCOPE-4 (gap WT-STALE) fixtures: standalone local branches + a stash ------
+# LOCAL branches NOT checked out in any worktree (created via a temp worktree
+# that is immediately removed, leaving the branch with a unique commit), plus a
+# real WIP stash. They must be SURFACED by the report and NEVER touched by the
+# reaper. Distinct age/ahead make the flagging assertions non-tautological. The
+# temp worktrees are created AND removed here (before the report runs), so the
+# "6 worktrees" summary below is unchanged; `git worktree remove` is targeted
+# (never `git worktree prune`, which would clear the PRUNABLE fixture).
+WT_TMP_FRESH="$TMP_ROOT/wt-tmp-fresh"
+WT_TMP_OLD="$TMP_ROOT/wt-tmp-old"
+
+# fresh-feature: 1 unique commit dated NOW -> ahead=1, age~0 (NOT flagged at defaults).
+setup git -C "$REPO" worktree add -q -b fresh-feature "$WT_TMP_FRESH" main
+printf 'fresh unique\n' > "$WT_TMP_FRESH/fresh.txt"
+setup git -C "$WT_TMP_FRESH" add -A
+setup git -C "$WT_TMP_FRESH" commit -qm "fresh unique commit"
+setup git -C "$REPO" worktree remove --force "$WT_TMP_FRESH"
+
+# old-feature: 1 unique commit dated 2020 -> ahead=1, age huge (FLAGGED by age).
+setup git -C "$REPO" worktree add -q -b old-feature "$WT_TMP_OLD" main
+printf 'old unique\n' > "$WT_TMP_OLD/old.txt"
+setup git -C "$WT_TMP_OLD" add -A
+setup env GIT_AUTHOR_DATE="2020-01-01T00:00:00 +0000" GIT_COMMITTER_DATE="2020-01-01T00:00:00 +0000" \
+  git -C "$WT_TMP_OLD" commit -qm "old unique commit"
+setup git -C "$REPO" worktree remove --force "$WT_TMP_OLD"
+
+# A real WIP stash in the main repo (surfaced report-only; never dropped).
+printf 'wip change\n' >> "$REPO/base.txt"
+setup git -C "$REPO" stash push -q -m "selftest-wip-stash"
+
 # class_of <machine-output> <path>  ->  classification token (or empty)
 class_of() {
   printf '%s\n' "$1" | awk -F'\t' -v p="$2" '$2 == p { print $1; exit }'
@@ -154,6 +193,68 @@ fi
 BUBBLES_REPO_ROOT="$REPO" bash "$REPORT_SH" >/dev/null 2>&1
 rc=$?
 if [[ "$rc" -eq 0 ]]; then pass "a8 report exits 0 (advisory)"; else fail "a8 report exit $rc (expected 0)"; fi
+
+# =====================================================================
+# (f) SCOPE-4 (gap WT-STALE): stale-branch + stash SURFACING (report-only),
+#     on the pristine repo (before any reaping). Non-tautological: the fresh
+#     branch is NOT flagged at defaults; lowering --branch-ahead flags BOTH.
+# =====================================================================
+rep_default="$(BUBBLES_REPO_ROOT="$REPO" bash "$REPORT_SH" 2>/dev/null || true)"
+
+if printf '%s\n' "$rep_default" | grep -qE '^  STALE-BRANCH old-feature .*age=[0-9]+d  ahead=1 '; then
+  pass "f1 old/diverged branch flagged with age+ahead"
+else
+  fail "f1 old-feature not flagged with age+ahead: $(printf '%s\n' "$rep_default" | grep -i 'stale-branch' || echo '<no STALE-BRANCH lines>')"
+fi
+
+if printf '%s\n' "$rep_default" | grep -qE '^  STALE-BRANCH fresh-feature '; then
+  fail "f2 fresh branch was wrongly flagged at default thresholds"
+else
+  pass "f2 fresh branch not flagged at default thresholds"
+fi
+
+if printf '%s\n' "$rep_default" | grep -qE '^  STALE-BRANCH main '; then
+  fail "f3 trunk branch was wrongly flagged"
+else
+  pass "f3 trunk branch excluded from the stale scan"
+fi
+
+if printf '%s\n' "$rep_default" | grep -q "selftest-wip-stash"; then
+  pass "f4 stash surfaced in the report"
+else
+  fail "f4 stash not surfaced"
+fi
+
+br_sum="$(printf '%s\n' "$rep_default" | sed -n 's/^worktree-hygiene-branches: //p' | tail -1)"
+if [[ "$br_sum" == "1 stale local branches (age>=14d or ahead>=200), 1 stashes" ]]; then
+  pass "f5 branch/stash summary line correct"
+else
+  fail "f5 branch/stash summary mismatch: '$br_sum'"
+fi
+
+wt_sum2="$(printf '%s\n' "$rep_default" | sed -n 's/^worktree-hygiene: //p' | tail -1)"
+if [[ "$wt_sum2" == "6 worktrees (1 merged, 1 unmerged, 1 prunable, 1 dirty, 1 lease-held, 1 experiment)" ]]; then
+  pass "f6 worktree summary line unchanged by SCOPE-4"
+else
+  fail "f6 worktree summary line perturbed: '$wt_sum2'"
+fi
+
+rep_cfg="$(BUBBLES_REPO_ROOT="$REPO" bash "$REPORT_SH" --branch-age-days 100000 --branch-ahead 1 2>/dev/null || true)"
+cfg_sum="$(printf '%s\n' "$rep_cfg" | sed -n 's/^worktree-hygiene-branches: //p' | tail -1)"
+if [[ "$cfg_sum" == "2 stale local branches (age>=100000d or ahead>=1), 1 stashes" ]] \
+  && printf '%s\n' "$rep_cfg" | grep -qE '^  STALE-BRANCH fresh-feature ' \
+  && printf '%s\n' "$rep_cfg" | grep -qE '^  STALE-BRANCH old-feature '; then
+  pass "f7 thresholds configurable (--branch-ahead 1 flags both; --branch-age-days 100000 disables age)"
+else
+  fail "f7 configurable thresholds failed: '$cfg_sum'"
+fi
+
+porc="$(BUBBLES_REPO_ROOT="$REPO" bash "$REPORT_SH" --porcelain 2>/dev/null || true)"
+if printf '%s\n' "$porc" | grep -qiE 'STALE-BRANCH|stash|worktree-hygiene-branches'; then
+  fail "f8 --porcelain leaked branch/stash lines into the reaper contract"
+else
+  pass "f8 --porcelain unchanged (no branch/stash lines; reaper contract intact)"
+fi
 
 # =====================================================================
 # (d) design-experiment-guard.sh --lingering (IMP-107 SCOPE-3) + a regression
@@ -299,6 +400,28 @@ if [[ -d "$WT_LEASE" ]] && git -C "$REPO" show-ref --verify --quiet refs/heads/l
   pass "e2 lease-held experiment worktree and branch left intact"
 else
   fail "e2 lease-held experiment worktree/branch was disturbed"
+fi
+
+# =====================================================================
+# (g) SCOPE-4 REPORT-ONLY proof: the reaper runs in (c) --yes and (e)
+#     --experiments --yes must have dropped NEITHER the stale/fresh local
+#     branches NOR the stash. The reaper consumes only worktree porcelain
+#     lines, so a branch/stash is structurally never reaped.
+# =====================================================================
+if git -C "$REPO" show-ref --verify --quiet refs/heads/old-feature; then
+  pass "g1 stale branch (old-feature) survived --yes + --experiments --yes"
+else
+  fail "g1 stale branch old-feature was reaped (REPORT-ONLY violated)"
+fi
+if git -C "$REPO" show-ref --verify --quiet refs/heads/fresh-feature; then
+  pass "g2 fresh branch (fresh-feature) survived the reaper"
+else
+  fail "g2 fresh branch fresh-feature was reaped (REPORT-ONLY violated)"
+fi
+if git -C "$REPO" stash list 2>/dev/null | grep -q "selftest-wip-stash"; then
+  pass "g3 stash survived the reaper (never auto-dropped)"
+else
+  fail "g3 stash was dropped (REPORT-ONLY violated)"
 fi
 
 echo

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# worktree-hygiene-report.sh (IMP-107 / SCOPE-1 — gap WT-TEARDOWN)
+# worktree-hygiene-report.sh (IMP-107 / SCOPE-1 + SCOPE-3 + SCOPE-4 — gaps WT-TEARDOWN, WT-STALE)
 # ---------------------------------------------------------------------------
 # ADVISORY, READ-ONLY worktree-hygiene detector. Enumerates the repo's LINKED
 # git worktrees and classifies each so the create->merge->DROP contract that is
@@ -21,15 +21,41 @@
 # never disturb a concurrent live run. It only probes the lease system when the
 # worktree already has a lease registry file, preserving the read-only contract.
 #
+# SCOPE-4 (gap WT-STALE) additionally surfaces, in DEFAULT mode only and
+# REPORT-ONLY, the two things the trunk-based policy never had a detector for:
+#   * Stale / long-lived LOCAL branches — a branch with unique commits (ahead>0)
+#     that is older than a threshold (default 14d, from its last-commit date) OR
+#     diverged beyond an ahead-count vs trunk (default 200). Each flagged branch
+#     shows name, age, ahead/behind, and whether it can still fast-forward into
+#     trunk (ff=yes|no|no-common-base — the last two expose a branch stranded on
+#     an orphaned base after a history rewrite). This gives
+#     instructions/bubbles-release-trains.instructions.md's "no long-lived
+#     feature branches" rule the detector it lacked. The trunk branch and any
+#     branch checked out in a live worktree are excluded.
+#   * Lingering stashes — `git stash list` entries with age + message.
+# SCOPE-4 is SURFACING ONLY: it adds NOTHING reapable. worktree-reap.sh consumes
+# only the --porcelain worktree lines (UNCHANGED by SCOPE-4), so a branch or a
+# stash is structurally NEVER reaped. Thresholds are configurable via
+# --branch-age-days / --branch-ahead or the flat `.github/bubbles-project.yaml`
+# keys worktreeBranchAgeDays / worktreeBranchAheadLimit (flag > yaml > default).
+# Default is inert-friendly: a repo with only a fresh trunk and no stashes is a
+# clean no-op.
+#
 # Modes:
-#   (default)     human-readable per-worktree detail + one machine summary line
-#   --porcelain   one TAB-separated line per LINKED worktree, for the reaper:
+#   (default)     human-readable worktree detail + one machine summary line, then
+#                 (SCOPE-4) stale-branch + stash detail + a SECOND summary line
+#   --porcelain   one TAB-separated line per LINKED worktree, for the reaper
+#                 (UNCHANGED by SCOPE-4 — emits NO branch/stash lines):
 #                 CLASS\tPATH\tBRANCH\tAHEAD\tBEHIND\tDIRTY\tAGEDAYS
+#   --branch-age-days N   flag a branch (with unique commits) older than N days (default 14)
+#   --branch-ahead N      flag a branch >= N commits ahead of trunk (default 200)
 #   --help        usage, exit 0
 #
-# The summary line (both modes emit it in default mode; --porcelain omits it) is:
+# The summary lines (default mode only; --porcelain omits them) are:
 #   worktree-hygiene: N worktrees (M merged, U unmerged, P prunable, D dirty, L lease-held, E experiment)
-# `cli.sh doctor` greps this line. There is NO --skip / --force / bypass flag.
+#   worktree-hygiene-branches: S stale local branches (age>=Ad or ahead>=B), T stashes
+# `cli.sh doctor` greps the FIRST line only (its tally is unaffected by SCOPE-4).
+# There is NO --skip / --force / bypass flag.
 #
 # Portable to bash 3.2 (macOS) + GNU/BSD git; uses only git + POSIX text tools.
 set -uo pipefail
@@ -51,35 +77,77 @@ LEASES_SH="$SCRIPT_DIR/runtime-leases.sh"
 
 usage() {
   cat <<'EOF'
-Usage: worktree-hygiene-report.sh [--porcelain] [--help]
+Usage: worktree-hygiene-report.sh [--porcelain] [--branch-age-days N] [--branch-ahead N] [--help]
 
 Advisory, READ-ONLY report of linked git worktrees and their hygiene class
-(PRUNABLE | LEASE-HELD | EXPERIMENT | DIRTY | UNMERGED | MERGED). Always exits 0.
+(PRUNABLE | LEASE-HELD | EXPERIMENT | DIRTY | UNMERGED | MERGED), plus (SCOPE-4,
+report-only) stale/long-lived local branches and lingering stashes. Always exits 0.
 
-  (no args)     Human-readable detail + a machine summary line consumed by doctor.
-  --porcelain   One TAB-separated line per linked worktree for worktree-reap.sh:
-                CLASS<TAB>PATH<TAB>BRANCH<TAB>AHEAD<TAB>BEHIND<TAB>DIRTY<TAB>AGEDAYS
-  --help        Show this help and exit 0.
+  (no args)            Human-readable worktree detail + a machine summary line
+                       consumed by doctor, then a stale-branch + stash section
+                       and a second (branch/stash) machine summary line.
+  --porcelain          One TAB-separated line per linked worktree for
+                       worktree-reap.sh (UNCHANGED by SCOPE-4 — NO branch/stash):
+                       CLASS<TAB>PATH<TAB>BRANCH<TAB>AHEAD<TAB>BEHIND<TAB>DIRTY<TAB>AGEDAYS
+  --branch-age-days N  Flag a local branch (with unique commits) older than N
+                       days. Default 14. Also settable via the flat
+                       .github/bubbles-project.yaml key worktreeBranchAgeDays.
+  --branch-ahead N     Flag a local branch >= N commits ahead of trunk. Default
+                       200. Also settable via worktreeBranchAheadLimit.
+  --help               Show this help and exit 0.
 
-Reads only; never removes a worktree or branch (that is worktree-reap.sh).
-No --skip / --force / bypass flag exists.
+Reads only; never removes a worktree, branch, or stash. Branches/stashes are
+SURFACED ONLY (worktree-reap.sh never reaps them). No --skip/--force/bypass flag.
 EOF
 }
 
 PORCELAIN=false
+branch_age_days_flag=""
+branch_ahead_flag=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --porcelain) PORCELAIN=true; shift ;;
+    --branch-age-days)
+      shift
+      if [[ $# -eq 0 || ! "$1" =~ ^[0-9]+$ ]]; then
+        echo "worktree-hygiene-report: --branch-age-days requires a non-negative integer" >&2
+        usage >&2; exit 0
+      fi
+      branch_age_days_flag="$1"; shift ;;
+    --branch-ahead)
+      shift
+      if [[ $# -eq 0 || ! "$1" =~ ^[0-9]+$ ]]; then
+        echo "worktree-hygiene-report: --branch-ahead requires a non-negative integer" >&2
+        usage >&2; exit 0
+      fi
+      branch_ahead_flag="$1"; shift ;;
     -h | --help) usage; exit 0 ;;
     *) echo "worktree-hygiene-report: unknown option: $1" >&2; usage >&2; exit 0 ;;
   esac
 done
+
+# SCOPE-4 (gap WT-STALE) stale-branch thresholds: flag > flat
+# `.github/bubbles-project.yaml` key > built-in default. Resolved here so the
+# not-a-git-repo no-op below can echo a coherent branch/stash summary line.
+PROJECT_YAML="$REPO_ROOT/.github/bubbles-project.yaml"
+yaml_flat_int() {
+  # Echo the integer value of a flat top-level `KEY: N` line in PROJECT_YAML, or nothing.
+  local key="$1" v
+  [[ -f "$PROJECT_YAML" ]] || return 0
+  v="$(sed -nE "s/^[[:space:]]*${key}:[[:space:]]*([0-9]+).*/\1/p" "$PROJECT_YAML" 2>/dev/null | head -1)"
+  [[ "$v" =~ ^[0-9]+$ ]] && printf '%s' "$v"
+}
+BRANCH_AGE_DAYS="${branch_age_days_flag:-$(yaml_flat_int worktreeBranchAgeDays)}"
+[[ "$BRANCH_AGE_DAYS" =~ ^[0-9]+$ ]] || BRANCH_AGE_DAYS=14
+BRANCH_AHEAD="${branch_ahead_flag:-$(yaml_flat_int worktreeBranchAheadLimit)}"
+[[ "$BRANCH_AHEAD" =~ ^[0-9]+$ ]] || BRANCH_AHEAD=200
 
 # Not a git repository -> benign advisory no-op.
 if ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   if [[ "$PORCELAIN" == false ]]; then
     echo "[worktree-hygiene] $REPO_ROOT is not a git repository (advisory no-op)."
     echo "worktree-hygiene: 0 worktrees (0 merged, 0 unmerged, 0 prunable, 0 dirty, 0 lease-held, 0 experiment)"
+    echo "worktree-hygiene-branches: 0 stale local branches (age>=${BRANCH_AGE_DAYS}d or ahead>=${BRANCH_AHEAD}), 0 stashes"
   fi
   exit 0
 fi
@@ -267,4 +335,85 @@ else
   printf '%s\n' "$detail_lines"
 fi
 echo "worktree-hygiene: ${n_total} worktrees (${n_merged} merged, ${n_unmerged} unmerged, ${n_prunable} prunable, ${n_dirty} dirty, ${n_lease} lease-held, ${n_exp} experiment)"
+
+# --- SCOPE-4 (gap WT-STALE): stale/long-lived local branches + stashes --------
+# REPORT-ONLY. Never emitted in --porcelain (the reaper's input contract is
+# unchanged), so a branch or a stash is structurally never reaped. Keyed to the
+# trunk-based "no long-lived feature branches" policy
+# (instructions/bubbles-release-trains.instructions.md).
+now_epoch="$(date -u +%s)"
+trunk_sha="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "$TRUNK" 2>/dev/null || true)"
+# Branches checked out in ANY live worktree are excluded from the stale scan
+# (they are covered by the worktree section above, not the branch section).
+checked_out_branches="$(git -C "$REPO_ROOT" worktree list --porcelain 2>/dev/null | sed -n 's#^branch refs/heads/##p')"
+
+branch_is_checked_out() {
+  local b="$1"
+  [[ -n "$checked_out_branches" ]] || return 1
+  printf '%s\n' "$checked_out_branches" | grep -qxF -- "$b"
+}
+
+# yes | no | no-common-base | unknown — can the branch still fast-forward into
+# trunk? `no` / `no-common-base` expose a branch stranded on a rewritten base.
+branch_ff_status() {
+  local b="$1" mb
+  [[ -n "$trunk_sha" ]] || { printf 'unknown'; return 0; }
+  mb="$(git -C "$REPO_ROOT" merge-base "$TRUNK" "$b" 2>/dev/null || true)"
+  if [[ -z "$mb" ]]; then printf 'no-common-base'
+  elif [[ "$mb" == "$trunk_sha" ]]; then printf 'yes'
+  else printf 'no'
+  fi
+}
+
+n_stale_branches=0
+branch_detail=""
+while IFS= read -r brname; do
+  [[ -n "$brname" ]] || continue
+  [[ "$brname" == "$TRUNK" ]] && continue
+  branch_is_checked_out "$brname" && continue
+  br_ab="$(count_ahead_behind "$brname")"
+  br_ahead="${br_ab%% *}"; br_behind="${br_ab##* }"
+  [[ "$br_ahead" =~ ^[0-9]+$ ]] || br_ahead=0
+  [[ "$br_behind" =~ ^[0-9]+$ ]] || br_behind=0
+  # A "long-lived feature branch" must carry unique (unmerged) work.
+  [[ "$br_ahead" -gt 0 ]] || continue
+  br_age="$(ref_age_days "$brname")"
+  [[ "$br_age" =~ ^-?[0-9]+$ ]] || br_age=-1
+  br_reason=""
+  [[ "$br_age" -ge "$BRANCH_AGE_DAYS" ]] && br_reason="age>=${BRANCH_AGE_DAYS}d"
+  if [[ "$br_ahead" -ge "$BRANCH_AHEAD" ]]; then
+    if [[ -n "$br_reason" ]]; then br_reason="${br_reason} & ahead>=${BRANCH_AHEAD}"; else br_reason="ahead>=${BRANCH_AHEAD}"; fi
+  fi
+  [[ -n "$br_reason" ]] || continue
+  br_ff="$(branch_ff_status "$brname")"
+  n_stale_branches=$((n_stale_branches + 1))
+  branch_detail="${branch_detail}${branch_detail:+
+}$(printf '  STALE-BRANCH %s  age=%sd  ahead=%s behind=%s  ff=%s  -> %s (trunk policy: no long-lived feature branches)' \
+    "$brname" "$br_age" "$br_ahead" "$br_behind" "$br_ff" "$br_reason")"
+done < <(git -C "$REPO_ROOT" for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)
+
+n_stashes=0
+stash_detail=""
+while IFS=$'\t' read -r st_sel st_ct st_msg; do
+  [[ -n "$st_sel" ]] || continue
+  n_stashes=$((n_stashes + 1))
+  st_age=-1
+  [[ "$st_ct" =~ ^[0-9]+$ ]] && st_age=$(( (now_epoch - st_ct) / 86400 ))
+  stash_detail="${stash_detail}${stash_detail:+
+}$(printf '  %s  age=%sd  %s' "$st_sel" "$st_age" "$st_msg")"
+done < <(git -C "$REPO_ROOT" stash list --format='%gd%x09%ct%x09%gs' 2>/dev/null)
+
+echo "[worktree-hygiene] Stale / long-lived local branches (trunk policy 'no long-lived feature branches' — instructions/bubbles-release-trains.instructions.md; flag age>=${BRANCH_AGE_DAYS}d or ahead>=${BRANCH_AHEAD}):"
+if [[ "$n_stale_branches" -eq 0 ]]; then
+  echo "  (none — no local branch with unique commits exceeds age>=${BRANCH_AGE_DAYS}d or ahead>=${BRANCH_AHEAD})"
+else
+  printf '%s\n' "$branch_detail"
+fi
+echo "[worktree-hygiene] Lingering stashes (report-only — NEVER auto-dropped):"
+if [[ "$n_stashes" -eq 0 ]]; then
+  echo "  (none)"
+else
+  printf '%s\n' "$stash_detail"
+fi
+echo "worktree-hygiene-branches: ${n_stale_branches} stale local branches (age>=${BRANCH_AGE_DAYS}d or ahead>=${BRANCH_AHEAD}), ${n_stashes} stashes"
 exit 0
