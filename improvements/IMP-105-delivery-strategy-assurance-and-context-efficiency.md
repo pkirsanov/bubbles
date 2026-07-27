@@ -53,11 +53,6 @@ Each bullet was re-checked against a real file; byte counts and enumerations com
 
 Every scope below is **additive** and **default-preserving** unless explicitly noted; none removes a gate or lowers the universal quality floor. Scopes are ordered by leverage and are independently landable.
 
-### SCOPE-7 — Unify the registry ontology + generate derived tables (`ONT-UNIFY`)
-
-- Introduce (or grow an existing registry into) one typed `delivery-policy` model whose primitives are `Intent`, `DeliveryStrategy`, `WorkflowMode`, `RiskClass`, `Phase`, `Gate`, `Artifact`, `AgentOwner`, `EvidenceClaim`, `AchievedAssurance`, `ReleaseAssuranceFloor`, `TerminalState`, with machine-checkable invariants expressed declaratively (the OWL-style constraints the talk highlights, WITHOUT RDF or a graph DB): `prototype` disjoint from `deployable`; exactly one owner per artifact section; only `bubbles.validate` writes certification; `fast` may be missing only `independent-audit`; high/unknown risk requires `full`; required specialists = `phaseOrder` minus control phases; a mode has exactly one transition profile. GENERATE the currently-hand-maintained tables (the gates block already is; extend to mode→specialist and docs/cheatsheet) and shadow-compare generated output against current source before any cutover.
-- **Why:** the talk's real lesson — derive relationships from one shared conceptualization. **Quality:** fewer hand-rolled encodings = fewer latent guard bugs (see the `env-pollution-scan` self-match class in repo history); every generated artifact is `--check`-verified as today.
-
 ### SCOPE-8 — Batch framework meta-churn (`META-CHURN`)
 
 - Group compatible policy/prose/doc improvements into periodic framework release trains rather than PATCH-per-commit deltas that each become a downstream upgrade event. Keep the auto-bump for correctness-critical single-gate fixes.
@@ -67,8 +62,8 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Migration / rollout
 
-- **Order:** SCOPE-7 → SCOPE-8. Each is independently landable.
-- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-7 is a canonical-source refactor validated by shadow-compare + existing `--check` generators. SCOPE-8 is a process change.
+- **Order:** SCOPE-8. Each is independently landable.
+- **Posture:** SCOPE-1 is behavior-completing (additive, backward-compatible). SCOPE-8 is a process change.
 - All framework edits are authored HERE (upstream-first per `operating-baseline.md` → Framework File Immutability) and reach downstream repos only via `install.sh` / upgrade.
 
 ## Risks & mitigations
@@ -78,12 +73,10 @@ Every scope below is **additive** and **default-preserving** unless explicitly n
 
 ## Acceptance criteria (when implemented)
 
-- SCOPE-7: mode→specialist and the gates/cheatsheet tables are generated from one canonical model and pass `--check`; shadow-compare shows byte-identical or reviewed diffs.
 - SCOPE-8: a documented framework release-train cadence exists.
 
 ## Files to touch (on approval)
 
-- **SCOPE-7:** new `bubbles/registry/delivery-policy.yaml` (or an extension of an existing registry), `bubbles/scripts/generate-*.sh`, `bubbles/scripts/workflow-registry-consistency.sh` — owner: framework.
 - **SCOPE-8:** `CHANGELOG.md` (Versioning Scheme), a maintainer release-cadence note — owner: maintainer.
 
 ---

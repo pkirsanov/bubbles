@@ -49,7 +49,7 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 | G019 | sequential_spec_completion_gate | 25 | — | — | — |
 | G020 | cross_agent_verification_gate | 25 | — | 1 | — |
 | G021 | anti_fabrication_gate | 25 | Check 20 | 3 | guard |
-| G022 | specialist_completion_gate | 25 | Check 6B | 4 | guard |
+| G022 | specialist_completion_gate | 25 | Check 6B | 5 | guard |
 | G023 | state_transition_guard_gate | 25 | — | — | — |
 | G024 | all_scopes_done_before_spec_done_gate | 25 | ref | 3 | guard |
 | G025 | per_dod_item_raw_evidence_gate | 25 | — | 2 | — |

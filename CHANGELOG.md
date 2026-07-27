@@ -14,6 +14,37 @@ The pre-commit hook auto-increments PATCH on every commit. To bump MINOR or MAJO
 
 ## [Unreleased]
 
+### IMP-105 SCOPE-7 — mode→specialist table unified into a canonical registry (ONT-UNIFY)
+
+The mode→required-specialists mapping enforced by `state-transition-guard.sh`
+Check 6 ("Specialist Phase Completion", Gate G022) is now backed by a canonical
+`bubbles/registry/required-specialists.yaml`. A new
+`bubbles/scripts/required-specialists-consistency.sh` guard (wired into
+`framework-validate.sh`, with an adversarial hermetic selftest
+`required-specialists-consistency-selftest.sh`) enforces that the guard's
+hardcoded `case "$state_workflow_mode" in … esac` matches the registry
+EXACTLY — same mode keys, same ordered specialist lists — failing on any missing
+mode, extra mode, or reordered/changed list. This is the continuous
+shadow-compare that resolves IMP-105 SCOPE-3's deferred "full table replacement":
+the mapping now has a single source of truth with drift protection. The live
+shadow-compare reconciles all **29 modes** at exit 0.
+
+Chosen a canonical-registry + consistency-guard over a block-generator +
+guard-rewrite deliberately: the guard's Check 6 case arms carry load-bearing
+inline documentation (e.g. the long `rapid-tool-delivery` rationale) that a
+data-only generator cannot reproduce byte-identically, and rewriting the critical
+guard is high-risk. Extracting the DATA into the registry and pinning the case to
+it with a consistency guard achieves the same single-source-of-truth +
+drift-protection goal safely. **Guard runtime behavior is byte-unchanged** — the
+Check 6 case logic and the `# IMP-105-SCOPE-3-FALLBACK-BEGIN … END` region are
+untouched (`state-transition-guard-selftest.sh` and
+`state-transition-required-specialists-selftest.sh` still pass). Additive: the
+registry MIRRORS the case; the guard remains authoritative at runtime. The
+broader 12-primitive unified delivery-policy model (Intent, DeliveryStrategy,
+WorkflowMode, RiskClass, Phase, Gate, Artifact, AgentOwner, EvidenceClaim,
+AchievedAssurance, ReleaseAssuranceFloor, TerminalState) remains the larger
+ONT-UNIFY direction.
+
 ### IMP-105 SCOPE-6 — risk-proportional sweep application made explicit (risk-tier-keyed)
 
 The scope sweeps (Shared-Infrastructure Impact Sweep, Change Boundary, Consumer
