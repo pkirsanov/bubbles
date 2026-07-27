@@ -1255,6 +1255,14 @@ executionOptions:
       type: boolean
       default: false
       meaning: Opt into isolated branch/worktree setup before implementation when repo policy allows it.
+      # Finalize-reap (IMP-107 / SCOPE-2, gap WT-TEARDOWN): this setup implies a
+      # SYMMETRIC teardown. On run/scope finalize the parent runs
+      # bubbles/scripts/worktree-reap.sh (invoked via `cli.sh doctor --heal`),
+      # which SAFELY reaps the now-MERGED (completed) or PRUNABLE (abandoned)
+      # worktree + its fully-merged local branch and REFUSES UNMERGED / DIRTY /
+      # LEASE-HELD. Advisory reference only — comment-only, so no gitIsolation
+      # semantics or schema change; see
+      # agents/bubbles_shared/scope-workflow.md (finalize-reap step).
     autoCommit:
       type: string
       default: "off"

@@ -189,6 +189,8 @@ Under `parallelScopes=dag`, DAG-independent scopes execute concurrently in separ
 
 **Cleanup on abandon:** if a worktree scope fails or is abandoned, the parent drops that worktree and its branch — no partial shared-state mutation survives (mirroring `gitIsolation` whole-run rollback).
 
+**Finalize-reap (mechanized teardown, IMP-107 / SCOPE-2 — gap `WT-TEARDOWN`).** The teardown above is a NAMED, mechanical step — not a manual hope. After a scope's branch is merged (completed) OR its run is rolled back (abandoned), the parent runs the **finalize-reap**: `bubbles/scripts/worktree-reap.sh` (equivalently `cli.sh doctor --heal`, which invokes it). A **completed** scope's worktree becomes `MERGED` (branch fully in trunk, 0 unique commits) and an **abandoned** / rolled-back scope's becomes `PRUNABLE` (its directory dropped); the SAFE reaper reaps BOTH end-states and their fully-merged local branches, while REFUSING `UNMERGED` / `DIRTY` / `LEASE-HELD` worktrees — it never eats un-merged or uncommitted work, and never disturbs a live IMP-023 writer-lease. So "the parent drops that worktree and its branch" is a checkable finalize-reap invocation over the EXISTING safe reaper (SCOPE-1) — mechanized, not manual, adding NO new teardown logic.
+
 **Acquire-before-mutate enforcement (IMP-023 writer-lease).** This contract is MECHANIZED — no longer advisory. Integration points:
 
 - **Parent dispatch:** before the first mutable write the parent acquires the target lease — `runtime writer-acquire --target <spec-dir> --paths source,tests,report`.

@@ -31,6 +31,24 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### IMP-107 SCOPE-2 — mechanized gitIsolation finalize-reap (WT-TEARDOWN)
+
+The gitIsolation / `parallelScopes=dag` run/scope finalize teardown — the "the
+parent drops that worktree and its branch" clause in
+`agents/bubbles_shared/scope-workflow.md` — is now a NAMED **finalize-reap** step
+wired to the existing safe reaper `bubbles/scripts/worktree-reap.sh` (SCOPE-1),
+not narrative. A **completed** scope's branch is merged → its worktree becomes
+`MERGED`; an **abandoned** / rolled-back scope's becomes `PRUNABLE`; the
+finalize-reap reaps BOTH (and their fully-merged local branches) while REFUSING
+`UNMERGED` / `DIRTY` / `LEASE-HELD` — it never eats un-merged or uncommitted work
+and never disturbs a live IMP-023 writer-lease. The named step is documented in
+`scope-workflow.md` and referenced (advisory, comment-only) from the
+`gitIsolation` block in `bubbles/workflows.yaml`, and is proven by a new hermetic
+selftest `bubbles/scripts/worktree-finalize-reap-selftest.sh` covering BOTH
+finalize end-states plus the un-merged/dirty safety refusal (registered in
+`framework-validate.sh`). NO new reaper logic — it reuses SCOPE-1's reaper;
+additive and advisory.
+
 ### IMP-107 SCOPE-4 — stale-branch + stash surfacing keyed to the trunk policy (WT-STALE)
 
 `worktree-hygiene-report.sh` now surfaces (advisory, report-only) two things the
