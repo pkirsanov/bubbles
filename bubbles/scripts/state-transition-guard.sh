@@ -2409,13 +2409,22 @@ resolve_evidence_by_reference() {
   # Normalize anchor: GitHub-style slugify (lower, spaces->dash, strip non-alnum/dash)
   local anchor_lower
   anchor_lower="$(echo "$anchor" | tr '[:upper:]' '[:lower:]')"
-  # Find the anchor — match either an HTML anchor <a name="X">, an explicit
-  # {#anchor} attribute, or a Markdown heading whose GitHub slug matches.
+  # Find the anchor — match either an HTML anchor <a name="X"> / <a id="X">,
+  # an explicit {#anchor} attribute, or a Markdown heading whose GitHub slug
+  # matches.
+  #
+  # IMP-102 fix (Defect 3): `<a id="X">` is the modern HTML anchor form and the
+  # shape agents naturally emit, but the matcher previously accepted ONLY
+  # `<a name="X">`, so a perfectly valid anchor resolved as "missing" and the
+  # DoD item hard-failed. Matching the tag first and the attribute second also
+  # tolerates attribute order (`<a class="x" id="y">`). This strictly REDUCES
+  # false failures — it cannot newly fail anything that resolves today.
   local anchor_line
   anchor_line="$(awk -v a="$anchor_lower" '
     BEGIN { IGNORECASE=1 }
-    /<a[[:space:]]+name=/ {
-      if (tolower($0) ~ "name=\""a"\"") { print NR; exit }
+    /<a[[:space:]]/ {
+      hay = tolower($0)
+      if (hay ~ "name=\""a"\"" || hay ~ "id=\""a"\"") { print NR; exit }
     }
     /\{#[^}]+\}/ {
       if (tolower($0) ~ "\\{#"a"\\}") { print NR; exit }
@@ -2431,9 +2440,25 @@ resolve_evidence_by_reference() {
     }
   ' "$report_path")"
   [[ -z "$anchor_line" ]] && return 1
-  # Count non-blank lines from anchor_line+1 until next heading or EOF
+  # Count non-blank lines from anchor_line+1 until next heading or EOF.
+  #
+  # IMP-102 fix (Defect 2): the end-of-block scan is FENCE-AWARE. A pasted shell
+  # comment inside the evidence fence (e.g. `# TP-03-01 rollback accounting`)
+  # matches /^#+[[:space:]]/ and previously terminated the block early, so the
+  # ≥10-non-blank-line rule measured a fraction of the real evidence and emitted
+  # a FALSE block-too-short failure. Only a `#` heading OUTSIDE a fenced block
+  # ends the evidence window. Fence state is tracked from line 1 so it is
+  # correct by the time the anchor line is reached. This strictly REDUCES false
+  # failures — the window can only grow, never shrink.
   local end_line
-  end_line="$(awk -v start="$anchor_line" 'NR>start && /^#+[[:space:]]/ { print NR; exit }' "$report_path")"
+  end_line="$(awk -v start="$anchor_line" '
+    {
+      probe = $0
+      sub(/^[[:space:]]+/, "", probe)
+      if (probe ~ /^```/) { in_fence = !in_fence; next }
+    }
+    NR>start && !in_fence && /^#+[[:space:]]/ { print NR; exit }
+  ' "$report_path")"
   [[ -z "$end_line" ]] && end_line="$(wc -l < "$report_path")"
   local block_text block_lines
   block_text="$(sed -n "$((anchor_line+1)),${end_line}p" "$report_path")"
@@ -2768,42 +2793,117 @@ fi
 echo ""
 
 # =============================================================================
-# CHECK 12: Duplicate evidence detection
+# CHECK 12: Duplicate evidence detection (Gate G021)
 # =============================================================================
-echo "--- Check 12: Duplicate Evidence Detection ---"
-for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
-  [[ -f "$scope_path" ]] || continue
-  evidence_hashes=()
-  in_evidence=0
-  current_evidence=""
-  duplicate_found="false"
+# IMP-102 fix (Defect 1): Check 12 previously had TWO independent blindnesses,
+# either sufficient alone to keep it from ever firing on a real artifact:
+#   1. It iterated ONLY `scope_files` and never opened `report_files` — but the
+#      evidence-by-reference convention (see resolve_evidence_by_reference)
+#      puts the fenced blocks in report.md.
+#   2. It matched ONLY 4-space-indented fences, while real artifacts write
+#      fences at column 0 almost exclusively.
+# The fix scans BOTH surfaces and recognises fences at ANY indentation, but it
+# does so at TWO severities so a previously-blind blocking gate cannot
+# retro-break already-certified downstream packets:
+#
+#   * LEGACY surface — scope files, 4-space-indented fences — stays BLOCKING
+#     with byte-identical detection semantics. Zero behaviour change.
+#   * NEWLY COVERED surface — scope + report files, fences at any indentation —
+#     is ADVISORY (info + counter, never `fail`). Some repetition is
+#     legitimate (e.g. one shared environment-context block quoted by sibling
+#     scopes), and downstream repos carry `done` packets certified while this
+#     surface was blind. This mirrors the framework's own established
+#     precedent for newly-activated enforcement (see `check9_advisory_count`
+#     above: "Advisory-for-one-release, NOT blocking"). Promote the advisory
+#     surface to blocking in a later release once downstream repos have
+#     drained the backlog.
+_c12_fence_any_re='^[[:space:]]*```'
+
+# Detect an exact-duplicate fenced evidence block within a single artifact.
+#   $1 = file path
+#   $2 = fence mode:
+#        "legacy-4space" — open on a 4-space `    ```` prefix, close on an
+#                          exact `    ```` line (the historical semantics)
+#        "any-indent"    — toggle on any fence line at any indentation,
+#                          covering both ```lang openers and bare ``` closers
+# Returns 0 when a duplicate block is found, 1 otherwise.
+#
+# Block text is compared directly instead of hashed: it yields the identical
+# equality relation the previous md5 implementation did, removes a GNU-only
+# `md5sum` dependency (macOS ships `md5`, not `md5sum`), and drops two forks
+# per block. The concatenation shape is byte-for-byte what was hashed before.
+c12_has_duplicate_evidence_block() {
+  local file_path="$1"
+  local fence_mode="$2"
+  local blocks=()
+  local in_evidence=0
+  local current_evidence=""
+  local line=""
+  local prev_block=""
+  local is_open=0
+  local is_close=0
+
   while IFS= read -r line; do
-    # BUG-005: bash glob builtins replace per-line echo|grep fence forks.
-    if [[ "$in_evidence" -eq 0 ]] && [[ "$line" == '    ```'* ]]; then
+    is_open=0
+    is_close=0
+    if [[ "$fence_mode" == "legacy-4space" ]]; then
+      # BUG-005: bash glob builtins replace per-line echo|grep fence forks.
+      [[ "$line" == '    ```'* ]] && is_open=1
+      [[ "$line" == '    ```' ]] && is_close=1
+    elif [[ "$line" =~ $_c12_fence_any_re ]]; then
+      is_open=1
+      is_close=1
+    fi
+
+    if [[ "$in_evidence" -eq 0 ]] && [[ "$is_open" -eq 1 ]]; then
       in_evidence=1
       current_evidence=""
-    elif [[ "$in_evidence" -eq 1 ]] && [[ "$line" == '    ```' ]]; then
+    elif [[ "$in_evidence" -eq 1 ]] && [[ "$is_close" -eq 1 ]]; then
       in_evidence=0
       if [[ -n "$current_evidence" ]]; then
-        evidence_hash="$(echo "$current_evidence" | md5sum | cut -d' ' -f1)"
-        for prev_hash in ${evidence_hashes[@]+"${evidence_hashes[@]}"}; do
-          if [[ "$evidence_hash" == "$prev_hash" ]]; then
-            fail "Duplicate evidence blocks detected in $(relative_artifact_path "$scope_path") — COPY-PASTE FABRICATION"
-            duplicate_found="true"
-            break 2
+        for prev_block in ${blocks[@]+"${blocks[@]}"}; do
+          if [[ "$current_evidence" == "$prev_block" ]]; then
+            return 0
           fi
         done
-        evidence_hashes+=("$evidence_hash")
+        blocks+=("$current_evidence")
       fi
     elif [[ "$in_evidence" -eq 1 ]]; then
       current_evidence="${current_evidence}${line}"
     fi
-  done < "$scope_path"
+  done < "$file_path"
 
-  if [[ "$duplicate_found" == "false" ]]; then
-    pass "No duplicate evidence blocks in $(relative_artifact_path "$scope_path")"
+  return 1
+}
+
+echo "--- Check 12: Duplicate Evidence Detection ---"
+c12_advisory_count=0
+
+for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
+  [[ -f "$scope_path" ]] || continue
+  if c12_has_duplicate_evidence_block "$scope_path" "legacy-4space"; then
+    fail "Duplicate evidence blocks detected in $(relative_artifact_path "$scope_path") — COPY-PASTE FABRICATION"
+    continue
+  fi
+
+  pass "No duplicate evidence blocks in $(relative_artifact_path "$scope_path")"
+  if c12_has_duplicate_evidence_block "$scope_path" "any-indent"; then
+    c12_advisory_count=$((c12_advisory_count + 1))
+    info "Check-12 ADVISORY: duplicate evidence block in $(relative_artifact_path "$scope_path") on the any-indentation fence surface — copy-paste fabrication indicator, NOT blocking this release (Gate G021 newly-covered surface)"
   fi
 done
+
+for report_path in ${report_files[@]+"${report_files[@]}"}; do
+  [[ -f "$report_path" ]] || continue
+  if c12_has_duplicate_evidence_block "$report_path" "any-indent"; then
+    c12_advisory_count=$((c12_advisory_count + 1))
+    info "Check-12 ADVISORY: duplicate evidence block in $(relative_artifact_path "$report_path") on the any-indentation fence surface — copy-paste fabrication indicator, NOT blocking this release (Gate G021 newly-covered surface)"
+  fi
+done
+
+if [[ "$c12_advisory_count" -gt 0 ]]; then
+  info "Check-12 advisory: $c12_advisory_count artifact(s) carry duplicate evidence blocks on the newly-covered any-indentation surface (would-fail count under a future blocking policy)"
+fi
 echo ""
 
 # =============================================================================
