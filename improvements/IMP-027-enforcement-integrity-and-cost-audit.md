@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1
+**Verified gaps addressed:** EV-3, COST-1
 
 ---
 
@@ -56,14 +56,6 @@ Coverage was **asserted from hand-written lists** rather than **derived from the
 ## Proposal
 
 Scopes are ordered by (severity × cheapness).
-
-### SCOPE-3 — Make receipt-backed evidence the primary rail (EV-1, EV-2)
-
-- Introduce `evidenceMode: receipt-required | receipt-preferred | markdown-ok` in `.github/bubbles-project.yaml`, defaulting to `receipt-preferred` (behavior-preserving). Done-ceiling modes (`full-delivery` and any mode whose `statusCeiling` is `done`) bind `receipt-required`.
-- Under `receipt-required`, invert the `state-transition-guard.sh` Check-9 chain so the tool-log path is evaluated **first** and markdown-only evidence fails rather than advises. Update `evidence-admission-hardening-selftest.sh:19`, which currently pins the permissive behavior, and add a red fixture proving prose-only fails under `receipt-required`.
-- Wire `evidence-receipt-check.sh --strict` into the transition path (today it is reachable only through its selftest at `framework-validate.sh:406`).
-- **Cheapest high-yield step:** because project terminal-discipline already funnels all commands through a single project CLI, wrapping that one entrypoint in `tool-log.sh` makes every gate-relevant command receipted at near-zero authoring cost. Document this as the recommended adoption path.
-- **Immediate, independent of the above:** reconcile `README.md:46` with the code. Either ship the blocking mode or amend the sentence. The gap between the advertised guarantee and `state-transition-guard.sh:2440-2445`/`:2555-2562` is the framework's single largest credibility risk.
 
 ### SCOPE-6 — Reduce context cost (COST-1) — **MEASUREMENT DELIVERED; REDUCTION BLOCKED**
 

@@ -41,7 +41,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
-| [IMP-027](IMP-027-enforcement-integrity-and-cost-audit.md) | Enforcement Integrity, Ungoverned Surfaces, and Context-Cost Audit | IN PROGRESS | framework-health (G125) | EV-1..3; COST-1 (measurement shipped, reduction blocked on a routing eval) | 2026-07-28 |
+| [IMP-027](IMP-027-enforcement-integrity-and-cost-audit.md) | Enforcement Integrity, Ungoverned Surfaces, and Context-Cost Audit | IN PROGRESS | framework-health (G125) | EV-3; COST-1 (measurement shipped, reduction blocked on a routing eval) | 2026-07-28 |
 
 > **Numbering note:** IMP-001…IMP-026 and IMP-100…IMP-107 are already referenced
 > across `bubbles/scripts/**`, `docs/**`, and `CHANGELOG.md` as historical

@@ -505,6 +505,36 @@ No regressions were observed in any previously passing area of the product.
 This paragraph provides the twelfth non-blank prose line for the fixture block.
 EOF
 
+# ---- CHECK 43 (IMP-027 SCOPE-3, EV-2): receipt staleness on the transition path ----
+# The guard resolves the receipt log at REPO root (`git rev-parse --show-toplevel`
+# from the feature dir), which is correct for production but means a fixture
+# cannot simply drop a log beside its own spec — it would resolve to the shared
+# selftest tmp root and read another fixture's log. Each receipt fixture is
+# therefore given its OWN git root via `git init`, making it genuinely hermetic.
+#
+# The FRESH and STALE fixtures are IDENTICAL except that the stale one's input
+# file is mutated AFTER its receipt is written. That isolation is what proves
+# Check 43 compares the recorded hashes rather than merely noticing a log.
+_emit_receipt_fixture() {
+  local dir="$1" mutate="$2"
+  emit_pass_fixture "$dir"
+  mkdir -p "$dir/.specify/runtime" "$dir/src"
+  git -C "$dir" init --quiet >/dev/null 2>&1 || return 1
+  printf 'original content\n' >"$dir/src/mod.rs"
+  local h
+  h="$(sha256sum "$dir/src/mod.rs" | awk '{print $1}')"
+  printf '{"ts":"2026-07-28T00:00:00Z","cmd":"cargo test","spec":"001-x","inputClosure":[{"path":"src/mod.rs","sha256":"%s"}]}\n' \
+    "$h" >"$dir/.specify/runtime/tool-calls.jsonl"
+  [[ "$mutate" == "mutate" ]] && printf 'MUTATED after the receipt was captured\n' >"$dir/src/mod.rs"
+  return 0
+}
+
+receipt_fresh_dir="$tmp_root/specs/959-c43-receipt-fresh"
+_emit_receipt_fixture "$receipt_fresh_dir" keep
+
+receipt_stale_dir="$tmp_root/specs/960-c43-receipt-stale"
+_emit_receipt_fixture "$receipt_stale_dir" mutate
+
 # ---- BLOCKING (#1): truly-bare `-> Evidence: done` marker ----
 bare_marker_dir="$tmp_root/specs/953-c9-bare-marker"
 emit_pass_fixture "$bare_marker_dir"
@@ -606,6 +636,14 @@ echo ""
 echo "=== ADVISORY PASS case (fix #3) ==="
 assert_passes "$advisory_prose_dir" yes \
   "ADVISORY (#3): resolved 12-line prose block accepted AND emits Check-9 ADVISORY"
+
+echo ""
+echo "=== CHECK 43 receipt staleness (IMP-027 SCOPE-3, EV-2) ==="
+assert_passes "$receipt_fresh_dir" any \
+  "CHECK 43 (fresh): receipt whose inputClosure still matches the tree passes"
+assert_blocks_with "$receipt_stale_dir" \
+  "Evidence receipt(s) are STALE" \
+  "CHECK 43 (stale): receipt whose input changed after capture BLOCKS"
 
 echo ""
 echo "=== BLOCKING FAIL cases ==="

@@ -3636,6 +3636,55 @@ fi
 echo ""
 
 # =============================================================================
+# CHECK 43: Evidence Receipt Staleness (IMP-027 SCOPE-3, EV-2)
+# =============================================================================
+# Markdown evidence has one property it can never have: freshness. A pasted
+# terminal block proves a command ran ONCE, against SOME version of the tree,
+# and nothing in the artifact records which. Receipts written by tool-log.sh
+# DO record it — each carries an `inputClosure` of the files the evidence
+# depended on, hashed at capture time.
+#
+# evidence-receipt-check.sh already knows how to compare those hashes against
+# the working tree, but until now it was reachable ONLY from its own selftest,
+# so no transition ever consulted it. That made the receipt rail decorative:
+# a spec could carry receipts captured before the very change under review and
+# certify anyway.
+#
+# This check consults it on the transition path. It is deliberately
+# NO-OP-UNLESS-EARNED:
+#   - no tool log                     -> skipped (the overwhelming majority)
+#   - receipts present, none stale    -> passes
+#   - receipts present, some stale    -> FAILS, naming them
+#   - checker unavailable/errors      -> INFO, never blocks
+# A project that never adopts receipts is unaffected; a project that adopts
+# them cannot then certify against evidence its own recorded inputs invalidate.
+echo "--- Check 43: Evidence Receipt Staleness (IMP-027 SCOPE-3) ---"
+c43_repo_root="$(cd "$feature_dir" && git rev-parse --show-toplevel 2>/dev/null || pwd)"
+c43_log="$c43_repo_root/.specify/runtime/tool-calls.jsonl"
+c43_checker="$SCRIPT_DIR/evidence-receipt-check.sh"
+if [[ ! -f "$c43_log" ]]; then
+  info "No tool-call receipt log at .specify/runtime/tool-calls.jsonl; receipt staleness not applicable (markdown evidence rail)"
+elif [[ ! -x "$c43_checker" && ! -f "$c43_checker" ]]; then
+  info "evidence-receipt-check.sh not present; skipping receipt staleness"
+else
+  c43_out=""
+  c43_rc=0
+  c43_out="$(bash "$c43_checker" --log "$c43_log" --repo-root "$c43_repo_root" --strict 2>&1)" || c43_rc=$?
+  case "$c43_rc" in
+    0)
+      pass "Evidence receipts consulted; no stale receipt backs this transition"
+      ;;
+    1)
+      fail "Evidence receipt(s) are STALE — an input file changed after the evidence was captured, so the recorded result no longer describes the current tree. Re-run the affected command(s) to refresh the receipt. Detail: $(printf '%s' "$c43_out" | tr '\n' ' ' | head -c 400)"
+      ;;
+    *)
+      info "evidence-receipt-check.sh could not produce a report (exit $c43_rc); receipt staleness not evaluated this run"
+      ;;
+  esac
+fi
+echo ""
+
+# =============================================================================
 # CHECKS 23-25 + 40: convergence cap (G082), compaction discipline (G083),
 # pre-existing deferral block (G084), and session cap (G128, the aggregate
 # sibling of G082). Extracted to a guards/ fragment (M4 split) and sourced in
