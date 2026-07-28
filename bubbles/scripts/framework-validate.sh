@@ -356,6 +356,16 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-bands.sh" ]]; then
   run_check_self_only "Gate-band strings current (IMP-027 SCOPE-2d)" bash "$SCRIPT_DIR/gate-bands.sh" --check --repo-root "$REPO_ROOT"
 fi
+# IMP-027 SCOPE-11: a modelCompensation gate with no recorded retirement
+# criterion carries unbounded cost in time — nobody can say what would have to
+# be true to turn it off, so it is carried forever by default. `lint` keeps
+# that backlog visible; it does not (and cannot) retire anything.
+if [[ -x "$SCRIPT_DIR/gate-retirement-selftest.sh" ]]; then
+  run_check "Gate retirement selftest (IMP-027 SCOPE-11)" bash "$SCRIPT_DIR/gate-retirement-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/gate-retirement.sh" ]]; then
+  run_check_self_only "Gate retirement criteria recorded (IMP-027 SCOPE-11)" bash "$SCRIPT_DIR/gate-retirement.sh" lint
+fi
 # IMP-027 SCOPE-4 / SEC-3: G034 was a businessInvariant gate with no enforcer
 # and no agent reference — its entire enforcement was "appears in a mode's
 # requiredGates list". These give it a mechanical surface.

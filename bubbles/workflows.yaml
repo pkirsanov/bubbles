@@ -53,6 +53,7 @@ gates:
   G005:
     name: evidence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: fabricated-evidence-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ mode-required ]
     description: Raw execution evidence is captured per policy.
   G006:
@@ -123,11 +124,13 @@ gates:
   G020:
     name: cross_agent_verification_gate
     classification: modelCompensation
+    retireWhen: { minTier: sonnet-class, metric: routing-omission-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ mode-required ]
     description: Each specialist agent's output MUST be verified by the orchestrator before advancing to the next phase. Verification includes checking that commands were actually executed (not fabricated), evidence exists, and exit codes are real.
   G021:
     name: anti_fabrication_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: fabricated-evidence-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:12 ]
     description: Detect and block fabricated evidence. Applies heuristics - evidence sections with fewer than 10 lines, evidence that matches expected output templates verbatim, DoD items batch-checked without sequential execution, timestamps that are impossible (all identical or out of order), and copy-pasted evidence where identical or near-identical terminal output blocks (≥80% similarity) appear across multiple DoD items within the same scope. Consolidates former G049 (evidence_clone_detection_gate). Enforced by state-transition-guard.sh Check 12 (enhanced). First-person execution or delegation claims in agent narration ("dispatched to X", "mid-flight", "resuming from session state", "tests pass") MUST correspond to an actual tool call, dispatch, or file read performed in the current session; a claim with no matching in-session action is fabrication, independent of whether any artifact is written. Operator-supplied context (pasted screenshots, terminal scrollback, another repository's logs or session state) is diagnostic input only and MUST NOT be restated as the agent's own execution evidence or used to infer a work mandate. (Composes with G129/IMP-103 for repository-selection authority.)
   G022:
@@ -148,16 +151,19 @@ gates:
   G025:
     name: per_dod_item_raw_evidence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: fabricated-evidence-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ script:bubbles/scripts/release-delivery-reconciliation-guard.sh ]
     description: ABSOLUTE BLOCKING gate. EVERY DoD item marked [x] MUST have raw terminal output evidence (≥10 lines) recorded INLINE directly beneath it in scopes.md. Items without evidence are INVALID even if checked. Each item MUST be individually validated — batch-checking is forbidden. Test-related DoD items MUST show real test execution covering ALL scenarios (Gherkin, error paths, boundary conditions, parameter permutations) with 100% business logic coverage. Tests MUST be real (no internal mocks, real test DBs, real assertions that fail if feature is broken). Agents MUST verify each [x] item has evidence before marking scope Done.
   G026:
     name: sla_stress_coverage_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: coverage-omission-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ guard-check:5A ]
     description: Scopes defining latency SLAs (p95, p99, response time targets) MUST have stress tests in the Test Plan and DoD, executed and passing with evidence.
   G027:
     name: phase_scope_coherence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: false-completion-claim-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:15 ]
     description: ABSOLUTE BLOCKING gate. Execution and certification phase records claiming implementation phases (implement, test) MUST have matching non-empty completedScopes AND Done scope artifacts. Claiming 6-7 lifecycle phases complete while completedScopes is empty or partial = FABRICATION. Guard script Check 15 enforces mechanically.
   G028:
@@ -227,12 +233,14 @@ gates:
   G040:
     name: incomplete_work_language_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: false-completion-claim-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:18 ]
     description: >-
       ABSOLUTE BLOCKING gate. Scope artifacts (scopes.md or scopes/*/scope.md) and report files MUST NOT contain deferral language indicating incomplete work (deferred, defer to, future scope, future work, follow-up, followup, out of scope, not in scope, will address later, revisit later, separate ticket, separate issue, punt, punted, postpone, postponed, skip for now, not implemented yet, not yet implemented, placeholder, temporary workaround) NOR pseudo-completion language indicating work claimed done but not finished (Next Steps headings, Recommended routing/resolution, Ready for /bubbles., Re-run /bubbles.validate, Commit the fix, Record DoD evidence, Run full E2E suite, [PENDING]). Consolidates former G065 (pseudo_completion_language_gate). Mechanically enforced by state-transition-guard.sh Check 18 and artifact-lint.sh. When this gate fails, the agent MUST either complete the deferred work NOW or remove the DoD item with justification.
   G041:
     name: dod_format_integrity_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: format-bypass-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ guard-check:4A, guard-check:4B ]
     description: >-
       ABSOLUTE BLOCKING gate. Prevents agents from bypassing DoD completion checks by reformatting checkbox items, inventing non-canonical scope statuses, or rewriting DoD item text. FOUR enforcement layers: (1) DoD FORMAT — Only '- [ ] ' and '- [x] ' are valid DoD item formats inside Definition of Done sections. Patterns like '- (deferred) ...', '- ~~...~~', '- *deferred* ...', or '- Text without checkbox' are FORBIDDEN manipulations. (2) SCOPE STATUS — Only four canonical statuses are valid: 'Not Started', 'In Progress', 'Done', 'Blocked'. Invented statuses like 'Deferred', 'Deferred — Planned Improvement', 'Skipped', 'N/A' are FORBIDDEN. (3) DoD ITEM DELETION — Removing DoD items to pass checkbox validation is structural fabrication. If a prior workflow phase added DoD items, they MUST remain as checkboxes until legitimately completed with evidence or explicitly removed with documented justification in the same commit. (4) DoD TEXT REWRITING — Modifying the behavioral claim in a DoD item's text description to match what was delivered instead of what the Gherkin scenario specified is CONTENT FABRICATION, semantically equivalent to deleting the original item and inventing a new one. Only bubbles.plan may modify DoD item text. Mechanically enforced by state-transition-guard.sh Checks 4A, 4B, and 22.
@@ -323,12 +331,14 @@ gates:
   G061:
     name: rework_packet_gate
     classification: modelCompensation
+    retireWhen: { minTier: sonnet-class, metric: routing-omission-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ script:bubbles/scripts/guards/control-plane-checks.sh ]
     description: >-
       BLOCKING gate for route-required findings. Diagnostic or certification phases that reopen work MUST emit structured transition or rework packets tied to concrete scenarios, DoD items, and owning specialists instead of narrative-only handoff text.
   G063:
     name: concrete_result_gate
     classification: modelCompensation
+    retireWhen: { minTier: sonnet-class, metric: routing-omission-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ guard-check:3G ]
     description: >-
       BLOCKING gate. Every agent or mapped-mode phase invocation MUST end with a concrete result shape: completed_owned, completed_diagnostic, route_required, or blocked. Narrative-only findings or generic advice are invalid. Route-required and blocked outcomes MUST include owner, reason, and scope/scenario/DoD references.
@@ -341,6 +351,7 @@ gates:
   G066:
     name: phase_claim_provenance_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: false-completion-claim-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:6B ]
     description: >-
       BLOCKING gate. Phase claims in completedPhaseClaims must have matching agent provenance in executionHistory. An agent may only record its own phase name; cross-phase impersonation is fabrication. Enforced by state-transition-guard.sh Check 6B.
@@ -353,6 +364,7 @@ gates:
   G068:
     name: dod_gherkin_content_fidelity_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: coverage-omission-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ guard-check:22 ]
     description: >-
       ABSOLUTE BLOCKING gate. DoD items MUST faithfully represent the behavioral claims of their source Gherkin scenarios. If a scope's Gherkin scenarios specify behavior X (e.g., "mock structs are removed and replaced with real test DB calls") but the DoD items describe behavior Y (e.g., "all files tagged for future migration"), the DoD has drifted from the spec and the scope MUST NOT be marked Done. This gate prevents execution agents from silently rewriting DoD item descriptions to match what was delivered instead of what was planned. Detection: cross-reference significant words from each Gherkin scenario against DoD item text using fuzzy matching. If a scenario's key behavioral claim has no corresponding DoD item preserving that claim, the gate fails. Enforced by traceability-guard.sh (Gherkin-to-DoD pass) and state-transition-guard.sh Check 22.
@@ -371,12 +383,14 @@ gates:
   G071:
     name: execution_only_validation_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: fabricated-evidence-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ unbound ]
     description: >-
       ABSOLUTE BLOCKING gate. Validation, audit, and verification commands (build, lint, test, guard scripts, artifact lint, traceability guard, implementation reality scan, etc.) MUST be executed via `run_in_terminal` (or equivalent direct tool invocation) in the current session. Reading the files that a script would check, performing equivalent pattern matching, and reporting predicted findings is FABRICATION — even if the predictions turn out to be accurate. The value of validation is that it runs the canonical script with its exact logic, not that an agent approximates that logic by reading files. Enforced behaviorally by bubbles.validate, bubbles.audit, and bubbles.test plus reinforced by tool-call provenance in evidence gates.
   G072:
     name: evidence_provenance_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: fabricated-evidence-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:12 ]
     description: >-
       ABSOLUTE BLOCKING gate. Every evidence block recording the outcome of a command MUST include a `**Claim Source:**` tag with one of three values: `executed` (command actually ran in this session), `interpreted` (command ran but the DoD claim requires inferring meaning from output), or `not-run` (command was not executed — DoD item MUST stay `[ ]` with an Uncertainty Declaration). Evidence labeled `executed` but containing summaries, predictions, or paraphrased output instead of raw terminal text is fabrication. Validate-owned remediation MUST downgrade mislabeled evidence and require re-execution. Enforced by bubbles.validate evidence review. No mechanical guard check currently scans the `**Claim Source:**` tag (state-transition-guard.sh Check 12 is duplicate and fabrication detection, not provenance-tag enforcement); a DoD-level mechanical enforcer for this tag is a tracked improvement.
@@ -389,18 +403,21 @@ gates:
   G074:
     name: workflow_mode_consistency_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: format-bypass-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ guard-check:2B ]
     description: >-
       BLOCKING gate. The top-level state.json `workflowMode` and `policySnapshot.workflowMode` MUST agree. These two fields are written by independent code paths and any divergence indicates that one was fabricated or that an agent silently switched modes mid-spec without an audit trail. Enforced by state-transition-guard.sh Check 2B.
   G075:
     name: scope_index_parity_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: format-bypass-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ guard-check:5B ]
     description: >-
       BLOCKING gate (per-scope-directory layout only). The status column of `scopes/_index.md` MUST match the `**Status:**` line of every linked `scopes/NN-name/scope.md`. Fabricated batch promotions historically updated individual scope.md files to "Done" while leaving _index.md showing "In Progress"; this gate detects that drift. Enforced by state-transition-guard.sh Check 5B.
   G076:
     name: phantom_scope_detection_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: false-completion-claim-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ guard-check:5C ]
     description: >-
       BLOCKING gate. Every entry in `state.json` `completedScopes` (and `certification.completedScopes`) MUST map to a real scope artifact on disk. Phantom entries that name scopes with no corresponding directory or `## Scope N:` heading are a documented fabrication pattern (e.g. a spec's "scope-15-stochastic-sweep-remediation"). Enforced by state-transition-guard.sh Check 5C.
@@ -413,6 +430,7 @@ gates:
   G078:
     name: batch_promotion_limit_gate
     classification: modelCompensation
+    retireWhen: { minTier: sonnet-class, metric: process-violation-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ script:bubbles/scripts/batch-promotion-lint.sh ]
     description: >-
       BLOCKING CI gate. A single git commit (or push range) MUST NOT promote more than one spec's `state.json` `status` to "done" without explicit override. Mass promotions are a documented fabrication pattern (one downstream batch promoted 33 specs in a single commit; another batch promoted 17 specs in a single commit). Enforced by `bubbles/scripts/batch-promotion-lint.sh` and the `state-transition-guard` GitHub Actions workflow.
@@ -449,12 +467,14 @@ gates:
   G084:
     name: pre_existing_deferral_block_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: false-completion-claim-rate, threshold: 0.005, window: 50 }
     enforcedBy: [ script:bubbles/scripts/pre-existing-deferral-guard-selftest.sh, script:bubbles/scripts/pre-existing-deferral-guard.sh ]
     description: >-
       BLOCKING gate. Forbids hiding pre-existing failures behind "out of session scope", "carried forward", or similar deferral language anywhere in a spec's `scope.md` or `report.md` artifacts. Enforced mechanically by `bubbles/scripts/pre-existing-deferral-guard.sh`, which recursively scans every `scopes/*/scope.md` and `scopes/*/report.md` under the spec directory for two classes of marker. (1) Forbidden phrases (case-insensitive substring match): "pre-existing failure", "pre-existing test failure", "carried forward", "out of session scope", "previous-session failure", "not introduced by this spec". (2) Forbidden deferral markers (colon-anchored, case-sensitive): `TODO:`, `FIXME:`, `HACK:`, `STUB:`. Three exempt H2 subsections — `## Superseded Decisions`, `## Historical Notes`, and `## Out of Scope` — are skipped so historical traceability is preserved. Content inside inline backticks (\`...\`) and inside fenced code blocks (```...```) is also stripped so enumeration prose and captured raw terminal output never self-trigger. The guard exits 0 (no active markers), 1 (at least one active marker — promotion to `done` blocked), or 2 (missing/invalid specDir argument). State-transition-guard.sh invokes this guard as Check 25. Any active hit MUST be remediated inline (fix the deferred failure, not the language); never emit a `done` RESULT-ENVELOPE while a hit remains. Hermetic selftest: `bubbles/scripts/pre-existing-deferral-guard-selftest.sh`. Persistent regression: `tests/regression/test_03_pre_existing_deferral_guard.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
   G085:
     name: framework_dogfood_evidence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: framework-evidence-omission-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ guard-check:26 ]
     description: >-
       BLOCKING gate. The Bubbles framework MUST prove it can drive work to certification under the same chain it imposes on consumers, but the Bubbles source repository itself MUST NOT keep persistent repo-local `specs/` execution packets. In the source repo, dogfood evidence comes from `framework-validate.sh`, hermetic selftests, `bubbles/release-manifest.json`, and downstream or fixture specs. Enforced mechanically by `bubbles/scripts/framework-dogfood-guard.sh`, which detects the canonical source checkout, fails if `specs/` exists there, and verifies the validation/release evidence surfaces are present. Downstream and hermetic fixture repositories pass through either `G085-CURRENT-DONE` when at least one current numbered top-level state has exact `.status == "done"`, or `G085-FIRST-ADOPTION` when one or more valid current numbered states exist, current done is zero, the requested root is the exact full non-shallow/non-partial Git worktree, complete traversal of all locally reachable refs succeeds, and no reachable numbered top-level state blob has exact `.status == "done"`. Reachable prior done evidence with zero current done exits 1 as `E085-ESTABLISHED-DONE-REMOVED`; no current numbered state exits 1 as `E085-NO-CURRENT-SPEC`. Missing, shallow, partial, malformed, or failed history and malformed current state exit 2 with distinct `E085-*` integrity codes. State-transition-guard.sh invokes this guard as Check 26. Hermetic selftest: `bubbles/scripts/framework-dogfood-guard-selftest.sh`. Persistent regression: `tests/regression/test_04_framework_dogfooding.sh`. Wired into `bubbles/scripts/framework-validate.sh`. Cross-references: G082 (convergence cap), G083 (compaction discipline), G084 (pre-existing deferral) — G082/G083/G084 keep individual execution packets honest; G085 keeps the framework evidence model honest without storing source-repo specs.
@@ -485,6 +505,7 @@ gates:
   G090:
     name: retro_convergence_health_evidence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: framework-evidence-omission-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ script:bubbles/scripts/retro-convergence-health-selftest.sh, script:bubbles/scripts/retro-convergence-health.sh ]
     description: >-
       BLOCKING gate. Retrospectives MUST surface a Convergence Health section backed by session data rather than narrative impressions. Enforced mechanically by `bubbles/scripts/retro-convergence-health.sh`, which reads `.specify/memory/bubbles.session.json` or an explicit transcript/session-store export, computes the legacy R7 metrics (`avgLoopIterations`, `maxConvergenceIterations`, `compactionFrequency`, `preExistingDeferralCount`, `snapshotCompleteness`) plus the retro output schema `convergenceHealth: {recapCount, handoffCount, summarizeHistoryCount, turnCount, slo}`, and exits 0 for `pass`/`degraded`, 1 for `failed`, or 2 for usage/runtime errors. More than 2 combined recap/handoff invocations is a P0 convergence regression and forces `slo: failed`. State-transition-guard.sh invokes this guard as Check 33. Hermetic selftest: `bubbles/scripts/retro-convergence-health-selftest.sh`. Persistent regression: `tests/regression/test_07_retro_convergence_health.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
@@ -497,6 +518,7 @@ gates:
   G092:
     name: strict_terminal_status_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: format-bypass-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ script:bubbles/scripts/strict-terminal-status-guard-selftest.sh, script:bubbles/scripts/strict-terminal-status-guard.sh ]
     description: >-
       BLOCKING gate. New delivery certification writes MUST use only `done` or `blocked` as terminal statuses. Non-blocking notes live in `observations[]`, `certification.observations[]`, or an equivalent non-status collection and never alter terminal status, waive gates, or satisfy missing evidence. Legacy `done_with_concerns` is read-only compatibility only for old untouched specs; when touched or recertified, it MUST migrate to `done` plus observations if all gates pass, or `blocked` when required work remains. High-severity or remediation-required observations cannot accompany `done`. Enforced mechanically by `bubbles/scripts/strict-terminal-status-guard.sh`, which exits 0 (clean), 1 (G092 findings), or 2 (runtime error / malformed input). State-transition-guard.sh invokes this guard as Check 32. Hermetic selftest: `bubbles/scripts/strict-terminal-status-guard-selftest.sh`. Persistent regression: `tests/regression/test_16_strict_terminal_status.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
@@ -685,6 +707,7 @@ gates:
   G125:
     name: framework_health_evidence_gate
     classification: modelCompensation
+    retireWhen: { minTier: opus-class, metric: framework-evidence-omission-rate, threshold: 0.01, window: 30 }
     enforcedBy: [ script:bubbles/scripts/framework-health-evidence-lint.sh, script:bubbles/scripts/retro-framework-health.sh ]
     description: >-
       BLOCKING gate for the `framework-health` workflow mode. `bubbles.retro target: framework` MUST emit an improvement proposal under `improvements/IMP-NNN-<slug>.md` referencing the input data sources analyzed (`.specify/runtime/framework-events.jsonl`, `workflow-runs.json`, `bubbles/capability-ledger.yaml`). The proposal MUST NOT auto-mutate `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` — proposal-first, human reviewed. Generated by `bubbles/scripts/retro-framework-health.sh` (which writes only to `improvements/`) and independently VERIFIED by `bubbles/scripts/framework-health-evidence-lint.sh`, which re-derives index presence, declared status, evidence citation, index row, generator containment, and proposal traceability. Owned by `bubbles.retro`.
@@ -726,6 +749,7 @@ gates:
   G128:
     name: session_cap_enforcement_gate
     classification: modelCompensation
+    retireWhen: { minTier: sonnet-class, metric: process-violation-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ script:bubbles/scripts/session-cap-guard-selftest.sh, script:bubbles/scripts/session-cap-guard.sh ]
     description: >-
       BLOCKING gate. Mechanically enforces the IMP-003 `sessionBudget` aggregate safety caps for a whole goal/sprint session — the AGGREGATE sibling of Gate G082. Where G082 caps convergence iterations PER (specDir, agent) using `maxConvergenceIterations` from `bubbles/workflows.yaml`, G128 caps the AGGREGATE usage across the WHOLE session (every spec, every agent) using a `sessionBudget` object recorded in `.specify/memory/bubbles.session.json` with three dimensions: `maxTotalConvergenceIterations` (aggregate sum of `convergenceLoops[].iterationCount`), `maxWallClockMinutes` (earliest → latest `turnSnapshots[].timestamp`, in minutes), and `maxToolCalls` (aggregate `toolCallCount` counter). DEFAULT-OFF for every existing repo: if the session file has no `sessionBudget`, or ALL THREE caps are null/absent, the guard exits 0 and nothing is enforced. A dimension whose cap is null is not enforced; a dimension whose cap is set but whose usage data is absent (no `turnSnapshots[]`, no `toolCallCount`) is skipped — you cannot breach what you cannot measure. Only when a non-null cap is present AND its aggregate is measurable does the guard compare them. RFC3339 timestamps are parsed with jq's `fromdateiso8601` (not the system `date`), so wall-clock math is identical on GNU (WSL/Linux) and BSD (macOS) userland. Enforced mechanically by `bubbles/scripts/session-cap-guard.sh` (exit 0 = no active budget / no cap exceeded; exit 1 = an active aggregate cap exceeded — stderr names the breached dimension(s) and observed-vs-cap; exit 2 = unparseable session.json / non-integer cap or counter / bad usage). State-transition-guard.sh invokes this guard as Check 40 (a NO-OP when no budget is recorded). Exceeding a cap MUST emit a `blocked` RESULT-ENVELOPE with finding `G128` and STOP the session (no further specs/scopes). There is NO `--skip`/`--force`/`--ignore` bypass (matches G082). Hermetic selftest: `bubbles/scripts/session-cap-guard-selftest.sh`. Persistent regression: `tests/regression/test_22_session_cap_enforcement.sh`. Wired into `bubbles/scripts/framework-validate.sh` (selftest + live guard). Cross-reference: G082 (per-spec convergence cap) — G082 keeps a single spec's loop honest; G128 keeps the whole session's aggregate honest. Reference: improvements/IMP-003-autonomy-dial-and-safety-caps.md (SCOPE-2).

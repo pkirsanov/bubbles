@@ -105,12 +105,6 @@ Remaining, each still blocked or independently large:
 - **Clone detection:** hash-compare receipts instead of 80 %-similarity over text.
 - Retain lexical scans strictly as **smell detectors feeding advisories**, never as the primary verdict.
 
-### SCOPE-11 — Strategic: plan the framework's own obsolescence curve (COV-3 follow-on)
-
-- For each `modelCompensation` gate, record a **retirement criterion** in the registry (e.g. `retireWhen: golden-task fabrication rate < 2% over 20 runs at model tier >= N`).
-- Connect the existing `bubbles/scripts/model-tier-advisory.sh`: on a stronger declared model tier, downgrade or skip specific `modelCompensation` gates and use the delivered golden-task corpus to **measure** whether quality holds.
-- This converts Bubbles from a fixed 112-gate tax into an adaptive assurance system that gets cheaper as models improve. Without it, cost stays permanently pinned to the weakest model the framework ever had to survive.
-
 ---
 
 ## Migration / rollout
@@ -121,7 +115,6 @@ Ordering matters; several scopes unblock others.
 |---|---|---|
 | 5 | SCOPE-6 | **Must not** land before the golden-task corpus shows a zero-regression eval — the explicit R3 condition in `operating-baseline.md`. |
 | 6 | SCOPE-3, SCOPE-8 | Behavior-changing for evidence acceptance. Ship `receipt-preferred` default first (no-op), let downstream repos adopt `tool-log.sh` wrapping, then flip done-ceiling modes to `receipt-required` a version later. SCOPE-8's `SCN-*` requirement needs a planning-artifact migration window. |
-| 7 | SCOPE-11 | Requires the delivered gate classification and the delivered corpus. |
 
 Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and SCOPE-8, which are the only two requiring a downstream migration window.
 
@@ -144,7 +137,6 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 - **SCOPE-3:** under `evidenceMode: receipt-required`, a DoD item backed only by a 10-line prose block causes `state-transition-guard.sh` to exit **1**; under `receipt-preferred` it still passes with an advisory. `evidence-receipt-check.sh --strict` runs in the transition path. `README.md:46` matches observed behavior.
 - **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the corpus eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
 - **SCOPE-8:** every DoD item in the reference examples carries an `SCN-*` reference; G068's word-overlap matcher is removed from the verdict path; the `docs/issues/G068-*` false-positive case now passes.
-- **SCOPE-11:** every `modelCompensation` gate carries a `retireWhen` criterion; `model-tier-advisory.sh` can produce a report of which gates would be skipped at a given tier.
 
 ---
 
@@ -187,6 +179,6 @@ Remediation must not weaken these verified-working controls:
 - **`eval-harness.sh` fails closed** on missing `python3`. The shared dependency-posture helper generalizes this posture; it must not invert it.
 - **`metrics` refusing to track `dollarCost`** because *"Derived from unknown tokens = fabricated"*. SCOPE-6 adds only exactly-computable proxies.
 - **Artifact ownership + the closed result-envelope vocabulary** (`completed_owned` / `completed_diagnostic` / `route_required` / `blocked`).
-- **`gateClassification`'s `modelCompensation` / `businessInvariant` split** — the only principled path to shedding scaffolding as models improve. SCOPE-11 extends it; nothing may collapse it.
+- **`gateClassification`'s `modelCompensation` / `businessInvariant` split** — the only principled path to shedding scaffolding as models improve. The delivered `retireWhen` criteria (`bubbles/scripts/gate-retirement.sh`) hang off it; nothing may collapse it. Nor may a `retireWhen` criterion be moved onto a `businessInvariant` or `hybrid` gate — those hold regardless of executor and never retire, and the lint refuses it.
 - **The repository-binding subsystem** (session-bound, control-revision, digest-verified work boundary) and its ~6,000 lines of selftest, fully wired via `framework-validate.sh:363`. The selftest discovery sweep must keep the `cli.sh repository-binding-selftest --suite=all` aggregate invocation intact.
 - **`install.sh` payload integrity verification** against `release-manifest.json` checksums, with its explicit *"INTEGRITY only, not authenticity"* disclosure. The delivered fail-closed branch must not disturb this design.

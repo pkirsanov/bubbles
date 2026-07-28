@@ -2500,6 +2500,29 @@ for a in d.get('agents',[]):
   fi
 
   echo ""
+  echo -e "${BOLD}Gate Obsolescence${NC}"
+  echo -e "${DIM}IMP-027 SCOPE-11. Records what would have to be MEASURED before a model-compensation gate could retire, so the gate tax has a stated expiry instead of being carried forever by default.${NC}"
+  echo ""
+
+  if [[ -x "$SCRIPT_DIR/gate-retirement.sh" ]]; then
+    retire_out="$(bash "$SCRIPT_DIR/gate-retirement.sh" lint 2>&1 || true)"
+    retire_missing="$(grep -c 'retirement-missing' <<<"$retire_out" || true)"
+    retire_bad="$(grep -c 'retirement-malformed\|retirement-illegal' <<<"$retire_out" || true)"
+    if [[ "$retire_missing" -eq 0 && "$retire_bad" -eq 0 ]]; then
+      retire_n="$(bash "$SCRIPT_DIR/gate-retirement.sh" report 2>/dev/null |
+        sed -n 's/^gate obsolescence curve — \([0-9]*\) .*/\1/p' | head -1)"
+      echo -e "  ${GREEN}✅${NC} all ${retire_n:-0} model-compensation gate(s) declare a retirement criterion"
+      passed=$((passed + 1))
+    else
+      echo -e "  ${YELLOW}⚠️${NC}  ${retire_missing} gate(s) with no criterion, ${retire_bad} malformed"
+      echo -e "  ${DIM}Run: gate-retirement.sh bind${NC}"
+    fi
+    echo -e "  ${DIM}Recording a criterion retires nothing. Every criterion is currently UNMET on its evidence half: no harness drives a model across the corpus to produce these rates, so tier eligibility alone is not clearance. See: model-tier-advisory.sh retirement${NC}"
+  else
+    echo -e "  ${YELLOW}⚠️${NC}  gate-retirement.sh unavailable; cannot report the obsolescence curve."
+  fi
+
+  echo ""
   echo -e "${BOLD}Golden-Task Corpus${NC}"
   echo -e "${DIM}IMP-027 SCOPE-5. Scores output QUALITY, not gate-pass. This is the regression baseline for framework and model upgrades — and the only place the Honesty Incentive is measured, via a task whose correct outcome is an unchecked box.${NC}"
   echo ""
