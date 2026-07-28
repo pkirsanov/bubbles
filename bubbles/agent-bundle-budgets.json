@@ -2,7 +2,7 @@
   "bubbles.analyst.agent.md": 143127,
   "bubbles.audit.agent.md": 167781,
   "bubbles.bug.agent.md": 178838,
-  "bubbles.chaos.agent.md": 195988,
+  "bubbles.chaos.agent.md": 205983,
   "bubbles.clarify.agent.md": 107867,
   "bubbles.code-review.agent.md": 16873,
   "bubbles.commands.agent.md": 59749,
@@ -39,5 +39,5 @@
   "bubbles.upkeep.agent.md": 18001,
   "bubbles.ux.agent.md": 135770,
   "bubbles.validate.agent.md": 224245,
-  "bubbles.workflow.agent.md": 505822
+  "bubbles.workflow.agent.md": 531140
 }

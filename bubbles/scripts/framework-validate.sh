@@ -71,7 +71,24 @@ declare -a failed_check_labels=()
 FRAMEWORK_VERSION="unknown"
 [[ -f "$REPO_ROOT/VERSION" ]] && FRAMEWORK_VERSION="$(tr -d '[:space:]' <"$REPO_ROOT/VERSION" 2>/dev/null || echo unknown)"
 # shellcheck source=bubbles/scripts/validate-cache.sh
-[[ -f "$SCRIPT_DIR/validate-cache.sh" ]] && source "$SCRIPT_DIR/validate-cache.sh"
+# IMP-027 SCOPE-7 cache helpers. Sourced ONLY when the file actually defines the
+# cache API. `source` runs in THIS shell, so a sibling that merely exits would
+# terminate framework-validate mid-run — and because it exits 0, the run would
+# look like a silent PASS that validated nothing. Confirming the function is
+# defined before sourcing keeps a malformed or stubbed sibling from being able
+# to end the validation run.
+#
+# The check uses ONLY bash builtins (`$(<file)` + glob compare). An external
+# `grep` here runs before the portability harness has a full PATH and shows up
+# as an unexpected command invocation in the BUG-021 deadline regression, which
+# asserts the canonical success path shells out to nothing optional.
+if [[ -f "$SCRIPT_DIR/validate-cache.sh" ]]; then
+  _validate_cache_src="$(<"$SCRIPT_DIR/validate-cache.sh")"
+  if [[ "$_validate_cache_src" == *"validate_cache_key()"* ]]; then
+    source "$SCRIPT_DIR/validate-cache.sh"
+  fi
+  unset _validate_cache_src
+fi
 
 # Paths the working tree has modified relative to HEAD, resolved once.
 CHANGED_PATHS=""
@@ -128,7 +145,25 @@ LIST_TIER_ONLY="false"
 #                 enumeration habit is what COV-2 was.
 # --no-cache      ignore the hermetic-selftest result cache for this run.
 CHANGED_ONLY="false"
-CACHE_ENABLED="true"
+# IMP-027 SCOPE-7: the result cache is OPT-IN (--cache), never on by default.
+#
+# Two independent reasons, both found by tests rather than by reasoning:
+#
+#  1. CORRECTNESS. validate_cache_key() hashes only the SELFTEST file, not the
+#     script under test. A `foo-selftest.sh` that exercises `foo.sh` therefore
+#     keeps returning a cached PASS after `foo.sh` changes — the same staleness
+#     class that guard Check 43 exists to catch in evidence. Until the key
+#     covers the tested surface, a cached PASS is not a proof.
+#
+#  2. IT DEFEATS DEADLINE ENFORCEMENT. tests/regression/test_28 mutates this
+#     validator to prove an overdue target gets killed by the watchdog. A cached
+#     result returns instantly, so the target never runs long enough to be
+#     killed, `mac.finished` appears, and the deadline assertion fails. A cache
+#     that can suppress a safety mechanism must not be the default.
+#
+# Speed is worth having, but only when explicitly requested by someone who knows
+# the run is not exercising timing or a changed script under test.
+CACHE_ENABLED="false"
 cache_hits=0
 for _arg in "$@"; do
   case "$_arg" in
@@ -138,13 +173,15 @@ for _arg in "$@"; do
       LIST_TIER_ONLY="true"
       ;;
     --changed-only) CHANGED_ONLY="true" ;;
+    --cache) CACHE_ENABLED="true" ;;
     --no-cache) CACHE_ENABLED="false" ;;
     -h | --help)
-      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full] [--changed-only] [--no-cache]"
+      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full] [--changed-only] [--cache] [--no-cache]"
       echo "  (no flag)        run every check (full tier — unchanged default)"
       echo "  --tier=core      run only the fast structural/lint/generator subset"
       echo "  --list-tier=core dry-list what the core tier runs/skips, then exit 0"
       echo "  --changed-only   run only checks whose owned surface the tree touched"
+      echo "  --cache          OPT IN to the hermetic-selftest result cache (off by default)"
       echo "  --no-cache       ignore the hermetic-selftest result cache"
       exit 0
       ;;
@@ -373,7 +410,12 @@ if [[ -x "$SCRIPT_DIR/security-gate.sh" ]]; then
   run_check_self_only "Security gate (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate.sh" --repo-root "$REPO_ROOT"
 fi
 if [[ -x "$SCRIPT_DIR/security-gate-selftest.sh" ]]; then
-  run_check "Security gate selftest (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate-selftest.sh"
+  # self-only, like its sibling above: a selftest validates framework SOURCE and
+  # has no meaning in a downstream/fixture tree. Registering it as a plain
+  # run_check made it execute inside minimal fixture repos and changed their
+  # aggregate failure count, which broke the BUG-021 deadline regression's
+  # "exactly 1 failing check" contract.
+  run_check_self_only "Security gate selftest (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate-selftest.sh"
 fi
 # IMP-027 SCOPE-6 / COST-1: distance-to-target and the dispatch-weighted cost
 # proxy. The report itself is advisory (a ratchet stops growth but never states

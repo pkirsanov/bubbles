@@ -36,15 +36,15 @@ Corroborating (grep-derived, advisory) numbers:
 
 | Gate | Name | Enforced By (declared) | # Modes | state-transition-guard | framework-validate scripts | CI |
 | --- | --- | --- | --- | --- | --- | --- |
-| G001 | artifact_gate | `mode-required` | 55 | — | 9 | — |
-| G002 | scope_definition_gate | `mode-required` | 23 | — | 3 | — |
-| G003 | test_integrity_gate | `mode-required` | 25 | — | 3 | — |
-| G004 | test_execution_gate | `mode-required` | 25 | — | 1 | — |
-| G005 | evidence_gate | `mode-required` | 25 | — | 2 | — |
-| G006 | docs_sync_gate | `mode-required` | 46 | — | — | — |
-| G007 | validation_gate | `mode-required` | 48 | — | — | — |
-| G008 | audit_gate | `mode-required` | 42 | — | — | — |
-| G009 | chaos_gate | `mode-required` | 26 | — | 2 | — |
+| G001 | artifact_gate | `mode-required` | 55 | — | 11 | — |
+| G002 | scope_definition_gate | `mode-required` | 23 | — | 5 | — |
+| G003 | test_integrity_gate | `mode-required` | 25 | — | 5 | — |
+| G004 | test_execution_gate | `mode-required` | 25 | — | 2 | — |
+| G005 | evidence_gate | `mode-required` | 25 | — | 3 | — |
+| G006 | docs_sync_gate | `mode-required` | 46 | — | 1 | — |
+| G007 | validation_gate | `mode-required` | 48 | — | 1 | — |
+| G008 | audit_gate | `mode-required` | 42 | — | 1 | — |
+| G009 | chaos_gate | `mode-required` | 26 | — | 3 | — |
 | G010 | user_validation_gate | `mode-required` | 31 | — | 1 | — |
 | G011 | session_gate | `mode-required` | 55 | — | — | — |
 | G012 | final_promotion_gate | `mode-required` | 55 | — | — | — |
@@ -55,7 +55,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G018 | dod_completion_gate | `mode-required` | 22 | — | 1 | — |
 | G019 | sequential_spec_completion_gate | `mode-required` | 25 | — | — | — |
 | G020 | cross_agent_verification_gate | `mode-required` | 25 | — | 1 | — |
-| G021 | anti_fabrication_gate | `guard-check:12` | 25 | Check 20 | 4 | guard |
+| G021 | anti_fabrication_gate | `guard-check:12` | 25 | Check 20 | 5 | guard |
 | G022 | specialist_completion_gate | `guard-check:6B` | 25 | Check 6B | 5 | guard |
 | G023 | state_transition_guard_gate | `mode-required` | 25 | — | — | — |
 | G024 | all_scopes_done_before_spec_done_gate | `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 25 | ref | 3 | guard |
