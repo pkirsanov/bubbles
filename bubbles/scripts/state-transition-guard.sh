@@ -2243,6 +2243,9 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
       unique_match_count="$({ printf '%s\n' "$unique_match" | grep -c .; } || true)"
       if [[ "$unique_match_count" -eq 1 ]]; then
         warn "Test Plan uses basename-only path '$test_path'; uniquely resolved to $(echo "$unique_match" | sed "s#^$feature_dir/../..##")"
+      elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
+        info "Future implementation-owned file is not physically required at planning maturity: $test_path"
+        missing_test_files=$((missing_test_files + 1))
       else
         record_failed_check Check-8-contract
         fail "Test Plan references non-existent or non-resolvable file: $test_path"

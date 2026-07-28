@@ -2648,6 +2648,47 @@ EOF
   fi
 fi
 
+echo "Running Check 8 basename-only planning-maturity exemption (flat-layout root deliverables)..."
+# A flat-layout repository keeps its deliverables at the repository root (for example
+# `rldata.js`), so a planned NEW root-level module can only be referenced by basename —
+# there is no directory to prefix. Before the fix, Check 8 evaluated its basename-only
+# branch BEFORE the planning-maturity exemption, so an unresolvable basename hard-failed
+# while an equivalent slash path (`tests/foo.spec.mjs`) was exempt. That asymmetry made
+# the planning ceiling unreachable for flat-layout repositories.
+check8_basename_planning_dir="$tmp_root/specs/931-check8-basename-planning"
+check8_basename_delivery_dir="$tmp_root/specs/932-check8-basename-delivery"
+emit_honest_planning_fixture "$check8_basename_planning_dir"
+emit_honest_planning_fixture "$check8_basename_delivery_dir"
+for check8_basename_dir in "$check8_basename_planning_dir" "$check8_basename_delivery_dir"; do
+  bubbles_sed_inplace \
+    's;^| Broader regression |.*$;| Broader regression | `regression` | `rlbasenameonlyfixture.js` | Preserve planning and delivery profile isolation. | `bash rlbasenameonlyfixture.js` | No |;' \
+    "$check8_basename_dir/scopes.md"
+done
+set_fixture_contract "$check8_basename_delivery_dir/state.json" "autonomous-goal" "done"
+
+check8_basename_planning_log="$tmp_root/check8-basename-planning.log"
+check8_basename_planning_status="$(run_capture "$check8_basename_planning_log" bash "$GUARD_SCRIPT" "$check8_basename_planning_dir")"
+if [[ "$check8_basename_planning_status" -eq 0 ]]; then
+  pass "Check 8: planning maturity exempts an unresolvable basename-only root deliverable"
+else
+  fail "Check 8: planning maturity should exempt a basename-only root deliverable (observed $check8_basename_planning_status)"
+  sed -n '1,260p' "$check8_basename_planning_log"
+fi
+assert_log_not_contains "$check8_basename_planning_log" "non-existent or non-resolvable file: rlbasenameonlyfixture.js" "Check 8: planning maturity emits no basename-only resolution failure"
+assert_log_contains "$check8_basename_planning_log" "planning maturity: rlbasenameonlyfixture.js" "Check 8: basename-only root deliverable is reported as a future implementation-owned file"
+
+# Adversarial half: the exemption MUST stay profile-scoped. Under delivery completion the
+# same unresolvable basename still hard-fails, so "fixing" the bug by deleting the check
+# outright — rather than gating it on the audit profile — regresses this assertion.
+check8_basename_delivery_log="$tmp_root/check8-basename-delivery.log"
+check8_basename_delivery_status="$(run_capture "$check8_basename_delivery_log" bash "$GUARD_SCRIPT" "$check8_basename_delivery_dir")"
+if [[ "$check8_basename_delivery_status" -eq 1 ]]; then
+  pass "Check 8 adversarial: delivery completion still rejects an unresolvable basename-only path"
+else
+  fail "Check 8 adversarial: delivery completion must still reject an unresolvable basename-only path (observed $check8_basename_delivery_status)"
+fi
+assert_log_contains "$check8_basename_delivery_log" "non-existent or non-resolvable file: rlbasenameonlyfixture.js" "Check 8 adversarial: delivery completion retains basename-only enforcement"
+
 echo "----------------------------------------"
 if [[ "$failures" -gt 0 ]]; then
   echo "state-transition-guard selftest failed with $failures issue(s)."
