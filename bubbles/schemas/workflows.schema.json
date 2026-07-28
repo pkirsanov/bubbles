@@ -23,8 +23,12 @@
               "type": "string",
               "minLength": 10
             },
-            "enforcedBy": {
-              "description": "IMP-027 SCOPE-2a. Declares the surface(s) that actually enforce this gate, so docs/generated/gate-coverage-map.md is derived from a declaration instead of inferred by grepping gate IDs out of scripts. 'mode-required' means a mode demands the gate but no dedicated mechanical enforcer implements it; 'unbound' means no enforcement surface exists and is deliberately left visible rather than hidden behind a plausible-looking binding.",
+            "classification": {
+              "description": "IMP-027 SCOPE-2c. modelCompensation gates exist because models are unreliable and SHOULD retire as models improve; businessInvariant gates encode a rule that holds regardless of executor and never retire; hybrid is genuinely both. Without this split there is no way to answer which gates could ever be turned off.",
+              "type": "string",
+              "enum": ["modelCompensation", "businessInvariant", "hybrid"]
+            },
+            "enforcedBy": {              "description": "IMP-027 SCOPE-2a. Declares the surface(s) that actually enforce this gate, so docs/generated/gate-coverage-map.md is derived from a declaration instead of inferred by grepping gate IDs out of scripts. 'mode-required' means a mode demands the gate but no dedicated mechanical enforcer implements it; 'unbound' means no enforcement surface exists and is deliberately left visible rather than hidden behind a plausible-looking binding.",
               "type": "array",
               "minItems": 1,
               "items": {

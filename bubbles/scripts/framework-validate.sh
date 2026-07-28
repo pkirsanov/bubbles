@@ -250,6 +250,12 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-enforcement-selftest.sh" ]]; then
   run_check "Gate enforcement selftest (IMP-027 SCOPE-2a)" bash "$SCRIPT_DIR/gate-enforcement-selftest.sh"
 fi
+# IMP-027 SCOPE-2c: every gate must declare whether it compensates for model
+# unreliability (and can retire as models improve) or encodes a business
+# invariant (and never can). 99 of 112 were unclassified.
+if [[ -x "$SCRIPT_DIR/gate-classification.sh" ]]; then
+  run_check_self_only "Gate classification complete (IMP-027 SCOPE-2c)" bash "$SCRIPT_DIR/gate-classification.sh" lint --repo-root "$REPO_ROOT"
+fi
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
   run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
 fi

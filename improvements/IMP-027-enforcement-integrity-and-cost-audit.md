@@ -110,9 +110,8 @@ Scopes are ordered by (severity × cheapness). SCOPE-2 removes the root cause; t
 
 ### SCOPE-2 — Derive coverage instead of enumerating it (COV-1, COV-2, COV-3, REG-1)
 
-The uniform fix for the root cause. Two sub-changes remain, each independently landable:
+The uniform fix for the root cause. One sub-change remains:
 
-- **2c — Require gate classification.** Classify all 112 gates in `bubbles/workflows.yaml::gateClassification` as `modelCompensation`, `businessInvariant`, or a new `hybrid`. Add a lint failing on any unclassified gate. This is the prerequisite for SCOPE-8.
 - **2d — Single-source the gate bands.** Delete the dead `customGatesDiscovery.idRange: G100+` key (no script reads it) or correct it to `G900+`; **recommendation: correct rather than delete**, since a downstream author will look for it. Generate the "currently uses G001-G095 plus G110-G125" strings in `bubbles/workflows.yaml:25-26` and `docs/recipes/custom-gates.md:53` from `bubbles/registry/gates.yaml` at generation time. Add a band-consistency assertion to `gates-registry-selftest.sh`.
 
 ### SCOPE-3 — Make receipt-backed evidence the primary rail (EV-1, EV-2)
