@@ -596,6 +596,15 @@ if [[ -x "$SCRIPT_DIR/retro-framework-health-selftest.sh" ]]; then
   run_check "Retro framework-health selftest" bash "$SCRIPT_DIR/retro-framework-health-selftest.sh"
 fi
 
+# IMP-027 SCOPE-9: G125 had ZERO enforcer scripts. retro-framework-health.sh is
+# the generator, not a verifier. These two run the independent check.
+if [[ -x "$SCRIPT_DIR/framework-health-evidence-lint-selftest.sh" ]]; then
+  run_check "Framework-health evidence lint selftest (G125, IMP-027 SCOPE-9)" bash "$SCRIPT_DIR/framework-health-evidence-lint-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/framework-health-evidence-lint.sh" ]]; then
+  run_check_self_only "Framework-health evidence lint (live, G125)" bash "$SCRIPT_DIR/framework-health-evidence-lint.sh" --repo-root "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/intent-routes-lint-selftest.sh" ]]; then
   run_check "Intent routes lint selftest" bash "$SCRIPT_DIR/intent-routes-lint-selftest.sh"
 fi

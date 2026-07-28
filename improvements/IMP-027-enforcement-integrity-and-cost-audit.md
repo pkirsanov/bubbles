@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COV-1, COV-2, COV-3, COST-1, COST-2, PERF-1, REG-1, REG-2
+**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COV-1, COV-2, COV-3, COST-1, COST-2, PERF-1, REG-1
 
 ---
 
@@ -102,8 +102,6 @@ Coverage is **asserted from hand-written lists** rather than **derived from the 
 
   `gates-registry-selftest.sh` verifies only byte-parity of the generated block against the registry, not semantic band consistency.
 
-- **REG-2 — the improvements surface is incomplete and G125 has no enforcer.** `improvements/TEMPLATE.md` instructs authors to *"add a row to improvements/INDEX.md"*, but `improvements/` contains **only `TEMPLATE.md`** — `INDEX.md` does not exist. G125 (`framework_health_evidence_gate`) is declared **BLOCKING** in the registry and requires `bubbles.retro target: framework` to emit `improvements/IMP-NNN-<slug>.md`; `grep -rln 'G125' bubbles/scripts/*.sh` returns **zero enforcer scripts**, and G125 appears in the COV-1 zero-mechanical-surface list.
-
 ---
 
 ## Proposal
@@ -168,11 +166,6 @@ The keystone: the harness is built and already fails closed; only the corpus is 
 - **Clone detection:** hash-compare receipts instead of 80 %-similarity over text.
 - Retain lexical scans strictly as **smell detectors feeding advisories**, never as the primary verdict.
 
-### SCOPE-9 — Complete the improvements surface and G125 (REG-2)
-
-- Create `improvements/INDEX.md` with the columns the template implies (IMP ID, title, status, surface, date, gap codes) and seed it with this proposal.
-- Implement a `bubbles/scripts/framework-health-evidence-lint.sh` enforcing G125: the emitted `improvements/IMP-NNN-*.md` must exist, cite its input data sources, carry `Status:`, and must not have mutated `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` in the same commit. Wire it into `framework-validate.sh` (via SCOPE-2b glob discovery) and record it as `enforcedBy: script:...` per SCOPE-2a.
-
 ### SCOPE-11 — Strategic: plan the framework's own obsolescence curve (COV-3 follow-on)
 
 - For each `modelCompensation` gate, record a **retirement criterion** in the registry (e.g. `retireWhen: golden-task fabrication rate < 2% over 20 runs at model tier >= N`).
@@ -187,8 +180,7 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 1 | SCOPE-9 | Small, additive/corrective, no behavior change for passing repos. Land first. |
-| 2 | SCOPE-2 (2a→2b→2c→2d) | Structural. 2a is a registry schema addition (additive; generator keeps byte-parity). 2b changes discovery only. Land 2a before 2b so newly-discovered checks have enforcement bindings. |
+| 1 | SCOPE-2 (2a→2b→2c→2d) | Structural. 2a is a registry schema addition (additive; generator keeps byte-parity). 2b changes discovery only. Land 2a before 2b so newly-discovered checks have enforcement bindings. |
 | 3 | SCOPE-4 | SEC-1 is gated on a new manifest capability flag, so it is non-breaking for existing payloads. SEC-2 ships advisory-first (`BUBBLES_ALLOW_DEGRADED` logged), then blocking one minor version later. |
 | 4 | SCOPE-5 | Pure addition. No existing behavior changes. Prerequisite for waves 5–6. |
 | 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before SCOPE-5 produces a passing zero-regression eval — this is the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
@@ -223,7 +215,6 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 - **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the SCOPE-5 eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
 - **SCOPE-7:** `framework-validate.sh --changed-only` runs a strict subset for a single-subsystem diff; full-tier wall clock drops below 5 minutes on the reference machine; repeated runs with no changes are cache-served; output ordering is deterministic.
 - **SCOPE-8:** every DoD item in the reference examples carries an `SCN-*` reference; G068's word-overlap matcher is removed from the verdict path; the `docs/issues/G068-*` false-positive case now passes.
-- **SCOPE-9:** `improvements/INDEX.md` exists and lists this IMP; a G125 enforcer exists, is wired, and fails on an IMP that mutated `bubbles/*` in the same commit.
 - **SCOPE-11:** every `modelCompensation` gate carries a `retireWhen` criterion; `model-tier-advisory.sh` can produce a report of which gates would be skipped at a given tier.
 
 ---
@@ -251,8 +242,6 @@ Owning agent/gate named per surface so implementation routes correctly.
 | `agents/bubbles_shared/{operating-baseline,plan-bootstrap,implement-bootstrap,design-bootstrap,analysis-bootstrap}.md` | phase-local authoring-module split | `bubbles.docs` / G042 |
 | `agents/bubbles_shared/{critical-requirements,agent-common,evidence-rules,quality-gates}.md` | de-duplicate anti-fabrication doctrine | `bubbles.simplify` / G042 |
 | `bubbles/scripts/agent-bundle-size-budget.sh` | ratchet → ratchet+target | `bubbles.devops` |
-| `bubbles/scripts/framework-health-evidence-lint.sh` (new) | enforce G125 | `bubbles.devops` / G125 |
-| `improvements/INDEX.md` (new) | proposal index | `bubbles.retro` / G125 |
 | `README.md` | reconcile line 46 evidence claim; declare dependencies | `bubbles.docs` |
 | `agents/bubbles.security.agent.md` | reference G034 (or its replacement) | `bubbles.security` |
 
