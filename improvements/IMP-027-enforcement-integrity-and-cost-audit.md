@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-3, COST-1
+**Verified gaps addressed:** COST-1
 
 ---
 
@@ -56,33 +56,6 @@ Coverage was **asserted from hand-written lists** rather than **derived from the
 ## Proposal
 
 Scopes are ordered by (severity × cheapness).
-
-### SCOPE-8 — Replace lexical proxies with structural facts (EV-3) — **LINKAGE DELIVERED; REMAINDER NARROWED**
-
-**Delivered:** DoD ↔ scenario linkage no longer relies solely on word overlap. When a
-scenario carries a stable `SCN-*` ID, that ID is the authoritative linkage — deterministic,
-no threshold to tune, zero false positives. Engages only when an ID is present, so specs
-that have not adopted IDs keep today's behavior exactly and no enforcement is lost.
-
-**Corrections to this proposal, recorded so they are decisions rather than gaps:**
-
-- **"Demote the lexical scan to advisory" is REJECTED.** Today effectively no project
-  carries `SCN-*` IDs in DoD text. Demoting the lexical path would therefore switch G068
-  off almost everywhere, trading a tuning-accuracy problem for a no-enforcement problem.
-  The lexical path stays authoritative exactly where no structural fact exists to replace
-  it, and is superseded per-scenario as IDs get adopted.
-- **"Evidence sufficiency: a receipt either exists or it does not" is REJECTED in that
-  form.** Requiring a receipt per DoD item is the same blanket rule rejected in SCOPE-3:
-  documentation and attestation items legitimately carry prose. Sufficiency is instead
-  enforced by claim type (SCOPE-3 EV-1) and freshness (SCOPE-3 EV-2, guard Check 43).
-
-**Remaining:**
-
-- **Clone detection by receipt hash.** Not delivered. Note that Check 12 (duplicate
-  evidence, G021) already hashes evidence blocks and was repaired under IMP-102, and
-  Check 20 covers similarity — so this is an incremental third path whose value is low
-  until receipts are actually adopted by a project. Sequence it after receipt adoption,
-  not before.
 
 ### SCOPE-6 — Reduce context cost (COST-1) — **MEASUREMENT DELIVERED; REDUCTION BLOCKED**
 

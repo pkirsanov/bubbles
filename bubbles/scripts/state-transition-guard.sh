@@ -3714,6 +3714,35 @@ else
       info "evidence-receipt-check.sh could not produce a report (exit $c43_rc); receipt staleness not evaluated this run"
       ;;
   esac
+
+  # IMP-027 SCOPE-8 (EV-3): clone detection by receipt hash, not text similarity.
+  #
+  # Check 20 (G021) answers "is this evidence a copy of that evidence?" with an
+  # 80%-similarity score over prose. That is a proxy: legitimately similar
+  # output (two runs of the same suite) scores high, and a lightly-edited
+  # forgery scores low. Receipts carry stdoutHash, which turns the same question
+  # into an exact comparison.
+  #
+  # The rule is deliberately narrow, because the naive one is wrong: identical
+  # output from a RE-RUN of the SAME command is normal and must never fire.
+  # What cannot happen honestly is identical stdout under DIFFERENT commands —
+  # `cargo test` and `npm run lint` do not produce byte-identical output. That
+  # is the signature of one captured result being reused to back a second,
+  # unrelated claim, which is exactly what G021 exists to catch.
+  if command -v jq >/dev/null 2>&1; then
+    c43_clones="$(jq -rs '
+      map(select((.stdoutHash // "") != "" and (.cmd // "") != ""))
+      | group_by(.stdoutHash)
+      | map(select((map(.cmd) | unique | length) > 1))
+      | .[]
+      | "\(.[0].stdoutHash[0:12])… reused by: \(map(.cmd) | unique | join(" AND "))"
+    ' "$c43_log" 2>/dev/null || true)"
+    if [[ -n "$c43_clones" ]]; then
+      fail "Evidence receipt CLONE — one captured stdout is cited by two different commands, which cannot happen from honest execution: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 400)"
+    else
+      pass "No receipt clones (no stdout hash shared across differing commands)"
+    fi
+  fi
 fi
 echo ""
 

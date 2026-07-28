@@ -535,6 +535,31 @@ _emit_receipt_fixture "$receipt_fresh_dir" keep
 receipt_stale_dir="$tmp_root/specs/960-c43-receipt-stale"
 _emit_receipt_fixture "$receipt_stale_dir" mutate
 
+# ---- CHECK 43 clone detection (IMP-027 SCOPE-8, EV-3) ----
+# Emits two receipts sharing one stdoutHash. The ONLY difference between the
+# two fixtures is whether the two receipts name the SAME command:
+#   same cmd  -> an honest re-run of a deterministic suite  -> MUST PASS
+#   diff cmd  -> one captured output reused for a second claim -> MUST BLOCK
+# Without the same-cmd fixture the check would look correct while silently
+# failing every project that runs its test suite twice.
+_emit_clone_fixture() {
+  local dir="$1" second_cmd="$2"
+  emit_pass_fixture "$dir"
+  mkdir -p "$dir/.specify/runtime"
+  git -C "$dir" init --quiet >/dev/null 2>&1 || return 1
+  {
+    printf '{"ts":"2026-07-28T00:00:00Z","cmd":"cargo test","spec":"001-x","exitCode":0,"stdoutHash":"deadbeefcafe1234deadbeefcafe1234deadbeefcafe1234deadbeefcafe1234"}\n'
+    printf '{"ts":"2026-07-28T00:05:00Z","cmd":"%s","spec":"001-x","exitCode":0,"stdoutHash":"deadbeefcafe1234deadbeefcafe1234deadbeefcafe1234deadbeefcafe1234"}\n' "$second_cmd"
+  } >"$dir/.specify/runtime/tool-calls.jsonl"
+  return 0
+}
+
+clone_diffcmd_dir="$tmp_root/specs/961-c43-clone-different-commands"
+_emit_clone_fixture "$clone_diffcmd_dir" 'npm run lint'
+
+clone_samecmd_dir="$tmp_root/specs/962-c43-clone-same-command-rerun"
+_emit_clone_fixture "$clone_samecmd_dir" 'cargo test'
+
 # ---- BLOCKING (#1): truly-bare `-> Evidence: done` marker ----
 bare_marker_dir="$tmp_root/specs/953-c9-bare-marker"
 emit_pass_fixture "$bare_marker_dir"
@@ -644,6 +669,11 @@ assert_passes "$receipt_fresh_dir" any \
 assert_blocks_with "$receipt_stale_dir" \
   "Evidence receipt(s) are STALE" \
   "CHECK 43 (stale): receipt whose input changed after capture BLOCKS"
+assert_blocks_with "$clone_diffcmd_dir" \
+  "Evidence receipt CLONE" \
+  "CHECK 43 (clone): one stdout hash cited by TWO DIFFERENT commands BLOCKS"
+assert_passes "$clone_samecmd_dir" any \
+  "CHECK 43 (re-run): same stdout hash from the SAME command is honest, passes"
 
 echo ""
 echo "=== BLOCKING FAIL cases ==="
