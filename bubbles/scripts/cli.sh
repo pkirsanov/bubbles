@@ -2466,6 +2466,40 @@ except Exception:
   fi
 
   echo ""
+  echo -e "${BOLD}Bundle Cost${NC}"
+  echo -e "${DIM}IMP-027 SCOPE-6 / COST-1. The per-agent budget ratchets, which stops growth but makes today's size tomorrow's floor. This states the distance to a role target instead, so the number is visible rather than implied.${NC}"
+  echo ""
+
+  if [[ -x "$SCRIPT_DIR/bundle-cost-report.sh" ]] && command -v python3 >/dev/null 2>&1; then
+    cost_over=0
+    while read -r c_agent c_role c_bytes c_target c_over; do
+      [[ -n "$c_agent" ]] || continue
+      if [[ "$c_over" -gt 0 ]]; then
+        echo -e "  ${YELLOW}⚠️${NC}  $c_agent ($c_role) — $c_bytes B, ${c_over} B over the ${c_target} B target"
+        cost_over=$((cost_over + 1))
+      fi
+    done < <(bash "$SCRIPT_DIR/bundle-cost-report.sh" --repo-root "$REPO_ROOT" --json 2>/dev/null |
+      python3 -c "
+import json,sys
+try:
+    d=json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for a in d.get('agents',[]):
+    print(a['agent'],a['role'],a['bytes'],a['targetBytes'],a['overBy'])
+" 2>/dev/null)
+
+    if [[ "$cost_over" -eq 0 ]]; then
+      echo -e "  ${GREEN}✅${NC} every agent is within its role target"
+      passed=$((passed + 1))
+    else
+      echo -e "  ${DIM}Reducing an orchestrator by moving authoring modules to phase-local profiles is GATED on a held-out eval showing zero gate-detection regression (operating-baseline.md, R3). The golden-task corpus does NOT satisfy that gate: it scores static artifacts with deterministic oracles and never invokes a model, so it cannot observe routing behaviour. Do not rewire an agent reference to chase this number.${NC}"
+    fi
+  else
+    echo -e "  ${YELLOW}⚠️${NC}  bundle-cost-report.sh unavailable; cannot report bundle cost."
+  fi
+
+  echo ""
   echo -e "${BOLD}Golden-Task Corpus${NC}"
   echo -e "${DIM}IMP-027 SCOPE-5. Scores output QUALITY, not gate-pass. This is the regression baseline for framework and model upgrades — and the only place the Honesty Incentive is measured, via a task whose correct outcome is an unchecked box.${NC}"
   echo ""

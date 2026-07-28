@@ -365,6 +365,13 @@ fi
 if [[ -x "$SCRIPT_DIR/security-gate-selftest.sh" ]]; then
   run_check "Security gate selftest (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate-selftest.sh"
 fi
+# IMP-027 SCOPE-6 / COST-1: distance-to-target and the dispatch-weighted cost
+# proxy. The report itself is advisory (a ratchet stops growth but never states
+# a destination); only its selftest is blocking, so a broken closure walk cannot
+# silently report a healthy repo.
+if [[ -x "$SCRIPT_DIR/bundle-cost-report-selftest.sh" ]]; then
+  run_check "Bundle cost report selftest (COST-1, IMP-027 SCOPE-6)" bash "$SCRIPT_DIR/bundle-cost-report-selftest.sh"
+fi
 # IMP-027 SCOPE-5: the golden-task corpus. The live run proves the reference
 # output still satisfies every task (the regression baseline); the selftest
 # proves the corpus can FAIL, which is what stops it becoming a rubber stamp.

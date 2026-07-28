@@ -65,13 +65,38 @@ Scopes are ordered by (severity × cheapness).
 - **Cheapest high-yield step:** because project terminal-discipline already funnels all commands through a single project CLI, wrapping that one entrypoint in `tool-log.sh` makes every gate-relevant command receipted at near-zero authoring cost. Document this as the recommended adoption path.
 - **Immediate, independent of the above:** reconcile `README.md:46` with the code. Either ship the blocking mode or amend the sentence. The gap between the advertised guarantee and `state-transition-guard.sh:2440-2445`/`:2555-2562` is the framework's single largest credibility risk.
 
-### SCOPE-6 — Reduce and measure context cost (COST-1)
+### SCOPE-6 — Reduce context cost (COST-1) — **MEASUREMENT DELIVERED; REDUCTION BLOCKED**
 
-- Execute the already-designed phase-local split from `operating-baseline.md:88-110`: move `project-config-contract.md`, `scope-workflow.md`, and `feature-templates.md` out of the orchestrator's always-loaded closure into the `*-bootstrap.md` phase profiles. Validate with the delivered golden-task corpus (`bubbles eval run`) showing zero gate-detection regression. Target: orchestrator effective bundle **≤ 40 K tokens** (from ~125 K).
-- Change `agent-bundle-size-budget.sh` from pure ratchet to **ratchet + target**: add `effectiveBundleTargetBytes` per role class (router / owner / diagnostic) and report distance-to-target in `doctor`. A ceiling seeded from current size can only preserve bloat.
-- Deduplicate the shared layer. `cli.sh doctor` reports `agent-common.md` with **in-degree 55**. `critical-requirements.md` (22,883 B), `agent-common.md` (20,274 B), `evidence-rules.md` (13,046 B), and `quality-gates.md` (19,932 B) substantially restate the same anti-fabrication doctrine. Collapse to one normative source plus short role-specific deltas.
-- Move **reference data out of prompts into tools.** `project-config-contract.md` (59,685 B) and `feature-templates.md` (22,401 B) are lookup material, not reasoning context. The MCP surface already exists (`docs/MCP.md`, `mcp_bubbles_read_spec`); serve templates on demand. This is the single largest available structural saving.
-- **Track cost honestly.** Do not fabricate token counts — but `bundle_bytes × dispatch_count` is exactly computable from `effective-bundle-measure.sh` plus the existing dispatch counters, and is a truthful, non-fabricated cost proxy. Add it to `bubbles.retro` and to `activityTracking.measuredDimensions`. This respects the existing (correct) refusal to invent `dollarCost` while ending the total blindness.
+**Delivered:** `bundle-cost-report.sh` (+ 16-case selftest) reports distance-to-target
+per role class and the `bundle_bytes × dispatches` cost proxy; wired into `doctor`,
+`framework-validate`, `bubbles.retro` (`## Context Cost`), and
+`activityTracking.measuredDimensions` as `bundleCostProxy`.
+
+**Correction to this proposal — the reduction is NOT unblocked.** This scope
+claimed the SCOPE-5 corpus would validate the phase-local module move. It does
+not. R3 in `operating-baseline.md` requires a held-out eval proving the
+orchestrator still **detects and routes** every gate. The corpus scores static
+artifacts with deterministic check types (`contains`, `not-contains`,
+`file-exists`, `executable-oracle`) and never invokes a model, so it cannot
+observe routing behaviour at all. Performing the move on corpus-green would be
+exactly the substitution R3 forbids. This correction is now recorded in
+`operating-baseline.md` so the next reader cannot repeat the mistake.
+
+Remaining, each still blocked or independently large:
+
+- **Blocked on a routing eval (R3):** move `project-config-contract.md`,
+  `scope-workflow.md`, `feature-templates.md` out of the orchestrator's
+  always-loaded closure. Measured gap: `bubbles.workflow` is 505,021 B against a
+  160,000 B target, and the 3-module split is only ~123 KB — so even once
+  unblocked this alone does not reach target. Build the routing eval first.
+- **Not blocked, but a large independent refactor:** deduplicate the
+  anti-fabrication doctrine restated across `critical-requirements.md`,
+  `agent-common.md`, `evidence-rules.md`, and `quality-gates.md` into one
+  normative source plus role deltas. **Preserve the Honesty Incentive verbatim.**
+- **Not blocked, but a large independent refactor:** serve
+  `project-config-contract.md` and `feature-templates.md` as on-demand lookups
+  through the existing MCP surface rather than pinning them into prompts.
+
 
 ### SCOPE-8 — Replace lexical proxies with structural facts (EV-3)
 
