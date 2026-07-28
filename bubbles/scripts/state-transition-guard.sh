@@ -2384,6 +2384,47 @@ sys.exit(1)
 PY
 }
 
+# IMP-027 SCOPE-3 (EV-1): does a DoD item assert an EXECUTION OUTCOME?
+#
+# README's evidence guarantee is specifically about execution claims — 'a
+# narrative "all tests pass" with no terminal output is rejected as
+# fabrication'. It is NOT a claim that every DoD item must be receipted.
+# Documentation, design-decision, and attestation items legitimately carry
+# prose, and failing those would manufacture false failures at scale.
+#
+# So the command-output requirement is CLAIM-TYPED, not global. This matcher
+# decides which side of that line an item falls on. It is deliberately anchored
+# to the VERB+SUBJECT shape of an execution assertion rather than to bare
+# keywords: "documented the test strategy" must NOT match, while "unit tests
+# pass" must.
+dod_item_claims_execution() {
+  local item_text="${1:-}"
+  [[ -z "$item_text" ]] && return 1
+  local probe
+  probe="$(printf '%s' "$item_text" | tr '[:upper:]' '[:lower:]')"
+
+  # Strip the Evidence: pointer — anchor slugs routinely contain words like
+  # "test" and would otherwise decide the claim type by accident.
+  probe="${probe%%→ evidence:*}"
+  probe="${probe%%evidence:*}"
+
+  # Negative guard first: an item ABOUT execution artifacts that does not itself
+  # assert an execution outcome (authoring, documenting, planning, designing).
+  if [[ "$probe" =~ (documented|document|describe[sd]?|plan(ned|s)?\ |design(ed|s)?\ |written|writes|author(ed|s)?|specif(y|ied|ies)|record(ed|s)?\ the) ]]; then
+    # ...unless it ALSO asserts an outcome ("tests written and passing").
+    if [[ ! "$probe" =~ (pass(es|ing|ed)?|green|succeed(s|ed|ing)?|exit\ code\ 0|0\ failures|clean) ]]; then
+      return 1
+    fi
+  fi
+
+  # Positive: an execution SUBJECT paired with an outcome/imperative.
+  if [[ "$probe" =~ (test|suite|build|compil|lint|clippy|fmt|format|coverage|benchmark|selftest|e2e|integration|smoke|stress|migration|deploy|guard|scan|audit) ]] &&
+     [[ "$probe" =~ (pass(es|ing|ed)?|run(s|ning)?|execut(e|ed|es|ing)|succeed(s|ed|ing)?|green|clean|exit\ code|0\ (failures|errors|warnings)|no\ (failures|errors|warnings)|complete[sd]?|verif(y|ied|ies)) ]]; then
+    return 0
+  fi
+  return 1
+}
+
 # v4.1.0: Evidence-by-reference resolver. When a DoD line is shaped like
 #   - [x] Item description → Evidence: [anchor-name](report.md#anchor-name)
 # follow the link to the report.md anchor and verify a ≥10-line evidence
@@ -2395,6 +2436,7 @@ PY
 resolve_evidence_by_reference() {
   local scope_dir="$1"
   local link_target="$2"     # e.g. "report.md#scope-3-cosign"
+  local dod_item_text="${3:-}"  # IMP-027 SCOPE-3: decides the claim type
   local rel_report="${link_target%%#*}"
   local anchor="${link_target##*#}"
   [[ -z "$anchor" || "$anchor" == "$link_target" ]] && return 1
@@ -2464,11 +2506,22 @@ resolve_evidence_by_reference() {
   block_text="$(sed -n "$((anchor_line+1)),${end_line}p" "$report_path")"
   block_lines="$(printf '%s\n' "$block_text" | grep -cE '\S' || true)"
   if [[ "${block_lines:-0}" -ge 10 ]]; then
-    # IMP-102 SCOPE-1 fix #3 (ADVISORY, proposal R1): a resolved ≥10-line block
-    # with NO fenced command-output signature is still ACCEPTED (documentation /
-    # attestation DoD items legitimately use prose), but we emit an advisory and
-    # count it. Advisory-for-one-release, NOT blocking.
+    # A resolved ≥10-line block carrying NO command-output signature.
+    #
+    # IMP-102 SCOPE-1 fix #3 made this an ADVISORY because documentation and
+    # attestation DoD items legitimately use prose.
+    #
+    # IMP-027 SCOPE-3 (EV-1) narrows that blanket permission WITHOUT
+    # reintroducing false failures: the permission stands for items that do not
+    # assert an execution outcome, and is WITHDRAWN for items that do. This is
+    # what closes the gap between README's stated guarantee and the code — a
+    # narrative "all tests pass" with no terminal output is now refused, while
+    # "architecture decision recorded in design.md" still passes on prose.
     if ! printf '%s\n' "$block_text" | grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:'; then
+      if dod_item_claims_execution "$dod_item_text"; then
+        check9_prose_execution_anchor="$anchor"
+        return 1
+      fi
       check9_advisory_count=$((${check9_advisory_count:-0} + 1))
       info "Check-9 ADVISORY: evidence block for anchor '#${anchor}' in $(basename "$report_path") has no command-output signature (prose-only); accepted as documentation/attestation evidence"
     fi
@@ -2523,11 +2576,16 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
         # link handler below.
         link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md#[A-Za-z0-9_-]+\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/' || true)"
         if [[ -n "$link_target" ]]; then
-          if resolve_evidence_by_reference "$scope_dir" "$link_target"; then
+          check9_prose_execution_anchor=""
+          if resolve_evidence_by_reference "$scope_dir" "$link_target" "$line"; then
             checked_with_evidence=$((checked_with_evidence + 1))
           else
             checked_without_evidence=$((checked_without_evidence + 1))
-            fail "DoD item [x] references '$link_target' but anchor missing OR block <10 non-blank lines in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            if [[ -n "${check9_prose_execution_anchor:-}" ]]; then
+              fail "DoD item [x] asserts an EXECUTION outcome but its evidence block '#${check9_prose_execution_anchor}' contains no command output (prose-only) in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            else
+              fail "DoD item [x] references '$link_target' but anchor missing OR block <10 non-blank lines in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            fi
           fi
         else
           # IMP-102 SCOPE-1 fix #1: a marker WITHOUT a resolvable
@@ -2553,11 +2611,16 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
         # not (e.g. exotic link shapes).
         link_target="$(echo "$line" | grep -oE '\[[^]]+\]\([^)]*report\.md(#[A-Za-z0-9_.-]+)?\)' | head -1 | sed -E 's/.*\(([^)]+)\)$/\1/' || true)"
         if [[ "$link_target" == *"#"* ]]; then
-          if resolve_evidence_by_reference "$scope_dir" "$link_target"; then
+          check9_prose_execution_anchor=""
+          if resolve_evidence_by_reference "$scope_dir" "$link_target" "$line"; then
             checked_with_evidence=$((checked_with_evidence + 1))
           else
             checked_without_evidence=$((checked_without_evidence + 1))
-            fail "DoD item [x] links '$link_target' but anchor missing OR block <10 non-blank lines in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            if [[ -n "${check9_prose_execution_anchor:-}" ]]; then
+              fail "DoD item [x] asserts an EXECUTION outcome but its evidence block '#${check9_prose_execution_anchor}' contains no command output (prose-only) in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            else
+              fail "DoD item [x] links '$link_target' but anchor missing OR block <10 non-blank lines in $(relative_artifact_path "$scope_path"): $(echo "$line" | head -c 80)"
+            fi
           fi
         else
           # Plain report.md link with no anchor — IMP-102 SCOPE-1 fix #2:

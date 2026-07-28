@@ -477,6 +477,34 @@ The reconciliation left the navigation ordering unchanged for both locales.
 This paragraph provides the twelfth non-blank prose line for the fixture block.
 EOF
 
+# ---- BLOCKING (IMP-027 SCOPE-3): SAME prose block, but an EXECUTION claim ----
+# Paired deliberately with the ADVISORY fixture above. The evidence block below
+# is byte-identical in SHAPE (>=10 non-blank prose lines, no command output);
+# the ONLY difference is that the DoD item asserts an execution outcome instead
+# of a documentary one. That isolation is what proves the new rule keys on the
+# CLAIM TYPE and not on the block, and it is what makes README's guarantee
+# ('a narrative "all tests pass" with no terminal output is rejected as
+# fabrication') literally true in code.
+prose_execution_dir="$tmp_root/specs/958-c9-prose-execution-claim"
+emit_pass_fixture "$prose_execution_dir"
+append_probe "$prose_execution_dir/scopes.md" \
+  '- [x] Full integration and e2e suites pass with zero failures -> Evidence: [suites](report.md#suites)'
+cat <<'EOF' >>"$prose_execution_dir/report.md"
+
+### Suites
+
+The integration suite and the end-to-end suite were both exercised against the
+ephemeral stack for this iteration and the maintainer reviewed the results in
+detail before recording this attestation for the scope.
+Every scenario enumerated in the test plan was walked through and the observed
+behavior matched the specification in each case without deviation.
+The reviewer additionally confirmed that no scenario was skipped and that the
+suites covered each boundary condition named in the design document.
+Coverage was inspected and judged sufficient for the behavior under change.
+No regressions were observed in any previously passing area of the product.
+This paragraph provides the twelfth non-blank prose line for the fixture block.
+EOF
+
 # ---- BLOCKING (#1): truly-bare `-> Evidence: done` marker ----
 bare_marker_dir="$tmp_root/specs/953-c9-bare-marker"
 emit_pass_fixture "$bare_marker_dir"
@@ -581,6 +609,9 @@ assert_passes "$advisory_prose_dir" yes \
 
 echo ""
 echo "=== BLOCKING FAIL cases ==="
+assert_blocks_with "$prose_execution_dir" \
+  "asserts an EXECUTION outcome but its evidence block" \
+  "BLOCK (IMP-027 SCOPE-3): prose-only block backing an EXECUTION claim"
 assert_blocks_with "$bare_marker_dir" \
   "has a bare Evidence marker with no report.md reference or inline evidence block" \
   "BLOCK (#1): truly-bare '-> Evidence: done' marker"

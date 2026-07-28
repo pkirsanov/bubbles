@@ -43,7 +43,7 @@ Stop babysitting your AI. Put it on the clock.
 
 Plenty of tools *ask* an AI to "be thorough." Bubbles is different because "done" is a **mechanically enforced verdict, not a claim.** The moat is a guard chain that treats fabricated progress as the default failure mode and refuses to let it through:
 
-- **Evidence gates** — every Definition-of-Done item must carry raw, captured command output (real exit codes, real test counts). A narrative "all tests pass" with no terminal output is rejected as fabrication, not accepted as proof.
+- **Evidence gates** — a Definition-of-Done item that asserts an execution outcome must carry raw, captured command output (real exit codes, real test counts). A narrative "all tests pass" with no terminal output is rejected as fabrication, not accepted as proof. Items that assert something other than an execution outcome — a design decision, a documentation change — are held to the same ≥10-line evidence standard but may satisfy it in prose.
 - **Adversarial fixtures** — a bug fix's regression test must include a case that *fails if the bug comes back*. Tautological tests, silent-pass early-returns, and mock-swapped "live" tests are caught and refused.
 - **The anti-fabrication guard chain** — heuristics scan for the tells of invented evidence (sub-10-line blocks, verbatim templates, batch-checked items, copy-pasted output) and revert the work to `in_progress` when they fire.
 - **The state-transition guard** — the single mechanical gate between `in_progress` and `done`. It re-derives DoD completeness, scope status, and evidence provenance from the artifacts themselves; if the proof doesn't hold, the transition is refused — there is no override flag.
