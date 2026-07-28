@@ -72,6 +72,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 | `bubbles-test-environment-isolation` | 182 | auto-discovery-required | 613 | KEEP | Ephemeral-only test backing store policy. |
 | `bubbles-test-integrity` | 250 | auto-discovery-required | 346 | KEEP | Trinity's field manual — substantive 6-gate decision tree. |
 | `bubbles-upkeep-cadence` | 116 | explicit-invocation-sufficient | 332 | KEEP | Calendar + ledger mechanics for upkeep tasks. |
+| `bubbles-vscode-agent-constraints` | 203 | auto-discovery-required | 652 | KEEP | VS Code agent-runtime constraints — depth-1 subagent limit, `handoffs:`/`agents:`/`disable-model-invocation:`/`user-invocable:` semantics, allowlist-overrides-flag precedence, dual-role invocability, frontmatter-vs-body authority. Prevents multi-level-dispatch designs and prose-only delegation laws. |
 | `bubbles-workflow-execution-loops` | 29 | auto-discovery-required | 345 | KEEP | Compact but enforceable — synchronous dispatch-and-wait rules. |
 | `bubbles-workflow-mode-resolution` | 54 | auto-discovery-required | 378 | KEEP | Mode resolver + alias + status ceiling rules. |
 

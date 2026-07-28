@@ -2427,6 +2427,42 @@ except Exception:
     esac
   fi
 
+  # Agent runtime assumption (IMP-027 SCOPE-1c / G064). Bubbles' direct-authorized-
+  # runner model assumes the VS Code default: subagents cannot invoke further
+  # subagents. Enabling chat.subagents.allowInvocationsFromSubagents raises the
+  # nesting limit to depth 5, at which point nested runner dispatch becomes
+  # POSSIBLE and G064 degrades from structurally-impossible to convention-only.
+  # The setting is operator-owned and lives outside the repo, so this is advisory
+  # and best-effort: it never changes the pass/fail tally.
+  echo ""
+  echo -e "${BOLD}Agent Runtime Assumptions${NC}"
+  echo -e "${DIM}Advisory only — Bubbles assumes the VS Code depth-1 subagent default (G064). Operator-owned editor setting; never changes doctor's exit code.${NC}"
+  echo ""
+
+  local nesting_setting='chat.subagents.allowInvocationsFromSubagents'
+  local nesting_hit=''
+  local settings_candidate
+  for settings_candidate in \
+    "$HOME/.config/Code/User/settings.json" \
+    "$HOME/.config/Code - Insiders/User/settings.json" \
+    "$HOME/Library/Application Support/Code/User/settings.json" \
+    "$HOME/.vscode-server/data/Machine/settings.json" \
+    "$REPO_ROOT/.vscode/settings.json"; do
+    [[ -f "$settings_candidate" ]] || continue
+    if grep -qE "\"${nesting_setting}\"[[:space:]]*:[[:space:]]*true" "$settings_candidate" 2>/dev/null; then
+      nesting_hit="$settings_candidate"
+      break
+    fi
+  done
+
+  if [[ -n "$nesting_hit" ]]; then
+    echo -e "  ${YELLOW}⚠️${NC}  Nested subagents ENABLED in ${nesting_hit/#$HOME/\~}"
+    echo -e "     ${DIM}G064 is no longer structurally enforced; the frontmatter allowlist is the only remaining mechanical defense.${NC}"
+    advisory_count=$((advisory_count + 1))
+  else
+    echo -e "  ${GREEN}✅${NC} Subagent nesting: depth-1 default assumed (${nesting_setting} not enabled in scanned settings)"
+  fi
+
   echo ""
   echo -e "${BOLD}Result: $passed passed, $failed failed, $advisory_count advisory"
   if [[ "$healed" -gt 0 ]]; then
