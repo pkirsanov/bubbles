@@ -899,28 +899,70 @@ fi
 # ---------------------------------------------------------------------------
 if [[ "$LIST_TIER_ONLY" != "true" ]]; then
   selftest_denylist="$REPO_ROOT/bubbles/registry/selftest-denylist.txt"
-  fv_source="$(cat "$SCRIPT_DIR/framework-validate.sh" 2>/dev/null || true)"
-  for selftest_path in "$SCRIPT_DIR"/*-selftest.sh; do
-    [[ -f "$selftest_path" ]] || continue
-    selftest_name="$(basename "$selftest_path")"
 
-    # Already wired by an enumerated check above.
-    case "$fv_source" in
-      *"$selftest_name"*) continue ;;
-    esac
+  # BUG-021. This sweep decides WHAT RUNS by matching each discovered name
+  # against this validator's own source, so reading that source is control
+  # flow, not decoration. The first version read it with `$(cat ... 2>/dev/null
+  # || true)`, which made an EXTERNAL tool load-bearing. Under a minimal PATH --
+  # exactly what tests/regression/test_28_framework_validate_portable_timeout.sh
+  # constructs, and what a hardened CI image can present -- `cat` is absent, the
+  # error was swallowed, `fv_source` collapsed to empty, no name ever matched,
+  # and every already-enumerated selftest was silently run a SECOND time outside
+  # the watchdog that bounds it. That is a wrong verdict reported as a pass.
+  #
+  # Read with the bash builtin so the sweep depends on nothing but bash, and
+  # refuse LOUDLY if the source cannot be read at all, rather than degrading
+  # into "re-run everything". The denylist is parsed with builtins for the same
+  # reason: no external tool may decide what this validator executes.
+  fv_source=""
+  if [[ -r "$SCRIPT_DIR/framework-validate.sh" ]]; then
+    fv_source="$(<"$SCRIPT_DIR/framework-validate.sh")"
+  fi
 
-    # Explicitly denied, with a documented reason.
-    if [[ -f "$selftest_denylist" ]] &&
-      grep -vE '^[[:space:]]*(#|$)' "$selftest_denylist" 2>/dev/null | grep -qxF "$selftest_name"; then
-      echo "==> Discovered selftest: $selftest_name"
-      echo "SKIP: $selftest_name (denied in bubbles/registry/selftest-denylist.txt)"
-      skipped=$((skipped + 1))
-      echo
-      continue
+  if [[ -z "$fv_source" ]]; then
+    echo "==> Discovered selftest sweep (IMP-027 SCOPE-2b)"
+    echo "FAIL: cannot read $SCRIPT_DIR/framework-validate.sh to identify already-enumerated selftests"
+    echo "      refusing to re-run every selftest unbounded; fix the install rather than ignoring this"
+    failures=$((failures + 1))
+    failed_check_labels+=("Discovered selftest sweep (IMP-027 SCOPE-2b)")
+    echo
+  else
+    # Newline-delimited denied names, read ONCE with builtins. Semantics match
+    # the previous grep pair exactly: blank lines and lines whose first
+    # non-space character is '#' are ignored, and a name must match a whole
+    # line exactly.
+    selftest_denied_names=$'\n'
+    if [[ -f "$selftest_denylist" ]]; then
+      while IFS= read -r selftest_deny_line || [[ -n "$selftest_deny_line" ]]; do
+        selftest_deny_trimmed="${selftest_deny_line#"${selftest_deny_line%%[![:space:]]*}"}"
+        [[ -z "$selftest_deny_trimmed" || "$selftest_deny_trimmed" == '#'* ]] && continue
+        selftest_denied_names+="$selftest_deny_line"$'\n'
+      done <"$selftest_denylist"
     fi
 
-    run_check "Discovered selftest: $selftest_name (IMP-027 SCOPE-2b)" bash "$selftest_path"
-  done
+    for selftest_path in "$SCRIPT_DIR"/*-selftest.sh; do
+      [[ -f "$selftest_path" ]] || continue
+      selftest_name="${selftest_path##*/}"
+
+      # Already wired by an enumerated check above.
+      case "$fv_source" in
+        *"$selftest_name"*) continue ;;
+      esac
+
+      # Explicitly denied, with a documented reason.
+      case "$selftest_denied_names" in
+        *$'\n'"$selftest_name"$'\n'*)
+          echo "==> Discovered selftest: $selftest_name"
+          echo "SKIP: $selftest_name (denied in bubbles/registry/selftest-denylist.txt)"
+          skipped=$((skipped + 1))
+          echo
+          continue
+          ;;
+      esac
+
+      run_check "Discovered selftest: $selftest_name (IMP-027 SCOPE-2b)" bash "$selftest_path"
+    done
+  fi
 fi
 
 if [[ -x "$SCRIPT_DIR/selftest-coverage-lint.sh" ]]; then
