@@ -240,6 +240,16 @@ run_check "Gates registry selftest (v5.2 / F4)" bash "$SCRIPT_DIR/gates-registry
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map.sh" ]]; then
   run_check_self_only "Gate-coverage map drift (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map.sh" --check
 fi
+# IMP-027 SCOPE-2a: the coverage map is now generated from the registry's
+# declared `enforcedBy` field. These verify that no gate declares an enforcer
+# that does not resolve, which is what made the previous grep-derived map
+# untrustworthy in both directions.
+if [[ -x "$SCRIPT_DIR/gate-enforcement.sh" ]]; then
+  run_check_self_only "Gate enforcement bindings resolve (IMP-027 SCOPE-2a)" bash "$SCRIPT_DIR/gate-enforcement.sh" lint --repo-root "$REPO_ROOT"
+fi
+if [[ -x "$SCRIPT_DIR/gate-enforcement-selftest.sh" ]]; then
+  run_check "Gate enforcement selftest (IMP-027 SCOPE-2a)" bash "$SCRIPT_DIR/gate-enforcement-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
   run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
 fi
