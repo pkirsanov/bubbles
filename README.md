@@ -81,7 +81,13 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 
 ## Install
 
-One command. No dependencies beyond `curl` and `bash` **4.0+**.
+One command. Installing needs only `curl` and `bash` **4.0+**.
+
+Running the full validation surface additionally needs `git`, `python3`, and the
+Python packages `PyYAML` and `jsonschema`. These are not optional niceties: ten
+guards (schema validation, the receipt bridge, the registry generators) refuse to
+run without them rather than reporting a green result for a check that never
+executed. `bash bubbles/scripts/cli.sh doctor` reports the dependency posture.
 
 **Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2 (bash 4.0+ — on macOS install a newer bash with `brew install bash`, since stock `/bin/bash` is 3.2). No Windows CMD/PowerShell support.
 

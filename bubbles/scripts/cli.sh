@@ -2378,6 +2378,35 @@ except Exception:
   fi
 
   echo ""
+  echo -e "${BOLD}Dependency Posture${NC}"
+  echo -e "${DIM}IMP-027 SCOPE-4 / SEC-2. Ten guards used to exit 0 on a missing dependency, so a run could go green having checked nothing. They now fail closed. A missing dependency here means those guards will refuse to run.${NC}"
+  echo ""
+
+  if [[ -f "$SCRIPT_DIR/dependency-posture.sh" ]]; then
+    # shellcheck source=bubbles/scripts/dependency-posture.sh
+    source "$SCRIPT_DIR/dependency-posture.sh"
+    dep_missing=0
+    while read -r dep_name dep_state dep_why; do
+      [[ -n "$dep_name" ]] || continue
+      if [[ "$dep_state" == "ok" ]]; then
+        echo -e "  ${GREEN}✅${NC} $dep_name — $dep_why"
+      else
+        echo -e "  ${RED}❌${NC} $dep_name MISSING — $dep_why"
+        dep_missing=$((dep_missing + 1))
+      fi
+    done < <(bubbles_dep_status)
+
+    if [[ "${BUBBLES_ALLOW_DEGRADED:-0}" == "1" ]]; then
+      echo -e "  ${YELLOW}⚠️${NC}  BUBBLES_ALLOW_DEGRADED=1 is set — guards will SKIP instead of failing. Checks that skip did NOT run."
+    fi
+    if [[ "$dep_missing" -gt 0 ]]; then
+      echo -e "  ${YELLOW}⚠️${NC}  $dep_missing dependency(ies) missing; the guards that need them will refuse to run."
+    fi
+  else
+    echo -e "  ${YELLOW}⚠️${NC}  dependency-posture.sh not present; cannot report dependency posture."
+  fi
+
+  echo ""
   echo -e "${BOLD}Observability Posture${NC}"
   echo -e "${DIM}Advisory only — surfaces the declared observability posture (G098/G099). Never changes doctor's pass/fail exit code; only policy.undeclaredPosture: block makes G098 blocking at pre-push.${NC}"
   echo ""

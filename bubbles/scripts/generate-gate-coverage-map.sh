@@ -70,11 +70,21 @@ done
   exit 2
 }
 
+# IMP-027 SCOPE-4 / SEC-2: both were `exit 0`.
+# shellcheck source=bubbles/scripts/dependency-posture.sh
+[[ -f "$SCRIPT_DIR/dependency-posture.sh" ]] && source "$SCRIPT_DIR/dependency-posture.sh"
+
 if ! command -v python3 >/dev/null 2>&1; then
+  if declare -F bubbles_require_dep >/dev/null 2>&1; then
+    bubbles_require_dep "generate-gate-coverage-map" "python3 is not installed" || exit 0
+  fi
   echo "generate-gate-coverage-map: SKIP (python3 not installed)"
   exit 0
 fi
 if ! python3 -c "import yaml" >/dev/null 2>&1; then
+  if declare -F bubbles_require_dep >/dev/null 2>&1; then
+    bubbles_require_dep "generate-gate-coverage-map" "PyYAML is not installed" || exit 0
+  fi
   echo "generate-gate-coverage-map: SKIP (PyYAML not installed)"
   exit 0
 fi

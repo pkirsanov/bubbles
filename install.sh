@@ -782,6 +782,31 @@ if [[ -f "$PAYLOAD_VERIFIER" ]]; then
   else
     fail "Payload integrity check failed — installed framework files do not match the release manifest checksums (corruption or incomplete download). Re-run the installer; if this persists, the downloaded payload is corrupt or was modified in transit."
   fi
+else
+  # IMP-027 SCOPE-4 / SEC-1 — fail closed when the verifier is missing.
+  #
+  # This block previously had NO else branch. The rationale was backward
+  # compatibility: an older payload that predates the verifier should still
+  # install. The consequence was that omitting ONE file from the downloaded
+  # tarball silently disabled integrity verification for the entire install,
+  # and the install still reported success. That is a tampering primitive, not
+  # a compatibility case — and the verifier cannot check its own absence,
+  # because only the verifier reads the manifest.
+  #
+  # The manifest now declares whether it expects the verifier. Genuinely old
+  # payloads (no declaration) keep the permissive path; anything from this
+  # version forward cannot silently skip verification.
+  payload_verifier_required="false"
+  if [[ -n "${RELEASE_MANIFEST_SOURCE:-}" && -f "$RELEASE_MANIFEST_SOURCE" ]]; then
+    if grep -q '"payloadVerifierRequired"[[:space:]]*:[[:space:]]*true' "$RELEASE_MANIFEST_SOURCE" 2>/dev/null; then
+      payload_verifier_required="true"
+    fi
+  fi
+
+  if [[ "$payload_verifier_required" == "true" ]]; then
+    fail "Payload integrity verifier is missing (bubbles/scripts/verify-payload-integrity.sh) but the release manifest declares payloadVerifierRequired: true. A payload that declares the verifier and does not ship it has been altered or truncated — refusing to install. Re-download the payload from the official source."
+  fi
+  warn "Payload integrity verifier not present in this payload; skipping verification (legacy payload — its manifest does not declare payloadVerifierRequired)."
 fi
 
 # ── Version stamp ───────────────────────────────────────────────────

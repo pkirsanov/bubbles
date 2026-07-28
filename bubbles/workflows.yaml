@@ -201,7 +201,7 @@ gates:
   G034:
     name: security_gate
     classification: businessInvariant
-    enforcedBy: [ mode-required ]
+    enforcedBy: [ script:bubbles/scripts/security-gate.sh, behavioral:bubbles.security ]
     description: Security scan clean — no critical or high severity vulnerabilities. Dependency audit passed, code review found no injection/XSS/SSRF/auth-bypass findings above medium severity. When this gate fails, the workflow MUST route to bubbles.implement to fix security findings before proceeding.
   G035:
     name: vertical_slice_gate

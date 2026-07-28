@@ -262,6 +262,15 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-bands.sh" ]]; then
   run_check_self_only "Gate-band strings current (IMP-027 SCOPE-2d)" bash "$SCRIPT_DIR/gate-bands.sh" --check --repo-root "$REPO_ROOT"
 fi
+# IMP-027 SCOPE-4 / SEC-3: G034 was a businessInvariant gate with no enforcer
+# and no agent reference — its entire enforcement was "appears in a mode's
+# requiredGates list". These give it a mechanical surface.
+if [[ -x "$SCRIPT_DIR/security-gate.sh" ]]; then
+  run_check_self_only "Security gate (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate.sh" --repo-root "$REPO_ROOT"
+fi
+if [[ -x "$SCRIPT_DIR/security-gate-selftest.sh" ]]; then
+  run_check "Security gate selftest (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
   run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
 fi

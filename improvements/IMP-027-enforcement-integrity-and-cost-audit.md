@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COST-1, COST-2, PERF-1
+**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1, COST-2, PERF-1
 
 ---
 
@@ -30,14 +30,6 @@ Coverage was **asserted from hand-written lists** rather than **derived from the
 - **EV-2 — the sound receipt rail exists but is the fallback, not the enforced path.** `bubbles/scripts/tool-log.sh` wraps a command, streams output through, and appends a JSONL receipt carrying a sha256 `inputClosure`; `bubbles/scripts/evidence-receipt-check.sh` performs targeted VALID/STALE/UNKNOWN invalidation over those receipts. This is provenance-grade evidence and is the correct mechanism. However it is **case 4** in the acceptance chain (`state-transition-guard.sh:2563-2571`), reached only after three markdown paths, and `evidence-receipt-check.sh` is wired into `framework-validate.sh:406` **only via its selftest** — the live check never runs against a real log in the transition path. Nothing requires an agent to call `tool-log.sh` at all.
 
 - **EV-3 — anti-fabrication verdicts rest on lexical proxies.** `≥10 non-blank lines` = evidence (padding satisfies it); `≥80% similarity` = clone detection (79% passes); G068 matches DoD↔Gherkin by ≥3-word overlap after stripping words <4 chars plus a hardcoded stopword list. The maintainer's own [`docs/issues/G068-word-overlap-threshold.md`](../docs/issues/G068-word-overlap-threshold.md) documents that this strips domain-critical short tokens (`API`, `UI`, `DB`, `key`, `log`) and scenario-defining words (`user`, `system`, `should`), producing **false-positive failures on legitimate DoD items**. False positives are corrosive: they train operators to distrust gates, which is the exact erosion the framework exists to prevent.
-
-### Security / supply chain
-
-- **SEC-1 — installer payload verification fails open when the verifier file is absent.** `install.sh` guards the integrity check with `if [[ -f "$PAYLOAD_VERIFIER" ]]; then ... fi` and **no `else` branch** (verified: the block's only `else` belongs to the inner `if bash "$PAYLOAD_VERIFIER" ...` invocation). The stated rationale is backward compatibility ("guard on its presence so an older payload lacking it never breaks the install"). Consequence: **omitting one file (`bubbles/scripts/verify-payload-integrity.sh`) from the downloaded tarball silently disables integrity verification for the entire install**, and the install proceeds and reports success. The verifier is itself listed in `bubbles/release-manifest.json`, but only the verifier can check that — a circular bootstrap dependency.
-
-- **SEC-2 — ten non-selftest guards `exit 0` on undeclared dependencies.** [`README.md`](../README.md) states *"No dependencies beyond `curl` and `bash` 4.0+."* In practice these silently pass when a dependency is missing: `result-envelope-validate.sh:149,171` (python3, **jsonschema**), `yaml-schema-validate.sh:20,25` (python3, PyYAML, jsonschema), `diff-evidence-guard.sh:57,65` (git, python3), `evidence-tool-log-bridge.sh:85` (python3 — this is the receipt bridge itself), plus `generate-gate-coverage-map.sh`, `generate-gates-block.sh`, `generate-modes-block.sh`, `mode-family-inventory.sh`, `model-tier-advisory.sh`, `parallel-fanout.sh`. `jsonschema` and `PyYAML` are **not** stdlib and are not declared install requirements. A guard that skips is a guard that lies. `bubbles/scripts/eval-harness.sh` already implements the correct fail-closed posture and should be the model.
-
-- **SEC-3 — G034 `security_gate` is a phantom.** Classified as one of only six `businessInvariant` gates in `bubbles/workflows.yaml::gateClassification`. Verified references: it appears in `bubbles/registry/gates.yaml` (definition), `bubbles/workflows.yaml` (4 occurrences: definition + `requiredGates`), and `docs/CHEATSHEET.md:404` (a doc table). It has **no enforcer script, and is not referenced by any agent — including `bubbles.security.agent.md`**. Its entire enforcement is "appears in a mode's `requiredGates` list", i.e. an LLM reading YAML.
 
 ### Cost and performance
 
@@ -76,12 +68,6 @@ Scopes are ordered by (severity × cheapness).
 - Wire `evidence-receipt-check.sh --strict` into the transition path (today it is reachable only through its selftest at `framework-validate.sh:406`).
 - **Cheapest high-yield step:** because project terminal-discipline already funnels all commands through a single project CLI, wrapping that one entrypoint in `tool-log.sh` makes every gate-relevant command receipted at near-zero authoring cost. Document this as the recommended adoption path.
 - **Immediate, independent of the above:** reconcile `README.md:46` with the code. Either ship the blocking mode or amend the sentence. The gap between the advertised guarantee and `state-transition-guard.sh:2440-2445`/`:2555-2562` is the framework's single largest credibility risk.
-
-### SCOPE-4 — Fail closed on missing dependencies (SEC-1, SEC-2)
-
-- **SEC-1:** add an `else` branch to the `if [[ -f "$PAYLOAD_VERIFIER" ]]` block in `install.sh` that **fails the install** when the verifier is absent, gated on the release manifest declaring a `payloadVerifierRequired: true` capability (so genuinely older payloads still install, but any manifest from this version forward cannot silently skip verification). A missing verifier in a manifest that declares it is a tampering signal, not a compatibility case.
-- **SEC-2:** declare the real dependency set (`bash>=4`, `git`, `jq`, `python3`, `PyYAML`, `jsonschema`) in `README.md` and surface it in `cli.sh doctor`. Convert the 10 non-selftest `SKIP → exit 0` paths to exit non-zero when the check is required, with a single logged `BUBBLES_ALLOW_DEGRADED=1` opt-out that `doctor` reports as a degraded posture. Selftests may retain SKIP; guards may not. Model the change on `bubbles/scripts/eval-harness.sh`, which already fails closed correctly.
-- **SEC-3:** either implement a real enforcer for G034 `security_gate` (dependency-audit + severity-threshold script invoked from the validate phase), or reclassify it out of `businessInvariant` and mark it `behavioral:bubbles.security` under the `enforcedBy` vocabulary — and add the corresponding reference to `agents/bubbles.security.agent.md`, which today does not mention it. **Recommendation: implement the enforcer**; a `businessInvariant` security gate with no mechanical surface is the weakest link in the six-gate invariant set.
 
 ### SCOPE-5 — Build the golden-task eval corpus (COST-2)
 
@@ -132,7 +118,6 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 3 | SCOPE-4 | SEC-1 is gated on a new manifest capability flag, so it is non-breaking for existing payloads. SEC-2 ships advisory-first (`BUBBLES_ALLOW_DEGRADED` logged), then blocking one minor version later. |
 | 4 | SCOPE-5 | Pure addition. No existing behavior changes. Prerequisite for waves 5–6. |
 | 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before SCOPE-5 produces a passing zero-regression eval — this is the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
 | 6 | SCOPE-3, SCOPE-8 | Behavior-changing for evidence acceptance. Ship `receipt-preferred` default first (no-op), let downstream repos adopt `tool-log.sh` wrapping, then flip done-ceiling modes to `receipt-required` a version later. SCOPE-8's `SCN-*` requirement needs a planning-artifact migration window. |
@@ -147,7 +132,7 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 - **R1 — removed (delivered).**
 - **R2 — SCOPE-6 bundle reduction degrades gate detection.** Moving load-bearing modules out of the router closure may cause missed routing. → This is exactly what the `operating-baseline.md` R3 condition anticipates. Hard-block SCOPE-6 on a passing SCOPE-5 held-out eval; keep the reduction opt-in until the eval is green two consecutive runs.
 - **R3 — SCOPE-3 `receipt-required` breaks existing downstream repos.** Repos with markdown-only evidence would fail promotion. → Default `receipt-preferred` (no-op). Announce, ship the CLI-wrapping recipe, and only bind `receipt-required` to done-ceiling modes one minor version later. Provide a `bubbles evidence migrate --dry-run` report showing which DoD items would fail.
-- **R4 — SCOPE-4 SEC-2 blocking breaks CI on machines lacking `jsonschema`.** → Advisory-first with a loud `doctor` degraded-posture line; blocking one version later; document `pip install --user pyyaml jsonschema` in `INSTALLATION.md`.
+- **R4 — removed (delivered).**
 - **R6 — removed (delivered).**
 - **R7 — SCOPE-7 parallelization introduces nondeterministic output ordering,** making failures hard to read. → `parallel-fanout.sh` already has a determinism selftest; require ordered result buffering and keep `--tier=core` serial as a debugging fallback.
 - **R8 — Scope creep.** → The remaining waves can be re-proposed separately if the owner prefers smaller units.
@@ -157,7 +142,6 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 ## Acceptance criteria (when implemented)
 
 - **SCOPE-3:** under `evidenceMode: receipt-required`, a DoD item backed only by a 10-line prose block causes `state-transition-guard.sh` to exit **1**; under `receipt-preferred` it still passes with an advisory. `evidence-receipt-check.sh --strict` runs in the transition path. `README.md:46` matches observed behavior.
-- **SCOPE-4:** `install.sh` fails when the manifest declares `payloadVerifierRequired: true` and the verifier is absent; `doctor` lists the full dependency set and reports degraded posture when `BUBBLES_ALLOW_DEGRADED=1`; each of the 10 SEC-2 scripts exits non-zero on a missing required dep unless the opt-out is set; G034 either has a resolvable enforcer or is reclassified with an agent reference.
 - **SCOPE-5:** `bubbles eval run --suite bubbles/eval/tasks` scores ≥10 golden tasks and returns a deterministic aggregate; the fabrication-bait task **fails** a run that marks the item `[x]` and **passes** one that leaves it `[ ]` with an Uncertainty Declaration.
 - **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the SCOPE-5 eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
 - **SCOPE-7:** `framework-validate.sh --changed-only` runs a strict subset for a single-subsystem diff; full-tier wall clock drops below 5 minutes on the reference machine; repeated runs with no changes are cache-served; output ordering is deterministic.
@@ -202,9 +186,9 @@ Remediation must not weaken these verified-working controls:
 - **`state-transition-guard.sh` integrity** — 108 `fail` vs 15 `warn`, one selftest-only env var, zero grandfather clauses. SCOPE-3 adds a mode; it must not add an override.
 - **`batch-promotion-lint.sh` override design** — `<actor>:<expiryEpoch>:<sha>`, sha-bound, expiring, non-replayable, append-only ledger. The reference pattern any future override must follow.
 - **`generate-gates-block.sh`** byte-identical registry→`workflows.yaml` splice with `--check` drift mode. It must preserve round-trip parity.
-- **`eval-harness.sh` fails closed** on missing `python3`. SCOPE-4 generalizes this posture; it must not invert it.
+- **`eval-harness.sh` fails closed** on missing `python3`. The shared dependency-posture helper generalizes this posture; it must not invert it.
 - **`metrics` refusing to track `dollarCost`** because *"Derived from unknown tokens = fabricated"*. SCOPE-6 adds only exactly-computable proxies.
 - **Artifact ownership + the closed result-envelope vocabulary** (`completed_owned` / `completed_diagnostic` / `route_required` / `blocked`).
 - **`gateClassification`'s `modelCompensation` / `businessInvariant` split** — the only principled path to shedding scaffolding as models improve. SCOPE-11 extends it; nothing may collapse it.
 - **The repository-binding subsystem** (session-bound, control-revision, digest-verified work boundary) and its ~6,000 lines of selftest, fully wired via `framework-validate.sh:363`. The selftest discovery sweep must keep the `cli.sh repository-binding-selftest --suite=all` aggregate invocation intact.
-- **`install.sh` payload integrity verification** against `release-manifest.json` checksums, with its explicit *"INTEGRITY only, not authenticity"* disclosure. SCOPE-4 closes the fail-open branch without disturbing this design.
+- **`install.sh` payload integrity verification** against `release-manifest.json` checksums, with its explicit *"INTEGRITY only, not authenticity"* disclosure. The delivered fail-closed branch must not disturb this design.
