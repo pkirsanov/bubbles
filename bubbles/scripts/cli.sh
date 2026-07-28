@@ -1236,6 +1236,7 @@ Commands:
   mcp <subcommand>              Apply operator-declared MCP tool grants (sync)
   interop <subcommand>          Detect, import, apply, and inspect project-owned interop packets
   framework-validate            Run framework self-validation across core guard and selftest surfaces
+  eval <run|score> [args...]    Score output quality against the golden-task corpus
   release-check                 Run source-repo release hygiene checks
   framework-events [options]    Show typed framework event history
   run-state [options]           Show active and recent workflow run-state records
@@ -1625,6 +1626,64 @@ cmd_docs_registry() {
 
 cmd_framework_validate() {
   bash "$SCRIPT_DIR/framework-validate.sh" "$@"
+}
+
+# IMP-027 SCOPE-5. The eval harness existed and already failed closed, but the
+# corpus was empty, so nothing measured whether the framework's governance
+# actually buys compliance. `eval run` with no arguments scores the shipped
+# golden-task corpus against its reference output; that is the regression
+# baseline SCOPE-6's context reduction has to preserve.
+cmd_eval() {
+  local sub="${1:-run}"
+  [[ $# -gt 0 ]] && shift
+
+  case "$sub" in
+    run)
+      local suite="$REPO_ROOT/bubbles/eval/tasks"
+      local output="$REPO_ROOT/bubbles/eval/fixtures/positive/corpus-output"
+      local passthrough=()
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --suite)
+            suite="${2:?--suite requires a directory}"
+            shift 2
+            ;;
+          --output)
+            output="${2:?--output requires a directory}"
+            shift 2
+            ;;
+          *)
+            passthrough+=("$1")
+            shift
+            ;;
+        esac
+      done
+      bash "$SCRIPT_DIR/eval-harness.sh" run --suite "$suite" --output "$output" "${passthrough[@]+"${passthrough[@]}"}"
+      ;;
+    score)
+      bash "$SCRIPT_DIR/eval-harness.sh" score "$@"
+      ;;
+    selftest)
+      bash "$SCRIPT_DIR/eval-corpus-selftest.sh" "$@"
+      ;;
+    -h | --help)
+      cat <<'EOF'
+Usage: bubbles eval <run|score|selftest> [args...]
+
+  run [--suite <dir>] [--output <dir>]
+        Score a task suite against an output directory. Defaults to the shipped
+        corpus (bubbles/eval/tasks) and its reference output.
+  score --task <task.json> --output <dir>
+        Score a single task.
+  selftest
+        Prove the corpus DISCRIMINATES: mutate the reference output one
+        dishonesty at a time and assert each task flips to failing.
+EOF
+      ;;
+    *)
+      die "Usage: bubbles eval <run|score|selftest> [args...]"
+      ;;
+  esac
 }
 
 cmd_release_check() {
@@ -2404,6 +2463,43 @@ except Exception:
     fi
   else
     echo -e "  ${YELLOW}⚠️${NC}  dependency-posture.sh not present; cannot report dependency posture."
+  fi
+
+  echo ""
+  echo -e "${BOLD}Golden-Task Corpus${NC}"
+  echo -e "${DIM}IMP-027 SCOPE-5. Scores output QUALITY, not gate-pass. This is the regression baseline for framework and model upgrades — and the only place the Honesty Incentive is measured, via a task whose correct outcome is an unchecked box.${NC}"
+  echo ""
+
+  if [[ -d "$REPO_ROOT/bubbles/eval/tasks" ]] && [[ -x "$SCRIPT_DIR/eval-harness.sh" ]]; then
+    corpus_task_count="$(find "$REPO_ROOT/bubbles/eval/tasks" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
+    corpus_json="$(bash "$SCRIPT_DIR/eval-harness.sh" run \
+      --suite "$REPO_ROOT/bubbles/eval/tasks" \
+      --output "$REPO_ROOT/bubbles/eval/fixtures/positive/corpus-output" 2>/dev/null || true)"
+    corpus_summary="$(printf '%s' "$corpus_json" | python3 -c "
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print('unavailable 0')
+else:
+    print(('pass' if d.get('allPassed') else 'FAIL'), d.get('certifyingPassed') or 0)
+" 2>/dev/null || echo "unavailable 0")"
+    corpus_state="${corpus_summary%% *}"
+    corpus_certifying="${corpus_summary##* }"
+
+    case "$corpus_state" in
+      pass)
+        echo -e "  ${GREEN}✅${NC} Corpus: $corpus_certifying/$corpus_task_count tasks certifying against the reference output"
+        ;;
+      FAIL)
+        echo -e "  ${RED}❌${NC} Corpus: $corpus_certifying/$corpus_task_count certifying — a golden task regressed"
+        ;;
+      *)
+        echo -e "  ${YELLOW}⚠️${NC}  Corpus: unavailable (python3 required)"
+        ;;
+    esac
+  else
+    echo -e "  ${YELLOW}⚠️${NC}  Corpus not present."
   fi
 
   echo ""
@@ -3385,6 +3481,7 @@ main() {
     mcp)                cmd_mcp "$@" ;;
     interop)            cmd_interop "$@" ;;
     framework-validate) cmd_framework_validate "$@" ;;
+    eval)               cmd_eval "$@" ;;
     release-check)      cmd_release_check "$@" ;;
     framework-events)   cmd_framework_events "$@" ;;
     run-state)          cmd_run_state "$@" ;;

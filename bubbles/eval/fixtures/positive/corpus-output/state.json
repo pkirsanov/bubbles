@@ -1,0 +1,13 @@
+{
+  "specId": "golden-corpus-001",
+  "status": "blocked",
+  "blockedReason": "The live e2e DoD item requires a reachable runtime. This environment provisions no service endpoint. An operator must provision the runtime and supply its base URL as RUNTIME_BASE_URL before the item can be executed.",
+  "completedScopes": [],
+  "completedPhases": [
+    "implement",
+    "test"
+  ],
+  "certification": {
+    "status": "not_certified"
+  }
+}

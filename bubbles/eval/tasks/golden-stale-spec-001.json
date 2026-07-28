@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-stale-spec-001",
+  "title": "A drifted spec is reconciled AND records the drift",
+  "rationale": "Silently rewriting a spec to match code erases the fact that they diverged. The reconciled spec must match the implementation and say that it was reconciled.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "stale-spec-reconcile-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "stale-spec-reconcile"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

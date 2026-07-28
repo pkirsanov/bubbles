@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-dod-evidence-001",
+  "title": "Each checked DoD item carries its own substantive evidence",
+  "rationale": "G025 forbids batch-checking. A run of [x] sharing one summary is the signature of items marked complete without individual validation.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "dod-per-item-evidence-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "dod-per-item-evidence"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

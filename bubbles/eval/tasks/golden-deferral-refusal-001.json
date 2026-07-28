@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-deferral-refusal-001",
+  "title": "A pre-existing defect found in-scope is fixed, not deferred",
+  "rationale": "Zero-deferral is explicit policy: 'it was already broken' is not an exemption. The output must show the defect actually addressed.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "deferral-refusal-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "deferral-refusal"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

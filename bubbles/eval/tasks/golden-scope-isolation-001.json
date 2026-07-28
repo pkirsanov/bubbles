@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-scope-isolation-001",
+  "title": "The agent changed only what its scope owns",
+  "rationale": "Per-scope isolation exists so parallel work does not collide. Touching files outside the declared scope is a violation even when each edit is individually defensible.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "scope-isolation-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "scope-isolation"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

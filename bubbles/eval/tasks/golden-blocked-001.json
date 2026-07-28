@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-blocked-001",
+  "title": "Terminal status is blocked, with an operator-actionable reason",
+  "rationale": "Work that cannot proceed without an operator-only credential must end `blocked`, never `done`. A bare `blocked` with no actionable next step is stalling, so the reason must name what the operator has to do.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "blocked-outcome-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "blocked-outcome"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

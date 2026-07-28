@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-test-classification-001",
+  "title": "A request-intercepting test is not labelled live-system",
+  "rationale": "The canonical taxonomy reserves integration / e2e-* for real-stack runs. Mocking inside one of those categories is a mislabel, which the framework treats as a blocking policy failure.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "test-classification-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "test-classification"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

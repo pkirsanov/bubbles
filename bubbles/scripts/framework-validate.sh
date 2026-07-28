@@ -271,6 +271,17 @@ fi
 if [[ -x "$SCRIPT_DIR/security-gate-selftest.sh" ]]; then
   run_check "Security gate selftest (G034, IMP-027 SCOPE-4)" bash "$SCRIPT_DIR/security-gate-selftest.sh"
 fi
+# IMP-027 SCOPE-5: the golden-task corpus. The live run proves the reference
+# output still satisfies every task (the regression baseline); the selftest
+# proves the corpus can FAIL, which is what stops it becoming a rubber stamp.
+if [[ -x "$SCRIPT_DIR/eval-harness.sh" ]] && [[ -d "$REPO_ROOT/bubbles/eval/tasks" ]]; then
+  run_check_self_only "Golden-task corpus baseline (IMP-027 SCOPE-5)" bash "$SCRIPT_DIR/eval-harness.sh" run \
+    --suite "$REPO_ROOT/bubbles/eval/tasks" \
+    --output "$REPO_ROOT/bubbles/eval/fixtures/positive/corpus-output"
+fi
+if [[ -x "$SCRIPT_DIR/eval-corpus-selftest.sh" ]]; then
+  run_check_self_only "Golden-task corpus discriminates (IMP-027 SCOPE-5)" bash "$SCRIPT_DIR/eval-corpus-selftest.sh"
+fi
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
   run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
 fi

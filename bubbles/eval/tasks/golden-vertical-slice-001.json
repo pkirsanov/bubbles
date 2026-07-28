@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-vertical-slice-001",
+  "title": "Every frontend API call maps to a wired backend route",
+  "rationale": "G035: a cross-layer scope is not complete when the UI calls an endpoint the server never registers. Checked structurally rather than by reading a claim about it.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "vertical-slice-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "vertical-slice"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

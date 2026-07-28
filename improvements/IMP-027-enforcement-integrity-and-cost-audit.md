@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1, COST-2, PERF-1
+**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1, PERF-1
 
 ---
 
@@ -51,8 +51,6 @@ Coverage was **asserted from hand-written lists** rather than **derived from the
 
   `bubbles/scripts/agent-bundle-size-budget.sh` is self-described as a *"ratcheting PER-AGENT effective-bundle size budget"* whose `--seed` sets ceilings from **current** size. It prevents regression but cannot drive reduction: today's bloat becomes tomorrow's floor. Current check output: `OK — all 41 agent bundle(s) within their recorded ceilings`.
 
-- **COST-2 — the fix for COST-1 is already designed but permanently blocked by a missing eval corpus.** [`agents/bubbles_shared/operating-baseline.md:88-110`](../agents/bubbles_shared/operating-baseline.md) identifies the exact remedy (move the three heavy authoring modules out of the router's always-loaded closure into phase `*-bootstrap.md` profiles — *"≈ 123 KB / ~25% of the closure"*) and then gates it: *"A repo MUST validate, via a held-out evaluation showing **zero gate-detection regression**... `framework-validate` cannot substitute for that eval — it exercises scripts and selftests, not LLM routing behavior."* That is methodologically correct. But `bubbles/eval/fixtures/` contains **only negative fixtures that test the harness itself** (`oracle-timeout.json`, `malformed-task.json`, `invalid-schema.json`, `missing-oracle.json`, …). There are no golden delivery tasks. The reduction is opt-in, default-off, and gated on a capability that was never built, so it will never activate.
-
 - **PERF-1 — validation is O(everything), sequential, and uncached.** Measured: `framework-validate.sh --tier=core` took **260 seconds** to run **16 of 209** checks. The full tier is what pre-push and `release-check` run (no flag). `grep` for `--since`, changed-files filtering, or result caching in `framework-validate.sh` returns nothing. `bubbles/scripts/parallel-fanout.sh` exists — and is referenced only by its own determinism selftest and one doc. The framework built a parallelism primitive and never applied it to its own largest cost centre. A ~25-minute serial pre-push is the single strongest incentive toward the bypass behavior the framework exists to prevent.
 
 ---
@@ -69,22 +67,9 @@ Scopes are ordered by (severity × cheapness).
 - **Cheapest high-yield step:** because project terminal-discipline already funnels all commands through a single project CLI, wrapping that one entrypoint in `tool-log.sh` makes every gate-relevant command receipted at near-zero authoring cost. Document this as the recommended adoption path.
 - **Immediate, independent of the above:** reconcile `README.md:46` with the code. Either ship the blocking mode or amend the sentence. The gap between the advertised guarantee and `state-transition-guard.sh:2440-2445`/`:2555-2562` is the framework's single largest credibility risk.
 
-### SCOPE-5 — Build the golden-task eval corpus (COST-2)
-
-The keystone: the harness is built and already fails closed; only the corpus is missing.
-
-- Author 10–20 versioned golden tasks under `bubbles/eval/tasks/` using the existing `task-v2.schema.json`, with `executable-oracle` checks so scoring is deterministic. Minimum coverage:
-  - a bug fix requiring an **adversarial** regression test,
-  - a vertical-slice feature (frontend + backend + E2E),
-  - a stale-spec reconcile,
-  - a **fabrication-bait** task where the correct outcome is an honest gap (`[ ]` + Uncertainty Declaration) — this directly tests the Honesty Incentive, which is currently unmeasured,
-  - a task whose correct outcome is `blocked`.
-- Add `bubbles eval run --suite bubbles/eval/tasks` to `cli.sh` and report the aggregate in `doctor`.
-- This unblocks SCOPE-6, enables model-upgrade regression detection, and — most importantly — makes it possible to **measure whether each 20 KB of governance prose actually buys compliance**, which is currently an article of faith.
-
 ### SCOPE-6 — Reduce and measure context cost (COST-1)
 
-- Execute the already-designed phase-local split from `operating-baseline.md:88-110`: move `project-config-contract.md`, `scope-workflow.md`, and `feature-templates.md` out of the orchestrator's always-loaded closure into the `*-bootstrap.md` phase profiles. Validate with the SCOPE-5 corpus showing zero gate-detection regression. Target: orchestrator effective bundle **≤ 40 K tokens** (from ~125 K).
+- Execute the already-designed phase-local split from `operating-baseline.md:88-110`: move `project-config-contract.md`, `scope-workflow.md`, and `feature-templates.md` out of the orchestrator's always-loaded closure into the `*-bootstrap.md` phase profiles. Validate with the delivered golden-task corpus (`bubbles eval run`) showing zero gate-detection regression. Target: orchestrator effective bundle **≤ 40 K tokens** (from ~125 K).
 - Change `agent-bundle-size-budget.sh` from pure ratchet to **ratchet + target**: add `effectiveBundleTargetBytes` per role class (router / owner / diagnostic) and report distance-to-target in `doctor`. A ceiling seeded from current size can only preserve bloat.
 - Deduplicate the shared layer. `cli.sh doctor` reports `agent-common.md` with **in-degree 55**. `critical-requirements.md` (22,883 B), `agent-common.md` (20,274 B), `evidence-rules.md` (13,046 B), and `quality-gates.md` (19,932 B) substantially restate the same anti-fabrication doctrine. Collapse to one normative source plus short role-specific deltas.
 - Move **reference data out of prompts into tools.** `project-config-contract.md` (59,685 B) and `feature-templates.md` (22,401 B) are lookup material, not reasoning context. The MCP surface already exists (`docs/MCP.md`, `mcp_bubbles_read_spec`); serve templates on demand. This is the single largest available structural saving.
@@ -107,7 +92,7 @@ The keystone: the harness is built and already fails closed; only the corpus is 
 ### SCOPE-11 — Strategic: plan the framework's own obsolescence curve (COV-3 follow-on)
 
 - For each `modelCompensation` gate, record a **retirement criterion** in the registry (e.g. `retireWhen: golden-task fabrication rate < 2% over 20 runs at model tier >= N`).
-- Connect the existing `bubbles/scripts/model-tier-advisory.sh`: on a stronger declared model tier, downgrade or skip specific `modelCompensation` gates and use the SCOPE-5 corpus to **measure** whether quality holds.
+- Connect the existing `bubbles/scripts/model-tier-advisory.sh`: on a stronger declared model tier, downgrade or skip specific `modelCompensation` gates and use the delivered golden-task corpus to **measure** whether quality holds.
 - This converts Bubbles from a fixed 112-gate tax into an adaptive assurance system that gets cheaper as models improve. Without it, cost stays permanently pinned to the weakest model the framework ever had to survive.
 
 ---
@@ -118,10 +103,9 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 4 | SCOPE-5 | Pure addition. No existing behavior changes. Prerequisite for waves 5–6. |
-| 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before SCOPE-5 produces a passing zero-regression eval — this is the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
+| 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before the golden-task corpus shows a zero-regression eval — the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
 | 6 | SCOPE-3, SCOPE-8 | Behavior-changing for evidence acceptance. Ship `receipt-preferred` default first (no-op), let downstream repos adopt `tool-log.sh` wrapping, then flip done-ceiling modes to `receipt-required` a version later. SCOPE-8's `SCN-*` requirement needs a planning-artifact migration window. |
-| 7 | SCOPE-11 | Requires the delivered gate classification and SCOPE-5 (corpus). |
+| 7 | SCOPE-11 | Requires the delivered gate classification and the delivered corpus. |
 
 Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and SCOPE-8, which are the only two requiring a downstream migration window.
 
@@ -130,7 +114,7 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 ## Risks & mitigations
 
 - **R1 — removed (delivered).**
-- **R2 — SCOPE-6 bundle reduction degrades gate detection.** Moving load-bearing modules out of the router closure may cause missed routing. → This is exactly what the `operating-baseline.md` R3 condition anticipates. Hard-block SCOPE-6 on a passing SCOPE-5 held-out eval; keep the reduction opt-in until the eval is green two consecutive runs.
+- **R2 — SCOPE-6 bundle reduction degrades gate detection.** Moving load-bearing modules out of the router closure may cause missed routing. → This is exactly what the `operating-baseline.md` R3 condition anticipates. Hard-block SCOPE-6 on a passing corpus eval; keep the reduction opt-in until the eval is green two consecutive runs.
 - **R3 — SCOPE-3 `receipt-required` breaks existing downstream repos.** Repos with markdown-only evidence would fail promotion. → Default `receipt-preferred` (no-op). Announce, ship the CLI-wrapping recipe, and only bind `receipt-required` to done-ceiling modes one minor version later. Provide a `bubbles evidence migrate --dry-run` report showing which DoD items would fail.
 - **R4 — removed (delivered).**
 - **R6 — removed (delivered).**
@@ -142,8 +126,7 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 ## Acceptance criteria (when implemented)
 
 - **SCOPE-3:** under `evidenceMode: receipt-required`, a DoD item backed only by a 10-line prose block causes `state-transition-guard.sh` to exit **1**; under `receipt-preferred` it still passes with an advisory. `evidence-receipt-check.sh --strict` runs in the transition path. `README.md:46` matches observed behavior.
-- **SCOPE-5:** `bubbles eval run --suite bubbles/eval/tasks` scores ≥10 golden tasks and returns a deterministic aggregate; the fabrication-bait task **fails** a run that marks the item `[x]` and **passes** one that leaves it `[ ]` with an Uncertainty Declaration.
-- **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the SCOPE-5 eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
+- **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the corpus eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
 - **SCOPE-7:** `framework-validate.sh --changed-only` runs a strict subset for a single-subsystem diff; full-tier wall clock drops below 5 minutes on the reference machine; repeated runs with no changes are cache-served; output ordering is deterministic.
 - **SCOPE-8:** every DoD item in the reference examples carries an `SCN-*` reference; G068's word-overlap matcher is removed from the verdict path; the `docs/issues/G068-*` false-positive case now passes.
 - **SCOPE-11:** every `modelCompensation` gate carries a `retireWhen` criterion; `model-tier-advisory.sh` can produce a report of which gates would be skipped at a given tier.

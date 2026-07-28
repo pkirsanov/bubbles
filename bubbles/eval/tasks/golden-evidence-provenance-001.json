@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-evidence-provenance-001",
+  "title": "Every evidence block declares how the claim was obtained",
+  "rationale": "evidence-rules.md requires a Claim Source of executed / interpreted / not-run. An `executed` claim unbacked by a command and an exit code is the precise pattern G021 forbids.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "evidence-provenance-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "evidence-provenance"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}

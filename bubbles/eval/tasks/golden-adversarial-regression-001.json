@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "taskId": "golden-adversarial-regression-001",
+  "title": "The regression test would fail if the bug returned",
+  "rationale": "A regression whose fixtures all satisfy the broken condition is tautological: it passes before and after the fix and therefore detects nothing.",
+  "passThreshold": 0.8,
+  "judgeWeight": 0,
+  "checks": [
+    {
+      "id": "adversarial-regression-oracle",
+      "type": "executable-oracle",
+      "required": true,
+      "weight": 6,
+      "allowedRoot": "oracles",
+      "argv": [
+        "corpus-oracle.py",
+        "adversarial-regression"
+      ],
+      "timeoutSeconds": 10
+    }
+  ]
+}
