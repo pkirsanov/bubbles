@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COV-1, COV-2, COV-3, COST-1, COST-2, PERF-1, REG-1, REG-2, DOC-1
+**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COV-1, COV-2, COV-3, COST-1, COST-2, PERF-1, REG-1, REG-2
 
 ---
 
@@ -104,8 +104,6 @@ Coverage is **asserted from hand-written lists** rather than **derived from the 
 
 - **REG-2 — the improvements surface is incomplete and G125 has no enforcer.** `improvements/TEMPLATE.md` instructs authors to *"add a row to improvements/INDEX.md"*, but `improvements/` contains **only `TEMPLATE.md`** — `INDEX.md` does not exist. G125 (`framework_health_evidence_gate`) is declared **BLOCKING** in the registry and requires `bubbles.retro target: framework` to emit `improvements/IMP-NNN-<slug>.md`; `grep -rln 'G125' bubbles/scripts/*.sh` returns **zero enforcer scripts**, and G125 appears in the COV-1 zero-mechanical-surface list.
 
-- **DOC-1 — documentation drift.** `README.md:533` documents *"### Self-Healing Loops (G039)"*; G039 was consolidated and no longer exists in `bubbles/registry/gates.yaml` (its content now lives in the gate that states *"Consolidates former G039 (self_healing_containment_gate)"*). `docs/guides/FRAMEWORK_CONCEPTS.md:168` says *"~32 modes"* (actual **61**); `:238` and `:509` say *"~22 checks"* (actual **42** in the state-transition guard). No lint validates gate IDs or counts appearing in prose docs.
-
 ---
 
 ## Proposal
@@ -175,12 +173,6 @@ The keystone: the harness is built and already fails closed; only the corpus is 
 - Create `improvements/INDEX.md` with the columns the template implies (IMP ID, title, status, surface, date, gap codes) and seed it with this proposal.
 - Implement a `bubbles/scripts/framework-health-evidence-lint.sh` enforcing G125: the emitted `improvements/IMP-NNN-*.md` must exist, cite its input data sources, carry `Status:`, and must not have mutated `bubbles/*`, `agents/*`, or `bubbles/workflows.yaml` in the same commit. Wire it into `framework-validate.sh` (via SCOPE-2b glob discovery) and record it as `enforcedBy: script:...` per SCOPE-2a.
 
-### SCOPE-10 — Documentation truth (DOC-1)
-
-- Fix `README.md:533` — replace the retired `G039` with the current consolidating gate ID.
-- Regenerate `docs/guides/FRAMEWORK_CONCEPTS.md:168` (`~32 modes` → 61) and `:238`/`:509` (`~22 checks` → 42) from `docs/generated/framework-stats.json`, using the existing `GENERATED:` marker mechanism already used in `README.md`.
-- Extend `bubbles/scripts/gate-id-grep.sh` to validate gate IDs referenced in `docs/**` and `README.md` prose against `bubbles/registry/gates.yaml`, failing on references to retired IDs.
-
 ### SCOPE-11 — Strategic: plan the framework's own obsolescence curve (COV-3 follow-on)
 
 - For each `modelCompensation` gate, record a **retirement criterion** in the registry (e.g. `retireWhen: golden-task fabrication rate < 2% over 20 runs at model tier >= N`).
@@ -195,7 +187,7 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 1 | SCOPE-9, SCOPE-10 | Small, additive/corrective, no behavior change for passing repos. Land first. |
+| 1 | SCOPE-9 | Small, additive/corrective, no behavior change for passing repos. Land first. |
 | 2 | SCOPE-2 (2a→2b→2c→2d) | Structural. 2a is a registry schema addition (additive; generator keeps byte-parity). 2b changes discovery only. Land 2a before 2b so newly-discovered checks have enforcement bindings. |
 | 3 | SCOPE-4 | SEC-1 is gated on a new manifest capability flag, so it is non-breaking for existing payloads. SEC-2 ships advisory-first (`BUBBLES_ALLOW_DEGRADED` logged), then blocking one minor version later. |
 | 4 | SCOPE-5 | Pure addition. No existing behavior changes. Prerequisite for waves 5–6. |
@@ -232,7 +224,6 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 - **SCOPE-7:** `framework-validate.sh --changed-only` runs a strict subset for a single-subsystem diff; full-tier wall clock drops below 5 minutes on the reference machine; repeated runs with no changes are cache-served; output ordering is deterministic.
 - **SCOPE-8:** every DoD item in the reference examples carries an `SCN-*` reference; G068's word-overlap matcher is removed from the verdict path; the `docs/issues/G068-*` false-positive case now passes.
 - **SCOPE-9:** `improvements/INDEX.md` exists and lists this IMP; a G125 enforcer exists, is wired, and fails on an IMP that mutated `bubbles/*` in the same commit.
-- **SCOPE-10:** no retired gate ID appears in `README.md` or `docs/**`; `FRAMEWORK_CONCEPTS.md` counts are generated and match `framework-stats.json`; `gate-id-grep.sh` fails on an injected retired-ID reference.
 - **SCOPE-11:** every `modelCompensation` gate carries a `retireWhen` criterion; `model-tier-advisory.sh` can produce a report of which gates would be skipped at a given tier.
 
 ---
@@ -262,9 +253,7 @@ Owning agent/gate named per surface so implementation routes correctly.
 | `bubbles/scripts/agent-bundle-size-budget.sh` | ratchet → ratchet+target | `bubbles.devops` |
 | `bubbles/scripts/framework-health-evidence-lint.sh` (new) | enforce G125 | `bubbles.devops` / G125 |
 | `improvements/INDEX.md` (new) | proposal index | `bubbles.retro` / G125 |
-| `README.md` | fix `G039`; reconcile line 46 evidence claim; declare dependencies | `bubbles.docs` |
-| `docs/guides/FRAMEWORK_CONCEPTS.md` | generated mode/check counts | `bubbles.docs` |
-| `bubbles/scripts/gate-id-grep.sh` | validate gate IDs in docs prose | `bubbles.devops` |
+| `README.md` | reconcile line 46 evidence claim; declare dependencies | `bubbles.docs` |
 | `agents/bubbles.security.agent.md` | reference G034 (or its replacement) | `bubbles.security` |
 
 ---

@@ -530,7 +530,7 @@ Cross-authoring is blocked. If a diagnostic or downstream specialist finds that 
 ### Downstream Framework Ownership
 Consumer repos may install and refresh Bubbles, but they must not author direct edits to framework-managed Bubbles files. Record requested framework changes in `.github/bubbles-project/proposals/` with `bubbles framework-proposal <slug>`, implement the real change in the Bubbles source repo, then refresh downstream installs.
 
-### Self-Healing Loops (G039)
+### Self-Healing Loops (G038)
 When agents hit failures, they attempt bounded self-repair: narrow context, retry up to 3 times, never stack. No infinite loops.
 
 ### Zero Deferral

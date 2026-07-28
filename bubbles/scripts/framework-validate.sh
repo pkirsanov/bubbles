@@ -448,6 +448,12 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-id-grep-selftest.sh" ]]; then
   run_check "Gate ID grep selftest" bash "$SCRIPT_DIR/gate-id-grep-selftest.sh"
 fi
+# IMP-027 SCOPE-10: run the LIVE scan too, not only its selftest. Previously a
+# retired gate ID could sit in README/docs prose indefinitely because nothing
+# executed the scanner against the real tree.
+if [[ -x "$SCRIPT_DIR/gate-id-grep.sh" ]]; then
+  run_check_self_only "Gate ID grep (live, IMP-027 SCOPE-10)" bash "$SCRIPT_DIR/gate-id-grep.sh" --repo-root "$REPO_ROOT"
+fi
 
 if [[ -x "$SCRIPT_DIR/release-packet-location-guard-selftest.sh" ]]; then
   run_check "Release packet location guard selftest" bash "$SCRIPT_DIR/release-packet-location-guard-selftest.sh"
