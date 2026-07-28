@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COV-1, COV-2, COV-3, COST-1, COST-2, PERF-1, REG-1
+**Verified gaps addressed:** EV-1, EV-2, EV-3, SEC-1, SEC-2, SEC-3, COST-1, COST-2, PERF-1
 
 ---
 
@@ -13,14 +13,7 @@ Every structural defect below reduces to one pattern:
 
 > **Bubbles enforces the surfaces it remembers to enumerate, and enumeration is manual everywhere.**
 
-| Surface | Manual enumeration | What escapes |
-|---|---|---|
-| `framework-validate.sh` `run_check` list | 132 hardcoded calls | 7 selftests (COV-2) |
-| Gate-band documentation | 3 hand-maintained copies | all 3 stale simultaneously (REG-1) |
-| `gateClassification` | 13 hand-listed gates | 99 unclassified (COV-3) |
-| `gates.yaml` schema | `name` + `description` only | no `enforcedBy` to derive coverage from (COV-1) |
-
-Coverage is **asserted from hand-written lists** rather than **derived from the file surface** — the same epistemic failure the framework forbids in agents. SCOPE-2 removes the cause; the other scopes close what it already let through.
+Coverage was **asserted from hand-written lists** rather than **derived from the file surface** — the same epistemic failure the framework forbids in agents. The delivered coverage work removed that cause; the remaining scopes close what it already let through.
 
 ---
 
@@ -46,29 +39,6 @@ Coverage is **asserted from hand-written lists** rather than **derived from the 
 
 - **SEC-3 — G034 `security_gate` is a phantom.** Classified as one of only six `businessInvariant` gates in `bubbles/workflows.yaml::gateClassification`. Verified references: it appears in `bubbles/registry/gates.yaml` (definition), `bubbles/workflows.yaml` (4 occurrences: definition + `requiredGates`), and `docs/CHEATSHEET.md:404` (a doc table). It has **no enforcer script, and is not referenced by any agent — including `bubbles.security.agent.md`**. Its entire enforcement is "appears in a mode's `requiredGates` list", i.e. an LLM reading YAML.
 
-### Coverage measurement
-
-- **COV-1 — 36 of 112 gates have zero mechanical enforcement surface, and the framework's own coverage instrument is unreliable in both directions.** [`docs/generated/gate-coverage-map.md`](../docs/generated/gate-coverage-map.md) summarizes *"Gates with NO detected MECHANICAL surface: **5** — G038, G066, G071, G078, G079."* That figure counts a gate as covered if it is merely listed in ≥1 mode's `requiredGates`. Computing gates whose three mechanical columns (state-transition-guard / framework-validate scripts / CI) are **all** `—`:
-
-  ```
-  G006 G007 G008 G010 G011 G012 G013 G014 G015 G016 G018 G019 G023 G032 G033
-  G034 G035 G036 G038 G066 G071 G078 G079 G081 G112 G113 G114 G116 G117 G119 G125
-  COUNT with zero mechanical surface: 36 of 112
-  ```
-
-  That list includes `G018 dod_completion_gate`, `G023 state_transition_guard_gate`, `G034 security_gate`, and `G035 vertical_slice_gate`.
-
-  The map is **also wrong in the opposite direction**, because detection is literal gate-ID string matching (`generate-gate-coverage-map.sh:188` — *"CI: which entrypoints the workflows run + literal gate ids"*). Confirmed false negatives:
-  - **G078** — `bubbles/scripts/batch-promotion-lint.sh` exists (11,779 bytes, executable) and is run by `.github/workflows/`, yet contains **0** occurrences of the string `G078`, so the map reports no surface.
-  - **G018** — genuinely enforced by `state-transition-guard.sh:1030` (`Check 4: DoD Completion (Zero Unchecked)`), undetected.
-  - **G035** — `bubbles/scripts/vertical-delivery-plan-guard.sh` exists, undetected.
-
-  Net effect: **the framework cannot currently answer "which gates are actually mechanically enforced?"** for a framework whose entire value proposition is mechanical enforcement. The upstream cause is that `bubbles/registry/gates.yaml` carries only `name` and `description` for all 112 gates — there is no `enforcedBy` binding to derive from.
-
-- **COV-2 — 7 selftests are never executed by `framework-validate.sh`.** Determined with fixed-string basename matching plus `cli.sh` subcommand accounting: `release-train-guard-selftest.sh`, `release-train-flag-audit-selftest.sh`, `upkeep-calendar-selftest.sh`, `repo-drift-report-selftest.sh`, `interop-import-selftest.sh`, `profile-transition-selftest.sh`, `v4.1.0-selftest.sh`. `release-check.sh` covers none of them (verified: 0 matches each). For the first three, the **live guards** (`release-train-guard.sh`, `release-train-flag-audit.sh`, `upkeep-calendar.sh`) exist but are also unwired. Root cause is the hardcoded 132-call `run_check` enumeration rather than glob discovery.
-
-- **COV-3 — 99 of 112 gates are unclassified.** `bubbles/workflows.yaml::gateClassification` lists 7 `modelCompensation` + 6 `businessInvariant` = 13. The stated purpose ("Review model-compensation gates when models improve significantly") is the framework's principal mechanism for shedding scaffolding as models improve; it is currently applicable to 12% of the gate surface. No lint fails on an unclassified gate.
-
 ### Cost and performance
 
 - **COST-1 — the most-invoked agent carries the largest context bundle, cost is untracked, and the budget mechanism institutionalizes the bloat.** Measured with `bubbles/scripts/effective-bundle-measure.sh` (transitive `agents/bubbles_shared/*.md` closure):
@@ -93,26 +63,11 @@ Coverage is **asserted from hand-written lists** rather than **derived from the 
 
 - **PERF-1 — validation is O(everything), sequential, and uncached.** Measured: `framework-validate.sh --tier=core` took **260 seconds** to run **16 of 209** checks. The full tier is what pre-push and `release-check` run (no flag). `grep` for `--since`, changed-files filtering, or result caching in `framework-validate.sh` returns nothing. `bubbles/scripts/parallel-fanout.sh` exists — and is referenced only by its own determinism selftest and one doc. The framework built a parallelism primitive and never applied it to its own largest cost centre. A ~25-minute serial pre-push is the single strongest incentive toward the bypass behavior the framework exists to prevent.
 
-### Registry and documentation drift
-
-- **REG-1 — gate-band guidance is wrong or stale on three surfaces, and no lint catches any of them.** Authoritative rule (`bubbles/workflows.yaml:25-28` comment): framework reserves G001-G199; project-local custom gates use **G900+**; G200-G899 is a reserved gap. `state-transition-guard.sh:3590` correctly implements *"Run project-defined custom gates (G900+)"*. Contradicting surfaces:
-  1. `bubbles/workflows.yaml:738` — `customGatesDiscovery.idRange: G100+`. This directly collides with framework gates **G110-G131**. Verified **dead**: `grep -rn 'idRange' bubbles/scripts/*.sh` returns nothing — no script reads it. It is nonetheless machine-readable guidance a downstream author would follow, producing a guaranteed upgrade collision.
-  2. `bubbles/workflows.yaml:25-26` comment — "currently G001-G095 plus G110-G125". Actual maximum defined gate is **G131**.
-  3. `docs/recipes/custom-gates.md:53` — same stale "G001–G095 plus G110–G125" range.
-
-  `gates-registry-selftest.sh` verifies only byte-parity of the generated block against the registry, not semantic band consistency.
-
 ---
 
 ## Proposal
 
-Scopes are ordered by (severity × cheapness). SCOPE-2 removes the root cause; the remaining scopes close what it already let through.
-
-### SCOPE-2 — Derive coverage instead of enumerating it (COV-1, COV-2, COV-3, REG-1)
-
-The uniform fix for the root cause. One sub-change remains:
-
-- **2d — Single-source the gate bands.** Delete the dead `customGatesDiscovery.idRange: G100+` key (no script reads it) or correct it to `G900+`; **recommendation: correct rather than delete**, since a downstream author will look for it. Generate the "currently uses G001-G095 plus G110-G125" strings in `bubbles/workflows.yaml:25-26` and `docs/recipes/custom-gates.md:53` from `bubbles/registry/gates.yaml` at generation time. Add a band-consistency assertion to `gates-registry-selftest.sh`.
+Scopes are ordered by (severity × cheapness).
 
 ### SCOPE-3 — Make receipt-backed evidence the primary rail (EV-1, EV-2)
 
@@ -126,7 +81,7 @@ The uniform fix for the root cause. One sub-change remains:
 
 - **SEC-1:** add an `else` branch to the `if [[ -f "$PAYLOAD_VERIFIER" ]]` block in `install.sh` that **fails the install** when the verifier is absent, gated on the release manifest declaring a `payloadVerifierRequired: true` capability (so genuinely older payloads still install, but any manifest from this version forward cannot silently skip verification). A missing verifier in a manifest that declares it is a tampering signal, not a compatibility case.
 - **SEC-2:** declare the real dependency set (`bash>=4`, `git`, `jq`, `python3`, `PyYAML`, `jsonschema`) in `README.md` and surface it in `cli.sh doctor`. Convert the 10 non-selftest `SKIP → exit 0` paths to exit non-zero when the check is required, with a single logged `BUBBLES_ALLOW_DEGRADED=1` opt-out that `doctor` reports as a degraded posture. Selftests may retain SKIP; guards may not. Model the change on `bubbles/scripts/eval-harness.sh`, which already fails closed correctly.
-- **SEC-3:** either implement a real enforcer for G034 `security_gate` (dependency-audit + severity-threshold script invoked from the validate phase), or reclassify it out of `businessInvariant` and mark it `behavioral:bubbles.security` under the SCOPE-2a vocabulary — and add the corresponding reference to `agents/bubbles.security.agent.md`, which today does not mention it. **Recommendation: implement the enforcer**; a `businessInvariant` security gate with no mechanical surface is the weakest link in the six-gate invariant set.
+- **SEC-3:** either implement a real enforcer for G034 `security_gate` (dependency-audit + severity-threshold script invoked from the validate phase), or reclassify it out of `businessInvariant` and mark it `behavioral:bubbles.security` under the `enforcedBy` vocabulary — and add the corresponding reference to `agents/bubbles.security.agent.md`, which today does not mention it. **Recommendation: implement the enforcer**; a `businessInvariant` security gate with no mechanical surface is the weakest link in the six-gate invariant set.
 
 ### SCOPE-5 — Build the golden-task eval corpus (COST-2)
 
@@ -177,12 +132,11 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 1 | SCOPE-2 (2a→2b→2c→2d) | Structural. 2a is a registry schema addition (additive; generator keeps byte-parity). 2b changes discovery only. Land 2a before 2b so newly-discovered checks have enforcement bindings. |
 | 3 | SCOPE-4 | SEC-1 is gated on a new manifest capability flag, so it is non-breaking for existing payloads. SEC-2 ships advisory-first (`BUBBLES_ALLOW_DEGRADED` logged), then blocking one minor version later. |
 | 4 | SCOPE-5 | Pure addition. No existing behavior changes. Prerequisite for waves 5–6. |
 | 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before SCOPE-5 produces a passing zero-regression eval — this is the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
 | 6 | SCOPE-3, SCOPE-8 | Behavior-changing for evidence acceptance. Ship `receipt-preferred` default first (no-op), let downstream repos adopt `tool-log.sh` wrapping, then flip done-ceiling modes to `receipt-required` a version later. SCOPE-8's `SCN-*` requirement needs a planning-artifact migration window. |
-| 7 | SCOPE-11 | Requires SCOPE-2c (full classification) and SCOPE-5 (corpus). |
+| 7 | SCOPE-11 | Requires the delivered gate classification and SCOPE-5 (corpus). |
 
 Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and SCOPE-8, which are the only two requiring a downstream migration window.
 
@@ -190,22 +144,18 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 
 ## Risks & mitigations
 
-- **R1 — SCOPE-2b glob discovery surfaces latent failures.** Seven selftests have never run in `framework-validate`; some may fail immediately. → Land 2b in a branch, run once, triage each failure as either a real defect (fix) or a justified exclusion (deny-list with a comment). Do not suppress silently.
+- **R1 — removed (delivered).**
 - **R2 — SCOPE-6 bundle reduction degrades gate detection.** Moving load-bearing modules out of the router closure may cause missed routing. → This is exactly what the `operating-baseline.md` R3 condition anticipates. Hard-block SCOPE-6 on a passing SCOPE-5 held-out eval; keep the reduction opt-in until the eval is green two consecutive runs.
 - **R3 — SCOPE-3 `receipt-required` breaks existing downstream repos.** Repos with markdown-only evidence would fail promotion. → Default `receipt-preferred` (no-op). Announce, ship the CLI-wrapping recipe, and only bind `receipt-required` to done-ceiling modes one minor version later. Provide a `bubbles evidence migrate --dry-run` report showing which DoD items would fail.
 - **R4 — SCOPE-4 SEC-2 blocking breaks CI on machines lacking `jsonschema`.** → Advisory-first with a loud `doctor` degraded-posture line; blocking one version later; document `pip install --user pyyaml jsonschema` in `INSTALLATION.md`.
-- **R6 — SCOPE-2a is 112 registry edits.** Large mechanical diff, risk of transcription error. → Generate the initial `enforcedBy` values from the existing coverage-map detection, then hand-correct the known false negatives (G018, G035, G078) and the 36 zero-surface gates. The `--check` byte-parity mode of `generate-gates-block.sh` proves nothing else drifted.
+- **R6 — removed (delivered).**
 - **R7 — SCOPE-7 parallelization introduces nondeterministic output ordering,** making failures hard to read. → `parallel-fanout.sh` already has a determinism selftest; require ordered result buffering and keep `--tier=core` serial as a debugging fallback.
-- **R8 — Scope creep.** Ten scopes is a large proposal. → Wave 2 alone closes COV-1/2/3 and REG-1 and delivers most of the integrity value; waves 3–7 can be re-proposed separately if the owner prefers smaller units.
+- **R8 — Scope creep.** → The remaining waves can be re-proposed separately if the owner prefers smaller units.
 
 ---
 
 ## Acceptance criteria (when implemented)
 
-- **SCOPE-2a:** every gate in `bubbles/registry/gates.yaml` has a non-empty `enforcedBy`; a lint fails on an unresolvable `script:`/`guard-check:` target; `generate-gate-coverage-map.sh` derives columns from `enforcedBy` and reports G018, G035, and G078 as enforced.
-- **SCOPE-2b:** `framework-validate.sh` discovers selftests by glob; a newly added `*-selftest.sh` is executed with no edit to `framework-validate.sh`; a selftest that is neither run nor deny-listed fails the run. The 7 COV-2 selftests execute.
-- **SCOPE-2c:** zero gates unclassified; lint fails on an unclassified gate.
-- **SCOPE-2d:** `grep -rn 'G100+' bubbles/workflows.yaml` returns nothing; the band strings in `workflows.yaml` and `docs/recipes/custom-gates.md` are generated and match `gates.yaml` (currently ending at G131); `gates-registry-selftest.sh` fails on an injected band mismatch.
 - **SCOPE-3:** under `evidenceMode: receipt-required`, a DoD item backed only by a 10-line prose block causes `state-transition-guard.sh` to exit **1**; under `receipt-preferred` it still passes with an advisory. `evidence-receipt-check.sh --strict` runs in the transition path. `README.md:46` matches observed behavior.
 - **SCOPE-4:** `install.sh` fails when the manifest declares `payloadVerifierRequired: true` and the verifier is absent; `doctor` lists the full dependency set and reports degraded posture when `BUBBLES_ALLOW_DEGRADED=1`; each of the 10 SEC-2 scripts exits non-zero on a missing required dep unless the opt-out is set; G034 either has a resolvable enforcer or is reclassified with an agent reference.
 - **SCOPE-5:** `bubbles eval run --suite bubbles/eval/tasks` scores ≥10 golden tasks and returns a deterministic aggregate; the fabrication-bait task **fails** a run that marks the item `[x]` and **passes** one that leaves it `[ ]` with an Uncertainty Declaration.
@@ -251,10 +201,10 @@ Remediation must not weaken these verified-working controls:
 - **The Honesty Incentive** (`critical-requirements.md:12-29`) — Executed+Observed > Honest Gap > Fabricated Completion, *"a wrong answer is 3x worse than a blank answer"*. **Preserve verbatim** through SCOPE-6 de-duplication; it is the framework's most effective single control.
 - **`state-transition-guard.sh` integrity** — 108 `fail` vs 15 `warn`, one selftest-only env var, zero grandfather clauses. SCOPE-3 adds a mode; it must not add an override.
 - **`batch-promotion-lint.sh` override design** — `<actor>:<expiryEpoch>:<sha>`, sha-bound, expiring, non-replayable, append-only ledger. The reference pattern any future override must follow.
-- **`generate-gates-block.sh`** byte-identical registry→`workflows.yaml` splice with `--check` drift mode. SCOPE-2a extends the schema; it must preserve round-trip parity.
+- **`generate-gates-block.sh`** byte-identical registry→`workflows.yaml` splice with `--check` drift mode. It must preserve round-trip parity.
 - **`eval-harness.sh` fails closed** on missing `python3`. SCOPE-4 generalizes this posture; it must not invert it.
 - **`metrics` refusing to track `dollarCost`** because *"Derived from unknown tokens = fabricated"*. SCOPE-6 adds only exactly-computable proxies.
 - **Artifact ownership + the closed result-envelope vocabulary** (`completed_owned` / `completed_diagnostic` / `route_required` / `blocked`).
-- **`gateClassification`'s `modelCompensation` / `businessInvariant` split** — the only principled path to shedding scaffolding as models improve. SCOPE-2c and SCOPE-11 extend it; nothing may collapse it.
-- **The repository-binding subsystem** (session-bound, control-revision, digest-verified work boundary) and its ~6,000 lines of selftest, fully wired via `framework-validate.sh:363`. SCOPE-2b's glob discovery must keep the `cli.sh repository-binding-selftest --suite=all` aggregate invocation intact.
+- **`gateClassification`'s `modelCompensation` / `businessInvariant` split** — the only principled path to shedding scaffolding as models improve. SCOPE-11 extends it; nothing may collapse it.
+- **The repository-binding subsystem** (session-bound, control-revision, digest-verified work boundary) and its ~6,000 lines of selftest, fully wired via `framework-validate.sh:363`. The selftest discovery sweep must keep the `cli.sh repository-binding-selftest --suite=all` aggregate invocation intact.
 - **`install.sh` payload integrity verification** against `release-manifest.json` checksums, with its explicit *"INTEGRITY only, not authenticity"* disclosure. SCOPE-4 closes the fail-open branch without disturbing this design.

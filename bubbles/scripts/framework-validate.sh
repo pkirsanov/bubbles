@@ -256,6 +256,12 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-classification.sh" ]]; then
   run_check_self_only "Gate classification complete (IMP-027 SCOPE-2c)" bash "$SCRIPT_DIR/gate-classification.sh" lint --repo-root "$REPO_ROOT"
 fi
+# IMP-027 SCOPE-2d: the documented gate bands were hand-written and wrong, and
+# customGatesDiscovery advertised G100+ for project gates while the framework
+# itself occupies G110-G131. Both are now derived and checked.
+if [[ -x "$SCRIPT_DIR/gate-bands.sh" ]]; then
+  run_check_self_only "Gate-band strings current (IMP-027 SCOPE-2d)" bash "$SCRIPT_DIR/gate-bands.sh" --check --repo-root "$REPO_ROOT"
+fi
 if [[ -x "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh" ]]; then
   run_check_self_only "Gate-coverage map generator selftest (IMP-102 / SCOPE-9)" bash "$SCRIPT_DIR/generate-gate-coverage-map-selftest.sh"
 fi
