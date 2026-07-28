@@ -110,9 +110,8 @@ Scopes are ordered by (severity × cheapness). SCOPE-2 removes the root cause; t
 
 ### SCOPE-2 — Derive coverage instead of enumerating it (COV-1, COV-2, COV-3, REG-1)
 
-The uniform fix for the root cause. Three sub-changes remain, each independently landable:
+The uniform fix for the root cause. Two sub-changes remain, each independently landable:
 
-- **2b — Glob-discover selftests.** Replace the hardcoded 132-call `run_check` enumeration in `bubbles/scripts/framework-validate.sh` with glob discovery over `bubbles/scripts/*-selftest.sh`, plus an explicit, commented deny-list for anything intentionally excluded. Add a check that fails when a selftest is neither run nor denied. This mechanically prevents the COV-2 class. Wire the 3 unwired **live** guards (`release-train-guard.sh`, `release-train-flag-audit.sh`, `upkeep-calendar.sh`) as well.
 - **2c — Require gate classification.** Classify all 112 gates in `bubbles/workflows.yaml::gateClassification` as `modelCompensation`, `businessInvariant`, or a new `hybrid`. Add a lint failing on any unclassified gate. This is the prerequisite for SCOPE-8.
 - **2d — Single-source the gate bands.** Delete the dead `customGatesDiscovery.idRange: G100+` key (no script reads it) or correct it to `G900+`; **recommendation: correct rather than delete**, since a downstream author will look for it. Generate the "currently uses G001-G095 plus G110-G125" strings in `bubbles/workflows.yaml:25-26` and `docs/recipes/custom-gates.md:53` from `bubbles/registry/gates.yaml` at generation time. Add a band-consistency assertion to `gates-registry-selftest.sh`.
 

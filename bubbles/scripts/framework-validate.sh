@@ -694,6 +694,57 @@ if [[ -x "$SCRIPT_DIR/agent-bundle-size-budget.sh" ]]; then
   run_check_self_only "Agent bundle-size budget (ratcheting per-agent, IMP-102 / SCOPE-10)" bash "$SCRIPT_DIR/agent-bundle-size-budget.sh" --check --repo-root "$REPO_ROOT"
 fi
 
+# ---------------------------------------------------------------------------
+# IMP-027 SCOPE-2b — selftest discovery sweep
+#
+# Everything above is an ENUMERATED check: a human wired it by hand. That
+# enumeration is exactly how COV-2 happened — 8 selftests existed in the tree
+# and were never executed by anything, because adding a file and adding its
+# run_check line are two separate acts and only the first is required to
+# commit.
+#
+# This sweep closes the class rather than the instances. It globs every
+# bubbles/scripts/*-selftest.sh, skips the ones already named by an enumerated
+# check above, skips anything explicitly denied in
+# bubbles/registry/selftest-denylist.txt, and runs the remainder. A newly
+# committed selftest is therefore executed with no wiring step at all.
+#
+# The enumerated checks are deliberately left in place: they carry tier
+# assignments, install-mode gating, and arguments that a glob cannot infer.
+# ---------------------------------------------------------------------------
+if [[ "$LIST_TIER_ONLY" != "true" ]]; then
+  selftest_denylist="$REPO_ROOT/bubbles/registry/selftest-denylist.txt"
+  fv_source="$(cat "$SCRIPT_DIR/framework-validate.sh" 2>/dev/null || true)"
+  for selftest_path in "$SCRIPT_DIR"/*-selftest.sh; do
+    [[ -f "$selftest_path" ]] || continue
+    selftest_name="$(basename "$selftest_path")"
+
+    # Already wired by an enumerated check above.
+    case "$fv_source" in
+      *"$selftest_name"*) continue ;;
+    esac
+
+    # Explicitly denied, with a documented reason.
+    if [[ -f "$selftest_denylist" ]] &&
+      grep -vE '^[[:space:]]*(#|$)' "$selftest_denylist" 2>/dev/null | grep -qxF "$selftest_name"; then
+      echo "==> Discovered selftest: $selftest_name"
+      echo "SKIP: $selftest_name (denied in bubbles/registry/selftest-denylist.txt)"
+      skipped=$((skipped + 1))
+      echo
+      continue
+    fi
+
+    run_check "Discovered selftest: $selftest_name (IMP-027 SCOPE-2b)" bash "$selftest_path"
+  done
+fi
+
+if [[ -x "$SCRIPT_DIR/selftest-coverage-lint.sh" ]]; then
+  run_check_self_only "Selftest coverage lint (IMP-027 SCOPE-2b)" bash "$SCRIPT_DIR/selftest-coverage-lint.sh" --repo-root "$REPO_ROOT"
+fi
+if [[ -x "$SCRIPT_DIR/selftest-coverage-lint-selftest.sh" ]]; then
+  run_check "Selftest coverage lint selftest (IMP-027 SCOPE-2b)" bash "$SCRIPT_DIR/selftest-coverage-lint-selftest.sh"
+fi
+
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
   exit 0

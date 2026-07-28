@@ -172,8 +172,8 @@ for sub in agents instructions docs bubbles/scripts; do
 done
 
 # IMP-027 SCOPE-10: README.md is the framework's most-read surface and carried a
-# reference to a RETIRED gate (G039, absorbed by G038) that no scan could see
-# because the roots above are directories only. Scan it explicitly.
+# reference to a RETIRED gate (former G039, absorbed by G038) that no scan could
+# see because the roots above are directories only. Scan it explicitly.
 if [[ -f "$repo_root/README.md" ]]; then
   scan_roots+=("$repo_root/README.md")
 fi
