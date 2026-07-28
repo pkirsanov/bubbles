@@ -3550,6 +3550,39 @@ stg_scenario_matches_dod() {
   local word_count=0
   local half_threshold=0
 
+  # IMP-027 SCOPE-8 (EV-3): structural linkage beats a lexical proxy.
+  #
+  # Word overlap is an INFERENCE about whether a DoD item preserves a
+  # scenario's behavioral claim, and every threshold it uses (>=3 words, >=50%)
+  # is a tuning knob rather than a fact. That is the documented root of the
+  # G068 false-positive/false-negative pair: rewording a scenario breaks the
+  # match, and unrelated items sharing vocabulary create one.
+  #
+  # When the scenario carries a stable SCN-* ID, the linkage is a FACT and no
+  # inference is needed: the DoD item either cites that ID or it does not. This
+  # is deterministic and has no threshold to tune.
+  #
+  # Deliberately NO-OP-UNLESS-EARNED, matching Check 43's pattern: the ID path
+  # engages ONLY when the scenario actually carries an ID. Specs that have not
+  # adopted SCN-* IDs keep today's word-overlap behavior EXACTLY, so this
+  # cannot newly fail an existing artifact and removes no enforcement.
+  #
+  # Divergence from the proposal, recorded deliberately: it also asked that the
+  # lexical scan be demoted to advisory. That is NOT done here. Demoting it
+  # would silently switch G068 off for every project that has not adopted IDs
+  # — which today is effectively all of them — trading a tuning-accuracy
+  # problem for a no-enforcement problem. The lexical path stays authoritative
+  # exactly where no structural fact is available to replace it.
+  local scenario_scn
+  scenario_scn="$(printf '%s' "$scenario" | grep -oE 'SCN-[A-Za-z0-9][A-Za-z0-9_-]*' | head -1 || true)"
+  if [[ -n "$scenario_scn" ]]; then
+    # Word-boundary compare so SCN-1 does not match SCN-12.
+    if printf '%s' "$dod_item" | grep -qE "(^|[^A-Za-z0-9_-])${scenario_scn}([^A-Za-z0-9_-]|\$)"; then
+      return 0
+    fi
+    return 1
+  fi
+
   dod_norm="$(stg_normalize_text "$dod_item")"
   words="$(stg_significant_words "$scenario")"
   if [[ -z "$words" ]]; then
