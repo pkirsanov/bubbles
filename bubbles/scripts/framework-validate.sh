@@ -65,6 +65,49 @@ failures=0
 skipped=0
 declare -a failed_check_labels=()
 
+# IMP-027 SCOPE-7 support: the hermetic-selftest result cache, and the
+# changed-surface filter both live outside this script so they can be tested on
+# their own. Absence degrades to the previous behaviour (run everything).
+FRAMEWORK_VERSION="unknown"
+[[ -f "$REPO_ROOT/VERSION" ]] && FRAMEWORK_VERSION="$(tr -d '[:space:]' <"$REPO_ROOT/VERSION" 2>/dev/null || echo unknown)"
+# shellcheck source=bubbles/scripts/validate-cache.sh
+[[ -f "$SCRIPT_DIR/validate-cache.sh" ]] && source "$SCRIPT_DIR/validate-cache.sh"
+
+# Paths the working tree has modified relative to HEAD, resolved once.
+CHANGED_PATHS=""
+changed_paths_load() {
+  [[ -n "$CHANGED_PATHS" ]] && return 0
+  if command -v git >/dev/null 2>&1 && git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    CHANGED_PATHS="$(
+      {
+        git -C "$REPO_ROOT" diff --name-only HEAD 2>/dev/null || true
+        git -C "$REPO_ROOT" ls-files --others --exclude-standard 2>/dev/null || true
+      } | sort -u
+    )"
+  fi
+  # A tree with no detectable changes must not silently skip everything.
+  [[ -n "$CHANGED_PATHS" ]] || CHANGED_PATHS="__NO_GIT__"
+}
+
+# changed_surface_touches <selftest-path>
+#
+# A selftest owns itself and the script it tests: `X-selftest.sh` -> `X.sh`.
+# That mapping is DERIVED, not enumerated, so a new selftest is covered the
+# moment it exists.
+changed_surface_touches() {
+  local selftest="$1"
+  changed_paths_load
+  [[ "$CHANGED_PATHS" == "__NO_GIT__" ]] && return 0
+
+  local base subject
+  base="$(basename "$selftest")"
+  subject="${base%-selftest.sh}.sh"
+
+  printf '%s\n' "$CHANGED_PATHS" | grep -qxF "bubbles/scripts/$base" && return 0
+  printf '%s\n' "$CHANGED_PATHS" | grep -qxF "bubbles/scripts/$subject" && return 0
+  return 1
+}
+
 # IMP-012 tiering (opt-in, non-breaking). Default tier=full runs EVERY check
 # exactly as before. `--tier=core` runs only the fast, high-signal structural
 # subset (registry/lint/generator/scan selftests) for a quick local signal;
@@ -73,6 +116,20 @@ declare -a failed_check_labels=()
 # exits 0 (no execution) — used by the tiering selftest and by operators.
 VALIDATE_TIER="${BUBBLES_VALIDATE_TIER:-full}"
 LIST_TIER_ONLY="false"
+
+# IMP-027 SCOPE-7 (PERF-1). --tier=core took 260s for 16 of 209 checks; the full
+# tier is what pre-push runs. A ~25-minute serial pre-push is the strongest
+# practical incentive toward the bypass behaviour this framework exists to
+# prevent, so wall clock is a governance concern.
+#
+# --changed-only  restrict to checks whose owned surface the working tree
+#                 actually touched. Ownership is DERIVED (a selftest owns the
+#                 script it tests), never a hand-maintained manifest -- that
+#                 enumeration habit is what COV-2 was.
+# --no-cache      ignore the hermetic-selftest result cache for this run.
+CHANGED_ONLY="false"
+CACHE_ENABLED="true"
+cache_hits=0
 for _arg in "$@"; do
   case "$_arg" in
     --tier=core | --tier=full) VALIDATE_TIER="${_arg#--tier=}" ;;
@@ -80,11 +137,15 @@ for _arg in "$@"; do
       VALIDATE_TIER="${_arg#--list-tier=}"
       LIST_TIER_ONLY="true"
       ;;
+    --changed-only) CHANGED_ONLY="true" ;;
+    --no-cache) CACHE_ENABLED="false" ;;
     -h | --help)
-      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full]"
+      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full] [--changed-only] [--no-cache]"
       echo "  (no flag)        run every check (full tier — unchanged default)"
       echo "  --tier=core      run only the fast structural/lint/generator subset"
       echo "  --list-tier=core dry-list what the core tier runs/skips, then exit 0"
+      echo "  --changed-only   run only checks whose owned surface the tree touched"
+      echo "  --no-cache       ignore the hermetic-selftest result cache"
       exit 0
       ;;
     *)
@@ -132,9 +193,42 @@ run_check() {
     return 0
   fi
 
+  # IMP-027 SCOPE-7. Both filters below apply ONLY to hermetic selftests, which
+  # the framework's own contract says build their own fixtures and depend on
+  # nothing outside their source. A live guard reads the working tree -- the
+  # very thing that changes between runs -- so skipping one would report a
+  # verdict about a tree that was never inspected.
+  local _script=""
+  if [[ "${1:-}" == "bash" && "$#" -eq 2 ]]; then
+    case "$(basename "${2:-}")" in
+      *-selftest.sh) _script="$2" ;;
+    esac
+  fi
+
+  if [[ -n "$_script" && "$CHANGED_ONLY" == "true" ]] && ! changed_surface_touches "$_script"; then
+    echo "==> $label"
+    echo "SKIP: $label (--changed-only; neither the selftest nor the script it tests was modified)"
+    skipped=$((skipped + 1))
+    echo
+    return 0
+  fi
+
+  local _cache_key=""
+  if [[ -n "$_script" && "$CACHE_ENABLED" == "true" ]] && declare -F validate_cache_key >/dev/null 2>&1; then
+    _cache_key="$(validate_cache_key "$_script" "$FRAMEWORK_VERSION" 2>/dev/null || true)"
+    if [[ -n "$_cache_key" ]] && validate_cache_get "$_cache_key"; then
+      echo "==> $label"
+      echo "PASS: $label (cached — script unchanged since it last passed)"
+      cache_hits=$((cache_hits + 1))
+      echo
+      return 0
+    fi
+  fi
+
   echo "==> $label"
   if "$@"; then
     echo "PASS: $label"
+    [[ -n "$_cache_key" ]] && validate_cache_put "$_cache_key" 0
   else
     echo "FAIL: $label"
     failures=$((failures + 1))

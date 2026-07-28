@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of `bubbles/*` until approved
 **Motivation:** Full-repository audit of v7.21.0 @ `f58fd5dd`. Every claim below was verified against a real file/line or a command executed against the tree.
-**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1, PERF-1
+**Verified gaps addressed:** EV-1, EV-2, EV-3, COST-1
 
 ---
 
@@ -51,8 +51,6 @@ Coverage was **asserted from hand-written lists** rather than **derived from the
 
   `bubbles/scripts/agent-bundle-size-budget.sh` is self-described as a *"ratcheting PER-AGENT effective-bundle size budget"* whose `--seed` sets ceilings from **current** size. It prevents regression but cannot drive reduction: today's bloat becomes tomorrow's floor. Current check output: `OK — all 41 agent bundle(s) within their recorded ceilings`.
 
-- **PERF-1 — validation is O(everything), sequential, and uncached.** Measured: `framework-validate.sh --tier=core` took **260 seconds** to run **16 of 209** checks. The full tier is what pre-push and `release-check` run (no flag). `grep` for `--since`, changed-files filtering, or result caching in `framework-validate.sh` returns nothing. `bubbles/scripts/parallel-fanout.sh` exists — and is referenced only by its own determinism selftest and one doc. The framework built a parallelism primitive and never applied it to its own largest cost centre. A ~25-minute serial pre-push is the single strongest incentive toward the bypass behavior the framework exists to prevent.
-
 ---
 
 ## Proposal
@@ -75,13 +73,6 @@ Scopes are ordered by (severity × cheapness).
 - Move **reference data out of prompts into tools.** `project-config-contract.md` (59,685 B) and `feature-templates.md` (22,401 B) are lookup material, not reasoning context. The MCP surface already exists (`docs/MCP.md`, `mcp_bubbles_read_spec`); serve templates on demand. This is the single largest available structural saving.
 - **Track cost honestly.** Do not fabricate token counts — but `bundle_bytes × dispatch_count` is exactly computable from `effective-bundle-measure.sh` plus the existing dispatch counters, and is a truthful, non-fabricated cost proxy. Add it to `bubbles.retro` and to `activityTracking.measuredDimensions`. This respects the existing (correct) refusal to invent `dollarCost` while ending the total blindness.
 
-### SCOPE-7 — Make validation fast and incremental (PERF-1)
-
-- Add `--changed-only` to `framework-validate.sh`, mapping `git diff --name-only` output to affected checks via a `check → owned paths` manifest. Most commits touch one subsystem.
-- Parallelize `run_check` using the existing `bubbles/scripts/parallel-fanout.sh` with bounded `-P` and deterministic ordered output (its determinism selftest already exists). The measured 260 s for 16 checks is dominated by process startup; this workload is embarrassingly parallel.
-- Cache selftest results keyed by sha256 of the script plus its fixtures — this is precisely the `inputClosure` mechanism already implemented for evidence receipts, reused.
-- **Target: pre-push under 3 minutes.** This removes the strongest practical incentive to bypass the hook.
-
 ### SCOPE-8 — Replace lexical proxies with structural facts (EV-3)
 
 - **DoD ↔ scenario linkage:** stop inferring with word overlap. Require the stable `SCN-*` ID (already present in `scenario-manifest.json`) inside the DoD item text. Deterministic, zero false positives, and it closes the documented G068 defect at its root rather than by threshold tuning.
@@ -103,7 +94,7 @@ Ordering matters; several scopes unblock others.
 
 | Wave | Scopes | Character |
 |---|---|---|
-| 5 | SCOPE-6, SCOPE-7 | SCOPE-6 **must not** land before the golden-task corpus shows a zero-regression eval — the explicit R3 condition in `operating-baseline.md`. SCOPE-7 is independent and can land in parallel. |
+| 5 | SCOPE-6 | **Must not** land before the golden-task corpus shows a zero-regression eval — the explicit R3 condition in `operating-baseline.md`. |
 | 6 | SCOPE-3, SCOPE-8 | Behavior-changing for evidence acceptance. Ship `receipt-preferred` default first (no-op), let downstream repos adopt `tool-log.sh` wrapping, then flip done-ceiling modes to `receipt-required` a version later. SCOPE-8's `SCN-*` requirement needs a planning-artifact migration window. |
 | 7 | SCOPE-11 | Requires the delivered gate classification and the delivered corpus. |
 
@@ -118,7 +109,7 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 - **R3 — SCOPE-3 `receipt-required` breaks existing downstream repos.** Repos with markdown-only evidence would fail promotion. → Default `receipt-preferred` (no-op). Announce, ship the CLI-wrapping recipe, and only bind `receipt-required` to done-ceiling modes one minor version later. Provide a `bubbles evidence migrate --dry-run` report showing which DoD items would fail.
 - **R4 — removed (delivered).**
 - **R6 — removed (delivered).**
-- **R7 — SCOPE-7 parallelization introduces nondeterministic output ordering,** making failures hard to read. → `parallel-fanout.sh` already has a determinism selftest; require ordered result buffering and keep `--tier=core` serial as a debugging fallback.
+- **R7 — removed (delivered).**
 - **R8 — Scope creep.** → The remaining waves can be re-proposed separately if the owner prefers smaller units.
 
 ---
@@ -127,7 +118,6 @@ Every scope is additive or advisory-until-configured except SCOPE-3 wave 6 and S
 
 - **SCOPE-3:** under `evidenceMode: receipt-required`, a DoD item backed only by a 10-line prose block causes `state-transition-guard.sh` to exit **1**; under `receipt-preferred` it still passes with an advisory. `evidence-receipt-check.sh --strict` runs in the transition path. `README.md:46` matches observed behavior.
 - **SCOPE-6:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md` reports ≤ 160,000 bytes (~40 K tokens); the corpus eval shows zero gate-detection regression across two consecutive runs; `doctor` reports distance-to-target per role class; `bubbles.retro` reports a `bundle_bytes × dispatches` cost proxy.
-- **SCOPE-7:** `framework-validate.sh --changed-only` runs a strict subset for a single-subsystem diff; full-tier wall clock drops below 5 minutes on the reference machine; repeated runs with no changes are cache-served; output ordering is deterministic.
 - **SCOPE-8:** every DoD item in the reference examples carries an `SCN-*` reference; G068's word-overlap matcher is removed from the verdict path; the `docs/issues/G068-*` false-positive case now passes.
 - **SCOPE-11:** every `modelCompensation` gate carries a `retireWhen` criterion; `model-tier-advisory.sh` can produce a report of which gates would be skipped at a given tier.
 
