@@ -77,13 +77,19 @@ BUBBLES_RJ_URL="$BUBBLES_EVAL_JUDGE_URL" \
 BUBBLES_RJ_MODEL="${BUBBLES_EVAL_JUDGE_MODEL:-qwen3:30b-a3b}" \
 BUBBLES_RJ_THINK="${BUBBLES_EVAL_JUDGE_THINK:-false}" \
 BUBBLES_RJ_EXCLUDE="${BUBBLES_EVAL_ROUTING_EXCLUDE:-}" \
+BUBBLES_RJ_MAXBUNDLE="${BUBBLES_EVAL_ROUTING_MAX_BUNDLE_BYTES:-800000}" \
+BUBBLES_RJ_NUM_CTX="${BUBBLES_EVAL_ROUTING_NUM_CTX:-131072}" \
+BUBBLES_RJ_HTTP_TIMEOUT="${BUBBLES_EVAL_ROUTING_HTTP_TIMEOUT:-290}" \
 BUBBLES_RJ_VERSION="$ADAPTER_VERSION" \
 python3 - <<'PY'
 import json, os, re, subprocess, sys, uuid
 
 VERSION = os.environ["BUBBLES_RJ_VERSION"]
 MODEL = os.environ["BUBBLES_RJ_MODEL"]
-MAX_BUNDLE_BYTES = 120000
+# Must exceed the real closure (~506 KB today). A cap below it silently drops
+# modules AND lets an exclusion backfill previously-truncated ones, which makes
+# any exclusion measurement compare two unrelated bundles.
+MAX_BUNDLE_BYTES = int(os.environ["BUBBLES_RJ_MAXBUNDLE"])
 
 
 def emit(status, verdict, findings, score=None, gates=None, error=None, inv=None):
@@ -129,6 +135,7 @@ excluded = {n.strip() for n in os.environ.get("BUBBLES_RJ_EXCLUDE", "").split(",
 agent_dir = os.path.dirname(os.path.abspath(agent_path))
 shared_dir = os.path.join(agent_dir, "bubbles_shared")
 seen, queue, parts, total = set(), [os.path.abspath(agent_path)], [], 0
+dropped = []
 while queue:
     path = queue.pop(0)
     if path in seen or not os.path.isfile(path):
@@ -140,12 +147,24 @@ while queue:
         continue
     if total < MAX_BUNDLE_BYTES:
         chunk = body[: MAX_BUNDLE_BYTES - total]
+        if len(chunk) < len(body):
+            dropped.append(f"{os.path.basename(path)} (truncated)")
         parts.append(f"--- {os.path.basename(path)} ---\n{chunk}")
         total += len(chunk)
+    else:
+        dropped.append(os.path.basename(path))
     for name in re.findall(r"bubbles_shared/([A-Za-z0-9._-]+)\.md", body):
         if name in excluded:
             continue
         queue.append(os.path.join(shared_dir, f"{name}.md"))
+
+# Fail loud rather than scoring a partial closure. A silent cap makes the judge
+# grade a bundle the orchestrator never had, and lets an exclusion backfill the
+# freed budget with modules that did not previously fit.
+if dropped:
+    fail("error", "routing-bundle-truncated",
+         "bundle cap %d B too small; %d module(s) dropped: %s"
+         % (MAX_BUNDLE_BYTES, len(dropped), ", ".join(dropped[:5])), inv)
 
 if not parts:
     fail("error", "routing-bundle-empty", "agent bundle resolved to no readable content", inv)
@@ -159,18 +178,24 @@ prompt = (
     "INSTRUCTIONS:\n" + "\n\n".join(parts) + "\n\nSCENARIO:\n" + scenario
 )
 
+# num_ctx MUST be explicit. The loaded server context defaults far below what the
+# model advertises (observed: 32768 vs an advertised 262144), and Ollama truncates
+# an over-long prompt SILENTLY from the start — dropping the output-schema
+# instruction and yielding a plausible answer computed from a fraction of the
+# closure. That failure mode is invisible without this.
+num_ctx = int(os.environ.get("BUBBLES_RJ_NUM_CTX") or 131072)
 payload = {
     "model": MODEL,
     "prompt": prompt,
     "format": "json",
     "stream": False,
     "think": think,
-    "options": {"num_predict": 400, "temperature": 0},
+    "options": {"num_predict": 400, "temperature": 0, "num_ctx": num_ctx},
 }
 
 try:
     done = subprocess.run(
-        ["curl", "-s", "--fail-with-body", "--max-time", "290",
+        ["curl", "-s", "--fail-with-body", "--max-time", os.environ.get("BUBBLES_RJ_HTTP_TIMEOUT", "290"),
          "-H", "Content-Type: application/json", "--data-binary", "@-",
          f"{base_url}/api/generate"],
         input=json.dumps(payload), capture_output=True, text=True, check=False,
@@ -185,6 +210,19 @@ try:
     envelope = json.loads(done.stdout)
 except ValueError:
     fail("error", "routing-transport-malformed", "endpoint did not return JSON", inv)
+
+# A prompt that fills the window was almost certainly clipped at the front, so the
+# verdict would describe a closure the model never fully received.
+prompt_tokens = envelope.get("prompt_eval_count")
+if isinstance(prompt_tokens, int) and prompt_tokens >= num_ctx - 1:
+    fail(
+        "error",
+        "routing-context-truncated",
+        f"prompt filled the {num_ctx}-token window (prompt_eval_count={prompt_tokens}); "
+        "raise BUBBLES_EVAL_ROUTING_NUM_CTX or the server context — a truncated "
+        "closure cannot certify gate detection",
+        inv,
+    )
 
 body = (envelope.get("response") or "").strip() or (envelope.get("thinking") or "").strip()
 if not body:

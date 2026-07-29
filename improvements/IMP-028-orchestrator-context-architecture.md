@@ -243,31 +243,50 @@ surface, starting with `project-config-contract.md` (59,685 B),
 This is the only item with enough mass to matter, and it is the one that changes
 the loading model rather than shrinking text.
 
-**MEASURED — the reduction as specified is UNSAFE. Do not ship it.**
+**RETRACTED — the earlier "SCOPE-2 is UNSAFE" measurement was invalid.**
 
-The routing eval was run against `bubbles.workflow.agent.md` with modules
-dropped from the closure (`BUBBLES_EVAL_ROUTING_EXCLUDE`):
+Commit `b2724bd` recorded that dropping `project-config-contract.md` loses 7 of 8
+gates. **That conclusion is not supported by its evidence.** Three compounding
+defects, found by re-checking the measurement rather than the result:
+
+1. **Bundle truncation.** The adapter capped the prompt at 120,000 bytes, so the
+   "baseline" was the agent file plus a *partially truncated*
+   `project-config-contract.md` — **2 of 42 modules**. The other 40 never reached
+   the model.
+2. **BFS backfill.** Excluding a 59,685 B module freed space that pulled in
+   `agent-common.md`, `workflow-orchestration-core.md` and
+   `completion-governance.md`, which previously did not fit. The two runs
+   differed by **four** modules, not one, so the gate delta measured nothing
+   attributable to the exclusion.
+3. **Silent server truncation.** The loaded model reports `ctx=32768`, not the
+   262,144 the model advertises. Ollama clips an over-long prompt from the FRONT,
+   which silently removed the output-schema instruction.
+
+The earlier baseline was reproducible (identical twice) but measured the wrong
+thing. Determinism proved stability, never validity.
+
+**Newly discovered blocker — R3 is not satisfiable on this hardware today.**
 
 ```
-baseline (full closure)           G021 G022 G023 G024 G025 G027 G028 G029
-drop project-config-contract      G021 G040 G092
-drop all three named modules      G021 G040 G092
+full closure          505,879 chars ~= 114,476 tokens
+server context        32,768 tokens        (qwen3:30b-a3b, vram 31.7 GB)
+over budget by        ~3.5x
+harness ceiling       judgeTimeoutSeconds max 300s; a full-closure call exceeds it
 ```
 
-Dropping `project-config-contract.md` alone loses **7 of the 8 baseline gates**.
-G022, G023, G024, G025, G027, G028 and G029 all stop being routed, and the
-orchestrator starts citing unrelated gates instead — the answer does not degrade
-gracefully, it changes character.
+A single direct call with `num_ctx=131072` did process all 114,476 tokens and
+routed `G021 G025 G040 G095`, so it is possible in principle — but two subsequent
+900 s attempts timed out, so it is not reliably reproducible here.
 
-This is precisely the failure R3 exists to prevent, and it was found before any
-agent file was edited. The three modules named here are not dead weight; they
-carry the completion-chain and evidence contracts the orchestrator routes from.
+**Consequence:** a whole-bundle routing eval cannot certify this agent's closure
+until either a larger usable context is available, or the eval is redesigned to
+probe per-module rather than loading the closure at once. Until then no reduction
+claim about `bubbles.workflow.agent.md` is defensible in either direction.
 
-**Acceptance (revised):** a reduction is shippable only when the routing eval
-reproduces the FULL baseline gate set with the module removed. Any candidate
-module must be measured with `BUBBLES_EVAL_ROUTING_EXCLUDE` FIRST. Reduction
-work now starts from the opposite question — which modules can leave without
-changing the gate set — rather than from the three largest files.
+**Acceptance (revised):** a reduction ships only when the eval reproduces the
+full baseline gate set with the module removed AND the run is proven untruncated
+(`routing-bundle-truncated` and `routing-context-truncated` both absent). Both
+guards now fail loud rather than measuring a partial closure silently.
 
 ### SCOPE-3 — Deduplicate the anti-fabrication doctrine
 
