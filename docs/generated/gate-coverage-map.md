@@ -53,9 +53,9 @@ Corroborating (grep-derived, advisory) numbers:
 | G015 | scenario_depth_gate | `mode-required` | 24 | — | — | — |
 | G016 | gherkin_e2e_coverage_gate | `mode-required` | 24 | — | — | — |
 | G018 | dod_completion_gate | `mode-required` | 22 | — | 1 | — |
-| G019 | sequential_spec_completion_gate | `mode-required` | 25 | — | — | — |
+| G019 | sequential_spec_completion_gate | `mode-required` | 25 | — | 1 | — |
 | G020 | cross_agent_verification_gate | `mode-required` | 25 | — | 1 | — |
-| G021 | anti_fabrication_gate | `guard-check:12` | 25 | Check 20 | 5 | guard |
+| G021 | anti_fabrication_gate | `guard-check:12` | 25 | Check 20 | 6 | guard |
 | G022 | specialist_completion_gate | `guard-check:6B` | 25 | Check 6B | 5 | guard |
 | G023 | state_transition_guard_gate | `mode-required` | 25 | — | — | — |
 | G024 | all_scopes_done_before_spec_done_gate | `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 25 | ref | 3 | guard |
