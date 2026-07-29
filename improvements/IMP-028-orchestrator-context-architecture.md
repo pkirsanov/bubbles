@@ -243,8 +243,31 @@ surface, starting with `project-config-contract.md` (59,685 B),
 This is the only item with enough mass to matter, and it is the one that changes
 the loading model rather than shrinking text.
 
-**Acceptance:** `effective-bundle-measure.sh agents/bubbles.workflow.agent.md`
-falls below the agreed target with the SCOPE-1 eval green across the change.
+**MEASURED — the reduction as specified is UNSAFE. Do not ship it.**
+
+The routing eval was run against `bubbles.workflow.agent.md` with modules
+dropped from the closure (`BUBBLES_EVAL_ROUTING_EXCLUDE`):
+
+```
+baseline (full closure)           G021 G022 G023 G024 G025 G027 G028 G029
+drop project-config-contract      G021 G040 G092
+drop all three named modules      G021 G040 G092
+```
+
+Dropping `project-config-contract.md` alone loses **7 of the 8 baseline gates**.
+G022, G023, G024, G025, G027, G028 and G029 all stop being routed, and the
+orchestrator starts citing unrelated gates instead — the answer does not degrade
+gracefully, it changes character.
+
+This is precisely the failure R3 exists to prevent, and it was found before any
+agent file was edited. The three modules named here are not dead weight; they
+carry the completion-chain and evidence contracts the orchestrator routes from.
+
+**Acceptance (revised):** a reduction is shippable only when the routing eval
+reproduces the FULL baseline gate set with the module removed. Any candidate
+module must be measured with `BUBBLES_EVAL_ROUTING_EXCLUDE` FIRST. Reduction
+work now starts from the opposite question — which modules can leave without
+changing the gate set — rather than from the three largest files.
 
 ### SCOPE-3 — Deduplicate the anti-fabrication doctrine
 

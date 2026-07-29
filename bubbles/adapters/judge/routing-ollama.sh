@@ -76,6 +76,7 @@ BUBBLES_RJ_SCENARIO_FILE="$OUT_DIR/scenario.md" \
 BUBBLES_RJ_URL="$BUBBLES_EVAL_JUDGE_URL" \
 BUBBLES_RJ_MODEL="${BUBBLES_EVAL_JUDGE_MODEL:-qwen3:30b-a3b}" \
 BUBBLES_RJ_THINK="${BUBBLES_EVAL_JUDGE_THINK:-false}" \
+BUBBLES_RJ_EXCLUDE="${BUBBLES_EVAL_ROUTING_EXCLUDE:-}" \
 BUBBLES_RJ_VERSION="$ADAPTER_VERSION" \
 python3 - <<'PY'
 import json, os, re, subprocess, sys, uuid
@@ -122,6 +123,9 @@ if not scenario:
 
 # Resolve the agent's effective closure the same way effective-bundle-measure.sh
 # does: the agent file plus every bubbles_shared/<name>.md it transitively cites.
+# BUBBLES_EVAL_ROUTING_EXCLUDE drops named modules so a SCOPE-2 reduction can be
+# MEASURED against the gate set before any agent file is edited.
+excluded = {n.strip() for n in os.environ.get("BUBBLES_RJ_EXCLUDE", "").split(",") if n.strip()}
 agent_dir = os.path.dirname(os.path.abspath(agent_path))
 shared_dir = os.path.join(agent_dir, "bubbles_shared")
 seen, queue, parts, total = set(), [os.path.abspath(agent_path)], [], 0
@@ -139,6 +143,8 @@ while queue:
         parts.append(f"--- {os.path.basename(path)} ---\n{chunk}")
         total += len(chunk)
     for name in re.findall(r"bubbles_shared/([A-Za-z0-9._-]+)\.md", body):
+        if name in excluded:
+            continue
         queue.append(os.path.join(shared_dir, f"{name}.md"))
 
 if not parts:
