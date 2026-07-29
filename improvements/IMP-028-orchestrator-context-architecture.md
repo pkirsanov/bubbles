@@ -243,18 +243,47 @@ the Honesty Incentive is byte-identical, and the SCOPE-1 eval is green.
 
 ---
 
-## Open question for the owner
+## Target — decided, and now derived rather than inherited
 
-Is 160,000 B still the right target? It was inherited from IMP-027 and never
-re-derived after measurement. Given the agent file alone is 72,882 B, the target
-implies an 87,118 B shared closure. Either:
+160,000 B was inherited from IMP-027 and never re-derived. Measuring the whole
+fleet rather than one agent shows it is defensible after all:
 
-- **keep 160,000 B** and accept that the agent file must also shrink, or
-- **re-derive the target** from what an orchestrator demonstrably needs loaded.
+```
+41 agents measured (effective-bundle-budget.sh)
+  median            127,513 B
+  exceed 160,000 B  13 of 41
+  largest           bubbles.workflow 505,847 B (4x median)
+  median x 1.25   = 159,391 B  ~= the inherited 160,000 B
+```
 
-The second is more likely to produce a target that survives contact with the
-routing eval. This proposal does not assume either; it needs the decision before
-SCOPE-2 sizing is meaningful.
+So the target reads as **"no agent carries more than ~25% above what the median
+agent needs"** — a rule with a defensible basis, not an arbitrary number. It is
+also not the near-impossible bar IMP-028 first framed: **28 of 41 agents already
+comply**. The real shape is 13 outliers, not a fleet-wide rewrite.
+
+**Decision: keep 160,000 B, adopt it incrementally.**
+
+1. The per-agent ratchet (`agent-bundle-budgets.json`) stays BLOCKING, so nothing
+   grows while the outliers are worked.
+2. 160,000 B stays ADVISORY fleet-wide (`effectiveBundleMaxBytes` unset), exactly
+   as `operating-baseline.md` requires: *"Start advisory, reduce via the
+   phase-local seam, run the held-out eval, and only then consider making the
+   budget blocking."*
+3. An agent flips to blocking INDIVIDUALLY once its reduction passes the SCOPE-1
+   routing eval with zero gate-detection regression.
+
+This turns one 13-agent big-bang into 13 independently reversible steps. A
+regression is then attributable to one agent and revertible on its own, instead
+of arriving as a fleet-wide change nobody can bisect.
+
+Rejected alternatives, with reasons:
+
+- **Re-derive from what an orchestrator "demonstrably needs."** Circular —
+  demonstrating need requires the routing eval this target is meant to gate.
+- **Ratchet only.** Zero risk but never converges; the outliers stay large and
+  the cost problem is never actually solved.
+- **Tiered targets by role.** An "orchestrators get headroom" exception is the
+  loophole that eventually swallows the rule.
 
 ---
 
@@ -265,6 +294,7 @@ SCOPE-2 sizing is meaningful.
 - **R2 — Dedup silently drops a normative clause.** `critical-requirements.md`
   and `agent-common.md` are load-bearing for anti-fabrication. Mitigate with a
   clause-by-clause diff review, not a summary read.
-- **R3 — Target is wrong.** See the open question. Sizing SCOPE-2 against an
-  unvalidated target risks either over-cutting the closure or declaring success
-  against a number nobody defends.
+- **R3 — Target is wrong.** RETIRED. The target is now derived from the fleet
+  distribution (median x 1.25) rather than inherited, and it is advisory until a
+  routing eval clears each agent individually, so a wrong target cannot silently
+  force an over-cut.
