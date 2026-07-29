@@ -416,7 +416,35 @@ reports zero sole-gates for it, AND (b) the routing eval reproduces the baseline
 gate set with it excluded and no truncation guard fires. (a) is available today;
 (b) awaits adequate context.
 
-### SCOPE-3 — Deduplicate the anti-fabrication doctrine
+### SCOPE-3 — Deduplicate the anti-fabrication doctrine — RETIRED 2026-07-29
+
+**RETIRED.** Its premise was measured and does not hold (measurement below). The
+scope is closed without action; no further work should be started against it.
+Retired by owner decision after the measurement was presented.
+
+**Consequence — IMP-028 can no longer reach its own target.** With SCOPE-3
+retired, the only remaining reduction is SCOPE-2:
+
+```
+current closure   505,847 B
+SCOPE-2 on-demand -130,284 B
+                  ---------
+remaining         375,563 B
+target            160,000 B
+shortfall         215,563 B
+```
+
+SCOPE-3 was never going to supply that shortfall either — its 76,135 B was
+combined file size, not recoverable duplication, so the gap was always larger
+than the IMP implied. Retiring it makes an existing shortfall visible rather
+than creating one.
+
+Closing the remaining 215,563 B would require reducing `bubbles.workflow.agent.md`
+itself (72,472 B) and moving further modules on-demand. Both are new work with
+their own reachability and routing questions; neither is in scope here. **This IMP
+should be closed at its delivered analysis rather than left open against a target
+it cannot meet.** A successor should start from the measured candidate set, not
+from the 160,000 B figure.
 
 The doctrine is restated across `critical-requirements.md` (22,883 B),
 `agent-common.md` (20,274 B), `quality-gates.md` (19,932 B), and
