@@ -26,7 +26,7 @@ A="$TMP/agents/fixture.agent.md"
 S="$TMP/agents/bubbles_shared"
 cat >"$A" <<'EOF'
 # fixture agent
-Gate G000 is handled here.
+Gate G000 is handled here (fixture gate id, not a real gate).
 See bubbles_shared/alpha.md and bubbles_shared/gamma.md
 EOF
 printf '# alpha\nG001 lives here.\nSee bubbles_shared/beta.md for more.\n' >"$S/alpha.md"
