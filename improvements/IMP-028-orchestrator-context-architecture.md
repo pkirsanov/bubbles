@@ -39,6 +39,25 @@ grep '"judgeWeight"' bubbles/eval/tasks/*.json — 13 tasks, all judgeWeight: 0
 ls bubbles/adapters/ — codeindex, observability (no judge adapter: operator-supplied)
 ```
 
+Gate-detection contract checked against `d8bba8a`, which produced SCOPE-1a:
+
+```
+allowed check types in eval-harness.sh (L109-113)
+  file-exists | contains | not-contains | executable-oracle      <- no routing type
+
+task schema fields across bubbles/eval/tasks/*.json
+  allowedRoot argv bugfix checks contains feature id judgeWeight oracles
+  passThreshold path pattern rationale required schemaVersion taskId
+  timeoutSeconds title type weight                                <- no gate field
+
+judge result contract, run_judge() (L781-812)
+  required weight status score verdict rubricFindings provenance error
+                                                                  <- no gate channel
+
+grep -rl 'gate' bubbles/eval/
+  README.md, fixtures/positive/bugfix-output/report.md            <- prose only
+```
+
 ---
 
 ## Why IMP-027 SCOPE-6 could not close
@@ -84,10 +103,17 @@ This prerequisite binds **every** reduction item below, including the ones
 IMP-027 labelled "not blocked". Any byte removed from the closure can change
 what the orchestrator detects; only a routing eval can show it did not.
 
-The machinery to run such an eval already exists (see SCOPE-1). The gap is the
-held-out routing task set and a configured judge adapter, both operator-supplied
-by design. Until those are in place and green twice consecutively, SCOPE-2 and
-SCOPE-3 MUST NOT land.
+The machinery to *run* such an eval already exists (see SCOPE-1). Three things
+are still missing, and only two of them are operator-supplied:
+
+1. a held-out routing task set (operator),
+2. a configured judge adapter (operator, needs credentials),
+3. **a gate-detection convention so the eval can report which gate was lost
+   (framework — see SCOPE-1a).** Without this the first two cannot be authored
+   conformantly, because there is no field in which to declare an expected gate.
+
+Until all three are in place and the eval is green twice consecutively, SCOPE-2
+and SCOPE-3 MUST NOT land.
 
 ---
 
@@ -132,13 +158,54 @@ Two operator-supplied inputs are needed:
    (a `none` default plus a real provider). Requires model credentials, which is
    why it is operator configuration.
 
-No framework change is expected here. If one is discovered, it belongs in its own
-scope rather than being folded into this one.
+**A framework change WAS discovered — see SCOPE-1a.** The clause above ("no
+framework change is expected") was written before the acceptance criterion was
+checked against the harness. It does not hold: the per-gate detection
+requirement has no mechanism. SCOPE-1 is therefore *mostly* operator
+configuration, not *entirely*, and it cannot complete until SCOPE-1a lands.
 
 **Acceptance:** the held-out routing suite runs through `eval-harness.sh` with a
 configured judge, passes `eval-heldout-guard.sh` isolation, reports per-gate
-detection, and is green twice consecutively against the current bundle as the
-baseline.
+detection (requires SCOPE-1a), and is green twice consecutively against the
+current bundle as the baseline.
+
+### SCOPE-1a — Ship the gate-detection convention (blocks SCOPE-1)
+
+SCOPE-1 requires the eval to "report per-gate detection so a regression names the
+gate it lost." **No mechanism for this exists.** Verified against `d8bba8a`:
+
+| Surface | Observed | Consequence |
+|---|---|---|
+| Check types in `eval-harness.sh` | `file-exists`, `contains`, `not-contains`, `executable-oracle` | all deterministic text/file assertions; none observes routing |
+| Task schema fields | `allowedRoot, argv, bugfix, checks, contains, feature, id, judgeWeight, oracles, passThreshold, path, pattern, rationale, required, schemaVersion, taskId, timeoutSeconds, title, type, weight` | **no `gate` / `expectedGates` field** — an operator cannot even express "expect G021 raised" |
+| Judge result contract (`run_judge`) | `required, weight, status, score, verdict, rubricFindings, provenance, error` | **no gate channel**; `rubricFindings` is the only free-form slot |
+| Gate convention in `bubbles/eval/` | none (only incidental prose in `README.md` and one fixture `report.md`) | nothing to conform to |
+
+This is framework work, not operator configuration, and it matches the division
+of labour the held-out guard states: this repo ships the CONVENTION, the operator
+supplies tasks and adapters. The convention for gate detection is missing, so the
+operator is currently blocked from authoring a conformant routing task at all.
+
+**Deliberately not implemented in this pass — the contract shape needs an owner
+decision first.** Closing it means inventing a *two-sided* interface: a task-side
+declaration of expected gates, and a judge-side convention for reporting the
+gates actually raised. No adapter exists to validate either half against, so the
+only available "proof" would be a fixture written from the same assumption as the
+convention. Two artifacts derived from one assumption agreeing is not independent
+confirmation — it is the tautological-test failure mode this framework already
+gates against elsewhere. Building it blind risks shipping an interface the first
+real judge adapter cannot satisfy.
+
+**Owner decision needed before implementation:** does the gate channel ride on
+`rubricFindings` (no schema change, weaker typing), or become a first-class
+`gatesDetected` field on the judge result (schema change, stronger typing and a
+clearer failure message)? Also: is per-gate reporting required for *every* gate,
+or only the subset a given held-out scenario targets?
+
+**Acceptance:** a task can declare expected gates; a judge adapter can report
+gates raised; the harness reports per-gate pass/fail naming any gate lost; and an
+adversarial selftest proves a task fails, naming the specific gate, when a gate
+that should be raised is not.
 
 ### SCOPE-2 — On-demand module resolution for the orchestrator
 
