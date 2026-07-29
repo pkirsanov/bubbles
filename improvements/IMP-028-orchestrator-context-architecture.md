@@ -283,10 +283,53 @@ until either a larger usable context is available, or the eval is redesigned to
 probe per-module rather than loading the closure at once. Until then no reduction
 claim about `bubbles.workflow.agent.md` is defensible in either direction.
 
-**Acceptance (revised):** a reduction ships only when the eval reproduces the
-full baseline gate set with the module removed AND the run is proven untruncated
-(`routing-bundle-truncated` and `routing-context-truncated` both absent). Both
-guards now fail loud rather than measuring a partial closure silently.
+**UNBLOCKED — deterministic gate attribution replaces the unobtainable verdict.**
+
+The whole-bundle eval cannot run here (114,476 tokens vs a 32,768 window), but
+the specific failure R3 guards against — removing a module that carries a gate's
+only reference — is decidable **without a model**.
+`bubbles/scripts/gate-attribution.sh` computes it exactly:
+
+```
+closure modules      42
+gate ids referenced  100
+sole-carried gates   54
+
+NOT REMOVABLE (sole carrier of a gate reference)
+   59401B   6 sole-gates  project-config-contract.md
+   48534B   1 sole-gate   scope-workflow.md
+   19758B  32 sole-gates  quality-gates.md
+   13890B   7 sole-gates  state-gates.md
+   ... 8 modules total
+
+CANDIDATES (no sole gate) — 33 modules, 236,194 bytes
+   31533B  operating-baseline.md
+   23881B  workflow-execution-loops.md
+   22839B  critical-requirements.md
+   22349B  feature-templates.md
+   ...
+```
+
+This settles SCOPE-2's three original targets on evidence: **two are
+load-bearing** (`project-config-contract.md` solely carries 6 gates,
+`scope-workflow.md` 1) and only **`feature-templates.md` is a candidate**.
+Sizing by file size was the wrong instinct; the largest file is among the least
+removable.
+
+236,194 candidate bytes exist against the 345,847 B that must go, so the target
+is not reachable by safe removals alone — the remainder must come from the agent
+file itself or from genuine on-demand loading.
+
+**Limits, stated plainly.** This counts gate-id REFERENCES, not semantic
+definitions. Zero sole-gates proves no gate id is orphaned; it does NOT prove
+routing is unchanged, since cross-module context can still matter. The tool
+NARROWS candidates conclusively in the negative direction (a sole carrier is a
+hard no) and only narrows them in the positive direction.
+
+**Acceptance (revised):** a module is removable only when (a) `gate-attribution.sh`
+reports zero sole-gates for it, AND (b) the routing eval reproduces the baseline
+gate set with it excluded and no truncation guard fires. (a) is available today;
+(b) awaits adequate context.
 
 ### SCOPE-3 — Deduplicate the anti-fabrication doctrine
 
