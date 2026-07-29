@@ -122,6 +122,7 @@ V2_TASK_KEYS = {
     "passThreshold",
     "judgeWeight",
     "judgeTimeoutSeconds",
+    "expectedGates",
     "checks",
 }
 
@@ -341,6 +342,16 @@ def validate_task(task):
         issues.append(issue("$.judgeWeight", "range", "must be a finite number in [0, 1]"))
     validate_timeout(task.get("judgeTimeoutSeconds", 30), "$.judgeTimeoutSeconds", issues)
 
+    # Gate detection needs a weighted judge; a deterministic check cannot observe routing.
+    expected_gates = task.get("expectedGates")
+    if expected_gates is not None:
+        if not isinstance(expected_gates, list) or not expected_gates or any(
+            not isinstance(item, str) or not item for item in expected_gates
+        ):
+            issues.append(issue("$.expectedGates", "type", "must be a non-empty array of gate id strings"))
+        elif not is_number(judge_weight) or judge_weight <= 0:
+            issues.append(issue("$.expectedGates", "dependency", "requires judgeWeight above zero"))
+
     checks = task.get("checks")
     if not isinstance(checks, list) or not checks:
         issues.append(issue("$.checks", "type", "must be a non-empty array"))
@@ -379,7 +390,7 @@ def validate_evaluator_result(result):
     issues = []
     if not isinstance(result, dict):
         return [issue("$", "type", "evaluator result must be an object")]
-    allowed = {"status", "score", "verdict", "rubricFindings", "provenance", "error"}
+    allowed = {"status", "score", "verdict", "rubricFindings", "provenance", "error", "gatesDetected"}
     for key in sorted(set(result) - allowed):
         issues.append(issue(f"$.{key}", "additional-property", "property is not allowed"))
     for key in ("status", "score", "verdict", "rubricFindings", "provenance"):
@@ -399,6 +410,11 @@ def validate_evaluator_result(result):
     findings = result.get("rubricFindings")
     if not isinstance(findings, list) or any(not isinstance(item, str) or not item for item in findings):
         issues.append(issue("$.rubricFindings", "type", "must be an array of non-empty strings"))
+    # Optional. Required only when a task declares expectedGates (enforced in run_judge).
+    if "gatesDetected" in result:
+        gates = result["gatesDetected"]
+        if not isinstance(gates, list) or any(not isinstance(item, str) or not item for item in gates):
+            issues.append(issue("$.gatesDetected", "type", "must be an array of non-empty gate id strings"))
     provenance = result.get("provenance")
     if not isinstance(provenance, dict):
         issues.append(issue("$.provenance", "type", "must be an object"))
@@ -799,13 +815,47 @@ def run_judge(task, task_path, out_dir):
         result["error"] = invocation["error"]
         return result
     evaluator_result = invocation["result"]
+    gates_detected = evaluator_result.get("gatesDetected")
+    findings = list(evaluator_result["rubricFindings"])
+    status = evaluator_result["status"]
+    score = evaluator_result["score"]
+
+    # R3 gate-detection: a reduction that loses a gate must name the gate it lost.
+    expected_gates = task.get("expectedGates")
+    if isinstance(expected_gates, list) and expected_gates:
+        if not isinstance(gates_detected, list):
+            status = "error"
+            score = None
+            findings.append("task declares expectedGates but the judge reported no gatesDetected array")
+            return {
+                "required": True,
+                "weight": weight,
+                "status": status,
+                "score": score,
+                "verdict": evaluator_result["verdict"],
+                "rubricFindings": findings,
+                "gatesDetected": None,
+                "provenance": evaluator_result["provenance"],
+                "error": {
+                    "code": "judge-gates-missing",
+                    "message": "expectedGates declared but gatesDetected absent from the judge result",
+                },
+            }
+        missing = [gate for gate in expected_gates if gate not in gates_detected]
+        if missing:
+            status = "failed"
+            score = 0.0
+            for gate in missing:
+                findings.append(f"gate-detection regression: {gate} was expected but not detected")
+
     return {
         "required": True,
         "weight": weight,
-        "status": evaluator_result["status"],
-        "score": evaluator_result["score"],
+        "status": status,
+        "score": score,
         "verdict": evaluator_result["verdict"],
-        "rubricFindings": evaluator_result["rubricFindings"],
+        "rubricFindings": findings,
+        "gatesDetected": gates_detected,
         "provenance": evaluator_result["provenance"],
         "error": evaluator_result.get("error"),
     }
