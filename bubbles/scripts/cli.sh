@@ -2806,6 +2806,36 @@ if git diff --cached --name-only | grep -q '^specs/'; then
     fi
   done
 fi
+# Release-manifest freshness (framework-source trees only).
+#
+# The manifest pins a sha256 of each managed file's POST-change content, and
+# `install provenance` + `trust doctor` both verify against it. Committing a
+# managed file without regenerating therefore does not merely warn — it makes
+# the branch unpushable for EVERY session, and the failure surfaces at someone
+# else's pre-push 20+ minutes later rather than at the author's commit.
+#
+# Fires only when a manifest-managed file is staged AND the manifest is not,
+# which is exactly that failure mode and nothing else. Unrelated dirty managed
+# files in the working tree do not trip it, so there are no false positives.
+# The -f guard keeps this inert in downstream installs, which have no
+# bubbles/release-manifest.json at this path.
+if [[ -f bubbles/release-manifest.json ]]; then
+  staged_files="$(git diff --cached --name-only)"
+  if ! printf '%s\n' "$staged_files" | grep -qx 'bubbles/release-manifest.json'; then
+    while IFS= read -r staged_file; do
+      [[ -n "$staged_file" ]] || continue
+      if grep -qF "\"path\": \"$staged_file\"" bubbles/release-manifest.json 2>/dev/null; then
+        echo "🫧 Bubbles pre-commit: release manifest freshness..."
+        echo "❌ $staged_file is manifest-managed but bubbles/release-manifest.json is not staged." >&2
+        echo "   The manifest pins a checksum of this file's new content." >&2
+        echo "   Run:  bash bubbles/scripts/generate-release-manifest.sh" >&2
+        echo "   Then: git add bubbles/release-manifest.json" >&2
+        failed=1
+        break
+      fi
+    done <<< "$staged_files"
+  fi
+fi
 exit $failed
 PCHOOK
   chmod +x "$git_hooks_dir/pre-commit"
