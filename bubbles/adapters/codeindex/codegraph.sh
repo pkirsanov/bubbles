@@ -79,7 +79,29 @@ case "$VERB" in
   affected)
     [ "$#" -ge 1 ] || die "affected requires at least one <file>"
     require_provider
-    run_provider "$CG_BIN" affected "$@" --json
+    # The provider's `affected --json` emits an OBJECT
+    # ({changedFiles, affectedTests, totalDependentsTraversed}), while every
+    # other verb here — and `selftest affected` — emits a JSON ARRAY. Passing the
+    # object through hands consumers two shapes for one contract, and a naive
+    # length check counts 3 KEYS instead of N affected tests. That is a
+    # silent-undercount trap of exactly the kind this adapter exists to prevent:
+    # a test-impact consumer would "helpfully" skip nearly every test.
+    # Emit the affectedTests list itself, as an array, so the contract holds.
+    # `--quiet` is the provider's own line-per-path mode; empty is a legitimate
+    # "no affected tests" result and MUST yield [] rather than a failure.
+    affected_out="$("$CG_BIN" affected "$@" --quiet 2>/dev/null)" ||
+      die "provider invocation failed: $CG_BIN affected $* --quiet"
+    printf '%s' "$affected_out" | awk '
+      BEGIN { printf "["; sep = "" }
+      NF {
+        line = $0
+        gsub(/\\/, "\\\\", line)
+        gsub(/"/, "\\\"", line)
+        printf "%s\"%s\"", sep, line
+        sep = ","
+      }
+      END { print "]" }
+    '
     ;;
   routes)
     require_provider
