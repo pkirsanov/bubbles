@@ -130,14 +130,24 @@ larger one. A reduction chasing the closure figure would then be optimising a
 number that is not the context cost, while still changing the orchestrator's
 contract. It would also explain why the 160,000 B target never looked reachable.
 
-**Scope of this evidence:** one observed session, for a different agent
-(`bubbles.goal`) than the measured one (`bubbles.workflow`). Same runtime and
-same mechanism, so it very likely generalises — but it has not been confirmed for
-`bubbles.workflow` specifically. Confirm before spending further effort here:
-open a fresh `bubbles.workflow` session and check whether those three modules
-arrive inline or are read on demand. **Do not attempt the reduction until this is
-settled** — if the modules are already on-demand, the reduction frees nothing and
-only risks the routing behaviour R3 protects.
+**Scope of this evidence:** first-person and behavioural, for `bubbles.goal`.
+That agent's file references `agent-common.md`, `operating-baseline.md`, and
+`scenario-compile.md` (4-module closure). The running session received **none**
+of their content — demonstrated, not asserted: when it needed R3's text it had to
+`grep` for it, and its first pattern missed. An agent cannot search for text it
+is already holding.
+
+The mechanism explains it. `applyTo: "**"` instruction files are inlined by an
+explicit VS Code feature. A markdown link inside an `*.agent.md` body is just
+text; nothing resolves or inlines it. The agent must call `read_file`. So the
+"transitive closure" is a documentation-linkage graph, not a prompt.
+
+Unconfirmed for `bubbles.workflow` specifically — same runtime and mechanism, so
+it very likely generalises, but it has not been observed directly. Confirm by
+opening a fresh `bubbles.workflow` session and checking whether those three
+modules arrive inline or are read on demand. **Do not attempt the reduction until
+this is settled** — if the modules are already on-demand, the reduction frees
+nothing and only risks the routing behaviour R3 protects.
 
 **Measured 2026-07-29 — read this before attempting the reduction.** The three
 modules named above were analysed with `bubbles/scripts/gate-attribution.sh`
