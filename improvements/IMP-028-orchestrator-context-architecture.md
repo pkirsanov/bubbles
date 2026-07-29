@@ -24,6 +24,21 @@ Cross-checked against `effective-bundle-budget` in the same `framework-validate`
 run, which independently reported `bubbles.workflow.agent.md: effective bundle
 505847 bytes`.
 
+Eval infrastructure verified separately against `93f3910`, because the first
+draft of SCOPE-1 asserted a gap that does not exist:
+
+```
+bubbles/scripts/eval-harness-selftest.sh
+  'weighted judge passes only with valid behavioral result'  -> exit 0
+  'missing weighted judge fails closed'                      -> exit 1, judge-adapter-missing
+  'non-JSON (/bin/echo) hollow judge output fails closed'    -> exit 1, judge-malformed-json
+  'successful judge provenance is present'                   -> judge.provenance.adapter
+
+bubbles/scripts/eval-heldout-guard.sh — held-out isolation invariant, shipped
+grep '"judgeWeight"' bubbles/eval/tasks/*.json — 13 tasks, all judgeWeight: 0
+ls bubbles/adapters/ — codeindex, observability (no judge adapter: operator-supplied)
+```
+
 ---
 
 ## Why IMP-027 SCOPE-6 could not close
@@ -69,22 +84,61 @@ This prerequisite binds **every** reduction item below, including the ones
 IMP-027 labelled "not blocked". Any byte removed from the closure can change
 what the orchestrator detects; only a routing eval can show it did not.
 
+The machinery to run such an eval already exists (see SCOPE-1). The gap is the
+held-out routing task set and a configured judge adapter, both operator-supplied
+by design. Until those are in place and green twice consecutively, SCOPE-2 and
+SCOPE-3 MUST NOT land.
+
 ---
 
 ## Scopes
 
-### SCOPE-1 — Build the routing eval (unblocks everything else)
+### SCOPE-1 — Supply the routing eval (unblocks everything else)
 
 A held-out eval that invokes a model against the orchestrator bundle and asserts
 gate detection and routing are unchanged. Must report per-gate detection so a
 regression names the gate it lost.
 
-Requires model-invocation infrastructure the framework does not yet have, plus
-credentials. Until it exists and is green on two consecutive runs, SCOPE-2 and
-SCOPE-3 MUST NOT land.
+**Corrected after measurement — the framework side is already delivered.** An
+earlier draft of this scope claimed it "requires model-invocation infrastructure
+the framework does not yet have." That is false, and building against it would
+have re-created a working seam. Verified against `93f3910`:
 
-**Acceptance:** eval runs from `bubbles/scripts/`, reports per-gate detection,
-and is green twice consecutively against the current bundle as the baseline.
+| Capability | Where | State |
+|---|---|---|
+| Weighted model judge | `eval-harness.sh` `run_judge()`, `judgeWeight`, `judgeTimeoutSeconds` | delivered |
+| Judge adapter seam | `BUBBLES_EVAL_JUDGE` -> adapter invoked with `[out_dir, task_path]` | delivered |
+| Judge provenance | `judge.provenance` carries `provider`, `model`, `invocationId` | delivered |
+| Fail-closed on missing judge | selftest: exit 1, `judge-adapter-missing` | delivered + adversarially tested |
+| Fail-closed on hollow judge | selftest: exit 1, `judge-malformed-json` | delivered + adversarially tested |
+| Held-out isolation invariant | `eval-heldout-guard.sh` (IMP-100 Phase 6 / IMP-020 S4) | delivered |
+
+What remains is therefore **operator configuration, not framework work**, and the
+held-out guard says so explicitly: *"The held-out tasks themselves are
+operator-supplied and kept out of the development corpus (like the semantic/judge
+adapters, which are operator configuration). This repo ships only the CONVENTION
++ this guard."*
+
+Two operator-supplied inputs are needed:
+
+1. **A held-out routing task set** with `judgeWeight > 0`, one task per gate the
+   orchestrator must still detect and route. These MUST NOT be committed to this
+   repo — `eval-heldout-guard.sh` hard-fails when a held-out `taskId` also
+   appears in `bubbles/eval/tasks` or `bubbles/eval/fixtures`, because a visible
+   held-out task is an overfit score. All 13 shipped corpus tasks carry
+   `judgeWeight: 0`, so the corpus cannot serve this purpose.
+2. **A judge adapter** pointed at by `BUBBLES_EVAL_JUDGE`, following the same
+   pattern as `bubbles/adapters/observability/` and `bubbles/adapters/codeindex/`
+   (a `none` default plus a real provider). Requires model credentials, which is
+   why it is operator configuration.
+
+No framework change is expected here. If one is discovered, it belongs in its own
+scope rather than being folded into this one.
+
+**Acceptance:** the held-out routing suite runs through `eval-harness.sh` with a
+configured judge, passes `eval-heldout-guard.sh` isolation, reports per-gate
+detection, and is green twice consecutively against the current bundle as the
+baseline.
 
 ### SCOPE-2 — On-demand module resolution for the orchestrator
 
