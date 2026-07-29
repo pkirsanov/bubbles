@@ -392,6 +392,38 @@ safety-critical text; the reduction is secondary to keeping it exact.
 **Acceptance:** no normative statement is lost (diff-reviewed clause by clause),
 the Honesty Incentive is byte-identical, and the SCOPE-1 eval is green.
 
+**MEASURED — the premise does not hold. This scope should not proceed as written.**
+
+"The doctrine is restated across" these four files was asserted, never measured.
+Measuring it:
+
+```
+distinct normative clauses (MUST/NEVER/FORBIDDEN/REQUIRED/SHALL/PROHIBITED)  68
+clauses appearing in 2 or more of the four files                              0
+gate ids referenced across the four                                          55
+gate ids appearing in 2 or more of the four                                   2   (G040, G071)
+```
+
+Zero duplicated normative clauses and 2 of 55 shared gate ids. The four files
+PARTITION the doctrine; they do not repeat it. There is no 76,135 B of redundancy
+to collapse — that figure is simply their combined size, which is not the same
+thing as duplicated content.
+
+Proceeding anyway would put the scope in direct conflict with its own first
+acceptance criterion: with no duplication to remove, any "collapse to one
+normative source" necessarily DELETES normative statements rather than
+deduplicating them. The stated safety requirement and the stated action are
+incompatible.
+
+"Honesty Incentive" appears in 3 of the 4 files, but since clause-level
+duplication is zero, those are references to the normative text rather than
+copies of it — which is the correct structure, not a defect.
+
+**Recommendation:** retire SCOPE-3, or re-scope it to a measured target. The
+saving it promised is not available at acceptable risk, and the framework's most
+safety-critical text is the last place to trade correctness for bytes. Any future
+version must begin from a duplication measurement, not from combined file size.
+
 ---
 
 ## Target — decided, and now derived rather than inherited
