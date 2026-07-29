@@ -36,9 +36,9 @@ Corroborating (grep-derived, advisory) numbers:
 
 | Gate | Name | Enforced By (declared) | # Modes | state-transition-guard | framework-validate scripts | CI |
 | --- | --- | --- | --- | --- | --- | --- |
-| G001 | artifact_gate | `mode-required` | 55 | — | 11 | — |
-| G002 | scope_definition_gate | `mode-required` | 23 | — | 5 | — |
-| G003 | test_integrity_gate | `mode-required` | 25 | — | 5 | — |
+| G001 | artifact_gate | `mode-required` | 55 | — | 12 | — |
+| G002 | scope_definition_gate | `mode-required` | 23 | — | 6 | — |
+| G003 | test_integrity_gate | `mode-required` | 25 | — | 6 | — |
 | G004 | test_execution_gate | `mode-required` | 25 | — | 2 | — |
 | G005 | evidence_gate | `mode-required` | 25 | — | 3 | — |
 | G006 | docs_sync_gate | `mode-required` | 46 | — | 1 | — |

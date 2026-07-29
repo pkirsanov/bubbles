@@ -289,7 +289,49 @@ until either a larger usable context is available, or the eval is redesigned to
 probe per-module rather than loading the closure at once. Until then no reduction
 claim about `bubbles.workflow.agent.md` is defensible in either direction.
 
-**UNBLOCKED — deterministic gate attribution replaces the unobtainable verdict.**
+**SCOPE-2 MEASURED — the proposal is reachability-safe. 130,284 B freed, 0 gates lost.**
+
+The earlier analysis asked the wrong question. SCOPE-2 does not DELETE these
+modules; it moves them to on-demand loading. So the hazard is not "is a gate
+orphaned" but "is a gate still REACHABLE" — either a carrier stays always-loaded,
+or an always-loaded file still points at the on-demand carrier. That is
+deterministic, and `gate-attribution.sh --ondemand` now decides it:
+
+```
+$ gate-attribution.sh agents/bubbles.workflow.agent.md \
+    --ondemand project-config-contract.md,scope-workflow.md,feature-templates.md
+
+bytes freed    : 130284
+UNREACHABLE    : 0
+REACHABLE VIA POINTER ONLY (7 gates):
+  G005 G047 G048 G051 G199 G900  in project-config-contract.md
+    <- pointed to by bubbles.workflow.agent.md, docker-lifecycle-governance.md,
+       operating-baseline.md
+  G037                            in scope-workflow.md
+    <- pointed to by agent-common.md, bubbles.workflow.agent.md, and 5 others
+VERDICT: every gate stays reachable.
+```
+
+Note the number 7 recurs from the retracted `b2724bd` ("loses 7 of 8 gates") but
+now means the opposite: seven gates become pointer-reachable, none are lost. The
+coincidence is worth naming so a future reader does not conflate the two.
+
+`scope-workflow.md` already has an on-demand twin at
+`skills/bubbles-scope-workflow-runtime`, and `bubbles.workflow.agent.md` already
+carries a Skills-First Pointers section, so the loading mechanism this scope needs
+is present and in use — this is not new machinery.
+
+**What this does and does not establish.** Reachable is NOT the same as followed.
+The check proves the agent CAN still get to every gate; it cannot prove the agent
+WILL choose to load the module at the right moment. That remains the routing
+question, and it still needs the real orchestrator (SCOPE-1 half 2). Treat the
+7 pointer-only gates as the eval's highest-priority cases — they are exactly where
+a silent regression would hide.
+
+**Arithmetic.** 505,847 - 130,284 = 375,563 B, still above the 160,000 B target.
+Combined with the 236,194 B of no-sole-gate candidates the two analyses overlap,
+so the totals are not additive; the remaining gap must come from the agent file
+itself. The target is not reachable by moving these three modules alone.
 
 The whole-bundle eval cannot run here (114,476 tokens vs a 32,768 window), but
 the specific failure R3 guards against — removing a module that carries a gate's
