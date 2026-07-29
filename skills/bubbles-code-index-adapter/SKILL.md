@@ -102,7 +102,7 @@ Project-owned config, never framework-managed:
 ```yaml
 # .github/bubbles-project.yaml
 codeIndex:
-  adapter: codegraph      # or: none (default)
+  adapter: codegraph      # or: codebase-memory, none (default)
 ```
 
 Resolve it:
@@ -124,14 +124,20 @@ Resolution rules that matter:
 ## Adding a provider adapter
 
 1. Create `bubbles/adapters/codeindex/<provider>.sh`, `chmod +x`.
-2. Implement all five verbs plus `selftest <verb>`.
+2. Implement all eight verbs plus `selftest <verb>` and `capabilities`.
 3. Normalize provider output to the canonical shapes — never pass a raw
    provider envelope through.
 4. Fail loud on missing provider/index (exit 1). No auto-install, no network
    fetch, no default binary path.
 5. Force provider telemetry **off** if the provider ships it on by default.
-6. Add the provider to the selftest's contract sweep and confirm all five verb
+6. Add the provider to the selftest's contract sweep and confirm all verb
    selftests pass with no provider installed.
+7. Declare any verb you cannot support honestly as `unsupported` in
+   `capabilities` and exit 1 for it. Do **not** approximate. A plausible-looking
+   wrong answer is worse than a refusal: an `affected` derivation that returns 6
+   test files when the true blast radius is 1,193 will be trusted, and the 1,187
+   skipped tests fail silently. Refusal degrades the consumer to the full suite,
+   which is merely slow.
 
 ## Choosing a provider
 
@@ -212,7 +218,8 @@ A derived fact is still a claim. When a consumer reports one:
 
 ## See also
 
-- `bubbles/adapters/codeindex/` — `none.sh` (default), provider adapters
+- `bubbles/adapters/codeindex/` — `none.sh` (default), `codegraph.sh`,
+  `codebase-memory.sh` (the only provider that parses shell)
 - `bubbles/scripts/codeindex-resolve.sh` — resolver
 - `bubbles/scripts/codeindex-resolve-selftest.sh` — hermetic contract selftest
 - `bubbles-observability-adapter` — the adapter pattern this mirrors
