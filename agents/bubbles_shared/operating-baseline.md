@@ -111,6 +111,34 @@ The budget is **inert until a downstream repo configures it** in `.github/bubble
 
 **⚠️ A BLOCKING budget MUST only be set AFTER a held-out eval confirms no gate-detection regression (R3).** Setting `effectiveBundleBudget: block` before validating the reduction risks forcing an orchestrator below the point where it still loads a load-bearing contract. Start advisory, reduce via the phase-local seam, run the held-out eval, and only then consider making the budget blocking.
 
+**⚠️ UNVERIFIED PREMISE — check this before acting on any bundle figure.** Every
+number in this section, and `effective-bundle-measure.sh` itself, rests on the
+assertion in that script's header: *"an agent's effective loaded prompt is NOT
+just its agent.md — it is that file PLUS every shared contract it transitively
+references."* That is an assumption, not a measurement of runtime behaviour, and
+direct observation contradicts it.
+
+In a VS Code Copilot session (2026-07-29) the agent received `*.instructions.md`
+files inline — they carry `applyTo: "**"` — and skills as *descriptions plus
+paths*, to be fetched with `read_file` on demand. It did NOT receive
+`scope-workflow.md`, `project-config-contract.md`, or `feature-templates.md`
+inline. Those were read on demand, when needed.
+
+If that holds generally, the transitive closure measures **everything reachable
+by link**, not everything loaded — a different quantity, and probably a much
+larger one. A reduction chasing the closure figure would then be optimising a
+number that is not the context cost, while still changing the orchestrator's
+contract. It would also explain why the 160,000 B target never looked reachable.
+
+**Scope of this evidence:** one observed session, for a different agent
+(`bubbles.goal`) than the measured one (`bubbles.workflow`). Same runtime and
+same mechanism, so it very likely generalises — but it has not been confirmed for
+`bubbles.workflow` specifically. Confirm before spending further effort here:
+open a fresh `bubbles.workflow` session and check whether those three modules
+arrive inline or are read on demand. **Do not attempt the reduction until this is
+settled** — if the modules are already on-demand, the reduction frees nothing and
+only risks the routing behaviour R3 protects.
+
 **Measured 2026-07-29 — read this before attempting the reduction.** The three
 modules named above were analysed with `bubbles/scripts/gate-attribution.sh`
 (deterministic; resolves the closure and reports which modules are the SOLE
