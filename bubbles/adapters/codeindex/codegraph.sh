@@ -52,6 +52,19 @@ require_provider() {
     die "provider '$CG_BIN' not found on PATH; set CODEINDEX_CODEGRAPH_BIN or install it. No auto-install is performed."
   [ -d "$CODEINDEX_ROOT/.codegraph" ] ||
     die "no index at '$CODEINDEX_ROOT/.codegraph'; run '$CG_BIN init' in that repository first."
+  # The provider resolves its project by CWD, and `status`/`sync` accept no
+  # --path flag at all (only query/impact/affected do). Without this cd,
+  # CODEINDEX_ROOT was validated and then IGNORED: pointing it at another
+  # repository silently read whichever index happened to sit in the caller's
+  # CWD, or failed with a confusing provider error that named the wrong repo.
+  # Enter the validated root so every verb agrees on one target.
+  #
+  # Consequence, and it is deliberate: <file> arguments to `affected` are
+  # REPO-RELATIVE (relative to CODEINDEX_ROOT), not relative to the caller's
+  # CWD. That is the only stable contract when the adapter may be invoked from
+  # anywhere in a multi-root workspace.
+  cd "$CODEINDEX_ROOT" ||
+    die "cannot enter CODEINDEX_ROOT '$CODEINDEX_ROOT'"
 }
 
 # Emit a bare JSON array/map on stdout, or fail loudly. Never emit partial JSON.
