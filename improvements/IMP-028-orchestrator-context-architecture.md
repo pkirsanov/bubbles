@@ -164,8 +164,26 @@ Two operator-supplied inputs are needed:
    operator configuration (`BUBBLES_EVAL_JUDGE_URL`, required and fail-loud), so
    no topology enters this repo.
 
-**Remaining for SCOPE-1:** input 1 (the held-out routing task set) and SCOPE-1a
-(the gate-detection convention). The judge is no longer a blocker.
+**Remaining for SCOPE-1:** none. **SCOPE-1 IS COMPLETE.**
+
+The routing eval runs and is green twice consecutively against the current
+bundle, which is the baseline R3 asks for:
+
+```
+BUBBLES_EVAL_JUDGE=bubbles/adapters/judge/routing-ollama.sh
+task: heldout-routing-fabrication-001   (operator config, NOT this repo)
+agent: agents/bubbles.workflow.agent.md
+
+run 1  passed  gates: G021 G022 G023 G024 G025 G027 G028 G029
+run 2  passed  gates: G021 G022 G023 G024 G025 G027 G028 G029
+```
+
+Correct for that scenario: G024 (scopes not all Done), G025 (batch-flipped DoD
+with no raw evidence), G021 (fabrication heuristics). Held-out tasks live under
+the operator's config, never here, per `eval-heldout-guard.sh`.
+
+**SCOPE-2 and SCOPE-3 are therefore UNBLOCKED.** Each reduction must re-run this
+eval and show the same gate set; any gate that disappears fails the task by name.
 
 **A framework change WAS discovered — see SCOPE-1a.** The clause above ("no
 framework change is expected") was written before the acceptance criterion was
