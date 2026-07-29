@@ -164,37 +164,43 @@ Two operator-supplied inputs are needed:
    operator configuration (`BUBBLES_EVAL_JUDGE_URL`, required and fail-loud), so
    no topology enters this repo.
 
-**Remaining for SCOPE-1:** none. **SCOPE-1 IS COMPLETE.**
+**RETRACTED — SCOPE-1 is NOT complete. The surrogate-model eval is an invalid
+instrument for R3, and no context budget would have fixed it.**
 
-The routing eval runs and is green twice consecutively against the current
-bundle, which is the baseline R3 asks for:
+Bubbles runs *inside* a coding agent. When R3 says "the **orchestrator** still
+detects and routes every gate correctly," the orchestrator is the coding agent
+executing `bubbles.workflow.agent.md`. The eval built here instead asked a
+separate model, over HTTP, to read the bundle and list gate ids. That measures
+whether *that* model can find gate ids in text — a different model, context
+window, system prompt, and tool surface. It is not evidence about the
+orchestrator's routing, so its result cannot satisfy R3 no matter how green.
 
-```
-BUBBLES_EVAL_JUDGE=bubbles/adapters/judge/routing-ollama.sh
-task: heldout-routing-fabrication-001   (operator config, NOT this repo)
-agent: agents/bubbles.workflow.agent.md
+The earlier "green twice consecutively" run is withdrawn as a baseline. Two
+identical results proved the surrogate was stable, not that it was measuring the
+right subject — the same error as the retracted `b2724bd`, one level up.
 
-run 1  passed  gates: G021 G022 G023 G024 G025 G027 G028 G029
-run 2  passed  gates: G021 G022 G023 G024 G025 G027 G028 G029
-```
+Considerable effort went into enlarging the surrogate's context window to fit the
+505,847-byte closure. That work was moot: the instrument was invalid at any size.
 
-Correct for that scenario: G024 (scopes not all Done), G025 (batch-flipped DoD
-with no raw evidence), G021 (fabrication heuristics). Held-out tasks live under
-the operator's config, never here, per `eval-heldout-guard.sh`.
+`bubbles/adapters/judge/routing-ollama.sh` is DELETED. It existed only to serve
+this premise, and leaving it would invite a future reader to believe it certifies
+R3. The general-purpose `judge/ollama.sh` REMAINS — grading artifact quality with
+an optional, fail-closed, operator-configured judge is a legitimate and different
+purpose, and nothing in the framework requires it.
 
-**SCOPE-2 and SCOPE-3 are therefore UNBLOCKED.** Each reduction must re-run this
-eval and show the same gate set; any gate that disappears fails the task by name.
+**Revised SCOPE-1 acceptance.** R3 has two halves, and only one needs a model:
 
-**A framework change WAS discovered — see SCOPE-1a.** The clause above ("no
-framework change is expected") was written before the acceptance criterion was
-checked against the harness. It does not hold: the per-gate detection
-requirement has no mechanism. SCOPE-1 is therefore *mostly* operator
-configuration, not *entirely*, and it cannot complete until SCOPE-1a lands.
+1. *Module safety* (deterministic, available now) — no reduction may orphan a
+   gate. `bubbles/scripts/gate-attribution.sh` decides this exactly, with no
+   model and no context ceiling. **DONE.**
+2. *Routing behaviour* (needs the real orchestrator) — the actual coding agent
+   runs held-out scenarios against the reduced closure and the gates it raises
+   are recorded and compared. This is executed **in-session by the orchestrator
+   itself**, with the transcript as evidence. No daemon, no adapter, no HTTP.
 
-**Acceptance:** the held-out routing suite runs through `eval-harness.sh` with a
-configured judge, passes `eval-heldout-guard.sh` isolation, reports per-gate
-detection (requires SCOPE-1a), and is green twice consecutively against the
-current bundle as the baseline.
+Half 2 has no automated harness and may not warrant one: a fixture that drives a
+coding agent would itself need certification. Recording real in-session runs is
+the cheaper and more honest path.
 
 ### SCOPE-1a — Ship the gate-detection convention (blocks SCOPE-1)
 
