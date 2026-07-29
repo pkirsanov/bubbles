@@ -142,12 +142,22 @@ explicit VS Code feature. A markdown link inside an `*.agent.md` body is just
 text; nothing resolves or inlines it. The agent must call `read_file`. So the
 "transitive closure" is a documentation-linkage graph, not a prompt.
 
-Unconfirmed for `bubbles.workflow` specifically — same runtime and mechanism, so
-it very likely generalises, but it has not been observed directly. Confirm by
-opening a fresh `bubbles.workflow` session and checking whether those three
-modules arrive inline or are read on demand. **Do not attempt the reduction until
-this is settled** — if the modules are already on-demand, the reduction frees
-nothing and only risks the routing behaviour R3 protects.
+**CONFIRMED for `bubbles.workflow` — 2026-07-29.** A fresh `bubbles.workflow`
+session was asked, without tools, to define the "Isolated Design-Experiment
+Contract" and the `contextFit` field from `scope-workflow.md`. It answered:
+
+> "That text is not in my context. I have not loaded `scope-workflow.md` from the
+> bubbles repo in this session. What I have is only the governance references
+> that *point* to it … the file's actual contents were never read."
+
+That is the measured agent, not an inference from another one, and it draws the
+exact distinction at issue: it holds the POINTERS, never the CONTENTS.
+
+**Therefore the closure is NOT the loaded prompt, and every byte figure in this
+section is a linkage measurement rather than a context cost.** Do NOT budget,
+reduce, or set `effectiveBundleBudget` against these numbers believing they are
+context. A reduction that moves an already-on-demand module frees nothing and
+only risks the routing behaviour R3 protects.
 
 **Measured 2026-07-29 — read this before attempting the reduction.** The three
 modules named above were analysed with `bubbles/scripts/gate-attribution.sh`
