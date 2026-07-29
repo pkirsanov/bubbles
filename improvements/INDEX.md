@@ -41,10 +41,10 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
-| [IMP-027](IMP-027-enforcement-integrity-and-cost-audit.md) | Enforcement Integrity, Ungoverned Surfaces, and Context-Cost Audit | IN PROGRESS | framework-health (G125) | COST-1 (measurement shipped, reduction blocked on a routing eval) | 2026-07-28 |
+| [IMP-028](IMP-028-orchestrator-context-architecture.md) | Orchestrator Context Architecture (COST-1 remainder) | PROPOSED | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
 
-> **Numbering note:** IMP-001…IMP-026 and IMP-100…IMP-107 are already referenced
+> **Numbering note:** IMP-001…IMP-027 and IMP-100…IMP-107 are already referenced
 > across `bubbles/scripts/**`, `docs/**`, and `CHANGELOG.md` as historical
-> delivery identifiers. New proposals continue from **IMP-027** in the primary
+> delivery identifiers. New proposals continue from **IMP-029** in the primary
 > band. Verify with:
 > `grep -rhoE 'IMP-[0-9]{3}' --include='*.sh' --include='*.md' --include='*.yaml' --include='*.json' . | sort -u`

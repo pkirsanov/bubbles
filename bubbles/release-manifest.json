@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "version": "7.21.0",
-  "gitSha": "b8682e47184daaf7d9cdc7481e8f70d8a25544a6",
-  "generatedAt": "2026-07-28T22:55:23+00:00",
+  "gitSha": "5e6fa0da7f75953161564fed82e8d1ce3e772c53",
+  "generatedAt": "2026-07-28T23:53:48+00:00",
   "capabilityLedgerVersion": 1,
   "payloadVerifierRequired": true,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
