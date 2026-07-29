@@ -41,7 +41,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
-| [IMP-028](IMP-028-orchestrator-context-architecture.md) | Orchestrator Context Architecture (COST-1 remainder) | PROPOSED | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
+| IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
 
 > **Numbering note:** IMP-001…IMP-027 and IMP-100…IMP-107 are already referenced
 > across `bubbles/scripts/**`, `docs/**`, and `CHANGELOG.md` as historical

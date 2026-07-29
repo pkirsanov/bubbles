@@ -111,6 +111,48 @@ The budget is **inert until a downstream repo configures it** in `.github/bubble
 
 **⚠️ A BLOCKING budget MUST only be set AFTER a held-out eval confirms no gate-detection regression (R3).** Setting `effectiveBundleBudget: block` before validating the reduction risks forcing an orchestrator below the point where it still loads a load-bearing contract. Start advisory, reduce via the phase-local seam, run the held-out eval, and only then consider making the budget blocking.
 
+**Measured 2026-07-29 — read this before attempting the reduction.** The three
+modules named above were analysed with `bubbles/scripts/gate-attribution.sh`
+(deterministic; resolves the closure and reports which modules are the SOLE
+carrier of a gate reference). Findings:
+
+| Question | Answer |
+|---|---|
+| Closure modules / gate ids referenced | 42 / 100 |
+| Gates with exactly one carrying module | 54 |
+| Moving all three to on-demand | frees 130,284 B, leaves **0 gates unreachable** |
+| Gates that become pointer-only | **7** — G005 G047 G048 G051 G199 G900 (`project-config-contract.md`), G037 (`scope-workflow.md`) |
+| Modules carrying no sole gate | 33, totalling 236,194 B |
+
+Use `gate-attribution.sh <agent.md> --ondemand <mods>` before ANY reduction. It
+decides reachability exactly and needs no model, so it is valid where a routing
+eval is unavailable. Reachability is necessary, NOT sufficient: it proves the
+agent CAN still reach a gate, never that it WILL load the module at the right
+moment. The 7 pointer-only gates above are the routing eval's priority cases —
+the other 93 keep an always-loaded carrier and are unaffected by construction.
+
+**The 160,000 B target is not reachable by this reduction.** 505,847 - 130,284 =
+375,563 B, still 215,563 B over. Closing that gap needs reducing the agent file
+itself (72,472 B) plus further on-demand moves, each with its own reachability
+and routing questions. Do not treat the three-module move as sufficient.
+
+**Two measurement traps, both hit for real while producing the numbers above.**
+A surrogate model reading the bundle over HTTP and listing gate ids does NOT
+satisfy R3 — it measures that model's text recall, not the orchestrator's
+routing, so its verdict is invalid at any context size. And an over-long prompt
+is silently truncated from the FRONT by some servers, which produced a
+reproducible-but-wrong result: determinism proved stability, never validity.
+Verify the instrument measures the intended subject before trusting its
+resolution.
+
+**Deduplication is not available here.** The anti-fabrication doctrine across
+`critical-requirements.md`, `agent-common.md`, `quality-gates.md` and
+`evidence-rules.md` was measured for redundancy: 68 distinct normative clauses,
+**0** appearing in more than one file; 55 gate ids, **2** shared. These files
+PARTITION the doctrine rather than repeat it. Their combined size is not
+duplicated content, and collapsing them would delete normative statements rather
+than dedupe them.
+
 ## Autonomous Operation
 
 - Non-interactive by default unless the prompt explicitly opts into bounded questioning.

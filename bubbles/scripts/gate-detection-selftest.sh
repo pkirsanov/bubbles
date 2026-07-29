@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Gate-detection contract selftest (IMP-028 SCOPE-1a).
+# Gate-detection contract selftest.
+# Contract: agents/bubbles_shared/operating-baseline.md (R3).
 #
 # operating-baseline.md R3 forbids removing a module from an orchestrator's
 # closure until a held-out eval shows ZERO gate-detection regression. That is

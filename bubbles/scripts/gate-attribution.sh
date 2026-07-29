@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Gate attribution across an agent's effective closure (IMP-028 SCOPE-2).
+# Gate attribution across an agent's effective closure.
+# Contract + measured findings: agents/bubbles_shared/operating-baseline.md (R3).
 #
 # R3 blocks closure reduction until a held-out eval shows zero gate-detection
 # regression. On hardware where the closure exceeds the model context, that eval
