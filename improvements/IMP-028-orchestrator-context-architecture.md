@@ -153,10 +153,19 @@ Two operator-supplied inputs are needed:
    appears in `bubbles/eval/tasks` or `bubbles/eval/fixtures`, because a visible
    held-out task is an overfit score. All 13 shipped corpus tasks carry
    `judgeWeight: 0`, so the corpus cannot serve this purpose.
-2. **A judge adapter** pointed at by `BUBBLES_EVAL_JUDGE`, following the same
-   pattern as `bubbles/adapters/observability/` and `bubbles/adapters/codeindex/`
-   (a `none` default plus a real provider). Requires model credentials, which is
-   why it is operator configuration.
+2. **A judge adapter** pointed at by `BUBBLES_EVAL_JUDGE`. **DELIVERED** as
+   `bubbles/adapters/judge/ollama.sh` with
+   `bubbles/scripts/judge-adapter-contract-selftest.sh` (hermetic 8/8, live
+   10/10). Note it ships WITHOUT a `none.sh` sibling, deliberately: the
+   observability/codeindex `none` default returns a neutral empty value so
+   consumers skip gracefully, but a judge is *required scoring* whenever
+   `judgeWeight > 0`, so a neutral default would silently downgrade required
+   scoring to a skip. Absence must stay `judge-adapter-missing`. The endpoint is
+   operator configuration (`BUBBLES_EVAL_JUDGE_URL`, required and fail-loud), so
+   no topology enters this repo.
+
+**Remaining for SCOPE-1:** input 1 (the held-out routing task set) and SCOPE-1a
+(the gate-detection convention). The judge is no longer a blocker.
 
 **A framework change WAS discovered — see SCOPE-1a.** The clause above ("no
 framework change is expected") was written before the acceptance criterion was
