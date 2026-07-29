@@ -85,7 +85,23 @@ The `agnosticity-lint.sh --staged` pre-commit check detects project-specific con
 - `simplifier`: `implement-bootstrap.md`
 - `chaos`: `test-bootstrap.md`
 
-### Phase-Local Authoring Reference (opt-in bundle reduction)
+### Phase-Local Authoring Reference (opt-in bundle reduction) — SUPERSEDED 2026-07-29
+
+**⛔ DO NOT ACT ON THIS SECTION. Its premise was disproven; the reduction it
+describes is a no-op.** Retained for provenance, not as guidance. The corrected
+account is in the R3 block below.
+
+This section assumed the heavy authoring modules are "pinned into the
+orchestrator's always-loaded reference closure", and that the reduction "only
+changes WHEN the heavy text is loaded versus ALWAYS". **Neither is true.** A
+markdown link inside an `*.agent.md` body is just text; nothing inlines it, so
+the modules were ALREADY loaded on demand. A fresh `bubbles.workflow` session
+confirmed it holds "only the governance references that *point* to" 
+`scope-workflow.md` and never read its contents.
+
+So the proposed change moves a module from on-demand to on-demand. It frees
+nothing, while rewriting a `MANDATORY: Follow …` directive — the single edit R3
+names as its own motivating hazard. **Cost: real. Benefit: zero.**
 
 The heavy authoring modules — `project-config-contract.md`, `scope-workflow.md`, and `feature-templates.md` — are **phase-local / specialist-owned authoring reference**. They are load-bearing for the PLANNING and AUTHORING specialists (`bubbles.plan`, `bubbles.analyst`, `bubbles.design`, `bubbles.implement`), which need their full text to author specs, scopes, DoD templates, and artifact structure. An orchestrator that *purely routes* — selecting the next scope and dispatching to the owning specialist — does not need the full text of these modules pinned into its own always-loaded reference closure to make a routing decision.
 
