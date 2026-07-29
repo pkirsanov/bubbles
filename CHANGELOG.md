@@ -31,6 +31,43 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### `doctor` truthfulness, read-only contract, and a new Hook Health section
+
+Three correctness fixes and one new advisory section in `cli.sh doctor`. No gate
+is weakened and no new gate id is introduced.
+
+- **Advisory accounting is now truthful.** `advisory_count` was declared *after*
+  the framework-integrity section, so every warning printed before it (framework
+  drift, worktree hygiene, stale leases, missing version stamp) was never
+  counted — and eleven later warning sites (TODO markers, dependency posture,
+  bundle cost, gate obsolescence, corpus) never incremented it either. A run
+  could print seven `⚠️` lines and still summarize `0 advisory`, which is
+  exactly the summary-contradicts-visible-output defect the framework refuses to
+  tolerate in spec artifacts. The counter is hoisted to the top of `cmd_doctor`
+  and incremented at every warning site, so the advisory count now equals the
+  number of warnings printed.
+- **A red golden-corpus result now fails.** A corpus regression printed `❌` but
+  never incremented `failed`, so `doctor` still exited 0. Because `cmd_upgrade`
+  gates on `cmd_doctor`'s exit code, a regressed corpus was reported as a clean
+  upgrade. It now increments `failed`.
+- **Plain `doctor` no longer writes.** `doctor` is declared `read_only` in
+  `bubbles/action-risk-registry.yaml` (only `--heal` is `owned_mutation`), yet
+  the project-scan-config check ran `project-scan-setup.sh` and wrote
+  `.github/bubbles-project.yaml` on a plain downstream run. Generation now
+  happens under `--heal` only; without it the check reports the gap and names
+  the command that closes it.
+- **NEW Hook Health section** (advisory — never changes the exit code). Reports
+  whether `pre-commit` / `pre-push` are installed, executable, and
+  Bubbles-managed, and — in the framework source repo only — whether `pre-push`
+  still carries the `install-bubbles-hooks.sh` framework-validate guard, which
+  `hooks install` regenerates from scratch and can silently wipe (dropping
+  framework-validate + release-check from push protection). Downstream repos are
+  reported, never flagged: Bubbles-managed git hooks are framework-source-only.
+- `agents/bubbles.super.agent.md` doctor documentation now matches the
+  implementation. It previously claimed doctor verified git hooks (it did not),
+  that the governance version matched the installed version, and that generated
+  docs were up to date — the latter two are `release-check`'s job.
+
 ## v7.21.0 — assurance-driven terminal status + domain invariants (G130/G131) + canonical required-specialists + worktree lifecycle
 
 ### IMP-107 SCOPE-5 — supported worktree spawn + .bubbles-worktree marker (WT-HARNESS)
