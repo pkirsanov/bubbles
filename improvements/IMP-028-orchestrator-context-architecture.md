@@ -202,6 +202,43 @@ Half 2 has no automated harness and may not warrant one: a fixture that drives a
 coding agent would itself need certification. Recording real in-session runs is
 the cheaper and more honest path.
 
+**Protocol for half 2 — executable by a fresh session, NOT by the session that
+performs the reduction.**
+
+Self-administration invalidates it. An agent that can see the expected gate set,
+and that authored the reduction, is not a held-out evaluator — that is the same
+failure as the surrogate, with a better-matched model. The evaluating session MUST
+NOT be told which modules moved.
+
+```
+1. BASELINE (before any reduction)
+   Run bubbles.workflow on N>=5 real tasks that exercise the 7 pointer-only gates:
+     G005 G047 G048 G051 G199 G900  (project-config-contract.md)
+     G037                           (scope-workflow.md)
+   Record, per task, which gate ids the orchestrator actually raised.
+
+2. REDUCE
+   Move the modules to on-demand, leaving the pointers verified by
+   `gate-attribution.sh --ondemand` intact.
+
+3. RE-RUN
+   A DIFFERENT session, given the same N tasks and no knowledge of the change,
+   records the gate ids raised.
+
+4. COMPARE
+   Any baseline gate absent post-reduction is a regression, named by id. Zero
+   regressions across all N is the pass condition.
+```
+
+Prioritise the 7 pointer-only gates: they are the only ones whose loading
+behaviour actually changes, so they are where a silent regression would hide. The
+other 93 gates keep an always-loaded carrier and are unaffected by construction.
+
+**Honest limitation.** N>=5 organic tasks is a weak sample against 100 gates. This
+protocol can demonstrate a regression; it cannot prove absence of one. It should
+be described as evidence, never as proof, and R3's "zero gate-detection
+regression" language should be read against that ceiling.
+
 ### SCOPE-1a — Ship the gate-detection convention (blocks SCOPE-1)
 
 SCOPE-1 requires the eval to "report per-gate detection so a regression names the
