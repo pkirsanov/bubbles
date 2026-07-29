@@ -140,14 +140,32 @@ bash .github/bubbles/scripts/codeindex-resolve.sh --repo-root . --names-only
 bash .github/bubbles/adapters/codeindex/codegraph.sh status
 ```
 
-**6. Use it.** Two starting points, in order of payoff:
+**6. Use it.** Start with `affected`, and run it in shadow before trusting it:
 
 - **Impact-aware validation.** If your repo has no `testImpact:` map, every
   change runs the full suite. `affected` derives the mapping from the real
-  dependency graph instead of asking someone to maintain it.
-- **Orphan / reachability checks.** If your repo has a written "every endpoint
-  must have a consumer" policy with no mechanical enforcement, `routes` plus
-  `impact` turns that prose into a check.
+  dependency graph instead of asking someone to maintain it. Run
+  [`test-impact-shadow.sh`](../../bubbles/scripts/test-impact-shadow.sh)
+  alongside the real suite first and keep a divergence log; it never gates, and
+  no exit code it returns means "safe to skip". Promote to gating only after
+  that log stays empty. Measured on an 8,276-file Go+TS repo: one changed file
+  selected 141 of 1,793 tests — a *candidate* 92% skip, not a result.
+- **Blast radius before a change.** `impact` and `symbols` answer "what calls
+  this" far better than grep, need no freshness beyond a sync, and nothing gates
+  on them — so they are safe to adopt on day one.
+- **Coverage-claim honesty.** `indexed` reports which files the index actually
+  covers, so a gate can refuse to claim "all" beyond its own scope — the exact
+  defect class in *Why this exists* above.
+
+> **Do NOT use `routes` for orphan-endpoint detection.** It is the obvious
+> reading of this seam and it does not work on either shipped provider. Measured
+> on a Go+TS repo, codegraph's 955 `route` nodes are frontend React-Router
+> entries and *test-file* routes, not backend HTTP handlers; a Go repo using
+> chi's nested `r.Route()` yields fragments like `ANY /` because the mount-prefix
+> chain is never reconstructed. `codebase-memory` is no better: route
+> `file_path` is empty and only 34 of 1,427 routes carry a `HANDLES` edge.
+> Closing an "every endpoint must have a consumer" policy mechanically needs
+> language-aware router-tree analysis that neither provider performs today.
 
 **To reverse everything:** `codegraph uninit --force`, remove the
 `.gitignore`/exclude line, `rm -rf ~/.cache/codegraph-eval`, and set

@@ -198,8 +198,14 @@ Both are **advisory** and both must degrade cleanly on `none` or exit 1:
 1. **Reachability nudges (integration-completeness family).** "Every shipped
    artifact has a real consumer" is a graph-reachability question. Where it is
    currently satisfied by an existence check plus authoring discipline, an
-   `impact`/`routes` derivation can surface artifacts with no inbound edge as a
+   `impact` derivation can surface artifacts with no inbound edge as a
    nudge — never as the verdict.
+   **`routes` does NOT close this today**, on either shipped provider. Measured:
+   codegraph's route nodes on a Go+TS repo are frontend router entries and
+   test-file routes rather than backend handlers, a chi-nested Go router yields
+   bare fragments (`ANY /`) because the mount-prefix chain is not reconstructed,
+   and `codebase-memory` emits an empty route `file_path` with a `HANDLES` edge
+   on a small minority of routes. Treat `routes` as a rough inventory only.
 2. **Impact-aware validation planning.** Where a test-impact map is
    hand-maintained (or absent, in which case the full suite always runs),
    `affected` derives the same mapping from the real dependency graph.
