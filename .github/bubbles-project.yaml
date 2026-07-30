@@ -36,6 +36,18 @@ docsRegistryOverrides:
       path: README.md
     development:
       path: README.md
-
   # Add classification: or policy: overrides here only when your repo needs
   # a managed-doc shape that differs from the framework default registry.
+
+  # Code-index provider (opt-in; framework default is `none`)
+codeIndex:
+  # codebase-memory, NOT codegraph: this repo is ~38% shell (420 of 1,098
+  # tracked files) and codegraph cannot parse shell at all, so it would see
+  # roughly 3% of the source. Measured here: 1,096 files -> 16,367 nodes in
+  # 2.21s / 232 MiB.
+  #
+  # This buys `impact`/`symbols`/`routes`/`indexed` for ad-hoc structural
+  # questions. It does NOT buy test-impact: the provider declares `affected`
+  # and `freshness` unsupported rather than approximating them, so
+  # test-impact-shadow degrades honestly here instead of proposing a subset.
+  adapter: codebase-memory

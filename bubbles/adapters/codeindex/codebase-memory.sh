@@ -74,7 +74,10 @@
 
 set -euo pipefail
 
-CODEINDEX_ROOT="${CODEINDEX_ROOT:-$PWD}"
+# Exported, not merely assigned: project resolution below reads this via
+# os.environ, so a plain shell variable KeyErrors whenever the caller did not
+# already export it — which is the normal wired path.
+export CODEINDEX_ROOT="${CODEINDEX_ROOT:-$PWD}"
 CBM_BIN="${CODEINDEX_CODEBASE_MEMORY_BIN:-codebase-memory-mcp}"
 
 # Privacy defaults, applied to every provider invocation. Set defensively —
