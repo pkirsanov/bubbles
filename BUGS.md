@@ -89,3 +89,112 @@ That was a RED HERRING — that file uses a plain `Role`+`Content` string messag
 model over a Python sidecar and cannot emit Anthropic content-block errors.
 Route the upstream issue to the sub-agent request serialization path in
 `microsoft/vscode-copilot-chat`, NOT to any downstream product or the framework.
+
+---
+
+## BUG-004 — G068 scenario→DoD matching has drifted between its two implementations, contradicting the in-file "MUST stay aligned" contract
+
+- **Filed:** 2026-07-30
+- **Disposition:** open in-repo framework defect, DEFERRED (not fixed in the discovering session). Reconciling the drift changes G068 enforcement semantics for every downstream repo that has adopted `SCN-*` IDs, so the direction is an owner decision rather than a mid-session edit. Per Gate G095 this is a tracked OPEN defect with a recorded reason for deferral, not a silent omission.
+- **Discovered by:** a downstream (WanderAide) certification-debt census that measured G068 across 264 `done` packets, then traced the false-positive rate to the matcher.
+- **Severity:** medium. The drift is currently in the SAFE direction (`traceability-guard.sh` is more lenient than `state-transition-guard.sh`), so it opens no enforcement hole. It does mean an artifact can pass the traceability guard and then fail the transition guard on the same G068 concern, which reads as a contradiction to an operator.
+- **Affects:** `bubbles/scripts/traceability-guard.sh` (`scenario_matches_dod`) and `bubbles/scripts/state-transition-guard.sh` (`stg_scenario_matches_dod`).
+
+### Evidence
+
+`traceability-guard.sh` states the contract explicitly:
+
+```
+# (see stg_scenario_matches_dod in state-transition-guard.sh for the same
+# logic — both implementations MUST stay aligned).
+```
+
+They are not aligned. Two divergences:
+
+| Behavior | `traceability-guard.sh` | `state-transition-guard.sh` |
+|---|---|---|
+| ID families recognized | `SCN`, `AC`, `FR`, `UC` (via `extract_trace_ids`) | `SCN` only |
+| Scenario carries an ID but no DoD item cites it | falls through to lexical word-overlap | hard `return 1` |
+
+`state-transition-guard.sh` received the IMP-027 SCOPE-8 (EV-3) structural-ID
+path — "structural linkage beats a lexical proxy", deliberately
+no-op-unless-earned. `traceability-guard.sh` never received it and still treats
+an ID as a hint that degrades to word overlap.
+
+### Recommended Fix
+
+Port the IMP-027 structural-ID path into `scenario_matches_dod`, OR relax
+`stg_scenario_matches_dod` to the lenient form, and add a selftest assertion
+that the two agree on a shared fixture so the pair cannot drift again. Choosing
+between them is a policy call: the strict form is the IMP-027 intent, but
+applying it to the traceability guard will newly fail artifacts in downstream
+repos that cite scenarios by prose rather than by ID.
+
+### Measured blast radius (why this was NOT reconciled in-session)
+
+Measured against one downstream repo (WanderAide), over Gherkin scenarios in
+`done` packets:
+
+| | count |
+|---|---|
+| scenarios with no `SCN-*` id (strict path never engages) | 2635 |
+| scenarios carrying an `SCN-*` id | 365 |
+| …whose DoD cites that id (would still pass) | 262 |
+| …whose DoD does NOT cite it (**would newly hard-fail**) | 103 |
+
+So adopting the strict form in `traceability-guard.sh` newly fails 103 scenarios
+in a single repo. The opposite direction — relaxing
+`stg_scenario_matches_dod` to fall through — reverses a deliberate IMP-027
+decision and is the "no-enforcement problem" its own comment warns against.
+Neither direction is safe to apply unilaterally, which is why this entry is
+DEFERRED with data rather than resolved by preference. A resolution needs either
+a migration that adds the missing DoD id citations first, or an explicit owner
+ruling that the lenient form is correct.
+
+### Related work already landed
+
+The same investigation found and FIXED three separate, non-drift defects in both
+implementations. All three are the same shape: the lexical matcher compares
+WHOLE normalized words, so any morphological difference between a scenario's
+wording and a DoD item's wording costs an overlap point, and with a hard `>=3`
+floor a single such difference can sink an otherwise identical claim.
+
+| Class | Worked example | Effect |
+|---|---|---|
+| plural | scenario `request` vs DoD `requests` | `JSON request rejected` scored 2 against `JSON requests rejected with 415` |
+| inflection | scenario `persisted` vs DoD `persist` | `Protobuf data persisted in PostgreSQL` scored 2 against `… protobuf decode + PostgreSQL persist` |
+| derivation | scenario `stale` vs DoD `staleness` | `Stale data warning` scored 2 against `Staleness warning (amber) displayed …` |
+
+Both implementations now share a tolerant matcher (`word_matches_text` /
+`stg_word_matches_text`) covering `-s`/`-es` plus a shared-prefix rule floored at
+5 characters so short roots cannot collide (`test` still does NOT match
+`testament`). 10 selftest assertions, including that floor and three unrelated-word
+negative controls.
+
+Measured on a downstream repo (WanderAide). Repo-wide over 264 `done` packets,
+unmapped scenarios fell 888 → 760 from the plural fix alone. The inflection and
+derivation fixes were measured on the five largest specs rather than repo-wide,
+because a full census costs hours (the guard takes ~64s on a single large spec,
+and the fixes add only ~3% to that — the cost is pre-existing, not introduced):
+
+| sample (5 largest specs) | unmapped |
+|---|---|
+| installed guard, no tolerance | 265 |
+| + plural | 220 |
+| + inflection + derivation | 199 |
+
+That is −25% cumulative on the sample. Extrapolating gives roughly 690 repo-wide,
+but that is an ESTIMATE from a 5-spec sample and was deliberately not promoted to
+a measured fact — re-running the full census was judged not worth hours for a
+number that must not be acted on as a defect count anyway. The count of FAILING
+PACKETS held at 97 across every variant, so no packet was failing on morphology
+alone.
+
+**Caution for whoever picks this up:** the residual count is still NOT a defect
+count. Each fix was root-caused from a worked example rather than tuned toward a
+target, and the work was stopped at root-caused fixes deliberately — it is easy
+to keep loosening the matcher until the number looks acceptable, which would be
+tuning to a desired answer. A trustworthy defect count needs either per-scenario
+adjudication or the structural `SCN-*` ID path (see the drift above), not further
+lexical loosening.
+

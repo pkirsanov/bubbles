@@ -3577,6 +3577,43 @@ stg_significant_words() {
   done
 }
 
+# G068 false-positive fix: whole-word overlap with no stemming meant a single
+# singular/plural mismatch could sink an otherwise near-verbatim DoD item.
+# Scenario "JSON request rejected" scored 2 against DoD "JSON requests rejected
+# with 415" — below the >=3 floor — because "request" != "requests".
+# Kept to regular -s/-es forms; no general stemmer, so unrelated words still
+# cannot collide. MUST stay aligned with word_matches_text in traceability-guard.sh.
+stg_word_matches_text() {
+  local word="$1"
+  local text=" $2 "
+  local singular
+  local tok
+
+  case "$text" in
+    *" $word "* | *" ${word}s "* | *" ${word}es "*) return 0 ;;
+  esac
+
+  if [[ "$word" == *es && ${#word} -gt 4 ]]; then
+    singular="${word%es}"
+    case "$text" in *" $singular "*) return 0 ;; esac
+  fi
+  if [[ "$word" == *s && ${#word} -gt 3 ]]; then
+    singular="${word%s}"
+    case "$text" in *" $singular "*) return 0 ;; esac
+  fi
+
+  # Inflection/derivation, e.g. persisted~persist and stale~staleness. Bounded
+  # to stems of 5+ chars so short roots cannot collide (test~testament).
+  [[ ${#word} -ge 5 ]] || return 1
+  for tok in $2; do
+    case "$tok" in "$word"*) return 0 ;; esac
+    [[ ${#tok} -ge 5 ]] || continue
+    case "$word" in "$tok"*) return 0 ;; esac
+  done
+
+  return 1
+}
+
 stg_scenario_matches_dod() {
   local scenario="$1"
   local dod_item="$2"
@@ -3630,7 +3667,7 @@ stg_scenario_matches_dod() {
   while IFS= read -r word; do
     [[ -n "$word" ]] || continue
     word_count=$((word_count + 1))
-    if [[ " $dod_norm " == *" $word "* ]]; then
+    if stg_word_matches_text "$word" "$dod_norm"; then
       score=$((score + 1))
     fi
   done <<< "$words"
