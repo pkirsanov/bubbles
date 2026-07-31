@@ -160,7 +160,7 @@
     {"path": "bubbles/scripts/handoff-cycle-check.sh", "sha256": "9a0938a3c8dccfdf27caa60775eecb1d92ffebf5b18dce7626af4589c9972367"},
     {"path": "bubbles/scripts/imp021-interaction-contracts-selftest.sh", "sha256": "284f308d31fad5c64979094e52daaf95b00704f2954616eab605d7f86e144b35"},
     {"path": "bubbles/scripts/implementation-reality-scan-selftest.sh", "sha256": "d7f6679022cd0e6ff4cf9ac2dea4252dce762d5594ea321d3ad442796dbc8704"},
-    {"path": "bubbles/scripts/implementation-reality-scan.sh", "sha256": "97c9965b4733cf73d3cebc31cd75b076341b4cfddac5c4b79adfdd2adc0419b5"},
+    {"path": "bubbles/scripts/implementation-reality-scan.sh", "sha256": "d64ffc8922c05e957ff79667ea50e0d383fa37cd6a7fd705dd90ceafc8c59fac"},
     {"path": "bubbles/scripts/install-bubbles-hooks.sh", "sha256": "86884efc58c9fe9f1e7953cd42e7239d60444e62348ecb796a18ad393df02119"},
     {"path": "bubbles/scripts/install-provenance-selftest.sh", "sha256": "19b6dc3a4284ef6b6e8066835a3769f3fad1cc33b0f502902cfe277c56191d99"},
     {"path": "bubbles/scripts/instruction-budget-lint-selftest.sh", "sha256": "8aebb33559602e8f652c83ec7a4f32c810be12e867b09adc7901e264eec02dec"},
