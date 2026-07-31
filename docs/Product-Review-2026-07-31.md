@@ -77,11 +77,13 @@ Every weakness below is the same failure: **a complete mechanism with no forcing
 
 | # | Mechanism | Built? | Installed? | Used? |
 |---|---|---|---|---|
-| W1 | Governance git hooks (`hooks.json` declares 6) | ✅ | `state-transition-guard` **0/6** · `artifact-lint` **0/6** · `reality-scan` **0/6** · only `pii-scan` in 3/6 | ~never |
+| W1 | Certification guards (`state-transition-guard`, `artifact-lint`, `reality-scan`) | ✅ | **unattached in 6/6 repos by _any_ path** — not git hook, not project CLI, not CI | ~never |
 | W2 | Receipt ledger (`record_evidence` → `tool-calls.jsonl`) | ✅ guard consumes it | MCP registered **7/7** | **1 entry** in 2/6 repos across 1,786 packets |
 | W3 | v3 control plane (`createdAt` / `certifiedAt` / `certification.status`) | ✅ | — | missing on **55% / 42% / 18%** of 1,395 done packets |
 | W4 | Gate retirement (`retireWhen` on all 24) | ✅ criteria declared | — | **0 retired**; metrics in 1/6 repos; harness does not exist |
 | W5 | Shared governance prose (49 docs) | ✅ | linked, not inlined | **provably not read** — confirmed for `bubbles.goal` and `bubbles.workflow` |
+
+**On W1 — what "unattached" means precisely.** Bubbles-managed *git hooks* are **framework-source-only by design**: `doctor` states a downstream repo without them is "reported, never flagged." That is a deliberate boundary, not a defect. The defect is that downstream repos never attached the guards through the surface they *do* own either. Measured across all six: the only Bubbles scripts in any enforcement path are `pii-scan` (3 repos, git hook) and `macos-portability-guard` (2 repos, CLI). wanderaide's sole `state-transition-guard` reference is a one-off Python script outside any hook. **Zero repos invoke the certification guards anywhere.**
 
 **Consequences, measured:**
 
@@ -118,7 +120,7 @@ Every weakness below is the same failure: **a complete mechanism with no forcing
 | "Is this feature actually done?" | Run `guard`, read long check output, hope hooks ran | `bubbles why <spec>` — verdict + exact missing condition + next command, <2s |
 | "Prove this test passed" | Paste ≥10 lines of terminal output; guard applies fabrication heuristics | Receipt ID resolves to argv + exit code + output hash; fabrication structurally impossible |
 | "Agent marks work done" | Agent writes `status: done`; nothing necessarily checks | Agent *proposes*; only the deriver *grants*; unearned completion blocked in-loop |
-| "Onboard a new repo" | 758 files, then hooks silently not installed | One CLI; `doctor` fails loudly until attached |
+| "Onboard a new repo" | 758 files, then guards silently never invoked | One CLI; `doctor` reports `UNATTACHED` until a repo-owned surface runs them |
 | "Is the framework worth its cost?" | Unanswerable | Per-gate trigger rate by model tier; gates retire on evidence |
 
 ---
@@ -160,7 +162,7 @@ $ bubbles why specs/042-catalog-assistant
 |---|---|---|
 | Framework gates | 112 | ≤ 20 |
 | Prose-only gates | 35 (31%) | 0 |
-| Governance hooks installed | 1/7 in 3/6 repos | 100% or `doctor` fails |
+| Certification guards attached (any repo-owned surface) | 0/6 | 6/6, or `doctor` fails |
 | Receipts per delivered scope | ~0 | ≥ 1 per execution DoD item |
 | Files installed per repo | 758 | ≤ 20 |
 | `done` written by an agent | always | never |
@@ -175,11 +177,13 @@ Ordered by dependency. **Each step delivers value alone and is worth doing even 
 ### Step 1 · Attach the guard that already exists
 **Value:** the 112 gates you already built begin firing. Highest value-per-effort change available.
 
-- `bubbles hooks install` becomes idempotent and self-verifying, installing the full `hooks.json` set.
-- `bubbles doctor` **fails** (non-zero), not warns, when hooks are absent.
-- Ship a CI job template so a repo without local hooks is still covered.
+Bubbles-managed git hooks are **framework-source-only** and must stay that way — do not install them downstream. Attach through the surface each repo owns instead:
 
-**Exit test:** every consumer repo's `pre-push` references `state-transition-guard`; flipping a spec to `done` with an unchecked DoD item is refused on push.
+- Publish one documented invocation each repo wires into its **own** pre-push path or CI (`wanderaide.sh test pre-push`, `quantitativefinance.sh dev lint`, a CI job — whatever that repo already runs).
+- Ship a drop-in CI job template for repos without a suitable CLI hook.
+- `bubbles doctor` gains an **attachment check**: does *any* repo-owned surface invoke the certification guards? Report `ATTACHED` / `UNATTACHED` per repo. Keep it advisory while adoption lands, then make `UNATTACHED` fail. This is distinct from the existing Hook Health section, which correctly reports source-only git hooks and must not start flagging downstream repos.
+
+**Exit test:** for every consumer repo, a repo-owned surface invokes `state-transition-guard`; flipping a spec to `done` with an unchecked DoD item is refused by that repo's normal push path. `doctor` reports `ATTACHED` for all six.
 
 ### Step 2 · Make the receipt path the default evidence rail
 **Value:** fabrication becomes structurally impossible rather than heuristically detected. Retires the ≥10-line guessing game.
