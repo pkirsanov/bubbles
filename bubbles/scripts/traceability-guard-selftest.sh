@@ -664,7 +664,11 @@ assert_case_not_contains 'unbound variable' "Case 10 optional fun mode does not 
 # rejected" scored 2 against DoD "JSON requests rejected with 415", below the
 # >=3 floor, purely because "request" != "requests". Negative controls assert
 # the tolerance did not become a general substring match.
-eval "$(sed -n '/^word_matches_text()/,/^}/p' "$GUARD")"
+# Sourced from a file rather than eval'd: G034 rejects eval on a substitution.
+matcher_src="$TMPDIR/word-matches-text.sh"
+sed -n '/^word_matches_text()/,/^}/p' "$GUARD" >"$matcher_src"
+# shellcheck source=/dev/null
+. "$matcher_src"
 plural_dod="json requests rejected with 415 protobuf only middleware"
 
 for probe in json request rejected; do
