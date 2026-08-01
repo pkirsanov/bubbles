@@ -50,11 +50,13 @@ A systems problem, not a model problem. It does not dissolve as models improve; 
 |---|---|---|---|
 | **Spec Kit** | what to build | 124.7k★ · 273 contributors · 30+ agent integrations | ❌ |
 | **BMAD-METHOD** | who builds it | 51.3k★ · 160 contributors · 12 agents, 34 workflows | ❌ |
-| **Bubbles** | **did it actually get built** | 1 maintainer · 1 platform | ✅ by design |
+| **Bubbles** | **did it actually get built** | 1 maintainer · 1 *execution* platform (+ MCP serving, + inbound interop from 4) | ✅ by design |
 
 **The edge is real and uncontested.** Both leaders are process/persona toolkits; neither can refuse a completion. Bubbles is the only one treating "done" as a verdict.
 
-**The exposure is equally real.** Claude Code now ships `PreToolUse`, `Stop`, `SubagentStop`, **`TaskCompleted`**, `TeammateIdle` hooks with exit-code-2 blocking, plus prompt/agent hooks and enterprise `allowManagedHooksOnly`. Anthropic's own `TaskCompleted` example runs tests and blocks completion — Bubbles' core proposition as a platform primitive, enforced *inside the loop* where it cannot be skipped. Bubbles' MCP server is a genuine cross-platform hedge, already registered in 7/7 repos, and is under-exploited.
+**The exposure is equally real.** Claude Code now ships `PreToolUse`, `Stop`, `SubagentStop`, **`TaskCompleted`**, `TeammateIdle` hooks with exit-code-2 blocking, plus prompt/agent hooks and enterprise `allowManagedHooksOnly`. Anthropic's own `TaskCompleted` example runs tests and blocks completion — Bubbles' core proposition as a platform primitive, enforced *inside the loop* where it cannot be skipped.
+
+**The cross-platform story is inbound-only — that is the precise gap.** `install.sh` emits exclusively VS Code surfaces (`.github/agents|bubbles|instructions`); it produces no `.claude/`, `.cursor/`, or `.roo/` artifacts. Interop (`detect|import|apply`) runs the other way: it *imports* Claude Code, Cursor, Cline, and Roo Code config **into** Bubbles. The MCP server serves any MCP host and is registered 7/7. So Bubbles can absorb users from the incumbents and can be *queried* anywhere — but nothing emits an outbound execution surface. Step 6 closes exactly that.
 
 **Strategic implication:** stop competing on process surface (41 agents / 62 modes / 74 recipes vs Spec Kit's 7 commands). Compete only on verifiable completion.
 
@@ -68,6 +70,8 @@ A systems problem, not a model problem. It does not dissolve as models improve; 
 4. **Artifact ownership + routing** — backed by a manifest and a blocking gate.
 5. **Receipt architecture** — `record_evidence` → `tool-calls.jsonl` → consumed by the guard. Correct design, already built.
 6. **Real dogfooding** — 1,786 packets across 6 heterogeneous stacks, single version.
+7. **Migration on-ramp** — inbound interop from Claude Code, Cursor, Cline, and Roo Code, review-gated, writing only into project-owned targets. A real path off the incumbents that neither competitor offers in reverse.
+8. **Skills as a working delivery channel** — 44 skills (5,102 lines) whose descriptions load into agent context and whose bodies carry the actual rules, not pointers. This is the one governance channel that demonstrably reaches agents.
 
 ---
 
@@ -81,9 +85,12 @@ Every weakness below is the same failure: **a complete mechanism with no forcing
 | W2 | Receipt ledger (`record_evidence` → `tool-calls.jsonl`) | ✅ guard consumes it | MCP registered **7/7** | **1 entry** in 2/6 repos across 1,786 packets |
 | W3 | v3 control plane (`createdAt` / `certifiedAt` / `certification.status`) | ✅ | — | missing on **55% / 42% / 18%** of 1,395 done packets |
 | W4 | Gate retirement (`retireWhen` on all 24) | ✅ criteria declared | — | **0 retired**; metrics in 1/6 repos; harness does not exist |
-| W5 | Shared governance prose (49 docs) | ✅ | linked, not inlined | **provably not read** — confirmed for `bubbles.goal` and `bubbles.workflow` |
+| W5 | Shared governance prose (49 docs, 7,369 lines) | ✅ authoritative | linked, not inlined | **provably not read** — confirmed for `bubbles.goal` and `bubbles.workflow` |
+| W6 | Skill↔module fidelity (44 skills restate the rules agents actually follow) | ✅ skills reach agents | — | **nothing verifies them against the authoritative docs** |
 
 **On W1 — what "unattached" means precisely.** Bubbles-managed *git hooks* are **framework-source-only by design**: `doctor` states a downstream repo without them is "reported, never flagged." That is a deliberate boundary, not a defect. The defect is that downstream repos never attached the guards through the surface they *do* own either. Measured across all six: the only Bubbles scripts in any enforcement path are `pii-scan` (3 repos, git hook) and `macos-portability-guard` (2 repos, CLI). wanderaide's sole `state-transition-guard` reference is a one-off Python script outside any hook. **Zero repos invoke the certification guards anywhere.**
+
+**On W5/W6 — the de facto governance is the unguarded one.** Two channels carry the same rules. The 7,369 lines of shared docs are authoritative but unreachable. The 5,102 lines of skills are reachable — descriptions sit in agent context, bodies restate the rules in full — and the framework built this deliberately (v4.0+ "Skills-First Discovery Layer"). So skills are what agents actually follow. Yet `bubbles/scripts/` contains `skill-description-load.sh` and `skill-evolution.sh` and **no consistency check whatsoever**: if a skill's restatement drifts from its authoritative module, agents follow the drifted skill and no gate notices. The rules with the most reach have the least verification.
 
 **Consequences, measured:**
 
@@ -109,7 +116,8 @@ Every weakness below is the same failure: **a complete mechanism with no forcing
 | **A single "why is this not done?" answer** | `dod`, `blocked`, `lint`, `guard`, `scan`, `audit-done` each answer a fragment across 44 commands. No consolidated verdict. |
 | **Enforcement-rank declaration per rule** | Nothing records whether a rule *can* be mechanically enforced, so prose accumulates silently. |
 | **Adoption telemetry** | The framework cannot see that its own mechanisms are unused. Every W-finding above required manual archaeology. |
-| **Claude Code hook emission** | Guards are POSIX shell with clean exit codes — ~90% of the way to being runtime hooks. Not emitted. |
+| **Skill↔module fidelity check** | 44 skills restate the authoritative rules and are the channel agents actually read; nothing compares the two. A silent drift changes agent behaviour with zero signal. |
+| **Outbound execution surfaces** | Interop is inbound-only and MCP is query-only; no target emits runnable agent/hook surfaces for Claude Code, Cursor, Cline, or Roo. |
 
 ---
 
@@ -189,7 +197,7 @@ Bubbles-managed git hooks are **framework-source-only** and must stay that way �
 **Value:** fabrication becomes structurally impossible rather than heuristically detected. Retires the ≥10-line guessing game.
 
 - Expose `tool-log.sh` as a first-class CLI verb: `bubbles run --spec <s> -- <cmd>`.
-- Put it **inline in the agent bodies that are actually loaded** — not in linked shared docs.
+- Carry it on a channel that reaches agents — a skill and/or the agent bodies themselves. A linked shared doc does not count (W5).
 - Guard **prefers** receipts; the markdown rail becomes an explicit fallback, reported as degraded.
 
 **Exit test:** a delivered scope produces ≥1 receipt per execution DoD item; a DoD item asserting an execution outcome with no receipt is refused; detection does not regress on a held-out known-bad set.
@@ -210,17 +218,19 @@ Bubbles-managed git hooks are **framework-source-only** and must stay that way �
 
 **Exit test:** manually setting `status: done` exits 1 naming the missing derivation.
 
-### Step 5 · Collapse the gate set
-**Value:** faster validation, smaller install, far less to read and maintain.
+### Step 5 · Collapse the gate set — and the second prose channel
+**Value:** faster validation, smaller install, far less to read and maintain — and the rules agents actually follow finally become the verified ones.
 
 Classify all 112 gates as **ledger-derivable** (delete script, keep query) · **project-specific** (move to `.github/bubbles-project.yaml`) · **taste** (delete) · **irreducible** (keep, target ≤ 20).
 
-**Exit test:** ≤ 20 framework gates; `framework-validate` wall-clock measurably lower; **zero detection loss** replaying the Step 3 corpus. That clause is the safety property — do not proceed without it.
+Resolve W6 in the same pass. Each skill declares the authoritative module it restates; a `skill-fidelity` check fails when a skill asserts a rule its module does not contain, or omits one the module marks non-negotiable. Where a shared doc exists only to be restated by a skill, collapse the two — one source, one reachable channel.
+
+**Exit test:** ≤ 20 framework gates; `framework-validate` wall-clock measurably lower; **zero detection loss** replaying the Step 3 corpus — that clause is the safety property, do not proceed without it. Every governance-critical skill names its module and passes `skill-fidelity`; a deliberately drifted skill fails it.
 
 ### Step 6 · Attach at the loop, on more than one platform
 **Value:** enforcement moves inside the agentic loop where it cannot be skipped, and Bubbles stops depending on the one platform lacking the primitive.
 
-Emit the ≤20 gates from one source into three targets: Claude Code hooks (`PreToolUse` for risk class, `Stop`/`TaskCompleted` for completion), CI jobs, git hooks. Promote the existing MCP server to the primary cross-host attachment.
+Emit the ≤20 gates from one source into three targets: Claude Code hooks (`PreToolUse` for risk class, `Stop`/`TaskCompleted` for completion), CI jobs, git hooks. Promote the existing MCP server to the primary cross-host attachment. This is the step that makes the platform story bidirectional: interop already *imports* from four competitors, but nothing yet *emits* a runnable surface back out.
 
 **Exit test:** in a live session a `TaskCompleted` hook blocks an unearned completion and the reason reaches the model — same guard, same exit code, three attachment points, one source.
 
@@ -240,7 +250,7 @@ Emit the ≤20 gates from one source into three targets: Claude Code hooks (`Pre
 
 **Operator experience.** You describe an outcome. Agents work. When one claims completion, the runtime asks the ledger whether the claim is supported — inside the loop, before the turn can end. If not, the agent is told which claim lacks a receipt and keeps working. You are not consulted, because nothing ambiguous happened. When you want status, one command answers in under two seconds with the exact next command. When it says `DONE`, that is a derived verdict backed by receipts you can inspect individually.
 
-**Engineering shape.** A versioned CLI of ~20 files. An append-only receipt ledger. ~20 irreducible gates expressed as queries over it, emitted to three attachment points from one source. Project rules live in projects. Load-bearing governance is inlined into context; reference material is labelled as such and is much shorter.
+**Engineering shape.** A versioned CLI of ~20 files. An append-only receipt ledger. ~20 irreducible gates expressed as queries over it, emitted to three attachment points from one source. Project rules live in projects. Load-bearing governance reaches agents through the skills channel — the one that demonstrably works — with a mechanical fidelity check binding each skill to its authoritative module; reference material is labelled as such and is much shorter.
 
 **Economics.** Every remaining `modelCompensation` gate carries a measured failure rate and a retirement date. As models improve the framework gets **cheaper**, automatically, on evidence. The cost curve bends down for the first time. `businessInvariant` gates never move, because they never should.
 
@@ -262,7 +272,8 @@ Adopt at Step 1; enforce from Step 5.
 | Certification debt may only decrease | tracked metric from Step 3 |
 | Every evidence rule is a ledger query | non-queryable rules rejected |
 | `modelCompensation` gates are dated | evaluated against the packet's certification date, never retroactively |
-| Load-bearing prose is inlined, not linked | `applyTo: "**"` or it is reference-only |
+| Load-bearing rules reach agents via a channel that works | skills (description-matched) or `applyTo: "**"` — never a bare markdown link |
+| Every skill is bound to its authoritative module | mechanical fidelity check; a drifted restatement fails |
 | **New mechanisms ship with an adoption metric** | a capability with no usage telemetry is not done |
 
 The last row is the one that would have prevented every weakness in §6.
@@ -273,8 +284,8 @@ The last row is the one that would have prevented every weakness in §6.
 
 **Claim Source:** executed.
 
-Measured this session: repository-binding preflight; `git log -S` history traces on `state-transition-guard.sh` and `required-specialists.yaml`; `artifact-lint.sh` against 13 guestHost `done` packets (direct exit code `1`); `jq` field sweep across 1,395 `done` packets in 6 repos; hook-content inspection across 6 repos; `tool-calls.jsonl` and MCP registration inventory; `cli.sh --help` surface enumeration; MCP server and tool-descriptor inspection; `lint-budget`; `gate-retirement.sh`; `model-tier-advisory.sh retirement`; gate-registry counts; `generate-release-manifest.sh --check`; `pii-scan.sh`; `agnosticity-lint.sh`.
+Measured this session: repository-binding preflight; `git log -S` history traces on `state-transition-guard.sh` and `required-specialists.yaml`; `artifact-lint.sh` against 13 guestHost `done` packets (direct exit code `1`); `jq` field sweep across 1,395 `done` packets in 6 repos; hook-content inspection across 6 repos; `tool-calls.jsonl` and MCP registration inventory; `cli.sh --help` surface enumeration; MCP server and tool-descriptor inspection; `lint-budget`; `gate-retirement.sh`; `model-tier-advisory.sh retirement`; gate-registry counts; `generate-release-manifest.sh --check` (in a clean worktree); `pii-scan.sh`; `agnosticity-lint.sh`; `install.sh` emission-target enumeration; `interop-registry.yaml` source/applyTarget inventory; skill inventory with governance-coverage and line-count comparison against `agents/bubbles_shared/`; `bubbles/scripts/` search for any skill↔module consistency check (**none exists** — the basis for W6).
 
-**Not run:** `framework-validate` (multi-minute; a competing run held the concurrency lock). No claim is made about current framework green/red status.
+**Framework status:** `framework-validate` + `release-check` ran to completion via the pre-push hook on both commits in this session and passed; neither push used a bypass.
 
 **Interpretation:** §1–§8 are analysis over those measurements. §9–§12 are proposals; none is implemented.
