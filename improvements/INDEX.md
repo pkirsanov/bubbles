@@ -42,9 +42,11 @@ where a new proposal addresses the same surface.
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
+| [IMP-030](IMP-030-controlled-technical-prose.md) | Controlled Technical Prose: term registry enforcement + prose-form governance | PROPOSED | framework-health (G125) | REG-3, DOC-2 | 2026-08-01 |
+| [IMP-031](IMP-031-feature-reachability.md) | Feature Reachability: close the orphaned-implementation hole | PROPOSED | framework-health (G125) | COV-3, REG-4, DOC-3 | 2026-08-01 |
 
-> **Numbering note:** IMP-001…IMP-027 and IMP-100…IMP-107 are already referenced
+> **Numbering note:** IMP-001…IMP-029 and IMP-100…IMP-107 are already referenced
 > across `bubbles/scripts/**`, `docs/**`, and `CHANGELOG.md` as historical
-> delivery identifiers. New proposals continue from **IMP-029** in the primary
+> delivery identifiers. New proposals continue from **IMP-032** in the primary
 > band. Verify with:
 > `grep -rhoE 'IMP-[0-9]{3}' --include='*.sh' --include='*.md' --include='*.yaml' --include='*.json' . | sort -u`

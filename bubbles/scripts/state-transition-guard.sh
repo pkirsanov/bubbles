@@ -3917,6 +3917,31 @@ if [[ -x "$SCRIPT_DIR/release-assurance-gate.sh" ]]; then
   echo ""
 fi
 
+# --------------------------------------------------------------------------
+# Check 46 (IMP-031 SCOPE-6): run the vertical-delivery plan guard for real.
+#
+# The guard has shipped since IMP-022 with a 13-case selftest and no production
+# caller, so the only plan it has ever classified is a fixture. A guard that
+# only runs its own selftest proves it CAN detect something while never being
+# allowed to detect anything.
+#
+# This wiring adds NO blocking threshold of its own. The guard is advisory by
+# construction and exits non-zero only when the repo has explicitly opted in
+# with `verticalPlanGuard: block` in .github/bubbles-project.yaml, so an
+# unconfigured repo can only ever see a warning here.
+# --------------------------------------------------------------------------
+if [[ -x "$SCRIPT_DIR/vertical-delivery-plan-guard.sh" ]]; then
+  echo "--- Check 46: Vertical-delivery plan shape (horizontal chain / scope budget / per-increment exposure) ---"
+  if fixture_gate_skip "vertical delivery plan"; then
+    :
+  elif bash "$SCRIPT_DIR/vertical-delivery-plan-guard.sh" "$feature_dir"; then
+    pass "Vertical-delivery plan: no blocking plan-shape violation"
+  else
+    fail "Vertical-delivery plan violation under block posture (horizontal chain, low-risk scope budget, or an increment with no consumer surface and no declared deferral)"
+  fi
+  echo ""
+fi
+
 # =============================================================================
 # FINAL VERDICT
 # =============================================================================
