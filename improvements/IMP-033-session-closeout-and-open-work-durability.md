@@ -34,27 +34,12 @@
 - **WIP-3 — no closeout capability exists at any layer.** `cli.sh --help` lists no `closeout`, `finish`, or `reconcile` command. `bubbles/workflows/modes.yaml` declares 61 modes and none of them closes out local state; `grep -rn "closeout"` across `agents/ skills/ bubbles/workflows/` resolves exclusively to WORKFLOW closeout (the `finalize` phase of a spec run), never SESSION closeout. `bubbles/scripts/release-check.sh` contains no clean-tree or pushed-state check. The operator's hand-written prompt is the current implementation.
 - **Corroborating detail — the residue is real, and the closest drift surface still cannot see it.** During this audit the working tree held untracked `skills/__manifest_leak_probe/`, `bubbles/scripts/__manifest_leak_probe.sh`, and `bubbles/adapters/observability/__manifest_leak_probe.sh` — the exact three paths `release-manifest-purity-selftest.sh:54-56` plants, plus the skill `inventory-parity-check-selftest.sh:113` plants. `inventory-parity-check.sh:8` documents the probe as "planted+removed by" the selftests, so residue in the tree means either a run in flight or a cleanup that did not complete; the audit cannot distinguish the two, and that is the point — no surface tells the operator which. `repo-drift-report.sh` comes closest and still misses it: it does report uncommitted (`:275`) and staged (`:280`) edits, but it sources them from `git diff --name-only -- "$@"` and `git diff --cached --name-only -- "$@"`, which are caller-path-scoped and cover TRACKED files only. Untracked residue is invisible to it, and it computes no ahead or behind count.
 
+## Delivered
+
+- **SCOPE-1 — LANDED.** `worktree-hygiene-report.sh` emits the third `worktree-hygiene-local:` summary line (primary-worktree dirty/untracked counts, ahead/behind against the resolved remote trunk, and ALL non-trunk local branches), with honest `remote=none` / `remote-untracked` / `remote-unverified` / `detached-HEAD` degradation and an opt-in `--fetch`. `--porcelain` is byte-identical, asserted by `worktree-hygiene-guard-selftest.sh` cases f9–f11 and h1–h11.
+- **SCOPE-2 — LANDED.** `cli.sh doctor` consumes all three summary lines. The green tick now requires every observed counter across all three to be zero AND the remote comparison to have been observable; dirty-only renders as a neutral note, while unpushed commits, non-trunk branches, and stashes render as warnings. The previously discarded `worktree-hygiene-branches:` line now reaches the operator. Exit-code contract unchanged. Asserted by `doctor-hygiene-surface-selftest.sh`.
+
 ## Proposal
-
-### SCOPE-1 — Widen the hygiene detector to the primary worktree and the remote (COV-5)
-
-Extend `bubbles/scripts/worktree-hygiene-report.sh`. Do not fork it and do not add a second detector.
-
-- Emit a THIRD summary line in default mode only, carrying ONLY facts the first two lines do not already carry:
-  `worktree-hygiene-local: D dirty files (primary), U untracked, A ahead / B behind <remote>/<trunk>, N non-trunk local branches`
-- Do NOT restate the stash count. The existing `worktree-hygiene-branches:` line already ends with `T stashes`, and duplicating a metric across two lines invites the two to disagree. For the same reason, name the branch counters distinctly: line 2 reports STALE branches (the threshold-filtered subset, `age>=14d or ahead>=200`), while line 3 reports ALL non-trunk local branches. They are different numbers by design and the labels must say so.
-- Leave `--porcelain` byte-identical. The reaper's input contract must not move.
-- Keep the script advisory, read-only, and always exit 0. It stays a doctor advisory host, not a gate.
-- Degrade honestly rather than silently. Report `remote=none` when no remote is configured, `remote-unverified` when `git fetch` fails or the run is offline (compare against the last-known ref and SAY the comparison is unverified), and `detached-HEAD` when HEAD is detached. Never print `0 ahead` as the result of a failed lookup.
-- Keep the filename. Downstream installs reference `worktree-hygiene-report.sh` by path; renaming it is a breaking surface change for a cosmetic gain. Document the widened scope in the header block instead.
-
-### SCOPE-2 — Stop `doctor` from certifying what it did not inspect (EV-5)
-
-- Consume the SCOPE-1 line, and also surface the existing `worktree-hygiene-branches:` line that `cli.sh:2258` currently drops.
-- **Green tick rule, stated precisely so it is implementable:** print the green tick only when EVERY observed counter across all three lines is zero. A dirty-only tree therefore does not get a green tick; it gets a neutral note. This is the correction EV-5 demands, and the distinction the earlier draft left ambiguous.
-- Keep the ADVISORY level ranked so the surface stays worth reading: dirty and untracked files render as a neutral note (mid-session normality), while unpushed commits, non-trunk local branches, and stashes render as a warning with the next command. Neither changes `doctor`'s exit code.
-- Keep it advisory. `doctor`'s exit-code contract does not change, because a dirty tree in the middle of a session is normal and must not fail a health check.
-- Reuse the existing `.github/bubbles-project.yaml` threshold pattern already established by `worktreeBranchAgeDays` / `worktreeBranchAheadLimit`.
 
 ### SCOPE-3 — A committed open-work register, built on the two projections that already exist (WIP-1, WIP-2)
 
@@ -166,7 +151,7 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 ## Migration / rollout
 
-- SCOPE-1 and SCOPE-2 land together; SCOPE-2 has no meaning without SCOPE-1's line, and SCOPE-1 alone would add an unread line.
+- SCOPE-1 and SCOPE-2 landed together, as required; see the Delivered section.
 - SCOPE-3 is additive and independently landable, and it lands on top of two scripts that already exist: it CONSUMES `work-tracker-project.sh` unchanged and EXTENDS `trajectory-inspector.sh`. Ship the register file and the renderer before anything writes to it.
 - SCOPE-4 depends on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
 - SCOPE-5 lands LAST, is gated on the Option A carve-out being approved, and is withdrawable without affecting anything else. Nothing in SCOPE-1 through SCOPE-4 depends on it. When it lands it must keep the `mode-alias-selftest.sh` invariants green.
@@ -189,10 +174,6 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 ## Acceptance criteria (when implemented)
 
-- In a repository with N dirty files and M unpushed commits, the detector's third summary line reports exactly N and M. The hermetic selftest covers dirty=0/ahead=0, dirty>0, ahead>0, no remote, detached HEAD, and a failed fetch.
-- `--porcelain` output is byte-identical before and after SCOPE-1, asserted in the selftest.
-- `doctor` does NOT print a green hygiene tick against a repository holding uncommitted or unpushed work. The regression fixture is a SYNTHESIZED repository built by the selftest under a `BUBBLES_REPO_ROOT` override, matching the pattern the detector's existing selftest already uses. The live audit state recorded in the Provenance table motivates the fixture; it cannot BE the fixture, because it is transient and not re-creatable.
-- `doctor` surfaces stale local branches and lingering stashes, which it discards today.
 - `cli.sh open-work` derives its artifact-backed rows by calling `work-tracker-project.sh` per feature, asserted by a selftest that changes a `state.json` status and observes the rendered row change without any second reader being touched.
 - A `residue` row missing `next-owner` or `next-action` fails the register lint.
 - `cli.sh closeout` on a fixture holding N dirty files and M unpushed commits reports exactly N and M, and proposes `residue` rows for the dirty paths that map to no open artifact.
@@ -219,9 +200,7 @@ IMP-033 satisfies the check by linking its identifier to its filename. Either th
 
 ## Files to touch (on approval)
 
-`bubbles/scripts/worktree-hygiene-report.sh` (SCOPE-1: third summary line, honest remote and detached-HEAD degradation; `--porcelain` unchanged) — framework maintainer, same owner as the existing detector.
-`bubbles/scripts/worktree-hygiene-guard-selftest.sh` (SCOPE-1: fixtures for dirty, ahead, no-remote, detached HEAD, failed fetch, plus the byte-identical `--porcelain` assertion) — same owner.
-`bubbles/scripts/cli.sh` (SCOPE-2: doctor hygiene block at ~2255-2283 consumes the new line and stops dropping `worktree-hygiene-branches:`; SCOPE-3: `open-work` command; SCOPE-4: `closeout` command; SCOPE-7: per-repository print) — framework maintainer.
+`bubbles/scripts/cli.sh` (SCOPE-3: `open-work` command; SCOPE-4: `closeout` command; SCOPE-7: per-repository print) — framework maintainer.
 `bubbles/scripts/work-tracker-project.sh` (SCOPE-3: CONSUMED unchanged for per-feature derivation; only repo-wide aggregation is new) — framework maintainer; treat any change here as a contract change for its existing consumers.
 `bubbles/scripts/trajectory-inspector.sh` (SCOPE-3: add the open-work section; it already reads every source the register needs) — framework maintainer.
 `.specify/memory/open-work.md` (SCOPE-3: new committed register) and `.specify/memory/.gitignore` (SCOPE-3: confirm the register is NOT ignored) — framework maintainer.

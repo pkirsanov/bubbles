@@ -2035,6 +2035,18 @@ cmd_dag() {
   echo '```'
 }
 
+# IMP-033 SCOPE-2 helper. Pull one integer out of a worktree-hygiene summary
+# line, defaulting to 0 when the pattern is absent so a shape change degrades to
+# "nothing observed" rather than to an empty string in an arithmetic test.
+# `|` is the sed delimiter (the ahead/behind pattern contains a literal `/`), so
+# callers must not put `|` in a pattern.
+hygiene_count() {
+  local line="$1" pattern="$2" n
+  n="$(printf '%s\n' "$line" | sed -nE "s|$pattern|\\1|p" | head -1)"
+  [[ "$n" =~ ^[0-9]+$ ]] || n=0
+  printf '%s' "$n"
+}
+
 cmd_doctor() {
   local heal=false
   for arg in "$@"; do
@@ -2244,34 +2256,95 @@ except Exception:
     fi
   fi
 
-  # Worktree hygiene advisory (IMP-107 / SCOPE-1 + SCOPE-3) — informational,
-  # non-blocking. Surfaces lingering MERGED/PRUNABLE/EXPERIMENT worktree debris
-  # every doctor run WITHOUT ever changing the pass/fail tally (advisory only,
-  # like the runtime-leases advisory it mirrors). `--heal` reaps the MERGED/
-  # PRUNABLE set AND lingering `.design-experiment` worktrees (SCOPE-3) via
-  # worktree-reap.sh --experiments (dry-run otherwise). Reuses the IMP-023
-  # writer-lease so a LEASE-HELD worktree is skipped and a concurrent live run
-  # is never disturbed.
+  # Worktree hygiene advisory (IMP-107 / SCOPE-1 + SCOPE-3; IMP-033 / SCOPE-2) —
+  # informational, non-blocking. Surfaces lingering MERGED/PRUNABLE/EXPERIMENT
+  # worktree debris every doctor run WITHOUT ever changing the pass/fail tally
+  # (advisory only, like the runtime-leases advisory it mirrors). `--heal` reaps
+  # the MERGED/PRUNABLE set AND lingering `.design-experiment` worktrees
+  # (SCOPE-3) via worktree-reap.sh --experiments (dry-run otherwise). Reuses the
+  # IMP-023 writer-lease so a LEASE-HELD worktree is skipped and a concurrent
+  # live run is never disturbed.
+  #
+  # IMP-033 SCOPE-2 (gap EV-5) fixes two defects here. First, this block used to
+  # grep the FIRST summary line only, so the detector's stale-branch + stash line
+  # was computed and then silently discarded before an operator ever saw it.
+  # Second, and worse, it printed a GREEN TICK reading "0 dirty" over a
+  # repository holding uncommitted work and unpushed commits — a condition the
+  # first line is structurally incapable of observing. The tick now requires
+  # EVERY observed counter across ALL THREE lines to be zero AND the remote
+  # comparison to have actually been observable. A state the detector could not
+  # inspect can no longer be certified clean.
   if [[ -x "$SCRIPT_DIR/worktree-hygiene-report.sh" ]]; then
-    local wt_summary wt_line wt_merged wt_prunable wt_experiment
+    local wt_summary wt_line wt_branch_line wt_local_line
     wt_summary="$(bash "$SCRIPT_DIR/worktree-hygiene-report.sh" 2>/dev/null || true)"
     wt_line="$(printf '%s\n' "$wt_summary" | sed -n 's/^worktree-hygiene: //p' | tail -1)"
+    wt_branch_line="$(printf '%s\n' "$wt_summary" | sed -n 's/^worktree-hygiene-branches: //p' | tail -1)"
+    wt_local_line="$(printf '%s\n' "$wt_summary" | sed -n 's/^worktree-hygiene-local: //p' | tail -1)"
     if [[ -n "$wt_line" ]]; then
-      wt_merged="$(printf '%s\n' "$wt_line" | sed -nE 's/.*\(([0-9]+) merged.*/\1/p')"
-      wt_prunable="$(printf '%s\n' "$wt_line" | sed -nE 's/.*, ([0-9]+) prunable.*/\1/p')"
-      wt_experiment="$(printf '%s\n' "$wt_line" | sed -nE 's/.* ([0-9]+) experiment.*/\1/p')"
-      wt_merged="${wt_merged:-0}"
-      wt_prunable="${wt_prunable:-0}"
-      wt_experiment="${wt_experiment:-0}"
-      if [[ "$wt_merged" -eq 0 && "$wt_prunable" -eq 0 && "$wt_experiment" -eq 0 ]]; then
-        echo -e "  ${GREEN}✅${NC} Worktree hygiene: ${wt_line}"
+      local wt_total wt_merged wt_prunable wt_experiment
+      local wt_stale wt_stashes
+      local wt_dirty wt_untracked wt_ahead wt_behind wt_branches
+      local wt_remote_observable=true
+
+      wt_total="$(hygiene_count "$wt_line" '^([0-9]+) worktrees.*')"
+      wt_merged="$(hygiene_count "$wt_line" '.*\(([0-9]+) merged.*')"
+      wt_prunable="$(hygiene_count "$wt_line" '.*, ([0-9]+) prunable.*')"
+      wt_experiment="$(hygiene_count "$wt_line" '.* ([0-9]+) experiment.*')"
+
+      wt_stale="$(hygiene_count "$wt_branch_line" '^([0-9]+) stale local branches.*')"
+      wt_stashes="$(hygiene_count "$wt_branch_line" '.*, ([0-9]+) stashes.*')"
+
+      wt_dirty="$(hygiene_count "$wt_local_line" '^([0-9]+) dirty files.*')"
+      wt_untracked="$(hygiene_count "$wt_local_line" '.*, ([0-9]+) untracked,.*')"
+      wt_ahead="$(hygiene_count "$wt_local_line" '.*, ([0-9]+) ahead / .*')"
+      wt_behind="$(hygiene_count "$wt_local_line" '.* ([0-9]+) behind .*')"
+      wt_branches="$(hygiene_count "$wt_local_line" '.*, ([0-9]+) non-trunk local branches.*')"
+
+      # `remote=none` is an OBSERVED absence and stays certifiable. The other
+      # three degraded states mean the comparison could not be made at all, and
+      # certifying an uninspected state is precisely the EV-5 defect.
+      case "$wt_local_line" in
+        *remote-untracked*|*remote-unverified*|*detached-HEAD*) wt_remote_observable=false ;;
+      esac
+
+      if [[ "$wt_total" -eq 0 && "$wt_stale" -eq 0 && "$wt_stashes" -eq 0 \
+            && "$wt_dirty" -eq 0 && "$wt_untracked" -eq 0 \
+            && "$wt_ahead" -eq 0 && "$wt_behind" -eq 0 && "$wt_branches" -eq 0 \
+            && "$wt_remote_observable" == true ]]; then
+        echo -e "  ${GREEN}✅${NC} Worktree hygiene: nothing outstanding — ${wt_line}; ${wt_local_line}"
       else
-        echo -e "  ${YELLOW}⚠️${NC}  Worktree hygiene: ${wt_line} — run 'worktree-reap.sh --experiments' (dry-run) or 'doctor --heal'"
-        advisory_count=$((advisory_count + 1))
-        if [[ "$heal" == "true" ]]; then
-          bash "$SCRIPT_DIR/worktree-reap.sh" --experiments --yes >/dev/null 2>&1 || true
-          echo -e "  ${GREEN}🔧${NC} Reaped ${wt_merged} merged + ${wt_prunable} prunable + ${wt_experiment} lingering experiment(s) (lease-held skipped)"
-          healed=$((healed + 1))
+        # Ranked so the surface stays worth reading. A dirty tree mid-session is
+        # normal and renders as a NOTE; work that can be lost at the session
+        # boundary renders as a WARNING with the command that resolves it.
+        if [[ "$wt_merged" -gt 0 || "$wt_prunable" -gt 0 || "$wt_experiment" -gt 0 ]]; then
+          echo -e "  ${YELLOW}⚠️${NC}  Worktree hygiene: ${wt_line} — run 'worktree-reap.sh --experiments' (dry-run) or 'doctor --heal'"
+          advisory_count=$((advisory_count + 1))
+          if [[ "$heal" == "true" ]]; then
+            bash "$SCRIPT_DIR/worktree-reap.sh" --experiments --yes >/dev/null 2>&1 || true
+            echo -e "  ${GREEN}🔧${NC} Reaped ${wt_merged} merged + ${wt_prunable} prunable + ${wt_experiment} lingering experiment(s) (lease-held skipped)"
+            healed=$((healed + 1))
+          fi
+        elif [[ "$wt_total" -gt 0 ]]; then
+          echo -e "  ${CYAN}ℹ️${NC}  Worktree hygiene: ${wt_line} — nothing reapable (unmerged/dirty/lease-held are never auto-reaped)"
+        fi
+
+        # SCOPE-2: this line existed and was thrown away before it reached an
+        # operator. Stale branches and stashes both hold work that no remote has.
+        if [[ -n "$wt_branch_line" && ( "$wt_stale" -gt 0 || "$wt_stashes" -gt 0 ) ]]; then
+          echo -e "  ${YELLOW}⚠️${NC}  Local branches/stashes: ${wt_branch_line} — run 'bash bubbles/scripts/cli.sh closeout' to triage"
+          advisory_count=$((advisory_count + 1))
+        fi
+
+        if [[ -n "$wt_local_line" ]]; then
+          if [[ "$wt_remote_observable" != true ]]; then
+            echo -e "  ${YELLOW}⚠️${NC}  Primary worktree: ${wt_local_line} — the remote comparison could not be made, so nothing here is certified clean"
+            advisory_count=$((advisory_count + 1))
+          elif [[ "$wt_ahead" -gt 0 || "$wt_behind" -gt 0 || "$wt_branches" -gt 0 ]]; then
+            echo -e "  ${YELLOW}⚠️${NC}  Primary worktree: ${wt_local_line} — run 'bash bubbles/scripts/cli.sh closeout' before ending the session"
+            advisory_count=$((advisory_count + 1))
+          elif [[ "$wt_dirty" -gt 0 || "$wt_untracked" -gt 0 ]]; then
+            echo -e "  ${CYAN}ℹ️${NC}  Primary worktree: ${wt_local_line} — uncommitted work is normal mid-session, and is not recorded anywhere until committed"
+          fi
         fi
       fi
     fi
