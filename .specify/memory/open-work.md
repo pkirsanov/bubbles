@@ -37,3 +37,4 @@ owns creates a second source of truth, and the two will disagree.
 
 | id | title | kind | ref | state | next-owner | next-action | opened | last-seen |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OW-001 | framework-health-evidence-lint matches index rows on the full filename, but INDEX.md and TEMPLATE.md instruct bare IMP-NNN rows | residue | bubbles/scripts/framework-health-evidence-lint.sh:200 | open | G125 lint author | Pick one convention: match check 4 on the IMP-NNN identifier, or change INDEX.md and TEMPLATE.md to require the linked-filename row form | 2026-08-02 | 2026-08-02 |
