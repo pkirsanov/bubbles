@@ -45,6 +45,10 @@
   Asserted by `closeout-report-selftest.sh` (27 cases). The load-bearing case is e2: a lease acquired AFTER the report but BEFORE `--apply`, which is the only case that separates an action-time check from a snapshot-time one. d1 is its positive control — without proof that the delete path is live, every refusal assertion would pass for the wrong reason.
   **Two defects were found by building the harness, and both are fixed.** (1) `closeout-report.sh` and `open-work-report.sh` accepted an EMPTY `--repo-root` and fell back to walking upward from the current directory. A caller passing an unset variable therefore pointed a mutating command at whatever repository the process was standing in. Empty is now a usage error (case g3). (2) `local name="$1" repo="$TMP_ROOT/$name"` is unsafe: bash declares every name in a single `local` before evaluating any assignment, so `$name` is unbound under `set -u` and the path silently collapses to empty — and `git -C ""` is a no-op that operates on the current repository. The harness now routes every fixture path through a `fixture()` guard that refuses an empty path or any path outside its own temp root.
 
+- **SCOPE-6 — LANDED.** An end-of-session invariant cannot be enforced at end of session; the operator simply stops typing, and a git hook is useless because the failure mode is precisely NOT pushing. Enforcement now happens at the only moment it can: the next session's first repository-bound command. `doctor` gained an `Open Work` section that reads the register and leads with `residue` rows, and `resume-only` gained `requireOpenWorkReview: true` with the matching obligation written into `agents/bubbles_shared/workflow-mode-resolution.md`. Doctor's open-work call honours `BUBBLES_REPO_ROOT`, so both of its repository-scoped sections describe the SAME repository rather than one repo's cleanliness beside another repo's open work.
+  Surfacing, never gating — asserted, not merely stated: case b1 proves the exit code is identical with and without carried-over work. b2 and b3 are a matched pair, because a section that only ever says "nothing carried over" would satisfy b2 while being useless.
+  Asserted by `open-work-surface-selftest.sh` (11 cases). The `resume` half is an agent obligation that no selftest can execute, so what is asserted is the part that IS mechanical: the constraint exists in the machine-readable registry AND in the module an agent loads, both name the same command, and c4 proves it did not quietly become a gate.
+
 ## Proposal
 
 ### SCOPE-5 — The workflow mode (WIP-3) — land last, and only after the policy carve-out below is approved
@@ -94,13 +98,6 @@ That is the short prompt this proposal exists to provide, and it needs no new pr
 
 **Alternative considered and rejected: a new `bubbles.closeout` agent.** `doctor` reports 41 installed agents and flags five over their bundle-cost target. What SCOPE-1 through SCOPE-4 add is a detector plus a report, which needs no new dispatch surface and no new prompt shim.
 
-### SCOPE-6 — Enforce at the only moment enforcement is possible (WIP-1)
-
-An end-of-session invariant cannot be enforced at end of session. The operator simply stops typing; no hook fires, and a git hook is useless here because the failure mode is precisely NOT pushing. The enforceable moment is the NEXT session's first repository-bound command.
-
-- Have the `resume` primitive and `doctor` read the open-work register and lead with carried-over items.
-- Keep it surfacing, not blocking. Refusing to start work because the previous session left something open would punish the operator for the framework's own gap.
-
 ### SCOPE-7 — Multi-repo honesty, without weakening the binding contract (WIP-3)
 
 The operator's real workflow spans seven repositories in one workspace. The repository-binding contract is deliberately one repository per command, and `repository-binding-host-context.sh:191` fails closed on a workspace root that is not a Git worktree, with no bypass. That refusal fired during this very audit on a non-git workspace folder.
@@ -115,7 +112,7 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 - SCOPE-3 landed on top of two scripts that already existed: it CONSUMES `work-tracker-project.sh` unchanged and EXTENDS `trajectory-inspector.sh`.
 - SCOPE-4 landed on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
 - SCOPE-5 lands LAST, is gated on the Option A carve-out being approved, and is withdrawable without affecting anything else. Nothing in SCOPE-1 through SCOPE-4 depends on it. When it lands it must keep the `mode-alias-selftest.sh` invariants green.
-- SCOPE-6 depends on SCOPE-3.
+- SCOPE-6 landed on SCOPE-3.
 - SCOPE-7 splits: the refusal-message half is doc-and-message only and can land first; the per-repository print depends on SCOPE-4.
 - Every scope is advisory-until-configured. No gate is registered by this proposal, and none should be until SCOPE-1 through SCOPE-4 have run against real repositories for at least one release cycle.
 
@@ -136,8 +133,8 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 - `upkeep task:session-closeout` resolves through `mode-resolver.sh` with all four `mode-alias-selftest.sh` invariants intact, and no agent's `agents:` list names `bubbles.upkeep`. If the Option A carve-out is declined, this criterion is void because the scope is withdrawn.
 - `.specify/memory/sessions/<id>.json` is written by closeout and read back by `trajectory-inspector.sh`, closing the reader-without-writer path. (LANDED with SCOPE-4.)
-- After a closeout writes the register, the next `doctor` run prints an open-work section containing every `residue` row id from that register. This is asserted against the hermetic fixture; "the operator does not have to restate it" is the intent, and the row-id match is the check.
-- The `resume` primitive reads the register and names the carried-over items before selecting work, asserted against the same fixture. (SCOPE-6 has two halves; the criterion above only covers `doctor`.)
+- After a closeout writes the register, the next `doctor` run prints an open-work section containing every `residue` row id from that register. (LANDED with SCOPE-6.)
+- The `resume` primitive reads the register and names the carried-over items before selecting work. (LANDED with SCOPE-6.)
 - `repository-binding-host-context.sh` refusing a non-git workspace root names the offending root in its message and prints the reduced-root command, asserted by a fixture with one non-git root among several git roots. Its exit code and fail-closed behaviour are unchanged, asserted by the same fixture. (SCOPE-7, first half.)
 - `closeout` ends by printing one invocation line per OTHER host-declared root, asserted against a multi-root fixture. No cross-root state is read, preserving the one-repository-per-command binding contract. (SCOPE-7, second half.)
 

@@ -2370,6 +2370,55 @@ except Exception:
     fi
   fi
 
+  # SCOPE-6: an end-of-session invariant cannot be enforced at end of session —
+  # the operator simply stops typing, and a git hook is useless because the
+  # failure mode is precisely NOT pushing. The enforceable moment is the NEXT
+  # session's first repository-bound command, and `doctor` is the one command
+  # an operator reliably runs then. So the register is surfaced here, and only
+  # surfaced: refusing to start work because the PREVIOUS session left something
+  # open would punish the operator for the framework's own gap. This section
+  # never changes doctor's exit code.
+  echo ""
+  echo -e "${BOLD}Open Work${NC}"
+  echo -e "${DIM}Advisory only. Carried over from previous sessions: non-terminal specs and bugs, PROPOSED improvements, and authored residue rows from .specify/memory/open-work.md. Residue is listed first because it is the only class that exists nowhere else — a derived row can be rediscovered from its artifact, an unrecorded loose end cannot.${NC}"
+  echo ""
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo -e "  ${CYAN}ℹ️${NC}  jq not installed — open work not surfaced (run 'bash bubbles/scripts/cli.sh open-work' directly)"
+  else
+    local ow_json='' ow_count=0 ow_defects=0 ow_root=''
+    # Same injection point the hygiene section above uses. Both sections must
+    # describe the SAME repository, or doctor reports one repo's cleanliness
+    # beside another repo's open work.
+    ow_root="${BUBBLES_REPO_ROOT:-$REPO_ROOT}"
+    ow_json="$(bash "$SCRIPT_DIR/open-work-report.sh" --repo-root "$ow_root" --format json 2>/dev/null || true)"
+    if [[ -z "$ow_json" ]] || ! printf '%s' "$ow_json" | jq -e . >/dev/null 2>&1; then
+      echo -e "  ${CYAN}ℹ️${NC}  Open-work register could not be read — nothing here is certified"
+    else
+      ow_count="$(printf '%s' "$ow_json" | jq '.items | length')"
+      ow_defects="$(printf '%s' "$ow_json" | jq '.defects | length')"
+      if [[ "$ow_count" -eq 0 && "$ow_defects" -eq 0 ]]; then
+        echo -e "  ${GREEN}✅${NC} Open work: nothing carried over"
+      else
+        local ow_line=''
+        # Residue first, then everything else, each group in register order.
+        while IFS= read -r ow_line; do
+          [[ -n "$ow_line" ]] || continue
+          echo -e "  ${YELLOW}⚠️${NC}  ${ow_line}"
+          advisory_count=$((advisory_count + 1))
+        done < <(printf '%s' "$ow_json" | jq -r '
+          (.items | map(select(.kind == "residue")) + map(select(.kind != "residue")))[]
+          | "\(.id) (\(.kind), \(.state)) — \(.nextAction) [owner: \(.nextOwner)]"')
+        while IFS= read -r ow_line; do
+          [[ -n "$ow_line" ]] || continue
+          echo -e "  ${YELLOW}⚠️${NC}  Register defect: ${ow_line}"
+          advisory_count=$((advisory_count + 1))
+        done < <(printf '%s' "$ow_json" | jq -r '.defects[]')
+        echo -e "  ${DIM}Run 'bash bubbles/scripts/cli.sh open-work' for detail, or 'closeout' to reconcile.${NC}"
+      fi
+    fi
+  fi
+
   echo ""
   echo -e "${BOLD}Hook Health${NC}"
   echo -e "${DIM}Advisory only — never changes doctor's exit code. A missing or stale hook means the checks you believe run on commit/push are not running. Bubbles-managed git hooks are framework-source-only, so a downstream repo without them is reported, never flagged.${NC}"
