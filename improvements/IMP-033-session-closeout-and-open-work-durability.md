@@ -39,23 +39,9 @@
 - **SCOPE-1 — LANDED.** `worktree-hygiene-report.sh` emits the third `worktree-hygiene-local:` summary line (primary-worktree dirty/untracked counts, ahead/behind against the resolved remote trunk, and ALL non-trunk local branches), with honest `remote=none` / `remote-untracked` / `remote-unverified` / `detached-HEAD` degradation and an opt-in `--fetch`. `--porcelain` is byte-identical, asserted by `worktree-hygiene-guard-selftest.sh` cases f9–f11 and h1–h11.
 - **SCOPE-2 — LANDED.** `cli.sh doctor` consumes all three summary lines. The green tick now requires every observed counter across all three to be zero AND the remote comparison to have been observable; dirty-only renders as a neutral note, while unpushed commits, non-trunk branches, and stashes render as warnings. The previously discarded `worktree-hygiene-branches:` line now reaches the operator. Exit-code contract unchanged. Asserted by `doctor-hygiene-surface-selftest.sh`.
 
+- **SCOPE-3 — LANDED.** `.specify/memory/open-work.md` is a committed markdown register (plus `templates/open-work.md.tmpl`, seeded by `install.sh`). `open-work-report.sh` is the single aggregator: spec and bug rows are DERIVED through `work-tracker-project.sh` (consumed unchanged), improvement rows from `improvements/INDEX.md`, and terminal-for-mode is delegated to `is-terminal-for-mode.sh` so mode ceilings are not misreported as backlog. Only `residue` rows are authored, and `--lint` rejects a row with no next-owner, a placeholder next-action, a non-residue kind, a duplicate id, or a git-ignored register. `trajectory-inspector.sh` renders it as section 6 and `cli.sh open-work` exposes the same code path with `--format json`. Asserted by `open-work-report-selftest.sh` (19 cases; a1/a2 mutate `state.json` and observe the rendered row change, proving derivation rather than authorship).
+
 ## Proposal
-
-### SCOPE-3 — A committed open-work register, built on the two projections that already exist (WIP-1, WIP-2)
-
-Add `.specify/memory/open-work.md`, committed and explicitly NOT git-ignored. That is the entire point: the record has to travel.
-
-- Columns: `id | title | kind | ref | state | next-owner | next-action | opened | last-seen`.
-- `kind` is one of `spec`, `bug`, `imp`, `residue`.
-- **Rows backed by an artifact are DERIVED, never authored, and the projection already exists.** `bubbles/scripts/work-tracker-project.sh` already reads a feature's `state.json` and emits a provider-neutral `{ id, type, title, status, parent }` item model that is read-only, idempotent, and byte-identical for identical input. Call it per feature and aggregate. Do not write a second state reader. Its only limitation is scope: it takes `--feature-dir <dir>`, so repo-wide aggregation is the sole piece of new logic.
-- Authoring artifact-backed rows by hand would create a second source of truth for status, which is exactly the status-mirror failure IMP-032 addressed.
-- **Render through the report that already aggregates these sources.** `bubbles/scripts/trajectory-inspector.sh` already composes `bubbles.session.json`, `.specify/memory/sessions/*.json`, `lessons.md`, and `specs/*/state.json`, and its section 5 is already "Active specs (status + workflowMode)". Extend it with an open-work section rather than shipping a parallel renderer. **Decision:** still expose `cli.sh open-work` as a thin entry point over that same code path, because `closeout` needs a machine-readable `--json` form that a human-readable trajectory report should not be forced to carry.
-- **Only `residue` rows are authored.** A `residue` row is work with no artifact yet: the thing noticed and not filed. This keeps the register small and keeps it from decaying into a stale mirror.
-- A `residue` row without both `next-owner` and `next-action` is a defect and fails the register lint. "Finish the thing" is not a next action.
-- **Closed rows are DELETED, not tombstoned.** A `residue` row disappears when its work is done or when it graduates into a spec, bug, or IMP (at which point the derived projection covers it). The register answers "what is still open", and a growing tail of closed rows would destroy that in a month. Git history is the audit trail for what was removed and when.
-- **Format decision: a markdown table, not JSON or YAML.** `doctor` currently reports PyYAML and jsonschema MISSING on this machine, and the framework's guards now fail closed on a missing dependency. A register that cannot be read without an optional parser disappears exactly when the environment is degraded. `improvements/INDEX.md` sets the precedent. Emit `--json` by projection when a consumer needs it.
-- **Populate the session archive that already has a reader.** Have closeout also write `.specify/memory/sessions/<id>.json`, which `trajectory-inspector.sh` already reads and which nothing currently writes.
-- **The register is per-consuming-repo, not framework-only.** The framework ships the renderer and the lint; `.specify/memory/open-work.md` is created in each repo that adopts Bubbles, alongside the `constitution.md` and `agents.md` that already live there.
 
 ### SCOPE-4 — The operator command (WIP-3)
 
@@ -152,7 +138,7 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 ## Migration / rollout
 
 - SCOPE-1 and SCOPE-2 landed together, as required; see the Delivered section.
-- SCOPE-3 is additive and independently landable, and it lands on top of two scripts that already exist: it CONSUMES `work-tracker-project.sh` unchanged and EXTENDS `trajectory-inspector.sh`. Ship the register file and the renderer before anything writes to it.
+- SCOPE-3 landed on top of two scripts that already existed: it CONSUMES `work-tracker-project.sh` unchanged and EXTENDS `trajectory-inspector.sh`.
 - SCOPE-4 depends on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
 - SCOPE-5 lands LAST, is gated on the Option A carve-out being approved, and is withdrawable without affecting anything else. Nothing in SCOPE-1 through SCOPE-4 depends on it. When it lands it must keep the `mode-alias-selftest.sh` invariants green.
 - SCOPE-6 depends on SCOPE-3.
@@ -174,8 +160,6 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 ## Acceptance criteria (when implemented)
 
-- `cli.sh open-work` derives its artifact-backed rows by calling `work-tracker-project.sh` per feature, asserted by a selftest that changes a `state.json` status and observes the rendered row change without any second reader being touched.
-- A `residue` row missing `next-owner` or `next-action` fails the register lint.
 - `cli.sh closeout` on a fixture holding N dirty files and M unpushed commits reports exactly N and M, and proposes `residue` rows for the dirty paths that map to no open artifact.
 - `cli.sh closeout --help` exposes no `--force`, `--skip`, or `--ignore`. `--apply` refuses on unmerged branches, dirty worktrees, and stashes, and each refusal names its remediation.
 - `closeout --apply` refuses while an IMP-023 writer-lease is live, asserted by a fixture that acquires a lease through `runtime-leases.sh` and by a second fixture that acquires one AFTER the report is produced but BEFORE apply, proving the check is at action time rather than from the snapshot. Report mode succeeds under a live lease.
@@ -200,10 +184,7 @@ IMP-033 satisfies the check by linking its identifier to its filename. Either th
 
 ## Files to touch (on approval)
 
-`bubbles/scripts/cli.sh` (SCOPE-3: `open-work` command; SCOPE-4: `closeout` command; SCOPE-7: per-repository print) — framework maintainer.
-`bubbles/scripts/work-tracker-project.sh` (SCOPE-3: CONSUMED unchanged for per-feature derivation; only repo-wide aggregation is new) — framework maintainer; treat any change here as a contract change for its existing consumers.
-`bubbles/scripts/trajectory-inspector.sh` (SCOPE-3: add the open-work section; it already reads every source the register needs) — framework maintainer.
-`.specify/memory/open-work.md` (SCOPE-3: new committed register) and `.specify/memory/.gitignore` (SCOPE-3: confirm the register is NOT ignored) — framework maintainer.
+`bubbles/scripts/cli.sh` (SCOPE-4: `closeout` command; SCOPE-7: per-repository print) — framework maintainer.
 `bubbles/workflows/modes.yaml` and `bubbles/workflows/aliases.yaml` (SCOPE-5: `upkeep-session-closeout` key plus the `upkeep task:session-closeout` tuple — `task:`, matching all seven existing upkeep aliases) — `bubbles.workflow` owns mode registration; `mode-alias-selftest.sh` must stay green.
 `instructions/bubbles-upkeep-operations.instructions.md` (SCOPE-5 PRECONDITION: scope the calendar-gating rule to the `production` task class and name the `workstation` exemption) — `bubbles.upkeep`; without this amendment SCOPE-5 must not land.
 `agents/bubbles.upkeep.agent.md` (SCOPE-5: `workstation` task class with the repo-local ledger, explicitly separate from the production ledger) — `bubbles.upkeep`.

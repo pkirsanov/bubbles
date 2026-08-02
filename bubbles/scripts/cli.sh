@@ -1266,6 +1266,9 @@ Commands:
   aliases                       List all Sunnyvale aliases
   trajectory [options]          Print human-readable trajectory report from
                                 session, lessons, and per-spec state
+  open-work [--format json]     What is still open in this repository, with the
+                                next owner and next action for each item
+                                (--lint exits 1 on a defective register row)
   help                          Show this help message
 HELPEOF
 }
@@ -1546,6 +1549,15 @@ cmd_session() {
 
 cmd_trajectory() {
   bash "$SCRIPT_DIR/trajectory-inspector.sh" --repo-root "$REPO_ROOT" "$@"
+}
+
+# IMP-033 SCOPE-3. A thin entry point over the SAME aggregator that renders
+# section 6 of the trajectory report. It exists as its own command because
+# `closeout` needs a machine-readable `--json` form, and a human-readable
+# trajectory report should not be forced to carry one. It does not re-derive
+# anything.
+cmd_open_work() {
+  bash "$SCRIPT_DIR/open-work-report.sh" --repo-root "$REPO_ROOT" "$@"
 }
 
 cmd_repository_binding_selftest() {
@@ -3850,6 +3862,7 @@ main() {
     sunnyvale)          cmd_sunnyvale "$@" ;;
     aliases)            cmd_aliases "$@" ;;
     trajectory)         cmd_trajectory "$@" ;;
+    open-work)          cmd_open_work "$@" ;;
     help|-h|--help)     cmd_help ;;
     *)                  die "Unknown command: $command\nRun 'bubbles help' for usage." ;;
   esac
