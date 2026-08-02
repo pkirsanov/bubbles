@@ -1,7 +1,8 @@
 # IMP-032 — Status-mirror invariant: name it, explain it at failure time, and give it a legal repair path
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
-**Rollback note (2026-08-02):** Retained after the v7.22 implementation rollback. No scope in this proposal landed; its findings concern retained v7.21 status and certification surfaces.
+**Status:** APPLIED 2026-08-02 — SCOPE-2a/3/4a/5 landed; SCOPE-1 withdrawn; SCOPE-2b and SCOPE-4b deferred
+**Closeout:** SCOPE-1's gate premise was falsified against source. SCOPE-2b requires a structured-result schema decision and coordinated downstream migration. SCOPE-4b requires a validate-owned recertification workflow rather than a standalone writer. The full rationale and unmet acceptance criterion are preserved in `CHANGELOG.md` under `[Unreleased]`.
+**Rollback note (2026-08-02):** Retained as historical proposal evidence after the separate IMP-030/031 rollback to `VERSION` 7.21.0. The landed IMP-032 status-consistency work remains in the tree.
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
 **Motivation:** A downstream audit of `research-lab` (commits `d61017f2` status reconciliation, `9ac151ae` spec-016 promotion) found six specs left in a state no guard can resolve, and — more importantly — found that the framework's own error output led the diagnosing agent to file a **false upstream bug against working framework code**. The proposal targets the ergonomics failure, not just the state.
 **Verified gaps addressed:** `EV-4` status mirrors can diverge silently and have no legal repair path · `COV-4` under-claimed status is undetectable · `DOC-4` the documented rule states a precondition, not a write-time obligation · `REG-5` the invariant has no gate ID
@@ -75,7 +76,7 @@ examined a derived-ledger regression in `research-lab` (merge `b5b24dd2`, repair
 source files that the merge unioned, and the repo's own selftest caught it honestly. It
 required no framework change and should not motivate one.
 
-## Proposal
+## Original proposal
 
 Every scope is additive and default-preserving. SCOPE-2 and SCOPE-3 are the high-value,
 low-risk pair and are independently landable.

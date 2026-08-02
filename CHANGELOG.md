@@ -31,21 +31,149 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Status-mirror invariant: name it, explain it, detect it (IMP-032)
+
+Landed on `main` after the reviewed v7.22.0 baseline and retained through the
+IMP-030/031 rollback to `VERSION` 7.21.0. It remains under `[Unreleased]` per the
+batched-release cadence stated above.
+
+A downstream audit of `research-lab` found six specs in a state no guard could
+resolve. The more serious finding was that the framework's own error message led
+the diagnosing agent to file a **false bug against working framework code**. This
+release fixes the ergonomics failure, not just the state.
+
+#### The trap that produced the state
+
+`transition-contract-resolver.sh` refuses with `E009-TARGET-MISMATCH` whenever
+`.certification.status` differs from `.status`. Artifact ownership says only
+`bubbles.validate` may write `certification.*`. Together those two rules left no
+legal move. An actor that corrected a stale `status` made the spec unresolvable.
+An actor that left it alone kept a record it knew was false.
+
+#### The message now names its own cause
+
+Before:
+
+```
+E009-TARGET-MISMATCH: top-level and certification status mirrors disagree
+```
+
+After:
+
+```
+E009-TARGET-MISMATCH: top-level status 'specs_hardened' does not match certification.status 'not_started' — certification.* is bubbles.validate-owned, so route the reconciliation there instead of advancing status alone
+```
+
+The old line carried no observed values and no owner. The same
+`E009-TARGET-MISMATCH` code is emitted by four unrelated conditions, and the
+mirror check runs before the registry lookup, so the guard then printed
+`workflowMode`, `auditProfile` and `targetStatus` as `UNRESOLVED`. The diagnosing
+agent read that `UNRESOLVED` as proof that the `specs_hardened` ceiling was
+unsupported, and filed it upstream. It was not: 30 specs across four repos sit at
+`specs_hardened` and resolve exit 0 against a byte-identical resolver. A resolver
+selftest assertion now requires both observed values and the owning agent in the
+message, so it cannot regress to a value-free string.
+
+#### The rule is now written as an obligation
+
+`feature-templates.md` said certification "must match top-level `status` **before
+promotion**". Read literally, that is a precondition to check. The runtime rule is
+stronger: every write to `status` must carry a matching `certification.status`
+write. An agent that followed the old sentence exactly still produced the broken
+state.
+
+`skills/bubbles-status-transition/SKILL.md` now states that the two mirrors are
+one fact, that `UNRESOLVED` in guard output is a symptom of the early exit rather
+than a ceiling defect, and that the only legal move is a `route_required` packet
+to `bubbles.validate`.
+
+#### Under-claimed status is now visible
+
+New `bubbles/scripts/state-consistency-scan.sh` reports two drift classes and
+never writes:
+
+| Class | Condition |
+|---|---|
+| `mirror-divergence` | `status` differs from `certification.status` |
+| `status-behind-evidence` | `status: not_started` against a Done scope or a completed phase claim |
+
+Advisory, always exit 0, no bypass flag. A spec parked with a `blockedReason` is a
+deliberate hold and is not flagged. Wired into `cli.sh doctor`, because doctor
+reports Bubbles-managed hooks as framework-source-only, so a downstream repo runs
+no guard automatically.
+
+Enforcement had been asymmetric. `state-transition-guard.sh` blocks promotion when
+scopes are not Done, which catches over-claiming. Nothing caught the inverse.
+`doctor` in `research-lab` returned 18 passed / 0 failed / 9 advisory while six
+specs read `not_started` against Done scopes and shipped, git-tracked code.
+
+The scan finds more than the manual audit did. Against `research-lab` it reports
+8 findings across 26 specs: the six known specs, a seventh mirror divergence in
+`specs/_bugs/BUG-001-central-provider-credential-security` with a different cause
+(`blocked` against `in_progress`), and a live under-claim in
+`specs/012-market-action-center-and-guided-tools/bugs/BUG-002-scope-baseline-head-drift-antipattern`.
+
+#### A scope was withdrawn because its premise was false
+
+The proposal claimed the invariant was defective for having no gate ID, and asked
+for one to be registered. Re-checked against source before any registry edit:
+`E009` appears **zero** times in `bubbles/registry/gates.yaml`, and so does
+`transition-contract-resolver`. No `E009` resolution precondition carries a gate
+id — not usage, registry-missing, state-malformed, mode-unknown, mode-mismatch,
+target-mismatch, or audit-profile-contradiction. That is coherent design, not an
+omission. These checks run before a mode is resolved, so they cannot be a mode's
+`requiredGates` entry, and the guard records them as
+`failedChecks: [contract-resolution]` rather than as a gate. Minting a gate for
+the mirror check alone would have made it the registry's single exception, and
+introduced the inconsistency the proposal claimed to fix. SCOPE-1 is withdrawn.
+
+#### Two scopes are deferred, and one acceptance criterion is not met
+
+**SCOPE-2b** would carry the enriched detail into the structured
+`TRANSITION_GUARD_RESULT_V1` block, where the misdiagnosing agent actually read
+its fields. That block is validated positionally against an exact field count,
+`audit-result-contract-lint.sh` carries two further field lists, and installed
+parser copies exist in seven downstream repos. Entry condition: an owner decision
+on whether the field is v1-additive or requires a v2 schema, plus a coordinated
+downstream migration. Until then the enriched stderr line is the operator's path.
+
+**SCOPE-4b** asked for a reconciliation writer. On contact with the ownership
+model the operation splits in two, and neither half wants that shape. Reverting
+`status` down to match is a one-line undo that discards the true observation that
+work shipped. Advancing `certification.status` forward is a certification rather
+than a file edit, and a script that writes `certification.*` outside
+`bubbles.validate` would create exactly the forging vector the mirror invariant
+exists to prevent. Entry condition: a `bubbles.validate` workflow that re-runs the
+guard and records real certification evidence, not a standalone script.
+
+**Not met:** the six `research-lab` specs are still not repairable without a
+hand-edit. They are now detected, and the route is documented. That is the honest
+current state.
+
+#### Untouched by design
+
+`bubbles/registry/gates.yaml`, `bubbles/workflows.yaml`, and the
+`TRANSITION_GUARD_RESULT_V1` schema. No exit code and no control flow changed, so
+downstream repos pick this up through the normal installed-surface refresh with
+no re-wiring.
+
 ### v7.22 rollback to the v7.21 baseline
 
 - The controlled technical-prose and feature-surface reachability work shipped
   as IMP-030 and IMP-031 has been removed, together with its scripts, selftests,
   registry wiring, documentation, skills, and generated assets. `VERSION` and
   the release manifest are restored to the v7.21.0 line.
-- IMP-032 remains a **PROPOSED, unimplemented** improvement. BUG-004, BUG-005,
-  and BUG-006 remain open in `BUGS.md`; the rollback does not resolve or erase
-  those independent defects.
+- IMP-032's SCOPE-2a/3/4a/5 implementation is retained. SCOPE-1 was withdrawn;
+  SCOPE-2b and SCOPE-4b remain deferred under the entry conditions recorded
+  above. BUG-004, BUG-005, and BUG-006 remain open in `BUGS.md`; the rollback
+  does not resolve or erase those independent defects.
 - `bubbles/scripts/docs-registry-effective.sh` is retained as the managed
   compatibility entrypoint for `docs-registry-resolve.sh --effective` and is
   hash-pinned in `bubbles/release-manifest.json`.
 - `docs/Product-Review-2026-08-02.md` remains a historical v7.22 diagnostic
-  snapshot and now carries an explicit post-review rollback disposition so its
-  assessed-baseline claims are not mistaken for current v7.21 capabilities.
+  snapshot and now carries an explicit post-review disposition so its
+  assessed-baseline claims are not mistaken for current v7.21 plus IMP-032
+  capabilities.
 
 ### `doctor` truthfulness, read-only contract, and a new Hook Health section
 
