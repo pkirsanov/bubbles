@@ -198,3 +198,104 @@ tuning to a desired answer. A trustworthy defect count needs either per-scenario
 adjudication or the structural `SCN-*` ID path (see the drift above), not further
 lexical loosening.
 
+---
+
+## BUG-005 — selftests fail transiently inside a full `framework-validate` run but pass standalone; root cause unknown
+
+- **Filed:** 2026-08-02
+- **Disposition:** open in-repo framework defect, DEFERRED with no fix attempted. The failure did not reproduce, and shipping a speculative fix to a hermetic, currently-passing selftest would let everyone believe the flake was resolved when it was not. Per Gate G095 this is a tracked OPEN defect with a recorded reason, not a silent omission.
+- **Discovered by:** two unrelated pre-push runs during a docs-only change; each failed on a *different* selftest, and each of those selftests passed when run directly afterwards.
+- **Severity:** medium for throughput, none for enforcement. It produces a FALSE FAILURE that blocks a push — it never lets bad work through. Cost is wasted ~80-minute validate cycles and, worse, misattribution: the natural reading is "my change broke this", which is what happened here before the runs disproved it.
+- **Affects:** `bubbles/scripts/framework-validate.sh` (as the harness). Observed victims so far: `bubbles/scripts/implementation-reality-scan-selftest.sh` and `bubbles/scripts/evidence-admission-hardening-selftest.sh`.
+
+### Evidence
+
+Instance 1 — `implementation-reality-scan-selftest`, failing assertion:
+
+```
+FAIL: Dynamic session provider is blocked unresolved (missing: reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED)
+implementation-reality-scan selftest failed with 1 issue(s).
+```
+
+Instance 2 — `evidence-admission-hardening-selftest`, reported failing by the push
+summary while a later direct run of the same selftest reported `17 passed / 0 failed`.
+
+Reproduction attempts for instance 1, all clean:
+
+| Attempt | Result |
+|---|---|
+| standalone, main checkout | 31/31 PASS, exit 0 |
+| standalone, clean worktree | 31/31 PASS, exit 0 |
+| 6× concurrent at load average 9.01 | 31/31 PASS, exit 0 (all six) |
+
+Net: 9 clean runs, 0 reproductions.
+
+### Ruled out
+
+- **Not the shared-scratch class.** Both selftests are hermetic: `mktemp -d` roots with `EXIT INT TERM` cleanup traps, no fixed shared paths. This is *not* a fourth instance of the three scratch-path defects fixed at `94ce0c4`.
+- **Not a PATH/environment difference.** `framework-validate.sh` prepends a macOS compat shim, but on Linux both probes short-circuit when unprefixed GNU tools are present, so PATH is unchanged between the passing and failing runs.
+- **Not load-induced timeout — this hypothesis is backwards and should not be retried.** `SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED` is the FAIL-CLOSED result in `implementation-reality-scan.sh`: it is emitted when python3/the helper is missing, or when the helper invocation fails. A load-induced helper failure would therefore SATISFY that assertion, not break it. The assertion failing means the helper *succeeded* and classified differently.
+
+### What would actually diagnose it
+
+Capture the classifier's output at failure time. For instance 1 that is
+`sensitive_storage_output` in `implementation-reality-scan.sh`; a single captured
+artifact distinguishes "helper misclassified" from "stream corrupted" and turns
+this into a one-shot fix. Note that `8e00f6f` removed one latent corruption path
+in that area (stderr was being merged into the parsed record stream) — that was a
+real defect found while reading the code, but it is NOT known to be this bug's
+cause and was not claimed as a fix for it.
+
+---
+
+## BUG-006 — the pre-push hook releases the `framework-validate` lock between its two phases, so a concurrent run can fail `release-check`
+
+- **Filed:** 2026-08-02
+- **Disposition:** open in-repo framework defect, DEFERRED. Diagnosed but not fixed: the candidate fixes (hold one lock across both phases, or let a nested run inherit the parent's lock) change the concurrency contract of the release gate, which is an owner decision rather than a mid-session edit. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
+- **Discovered by:** repeated push failures on a multi-agent machine — bubbles needed six push attempts in one session, several lost to this.
+- **Severity:** medium for throughput, none for enforcement. It only ever produces a false FAILURE; it cannot admit bad work.
+- **Affects:** `bubbles/scripts/hooks/pre-push.sh`, `bubbles/scripts/release-check.sh`, `bubbles/scripts/framework-validate.sh` (the flock guard added at `1a49aba`).
+
+### Mechanism
+
+The hook runs two phases in sequence:
+
+1. `framework-validate.sh` — takes the machine-wide flock, runs, **releases it**.
+2. `release-check.sh` — which runs `framework-validate.sh` *again* internally, and so must take the lock a second time.
+
+Between those two acquisitions the lock is free. On a machine with several agents
+pushing, a peer's run acquires it in that window, and phase 2 then refuses:
+
+```
+==> Framework validation
+ERROR: another framework-validate run is already in progress on this machine.
+       Concurrent runs corrupt each other's shared scratch fixtures and produce
+       false failures. Wait for the other run to finish, then re-run.
+FAIL: Framework validation
+Release check failed with 1 failing check(s).
+```
+
+The guard itself is behaving correctly — it is refusing rather than producing the
+corrupt-fixture false failures it exists to prevent. The defect is that the
+pre-push sequence hands the lock back mid-flight.
+
+### Why waiting for the lock before pushing does not fix it
+
+There are TWO exposure windows, and a pre-push wait closes neither from outside.
+
+**Window A — before phase 1 acquires.** Blocking until the lock is free and
+pushing immediately still loses, because the hook does not start
+`framework-validate` first: it runs the changed-spec / agnosticity pass ahead of
+it. A peer can take the lock inside that gap. Observed directly while filing this
+entry — the wait loop reported the lock free, the push started, and phase 1 was
+then refused with the error above.
+
+**Window B — between phase 1 and phase 2.** Phase 1 releases the lock when it
+finishes and `release-check` re-acquires it later, leaving a gap of roughly the
+full validate duration.
+
+Neither window is closable by the caller. The lock has to be held across both
+phases, or the nested run has to inherit the parent's hold — which is the
+contract change recorded in the disposition above.
+
+
