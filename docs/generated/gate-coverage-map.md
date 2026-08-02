@@ -88,7 +88,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G058 | lockdown_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 1 | Check 3D | — | guard |
 | G059 | regression_contract_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3D | 1 | guard |
 | G060 | scenario_tdd_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 3 | Check 3E | 4 | guard |
-| G061 | rework_packet_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3F | — | guard |
+| G061 | rework_packet_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3F | 1 | guard |
 | G063 | concrete_result_gate | `guard-check:3G` | 0 | Check 3G | 2 | guard |
 | G064 | workflow_runner_authorization_gate | `guard-check:3H` | 0 | Check 3H | 7 | guard |
 | G066 | phase_claim_provenance_gate | `guard-check:6B` | 0 | — | — | — |
