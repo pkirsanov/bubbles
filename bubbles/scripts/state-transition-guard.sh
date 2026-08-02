@@ -3874,6 +3874,50 @@ if [[ -x "$SCRIPT_DIR/claim-source-lint.sh" ]]; then
 fi
 
 # =============================================================================
+# CHECK 44: Plan Dependency Depth (IMP-031 SCOPE-8 / IMP-022 SCOPE-3 + SCOPE-4)
+# CHECK 45: Release Assurance deploy-eligibility (IMP-031 SCOPE-8 / IMP-100 P3)
+# =============================================================================
+# Both scripts shipped complete, with selftests wired into framework-validate,
+# and NO production caller. A selftest proves a guard CAN detect something; it
+# never lets the guard detect anything. Until this wiring they could not fail a
+# real transition, so their green selftests were assurance about nothing.
+#
+# Wired straight through rather than wrapped in a new report-only knob: each
+# script already owns its own posture and no-op rules, and re-deciding them here
+# would fork the contract.
+#   - plan-dependency-depth-guard.sh exits 1 ONLY under an operator-selected
+#     block posture; otherwise findings print advisory and it exits 0.
+#   - release-assurance-gate.sh no-ops without config/release-trains.yaml, skips
+#     without yq, and skips any spec lacking certification.assurance.level or
+#     releaseTrain. It exits 1 only for a certified feature whose achieved
+#     assurance is below its target train's floor — a real deploy-eligibility
+#     breach the operator explicitly configured a floor to catch.
+# Each runs in its own subprocess so its `set -e` cannot abort this guard.
+if [[ -x "$SCRIPT_DIR/plan-dependency-depth-guard.sh" ]]; then
+  echo "--- Check 44: Plan Dependency Depth (horizontal-layer DAG analysis) ---"
+  if fixture_gate_skip "plan dependency depth"; then
+    :
+  elif bash "$SCRIPT_DIR/plan-dependency-depth-guard.sh" "$feature_dir"; then
+    pass "Plan dependency depth: no blocking horizontal-plan violation"
+  else
+    fail "Plan dependency depth violation under block posture (every consumer-visible scope sits behind >=3 foundation scopes)"
+  fi
+  echo ""
+fi
+
+if [[ -x "$SCRIPT_DIR/release-assurance-gate.sh" ]]; then
+  echo "--- Check 45: Release Assurance deploy-eligibility ---"
+  if fixture_gate_skip "release assurance"; then
+    :
+  elif bash "$SCRIPT_DIR/release-assurance-gate.sh" "$guard_repo_root"; then
+    pass "Release assurance: no certified feature targets a train above its achieved assurance"
+  else
+    fail "Release assurance breach: a certified feature's achieved assurance is below its target train's minimum floor"
+  fi
+  echo ""
+fi
+
+# =============================================================================
 # FINAL VERDICT
 # =============================================================================
 echo "============================================================"
