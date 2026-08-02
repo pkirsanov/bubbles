@@ -706,8 +706,7 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
   else
     sensitive_storage_output=""
     sensitive_storage_status=0
-    # stdout is a tab-delimited record stream parsed below; merging stderr into it would corrupt a record.
-    if sensitive_storage_output="$(python3 "$SENSITIVE_STORAGE_HELPER" --repo-root "$REPO_ROOT" --config "$PROJECT_CONFIG" "${sensitive_storage_files[@]}" 2>/dev/null)"; then
+    if sensitive_storage_output="$(python3 "$SENSITIVE_STORAGE_HELPER" --repo-root "$REPO_ROOT" --config "$PROJECT_CONFIG" "${sensitive_storage_files[@]}" 2>&1)"; then
       sensitive_storage_status=0
     else
       sensitive_storage_status=$?

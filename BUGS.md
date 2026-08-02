@@ -269,8 +269,8 @@ pushing, a peer's run acquires it in that window, and phase 2 then refuses:
 ```
 ==> Framework validation
 ERROR: another framework-validate run is already in progress on this machine.
-       Concurrent runs corrupt each other's shared scratch fixtures and produce
-       false failures. Wait for the other run to finish, then re-run.
+   Concurrent runs corrupt each other's shared scratch fixtures and produce
+   false failures. Wait for the other run to finish, then re-run.
 FAIL: Framework validation
 Release check failed with 1 failing check(s).
 ```
@@ -297,5 +297,3 @@ full validate duration.
 Neither window is closable by the caller. The lock has to be held across both
 phases, or the nested run has to inherit the parent's hold — which is the
 contract change recorded in the disposition above.
-
-

@@ -57,12 +57,6 @@ Single source of truth for the operator cheatsheet. `bubbles/scripts/generate-ch
   {
     "term": "scenario replay",
     "meaning": "Validate reruns the linked live-system `SCN-*` user journeys from `scenario-manifest.json` before certification."
-  },
-  {
-    "term": "guard",
-    "meaning": "An executable script under `bubbles/scripts/` that mechanically enforces one or more gates.",
-    "notInsteadOf": ["gate", "lint"],
-    "commonMisuse": "Do not write 'guard' when you mean the policy — that is a gate."
   }
 ]
 ```
@@ -71,12 +65,6 @@ Single source of truth for the operator cheatsheet. `bubbles/scripts/generate-ch
 |---|---|
 | `term` | yes — the vocabulary term |
 | `meaning` | yes — markdown prose; backticks become `<code>` in the HTML output |
-| `notInsteadOf` | no — array of terms this one is confused with; machine-facing, NOT rendered |
-| `commonMisuse` | no — one line naming the misuse to avoid; machine-facing, NOT rendered |
-
-`notInsteadOf` and `commonMisuse` are consumed by tooling that checks terminology
-consistency. The generator renders `meaning` only, so adding them produces no
-cheatsheet diff.
 
 ## Generator
 
@@ -97,6 +85,5 @@ Run after editing any registry file. `--check` is wired into `framework-validate
 ## Adding a TPB vocabulary term
 
 1. Add an entry to `vocabulary.json`.
-2. Optionally add `notInsteadOf` / `commonMisuse` when the term is confusable with a sibling term.
-3. Run the generator.
-4. Commit.
+2. Run the generator.
+3. Commit.

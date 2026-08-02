@@ -3,12 +3,20 @@
 **Reviewed:** 2026-08-02 | **Repository:** Bubbles | **Baseline:** v7.22.0 at `725b641`
 **Type:** standalone diagnostic and corrective roadmap | **Status:** analysis, not certification
 
+> **Post-review disposition (2026-08-02):** The v7.22 controlled
+> technical-prose and feature-surface reachability implementation was rolled
+> back to the v7.21.0 baseline. References below to those v7.22 capabilities
+> describe the reviewed historical snapshot, not the current tree. IMP-032 is
+> retained as **PROPOSED** and no scope in it has landed. The separate `doctor`
+> fixes remain under `CHANGELOG.md` `[Unreleased]`; BUG-004, BUG-005, and
+> BUG-006 remain open in `BUGS.md`.
+
 ## 1. Executive Verdict
 Bubbles addresses a real engineering problem: agentic delivery produces persuasive completion claims without a dependable, inspectable link between intent, execution, source state, and outcome. The repository has unusually deep machinery for contracts, evidence, workflow state, validation, and certification.
 
 The product is not yet a dependable assurance control plane. Its strongest mechanisms are incompletely attached, some evidence receipts are structurally inadmissible, several user-facing truth surfaces contradict runtime behavior, and the normal validation path is slow and operationally fragile. Dogfooding by one maintainer across six consumer repositories proves exposure to varied systems, not external demand or customer value.
 
-v7.22.0 materially improves feature-surface reachability, macOS guard integrity, technical-prose discipline, and `doctor` documentation. Those are useful corrections. They do not close the assurance chain: surface reachability remains report-only, certification attachment is still absent from consumer workflows, and receipt admission remains weak.
+At the reviewed v7.22.0 baseline, feature-surface reachability, macOS guard integrity, technical-prose discipline, and `doctor` documentation were materially improved. Those corrections did not close the assurance chain: surface reachability remained report-only, certification attachment was still absent from consumer workflows, and receipt admission remained weak. The technical-prose and surface-reachability implementation was subsequently rolled back as noted above.
 
 The corrective verdict is neither "build more governance" nor "just wire up what exists." Bubbles needs a staged convergence: first make the current control path truthful and stable, then expose one mode-aware verdict, strengthen evidence in shadow, attach enforcement gradually, consolidate certification under the existing validate-owned authority, simplify by measured detection parity, and finally prove customer value and retire compensating controls.
 
@@ -116,12 +124,12 @@ The existing `assurance-derive.sh` maps caller-supplied booleans to assurance an
 ### 7.2 Attachment and adoption
 Canonical state-transition enforcement is absent from all 6 consumer normal push or CI paths. MCP is registered everywhere, yet only 3 ledgers exist and none of their 3 total rows qualifies as admissible DoD evidence. Installation and capability existence are being mistaken for use.
 
-v7.22.0 adds an Exposure Contract and `surface-reachability-guard.sh`. This is valuable product-surface accounting, but the guard is explicitly report-only and answers a different question: whether shipped value names and reaches a caller surface. It neither attaches nor executes certification guards in consumer workflows. Step 4 should reuse its declared-surface denominator and rollout pattern without treating it as certification enforcement.
+The reviewed v7.22.0 baseline added an Exposure Contract and `surface-reachability-guard.sh`. This was valuable product-surface accounting, but the guard was explicitly report-only and answered a different question: whether shipped value names and reaches a caller surface. It neither attached nor executed certification guards in consumer workflows. That implementation was later rolled back; any future Step 4 work may reuse the historical denominator and rollout pattern only after re-establishing them deliberately.
 
 The framework needs generated, reusable, repository-owned attachment plus an explicit doctor state. It must adopt advisory-first rollout and measure false positives before blocking all consumers.
 
 ### 7.3 Usability and truth drift
-The source-repository `status` and `blocked` CLI paths still mirror mutable top-level state rather than explaining derived certification truth, so they can emit contradictory false-green output. v7.22.0 corrects `doctor` hook documentation, but the status-mirror remedy is only a proposal in IMP-032. README still recommends `bubbles hooks install --all` without limiting it to the framework source repo, conflicting with the scoped framework-ops recipe. Handoff documentation implies stale packet or fresh-chat authority and persistence that the runtime does not provide. The MCP catalog lists 11 of 12 tools and omits `check_observability`, while historical v6 MCP design text still says the server is not implemented.
+The source-repository `status` and `blocked` CLI paths still mirror mutable top-level state rather than explaining derived certification truth, so they can emit contradictory false-green output. The retained `[Unreleased]` work corrects `doctor` hook documentation, but the status-mirror remedy remains only a proposal in IMP-032. README still recommends `bubbles hooks install --all` without limiting it to the framework source repo, conflicting with the scoped framework-ops recipe. Handoff documentation implies stale packet or fresh-chat authority and persistence that the runtime does not provide. The MCP catalog lists 11 of 12 tools and omits `check_observability`, while historical v6 MCP design text still says the server is not implemented.
 
 These are not merely documentation defects. They show that users cannot reliably infer the current control state from the product's own surfaces.
 

@@ -31,93 +31,21 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
-## v7.22.0 — feature reachability (IMP-031) + controlled technical prose (IMP-030) + `doctor` truthfulness
+### v7.22 rollback to the v7.21 baseline
 
-### Feature reachability (IMP-031) — built value must name how a caller reaches it
-
-Eight of nine scopes landed. The hole this closes: a scope could pass every
-gate, ship real code, and leave that code unreachable by any caller, because
-nothing in the framework ever asked *which surface exposes this*.
-
-- **Two gate descriptions stopped claiming enforcement nothing performs.** `G035`
-  and `G029` in `bubbles/registry/gates.yaml` described mechanical checks that no
-  script carried out. The descriptions now match what the code does.
-- **`G034` inspected nothing on macOS.** The security-surface guard used GNU-only
-  `find -printf`, which fails on BSD `find`. The denominator came back empty, so
-  the gate reported success over zero files on every macOS run. Its selftest went
-  from 5/10 to **10/10** once the portable form landed. This is the same
-  empty-denominator failure the whole proposal exists to remove, found inside the
-  framework's own security gate.
-- **The Exposure Contract.** `spec.md` now carries an `## Exposure Contract`
-  section: every increment names the surface a caller reaches it through, or
-  names an explicit deferral. The vertical-delivery guard enforces the
-  name-a-surface-or-name-a-deferral rule and now actually runs.
-- **An optional `surfaces:` contract** in the project config gives reachability
-  checks a real denominator, per repo, derived by a command that repo owns.
-- **`surface-reachability-guard.sh`** reconciles derived surfaces against
-  declared exposure, **report-only**, with a 16-case selftest. It exits non-zero
-  only on derivation *integrity* failure — a class declared with no derive
-  command is a misconfiguration, not a silent no-op.
-- **Recipe:** [`docs/recipes/declare-reachable-surfaces.md`](docs/recipes/declare-reachable-surfaces.md)
-  gives every repo a starting surface-class table, a rollout order, and the
-  onboarding bar.
-
-**Correction on the record.** The proposal claimed **15 orphaned scripts**. That
-count was **wrong**. It came from a literal-name grep, which cannot see indirect
-invocation — `install.sh` calls `verify-payload-integrity.sh` through a
-`PAYLOAD_VERIFIER` variable, so the script looked orphaned while being load-bearing.
-The verified orphan set is **five**, each now dispositioned:
-
-| Script | Disposition |
-|---|---|
-| `docs-registry-effective.sh` | RETIRED (redundant alias) |
-| `plan-dependency-depth-guard.sh` | WIRED LIVE — transition Check 44 |
-| `release-assurance-gate.sh` | WIRED CONDITIONAL — transition Check 45 |
-| `release-train-backfill-planner.sh` | EXPOSED via CLI |
-| `work-tracker-project.sh` | EXPOSED via CLI |
-
-Ten further scripts named in the proposal — including
-`vertical-delivery-plan-guard.sh`, `diff-evidence-guard.sh`, and
-`governance-index-lint.sh` — were **not** orphans.
-
-**SCOPE-7 (gate registration) is DEFERRED, not delivered.** Its entry condition
-requires the report-only guard to run for a release cycle across at least two
-consumer repos on different stacks with an orphan-detection false-positive rate
-under 10%. No gate id is allocated. A blocking gate over an untrustworthy
-denominator would recreate the exact failure this work removes.
-
-### Controlled technical prose (IMP-030) — a form floor that can never outrank a finding
-
-Four of five scopes landed.
-
-- **12 confusable governance terms** seeded in `bubbles/cheatsheet/vocabulary.json`
-  with machine-facing `notInsteadOf` and `commonMisuse` fields — `gate` versus
-  `guard` versus `check`, and the rest of the cluster that agents routinely blur.
-- **Prose form is ranked Tier 2** in `analytical-rigor.md`, explicitly below
-  honest findings. Form never outranks Rule 3. A well-formed sentence that hides
-  a real defect is worse than an ugly sentence that names it.
-- **`skills/bubbles-technical-prose/SKILL.md`** carries the form floor and records
-  the two corrections a naive implementation would get wrong: the **em dash is
-  permitted** (rule 8.1 excludes only the semicolon), and a **marketing-adjective
-  blacklist must not be built**.
-- **`technical-prose-lint.sh`** is **report-only** and always exits 0 on a
-  readable surface. It excludes fenced blocks, tables, inline code, blockquotes,
-  link targets, and headings. Four adversarial selftest cases exist purely to
-  fail loudly if an exclusion ever breaks, because the worst outcome available
-  here is a lint that induces an agent to **reword captured terminal output**.
-
-**A rule was cut during implementation.** The proposed `term-drift` check counted
-uses of registry terms and reported 133 findings on the skills corpus — all of
-them correct usage. The registry's `notInsteadOf` clusters are *deliberately
-distinct* terms that legitimately co-occur, so counting them measures vocabulary
-size, not drift. It was replaced with `term-spelling`, which detects only the
-mechanical half: a registered term written in a split form the registry does not
-carry, such as `sub-agent` against `subagent`. A report-only lint that cries wolf
-gets ignored.
-
-**SCOPE-5 (Gate G132) is DEFERRED, not delivered.** Its entry condition requires
-one full release cycle of report-only operation with a measured false-positive
-rate under 5% on the excluded-surface rules. No gate id is allocated.
+- The controlled technical-prose and feature-surface reachability work shipped
+  as IMP-030 and IMP-031 has been removed, together with its scripts, selftests,
+  registry wiring, documentation, skills, and generated assets. `VERSION` and
+  the release manifest are restored to the v7.21.0 line.
+- IMP-032 remains a **PROPOSED, unimplemented** improvement. BUG-004, BUG-005,
+  and BUG-006 remain open in `BUGS.md`; the rollback does not resolve or erase
+  those independent defects.
+- `bubbles/scripts/docs-registry-effective.sh` is retained as the managed
+  compatibility entrypoint for `docs-registry-resolve.sh --effective` and is
+  hash-pinned in `bubbles/release-manifest.json`.
+- `docs/Product-Review-2026-08-02.md` remains a historical v7.22 diagnostic
+  snapshot and now carries an explicit post-review rollback disposition so its
+  assessed-baseline claims are not mistaken for current v7.21 capabilities.
 
 ### `doctor` truthfulness, read-only contract, and a new Hook Health section
 
