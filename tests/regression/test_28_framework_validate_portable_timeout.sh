@@ -17,6 +17,17 @@ SOURCE_MANIFEST="$REPO_ROOT/bubbles/release-manifest.json"
 TEST_FILE="$SCRIPT_DIR/test_28_framework_validate_portable_timeout.sh"
 SYSTEM_PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
+# framework-validate.sh refuses bash < 4, and macOS /bin/bash is 3.2, so resolve
+# a conforming interpreter instead of hardcoding a path that only works on Linux.
+VALIDATOR_BASH="${BASH:-}"
+if [[ -z "$VALIDATOR_BASH" ]] || ! "$VALIDATOR_BASH" -c '(( ${BASH_VERSINFO[0]:-0} >= 4 ))' 2>/dev/null; then
+  VALIDATOR_BASH="$(command -v bash 2>/dev/null || true)"
+fi
+if [[ -z "$VALIDATOR_BASH" ]] || ! "$VALIDATOR_BASH" -c '(( ${BASH_VERSINFO[0]:-0} >= 4 ))' 2>/dev/null; then
+  echo "test_28: no bash >= 4 available to run the staged validator" >&2
+  exit 2
+fi
+
 MAC_LABEL='macOS portability guard selftest (bubbles-cross-platform-shell)'
 PLAN_LABEL='Workflow planning provenance selftest'
 SCRIPT_DIR_ASSIGNMENT='SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"'
@@ -503,7 +514,7 @@ run_validator() {
     BUG021_MAC_EXIT_STATUS="$mac_exit" \
     BUG021_PLAN_SLEEP_SECONDS="$plan_sleep" \
     BUG021_PLAN_EXIT_STATUS="$plan_exit" \
-    /bin/bash "$validator" >"$RUN_OUTPUT_FILE" 2>&1; then
+    "$VALIDATOR_BASH" "$validator" >"$RUN_OUTPUT_FILE" 2>&1; then
     RUN_STATUS=0
   else
     RUN_STATUS=$?
