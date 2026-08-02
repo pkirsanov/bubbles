@@ -87,7 +87,13 @@ quiet_empty=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --repo-root) repo_root="${2:-}"; shift 2 ;;
+    --repo-root)
+      # Empty is a usage error, not a silent fall-through to the walk-upward
+      # default: a caller passing an unset variable means to name a repository,
+      # and binding to the ambient one instead reports on the wrong repo.
+      repo_root="${2:-}"
+      [[ -n "$repo_root" ]] || { echo "open-work: --repo-root requires a non-empty path" >&2; exit 2; }
+      shift 2 ;;
     --format) format="${2:-}"; shift 2 ;;
     --register) register_override="${2:-}"; shift 2 ;;
     --lint) do_lint=true; shift ;;

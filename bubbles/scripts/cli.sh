@@ -1269,6 +1269,10 @@ Commands:
   open-work [--format json]     What is still open in this repository, with the
                                 next owner and next action for each item
                                 (--lint exits 1 on a defective register row)
+  closeout [--apply]            Session-boundary reconciliation: hygiene, a
+                                disposition per branch and stash, unrecorded
+                                residue, and the exact commands. Report-only by
+                                default; --apply is the ONLY execution mechanism
   help                          Show this help message
 HELPEOF
 }
@@ -1558,6 +1562,10 @@ cmd_trajectory() {
 # anything.
 cmd_open_work() {
   bash "$SCRIPT_DIR/open-work-report.sh" --repo-root "$REPO_ROOT" "$@"
+}
+
+cmd_closeout() {
+  bash "$SCRIPT_DIR/closeout-report.sh" --repo-root "$REPO_ROOT" "$@"
 }
 
 cmd_repository_binding_selftest() {
@@ -3863,6 +3871,7 @@ main() {
     aliases)            cmd_aliases "$@" ;;
     trajectory)         cmd_trajectory "$@" ;;
     open-work)          cmd_open_work "$@" ;;
+    closeout)           cmd_closeout "$@" ;;
     help|-h|--help)     cmd_help ;;
     *)                  die "Unknown command: $command\nRun 'bubbles help' for usage." ;;
   esac

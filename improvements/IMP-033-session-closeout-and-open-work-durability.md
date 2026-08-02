@@ -41,37 +41,11 @@
 
 - **SCOPE-3 — LANDED.** `.specify/memory/open-work.md` is a committed markdown register (plus `templates/open-work.md.tmpl`, seeded by `install.sh`). `open-work-report.sh` is the single aggregator: spec and bug rows are DERIVED through `work-tracker-project.sh` (consumed unchanged), improvement rows from `improvements/INDEX.md`, and terminal-for-mode is delegated to `is-terminal-for-mode.sh` so mode ceilings are not misreported as backlog. Only `residue` rows are authored, and `--lint` rejects a row with no next-owner, a placeholder next-action, a non-residue kind, a duplicate id, or a git-ignored register. `trajectory-inspector.sh` renders it as section 6 and `cli.sh open-work` exposes the same code path with `--format json`. Asserted by `open-work-report-selftest.sh` (19 cases; a1/a2 mutate `state.json` and observe the rendered row change, proving derivation rather than authorship).
 
+- **SCOPE-4 — LANDED.** `cli.sh closeout` (over `closeout-report.sh`) reports the hygiene snapshot, a disposition per branch and stash (`merge-able`, `has-unique-commits`, `dirty`, `lease-held`, `checked-out`), unrecorded residue as register-shaped rows, the exact commands, and the open-work register. Report-only is the default and `--apply` is the only execution mechanism; `--dry-run` is an explicit no-op synonym. `--apply` executes only `git branch -d` on a fully-merged, unleased, not-checked-out branch plus the session archive to `.specify/memory/sessions/<id>.json`, closing the reader-without-writer path in `trajectory-inspector.sh`. The IMP-023 writer-lease is re-checked AT ACTION TIME, mirroring `worktree-reap.sh`'s `still_lease_held()`. There is no `--force`, `--skip`, or `--ignore` at any layer.
+  Asserted by `closeout-report-selftest.sh` (27 cases). The load-bearing case is e2: a lease acquired AFTER the report but BEFORE `--apply`, which is the only case that separates an action-time check from a snapshot-time one. d1 is its positive control — without proof that the delete path is live, every refusal assertion would pass for the wrong reason.
+  **Two defects were found by building the harness, and both are fixed.** (1) `closeout-report.sh` and `open-work-report.sh` accepted an EMPTY `--repo-root` and fell back to walking upward from the current directory. A caller passing an unset variable therefore pointed a mutating command at whatever repository the process was standing in. Empty is now a usage error (case g3). (2) `local name="$1" repo="$TMP_ROOT/$name"` is unsafe: bash declares every name in a single `local` before evaluating any assignment, so `$name` is unbound under `set -u` and the path silently collapses to empty — and `git -C ""` is a no-op that operates on the current repository. The harness now routes every fixture path through a `fixture()` guard that refuses an empty path or any path outside its own temp root.
+
 ## Proposal
-
-### SCOPE-4 — The operator command (WIP-3)
-
-Add `cli.sh closeout` — one repository-bound, read-only-by-default reconciliation report that answers the operator's hand-written prompt directly.
-
-**Decision: two commands, not one.** Recording open work and cleaning local state are different verbs with different risk profiles. `open-work` is pure reporting and safe to run constantly; `closeout` proposes mutations and needs a confirmation step. Fusing them would force the read-only case through the dangerous one's safety contract. `closeout` calls `open-work` and prints its result, so an operator who wants both still types one command.
-
-Operator invocation, which is the entire point of this proposal. There is no `bubbles` executable on PATH and no `bubbles.sh`, so the real form is the `cli.sh` path the terminal-discipline policy already mandates:
-
-```
-bash bubbles/scripts/cli.sh closeout           # report only; nothing changes
-bash bubbles/scripts/cli.sh closeout --apply   # execute only the provably safe subset
-bash bubbles/scripts/cli.sh open-work          # what is still open, with owner and next action
-```
-
-Downstream repos use the installed path (`bash .github/bubbles/scripts/cli.sh closeout`), matching every other command in the registry.
-
-`closeout` reports, in order:
-
-1. The SCOPE-1 hygiene snapshot.
-2. A disposition proposal per branch, stash, and worktree: merge-able, has unique commits, or dirty.
-3. Unrecorded residue: dirty or untracked paths that map to no open spec, bug, or IMP, offered as proposed `residue` rows.
-4. The exact commands the operator would run, printed and not executed.
-
-Safety contract:
-
-- Report-only is the DEFAULT behaviour, and `--apply` is the ONLY way to execute. `--dry-run` is accepted as an explicit no-op synonym for the default so a cautious operator can state the intent, but it is not the mechanism; absence of `--apply` is. Naming both without saying which one governs is how an implementer ends up building a third state.
-- `--apply` refuses on unmerged branches, dirty worktrees, and any stash. It never drops, never resets, never rebases, never force-pushes.
-- **`--apply` honours the IMP-023 writer-lease, re-checked at action time.** A second session can be working in the same repository right now; that is not hypothetical, it happened during this audit. The mechanism already exists and MUST be consumed rather than reinvented: `worktree-hygiene-report.sh` classifies lease-covered worktrees `LEASE-HELD` by asking `runtime-leases.sh summary`, and `worktree-reap.sh` re-checks the lease at action time via `still_lease_held()` rather than trusting the snapshot it started from. `closeout --apply` MUST do the same, because the window between reporting and applying is exactly where a concurrent session lands a commit. Report mode is unaffected: reading state under a live lease is safe.
-- There is no `--force`, no `--skip`, and no `--ignore`. A situation the command will not resolve is an operator decision, printed with its remediation.
 
 ### SCOPE-5 — The workflow mode (WIP-3) — land last, and only after the policy carve-out below is approved
 
@@ -139,7 +113,7 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 - SCOPE-1 and SCOPE-2 landed together, as required; see the Delivered section.
 - SCOPE-3 landed on top of two scripts that already existed: it CONSUMES `work-tracker-project.sh` unchanged and EXTENDS `trajectory-inspector.sh`.
-- SCOPE-4 depends on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
+- SCOPE-4 landed on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
 - SCOPE-5 lands LAST, is gated on the Option A carve-out being approved, and is withdrawable without affecting anything else. Nothing in SCOPE-1 through SCOPE-4 depends on it. When it lands it must keep the `mode-alias-selftest.sh` invariants green.
 - SCOPE-6 depends on SCOPE-3.
 - SCOPE-7 splits: the refusal-message half is doc-and-message only and can land first; the per-repository print depends on SCOPE-4.
@@ -160,11 +134,8 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 
 ## Acceptance criteria (when implemented)
 
-- `cli.sh closeout` on a fixture holding N dirty files and M unpushed commits reports exactly N and M, and proposes `residue` rows for the dirty paths that map to no open artifact.
-- `cli.sh closeout --help` exposes no `--force`, `--skip`, or `--ignore`. `--apply` refuses on unmerged branches, dirty worktrees, and stashes, and each refusal names its remediation.
-- `closeout --apply` refuses while an IMP-023 writer-lease is live, asserted by a fixture that acquires a lease through `runtime-leases.sh` and by a second fixture that acquires one AFTER the report is produced but BEFORE apply, proving the check is at action time rather than from the snapshot. Report mode succeeds under a live lease.
 - `upkeep task:session-closeout` resolves through `mode-resolver.sh` with all four `mode-alias-selftest.sh` invariants intact, and no agent's `agents:` list names `bubbles.upkeep`. If the Option A carve-out is declined, this criterion is void because the scope is withdrawn.
-- `.specify/memory/sessions/<id>.json` is written by closeout and read back by `trajectory-inspector.sh`, closing the reader-without-writer path.
+- `.specify/memory/sessions/<id>.json` is written by closeout and read back by `trajectory-inspector.sh`, closing the reader-without-writer path. (LANDED with SCOPE-4.)
 - After a closeout writes the register, the next `doctor` run prints an open-work section containing every `residue` row id from that register. This is asserted against the hermetic fixture; "the operator does not have to restate it" is the intent, and the row-id match is the check.
 - The `resume` primitive reads the register and names the carried-over items before selecting work, asserted against the same fixture. (SCOPE-6 has two halves; the criterion above only covers `doctor`.)
 - `repository-binding-host-context.sh` refusing a non-git workspace root names the offending root in its message and prints the reduced-root command, asserted by a fixture with one non-git root among several git roots. Its exit code and fail-closed behaviour are unchanged, asserted by the same fixture. (SCOPE-7, first half.)
@@ -184,7 +155,7 @@ IMP-033 satisfies the check by linking its identifier to its filename. Either th
 
 ## Files to touch (on approval)
 
-`bubbles/scripts/cli.sh` (SCOPE-4: `closeout` command; SCOPE-7: per-repository print) — framework maintainer.
+`bubbles/scripts/cli.sh` (SCOPE-7: per-repository print) — framework maintainer.
 `bubbles/workflows/modes.yaml` and `bubbles/workflows/aliases.yaml` (SCOPE-5: `upkeep-session-closeout` key plus the `upkeep task:session-closeout` tuple — `task:`, matching all seven existing upkeep aliases) — `bubbles.workflow` owns mode registration; `mode-alias-selftest.sh` must stay green.
 `instructions/bubbles-upkeep-operations.instructions.md` (SCOPE-5 PRECONDITION: scope the calendar-gating rule to the `production` task class and name the `workstation` exemption) — `bubbles.upkeep`; without this amendment SCOPE-5 must not land.
 `agents/bubbles.upkeep.agent.md` (SCOPE-5: `workstation` task class with the repo-local ledger, explicitly separate from the production ledger) — `bubbles.upkeep`.
