@@ -21,16 +21,19 @@ description: Session recap — summarize what was done, what's in progress, and 
 1. Validate any inherited packet with `bubbles/scripts/repository-binding.sh validate-packet`, then execute `bubbles/scripts/repository-binding.sh preflight` and require the current local actionable packet plus `PREFLIGHT_COMMITTED`; stale, substituted, malformed, or redacted packets stop before conversation-derived repository paths or state scans.
 2. Review the current conversation history only as advisory context after `PREFLIGHT_COMMITTED`.
 3. Check `specs/*/state.json` only under the committed `repositoryRoot` for active spec work — read `certification.status`, `execution.currentPhase`, and `workflowMode`.
-4. Produce a structured recap:
+4. Read the durable open-work register with `bash bubbles/scripts/cli.sh open-work` under the committed `repositoryRoot`. This is a READ. The register is the only part of a recap that outlives the chat window, so **In Progress** and **Open** MUST be reconciled against it rather than reconstructed from conversation alone.
+5. Produce a structured recap:
    - **Done** — Commits, file changes, fixes, decisions completed
    - **In Progress** — Work started but not finished
    - **Open** — Requests mentioned but not acted on
    - **Workflow Continuation** — one recommended `/bubbles.workflow ...` command plus fallback context when no spec work is active
 
+   When an item appears in the recap but NOT in the register, say so explicitly and name `bash bubbles/scripts/cli.sh closeout` as the way to record it. A recap that ends in chat is lost the moment the window closes; naming the gap is the difference between a summary and a handoff.
+
 ## Output Rules
 
 - Keep it short. Use bullet points. No fluff.
-- Do NOT modify any files or state.
+- Do NOT modify any files or state. Reading the open-work register is a read; WRITING it is `closeout`'s job, not recap's.
 - Do NOT record execution history or phase claims — this agent is purely informational.
 - Continuation suggestions are informational only; they must not be treated as completion state, copied into `report.md`, or interpreted as deferred required work.
 - Default to workflow-only continuation guidance. Recommend `/bubbles.workflow ...` with a resolved mode instead of raw `/bubbles.implement`, `/bubbles.test`, or `/bubbles.validate` commands unless the user explicitly asked for a direct specialist.

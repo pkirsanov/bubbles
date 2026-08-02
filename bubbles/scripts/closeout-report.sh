@@ -22,6 +22,11 @@
 #   4. The exact commands the operator would run, PRINTED AND NOT EXECUTED.
 #   5. The open-work register (open-work-report.sh), so the two halves of the
 #      session boundary appear in one place.
+#   6. One bounded invocation line per OTHER host-declared workspace root
+#      (IMP-033 SCOPE-7), read from BUBBLES_WORKSPACE_ROOTS. Printed only — no
+#      cross-root state is inspected, which is what keeps the one-repository-
+#      per-command binding contract intact rather than merely well-intentioned.
+#      Absent entirely when the host declared no other roots.
 #
 # SAFETY CONTRACT (IMP-033 SCOPE-4, mechanically asserted by the selftest)
 #   * Report-only is the DEFAULT. `--apply` is the ONLY execution mechanism.
@@ -319,6 +324,41 @@ if [[ -f "$open_work_sh" ]]; then
   bash "$open_work_sh" --repo-root "$REPO_ROOT" 2>/dev/null | sed 's/^/  /'
 else
   echo "  open-work-report.sh not found at $open_work_sh"
+fi
+
+# --- 6. the other declared roots ---------------------------------------------
+#
+# IMP-033 / SCOPE-7. The operator's real workspace spans several repositories,
+# but the repository-binding contract is deliberately one repository per
+# command. Sweeping all of them from here would be the easy answer and the
+# wrong one: it would make a MUTATING command's blast radius depend on host
+# workspace configuration rather than on an argument the operator typed.
+#
+# So this prints, and only prints, the exact invocation for each of the OTHER
+# declared roots. The operator runs N bounded closeouts instead of one
+# unbounded sweep. NO cross-root state is read here — not a git status, not a
+# register, not a branch list. The roots are echoed back from what the host
+# declared and nothing else, which is what keeps the one-repository-per-command
+# binding contract intact rather than merely well-intentioned.
+if [[ -n "${BUBBLES_WORKSPACE_ROOTS:-}" ]]; then
+  other_roots=""
+  while IFS= read -r ws_root; do
+    [[ -n "$ws_root" ]] || continue
+    # Compare canonically so a symlinked or trailing-slash duplicate of the
+    # current repo is not offered back to the operator as a separate one.
+    ws_canon="$(cd "$ws_root" 2>/dev/null && pwd -P || printf '%s' "$ws_root")"
+    [[ "$ws_canon" != "$REPO_ROOT" ]] || continue
+    other_roots="${other_roots}${other_roots:+$'\n'}$ws_canon"
+  done <<< "${BUBBLES_WORKSPACE_ROOTS//:/$'\n'}"
+
+  if [[ -n "$other_roots" ]]; then
+    echo
+    echo "6. Other declared roots (not inspected — one repository per command)"
+    while IFS= read -r ws_root; do
+      [[ -n "$ws_root" ]] || continue
+      printf '  bash bubbles/scripts/cli.sh closeout --repo-root %s\n' "$ws_root"
+    done <<< "$other_roots"
+  fi
 fi
 
 exit 0

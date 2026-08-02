@@ -49,6 +49,10 @@
   Surfacing, never gating — asserted, not merely stated: case b1 proves the exit code is identical with and without carried-over work. b2 and b3 are a matched pair, because a section that only ever says "nothing carried over" would satisfy b2 while being useless.
   Asserted by `open-work-surface-selftest.sh` (11 cases). The `resume` half is an agent obligation that no selftest can execute, so what is asserted is the part that IS mechanical: the constraint exists in the machine-readable registry AND in the module an agent loads, both name the same command, and c4 proves it did not quietly become a gate.
 
+- **SCOPE-7 — LANDED.** The fail-closed behaviour of `repository-binding-host-context.sh` was NOT softened — authority resolution is the wrong place to become permissive. What changed is that the refusal is now actionable: it names the offending root and prints the reduced-root command with that root dropped and every valid root retained. A refusal the operator cannot act on is the moment they abandon the tool and work unbound, which is a worse outcome than the one the refusal was protecting against. A sole bad root is reported as having no reduced form rather than being handed an empty command that would fail on a different error.
+  `closeout` gained a final section printing one bounded invocation per OTHER host-declared root from `BUBBLES_WORKSPACE_ROOTS`. Sweeping every root would be the easy answer and the wrong one: it would make a MUTATING command's blast radius depend on host workspace configuration rather than on an argument the operator typed.
+  Asserted by `multi-root-honesty-selftest.sh` (14 cases). b1–b3 exist specifically to catch the drift this scope invites — making an error message helpful is the classic route by which a hard check quietly becomes a warning — and b4 is the positive control without which every refusal assertion would also pass on a script that simply refused everything. c4 is load-bearing: another root is given a dirty file and a uniquely-named branch that would be impossible to miss, and their absence from the output is the proof that roots are echoed, not inspected.
+
 ## Proposal
 
 ### SCOPE-5 — The workflow mode (WIP-3) — land last, and only after the policy carve-out below is approved
@@ -98,14 +102,6 @@ That is the short prompt this proposal exists to provide, and it needs no new pr
 
 **Alternative considered and rejected: a new `bubbles.closeout` agent.** `doctor` reports 41 installed agents and flags five over their bundle-cost target. What SCOPE-1 through SCOPE-4 add is a detector plus a report, which needs no new dispatch surface and no new prompt shim.
 
-### SCOPE-7 — Multi-repo honesty, without weakening the binding contract (WIP-3)
-
-The operator's real workflow spans seven repositories in one workspace. The repository-binding contract is deliberately one repository per command, and `repository-binding-host-context.sh:191` fails closed on a workspace root that is not a Git worktree, with no bypass. That refusal fired during this very audit on a non-git workspace folder.
-
-- Do NOT soften the fail-closed behavior. Authority resolution is the wrong place to become permissive.
-- Make the refusal actionable instead: name the offending root and print the reduced-root command the operator can run immediately.
-- Have `closeout` end by printing the exact per-repository invocation for each of the OTHER host-declared roots, so the operator runs N bounded closeouts rather than one unbounded sweep.
-
 ## Migration / rollout
 
 - SCOPE-1 and SCOPE-2 landed together, as required; see the Delivered section.
@@ -113,7 +109,7 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 - SCOPE-4 landed on SCOPE-1 (snapshot) and SCOPE-3 (residue rows).
 - SCOPE-5 lands LAST, is gated on the Option A carve-out being approved, and is withdrawable without affecting anything else. Nothing in SCOPE-1 through SCOPE-4 depends on it. When it lands it must keep the `mode-alias-selftest.sh` invariants green.
 - SCOPE-6 landed on SCOPE-3.
-- SCOPE-7 splits: the refusal-message half is doc-and-message only and can land first; the per-repository print depends on SCOPE-4.
+- SCOPE-7 landed in two halves: the actionable refusal, and the per-repository print on top of SCOPE-4.
 - Every scope is advisory-until-configured. No gate is registered by this proposal, and none should be until SCOPE-1 through SCOPE-4 have run against real repositories for at least one release cycle.
 
 ## Risks & mitigations
@@ -135,8 +131,8 @@ The operator's real workflow spans seven repositories in one workspace. The repo
 - `.specify/memory/sessions/<id>.json` is written by closeout and read back by `trajectory-inspector.sh`, closing the reader-without-writer path. (LANDED with SCOPE-4.)
 - After a closeout writes the register, the next `doctor` run prints an open-work section containing every `residue` row id from that register. (LANDED with SCOPE-6.)
 - The `resume` primitive reads the register and names the carried-over items before selecting work. (LANDED with SCOPE-6.)
-- `repository-binding-host-context.sh` refusing a non-git workspace root names the offending root in its message and prints the reduced-root command, asserted by a fixture with one non-git root among several git roots. Its exit code and fail-closed behaviour are unchanged, asserted by the same fixture. (SCOPE-7, first half.)
-- `closeout` ends by printing one invocation line per OTHER host-declared root, asserted against a multi-root fixture. No cross-root state is read, preserving the one-repository-per-command binding contract. (SCOPE-7, second half.)
+- `repository-binding-host-context.sh` refusing a non-git workspace root names the offending root and prints the reduced-root command, with its exit code and fail-closed behaviour unchanged. (LANDED with SCOPE-7.)
+- `closeout` ends by printing one invocation line per OTHER host-declared root, reading no cross-root state. (LANDED with SCOPE-7.)
 
 ## Incidental finding (recorded, not fixed by this proposal)
 
@@ -152,10 +148,8 @@ IMP-033 satisfies the check by linking its identifier to its filename. Either th
 
 ## Files to touch (on approval)
 
-`bubbles/scripts/cli.sh` (SCOPE-7: per-repository print) — framework maintainer.
 `bubbles/workflows/modes.yaml` and `bubbles/workflows/aliases.yaml` (SCOPE-5: `upkeep-session-closeout` key plus the `upkeep task:session-closeout` tuple — `task:`, matching all seven existing upkeep aliases) — `bubbles.workflow` owns mode registration; `mode-alias-selftest.sh` must stay green.
 `instructions/bubbles-upkeep-operations.instructions.md` (SCOPE-5 PRECONDITION: scope the calendar-gating rule to the `production` task class and name the `workstation` exemption) — `bubbles.upkeep`; without this amendment SCOPE-5 must not land.
 `agents/bubbles.upkeep.agent.md` (SCOPE-5: `workstation` task class with the repo-local ledger, explicitly separate from the production ledger) — `bubbles.upkeep`.
 `agents/bubbles.recap.agent.md` and `agents/bubbles.handoff.agent.md` (SCOPE-3: point their Open/In-Progress output at the durable register instead of ending in chat only; both stay read-only) — respective agent owners.
-`bubbles/scripts/repository-binding-host-context.sh` (SCOPE-7: actionable refusal message naming the non-git root; fail-closed behavior unchanged) — repository-binding owner.
 `docs/CHEATSHEET.md` and `docs/guides/WORKFLOW_MODES.md` (SCOPE-4, SCOPE-5: document the command and the mode) — `bubbles.docs`.
