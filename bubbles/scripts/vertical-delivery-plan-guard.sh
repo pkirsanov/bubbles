@@ -14,10 +14,16 @@
 # (`verticalPlanGuard: block`), matching the advisory-until-configured posture of
 # other coverage gates. There is no `--skip`/`--force` bypass.
 #
-# Classification is structural (does a scope reference a consumer-visible
-# surface?), not keyword-counting: a scope is "consumer" when its body references
-# a route/endpoint/UI/CLI/operator surface, else "foundation". Ambiguous scopes
-# are treated as foundation (conservative — advisory only).
+# Classification is PROSE KEYWORD MATCHING, not structural analysis (stated
+# honestly per IMP-031 SCOPE-1 — an earlier version of this header claimed the
+# opposite). A scope is classified "consumer" when a case-insensitive extended
+# regex (`grep -qiE "$consumer_re"`) matches the scope's markdown body against a
+# fixed vocabulary of route/endpoint/UI/CLI/operator words; otherwise it is
+# "foundation". This reads the PLAN TEXT only — it never inspects a router
+# table, a source tree, or a running system, so a scope that genuinely ships a
+# consumer surface while describing it in other words WILL be misclassified as
+# foundation, and prose that merely mentions a surface WILL count as consumer.
+# Ambiguous scopes are treated as foundation (conservative — advisory only).
 #
 # It ALSO enforces a risk-adjusted scope BUDGET (IMP-022 SCOPE-2, bound to the
 # Phase-1 tier): when the feature's state.json workflowMode is the low-risk
