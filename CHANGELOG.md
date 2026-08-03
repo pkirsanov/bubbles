@@ -266,15 +266,19 @@ omission. These checks run before a mode is resolved, so they cannot be a mode's
 the mirror check alone would have made it the registry's single exception, and
 introduced the inconsistency the proposal claimed to fix. SCOPE-1 is withdrawn.
 
-#### Two scopes are deferred, and one acceptance criterion is not met
+#### One scope is deferred, and one acceptance criterion is not met
 
-**SCOPE-2b** would carry the enriched detail into the structured
-`TRANSITION_GUARD_RESULT_V1` block, where the misdiagnosing agent actually read
-its fields. That block is validated positionally against an exact field count,
-`audit-result-contract-lint.sh` carries two further field lists, and installed
-parser copies exist in seven downstream repos. Entry condition: an owner decision
-on whether the field is v1-additive or requires a v2 schema, plus a coordinated
-downstream migration. Until then the enriched stderr line is the operator's path.
+**SCOPE-2b landed 2026-08-03, and its recorded blocker was wrong.** The deferral
+assumed carrying the detail into `TRANSITION_GUARD_RESULT_V1` required a new
+field, which would have meant an owner decision on v1-additive versus v2 plus a
+coordinated migration across seven downstream parser copies. None of that was
+needed. `state-transition-guard.sh` already parses the resolver's `E009-*` code
+from stderr, validates it against `^E009-[A-Z0-9-]+$`, and passes it through to
+the existing `blockingCode` field. Giving the mirror divergence its own sub-code,
+`E009-STATUS-MIRROR`, therefore makes it machine-distinguishable from the five
+other exit-69 causes with the block still at fifteen fields, `TRANSITION_FIELDS`
+unchanged, and no downstream migration. The agent that misdiagnosed this now
+reads a `blockingCode` that names the cause instead of a generic mismatch.
 
 **SCOPE-4b** asked for a reconciliation writer. On contact with the ownership
 model the operation splits in two, and neither half wants that shape. Reverting
