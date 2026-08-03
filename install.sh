@@ -1097,6 +1097,21 @@ LESSONSEOF
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
+  # ── Scaffold: open-work.md (IMP-033 SCOPE-3 open-work register) ───
+  # The register is per-consuming-repo, not framework-only: the framework ships
+  # the renderer and the lint, and each adopting repo owns its own residue rows
+  # alongside the constitution.md and agents.md that already live there.
+  if [[ ! -f ".specify/memory/open-work.md" ]]; then
+    if [[ -f "$TEMPLATE_DIR/open-work.md.tmpl" ]]; then
+      apply_template "$TEMPLATE_DIR/open-work.md.tmpl" ".specify/memory/open-work.md"
+      ok "Created .specify/memory/open-work.md (open-work register)"
+      CREATED_COUNT=$((CREATED_COUNT + 1))
+    fi
+  else
+    warn "Skipped .specify/memory/open-work.md (already exists)"
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+  fi
+
   # ── Scaffold: bubbles/docs/CROSS_PROJECT_SETUP.md ──────────────────────
   if [[ ! -f "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" ]]; then
     cat > "${TARGET}/bubbles/docs/CROSS_PROJECT_SETUP.md" <<'CROSSEOF'

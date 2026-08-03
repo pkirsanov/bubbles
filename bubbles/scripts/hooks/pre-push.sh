@@ -3,8 +3,8 @@
 # Bubbles source-repo pre-push hook (v5.0.1).
 #
 # Installed by `bash bubbles/scripts/install-bubbles-hooks.sh` for
-# framework maintainers. Runs framework-validate + release-check
-# before any push to origin. NO bypass flags.
+# framework maintainers. Runs release-check before any push to origin,
+# which executes framework-validate as its own first check. NO bypass flags.
 #
 # This is the framework eating its own dog food: the framework's
 # release process refuses pushes that would ship framework drift.
@@ -49,6 +49,24 @@ if [[ "$PREPUSH_TIER" == "core" ]]; then
   exit 0
 fi
 
+# release-check.sh runs framework-validate.sh as its OWN first check, so
+# invoking both here ran the entire suite twice for one verdict — nothing can
+# change the tree between them. Prefer release-check, which is a strict
+# superset; fall back to a bare validate only when release-check is absent.
+if [[ -x "$SCRIPT_DIR/release-check.sh" ]]; then
+  echo "🫧 bubbles pre-push: running release-check (framework-validate runs inside it)..."
+  if ! bash "$SCRIPT_DIR/release-check.sh" >/tmp/bubbles-pre-push-release.log 2>&1; then
+    echo "❌ release-check failed. Full log: /tmp/bubbles-pre-push-release.log"
+    echo "    Tail:"
+    tail -30 /tmp/bubbles-pre-push-release.log | sed 's/^/      /'
+    echo ""
+    echo "    Fix the failures and retry the push. There is no bypass."
+    exit 1
+  fi
+  echo "✅ release-check passed (framework-validate included)"
+  exit 0
+fi
+
 if ! bash "$SCRIPT_DIR/framework-validate.sh" >/tmp/bubbles-pre-push-validate.log 2>&1; then
   echo "❌ framework-validate failed. Full log: /tmp/bubbles-pre-push-validate.log"
   echo "    Tail:"
@@ -58,18 +76,5 @@ if ! bash "$SCRIPT_DIR/framework-validate.sh" >/tmp/bubbles-pre-push-validate.lo
   exit 1
 fi
 echo "✅ framework-validate passed"
-
-if [[ -x "$SCRIPT_DIR/release-check.sh" ]]; then
-  echo "🫧 bubbles pre-push: running release-check..."
-  if ! bash "$SCRIPT_DIR/release-check.sh" >/tmp/bubbles-pre-push-release.log 2>&1; then
-    echo "❌ release-check failed. Full log: /tmp/bubbles-pre-push-release.log"
-    echo "    Tail:"
-    tail -30 /tmp/bubbles-pre-push-release.log | sed 's/^/      /'
-    echo ""
-    echo "    Fix the failures and retry the push. There is no bypass."
-    exit 1
-  fi
-  echo "✅ release-check passed"
-fi
 
 exit 0
