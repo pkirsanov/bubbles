@@ -35,6 +35,7 @@ This inventory captures the v6.0 baseline so v6.0.1 can act on operator-reviewed
 |---|---:|---|---:|---|---|
 | `bubbles-anti-fabrication` | 50 | auto-discovery-required | 361 | KEEP | Auto-loaded discovery skill — anti-fab heuristics and gates G020-G025. |
 | `bubbles-artifact-ownership-routing` | 63 | auto-discovery-required | 355 | KEEP | Routes foreign-artifact changes to owning agent. Triggered by every cross-owner edit. |
+| `bubbles-claim-grounding` | 80 | auto-discovery-required | 444 | KEEP | Auto-loaded discovery skill — never assume/guess; admissible sources, no phantom references (G132), Assumption Ledger. |
 | `bubbles-backup-bcdr-doctrine` | 100 | explicit-invocation-sufficient | 277 | KEEP | Tier model + RTO/RPO + `OFFSITE_BACKEND` contract. Concrete operator rules. |
 | `bubbles-bug-template` | 50 | auto-discovery-required | 312 | KEEP | Bug artifact template. Filed-with-bug enforcement. |
 | `bubbles-capability-foundation-design` | 157 | auto-discovery-required | 291 | KEEP | Gate G094 enforcement details + provider/foundation split rules. Borderline; default-to-auto (high-cost-if-missed design trigger). |
