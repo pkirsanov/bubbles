@@ -31,6 +31,44 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Payload integrity now verifies the rendered agent surface instead of failing on it
+
+`verify-payload-integrity.sh` could not pass in ANY downstream install. It
+reported five orchestrators — `bubbles.bug`, `bubbles.goal`, `bubbles.iterate`,
+`bubbles.sprint`, `bubbles.workflow` — as corrupt in every repo, permanently.
+
+The five were not corrupt. A restricted orchestrator's `tools:` line is a
+RENDERED surface: `install.sh` materializes the per-repo MCP server id
+(`bubbles-<slug>`, required because VS Code's MCP gateway silently refuses to
+start duplicate generic ids across a multi-root workspace) and `mcp-grant-sync`
+injects operator-declared grants from `bubbles-project.yaml`. The manifest pins
+the canonical bytes, so the installed bytes legitimately differ.
+
+The framework already knew this. `mcp-grant-reconcile.sh` ships
+`bubbles_mcp_reconcile_to_stdout()` for exactly this purpose, and its docstring
+ends "the caller hashes stdout and compares to .checksums".
+`downstream-framework-write-guard.sh` has consumed it since it shipped. The
+payload verifier simply never got wired to it, so two integrity surfaces
+disagreed about the same known-legitimate derivation. The fix is that wiring,
+reusing the existing canonicalizer rather than adding a second copy of the
+transform that could drift from it.
+
+Two alternatives were rejected on inspection. Recording post-transform hashes
+per repo would make the manifest self-certifying — it would attest to whatever
+was installed, including corruption, which is the opposite of what it exists to
+do. Teaching the verifier to normalize only the MCP id would fix the id and
+still fail the moment a repo declared a single `mcp.grants` entry; the shared
+canonicalizer handles the grants and the id together.
+
+This is a canonicalization, not an exemption, and the distinction is the whole
+point. Reconcile is attempted ONLY after a literal mismatch, so a file that
+already verifies is untouched, and the line is reconstructed from the declared
+config rather than skipped. Three adversarial cases now guard it: a body tamper
+fails, an undeclared tool on the rendered line fails, and a removed core token
+fails. Verified end to end against a real install — `research-lab` goes from
+five permanent failures to `OK — 774 required framework file(s) match`, with its
+`tools:` line still carrying `bubbles-research-lab`.
+
 ### Python dependencies are provisioned, not assumed
 
 The full validation surface requires `python3` plus `PyYAML` and `jsonschema`.
