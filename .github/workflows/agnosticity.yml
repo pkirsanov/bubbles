@@ -24,11 +24,16 @@ jobs:
   release-hygiene:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 is REQUIRED — evidence-admission-hardening-selftest resolves
+      # the pre-fix guard commit to prove its fixtures are non-tautological, and a
+      # shallow clone makes that `git show` fail the whole selftest.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install validation dependencies
-        run: python3 -m pip install --break-system-packages pyyaml jsonschema || python3 -m pip install pyyaml jsonschema
+        run: bash bubbles/scripts/python-env.sh --provision
 
       - name: Run release hygiene
         run: bash bubbles/scripts/cli.sh release-check
@@ -41,19 +46,25 @@ jobs:
     if: github.event_name == 'push'
     runs-on: macos-latest
     steps:
+      # fetch-depth: 0 is REQUIRED — see the ubuntu job above.
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install validation dependencies
-        run: python3 -m pip install --break-system-packages pyyaml jsonschema || python3 -m pip install pyyaml jsonschema
+        with:
+          fetch-depth: 0
 
       # macOS ships bash 3.2, which cli.sh rejects outright (it needs the 4.0+
       # `declare -A` used by 12+ scripts). Putting Homebrew's bash first covers
-      # cli.sh AND every `#!/usr/bin/env bash` selftest it spawns.
+      # cli.sh AND every `#!/usr/bin/env bash` selftest it spawns. This runs
+      # BEFORE provisioning so every later step is already on bash 4+.
       - name: Install bash 4+
         run: |
           brew list bash >/dev/null 2>&1 || brew install bash
           "$(brew --prefix)/bin/bash" --version | head -1
+
+      - name: Install validation dependencies
+        run: |
+          export PATH="$(brew --prefix)/bin:$PATH"
+          bash bubbles/scripts/python-env.sh --provision
 
       - name: Run release hygiene
         run: |
