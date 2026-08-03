@@ -10,7 +10,7 @@
 ## I. Context Loading Priority
 
 | Priority | File | Purpose |
-|----------|------|---------|
+| ---------- | ------ | --------- |
 | 1 | `.specify/memory/constitution.md` | Repo governance for this source checkout |
 | 2 | `.specify/memory/agents.md` | Command registry and file layout |
 | 3 | `.github/copilot-instructions.md` | Source-repo operating rules |
@@ -23,7 +23,7 @@
 ## II. Design Document References
 
 | Document | Path | Purpose |
-|----------|------|---------|
+| ---------- | ------ | --------- |
 | Framework overview | `README.md` | Source-repo layout, maintainer entry points, install model |
 | Maintainer cheatsheet | `docs/CHEATSHEET.md` | Common workflow and framework ops commands |
 | Installation guide | `docs/guides/INSTALLATION.md` | Install and upgrade behavior |
@@ -101,7 +101,7 @@ bash bubbles/scripts/cli.sh run-state --all
 
 | Track | Command | When to use |
 |-------|---------|-------------|
-| Quick signal | `bash bubbles/scripts/cli.sh framework-validate --tier=core` | Fast structural/lint/generator subset for routine local iteration. Also available on the pre-push hook via `BUBBLES_PREPUSH_TIER=core`. |
+| Quick signal | `bash bubbles/scripts/cli.sh framework-validate --tier=core` | Fast structural/lint/generator subset for routine local iteration. This is also the pre-push hook DEFAULT; `BUBBLES_PREPUSH_TIER=full` runs the whole release gate locally. |
 | Assured / promotion default | `bash bubbles/scripts/cli.sh framework-validate` (= `--tier=full`, the default) | Every check — the full assured suite. This is the default and the required gate before cutting a release (`release-check` runs it in full). |
 
 `--list-tier=core` / `--list-tier=full` dry-list which checks a tier would run or skip without executing anything (see `framework-validate-tier-selftest.sh`). A `--tier=core` push is a fast local signal only — a full validate + `release-check` is still required before a release; the release gate is never silently weakened.
@@ -111,7 +111,7 @@ bash bubbles/scripts/cli.sh run-state --all
 ## IV. Code Patterns
 
 | Category | Convention |
-|----------|-----------|
+| ---------- | ----------- |
 | Framework source | `agents/`, `prompts/`, `bubbles/`, `templates/`, `docs/` |
 | Shell validation surfaces | `bubbles/scripts/*.sh` |
 | Specs and packets | `specs/` |
@@ -153,7 +153,7 @@ bash bubbles/scripts/cli.sh run-state --all
 ## VII. Sources of Truth
 
 | Item | Source |
-|------|--------|
+| ------ | -------- |
 | Commands | This file |
 | Framework CLI and scripts | `bubbles/scripts/` |
 | Repo policies | `.github/copilot-instructions.md` |
