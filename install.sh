@@ -324,6 +324,9 @@ cp "$TEMP_DIR"/bubbles/*.yaml "${TARGET}/bubbles/" 2>/dev/null || true
 if [[ -f "$TEMP_DIR/bubbles/agnosticity-allowlist.txt" ]]; then
   cp "$TEMP_DIR"/bubbles/agnosticity-allowlist.txt "${TARGET}/bubbles/"
 fi
+if [[ -f "$TEMP_DIR/bubbles/requirements.txt" ]]; then
+  cp "$TEMP_DIR"/bubbles/requirements.txt "${TARGET}/bubbles/"
+fi
 cp "$RELEASE_MANIFEST_SOURCE" "${TARGET}/bubbles/release-manifest.json"
 ok "workflows.yaml + registries installed"
 

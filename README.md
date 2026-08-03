@@ -89,6 +89,26 @@ guards (schema validation, the receipt bridge, the registry generators) refuse t
 run without them rather than reporting a green result for a check that never
 executed. `bash bubbles/scripts/cli.sh doctor` reports the dependency posture.
 
+Provision those Python packages once, reproducibly:
+
+```bash
+bash bubbles/scripts/python-env.sh --provision   # create/repair the managed env
+bash bubbles/scripts/python-env.sh --check       # report posture
+```
+
+This builds a virtualenv from the pinned `bubbles/requirements.txt` under
+`~/.cache/bubbles/python` (override with `BUBBLES_PYTHON_HOME`). Because the
+virtualenv owns its own interpreter, it keeps satisfying even when `PATH` later
+changes — which matters on machines carrying several `python3` installs, where
+`command -v python3` is not a stable identity. The guards resolve it
+automatically; nothing needs to be activated by hand.
+
+Prefer your own interpreter? Point `BUBBLES_PYTHON` at it, or just install the
+packages into the `python3` already on `PATH` — a satisfying `PATH` interpreter
+is used as-is and never overridden. Do **not** reach for
+`pip install --break-system-packages` or a virtualenv under `/tmp`: both are
+undone by the next `PATH` change or reboot and leave no reproducible record.
+
 **Supported platforms:** VS Code + GitHub Copilot Chat (required). Works on macOS, Linux, and WSL2 (bash 4.0+ — on macOS install a newer bash with `brew install bash`, since stock `/bin/bash` is 3.2). No Windows CMD/PowerShell support.
 
 **Source repo note:** these installer commands are for downstream project repos. Do not run `install.sh` inside the Bubbles source repository itself; maintainers should edit the framework directly and validate with `bash bubbles/scripts/cli.sh framework-validate` or `bash bubbles/scripts/cli.sh release-check`. The Bubbles source repo also does not keep persistent `specs/` packets for its own work; durable behavior belongs in docs, scripts, agents, workflows, generated manifests, and release notes.

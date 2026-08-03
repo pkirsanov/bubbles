@@ -31,6 +31,51 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Python dependencies are provisioned, not assumed
+
+The full validation surface requires `python3` plus `PyYAML` and `jsonschema`.
+The framework said so, and `dependency-posture.sh` refused to let guards report
+green without them — but nothing in the repo actually **provisioned** them. That
+missing half turned a correct policy into a per-operator improvisation contest:
+prepending another distribution's `bin` to `PATH`, `pip install
+--break-system-packages` against an externally-managed interpreter, a virtualenv
+under `/tmp`. None survive a `PATH` change or a reboot, none are reproducible,
+and on a machine carrying several `python3` installs `command -v python3` is not
+a stable identity. Four `framework-validate` checks failed on such machines and
+were repeatedly misread as pre-existing defects: YAML schema validation, the
+gate-coverage map, the repository work-boundary aggregate, and the v4.1.0
+selftest. None of them were code defects.
+
+**New — `bubbles/requirements.txt`.** A fully pinned dependency closure resolved
+from exactly one index. It documents why it does not use `--require-hashes`:
+`PyYAML` and `rpds-py` ship platform-specific binary wheels, so a hash set
+generated on one platform would break the other.
+
+**New — `bubbles/scripts/python-env.sh`.** Builds and reports a managed
+virtualenv under `${XDG_CACHE_HOME:-$HOME/.cache}/bubbles/python`
+(`BUBBLES_PYTHON_HOME` overrides). Resolution order is `$BUBBLES_PYTHON`, then
+the managed virtualenv, then `PATH` — each only when it **actually satisfies**,
+so an operator who already has a working interpreter keeps it and is never
+overridden. There is no `--skip`, `--force`, or `--ignore`; an environment that
+cannot be provisioned is reported, not waved through.
+
+**`cli.sh` resolves the interpreter once, before command dispatch.** Activation
+exports `PATH`, so every child process inherits it. That single call covers the
+selftests that invoke `python3 -c "import yaml"` directly without sourcing
+`dependency-posture.sh`, and covers any selftest added later — the alternative,
+editing each call site, decays the moment someone adds the next one.
+
+**`result-envelope-validate.sh` now fails closed.** It printed `SKIP` and exited
+0 when `python3` or `jsonschema` was missing, while `dependency-posture.sh`'s own
+header already listed it among the guarded consumers it never actually sourced.
+A guard that skips is a guard that lies.
+
+Shipping a new non-script asset downstream required wiring it into both
+`trust-metadata.sh` and `install.sh`; without that, `--provision` would fail in
+every installed tree. Covered by `python-env-selftest.sh` — 24 hermetic cases
+using fake interpreter shims, no network — including a guard that fails loudly
+if the `cli.sh` activation is ever removed.
+
 ### Claim grounding: never assume, never guess (Gate G132)
 
 Landed on `main` at version 7.22.0; held here rather than cut as its own release,
