@@ -27,5 +27,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install validation dependencies
+        run: python3 -m pip install --break-system-packages pyyaml jsonschema || python3 -m pip install pyyaml jsonschema
+
+      - name: Run release hygiene
+        run: bash bubbles/scripts/cli.sh release-check
+
+  # The Linux job above cannot catch BSD-userland defects, which is the class
+  # that produced every portability failure fixed on 2026-08-02 (jq reserved
+  # word, BSD awk, GNU-only `date -d`, bash 3.2). Restricted to pushes on main:
+  # macOS runners bill at a 10x multiplier and this job is ~30 minutes.
+  release-hygiene-macos:
+    if: github.event_name == 'push'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install validation dependencies
+        run: python3 -m pip install --break-system-packages pyyaml jsonschema || python3 -m pip install pyyaml jsonschema
+
       - name: Run release hygiene
         run: bash bubbles/scripts/cli.sh release-check

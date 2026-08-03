@@ -31,6 +31,100 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Claim grounding: never assume, never guess (Gate G132)
+
+Landed on `main` at version 7.22.0; held here rather than cut as its own release,
+per the batched-release cadence stated above.
+
+The framework already enforced two things well: whether a claimed **command**
+actually ran (`evidence-rules.md`, G005/G021/G025/G071/G072), and whether the
+resulting **analysis** was deep and honest (`analytical-rigor.md`). Neither
+answers a third question that sits underneath both: **was the underlying FACT
+ever checked?** An agent can execute a command perfectly and report it honestly
+while the claim that motivated the command was never verified against the repo.
+
+That gap was not hypothetical. `agents/bubbles_shared/operating-baseline.md`
+carries a section marked `⛔ DO NOT ACT ON THIS SECTION. Its premise was
+disproven`, and `improvements/INDEX.md` records a withdrawn IMP-032 scope whose
+premise was `falsified against source`. Both were built on references nobody
+checked.
+
+**New shared module — `agents/bubbles_shared/claim-grounding.md`.** The canonical
+contract. Every factual assertion about the system, and every action, edit,
+recommendation, or refusal derived from one, must trace to a source the agent
+read, executed, or retrieved in the CURRENT session. It defines a closed list of
+four admissible sources, an explicit non-source list (training recall, inference
+from a name, inference from a convention, a prior session, an unsourced subagent
+assertion, operator-pasted context, an unestablished search surface), the
+read-before-assert / read-before-edit / verify-before-recommend duties, the No
+Phantom References rule, an **Assumption Ledger** shape for premises that
+genuinely cannot be verified, and rules for inherited and delegated claims.
+Being right does not satisfy the contract: a correct guess and an incorrect guess
+are the same violation, because neither is repeatable or reviewable. This is the
+same logic the framework already applies to execution, where an accurate
+prediction of a command's output is still fabrication.
+
+**New gate G132 (`reference_existence_gate`)** with
+`bubbles/scripts/reference-existence-lint.sh` — the mechanical half of the rule.
+It resolves relative markdown link targets against the linking file's directory
+and reports every target that exists as neither file nor directory. Division of
+labor: G021 verifies a command ran, G072 tags how evidence supports a claim, and
+`gate-id-grep.sh` resolves gate ID references — none of them verify that a cited
+**path** exists.
+
+The lint is deliberately narrow, because a lint that cries wolf gets ignored. It
+skips external schemes, absolute paths, bare `#anchor` links, placeholder targets
+containing `< > { } $ *`, fenced code blocks, inline code spans, and bare
+backticked paths (a `.github/bubbles/...` path is frequently a downstream
+projection that correctly does not exist in a source checkout). The scan surface
+is caller-supplied with no default, following the `macos-portability-guard.sh`
+precedent. A deliberately dangling link is exempted inline with `ref-ok:<reason>`;
+there is no `--skip`, no `--force`, and no allowlist file. Advisory by default,
+blocking only under `referenceExistenceGuard: block` — the same
+advisory-until-opt-in shape as the G072 `claimSourceProvenanceGuard` key.
+
+Its limit is stated honestly in the gate description: it catches dead paths, not
+a reference that resolves to a real file whose content fails to support the
+claim. That half stays the agent's obligation.
+
+**Dogfood result — the lint found four real phantom references on its first run**
+and all four are fixed:
+
+- `docs/governance-index.md` listed `bubbles-tailnet-edge-pattern`, a skill that
+  does not exist.
+- `docs/recipes/build-once-deploy-many.md` cited
+  `bubbles-docker-ports.instructions.md`, which does not exist; the real asset is
+  the `bubbles-docker-port-standards` skill already listed on the line above.
+- `bubbles/capability-ledger.yaml` carried three `docsRefs`/`freshnessTargets`
+  entries pointing at `improvements/IMP-103-*.md` and `improvements/IMP-004-*.md`
+  — historical delivery identifiers that were never files. Gate G127 checks
+  `consumers:` paths exist but does not check `docsRefs`/`freshnessTargets`, so
+  these propagated into the generated
+  `docs/generated/competitive-capabilities.md`.
+
+**Wiring.** Policy 24 (*Grounded Claims Only — No Assuming, No Guessing*) and
+Completion Gate question 19 added to `critical-requirements.md`. Module index and
+four routing rows added to `agent-common.md`. A grounding bullet added to the
+Autonomous Operation list in `operating-baseline.md`. `analytical-rigor.md` Rule 2
+now names grounding as its prerequisite layer. `evidence-rules.md` cross-links the
+division of labor. New auto-discovery skill `bubbles-claim-grounding`, routed from
+`bubbles-skills-first-discovery` and `bubbles-anti-fabrication`, inventoried in
+`skills/INVENTORY.md`, and indexed in `docs/governance-index.md`. Curated G132
+entry added to `agents/bubbles_shared/quality-gates.md` and
+`skills/bubbles-quality-gates-catalog`.
+
+**Coverage.** `bubbles/scripts/reference-existence-lint-selftest.sh` — 25 hermetic
+cases including three adversarial groups that would each pass every other case if
+detection regressed: a broken link beside a valid one on the same line (per-link
+resolution, not per-line short-circuiting), two fixtures identical except for
+whether the target exists (verdict comes from the filesystem, not the prose), and
+a real link after a closed fenced block (the fence toggle closes). Selftest plus a
+live self-only scan of the claim-bearing governance surfaces are wired into
+`framework-validate.sh`. `docs/examples/` is excluded from the live surface on
+purpose: an example artifact legitimately renders self-referential links such as
+`[bug.md](bug.md)` that describe a hypothetical spec folder rather than claiming a
+path in this repo.
+
 ### Status-mirror invariant: name it, explain it, detect it (IMP-032)
 
 Landed on `main` after the reviewed v7.22.0 baseline and retained through the
