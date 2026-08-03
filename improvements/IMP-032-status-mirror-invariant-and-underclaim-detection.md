@@ -2,7 +2,6 @@
 
 **Status:** APPLIED 2026-08-02 — SCOPE-2a/3/4a/5 landed; SCOPE-1 withdrawn; SCOPE-2b and SCOPE-4b deferred
 **Closeout:** SCOPE-1's gate premise was falsified against source. SCOPE-2b requires a structured-result schema decision and coordinated downstream migration. SCOPE-4b requires a validate-owned recertification workflow rather than a standalone writer. The full rationale and unmet acceptance criterion are preserved in `CHANGELOG.md` under `[Unreleased]`.
-**Rollback note (2026-08-02):** Retained as historical proposal evidence after the separate IMP-030/031 rollback to `VERSION` 7.21.0. The landed IMP-032 status-consistency work remains in the tree.
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
 **Motivation:** A downstream audit of `research-lab` (commits `d61017f2` status reconciliation, `9ac151ae` spec-016 promotion) found six specs left in a state no guard can resolve, and — more importantly — found that the framework's own error output led the diagnosing agent to file a **false upstream bug against working framework code**. The proposal targets the ergonomics failure, not just the state.
 **Verified gaps addressed:** `EV-4` status mirrors can diverge silently and have no legal repair path · `COV-4` under-claimed status is undetectable · `DOC-4` the documented rule states a precondition, not a write-time obligation · `REG-5` the invariant has no gate ID
@@ -190,10 +189,10 @@ registration; owner `bubbles.setup`/registry maintainer) · `bubbles/scripts/tra
 and `bubbles/scripts/state-transition-guard-selftest.sh` (SCOPE-2 — assertions for the new
 message shape; owner `bubbles.test`) · `agents/bubbles_shared/feature-templates.md` (SCOPE-3 —
 restate as obligation; owner `bubbles.docs`) · artifact-ownership/routing guidance +
-`skills/bubbles-status-transition/SKILL.md` (SCOPE-4a — route-required packet; owner
-`bubbles.docs`) · new `bubbles/scripts/state-certification-reconcile.sh` + selftest (SCOPE-4b —
-dry-run-default repair tool; owner `bubbles.validate`) · `bubbles/scripts/cli.sh` doctor advisory
-band + its scan (SCOPE-5 — under-claim detector; owner `bubbles.devops`).
+`skills/bubbles-status-transition/SKILL.md` (SCOPE-4a — route-required packet; owner `bubbles.docs`) ·
+new `bubbles/scripts/state-certification-reconcile.sh` + selftest (SCOPE-4b — dry-run-default
+repair tool; owner `bubbles.validate`) · `bubbles/scripts/cli.sh` doctor advisory band + its scan
+(SCOPE-5 — under-claim detector; owner `bubbles.devops`).
 
 ## Provenance
 

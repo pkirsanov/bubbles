@@ -44,6 +44,10 @@ PREPUSH_TIER="${BUBBLES_PREPUSH_TIER:-core}"
 PREPUSH_VALIDATE_LOG="/tmp/bubbles-pre-push-validate.$$.log"
 PREPUSH_RELEASE_LOG="/tmp/bubbles-pre-push-release.$$.log"
 
+# Per-process paths: a fixed name is silently overwritten by any concurrent push on the same machine.
+PREPUSH_VALIDATE_LOG="/tmp/bubbles-pre-push-validate.$$.log"
+PREPUSH_RELEASE_LOG="/tmp/bubbles-pre-push-release.$$.log"
+
 if [[ "$PREPUSH_TIER" == "core" ]]; then
   echo "🫧 bubbles pre-push: tier=core (fast structural gate — the full release gate runs in CI, and BUBBLES_PREPUSH_TIER=full runs it here)"
   if ! bash "$SCRIPT_DIR/framework-validate.sh" --tier=core >"$PREPUSH_VALIDATE_LOG" 2>&1; then
