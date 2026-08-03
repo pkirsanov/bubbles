@@ -307,10 +307,23 @@ ownership declaration recorded at the call site rather than an authentication
 boundary. The tool never invents `certifiedAt` and never lowers top-level
 `status`. 26 selftest cases, wired into `framework-validate`.
 
-**Met:** the six `research-lab` specs now have a repair path that does not
-require a hand-edit. Specs whose evidence supports the claimed status reconcile
-under `--apply`; specs whose evidence does not are refused with exit 3 and the
-guard's own `blockingCode`, which is the correct answer rather than a gap.
+**Measured against the six `research-lab` specs, and the criterion is still not
+met.** All six were run through the tool in dry-run. All six were refused at
+exit 3 with the guard's own code, and all six left `state.json` byte-identical:
+`016-auction-gamma-playbook` on `PLANNING_GATE_FAILED`, and
+`001-causal-rotation-intelligence`, `004-fx-regime-relative-value-lab`,
+`006-trend-dynamics-cycle-lab`, `007-technical-analysis-decision-lab` and
+`008-portfolio-survival-and-brief-lab` on `DELIVERY_COMPLETION_FAILED`. Their
+statuses are genuinely ahead of their evidence, so no tool may reconcile them;
+they need the underlying work finished, or the status restated downward, which
+is a `bubbles.validate` judgement this tool deliberately refuses to make.
+
+What changed is the shape of the answer, not the state of those specs. The
+divergence used to be a dead end with two wrong moves. It is now a mechanical
+question with an evidence-backed verdict and a specific blocking code naming
+what is missing. A spec whose evidence does support its claimed status
+reconciles under `--apply`; these six do not, and being told so precisely is
+the correct outcome rather than a gap.
 
 #### Untouched by design
 
