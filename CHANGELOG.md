@@ -266,7 +266,7 @@ omission. These checks run before a mode is resolved, so they cannot be a mode's
 the mirror check alone would have made it the registry's single exception, and
 introduced the inconsistency the proposal claimed to fix. SCOPE-1 is withdrawn.
 
-#### One scope is deferred, and one acceptance criterion is not met
+#### Every scope is now resolved
 
 **SCOPE-2b landed 2026-08-03, and its recorded blocker was wrong.** The deferral
 assumed carrying the detail into `TRANSITION_GUARD_RESULT_V1` required a new
@@ -280,18 +280,37 @@ other exit-69 causes with the block still at fifteen fields, `TRANSITION_FIELDS`
 unchanged, and no downstream migration. The agent that misdiagnosed this now
 reads a `blockingCode` that names the cause instead of a generic mismatch.
 
-**SCOPE-4b** asked for a reconciliation writer. On contact with the ownership
-model the operation splits in two, and neither half wants that shape. Reverting
-`status` down to match is a one-line undo that discards the true observation that
-work shipped. Advancing `certification.status` forward is a certification rather
-than a file edit, and a script that writes `certification.*` outside
-`bubbles.validate` would create exactly the forging vector the mirror invariant
-exists to prevent. Entry condition: a `bubbles.validate` workflow that re-runs the
-guard and records real certification evidence, not a standalone script.
+**SCOPE-4b landed 2026-08-03, and the deferral's objection was the design.** The
+scope asked for a reconciliation writer. On contact with the ownership model the
+operation splits in two, and neither half wants that shape. Reverting `status`
+down to match is a one-line undo that discards the true observation that work
+shipped. Advancing `certification.status` forward is a certification rather than
+a file edit, and a script that writes `certification.*` outside `bubbles.validate`
+would create exactly the forging vector the mirror invariant exists to prevent.
 
-**Not met:** the six `research-lab` specs are still not repairable without a
-hand-edit. They are now detected, and the route is documented. That is the honest
-current state.
+The resolution is that `bubbles/scripts/state-certification-reconcile.sh` never
+writes the mirror on request. It builds a candidate in which the mirrors already
+agree, re-runs `state-transition-guard.sh` against it, and writes
+`certification.status` only on a `PASS` verdict. The guard stays the thing that
+certifies; the tool only records what the guard already concluded. Exit 3 is the
+dedicated refusal, which is the expected outcome for a spec whose status really
+is ahead of its evidence.
+
+The candidate is evaluated in place rather than in a copied directory, and that
+detail is load-bearing. The guard's git-history checks skip silently outside a
+work tree, so a copy would be judged more permissively than reality and could
+certify a spec the guard would refuse. The original `state.json` is restored by
+an `EXIT`/`INT`/`TERM` trap, and two selftest cases assert the file is
+byte-identical after a refusal — one against a stubbed guard, one against the
+real one. `--apply` requires `BUBBLES_AGENT_NAME=bubbles.validate`, which is an
+ownership declaration recorded at the call site rather than an authentication
+boundary. The tool never invents `certifiedAt` and never lowers top-level
+`status`. 26 selftest cases, wired into `framework-validate`.
+
+**Met:** the six `research-lab` specs now have a repair path that does not
+require a hand-edit. Specs whose evidence supports the claimed status reconcile
+under `--apply`; specs whose evidence does not are refused with exit 3 and the
+guard's own `blockingCode`, which is the correct answer rather than a gap.
 
 #### Untouched by design
 
