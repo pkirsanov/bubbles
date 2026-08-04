@@ -187,7 +187,7 @@ session_id="vscode-${session_digest:0:32}"
 control_home="${BUBBLES_SESSION_CONTROL_HOME:-}"
 if [[ -z "$control_home" ]]; then
   if [[ -n "${XDG_RUNTIME_DIR:-}" && "$XDG_RUNTIME_DIR" == /* && -d "$XDG_RUNTIME_DIR" && -O "$XDG_RUNTIME_DIR" ]]; then
-    control_home="$XDG_RUNTIME_DIR/bubbles/repository-binding"
+    control_home="${XDG_RUNTIME_DIR%/}/bubbles/repository-binding"
   else
     [[ -n "${HOME:-}" && "$HOME" == /* ]] || fail 'HOME or XDG_RUNTIME_DIR is required for host-private state'
     control_home="$HOME/.local/state/bubbles/repository-binding"
