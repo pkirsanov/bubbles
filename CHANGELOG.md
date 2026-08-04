@@ -31,6 +31,46 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## v7.23.0 — lesson-to-skill loop unstarved (IMP-034) + claim grounding (G132) + provisioned Python dependencies + payload-integrity truthfulness
+
+### The lesson-to-skill loop now fires on real input (IMP-034)
+
+The skill-evolution detector grouped lessons by exact normalized line equality.
+Lessons are model-authored prose, so three descriptions of one root cause almost
+never match character for character. The loop could reach `triggerThreshold`
+only on verbatim duplicates, which meant it never fired on real input.
+
+`normalize_lessons()` now clusters by token overlap instead. It normalizes each
+line, sorts the set, then walks it once assigning each line to the first cluster
+whose representative it resembles. The sort is load-bearing: greedy assignment
+depends on input order, and awk array order is unspecified.
+
+Similarity is the overlap coefficient, which divides shared content tokens by
+the smaller of the two token sets. Jaccard was tried first and rejected on
+measurement: a realistic paraphrase pair scored 4 shared over 10 union, which is
+0.40 and below any usable threshold, so the loop would have stayed broken. The
+same pair scores 4 over 6 under the overlap coefficient. Because a subset can
+score a perfect 1.0 under that measure, a cluster also requires at least three
+shared content tokens, so a short generic lesson cannot merge into a long
+specific one.
+
+The new `skillEvolution.similarityThreshold` knob defaults to 0.6. Raise it
+toward 1.0 to merge less. Each proposal now prints a `Grouped variants:` list so
+a reviewer can audit every merge the detector made.
+
+The G068 word-overlap matcher was evaluated for reuse and rejected. Its comment
+freezes its behavior for already-adopted scenario identifiers, its threshold is
+tuned for scenario-title matching rather than free prose, its stopword policy
+deliberately keeps generic words significant, and it is internal to a guard that
+carries its own exit paths.
+
+`cli.sh lessons add` records one structured lesson at a single capture point,
+which is result-envelope close after a real diagnosis. The entry is one line
+because the detector clusters per line. No gate requires a lesson per run, since
+a counter would invite filler that degrades clustering. `.specify/memory/lessons.md`
+now appears in the artifact-ownership table as append-only and multi-writer,
+with `bubbles.super` owning compaction.
+
 ### Payload integrity now verifies the rendered agent surface instead of failing on it
 
 `verify-payload-integrity.sh` could not pass in ANY downstream install. It
