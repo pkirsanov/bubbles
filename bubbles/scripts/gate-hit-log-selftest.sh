@@ -188,6 +188,41 @@ else
   bad "sourcing produces no output" "got '$side_effect'"
 fi
 
+# --- 14. parent-expansion run record (IMP-036 SCOPE-2) -----------------------
+r14="$WORK/r14"
+mkdir -p "$r14"
+bash "$TARGET" append --repo-root "$r14" --spec "specs/004-w" --mode full-delivery \
+  --target-status "done" --verdict PASS --exit-status 0 --passed "G022" \
+  --parent-expanded 3 >/dev/null 2>&1
+if grep -q '"kind":"run"' "$(log_of "$r14")" 2>/dev/null &&
+  grep -q '"parentExpanded":3' "$(log_of "$r14")" 2>/dev/null &&
+  grep -q '"kind":"gate"' "$(log_of "$r14")" 2>/dev/null; then
+  ok "parent-expansion emits a run record alongside gate records"
+else
+  bad "parent-expansion run record" "$(tr '\n' '|' <"$(log_of "$r14")" 2>/dev/null)"
+fi
+
+# --- 15. ADVERSARIAL: a non-numeric expansion count writes no run record -----
+r15="$WORK/r15"
+mkdir -p "$r15"
+bash "$TARGET" append --repo-root "$r15" --spec s --mode m --target-status "done" \
+  --verdict PASS --exit-status 0 --passed "G001" --parent-expanded "lots" >/dev/null 2>&1
+if ! grep -q '"kind":"run"' "$(log_of "$r15")" 2>/dev/null &&
+  grep -q '"kind":"gate"' "$(log_of "$r15")" 2>/dev/null; then
+  ok "non-numeric expansion count is ignored, gate records still written"
+else
+  bad "non-numeric expansion count ignored" "$(tr '\n' '|' <"$(log_of "$r15")" 2>/dev/null)"
+fi
+
+# --- 16. report surfaces the expansion rate ----------------------------------
+out="$(bash "$TARGET" report --repo-root "$r14" 2>&1)"
+if printf '%s' "$out" | grep -q 'runs using parent-expansion' &&
+  printf '%s' "$out" | grep -q 'phases parent-expanded in total: 3'; then
+  ok "report surfaces parent-expansion rate"
+else
+  bad "report surfaces expansion rate" "$(printf '%s' "$out" | tr '\n' '|')"
+fi
+
 printf '\n%s: %d/%d checks passed\n' "$NAME" "$((checks - failures))" "$checks"
 if [[ "$failures" -gt 0 ]]; then
   printf '%s: FAILED\n' "$NAME"

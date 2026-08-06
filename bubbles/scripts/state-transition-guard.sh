@@ -58,6 +58,11 @@ transition_required_gate_ids=()
 passed_gate_ids=()
 failed_gate_ids=()
 failed_check_ids=()
+# IMP-036 SCOPE-2: parent-expansion is already gated (registered orchestrator,
+# >=20-char reason naming the missing capability, resolvable evidence ref). What
+# was missing is VISIBILITY: a rate nobody counts cannot show whether SCOPE-1's
+# single-orchestrator rule actually reduced expansion.
+parent_expanded_phases=0
 
 list_contains() {
   local needle="$1"
@@ -148,6 +153,7 @@ emit_transition_result() {
   printf 'failedGateIds: %s\n' "$(format_result_list ${failed_gate_ids[@]+"${failed_gate_ids[@]}"})"
   printf 'failedChecks: %s\n' "$(format_result_list ${failed_check_ids[@]+"${failed_check_ids[@]}"})"
   printf 'blockingCode: %s\n' "$blocking_code"
+  printf 'parentExpandedPhases: %s\n' "${parent_expanded_phases:-0}"
   printf 'failureCount: %s\n' "$failure_count"
   printf 'exitStatus: %s\n' "$exit_status"
   printf 'verdict: %s\n' "$verdict"
@@ -177,7 +183,8 @@ emit_transition_result() {
         --verdict "$verdict" \
         --exit-status "$exit_status" \
         --passed "$passed_str" \
-        --failed "$failed_str" >/dev/null 2>&1 || true
+        --failed "$failed_str" \
+        --parent-expanded "${parent_expanded_phases:-0}" >/dev/null 2>&1 || true
     fi
   fi
 }
@@ -1841,6 +1848,7 @@ for p in set(names):
                 provenance_failures=$((provenance_failures + 1))
               else
                 pass "Phase '$claimed_phase' has parent-expanded provenance from $pe_expanded_by — INFO[G022-PARENT-EXPANDED] reason: $pe_reason → $ev_resolved"
+                parent_expanded_phases=$((parent_expanded_phases + 1))
                 matched="true"
               fi
             fi

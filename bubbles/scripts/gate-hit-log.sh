@@ -85,7 +85,7 @@ bubbles_gate_hit_append() {
   [[ "${BUBBLES_GATE_HIT_LOG:-on}" == "off" ]] && return 0
 
   local repo_root="" spec="" mode="" target_status="" verdict="" exit_status=""
-  local passed="" failed=""
+  local passed="" failed="" parent_expanded=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --repo-root) shift; repo_root="${1:-}" ;;
@@ -96,6 +96,7 @@ bubbles_gate_hit_append() {
       --exit-status) shift; exit_status="${1:-}" ;;
       --passed) shift; passed="${1:-}" ;;
       --failed) shift; failed="${1:-}" ;;
+      --parent-expanded) shift; parent_expanded="${1:-}" ;;
       *) return 0 ;;
     esac
     shift || true
@@ -121,13 +122,23 @@ bubbles_gate_hit_append() {
     outcome="${group%%:*}"
     for gate in ${group#*:}; do
       [[ "$gate" =~ ^G[0-9][0-9][0-9]$ ]] || continue
-      printf '{"schemaVersion":"%s","ts":"%s","gate":"%s","outcome":"%s","spec":"%s","mode":"%s","targetStatus":"%s","guardVerdict":"%s","exitStatus":"%s"}\n' \
+      printf '{"schemaVersion":"%s","kind":"gate","ts":"%s","gate":"%s","outcome":"%s","spec":"%s","mode":"%s","targetStatus":"%s","guardVerdict":"%s","exitStatus":"%s"}\n' \
         "$GATE_HIT_SCHEMA_VERSION" "$ts" "$gate" "$outcome" \
         "$(bubbles_gate_hit_json_escape "$spec")" "$(bubbles_gate_hit_json_escape "$mode")" \
         "$(bubbles_gate_hit_json_escape "$target_status")" "$(bubbles_gate_hit_json_escape "$verdict")" \
         "$(bubbles_gate_hit_json_escape "$exit_status")" >>"$log_file" 2>/dev/null || return 0
     done
   done
+
+  # IMP-036 SCOPE-2: one run-scoped record carrying the parent-expansion count.
+  # Expansion is already gated by G022; this makes the RATE visible, which is the
+  # only way to tell whether SCOPE-1's single-orchestrator rule actually moved it.
+  if [[ "$parent_expanded" =~ ^[0-9]+$ ]]; then
+    printf '{"schemaVersion":"%s","kind":"run","ts":"%s","spec":"%s","mode":"%s","parentExpanded":%s,"guardVerdict":"%s"}\n' \
+      "$GATE_HIT_SCHEMA_VERSION" "$ts" \
+      "$(bubbles_gate_hit_json_escape "$spec")" "$(bubbles_gate_hit_json_escape "$mode")" \
+      "$parent_expanded" "$(bubbles_gate_hit_json_escape "$verdict")" >>"$log_file" 2>/dev/null || return 0
+  fi
   return 0
 }
 
@@ -161,6 +172,7 @@ bubbles_gate_hit_report() {
       if (match($0, /"gate":"[^"]*"/))    { gate    = substr($0, RSTART+8,  RLENGTH-9) }
       if (match($0, /"outcome":"[^"]*"/)) { outcome = substr($0, RSTART+11, RLENGTH-12) }
       if (match($0, /"ts":"[^"]*"/))      { ts      = substr($0, RSTART+6,  RLENGTH-7) }
+      if (match($0, /"parentExpanded":[0-9]+/)) { pe = substr($0, RSTART+17, RLENGTH-17); runs++; pe_total += pe; if (pe+0 > 0) runs_expanded++ }
       if (gate == "") next
       hits[gate]++
       if (outcome == "fail") fails[gate]++; else passes[gate]++
@@ -193,6 +205,13 @@ bubbles_gate_hit_report() {
         printf "  gates observed: %d\n", n
         printf "  gates that have NEVER rejected anything: %d\n", never
         printf "  A gate with zero rejections is a retirement CANDIDATE, not a decision.\n"
+        if (runs+0 > 0) {
+          printf "  ---\n"
+          printf "  guard runs recorded: %d\n", runs+0
+          printf "  runs using parent-expansion: %d (%.1f%%)\n", runs_expanded+0, 100*(runs_expanded+0)/runs
+          printf "  phases parent-expanded in total: %d\n", pe_total+0
+          printf "  Expansion is legal under G022 but means a specialist did not run.\n"
+        }
       }
     }
   ' "$log_file"

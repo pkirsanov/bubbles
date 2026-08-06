@@ -43,7 +43,21 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CAPABILITIES_FILE="${BUBBLES_AGENT_CAPABILITIES_FILE:-$ROOT_DIR/bubbles/agent-capabilities.yaml}"
-BASELINE_FILE="${BUBBLES_AGENT_ID_BASELINE_FILE:-$SCRIPT_DIR/agent-id-enum-lint.baseline}"
+# The baseline is a PER-REPO ratchet, so it lives in the consuming repo and not
+# beside this script. Downstream this script installs under
+# .github/bubbles/scripts/, which downstream-framework-write-guard.sh forbids the
+# consuming repo from editing, so a baseline there could never be updated by the
+# only party entitled to update it. A framework-side baseline would also carry
+# downstream spec paths into the portable tree.
+resolve_baseline_root() {
+  local d
+  d="$(cd "$TARGET" && pwd -P)"
+  if command -v git >/dev/null 2>&1 && git -C "$d" rev-parse --show-toplevel >/dev/null 2>&1; then
+    git -C "$d" rev-parse --show-toplevel
+    return 0
+  fi
+  printf '%s' "$d"
+}
 
 # Non-agent actors that legitimately appear in executionHistory. These are not
 # agents and never will be, so they are part of the contract rather than debt.
@@ -93,6 +107,9 @@ done
 [[ -d "$TARGET" ]] || die_usage "target does not exist: $TARGET"
 [[ -f "$CAPABILITIES_FILE" ]] || die_usage "agent capabilities file not found: $CAPABILITIES_FILE"
 
+# Resolved only after TARGET is known, because the ratchet is per-repo.
+BASELINE_FILE="${BUBBLES_AGENT_ID_BASELINE_FILE:-$(resolve_baseline_root)/.specify/agent-id-enum-lint.baseline}"
+
 # --- registered agent ids ----------------------------------------------------
 registered="$(grep -oE '^  bubbles\.[a-z][a-z-]*:' "$CAPABILITIES_FILE" 2>/dev/null | tr -d ' :' | LC_ALL=C sort -u)"
 if [[ -z "$registered" ]]; then
@@ -141,6 +158,7 @@ EOF
 unknown="$(printf '%s' "$unknown" | grep -v '^$' || true)"
 
 if [[ "$UPDATE_BASELINE" == "true" ]]; then
+  mkdir -p "$(dirname "$BASELINE_FILE")" 2>/dev/null || true
   {
     printf '# agent-id-enum-lint baseline (IMP-036 SCOPE-7)\n'
     printf '# Pre-existing free-text agent ids, frozen so the lint can run at all.\n'

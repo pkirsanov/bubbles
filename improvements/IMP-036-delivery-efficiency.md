@@ -53,12 +53,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Update the result-envelope contract so `route_required` is explicitly an upward return to the orchestrator, never a lateral call, and reflect the same rule in the `bubbles-result-envelope` and `bubbles-fix-cycle-protocol` skills.
 - Collapse the router chain. `bubbles.sprint` (0 recorded invocations) to `bubbles.goal` (135) to `bubbles.workflow` (2,280) to specialists is three levels on a two-level runtime. Recommendation: make the outer routers handoff-only surfaces rather than dispatching agents, which preserves the operator entry point without adding a dispatch level.
 
-### SCOPE-2 — Fail loud on a dispatch that did not happen (HO-2)
-
-- Treat an empty or absent subagent return as a hard failure of the run rather than a condition to narrate. The agent must not record a specialist invocation it did not make.
-- Stop accepting `parent-expanded` as equivalent to a dispatch in `bubbles/scripts/state-transition-guard.sh`. Recommendation: keep the token legal only when accompanied by a machine-checkable reason field drawn from a closed enum, and count it separately from real dispatches so the rate stays visible.
-- Emit a counter for expanded-instead-of-dispatched runs so SCOPE-1's effect is measurable rather than asserted.
-
 ### SCOPE-6 — Stop write amplification (COST-3)
 
 - Skip the state write when nothing moved. If `statusBefore` equals `statusAfter` and no scope changed state, the run must not commit a state mutation.
@@ -98,7 +92,7 @@ Every scope is additive or deletion-of-unreferenced-surface except SCOPE-1, SCOP
 
 Measured against the same method recorded under Provenance, 60 days after the last scope lands.
 
-- **SCOPE-1 / SCOPE-2 (HO-1, HO-2):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, and the expanded-instead-of-dispatched counter reads zero for runs after the change. Any non-zero value is attributable to a named enum reason rather than to silence.
+- **SCOPE-1 (HO-1):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, measured by the `kind: run` records that SCOPE-2 already emits (`gate-hit-log.sh report` prints runs-using-parent-expansion and total expanded phases). Any residual expansion is attributable to a named G022 reason rather than to silence.
 - **SCOPE-6 (COST-3):** state-file commits per repo per 60 days fall by at least half from the 306-to-563 baseline, and product code rises above **45%** of changed lines, from 28%.
 - **SCOPE-8 (REG-7):** no spec is reopened by a gate introduced after its certification, and newly written reopen or sweep language appears in zero specs.
 - **Guardrail, all scopes:** the fixed-30-day-window completion rate holds at or above **45%**. A decline invalidates the cut that preceded it and triggers restoration.
