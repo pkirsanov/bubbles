@@ -31,6 +31,106 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## v7.24.0 — delivery efficiency: the dispatch hole closed, the gates instrumented, the ceremony cut (IMP-036)
+
+A portfolio-wide audit across the six downstream repos measured that roughly half
+of all commits touch no product code, that a third of specialist runs never
+dispatched a specialist, and that 69% of bugs are filed against specs the gate
+battery had already certified `done`. The same audit measured a sharp improvement
+in convergence (45% of June-cohort specs closed within 30 days, up from 0% through
+February). This release cuts the ceremony without touching what produced that gain:
+the tests, the execution-evidence rule, the structured refusals and the bug loop
+are untouched.
+
+### A specialist may never dispatch a specialist (SCOPE-1)
+
+`parent-expanded` appears 3,951 times in downstream `state.json` prose. It is not a
+frontmatter defect — the top-level dispatch is correctly wired. The failure is at
+the **second hop**, where a specialist tries to route to another specialist and the
+depth-1 runtime discards the call.
+
+This was confirmed empirically rather than argued: a subagent was dispatched and
+asked to enumerate its own tools. It has no `runSubagent`, no `agent`, and no
+dispatcher under any name; a tool search for one returned nothing. The second hop
+cannot fail loudly because the capability is absent, which is exactly why it shows
+up as silent parent-expansion instead of an error.
+
+`workflow-delegation-core.md` now states the rule as a measured fact and requires a
+specialist that needs another specialist to return `route_required` **upward** to
+the orchestrator. The result-envelope and fix-cycle skills were aligned to match.
+
+### The parent-expansion rate is now visible (SCOPE-2)
+
+`state-transition-guard.sh` counts parent-expanded phases and reports
+`parentExpandedPhases:` in its result block. A dispatch that never happened is no
+longer indistinguishable from one that did.
+
+### Gate G133 — evidence may not attest to a zero-test run (SCOPE-3)
+
+One downstream e2e suite executed zero tests for 15 days while 12 spec commits
+recorded passing evidence. The runner exited non-zero, which reads as ordinary test
+failure, and raw output from a broken runner is still raw output, so the Execution
+Evidence Standard was satisfied.
+
+`collected-test-count-guard.sh` scans **only fenced code blocks** in `report.md` and
+scope files for collection-zero signals. Scanning prose was tried first and was
+circular — the guard matched its own documentation. The signal set is deliberately
+small; widening it produced 2,133 hits, of which 23 were genuine.
+
+### Gate-hit telemetry (SCOPE-4)
+
+No gate-hit telemetry existed anywhere in the framework, so no gate could be retired
+on evidence rather than opinion. `gate-hit-log.sh` appends to
+`.specify/runtime/gate-hits.jsonl`. It is **sourced, not spawned** — an unbounded
+subprocess inside a guard with a documented hang history was the first
+implementation and was rejected. Every identifier is namespaced, it never fails its
+caller, and `BUBBLES_GATE_HIT_LOG=off` disables it.
+
+### Always-on context reduced 850 → 545 lines (SCOPE-5)
+
+Four instruction files carried `applyTo: "**"` and were injected on every turn in
+every repo. One of them governs a config file that exists in **zero** of the six
+repos, for an agent with **zero** recorded invocations. The cost was the `applyTo`
+header, not the capability behind it, so the capability was kept and the header
+scoped or removed.
+
+A companion recommendation in the proposal — retire seven "unused" agents — was
+checked before acting and **falsified**: all seven are fully wired. Zero recorded
+invocations does not mean dead code.
+
+### Compact verifiable evidence, and no-op state writes banned (SCOPE-6)
+
+`report.md` is the largest artifact in every repo, at up to 121,311 lines per repo
+per 60 days. `evidence-capture.sh` emits command, exit code, line count, sha256 and
+the first and last 20 lines, plus a re-runnable verify hint. `--verify <sha256>`
+exits 3 on drift, so the compact form stays checkable. Writing `state.json` when no
+field changed is now prohibited.
+
+### The `agent` field is an enum, not prose (SCOPE-7)
+
+The field held 163 distinct values across 15,685 invocations, 60 of them appearing
+exactly once. Nothing downstream could aggregate it, which is why the dispatch hole
+stayed invisible for months. `agent-id-enum-lint.sh` validates the field against
+`agent-capabilities.yaml` with a per-repo ratchet baseline.
+
+### Every gate carries a vintage (SCOPE-8)
+
+Gate ids grew from 71 to 134 between April and August, and about 176 of 598 specs
+carry reopen or recertification language. `gate-vintage-annotate.sh` derives
+`since`/`sinceDate` for each gate from git history; all 114 registry gates are
+annotated. `gate-vintage-guard.sh` reports which failing gates postdate a spec's
+first commit. It is **advisory** — it never auto-excuses a failure.
+
+### Notes
+
+- Ratchet baselines live at `<repo>/.specify/`, not beside the scripts. Downstream
+  repos cannot write into `.github/bubbles/scripts/`, and a baseline stored there
+  would leak downstream paths into the portable tree.
+- None of the new lints are wired into the downstream pre-push hook. They are
+  opt-in and cannot break an existing downstream push.
+- Gate retirement, baseline shrink, and re-measurement of these metrics are tracked
+  as OW-012, OW-013 and OW-014 in `.specify/memory/open-work.md`.
+
 ## v7.23.0 — lesson-to-skill loop unstarved (IMP-034) + claim grounding (G132) + provisioned Python dependencies + payload-integrity truthfulness
 
 ### The lesson-to-skill loop now fires on real input (IMP-034)
