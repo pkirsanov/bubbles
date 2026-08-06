@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS - SCOPE-1 landed in the pending commit and focused validation is complete; SCOPE-2 through SCOPE-7 remain
+**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 and SCOPE-2 are implemented and validated in committed/pending commits; SCOPE-3 through SCOPE-7 remain
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,20 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-2 - Deterministic local lexical index and source admission (LRN-4, EV-7)
-
-**Depends on:** SCOPE-1
-
-**Decision:** Add `local-lexical` as the first provider. Build a derived JSONL index under `.specify/runtime/experience-recall/`. Store normalized structured fields and source metadata only. Do not copy raw artifact bodies into the index.
-
-Extend the supported lesson writer with stable ids and optional recall metadata. Keep legacy lesson commands and skill clustering compatible. Exclude unanchored legacy lessons from recall instead of inventing provenance.
-
-The local provider must validate repository containment before reading any source. It must not follow an anchor into another workspace root. It must never inspect host session stores.
-
-**Likely files and owners:** `bubbles/adapters/experience-recall/local-lexical.sh`, `bubbles/scripts/experience-recall-index.py`, `bubbles/scripts/experience-recall-index-selftest.sh`, `bubbles/scripts/cli.sh`, `bubbles/scripts/skill-evolution.sh`, `bubbles/scripts/skill-evolution-selftest.sh`, `agents/bubbles_shared/execution-ops.md`, and `agents/bubbles_shared/artifact-ownership.md`. Framework and memory-contract ownership belongs to `bubbles.super`. Selftest ownership belongs to `bubbles.test`.
-
-**Observable acceptance:** Rebuilding the same corpus yields byte-identical records and ordering. A labeled fixture returns the expected top records. Unanchored lessons, missing anchors, digest mismatches, cross-root paths, and raw transcript fixtures are excluded with counted reasons. Skill-evolution tests prove that added lesson metadata does not change existing clustering behavior.
 
 ### SCOPE-3 - CLI search, read, status, freshness, and sync (LRN-4, REG-8)
 

@@ -152,12 +152,21 @@ assert_exit "shell-metacharacter provider fails loud" "$rc" 1
 
 repo="$(new_repo unknown)"
 write_config "$repo" 'experienceRecall:
-  adapter: local-lexical
+  adapter: missing-provider
 '
 output="$(bash "$RESOLVE" --repo-root "$repo" 2>&1)"
 rc=$?
 assert_exit "unknown provider fails loud" "$rc" 1
 assert_contains "unknown provider names the missing adapter" "has no adapter" "$output"
+
+repo="$(new_repo local-lexical)"
+write_config "$repo" 'experienceRecall:
+  adapter: local-lexical
+'
+output="$(bash "$RESOLVE" --repo-root "$repo" 2>&1)"
+rc=$?
+assert_exit "local lexical provider resolves when explicitly configured" "$rc" 0
+assert_contains "local lexical provider resolves its shipped adapter" "adapterPath=$ADAPTERS/local-lexical.sh" "$output"
 
 repo="$(new_repo names-only)"
 output="$(bash "$RESOLVE" --repo-root "$repo" --names-only 2>&1)"

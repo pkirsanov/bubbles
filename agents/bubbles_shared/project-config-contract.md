@@ -416,9 +416,24 @@ mcp:
 `.github/bubbles-project.yaml`:
 
 ```yaml
+# Default neutral provider
 experienceRecall:
   adapter: none
 ```
+
+To opt into the repository-local provider:
+
+```yaml
+# Explicit repository-local lexical provider
+experienceRecall:
+  adapter: local-lexical
+```
+
+| Adapter value | Resolution and runtime requirement |
+|---|---|
+| omitted or `none` | Select the dependency-free neutral provider |
+| `local-lexical` | Select the shipped local deterministic provider and require `python3` with its standard library |
+| another safe token | Resolve a matching installed adapter or fail loud when it is unavailable |
 
 The value is an adapter name only. It must not contain a path, URL, executable
 name, shell fragment, host, credential, or provider setting.
@@ -443,6 +458,11 @@ exit `1`. Resolver usage errors and missing repository roots exit `2`.
 
 The `none` adapter is dependency-free and performs no recall work. It emits
 `[]` for `search` and `export`. It emits `{}` for every other provider verb.
+
+The `local-lexical` adapter is an explicit opt-in. It supports `search`,
+`read`, `status`, `freshness`, and `sync` through a repository-local derived
+index. It reports `export` and `delete` as unsupported. It does not install
+Python or any package when `python3` is unavailable.
 
 This block remains project-owned. Framework upgrades must never add, normalize,
 or overwrite this block. See

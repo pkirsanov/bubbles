@@ -3527,6 +3527,60 @@ cmd_metrics() {
   esac
 }
 
+lesson_source_file() {
+  local relative_path="$1"
+  local current_path="$REPO_ROOT"
+  local component=""
+  local -a components=()
+
+  [[ -n "$relative_path" && "$relative_path" != /* ]] || return 1
+  IFS='/' read -r -a components <<< "$relative_path"
+  [[ "${#components[@]}" -gt 0 ]] || return 1
+  for component in "${components[@]}"; do
+    [[ -n "$component" && "$component" != "." && "$component" != ".." ]] || return 1
+    current_path="$current_path/$component"
+    [[ ! -L "$current_path" ]] || return 1
+  done
+  [[ -f "$current_path" ]] || return 1
+  printf '%s' "$current_path"
+}
+
+lesson_metadata_json() {
+  local lesson_id="$1"
+  local captured_at="$2"
+  local repository_alias="$3"
+  local review_state="$4"
+  local source_path="$5"
+  local source_selector="$6"
+  local source_digest="$7"
+
+  command -v python3 >/dev/null 2>&1 || die "lessons add requires python3 to encode lesson metadata"
+  python3 -c '
+import json
+import sys
+
+lesson_id, captured_at, repository_alias, review_state, source_path, source_selector, source_digest = sys.argv[1:]
+source_anchor = None
+if source_path:
+    source_anchor = {
+        "contentDigest": source_digest,
+        "observedAt": captured_at,
+        "relativePath": source_path,
+        "selector": source_selector,
+    }
+metadata = {
+    "capturedAt": captured_at,
+    "lessonId": lesson_id,
+    "repositoryAlias": repository_alias or None,
+    "reviewState": review_state,
+    "schemaVersion": 1,
+    "sourceAnchor": source_anchor,
+}
+print(json.dumps(metadata, ensure_ascii=True, separators=(",", ":"), sort_keys=True))
+' "$lesson_id" "$captured_at" "$repository_alias" "$review_state" \
+    "$source_path" "$source_selector" "$source_digest"
+}
+
 cmd_lessons() {
   local lessons_file="$REPO_ROOT/.specify/memory/lessons.md"
   local subcmd="${1:-}"
@@ -3535,10 +3589,11 @@ cmd_lessons() {
     add)
       shift
       local problem="" root_cause="" fix="" applies_when="" flag=""
+      local repository_alias="" source_path="" source_selector="" review_state=""
       while [[ $# -gt 0 ]]; do
         flag="$1"
         case "$flag" in
-          --problem|--root-cause|--fix|--applies-when)
+          --problem|--root-cause|--fix|--applies-when|--repository-alias|--source-path|--source-selector|--review-state)
             # Guard the value BEFORE shifting: `shift 2` with one argument left
             # fails without shifting, which would spin this loop forever.
             if [[ $# -lt 2 ]]; then
@@ -3549,20 +3604,73 @@ cmd_lessons() {
               --root-cause) root_cause="$2" ;;
               --fix) fix="$2" ;;
               --applies-when) applies_when="$2" ;;
+              --repository-alias) repository_alias="$2" ;;
+              --source-path) source_path="$2" ;;
+              --source-selector) source_selector="$2" ;;
+              --review-state) review_state="$2" ;;
             esac
             shift 2
             ;;
-          *) die "Unknown lessons add option: $flag. Expected --problem, --root-cause, --fix, --applies-when" ;;
+          *) die "Unknown lessons add option: $flag. Expected the four lesson fields and optional source metadata" ;;
         esac
       done
       if [[ -z "$problem" || -z "$root_cause" || -z "$fix" || -z "$applies_when" ]]; then
         die "lessons add requires all four fields: --problem, --root-cause, --fix, --applies-when"
       fi
+      if [[ "$problem$root_cause$fix$applies_when" == *"<!-- bubbles-lesson-meta:"* ]]; then
+        die "lessons add field values must not contain the reserved lesson metadata marker"
+      fi
+
+      local source_group_count=0
+      [[ -n "$repository_alias" ]] && source_group_count=$((source_group_count + 1))
+      [[ -n "$source_path" ]] && source_group_count=$((source_group_count + 1))
+      [[ -n "$source_selector" ]] && source_group_count=$((source_group_count + 1))
+      [[ -n "$review_state" ]] && source_group_count=$((source_group_count + 1))
+      if [[ "$source_group_count" -ne 0 && "$source_group_count" -ne 4 ]]; then
+        die "lessons add source metadata requires --repository-alias, --source-path, --source-selector, and --review-state together"
+      fi
+
+      local source_digest="" source_abs=""
+      if [[ "$source_group_count" -eq 4 ]]; then
+        [[ "$repository_alias" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ && "${#repository_alias}" -le 128 ]] ||
+          die "lessons add --repository-alias does not satisfy the recall contract"
+        [[ "${#source_path}" -le 1024 ]] || die "lessons add --source-path is too long"
+        [[ "${#source_selector}" -le 512 ]] || die "lessons add --source-selector is too long"
+        case "$review_state" in
+          anchored|reviewed) ;;
+          *) die "lessons add --review-state must be anchored or reviewed" ;;
+        esac
+        if ! source_abs="$(lesson_source_file "$source_path")"; then
+          die "lessons add --source-path must name a contained regular file without symlink components"
+        fi
+        [[ "$source_abs" != "$lessons_file" ]] ||
+          die "lessons add cannot anchor a lesson to the lessons file being appended"
+        source_digest="sha256:$(bubbles_sha256_file "$source_abs")" ||
+          die "lessons add could not digest --source-path"
+      else
+        review_state="unanchored"
+      fi
+
       # One entry is one LINE because the skill-evolution detector clusters per
       # line; splitting the four fields across lines would fragment the cluster.
-      local entry
-      entry="$(printf -- '- problem: %s; root cause: %s; fix: %s; applies when: %s' \
+      local visible_entry identity_material lesson_id captured_at metadata_json entry previous_lessons_digest
+      visible_entry="$(printf -- '- problem: %s; root cause: %s; fix: %s; applies when: %s' \
         "$problem" "$root_cause" "$fix" "$applies_when" | tr '\n|' '  ')"
+      captured_at="$(bubbles_current_timestamp)"
+      if [[ -f "$lessons_file" ]]; then
+        previous_lessons_digest="$(bubbles_sha256_file "$lessons_file")" ||
+          die "lessons add could not digest the existing lessons file"
+      else
+        previous_lessons_digest="$(printf '' | bubbles_sha256_stdin)" ||
+          die "lessons add could not initialize lesson identity"
+      fi
+      identity_material="${visible_entry}|${repository_alias}|${source_path}|${source_selector}|${captured_at}|${previous_lessons_digest}"
+      lesson_id="lesson-$(printf '%s' "$identity_material" | bubbles_sha256_stdin)" ||
+        die "lessons add could not derive a stable lesson id"
+      metadata_json="$(lesson_metadata_json "$lesson_id" "$captured_at" "$repository_alias" \
+        "$review_state" "$source_path" "$source_selector" "$source_digest")" ||
+        die "lessons add could not encode lesson metadata"
+      entry="$visible_entry <!-- bubbles-lesson-meta:$metadata_json -->"
       mkdir -p "$(dirname "$lessons_file")"
       if [[ ! -f "$lessons_file" ]]; then
         printf '# Lessons\n\n' > "$lessons_file"

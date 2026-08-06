@@ -188,6 +188,93 @@ Any non-empty normalized provider descriptor must satisfy the provider schema.
 The neutral adapter intentionally emits empty neutral payloads and declares no
 active provider behavior.
 
+## Local Lexical Provider (SCOPE-2)
+
+[`local-lexical.sh`](../../bubbles/adapters/experience-recall/local-lexical.sh)
+is the first active provider. Projects must select it explicitly with
+`experienceRecall.adapter: local-lexical`. An absent block and explicit `none`
+still select the neutral provider.
+
+The provider requires `python3`. Its indexer uses only the Python standard
+library. It installs nothing, opens no network connection, and reads no host
+session store.
+
+| Verb | SCOPE-2 capability | Behavior |
+|---|---|---|
+| `search` | `derived` | Filter and score fresh admitted records from the local index |
+| `read` | `derived` | Return one record after validating its current source digest |
+| `status` | `derived` | Report index state, corpus counts, exclusions, and freshness |
+| `freshness` | `derived` | Compare indexed source digests with current contained files |
+| `sync` | `derived` | Rebuild the deterministic derived index and status atomically |
+| `capabilities` | `native` | Return the provider descriptor |
+| `export` | `unsupported` | Return `[]`, write an unsupported diagnostic, and exit `1` |
+| `delete` | `unsupported` | Return a structured unsupported object, write a diagnostic, and exit `1` |
+
+SCOPE-2 does not ship the `recall` CLI family, MCP tools, lifecycle mutation,
+or orchestrator consumption. The schema defines those broader contracts, but
+the local provider currently emits only `admitted` lifecycle state.
+
+### Derived State
+
+`sync` writes these repository-local files:
+
+- `.specify/runtime/experience-recall/index.jsonl`
+- `.specify/runtime/experience-recall/status.json`
+
+Both files are derived and disposable. They never become evidence or source
+authority. The JSONL file contains normalized records and source metadata. It
+does not copy raw artifact bodies. Rebuilding an unchanged corpus produces the
+same record bytes and ordering.
+
+The status file reports candidate, record, kind, and exclusion counts. It also
+records the index digest, aggregate source digest, provider version, and build
+time. Missing derived state reports `state: missing` and unknown freshness.
+
+### Closed Admission
+
+The SCOPE-2 indexer reads only these repository-contained sources:
+
+| Source | Admission rule |
+|---|---|
+| `.specify/memory/bubbles.session.json` | Read only bound `compactedHistory[]` entries with valid evidence references and contained source pointers |
+| `.specify/memory/lessons.md` | Read only supported lesson lines whose metadata carries an anchored or reviewed contained source |
+| `improvements/IMP-*.md` | Read narrowly parsed scope decisions from dated `ACCEPTED`, `IN PROGRESS`, or `APPLIED` improvements |
+
+A compacted command packet must use the exact decision ID
+`rb:<sessionId>:<controlRevision>`. A goal-node packet must append the exact
+`:node:<scopeId>` suffix. Every packet must also satisfy its declared authority,
+transition, target kind, local visibility, and actionable state.
+
+Plain JSON objects and fenced JSON objects are supported RESULT-ENVELOPE source
+forms. Canonical Markdown/YAML RESULT-ENVELOPE sources are unsupported in
+SCOPE-2. `sync` counts each such source as `result-envelope-unsupported`. It
+does not emit a partial finding claim from that source.
+
+Structured outcomes and findings retain their source record and source digest.
+Malformed packets, missing evidence references, digest mismatches, missing
+anchors, cross-root paths, transcript-like inputs, and unsupported shapes are
+excluded with counted reason codes.
+
+An improvement decision is eligible only beneath a `### SCOPE-*` heading. The
+indexer admits the first following `**Decision:**` line before the next scope.
+An eligible improvement also needs a dated supported status line. Other
+Markdown and proposal prose do not enter the index.
+
+### Lesson Admission
+
+`cli.sh lessons add` always appends a stable lesson ID, capture time, review
+state, and nullable anchor metadata in an HTML comment. The visible four-field
+lesson text remains unchanged for skill evolution.
+
+Supplying no anchor fields writes `reviewState: unanchored` with no source
+anchor. That lesson remains valid skill-evolution input, but recall excludes it
+as `unanchored-lesson`.
+
+Anchored mode requires a repository alias, contained source path, source
+selector, and review state. The review state must be `anchored` or `reviewed`.
+The writer captures the current source digest. `sync` excludes the lesson when
+the alias or digest no longer matches.
+
 ## Neutral Provider
 
 [`none.sh`](../../bubbles/adapters/experience-recall/none.sh) is the default
