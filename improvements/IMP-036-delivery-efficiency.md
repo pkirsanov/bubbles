@@ -53,12 +53,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Update the result-envelope contract so `route_required` is explicitly an upward return to the orchestrator, never a lateral call, and reflect the same rule in the `bubbles-result-envelope` and `bubbles-fix-cycle-protocol` skills.
 - Collapse the router chain. `bubbles.sprint` (0 recorded invocations) to `bubbles.goal` (135) to `bubbles.workflow` (2,280) to specialists is three levels on a two-level runtime. Recommendation: make the outer routers handoff-only surfaces rather than dispatching agents, which preserves the operator entry point without adding a dispatch level.
 
-### SCOPE-6 — Stop write amplification (COST-3)
-
-- Skip the state write when nothing moved. If `statusBefore` equals `statusAfter` and no scope changed state, the run must not commit a state mutation.
-- Replace full evidence transcripts with **command, exit code, first and last 20 lines, and a hash of the full output**. This strengthens anti-fabrication rather than weakening it, because a reviewer can re-run and compare the hash, whereas a pasted transcript proves only that text was pasted. It also removes the recurring class where captured evidence carries paths that trip secret and PII scanners.
-- Keep the requirement that evidence originates from real execution in the current session. That rule is not the cost. The transcript volume is.
-
 ## Migration / rollout
 
 Ordering is chosen so that no scope cuts a control before the replacement measurement exists.
