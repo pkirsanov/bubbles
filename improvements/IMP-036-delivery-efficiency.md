@@ -72,12 +72,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Replace full evidence transcripts with **command, exit code, first and last 20 lines, and a hash of the full output**. This strengthens anti-fabrication rather than weakening it, because a reviewer can re-run and compare the hash, whereas a pasted transcript proves only that text was pasted. It also removes the recurring class where captured evidence carries paths that trip secret and PII scanners.
 - Keep the requirement that evidence originates from real execution in the current session. That rule is not the cost. The transcript volume is.
 
-### SCOPE-7 — Constrain the agent field to an enum (REG-6)
-
-- Restrict `executionHistory[].agent` to a registered agent id validated against `bubbles/agent-capabilities.yaml`.
-- Move the qualifiers that currently ride inside the value (expansion reason, mode, sweep round) into named sibling fields so they remain available and become queryable.
-- Add the enum check to artifact lint. This scope is what makes SCOPE-2's counter and SCOPE-4's telemetry aggregable at all.
-
 ### SCOPE-8 — Give gates a vintage (REG-7)
 
 - Record the introducing framework version on every gate in `bubbles/registry/gates.yaml`.
@@ -89,7 +83,7 @@ Three limits of this evidence base are stated here so later readers do not overr
 
 Ordering is chosen so that no scope cuts a control before the replacement measurement exists.
 
-1. **SCOPE-7**, then **SCOPE-2**, then **SCOPE-6**. The enum must land before the dispatch counter, or the counter cannot be aggregated. The write-skip rule is safest once the enum has settled the schema.
+1. **SCOPE-2**, then **SCOPE-6**. The write-skip rule is safest once the agent-id enum has settled the schema, which it now has.
 4. **SCOPE-3** as soon as the enforcement script is written. It is additive and independently valuable.
 5. **SCOPE-1** after its confirmation step. This is the structural change and carries the most risk.
 6. **SCOPE-8** at any point after SCOPE-4 begins logging.
@@ -114,7 +108,6 @@ Measured against the same method recorded under Provenance, 60 days after the la
 - **SCOPE-1 / SCOPE-2 (HO-1, HO-2):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, and the expanded-instead-of-dispatched counter reads zero for runs after the change. Any non-zero value is attributable to a named enum reason rather than to silence.
 - **SCOPE-3 (EV-6):** a test-evidence block reporting zero collected tests is rejected, proven by an adversarial selftest that replays the guestHost `188d11ce` condition and asserts refusal. Bugs filed against already-`done` specs fall below **40%** of new bug folders, from 69%.
 - **SCOPE-6 (COST-3):** state-file commits per repo per 60 days fall by at least half from the 306-to-563 baseline, and product code rises above **45%** of changed lines, from 28%.
-- **SCOPE-7 (REG-6):** distinct `agent` values equal the registered agent count, with zero singletons, from 163 values with 60 singletons.
 - **SCOPE-8 (REG-7):** no spec is reopened by a gate introduced after its certification, and newly written reopen or sweep language appears in zero specs.
 - **Guardrail, all scopes:** the fixed-30-day-window completion rate holds at or above **45%**. A decline invalidates the cut that preceded it and triggers restoration.
 

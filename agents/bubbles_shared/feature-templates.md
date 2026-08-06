@@ -427,6 +427,7 @@ Rules:
 **`specDependsOn`:** Explicit array of repo-relative spec paths; empty array when no dependency exists.
 **`certifiedAt`:** Top-level certification timestamp; `null` until certification or backfill from scope-level certification timestamps.
 **`requiresRevalidation`:** Explicit boolean used by inter-spec dependency/revalidation flows; defaults to `false`.
+**`executionHistory[]` entry:** `agent` MUST be a registered id from `bubbles/agent-capabilities.yaml`, or one of the non-agent actors `manual`, `operator`, `human`. It is an enum, not free text. Qualifiers go in named sibling fields: `expansionReason` for a parent-expansion cause, `sweepRound` for a sweep counter, `scope` for the scope worked, `mode` for the workflow mode. Recording several agents in one entry is forbidden; write one entry per agent. Enforced by `bubbles/scripts/agent-id-enum-lint.sh`, which ratchets against `agent-id-enum-lint.baseline` so historical records stay readable while new ones cannot regress. This field is the control plane's primary key: when it carried free text it reached 163 distinct values across six repos with 60 appearing exactly once, and no query could group the runs that exposed a framework-wide dispatch failure.
 Only modes with `statusCeiling: done` (in `bubbles/workflows/modes.yaml`) may set `status: "done"`.
 Artifact-only modes set their ceiling status (e.g., `specs_hardened` for `spec-scope-hardening`).
 **`execution` vs `certification`:** execution records runtime claims. certification is the validate-owned authoritative state.
