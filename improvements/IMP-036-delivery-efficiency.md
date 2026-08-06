@@ -59,13 +59,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Stop accepting `parent-expanded` as equivalent to a dispatch in `bubbles/scripts/state-transition-guard.sh`. Recommendation: keep the token legal only when accompanied by a machine-checkable reason field drawn from a closed enum, and count it separately from real dispatches so the rate stays visible.
 - Emit a counter for expanded-instead-of-dispatched runs so SCOPE-1's effect is measurable rather than asserted.
 
-### SCOPE-3 — Assert that tests actually ran (EV-6)
-
-- Require every test-evidence block to carry a **collected-test count**, and fail the evidence when that count is zero. A suite that collects nothing must never satisfy a test DoD item.
-- Register this as a new gate in `bubbles/registry/gates.yaml` with a real enforcement script, because a prose-only gate would reproduce COV-6.
-- Extend `bubbles-evidence-capture` and `bubbles-test-integrity` with the collected-count requirement and the guestHost outage as the worked example.
-- This is the single highest-value addition in the proposal: it closes the exact class that produced 15 days of evidence attesting to nothing.
-
 ### SCOPE-6 — Stop write amplification (COST-3)
 
 - Skip the state write when nothing moved. If `statusBefore` equals `statusAfter` and no scope changed state, the run must not commit a state mutation.
@@ -106,7 +99,6 @@ Every scope is additive or deletion-of-unreferenced-surface except SCOPE-1, SCOP
 Measured against the same method recorded under Provenance, 60 days after the last scope lands.
 
 - **SCOPE-1 / SCOPE-2 (HO-1, HO-2):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, and the expanded-instead-of-dispatched counter reads zero for runs after the change. Any non-zero value is attributable to a named enum reason rather than to silence.
-- **SCOPE-3 (EV-6):** a test-evidence block reporting zero collected tests is rejected, proven by an adversarial selftest that replays the guestHost `188d11ce` condition and asserts refusal. Bugs filed against already-`done` specs fall below **40%** of new bug folders, from 69%.
 - **SCOPE-6 (COST-3):** state-file commits per repo per 60 days fall by at least half from the 306-to-563 baseline, and product code rises above **45%** of changed lines, from 28%.
 - **SCOPE-8 (REG-7):** no spec is reopened by a gate introduced after its certification, and newly written reopen or sweep language appears in zero specs.
 - **Guardrail, all scopes:** the fixed-30-day-window completion rate holds at or above **45%**. A decline invalidates the cut that preceded it and triggers restoration.
