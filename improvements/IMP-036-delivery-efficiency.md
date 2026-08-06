@@ -59,13 +59,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Replace full evidence transcripts with **command, exit code, first and last 20 lines, and a hash of the full output**. This strengthens anti-fabrication rather than weakening it, because a reviewer can re-run and compare the hash, whereas a pasted transcript proves only that text was pasted. It also removes the recurring class where captured evidence carries paths that trip secret and PII scanners.
 - Keep the requirement that evidence originates from real execution in the current session. That rule is not the cost. The transcript volume is.
 
-### SCOPE-8 — Give gates a vintage (REG-7)
-
-- Record the introducing framework version on every gate in `bubbles/registry/gates.yaml`.
-- Apply a gate only to specs opened at or after that version. Grandfather specs that were certified under an earlier catalogue.
-- Provide one deliberate override for a genuine correctness defect, requiring a named owner decision recorded on the spec. The override must be the exception, not the sweep.
-- Retire the pattern where a catalogue-wide sweep reopens previously certified specs. About 176 specs currently carry that history.
-
 ## Migration / rollout
 
 Ordering is chosen so that no scope cuts a control before the replacement measurement exists.
@@ -94,7 +87,6 @@ Measured against the same method recorded under Provenance, 60 days after the la
 
 - **SCOPE-1 (HO-1):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, measured by the `kind: run` records that SCOPE-2 already emits (`gate-hit-log.sh report` prints runs-using-parent-expansion and total expanded phases). Any residual expansion is attributable to a named G022 reason rather than to silence.
 - **SCOPE-6 (COST-3):** state-file commits per repo per 60 days fall by at least half from the 306-to-563 baseline, and product code rises above **45%** of changed lines, from 28%.
-- **SCOPE-8 (REG-7):** no spec is reopened by a gate introduced after its certification, and newly written reopen or sweep language appears in zero specs.
 - **Guardrail, all scopes:** the fixed-30-day-window completion rate holds at or above **45%**. A decline invalidates the cut that preceded it and triggers restoration.
 
 ## Files to touch (on approval)
