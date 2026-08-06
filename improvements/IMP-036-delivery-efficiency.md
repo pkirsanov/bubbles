@@ -66,12 +66,6 @@ Three limits of this evidence base are stated here so later readers do not overr
 - Extend `bubbles-evidence-capture` and `bubbles-test-integrity` with the collected-count requirement and the guestHost outage as the worked example.
 - This is the single highest-value addition in the proposal: it closes the exact class that produced 15 days of evidence attesting to nothing.
 
-### SCOPE-4 — Instrument gates before retiring any (COV-6)
-
-- Add append-only gate-hit logging: gate id, spec, verdict, timestamp, one line per evaluation. No retirement decision is taken in this scope.
-- After 60 days of data, retire every gate that never rejected anything, and resolve the 26 prose-only gates by either wiring each to an enforcement script or deleting it. Recommendation: default to deletion, because a gate that has never rejected anything in 60 days across six active repos is indistinguishable from documentation.
-- Sequence matters. Cutting gates before the telemetry exists would repeat the mistake this proposal is trying to correct.
-
 ### SCOPE-6 — Stop write amplification (COST-3)
 
 - Skip the state write when nothing moved. If `statusBefore` equals `statusAfter` and no scope changed state, the run must not commit a state mutation.
@@ -95,8 +89,7 @@ Three limits of this evidence base are stated here so later readers do not overr
 
 Ordering is chosen so that no scope cuts a control before the replacement measurement exists.
 
-1. **SCOPE-4** logging half first. It is purely additive and starts the 60-day clock that every later retirement decision depends on.
-3. **SCOPE-7**, then **SCOPE-2**, then **SCOPE-6**. The enum must land before the dispatch counter, or the counter cannot be aggregated. The write-skip rule is safest once the enum has settled the schema.
+1. **SCOPE-7**, then **SCOPE-2**, then **SCOPE-6**. The enum must land before the dispatch counter, or the counter cannot be aggregated. The write-skip rule is safest once the enum has settled the schema.
 4. **SCOPE-3** as soon as the enforcement script is written. It is additive and independently valuable.
 5. **SCOPE-1** after its confirmation step. This is the structural change and carries the most risk.
 6. **SCOPE-8** at any point after SCOPE-4 begins logging.
@@ -120,7 +113,6 @@ Measured against the same method recorded under Provenance, 60 days after the la
 
 - **SCOPE-1 / SCOPE-2 (HO-1, HO-2):** `parent-expanded` occurrences in newly written downstream state fall to **zero**, and the expanded-instead-of-dispatched counter reads zero for runs after the change. Any non-zero value is attributable to a named enum reason rather than to silence.
 - **SCOPE-3 (EV-6):** a test-evidence block reporting zero collected tests is rejected, proven by an adversarial selftest that replays the guestHost `188d11ce` condition and asserts refusal. Bugs filed against already-`done` specs fall below **40%** of new bug folders, from 69%.
-- **SCOPE-4 (COV-6):** every gate evaluation is logged, and the count of gates with zero recorded rejections over 60 days is published. The 26 prose-only ids are each either wired to a script or removed, leaving no declared gate that no script names.
 - **SCOPE-6 (COST-3):** state-file commits per repo per 60 days fall by at least half from the 306-to-563 baseline, and product code rises above **45%** of changed lines, from 28%.
 - **SCOPE-7 (REG-6):** distinct `agent` values equal the registered agent count, with zero singletons, from 163 values with 60 singletons.
 - **SCOPE-8 (REG-7):** no spec is reopened by a gate introduced after its certification, and newly written reopen or sweep language appears in zero specs.

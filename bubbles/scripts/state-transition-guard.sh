@@ -152,6 +152,34 @@ emit_transition_result() {
   printf 'exitStatus: %s\n' "$exit_status"
   printf 'verdict: %s\n' "$verdict"
   printf '%s\n' 'END TRANSITION_GUARD_RESULT_V1'
+
+  # IMP-036 SCOPE-4: append-only gate-hit telemetry. Observes only; retires
+  # nothing. The helper swallows its own failures so a read-only log directory
+  # can never turn into a blocked commit.
+  local passed_str="" failed_str=""
+  for gate_id in ${effective_passed_gate_ids[@]+"${effective_passed_gate_ids[@]}"}; do
+    passed_str+="$gate_id "
+  done
+  for gate_id in ${failed_gate_ids[@]+"${failed_gate_ids[@]}"}; do
+    failed_str+="$gate_id "
+  done
+  if [[ -f "$SCRIPT_DIR/gate-hit-log.sh" ]]; then
+    if ! declare -F bubbles_gate_hit_append >/dev/null 2>&1; then
+      # shellcheck disable=SC1091
+      source "$SCRIPT_DIR/gate-hit-log.sh" 2>/dev/null || true
+    fi
+    if declare -F bubbles_gate_hit_append >/dev/null 2>&1; then
+      bubbles_gate_hit_append \
+        --repo-root "${guard_repo_root:-$PWD}" \
+        --spec "${feature_dir:-}" \
+        --mode "$transition_workflow_mode" \
+        --target-status "$transition_target_status" \
+        --verdict "$verdict" \
+        --exit-status "$exit_status" \
+        --passed "$passed_str" \
+        --failed "$failed_str" >/dev/null 2>&1 || true
+    fi
+  fi
 }
 
 block_contract() {
