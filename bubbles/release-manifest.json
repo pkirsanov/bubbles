@@ -426,7 +426,7 @@
     {"path": "bubbles/schemas/scenario-manifest.schema.json", "sha256": "8fcc80430711619a82874e81f145db88bb06590c272094de971319a45aeb7a95"},
     {"path": "bubbles/schemas/tool-call.schema.json", "sha256": "2a325c757f1c07bc12afc42a355ddc9324526e661bfb0286236caab62209334e"},
     {"path": "bubbles/schemas/tool-trust-registry.schema.json", "sha256": "e48b1671db936cedd93d09683c51965d33a67df9c33e954f0839cbb79f3be127"},
-    {"path": "bubbles/schemas/workflows.schema.json", "sha256": "0ecb4f8f9cb5fd6843a756567d74950c3202ac590b937a1d9eed8cb313af1a79"},
+    {"path": "bubbles/schemas/workflows.schema.json", "sha256": "02befe182eff5894c05ccea6f20950dd9a1be8632ad179bf77a7cf8c2dc19acc"},
     {"path": "bubbles/eval/schemas/adversarial-sample.schema.json", "sha256": "6db7125ed5c912a6c75b437c4ac222c3ace7acf31a0f513be6b73ddb4ac39670"},
     {"path": "bubbles/registry/gates.yaml", "sha256": "091a596da067734c920215efcbc546d5bb8c0173666d634b4c3e94b280e05b67"},
     {"path": "bubbles/registry/optional-skills.txt", "sha256": "5a64987fc1e44812b4bd41f52f30ea0322d3245b43d50f76fbfa2f9c5f66ba93"},
