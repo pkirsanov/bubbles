@@ -40,6 +40,7 @@
 #   autofix <spec>                Scaffold missing report sections
 #   metrics <subcommand>          Manage metrics and activity tracking
 #   lessons [add|--all|compact]   Record, view, or compact lessons-learned memory
+#   recall <subcommand>           Search, read, inspect, or sync experience recall
 #   skill-proposals [subcommand]  Show or dismiss generated skill proposals
 #   profile [subcommand]          Show, list, or change adoption profiles plus developer observations
 #   sunnyvale <alias>             Resolve a Sunnyvale alias (agent or mode)
@@ -606,6 +607,13 @@ command_effective_risk_class() {
       else
         printf '%s' "$default_risk"
       fi
+      ;;
+    recall)
+      case "${command_args%% *}" in
+        search|read|status|freshness) printf '%s' 'read_only' ;;
+        sync) printf '%s' 'owned_mutation' ;;
+        *) printf '%s' 'owned_mutation' ;;
+      esac
       ;;
     runtime)
       case "${command_args%% *}" in
@@ -1272,6 +1280,8 @@ Commands:
   project [gates <subcmd>]      Manage project extensions (bubbles-project.yaml)
   metrics <subcommand>          Manage metrics (enable|disable|activity-enable|activity-disable|status|summary|gates|agents)
   lessons [add|--all|compact]   Record, view, or compact lessons-learned memory
+  recall <subcommand>           Experience recall (search|read|status|freshness|sync)
+                                Freshness exits: 0 fresh, 3 stale, 4 unknown, 5 disabled
   skill-proposals [subcommand]  Show or dismiss generated skill proposals
   profile [subcommand]          Show, list, or change adoption profiles plus developer observations
   upgrade [version] [--dry-run] Upgrade Bubbles to latest or specific version
@@ -2271,6 +2281,36 @@ cmd_doctor() {
       advisory_count=$((advisory_count + 1))
     fi
   fi
+
+  # Check 11b: Control-plane ratchet lints (IMP-036 SCOPE-3 / SCOPE-7, OW-015).
+  # These shipped wired into nothing: no runner referenced them, and `project
+  # gates add` only appends a declaration that no framework code executes, so a
+  # declared gate can look wired and stay inert. Running them here is the one
+  # place that reaches every consuming repo on upgrade without editing six
+  # uncommitted, mutually-different .git/hooks/pre-push files.
+  #
+  # Blocking, not advisory: both are RATCHETS seeded from the repo's own current
+  # state, so a clean repo passes by construction and only NEW drift fails. An
+  # advisory ratchet is a contradiction — it would report the drift it exists to
+  # refuse. Absent baseline is not a failure: a repo that has never seeded one
+  # is reported as unseeded rather than blocked.
+  local ratchet
+  for ratchet in agent-id-enum-lint collected-test-count-guard; do
+    [[ -x "$SCRIPT_DIR/${ratchet}.sh" ]] || continue
+    local ratchet_baseline="$REPO_ROOT/.specify/${ratchet}.baseline"
+    if [[ ! -f "$ratchet_baseline" ]]; then
+      echo -e "  ${YELLOW}⚠️${NC}  ${ratchet}: no baseline at .specify/${ratchet}.baseline (seed with --update-baseline)"
+      advisory_count=$((advisory_count + 1))
+      continue
+    fi
+    if bash "$SCRIPT_DIR/${ratchet}.sh" "$REPO_ROOT" >/dev/null 2>&1; then
+      echo -e "  ${GREEN}✅${NC} ${ratchet}: no new drift beyond the recorded baseline"
+      passed=$((passed + 1))
+    else
+      echo -e "  ${RED}❌${NC} ${ratchet}: new drift beyond the baseline (run 'bash .github/bubbles/scripts/${ratchet}.sh .' for detail)"
+      failed=$((failed + 1))
+    fi
+  done
 
   # Check 12: Governance hub snapshot (IMP-014) — informational, non-blocking.
   # Surfaces the single most-depended-on governance node so an operator sees the
@@ -3720,6 +3760,10 @@ cmd_skill_proposals() {
   bash "$SCRIPT_DIR/skill-evolution.sh" "${1:-show}"
 }
 
+cmd_recall() {
+  bash "$SCRIPT_DIR/experience-recall.sh" "$@"
+}
+
 cmd_profile() {
   if [[ $# -eq 0 ]]; then
     bash "$SCRIPT_DIR/developer-profile.sh" show
@@ -4072,6 +4116,7 @@ main() {
     project)            cmd_project "$@" ;;
     metrics)            cmd_metrics "$@" ;;
     lessons)            cmd_lessons "$@" ;;
+    recall)             cmd_recall "$@" ;;
     skill-proposals)    cmd_skill_proposals "$@" ;;
     profile)            cmd_profile "$@" ;;
     upgrade)            cmd_upgrade "$@" ;;
