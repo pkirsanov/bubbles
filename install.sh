@@ -302,6 +302,34 @@ bubbles_prune_managed_skill_orphans() {
   done < <(grep -oE '^skills/[^/]+/' "$PRE_INSTALL_MANIFEST" | sort -u | sed -e 's#^skills/##' -e 's#/$##')
 }
 
+bubbles_prune_managed_namespace_orphans() {
+  # $1 = managed dir (e.g. "agents"), $2 = framework filename prefix
+  # (e.g. "bubbles."), $3 = filename suffix (e.g. ".agent.md").
+  #
+  # The manifest-anchored prune above cannot reach a file the framework dropped
+  # BEFORE that prune existed: its trust anchor is the previous manifest, which
+  # by then no longer listed the file. bubbles.bootstrap, removed upstream in
+  # 8a4f32d, survived that way in three downstream repos for months.
+  #
+  # This prune anchors on the NEW source payload plus the framework's filename
+  # namespace instead, so it is self-healing. It is deliberately namespace-scoped
+  # because these directories are MIXED ownership: operator-authored agents
+  # (speckit.*, repo-local helpers) share the directory and must never be
+  # touched.
+  local dir="$1" prefix="$2" suffix="$3"
+  local installed_root="${TARGET}/${dir}"
+  [[ -d "$installed_root" ]] || return 0
+  local installed_file name
+  for installed_file in "$installed_root/${prefix}"*"${suffix}"; do
+    [[ -f "$installed_file" ]] || continue
+    name="$(basename "$installed_file")"
+    if [[ ! -e "$TEMP_DIR/${dir}/${name}" ]]; then
+      rm -f "$installed_file"
+      info "Pruned retired framework file: ${dir}/${name}"
+    fi
+  done
+}
+
 bubbles_prune_managed_tree_orphans() {
   # $1 = framework-managed directory relative to ${TARGET} and ${TEMP_DIR}.
   # Files absent from the new source or its managed checksum contract are stale
@@ -341,6 +369,11 @@ ok "$(ls "${TARGET}"/prompts/bubbles.*.prompt.md | wc -l) prompts installed"
 # (never in the manifest) are untouched.
 bubbles_prune_managed_file_orphans "agents/"
 bubbles_prune_managed_file_orphans "prompts/"
+
+# Catch retired framework agents/prompts the manifest-anchored prune above
+# cannot see because they fell out of the trust anchor before it existed.
+bubbles_prune_managed_namespace_orphans "agents" "bubbles." ".agent.md"
+bubbles_prune_managed_namespace_orphans "prompts" "bubbles." ".prompt.md"
 
 # ── Install workflows ───────────────────────────────────────────────
 info "Installing workflow config and registries..."
