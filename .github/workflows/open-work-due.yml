@@ -1,0 +1,69 @@
+name: open-work-due
+
+# Two of the residue rows in .specify/memory/open-work.md cannot be worked until
+# a date passes (60 days of gate-hit telemetry; a re-measurement window). A date
+# written only into a markdown cell is not a schedule — nothing reads it, so the
+# item surfaces again only if a human happens to reopen the file.
+#
+# This runs on GitHub's infrastructure rather than the dev box, which is not
+# always on, and FAILS when an item comes due so the owner is emailed. A green
+# log nobody opens is not delivery.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch: # so a due date can be checked on demand
+
+permissions:
+  contents: read
+
+jobs:
+  due:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Report open-work items that have come due
+        run: |
+          set -euo pipefail
+          register=".specify/memory/open-work.md"
+
+          if [[ ! -f "$register" ]]; then
+            echo "::warning::$register not found; nothing to schedule against."
+            exit 0
+          fi
+
+          today="$(date -u +%F)"
+          today_epoch="$(date -u -d "$today" +%s)"
+          echo "Checking DUE markers in $register as of $today (UTC)"
+          echo
+
+          due_count=0
+          pending_count=0
+
+          # Rows carry their schedule as a `DUE: YYYY-MM-DD` token inside the
+          # free-text next-action cell. That avoids adding a column to a
+          # framework-managed schema that every downstream repo would inherit.
+          while IFS=$'\t' read -r id due; do
+            [[ -n "$id" ]] || continue
+            due_epoch="$(date -u -d "$due" +%s)"
+            if (( due_epoch <= today_epoch )); then
+              echo "DUE  $id  (due $due)"
+              echo "::error title=$id is due::$id came due on $due. Open $register and run its next-action."
+              due_count=$(( due_count + 1 ))
+            else
+              days=$(( (due_epoch - today_epoch) / 86400 ))
+              echo "wait $id  (due $due, in $days day(s))"
+              pending_count=$(( pending_count + 1 ))
+            fi
+          done < <(grep -oE '^\| (OW-[0-9]+).*DUE: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$register" \
+                   | sed -E 's/^\| (OW-[0-9]+).*DUE: ([0-9-]+)$/\1\t\2/')
+
+          echo
+          echo "due now: $due_count   scheduled: $pending_count"
+
+          if (( due_count > 0 )); then
+            echo "Failing so this reaches the owner by email rather than sitting in a log."
+            exit 1
+          fi
