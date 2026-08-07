@@ -298,4 +298,159 @@ Neither window is closable by the caller. The lock has to be held across both
 phases, or the nested run has to inherit the parent's hold — which is the
 contract change recorded in the disposition above.
 
+---
+
+## BUG-007 — Check 43 clone detection treats every empty-stdout receipt as a forgery, because all of them hash to the SHA-256 of the empty string
+
+- **Filed:** 2026-08-07
+- **Disposition:** open in-repo framework defect, NOT fixed here. Diagnosed with a reproduction and a proposed one-predicate fix, but `state-transition-guard.sh` ships to consumer repos as a framework-managed install artifact and the downstream repo that found it is forbidden from patching it locally. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
+- **Discovered by:** a downstream consumer repo (research-lab) running the guard against `specs/_bugs/BUG-001-central-provider-credential-security`.
+- **Severity:** high. It produces a **false BLOCK**, and it is a false accusation of *fabrication* specifically — the most serious finding class the framework issues. It also fires across spec boundaries, so an unrelated spec's receipts can block a transition.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 43 (IMP-027 SCOPE-8, EV-3) — the clone-detection block, not the staleness block above it.
+
+### Mechanism
+
+Check 43 groups tool-call receipts by `stdoutHash` and fails when one hash is
+cited by more than one distinct `cmd`:
+
+```
+| group_by(.stdoutHash)
+| map(select((map(.cmd) | unique | length) > 1))
+```
+
+The in-file rationale is sound as far as it goes:
+
+> What cannot happen honestly is identical stdout under DIFFERENT commands —
+> `cargo test` and `npm run lint` do not produce byte-identical output.
+
+That reasoning has one unhandled degenerate case: **empty stdout**. Every
+command that writes nothing to stdout hashes to the same value —
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`, the SHA-256
+of the empty string:
+
+```
+$ printf '' | sha256sum
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -
+```
+
+Producing no stdout is routine and honest: `grep` with no match, a command that
+writes only to stderr, a failed invocation that never got as far as printing, a
+quiet-mode run. Every such receipt collides with every other one, and the check
+reads that collision as one result being reused to back an unrelated claim.
+
+### Reproduction
+
+```
+$ bash .github/bubbles/scripts/state-transition-guard.sh \
+    specs/_bugs/BUG-001-central-provider-credential-security
+🔴 BLOCK: Evidence receipt CLONE — one captured stdout is cited by two different
+commands, which cannot happen from honest execution: e3b0c44298fc… reused by:
+--help AND bash .github/bubbles/scripts/traceability-guard.sh
+specs/008-portfolio-survival-and-brief-lab --current-scope AND grep -n -E
+MANDATE_CONSTRAINT_KINDS|... rlportfolio.js AND node --test
+tests/feature-004-brief-eligibility.test.mjs AND node --test
+tests/feature-004-journey-evidence-refresh.test
+```
+
+Note the cited commands: a `grep` (no match, no stdout), a `--help` that exited
+127, and several `node --test` runs that exited 1 having written only to stderr.
+None of them produced stdout; none of them is a forgery.
+
+Note also that the finding cites `specs/008-portfolio-survival-and-brief-lab`
+while the guard was invoked on `specs/_bugs/BUG-001-...`. The receipt log is
+repo-global, so the clone check compares across every spec, and a transition can
+be blocked by receipts belonging to an unrelated packet.
+
+### Proof that empty stdout is the whole finding
+
+The receipt schema already records `stdoutBytes`, so the hypothesis is directly
+testable against the log:
+
+```
+$ jq -rs '[.[] | select((.stdoutHash // "") | startswith("e3b0c44298fc"))] | length' \
+    .specify/runtime/tool-calls.jsonl
+10
+$ jq -rs 'length' .specify/runtime/tool-calls.jsonl
+97
+```
+
+All 10 colliding receipts report `stdoutBytes=0`. Excluding that one digest
+leaves **zero** clones in the entire log:
+
+```
+$ jq -rs 'map(select((.stdoutHash // "") != "" and (.cmd // "") != ""
+      and ((.stdoutHash // "") | startswith("e3b0c44298fc") | not)))
+    | group_by(.stdoutHash)
+    | map(select((map(.cmd)|unique|length)>1)) | length' \
+    .specify/runtime/tool-calls.jsonl
+0
+```
+
+So on this repo the empty-stdout artifact is not merely the loudest clone
+finding — it is the *only* one. Every BLOCK the check has ever issued here is
+false.
+
+### Recommended Fix
+
+Add an emptiness predicate to the receipt selection. `stdoutBytes` is already in
+the schema, so this needs no new capture and no hardcoded digest:
+
+```
+map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutBytes // 0) > 0))
+```
+
+A receipt with no stdout carries no evidentiary content to clone, so excluding
+it removes a false-positive class without weakening the check: a genuine forgery
+reuses a *substantive* captured result, which by definition is non-empty.
+
+Guard the fix with an adversarial case — a log containing two different commands
+that both produced real, byte-identical stdout MUST still fail — so the fix
+cannot silently disable the check it is repairing.
+
+---
+
+## BUG-008 — `bubbles.audit` returns no output at all on one specific downstream packet; the packet-size hypothesis is refuted
+
+- **Filed:** 2026-08-07
+- **Disposition:** open, UNDIAGNOSED, recorded rather than worked around. The obvious hypothesis was tested and **refuted** (below), and no replacement hypothesis has evidence behind it. Deliberately NOT worked around: the blocked transition needs an `audit` phase claim, and hand-writing one is precisely the fabrication Gates G022/G027 exist to detect. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
+- **Discovered by:** a downstream consumer repo (research-lab) attempting to certify `specs/_bugs/BUG-001-central-provider-credential-security`.
+- **Severity:** high for the affected packet — it cannot reach a terminal status, because `audit` is a required phase and no other agent may claim it. No evidence yet of a general failure.
+- **Affects:** the `bubbles.audit` agent. No specific script identified; the failure is that the dispatch produces no output whatsoever, so there is no error message to attribute.
+
+### Symptom
+
+Dispatching `bubbles.audit` against that packet returns nothing — not a
+refusal, not a partial report, not an error. Eight attempts across separate
+sessions, same result each time. Every other agent dispatches normally against
+the same packet in the same sessions.
+
+### Refuted hypothesis: packet size
+
+The natural explanation is that the packet is too large for the audit agent to
+read — its `report.md` is large. That explanation does not survive contact with
+a sibling packet in the same repo:
+
+| packet | `report.md` lines | bytes | terminal status |
+|---|---|---|---|
+| `specs/_bugs/BUG-001-central-provider-credential-security` | 6950 | 342,091 | **blocked at `in_progress`** |
+| `specs/012-market-action-center-and-guided-tools/bugs/BUG-004-market-heatmap-control-surface` | 9907 | 469,230 | **`done`, certified** |
+
+BUG-004's report is roughly 43% larger by lines and 37% larger by bytes, and it
+audited and certified without incident. Size alone therefore does not explain
+the failure, and any fix built on the size assumption would be built on a
+falsified premise.
+
+### What Would Advance This
+
+The failure produces no diagnostic surface, so the first need is observability
+rather than a fix: have the audit dispatch emit *something* on every path —
+a start marker, and on abnormal termination a reason — so a silent failure
+becomes an attributable one. Until then any root cause is speculation.
+
+Candidate differences between the two packets that have NOT yet been tested and
+are recorded here only as untested leads, not findings: bug-folder location
+(`specs/_bugs/` versus a nested `specs/<feature>/bugs/`), the number of prior
+phase claims in `state.json`, and total packet size across all files rather than
+`report.md` alone.
+
 
