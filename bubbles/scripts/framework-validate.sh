@@ -197,10 +197,17 @@ changed_surface_touches() {
 VALIDATE_TIER="${BUBBLES_VALIDATE_TIER:-full}"
 LIST_TIER_ONLY="false"
 
-# IMP-027 SCOPE-7 (PERF-1). --tier=core took 260s for 16 of 209 checks; the full
-# tier is what pre-push runs. A ~25-minute serial pre-push is the strongest
-# practical incentive toward the bypass behaviour this framework exists to
-# prevent, so wall clock is a governance concern.
+# IMP-027 SCOPE-7 (PERF-1). --tier=core took 260s for 16 of 209 checks. A
+# ~25-minute serial pre-push is the strongest practical incentive toward the
+# bypass behaviour this framework exists to prevent, so wall clock is a
+# governance concern.
+#
+# WHICH TIER RUNS WHERE (keep this accurate -- a stale claim here sends a new
+# check into a tier that never executes in the gate people actually hit):
+#   pre-push  -> --tier=core   (see hooks/pre-push.sh; BUBBLES_PREPUSH_TIER=full
+#                               opts into the full gate locally)
+#   CI        -> the full tier
+# So a regression guard that must block a push has to be in core_check_label().
 #
 # --changed-only  restrict to checks whose owned surface the working tree
 #                 actually touched. Ownership is DERIVED (a selftest owns the
@@ -264,7 +271,8 @@ core_check_label() {
       *"Registry consistency"* | *"Gates registry"* | *"YAML schema"* | \
       *"Cheatsheet generator selftest"* | *"Modes split"* | \
       *"Scan-lib"* | *"Derived-artifact regen"* | *"Gate scaffolder"* | \
-      *"drift-check selftest"* | *"hub-report selftest"*)
+      *"drift-check selftest"* | *"hub-report selftest"* | \
+      *"guard-lib timeout fallback"*)
       return 0
       ;;
     *) return 1 ;;
@@ -419,6 +427,13 @@ run_check "Workflow YAML validity selftest (IMP-102 / SCOPE-3)" bash "$SCRIPT_DI
 # intentionally use raw timeout/sed -i mediated by guard-lib + the PATH shim).
 macos_portability_guard_timeout_seconds="${BUBBLES_MACOS_PORTABILITY_GUARD_SELFTEST_TIMEOUT_SECONDS:-120}"
 run_check "macOS portability guard selftest (bubbles-cross-platform-shell)" bubbles_run_with_timeout "$macos_portability_guard_timeout_seconds" bash "$SCRIPT_DIR/macos-portability-guard-selftest.sh"
+# guard-lib timeout fallback (OW-009): on a host with no coreutils timeout the
+# fallback watchdog must NOT inherit the caller's stdout pipe, or a command
+# substitution blocks for the FULL timeout even after the command already
+# exited. That is the 129s vs 9s state-transition-guard run reported on a stock
+# macOS PATH. The selftest forces the fallback branch on EVERY platform, so
+# Linux CI protects macOS.
+run_check "guard-lib timeout fallback selftest (OW-009)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/guard-lib-timeout-selftest.sh"
 # Bash baseline guard (IMP-102 / SCOPE-5): proves the shipped command surface
 # (cli.sh, framework-validate.sh) fails LOUDLY and EARLY on bash < 4 instead of
 # silently masking declare -A breakage — positive static + functional + an
