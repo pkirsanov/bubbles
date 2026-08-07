@@ -31,6 +31,32 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### latency report attributes parent-expanded runs to their expander
+
+Not cut as a standalone bump: this is a diagnostic reporting fix, not a
+correctness-critical gate fix that downstream must pick up right away, so it
+rides the next batched release train per the cadence policy above.
+
+`validation-latency-report.sh --group agent` bucketed the raw `agent` string.
+For a parent-expanded run that string is a **composite** id such as
+`bubbles.implement+test+validate+audit+docs`, so the report invented an
+"a+b+c" agent that never ran and hid the orchestrator that actually did the
+work. It now resolves such a run to its `expandedBy` value.
+
+Both jq programs in that script define `agent_of`, and the fix has to be in
+**both** — the first edit touched only the diagnostics copy while the
+table-rendering copy still emitted the composite. The new adversarial
+selftest case S7 caught that miss, which is why it asserts the composite is
+**absent** rather than merely that the expander is present; S8 guards the
+opposite direction so a genuine single-agent run is never rewritten.
+
+This closes OW-013 by fixing aggregation on the **consumer** side. The
+historical records are deliberately left alone: rewriting a composite id into
+one entry per named agent would convert an honest parent-expansion into five
+specialist dispatches that never occurred — manufacturing exactly the
+fabrication IMP-036 exists to stop — and it would have applied to only 3 of
+381 flagged records.
+
 ## v7.24.0 — delivery efficiency: the dispatch hole closed, the gates instrumented, the ceremony cut (IMP-036)
 
 A portfolio-wide audit across the six downstream repos measured that roughly half
