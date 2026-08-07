@@ -272,7 +272,7 @@ core_check_label() {
       *"Cheatsheet generator selftest"* | *"Modes split"* | \
       *"Scan-lib"* | *"Derived-artifact regen"* | *"Gate scaffolder"* | \
       *"drift-check selftest"* | *"hub-report selftest"* | \
-      *"guard-lib timeout fallback"*)
+      *"guard-lib timeout fallback"*) # portable-ok: case pattern matching a check NAME, not a timeout invocation
       return 0
       ;;
     *) return 1 ;;
