@@ -27,7 +27,9 @@ INPUT_BOOTSTRAP="$REPO_ROOT/agents/bubbles_shared/workflow-input-bootstrap.md"
 
 _regression_tmp_base="${TMPDIR:-$HOME/.cache}"
 mkdir -p "$_regression_tmp_base"
-TMP_DIR="$(mktemp -d -p "$_regression_tmp_base" bubbles-spec-review-route.XXXXXX)"
+# A template inside the base directory, not `-p`: the parent-directory flag is
+# GNU-only and BSD mktemp rejects it. Every mktemp call below uses this form.
+TMP_DIR="$(mktemp -d "$_regression_tmp_base/bubbles-spec-review-route.XXXXXX")"
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
@@ -77,7 +79,7 @@ assert_resolved_yq() {
   local mode="$2"
   local expr="$3"
   local resolved_file
-  resolved_file="$(mktemp -p "$TMP_DIR")"
+  resolved_file="$(mktemp "$TMP_DIR/resolved.XXXXXX")"
   set +e
   # v7 mode-collapse removed v5-name INPUT; these regression modes are persisted
   # names resolved programmatically, so grandfather them (per the resolver's own
