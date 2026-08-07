@@ -581,7 +581,7 @@ assert_json "read returns the anchored record while its digest is current" "$rea
 
 ready_status="$(bash "$ADAPTER" status --repo-root "$FIXTURE" --repository-alias fixture)"
 assert_json "provider status reports exclusions and fresh derived state" "$ready_status" \
-  'data["state"] == "ready" and data["excludedCount"] == sum(data["exclusions"].values()) and data["freshness"]["state"] == "fresh"'
+  'data["state"] == "ready" and data["excludedCount"] == sum(data["exclusions"].values()) and data["freshness"]["state"] == "fresh" and data["lifecycleCounts"] == {"admitted": data["recordCount"], "deleted": 0, "expired": 0, "superseded": 0}'
 
 freshness="$(bash "$ADAPTER" freshness --repo-root "$FIXTURE" --repository-alias fixture)"
 assert_json "provider freshness reports a current aggregate source digest" "$freshness" \

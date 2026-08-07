@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 and SCOPE-2 are implemented and validated in committed/pending commits; SCOPE-3 through SCOPE-7 remain
+**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 through SCOPE-3 are implemented and validated in committed/pending commits; SCOPE-4 through SCOPE-7 remain
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,20 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-3 - CLI search, read, status, freshness, and sync (LRN-4, REG-8)
-
-**Depends on:** SCOPE-1 and SCOPE-2
-
-**Decision:** Add one `recall` CLI family. Provide `search`, `read`, `status`, `freshness`, and `sync` subcommands. Keep all commands rooted to the active CLI repository. Do not accept a remembered repository path as input.
-
-`search` must emit machine-readable JSON and a concise text view. `read` must validate the current source anchor. `status` must report provider, lifecycle counts, excluded-source counts, and index location. `freshness` must distinguish fresh, stale, unknown, and disabled. `sync` is the only mutation in this scope.
-
-Search must fail with a distinct stale status when source digests changed. It must not silently return an empty result. Disabled recall may return the neutral result and an explicit disabled status.
-
-**Likely files and owners:** `bubbles/scripts/cli.sh`, `bubbles/scripts/experience-recall.sh`, `bubbles/scripts/experience-recall-cli-selftest.sh`, `bubbles/action-risk-registry.yaml`, and `docs/CHEATSHEET.md`. CLI and risk ownership belongs to `bubbles.super`. Selftest ownership belongs to `bubbles.test`. Documentation ownership belongs to `bubbles.docs`.
-
-**Observable acceptance:** Search returns at most the requested bounded count. Read returns the anchored record only while its digest matches. Status distinguishes no provider from zero matches. Freshness exits distinctly for stale or unknown state. Sync rebuilds atomically and leaves no partial index after failure.
 
 ### SCOPE-4 - Lifecycle, bounded export, and deletion (EV-7)
 

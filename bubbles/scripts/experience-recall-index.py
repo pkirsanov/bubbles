@@ -28,6 +28,7 @@ STATUS_NAME = "status.json"
 MAX_SOURCE_BYTES = 2 * 1024 * 1024
 
 KINDS = {"compacted-result", "lesson", "owner-decision", "finding", "outcome"}
+LIFECYCLE_STATES = ("admitted", "superseded", "expired", "deleted")
 TRUST_BY_KIND = {
     "compacted-result": {"executed-result", "historical-result"},
     "lesson": {"reviewed-lesson", "anchored-lesson"},
@@ -543,6 +544,7 @@ class IndexBuilder:
             "recordCount": len(records),
             "candidateCount": self.candidate_count,
             "countsByKind": counts_by_kind(records),
+            "lifecycleCounts": counts_by_lifecycle(records),
             "excludedCount": sum(self.exclusions.values()),
             "exclusions": {key: self.exclusions[key] for key in sorted(self.exclusions)},
             "builtAt": max(
@@ -914,6 +916,11 @@ def counts_by_kind(records: Sequence[Dict[str, Any]]) -> Dict[str, int]:
     return {key: counts[key] for key in sorted(counts)}
 
 
+def counts_by_lifecycle(records: Sequence[Dict[str, Any]]) -> Dict[str, int]:
+    counts = collections.Counter(record["lifecycle"]["state"] for record in records)
+    return {state: counts[state] for state in LIFECYCLE_STATES}
+
+
 def source_digest_for_records(records: Sequence[Dict[str, Any]]) -> str:
     source_material = "\n".join(
         f"{record['sourceAnchor']['relativePath']}\x00{record['sourceAnchor']['selector']}\x00{record['sourceAnchor']['contentDigest']}"
@@ -1010,6 +1017,8 @@ def validate_status_against_records(
     record_count = status.get("recordCount")
     if type(record_count) is not int or record_count != len(records) or recorded_counts != actual_counts:
         raise RecallError("index-invalid", "experience recall status counts do not match the index")
+    if status.get("lifecycleCounts") != counts_by_lifecycle(records):
+        raise RecallError("index-invalid", "experience recall lifecycle counts do not match the index")
 
     exclusions = status.get("exclusions")
     if not isinstance(exclusions, dict) or any(
@@ -1123,6 +1132,7 @@ def provider_status(paths: RepositoryPaths, repository_alias: str) -> Dict[str, 
             "recordCount": 0,
             "candidateCount": 0,
             "countsByKind": {},
+            "lifecycleCounts": {state: 0 for state in LIFECYCLE_STATES},
             "excludedCount": 0,
             "exclusions": {},
             "builtAt": None,

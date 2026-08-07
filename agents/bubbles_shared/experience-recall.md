@@ -210,9 +210,46 @@ session store.
 | `export` | `unsupported` | Return `[]`, write an unsupported diagnostic, and exit `1` |
 | `delete` | `unsupported` | Return a structured unsupported object, write a diagnostic, and exit `1` |
 
-SCOPE-2 does not ship the `recall` CLI family, MCP tools, lifecycle mutation,
-or orchestrator consumption. The schema defines those broader contracts, but
-the local provider currently emits only `admitted` lifecycle state.
+SCOPE-2 ships provider behavior. SCOPE-3 adds the public repository-rooted CLI
+described below. The local provider still emits only `admitted` lifecycle state.
+
+### Public CLI (SCOPE-3)
+
+`bubbles recall` exposes `search`, `read`, `status`, `freshness`, and `sync`.
+The wrapper derives the repository root, repository alias, and configured
+provider. It refuses public `--repo-root`, `--repository-alias`, and `--adapter`
+overrides.
+
+Risk classification runs before provider dispatch or usage refusal. `search`,
+`read`, `status`, and `freshness` are `read_only`. `sync` is `owned_mutation`.
+An unknown recall operation is conservatively `owned_mutation` before usage
+refusal.
+
+Each command supports JSON and bounded text views. The wrapper validates each
+exact provider response shape before rendering. It rejects malformed provider
+responses and sanitizes text for terminal output.
+
+The `freshness` command uses this closed exit contract:
+
+| Exit | Meaning |
+|---|---|
+| `0` | Fresh |
+| `3` | Stale |
+| `4` | Unknown |
+| `5` | Disabled |
+| `1` | Provider failure or malformed response |
+| `2` | Usage error |
+
+A disabled text search names the disabled adapter instead of reporting zero
+matches. Status and freshness also return `disabled`.
+
+`search`, `read`, `status`, and `freshness` leave derived bytes and mtimes
+unchanged. `sync` replaces derived state atomically and is SCOPE-3's only
+mutation.
+
+`status` reports provider state, corpus counts, lifecycle counts, exclusion
+counts, and freshness. SCOPE-3 exposes no lifecycle mutation, export, delete,
+MCP tools, or orchestrator consumption.
 
 ### Derived State
 
@@ -226,9 +263,10 @@ authority. The JSONL file contains normalized records and source metadata. It
 does not copy raw artifact bodies. Rebuilding an unchanged corpus produces the
 same record bytes and ordering.
 
-The status file reports candidate, record, kind, and exclusion counts. It also
-records the index digest, aggregate source digest, provider version, and build
-time. Missing derived state reports `state: missing` and unknown freshness.
+The status file reports candidate, record, kind, lifecycle, and exclusion
+counts. It also records the index digest, aggregate source digest, provider
+version, and build time. Missing derived state reports `state: missing` and
+unknown freshness.
 
 ### Closed Admission
 
