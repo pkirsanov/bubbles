@@ -38,7 +38,9 @@ fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
 TEST_ROOT_BASE="${HOME}/.cache/bubbles-result-envelope-selftest"
 mkdir -p "$TEST_ROOT_BASE"
-TEST_ROOT="$(mktemp -d -p "$TEST_ROOT_BASE")"
+# A template inside the base directory, not `-p`: the parent-directory flag is
+# GNU-only and BSD mktemp rejects it, which took this selftest down on macOS.
+TEST_ROOT="$(mktemp -d "$TEST_ROOT_BASE/run.XXXXXX")"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
 # Re-implement run_validator without AGENTS_DIR env override since the

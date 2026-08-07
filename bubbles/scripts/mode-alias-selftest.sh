@@ -167,7 +167,9 @@ _alias_fixture_base="${HOME}/.cache/bubbles-mode-alias-selftest"
 mkdir -p "$_alias_fixture_base"
 # BSD/macOS mktemp lacks GNU `--suffix`; create the temp file then rename to add
 # the .yaml extension (portable across GNU + BSD).
-tmp_alias="$(mktemp -p "$_alias_fixture_base")"
+# A template inside the base directory, not `-p`: the parent-directory flag is
+# GNU-only and BSD mktemp rejects it, which took this selftest down on macOS.
+tmp_alias="$(mktemp "$_alias_fixture_base/alias.XXXXXX")"
 mv "$tmp_alias" "${tmp_alias}.yaml"
 tmp_alias="${tmp_alias}.yaml"
 trap 'rm -f "$tmp_alias"' EXIT
