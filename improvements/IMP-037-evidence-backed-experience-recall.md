@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 through SCOPE-3 are implemented and validated in committed/pending commits; SCOPE-4 through SCOPE-7 remain
+**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 through SCOPE-4 are implemented and validated in committed/pending commits; SCOPE-5 through SCOPE-7 remain
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,20 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-4 - Lifecycle, bounded export, and deletion (EV-7)
-
-**Depends on:** SCOPE-1, SCOPE-2, and SCOPE-3
-
-**Decision:** Add a durable local lifecycle ledger and CLI operations for `admitted`, `superseded`, `expired`, and `deleted`. Keep derived recall state separate from source authority.
-
-Deleting a recall record must not delete its source artifact. It must write a source-anchor tombstone, remove the record from default search, and prevent automatic re-admission. An explicit admit action may reverse that recall-only state.
-
-Export must require an explicit bounded selection. It must include normalized records and source anchors, not raw source bodies. Export must never include transcript data because transcript data is outside the corpus.
-
-**Likely files and owners:** `bubbles/scripts/experience-recall.sh`, `bubbles/scripts/experience-recall-lifecycle.py`, `bubbles/scripts/experience-recall-lifecycle-selftest.sh`, `agents/bubbles_shared/artifact-ownership.md`, and `bubbles/action-risk-registry.yaml`. Lifecycle ownership belongs to `bubbles.super`. Destructive-path selftests belong to `bubbles.test`.
-
-**Observable acceptance:** Superseded, expired, and deleted records disappear from default search. Status reports each lifecycle count. Rebuild honors tombstones. Export respects its limit and omits raw bodies. Delete changes only derived recall state and the lifecycle ledger.
 
 ### SCOPE-5 - Thin read-only MCP tools over bash twins (REG-8)
 

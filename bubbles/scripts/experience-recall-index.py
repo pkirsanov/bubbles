@@ -25,10 +25,32 @@ EXTRACTOR_VERSION = "1"
 RUNTIME_PARTS = (".specify", "runtime", "experience-recall")
 INDEX_NAME = "index.jsonl"
 STATUS_NAME = "status.json"
+LEDGER_NAME = "lifecycle.jsonl"
+LEDGER_CONTRACT = "lifecycle-entry"
+LEDGER_ENTRY_KEYS = {
+    "contractType",
+    "schemaVersion",
+    "sequence",
+    "repositoryAlias",
+    "recordId",
+    "anchorKey",
+    "sourceAnchor",
+    "state",
+    "transitionedAt",
+    "reason",
+}
+MAX_LEDGER_BYTES = 1024 * 1024
+MAX_LEDGER_ENTRIES = 5000
+MAX_LEDGER_REASON_CHARS = 512
 MAX_SOURCE_BYTES = 2 * 1024 * 1024
 
 KINDS = {"compacted-result", "lesson", "owner-decision", "finding", "outcome"}
 LIFECYCLE_STATES = ("admitted", "superseded", "expired", "deleted")
+TRANSITION_TIMESTAMP_FIELD = {
+    "superseded": "supersededAt",
+    "expired": "expiredAt",
+    "deleted": "deletedAt",
+}
 TRUST_BY_KIND = {
     "compacted-result": {"executed-result", "historical-result"},
     "lesson": {"reviewed-lesson", "anchored-lesson"},
@@ -67,6 +89,7 @@ PACKET_FIELDS = {
     "actionable",
 }
 DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+RECORD_ID_RE = re.compile(r"^recall-[0-9a-f]{64}$")
 ALIAS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SESSION_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
 LESSON_ID_RE = re.compile(r"^lesson-[0-9a-f]{64}$")
@@ -488,10 +511,17 @@ def validate_record(record: Dict[str, Any]) -> None:
         raise RecallError("invalid-record", "lifecycle metadata is invalid")
     if set(lifecycle) != {"contractType", "state", "admittedAt", "supersededAt", "expiredAt", "deletedAt"}:
         raise RecallError("invalid-record", "lifecycle fields are invalid")
-    if lifecycle.get("state") != "admitted" or not valid_timestamp(lifecycle.get("admittedAt")):
+    state = lifecycle.get("state")
+    if state not in LIFECYCLE_STATES or not valid_timestamp(lifecycle.get("admittedAt")):
         raise RecallError("invalid-record", "lifecycle state is invalid")
-    if any(lifecycle.get(key) is not None for key in ("supersededAt", "expiredAt", "deletedAt")):
-        raise RecallError("invalid-record", "admitted lifecycle has a transition timestamp")
+    expected_stamp = TRANSITION_TIMESTAMP_FIELD.get(state)
+    for key in ("supersededAt", "expiredAt", "deletedAt"):
+        value = lifecycle.get(key)
+        if key == expected_stamp:
+            if not valid_timestamp(value):
+                raise RecallError("invalid-record", f"{state} lifecycle has no transition timestamp")
+        elif value is not None:
+            raise RecallError("invalid-record", "lifecycle carries a transition timestamp for another state")
     provenance = record.get("provenance")
     if not isinstance(provenance, dict) or set(provenance) != {
         "extractor",
@@ -764,6 +794,8 @@ class IndexBuilder:
         if set(anchor_meta) != required_anchor:
             raise RecallError("malformed-lesson-metadata", "lesson source anchor fields are invalid")
         relative = self.paths.normalize_relative(anchor_meta.get("relativePath"))
+        if transcript_like(relative):
+            raise RecallError("transcript-like-input", "lesson anchor names an excluded input family")
         source_path = self.paths.resolve_file(relative)
         content_digest = anchor_meta.get("contentDigest")
         if not isinstance(content_digest, str) or not DIGEST_RE.fullmatch(content_digest):
@@ -804,6 +836,9 @@ class IndexBuilder:
             if path.is_symlink() or not path.is_file() or not IMPROVEMENT_RE.fullmatch(path.name):
                 continue
             relative = f"improvements/{path.name}"
+            if transcript_like(relative):
+                # An excluded input family is never read, so its bytes cannot reach the corpus.
+                continue
             text = read_text(path)
             lines = text.splitlines()
             status_token = next(
@@ -929,8 +964,160 @@ def source_digest_for_records(records: Sequence[Dict[str, Any]]) -> str:
     return digest_bytes(source_material)
 
 
+def anchor_key(repository_alias: str, relative_path: str, selector: str) -> str:
+    material = "\x00".join((repository_alias, relative_path, selector)).encode("utf-8")
+    return digest_bytes(material)
+
+
+def printable_text(value: Any, limit: int) -> bool:
+    if not isinstance(value, str) or not value or len(value) > limit:
+        return False
+    return not any(character < " " or character == "\x7f" for character in value)
+
+
+def valid_ledger_anchor(value: Any) -> bool:
+    if not isinstance(value, dict) or set(value) != {
+        "relativePath",
+        "selector",
+        "contentDigest",
+        "observedAt",
+    }:
+        return False
+    relative = value["relativePath"]
+    if not printable_text(relative, 1024) or relative.startswith("/"):
+        return False
+    if any(part in {"", ".", ".."} for part in PurePosixPath(relative).parts):
+        return False
+    return (
+        printable_text(value["selector"], 512)
+        and isinstance(value["contentDigest"], str)
+        and DIGEST_RE.fullmatch(value["contentDigest"]) is not None
+        and valid_timestamp(value["observedAt"])
+    )
+
+
+def validate_ledger_entry(
+    entry: Any,
+    expected_sequence: int,
+    repository_alias: str,
+) -> Dict[str, Any]:
+    if not isinstance(entry, dict) or set(entry) != LEDGER_ENTRY_KEYS:
+        raise RecallError("ledger-invalid", "lifecycle ledger entry fields do not match schema version 1")
+    if entry["contractType"] != LEDGER_CONTRACT or entry["schemaVersion"] != SCHEMA_VERSION:
+        raise RecallError("ledger-invalid", "lifecycle ledger entry discriminator is invalid")
+    if type(entry["sequence"]) is not int or entry["sequence"] != expected_sequence:
+        raise RecallError("ledger-invalid", "lifecycle ledger sequence is not continuous")
+    if entry["repositoryAlias"] != repository_alias:
+        raise RecallError("ledger-invalid", "lifecycle ledger entry belongs to another repository")
+    if not isinstance(entry["recordId"], str) or RECORD_ID_RE.fullmatch(entry["recordId"]) is None:
+        raise RecallError("ledger-invalid", "lifecycle ledger record id is invalid")
+    if not isinstance(entry["anchorKey"], str) or DIGEST_RE.fullmatch(entry["anchorKey"]) is None:
+        raise RecallError("ledger-invalid", "lifecycle ledger anchor key is invalid")
+    if not valid_ledger_anchor(entry["sourceAnchor"]):
+        raise RecallError("ledger-invalid", "lifecycle ledger source anchor is invalid")
+    anchor = entry["sourceAnchor"]
+    if entry["anchorKey"] != anchor_key(repository_alias, anchor["relativePath"], anchor["selector"]):
+        raise RecallError("ledger-invalid", "lifecycle ledger anchor key does not bind its source anchor")
+    if entry["state"] not in LIFECYCLE_STATES:
+        raise RecallError("ledger-invalid", "lifecycle ledger state is outside the closed state machine")
+    if not valid_timestamp(entry["transitionedAt"]):
+        raise RecallError("ledger-invalid", "lifecycle ledger transition time is invalid")
+    reason = entry["reason"]
+    if reason is not None and not printable_text(reason, MAX_LEDGER_REASON_CHARS):
+        raise RecallError("ledger-invalid", "lifecycle ledger reason is invalid")
+    return entry
+
+
+def ledger_path(paths: RepositoryPaths, create: bool) -> Path:
+    runtime = paths.runtime_dir(create=create)
+    path = runtime / LEDGER_NAME
+    if path.is_symlink() or (path.exists() and not stat.S_ISREG(path.lstat().st_mode)):
+        raise RecallError("unsafe-derived-state", "lifecycle ledger path is not a contained regular file")
+    return path
+
+
+def read_ledger(
+    paths: RepositoryPaths,
+    repository_alias: str,
+    create: bool = False,
+) -> List[Dict[str, Any]]:
+    try:
+        path = ledger_path(paths, create=create)
+    except RecallError as error:
+        if error.code == "index-missing":
+            return []
+        raise
+    if not path.exists():
+        return []
+    payload = path.read_bytes()
+    if not payload:
+        return []
+    if len(payload) > MAX_LEDGER_BYTES:
+        raise RecallError("ledger-invalid", "lifecycle ledger exceeds the contract size bound")
+    if not payload.endswith(b"\n"):
+        raise RecallError("ledger-invalid", "lifecycle ledger is truncated at its final entry")
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise RecallError("ledger-invalid", "lifecycle ledger is not valid UTF-8") from error
+    entries: List[Dict[str, Any]] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        if not line.strip():
+            raise RecallError("ledger-invalid", f"lifecycle ledger has a blank entry at line {line_number}")
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise RecallError(
+                "ledger-invalid", f"lifecycle ledger entry {line_number} is malformed"
+            ) from error
+        entries.append(validate_ledger_entry(entry, line_number, repository_alias))
+    if len(entries) > MAX_LEDGER_ENTRIES:
+        raise RecallError("ledger-invalid", "lifecycle ledger exceeds the contract entry bound")
+    return entries
+
+
+def effective_lifecycle_states(entries: Sequence[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    effective: Dict[str, Dict[str, Any]] = {}
+    for entry in entries:
+        effective[entry["recordId"]] = entry
+    return effective
+
+
+def apply_lifecycle_overrides(
+    records: Iterable[Dict[str, Any]],
+    effective: Dict[str, Dict[str, Any]],
+) -> None:
+    for record in records:
+        entry = effective.get(record["recordId"])
+        if entry is None:
+            continue
+        lifecycle = {
+            "contractType": "lifecycle",
+            "state": entry["state"],
+            "admittedAt": record["lifecycle"]["admittedAt"],
+            "supersededAt": None,
+            "expiredAt": None,
+            "deletedAt": None,
+        }
+        if entry["state"] == "admitted":
+            lifecycle["admittedAt"] = entry["transitionedAt"]
+        else:
+            lifecycle[TRANSITION_TIMESTAMP_FIELD[entry["state"]]] = entry["transitionedAt"]
+        record["lifecycle"] = lifecycle
+
+
+def serialize_ledger(entries: Sequence[Dict[str, Any]]) -> bytes:
+    if not entries:
+        return b""
+    return ("\n".join(canonical_json(entry) for entry in entries) + "\n").encode("utf-8")
+
+
 def sync_index(paths: RepositoryPaths, repository_alias: str) -> Dict[str, Any]:
     records, status = IndexBuilder(paths, repository_alias).build()
+    apply_lifecycle_overrides(
+        records, effective_lifecycle_states(read_ledger(paths, repository_alias))
+    )
+    status["lifecycleCounts"] = counts_by_lifecycle(records)
     index_payload = serialize_index(records)
     status["indexDigest"] = digest_bytes(index_payload)
     status["sourceDigest"] = source_digest_for_records(records)
@@ -1055,7 +1242,11 @@ def assess_freshness(paths: RepositoryPaths, records: Sequence[Dict[str, Any]]) 
     current_parts: List[str] = []
     stale = 0
     unavailable = 0
+    # Freshness describes usable recall state, so a tombstoned record whose
+    # source later disappears must not make the whole index unknown.
     for record in records:
+        if record["lifecycle"]["state"] != "admitted":
+            continue
         anchor = record["sourceAnchor"]
         try:
             source = paths.resolve_file(anchor["relativePath"])
