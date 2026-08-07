@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS 2026-08-07 - SCOPE-1 through SCOPE-6 are implemented and validated in committed/pending commits; SCOPE-7 remains
+**Status:** APPLIED 2026-08-07 - SCOPE-1 through SCOPE-7 are implemented, measured, and validated; all scope blocks are removed as delivered
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,20 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-7 - Adversarial evaluation, documentation, capability registration, and packaging (LRN-4, EV-7, REG-8)
-
-**Depends on:** SCOPE-1 through SCOPE-6
-
-**Decision:** Add a labeled evaluation corpus that measures lexical retrieval and attacks authority, freshness, repository isolation, lifecycle, and privacy boundaries. Document the capability and register only the behavior that actually ships.
-
-Record lexical precision and recall at the configured result bound. Require every returned record to have a valid anchor. Semantic or embedding providers are excluded from IMP-037. A future IMP may propose one only after a measured evaluation shows a positive recall lift without reducing precision, anchor validity, repository isolation, or default-none behavior.
-
-Update the release manifest only after all source, selftest, documentation, and consumer paths exist. Mark the capability `shipped` only when the ledger names real consumers and the live consumer-freshness guard accepts them.
-
-**Likely files and owners:** `bubbles/eval/tasks/`, `bubbles/eval/fixtures/`, `bubbles/scripts/experience-recall-eval-selftest.sh`, `docs/recipes/evidence-backed-experience-recall.md`, `docs/CATALOG.md`, `docs/guides/CONTROL_PLANE_SCHEMAS.md`, `docs/CHEATSHEET.md`, `bubbles/capability-ledger.yaml`, `bubbles/release-manifest.json`, and `CHANGELOG.md`. Evaluation and framework registration belong to `bubbles.super` and `bubbles.test`. Managed documentation belongs to `bubbles.docs`.
-
-**Observable acceptance:** Positive fixtures retrieve the expected anchored records. Near-match fixtures reject unrelated experience. Cross-repo, stale-anchor, deleted-record, unanchored-lesson, transcript, prompt-injection, tool-authorization, DoD-evidence, and Skill-mutation attacks fail. Documentation matches the shipped CLI and MCP surfaces. Capability-consumer freshness and release-manifest checks pass.
 
 ## Migration / rollout
 

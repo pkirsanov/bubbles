@@ -1338,9 +1338,54 @@ def tokenize(value: str) -> set[str]:
     return set(TOKEN_RE.findall(value.lower()))
 
 
-def score_record(record: Dict[str, Any], query: str) -> Dict[str, float]:
+# Retrieval-quality controls (IMP-037 / SCOPE-7), both measured against
+# bubbles/eval/fixtures/experience-recall/corpus.json.
+#
+# DF guard: a query token that occurs in most records carries no discriminating
+# signal. The corpus summary template literally begins "Problem: ...", so the
+# token `problem` sits in 100% of summaries; without this guard the filler query
+# "the it was and problem" returned 5 confident hits. This is poor-man's IDF --
+# deterministic, dependency-free, and corpus-adaptive, which is why it is
+# preferred over a hand-maintained stopword list that would need curating per
+# language and per repository.
+#
+# It engages only on a corpus large enough for document frequency to mean
+# anything. On a 3-record index, 2 records is 67% and would zero a perfectly
+# discriminating term.
+DF_GUARD_MIN_RECORDS = 8
+DF_GUARD_SATURATION_RATIO = 0.5
+
+# Relevance floor: keep only hits within this fraction of the best score. The
+# measured corpus separates signal from noise by a wide margin (for example
+# 22 vs 3, and 19 vs 6), so a half-of-top floor removes the tail without ever
+# dropping the top hit. Ties survive, which is what keeps a genuinely broad
+# query (two equally relevant database records at 7 and 7) intact.
+RELEVANCE_FLOOR_RATIO = 0.5
+
+
+def saturated_tokens(records: Sequence[Dict[str, Any]]) -> set[str]:
+    """Tokens so common across the corpus that they cannot discriminate."""
+    if len(records) < DF_GUARD_MIN_RECORDS:
+        return set()
+    counts: Dict[str, int] = {}
+    for record in records:
+        seen = tokenize(record["summary"])
+        fields = record["searchableFields"]
+        for value in fields["identifiers"] + fields["phrases"]:
+            seen |= tokenize(value)
+        seen |= {value.lower() for value in fields["tags"]}
+        for token in seen:
+            counts[token] = counts.get(token, 0) + 1
+    ceiling = len(records) * DF_GUARD_SATURATION_RATIO
+    return {token for token, count in counts.items() if count > ceiling}
+
+
+def score_record(
+    record: Dict[str, Any], query: str, ignored_tokens: Optional[set[str]] = None
+) -> Dict[str, float]:
+    ignored = ignored_tokens or set()
     query_normalized = normalized_text(query, 1000).lower()
-    query_tokens = tokenize(query_normalized)
+    query_tokens = tokenize(query_normalized) - ignored
     identifiers = [value.lower() for value in record["searchableFields"]["identifiers"]]
     phrases = [value.lower() for value in record["searchableFields"]["phrases"]]
     tags = [value.lower() for value in record["searchableFields"]["tags"]]
@@ -1393,9 +1438,24 @@ def search_records(
     if freshness["state"] != "fresh":
         raise RecallError(f"index-{freshness['state']}", freshness["reason"] or "index is not fresh")
     scored: List[Tuple[Tuple[float, float, float, str], Dict[str, Any]]] = []
-    for record in records:
-        if record["lifecycle"]["state"] != "admitted" or record["freshness"]["state"] != "fresh":
-            continue
+    # The per-record freshness test below is defense in depth and is currently
+    # unreachable: assess_freshness above evaluates every record, so a single
+    # changed anchor makes the WHOLE index stale and search has already refused
+    # by this point. It is kept deliberately so that a future partial-freshness
+    # model cannot start serving stale records by omission. Do not read its
+    # presence as evidence that a stale record can reach scoring today --
+    # experience-recall-eval-selftest.sh asserts the index-level refusal, which
+    # is the reachable contract.
+    candidates = [
+        record
+        for record in records
+        if record["lifecycle"]["state"] == "admitted" and record["freshness"]["state"] == "fresh"
+    ]
+    # Document frequency is computed over the admitted/fresh candidate set, not
+    # the raw index, so a saturated token is measured against what search can
+    # actually return.
+    ignored_tokens = saturated_tokens(candidates)
+    for record in candidates:
         if kinds and record["kind"] not in kinds:
             continue
         if trusts and record["sourceTrust"] not in trusts:
@@ -1404,7 +1464,7 @@ def search_records(
             continue
         if scope_ref is not None and record["scopeRef"] != scope_ref:
             continue
-        score = score_record(record, text)
+        score = score_record(record, text, ignored_tokens)
         if score["total"] <= 0:
             continue
         result = {
@@ -1433,6 +1493,14 @@ def search_records(
         )
         scored.append((ordering, result))
     scored.sort(key=lambda item: item[0])
+    if scored:
+        # Applied AFTER sorting and BEFORE the limit, so the floor trims the
+        # noise tail rather than competing with the result bound. The top hit
+        # always clears its own floor, so this can never empty a result set
+        # that had a match.
+        best = scored[0][1]["score"]["total"]
+        cutoff = best * RELEVANCE_FLOOR_RATIO
+        scored = [item for item in scored if item[1]["score"]["total"] >= cutoff]
     return [result for _, result in scored[:limit]]
 
 

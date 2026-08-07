@@ -31,6 +31,56 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Evidence-Backed Experience Recall (IMP-037)
+
+New opt-in capability: relevance retrieval over Bubbles-owned structured
+experience — compacted RESULT-ENVELOPE history, anchored lessons, owner
+decisions, findings, and outcomes. The default adapter is `none`, so an
+untouched repository sees **zero behavioral change**.
+
+The problem it targets is not storage, it is retrieval. Bubbles already
+preserved this history; nothing could ask it *"has this repository hit this
+before?"* The record of an incident sat correctly stored and effectively
+invisible while the same problem was solved again.
+
+**Authority is the hard part, and it is mechanical.** Recalled experience is
+permanently tier 4 and `recallAuthority: advisory`; a valid source anchor does
+not promote it. Two boundaries are structural rather than documentary:
+
+- `result-envelope-validate.sh` refuses any envelope citing a recall record id,
+  the recall index directory, or a content-classified recall export in
+  `evidenceRefs`, `toolCalls`, `evidence`, or `dodRef` — in **every** mode
+  including `--advisory`, because citing advisory content as proof is an
+  authority breach, not a schema nit. Exports are classified by content, so a
+  rename does not launder one. Narrative fields are deliberately not scanned:
+  an agent should be able to disclose that it consulted recall.
+- The public twin derives repository root and alias from its own install
+  location and refuses `--repo-root`, `--repository-alias`, and `--adapter`.
+  Cross-repository recall is not a rule that can be broken; it is not
+  expressible.
+
+The corpus is closed. Raw host transcripts, chat logs, terminal scrollback,
+arbitrary Markdown, source text, and inferred personas are inadmissible. This
+explicitly does **not** revive raw session-store mining.
+
+**Retrieval quality is measured, not asserted.** A labeled corpus at
+`bubbles/eval/fixtures/experience-recall/corpus.json` scores macro precision and
+recall at the result bound. First measurement was precision **0.54**, with a
+pure-stopword query returning five confident hits. Two controls fixed it — a
+document-frequency guard that zeroes query tokens saturated across the corpus
+(the summary template begins "Problem:", so `problem` carried no signal), and a
+relevance floor keeping only hits within half the top score. Now **1.00
+precision / 1.00 recall** over 13 queries, recall never having moved.
+
+Also fixed a real coverage gap found while landing this: none of the recall
+selftests had ever been registered in `framework-validate.sh` — nothing there
+auto-discovers `*-selftest.sh` — so a green suite was executed by no gate. All
+seven are now registered (540 assertions).
+
+New surfaces: `experienceRecall.adapter` config, `none` + `local-lexical`
+adapters, the `recall` CLI family, read-only MCP twins, a lifecycle ledger with
+tombstoned deletion, and `docs/recipes/evidence-backed-experience-recall.md`.
+
 ### latency report attributes parent-expanded runs to their expander
 
 Not cut as a standalone bump: this is a diagnostic reporting fix, not a

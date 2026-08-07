@@ -455,6 +455,13 @@ run_check "Experience-recall lifecycle selftest (IMP-037 / SCOPE-4)" bubbles_run
 # EVERY mode including --advisory, because that is an authority breach, not a
 # schema nit. Also pins the validator's fallback constants to the indexer's.
 run_check "Experience-recall authority firewall selftest (IMP-037 / SCOPE-6)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/experience-recall-authority-selftest.sh"
+# Retrieval QUALITY, not just correctness: a labeled corpus measures macro
+# precision/recall at the result bound and attacks repository isolation, anchor
+# validity, freshness, lifecycle, corpus admission, and prompt injection. A
+# provider that retrieves nothing useful passes every other selftest.
+# Source-only: the corpus lives under bubbles/eval/, which does not ship, so
+# downstream this could only ever SKIP.
+run_check_self_only "Experience-recall evaluation selftest (IMP-037 / SCOPE-7)" bubbles_run_with_timeout 300 bash "$SCRIPT_DIR/experience-recall-eval-selftest.sh"
 run_check_self_only "Installer manifest check (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer.sh"
 run_check_self_only "Installer manifest selftest (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer-selftest.sh"
 run_check_self_only "Payload integrity verifier selftest (IMP-101 / SCOPE-8)" bash "$SCRIPT_DIR/verify-payload-integrity-selftest.sh"

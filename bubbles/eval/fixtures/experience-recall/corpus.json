@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "description": "Labeled retrieval-quality corpus for the IMP-037 local-lexical experience-recall provider. Documents become anchored lessons in a synthetic repository. Each query declares the document keys a correct provider must return within the result bound. Labels are declarative so a scoring change is reviewed as data, not buried in shell.",
+  "resultBound": 5,
+  "thresholds": {
+    "minMacroPrecision": 0.95,
+    "minMacroRecall": 0.95,
+    "requirePerQueryFullRecall": true,
+    "comment": "Measured 1.00/1.00 on the shipped local-lexical provider after the SCOPE-7 document-frequency guard and relevance floor were added (before them: precision 0.54, recall 1.00). Thresholds sit just under measured so benign scoring drift does not fail the gate while a real regression does. requirePerQueryFullRecall is the sharper guard: macro precision only falls to about 0.96 when a single query degrades, which a macro-only threshold could absorb, so every individual query must still return all of its labeled relevant records."
+  },
+  "documents": [
+    {
+      "key": "db-timeout",
+      "problem": "database connection timeout under retry storms",
+      "cause": "the retry budget was unbounded so every failure amplified",
+      "fix": "bound total retries and add jitter",
+      "appliesWhen": "a database timeout repeats under load"
+    },
+    {
+      "key": "db-pool-exhaustion",
+      "problem": "postgres connection pool exhaustion during migrations",
+      "cause": "long migrations held pooled connections open",
+      "fix": "run migrations on a dedicated short-lived connection",
+      "appliesWhen": "a migration runs against a pooled database"
+    },
+    {
+      "key": "e2e-login-flake",
+      "problem": "playwright end to end test flakes on the login redirect",
+      "cause": "the auth cookie was set after first paint so the assertion raced",
+      "fix": "wait for the network idle state before asserting the redirect",
+      "appliesWhen": "an end to end test asserts a post login redirect"
+    },
+    {
+      "key": "e2e-silent-pass",
+      "problem": "end to end test passed while the feature was missing",
+      "cause": "the test returned early when the control was absent",
+      "fix": "assert visibility directly and delete the bailout branch",
+      "appliesWhen": "a required end to end scenario contains an early return"
+    },
+    {
+      "key": "docker-cache-miss",
+      "problem": "docker build cache miss on every cargo layer",
+      "cause": "the lockfile was copied after the source tree",
+      "fix": "copy manifests first and build dependencies before source",
+      "appliesWhen": "a docker build recompiles unchanged dependencies"
+    },
+    {
+      "key": "docker-oom",
+      "problem": "docker build killed with exit code 137 during compilation",
+      "cause": "the host ran out of memory while other stacks were running",
+      "fix": "stop idle stacks and cap parallel compile jobs",
+      "appliesWhen": "a container build dies with exit code 137"
+    },
+    {
+      "key": "secret-leak-echo",
+      "problem": "a secret value leaked into terminal output during diagnostics",
+      "cause": "a masked expansion expanded to the real value when the variable was set",
+      "fix": "report presence only and never expand the value",
+      "appliesWhen": "a diagnostic prints a credential bearing variable"
+    },
+    {
+      "key": "shared-index-race",
+      "problem": "a commit swept in another agent's staged files",
+      "cause": "the shared index changed between the staging check and the commit",
+      "fix": "commit only explicit pathspecs so the index cannot leak in",
+      "appliesWhen": "several agents share one working copy"
+    },
+    {
+      "key": "exec-bit-lost",
+      "problem": "a shipped shell script landed without its executable bit",
+      "cause": "the file mode was never verified after creation",
+      "fix": "assert the staged mode rather than trusting the report",
+      "appliesWhen": "a new script is added to the managed file set"
+    },
+    {
+      "key": "manifest-drift",
+      "problem": "a new managed file was missing from the release manifest",
+      "cause": "the generator only walks tracked files and the file was untracked",
+      "fix": "stage the file before regenerating the manifest",
+      "appliesWhen": "a new managed file is added to the framework"
+    },
+    {
+      "key": "timeout-watchdog",
+      "problem": "a command substitution blocked for the full timeout after the command exited",
+      "cause": "the fallback watchdog inherited the caller's output pipe",
+      "fix": "detach the watchdog from the inherited pipe",
+      "appliesWhen": "a host has no coreutils timeout binary"
+    },
+    {
+      "key": "unregistered-selftest",
+      "problem": "a green selftest suite was executed by no quality gate",
+      "cause": "the validator registers selftests explicitly and nothing discovers them",
+      "fix": "register every new selftest in the validation entrypoint",
+      "appliesWhen": "a new selftest is added to the framework"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q-db-timeout",
+      "text": "database timeout retry storm",
+      "relevant": ["db-timeout"]
+    },
+    {
+      "id": "q-db-pool",
+      "text": "postgres connection pool exhaustion migration",
+      "relevant": ["db-pool-exhaustion"]
+    },
+    {
+      "id": "q-e2e-login",
+      "text": "playwright login redirect flake",
+      "relevant": ["e2e-login-flake"]
+    },
+    {
+      "id": "q-e2e-bailout",
+      "text": "end to end test early return bailout missing feature",
+      "relevant": ["e2e-silent-pass"]
+    },
+    {
+      "id": "q-docker-cache",
+      "text": "docker cargo layer cache miss lockfile",
+      "relevant": ["docker-cache-miss"]
+    },
+    {
+      "id": "q-docker-oom",
+      "text": "build killed exit code 137 out of memory",
+      "relevant": ["docker-oom"]
+    },
+    {
+      "id": "q-secret",
+      "text": "secret value leaked masked expansion terminal",
+      "relevant": ["secret-leak-echo"]
+    },
+    {
+      "id": "q-shared-index",
+      "text": "commit swept another agent staged files shared index",
+      "relevant": ["shared-index-race"]
+    },
+    {
+      "id": "q-exec-bit",
+      "text": "shell script executable bit file mode",
+      "relevant": ["exec-bit-lost"]
+    },
+    {
+      "id": "q-manifest",
+      "text": "managed file missing from release manifest untracked",
+      "relevant": ["manifest-drift"]
+    },
+    {
+      "id": "q-watchdog",
+      "text": "fallback watchdog inherited pipe command substitution blocked",
+      "relevant": ["timeout-watchdog"]
+    },
+    {
+      "id": "q-selftest-gate",
+      "text": "selftest executed by no quality gate registration",
+      "relevant": ["unregistered-selftest"]
+    },
+    {
+      "id": "q-database-broad",
+      "text": "database connection problem",
+      "relevant": ["db-timeout", "db-pool-exhaustion"],
+      "comment": "A deliberately broad query. Both database documents are relevant, so this measures whether the provider can return a set rather than a single best guess."
+    }
+  ],
+  "nearMiss": [
+    {
+      "id": "nm-unrelated-domain",
+      "text": "kubernetes ingress certificate rotation",
+      "maxHits": 0,
+      "comment": "No corpus document covers this and no token is shared. A provider that returns anything here is pattern-matching noise."
+    },
+    {
+      "id": "nm-generic-words",
+      "text": "the it was and problem",
+      "maxHits": 0,
+      "comment": "Stopword-heavy filler. Every token is saturated across the corpus, including the template word 'problem', so the document-frequency guard must reduce this to no signal at all. Before that guard this query returned five confident hits."
+    },
+    {
+      "id": "nm-plausible-but-absent",
+      "text": "redis cache eviction policy tuning",
+      "maxHits": 1,
+      "comment": "Same technical register as the corpus but genuinely absent from it. One weak hit is permitted because 'cache' is a real shared token, and demanding zero here would over-fit the gate to this wording rather than measuring lexical behavior honestly."
+    }
+  ]
+}
