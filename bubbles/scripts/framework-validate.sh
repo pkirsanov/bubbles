@@ -427,6 +427,17 @@ run_check "Workflow YAML validity selftest (IMP-102 / SCOPE-3)" bash "$SCRIPT_DI
 # intentionally use raw timeout/sed -i mediated by guard-lib + the PATH shim).
 macos_portability_guard_timeout_seconds="${BUBBLES_MACOS_PORTABILITY_GUARD_SELFTEST_TIMEOUT_SECONDS:-120}"
 run_check "macOS portability guard selftest (bubbles-cross-platform-shell)" bubbles_run_with_timeout "$macos_portability_guard_timeout_seconds" bash "$SCRIPT_DIR/macos-portability-guard-selftest.sh"
+# BSD-userland simulator (OW-002): the PATH shim at the top of this file only
+# works in the macOS-to-GNU direction -- it lets a Mac run GNU-shaped code.
+# Nothing let a Linux host run BSD-shaped userland, so a macOS-only failure could
+# not be reproduced without a Mac, and the release-hygiene-macos job's logs are
+# not readable from a workstation. That is why OW-002's macOS failures sat
+# unattributed. Run the simulator's HERMETIC selftest, never a live scan: the
+# simulator is opt-in tooling that nothing executes unless a caller assigns its
+# output to PATH. The selftest asserts TRANSLATION rather than mere acceptance,
+# because a shim that only rejected GNU spellings would break the correct BSD
+# branch too and produce false attributions -- worse than having no simulator.
+run_check "BSD-userland simulator selftest (OW-002)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/bsd-userland-sim-selftest.sh"
 # guard-lib timeout fallback (OW-009): on a host with no coreutils timeout the
 # fallback watchdog must NOT inherit the caller's stdout pipe, or a command
 # substitution blocks for the FULL timeout even after the command already
