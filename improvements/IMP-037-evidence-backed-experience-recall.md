@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS 2026-08-06 - SCOPE-1 through SCOPE-4 are implemented and validated in committed/pending commits; SCOPE-5 through SCOPE-7 remain
+**Status:** IN PROGRESS 2026-08-07 - SCOPE-1 through SCOPE-5 are implemented and validated in committed/pending commits; SCOPE-6 and SCOPE-7 remain
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,18 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-5 - Thin read-only MCP tools over bash twins (REG-8)
-
-**Depends on:** SCOPE-3
-
-**Decision:** Add read-only MCP tools for experience search, experience read, and recall status. Each tool must invoke the same bash twin as the CLI. The MCP server must not implement scoring, freshness, or source validation.
-
-Do not expose sync, export, delete, or lifecycle mutation through MCP in this scope. Those operations remain explicit CLI actions with action-risk classification.
-
-**Likely files and owners:** `bubbles/mcp/tools/search_experience.json`, `bubbles/mcp/tools/read_experience.json`, `bubbles/mcp/tools/experience_recall_status.json`, `bubbles/scripts/mcp-server-selftest.sh`, and `bubbles/tool-trust-registry.yaml`. MCP catalog and trust ownership belongs to `bubbles.super`. Protocol selftest ownership belongs to `bubbles.test`.
-
-**Observable acceptance:** MCP search, read, and status return the bash twin's stdout, stderr, command, and exit code without paraphrase. Tool annotations and trust entries classify all three as local read-only operations. MCP and CLI fixture outputs are byte-equivalent after envelope normalization.
 
 ### SCOPE-6 - Bounded orchestrator consumption and authority enforcement (EV-7)
 
