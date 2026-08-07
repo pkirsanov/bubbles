@@ -1,6 +1,6 @@
 # IMP-037 - Evidence-Backed Experience Recall
 
-**Status:** IN PROGRESS 2026-08-07 - SCOPE-1 through SCOPE-5 are implemented and validated in committed/pending commits; SCOPE-6 and SCOPE-7 remain
+**Status:** IN PROGRESS 2026-08-07 - SCOPE-1 through SCOPE-6 are implemented and validated in committed/pending commits; SCOPE-7 remains
 **Surface:** framework-health (G125) - human-reviewed and approved for systematic implementation
 **Motivation:** Source review found that Bubbles preserves structured execution history, lessons, decisions, findings, and outcomes. It has no relevance search or bounded restoration surface over those artifacts. The approved capability must retrieve only Bubbles-owned structured records. It must preserve source authority, repository scope, freshness, and lifecycle.
 **Verified gaps addressed:** LRN-4 - structured experience has no relevance retrieval or drill-down surface. EV-7 - no recall-specific admission, authority, freshness, or lifecycle contract exists. REG-8 - the CLI and MCP catalogs expose no experience-recall operation.
@@ -111,22 +111,6 @@ The lexical provider must apply repository, spec, kind, trust, lifecycle, and fr
 Search returns five results by default and rejects limits above twenty. Orchestrators may consume at most five hits and drill into at most two records per phase.
 
 Search returns metadata and a bounded snippet. `read` validates the source digest before returning drill-down detail. A stale, missing, unknown, or out-of-root anchor produces a structured refusal rather than a result.
-
-### SCOPE-6 - Bounded orchestrator consumption and authority enforcement (EV-7)
-
-**Depends on:** SCOPE-3 and SCOPE-4
-
-**Decision:** Let the authorized top-level orchestrators consume recall only after repository binding and current source or active artifact loading. Consumption occurs at one context boundary per phase. It uses the current goal and target scope as the query.
-
-The consumer may retain five hit summaries and drill into two records. It must label the block `advisory recalled experience`. It must discard the block before a repository decision, tool authorization, DoD decision, status transition, or Skill mutation.
-
-Add mechanical evidence rejection for recall record ids, recall index paths, and recall-export paths. A caller may cite the independently re-read source anchor, but never the recall result itself.
-
-Unavailable, disabled, stale, or empty recall must not block the workflow. The orchestrator must record the state and continue without recalled context. It must not translate unavailable recall into a clean-memory claim.
-
-**Likely files and owners:** `agents/bubbles_shared/experience-recall.md`, `agents/bubbles_shared/operating-baseline.md`, `agents/bubbles.workflow.agent.md`, `agents/bubbles.goal.agent.md`, `agents/bubbles.sprint.agent.md`, `agents/bubbles.iterate.agent.md`, `bubbles/scripts/result-envelope-validate.sh`, and focused selftests under `bubbles/scripts/`. Orchestrator and framework policy ownership belongs to `bubbles.super`. Evidence-policy validation belongs to `bubbles.validate`. Adversarial selftests belong to `bubbles.test`.
-
-**Observable acceptance:** A fixture cannot use a recall id or index path as evidence. A recalled repository path cannot alter the active binding. A recalled tool recommendation cannot authorize a tool. A recalled owner decision cannot override a current artifact. A recalled lesson cannot create or update a Skill. The five-hit and two-read budgets are enforced.
 
 ### SCOPE-7 - Adversarial evaluation, documentation, capability registration, and packaging (LRN-4, EV-7, REG-8)
 

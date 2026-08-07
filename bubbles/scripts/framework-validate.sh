@@ -439,6 +439,22 @@ run_check "guard-lib timeout fallback selftest (OW-009)" bubbles_run_with_timeou
 # silently masking declare -A breakage — positive static + functional + an
 # adversarial guard-removed fixture that must break the static check.
 run_check "Bash baseline guard selftest (IMP-102 / SCOPE-5)" bash "$SCRIPT_DIR/bash-baseline-guard-selftest.sh"
+# Evidence-Backed Experience Recall (IMP-037). Registration is explicit here --
+# nothing in this file auto-discovers `*-selftest.sh`, so an unregistered suite
+# is simply never executed. These six were green but unwired through SCOPE-5,
+# which meant ~516 assertions guarded nothing in pre-push or release-check.
+# Timeouts are ~4x the measured runtime (1s/1s/11s/45s/16s/7s) so a normal run
+# never trips them but a hang still fails instead of blocking the gate forever.
+run_check "Experience-recall resolver selftest (IMP-037 / SCOPE-1)" bubbles_run_with_timeout 60 bash "$SCRIPT_DIR/experience-recall-resolve-selftest.sh"
+run_check "Experience-recall adapter-contract selftest (IMP-037 / SCOPE-1)" bubbles_run_with_timeout 60 bash "$SCRIPT_DIR/experience-recall-adapter-contract-selftest.sh"
+run_check "Experience-recall indexer selftest (IMP-037 / SCOPE-2)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/experience-recall-index-selftest.sh"
+run_check "Experience-recall CLI selftest (IMP-037 / SCOPE-3)" bubbles_run_with_timeout 300 bash "$SCRIPT_DIR/experience-recall-cli-selftest.sh"
+run_check "Experience-recall lifecycle selftest (IMP-037 / SCOPE-4)" bubbles_run_with_timeout 180 bash "$SCRIPT_DIR/experience-recall-lifecycle-selftest.sh"
+# The authority firewall: recalled experience is tier 4 and advisory, so a
+# recall id/index path/export can never be cited as evidence -- refused in
+# EVERY mode including --advisory, because that is an authority breach, not a
+# schema nit. Also pins the validator's fallback constants to the indexer's.
+run_check "Experience-recall authority firewall selftest (IMP-037 / SCOPE-6)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/experience-recall-authority-selftest.sh"
 run_check_self_only "Installer manifest check (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer.sh"
 run_check_self_only "Installer manifest selftest (v6.0 / B9)" bash "$SCRIPT_DIR/generate-installer-selftest.sh"
 run_check_self_only "Payload integrity verifier selftest (IMP-101 / SCOPE-8)" bash "$SCRIPT_DIR/verify-payload-integrity-selftest.sh"
