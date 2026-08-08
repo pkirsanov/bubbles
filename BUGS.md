@@ -590,6 +590,86 @@ that otherwise passes should be **re-run before it is treated as real**. If the
 phase is present in `state.json` and the extractor emits it, the failure is this
 bug. Do not edit correct artifacts in response to it.
 
+---
+
+## BUG-011 — `bubbles.validate` writes `certification.completedScopes` as integers; the guard counts quoted strings, so six entries are read as zero
+
+- **Filed:** 2026-08-08
+- **Disposition:** open framework defect — root cause isolated and confirmed on both sides. NOT fixed here because the correct owner is ambiguous between the writer and the reader, and picking one silently would bake in whichever shape happened to be convenient. Per Gate G095 this is a tracked OPEN defect with a recorded reason and a recommended resolution.
+- **Discovered by:** downstream `research-lab` certification of spec `017-decision-attention-and-developing-situations`, when the guard reported `completedScopes` EMPTY on a `state.json` that visibly contained six entries.
+- **Severity:** medium. It produces a FALSE BLOCK, never a false pass. Its real cost is that it looks like two framework components contradicting each other — the validate agent reports six completed scopes, the guard reports zero — which invites an author to distrust the guard or to hand-edit `certification.*`, and hand-editing `certification.*` is exactly the fabrication Gates G022/G027 exist to catch.
+- **Affects:** the `bubbles.validate` agent (writer) and `bubbles/scripts/state-transition-guard.sh` (reader, the `state_completed_scopes_count` extractor).
+
+### The mismatch
+
+`bubbles.validate` wrote:
+
+```json
+"completedScopes": [1, 2, 3, 4, 5, 6]
+```
+
+The guard counts entries by matching **quoted strings**:
+
+```bash
+state_completed_scopes_count="$({
+  ...
+  | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
+  | grep -cE '"[^"]+"' || true
+```
+
+`grep -cE '"[^"]+"'` matches nothing in `[1, 2, 3, 4, 5, 6]`, so the count is 0
+and Check 4 fails with:
+
+```
+🔴 BLOCK: Resolved scope artifacts report 6 Done scope(s) but state.json
+   completedScopes is EMPTY — state.json integrity failure
+```
+
+Gate G027 then fails on the same zero, reporting FABRICATION.
+
+### Which shape is canonical
+
+Every certified spec in the reporting repo uses **string scope IDs**, so the
+reader is right and the writer is wrong:
+
+| spec | `certification.completedScopes` |
+|---|---|
+| `002-distributed-tool-briefs-and-history` (done) | `["01-market-session-evidence-foundation", …]` |
+| `010-company-fundamentals-and-brief-lab` (done) | `["scope-1-…", …]` |
+| `011-volatility-regime-and-sizing-lab` (done) | `["SCOPE-01","SCOPE-02","SCOPE-03","SCOPE-04"]` |
+| `_bugs/BUG-004-proxy-route-local-key-fallback` (done) | `["SCOPE-01"]` |
+
+The guard also has a second check — "All completedScopes entries map to real
+scope artifacts" — which is only meaningful for string IDs. Integers cannot map
+to a scope directory, so the integer shape silently disables that check too.
+
+### Recommended fix
+
+Both halves, because either alone leaves the failure mode reachable:
+
+1. **Writer.** `bubbles.validate` must emit scope IDs, not ordinals. In
+   per-scope-directory layout the IDs are already present in the same file at
+   `execution.scopeProgress[].scopeId`, so the writer can copy them rather than
+   invent a numbering.
+2. **Reader.** The extractor should FAIL LOUD on a present-but-unparseable
+   `completedScopes` instead of silently counting zero. "Six integers" and
+   "genuinely empty" are different states and currently produce the identical
+   message, which is what made this take a schema comparison across four other
+   specs to diagnose. A distinct message — *completedScopes is present but its
+   entries are not string scope IDs* — would have made it self-evident.
+
+Guard the fix with an adversarial case: a `state.json` carrying integer entries
+must still BLOCK (it is genuinely malformed), but with the new, specific
+message rather than the misleading EMPTY one.
+
+### Workaround applied downstream
+
+The reporting repo re-encoded the six entries to the scope directory IDs already
+in `execution.scopeProgress`. That is an ENCODING correction only — the
+certification claim itself was made by `bubbles.validate`, and re-typing its
+output is not the same as asserting it.
+
+
 
 
 
