@@ -1979,8 +1979,15 @@ except Exception:
     sys.exit(0)
 
 history = []
-container = data.get("execution", {}) if isinstance(data.get("execution"), dict) else data
-raw = container.get("executionHistory", [])
+# executionHistory is written at the TOP level by most agents and under
+# execution.* by others. Selecting only one location silently yields [] for the
+# other, which turned this whole check into a no-op that reported "fewer than 3
+# entries" against a packet holding fourteen. Check 6B already falls back this
+# way; if this check does not, the two disagree about the same array.
+execution_obj = data.get("execution") if isinstance(data.get("execution"), dict) else {}
+raw = execution_obj.get("executionHistory")
+if not isinstance(raw, list):
+    raw = data.get("executionHistory")
 if not isinstance(raw, list):
     raw = []
 
@@ -1988,8 +1995,17 @@ entries = []
 for entry in raw:
     if not isinstance(entry, dict):
         continue
-    started = parse_ts(entry.get("runStartedAt"))
-    completed = parse_ts(entry.get("runCompletedAt"))
+    # Entry timestamps are startedAt plus completedAt or finishedAt.
+    # runStartedAt is an EXECUTION-level field, not an entry field: across every
+    # recorded packet it appears zero times on an entry, so reading it here made
+    # the loop `continue` on all of them. This check had never once evaluated an
+    # entry, which is why it did not catch a set of fabricated timestamps.
+    started = parse_ts(entry.get("startedAt") or entry.get("runStartedAt"))
+    completed = parse_ts(
+        entry.get("completedAt")
+        or entry.get("finishedAt")
+        or entry.get("runCompletedAt")
+    )
     if started is None or completed is None:
         continue
     phases = entry.get("phasesExecuted") or []
@@ -2101,8 +2117,13 @@ print(f"ROUND={round_count}")
 if last_clean is not None:
     print(f"LAST_CLEAN={last_clean}")
 
-container = data.get("execution", {}) if isinstance(data.get("execution"), dict) else data
-history = container.get("executionHistory", [])
+# Same top-level / execution.* fallback as Check 7A. Without it this counted zero
+# implement runs on a packet that records one, then "passed" by agreeing with its
+# own empty read.
+execution_obj = data.get("execution") if isinstance(data.get("execution"), dict) else {}
+history = execution_obj.get("executionHistory")
+if not isinstance(history, list):
+    history = data.get("executionHistory")
 if not isinstance(history, list):
     history = []
 

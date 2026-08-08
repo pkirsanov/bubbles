@@ -723,6 +723,110 @@ in `execution.scopeProgress`. That is an ENCODING correction only — the
 certification claim itself was made by `bubbles.validate`, and re-typing its
 output is not the same as asserting it.
 
+---
+
+## BUG-012 — Check 7A (executionHistory timestamp plausibility) has never evaluated a single entry; it reads a container and field names that do not exist
+
+- **Filed:** 2026-08-08
+- **Disposition:** FIXED at source in the same change that files this. The fix is
+  behaviour-visible and will newly block packets that were passing vacuously —
+  see "Blast radius" below, which is the point rather than a side effect.
+- **Discovered by:** an independent audit (`AUD-017-001`) of downstream
+  research-lab `specs/017-decision-attention-and-developing-situations`. The
+  audit caught a set of fabricated-looking timestamps *by reading them*, then
+  noted that the guard check whose entire job is to catch exactly that had
+  reported itself skipped.
+- **Severity:** high. This is a silently-inert anti-fabrication control. It does
+  not produce a wrong answer; it produces a reassuring one.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 7A, and a
+  second site sharing the same container-selection bug.
+
+### The defect — two independent bugs, either sufficient to disable the check
+
+**1. Container selection has no fallback.**
+
+```python
+container = data.get("execution", {}) if isinstance(data.get("execution"), dict) else data
+raw = container.get("executionHistory", [])
+```
+
+`executionHistory` is written at the TOP level by most agents. Because
+`data["execution"]` is always a dict, the ternary always chooses it, and the
+top-level array is never consulted — `raw` is `[]`. Check 6B, reading the *same*
+array, already falls back correctly (`execution.get(...) or data.get(...)`), so
+the two checks disagreed about whether the packet had any history at all.
+
+**2. Entry timestamp field names do not exist on entries.**
+
+```python
+started = parse_ts(entry.get("runStartedAt"))
+completed = parse_ts(entry.get("runCompletedAt"))
+if started is None or completed is None:
+    continue
+```
+
+Entries carry `startedAt` plus `completedAt`/`finishedAt`. `runStartedAt` is an
+**execution-level** field (`execution.runStartedAt`), not an entry field.
+Measured across every `specs/*/state.json` in the discovering repo:
+
+| entry key | occurrences on executionHistory entries |
+|---|---|
+| `startedAt` | 252 |
+| `finishedAt` | 222 |
+| `runStartedAt` | **0** |
+
+So even with the container fixed, every entry would hit the `continue`. The two
+bugs are independent, and each alone is fatal.
+
+### Observed symptom
+
+```text
+--- Check 7A: executionHistory Timestamp Plausibility ---
+ℹ️  INFO: executionHistory has fewer than 3 entries — plausibility check skipped
+```
+
+on a packet whose `executionHistory` holds **fourteen** entries.
+
+### Second site, same container bug
+
+The implement-run counter behind the `lockdownState` consistency check shares the
+identical container expression. It reported:
+
+```text
+✅ PASS: lockdownState round=0 is consistent with 0 implement-phase run(s) in executionHistory
+```
+
+on a packet recording one implement run. It passed by agreeing with its own empty
+read — a check that cannot fail is not a check.
+
+### The fix
+
+Give both sites the top-level fallback Check 6B already has, and read the entry
+field names that entries actually use (preferring the real ones, still accepting
+the legacy names so no existing packet regresses).
+
+### Blast radius — deliberately not softened
+
+With the fix applied, Check 7A immediately blocks on the discovering packet:
+
+```text
+ℹ️  INFO: executionHistory entries analyzed: 14
+🔴 BLOCK: executionHistory contains zero-duration entries for non-trivial phases: bubbles.plan:bootstrap|bubbles.implement:implement|bubbles.plan:bootstrap
+🔴 BLOCK: executionHistory contains 4 overlapping entries — sequential agent execution is impossible if runs overlap
+```
+
+Note *which* entries are flagged: the pre-existing **specialist** records written
+by `bubbles.plan` and `bubbles.implement`, not the parent-expanded ones the audit
+had challenged. Those specialist records have carried zero-duration timestamps
+all along and nothing has ever looked at them, because nothing could.
+
+This will newly block packets across every consumer repo. That is the correct
+outcome — they were never passing this check, they were skipping it — but it
+should land with the expectation that real remediation follows, not a baseline.
+Agents writing `executionHistory` should record measured start/finish times;
+zero-duration on a non-trivial phase is now a blocking claim rather than an
+unread one.
+
 
 
 
