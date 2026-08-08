@@ -1399,7 +1399,13 @@ sla_scope_count=0
 for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
-  if grep -Eiq 'latency|throughput|p95|p99|response time|sla|slo' "$scope_path"; then
+  # `sla` and `slo` are word-bounded; the rest are not. Unbounded, the two
+  # three-letter terms match any word merely CONTAINING them — "slot", "slope",
+  # "slow", "slate", "Slack", "translate" — so a scope that says "slot" once was
+  # told it had a latency SLA and owed stress coverage it had no reason to write.
+  # The longer terms need no boundary: nothing innocent contains "latency" or
+  # "throughput". Guarded by a selftest case below.
+  if grep -Eiq 'latency|throughput|p95|p99|response time|\bsla\b|\bslo\b' "$scope_path"; then
     sla_scope_count=$((sla_scope_count + 1))
     if grep -Eq '^\|[[:space:]]*Stress[[:space:]]*\|' "$scope_path" || grep -Eiq 'stress' "$scope_path"; then
       pass "SLA-sensitive scope includes stress coverage: ${scope_path#$feature_dir/}"
