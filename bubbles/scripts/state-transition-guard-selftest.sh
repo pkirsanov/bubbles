@@ -3243,17 +3243,29 @@ echo "Running Check 43 empty-stdout receipt-clone exemption (BUG-007)..."
 # SUBSTANTIVE result, which is by definition non-empty.
 #
 # The predicate is extracted from the guard source so this test cannot drift away
-# from the code it defends.
+# from the code it defends. The empty-stdout digest is extracted the same way, for
+# the same reason.
 c43_predicate="$(grep -F 'map(select((.stdoutHash' "$GUARD_SCRIPT" | head -1 || true)"
+c43_empty_sha="$(grep -oE 'c43_empty_stdout_sha256="[0-9a-f]{64}"' "$GUARD_SCRIPT" | grep -oE '[0-9a-f]{64}' | head -1 || true)"
 if [[ -z "$c43_predicate" ]]; then
   fail "Check 43 clone predicate could not be extracted from $GUARD_SCRIPT (guard shape changed)"
-elif ! echo "$c43_predicate" | grep -qF '(.stdoutBytes // 0) > 0'; then
+elif [[ "$c43_empty_sha" != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]]; then
+  fail "Check 43 empty-stdout constant is not the SHA-256 of the empty string (got: '${c43_empty_sha}')"
+elif ! echo "$c43_predicate" | grep -qF '$empty_sha'; then
   fail "Check 43 clone predicate lost its empty-stdout exemption — BUG-007 regressed"
   echo "--- extracted predicate ---"
   echo "$c43_predicate"
   echo "--- end ---"
+elif echo "$c43_predicate" | grep -qF '(.stdoutBytes // 0) > 0'; then
+  # The exemption must key on the DIGEST, which every receipt carries. Keying it
+  # on `stdoutBytes` defaults an ABSENT field to 0, and `0 > 0` then filters a
+  # genuine clone out of detection entirely. That is a silent hole, not a fix.
+  fail "Check 43 clone predicate keys its exemption on the optional stdoutBytes field — an absent field would exempt genuine clones"
+  echo "--- extracted predicate ---"
+  echo "$c43_predicate"
+  echo "--- end ---"
 else
-  pass "Check 43 clone predicate extracted from guard source and retains the empty-stdout exemption"
+  pass "Check 43 clone predicate extracted from guard source and exempts empty stdout by digest, not by an optional field"
 
   c43_dir="$(mktemp -d)"
   # Three DIFFERENT commands that each legitimately produced no stdout. All three
@@ -3275,10 +3287,31 @@ else
     printf '%s\n' '{"cmd":"node --test tests/contract.test.mjs","stdoutHash":"9f2c1a77b3e45d6081ca2be7f4d0913ac5e8b26df1074a3c9e5b0d8f6a271c43","stdoutBytes":2048}'
   } > "$c43_real_log"
 
+  # REGRESSION PIN (the shape that reached main): two different commands sharing a
+  # real non-empty stdout, on receipts that carry NO `stdoutBytes` key at all. The
+  # field is optional, so a predicate that reads `(.stdoutBytes // 0) > 0` defaults
+  # it to 0 and filters this genuine clone out of detection. It must be caught by
+  # the digest test alone, with no field present.
+  c43_nobytes_log="$c43_dir/nobytes.jsonl"
+  {
+    printf '%s\n' '{"cmd":"cargo test","stdoutHash":"9f2c1a77b3e45d6081ca2be7f4d0913ac5e8b26df1074a3c9e5b0d8f6a271c43"}'
+    printf '%s\n' '{"cmd":"npm run lint","stdoutHash":"9f2c1a77b3e45d6081ca2be7f4d0913ac5e8b26df1074a3c9e5b0d8f6a271c43"}'
+  } > "$c43_nobytes_log"
+
+  # The mirror of the pin: empty stdout must stay exempt even when `stdoutBytes` is
+  # absent, proving the digest carries the exemption on its own.
+  c43_empty_nobytes_log="$c43_dir/empty-nobytes.jsonl"
+  {
+    printf '%s\n' '{"cmd":"grep -rn TODO src/","stdoutHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'
+    printf '%s\n' '{"cmd":"node scripts/validate.mjs","stdoutHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'
+  } > "$c43_empty_nobytes_log"
+
   c43_jq="$c43_predicate | group_by(.stdoutHash) | map(select((map(.cmd) | unique | length) > 1)) | length"
 
-  c43_empty_hits="$(jq -rs "$c43_jq" "$c43_empty_log" 2>/dev/null || echo "ERR")"
-  c43_real_hits="$(jq -rs "$c43_jq" "$c43_real_log" 2>/dev/null || echo "ERR")"
+  c43_empty_hits="$(jq -rs --arg empty_sha "$c43_empty_sha" "$c43_jq" "$c43_empty_log" 2>/dev/null || echo "ERR")"
+  c43_real_hits="$(jq -rs --arg empty_sha "$c43_empty_sha" "$c43_jq" "$c43_real_log" 2>/dev/null || echo "ERR")"
+  c43_nobytes_hits="$(jq -rs --arg empty_sha "$c43_empty_sha" "$c43_jq" "$c43_nobytes_log" 2>/dev/null || echo "ERR")"
+  c43_empty_nobytes_hits="$(jq -rs --arg empty_sha "$c43_empty_sha" "$c43_jq" "$c43_empty_nobytes_log" 2>/dev/null || echo "ERR")"
 
   if [[ "$c43_empty_hits" == "0" ]]; then
     pass "Check 43 does not accuse three different commands that each produced empty stdout"
@@ -3290,6 +3323,18 @@ else
     pass "Check 43 still detects a genuine clone (two commands sharing real non-empty stdout)"
   else
     fail "Check 43 no longer detects a genuine receipt clone ($c43_real_hits group(s), expected 1) — exemption widened into a hole"
+  fi
+
+  if [[ "$c43_nobytes_hits" == "1" ]]; then
+    pass "Check 43 detects a genuine clone on receipts carrying NO stdoutBytes field (exemption is digest-keyed, not field-keyed)"
+  else
+    fail "Check 43 missed a genuine clone on receipts with no stdoutBytes field ($c43_nobytes_hits group(s), expected 1) — an optional-field exemption is silently excusing forgeries"
+  fi
+
+  if [[ "$c43_empty_nobytes_hits" == "0" ]]; then
+    pass "Check 43 exempts empty stdout by digest alone, with no stdoutBytes field present"
+  else
+    fail "Check 43 false-positives on empty stdout when stdoutBytes is absent ($c43_empty_nobytes_hits group(s), expected 0)"
   fi
 
   rm -rf "$c43_dir"

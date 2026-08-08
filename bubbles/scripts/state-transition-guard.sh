@@ -3867,10 +3867,18 @@ else
     # can allege. A receipt with no stdout also has no evidentiary content to
     # clone, so excluding it removes the false-positive class without weakening
     # the check: a real forgery reuses a SUBSTANTIVE captured result, which is
-    # by definition non-empty. `stdoutBytes` is already in the receipt schema,
-    # so this needs no new capture and no hardcoded digest.
-    c43_clones="$(jq -rs '
-      map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutBytes // 0) > 0))
+    # by definition non-empty.
+    #
+    # The DIGEST is the discriminator, not `stdoutBytes`. `stdoutBytes` is
+    # optional, so keying the exemption on it meant an absent field defaulted
+    # to 0 and silently excluded a genuine clone from detection (BUG-007's
+    # first fix over-corrected exactly this way). Every receipt of every
+    # vintage carries a stdoutHash, so the empty-string digest identifies
+    # empty stdout with no field required. An explicitly-present
+    # `stdoutBytes: 0` is still honoured; an ABSENT one exempts nothing.
+    c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    c43_clones="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutHash != $empty_sha) and ((has("stdoutBytes") and .stdoutBytes == 0) | not)))
       | group_by(.stdoutHash)
       | map(select((map(.cmd) | unique | length) > 1))
       | .[]
