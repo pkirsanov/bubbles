@@ -1878,6 +1878,79 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+mutate_partial_certified_phases_with_dict_claims() {
+  local state_file="$1"
+
+  python3 - "$state_file" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+# Regression shape for the Check 6 short-circuit defect. Check 6 used to select
+# its phase source with `certification_phases or execution_phase_claims or
+# legacy_phases`, so a NON-EMPTY certifiedCompletedPhases won outright and
+# execution.completedPhaseClaims was never evaluated at all. Observed live: a
+# packet certified for ["validate"] alongside fourteen execution claims had every
+# other phase reported as unrecorded (G022) while Check 6B — which reads
+# completedPhaseClaims directly — PASSED those same entries. One guard run
+# asserted both "phase not recorded" and "that phase's record has valid
+# provenance" for identical data. The sibling fixture above pins the EMPTY-
+# certification path; this one pins the PARTIAL-certification path, which the
+# `or` left completely unguarded.
+#
+# certifiedCompletedPhases carries only 'validate'; the remaining required phase
+# 'audit' exists ONLY as a dict-shaped execution claim. Under workflowMode=iterate
+# (required specialists: validate, audit) the two sources satisfy the requirement
+# only when Check 6 MERGES them. 'implement' is a second, non-required dict claim
+# so the mixed string+dict input is normalized across more than one record.
+data["workflowMode"] = "iterate"
+snapshot = data.get("policySnapshot")
+if isinstance(snapshot, dict):
+    snapshot["workflowMode"] = "iterate"
+
+execution = data.get("execution")
+if not isinstance(execution, dict):
+    execution = {}
+    data["execution"] = execution
+
+execution["completedPhaseClaims"] = [
+    {"phase": "audit", "agent": "bubbles.audit"},
+    {"phase": "implement", "agent": "bubbles.implement"},
+]
+execution["executionHistory"] = [
+    {
+        "agent": "bubbles.implement",
+        "runStartedAt": "2026-03-27T11:00:00Z",
+        "runCompletedAt": "2026-03-27T11:09:00Z",
+        "phasesExecuted": ["implement"],
+    },
+    {
+        "agent": "bubbles.validate",
+        "runStartedAt": "2026-03-27T11:20:00Z",
+        "runCompletedAt": "2026-03-27T11:26:00Z",
+        "phasesExecuted": ["validate"],
+    },
+    {
+        "agent": "bubbles.audit",
+        "runStartedAt": "2026-03-27T11:35:00Z",
+        "runCompletedAt": "2026-03-27T11:43:00Z",
+        "phasesExecuted": ["audit"],
+    },
+]
+
+cert = data.get("certification")
+if isinstance(cert, dict):
+    cert["certifiedCompletedPhases"] = ["validate"]
+
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
+}
+
 assert_transition_result_contract_matches_emitter \
   "TRANSITION_GUARD_RESULT_V1 emitter field order matches this suite's expectation"
 
@@ -2113,6 +2186,17 @@ cp -R "$positive_feature_dir" "$bug007_benign_dir"
 dict_phase_claims_dir="$tmp_root/specs/933-transition-guard-selftest-dict-phase-claims"
 cp -R "$positive_feature_dir" "$dict_phase_claims_dir"
 mutate_dict_shaped_phase_claims "$dict_phase_claims_dir/state.json"
+
+# Check 6 regression fixture (short-circuit `or` on the phase source). A state.json
+# with a NON-EMPTY but PARTIAL certifiedCompletedPhases (["validate"]) plus the
+# remaining required phase carried ONLY as a dict-shaped execution claim
+# ({"phase": "audit", ...}) previously reported 'audit' as unrecorded, because a
+# truthy certification list short-circuited execution.completedPhaseClaims out of
+# the selection entirely. The sibling fixture above covers the EMPTY-certification
+# path; this one covers the PARTIAL path the `or` left unguarded.
+partial_certified_phase_claims_dir="$tmp_root/specs/940-transition-guard-selftest-partial-certified-phase-claims"
+cp -R "$positive_feature_dir" "$partial_certified_phase_claims_dir"
+mutate_partial_certified_phases_with_dict_claims "$partial_certified_phase_claims_dir/state.json"
 
 echo "Running agent ownership lint precheck..."
 lint_log="$tmp_root/agent-ownership-lint.log"
@@ -2549,6 +2633,28 @@ assert_log_not_contains "$dict_phase_claims_log" "unhashable type: 'dict'" "Chec
 assert_log_contains "$dict_phase_claims_log" "Required phase 'validate' recorded in execution/certification phase records" "Check 6: phase name 'validate' is read OUT of the dict-shaped completedPhaseClaims (empty certifiedCompletedPhases)"
 assert_log_contains "$dict_phase_claims_log" "Required phase 'audit' recorded in execution/certification phase records" "Check 6: phase name 'audit' is read OUT of the dict-shaped completedPhaseClaims (empty certifiedCompletedPhases)"
 assert_log_contains "$dict_phase_claims_log" "Phase 'validate' has specialist provenance from bubbles.validate" "Check 6B: dict-shaped claim is normalized to its phase name and validated for provenance (not silently swallowed)"
+
+# Check 6 — a PARTIAL certifiedCompletedPhases must NOT short-circuit
+# execution.completedPhaseClaims out of the phase source. Regression for the `or`
+# selection that made Check 6 and Check 6B contradict each other on identical
+# data. Same convention as the fixture above: assert on Check 6 / 6B log content
+# only, since the fixture's overall exit may be non-zero for unrelated ceiling
+# reasons.
+echo "Running Check 6 partial-certification phase-source regression selftest..."
+partial_certified_log="$tmp_root/partial-certified-phase-claims.log"
+run_capture "$partial_certified_log" bash "$GUARD_SCRIPT" "$partial_certified_phase_claims_dir" >/dev/null
+assert_log_contains "$partial_certified_log" "Required phase 'validate' recorded in execution/certification phase records" "Check 6: the certified phase is still counted after the merge (certification source not dropped)"
+assert_log_contains "$partial_certified_log" "Required phase 'audit' recorded in execution/certification phase records" "Check 6: an execution claim IS evaluated even though certifiedCompletedPhases is non-empty (no short-circuit)"
+assert_log_not_contains "$partial_certified_log" "Required phase 'audit' NOT in execution/certification phase records" "Check 6: a phase present only in completedPhaseClaims is NOT reported missing under partial certification (Gate G022 false positive)"
+assert_log_not_contains "$partial_certified_log" "Traceback (most recent call last)" "Check 6: mixed string+dict phase sources do NOT crash the guard with a Python Traceback"
+assert_log_not_contains "$partial_certified_log" "unhashable type: 'dict'" "Check 6: dict claim records normalize to phase names instead of raising the unhashable-dict TypeError"
+# Check 6 / Check 6B agreement on 'audit'. The provenance line ALONE does not
+# prove agreement: Check 6B reads completedPhaseClaims directly and is immune to
+# the `or` short-circuit, so it passed even while Check 6 was blocking the same
+# record. The paired negative is what makes the agreement claim real; it repeats
+# the Check 6 needle asserted above, kept adjacent so both halves sit together.
+assert_log_contains "$partial_certified_log" "Phase 'audit' has specialist provenance from bubbles.audit" "Check 6B: the 'audit' claim record carries specialist provenance from bubbles.audit"
+assert_log_not_contains "$partial_certified_log" "Required phase 'audit' NOT in execution/certification phase records" "Check 6 emits no BLOCK for the same 'audit' record Check 6B accepted above (the two checks agree)"
 
 echo "Running negative packet-field selftest..."
 negative_log="$tmp_root/negative-guard.log"
