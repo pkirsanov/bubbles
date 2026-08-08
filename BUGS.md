@@ -516,5 +516,80 @@ deterministic (0 false negatives in 200 trials). That flakiness tracked
 in BUG-005. The two are independent; this entry documents only the SIGPIPE race,
 which was proven on its own terms.
 
+---
+
+## BUG-010 — `state-transition-guard` intermittently reports a G022 required phase as missing when it is demonstrably present (~4% of runs); root cause NOT isolated
+
+- **Filed:** 2026-08-07
+- **Disposition:** open framework defect — reproduced and quantified, but the mechanism is **unexplained**. The two obvious candidates were tested and BOTH ruled out. Recorded as an honest open lead rather than a closed diagnosis.
+- **Discovered by:** downstream `quantitativeFinance` certification of spec 109 (FC.1), on a packet whose artifacts were independently proven correct.
+- **Severity:** medium. Like BUG-009 it produces a FALSE BLOCK, never a false pass — but it is worse to diagnose, because the failure names a specific phase and so reads as a genuine, actionable artifact defect. An author who trusts it will "fix" a `state.json` that was already correct.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh` Check 6 / Gate G022 (the required-specialist-phase loop at the `Required phase '...' NOT in execution/certification phase records` failure).
+
+### Symptom
+
+```
+🔴 BLOCK: Required phase 'stabilize' NOT in execution/certification phase records (Gate G022 violation)
+🔴 BLOCK: 1 specialist phase(s) missing — work was NOT executed through the full pipeline
+```
+
+Exactly ONE phase is reported missing; the other twelve pass in the same run.
+
+### Measured rate
+
+```
+25 sequential runs, same packet, no concurrent load, no file changes between runs:
+  PASS = 24
+  FAIL =  1     (the block above)
+```
+
+Earlier sweeps on the same packet: 11/12, then 10/10, then 8/8 — consistent with a
+low-single-digit-percent intermittent false negative.
+
+### What was ruled out
+
+**1. The artifacts.** `stabilize` is present in BOTH `certification.certifiedCompletedPhases` and `executionHistory[].phasesExecuted`.
+
+**2. The phase extractor.** Check 6 builds `state_completed_phases_block` from an inline Python heredoc. Running *that exact extractor* against the same `state.json`:
+
+```
+runs: 300 | empty output: 0 | "stabilize" missing: 0
+```
+
+It emits all thirteen phases, every time:
+
+```
+"spec-review" "implement" "test" "regression" "simplify" "gaps" "harden" "stabilize" "security" "validate" "audit" "chaos" "docs"
+```
+
+**3. A BUG-009-style SIGPIPE race at this call site.** The match is
+`echo "$state_completed_phases_block" | grep -qE "\"$specialist_phase\""`, which is
+the same `grep -q` shape as BUG-009 — but the block here is thirteen short lines,
+far below the 64 KiB pipe buffer, so the race cannot arm. Confirmed on the real
+data: 0 false negatives in 200 trials.
+
+So the extractor is deterministic, the data is correct, and the comparison is too
+small to race — yet the composed guard still fails ~4% of the time. **The
+mechanism is genuinely not yet known.** Recording it as unexplained is the point:
+a plausible-but-unverified root cause here would be worse than none, because it
+would close the investigation on a guess.
+
+### Untested leads (explicitly not findings)
+
+`mode-resolver.sh` is invoked under `bubbles_run_with_timeout 30` in the IMP-105
+fallback that derives `required_specialists`; a timeout or partial read there
+would change the derived requirement set for that run. Whether the failing run
+took the explicit-table path or the fallback path was not captured, and the
+failure is too rare to bisect cheaply. Capturing which path produced
+`required_specialists` on each run is the next diagnostic step.
+
+### Interim guidance
+
+Because it fails ~4% and cannot pass bad work, a single G022 failure on a packet
+that otherwise passes should be **re-run before it is treated as real**. If the
+phase is present in `state.json` and the extractor emits it, the failure is this
+bug. Do not edit correct artifacts in response to it.
+
+
 
 
