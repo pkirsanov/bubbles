@@ -349,6 +349,10 @@ run_check() {
     [[ -n "$_cache_key" ]] && validate_cache_put "$_cache_key" 0
   else
     echo "FAIL: $label"
+    # Additive, GitHub-gated (OW-002): also surface the failing check as a
+    # check-run annotation, which is readable UNAUTHENTICATED even though the
+    # raw job log needs admin (403). Local output is unchanged.
+    bubbles_ci_annotate_failure "FAIL: $label"
     failures=$((failures + 1))
     failed_check_labels+=("$label")
   fi
@@ -445,6 +449,12 @@ run_check "BSD-userland simulator selftest (OW-002)" bubbles_run_with_timeout 12
 # macOS PATH. The selftest forces the fallback branch on EVERY platform, so
 # Linux CI protects macOS.
 run_check "guard-lib timeout fallback selftest (OW-009)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/guard-lib-timeout-selftest.sh"
+# CI annotation emitter (OW-002): raw job logs need repo ADMIN and answer 403,
+# so a red macOS release-hygiene job was unattributable from an unprivileged
+# machine. Check-run annotations ARE readable unauthenticated, so every FAIL
+# also emits `::error::` under GITHUB_ACTIONS. The selftest pins that the
+# annotation is additive, gated (no local noise), and correctly escaped.
+run_check "CI annotation emitter selftest (OW-002)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/ci-annotation-emitter-selftest.sh"
 # Bash baseline guard (IMP-102 / SCOPE-5): proves the shipped command surface
 # (cli.sh, framework-validate.sh) fails LOUDLY and EARLY on bash < 4 instead of
 # silently masking declare -A breakage — positive static + functional + an
@@ -1087,6 +1097,7 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
   if [[ -z "$fv_source" ]]; then
     echo "==> Discovered selftest sweep (IMP-027 SCOPE-2b)"
     echo "FAIL: cannot read $SCRIPT_DIR/framework-validate.sh to identify already-enumerated selftests"
+    bubbles_ci_annotate_failure "FAIL: cannot read $SCRIPT_DIR/framework-validate.sh to identify already-enumerated selftests"
     echo "      refusing to re-run every selftest unbounded; fix the install rather than ignoring this"
     failures=$((failures + 1))
     failed_check_labels+=("Discovered selftest sweep (IMP-027 SCOPE-2b)")
