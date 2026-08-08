@@ -1449,7 +1449,14 @@ if not isinstance(execution_phase_claims, list):
 if not isinstance(legacy_phases, list):
     legacy_phases = []
 
-selected_phases = certification_phases or execution_phase_claims or legacy_phases
+# MERGE, never short-circuit. A truthy `certifiedCompletedPhases` used to win
+# outright via `or`, so a spec carrying certification ["validate"] alongside 14
+# execution claims reported every other phase as unrecorded — while Check 6B,
+# reading completedPhaseClaims directly, passed those same entries. One run then
+# asserted both "phase not recorded" and "that phase's record has valid
+# provenance". Concatenating is safe: _phase_name() below normalizes bare
+# strings and dict claim records alike, and dict.fromkeys dedups the result.
+selected_phases = list(certification_phases) + list(execution_phase_claims) + list(legacy_phases)
 
 # v4.1.0: phaseStubs[] — a phase can be honestly declared as no-work-needed
 # via state.json.execution.phaseStubs[<phase>] = {reason: "...", justification: "..."}
