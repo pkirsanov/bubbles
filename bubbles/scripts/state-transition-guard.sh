@@ -3858,8 +3858,19 @@ else
   # is the signature of one captured result being reused to back a second,
   # unrelated claim, which is exactly what G021 exists to catch.
   if command -v jq >/dev/null 2>&1; then
+    # An EMPTY stdout is excluded, and that exclusion is what makes the rule
+    # correct rather than merely narrow. Every command that writes nothing to
+    # stdout hashes to e3b0c442… — the SHA-256 of the empty string — so a
+    # `grep` with no match, a run that wrote only to stderr, and a `--help`
+    # that exited 127 all collide with each other. Reading that collision as
+    # forgery accuses honest work of the single most serious thing this guard
+    # can allege. A receipt with no stdout also has no evidentiary content to
+    # clone, so excluding it removes the false-positive class without weakening
+    # the check: a real forgery reuses a SUBSTANTIVE captured result, which is
+    # by definition non-empty. `stdoutBytes` is already in the receipt schema,
+    # so this needs no new capture and no hardcoded digest.
     c43_clones="$(jq -rs '
-      map(select((.stdoutHash // "") != "" and (.cmd // "") != ""))
+      map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutBytes // 0) > 0))
       | group_by(.stdoutHash)
       | map(select((map(.cmd) | unique | length) > 1))
       | .[]
