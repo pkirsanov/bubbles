@@ -3296,7 +3296,19 @@ if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
 elif [[ "$state_status" == "done_with_concerns" && "$(json_first_bool "legacyStatusCompatibility" "$state_file" || true)" == "true" ]]; then
   info "Check 18 skipped: state.json status is legacy read-only 'done_with_concerns' with legacyStatusCompatibility:true (Gate G040/G092)"
 else
-  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|placeholder|temporary workaround'
+  # NOTE on the `placeholder` term (Gate G040 false-positive class). Every other
+  # term in this list is prose that ADMITS deferral ("deferred", "out of scope",
+  # "skip for now"). The bare noun `placeholder` is not: it is ordinary UI, DOM
+  # and test vocabulary, and it appears most often in artifacts that FORBID one
+  # — "the empty state renders with no placeholder card", "do not synthesise a
+  # placeholder item". Matching the bare noun therefore flagged prose asserting
+  # the exact opposite of deferral. It is narrowed to admission-bearing forms
+  # ("is a placeholder", "placeholder value/until/for now"), which still catch a
+  # genuine "this is a placeholder until X" admission while ignoring a noun that
+  # merely names an artifact. Guarded by two selftest cases below: a negative
+  # (prohibition prose must NOT block) and its adversarial twin (a real
+  # admission MUST still block), so the narrowing cannot silently disable it.
+  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|(is|are|was|were|remains?|stays?|left|leaving)[[:space:]]+(still[[:space:]]+)?an?[[:space:]]+placeholder|placeholder[[:space:]]+(value|until|for now)|temporary workaround'
   # Strategy (i): exclude schema-canonical follow-up field names mandated
   # by completion-governance.md AND the canonical "Follow-Up Narrative"
   # section heading itself. Both are schema-structural usage, not deferred-

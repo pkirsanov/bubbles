@@ -1853,6 +1853,8 @@ g040_planning_na_dir="$tmp_root/specs/930-g040-planning-not-applicable"
 g040_pos_deferred_dir="$tmp_root/specs/920-g040-positive-deferred-prose"
 g040_pos_skip_for_now_dir="$tmp_root/specs/921-g040-positive-skip-for-now"
 g040_neg_followup_fields_dir="$tmp_root/specs/922-g040-negative-schema-yaml-only"
+g040_neg_placeholder_noun_dir="$tmp_root/specs/938-g040-negative-placeholder-noun"
+g040_pos_placeholder_admission_dir="$tmp_root/specs/939-g040-positive-placeholder-admission"
 g040_neg_done_with_concerns_dir="$tmp_root/specs/923-g040-negative-done-with-concerns"
 g040_neg_skip_markers_dir="$tmp_root/specs/924-g040-negative-skip-markers"
 g040_pos_skip_marker_outside_dir="$tmp_root/specs/925-g040-positive-skip-marker-outside"
@@ -1941,6 +1943,19 @@ emit_g040_fixture "$g040_pos_skip_for_now_dir" "done" \
 emit_g040_fixture "$g040_neg_followup_fields_dir" "done" \
   "Schema worked example follows in YAML form below." \
   "no" "yes"
+# The bare noun `placeholder` is ordinary UI/DOM/test vocabulary, and it appears
+# most often in prose that FORBIDS one. Every sentence below asserts the OPPOSITE
+# of deferral, so none may block. The last clause is adversarial: it names a
+# placeholder as the object of a completed action, which is still not an
+# admission that anything was left unfinished.
+emit_g040_fixture "$g040_neg_placeholder_noun_dir" "done" \
+  "The empty state renders with no placeholder card, and the builder must not synthesise a placeholder item. The record placeholder text is asserted verbatim. The adversarial probe confirmed the node was replaced with a placeholder and then restored byte-identical." \
+  "no" "no"
+# Adversarial twin of the case above: the narrowing must NOT have disabled the
+# term. A genuine admission that something IS a placeholder still blocks.
+emit_g040_fixture "$g040_pos_placeholder_admission_dir" "done" \
+  "The scoring weight is a placeholder value until the calibration lands." \
+  "no" "no"
 emit_g040_fixture "$g040_neg_done_with_concerns_dir" "done_with_concerns" \
   "Concern routed to bubbles.bug for follow-up tracking; nothing was deferred." \
   "no" "yes" "yes"
@@ -2964,6 +2979,16 @@ echo "Running G040 Check 18 — negative: schema followUp* fields do NOT trigger
 g040_neg_followup_log="$tmp_root/g040-neg-followup.log"
 run_capture "$g040_neg_followup_log" bash "$GUARD_SCRIPT" "$g040_neg_followup_fields_dir" >/dev/null
 assert_log_not_contains "$g040_neg_followup_log" "deferral language hit" "G040 Check 18 ignores schema followUpOwner/followUpAction/followUpTarget/followUps tokens"
+
+echo "Running G040 Check 18 — negative: prohibition and UI 'placeholder' nouns do NOT trigger..."
+g040_neg_placeholder_noun_log="$tmp_root/g040-neg-placeholder-noun.log"
+run_capture "$g040_neg_placeholder_noun_log" bash "$GUARD_SCRIPT" "$g040_neg_placeholder_noun_dir" >/dev/null
+assert_log_not_contains "$g040_neg_placeholder_noun_log" "deferral language hit" "G040 Check 18 ignores 'no placeholder card', 'must not synthesise a placeholder', the UI record placeholder, and an adversarial 'replaced with a placeholder' probe description"
+
+echo "Running G040 Check 18 — positive (adversarial twin): a real placeholder admission still BLOCKs..."
+g040_pos_placeholder_admission_log="$tmp_root/g040-pos-placeholder-admission.log"
+run_capture "$g040_pos_placeholder_admission_log" bash "$GUARD_SCRIPT" "$g040_pos_placeholder_admission_dir" >/dev/null
+assert_log_contains "$g040_pos_placeholder_admission_log" "deferral language hit" "G040 Check 18 still BLOCKs on 'is a placeholder value until' — the narrowing did not disable the term"
 
 echo "Running transition metadata negative: done_with_concerns fails loud..."
 g040_neg_dwc_log="$tmp_root/g040-neg-dwc.log"
