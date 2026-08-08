@@ -2023,6 +2023,15 @@ for entry in raw:
         "started": started,
         "completed": completed,
         "phases": [p for p in phases if isinstance(p, str)],
+        # An entry may DECLARE that its span was never measured — the writer
+        # stored one instant rather than a start and a finish. That is a
+        # different condition from a fabricated span, and conflating them makes
+        # the zero-duration signal unusable on any record written before a span
+        # was required. The declaration must carry a substantive reason, so it
+        # cannot be used as a silent exemption, and it is reported either way.
+        "unmeasured": entry.get("durationUnmeasured") is True,
+        "unmeasured_reason": (entry.get("durationUnmeasuredReason") or "").strip()
+            if isinstance(entry.get("durationUnmeasuredReason"), str) else "",
     })
 
 if len(entries) < 3:
@@ -2041,11 +2050,22 @@ if intervals and len(set(intervals)) == 1 and intervals[0] > 0:
 
 # Check zero-duration entries (excluding intentionally zero phases)
 zero_dur_offenders = []
+unmeasured_spans = []
+UNMEASURED_REASON_MIN = 20
 for e in entries:
     duration = (e["completed"] - e["started"]).total_seconds()
     if duration <= 0:
         if not e["phases"] or any(p not in ZERO_DURATION_EXEMPT for p in e["phases"]):
-            zero_dur_offenders.append(f"{e['agent']}:{','.join(e['phases']) or '?'}")
+            label = f"{e['agent']}:{','.join(e['phases']) or '?'}"
+            # A declared-unmeasured span is surfaced, not blocked. An EMPTY or
+            # perfunctory reason is still an offender: the declaration has to
+            # cost something or it is just a bypass with extra steps.
+            if e["unmeasured"] and len(e["unmeasured_reason"]) >= UNMEASURED_REASON_MIN:
+                unmeasured_spans.append(label)
+            else:
+                zero_dur_offenders.append(label)
+if unmeasured_spans:
+    print(f"UNMEASURED_SPANS={'|'.join(unmeasured_spans)}")
 if zero_dur_offenders:
     print(f"ZERO_DURATION={'|'.join(zero_dur_offenders)}")
 
@@ -2074,6 +2094,13 @@ else
   uniform_interval="$(echo "$exec_history_analysis" | grep -E '^UNIFORM_INTERVAL=' | head -n 1 | sed 's/^UNIFORM_INTERVAL=//' || true)"
   if [[ -n "$uniform_interval" ]]; then
     fail "executionHistory has $exec_count entries with identical ${uniform_interval}s intervals — FABRICATION INDICATOR"
+  fi
+
+  # Surfaced, never silent: a declared-unmeasured span is a weaker record than a
+  # measured one, and a reader should be told which entries carry that weakness.
+  unmeasured_line="$(echo "$exec_history_analysis" | grep -E '^UNMEASURED_SPANS=' | head -n 1 | sed 's/^UNMEASURED_SPANS=//' || true)"
+  if [[ -n "$unmeasured_line" ]]; then
+    info "executionHistory declares unmeasured spans (single instant recorded, reason given): $unmeasured_line"
   fi
 
   zero_dur_line="$(echo "$exec_history_analysis" | grep -E '^ZERO_DURATION=' | head -n 1 | sed 's/^ZERO_DURATION=//' || true)"
