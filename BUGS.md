@@ -410,13 +410,14 @@ cannot silently disable the check it is repairing.
 
 ---
 
-## BUG-008 — `bubbles.audit` returns no output at all on one specific downstream packet; the packet-size hypothesis is refuted
+## BUG-008 — specialist subagent dispatch silently no-ops (returns no output, performs no work); NOT audit-specific and NOT packet-specific
 
 - **Filed:** 2026-08-07
-- **Disposition:** open, UNDIAGNOSED, recorded rather than worked around. The obvious hypothesis was tested and **refuted** (below), and no replacement hypothesis has evidence behind it. Deliberately NOT worked around: the blocked transition needs an `audit` phase claim, and hand-writing one is precisely the fabrication Gates G022/G027 exist to detect. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
-- **Discovered by:** a downstream consumer repo (research-lab) attempting to certify `specs/_bugs/BUG-001-central-provider-credential-security`.
-- **Severity:** high for the affected packet — it cannot reach a terminal status, because `audit` is a required phase and no other agent may claim it. No evidence yet of a general failure.
-- **Affects:** the `bubbles.audit` agent. No specific script identified; the failure is that the dispatch produces no output whatsoever, so there is no error message to attribute.
+- **Scope widened:** 2026-08-08 — see "Second observation" below. The original title scoped this to `bubbles.audit` on one packet. A `bubbles.test` dispatch against an unrelated packet reproduced the identical signature, so both the agent-specific and the packet-specific framings are now **refuted**.
+- **Disposition:** open, UNDIAGNOSED, recorded rather than worked around. Every hypothesis tested so far has been **refuted** (below), and no replacement hypothesis has evidence behind it. Deliberately NOT worked around by forging claims: a blocked transition needs real phase claims, and hand-writing one is precisely the fabrication Gates G022/G027 exist to detect. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
+- **Discovered by:** a downstream consumer repo (research-lab) attempting to certify `specs/_bugs/BUG-001-central-provider-credential-security`; widened while delivering `specs/017-decision-attention-and-developing-situations` in the same repo.
+- **Severity:** high. A packet that needs a specialist phase claim cannot reach a terminal status through dispatch. The framework's sanctioned escape hatch is `provenanceMode: "parent-expanded"` (Check 6B Pass 2), which requires the parent to genuinely perform the work and cite real evidence — it is a legitimate path, not a bypass, but it means dispatch is effectively unavailable rather than merely flaky.
+- **Affects:** specialist subagent dispatch generally. No specific script identified; the failure is that the dispatch produces no output whatsoever, so there is no error message to attribute.
 
 ### Symptom
 
@@ -441,18 +442,70 @@ audited and certified without incident. Size alone therefore does not explain
 the failure, and any fix built on the size assumption would be built on a
 falsified premise.
 
+### Second observation (2026-08-08): a different agent, a different packet, same signature
+
+Dispatching `bubbles.test` against
+`specs/017-decision-attention-and-developing-situations` — a normal feature
+packet, not a bug folder, in `full-delivery` mode — returned
+`Agent completed with no output`, with **zero side effects**:
+
+| probe | result |
+|---|---|
+| working tree after dispatch | no file attributable to the dispatch |
+| `execution.completedPhaseClaims` | unchanged (still 4 × `implement`) |
+| `execution.executionHistory` | still empty (`length == 0`) |
+| commits during the window | all attributable to a concurrent session on other specs |
+
+So the agent did not run, refuse, or partially execute. This kills two framings
+at once: the failure is **not** specific to `bubbles.audit`, and it is **not**
+specific to the BUG-001 packet or to `specs/_bugs/` placement.
+
+### Refuted hypothesis: `disable-model-invocation` frontmatter
+
+The documented VS Code runtime cause of a silently no-opping dispatch is a
+target agent carrying `disable-model-invocation: true` (see the
+`bubbles-vscode-agent-constraints` skill: a dispatch at a target with that flag
+set is dropped by the host). That is **not** what is happening here. Reading the
+frontmatter block of all twelve specialist agents in the downstream install:
+
+```
+agent        disable-model-invocation            user-invocable
+test         <none>                              <none>
+audit        <none>                              <none>
+regression   <none>                              <none>
+simplify     <none>                              <none>
+gaps         <none>                              <none>
+harden       <none>                              <none>
+stabilize    <none>                              <none>
+security     <none>                              <none>
+chaos        <none>                              <none>
+docs         <none>                              <none>
+validate     <none>                              <none>
+implement    <none>                              <none>
+```
+
+None of them sets either field, so none is a "pure top-level runner" the host
+would refuse to dispatch. The frontmatter explanation is refuted.
+
 ### What Would Advance This
 
 The failure produces no diagnostic surface, so the first need is observability
-rather than a fix: have the audit dispatch emit *something* on every path —
-a start marker, and on abnormal termination a reason — so a silent failure
-becomes an attributable one. Until then any root cause is speculation.
+rather than a fix: have the dispatch emit *something* on every path — a start
+marker, and on abnormal termination a reason — so a silent failure becomes an
+attributable one. Until then any root cause is speculation.
 
-Candidate differences between the two packets that have NOT yet been tested and
-are recorded here only as untested leads, not findings: bug-folder location
-(`specs/_bugs/` versus a nested `specs/<feature>/bugs/`), the number of prior
-phase claims in `state.json`, and total packet size across all files rather than
-`report.md` alone.
+Untested leads, recorded as leads and not findings: whether the dispatching
+session's own agent identity or nesting depth matters (a specialist dispatching
+a specialist would exceed the depth-1 subagent constraint the
+`bubbles-vscode-agent-constraints` skill describes, and depth-1 is a *host*
+limit that would plausibly fail silently); whether a very large loaded
+instruction/skill context in the parent session starves the child; and total
+packet size across all files rather than `report.md` alone.
+
+The depth lead is currently the strongest, because it is the one documented
+host behaviour that produces exactly this signature — a dispatch that is
+dropped without an error — and it would explain why the same agent works when
+invoked directly by a user but not when invoked from inside an agent session.
 
 ---
 
