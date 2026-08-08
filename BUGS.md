@@ -453,4 +453,68 @@ are recorded here only as untested leads, not findings: bug-folder location
 phase claims in `state.json`, and total packet size across all files rather than
 `report.md` alone.
 
+---
+
+## BUG-009 — Check 9's command-output signature test is a SIGPIPE race under `pipefail`; an evidence block larger than the pipe buffer is intermittently misreported as "prose-only"
+
+- **Filed:** 2026-08-07
+- **Disposition:** open framework defect — reproduced deterministically at scale, fix identified, not yet applied.
+- **Discovered by:** downstream `quantitativeFinance` delivery of spec 109 (FC.1), while diagnosing an intermittent `state-transition-guard` verdict flip on an otherwise-clean packet.
+- **Severity:** medium. It cannot pass work that should fail — it does the opposite, producing a FALSE BLOCK on legitimate evidence. The cost is an unreproducible red verdict that invites an author to "fix" evidence that was already correct.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, `resolve_evidence_by_reference()`, the command-output signature test.
+
+### The defect
+
+```bash
+if ! printf '%s\n' "$block_text" | grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:'; then
+```
+
+`grep -q` exits the instant it matches. When `$block_text` exceeds the 64 KiB
+pipe buffer, `printf` is still writing when the reader closes, so `printf` dies
+of SIGPIPE (141). The script runs under `set -o pipefail`, so the pipeline's
+status becomes 141 — non-zero — even though **the pattern was found**. The `!`
+inverts that into "no command-output signature", and an execution-claiming DoD
+item is blocked as prose-only.
+
+The failure is size-dependent, which is why it presents as flakiness: the same
+packet passes or fails depending on how much evidence a block happens to carry.
+
+### Reproduction (measured, not asserted)
+
+```
+$ # exact semantics of the guard line, varying only block size
+block=63 lines   -> false prose-only in  0/60 trials
+block=200 lines  -> false prose-only in  0/60 trials
+block=2000 lines -> false prose-only in 45/60 trials
+block=200001 lines -> false prose-only in 40/40 trials
+```
+
+Under ~64 KiB the race never fires; above it, it fires most of the time. A
+project pasting a full test-suite log into one anchor is comfortably over the
+line.
+
+### Recommended fix
+
+Stop letting the reader close the pipe early, or stop letting `pipefail` see it:
+
+```bash
+if ! grep -qE '...' <<<"$block_text"; then
+```
+
+A herestring is a file, not a pipe, so there is no SIGPIPE and no pipefail
+interaction. Equivalent alternatives: capture the status explicitly
+(`printf ... | grep -cE ... || true` then compare), or drop `-q` so the reader
+consumes its input. The herestring is preferred — it is the smallest change and
+removes the failure mode rather than masking it.
+
+### Note on a related, distinct symptom
+
+The intermittency that led here was NOT this bug: the downstream block was 59
+lines / 5085 bytes, far under the threshold, and its extraction was verified
+deterministic (0 false negatives in 200 trials). That flakiness tracked
+**concurrent guard invocations** instead, and is the same class already recorded
+in BUG-005. The two are independent; this entry documents only the SIGPIPE race,
+which was proven on its own terms.
+
+
 
