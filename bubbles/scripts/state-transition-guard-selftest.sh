@@ -3565,6 +3565,90 @@ else
 fi
 assert_log_not_contains "$c9_html_id_log" "anchor missing OR block <10 non-blank lines" "Check 9: no false anchor-missing failure for an <a id> anchor"
 
+echo "Running Check 7A executionHistory reader defects (BUG-012)..."
+
+# BUG-012: Check 7A never evaluated a single entry, for two independent reasons.
+# Both are shape defects in the guard's own reader, so they are asserted against
+# guard SOURCE — and each assertion is paired with an adversarial twin proving
+# the assertion actually fires on the old buggy shape. Without those twins this
+# whole block could pass vacuously, which is precisely the failure mode BUG-012
+# was: a check that reported success because it had examined nothing.
+
+c7a_src="$(sed -n '/Check 7A: executionHistory Timestamp Plausibility/,/^PY$/p' "$GUARD_SCRIPT")"
+if [[ -z "$c7a_src" ]]; then
+  fail "Check 7A source block could not be extracted from $GUARD_SCRIPT (guard shape changed)"
+else
+  pass "Check 7A source block extracted from guard source (no test/source drift)"
+
+  # --- Defect 1: container selection must fall back to the TOP level ----------
+  # executionHistory is written at the top level by most agents. The old
+  # expression always chose data['execution'] because that key is always a dict,
+  # so the top-level array was never read and the check saw an empty list.
+  if printf '%s\n' "$c7a_src" | grep -q 'data.get("executionHistory")'; then
+    pass "Check 7A falls back to the TOP-level executionHistory (BUG-012 defect 1 fixed)"
+  else
+    fail "Check 7A does not read the top-level executionHistory — it will see [] for every packet that writes it there (BUG-012 defect 1)"
+  fi
+
+  c7a_old_container='container = data.get("execution", {}) if isinstance(data.get("execution"), dict) else data'
+  if printf '%s\n' "$c7a_src" | grep -qF "$c7a_old_container"; then
+    fail "Check 7A still carries the always-chooses-execution container expression (BUG-012 defect 1 regressed)"
+  else
+    pass "Check 7A no longer carries the always-chooses-execution container expression"
+  fi
+
+  # Adversarial twin for defect 1: prove the detector above is not vacuous by
+  # running it against the exact old line. If this does NOT match, the guard
+  # could regress to the old shape without this selftest noticing.
+  c7a_old_fixture="$tmp_root/c7a-old-container.txt"
+  printf '%s\n' "$c7a_old_container" > "$c7a_old_fixture"
+  if grep -qF "$c7a_old_container" "$c7a_old_fixture"; then
+    pass "Check 7A defect-1 detector is adversarially proven (it matches the pre-fix container line)"
+  else
+    fail "Check 7A defect-1 detector is vacuous — it does not even match the known-buggy container line"
+  fi
+
+  # --- Defect 2: entry timestamps are startedAt, not runStartedAt -------------
+  # runStartedAt is an EXECUTION-level field. Measured across the discovering
+  # repo it appears on 0 executionHistory entries against startedAt's 252, so
+  # reading it made every entry hit the `continue`.
+  if printf '%s\n' "$c7a_src" | grep -q 'entry.get("startedAt")'; then
+    pass "Check 7A reads the entry field that entries actually carry, startedAt (BUG-012 defect 2 fixed)"
+  else
+    fail "Check 7A does not read entry.startedAt — every entry will be skipped (BUG-012 defect 2)"
+  fi
+
+  if printf '%s\n' "$c7a_src" | grep -qE 'entry\.get\("(completedAt|finishedAt)"\)'; then
+    pass "Check 7A reads a completion field that entries actually carry (completedAt/finishedAt)"
+  else
+    fail "Check 7A reads no entry completion field that entries carry — every entry will be skipped (BUG-012 defect 2)"
+  fi
+
+  # Adversarial twin for defect 2: a reader that ONLY knows the run* names must
+  # be recognised as broken. This is the shape that shipped.
+  c7a_only_run="$(printf '%s\n' "$c7a_src" | grep -c 'entry.get("startedAt")' || true)"
+  if [[ "$c7a_only_run" -eq 0 ]]; then
+    fail "Check 7A entry reader knows only the run* field names (BUG-012 defect 2 regressed)"
+  else
+    pass "Check 7A entry reader is adversarially proven not to be run*-only"
+  fi
+fi
+
+# --- The second site sharing the identical container bug ---------------------
+# The implement-run counter behind lockdownState reported "0 implement-phase
+# run(s)" on a packet recording one, and passed by agreeing with its own empty
+# read. A check that cannot fail is not a check.
+c7a_lockdown_src="$(sed -n '/^print(f"ROUND={round_count}")/,/^PY$/p' "$GUARD_SCRIPT")"
+if [[ -z "$c7a_lockdown_src" ]]; then
+  fail "lockdownState implement-run counter source could not be extracted (guard shape changed)"
+else
+  if printf '%s\n' "$c7a_lockdown_src" | grep -q 'data.get("executionHistory")'; then
+    pass "lockdownState implement-run counter falls back to the TOP-level executionHistory (BUG-012)"
+  else
+    fail "lockdownState implement-run counter cannot see a top-level executionHistory — it will count 0 implement runs and 'pass' (BUG-012)"
+  fi
+fi
+
 echo "----------------------------------------"
 if [[ "$failures" -gt 0 ]]; then
   echo "state-transition-guard selftest failed with $failures issue(s)."
