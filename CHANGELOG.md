@@ -31,6 +31,80 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## [7.25.0] - 2026-08-09
+
+### Goal Fidelity and Bounded Autonomous Delivery (IMP-038)
+
+An autonomous run had no immutable record of what it was asked to do. The only
+persisted statement of intent was the spec — which planning is allowed to
+rewrite — so a run could revise the target and still look internally
+consistent at every checkpoint. Nothing distinguished "delivered the requested
+outcome" from "delivered a related outcome the run talked itself into".
+
+**One frozen Goal Contract per mutable run.** Frozen before planning at
+`.goalContract`, carrying intent, success signal, hard constraints, targets and
+a work boundary, keyed by a SHA-256 of the source request. Re-freezing is
+refused; widening requires `revise --approval-note` with recorded operator
+approval. Specs mirror it by id, revision and digest only, so contract prose
+never inflates every prompt.
+
+**The boundary now refuses absence, not just violation.** `work-boundary-resolve.sh`
+answered `in-boundary` whenever nothing was declared — correct for reading a
+historical spec, but it also meant a run could enter mutable execution with no
+declared repository, spec or path reach and nothing would object. `--strict`
+refuses that (exit 3) and `--require-allowed-paths` refuses an undeclared
+mutation surface (exit 4). A complete boundary classifies identically in every
+mode, so strict only ever makes the resolver more demanding, and historical
+specs stay readable.
+
+**Goal identity is threaded through every transition** behind exactly one
+producer (`goal-contract.sh ref`) and one comparator (`verify-ref`). Three
+shapes that all read as a healthy payload are refused: an omitted field asserts
+nothing, a substituted goalId/revision/digest re-points the work at a different
+goal, and a widened boundary grants unapproved reach. Compaction preserves the
+ref verbatim — never summarized, never "repaired" against the current contract,
+because silently correcting a wrong ref would destroy the only evidence that a
+specialist substituted the goal.
+
+**`goalImpact` reconciles four modules that disagreed about closure.** G095's
+disposition set is unchanged and records what was FILED; the new orthogonal
+dimension records what a finding MEANS for the requested outcome. `required`
+runs the full finding-owned chain, `blocking-external` blocks the parent,
+`independent` is discharged by filing plus routing under a separate packet. The
+envelope validator refuses a routed or blocking-external finding reported as
+addressed, and an `independent` finding with nothing filed.
+
+**Phase relevance became executable.** `phase-relevance-resolve.sh` reads the
+rules from the registry and restates none of them; all four authorized runners
+consume the same verdict. Every ambiguous path resolves to `run` — an
+unevaluated rule, a missing input, and an empty changed-surface file all run,
+because "I could not tell" is not "not relevant". There is no flag that can
+force a skip. The published guarantee was also broader than the wiring: three
+of the four named runners could not reach the contract, which a regression now
+prevents.
+
+**Gate G134** checks the six boundaries where drift enters — pre-planning,
+post-planning, pre-dispatch, post-finding, post-compaction, pre-certification —
+so a run that simply never called the new capabilities fails instead of passing.
+It also carries the **G070 repair**: that gate read `enforcedBy: [ unbound ]`
+while its description credited `artifact-lint.sh` with a presence check the
+script has never contained, leaving the goal-to-spec and spec-to-implementation
+links unenforced for ordinary feature work.
+
+**Telemetry cannot leak a prompt**, structurally rather than by convention:
+the emitter has no free-text field, every option is a closed enum or an
+already-hashed identifier, and `--details`/`--note`/`--reason`/`--message`/
+`--prompt`/`--text`/`--request` are refused by name.
+
+Two defects were found by building on the earlier scopes and fixed rather than
+deferred: boundary comparison used set difference, so narrowing a glob to a file
+inside it read as a widening and was falsely refused (reach is now compared by
+coverage, with a cross-script agreement test that fails if either side drifts
+alone); and the G070 misdescription above. Three more were caught by the repo's
+own gates during the work — an `eval` in a selftest, real sibling-repository
+names in portable fixtures, and a directly-edited generated gates block.
+
+
 ### Evidence-Backed Experience Recall (IMP-037)
 
 New opt-in capability: relevance retrieval over Bubbles-owned structured
