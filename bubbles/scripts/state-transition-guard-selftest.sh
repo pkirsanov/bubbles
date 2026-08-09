@@ -3579,6 +3579,77 @@ else
 fi
 assert_log_contains "$c12_scope_dup_log" "Duplicate evidence blocks detected in scopes.md" "Check 12 adversarial: legacy blocking message is preserved verbatim"
 
+# --- Dash-leading regression: gives the `grep -qF -e` fix its teeth ----------
+# This fixture exists so that dropping the `-e` from `grep -qF -e "$a_line"` in
+# Check 20 fails a test. Without `-e`, grep parses any evidence line starting
+# with '-' as an OPTION and exits 2, which the loop read as "line not shared" —
+# undercounting shared_lines and letting the fabrication gate FAIL OPEN.
+#
+# It targets Check 20 (Evidence Similarity Detection), not Check 12: the grep is
+# in Check 20, while Check 12 compares blocks with `[[ a == b ]]` string
+# equality and never calls grep, so a Check-12 exact-duplicate fixture is
+# tautological against this defect. The two existing Check 12 fixtures above
+# carry no dash-leading evidence line at all, so neither one moves if `-e` goes.
+#
+# The blocks are therefore NEAR-duplicates (one differing run identifier) so the
+# exact-match Check 12 path cannot fire and mask the result — asserted below.
+# Each block holds 14 lines: 11 identical dash-leading, 2 identical plain, 1
+# differing. min_lines is 15, so the arithmetic straddles the >=80% threshold:
+#   with    `-e`: 13 shared -> 13*100/15 = 86%  -> BLOCKS
+#   without `-e`:  2 shared ->  2*100/15 = 13%  -> silent, gate fails open
+c20_dash_dup_dir="$tmp_root/specs/947-c20-dash-leading-near-duplicate"
+emit_base_fixture "$c20_dash_dup_dir"
+mutate_delivery_contract "$c20_dash_dup_dir/state.json"
+cat <<'EOF' >> "$c20_dash_dup_dir/scopes.md"
+
+### Dash-Leading Evidence Appendix
+
+    ```text
+    $ bash scripts/g021-dash-evidence-probe.sh --surface scopes
+    - probe: enumerate dash-leading evidence lines
+    - probe: markdown bullets are the common real-world shape
+    - probe: an SQL comment line also begins with a dash
+    - probe: a diff removal line also begins with a dash
+    - probe: driver-a ready
+    - probe: driver-b ready
+    - probe: driver-c ready
+    - probe: driver-d ready
+    - probe: driver-e ready
+    - probe: driver-f ready
+    - probe: driver-g ready
+    exit code: 0
+    - run identifier: alpha-1
+    ```
+
+    ```text
+    $ bash scripts/g021-dash-evidence-probe.sh --surface scopes
+    - probe: enumerate dash-leading evidence lines
+    - probe: markdown bullets are the common real-world shape
+    - probe: an SQL comment line also begins with a dash
+    - probe: a diff removal line also begins with a dash
+    - probe: driver-a ready
+    - probe: driver-b ready
+    - probe: driver-c ready
+    - probe: driver-d ready
+    - probe: driver-e ready
+    - probe: driver-f ready
+    - probe: driver-g ready
+    exit code: 0
+    - run identifier: beta-2
+    ```
+EOF
+
+c20_dash_dup_log="$tmp_root/c20-dash-near-duplicate.log"
+c20_dash_dup_status="$(run_capture "$c20_dash_dup_log" bash "$GUARD_SCRIPT" "$c20_dash_dup_dir")"
+if [[ "$c20_dash_dup_status" -eq 1 ]]; then
+  pass "Check 20 adversarial: dash-leading near-duplicate evidence still BLOCKS"
+else
+  fail "Check 20 adversarial: dash-leading near-duplicate evidence must block (observed $c20_dash_dup_status)"
+  sed -n '1,260p' "$c20_dash_dup_log"
+fi
+assert_log_contains "$c20_dash_dup_log" "Near-duplicate evidence blocks (86% line overlap) in scopes.md" "Check 20 adversarial: dash-leading lines are counted as shared (fails if grep loses -e)"
+assert_log_not_contains "$c20_dash_dup_log" "Duplicate evidence blocks detected in scopes.md" "Check 20 adversarial: the block is near-duplicate, so Check 12 exact match cannot mask the grep path"
+
 echo "Running Check 9 evidence-anchor resolution defects (in-fence comments, <a id>)..."
 
 # --- Defect 2: in-fence '#' comments no longer truncate the evidence window --
