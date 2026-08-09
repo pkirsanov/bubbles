@@ -80,34 +80,6 @@ An autonomous runner must deliver the operator-approved outcome and must not abs
 
 ## Proposal
 
-### SCOPE-2 - Make Work Boundary mandatory for mutable goals (GF-2)
-
-Derive `workBoundary` from the frozen Goal Contract. Require at least `repositoryRoots`, `specTargets`, and `crossRepoPolicy` before planning dispatch. Require concrete `allowedPaths` or planned path families before the first source mutation.
-
-Add `workBoundary` and the Goal Contract reference to the version 3 state template. New mutable goals must fail closed when either is missing. Read-only diagnostics remain compatible with historical specs.
-
-Extend the existing boundary resolver with a planned strict invocation form. Mutating runners must use that form. The current permissive behavior may remain for legacy read-only callers, but it must not authorize a new source edit.
-
-Run the resolver before every specialist dispatch. Run it again for each candidate repository, spec, and changed path returned by that specialist. A planner may narrow a boundary without approval. Widening it after freeze requires a Goal Contract revision.
-
-### SCOPE-3 - Thread goal identity through every transition (GF-1, GF-5)
-
-Add a Goal Contract trace to the existing `spec.md` Outcome Contract. Every active scope must state its concrete contribution to the frozen intent or success signal.
-
-Carry `goalId`, revision, digest, and boundary through:
-
-- specialist dispatch packets
-- RESULT-ENVELOPE and route-required payloads
-- invocation ledgers
-- turn and convergence snapshots
-- compacted history records
-- continuation and resume packets
-- validation and audit attempts
-
-Reject a specialist result that omits these fields, substitutes a digest, or returns work outside the declared boundary. Compaction must preserve the fields without summarizing them. Resume must revalidate the digest before repository-local work continues.
-
-A plan may add detail, edge cases, and required transitive dependencies. Each addition must map to the Goal Contract. A new capability, actor, target, or user journey without that mapping is an expansion request, not an implementation task.
-
 ### SCOPE-4 - Reconcile finding closure with bounded delivery (GF-3)
 
 Do not introduce a new disposition vocabulary. Gate `G095` already defines the closed set `fixed-in-session`, `bug-filed`, `spec-filed`, `ops-filed`, `routed`, and `status-adjusted`, and `discovered-issue-disposition-guard.sh` already enforces same-turn filing. Reuse both unchanged.

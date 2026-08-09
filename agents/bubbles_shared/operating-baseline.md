@@ -309,6 +309,27 @@ Compact eagerly, before the next dispatch. Do not wait for the model to start tr
 2. After appending, DELETE that raw envelope from in-context working memory. Keep only the latest 2 raw envelopes plus the full `compactedHistory` ledger in scope.
 3. The compactor is idempotent — re-running it on the same input file produces a byte-identical record. Re-compacting is safe.
 4. Before repository-local work resumes from a compacted record, reconstruct the packet from `repositoryRoot`, `repositoryAlias`, and the nested `repositoryResolution`, then run `bubbles/scripts/repository-binding.sh validate-packet` against the current control record. A failed validation is a refusal before reads or dispatch. Never reconstruct repository identity from CWD, prompt text, workspace order, or the flattened compatibility fields.
+5. In the same resume step, revalidate goal identity: write the record's `goalRef` to a file and run `bubbles/scripts/goal-contract.sh verify-ref --session-file .specify/memory/bubbles.session.json --ref-file <ref-file>` (add `--require-boundary` before mutable work). A failed verification is a refusal, not a warning — the resumed run is pointed at a different goal, or at a revision whose planning is now stale. Route the affected planning and certification artifacts back to their owners before mutable work continues.
+
+### Goal Identity Through Every Transition (IMP-038 SCOPE-3 / GF-1, GF-5)
+
+A goal that cannot be traced across a transition cannot be shown to have been delivered. Every transition therefore carries the same `goalRef` block — `goalId`, `revision`, `sourceRequestDigest`, and (for mutable work) `workBoundary`:
+
+| Surface | How it gets the ref |
+| --- | --- |
+| Specialist dispatch packets | `goal-contract.sh ref` |
+| RESULT-ENVELOPE / `route_required` payloads | echoed back by the specialist; schema property `goalRef` |
+| Invocation ledgers | `goal-contract.sh ref` |
+| Turn and convergence snapshots | DERIVED from `.goalContract` by the turn snapshot writer — never supplied by the caller |
+| Compacted history records | preserved verbatim by `context-compactor.sh` |
+| Continuation and resume packets | verified on resume, per step 5 above |
+| Validation and audit attempts | `goal-contract.sh ref` |
+
+`goal-contract.sh ref` is the ONLY sanctioned producer and `goal-contract.sh verify-ref` the ONLY comparator. Never hand-author a ref: a hand-authored one is how a substituted digest enters the system looking well-formed.
+
+A received result is REFUSED when its ref omits a required field, when any field disagrees with the frozen contract, or when its `workBoundary` is **wider** than the contract's. A **narrower** boundary is accepted — a specialist legitimately reports back a subset of the reach it was given, and `verify-ref` compares reach by coverage (using the same path and spec matching rules as `work-boundary-resolve.sh`), so replacing a glob with a file inside it reads as narrowing rather than expansion.
+
+A plan may add detail, edge cases, and required transitive dependencies; each addition must map to the Goal Contract. A new capability, actor, target, or user journey that maps to nothing in the contract is an expansion request — route it, and if the operator approves it, record it with `goal-contract.sh revise --approval-note`, which increments the revision and invalidates refs minted against the prior one.
 
 ### What MUST Be Preserved (Non-Negotiable)
 
@@ -317,6 +338,7 @@ Compact eagerly, before the next dispatch. Do not wait for the model to start tr
 - All `blockedReason` strings — never collapse a blocked finding into "all good".
 - All artifact paths (`artifactsCreated`, `artifactsUpdated`).
 - The exact current repository decision: `repositoryRoot`, `repositoryAlias`, and every nested `repositoryResolution` field (`sessionId`, `decisionId`, `controlRevision`, `controlPathDigest`, `authority`, `transition`, `scopeKind`, `scopeId`, `targetKind`, `pathVisibility`, `actionable`).
+- The exact `goalRef` the envelope asserted: `goalId`, `revision`, `sourceRequestDigest`. Preserved **verbatim** — never summarized, never normalized, and never "repaired" against the current contract. A wrong ref must arrive at the verifier still wrong; silently correcting it would destroy the only evidence that a specialist substituted the goal.
 - The `rawPointer` field — every compact record MUST point back to the original raw envelope file so an operator (or audit) can drill in.
 
 Truncation may only affect verbose narrative or evidence prose, never the structural routing fields above.

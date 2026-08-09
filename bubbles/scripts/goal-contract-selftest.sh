@@ -443,6 +443,273 @@ else
   skip "T16 shared outcome model (python3 jsonschema not installed)"
 fi
 
+# ═══════════════════════════════════════════════════════════════════════════
+# T17-T21 sync-boundary (IMP-038 SCOPE-2 / GF-2)
+#
+# The contract's workBoundary and the boundary work-boundary-resolve.sh actually
+# enforces must be ONE fact. T17c/T17d are the load-bearing pair: they prove the
+# sync is what turns a strict REFUSAL into a decision, so a regression that makes
+# sync a no-op fails loudly instead of leaving a silently unbounded run.
+# ═══════════════════════════════════════════════════════════════════════════
+
+d17="$(new_case t17)"
+freeze_default "$d17" >/dev/null 2>&1
+printf '%s\n' '{ "version": 3, "status": "in_progress", "execution": { "currentScope": "SCOPE-2" } }' \
+  > "$d17/state.json"
+
+if [[ -f "$BOUNDARY_RESOLVER" ]]; then
+  expect_rc "T17 BEFORE sync, --strict refuses the spec (exit 3) — the GF-2 hole" 3 \
+    bash "$BOUNDARY_RESOLVER" --feature-dir "$d17" --candidate-repo bubbles --strict
+else
+  skip "T17 pre-sync strict refusal (work-boundary-resolve.sh not found)"
+fi
+
+if bash "$GC" sync-boundary --session-file "$d17/session.json" --state-file "$d17/state.json" \
+     >/dev/null 2>"$d17/sync.err"; then
+  contract_wb="$(bash "$GC" read --session-file "$d17/session.json" --field '.workBoundary | tojson' 2>/dev/null)"
+  state_wb="$(jq -c '.workBoundary' "$d17/state.json")"
+  if [[ "$contract_wb" == "$state_wb" ]]; then
+    pass "T17b sync-boundary wrote the contract's workBoundary verbatim"
+  else
+    fail "T17b sync wrote a different boundary (contract: $contract_wb, state: $state_wb)"
+  fi
+  if [[ "$(jq -r '.execution.currentScope' "$d17/state.json")" == "SCOPE-2" ]] \
+     && [[ "$(jq -r '.status' "$d17/state.json")" == "in_progress" ]] \
+     && [[ "$(jq -r '.version' "$d17/state.json")" == "3" ]]; then
+    pass "T17c sync-boundary preserved every pre-existing state.json key"
+  else
+    fail "T17c sync-boundary dropped pre-existing state: $(jq -c . "$d17/state.json")"
+  fi
+else
+  fail "T17b sync-boundary exited non-zero: $(cat "$d17/sync.err")"
+fi
+
+if [[ -f "$BOUNDARY_RESOLVER" ]]; then
+  expect_rc "T17d AFTER sync, --strict --require-allowed-paths DECIDES (exit 0)" 0 \
+    bash "$BOUNDARY_RESOLVER" --feature-dir "$d17" --candidate-repo bubbles \
+      --candidate-spec specs/038-goal-fidelity --candidate-path bubbles/scripts/x.sh \
+      --strict --require-allowed-paths
+else
+  skip "T17d post-sync strict decision (work-boundary-resolve.sh not found)"
+fi
+
+# ── T18 narrowing succeeds: a planner may shrink reach without approval ────
+d18="$(new_case t18)"
+freeze_default "$d18" >/dev/null 2>&1
+printf '%s\n' '{ "version": 3, "workBoundary": { "repositoryRoots": ["bubbles","knb"], "specTargets": ["specs/038-goal-fidelity","specs/999-extra"], "allowedPaths": ["bubbles/scripts/**","docs/**"], "crossRepoPolicy": "forbidden" } }' \
+  > "$d18/state.json"
+expect_rc "T18 sync-boundary that NARROWS an existing boundary -> exit 0" 0 \
+  bash "$GC" sync-boundary --session-file "$d18/session.json" --state-file "$d18/state.json"
+if [[ "$(jq -c '.workBoundary.repositoryRoots' "$d18/state.json")" == '["bubbles"]' ]] \
+   && [[ "$(jq -r '.workBoundary.specTargets | index("specs/999-extra") == null' "$d18/state.json")" == "true" ]]; then
+  pass "T18b the narrowed boundary actually replaced the wider one"
+else
+  fail "T18b narrowing did not take effect: $(jq -c '.workBoundary' "$d18/state.json")"
+fi
+
+# ── T19 widening is REFUSED and leaves state.json byte-identical ───────────
+d19="$(new_case t19)"
+freeze_default "$d19" >/dev/null 2>&1
+printf '%s\n' '{ "version": 3, "status": "in_progress", "workBoundary": { "repositoryRoots": ["bubbles"], "specTargets": ["specs/038-goal-fidelity"], "crossRepoPolicy": "forbidden" } }' \
+  > "$d19/state.json"
+cp "$d19/state.json" "$d19/state.before"
+expect_rc "T19 sync-boundary that would WIDEN an existing boundary -> exit 3 (refused)" 3 \
+  bash "$GC" sync-boundary --session-file "$d19/session.json" --state-file "$d19/state.json"
+if cmp -s "$d19/state.before" "$d19/state.json"; then
+  pass "T19b the refused widen left state.json byte-identical"
+else
+  fail "T19b the refused widen MUTATED state.json: $(jq -c '.workBoundary' "$d19/state.json")"
+fi
+
+d19b="$(new_case t19b)"
+freeze_default "$d19b" --cross-repo-policy authorized >/dev/null 2>&1
+printf '%s\n' '{ "version": 3, "workBoundary": { "repositoryRoots": ["bubbles"], "specTargets": ["specs/038-goal-fidelity"], "allowedPaths": ["bubbles/scripts/**"], "crossRepoPolicy": "forbidden" } }' \
+  > "$d19b/state.json"
+expect_rc "T19c forbidden -> authorized is a widening, so sync refuses it too" 3 \
+  bash "$GC" sync-boundary --session-file "$d19b/session.json" --state-file "$d19b/state.json"
+
+# ── T20 an unchanged re-sync is idempotent, not a refusal ──────────────────
+expect_rc "T20 re-syncing an already-identical boundary -> exit 0 (idempotent)" 0 \
+  bash "$GC" sync-boundary --session-file "$d17/session.json" --state-file "$d17/state.json"
+
+# ── T21 sync-boundary input handling ──────────────────────────────────────
+expect_rc "T21 sync-boundary with no --state-file -> exit 2" 2 \
+  bash "$GC" sync-boundary --session-file "$d17/session.json"
+expect_rc "T21b sync-boundary with a missing state file -> exit 2" 2 \
+  bash "$GC" sync-boundary --session-file "$d17/session.json" --state-file "$d17/absent.json"
+expect_rc "T21c sync-boundary with no contract -> exit 4" 4 \
+  bash "$GC" sync-boundary --session-file "$d5/session.json" --state-file "$d17/state.json"
+d21="$(new_case t21)"
+freeze_default "$d21" >/dev/null 2>&1
+printf '%s\n' '{ "version": 3, "workBoundary": "bubbles" }' > "$d21/state.json"
+expect_rc "T21d sync-boundary onto a non-object existing workBoundary -> exit 2" 2 \
+  bash "$GC" sync-boundary --session-file "$d21/session.json" --state-file "$d21/state.json"
+for bypass in --force --skip --ignore --no-verify; do
+  expect_rc "T21e sync-boundary rejects '$bypass' (no bypass exists)" 2 \
+    bash "$GC" sync-boundary --session-file "$d17/session.json" --state-file "$d17/state.json" "$bypass"
+done
+
+# ── SCOPE-3 / GF-1, GF-5: goal identity threaded through every transition ────
+# `ref` is the ONE producer and `verify-ref` the ONE comparator. The three
+# defects below all look like a well-formed payload to a reader: an omitted
+# field asserts nothing, a substituted field re-points the work at a different
+# goal, and a widened boundary grants unapproved reach.
+
+d22="$(new_case t22)"
+freeze_default "$d22" >/dev/null 2>&1
+ref22="$d22/ref.json"
+bash "$GC" ref --session-file "$d22/session.json" > "$ref22" 2>/dev/null
+
+if [[ "$(jq -r '[keys_unsorted[]] | join(",")' "$ref22")" == "goalId,revision,sourceRequestDigest,workBoundary" ]]; then
+  pass "T22 ref emits exactly goalId, revision, sourceRequestDigest, workBoundary"
+else
+  fail "T22 ref emitted unexpected keys: $(jq -c 'keys_unsorted' "$ref22")"
+fi
+# A transition ref carries the boundary; the durable spec mirror deliberately
+# does not (R5). Asserting the difference keeps the two from converging.
+if [[ "$(jq -r 'has("intent") or has("successSignal") or has("hardConstraints") or has("targets")' "$ref22")" == "false" ]]; then
+  pass "T22b ref leaked no intent/successSignal/constraints/targets"
+else
+  fail "T22b ref leaked contract prose: $(jq -c 'keys_unsorted' "$ref22")"
+fi
+expect_rc "T22c a freshly produced ref verifies, boundary included" 0 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$ref22" --require-boundary
+
+for omitted in goalId revision sourceRequestDigest; do
+  jq --arg k "$omitted" 'del(.[$k])' "$ref22" > "$d22/omit-$omitted.json"
+  expect_rc "T23 a ref omitting $omitted -> exit 1" 1 \
+    bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/omit-$omitted.json"
+done
+
+jq '.sourceRequestDigest = "sha256:0000000000000000000000000000000000000000000000000000000000000000"' \
+  "$ref22" > "$d22/sub-digest.json"
+expect_rc "T24 a substituted digest -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/sub-digest.json"
+jq '.revision = 99' "$ref22" > "$d22/sub-rev.json"
+expect_rc "T24b a substituted revision -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/sub-rev.json"
+jq '.goalId = "gc:someone-elses-session:1"' "$ref22" > "$d22/sub-id.json"
+expect_rc "T24c a substituted goalId -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/sub-id.json"
+
+jq '.workBoundary.repositoryRoots += ["knb"]' "$ref22" > "$d22/widen-repo.json"
+expect_rc "T25 a ref claiming an extra repositoryRoot -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/widen-repo.json" --require-boundary
+jq '.workBoundary.allowedPaths = ["docs/**"]' "$ref22" > "$d22/widen-path.json"
+expect_rc "T25b a ref claiming a path outside the frozen glob -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/widen-path.json" --require-boundary
+jq '.workBoundary.crossRepoPolicy = "authorized"' "$ref22" > "$d22/widen-policy.json"
+expect_rc "T25c a ref upgrading crossRepoPolicy to authorized -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/widen-policy.json" --require-boundary
+
+# Narrowing is legitimate: a specialist reports back a subset of what it was
+# given. These two cases are the reason the comparator tests COVERAGE rather
+# than set difference — under set difference both read as additions and were
+# falsely refused.
+jq '.workBoundary.allowedPaths = ["bubbles/scripts/goal-contract.sh"]' "$ref22" > "$d22/narrow-path.json"
+expect_rc "T26 a ref narrowing a glob to one file inside it -> exit 0" 0 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/narrow-path.json" --require-boundary
+jq '.workBoundary.specTargets = ["038-goal-fidelity"]' "$ref22" > "$d22/narrow-spec.json"
+expect_rc "T26b a ref using the resolver's basename spec form -> exit 0" 0 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/narrow-spec.json" --require-boundary
+
+jq 'del(.workBoundary)' "$ref22" > "$d22/no-boundary.json"
+expect_rc "T27 a ref with no workBoundary and --require-boundary -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/no-boundary.json" --require-boundary
+expect_rc "T27b the same ref WITHOUT --require-boundary still verifies" 0 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/no-boundary.json"
+
+printf '%s\n' '["not","an","object"]' > "$d22/array-ref.json"
+expect_rc "T28 a non-object ref -> exit 1" 1 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/array-ref.json"
+printf '%s\n' 'not json at all' > "$d22/bad.json"
+expect_rc "T28b a non-JSON ref file -> exit 2" 2 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/bad.json"
+expect_rc "T28c verify-ref with no --ref-file -> exit 2" 2 \
+  bash "$GC" verify-ref --session-file "$d22/session.json"
+expect_rc "T28d verify-ref with a missing ref file -> exit 2" 2 \
+  bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/absent.json"
+expect_rc "T28e verify-ref with no contract -> exit 4" 4 \
+  bash "$GC" verify-ref --session-file "$d5/session.json" --ref-file "$ref22"
+expect_rc "T28f ref with no contract -> exit 4" 4 \
+  bash "$GC" ref --session-file "$d5/session.json"
+for bypass in --force --skip --ignore --no-verify; do
+  expect_rc "T28g verify-ref rejects '$bypass' (no bypass exists)" 2 \
+    bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$ref22" "$bypass"
+done
+
+# A revision moves the identity. Every ref minted against the prior revision
+# must stop verifying, or resume after an approved expansion would silently
+# keep running against stale planning.
+d29="$(new_case t29)"
+freeze_default "$d29" >/dev/null 2>&1
+bash "$GC" ref --session-file "$d29/session.json" > "$d29/ref-r1.json" 2>/dev/null
+bash "$GC" revise --session-file "$d29/session.json" --approval-note "operator widened to knb" \
+  --repository-root bubbles --repository-root knb >/dev/null 2>&1
+expect_rc "T29 a ref minted at revision 1 fails after an approved revision" 1 \
+  bash "$GC" verify-ref --session-file "$d29/session.json" --ref-file "$d29/ref-r1.json"
+bash "$GC" ref --session-file "$d29/session.json" > "$d29/ref-r2.json" 2>/dev/null
+expect_rc "T29b a ref re-minted at revision 2 verifies" 0 \
+  bash "$GC" verify-ref --session-file "$d29/session.json" --ref-file "$d29/ref-r2.json" --require-boundary
+if [[ "$(jq -r '.revision' "$d29/ref-r2.json")" == "2" ]]; then
+  pass "T29c the re-minted ref carries the new revision"
+else
+  fail "T29c re-minted ref revision: $(jq -r '.revision' "$d29/ref-r2.json")"
+fi
+
+# ── Cross-script agreement: one matching rule, two implementations ──────────
+# classify_boundary_change() mirrors work-boundary-resolve.sh's path matching.
+# This table drives BOTH through their real entry points — the resolver via a
+# candidate path, the comparator via `verify-ref --require-boundary` on a ref
+# that narrows allowedPaths to exactly that candidate. A change to either side
+# alone fails here rather than silently diverging, which is how a boundary
+# starts meaning one thing to the resolver and another to the comparator.
+if [[ -f "$BOUNDARY_RESOLVER" ]]; then
+  d30="$(new_case t30)"
+  freeze_default "$d30" --allowed-path 'docs/guides/' --allowed-path 'README.md' >/dev/null 2>&1
+  bash "$GC" ref --session-file "$d30/session.json" > "$d30/ref.json" 2>/dev/null
+  bash "$GC" sync-boundary --session-file "$d30/session.json" --state-file "$d30/state.json" >/dev/null 2>&1 \
+    || printf '%s\n' "{ \"version\": 3, \"workBoundary\": $(jq -c '.workBoundary' "$d30/ref.json") }" > "$d30/state.json"
+  # candidate|expected-in-boundary. The frozen allowedPaths are
+  # bubbles/scripts/** (glob), docs/guides/ (dir prefix), README.md (exact).
+  agreement_rows=(
+    'bubbles/scripts/goal-contract.sh|yes'
+    'bubbles/scripts|yes'
+    'docs/guides/CONTROL_PLANE_DESIGN.md|yes'
+    'README.md|yes'
+    'docs/other.md|no'
+    'bubbles/schemas/x.json|no'
+    'README.md.bak|no'
+  )
+  agreement_ok="true"
+  for row in "${agreement_rows[@]}"; do
+    cand="${row%%|*}"; want="${row##*|}"
+
+    resolver_disposition="$(bash "$BOUNDARY_RESOLVER" --feature-dir "$d30" \
+      --candidate-repo bubbles --candidate-path "$cand" 2>/dev/null \
+      | sed -n 's/^disposition=//p')"
+    resolver_says="no"; [[ "$resolver_disposition" == "in-boundary" ]] && resolver_says="yes"
+
+    # A ref that declares ONLY this candidate is a NARROWING exactly when the
+    # frozen list already covers it, so verify-ref's exit code IS the
+    # comparator's coverage verdict — reached through the real caller, not by
+    # reaching into the function.
+    jq --arg p "$cand" '.workBoundary.allowedPaths = [$p]' "$d30/ref.json" > "$d30/probe.json"
+    comparator_rc=0
+    bash "$GC" verify-ref --session-file "$d30/session.json" \
+      --ref-file "$d30/probe.json" --require-boundary >/dev/null 2>&1 || comparator_rc=$?
+    comparator_says="no"; [[ "$comparator_rc" -eq 0 ]] && comparator_says="yes"
+
+    if [[ "$resolver_says" != "$want" || "$comparator_says" != "$want" ]]; then
+      fail "T30 agreement for '$cand': want $want, resolver=$resolver_says ($resolver_disposition), comparator=$comparator_says (rc=$comparator_rc)"
+      agreement_ok="false"
+    fi
+  done
+  [[ "$agreement_ok" == "true" ]] && pass "T30 resolver and comparator agree on every path-matching row"
+else
+  skip "T30 cross-script matching agreement (work-boundary-resolve.sh not found)"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "goal-contract-selftest FAILED with $FAILURES issue(s)."

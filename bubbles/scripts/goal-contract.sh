@@ -15,17 +15,21 @@
 # below mirrors that schema mechanically so `verify` needs nothing but jq.
 #
 # Subcommands
-#   freeze   Create revision 1 and freeze it. REFUSES if one already exists.
-#   read     Print the stored contract, or one field.
-#   verify   Validate the stored contract and check caller expectations.
-#   revise   Create revision N+1. REFUSES without an operator approval note.
-#   mirror   Write only {goalId, revision, sourceRequestDigest} into a state.json.
+#   freeze         Create revision 1 and freeze it. REFUSES if one already exists.
+#   read           Print the stored contract, or one field.
+#   verify         Validate the stored contract and check caller expectations.
+#   revise         Create revision N+1. REFUSES without an operator approval note.
+#   mirror         Write only {goalId, revision, sourceRequestDigest} into a state.json.
+#   sync-boundary  Write .workBoundary into a state.json from the contract, so the
+#                  spec and the contract cannot disagree (IMP-038 SCOPE-2 / GF-2).
+#                  REFUSES a widening.
 #
 # Exit codes (closed set)
 #   0  success / match
 #   1  contract invalid, or a supplied expectation did not match
 #   2  usage or runtime error (missing input, missing jq, unreadable file)
-#   3  REFUSED — re-freezing an existing contract, or revising without approval
+#   3  REFUSED — re-freezing an existing contract, revising without approval, or a
+#      sync-boundary that would WIDEN a spec's already-declared boundary
 #   4  no contract present in the session file
 #
 # There is no --force / --skip / --ignore. A second freeze is the silent-revision
@@ -78,6 +82,26 @@ Usage: goal-contract.sh <subcommand> [options]
           sourceRequestDigest}. Never copies intent/successSignal/constraints,
           and never drops an existing .execution key.
 
+  sync-boundary --session-file <path> --state-file <path>
+          Additively writes .workBoundary from the contract's workBoundary, so
+          the enforced boundary and the frozen contract cannot disagree. Seeds an
+          absent boundary; NARROWING an existing one is free (a planner may
+          narrow without approval); WIDENING is REFUSED (exit 3) — revise the
+          Goal Contract instead. A refused sync leaves state.json untouched.
+
+  ref     --session-file <path>
+          Prints the canonical goalRef block for a transition payload:
+          {goalId, revision, sourceRequestDigest, workBoundary}. This is the
+          ONLY sanctioned producer — never hand-author a goalRef.
+
+  verify-ref --session-file <path> --ref-file <path> [--require-boundary]
+          Validates a goalRef carried by a dispatch packet, RESULT-ENVELOPE,
+          route-required payload, ledger entry, snapshot, compacted record, or
+          resume packet. Exit 1 when the ref omits a required field, when any
+          field differs from the stored contract (digest/revision/goalId
+          substitution), or when --require-boundary is given and the ref's
+          workBoundary is absent or WIDER than the contract's.
+
   -h, --help   Print this usage.
 EOF
 }
@@ -126,8 +150,9 @@ read_json_file() {
   jq empty "$path" >/dev/null 2>&1 || fail_usage "$label is not valid JSON: $path"
 }
 
-# atomic_session_write <session-file> <new-full-json>
+# atomic_session_write <destination-file> <new-full-json>
 # mktemp + mv inside the destination directory, matching state-snapshot.sh.
+# Path-generic despite the name: sync-boundary uses it for a spec state.json.
 atomic_session_write() {
   local session_file="$1" payload="$2" dir tmp
   dir="$(cd "$(dirname "$session_file")" && pwd)"
@@ -304,6 +329,8 @@ reset_content_flags() {
   repository_alias=""
   cross_repo_policy=""
   state_file=""
+  ref_file=""
+  require_boundary="false"
   field=""
   expect_goal_id=""
   expect_revision=""
@@ -353,6 +380,8 @@ parse_flags() {
       --repository-alias) repository_alias="${2:-}"; shift 2 ;;
       --approval-note) approval_note="${2:-}"; shift 2 ;;
       --state-file) state_file="${2:-}"; shift 2 ;;
+      --ref-file) ref_file="${2:-}"; shift 2 ;;
+      --require-boundary) require_boundary="true"; shift ;;
       --field) field="${2:-}"; shift 2 ;;
       --expect-goal-id) expect_goal_id="${2:-}"; shift 2 ;;
       --expect-revision) expect_revision="${2:-}"; shift 2 ;;
@@ -384,16 +413,69 @@ build_boundary_json() {
 }
 
 # classify_boundary_change <old-boundary-json> <new-boundary-json>
-# Any addition on any dimension (or forbidden -> authorized) is a WIDENING and
-# outranks a simultaneous removal: a mixed change still grants new reach.
+#
+# "Widened" means the new boundary grants reach the old one did not. That is a
+# COVERAGE question, not a set-difference one, because two dimensions carry
+# patterns rather than exact identifiers:
+#
+#   allowedPaths  `prefix/**`, `dir/`, or an exact path
+#   specTargets   an exact target, or any target with the same basename
+#
+# Naive set difference reads `bubbles/scripts/**` -> `bubbles/scripts/x.sh` as
+# an ADDITION and refuses it as a widening, even though it is strictly less
+# reach. That false refusal blocks the narrowing a planner is explicitly
+# allowed to perform without approval, so coverage is the correct test.
+#
+# The matching rules below MIRROR work-boundary-resolve.sh. The selftest drives
+# one shared table through BOTH implementations, so neither can drift alone.
+#
+# Absence is deliberately NOT read as "unrestricted". A boundary with no
+# allowedPaths cannot authorize a mutation at all (`--require-allowed-paths`
+# refuses it), so declaring the first path list GRANTS concrete mutation reach
+# where none was usable — that stays a widening.
+#
+# An addition on any dimension (or forbidden -> authorized) outranks a
+# simultaneous removal: a mixed change still grants new reach.
 classify_boundary_change() {
   jq -n -r --argjson o "$1" --argjson n "$2" '
+    def basename_of: sub("/$"; "") | split("/") | last;
+
+    # covers_path($pat; $cand) — work-boundary-resolve.sh path dimension.
+    def covers_path($pat; $cand):
+      if ($pat | endswith("/**")) then
+        ($pat | rtrimstr("/**")) as $prefix
+        | ($cand == $prefix) or ($cand | startswith($prefix + "/"))
+      elif ($pat | endswith("/")) then
+        $cand | startswith($pat)
+      else
+        $cand == $pat
+      end;
+
+    # covers_spec($pat; $cand) — work-boundary-resolve.sh spec dimension.
+    def covers_spec($pat; $cand):
+      ($pat == $cand) or (($pat | basename_of) == ($cand | basename_of));
+
     def old(k): ($o[k] // []) | unique;
     def new(k): ($n[k] // []) | unique;
-    def added(k): ((new(k) - old(k)) | length);
-    def removed(k): ((old(k) - new(k)) | length);
-    (added("repositoryRoots") + added("specTargets") + added("allowedPaths")) as $add
-    | (removed("repositoryRoots") + removed("specTargets") + removed("allowedPaths")) as $rem
+
+    # uncovered(candidates; patterns; rule) — entries the other side cannot reach.
+    def uncovered($cands; $pats; $kind):
+      [ $cands[]
+        | . as $c
+        | select(
+            [ $pats[] | . as $p
+              | if $kind == "path" then covers_path($p; $c)
+                elif $kind == "spec" then covers_spec($p; $c)
+                else ($p == $c) end
+            ] | any | not)
+      ] | length;
+
+    (uncovered(new("repositoryRoots"); old("repositoryRoots"); "exact")
+      + uncovered(new("specTargets"); old("specTargets"); "spec")
+      + uncovered(new("allowedPaths"); old("allowedPaths"); "path")) as $add
+    | (uncovered(old("repositoryRoots"); new("repositoryRoots"); "exact")
+      + uncovered(old("specTargets"); new("specTargets"); "spec")
+      + uncovered(old("allowedPaths"); new("allowedPaths"); "path")) as $rem
     | (($o.crossRepoPolicy // "forbidden")) as $op
     | (($n.crossRepoPolicy // "forbidden")) as $np
     | (if $op == "forbidden" and $np == "authorized" then 1 else 0 end) as $polWiden
@@ -681,6 +763,133 @@ cmd_mirror() {
   jq -n --argjson ref "$ref" '$ref'
 }
 
+# cmd_sync_boundary — carry the frozen contract's workBoundary into a spec's
+# state.json (IMP-038 SCOPE-2 / GF-2), so the boundary the resolver enforces and
+# the boundary the operator approved are one fact, not two.
+#
+# Direction rule, decided by the SHARED classify_boundary_change() so there is
+# exactly one comparator in this file:
+#   absent    seed it
+#   unchanged idempotent rewrite
+#   narrowed  write \u2014 a planner may shrink reach without approval
+#   widened   REFUSE (exit 3) \u2014 granting a spec MORE reach than it already
+#             declares is an expansion, and an expansion belongs in `revise`
+#             where it carries a recorded operator approval note.
+cmd_sync_boundary() {
+  parse_flags "$@"
+  [[ -n "$session_file" ]] || fail_usage "sync-boundary requires --session-file"
+  [[ -n "$state_file" ]] || fail_usage "sync-boundary requires --state-file"
+
+  local contract
+  contract="$(get_contract "$session_file")"
+  assert_valid_contract "$contract"
+
+  read_json_file "$state_file" "state file"
+
+  local boundary existing change
+  boundary="$(jq -c '.workBoundary' <<< "$contract")"
+
+  if [[ "$(jq -r 'has("workBoundary") and (.workBoundary != null)' "$state_file")" == "true" ]]; then
+    if [[ "$(jq -r '.workBoundary | type' "$state_file")" != "object" ]]; then
+      fail_usage "existing .workBoundary in $state_file is not an object — repair it before syncing"
+    fi
+    existing="$(jq -c '.workBoundary' "$state_file")"
+    change="$(classify_boundary_change "$existing" "$boundary")"
+    if [[ "$change" == "widened" ]]; then
+      fail_refuse "the Goal Contract's workBoundary grants MORE reach than $state_file already declares. Narrowing is free; widening a spec's declared reach is an expansion — record it with 'goal-contract.sh revise --approval-note ...' and then widen $state_file's workBoundary deliberately. sync-boundary will not widen a spec for you. state.json was NOT modified."
+    fi
+  fi
+
+  atomic_session_write "$state_file" \
+    "$(jq --argjson wb "$boundary" '. + { workBoundary: $wb }' "$state_file")"
+
+  jq -n --argjson wb "$boundary" '$wb'
+}
+
+# cmd_ref — the ONE sanctioned producer of a transition goalRef (IMP-038
+# SCOPE-3 / GF-1, GF-5). Every surface that must carry goal identity —
+# dispatch packets, RESULT-ENVELOPE and route-required payloads, invocation
+# ledgers, turn and convergence snapshots, compacted history, continuation and
+# resume packets, validation and audit attempts — emits THIS block rather than
+# hand-authoring one. A hand-authored ref is exactly how a substituted digest
+# enters the system unnoticed.
+#
+# The boundary IS included here, unlike `mirror`. The two serve different
+# readers: `mirror` writes a durable spec-local pointer and deliberately stays
+# minimal (R5 — contract fields must not inflate every prompt), while a
+# transition ref is consumed by a verifier that must also confirm the work
+# stayed inside the declared reach.
+cmd_ref() {
+  parse_flags "$@"
+  [[ -n "$session_file" ]] || fail_usage "ref requires --session-file"
+
+  local contract
+  contract="$(get_contract "$session_file")"
+  assert_valid_contract "$contract"
+
+  jq -c '{
+    goalId: .goalId,
+    revision: .revision,
+    sourceRequestDigest: .sourceRequestDigest,
+    workBoundary: .workBoundary
+  }' <<< "$contract"
+}
+
+# cmd_verify_ref — the ONE comparator for a goalRef arriving from any
+# transition. It refuses three distinct failures that all look like success to
+# a reader who only eyeballs the payload:
+#
+#   omission     a field is absent, so nothing was actually asserted
+#   substitution a field is present but disagrees with the frozen contract
+#   widening     the ref claims MORE reach than the contract grants
+#
+# Narrowing is accepted: a specialist legitimately reports back a subset of the
+# boundary it was given. Widening is not, because a specialist cannot grant
+# itself reach the operator never approved.
+cmd_verify_ref() {
+  parse_flags "$@"
+  [[ -n "$session_file" ]] || fail_usage "verify-ref requires --session-file"
+  [[ -n "$ref_file" ]] || fail_usage "verify-ref requires --ref-file"
+
+  local contract
+  contract="$(get_contract "$session_file")"
+  assert_valid_contract "$contract"
+
+  read_json_file "$ref_file" "ref file"
+  local ref
+  ref="$(jq -c '.' "$ref_file")"
+  [[ "$(jq -r 'type' <<< "$ref")" == "object" ]] \
+    || fail_invalid "goalRef must be an object (observed $(jq -r 'type' <<< "$ref"))"
+
+  local key observed expected
+  for key in goalId revision sourceRequestDigest; do
+    if [[ "$(jq -r --arg k "$key" 'has($k) and (.[$k] != null)' <<< "$ref")" != "true" ]]; then
+      fail_invalid "goalRef omits $key. A transition that carries no goal identity cannot be traced to the frozen contract — emit it with 'goal-contract.sh ref'."
+    fi
+    observed="$(jq -r --arg k "$key" '.[$k] | tostring' <<< "$ref")"
+    expected="$(jq -r --arg k "$key" '.[$k] | tostring' <<< "$contract")"
+    if [[ "$observed" != "$expected" ]]; then
+      fail_invalid "goalRef $key mismatch: observed '$observed', frozen contract holds '$expected'. A substituted $key silently re-points the work at a different goal."
+    fi
+  done
+
+  if [[ "$require_boundary" == "true" ]]; then
+    if [[ "$(jq -r 'has("workBoundary") and (.workBoundary != null)' <<< "$ref")" != "true" ]]; then
+      fail_invalid "goalRef omits workBoundary, but --require-boundary was given. A mutable transition must state the reach it operated within."
+    fi
+    if [[ "$(jq -r '.workBoundary | type' <<< "$ref")" != "object" ]]; then
+      fail_invalid "goalRef.workBoundary must be an object"
+    fi
+    local change
+    change="$(classify_boundary_change "$(jq -c '.workBoundary' <<< "$contract")" "$(jq -c '.workBoundary' <<< "$ref")")"
+    if [[ "$change" == "widened" ]]; then
+      fail_invalid "goalRef.workBoundary claims MORE reach than the frozen contract grants. A specialist may report a narrowed boundary; it may not grant itself an expansion — that requires 'goal-contract.sh revise --approval-note'."
+    fi
+  fi
+
+  echo "goal-contract: goalRef verified against $(jq -r '.goalId' <<< "$contract") revision $(jq -r '.revision' <<< "$contract")"
+}
+
 # --- dispatch --------------------------------------------------------------
 
 main() {
@@ -704,6 +913,9 @@ main() {
     verify) cmd_verify "$@" ;;
     revise) cmd_revise "$@" ;;
     mirror) cmd_mirror "$@" ;;
+    sync-boundary) cmd_sync_boundary "$@" ;;
+    ref) cmd_ref "$@" ;;
+    verify-ref) cmd_verify_ref "$@" ;;
     *) fail_usage "unknown subcommand: $subcommand" ;;
   esac
 }
