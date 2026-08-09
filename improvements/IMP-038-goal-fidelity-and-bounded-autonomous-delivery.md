@@ -80,26 +80,6 @@ An autonomous runner must deliver the operator-approved outcome and must not abs
 
 ## Proposal
 
-### SCOPE-4 - Reconcile finding closure with bounded delivery (GF-3)
-
-Do not introduce a new disposition vocabulary. Gate `G095` already defines the closed set `fixed-in-session`, `bug-filed`, `spec-filed`, `ops-filed`, `routed`, and `status-adjusted`, and `discovered-issue-disposition-guard.sh` already enforces same-turn filing. Reuse both unchanged.
-
-Add the one dimension that is missing. Every finding raised during a goal run must also carry a `goalImpact` classification:
-
-| `goalImpact` | Meaning | Parent goal behavior |
-| --- | --- | --- |
-| `required` | Inside the work boundary, and the Goal Contract cannot be satisfied while it is open | Complete the existing finding-owned planning and delivery chain before advancing |
-| `blocking-external` | Outside the work boundary, but it prevents the success signal or violates a hard constraint | Block the parent and request the operator-approved expansion or an external repair |
-| `independent` | Valid work that does not affect the success signal or any hard constraint | Discharge it through its existing `G095` disposition under a separate scoped packet, then continue the parent without inline implementation |
-
-`goalImpact` is orthogonal to the `G095` disposition. A finding always has both. The disposition records what was filed. The classification records what it means for the requested outcome.
-
-Resolve the module disagreement in one change. `workflow-phase-engine.md` and `workflow-fix-cycle-protocol.md` must state that their mandatory planning and delivery chain applies to `required` findings, and that an `independent` finding is discharged by filing plus routing rather than by inline delivery. `completion-governance.md` keeps routing as valid closure and gains the boundary condition. `workflow-delegation-core.md` keeps route-only handling for out-of-boundary work. None of these changes weakens the existing prohibition on cherry-picking easy in-boundary findings.
-
-Routing remains distinct from resolution. Extend result accounting so a routed finding cannot be reported as addressed, and record its filed artifact path. An `independent` finding that has no filed artifact is not discharged.
-
-Final validation must confirm that every `independent` classification is genuinely independent of the success signal and hard constraints. If independence cannot be demonstrated, the finding is `blocking-external` and the parent blocks. `observations[]` remains available for low and medium non-blocking notes under its existing severity rules and must not be used to reclassify a `required` finding.
-
 ### SCOPE-6 - Enforce Goal Fidelity at planning and completion boundaries (GF-1, GF-2, GF-3, GF-6)
 
 Add a planned goal-fidelity guard. Assign its gate identifier only when the enforcement script is registered. Do not reserve or document an unenforced gate id in this proposal.

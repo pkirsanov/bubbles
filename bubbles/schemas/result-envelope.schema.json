@@ -85,6 +85,30 @@
           },
           "scenarioRef": {
             "type": "string"
+          },
+          "goalImpact": {
+            "enum": [
+              "required",
+              "blocking-external",
+              "independent"
+            ],
+            "description": "What this finding means for the requested outcome (IMP-038 SCOPE-4 / GF-3). ORTHOGONAL to the G095 disposition, which records what was filed. `required`: inside the work boundary and the Goal Contract cannot be satisfied while it is open - complete the finding-owned planning and delivery chain. `blocking-external`: outside the boundary but it prevents the success signal or violates a hard constraint - BLOCK the parent. `independent`: affects neither the success signal nor any hard constraint - discharge via its G095 disposition under a separate packet and continue. An `independent` claim that cannot be demonstrated at final validation is `blocking-external`."
+          },
+          "disposition": {
+            "enum": [
+              "fixed-in-session",
+              "bug-filed",
+              "spec-filed",
+              "ops-filed",
+              "routed",
+              "status-adjusted"
+            ],
+            "description": "The Gate G095 disposition. Unchanged closed set; recorded alongside goalImpact."
+          },
+          "filedArtifact": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to the artifact that discharges the disposition, on disk as of this turn. Required for a `routed` or `independent` finding: an `independent` finding with no filed artifact is NOT discharged."
           }
         }
       }

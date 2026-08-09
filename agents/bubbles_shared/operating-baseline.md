@@ -284,6 +284,28 @@ Failure to satisfy either condition emits a `blocked` RESULT-ENVELOPE with findi
 
 **This policy applies to ALL agents — orchestrators, specialists, advisory/read-only agents. Read-only agents that cannot file artifacts directly MUST emit a routed transition packet naming the disposition owner.**
 
+### Goal Impact (IMP-038 SCOPE-4 / GF-3 — orthogonal to disposition)
+
+The disposition above records **what was filed**. It says nothing about **what the finding means for the outcome the operator asked for**, and that missing dimension is why modules disagreed about closure: one read every finding as work the parent must finish, another read routing as sufficient. Both are right, for different findings.
+
+Every finding raised during a goal run therefore carries a `goalImpact` **in addition to** its disposition. A finding always has both; neither substitutes for the other, and the `G095` disposition set is unchanged.
+
+| `goalImpact` | Meaning | Parent behavior |
+| --- | --- | --- |
+| `required` | Inside the work boundary, and the Goal Contract cannot be satisfied while it is open | Complete the finding-owned planning and delivery chain before advancing |
+| `blocking-external` | Outside the work boundary, but it prevents the success signal or violates a hard constraint | BLOCK the parent and request an operator-approved expansion or an external repair |
+| `independent` | Valid work that affects neither the success signal nor any hard constraint | Discharge through its existing `G095` disposition under a separate scoped packet, then continue the parent — no inline implementation |
+
+Rules that make the classification load-bearing rather than decorative:
+
+- **Routing is not resolution.** A `routed` finding MUST NOT be reported in `addressedFindings`. It belongs in `unresolvedFindings` with its filed artifact path, because the parent did not fix it — it handed it to an owner.
+- **An `independent` finding with no filed artifact is NOT discharged.** The classification permits the parent to continue; the disposition still has to exist on disk this turn.
+- **`independent` is a claim that must survive checking.** Final validation confirms independence against the success signal and every hard constraint. If independence cannot be demonstrated, the finding is `blocking-external` and the parent blocks. This is the direction the classification can be abused in: relabeling an inconvenient `required` finding as `independent` is how bounded delivery would become an excuse.
+- **`observations[]` keeps its existing severity rules** for low/medium non-blocking notes and MUST NOT be used to downgrade a `required` finding.
+- **Boundary decides the first split, impact decides the second.** Use `work-boundary-resolve.sh` for in/out of boundary; then ask whether the success signal or a hard constraint survives with the finding open.
+
+None of this weakens the existing prohibition on cherry-picking easy in-boundary findings: an in-boundary finding that blocks the contract is `required`, and `required` findings are completed, not routed.
+
 ## Auto-Approval And Timeouts
 
 - Avoid shell wrapper patterns that trigger approval prompts unless explicitly required.

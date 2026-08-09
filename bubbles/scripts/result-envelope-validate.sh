@@ -287,6 +287,48 @@ def repository_projection_error(doc):
             )
     return None
 
+def finding_accounting_error(doc):
+    """IMP-038 SCOPE-4 / GF-3: routing is not resolution.
+
+    A routed finding was handed to another owner, not fixed. Reporting it in
+    addressedFindings is how a bounded run claims closure it never performed,
+    and it reads as a clean result to anyone scanning the envelope. The same
+    applies to `blocking-external`, which by definition the parent could not
+    close. `independent` permits the parent to CONTINUE; it never permits the
+    parent to claim the work is done, and it still requires the disposition
+    artifact to exist.
+    """
+    findings = doc.get('findings')
+    if not isinstance(findings, list):
+        return None
+    addressed = doc.get('addressedFindings')
+    addressed_ids = set(addressed) if isinstance(addressed, list) else set()
+    for entry in findings:
+        if not isinstance(entry, dict):
+            continue
+        fid = entry.get('id')
+        impact = entry.get('goalImpact')
+        disposition = entry.get('disposition')
+        filed = entry.get('filedArtifact')
+        if fid in addressed_ids:
+            if disposition == 'routed':
+                return (
+                    f"finding '{fid}' is disposition=routed but reported in "
+                    'addressedFindings; routing hands work to an owner, it does not close it'
+                )
+            if impact == 'blocking-external':
+                return (
+                    f"finding '{fid}' is goalImpact=blocking-external but reported in "
+                    'addressedFindings; the parent blocks on it rather than closing it'
+                )
+        needs_artifact = disposition == 'routed' or impact == 'independent'
+        if needs_artifact and not (isinstance(filed, str) and filed.strip()):
+            return (
+                f"finding '{fid}' is {'disposition=routed' if disposition == 'routed' else 'goalImpact=independent'} "
+                'but names no filedArtifact; an undischarged finding is not closed'
+            )
+    return None
+
 # ---------------------------------------------------------------------------
 # IMP-037 / SCOPE-6: recall artifacts can never become evidence.
 #
@@ -490,6 +532,9 @@ for p in sorted(agents_dir.glob('*.agent.md')):
                 error_text = f"Repository provenance error: {provenance_error}"
                 malformed_envelopes.append((p.name, error_text))
                 repository_binding_errors.append((p.name, error_text))
+        accounting_error = finding_accounting_error(doc)
+        if accounting_error:
+            malformed_envelopes.append((p.name, f"Finding accounting error: {accounting_error}"))
 
 # Report.
 print(f"result-envelope-validate: scanned {total_agents} agent file(s)")
