@@ -100,18 +100,6 @@ Routing remains distinct from resolution. Extend result accounting so a routed f
 
 Final validation must confirm that every `independent` classification is genuinely independent of the success signal and hard constraints. If independence cannot be demonstrated, the finding is `blocking-external` and the parent blocks. `observations[]` remains available for low and medium non-blocking notes under its existing severity rules and must not be used to reclassify a `required` finding.
 
-### SCOPE-5 - Apply executable phase relevance to every top-level runner (GF-4)
-
-Create one executable phase-relevance resolver from the existing `phaseRelevance` registry. All authorized top-level runners must consume the same verdict before dispatching a phase.
-
-The resolver must use the current changed surface, Goal Contract, hard constraints, and active scope. It must return `run` or `skip` with a structured reason. An unknown or ambiguous classification must resolve to `run`.
-
-Preserve the current `neverSkip` phases. Re-evaluate every skip after artifact changes, boundary changes, routed work, or gate failures. Record each decision in execution history.
-
-This scope reduces irrelevant work, not assurance. A security, regression, stability, or operational phase must run whenever the goal, changed surface, or hard constraints make it relevant.
-
-Update the documentation only after goal, sprint, iterate, and workflow all execute the same resolver. Until then, remove the claim that every active authorized runner already applies smart phase routing.
-
 ### SCOPE-6 - Enforce Goal Fidelity at planning and completion boundaries (GF-1, GF-2, GF-3, GF-6)
 
 Add a planned goal-fidelity guard. Assign its gate identifier only when the enforcement script is registered. Do not reserve or document an unenforced gate id in this proposal.

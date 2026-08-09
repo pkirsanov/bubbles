@@ -52,6 +52,15 @@ Retained workflow-agent anchors that must still be honored:
 - **The orchestrator MUST enforce the Planning-Only Mode Gate (Gate G070) before any `implement` phase:** If the active workflow mode has `statusCeiling` below `done`, the `implement` phase MUST NOT be invoked. Instead, mark the spec as `route_required` with `nextRequiredOwner: bubbles.implement`. This gate also applies when the user's original request contained planning-only intent language (see workflow-mode-resolution.md → Reciprocal Status Ceiling Warning).
 - The state transition guard (G023) remains the first blocking check before any `done` promotion.
 
+#### Phase Relevance Resolution (MANDATORY — one verdict, every runner)
+
+Before dispatching each phase, obtain the skip/run verdict from `bubbles/scripts/phase-relevance-resolve.sh` rather than deciding here. The contract — invocation, the four authorized runners sharing one verdict, the three fail-to-`run` properties, and the absence of any skip-forcing flag — is [operating-baseline.md → Phase Relevance Resolution](operating-baseline.md).
+
+Two obligations belong to this phase loop specifically:
+
+- **Record every decision** in `executionHistory` using the registry's `skipRecordSchema` (`phase`, `outcome: skipped`, `reason`, `changedSurface`, `reevaluated`, `reevaluationTrigger`). A skip that leaves no record is indistinguishable from a phase that was never considered.
+- **Re-evaluate every skip** when a `reevaluateTriggers` event occurs — artifact modified, scope surface expanded, gate failure, or a prior phase routing new work. A phase skipped earlier MUST be dispatched if the new surface makes it relevant.
+
 #### Finding-Owned Closure Protocol (MANDATORY — NON-NEGOTIABLE)
 
 **Reference:** [workflow-fix-cycle-protocol.md](workflow-fix-cycle-protocol.md) for the full closure contract.

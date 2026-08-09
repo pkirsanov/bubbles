@@ -362,6 +362,22 @@ If `rawPointer` ever points to a file that does not exist, the compact record is
 
 Operator-supplied context — pasted screenshots, terminal scrollback, another repository's logs, or another session's state — is DIAGNOSTIC INPUT ONLY. It MUST NOT be restated as the agent's own execution evidence, and MUST NOT be used to infer an active work mandate. Work is authorized only by the operator's explicit request in the current conversation (and, for repository selection, by IMP-103 repository-binding preflight).
 
+## Phase Relevance Resolution (Orchestrator Agents — IMP-038 SCOPE-5 / GF-4)
+
+Authorized top-level runners (`bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`) MUST obtain each phase's skip/run verdict from the shared resolver instead of deciding for themselves:
+
+```
+bubbles/scripts/phase-relevance-resolve.sh --phase <phase> --runner <agent> \
+    [--changed-surface-file <paths>] [--changed-lines <n>] \
+    [--spec-dir <FEATURE_DIR>] [--session-file <session>]
+```
+
+It prints `verdict` (`run` | `skip`), `phase`, `rule`, and `reason`. All four runners consume the SAME verdict, which is what stops one scope from being routed four different ways depending on which runner picked it up. `--runner` is recorded in the reason for audit and never changes the decision.
+
+**It reduces irrelevant work, never assurance.** Three properties hold, and the resolver's selftest fails if any regresses: every `neverSkip` phase runs unconditionally; a rule whose `skipWhen` token has no evaluator resolves to `run`; and an evaluator missing its input resolves to `run` — "I could not tell" is not "not relevant", and an EMPTY changed-surface file is missing input, not a docs-only scope. There is no `--force` / `--skip-phase` flag: a caller can always obtain `run`, and can never ask the resolver to skip a phase it decided to run.
+
+Rules are read FROM `phaseRelevance` in `bubbles/workflows/modes.yaml`; the resolver restates none of them. Record every decision in `executionHistory` using the registry's `skipRecordSchema`, and re-evaluate every skip on a `reevaluateTriggers` event — artifact modified, scope surface expanded, gate failure, or a prior phase routing new work. `workflow-phase-engine.md` carries the long form for runners that load it.
+
 ## Experience Recall Consumption (Orchestrator Agents)
 
 Authorized top-level orchestrators (`bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`) MAY consume Evidence-Backed Experience Recall. No other agent consumes recall. The full contract is [experience-recall.md](experience-recall.md); this section is the orchestrator-side discipline.
