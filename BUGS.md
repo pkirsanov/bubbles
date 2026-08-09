@@ -874,6 +874,164 @@ Agents writing `executionHistory` should record measured start/finish times;
 zero-duration on a non-trivial phase is now a blocking claim rather than an
 unread one.
 
+---
+
+## BUG-013 — the uniform-interval fabrication detector runs on `executionHistory` only; `completedPhaseClaims[].claimedAt` is read by no check at all
+
+- **Filed:** 2026-08-09
+- **Disposition:** open in-repo framework defect, DEFERRED with a concrete fix
+  recommended below. NOT applied in the discovering session for one specific
+  reason: `bubbles/scripts/state-transition-guard.sh` currently carries **+181
+  uncommitted lines from a concurrent session** in this shared working copy, and
+  adding a check to a file another agent is mid-edit in would risk clobbering
+  unrelated in-flight work. Per Gate G095 this is a tracked OPEN defect with a
+  recorded reason, not a silent omission.
+- **Discovered by:** delivery of downstream research-lab
+  `specs/017-decision-attention-and-developing-situations`, immediately after
+  BUG-012's fix landed. BUG-012 made Check 7A *work*; this entry is about where
+  it still does not *look*.
+- **Severity:** high, and specifically high **after** BUG-012. BUG-012's fix
+  repaired the `executionHistory` surface, which makes it easy to believe
+  timestamp fabrication is now covered. It is covered on one surface of two.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 7A.
+
+### The gap
+
+Check 7A already contains precisely the right detector:
+
+```text
+fail "executionHistory has $exec_count entries with identical ${uniform_interval}s intervals — FABRICATION INDICATOR"
+```
+
+That detector is pointed at exactly one array. Measured against the guard source:
+
+| field | occurrences in `state-transition-guard.sh` |
+|---|---|
+| `executionHistory` | read by Check 7A and Check 6B |
+| `claimedAt` | **0** |
+
+`claimedAt` does not appear in the guard even once. No check parses it, so no
+check can find a pattern in it.
+
+### Why that surface is the one that matters
+
+`completedPhaseClaims[].claimedAt` is the timestamp on the **phase claim** —
+the record Gates G022 and G027 rely on to decide whether a phase was genuinely
+performed. `executionHistory` is a narrative log; `completedPhaseClaims` is the
+load-bearing assertion. The guard validates the log and takes the assertion at
+face value.
+
+### Observed instance
+
+The discovering packet carried **ten** `claimedAt` values lying on an exact
+600-second grid. When each claim was reconciled against its corresponding
+`executionHistory.completedAt`, **thirteen distinct gaps** appeared — for example
+`stabilize` claimed at `15:52:35Z` against a real completion of `04060d09`, and
+`gaps` claimed at `16:02:49Z` against `53223f1c`.
+
+A ten-entry 600-second grid is the *exact* signature the Check 7A detector
+already recognises. It went unreported solely because the detector never reads
+that array. The pattern was found by a human-directed reconciliation, not by the
+control built to find it.
+
+### Recommended fix
+
+Run the existing uniform-interval and ordering analysis over
+`execution.completedPhaseClaims[].claimedAt` as a second input set, reusing the
+Check 7A helpers rather than duplicating them. Two properties are worth keeping:
+
+1. Preserve the existing `durationUnmeasured` / declared-gap escape so honest
+   packets that *declare* an unmeasured span stay passable. The equivalent
+   marker on the claim side is `claimedAtUnreconciled` with a substantive
+   reason, which the discovering packet used for three orphaned `implement`
+   claims.
+2. Guard it with an adversarial case — a set of `claimedAt` values on a uniform
+   grid MUST fail — so the new check cannot regress to the vacuous state
+   BUG-012 documented.
+
+### Blast radius
+
+Same shape as BUG-012 and equally deliberate: packets whose phase claims were
+written on a round grid will begin to block. They were never passing this
+analysis, because it was never applied to them.
+
+---
+
+## BUG-014 — the `doctor` subagent-nesting probe never reads remote VS Code user settings, so every WSL / Remote-SSH install reports "not enabled" regardless of the real value
+
+- **Filed:** 2026-08-09
+- **Disposition:** open in-repo framework defect, fix is a one-line path
+  addition. DEFERRED only because `cli.sh` sits beside the same concurrently
+  modified guard files described in BUG-013; recorded here with the exact path
+  so it can be applied cleanly. Per Gate G095 this is a tracked OPEN defect.
+- **Discovered by:** enabling `chat.subagents.allowInvocationsFromSubagents` on
+  a WSL host and observing `doctor` continue to report it unset.
+- **Severity:** low-to-moderate. The probe is explicitly advisory and never
+  changes `doctor`'s exit code, so nothing breaks. It does, however, give a
+  confidently wrong reading, and an advisory that is wrong is worse than absent
+  because it invites the operator to "fix" an already-correct configuration.
+- **Affects:** `bubbles/scripts/cli.sh`, the subagent-nesting probe (the scanned
+  path list near the `allowInvocationsFromSubagents` lookup).
+
+### The defect
+
+The probe scans five candidate settings paths:
+
+```text
+$HOME/.config/Code/User/settings.json
+$HOME/.config/Code - Insiders/User/settings.json
+$HOME/Library/Application Support/Code/User/settings.json
+$HOME/.vscode-server/data/Machine/settings.json
+$REPO_ROOT/.vscode/settings.json
+```
+
+In a Remote / WSL session the **user-scope** settings that the agent runtime
+actually honours live at:
+
+```text
+$HOME/.vscode-server/data/User/settings.json
+```
+
+That path is absent from the list. The list does include
+`.vscode-server/data/**Machine**/settings.json`, so the `.vscode-server` tree is
+clearly in scope conceptually — the *User* sibling was simply missed, which is
+why the omission is easy to overlook.
+
+### Evidence that the missed path is the live one
+
+The directory carries the rest of the active user profile, including the
+`prompts` folder the running session was handed:
+
+```text
+~/.vscode-server/data/User/
+  History  copilot  globalStorage  memories  prompts  settings.json  workspaceStorage
+```
+
+Meanwhile `$HOME/.config/Code/User/settings.json` does exist on this host, but it
+belongs to a *local desktop* VS Code install, not the remote server backing the
+session — so scanning it reads the wrong profile entirely.
+
+With `"chat.subagents.allowInvocationsFromSubagents": true` written to the real
+user-scope file, `doctor` still reported:
+
+```text
+✅ Subagent nesting: depth-1 default assumed (chat.subagents.allowInvocationsFromSubagents not enabled in scanned settings)
+```
+
+### Recommended fix
+
+Add `$HOME/.vscode-server/data/User/settings.json` to the candidate list, next to
+the existing `Machine` entry. Consider also `$HOME/.vscode-server-insiders/data/User/settings.json`
+for symmetry with the Insiders desktop path already present.
+
+### Note on what this does NOT explain
+
+This probe's inaccuracy is **not** a candidate cause of BUG-008. BUG-008's
+decisive observation — the same agent, on the same packet, in one session,
+succeeding twice and then no-opping four times — rules out every static
+configuration input, this setting included. The two entries are unrelated beyond
+both touching subagent dispatch.
+
 
 
 
