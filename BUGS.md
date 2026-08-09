@@ -519,12 +519,38 @@ any explanation that is a property of the *configuration* cannot be the cause:
 | packet identity / `specs/_bugs/` placement | **refuted** — one packet did both |
 | agent identity (`bubbles.audit` specifically) | **refuted** — that agent did both |
 | `disable-model-invocation` frontmatter | refuted — no agent sets it |
-| subagent nesting depth | **refuted as sole cause** — depth was identical on rows 2 and 4 |
+| subagent nesting depth | **refuted as sole cause** — depth was identical on rows 2 and 4; and see below, the depth-2 setting was ENABLED throughout |
 | prompt / instruction size | **refuted** — row 7 was a deliberately short prompt |
 
 The depth lead recorded above is therefore **downgraded**: depth may still gate
 whether dispatch is possible at all, but it cannot explain a dispatch that works
 and then stops working with depth unchanged.
+
+### The depth hypothesis is now fully dead, and doctor was reporting the opposite
+
+`chat.subagents.allowInvocationsFromSubagents` was **`true`** in
+`~/.vscode-server/data/User/settings.json` for the whole of the session that
+produced rows 2–7. Depth-2 dispatch was permitted, and dispatch still no-opped
+intermittently. Nesting depth is not the cause.
+
+This was obscured for a long time by a defect in `cli.sh doctor` itself (fixed in
+the same change that records this): its probe scanned
+`.vscode-server/data/Machine/settings.json` but **not**
+`.vscode-server/data/User/settings.json`, which is where Remote, WSL and
+Codespaces keep user settings. Doctor therefore printed
+
+```text
+✅ Subagent nesting: depth-1 default assumed (chat.subagents.allowInvocationsFromSubagents not enabled in scanned settings)
+```
+
+while the setting was in fact enabled in a file it never opened. A downstream
+packet recorded "enable this setting" as a blocking **operator action** on that
+false report — so the defect did not merely mislead, it manufactured a blocker
+out of a condition that was already satisfied.
+
+Two lessons worth keeping separate: the depth hypothesis is refuted, and a
+diagnostic that cannot see the thing it reports on is worse than no diagnostic,
+because its output gets cited as evidence.
 
 ### What Would Advance This
 
