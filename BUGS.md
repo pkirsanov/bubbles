@@ -414,6 +414,7 @@ cannot silently disable the check it is repairing.
 
 - **Filed:** 2026-08-07
 - **Scope widened:** 2026-08-08 — see "Second observation" below. The original title scoped this to `bubbles.audit` on one packet. A `bubbles.test` dispatch against an unrelated packet reproduced the identical signature, so both the agent-specific and the packet-specific framings are now **refuted**.
+- **Reframed:** 2026-08-09 — see "Decisive observation" below. The fault is **intermittent, not deterministic**: the same agent, against the same packet, in the same session, succeeded twice and then no-opped four times. Every static-configuration hypothesis is eliminated by that alone. Practical consequence: **retrying a dropped dispatch is worthwhile**, which was not obvious while the bug read as absolute.
 - **Disposition:** open, UNDIAGNOSED, recorded rather than worked around. Every hypothesis tested so far has been **refuted** (below), and no replacement hypothesis has evidence behind it. Deliberately NOT worked around by forging claims: a blocked transition needs real phase claims, and hand-writing one is precisely the fabrication Gates G022/G027 exist to detect. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
 - **Discovered by:** a downstream consumer repo (research-lab) attempting to certify `specs/_bugs/BUG-001-central-provider-credential-security`; widened while delivering `specs/017-decision-attention-and-developing-situations` in the same repo.
 - **Severity:** high. A packet that needs a specialist phase claim cannot reach a terminal status through dispatch. The framework's sanctioned escape hatch is `provenanceMode: "parent-expanded"` (Check 6B Pass 2), which requires the parent to genuinely perform the work and cite real evidence — it is a legitimate path, not a bypass, but it means dispatch is effectively unavailable rather than merely flaky.
@@ -487,25 +488,71 @@ implement    <none>                              <none>
 None of them sets either field, so none is a "pure top-level runner" the host
 would refuse to dispatch. The frontmatter explanation is refuted.
 
+### Decisive observation (2026-08-08/09): the SAME agent on the SAME packet both succeeded and no-opped, in one session
+
+This is the datum that reframes the bug. Driving
+`specs/017-decision-attention-and-developing-situations` to completion in a
+single session, with the dispatching identity, the target packet, the agent
+definitions and the loaded context all held constant:
+
+| # | dispatch | outcome |
+|---|---|---|
+| 1 | `bubbles.test` | no output, zero side effects |
+| 2 | `bubbles.audit` | **SUCCESS** — wrote `AUD-017-001`, a complete `AUDIT_RESULT_V1` transcript, and a `REWORK_REQUIRED` verdict |
+| 3 | `bubbles.audit` | **SUCCESS** — wrote `AUD-017-002` |
+| 4 | `bubbles.audit` | no output, zero side effects |
+| 5 | `bubbles.audit` | no output, zero side effects |
+| 6 | `bubbles.validate` | no output, zero side effects |
+| 7 | `bubbles.validate`, deliberately short prompt | no output, zero side effects |
+
+The failure is therefore **intermittent, not deterministic**, and it is
+intermittent with every static input pinned.
+
+### What this refutes
+
+Because rows 2–5 are the same agent against the same packet in the same session,
+any explanation that is a property of the *configuration* cannot be the cause:
+
+| hypothesis | status |
+|---|---|
+| packet size | refuted earlier (BUG-004's larger packet certified fine) |
+| packet identity / `specs/_bugs/` placement | **refuted** — one packet did both |
+| agent identity (`bubbles.audit` specifically) | **refuted** — that agent did both |
+| `disable-model-invocation` frontmatter | refuted — no agent sets it |
+| subagent nesting depth | **refuted as sole cause** — depth was identical on rows 2 and 4 |
+| prompt / instruction size | **refuted** — row 7 was a deliberately short prompt |
+
+The depth lead recorded above is therefore **downgraded**: depth may still gate
+whether dispatch is possible at all, but it cannot explain a dispatch that works
+and then stops working with depth unchanged.
+
 ### What Would Advance This
 
-The failure produces no diagnostic surface, so the first need is observability
-rather than a fix: have the dispatch emit *something* on every path — a start
-marker, and on abnormal termination a reason — so a silent failure becomes an
-attributable one. Until then any root cause is speculation.
+The failure produces no diagnostic surface, so the first need is still
+observability rather than a fix: have the dispatch emit *something* on every
+path — a start marker, and on abnormal termination a reason — so a silent
+failure becomes an attributable one. That need is now sharper, because an
+intermittent fault cannot be cornered by inspecting static inputs.
 
-Untested leads, recorded as leads and not findings: whether the dispatching
-session's own agent identity or nesting depth matters (a specialist dispatching
-a specialist would exceed the depth-1 subagent constraint the
-`bubbles-vscode-agent-constraints` skill describes, and depth-1 is a *host*
-limit that would plausibly fail silently); whether a very large loaded
-instruction/skill context in the parent session starves the child; and total
-packet size across all files rather than `report.md` alone.
+The remaining leads are all **transient runtime conditions**, which is the only
+class the evidence has not eliminated: host-side rate limiting or quota
+exhaustion on nested requests; a capacity or timeout condition in the subagent
+runtime that surfaces as a dropped dispatch rather than an error; and machine
+resource contention.
 
-The depth lead is currently the strongest, because it is the one documented
-host behaviour that produces exactly this signature — a dispatch that is
-dropped without an error — and it would explain why the same agent works when
-invoked directly by a user but not when invoked from inside an agent session.
+Contention deserves a specific note, because the successes and failures were not
+evenly distributed across load. Rows 4–7 were issued while this machine was
+running a 14-minute Playwright suite, a second repo's Docker-based Playwright
+install, a framework selftest, and at least one other concurrent agent session.
+That is a correlation observed once, not a finding — but it is testable, and it
+is cheap to test: retry a known-good dispatch on an idle machine and see whether
+the success rate changes.
+
+Until the dispatch emits a reason, the practical mitigation is the framework's
+own `provenanceMode: "parent-expanded"` path (Check 6B Pass 2), which lets the
+orchestrator perform the work itself and record why, with evidence — and, for a
+phase that must be independent such as `audit`, simply retrying, since the fault
+is intermittent rather than absolute.
 
 ---
 
