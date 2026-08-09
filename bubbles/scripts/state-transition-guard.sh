@@ -908,8 +908,8 @@ except Exception:
     # Check staged files
     while IFS= read -r changed_file; do
       [[ -z "$changed_file" ]] && continue
-      if echo "$changed_file" | grep -qE "$source_code_pattern"; then
-        if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
+      if grep -qE "$source_code_pattern" <<< "$changed_file"; then
+        if ! grep -qE "$allowed_path_pattern" <<< "$changed_file"; then
           if is_deliverable_file "$changed_file"; then
             pass "Staged file '$changed_file' is declared in deliverableFiles[] manifest — permitted under ceiling '$ceiling_label'"
             continue
@@ -923,8 +923,8 @@ except Exception:
     # Check unstaged working tree changes
     while IFS= read -r changed_file; do
       [[ -z "$changed_file" ]] && continue
-      if echo "$changed_file" | grep -qE "$source_code_pattern"; then
-        if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
+      if grep -qE "$source_code_pattern" <<< "$changed_file"; then
+        if ! grep -qE "$allowed_path_pattern" <<< "$changed_file"; then
           if is_deliverable_file "$changed_file"; then
             pass "Working-tree file '$changed_file' is declared in deliverableFiles[] manifest — permitted under ceiling '$ceiling_label'"
             continue
@@ -940,8 +940,8 @@ except Exception:
     if [[ -n "$last_commit_msg" ]]; then
       while IFS= read -r changed_file; do
         [[ -z "$changed_file" ]] && continue
-        if echo "$changed_file" | grep -qE "$source_code_pattern"; then
-          if ! echo "$changed_file" | grep -qE "$allowed_path_pattern"; then
+        if grep -qE "$source_code_pattern" <<< "$changed_file"; then
+          if ! grep -qE "$allowed_path_pattern" <<< "$changed_file"; then
             if is_deliverable_file "$changed_file"; then
               continue
             fi
@@ -1678,7 +1678,7 @@ if [[ -n "$state_workflow_mode" ]]; then
   if [[ ${#required_specialists[@]} -gt 0 ]]; then
     missing_phases=0
     for specialist_phase in "${required_specialists[@]}"; do
-      if echo "$state_completed_phases_block" | grep -qE "\"$specialist_phase\""; then
+      if grep -qE "\"$specialist_phase\"" <<< "$state_completed_phases_block"; then
         pass "Required phase '$specialist_phase' recorded in execution/certification phase records"
       else
         fail "Required phase '$specialist_phase' NOT in execution/certification phase records (Gate G022 violation)"
@@ -1839,7 +1839,7 @@ for p in set(names):
             elif [[ -z "$pe_reason" ]] || [[ "${#pe_reason}" -lt 20 ]]; then
               fail "Phase '$claimed_phase' claims parent-expansion but expansionReason is empty or <20 chars (Gate G022). Got: '$pe_reason'"
               provenance_failures=$((provenance_failures + 1))
-            elif ! echo "$pe_reason" | grep -qiE "$expansion_reason_regex"; then
+            elif ! grep -qiE "$expansion_reason_regex" <<< "$pe_reason"; then
               fail "Phase '$claimed_phase' expansionReason does not name the missing capability (must mention one of: runSubagent, tool unavailable, nested runtime, capability missing, parent-expand). Got: '$pe_reason' (Gate G022)"
               provenance_failures=$((provenance_failures + 1))
             elif [[ -z "$pe_ev_ref" ]]; then
@@ -3197,10 +3197,10 @@ if [[ -n "$state_workflow_mode" ]]; then
       # Check if implement/test phases are claimed
       has_implement="false"
       has_test="false"
-      if echo "$state_completed_phases_block" | grep -qE '"implement"'; then
+      if grep -qE '"implement"' <<< "$state_completed_phases_block"; then
         has_implement="true"
       fi
-      if echo "$state_completed_phases_block" | grep -qE '"test"'; then
+      if grep -qE '"test"' <<< "$state_completed_phases_block"; then
         has_test="true"
       fi
 
@@ -3551,10 +3551,10 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   in_evidence=0
   current_block=""
   while IFS= read -r line; do
-    if [[ "$in_evidence" -eq 0 ]] && echo "$line" | grep -qE '^    ```'; then
+    if [[ "$in_evidence" -eq 0 ]] && grep -qE '^    ```' <<< "$line"; then
       in_evidence=1
       current_block=""
-    elif [[ "$in_evidence" -eq 1 ]] && echo "$line" | grep -qE '^    ```$'; then
+    elif [[ "$in_evidence" -eq 1 ]] && grep -qE '^    ```$' <<< "$line"; then
       in_evidence=0
       if [[ -n "$current_block" ]]; then
         evidence_blocks+=("$current_block")
@@ -3590,10 +3590,14 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
       fi
 
       # Count shared lines (exact match)
+      # NOTE: `-e` is REQUIRED. Without it, any evidence line beginning with '-'
+      # (a markdown bullet, an SQL '--' comment, a diff '-' line) is parsed by
+      # grep as an OPTION, which exits 2. Exit 2 was then read as "not shared",
+      # undercounting shared_lines and making this fabrication gate FAIL OPEN.
       shared_lines=0
       while IFS= read -r a_line; do
         [[ -z "$a_line" ]] && continue
-        if echo "$block_b" | grep -qF "$a_line"; then
+        if grep -qF -e "$a_line" <<< "$block_b"; then
           shared_lines=$((shared_lines + 1))
         fi
       done <<< "$block_a"
@@ -3621,8 +3625,8 @@ echo ""
 echo "--- Check 21: Spec Review Enforcement (specReview policy) ---"
 if [[ "$state_status" == "done" ]] && [[ -n "$state_workflow_mode" ]]; then
   spec_review_required_modes="improve-existing|reconcile-to-doc|redesign-existing|full-delivery"
-  if echo "$state_workflow_mode" | grep -qE "^($spec_review_required_modes)$"; then
-    if echo "$state_completed_phases_block" | grep -qE '"spec-review"'; then
+  if grep -qE "^($spec_review_required_modes)$" <<< "$state_workflow_mode"; then
+    if grep -qE '"spec-review"' <<< "$state_completed_phases_block"; then
       pass "Spec-review phase recorded for legacy-improvement mode '$state_workflow_mode'"
     else
       fail "Legacy-improvement mode '$state_workflow_mode' requires a spec-review phase (specReview: once-before-implement) but 'spec-review' is NOT in execution/certification phase records"

@@ -187,7 +187,7 @@ v5Aliases:
     description: Duplicate tuple — should be rejected at resolution time.
 EOF
 out="$(BUBBLES_WORKFLOW_ALIASES_FILE="$tmp_alias" bash "$RESOLVER" --resolve-v6 ship action:promote 2>&1 || true)"
-if echo "$out" | grep -q 'ambiguous'; then
+if grep -q 'ambiguous' <<< "$out"; then
   pass "adversarial: resolver rejects duplicate (primitive, tag-set) tuple"
 else
   fail "adversarial: resolver did NOT reject duplicate tuple (got: $out)"

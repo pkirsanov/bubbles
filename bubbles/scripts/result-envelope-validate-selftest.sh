@@ -114,13 +114,13 @@ fi
 
 # 2. v6 default — malformed BLOCKS, missing still warns.
 run_fixture "$repo_malformed"
-if [[ "$RC" -ne 0 ]] && echo "$OUT" | grep -q MALFORMED; then
+if [[ "$RC" -ne 0 ]] && grep -q MALFORMED <<< "$OUT"; then
   pass "2a. v6 default (no flags) blocks on malformed envelope"
 else
   fail "2a. v6 default malformed: rc=$RC out=$OUT"
 fi
 run_fixture "$repo_none"
-if [[ "$RC" -eq 0 ]] && echo "$OUT" | grep -q -E 'Advisory|missing'; then
+if [[ "$RC" -eq 0 ]] && grep -q -E 'Advisory|missing' <<< "$OUT"; then
   pass "2b. v6 default still warns (not blocks) on missing envelope"
 else
   fail "2b. v6 default missing: rc=$RC out=$OUT"
@@ -179,7 +179,7 @@ else
 fi
 # advisory still warns but exits 0 — that's by design (advisory never blocks).
 run_fixture "$repo_invalid" --advisory
-if [[ "$RC" -eq 0 ]] && echo "$OUT" | grep -q MALFORMED; then
+if [[ "$RC" -eq 0 ]] && grep -q MALFORMED <<< "$OUT"; then
   pass "7c. advisory still reports invalid outcome but exits 0 (by design)"
 else
   fail "7c. invalid outcome advisory: rc=$RC out=$OUT"
