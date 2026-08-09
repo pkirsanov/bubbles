@@ -858,6 +858,12 @@ if [[ -x "$SCRIPT_DIR/governance-index-lint-selftest.sh" ]]; then
   run_check "Governance index lint selftest" bash "$SCRIPT_DIR/governance-index-lint-selftest.sh"
 fi
 
+# Source-only: the consulted indexes are framework-layout paths that do not
+# exist in a downstream install, where this would report false orphans.
+if [[ -x "$SCRIPT_DIR/governance-index-lint.sh" ]]; then
+  run_check_self_only "Governance index lint (live)" bash "$SCRIPT_DIR/governance-index-lint.sh" --repo-root "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/orchestrator-tool-frontmatter-lint-selftest.sh" ]]; then
   run_check "Orchestrator tool frontmatter lint selftest" bash "$SCRIPT_DIR/orchestrator-tool-frontmatter-lint-selftest.sh"
 fi
