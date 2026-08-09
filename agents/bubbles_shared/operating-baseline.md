@@ -400,6 +400,14 @@ It prints `verdict` (`run` | `skip`), `phase`, `rule`, and `reason`. All four ru
 
 Rules are read FROM `phaseRelevance` in `bubbles/workflows/modes.yaml`; the resolver restates none of them. Record every decision in `executionHistory` using the registry's `skipRecordSchema`, and re-evaluate every skip on a `reevaluateTriggers` event — artifact modified, scope surface expanded, gate failure, or a prior phase routing new work. `workflow-phase-engine.md` carries the long form for runners that load it.
 
+### Goal-Fidelity Telemetry (IMP-038 SCOPE-7 / GF-5)
+
+Record goal-fidelity events into the existing `.specify/runtime/framework-events.jsonl` ledger with `bubbles/scripts/goal-fidelity-telemetry.sh --event <type>`. The closed event set is `contract-frozen`, `contract-revised`, `expansion-requested`, `expansion-rejected`, `boundary-refusal`, `finding-routed`, `finding-goal-blocking`, and `phase-relevance`.
+
+**No operator prompt ever reaches the ledger, and that is structural rather than a matter of care.** The emitter has no free-text field — every option is a closed enum or an already-hashed identifier — so `--details`, `--note`, `--reason`, `--message`, `--prompt`, `--text`, and `--request` are all refused by name. `sourceRequestDigest` is permitted precisely because it is a SHA-256 of the request: it identifies a goal without reproducing what was typed. If no enum value fits, the correct change is a new enum value in review, never a prose field.
+
+Telemetry is observability, never a gate: an unwritable ledger, a missing `jq`, or `BUBBLES_TELEMETRY=0` all exit 0 rather than blocking delivery.
+
 ## Experience Recall Consumption (Orchestrator Agents)
 
 Authorized top-level orchestrators (`bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`) MAY consume Evidence-Backed Experience Recall. No other agent consumes recall. The full contract is [experience-recall.md](experience-recall.md); this section is the orchestrator-side discipline.
