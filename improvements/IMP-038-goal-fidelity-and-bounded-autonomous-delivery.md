@@ -80,27 +80,6 @@ An autonomous runner must deliver the operator-approved outcome and must not abs
 
 ## Proposal
 
-### SCOPE-1 - Create one immutable Goal Contract (GF-1)
-
-Create one versioned Goal Contract schema for every mutable top-level run. Apply it to `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, and mutable `bubbles.workflow` runs.
-
-The contract must contain:
-
-- `goalId` and `revision`
-- a digest of the source request
-- normalized `intent` and `successSignal`
-- `hardConstraints[]` and `nonGoals[]`
-- concrete target references
-- the work boundary from SCOPE-2
-- creation time and provenance
-- the approval state for any revision
-
-Freeze the initial contract before planning. Full-autonomy mode may normalize and freeze the operator's request without an extra check-in. Any later expansion of intent, success criteria, target references, or boundary requires explicit operator approval. A required expansion returns a structured approval request instead of mutating the contract silently.
-
-Persist the active contract in `.specify/memory/bubbles.session.json`. Mirror only its stable id, revision, and digest into each targeted spec's `state.json.execution`. Make a compiled scenario's existing `rootOutcome` conform to the same schema rather than maintaining a second outcome model.
-
-Specialists may read and echo the Goal Contract. They may not revise it. Only the active top-level runner may request a revision, and only an operator-approved revision may replace the frozen digest.
-
 ### SCOPE-2 - Make Work Boundary mandatory for mutable goals (GF-2)
 
 Derive `workBoundary` from the frozen Goal Contract. Require at least `repositoryRoots`, `specTargets`, and `crossRepoPolicy` before planning dispatch. Require concrete `allowedPaths` or planned path families before the first source mutation.
