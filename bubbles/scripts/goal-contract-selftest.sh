@@ -242,10 +242,10 @@ expect_rc "T10b the revised contract passes verify at revision 2" 0 \
 # ── T11 widening vs narrowing is classified, never silently reclassified ──
 d11="$(new_case t11)"
 freeze_default "$d11" >/dev/null 2>&1
-bash "$GC" revise --session-file "$d11/session.json" --approval-note "add knb" \
-  --repository-root bubbles --repository-root knb >/dev/null 2>&1
+bash "$GC" revise --session-file "$d11/session.json" --approval-note "add secondary-repo" \
+  --repository-root bubbles --repository-root secondary-repo >/dev/null 2>&1
 expect_field "T11 revise that ADDS a repositoryRoot -> 'widened: ' note prefix" \
-  "$d11/session.json" ".approval.approvalNote" "widened: add knb"
+  "$d11/session.json" ".approval.approvalNote" "widened: add secondary-repo"
 
 d11b="$(new_case t11b)"
 freeze_default "$d11b" \
@@ -265,7 +265,7 @@ expect_field "T11c revise that leaves the boundary alone -> 'unchanged: ' prefix
 d11d="$(new_case t11d)"
 freeze_default "$d11d" >/dev/null 2>&1
 bash "$GC" revise --session-file "$d11d/session.json" --approval-note "swap roots" \
-  --repository-root knb >/dev/null 2>&1
+  --repository-root secondary-repo >/dev/null 2>&1
 expect_field "T11d a mixed add+remove is 'widened: ' (an addition outranks a removal)" \
   "$d11d/session.json" ".approval.approvalNote" "widened: swap roots"
 
@@ -496,7 +496,7 @@ fi
 # ── T18 narrowing succeeds: a planner may shrink reach without approval ────
 d18="$(new_case t18)"
 freeze_default "$d18" >/dev/null 2>&1
-printf '%s\n' '{ "version": 3, "workBoundary": { "repositoryRoots": ["bubbles","knb"], "specTargets": ["specs/038-goal-fidelity","specs/999-extra"], "allowedPaths": ["bubbles/scripts/**","docs/**"], "crossRepoPolicy": "forbidden" } }' \
+printf '%s\n' '{ "version": 3, "workBoundary": { "repositoryRoots": ["bubbles","secondary-repo"], "specTargets": ["specs/038-goal-fidelity","specs/999-extra"], "allowedPaths": ["bubbles/scripts/**","docs/**"], "crossRepoPolicy": "forbidden" } }' \
   > "$d18/state.json"
 expect_rc "T18 sync-boundary that NARROWS an existing boundary -> exit 0" 0 \
   bash "$GC" sync-boundary --session-file "$d18/session.json" --state-file "$d18/state.json"
@@ -592,7 +592,7 @@ jq '.goalId = "gc:someone-elses-session:1"' "$ref22" > "$d22/sub-id.json"
 expect_rc "T24c a substituted goalId -> exit 1" 1 \
   bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/sub-id.json"
 
-jq '.workBoundary.repositoryRoots += ["knb"]' "$ref22" > "$d22/widen-repo.json"
+jq '.workBoundary.repositoryRoots += ["secondary-repo"]' "$ref22" > "$d22/widen-repo.json"
 expect_rc "T25 a ref claiming an extra repositoryRoot -> exit 1" 1 \
   bash "$GC" verify-ref --session-file "$d22/session.json" --ref-file "$d22/widen-repo.json" --require-boundary
 jq '.workBoundary.allowedPaths = ["docs/**"]' "$ref22" > "$d22/widen-path.json"
@@ -644,8 +644,8 @@ done
 d29="$(new_case t29)"
 freeze_default "$d29" >/dev/null 2>&1
 bash "$GC" ref --session-file "$d29/session.json" > "$d29/ref-r1.json" 2>/dev/null
-bash "$GC" revise --session-file "$d29/session.json" --approval-note "operator widened to knb" \
-  --repository-root bubbles --repository-root knb >/dev/null 2>&1
+bash "$GC" revise --session-file "$d29/session.json" --approval-note "operator widened to secondary-repo" \
+  --repository-root bubbles --repository-root secondary-repo >/dev/null 2>&1
 expect_rc "T29 a ref minted at revision 1 fails after an approved revision" 1 \
   bash "$GC" verify-ref --session-file "$d29/session.json" --ref-file "$d29/ref-r1.json"
 bash "$GC" ref --session-file "$d29/session.json" > "$d29/ref-r2.json" 2>/dev/null

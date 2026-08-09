@@ -80,25 +80,6 @@ An autonomous runner must deliver the operator-approved outcome and must not abs
 
 ## Proposal
 
-### SCOPE-6 - Enforce Goal Fidelity at planning and completion boundaries (GF-1, GF-2, GF-3, GF-6)
-
-Add a planned goal-fidelity guard. Assign its gate identifier only when the enforcement script is registered. Do not reserve or document an unenforced gate id in this proposal.
-
-The guard must check these boundaries:
-
-1. Before planning, the Goal Contract is complete, frozen, and bound to a repository decision.
-2. After planning, every active requirement and scope traces to the Goal Contract.
-3. Before dispatch, the candidate work is inside the boundary and carries the current digest.
-4. After finding handling, no out-of-boundary path changed inside the parent packet.
-5. After compaction or resume, the contract digest and boundary are unchanged.
-6. Before final certification, evidence demonstrates the original success signal and preserves every hard constraint.
-
-Repair `G070` in the same scope. Its declared enforcement is currently absent, so the goal-to-spec link and the spec-to-implementation link are both unenforced for ordinary feature work. Two corrections are required. First, correct the registry description so it states the true enforcement surface instead of naming `artifact-lint.sh`. Second, give the ordinary feature path a real presence check for the Outcome Contract, either by adding it to `artifact-lint.sh` and updating `enforcedBy`, or by folding it into the new goal-fidelity guard. Leaving `enforcedBy: [ unbound ]` is acceptable only while the description matches that reality, because the `unbound` value exists to keep an unenforced gate visible.
-
-`bubbles.validate` must independently verify both links before certification. Substance verification of the success signal stays with validate. Presence and traceability become mechanical.
-
-A changed Goal Contract revision invalidates stale planning and certification claims that depended on the prior digest. The active runner must route those artifacts back to their owners before mutable work resumes.
-
 ### SCOPE-7 - Add adversarial goal-fidelity coverage and telemetry (GF-5)
 
 Add focused selftests and evaluation fixtures for these cases:
