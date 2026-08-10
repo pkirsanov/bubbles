@@ -78,6 +78,25 @@ report() {
   findings=$((findings + 1))
 }
 
+# An inline `security-gate:allow` / `gitleaks:allow` on the offending LINE is
+# an explicit operator acknowledgement, and the same standard this gate
+# already applies to the highest-severity class: a committed key block.
+#
+# It cannot be inferred, it has to be typed on the exact line, and it lands in
+# the diff a reviewer is already reading. Without it a consuming repo cannot
+# resolve a legitimate finding — an official installer one-liner, a hermetic
+# test fixture — except by patching this framework file or switching the gate
+# off, and a gate that gets switched off enforces nothing.
+#
+# Every acknowledgement stays auditable:
+#   grep -rn 'security-gate:allow' .
+acknowledged() {
+  case "$1" in
+    *security-gate:allow* | *gitleaks:allow*) return 0 ;;
+  esac
+  return 1
+}
+
 cd "$repo_root"
 
 # Only inspect tracked files: the working tree may hold local scratch, and a
@@ -197,6 +216,7 @@ while IFS= read -r hit; do
   case "$hit" in
     *-selftest.sh* | *dependency-posture.sh* | *security-gate* | *tests/*) continue ;;
   esac
+  acknowledged "$hit" && continue
   report "inline-credentials" "$hit"
 done < <(
   grep -rnE '^[^#]*\b[A-Za-z_]*(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)[A-Za-z_]*=["'"'"']?[A-Za-z0-9/+_.-]{8,}["'"'"']?' \
@@ -238,6 +258,7 @@ while IFS= read -r hit; do
   case "$hit" in
     *"cli.sh"*"install.sh"*) continue ;;
   esac
+  acknowledged "$hit" && continue
   report "curl-pipe-shell" "$hit"
 done < <(
   grep -rnE '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba)?sh\b' \
@@ -261,6 +282,7 @@ while IFS= read -r hit; do
   case "$hit" in
     *security-gate*) continue ;;
   esac
+  acknowledged "$hit" && continue
   report "eval-on-input" "$hit"
 done < <(
   grep -rnE '^[^#]*\beval[[:space:]]+["'"'"']?\$\(' --include='*.sh' . 2>/dev/null || true

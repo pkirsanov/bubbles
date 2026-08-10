@@ -231,7 +231,36 @@ r8="$WORK/r8"
 make_repo "$r8"
 printf '#!/usr/bin/env bash\nAPI_TOKEN="ghp_literal$value1234"\n' >"$r8/bubbles/scripts/deploy.sh"
 assert "red: literal credential containing a bare dollar" 1 "$r8"
+# --- GREEN: acknowledged findings in the non-key classes -------------------
+#
+# The gate already accepts an inline acknowledgement for a committed key
+# block. Applying the same standard to the other classes is what lets a repo
+# resolve a legitimate finding — an official installer, a hermetic fixture,
+# a framework idiom — without patching the gate or switching it off.
+g11="$WORK/g11"
+make_repo "$g11"
+{
+  echo "#!/usr/bin/env bash"
+  echo "TEST_DB_PASSWORD=\"ephemeral_fixture_pass\" # security-gate:allow container this script creates"
+  echo "curl -sSf https://example.invalid/rustup.sh | sh # security-gate:allow official toolchain installer"
+  echo "eval \$(compute_paths) # security-gate:allow values produced by a local function"
+} >"$g11/bubbles/scripts/acknowledged.sh"
+assert "green: acknowledged credential, installer and eval" 0 "$g11"
 
+# --- RED: the SAME three lines without the acknowledgement -----------------
+#
+# Mutation proof that the annotation is what clears them. If this were green
+# the exemption would be leaking from the path, and a real finding would ride
+# through on it.
+r10="$WORK/r10"
+make_repo "$r10"
+{
+  echo "#!/usr/bin/env bash"
+  echo "TEST_DB_PASSWORD=\"ephemeral_fixture_pass\""
+  echo "curl -sSf https://example.invalid/rustup.sh | sh"
+  echo "eval \$(compute_paths)"
+} >"$r10/bubbles/scripts/unacknowledged.sh"
+assert "red: same three lines with no acknowledgement" 1 "$r10"
 echo ""
 echo "security-gate selftest: $pass_count passed, $fail_count failed"
 [[ "$fail_count" -eq 0 ]] || exit 1
