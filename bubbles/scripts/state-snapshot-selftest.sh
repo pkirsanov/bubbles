@@ -309,6 +309,22 @@ run_atomic_success_case() {
     echo "  output: $snapshot_output"
   fi
 
+  # SCOPE-6: the snapshot must be self-describing about the posture that
+  # produced it, so an audit never reconstructs the operator's shell.
+  posture_recorded="$(jq -r '.autonomyPosture // "null"' "$session_file" 2>/dev/null)"
+  if [[ -n "$posture_recorded" && "$posture_recorded" != "null" ]]; then
+    pass "session state records the resolved autonomy posture (got: $posture_recorded)"
+  else
+    fail "session state should record a non-null autonomyPosture"
+  fi
+
+  turn_posture="$(jq -r '.turnSnapshots[-1].posture // "null"' "$session_file" 2>/dev/null)"
+  if [[ "$turn_posture" == "$posture_recorded" ]]; then
+    pass "the turn snapshot carries the same posture as the session record"
+  else
+    fail "turn snapshot posture ($turn_posture) should match session posture ($posture_recorded)"
+  fi
+
   if [[ "$(file_line_count "$rename_proof")" == "2" ]]; then
     pass "exactly two session-file renames occur for a convergence snapshot"
   else

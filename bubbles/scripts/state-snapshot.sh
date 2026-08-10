@@ -23,6 +23,7 @@ usage() {
   cat <<'EOF'
 Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
+         [--posture <autonomy>] \
          [--convergence-iteration <N> --spec-dir <path>] \
          --session-id <id> --session-control-file <path> --binding-packet-file <path>
 
@@ -85,6 +86,7 @@ PHASE=""
 SCOPE_ID=""
 NOTE=""
 MODE="start"
+POSTURE=""
 CONV_ITER=""
 SPEC_DIR=""
 SESSION_ID=""
@@ -120,6 +122,11 @@ while [[ $# -gt 0 ]]; do
     --mode)
       [[ $# -ge 2 ]] || { echo "state-snapshot: --mode requires a value" >&2; exit 2; }
       MODE="$2"
+      shift 2
+      ;;
+    --posture)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --posture requires a value" >&2; exit 2; }
+      POSTURE="$2"
       shift 2
       ;;
     --convergence-iteration)
@@ -186,6 +193,14 @@ case "$MODE" in
     exit 2
     ;;
 esac
+
+# Record the posture that produced this turn, so an audit never has to
+# reconstruct the operator's shell environment. A resolver failure (e.g. an
+# unbounded `unattended`) must not fail the snapshot: leave it unset instead.
+if [[ -z "$POSTURE" && -x "$SCRIPT_DIR/autonomy-resolve.sh" ]]; then
+  POSTURE="$(bash "$SCRIPT_DIR/autonomy-resolve.sh" --format json 2>/dev/null |
+    sed -n 's/.*"autonomy":"\([^"]*\)".*/\1/p')"
+fi
 
 [[ -n "$SESSION_ID" ]] || { echo "state-snapshot: --session-id is required for repository-local snapshots" >&2; exit 2; }
 [[ -n "$SESSION_CONTROL_FILE" ]] || { echo "state-snapshot: --session-control-file is required for repository-local snapshots" >&2; exit 2; }
@@ -474,6 +489,7 @@ jq \
   --arg scope_id "$SCOPE_ID" \
   --arg note "$NOTE" \
   --arg mode "$MODE" \
+  --arg posture "$POSTURE" \
   --arg agent "$AGENT_NAME" \
   '
   def goal_ref:
@@ -493,11 +509,13 @@ jq \
           phase: $phase,
           scopeId: (if $scope_id == "" then null else $scope_id end),
           mode: $mode,
+          posture: (if $posture == "" then null else $posture end),
           note: (if $note == "" then null else $note end),
           agent: $agent,
           goalRef: $goalRef
         }
-      ]))
+      ])),
+      autonomyPosture: (if $posture == "" then ($root.autonomyPosture // null) else $posture end)
     })
   ' "$SESSION_FILE" > "$TMP_FILE"
 
