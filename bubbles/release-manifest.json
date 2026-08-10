@@ -398,7 +398,7 @@
     {"path": "bubbles/scripts/upkeep-calendar.sh", "sha256": "112fca66161143a0e826a0593bcfda9419aa4338bb04d87e3148bc339f0fe708"},
     {"path": "bubbles/scripts/v4.1.0-selftest.sh", "sha256": "9f9854ce11f8dcb2422ccb5b575536bd466094808b2955120dd481a42f7090c9"},
     {"path": "bubbles/scripts/v5.2-selftest.sh", "sha256": "a8cff5fd2f74925b9cacc005a93adcba44bb2cdfe475bb16af12de44d89a7679"},
-    {"path": "bubbles/scripts/v5.3-selftest.sh", "sha256": "011d3bb05df635c80b61bda9934c524970cc2a338ac6dbe9e4ddb4b6111585ce"},
+    {"path": "bubbles/scripts/v5.3-selftest.sh", "sha256": "09f780b86033aef1098d7a49e38729feaa8024d3617d4a15f2eee4d680df2a27"},
     {"path": "bubbles/scripts/v7-selftest.sh", "sha256": "2c49089b956cc3aea7c4f9f4b1299a33e8feede9ce78d8cb3e9b2d85f9a3c82b"},
     {"path": "bubbles/scripts/validate-cache-selftest.sh", "sha256": "50a22e8437afcae836d20c9746f9430e7a1380618f4681240a33da10c1ca829d"},
     {"path": "bubbles/scripts/validate-cache.sh", "sha256": "01b0f0b964b1c6fbbc56d1648db7b079db0323996b34e225645aaae559960ee8"},
