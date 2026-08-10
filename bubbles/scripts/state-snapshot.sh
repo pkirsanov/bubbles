@@ -24,6 +24,8 @@ usage() {
 Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
          [--posture <autonomy>] \
+         [--decision <text> [--decision-principle <name>] [--decision-chose <option>] \
+          [--decision-considered <csv>]] \
          [--convergence-iteration <N> --spec-dir <path>] \
          --session-id <id> --session-control-file <path> --binding-packet-file <path>
 
@@ -87,6 +89,10 @@ SCOPE_ID=""
 NOTE=""
 MODE="start"
 POSTURE=""
+DECISION=""
+DECISION_PRINCIPLE=""
+DECISION_CHOSE=""
+DECISION_CONSIDERED=""
 CONV_ITER=""
 SPEC_DIR=""
 SESSION_ID=""
@@ -127,6 +133,26 @@ while [[ $# -gt 0 ]]; do
     --posture)
       [[ $# -ge 2 ]] || { echo "state-snapshot: --posture requires a value" >&2; exit 2; }
       POSTURE="$2"
+      shift 2
+      ;;
+    --decision)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --decision requires a value" >&2; exit 2; }
+      DECISION="$2"
+      shift 2
+      ;;
+    --decision-principle)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --decision-principle requires a value" >&2; exit 2; }
+      DECISION_PRINCIPLE="$2"
+      shift 2
+      ;;
+    --decision-chose)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --decision-chose requires a value" >&2; exit 2; }
+      DECISION_CHOSE="$2"
+      shift 2
+      ;;
+    --decision-considered)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --decision-considered requires a value" >&2; exit 2; }
+      DECISION_CONSIDERED="$2"
       shift 2
       ;;
     --convergence-iteration)
@@ -200,6 +226,14 @@ esac
 if [[ -z "$POSTURE" && -x "$SCRIPT_DIR/autonomy-resolve.sh" ]]; then
   POSTURE="$(bash "$SCRIPT_DIR/autonomy-resolve.sh" --format json 2>/dev/null |
     sed -n 's/.*"autonomy":"\([^"]*\)".*/\1/p')"
+fi
+
+# Decision metadata without a decision would record a principle that fired on
+# nothing, which is worse than no ledger entry at all.
+if [[ -z "$DECISION" ]] &&
+  [[ -n "$DECISION_PRINCIPLE$DECISION_CHOSE$DECISION_CONSIDERED" ]]; then
+  echo "state-snapshot: --decision-principle/--decision-chose/--decision-considered require --decision" >&2
+  exit 2
 fi
 
 [[ -n "$SESSION_ID" ]] || { echo "state-snapshot: --session-id is required for repository-local snapshots" >&2; exit 2; }
@@ -490,6 +524,10 @@ jq \
   --arg note "$NOTE" \
   --arg mode "$MODE" \
   --arg posture "$POSTURE" \
+  --arg decision "$DECISION" \
+  --arg dprinciple "$DECISION_PRINCIPLE" \
+  --arg dchose "$DECISION_CHOSE" \
+  --arg dconsidered "$DECISION_CONSIDERED" \
   --arg agent "$AGENT_NAME" \
   '
   def goal_ref:
@@ -515,7 +553,22 @@ jq \
           goalRef: $goalRef
         }
       ])),
-      autonomyPosture: (if $posture == "" then ($root.autonomyPosture // null) else $posture end)
+      autonomyPosture: (if $posture == "" then ($root.autonomyPosture // null) else $posture end),
+      autonomyDecisions: (
+        if $decision == "" then ($root.autonomyDecisions // [])
+        else (($root.autonomyDecisions // []) + [{
+          turnNumber: $turn,
+          timestamp: $timestamp,
+          description: $decision,
+          principle: (if $dprinciple == "" then null else $dprinciple end),
+          chose: (if $dchose == "" then null else $dchose end),
+          considered: (if $dconsidered == "" then []
+                       else ($dconsidered | split(",") | map(gsub("^ +| +$"; "")) | map(select(length > 0))) end),
+          posture: (if $posture == "" then null else $posture end),
+          agent: $agent
+        }])
+        end
+      )
     })
   ' "$SESSION_FILE" > "$TMP_FILE"
 
