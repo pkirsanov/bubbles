@@ -27,6 +27,7 @@ Usage: bash bubbles/scripts/state-snapshot.sh \
          [--decision <text> [--decision-principle <name>] [--decision-chose <option>] \
           [--decision-considered <csv>]] \
          [--convergence-iteration <N> --spec-dir <path>] \
+         [--scenario-file <compiled-scenario.json> --node-id <node-id>] \
          --session-id <id> --session-control-file <path> --binding-packet-file <path>
 
 Required:
@@ -39,6 +40,12 @@ Required repository binding:
                        Host-private authoritative session control record.
   --binding-packet-file <path>
                        Current local actionable repository binding packet.
+
+Optional goal-node binding:
+  --scenario-file <path>
+                       Compiled scenario that declares the goal node.
+  --node-id <id>       Goal-node ID declared by --scenario-file. Both
+                       --scenario-file and --node-id MUST be supplied together.
 
 Optional:
   --scope-id <id>      Scope being worked, when applicable.
@@ -98,6 +105,8 @@ SPEC_DIR=""
 SESSION_ID=""
 SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
+SCENARIO_FILE=""
+NODE_ID=""
 
 if [[ $# -eq 0 ]]; then
   usage >&2
@@ -180,6 +189,16 @@ while [[ $# -gt 0 ]]; do
       BINDING_PACKET_FILE="$2"
       shift 2
       ;;
+    --scenario-file)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --scenario-file requires a value" >&2; exit 2; }
+      SCENARIO_FILE="$2"
+      shift 2
+      ;;
+    --node-id)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --node-id requires a value" >&2; exit 2; }
+      NODE_ID="$2"
+      shift 2
+      ;;
     *)
       echo "state-snapshot: unknown argument: $1" >&2
       usage >&2
@@ -187,6 +206,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$SCENARIO_FILE" && -z "$NODE_ID" ]]; then
+  echo "state-snapshot: --scenario-file requires --node-id" >&2
+  exit 2
+fi
+if [[ -n "$NODE_ID" && -z "$SCENARIO_FILE" ]]; then
+  echo "state-snapshot: --node-id requires --scenario-file" >&2
+  exit 2
+fi
 
 # Pair check: --convergence-iteration and --spec-dir must be supplied together.
 if [[ -n "$CONV_ITER" && -z "$SPEC_DIR" ]]; then
@@ -477,11 +505,17 @@ if [[ -n "$REPO_ROOT" && "$REPO_ROOT" == /* ]]; then
   acquire_session_lock
 fi
 
+MIRROR_GOAL_NODE_ARGS=()
+if [[ -n "$SCENARIO_FILE" ]]; then
+  MIRROR_GOAL_NODE_ARGS=(--scenario-file "$SCENARIO_FILE" --node-id "$NODE_ID")
+fi
+
 set +e
 BINDING_OUTPUT="$(bash "$REPOSITORY_BINDING" mirror-session \
   --session-id "$SESSION_ID" \
   --session-control-file "$SESSION_CONTROL_FILE" \
-  --packet-file "$NORMALIZED_PACKET_FILE" 2>&1)"
+  --packet-file "$NORMALIZED_PACKET_FILE" \
+  "${MIRROR_GOAL_NODE_ARGS[@]}" 2>&1)"
 BINDING_RC=$?
 set -e
 if [[ "$BINDING_RC" -ne 0 ]]; then
