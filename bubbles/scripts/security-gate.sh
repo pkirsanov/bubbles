@@ -109,12 +109,40 @@ done
 while IFS= read -r hit; do
   [[ -n "$hit" ]] || continue
   # A private-key MARKER inside documentation is the doc describing the pattern
-  # (SECURITY-PII-POLICY.md does exactly that). Require the closing marker too,
-  # so only an actual key block counts.
+  # (SECURITY-PII-POLICY.md does exactly that).
   case "$hit" in
     *.md | *security-gate*) continue ;;
   esac
-  grep -q -- '-----END .*PRIVATE KEY-----' "$hit" 2>/dev/null || continue
+  # Requiring only that the closing marker ALSO appears somewhere in the file
+  # asks the wrong question. A test that asserts a PEM prefix on one line and
+  # the matching suffix on the next holds both markers and zero key bytes, and
+  # was reported as committed key material. Co-occurrence of two strings is not
+  # a key block. (The literal markers are deliberately NOT quoted in this
+  # comment: writing them here would make this file trip the very scanners it
+  # exists to complement.)
+  #
+  # Require a base64 payload BETWEEN the markers, so the finding means "this
+  # file carries key material" rather than "this file mentions the words".
+  #
+  # An inline `gitleaks:allow` / `security-gate:allow` on the BEGIN line is an
+  # explicit operator acknowledgement that the block is a throwaway fixture —
+  # a structurally valid PEM is often the only way to test a PEM parser. It
+  # must be written deliberately and is visible in review; nothing infers it,
+  # so an unannotated real key still fails.
+  awk '
+    /-----BEGIN [A-Z ]*PRIVATE KEY-----/ {
+      if ($0 ~ /gitleaks:allow|security-gate:allow/) { next }
+      inblock = 1
+      next
+    }
+    inblock && /-----END [A-Z ]*PRIVATE KEY-----/ { inblock = 0; next }
+    inblock {
+      payload = $0
+      gsub(/[^A-Za-z0-9+\/=]/, "", payload)
+      if (length(payload) >= 32) { found = 1; exit }
+    }
+    END { exit(found ? 0 : 1) }
+  ' "$hit" 2>/dev/null || continue
   report "secret-material" "$hit contains a private-key block"
 done < <(grep -rl -- '-----BEGIN .*PRIVATE KEY-----' "${tracked[@]}" 2>/dev/null || true)
 
@@ -135,7 +163,16 @@ while IFS= read -r hit; do
 done < <(
   grep -rnE '^[^#]*\b[A-Za-z_]*(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)[A-Za-z_]*=["'"'"']?[A-Za-z0-9/+_.-]{8,}["'"'"']?' \
     --include='*.sh' --include='*.yaml' --include='*.yml' . 2>/dev/null |
-    grep -vE '=\$|=["'"'"']\$|=["'"'"']{2}|:-|placeholder|example|EXAMPLE|\bfake\b|redact' || true
+    grep -vE '=\$|=["'"'"']\$|=["'"'"']{2}|:-|placeholder|example|EXAMPLE|\bfake\b|redact' |
+    # A value that embeds a substitution is COMPOSED at runtime, so there is no
+    # literal to leak: RUN_TOKEN="depqual-$$-$(date +%s)" is a run identifier,
+    # not a credential. The exclusions above only catch a value that STARTS
+    # with `$`, so any generated value carrying a literal prefix was reported.
+    grep -vE '[$][({]|[$][$]' |
+    # `TOKEN_CHARS='ABC…xyz0123'` is the ALPHABET a random token is drawn from.
+    # The name matches because `[A-Za-z_]*` after TOKEN absorbs the suffix, but
+    # publishing a character set leaks nothing.
+    grep -vE '(_CHARS|_CHARSET|_ALPHABET)=' || true
 )
 
 # --- 3. curl-pipe-shell remote execution -----------------------------------
