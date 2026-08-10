@@ -13,6 +13,12 @@ SCRIPT_DIR="$(cd "${SCRIPT_SOURCE%/*}" 2>/dev/null && pwd)"
 GUARD="$SCRIPT_DIR/autonomy-posture-guard.sh"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd)"
 
+# Fixture mutation goes through the framework's own portable in-place helper
+# instead of a raw `sed -i`, so this selftest behaves identically on GNU and BSD
+# (macOS) userland -- the same rule macos-portability-guard.sh enforces.
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/guard-lib.sh"
+
 ISSUES=0
 TMPS=()
 trap '[[ ${#TMPS[@]} -gt 0 ]] && rm -rf "${TMPS[@]}" 2>/dev/null || true' EXIT INT TERM
@@ -93,15 +99,18 @@ check "a hollowed-out floor (heading kept, items removed) is refused" "1" "$(gua
 ENUM_AHEAD="$(make_fixture)"
 # A new posture declared in the registry but never taught to the resolver: the
 # AUT-2 defect shape, a declaration describing behavior nothing implements.
-sed -i.bak 's|^        interactive: |        supervised: placeholder posture\n        interactive: |' \
+# The replacement carries a POSIX escaped literal newline rather than `\n`:
+# GNU sed expands `\n` in the RHS, BSD sed emits a literal `n`, which would
+# leave this fixture undrifted on macOS and fail the assertion for the wrong
+# reason.
+bubbles_sed_inplace 's|^        interactive: |        supervised: placeholder posture\
+        interactive: |' \
   "$ENUM_AHEAD/bubbles/workflows.yaml"
-rm -f "$ENUM_AHEAD/bubbles/workflows.yaml.bak"
 check "an enum value the resolver does not accept is refused" "1" "$(guard_rc "$ENUM_AHEAD")"
 
 RESOLVER_AHEAD="$(make_fixture)"
-sed -i.bak 's|^VALID_AUTONOMY=".*"$|VALID_AUTONOMY="full guarded interactive unattended rogue"|' \
+bubbles_sed_inplace 's|^VALID_AUTONOMY=".*"$|VALID_AUTONOMY="full guarded interactive unattended rogue"|' \
   "$RESOLVER_AHEAD/bubbles/scripts/autonomy-resolve.sh"
-rm -f "$RESOLVER_AHEAD/bubbles/scripts/autonomy-resolve.sh.bak"
 check "a resolver value the enum does not declare is refused" "1" "$(guard_rc "$RESOLVER_AHEAD")"
 
 if printf '%s' "$(guard_out "$RESOLVER_AHEAD")" | grep -q 'enum/resolver drift'; then
@@ -112,22 +121,19 @@ fi
 
 # --- 3. `unattended` may not become unbounded ---------------------------------
 UNBOUNDED_OK="$(make_fixture)"
-sed -i.bak 's|^    exit 3$|    exit 0|' "$UNBOUNDED_OK/bubbles/scripts/autonomy-resolve.sh"
-rm -f "$UNBOUNDED_OK/bubbles/scripts/autonomy-resolve.sh.bak"
+bubbles_sed_inplace 's|^    exit 3$|    exit 0|' "$UNBOUNDED_OK/bubbles/scripts/autonomy-resolve.sh"
 check "a resolver that stops refusing an unbounded unattended is refused" "1" "$(guard_rc "$UNBOUNDED_OK")"
 
 UNNAMED="$(make_fixture)"
-sed -i.bak 's|E039-UNATTENDED-UNBOUNDED|SOMETHING-WENT-WRONG|' \
+bubbles_sed_inplace 's|E039-UNATTENDED-UNBOUNDED|SOMETHING-WENT-WRONG|' \
   "$UNNAMED/bubbles/scripts/autonomy-resolve.sh"
-rm -f "$UNNAMED/bubbles/scripts/autonomy-resolve.sh.bak"
 check "an unbounded refusal that drops its named code is refused" "1" "$(guard_rc "$UNNAMED")"
 
 # --- 4. The bypass prohibition must hold --------------------------------------
 BYPASS="$(make_fixture)"
 # Make --skip silently accepted instead of refused.
-sed -i.bak '/is not a supported flag/{n;s/exit 2/shift/;}' \
+bubbles_sed_inplace '/is not a supported flag/{n;s/exit 2/shift/;}' \
   "$BYPASS/bubbles/scripts/autonomy-resolve.sh"
-rm -f "$BYPASS/bubbles/scripts/autonomy-resolve.sh.bak"
 check "a resolver that accepts a bypass flag is refused" "1" "$(guard_rc "$BYPASS")"
 
 # --- The guard itself offers no bypass ----------------------------------------
