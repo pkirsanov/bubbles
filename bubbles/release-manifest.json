@@ -126,7 +126,7 @@
     {"path": "bubbles/scripts/execution-substate-guard.sh", "sha256": "6de5ff324366d39afced3306b8ff1fe952fbbd39b1cbf0102007d7e2c3af5a25"},
     {"path": "bubbles/scripts/expand-migrate-contract-guard-selftest.sh", "sha256": "44b68e65cc32dff43d191ab1e84cc5727ffbd1eb71f0d258bc75e4fe8c7cd689"},
     {"path": "bubbles/scripts/expand-migrate-contract-guard.sh", "sha256": "fa387f07155503e3fa36177e86a1dddd67c3960d95a6b4e8f40304cd2fe705b6"},
-    {"path": "bubbles/scripts/experience-recall-adapter-contract-selftest.sh", "sha256": "467aefbdbb8144d09336eb4d7680b359d2936e585cb3131e7987888e77af04e9"},
+    {"path": "bubbles/scripts/experience-recall-adapter-contract-selftest.sh", "sha256": "49c5558a5a6cf2212b9e4512867a30f635874d9b1ecb674340112f25860f0b7b"},
     {"path": "bubbles/scripts/experience-recall-authority-selftest.sh", "sha256": "5097bb78575fd4efcc732bba3325e4c0832052ea4c46eaf70287f608844298a9"},
     {"path": "bubbles/scripts/experience-recall-cli-selftest.sh", "sha256": "3116f0580b987d351a329bdab1f108956f1c1d9e103378dcbfd726ed8ea7a333"},
     {"path": "bubbles/scripts/experience-recall-index-selftest.sh", "sha256": "5737576538d9b66da715a70496e6b93edd5b63fe42a2e6bf996f7d28202a932f"},
