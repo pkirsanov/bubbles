@@ -133,6 +133,44 @@ fi
 check "--format json emits a single-line record" '{"autonomy":"full","source":"framework-default"}' \
   "$(posture_json=$(resolve --format json --repo-root "$BARE_ROOT"); printf '%s' "$posture_json")"
 
+# --- SCOPE-3: `unattended` is opt-in AND may not be unbounded ---
+check "unattended resolves when the budget is bounded" "unattended" \
+  "$(posture --autonomy unattended --session-budget bounded)"
+
+resolve --autonomy unattended --session-budget bounded >/dev/null 2>&1
+check "unattended with a bounded budget exits 0" "0" "$?"
+
+resolve --autonomy unattended --session-budget unbounded >/dev/null 2>&1
+check "unattended with an unbounded budget is refused (exit 3)" "3" "$?"
+
+unbounded_err="$(env -u BUBBLES_AUTONOMY bash "$RESOLVE" --autonomy unattended --session-budget unbounded 2>&1 >/dev/null)"
+if printf '%s' "$unbounded_err" | grep -q 'E039-UNATTENDED-UNBOUNDED'; then
+  pass "The unbounded refusal names its code (E039-UNATTENDED-UNBOUNDED)"
+else
+  fail "The unbounded refusal must name E039-UNATTENDED-UNBOUNDED"
+fi
+
+# With no override the budget state is read from the session file.
+BUDGET_ROOT="$(mktemp -d)"
+TMPS+=("$BUDGET_ROOT")
+mkdir -p "$BUDGET_ROOT/.specify/memory"
+printf '%s\n' '{"sessionBudget":{"maxToolCalls":250,"maxWallClockMinutes":null}}' >"$BUDGET_ROOT/.specify/memory/bubbles.session.json"
+resolve --autonomy unattended --repo-root "$BUDGET_ROOT" >/dev/null 2>&1
+check "unattended is allowed when the session file carries a numeric cap" "0" "$?"
+
+printf '%s\n' '{"sessionBudget":{"maxToolCalls":null,"maxWallClockMinutes":null}}' >"$BUDGET_ROOT/.specify/memory/bubbles.session.json"
+resolve --autonomy unattended --repo-root "$BUDGET_ROOT" >/dev/null 2>&1
+check "unattended is refused when every session cap is null" "3" "$?"
+
+resolve --autonomy unattended --session-budget bogus >/dev/null 2>&1
+check "--session-budget with a bogus value is a usage error (exit 2)" "2" "$?"
+
+# Adding a fourth value must not shift the default, and must not constrain the others.
+check "the framework default is still full, not unattended" "full" "$(posture --repo-root "$BARE_ROOT")"
+
+resolve --autonomy full --session-budget unbounded --repo-root "$BARE_ROOT" >/dev/null 2>&1
+check "full is unaffected by an unbounded budget (exit 0)" "0" "$?"
+
 echo
 if [[ $ISSUES -eq 0 ]]; then
   echo "autonomy-resolve selftest passed."
