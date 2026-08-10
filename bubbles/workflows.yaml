@@ -1807,7 +1807,7 @@ executionOptions:
       type: string
       default: full
       values:
-        full: 100% autonomous — grillMode off, socratic false, decisionPolicy auto-resolves (today's default)
+        full: grillMode off, socratic false; mechanical decisions auto-resolve via decisionPolicy.mechanicalPrinciples, but taste decisions still batch to each phase boundary and security decisions always escalate (today's default)
         guarded: grillMode required-on-ambiguity plus a conditional clarify consistency gate — stop only on genuine ambiguity
         interactive: grillMode on-demand plus socratic true — human-in-the-loop; taste decisions surfaced
       meaning: Convenience alias that sets grillMode/socratic/clarify together. Explicit flags override this alias. Default `full` preserves current behavior.
