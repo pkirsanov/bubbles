@@ -60,7 +60,7 @@
     {"path": "bubbles/scripts/capability-foundation-guard-selftest.sh", "sha256": "4c379f2158398392773184609b6a43803f4024cc0cb2bafbe63901fba05e022a"},
     {"path": "bubbles/scripts/capability-foundation-guard.sh", "sha256": "94c4170947ad320772dbbfdab9379cfd28ff27dca84736fcc74c6294dda344d2"},
     {"path": "bubbles/scripts/capability-freshness-selftest.sh", "sha256": "669e69c639c7c2b357882b74dd69cd2c3430e895b514c2b25a2dbae10e75c4e1"},
-    {"path": "bubbles/scripts/capability-ledger-selftest.sh", "sha256": "f9ad999ee4b58e5fef8cd68b17b06eed3750f9c199a2c06d2ffe0105002f0cbb"},
+    {"path": "bubbles/scripts/capability-ledger-selftest.sh", "sha256": "93fadf8547d6ca5bd82f1ff3b889713a1ec8291680d47129f9e3ca86da73a767"},
     {"path": "bubbles/scripts/case-collision-guard-selftest.sh", "sha256": "36b5f8a5d445113c142d935b2fb8d3be978c6ab58e2fe0c07276044620fec6db"},
     {"path": "bubbles/scripts/case-collision-guard.sh", "sha256": "aa59a7f56f27f3b3b7cd7ce2ec0706c8bdff0ff8d01c7d20e2a0178354134b6a"},
     {"path": "bubbles/scripts/ci-annotation-emitter-selftest.sh", "sha256": "d4d6548cc32406b3932b11cd635cd966cdbd0e1fee3075cc1cf9fd02adca80d3"},
