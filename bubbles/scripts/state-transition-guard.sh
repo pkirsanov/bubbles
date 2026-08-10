@@ -2927,7 +2927,7 @@ implementation_phase_claim_count="$(jq -r '
 # case-SENSITIVE (original grep -qE) — see the per-line tests below.
 _c11_sig_i_re='(passed|failed|ok$| PASS | FAIL |test result:|Tests:.*suites|✓|✗|PASSED|FAILED)'
 _c11_sig_ii_re='(exit code|Exit Code:|error\[|warning\[|Compiling |Finished |error:|warning:|WARN |ERROR |INFO )'
-_c11_sig_iii_re='([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|go|sh|sql|toml|yaml|json|proto|md)|\./)'
+_c11_sig_iii_re='([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|jsx|go|sh|sql|toml|yaml|yml|json|proto|md|dart|kt|kts|swift|java|scala|rb|cs|cpp|cc|h|hpp|xml|gradle|tf|ex|exs)|\./)'
 _c11_sig_iv_re='(in [0-9]+(\.[0-9]+)?(s|ms|m)|elapsed|finished in|Duration|[0-9]+\.[0-9]+s$)'
 _c11_sig_v_re='(cargo |npm |pytest|go test|jest |playwright|vitest|running [0-9]+ test|test result:)'
 _c11_sig_vi_re='[0-9]+ (passed|failed|errors?|warnings?|skipped|ignored|tests?)'
