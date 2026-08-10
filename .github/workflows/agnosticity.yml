@@ -52,6 +52,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      # `$(brew --prefix)` interpolated straight into PATH is not safe to trust.
+      # Homebrew also prints notices (a tap-trust notice appeared in run
+      # 31419142715), and when the command fails the bare substitution quietly
+      # degrades PATH to "/bin:$PATH" with nothing detecting it. Resolve ONCE,
+      # validate, and publish — so no later step re-expands the fragile form.
+      - name: Resolve Homebrew prefix
+        run: |
+          set -euo pipefail
+          brew_prefix_raw="$(brew --prefix 2>/dev/null || true)"
+          brew_prefix=""
+          case "$brew_prefix_raw" in
+            /*) brew_prefix="$brew_prefix_raw" ;;
+          esac
+          if [ -z "$brew_prefix" ] \
+            || [ "$(printf '%s' "$brew_prefix" | wc -l | tr -d ' ')" != "0" ] \
+            || [ ! -d "$brew_prefix/bin" ]; then
+            echo "::error::'brew --prefix' did not yield one absolute existing prefix directory; refusing to build PATH from it"
+            echo "received from 'brew --prefix': >>>${brew_prefix_raw}<<<"
+            exit 1
+          fi
+          echo "brew prefix : $brew_prefix"
+          echo "BREW_PREFIX=$brew_prefix" >> "$GITHUB_ENV"
+          echo "$brew_prefix/bin" >> "$GITHUB_PATH"
+
       # macOS ships bash 3.2, which cli.sh rejects outright (it needs the 4.0+
       # `declare -A` used by 12+ scripts). Putting Homebrew's bash first covers
       # cli.sh AND every `#!/usr/bin/env bash` selftest it spawns. This runs
@@ -59,14 +83,15 @@ jobs:
       - name: Install bash 4+
         run: |
           brew list bash >/dev/null 2>&1 || brew install bash
-          "$(brew --prefix)/bin/bash" --version | head -1
+          "$BREW_PREFIX/bin/bash" --version | head -1
 
       - name: Install validation dependencies
         run: |
-          export PATH="$(brew --prefix)/bin:$PATH"
+          set -euo pipefail
+          echo "brew prefix : $BREW_PREFIX"
+          echo "bash        : $(command -v bash)"
+          echo "python3     : $(command -v python3) ($(python3 -V 2>&1))"
           bash bubbles/scripts/python-env.sh --provision
 
       - name: Run release hygiene
-        run: |
-          export PATH="$(brew --prefix)/bin:$PATH"
-          bash bubbles/scripts/cli.sh release-check
+        run: bash bubbles/scripts/cli.sh release-check
