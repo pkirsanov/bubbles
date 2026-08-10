@@ -166,6 +166,51 @@ make_repo "$r7"
 } >"$r7/docs/fixture.rs"
 assert "red: same block with the annotation removed" 1 "$r7"
 
+# --- RED: a key embedded in a source string literal, carrying \n escapes ---
+#
+# A PEM pasted into a Rust/JS string literal reads ...QChjVWJ\n\ per line, so
+# its body is not a contiguous base64 run and a genuine committed key was
+# NOT detected. This fixture fails unless the escape is normalised first.
+r8="$WORK/r8"
+make_repo "$r8"
+{
+  echo "const TEST_RSA_PEM: &str = \"$key_begin\\\\n\\\\"
+  echo "$payload\\\\n\\\\"
+  echo "$key_end\";"
+} >"$r8/docs/embedded_pem.rs"
+assert "red: key block embedded with escaped newlines" 1 "$r8"
+
+# --- GREEN: annotation trailing an escape on the BEGIN line ----------------
+#
+# The real-world shape is `"BEGIN...\n", // gitleaks:allow`. Splitting the
+# FILE on the escape moves the annotation onto its own line and silently
+# revokes the operator's acknowledgement, so an acknowledged fixture key
+# started failing. The annotation is matched on the ORIGINAL line.
+g10="$WORK/g10"
+make_repo "$g10"
+{
+  echo "const TEST_PEM: &str = concat!("
+  echo "    \"$key_begin\\n\", // gitleaks:allow throwaway unit-test RSA key"
+  echo "    \"$payload\\n\","
+  echo "    \"$key_end\\n\");"
+} >"$g10/docs/annotated_escaped.rs"
+assert "green: annotation trailing an escape on the BEGIN line" 0 "$g10"
+
+# --- GREEN: a prefix assertion with no closing marker ----------------------
+#
+# The file names BEGIN and never closes the block. Without requiring closure
+# the scan ran to EOF and judged ordinary code below it as the payload — the
+# real trigger was a banner comment of '=' characters, which is a contiguous
+# base64 run because '=' is padding. A separator is not key material.
+g9="$WORK/g9"
+make_repo "$g9"
+{
+  echo "if not pem_bytes.startswith(b\"$key_begin\"):"
+  echo "    pytest.fail(\"sidecar did not return a PEM PRIVATE KEY payload\")"
+  echo "# ========================================================================"
+} >"$g9/docs/prefix_only.py"
+assert "green: prefix assertion with no closing marker" 0 "$g9"
+
 # --- GREEN: a value composed at runtime is not a hardcoded credential ------
 g8="$WORK/g8"
 make_repo "$g8"

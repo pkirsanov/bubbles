@@ -124,22 +124,60 @@ while IFS= read -r hit; do
   # Require a base64 payload BETWEEN the markers, so the finding means "this
   # file carries key material" rather than "this file mentions the words".
   #
+  # "Payload" has to mean a CONTIGUOUS base64 run, not "enough base64-ish
+  # characters". Deleting punctuation from ordinary prose leaves base64:
+  #   pytest.fail("sidecar did not return a PEM PRIVATE KEY")
+  # strips to 62 such characters and was reported as key material. A real PEM
+  # body line has no interior spaces or punctuation, so the test is whether the
+  # line CONSISTS of base64 once its surrounding quoting is removed.
+  #
+  # The escape handling is load-bearing, not cosmetic. A PEM embedded in a
+  # source string literal carries \n escapes, so its body reads ...bvBRQ\n\ —
+  # not contiguous, and a genuine committed key went UNDETECTED. Each source
+  # line is therefore split on the escape before the segments are judged.
+  #
+  # Splitting the FILE (rather than each line) would be wrong: it moves a
+  # trailing `// gitleaks:allow` off the BEGIN line and revokes the operator's
+  # acknowledgement. The annotation is matched against the ORIGINAL line and
+  # the payload against the segments.
+  #
+  # The block must also CLOSE. A file asserting on a prefix marker has no
+  # closing marker at all; without this the scan ran to EOF and judged
+  # unrelated text as the payload — the real trigger was a banner comment of
+  # '=' characters, contiguous base64 because '=' is padding.
+  #
   # An inline `gitleaks:allow` / `security-gate:allow` on the BEGIN line is an
   # explicit operator acknowledgement that the block is a throwaway fixture —
   # a structurally valid PEM is often the only way to test a PEM parser. It
   # must be written deliberately and is visible in review; nothing infers it,
   # so an unannotated real key still fails.
   awk '
-    /-----BEGIN [A-Z ]*PRIVATE KEY-----/ {
-      if ($0 ~ /gitleaks:allow|security-gate:allow/) { next }
-      inblock = 1
-      next
-    }
-    inblock && /-----END [A-Z ]*PRIVATE KEY-----/ { inblock = 0; next }
-    inblock {
-      payload = $0
-      gsub(/[^A-Za-z0-9+\/=]/, "", payload)
-      if (length(payload) >= 32) { found = 1; exit }
+    {
+      orig = $0
+      segments = split(orig, seg, /\\n/)
+      for (i = 1; i <= segments; i++) {
+        s = seg[i]
+        if (s ~ /-----BEGIN [A-Z ]*PRIVATE KEY-----/) {
+          if (orig ~ /gitleaks:allow|security-gate:allow/) {
+            inblock = 0
+          } else {
+            inblock = 1
+            candidate = 0
+          }
+          continue
+        }
+        if (inblock && s ~ /-----END [A-Z ]*PRIVATE KEY-----/) {
+          if (candidate) { found = 1; exit }
+          inblock = 0
+          continue
+        }
+        if (inblock) {
+          payload = s
+          sub(/^[^A-Za-z0-9+\/=]+/, "", payload)
+          sub(/[^A-Za-z0-9+\/=]+$/, "", payload)
+          if (payload ~ /^[A-Za-z0-9+\/=]{32,}$/) { candidate = 1 }
+        }
+      }
     }
     END { exit(found ? 0 : 1) }
   ' "$hit" 2>/dev/null || continue
