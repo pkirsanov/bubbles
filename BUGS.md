@@ -1063,13 +1063,23 @@ both touching subagent dispatch.
 ## BUG-015 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
 
 - **Filed:** 2026-08-11
-- **Disposition:** open in-repo framework defect, DEFERRED with a fix recommended
-  below. Not applied in the discovering session because
-  `bubbles/scripts/state-transition-guard.sh` again carries uncommitted changes
-  from a concurrent session in this shared working copy, and this repo has
-  already had one incident this week where an edit made during a concurrent
-  session's commit window shipped in a state nobody intended. Per Gate G095 this
-  is a tracked OPEN defect with a recorded reason.
+- **Disposition:** **FIXED** 2026-08-11 in `7e71f02` ("fix(guard): stop reporting
+  an artifact-lint TIMEOUT as a lint FAILURE"), landed by a concurrent session
+  while this entry was being written. The fix applies all three recommendations
+  below: it captures `lint_rc` and branches on `-eq 124` separately, raises the
+  default budget to `${BUBBLES_ARTIFACT_LINT_TIMEOUT:-300}`, and reports a
+  timeout as *"did NOT COMPLETE within ${artifact_lint_timeout}s (exit 124) —
+  this is a TIMEOUT, not a lint failure"* rather than as an artifact defect. Both
+  outcomes still block, which is correct: a lint that cannot finish is unknown,
+  not fine. Guarded by 27 lines of new selftest coverage. This entry is retained
+  because the DIAGNOSIS is the durable part — see the scope note at the end,
+  which still applies to every other check wrapped in the same pattern.
+- **Correction, recorded rather than edited out:** an earlier draft of this entry
+  called the failure permanent for this packet. It is not. The lint's runtime is
+  load-dependent, measured at 32s / 73s / 90s / 103s against byte-identical
+  content on the same machine, so the old 60s cap sat *inside* the spread and the
+  verdict depended on concurrent load rather than on the packet. That is why the
+  same tree produced BLOCK and PASS minutes apart.
 - **Discovered by:** certifying downstream research-lab
   `specs/017-decision-attention-and-developing-situations`. Two guard runs
   minutes apart over the SAME tree disagreed: one reported
