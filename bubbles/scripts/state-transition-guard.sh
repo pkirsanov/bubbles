@@ -4046,18 +4046,49 @@ else
     # vintage carries a stdoutHash, so the empty-string digest identifies
     # empty stdout with no field required. An explicitly-present
     # `stdoutBytes: 0` is still honoured; an ABSENT one exempts nothing.
+    # "SAME command" is command IDENTITY, not a byte-identical argv string.
+    # Keying it on the raw string re-broke the very re-run case the rule above
+    # promises never to fire on, because an honest re-run is routinely spelled
+    # differently: `--repo-root .` and `--repo-root /abs/path` name one
+    # directory, and an optional trailing filter argument narrows a run without
+    # making it a different claim. Both produce identical stdout because they
+    # ARE the same command, and the raw-string rule reported that as forgery.
+    #
+    # Identity is therefore (executable basename, first positional argument):
+    # the tool, and the subject it ran against. Option flags and their values
+    # are dropped, so a re-spelled invocation collapses to one identity, while
+    # `cargo test` vs `npm run lint` — different tool, different subject — stay
+    # distinct and still block. Dropping option VALUES does mean two runs of
+    # one tool over one subject under different flags no longer collide; that
+    # is the intended trade, because a false CLONE accuses honest work of the
+    # most serious thing this guard can allege, and the surviving rule still
+    # catches the case G021 exists for: one captured result reused for an
+    # UNRELATED claim.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     c43_clones="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      def cmd_identity:
+        ( . / " " | map(select(length > 0)) ) as $raw
+        | ( if (($raw[0] // "") == "bash") or (($raw[0] // "") == "sh")
+            then $raw[1:] else $raw end ) as $t
+        | ( ($t[0] // "") | split("/") | last ) as $exe
+        | ( reduce ($t[1:][]) as $tok ({skip:false, pos:[]};
+              if .skip then {skip:false, pos:.pos}
+              elif ($tok | startswith("-"))
+                then {skip: (($tok | contains("=")) | not), pos:.pos}
+              else {skip:false, pos:(.pos + [$tok])}
+              end)
+            | (.pos[0] // "") ) as $subject
+        | $exe + " " + $subject;
       map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutHash != $empty_sha) and ((has("stdoutBytes") and .stdoutBytes == 0) | not)))
       | group_by(.stdoutHash)
-      | map(select((map(.cmd) | unique | length) > 1))
+      | map(select((map(.cmd | cmd_identity) | unique | length) > 1))
       | .[]
       | "\(.[0].stdoutHash[0:12])… reused by: \(map(.cmd) | unique | join(" AND "))"
     ' "$c43_log" 2>/dev/null || true)"
     if [[ -n "$c43_clones" ]]; then
       fail "Evidence receipt CLONE — one captured stdout is cited by two different commands, which cannot happen from honest execution: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 400)"
     else
-      pass "No receipt clones (no stdout hash shared across differing commands)"
+      pass "No receipt clones (no stdout hash shared across differing command identities)"
     fi
   fi
 fi
