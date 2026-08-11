@@ -2927,7 +2927,7 @@ implementation_phase_claim_count="$(jq -r '
 # case-SENSITIVE (original grep -qE) — see the per-line tests below.
 _c11_sig_i_re='(passed|failed|ok$| PASS | FAIL |test result:|Tests:.*suites|✓|✗|PASSED|FAILED)'
 _c11_sig_ii_re='(exit code|Exit Code:|error\[|warning\[|Compiling |Finished |error:|warning:|WARN |ERROR |INFO )'
-_c11_sig_iii_re='([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|jsx|go|sh|sql|toml|yaml|yml|json|proto|md|dart|kt|kts|swift|java|scala|rb|cs|cpp|cc|h|hpp|xml|gradle|tf|ex|exs)|\./)'
+_c11_sig_iii_re='(([a-zA-Z0-9_-]+/)?[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|jsx|mjs|cjs|go|sh|sql|toml|yaml|yml|json|proto|md|dart|kt|kts|swift|java|scala|rb|cs|cpp|cc|h|hpp|xml|gradle|tf|ex|exs)|\./)'
 _c11_sig_iv_re='(in [0-9]+(\.[0-9]+)?(s|ms|m)|elapsed|finished in|Duration|[0-9]+\.[0-9]+s$)'
 _c11_sig_v_re='(cargo |npm |pytest|go test|jest |playwright|vitest|running [0-9]+ test|test result:)'
 _c11_sig_vi_re='[0-9]+ (passed|failed|errors?|warnings?|skipped|ignored|tests?)'
@@ -3166,13 +3166,29 @@ echo ""
 # =============================================================================
 echo "--- Check 13: Artifact Lint ---"
 lint_script="$SCRIPT_DIR/artifact-lint.sh"
+# Check 13 is fail-closed, so "did not complete" and "completed and rejected"
+# must be reported as different things. Conflating them indicts a timing
+# artifact as a content defect: a large spec whose lint legitimately exits 0 can
+# exceed the cap under load and be reported as a lint FAILURE it does not have,
+# which sends the reader hunting for findings that do not exist. The cap was 60s
+# and is load-sensitive in practice (the same spec measured 32s idle and 73-90s
+# under concurrent load), so the default is raised and made overridable.
+artifact_lint_timeout="${BUBBLES_ARTIFACT_LINT_TIMEOUT:-300}"
 if [[ -f "$lint_script" ]]; then
-  if BUBBLES_WORKFLOWS_FILE="$workflow_registry_file" bubbles_run_with_timeout 60 bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
+  lint_rc=0
+  BUBBLES_WORKFLOWS_FILE="$workflow_registry_file" bubbles_run_with_timeout "$artifact_lint_timeout" bash "$lint_script" "$feature_dir" > /dev/null 2>&1 || lint_rc=$?
+  if [[ "$lint_rc" -eq 0 ]]; then
     pass "Artifact lint passes (exit 0)"
+  elif [[ "$lint_rc" -eq 124 ]]; then
+    if [[ "$is_test_fixture_dir" == "true" ]]; then
+      warn "Artifact lint TIMED OUT after ${artifact_lint_timeout}s for tests/fixtures target; not blocking fixture acceptance"
+    else
+      fail "Artifact lint did NOT COMPLETE within ${artifact_lint_timeout}s (exit 124) — this is a TIMEOUT, not a lint failure; re-run 'bash bubbles/scripts/artifact-lint.sh $feature_dir' directly, or raise BUBBLES_ARTIFACT_LINT_TIMEOUT"
+    fi
   elif [[ "$is_test_fixture_dir" == "true" ]]; then
     warn "Artifact lint subprocess failed for tests/fixtures target after direct guard artifact checks passed; not blocking fixture acceptance"
   else
-    fail "Artifact lint FAILED — run 'bash bubbles/scripts/artifact-lint.sh $feature_dir' for details"
+    fail "Artifact lint FAILED (exit $lint_rc) — run 'bash bubbles/scripts/artifact-lint.sh $feature_dir' for details"
   fi
 else
   fail "Artifact lint script not found at $lint_script"
@@ -4030,18 +4046,49 @@ else
     # vintage carries a stdoutHash, so the empty-string digest identifies
     # empty stdout with no field required. An explicitly-present
     # `stdoutBytes: 0` is still honoured; an ABSENT one exempts nothing.
+    # "SAME command" is command IDENTITY, not a byte-identical argv string.
+    # Keying it on the raw string re-broke the very re-run case the rule above
+    # promises never to fire on, because an honest re-run is routinely spelled
+    # differently: `--repo-root .` and `--repo-root /abs/path` name one
+    # directory, and an optional trailing filter argument narrows a run without
+    # making it a different claim. Both produce identical stdout because they
+    # ARE the same command, and the raw-string rule reported that as forgery.
+    #
+    # Identity is therefore (executable basename, first positional argument):
+    # the tool, and the subject it ran against. Option flags and their values
+    # are dropped, so a re-spelled invocation collapses to one identity, while
+    # `cargo test` vs `npm run lint` — different tool, different subject — stay
+    # distinct and still block. Dropping option VALUES does mean two runs of
+    # one tool over one subject under different flags no longer collide; that
+    # is the intended trade, because a false CLONE accuses honest work of the
+    # most serious thing this guard can allege, and the surviving rule still
+    # catches the case G021 exists for: one captured result reused for an
+    # UNRELATED claim.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     c43_clones="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      def cmd_identity:
+        ( . / " " | map(select(length > 0)) ) as $raw
+        | ( if (($raw[0] // "") == "bash") or (($raw[0] // "") == "sh")
+            then $raw[1:] else $raw end ) as $t
+        | ( ($t[0] // "") | split("/") | last ) as $exe
+        | ( reduce ($t[1:][]) as $tok ({skip:false, pos:[]};
+              if .skip then {skip:false, pos:.pos}
+              elif ($tok | startswith("-"))
+                then {skip: (($tok | contains("=")) | not), pos:.pos}
+              else {skip:false, pos:(.pos + [$tok])}
+              end)
+            | (.pos[0] // "") ) as $subject
+        | $exe + " " + $subject;
       map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutHash != $empty_sha) and ((has("stdoutBytes") and .stdoutBytes == 0) | not)))
       | group_by(.stdoutHash)
-      | map(select((map(.cmd) | unique | length) > 1))
+      | map(select((map(.cmd | cmd_identity) | unique | length) > 1))
       | .[]
       | "\(.[0].stdoutHash[0:12])… reused by: \(map(.cmd) | unique | join(" AND "))"
     ' "$c43_log" 2>/dev/null || true)"
     if [[ -n "$c43_clones" ]]; then
       fail "Evidence receipt CLONE — one captured stdout is cited by two different commands, which cannot happen from honest execution: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 400)"
     else
-      pass "No receipt clones (no stdout hash shared across differing commands)"
+      pass "No receipt clones (no stdout hash shared across differing command identities)"
     fi
   fi
 fi

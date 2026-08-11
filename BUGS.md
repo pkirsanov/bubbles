@@ -1322,6 +1322,478 @@ This `bubbles.bug` invocation did not execute the focused suites or
   framework installation. This entry does not claim that propagation occurred;
   the inherited evidence proves source closure only.
 
+---
+
+## BUG-016 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
+
+- **Filed:** 2026-08-11
+- **Renumbered:** filed as BUG-015, renumbered to BUG-016 during rebase. An
+  unrelated BUG-015 (the `state-snapshot.sh` goal-node drop, directly above)
+  reached `origin/main` first and owns that number. Two sessions filing against
+  one shared working copy collide on the next free id; the entry that landed
+  first keeps it.
+- **Disposition:** FIXED in `7e71f02`. The fix was written in a concurrent
+  session that hit the same defect from the other end — certifying the same
+  downstream packet — and arrived at all three recommended parts below
+  independently, which is corroboration of the diagnosis rather than a
+  coincidence. The DEFERRAL reason recorded at filing (unwilling to edit
+  `state-transition-guard.sh` while a concurrent session held uncommitted
+  changes to it) was sound; that session committed its change from an isolated
+  worktree for exactly that reason.
+- **Discovered by:** certifying downstream research-lab
+  `specs/017-decision-attention-and-developing-situations`. Two guard runs
+  minutes apart over the SAME tree disagreed: one reported
+  `🔴 BLOCK: Artifact lint FAILED`, the other `verdict: PASS` with
+  `failureCount: 0`.
+- **Severity:** high, because of what the false failure LOOKS like. It does not
+  present as flakiness — it presents as a specific, named, blocking artifact
+  defect, and the remedy it prints sends the reader to a command that exits 0.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, the Check 13
+  artifact-lint invocation.
+
+### The defect
+
+```bash
+if BUBBLES_WORKFLOWS_FILE="$workflow_registry_file" bubbles_run_with_timeout 60 bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
+```
+
+Two properties combine, and neither is a problem alone:
+
+1. The budget is the **literal 60**, not derived from packet size and not
+   configurable.
+2. Output is discarded, so `timeout`'s exit 124 is indistinguishable from a
+   genuine non-zero lint exit. Every non-zero outcome takes the same branch.
+
+Measured on the discovering packet:
+
+```text
+$ bash artifact-lint.sh specs/017-...      →  exit 0   elapsed 60s
+$ timeout 60 bash artifact-lint.sh ...     →  exit 124
+```
+
+A 60-second lint under a 60-second budget is a coin flip. The packet is a
+six-scope feature with per-scope reports — large, but not pathological — and
+lint cost grows with scope count and evidence-block count, so **this gets more
+likely as packets grow, not less**.
+
+### Why the reported message makes it worse
+
+```text
+🔴 BLOCK: Artifact lint FAILED — run 'bash bubbles/scripts/artifact-lint.sh <dir>' for details
+```
+
+Following that instruction runs the lint WITHOUT the timeout, so it prints
+`Artifact lint PASSED.` and exits 0. The guard and its own suggested diagnostic
+contradict each other, and the contradiction points away from the real cause. In
+the discovering session this consumed a full investigation cycle — including
+building a pinned scratch worktree to prove the lint genuinely passes at
+`status: done` — before the timing was measured.
+
+### Recommended fix
+
+Three parts, smallest first:
+
+1. **Stop discarding the outcome.** Capture the exit code and distinguish 124
+   from every other non-zero value. A timeout is an infrastructure condition and
+   MUST NOT be reported as an artifact defect.
+2. **Make the budget adequate and configurable.** Raise the default well clear
+   of observed cost and honour an env override, so a large packet is not
+   silently penalised for being large.
+3. **Report a timeout honestly.** Say the lint exceeded its budget, print the
+   budget, and either fail with that distinct reason or surface it as advisory —
+   but never under a message that names artifact quality.
+
+Guard the fix with a case that stubs a lint script sleeping past the budget and
+asserts the guard does NOT emit "Artifact lint FAILED" for it, so the two
+outcomes cannot be re-conflated.
+
+### Scope note
+
+Any guard check wrapped in `bubbles_run_with_timeout ... > /dev/null 2>&1` has
+the same shape. This entry documents the instance that was measured; a sweep for
+the pattern is worth doing while fixing it.
+
+### What the fix actually did (`7e71f02`)
+
+All three parts, in the order recommended:
+
+1. The exit code is captured and `124` takes its own branch, so a lint that did
+  not COMPLETE is never reported as a lint that completed and rejected.
+2. The budget moved `60` → `300` and honours `BUBBLES_ARTIFACT_LINT_TIMEOUT`.
+3. The timeout message names the cap and points at both remedies. Both outcomes
+  still BLOCK — a lint that cannot finish is *unknown*, not *fine* — but they
+  are no longer the same message.
+
+The suggested guard case was written as three, two of them adversarial in
+opposite directions: the timeout path must not borrow the failure wording (or
+the distinction is cosmetic), and the SAME fixture at the default cap must NOT
+take the timeout path (or the case is tautological and would pass even if the
+branch never fired). Suite: 255 passed, 0 failed.
+
+The measurement in this entry was also refined by the fixing session. The cost
+is not "~60s"; it is load-dependent. The same lint over byte-identical content
+measured 32s, 73s, 90s and 103s on one machine. That is why the failure looked
+non-deterministic: the budget sits inside the spread, so the verdict tracked
+machine load rather than the packet.
+
+## BUG-017 — 31 of 33 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
+
+- **Filed:** 2026-08-11
+- **Disposition:** open. The fix is a design decision (a fourth audit profile, or
+  an explicit "no audit contract applies" declaration), not a one-line change, so
+  it is filed rather than patched.
+- **Discovered by:** certifying downstream research-lab packets. `BUG-005`,
+  `015` and `016` all certified cleanly at `specs_hardened` because
+  `product-to-planning` is one of the **two** below-`done` modes that declare a
+  `transitionAudit`. Auditing why those two worked surfaced that the other 31 do
+  not.
+- **Severity:** high. It is the same defect class as G087 before `81cac4e`: a
+  terminal state the registry advertises with no truthful path to it. A packet
+  run under any of the 31 modes cannot be promoted to its own declared ceiling
+  through the guard, so it either sits below its ceiling forever or gets pushed
+  to a status it did not earn.
+- **Affects:** `bubbles/workflows/modes.yaml` (the 31 mode definitions),
+  `bubbles/scripts/transition-contract-resolver.sh` (the refusal point).
+
+### The defect
+
+`transition-contract-resolver.sh` refuses any mode without a supported
+`transitionAudit` contract. `state-transition-guard.sh` already states this as
+settled behaviour at the Check 6 fallback comment:
+
+> (Modes with no transitionAudit profile never reach Check 6 —
+> transition-contract-resolver.sh blocks them first with
+> E009-AUDIT-PROFILE-MISSING/UNSUPPORTED.)
+
+What is NOT recorded anywhere is how many modes that sentence disqualifies.
+
+### Evidence
+
+Counted against the mode registry:
+
+```
+total modes        : 62
+ceiling below done : 33
+NO transitionAudit : 31
+```
+
+The two that resolve are `spec-scope-hardening` and `product-to-planning`, both
+bound to `planning-maturity-v1`. The 31 that cannot include `validate-only`,
+`audit-only`, `validate-to-doc`, `docs-only`, `spec-review-to-doc`,
+`retro-to-review`, `release-planning-to-doc`, `journey-refinement`,
+`readiness-review`, `production-adversarial-probe`, `resume-only`, the three
+`delivered_pending_activation` modes, all five `release-train-*` modes, all six
+`upkeep-*` modes, all three `propagate-*` modes, `incident-fastlane`, and
+`framework-health`.
+
+Controlled A/B — two fixtures identical except for `workflowMode`:
+
+```
+$ bash bubbles/scripts/transition-contract-resolver.sh /tmp/.../with-audit/specs/900-probe
+{"schemaVersion":"transition-contract/v1", ... "workflowMode":"product-to-planning",
+ "auditProfile":"planning-maturity-v1","statusCeiling":"specs_hardened",
+ "targetStatus":"specs_hardened","requiredGates":["G001",...,"G073"], ...}
+  RESOLVER_EXIT=0
+
+$ bash bubbles/scripts/transition-contract-resolver.sh /tmp/.../no-audit/specs/900-probe
+E009-AUDIT-PROFILE-UNSUPPORTED: resolved mode has no supported transition audit contract
+```
+
+Same fixture, same fields, one word different. The first resolves a full
+contract; the second cannot resolve one at all.
+
+### Why this is not merely cosmetic
+
+A missing `transitionAudit` is not "no extra audit required" — it is a hard
+refusal before any gate runs. So the affected modes advertise a `statusCeiling`
+in the registry that the mechanical path cannot deliver. `is-terminal-for-mode.sh`
+will happily report `validated` as terminal-for-mode for `validate-to-doc`, and
+the portfolio sweeps that call it will treat such a packet as closed, while the
+guard can never certify it there.
+
+### Recommendation
+
+Decide per mode, do not blanket-assign:
+
+1. Modes that genuinely complete work at a below-`done` ceiling
+   (`validate-to-doc`, `docs-only`, the `upkeep-*` and `release-train-*`
+   families) need an audit profile expressing what completeness means for them —
+   a fourth profile alongside `delivery-completion-v1`,
+   `delivery-completion-fast-v1` and `planning-maturity-v1`.
+2. Modes whose ceiling is a *report* rather than a delivery
+   (`release-train-status-all`, `propagate-audit`) may legitimately need no
+   contract, but that should be an explicit declaration the resolver honours,
+   not an omission it refuses.
+
+The distinction matters: today both cases look identical to the resolver, which
+is exactly why the gap went unnoticed.
+
+---
+
+## BUG-018 — `artifact-lint.sh`'s evidence-signal check counts Gherkin `Scenario:` blocks as execution evidence, and its file-path signal accepts `.js` but not `.mjs`
+
+- **Filed:** 2026-08-11
+- **Disposition:** FIXED, same day, in the framework rather than worked around
+  downstream. See "### Fix" below.
+- **Severity:** medium — it does not corrupt state, but it makes a fully-verified
+  packet unpromotable, and the only way to satisfy it is to fabricate.
+- **Found by:** closing `specs/_bugs/BUG-007-decision-attention-contract-drift`
+  in the `research-lab` downstream install. Every substantive gate passed
+  (G022, G057, G060, G068, G070, G094, traceability, transition guard at
+  `failureCount: 0`), tests were green, yet artifact-lint refused promotion with
+  11 findings.
+
+### Defect 1 — every fenced block is treated as an evidence block
+
+`artifact-lint.sh` (the anti-fabrication section, around the
+`Evidence block lacks terminal output signals (N/2 required)` failure) walks
+**every** fenced code block in `report.md` and `scopes.md` and requires each to
+carry at least 2 of its 7 "terminal output signals".
+
+It does not discriminate by fence language or by section. So a Gherkin block:
+
+````markdown
+```gherkin
+  Scenario: An empty attention tier with no recorded exclusions is refused
+    Given a committed brief payload whose attention tier is empty
+     When the publication gate runs
+     Then publication is refused by name
+```
+````
+
+…is counted as execution evidence and refused for having no exit code. A
+specification block **can never** carry a test count or an exit code — that is
+what makes it a specification. The same applies to file excerpts and diff hunks,
+which legitimately carry no runner output.
+
+The perverse incentive is the problem: the only way to clear the check on such a
+block is to write an exit code above output that never came from a command,
+which is precisely the fabrication this gate exists to detect.
+
+**Suggested fix:** skip blocks whose fence language is a known non-transcript
+language (`gherkin`, `diff`, `json`, `yaml`, `markdown`), or only apply the
+check to blocks inside evidence-bearing sections / under a checked DoD item.
+
+### Defect 2 — the file-path signal regex omits `.mjs`
+
+Signal (ii) is:
+
+```
+([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|go|sh|sql|toml|yaml|json|proto|md)|\./)
+```
+
+`mjs` is absent, and `.mjs` does not match the `js` alternative because the
+literal `\.` must immediately precede `js`. In a build-free ESM repository —
+exactly what the framework's own downstream `research-lab` install is — a
+genuine, executed command line such as:
+
+```
+$ node scripts/selftest.mjs
+```
+
+scores only ONE signal (the `^\$ ` shell-prompt signal), so real terminal
+evidence is refused for not looking like terminal evidence. `cjs` is missing for
+the same reason.
+
+**Suggested fix:** add `mjs|cjs` to the alternation. Note the transition guard's
+own copy of this regex (`_c11_sig_iii_re` in `state-transition-guard.sh`) has
+the same omission, so both should move together — and they are already duplicated
+rather than shared, which is a third, smaller finding.
+
+### Why this was not worked around downstream
+
+The packet was set to `blocked` with the blocker named in `blockedReason`,
+rather than promoted to `done` by inventing signals. Recording the refusal
+honestly is the behaviour the gate is meant to produce; the defect is that it
+fires on artifacts that cannot possibly satisfy it.
+
+### Fix
+
+`artifact-lint.sh` now captures the fence language when a block opens and
+exempts a block whose language is `gherkin`, `diff` or `mermaid` from both the
+`>=3 line` and `>=2 signal` heuristics, reporting the exemption on stdout rather
+than skipping silently. The exemption requires an **explicitly declared**
+language — a bare ``` fence stays fully enforced, so it cannot be used to
+silence a real evidence block. `mjs|cjs` were added to the file-path signal
+alternation in `artifact-lint.sh` and to `_c11_sig_iii_re` in
+`state-transition-guard.sh`.
+
+Four selftest cases were added to `artifact-lint-selftest.sh`, two of which are
+adversarial controls that fail if the fix is written as a blanket disable:
+
+- **T12** a `gherkin` block is exempt, and the exemption is reported.
+- **T13** the *identical content* in a **bare** fence is still refused. Without
+  this, T12 would also pass had the whole check been disabled.
+- **T14** `$ node scripts/selftest.mjs` now supplies a second signal.
+- **T15** `$ node scripts/selftest.zzq` is **still** refused, proving T14 passes
+  because `mjs` is recognised and not because the path check matches anything.
+
+The remaining sub-finding — that the signal regex is duplicated between
+`artifact-lint.sh` and `state-transition-guard.sh` rather than shared — is left
+open deliberately. Extracting it into `guard-lib.sh` touches two hot guards and
+belongs in its own change, not folded into a fix that must stay auditable.
+
+## BUG-019 — Check 43 clone detection compares raw argv, so an honest re-run spelled two ways is accused of forgery
+
+- **Filed:** 2026-08-11
+- **Disposition:** FIXED, same day, in the framework. See "### Fix" below.
+- **Severity:** high — it alleges forgery, the most serious thing this guard
+  says, against work that did nothing wrong, and it blocks promotion of a spec
+  that is otherwise clean.
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install. Every other gate passed —
+  artifact-lint 0, traceability 0, G094 0 — and the transition guard reported a
+  single failure, this one.
+
+### Defect
+
+Check 43's own comment states the boundary correctly:
+
+> The rule is deliberately narrow, because the naive one is wrong: identical
+> output from a RE-RUN of the SAME command is normal and must never fire.
+
+The implementation did not honour it. It grouped receipts by `stdoutHash` and
+fired whenever `map(.cmd) | unique | length > 1` — comparing the **raw argv
+string**. An honest re-run is routinely spelled two ways inside one session, and
+both spellings produce byte-identical stdout precisely because they are the same
+command:
+
+```text
+933f9ae10795… reused by:
+  bash bubbles/scripts/release-delivery-reconciliation-guard.sh --repo-root . --phase mvp --require-coverage
+  AND
+  bash bubbles/scripts/release-delivery-reconciliation-guard.sh --repo-root <abs-path> --phase mvp --require-coverage
+
+d4069abf44b4… reused by:
+  bash bubbles/scripts/artifact-lint.sh specs/095-research-plane-v1
+  bash bubbles/scripts/artifact-lint.sh specs/095-research-plane-v1 SCN-095-CI01
+```
+
+The first pair differs only in whether one directory is named relatively or
+absolutely. The second differs only by an optional trailing scenario-regex that
+narrows a run without making it a different claim.
+
+Two aggravating properties:
+
+1. **The check is repo-global while the transition it gates is spec-scoped.**
+   Neither cited group mentioned spec 112 at all — receipts from spec 095 work
+   blocked spec 112's promotion.
+2. **There is no honest exit.** The receipts are truthful, so the only ways to
+   clear it are to delete evidence or to stop re-running commands. Deleting
+   receipts to pass a gate is the structural fabrication the framework forbids.
+
+This is distinct from BUG-007, which fixed the *empty-stdout* collision in the
+same predicate. BUG-007's exemption is intact and still tested.
+
+### Fix
+
+Command identity is now `(executable basename, first positional subject)` —
+the tool, and the subject it ran against — instead of the raw argv string.
+Option flags and their values are dropped, so a re-spelled invocation collapses
+to one identity, while `cargo test` versus `npm run lint` stay distinct and
+still BLOCK.
+
+The trade is recorded deliberately in-source: dropping option *values* means two
+runs of one tool over one subject under different flags no longer collide. That
+is intended. A false CLONE accuses honest work of the most serious allegation
+this guard makes, and the surviving rule still catches what G021 exists for —
+one captured result reused for an UNRELATED claim.
+
+Evidence: against the real receipt log that triggered this, the old predicate
+reports 2 clones and the new one reports 0.
+`evidence-admission-hardening-selftest` is 16 passed / 0 failed, with the
+genuine two-different-commands case still blocking. Two regression fixtures were
+added for the shapes above (`963-c43-clone-same-command-respelled`,
+`964-c43-clone-same-command-optional-arg`). The
+`map(select((.stdoutHash` line is preserved verbatim so BUG-007's
+predicate-extraction test keeps resolving.
+
+## BUG-020 — Check 6B requires an `executionHistory` agent named literally `bubbles.<phase>`, so `analyze` and `bootstrap` can never be certified
+
+- **Filed:** 2026-08-11
+- **Disposition:** open in-repo framework defect, ANALYZED not fixed. The
+  workaround below is truthful and costs nothing, so this is not urgent, but the
+  certified phase list it produces understates what actually ran.
+- **Severity:** medium — it does not corrupt state and it fails safe (it refuses
+  a claim rather than admitting a false one), but it makes a complete phase list
+  unreachable, so `certifiedCompletedPhases` cannot be read as "what ran".
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install under `product-to-planning`.
+
+### Defect
+
+Gate G022 Check 6B accepts a phase claim only when `executionHistory` carries an
+entry whose agent is named literally `bubbles.<phase>`. For several phases no
+such agent exists, because the phase is executed by differently-named
+specialists:
+
+| Phase | Executed by | `bubbles.<phase>` exists? |
+|---|---|---|
+| `analyze` | `bubbles.analyst`, `bubbles.ux` | no |
+| `bootstrap` | `bubbles.design`, `bubbles.plan` | no |
+| `audit` | `bubbles.audit` | yes, but it records `execution.audit`, not an `executionHistory` entry |
+
+So `analyze` and `bootstrap` are **structurally uncertifiable** — no honest
+execution can ever satisfy the check — and `audit` is excluded unless the
+auditor also writes a provenance entry.
+
+`bubbles.validate` hit this while certifying spec 112. Claiming `audit` tripped
+phase-impersonation; authoring an `executionHistory` entry on `bubbles.audit`'s
+behalf to satisfy it would be exactly the impersonation G022 exists to detect.
+It correctly declined, and certified `["harden","validate"]` with the reasoning
+recorded in `certification.note`.
+
+The result is safe but lossy: a reader of `certifiedCompletedPhases` sees two
+phases where six ran, and `execution.audit` is the only record that audit
+happened at all.
+
+### Recommended fix
+
+Map phase to its *owning agents* rather than to a name-derived agent id, or
+accept any agent the mode's phase-owner registry names for that phase. The
+registry already knows which agent owns which phase; Check 6B is re-deriving it
+from a string convention that the agent roster does not follow.
+
+## BUG-021 — `state-transition-guard.sh` rewrites `report.md` on first run, so `targetRevision` cannot discriminate staleness
+
+- **Filed:** 2026-08-11
+- **Disposition:** open in-repo framework defect, ANALYZED not fixed.
+- **Severity:** low — no state is corrupted and no false claim is admitted, but
+  it silently disarms a staleness signal that readers are invited to trust.
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install, when an audit attempt's recorded
+  `targetRevision` did not match a freshly-resolved contract.
+
+### Defect
+
+Running `state-transition-guard.sh` against a spec mutates that spec's
+`report.md` by one byte on the first run, and is byte-stable on re-run. Because
+`report.md` is inside the revision-covered artifact set, the act of *measuring*
+the packet changes the revision being measured.
+
+Consequently a recorded `targetRevision` will differ from a later re-resolution
+even when nothing substantive changed, and the difference is indistinguishable
+from genuine drift by digest alone.
+
+`bubbles.validate` isolated this while investigating an apparent mismatch on
+spec 112: a byte-level projection showed the canonical `state.json` projection
+identical to the committed revision, and every other revision-covered artifact
+carried an mtime earlier than the audit attempt's instant. The whole delta was
+`report.md` prose. It then found the guard itself as the writer.
+
+### Why it matters
+
+`targetRevision` reads as a staleness discriminator — that is its evident
+purpose — but any consumer comparing it across a guard run will see a mismatch
+that means nothing. A reviewer who trusts it will chase a phantom; one who
+learns to ignore it loses the real signal too.
+
+### Recommended fix
+
+Either exclude `report.md` from the revision-covered set for this purpose, or
+make the guard's own write happen before the revision is computed, so that
+measuring a packet does not change it.
+
 
 
 
