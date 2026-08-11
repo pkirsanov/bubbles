@@ -2306,6 +2306,33 @@ assert_log_contains "$g053_artifact_log" \
   "Code Diff Evidence does not show any non-artifact runtime/source/config file paths" \
   "G053 Check 13B still rejects an artifact-only Code Diff Evidence (non-vacuous)"
 
+# --- Check 13: a lint TIMEOUT must not be reported as a lint FAILURE ---
+# Check 13 is fail-closed, so both outcomes block; the defect being guarded is
+# the DIAGNOSIS, not the exit code. The cap was a flat 60s while a large spec's
+# lint is load-sensitive (32s idle, 73-90s under concurrent load), so the same
+# packet was reported as having lint failures on a busy machine and passing on
+# an idle one. A reader told "Artifact lint FAILED" hunts for findings that do
+# not exist. Forcing a 1s cap makes the timeout path deterministic.
+c13_timeout_log="$tmp_root/check13-timeout.log"
+run_capture "$c13_timeout_log" env BUBBLES_ARTIFACT_LINT_TIMEOUT=1 bash "$GUARD_SCRIPT" "$positive_feature_dir" >/dev/null
+assert_log_contains "$c13_timeout_log" \
+  "this is a TIMEOUT, not a lint failure" \
+  "Check 13 reports a lint that did not COMPLETE as a timeout, naming the cap"
+
+# Adversarial twin: the timeout path must NOT borrow the failure wording, or the
+# distinction is cosmetic and a reader still cannot tell the two apart.
+assert_log_not_contains "$c13_timeout_log" \
+  "Artifact lint FAILED (exit" \
+  "Check 13 timeout path is distinct from the completed-and-rejected wording"
+
+# Second twin: with the default cap the SAME fixture must not take the timeout
+# path, proving the case above fires on the cap rather than on the fixture.
+c13_default_log="$tmp_root/check13-default.log"
+run_capture "$c13_default_log" bash "$GUARD_SCRIPT" "$positive_feature_dir" >/dev/null
+assert_log_not_contains "$c13_default_log" \
+  "this is a TIMEOUT, not a lint failure" \
+  "Check 13 does not take the timeout path at the default cap (timeout case is non-tautological)"
+
 # --- Check 8: shell (.sh) test-path recognition (Test File Existence) ---
 # Regression guard for the Check 8 extension-alternation parity fix. Check 8's
 # test-path extraction regex historically recognized only
