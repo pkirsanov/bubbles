@@ -1280,6 +1280,119 @@ after the source fix, never direct edit targets for this bug.
 begin with the failing positive regressions above and return the complete
 finding set to `bubbles.test` and `bubbles.validate`; BUG-015 remains OPEN until
 that separate delivery and certification work is complete.
+---
+
+## BUG-016 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
+
+- **Filed:** 2026-08-11
+- **Renumbered:** filed as BUG-015, renumbered to BUG-016 during rebase. An
+  unrelated BUG-015 (the `state-snapshot.sh` goal-node drop, directly above)
+  reached `origin/main` first and owns that number. Two sessions filing against
+  one shared working copy collide on the next free id; the entry that landed
+  first keeps it.
+- **Disposition:** FIXED in `7e71f02`. The fix was written in a concurrent
+  session that hit the same defect from the other end — certifying the same
+  downstream packet — and arrived at all three recommended parts below
+  independently, which is corroboration of the diagnosis rather than a
+  coincidence. The DEFERRAL reason recorded at filing (unwilling to edit
+  `state-transition-guard.sh` while a concurrent session held uncommitted
+  changes to it) was sound; that session committed its change from an isolated
+  worktree for exactly that reason.
+- **Discovered by:** certifying downstream research-lab
+  `specs/017-decision-attention-and-developing-situations`. Two guard runs
+  minutes apart over the SAME tree disagreed: one reported
+  `🔴 BLOCK: Artifact lint FAILED`, the other `verdict: PASS` with
+  `failureCount: 0`.
+- **Severity:** high, because of what the false failure LOOKS like. It does not
+  present as flakiness — it presents as a specific, named, blocking artifact
+  defect, and the remedy it prints sends the reader to a command that exits 0.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, the Check 13
+  artifact-lint invocation.
+
+### The defect
+
+```bash
+if BUBBLES_WORKFLOWS_FILE="$workflow_registry_file" bubbles_run_with_timeout 60 bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
+```
+
+Two properties combine, and neither is a problem alone:
+
+1. The budget is the **literal 60**, not derived from packet size and not
+   configurable.
+2. Output is discarded, so `timeout`'s exit 124 is indistinguishable from a
+   genuine non-zero lint exit. Every non-zero outcome takes the same branch.
+
+Measured on the discovering packet:
+
+```text
+$ bash artifact-lint.sh specs/017-...      →  exit 0   elapsed 60s
+$ timeout 60 bash artifact-lint.sh ...     →  exit 124
+```
+
+A 60-second lint under a 60-second budget is a coin flip. The packet is a
+six-scope feature with per-scope reports — large, but not pathological — and
+lint cost grows with scope count and evidence-block count, so **this gets more
+likely as packets grow, not less**.
+
+### Why the reported message makes it worse
+
+```text
+🔴 BLOCK: Artifact lint FAILED — run 'bash bubbles/scripts/artifact-lint.sh <dir>' for details
+```
+
+Following that instruction runs the lint WITHOUT the timeout, so it prints
+`Artifact lint PASSED.` and exits 0. The guard and its own suggested diagnostic
+contradict each other, and the contradiction points away from the real cause. In
+the discovering session this consumed a full investigation cycle — including
+building a pinned scratch worktree to prove the lint genuinely passes at
+`status: done` — before the timing was measured.
+
+### Recommended fix
+
+Three parts, smallest first:
+
+1. **Stop discarding the outcome.** Capture the exit code and distinguish 124
+   from every other non-zero value. A timeout is an infrastructure condition and
+   MUST NOT be reported as an artifact defect.
+2. **Make the budget adequate and configurable.** Raise the default well clear
+   of observed cost and honour an env override, so a large packet is not
+   silently penalised for being large.
+3. **Report a timeout honestly.** Say the lint exceeded its budget, print the
+   budget, and either fail with that distinct reason or surface it as advisory —
+   but never under a message that names artifact quality.
+
+Guard the fix with a case that stubs a lint script sleeping past the budget and
+asserts the guard does NOT emit "Artifact lint FAILED" for it, so the two
+outcomes cannot be re-conflated.
+
+### Scope note
+
+Any guard check wrapped in `bubbles_run_with_timeout ... > /dev/null 2>&1` has
+the same shape. This entry documents the instance that was measured; a sweep for
+the pattern is worth doing while fixing it.
+
+### What the fix actually did (`7e71f02`)
+
+All three parts, in the order recommended:
+
+1. The exit code is captured and `124` takes its own branch, so a lint that did
+   not COMPLETE is never reported as a lint that completed and rejected.
+2. The budget moved `60` → `300` and honours `BUBBLES_ARTIFACT_LINT_TIMEOUT`.
+3. The timeout message names the cap and points at both remedies. Both outcomes
+   still BLOCK — a lint that cannot finish is *unknown*, not *fine* — but they
+   are no longer the same message.
+
+The suggested guard case was written as three, two of them adversarial in
+opposite directions: the timeout path must not borrow the failure wording (or
+the distinction is cosmetic), and the SAME fixture at the default cap must NOT
+take the timeout path (or the case is tautological and would pass even if the
+branch never fired). Suite: 255 passed, 0 failed.
+
+The measurement in this entry was also refined by the fixing session. The cost
+is not "~60s"; it is load-dependent. The same lint over byte-identical content
+measured 32s, 73s, 90s and 103s on one machine. That is why the failure looked
+non-deterministic: the budget sits inside the spread, so the verdict tracked
+machine load rather than the packet.
 
 
 
