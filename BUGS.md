@@ -1591,6 +1591,168 @@ The remaining sub-finding — that the signal regex is duplicated between
 open deliberately. Extracting it into `guard-lib.sh` touches two hot guards and
 belongs in its own change, not folded into a fix that must stay auditable.
 
+## BUG-019 — Check 43 clone detection compares raw argv, so an honest re-run spelled two ways is accused of forgery
+
+- **Filed:** 2026-08-11
+- **Disposition:** FIXED, same day, in the framework. See "### Fix" below.
+- **Severity:** high — it alleges forgery, the most serious thing this guard
+  says, against work that did nothing wrong, and it blocks promotion of a spec
+  that is otherwise clean.
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install. Every other gate passed —
+  artifact-lint 0, traceability 0, G094 0 — and the transition guard reported a
+  single failure, this one.
+
+### Defect
+
+Check 43's own comment states the boundary correctly:
+
+> The rule is deliberately narrow, because the naive one is wrong: identical
+> output from a RE-RUN of the SAME command is normal and must never fire.
+
+The implementation did not honour it. It grouped receipts by `stdoutHash` and
+fired whenever `map(.cmd) | unique | length > 1` — comparing the **raw argv
+string**. An honest re-run is routinely spelled two ways inside one session, and
+both spellings produce byte-identical stdout precisely because they are the same
+command:
+
+```text
+933f9ae10795… reused by:
+  bash bubbles/scripts/release-delivery-reconciliation-guard.sh --repo-root . --phase mvp --require-coverage
+  AND
+  bash bubbles/scripts/release-delivery-reconciliation-guard.sh --repo-root <abs-path> --phase mvp --require-coverage
+
+d4069abf44b4… reused by:
+  bash bubbles/scripts/artifact-lint.sh specs/095-research-plane-v1
+  bash bubbles/scripts/artifact-lint.sh specs/095-research-plane-v1 SCN-095-CI01
+```
+
+The first pair differs only in whether one directory is named relatively or
+absolutely. The second differs only by an optional trailing scenario-regex that
+narrows a run without making it a different claim.
+
+Two aggravating properties:
+
+1. **The check is repo-global while the transition it gates is spec-scoped.**
+   Neither cited group mentioned spec 112 at all — receipts from spec 095 work
+   blocked spec 112's promotion.
+2. **There is no honest exit.** The receipts are truthful, so the only ways to
+   clear it are to delete evidence or to stop re-running commands. Deleting
+   receipts to pass a gate is the structural fabrication the framework forbids.
+
+This is distinct from BUG-007, which fixed the *empty-stdout* collision in the
+same predicate. BUG-007's exemption is intact and still tested.
+
+### Fix
+
+Command identity is now `(executable basename, first positional subject)` —
+the tool, and the subject it ran against — instead of the raw argv string.
+Option flags and their values are dropped, so a re-spelled invocation collapses
+to one identity, while `cargo test` versus `npm run lint` stay distinct and
+still BLOCK.
+
+The trade is recorded deliberately in-source: dropping option *values* means two
+runs of one tool over one subject under different flags no longer collide. That
+is intended. A false CLONE accuses honest work of the most serious allegation
+this guard makes, and the surviving rule still catches what G021 exists for —
+one captured result reused for an UNRELATED claim.
+
+Evidence: against the real receipt log that triggered this, the old predicate
+reports 2 clones and the new one reports 0.
+`evidence-admission-hardening-selftest` is 16 passed / 0 failed, with the
+genuine two-different-commands case still blocking. Two regression fixtures were
+added for the shapes above (`963-c43-clone-same-command-respelled`,
+`964-c43-clone-same-command-optional-arg`). The
+`map(select((.stdoutHash` line is preserved verbatim so BUG-007's
+predicate-extraction test keeps resolving.
+
+## BUG-020 — Check 6B requires an `executionHistory` agent named literally `bubbles.<phase>`, so `analyze` and `bootstrap` can never be certified
+
+- **Filed:** 2026-08-11
+- **Disposition:** open in-repo framework defect, ANALYZED not fixed. The
+  workaround below is truthful and costs nothing, so this is not urgent, but the
+  certified phase list it produces understates what actually ran.
+- **Severity:** medium — it does not corrupt state and it fails safe (it refuses
+  a claim rather than admitting a false one), but it makes a complete phase list
+  unreachable, so `certifiedCompletedPhases` cannot be read as "what ran".
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install under `product-to-planning`.
+
+### Defect
+
+Gate G022 Check 6B accepts a phase claim only when `executionHistory` carries an
+entry whose agent is named literally `bubbles.<phase>`. For several phases no
+such agent exists, because the phase is executed by differently-named
+specialists:
+
+| Phase | Executed by | `bubbles.<phase>` exists? |
+|---|---|---|
+| `analyze` | `bubbles.analyst`, `bubbles.ux` | no |
+| `bootstrap` | `bubbles.design`, `bubbles.plan` | no |
+| `audit` | `bubbles.audit` | yes, but it records `execution.audit`, not an `executionHistory` entry |
+
+So `analyze` and `bootstrap` are **structurally uncertifiable** — no honest
+execution can ever satisfy the check — and `audit` is excluded unless the
+auditor also writes a provenance entry.
+
+`bubbles.validate` hit this while certifying spec 112. Claiming `audit` tripped
+phase-impersonation; authoring an `executionHistory` entry on `bubbles.audit`'s
+behalf to satisfy it would be exactly the impersonation G022 exists to detect.
+It correctly declined, and certified `["harden","validate"]` with the reasoning
+recorded in `certification.note`.
+
+The result is safe but lossy: a reader of `certifiedCompletedPhases` sees two
+phases where six ran, and `execution.audit` is the only record that audit
+happened at all.
+
+### Recommended fix
+
+Map phase to its *owning agents* rather than to a name-derived agent id, or
+accept any agent the mode's phase-owner registry names for that phase. The
+registry already knows which agent owns which phase; Check 6B is re-deriving it
+from a string convention that the agent roster does not follow.
+
+## BUG-021 — `state-transition-guard.sh` rewrites `report.md` on first run, so `targetRevision` cannot discriminate staleness
+
+- **Filed:** 2026-08-11
+- **Disposition:** open in-repo framework defect, ANALYZED not fixed.
+- **Severity:** low — no state is corrupted and no false claim is admitted, but
+  it silently disarms a staleness signal that readers are invited to trust.
+- **Found by:** certifying `specs/112-macro-regime-evidence-stack` in the
+  `QuantitativeFinance` downstream install, when an audit attempt's recorded
+  `targetRevision` did not match a freshly-resolved contract.
+
+### Defect
+
+Running `state-transition-guard.sh` against a spec mutates that spec's
+`report.md` by one byte on the first run, and is byte-stable on re-run. Because
+`report.md` is inside the revision-covered artifact set, the act of *measuring*
+the packet changes the revision being measured.
+
+Consequently a recorded `targetRevision` will differ from a later re-resolution
+even when nothing substantive changed, and the difference is indistinguishable
+from genuine drift by digest alone.
+
+`bubbles.validate` isolated this while investigating an apparent mismatch on
+spec 112: a byte-level projection showed the canonical `state.json` projection
+identical to the committed revision, and every other revision-covered artifact
+carried an mtime earlier than the audit attempt's instant. The whole delta was
+`report.md` prose. It then found the guard itself as the writer.
+
+### Why it matters
+
+`targetRevision` reads as a staleness discriminator — that is its evident
+purpose — but any consumer comparing it across a guard run will see a mismatch
+that means nothing. A reviewer who trusts it will chase a phantom; one who
+learns to ignore it loses the real signal too.
+
+### Recommended fix
+
+Either exclude `report.md` from the revision-covered set for this purpose, or
+make the guard's own write happen before the revision is computed, so that
+measuring a packet does not change it.
+
+
 
 
 
