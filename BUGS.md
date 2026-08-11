@@ -1060,26 +1060,244 @@ both touching subagent dispatch.
 
 ---
 
-## BUG-015 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
+## BUG-015 — `state-snapshot.sh` drops the compiled goal-node declaration before `mirror-session`, so valid goal-node convergence snapshots always refuse
+
+- **Filed:** 2026-08-10
+- **Disposition:** open in-repo framework defect, ANALYZED and routed for a
+  test-first fix. Implementation was explicitly excluded from this scenario
+  node's bug-analysis/bootstrap phase. Per Gate G095 this is a tracked OPEN
+  defect with a concrete owner and fix contract, not a silent deferral.
+- **Discovered by:** the cross-product
+  `fix-goal-node-state-snapshot-binding` scenario after a valid scoped goal-node
+  packet passed `validate-packet` and the immediately required convergence
+  snapshot rejected the same packet.
+- **Severity:** high. The defect is fail-closed, so it does not authorize the
+  wrong repository. It makes the required Gate G082 progress record impossible
+  for every goal-scenario node and prevents the same call from appending its
+  `turnSnapshots[]` audit record.
+- **Affects:** `bubbles/scripts/state-snapshot.sh`,
+  `bubbles/scripts/repository-binding.sh`, their selftests, and the invocation
+  contracts in `agents/bubbles.goal.agent.md` and
+  `agents/bubbles_shared/operating-baseline.md`. Installed downstream copies
+  have the same defect, but they are framework-managed and MUST NOT be edited
+  directly; the source fix must propagate through the normal framework install
+  path.
+
+### Exact reproduction
+
+The persisted command rendering below replaces host-private absolute roots with
+`<control>`, `<scenario>`, and `<packet>`. Both commands used session
+`vscode-4911317a16be7826959f98f665c79cd0` and the same packet bytes.
+
+**Claim Source:** operator-provided reproduction, independently observed before
+this bug-analysis node; retained as inherited evidence rather than represented
+as execution by this agent.
+
+1. Validate the goal-node packet against its compiled declaration:
+
+```text
+repository-binding.sh validate-packet \
+  --session-id vscode-4911317a16be7826959f98f665c79cd0 \
+  --session-control-file <control> \
+  --packet-file <packet> \
+  --scenario-file <scenario> \
+  --node-id certify-ops009-scope02
+```
+
+Observed exit `0`:
+
+```text
+REPOSITORY PACKET SCOPED actionable=true ... scopeKind=goal-node scopeId=certify-ops009-scope02
+```
+
+2. Run the mandatory convergence snapshot with the same packet:
+
+```text
+BUBBLES_AGENT_NAME=bubbles.goal bash .github/bubbles/scripts/state-snapshot.sh \
+  --phase phase_5_remediate \
+  --scope-id 02-immutable-candidate-runtime-qualification \
+  --note 'Scope 02 certification blockers VAL-001 through VAL-007 routed as one finding set' \
+  --mode start \
+  --convergence-iteration 1 \
+  --spec-dir specs/_ops/OPS-009-online-inference-resource-admission \
+  --session-id vscode-4911317a16be7826959f98f665c79cd0 \
+  --session-control-file <control> \
+  --binding-packet-file <packet>
+```
+
+Observed exit `1`:
+
+```text
+REPOSITORY PACKET REFUSED reason=GOAL_NODE_DECLARATION_REQUIRED actionable=false
+```
+
+**Claim Source:** executed in this bug-analysis node against the canonical source
+copy and the independently bound packet for
+`fix-goal-node-state-snapshot-binding`.
+
+The current packet first validated with its declaration:
+
+```text
+REPOSITORY PACKET SCOPED actionable=true repository=bubbles root=<bubbles-root> decision=rb:vscode-4911317a16be7826959f98f665c79cd0:3:node:fix-goal-node-state-snapshot-binding revision=3 scopeKind=goal-node scopeId=fix-goal-node-state-snapshot-binding
+```
+
+The source `state-snapshot.sh` call then reproduced the defect:
+
+```text
+REPOSITORY PACKET REFUSED reason=GOAL_NODE_DECLARATION_REQUIRED actionable=false scopeId=fix-goal-node-state-snapshot-binding
+STATE_SNAPSHOT_EXIT=1
+```
+
+No implementation or test command was run in this phase.
+
+### Expected vs actual
+
+**Expected:** a goal-node caller supplies the compiled scenario and node ID as a
+required pair. `state-snapshot.sh` carries that pair into `mirror-session`, which
+validates the packet against the exact compiled declaration before writing the
+binding mirror, appending one `turnSnapshots[]` record, and updating the matching
+`convergenceLoops[]` entry when convergence arguments are present.
+
+**Actual:** `state-snapshot.sh` has no scenario/node arguments to carry. It calls
+`mirror-session` with only session ID, control file, and packet file.
+`mirror-session` therefore reaches the goal-node validator without the compiled
+declaration and correctly refuses before any of the snapshot or convergence
+updates can run.
+
+### Grounded root cause
+
+The defect is an authorization-context transport gap, not a defect in the
+fail-closed validator:
+
+1. `state-snapshot.sh` parses `--session-id`, `--session-control-file`, and
+   `--binding-packet-file`, but no `--scenario-file` or `--node-id`.
+2. Its `mirror-session` invocation forwards only those three values.
+3. `repository-binding.sh` routes `mirror-session` through
+   `parse_packet_command_args`, whose accepted options likewise contain no
+   scenario or node pair.
+4. `mirror_session()` calls `validate_packet_internal` without an expected
+   goal-node declaration.
+5. `validate_packet_internal` deliberately returns
+   `GOAL_NODE_DECLARATION_REQUIRED` whenever `scopeKind == "goal-node"` and the
+   declaration is absent. The public `validate-packet` front door already shows
+   the correct pattern: it accepts the pair, resolves the node declaration from
+   the compiled scenario, and passes that declaration into the same internal
+   validator.
+
+The local hypothesis is therefore falsifiable: if the declaration pair is
+accepted and forwarded through both missing front doors while the internal
+equality check remains unchanged, the valid positive path should reach the
+mirror/snapshot writes; any mismatched declaration should continue to refuse.
+
+### Gate G082 and convergence impact
+
+`bubbles.goal.agent.md` mandates a `state-snapshot.sh` call on every convergence
+iteration so Gate G082 can enforce `maxConvergenceIterations`. The refusal occurs
+before `state-snapshot.sh` writes either session-state surface:
+
+- `convergenceLoops[]` is not advanced, so the durable iteration count can
+  under-report the goal runner's actual work.
+- `turnSnapshots[]` receives no start/end record, so crash-resume and per-turn
+  audit history lose the same iteration.
+- A compliant goal runner must choose between a required call that always fails
+  and omitting the call in violation of its convergence contract. Neither is an
+  acceptable steady state.
+
+This is a liveness and audit-integrity defect with a safe refusal, not an
+authorization bypass.
+
+### Security boundary that the fix MUST preserve
+
+- Ordinary non-goal actionable packets MUST continue to validate, mirror, and
+  snapshot without a scenario/node declaration.
+- A goal-node packet MUST still require a matching compiled scenario
+  declaration. The packet alone is not authority for its repository.
+- `--scenario-file` and `--node-id` MUST be accepted only as a complete pair.
+  Supplying either half alone must fail before repository-local writes.
+- The scenario-declared repository root, alias, node ID, and complete
+  `repositoryResolution` MUST continue to match the packet exactly. Forged or
+  substituted root, alias, node, or resolution values must refuse with zero
+  repository-local side effects.
+- `state-snapshot.sh` MUST carry the caller's scenario and node through to
+  `mirror-session`; it must not infer a declaration from packet fields, downgrade
+  `scopeKind`, or call the ordinary-packet path for a goal node.
+- No bypass, skip flag, permissive fallback, or optional weakening may be added.
+  The correct fix transports the missing proof to the existing validator.
+
+### Test-first fix contract
+
+The implementation owner MUST add the positive regression first and show it
+failing against the current source before changing production scripts. The
+security-negative cases are part of the same finding set and cannot be
+cherry-picked away.
+
+| Regression case | Required assertion |
+|---|---|
+| Valid goal-node direct mirror | `mirror-session` accepts the matching scenario/node pair, writes the exact scoped binding mirror, and leaves command-level control unchanged. |
+| Valid goal-node snapshot plus convergence | `state-snapshot.sh` forwards the pair; mirror succeeds; exactly one new turn snapshot and the requested convergence entry are durable. This is the positive case that MUST fail before the fix. |
+| Wrong node | A scenario paired with a different or absent node refuses and writes no mirror, turn snapshot, or convergence entry. |
+| Changed repository alias, root, or resolution | Same-root forged alias, alternate eligible root, and mutated `repositoryResolution` each refuse; none may fall through to ordinary packet validation. |
+| Missing half of the pair | Scenario-only and node-only invocations of both `mirror-session` and `state-snapshot.sh` return usage failure and create no repository-local state. |
+| Ordinary packet | Existing non-goal mirror and snapshot calls with no scenario/node pair continue to succeed unchanged. |
+| `convergenceLoops[]` update | The goal-node snapshot updates only the matching `(specDir, agent)` entry, preserves unrelated entries, and records the requested iteration count. |
+| No lost `turnSnapshots[]` update | Pre-existing snapshots remain byte-for-byte equivalent, one new record is appended, and the mirror plus convergence update do not overwrite that append. |
+
+Likely regression ownership:
+
+- `bubbles/scripts/repository-binding-selftest.sh`: direct mirror pair parsing,
+  valid goal-node mirror, wrong-node and forged root/alias/resolution refusals,
+  missing-half refusals, and the ordinary-packet compatibility case.
+- `bubbles/scripts/state-snapshot-selftest.sh`: end-to-end forwarding, the
+  valid goal-node convergence write, and preservation of both
+  `turnSnapshots[]` and unrelated `convergenceLoops[]` records.
+
+After the focused selftests are red then green, the implementation must run the
+canonical `framework-validate` and `release-check` surfaces. This entry records
+the required commands; it does not claim either has run or passed.
+
+### Likely owned source and conformance surfaces
+
+The next owner should inspect and change only what the regression proves is
+needed:
+
+- `bubbles/scripts/state-snapshot.sh`
+- `bubbles/scripts/repository-binding.sh`
+- `bubbles/scripts/state-snapshot-selftest.sh`
+- `bubbles/scripts/repository-binding-selftest.sh`
+- `agents/bubbles_shared/operating-baseline.md`
+- `agents/bubbles.goal.agent.md`
+
+Other orchestrator instructions that publish the same state-snapshot syntax
+should be updated only if the shared invocation contract changes. Gate G082's
+cap semantics and `validate_packet_internal`'s goal-node refusal do not need to
+be weakened. Downstream `.github/bubbles/**` copies are propagation targets
+after the source fix, never direct edit targets for this bug.
+
+### Next owner
+
+`bubbles.implement` owns the test-first source fix under canonical mode
+`fix action:fastlane target:bug` / persisted alias `bugfix-fastlane`. It must
+begin with the failing positive regressions above and return the complete
+finding set to `bubbles.test` and `bubbles.validate`; BUG-015 remains OPEN until
+that separate delivery and certification work is complete.
+---
+
+## BUG-016 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
 
 - **Filed:** 2026-08-11
-- **Disposition:** **FIXED** 2026-08-11 in `7e71f02` ("fix(guard): stop reporting
-  an artifact-lint TIMEOUT as a lint FAILURE"), landed by a concurrent session
-  while this entry was being written. The fix applies all three recommendations
-  below: it captures `lint_rc` and branches on `-eq 124` separately, raises the
-  default budget to `${BUBBLES_ARTIFACT_LINT_TIMEOUT:-300}`, and reports a
-  timeout as *"did NOT COMPLETE within ${artifact_lint_timeout}s (exit 124) —
-  this is a TIMEOUT, not a lint failure"* rather than as an artifact defect. Both
-  outcomes still block, which is correct: a lint that cannot finish is unknown,
-  not fine. Guarded by 27 lines of new selftest coverage. This entry is retained
-  because the DIAGNOSIS is the durable part — see the scope note at the end,
-  which still applies to every other check wrapped in the same pattern.
-- **Correction, recorded rather than edited out:** an earlier draft of this entry
-  called the failure permanent for this packet. It is not. The lint's runtime is
-  load-dependent, measured at 32s / 73s / 90s / 103s against byte-identical
-  content on the same machine, so the old 60s cap sat *inside* the spread and the
-  verdict depended on concurrent load rather than on the packet. That is why the
-  same tree produced BLOCK and PASS minutes apart.
+- **Renumbered:** filed as BUG-015, renumbered to BUG-016 during rebase. An
+  unrelated BUG-015 (the `state-snapshot.sh` goal-node drop, directly above)
+  reached `origin/main` first and owns that number. Two sessions filing against
+  one shared working copy collide on the next free id; the entry that landed
+  first keeps it.
+- **Disposition:** FIXED in `7e71f02`. The fix was written in a concurrent
+  session that hit the same defect from the other end — certifying the same
+  downstream packet — and arrived at all three recommended parts below
+  independently, which is corroboration of the diagnosis rather than a
+  coincidence. The DEFERRAL reason recorded at filing (unwilling to edit
+  `state-transition-guard.sh` while a concurrent session held uncommitted
+  changes to it) was sound; that session committed its change from an isolated
+  worktree for exactly that reason.
 - **Discovered by:** certifying downstream research-lab
   `specs/017-decision-attention-and-developing-situations`. Two guard runs
   minutes apart over the SAME tree disagreed: one reported
@@ -1153,7 +1371,30 @@ Any guard check wrapped in `bubbles_run_with_timeout ... > /dev/null 2>&1` has
 the same shape. This entry documents the instance that was measured; a sweep for
 the pattern is worth doing while fixing it.
 
-## BUG-016 — 31 of 33 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
+### What the fix actually did (`7e71f02`)
+
+All three parts, in the order recommended:
+
+1. The exit code is captured and `124` takes its own branch, so a lint that did
+  not COMPLETE is never reported as a lint that completed and rejected.
+2. The budget moved `60` → `300` and honours `BUBBLES_ARTIFACT_LINT_TIMEOUT`.
+3. The timeout message names the cap and points at both remedies. Both outcomes
+  still BLOCK — a lint that cannot finish is *unknown*, not *fine* — but they
+  are no longer the same message.
+
+The suggested guard case was written as three, two of them adversarial in
+opposite directions: the timeout path must not borrow the failure wording (or
+the distinction is cosmetic), and the SAME fixture at the default cap must NOT
+take the timeout path (or the case is tautological and would pass even if the
+branch never fired). Suite: 255 passed, 0 failed.
+
+The measurement in this entry was also refined by the fixing session. The cost
+is not "~60s"; it is load-dependent. The same lint over byte-identical content
+measured 32s, 73s, 90s and 103s on one machine. That is why the failure looked
+non-deterministic: the budget sits inside the spread, so the verdict tracked
+machine load rather than the packet.
+
+## BUG-017 — 31 of 33 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
 
 - **Filed:** 2026-08-11
 - **Disposition:** open. The fix is a design decision (a fourth audit profile, or
@@ -1244,7 +1485,6 @@ Decide per mode, do not blanket-assign:
 
 The distinction matters: today both cases look identical to the resolver, which
 is exactly why the gap went unnoticed.
-
 
 
 

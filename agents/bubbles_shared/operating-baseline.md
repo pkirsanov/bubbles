@@ -485,7 +485,7 @@ Hard dependency: `jq` is required (already used elsewhere in the framework). If 
 
 ### What
 
-- Each orchestrator agent calls `bash bubbles/scripts/state-snapshot.sh --mode start --phase <p> --session-id <session-id> --session-control-file <control-file> --binding-packet-file <packet-file>` at the beginning of every turn, and repeats the complete binding triplet with `--mode end` at the close, before yielding control back to the operator.
+- Orchestrators snapshot each turn boundary with `bash bubbles/scripts/state-snapshot.sh --mode <start|end> --phase <p> --session-id <session-id> --session-control-file <control-file> --binding-packet-file <packet-file>`. Goal-node calls add the required pair `--scenario-file <compiled-scenario.json> --node-id <node-id>`.
 - Each invocation appends a single record to `.specify/memory/bubbles.session.json` `turnSnapshots[]` carrying: `turnNumber` (auto-incremented), `timestamp` (UTC ISO8601), `phase`, `scopeId` (or null), `mode` (`start` | `end`), `note` (or null), and `agent` (from `$BUBBLES_AGENT_NAME`, defaulting to `unknown`).
 
 ### Why
