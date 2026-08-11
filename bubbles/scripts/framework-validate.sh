@@ -777,6 +777,7 @@ run_check "Design-experiment guard selftest (IMP-100 Phase 4 / IMP-026 SCOPE-8)"
 run_check "Worktree hygiene guard selftest (IMP-107 / SCOPE-1; IMP-033 / SCOPE-1)" bash "$SCRIPT_DIR/worktree-hygiene-guard-selftest.sh"
 run_check "Doctor hygiene surface selftest (IMP-033 / SCOPE-2 — EV-5)" bash "$SCRIPT_DIR/doctor-hygiene-surface-selftest.sh"
 run_check "Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)" bash "$SCRIPT_DIR/open-work-report-selftest.sh"
+run_check_self_only "Open-work register lint (live)" bash "$SCRIPT_DIR/open-work-report.sh" --repo-root "$REPO_ROOT" --lint
 run_check "Closeout safety-contract selftest (IMP-033 / SCOPE-4 — WIP-3)" bash "$SCRIPT_DIR/closeout-report-selftest.sh"
 run_check "Open-work surface selftest (IMP-033 / SCOPE-6 — WIP-1)" bash "$SCRIPT_DIR/open-work-surface-selftest.sh"
 run_check "Multi-root honesty selftest (IMP-033 / SCOPE-7 — WIP-3)" bash "$SCRIPT_DIR/multi-root-honesty-selftest.sh"
