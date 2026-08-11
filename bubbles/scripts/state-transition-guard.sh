@@ -3165,7 +3165,7 @@ echo ""
 # CHECK 13: Run artifact lint as final cross-check
 # =============================================================================
 echo "--- Check 13: Artifact Lint ---"
-lint_script="$SCRIPT_DIR/artifact-lint.sh"
+lint_script="${BUBBLES_ARTIFACT_LINT_SCRIPT:-$SCRIPT_DIR/artifact-lint.sh}"
 # Check 13 is fail-closed, so "did not complete" and "completed and rejected"
 # must be reported as different things. Conflating them indicts a timing
 # artifact as a content defect: a large spec whose lint legitimately exits 0 can
