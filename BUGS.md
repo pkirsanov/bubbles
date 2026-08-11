@@ -1058,6 +1058,91 @@ succeeding twice and then no-opping four times — rules out every static
 configuration input, this setting included. The two entries are unrelated beyond
 both touching subagent dispatch.
 
+---
+
+## BUG-015 — the guard runs `artifact-lint.sh` under a hardcoded 60s budget and discards its output, so a lint that PASSES in ~60s is reported as a blocking failure, non-deterministically
+
+- **Filed:** 2026-08-11
+- **Disposition:** open in-repo framework defect, DEFERRED with a fix recommended
+  below. Not applied in the discovering session because
+  `bubbles/scripts/state-transition-guard.sh` again carries uncommitted changes
+  from a concurrent session in this shared working copy, and this repo has
+  already had one incident this week where an edit made during a concurrent
+  session's commit window shipped in a state nobody intended. Per Gate G095 this
+  is a tracked OPEN defect with a recorded reason.
+- **Discovered by:** certifying downstream research-lab
+  `specs/017-decision-attention-and-developing-situations`. Two guard runs
+  minutes apart over the SAME tree disagreed: one reported
+  `🔴 BLOCK: Artifact lint FAILED`, the other `verdict: PASS` with
+  `failureCount: 0`.
+- **Severity:** high, because of what the false failure LOOKS like. It does not
+  present as flakiness — it presents as a specific, named, blocking artifact
+  defect, and the remedy it prints sends the reader to a command that exits 0.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, the Check 13
+  artifact-lint invocation.
+
+### The defect
+
+```bash
+if BUBBLES_WORKFLOWS_FILE="$workflow_registry_file" bubbles_run_with_timeout 60 bash "$lint_script" "$feature_dir" > /dev/null 2>&1; then
+```
+
+Two properties combine, and neither is a problem alone:
+
+1. The budget is the **literal 60**, not derived from packet size and not
+   configurable.
+2. Output is discarded, so `timeout`'s exit 124 is indistinguishable from a
+   genuine non-zero lint exit. Every non-zero outcome takes the same branch.
+
+Measured on the discovering packet:
+
+```text
+$ bash artifact-lint.sh specs/017-...      →  exit 0   elapsed 60s
+$ timeout 60 bash artifact-lint.sh ...     →  exit 124
+```
+
+A 60-second lint under a 60-second budget is a coin flip. The packet is a
+six-scope feature with per-scope reports — large, but not pathological — and
+lint cost grows with scope count and evidence-block count, so **this gets more
+likely as packets grow, not less**.
+
+### Why the reported message makes it worse
+
+```text
+🔴 BLOCK: Artifact lint FAILED — run 'bash bubbles/scripts/artifact-lint.sh <dir>' for details
+```
+
+Following that instruction runs the lint WITHOUT the timeout, so it prints
+`Artifact lint PASSED.` and exits 0. The guard and its own suggested diagnostic
+contradict each other, and the contradiction points away from the real cause. In
+the discovering session this consumed a full investigation cycle — including
+building a pinned scratch worktree to prove the lint genuinely passes at
+`status: done` — before the timing was measured.
+
+### Recommended fix
+
+Three parts, smallest first:
+
+1. **Stop discarding the outcome.** Capture the exit code and distinguish 124
+   from every other non-zero value. A timeout is an infrastructure condition and
+   MUST NOT be reported as an artifact defect.
+2. **Make the budget adequate and configurable.** Raise the default well clear
+   of observed cost and honour an env override, so a large packet is not
+   silently penalised for being large.
+3. **Report a timeout honestly.** Say the lint exceeded its budget, print the
+   budget, and either fail with that distinct reason or surface it as advisory —
+   but never under a message that names artifact quality.
+
+Guard the fix with a case that stubs a lint script sleeping past the budget and
+asserts the guard does NOT emit "Artifact lint FAILED" for it, so the two
+outcomes cannot be re-conflated.
+
+### Scope note
+
+Any guard check wrapped in `bubbles_run_with_timeout ... > /dev/null 2>&1` has
+the same shape. This entry documents the instance that was measured; a sweep for
+the pattern is worth doing while fixing it.
+
 
 
 
