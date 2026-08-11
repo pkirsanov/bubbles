@@ -1153,6 +1153,99 @@ Any guard check wrapped in `bubbles_run_with_timeout ... > /dev/null 2>&1` has
 the same shape. This entry documents the instance that was measured; a sweep for
 the pattern is worth doing while fixing it.
 
+## BUG-016 — 31 of 33 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
+
+- **Filed:** 2026-08-11
+- **Disposition:** open. The fix is a design decision (a fourth audit profile, or
+  an explicit "no audit contract applies" declaration), not a one-line change, so
+  it is filed rather than patched.
+- **Discovered by:** certifying downstream research-lab packets. `BUG-005`,
+  `015` and `016` all certified cleanly at `specs_hardened` because
+  `product-to-planning` is one of the **two** below-`done` modes that declare a
+  `transitionAudit`. Auditing why those two worked surfaced that the other 31 do
+  not.
+- **Severity:** high. It is the same defect class as G087 before `81cac4e`: a
+  terminal state the registry advertises with no truthful path to it. A packet
+  run under any of the 31 modes cannot be promoted to its own declared ceiling
+  through the guard, so it either sits below its ceiling forever or gets pushed
+  to a status it did not earn.
+- **Affects:** `bubbles/workflows/modes.yaml` (the 31 mode definitions),
+  `bubbles/scripts/transition-contract-resolver.sh` (the refusal point).
+
+### The defect
+
+`transition-contract-resolver.sh` refuses any mode without a supported
+`transitionAudit` contract. `state-transition-guard.sh` already states this as
+settled behaviour at the Check 6 fallback comment:
+
+> (Modes with no transitionAudit profile never reach Check 6 —
+> transition-contract-resolver.sh blocks them first with
+> E009-AUDIT-PROFILE-MISSING/UNSUPPORTED.)
+
+What is NOT recorded anywhere is how many modes that sentence disqualifies.
+
+### Evidence
+
+Counted against the mode registry:
+
+```
+total modes        : 62
+ceiling below done : 33
+NO transitionAudit : 31
+```
+
+The two that resolve are `spec-scope-hardening` and `product-to-planning`, both
+bound to `planning-maturity-v1`. The 31 that cannot include `validate-only`,
+`audit-only`, `validate-to-doc`, `docs-only`, `spec-review-to-doc`,
+`retro-to-review`, `release-planning-to-doc`, `journey-refinement`,
+`readiness-review`, `production-adversarial-probe`, `resume-only`, the three
+`delivered_pending_activation` modes, all five `release-train-*` modes, all six
+`upkeep-*` modes, all three `propagate-*` modes, `incident-fastlane`, and
+`framework-health`.
+
+Controlled A/B — two fixtures identical except for `workflowMode`:
+
+```
+$ bash bubbles/scripts/transition-contract-resolver.sh /tmp/.../with-audit/specs/900-probe
+{"schemaVersion":"transition-contract/v1", ... "workflowMode":"product-to-planning",
+ "auditProfile":"planning-maturity-v1","statusCeiling":"specs_hardened",
+ "targetStatus":"specs_hardened","requiredGates":["G001",...,"G073"], ...}
+  RESOLVER_EXIT=0
+
+$ bash bubbles/scripts/transition-contract-resolver.sh /tmp/.../no-audit/specs/900-probe
+E009-AUDIT-PROFILE-UNSUPPORTED: resolved mode has no supported transition audit contract
+```
+
+Same fixture, same fields, one word different. The first resolves a full
+contract; the second cannot resolve one at all.
+
+### Why this is not merely cosmetic
+
+A missing `transitionAudit` is not "no extra audit required" — it is a hard
+refusal before any gate runs. So the affected modes advertise a `statusCeiling`
+in the registry that the mechanical path cannot deliver. `is-terminal-for-mode.sh`
+will happily report `validated` as terminal-for-mode for `validate-to-doc`, and
+the portfolio sweeps that call it will treat such a packet as closed, while the
+guard can never certify it there.
+
+### Recommendation
+
+Decide per mode, do not blanket-assign:
+
+1. Modes that genuinely complete work at a below-`done` ceiling
+   (`validate-to-doc`, `docs-only`, the `upkeep-*` and `release-train-*`
+   families) need an audit profile expressing what completeness means for them —
+   a fourth profile alongside `delivery-completion-v1`,
+   `delivery-completion-fast-v1` and `planning-maturity-v1`.
+2. Modes whose ceiling is a *report* rather than a delivery
+   (`release-train-status-all`, `propagate-audit`) may legitimately need no
+   contract, but that should be an explicit declaration the resolver honours,
+   not an omission it refuses.
+
+The distinction matters: today both cases look identical to the resolver, which
+is exactly why the gap went unnoticed.
+
+
 
 
 
