@@ -1491,6 +1491,8 @@ is exactly why the gap went unnoticed.
 ## BUG-018 — `artifact-lint.sh`'s evidence-signal check counts Gherkin `Scenario:` blocks as execution evidence, and its file-path signal accepts `.js` but not `.mjs`
 
 - **Filed:** 2026-08-11
+- **Disposition:** FIXED, same day, in the framework rather than worked around
+  downstream. See "### Fix" below.
 - **Severity:** medium — it does not corrupt state, but it makes a fully-verified
   packet unpromotable, and the only way to satisfy it is to fabricate.
 - **Found by:** closing `specs/_bugs/BUG-007-decision-attention-contract-drift`
@@ -1562,6 +1564,32 @@ The packet was set to `blocked` with the blocker named in `blockedReason`,
 rather than promoted to `done` by inventing signals. Recording the refusal
 honestly is the behaviour the gate is meant to produce; the defect is that it
 fires on artifacts that cannot possibly satisfy it.
+
+### Fix
+
+`artifact-lint.sh` now captures the fence language when a block opens and
+exempts a block whose language is `gherkin`, `diff` or `mermaid` from both the
+`>=3 line` and `>=2 signal` heuristics, reporting the exemption on stdout rather
+than skipping silently. The exemption requires an **explicitly declared**
+language — a bare ``` fence stays fully enforced, so it cannot be used to
+silence a real evidence block. `mjs|cjs` were added to the file-path signal
+alternation in `artifact-lint.sh` and to `_c11_sig_iii_re` in
+`state-transition-guard.sh`.
+
+Four selftest cases were added to `artifact-lint-selftest.sh`, two of which are
+adversarial controls that fail if the fix is written as a blanket disable:
+
+- **T12** a `gherkin` block is exempt, and the exemption is reported.
+- **T13** the *identical content* in a **bare** fence is still refused. Without
+  this, T12 would also pass had the whole check been disabled.
+- **T14** `$ node scripts/selftest.mjs` now supplies a second signal.
+- **T15** `$ node scripts/selftest.zzq` is **still** refused, proving T14 passes
+  because `mjs` is recognised and not because the path check matches anything.
+
+The remaining sub-finding — that the signal regex is duplicated between
+`artifact-lint.sh` and `state-transition-guard.sh` rather than shared — is left
+open deliberately. Extracting it into `guard-lib.sh` touches two hot guards and
+belongs in its own change, not folded into a fix that must stay auditable.
 
 
 
