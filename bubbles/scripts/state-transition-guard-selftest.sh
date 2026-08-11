@@ -2312,9 +2312,44 @@ assert_log_contains "$g053_artifact_log" \
 # lint is load-sensitive (32s idle, 73-90s under concurrent load), so the same
 # packet was reported as having lint failures on a busy machine and passing on
 # an idle one. A reader told "Artifact lint FAILED" hunts for findings that do
-# not exist. Forcing a 1s cap makes the timeout path deterministic.
+# not exist.
+#
+# The timeout is forced by making the LINT slow, never by making the cap tight.
+# An earlier form set BUBBLES_ARTIFACT_LINT_TIMEOUT=1 and bet that the real lint
+# would lose that race; measured, this fixture's lint runs in ~0.6s, so on an
+# idle machine it COMPLETED and Check 13 printed "Artifact lint passes (exit 0)".
+# The case passed only on loaded hosts and failed on healthy ones -- it
+# reproduced the exact timing defect it exists to catch. A sub-second cap does
+# not repair that either: guard-lib's fallback watchdog (hosts with neither
+# `timeout` nor `gtimeout`, e.g. a stock macOS PATH) gates its poll loop on
+# `[ "$waited" -lt "$secs" ]`, an INTEGER test that errors on "0.1" and skips the
+# loop entirely, so no SIGTERM is sent and 124 never comes back.
+#
+# So the guard is run from a staged framework clone whose artifact-lint.sh is a
+# stub that sleeps 10x the cap. The timed command's duration is a guaranteed
+# lower bound rather than an estimate of real lint speed, so the exit-124 path
+# fires on every host, at any load, through all three bubbles_run_with_timeout
+# paths (the cap stays an integer the fallback watchdog can compare).
+c13_lint_cap_seconds=2
+c13_stub_root="$tmp_root/framework-c13-lint-timeout"
+clone_framework_surface "$c13_stub_root"
+c13_stub_guard="$c13_stub_root/bubbles/scripts/state-transition-guard.sh"
+c13_stub_lint="$c13_stub_root/bubbles/scripts/artifact-lint.sh"
+c13_stub_feature_dir="$c13_stub_root/specs/944-check13-lint-timeout"
+mkdir -p "$c13_stub_root/specs"
+cp -R "$positive_feature_dir" "$c13_stub_feature_dir"
+
+cat <<'EOF' > "$c13_stub_lint"
+#!/usr/bin/env bash
+# Selftest stub: a lint that CANNOT complete inside the cap, by construction.
+sleep 20
+EOF
+
 c13_timeout_log="$tmp_root/check13-timeout.log"
-run_capture "$c13_timeout_log" env BUBBLES_ARTIFACT_LINT_TIMEOUT=1 bash "$GUARD_SCRIPT" "$positive_feature_dir" >/dev/null
+run_capture "$c13_timeout_log" env \
+  BUBBLES_REPO_ROOT="$c13_stub_root" \
+  BUBBLES_ARTIFACT_LINT_TIMEOUT="$c13_lint_cap_seconds" \
+  bash "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
 assert_log_contains "$c13_timeout_log" \
   "this is a TIMEOUT, not a lint failure" \
   "Check 13 reports a lint that did not COMPLETE as a timeout, naming the cap"
@@ -2325,13 +2360,33 @@ assert_log_not_contains "$c13_timeout_log" \
   "Artifact lint FAILED (exit" \
   "Check 13 timeout path is distinct from the completed-and-rejected wording"
 
-# Second twin: with the default cap the SAME fixture must not take the timeout
-# path, proving the case above fires on the cap rather than on the fixture.
+# Second twin, controlled pair: same staged clone, same fixture, same cap -- the
+# ONLY difference is that the stub now returns immediately. Isolating the lint's
+# duration is what proves the case above fires on the cap being exceeded and not
+# on anything about the staged clone. (Varying only the cap, as the earlier form
+# did, no longer isolates the cause now that the lint itself is injected.)
+cat <<'EOF' > "$c13_stub_lint"
+#!/usr/bin/env bash
+# Selftest stub: a lint that completes instantly, so Check 13 must NOT time out.
+exit 0
+EOF
+c13_completes_log="$tmp_root/check13-completes.log"
+run_capture "$c13_completes_log" env \
+  BUBBLES_REPO_ROOT="$c13_stub_root" \
+  BUBBLES_ARTIFACT_LINT_TIMEOUT="$c13_lint_cap_seconds" \
+  bash "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
+assert_log_not_contains "$c13_completes_log" \
+  "this is a TIMEOUT, not a lint failure" \
+  "Check 13 does not take the timeout path when the same staged lint completes (timeout case is non-tautological)"
+
+# Third twin: the REAL guard running the REAL lint at the DEFAULT cap must not
+# report a timeout either, so the staged pair above cannot mask a regression that
+# makes the shipped configuration time out spuriously.
 c13_default_log="$tmp_root/check13-default.log"
 run_capture "$c13_default_log" bash "$GUARD_SCRIPT" "$positive_feature_dir" >/dev/null
 assert_log_not_contains "$c13_default_log" \
   "this is a TIMEOUT, not a lint failure" \
-  "Check 13 does not take the timeout path at the default cap (timeout case is non-tautological)"
+  "Check 13 does not take the timeout path with the real lint at the default cap"
 
 # --- Check 8: shell (.sh) test-path recognition (Test File Existence) ---
 # Regression guard for the Check 8 extension-alternation parity fix. Check 8's
