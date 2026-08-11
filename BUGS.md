@@ -1063,10 +1063,12 @@ both touching subagent dispatch.
 ## BUG-015 — `state-snapshot.sh` drops the compiled goal-node declaration before `mirror-session`, so valid goal-node convergence snapshots always refuse
 
 - **Filed:** 2026-08-10
-- **Disposition:** open in-repo framework defect, ANALYZED and routed for a
-  test-first fix. Implementation was explicitly excluded from this scenario
-  node's bug-analysis/bootstrap phase. Per Gate G095 this is a tracked OPEN
-  defect with a concrete owner and fix contract, not a silent deferral.
+- **Disposition:** **CLOSED** 2026-08-10 at stable source revision
+  `264505f535c70c79d194fc8d1561688dcdb0a025`. The test-first source repair and
+  follow-up case-collision correction passed focused, repeated managed, and
+  canonical stable release certification. The original analysis-phase routing
+  remains documented below; closure relies only on inherited validate/test
+  evidence from the pinned, unchanged revision.
 - **Discovered by:** the cross-product
   `fix-goal-node-state-snapshot-binding` scenario after a valid scoped goal-node
   packet passed `validate-packet` and the immediately required convergence
@@ -1273,13 +1275,52 @@ cap semantics and `validate_packet_internal`'s goal-node refusal do not need to
 be weakened. Downstream `.github/bubbles/**` copies are propagation targets
 after the source fix, never direct edit targets for this bug.
 
-### Next owner
+### Next owner (analysis-phase record)
 
-`bubbles.implement` owns the test-first source fix under canonical mode
-`fix action:fastlane target:bug` / persisted alias `bugfix-fastlane`. It must
-begin with the failing positive regressions above and return the complete
-finding set to `bubbles.test` and `bubbles.validate`; BUG-015 remains OPEN until
-that separate delivery and certification work is complete.
+`bubbles.implement` owned the test-first source fix under canonical mode
+`fix action:fastlane target:bug` / persisted alias `bugfix-fastlane`. It was
+required to begin with the failing positive regressions above and return the
+complete finding set to `bubbles.test` and `bubbles.validate`; BUG-015 was to
+remain OPEN until that separate delivery and certification work completed. The
+closure evidence below records the later completion of that condition without
+rewriting the original fix contract.
+
+### Closure evidence
+
+**Claim Source:** inherited validate/test execution evidence from the
+validate-owned stable release certification supplied to this bookkeeping node.
+This `bubbles.bug` invocation did not execute the focused suites or
+`release-check`.
+
+- Closure was certified at exact revision
+  `264505f535c70c79d194fc8d1561688dcdb0a025`. Pre/post `HEAD`, `origin/main`,
+  clean status, and controlling file hashes were byte-identical throughout the
+  final release gate.
+- The focused BUG-015 repository-binding suite passed 61/61 assertions. The
+  state-snapshot suite passed 73/73 assertions across 13 cases.
+- The repaired source state-snapshot processed the real revision-4 knb
+  `fix-goal-node-state-snapshot-binding` packet and recorded turn 87 at
+  convergence iteration 2.
+- A follow-up case-collision false positive was fixed test-first and
+  independently verified: exact duplicate Git index stages deduplicate, while
+  real `Foo.md`/`foo.md` path variants still fail.
+- The independent focused slice passed all 17 required checks with 343
+  assertions and zero failures. It reported two optional schema skips before
+  managed Python activation.
+- The managed goal-contract selftest then passed 10 consecutive serial runs at
+  the pinned revision, each with 103 assertions and zero skips or failures.
+- The final canonical `bash bubbles/scripts/cli.sh release-check` passed at the
+  pinned unchanged revision. Its embedded framework validation passed 280
+  checks in 2073 seconds with no failed checks, and the release-manifest check
+  passed with 825 managed files. Explicit skips were limited to the two
+  denylisted repository-binding selftests, no configured live code-index
+  repository, and no reachable live judge URL.
+- Earlier broad validation attempts remain part of the history, not closure
+  proof: some failed, and others were invalidated by concurrent revision
+  movement. Closure rests on the separate stable certification above.
+- Installed downstream copies remain propagation targets through normal
+  framework installation. This entry does not claim that propagation occurred;
+  the inherited evidence proves source closure only.
 
 
 
