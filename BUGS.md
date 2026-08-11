@@ -1486,6 +1486,84 @@ Decide per mode, do not blanket-assign:
 The distinction matters: today both cases look identical to the resolver, which
 is exactly why the gap went unnoticed.
 
+---
+
+## BUG-018 — `artifact-lint.sh`'s evidence-signal check counts Gherkin `Scenario:` blocks as execution evidence, and its file-path signal accepts `.js` but not `.mjs`
+
+- **Filed:** 2026-08-11
+- **Severity:** medium — it does not corrupt state, but it makes a fully-verified
+  packet unpromotable, and the only way to satisfy it is to fabricate.
+- **Found by:** closing `specs/_bugs/BUG-007-decision-attention-contract-drift`
+  in the `research-lab` downstream install. Every substantive gate passed
+  (G022, G057, G060, G068, G070, G094, traceability, transition guard at
+  `failureCount: 0`), tests were green, yet artifact-lint refused promotion with
+  11 findings.
+
+### Defect 1 — every fenced block is treated as an evidence block
+
+`artifact-lint.sh` (the anti-fabrication section, around the
+`Evidence block lacks terminal output signals (N/2 required)` failure) walks
+**every** fenced code block in `report.md` and `scopes.md` and requires each to
+carry at least 2 of its 7 "terminal output signals".
+
+It does not discriminate by fence language or by section. So a Gherkin block:
+
+````markdown
+```gherkin
+  Scenario: An empty attention tier with no recorded exclusions is refused
+    Given a committed brief payload whose attention tier is empty
+     When the publication gate runs
+     Then publication is refused by name
+```
+````
+
+…is counted as execution evidence and refused for having no exit code. A
+specification block **can never** carry a test count or an exit code — that is
+what makes it a specification. The same applies to file excerpts and diff hunks,
+which legitimately carry no runner output.
+
+The perverse incentive is the problem: the only way to clear the check on such a
+block is to write an exit code above output that never came from a command,
+which is precisely the fabrication this gate exists to detect.
+
+**Suggested fix:** skip blocks whose fence language is a known non-transcript
+language (`gherkin`, `diff`, `json`, `yaml`, `markdown`), or only apply the
+check to blocks inside evidence-bearing sections / under a checked DoD item.
+
+### Defect 2 — the file-path signal regex omits `.mjs`
+
+Signal (ii) is:
+
+```
+([a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+\.(rs|py|ts|tsx|js|go|sh|sql|toml|yaml|json|proto|md)|\./)
+```
+
+`mjs` is absent, and `.mjs` does not match the `js` alternative because the
+literal `\.` must immediately precede `js`. In a build-free ESM repository —
+exactly what the framework's own downstream `research-lab` install is — a
+genuine, executed command line such as:
+
+```
+$ node scripts/selftest.mjs
+```
+
+scores only ONE signal (the `^\$ ` shell-prompt signal), so real terminal
+evidence is refused for not looking like terminal evidence. `cjs` is missing for
+the same reason.
+
+**Suggested fix:** add `mjs|cjs` to the alternation. Note the transition guard's
+own copy of this regex (`_c11_sig_iii_re` in `state-transition-guard.sh`) has
+the same omission, so both should move together — and they are already duplicated
+rather than shared, which is a third, smaller finding.
+
+### Why this was not worked around downstream
+
+The packet was set to `blocked` with the blocker named in `blockedReason`,
+rather than promoted to `done` by inventing signals. Recording the refusal
+honestly is the behaviour the gate is meant to produce; the defect is that it
+fires on artifacts that cannot possibly satisfy it.
+
+
 
 
 
