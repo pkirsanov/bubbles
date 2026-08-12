@@ -171,6 +171,22 @@ for scenario in scenarios:
                          f"scenario declares api-contract but asserts against '{surface}'. "
                          "A wire contract needs an externally observable response"))
 
+    # SCOPE-8. The shared-consumer half that a shared change most often breaks
+    # is the CONSUMER surface, so an internal observation cannot stand in for
+    # it: an attached hidden legacy node is not the visible current surface, and
+    # a manual renderer call is not the route that owns rendering.
+    if "shared-consumer" in trait_set:
+        if surface in {"hidden-dom", "internal-state"}:
+            findings.append((sid, "COHERENCE",
+                             f"scenario declares shared-consumer but asserts against "
+                             f"'{surface}'. A hidden legacy node cannot substitute for the "
+                             "visible current consumer surface"))
+        if entrypoint == "detached-renderer":
+            findings.append((sid, "COHERENCE",
+                             "scenario declares shared-consumer but enters through a "
+                             "detached renderer. A manual renderer invocation cannot "
+                             "substitute for the route that owns rendering"))
+
     # --- D. non-vacuity: the negative control matches the risk (SCOPE-7) ----
     # Ranked weakest to strongest. A negative control that is weaker than the
     # stakes has not shown the test is sensitive to what it claims.

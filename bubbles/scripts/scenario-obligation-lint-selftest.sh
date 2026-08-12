@@ -115,7 +115,7 @@ fi
 # Guards A4 against becoming a judgement threshold. A genuinely multi-trait
 # scenario must pass; only the maximal set is unambiguous enumeration.
 ALL8='"pure-calculation","user-visible-ui","api-contract","mutable-state","degraded-state","shared-consumer","dependency-path","responsive-accessible"'
-OBS8='{"trait":"pure-calculation","requiredProof":"x"},{"trait":"user-visible-ui","requiredProof":"x"},{"trait":"api-contract","requiredProof":"x"},{"trait":"mutable-state","requiredProof":"x"},{"trait":"degraded-state","requiredProof":"x"},{"trait":"shared-consumer","requiredProof":"x"},{"trait":"dependency-path","requiredProof":"x"},{"trait":"responsive-accessible","requiredProof":"x"}'
+OBS8='{"trait":"pure-calculation","requiredProof":"x"},{"trait":"user-visible-ui","requiredProof":"x"},{"trait":"api-contract","requiredProof":"x"},{"trait":"mutable-state","requiredProof":"x"},{"trait":"degraded-state","requiredProof":"x"},{"trait":"shared-consumer","requiredProof":"x","satisfiedBy":["parity:t/p.spec.ts","consumer-surface:t/c.spec.ts"]},{"trait":"dependency-path","requiredProof":"x"},{"trait":"responsive-accessible","requiredProof":"x"}'
 R="$(make_case p4 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"behaviorTraits\":[$ALL8],\"obligations\":[$OBS8]}]}")"
 run_lint "$R"
 if [[ "$RC" -eq 0 ]]; then
@@ -213,6 +213,41 @@ if [[ "$RC" -eq 0 ]]; then
   ok "P7 the cache-case requirement is scoped to cache-first mechanisms"
 else
   bad "P7 non-cache scoped" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- IMP-040 SCOPE-8: shared-consumer parity --------------------------------
+#
+# A11/A12 are the rule: BOTH halves are owed. P8 is the guard — a scenario that
+# declares both passes, so the rule cannot be satisfied by simply never using
+# the shared-consumer trait.
+
+SC_HEAD='"behaviorTraits":["shared-consumer"],"testMechanism":{"entrypoint":"production-route","inputOrigin":"seeded-store","assertionSurface":"visible-ui","dependencyPath":"not-applicable","productionOwners":["src/shared/client.ts"],"negativeControl":"x"}'
+
+# A11. only parity declared.
+R="$(make_case a11 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"integration\",$SC_HEAD,\"obligations\":[{\"trait\":\"shared-consumer\",\"requiredProof\":\"parity plus consumer surface\",\"satisfiedBy\":[\"parity:tests/shared/parity.spec.ts\"]}]}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'consumer-surface'; then
+  ok "A11 owner parity alone does not satisfy a shared-consumer scenario"
+else
+  bad "A11 parity only" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A12. only the consumer surface declared.
+R="$(make_case a12 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"integration\",$SC_HEAD,\"obligations\":[{\"trait\":\"shared-consumer\",\"requiredProof\":\"parity plus consumer surface\",\"satisfiedBy\":[\"consumer-surface:tests/ui/list.spec.ts\"]}]}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q "'parity:'"; then
+  ok "A12 a consumer-surface test alone does not satisfy shared-consumer"
+else
+  bad "A12 surface only" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P8. GUARD: both halves declared passes.
+R="$(make_case p8 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"integration\",$SC_HEAD,\"obligations\":[{\"trait\":\"shared-consumer\",\"requiredProof\":\"parity plus consumer surface\",\"satisfiedBy\":[\"parity:tests/shared/parity.spec.ts\",\"consumer-surface:tests/ui/list.spec.ts\"]}]}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P8 both parity and consumer-surface declared passes"
+else
+  bad "P8 both halves" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
 fi
 
 # --- U1. usage -------------------------------------------------------------

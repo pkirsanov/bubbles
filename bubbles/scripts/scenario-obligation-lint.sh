@@ -123,6 +123,19 @@ CACHE_FIRST_CASES = {
     "delta-changes-result",
 }
 
+# --- IMP-040 SCOPE-8: shared-consumer parity (COV-9, REG-8) -----------------
+#
+# When a feature publishes through a shared adapter, shell, client, serializer
+# or renderer, ONE proof is not enough. Owner parity shows the shared code
+# produces the same result for the same input and policy; it says nothing about
+# whether the consumer surface a user actually meets still renders it. A
+# consumer-surface assertion shows the opposite half. Certifying either alone
+# is how a shared change passes while a downstream surface is broken.
+SHARED_CONSUMER_PROOFS = {
+    "parity": "owner parity over the same input and policy",
+    "consumer-surface": "the current externally observable consumer surface",
+}
+
 findings = []
 declared = 0
 
@@ -228,6 +241,32 @@ for scenario in scenarios:
                          "cache-case in any obligation's satisfiedBy. Declare the applicable "
                          f"case(s) as 'cache-case:<token>' from: "
                          f"{', '.join(sorted(CACHE_FIRST_CASES))}"))
+
+    # --- E. shared-consumer parity (SCOPE-8) --------------------------------
+    if "shared-consumer" in trait_set:
+        shared_proofs = set()
+        for ob in obligations if isinstance(obligations, list) else []:
+            if not isinstance(ob, dict) or ob.get("trait") != "shared-consumer":
+                continue
+            for entry in ob.get("satisfiedBy") or []:
+                if not isinstance(entry, str):
+                    continue
+                for kind in SHARED_CONSUMER_PROOFS:
+                    if entry.startswith(kind + ":"):
+                        shared_proofs.add(kind)
+
+        missing_proofs = sorted(set(SHARED_CONSUMER_PROOFS) - shared_proofs)
+        if missing_proofs:
+            detail = "; ".join(f"'{k}:' — {SHARED_CONSUMER_PROOFS[k]}" for k in missing_proofs)
+            findings.append((sid, "SHARED-CONSUMER",
+                             "a shared-consumer scenario owes BOTH proofs; the "
+                             f"shared-consumer obligation names no {detail}"))
+
+        if isinstance(mech, dict) and not (mech.get("productionOwners") or []):
+            findings.append((sid, "SHARED-CONSUMER",
+                             "a shared-consumer scenario names no productionOwners. The "
+                             "controlling code path must be recorded as repository-relative "
+                             "paths when no code-index adapter is configured"))
 
 if findings:
     print("scenario-obligation-lint: FAIL — obligation matrix is not coherent (COV-9)", file=sys.stderr)

@@ -193,6 +193,31 @@ high-risk scenario may declare a weaker mechanism when it also declares
 distinguishable from a silent downgrade; the resolver refuses a *broken* adapter
 config loudly for the same reason, so a misspelling cannot buy that exemption.
 
+## Shared-Consumer Parity (IMP-040 SCOPE-8 / COV-9, REG-8)
+
+When a feature publishes through a shared adapter, shell, client, serializer or
+renderer, **one proof is not enough**. A `shared-consumer` scenario owes both,
+declared in its obligation's `satisfiedBy`:
+
+| Prefix | Proof |
+|---|---|
+| `parity:` | Owner parity over the same input and policy |
+| `consumer-surface:` | A test of the current externally observable consumer surface |
+
+Parity shows the shared code produces the same result for the same input; it
+says nothing about whether the surface a user actually meets still renders it.
+Certifying either half alone is how a shared change passes while a downstream
+surface is broken.
+
+An attached hidden legacy node cannot substitute for the visible current
+surface, and a manual renderer invocation cannot substitute for the route that
+owns rendering — a `shared-consumer` scenario asserting `hidden-dom` /
+`internal-state`, or entering through a `detached-renderer`, is refused.
+
+The planner identifies the controlling code path, using the code-index adapter
+when one is configured. Without an index it records explicit repository-relative
+owner paths in `productionOwners`, which a shared-consumer scenario must have.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

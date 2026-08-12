@@ -233,6 +233,32 @@ else
   bad "P7 tier inert" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
 fi
 
+# --- IMP-040 SCOPE-8: shared-consumer surface substitution ------------------
+
+R="$(make_case a13 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"integration","behaviorTraits":["shared-consumer"],"testMechanism":{"entrypoint":"production-route","inputOrigin":"seeded-store","assertionSurface":"hidden-dom","dependencyPath":"not-applicable","productionOwners":["a.ts"],"negativeControl":"x"}}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'hidden legacy node'; then
+  ok "A13 a hidden node cannot substitute for the consumer surface"
+else
+  bad "A13 hidden consumer" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+R="$(make_case a14 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"integration","behaviorTraits":["shared-consumer"],"testMechanism":{"entrypoint":"detached-renderer","inputOrigin":"seeded-store","assertionSurface":"visible-ui","dependencyPath":"not-applicable","productionOwners":["a.ts"],"negativeControl":"x"}}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'route that owns rendering'; then
+  ok "A14 a manual renderer call cannot substitute for the owning route"
+else
+  bad "A14 detached consumer" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+R="$(make_case p8 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"integration","behaviorTraits":["shared-consumer"],"testMechanism":{"entrypoint":"production-route","inputOrigin":"seeded-store","assertionSurface":"visible-ui","dependencyPath":"not-applicable","productionOwners":["a.ts"],"negativeControl":"x"}}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P8 a shared-consumer scenario on the real route and surface passes"
+else
+  bad "P8 shared consumer ok" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
 # --- U1. usage -------------------------------------------------------------
 set +e
 bash "$TARGET" >/dev/null 2>&1; u1=$?

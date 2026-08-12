@@ -39,17 +39,6 @@
 
 ## Proposal
 
-### SCOPE-8 — Shared-consumer parity (COV-9, REG-8)
-
-When a feature publishes through a shared adapter, shell, client, serializer, or renderer, require both:
-
-- owner parity over the same input and policy.
-- a test of the current externally observable consumer surface.
-
-An attached hidden legacy node cannot substitute for the visible current surface. A manual renderer invocation cannot substitute for the route that owns rendering.
-
-The planner must identify the controlling code path. It should use the optional code-index adapter when configured. Without an index, it records explicit repository-relative owner paths.
-
 ### SCOPE-9 — Source-to-scenario impact and revalidation (REG-8)
 
 Add `implementationRefs` to scenario contracts. Populate them from the owning code path and consumer surfaces.
