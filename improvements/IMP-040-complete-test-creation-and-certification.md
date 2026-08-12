@@ -39,54 +39,6 @@
 
 ## Proposal
 
-### SCOPE-1 — Test inventory adapter contract (COV-8, COV-12)
-
-Add a generic test inventory adapter to `.github/bubbles-project.yaml`.
-
-```yaml
-testDiscovery:
-  adapter: command
-  command: scripts/bubbles-test-inventory
-  timeoutSeconds: 120
-```
-
-The command emits one versioned JSON document:
-
-```json
-{
-  "contractVersion": "bubbles-test-inventory/v1",
-  "tests": [
-    {
-      "id": "runner-stable-id",
-      "file": "tests/example",
-      "title": "exact test title",
-      "category": "e2e-ui",
-      "runner": "project-runner",
-      "tags": ["SCN-001-001"]
-    }
-  ]
-}
-```
-
-Projects may implement the adapter with any language or runner. Bubbles validates only this output contract. An explicit `adapter: none` remains valid for projects without titled tests, but it cannot certify title-based linked references.
-
-### SCOPE-2 — Exact scenario test resolution (COV-8)
-
-Add a structured resolver for every `scenario-manifest.json` linked test.
-
-The resolver must:
-
-- support the current `path#exact title` form.
-- support a structured future form without breaking existing packets.
-- resolve the file under the bound repository root.
-- resolve exactly one test from the inventory adapter.
-- reject missing and ambiguous titles.
-- compare `requiredTestType` with the discovered category.
-- reject a unit test presented as required live-system coverage.
-- emit scenario ID, reference, and mismatch reason.
-
-Wire the resolver into G057 and traceability. Field counts remain diagnostics, not satisfiers.
-
 ### SCOPE-3 — Scenario obligation matrix (COV-9)
 
 Extend planning with a behavior-derived obligation matrix. Each active scenario records the applicable obligations below.

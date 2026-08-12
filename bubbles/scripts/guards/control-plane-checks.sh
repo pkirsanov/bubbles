@@ -23,6 +23,12 @@
 # in guard-lib.sh). Mirrors the G094 grandfather pattern.
 control_plane_policy_cutoff="2026-06-18"
 
+# IMP-040 SCOPE-2 / COV-8. Exact linked-test resolution activates for scenario
+# packets created on or after this date. A legacy untouched spec keeps the old
+# field-count behaviour so a framework upgrade never retro-breaks a closed
+# packet; a changed or recertified spec adopts the current contract.
+scenario_resolution_cutoff="2026-08-12"
+
 # =============================================================================
 # CHECK 3A: Policy Snapshot Provenance (Gate G055)
 # =============================================================================
@@ -144,6 +150,51 @@ if [[ "$gherkin_scenario_count" -gt 0 ]]; then
       fail "scenario-manifest.json is missing linkedTests entries (Gate G057)"
     else
       pass "scenario-manifest.json records linkedTests"
+    fi
+
+    # The count above is a DIAGNOSTIC, never the satisfier. It only proves the
+    # string appears; BUG-030 certified three titles that existed in no file.
+    # Resolution is what satisfies G057.
+    #
+    # ADVISORY BY DEFAULT, per the IMP-040 rollout: run resolution on existing
+    # packets and report, fix the stale links that surfaces, and only then turn
+    # on blocking. A repo opts in with `scenarioResolution: block` in
+    # .github/bubbles-project.yaml. This mirrors effective-bundle-budget.sh,
+    # which uses the same advisory/opt-in-block shape for the same reason:
+    # activating a new gate as blocking against a corpus it has never run on
+    # converts every pre-existing stale link into a build break.
+    scenario_resolver="$SCRIPT_DIR/scenario-test-resolve.sh"
+    if [[ -x "$scenario_resolver" ]]; then
+      # Date-only grandfather, deliberately NOT policy_spec_grandfathered: that
+      # helper enforces whenever a policySnapshot exists, which couples this
+      # activation to an unrelated field. Age is the only relevant question.
+      scenario_created_at="$(grep -Eo '"createdAt"[[:space:]]*:[[:space:]]*"[^"]+"' "$state_file" 2>/dev/null \
+        | head -n1 | sed -E 's/.*"createdAt"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' || true)"
+      scenario_created_date="${scenario_created_at:0:10}"
+      if [[ -n "$scenario_created_date" && "$scenario_created_date" < "$scenario_resolution_cutoff" ]]; then
+        pass "linked-test resolution skipped — packet created $scenario_created_date, before the $scenario_resolution_cutoff activation (grandfathered)"
+      else
+        scenario_resolution_mode="advisory"
+        # Relative, matching the PROJECT_CONFIG convention the rest of the guard
+        # uses: the guard runs with CWD at the repository root.
+        for scenario_cfg in ".github/bubbles-project.yaml" "bubbles-project.yaml"; do
+          [[ -f "$scenario_cfg" ]] || continue
+          if grep -qE '^[[:space:]]*scenarioResolution:[[:space:]]*block[[:space:]]*$' "$scenario_cfg"; then
+            scenario_resolution_mode="block"
+          fi
+          break
+        done
+        scenario_resolve_output=""
+        if scenario_resolve_output="$(bash "$scenario_resolver" "$feature_dir" --quiet 2>&1)"; then
+          pass "every linked test resolves to a real file and title (Gate G057)"
+        elif [[ "$scenario_resolution_mode" == "block" ]]; then
+          fail "linked tests do not resolve (Gate G057)"
+          [[ -n "$scenario_resolve_output" ]] && printf '%s\n' "$scenario_resolve_output"
+        else
+          warn "linked tests do not resolve — ADVISORY until scenarioResolution: block is set (Gate G057)"
+          [[ -n "$scenario_resolve_output" ]] && printf '%s\n' "$scenario_resolve_output"
+        fi
+      fi
     fi
 
     if [[ "$manifest_evidence_count" -eq 0 ]]; then
