@@ -97,6 +97,53 @@ write_session "$root3" '{
 rc3="$(run_guard "$root3")"
 assert_exit "aggregate 13 > cap 10 blocks" 1 "$rc3"
 
+# --- Case 4: context volume over cap while every EVENT cap holds ---------
+# The regression this dimension exists for (IMP-039 SCOPE-3): a session well
+# inside the iteration, wall-clock, and tool-call caps still carrying enough
+# retained tool output to dominate every later request. Without the byte
+# dimension this session passes.
+root4="$(stage_root case4)"
+write_session "$root4" '{
+  "sessionBudget": {
+    "maxTotalConvergenceIterations": 100,
+    "maxWallClockMinutes": null,
+    "maxToolCalls": 500,
+    "maxSingleToolResultBytes": 50000,
+    "maxCumulativeToolResultBytes": 250000
+  },
+  "toolCallCount": 12,
+  "convergenceLoops": [ { "specDir": "specs/900-a", "agent": "bubbles.workflow", "iterationCount": 2 } ]
+}'
+mkdir -p "$root4/.specify/runtime"
+{
+  printf '%s\n' '{"cmd":"a","stdoutBytes":120000,"stderrBytes":0}'
+  printf '%s\n' '{"cmd":"b","stdoutBytes":200000,"stderrBytes":0}'
+} > "$root4/.specify/runtime/tool-calls.jsonl"
+rc4="$(run_guard "$root4")"
+assert_exit "retained tool bytes over cap blocks while event caps hold" 1 "$rc4"
+
+# --- Case 5: the same volume with the byte caps unset stays a no-op ------
+# Proves case 4 is caused by the cap, not by the presence of a tool-call log.
+root5="$(stage_root case5)"
+write_session "$root5" '{
+  "sessionBudget": {
+    "maxTotalConvergenceIterations": 100,
+    "maxWallClockMinutes": null,
+    "maxToolCalls": 500,
+    "maxSingleToolResultBytes": null,
+    "maxCumulativeToolResultBytes": null
+  },
+  "toolCallCount": 12,
+  "convergenceLoops": [ { "specDir": "specs/900-a", "agent": "bubbles.workflow", "iterationCount": 2 } ]
+}'
+mkdir -p "$root5/.specify/runtime"
+{
+  printf '%s\n' '{"cmd":"a","stdoutBytes":120000,"stderrBytes":0}'
+  printf '%s\n' '{"cmd":"b","stdoutBytes":200000,"stderrBytes":0}'
+} > "$root5/.specify/runtime/tool-calls.jsonl"
+rc5="$(run_guard "$root5")"
+assert_exit "identical volume with byte caps unset is a no-op" 0 "$rc5"
+
 # --- Verdict -------------------------------------------------------------
 echo ""
 printf 'test_22_session_cap_enforcement: %d passed, %d failed\n' "$PASS_COUNT" "$FAIL_COUNT"

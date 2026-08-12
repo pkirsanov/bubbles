@@ -51,3 +51,11 @@ codeIndex:
   # and `freshness` unsupported rather than approximating them, so
   # test-impact-shadow degrades honestly here instead of proposing a subset.
   adapter: codebase-memory
+
+# Host-usage provider (opt-in; framework default is `none`)
+usage:
+  # `none` here is deliberate, not an oversight. The measured records live on
+  # the CLIENT machine and this is a remote server install, so `vscode-copilot`
+  # would find nothing and report `unmeasured` anyway. Declaring `none` says the
+  # same thing without implying a provider is working.
+  adapter: none

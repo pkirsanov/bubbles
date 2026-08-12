@@ -39,7 +39,11 @@ shell redirection in the working tree.
 
 ---
 
-## 2. No Truncating Command Output (ABSOLUTE)
+## 2. Never Discard Output; Bound What Re-Enters Context (ABSOLUTE)
+
+Two separate obligations live here. Keep them apart.
+
+### 2a. Produce every line — never filter a command through a discarding pipe
 
 **FORBIDDEN:** Filtering, truncating, or limiting command output with pipes.
 
@@ -55,12 +59,10 @@ command 2>&1 | head
 bash bubbles/scripts/cli.sh framework-validate 2>&1 | tail -30
 ```
 
-**REQUIRED:** Always capture and display the FULL unfiltered output of every
-command.
+**REQUIRED:** Run the command unfiltered so every line is produced and captured.
 
 ```bash
-# ✅ REQUIRED — full output, no filters
-bash bubbles/scripts/cli.sh framework-validate
+# ✅ REQUIRED — no filters in the pipeline
 bash bubbles/scripts/cli.sh doctor
 bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
 
@@ -69,13 +71,32 @@ grep -rn "TODO" bubbles/scripts/
 grep -rnE 'G[0-9]{3}' bubbles/registry/gates.yaml
 ```
 
-**Why:** Truncated output hides errors, warnings, and context critical for
-debugging and evidence. The Bubbles Execution Evidence Standard requires ≥10
-lines of raw terminal output — truncation risks hiding the lines that matter.
+**Why:** A discarding pipe destroys the line that mattered. The target of this
+rule is an agent quietly dropping a failure it did not want to see.
 
 **Exception:** Using `grep` to SEARCH files (not to filter a command's
 stdout/stderr) is allowed. The prohibition is on piping a command's output
 through filters that discard lines.
+
+### 2b. Above 40 lines, capture instead of paste
+
+Capturing every line does NOT mean replaying the whole transcript into the model
+context on this request and every later one. Above 40 lines, route the command
+through the capture tool:
+
+```bash
+# ✅ REQUIRED when output exceeds 40 lines
+bash bubbles/scripts/evidence-capture.sh --label "framework-validate" -- \
+  bash bubbles/scripts/cli.sh framework-validate
+```
+
+The emitted block carries the command, the exit code, the line count, a sha256
+over every line produced, the failure-shaped lines, and the first and last 20
+lines. That is STRONGER than a pasted transcript, not weaker: the hash is
+re-derivable with `--verify`, and a paste could never be checked at all.
+
+At or below 40 lines, show the output as it came back — capture buys nothing
+there.
 
 ---
 
@@ -161,7 +182,7 @@ transcript cannot be retracted, so rotation is the only safe remedy.
 | Category | FORBIDDEN | REQUIRED |
 |----------|-----------|----------|
 | **File writes** | `>`, `>>`, `tee`, heredoc-to-file, pipe-to-file | IDE file tools (create_file, replace_string_in_file) |
-| **Output filtering** | `head`, `tail`, `awk 'NR<=N'`, `sed -n`, pipe-to-grep on commands | Full unfiltered output from every command |
+| **Output filtering** | `head`, `tail`, `awk 'NR<=N'`, `sed -n`, pipe-to-grep on commands | Run unfiltered; above 40 lines record via `evidence-capture.sh` |
 | **Build/test/lint** | `./bubbles.sh`, direct `npm`/`cargo`/`docker` | `bash bubbles/scripts/cli.sh <command>` |
 | **Secret values** | `echo "$SECRET"`, `${SECRET:-mask}` (expands to value when set), `set -x`/`env`/`printenv` around secrets | `${SECRET:+set}` / `[ -n "$SECRET" ]` presence checks |
 

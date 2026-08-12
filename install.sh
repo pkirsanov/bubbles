@@ -696,6 +696,7 @@ fi
 for legacy_pair in \
   "agents.instructions.md:bubbles-agents.instructions.md" \
   "skills.instructions.md:bubbles-skills.instructions.md" \
+  "wsl-macos-compatibility.instructions.md:bubbles-wsl-macos-compatibility.instructions.md" \
   "docker-lifecycle-governance.instructions.md:bubbles-docker-lifecycle-governance.instructions.md"; do
   legacy_name=${legacy_pair%%:*}
   namespaced_name=${legacy_pair##*:}
@@ -1046,6 +1047,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
   for legacy_pair in \
     "agents.instructions.md:bubbles-agents.instructions.md" \
     "skills.instructions.md:bubbles-skills.instructions.md" \
+    "wsl-macos-compatibility.instructions.md:bubbles-wsl-macos-compatibility.instructions.md" \
     "docker-lifecycle-governance.instructions.md:bubbles-docker-lifecycle-governance.instructions.md"; do
     legacy_name=${legacy_pair%%:*}
     namespaced_name=${legacy_pair##*:}

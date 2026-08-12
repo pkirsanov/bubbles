@@ -610,9 +610,9 @@ gates:
     sinceDate: "2026-06-04"
     name: context_compaction_discipline_gate
     classification: businessInvariant
-    enforcedBy: [ script:bubbles/scripts/compaction-discipline-guard-selftest.sh, script:bubbles/scripts/compaction-discipline-guard.sh, script:bubbles/scripts/context-compactor.sh ]
+    enforcedBy: [ script:bubbles/scripts/compaction-discipline-guard-selftest.sh, script:bubbles/scripts/compaction-discipline-guard.sh, script:bubbles/scripts/context-compactor.sh, script:bubbles/scripts/state-snapshot.sh ]
     description: >-
-      BLOCKING gate. Enforces the in-loop compaction rule from `agents/bubbles_shared/operating-baseline.md` → "Context Compaction Discipline": orchestrator agents (bubbles.workflow, bubbles.goal, bubbles.iterate, bubbles.sprint) MUST keep the trailing transition-packet log inside per-spec budgets. The eligible slice — all envelopes for a spec EXCEPT the latest 2 (kept raw on purpose) — MUST satisfy BOTH `count <= 3` AND `cumulative rawSizeBytes <= 8192` UNLESS each over-budget envelope carries a `compactedAt` timestamp. Thresholds are framework constants (NOT workflows.yaml-configurable). Enforced mechanically by `bubbles/scripts/compaction-discipline-guard.sh`, which reads `.specify/memory/bubbles.session.json` `envelopesReceived[]` (schema `{specDir, agent, receivedAt, rawSizeBytes, incomingMessage, compactedAt, rawPointer}`). The guard exits 0 (pass), 1 (violation — count or size breach with uncompacted eligible entries), or 2 (malformed/missing structured fields). State-transition-guard.sh invokes this guard as Check 24. Exceeding either threshold without compaction MUST emit a `blocked` RESULT-ENVELOPE with finding `G083`; remediate by running `bubbles/scripts/context-compactor.sh` against the over-budget envelopes (it stamps `compactedAt` additively). Hermetic selftest: `bubbles/scripts/compaction-discipline-guard-selftest.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
+      BLOCKING gate. Enforces the in-loop compaction rule from `agents/bubbles_shared/operating-baseline.md` → "Context Compaction Discipline": orchestrator agents (bubbles.workflow, bubbles.goal, bubbles.iterate, bubbles.sprint) MUST keep the trailing transition-packet log inside per-spec budgets. The eligible slice — all envelopes for a spec EXCEPT the latest 2 (kept raw on purpose) — MUST satisfy BOTH `count <= 3` AND `cumulative rawSizeBytes <= 8192` UNLESS each over-budget envelope carries a `compactedAt` timestamp. Thresholds are framework constants (NOT workflows.yaml-configurable). Enforced mechanically by `bubbles/scripts/compaction-discipline-guard.sh`, which reads `.specify/memory/bubbles.session.json` `envelopesReceived[]` (schema `{specDir, agent, receivedAt, rawSizeBytes, incomingMessage, compactedAt, rawPointer}`). SECOND OBLIGATION (IMP-039 SCOPE-4): the rules above govern the repository LEDGER only, so the gate could pass on every envelope while the live model transcript grew monotonically. The guard therefore ALSO checks the session's `contextBoundary` object `{kind, checkpointId, at}`, where `kind` is `host-checkpoint` (a real host compaction checkpoint; `checkpointId` REQUIRED, because a checkpoint claim with no id cannot be checked against anything), `fresh-context` (a new specialist context carrying only the persisted envelope), or `unavailable` (the host exposes no compaction primitive). A malformed boundary is ALWAYS a finding. An ABSENT boundary is a finding only when the session actually compacted at least one envelope, so an upgrade never retroactively blocks a session that never exercised compaction. `unavailable` is always declarable, so remediation is never blocked by the host: declaring unavailability is honest, passing while the transcript grows is not. The boundary is recorded at a phase transition via `bubbles/scripts/state-snapshot.sh --context-boundary <kind>[:<checkpointId>]`. The guard exits 0 (pass), 1 (violation — count or size breach with uncompacted eligible entries, OR a missing/malformed live-transcript boundary), or 2 (malformed/missing structured fields). State-transition-guard.sh invokes this guard as Check 24. Exceeding either threshold without compaction MUST emit a `blocked` RESULT-ENVELOPE with finding `G083`; remediate by running `bubbles/scripts/context-compactor.sh` against the over-budget envelopes (it stamps `compactedAt` additively). Hermetic selftest: `bubbles/scripts/compaction-discipline-guard-selftest.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
   G084:
     since: "5.2.0"
     sinceDate: "2026-06-04"
@@ -973,7 +973,7 @@ gates:
     retireWhen: { minTier: sonnet-class, metric: process-violation-rate, threshold: 0.02, window: 20 }
     enforcedBy: [ script:bubbles/scripts/session-cap-guard-selftest.sh, script:bubbles/scripts/session-cap-guard.sh ]
     description: >-
-      BLOCKING gate. Mechanically enforces the IMP-003 `sessionBudget` aggregate safety caps for a whole goal/sprint session — the AGGREGATE sibling of Gate G082. Where G082 caps convergence iterations PER (specDir, agent) using `maxConvergenceIterations` from `bubbles/workflows.yaml`, G128 caps the AGGREGATE usage across the WHOLE session (every spec, every agent) using a `sessionBudget` object recorded in `.specify/memory/bubbles.session.json` with three dimensions: `maxTotalConvergenceIterations` (aggregate sum of `convergenceLoops[].iterationCount`), `maxWallClockMinutes` (earliest → latest `turnSnapshots[].timestamp`, in minutes), and `maxToolCalls` (aggregate `toolCallCount` counter). DEFAULT-OFF for every existing repo: if the session file has no `sessionBudget`, or ALL THREE caps are null/absent, the guard exits 0 and nothing is enforced. A dimension whose cap is null is not enforced; a dimension whose cap is set but whose usage data is absent (no `turnSnapshots[]`, no `toolCallCount`) is skipped — you cannot breach what you cannot measure. Only when a non-null cap is present AND its aggregate is measurable does the guard compare them. RFC3339 timestamps are parsed with jq's `fromdateiso8601` (not the system `date`), so wall-clock math is identical on GNU (WSL/Linux) and BSD (macOS) userland. Enforced mechanically by `bubbles/scripts/session-cap-guard.sh` (exit 0 = no active budget / no cap exceeded; exit 1 = an active aggregate cap exceeded — stderr names the breached dimension(s) and observed-vs-cap; exit 2 = unparseable session.json / non-integer cap or counter / bad usage). State-transition-guard.sh invokes this guard as Check 40 (a NO-OP when no budget is recorded). Exceeding a cap MUST emit a `blocked` RESULT-ENVELOPE with finding `G128` and STOP the session (no further specs/scopes). There is NO `--skip`/`--force`/`--ignore` bypass (matches G082). Hermetic selftest: `bubbles/scripts/session-cap-guard-selftest.sh`. Persistent regression: `tests/regression/test_22_session_cap_enforcement.sh`. Wired into `bubbles/scripts/framework-validate.sh` (selftest + live guard). Cross-reference: G082 (per-spec convergence cap) — G082 keeps a single spec's loop honest; G128 keeps the whole session's aggregate honest. Reference: improvements/IMP-003-autonomy-dial-and-safety-caps.md (SCOPE-2).
+      BLOCKING gate. Mechanically enforces the IMP-003 `sessionBudget` aggregate safety caps for a whole goal/sprint session — the AGGREGATE sibling of Gate G082. Where G082 caps convergence iterations PER (specDir, agent) using `maxConvergenceIterations` from `bubbles/workflows.yaml`, G128 caps the AGGREGATE usage across the WHOLE session (every spec, every agent) using a `sessionBudget` object recorded in `.specify/memory/bubbles.session.json` with seven dimensions: `maxTotalConvergenceIterations` (aggregate sum of `convergenceLoops[].iterationCount`), `maxWallClockMinutes` (earliest → latest `turnSnapshots[].timestamp`, in minutes), `maxToolCalls` (aggregate `toolCallCount` counter), and the four context-volume dimensions added by IMP-039 SCOPE-3: `maxSingleToolResultBytes` and `maxCumulativeToolResultBytes` (largest and total retained tool result, measured from `stdoutBytes` + `stderrBytes` in `.specify/runtime/tool-calls.jsonl`, no adapter required), plus `maxPromptTokensPerRequest` and `maxCumulativePromptTokens` (measurable ONLY through a configured usage adapter under `bubbles/adapters/usage/`, default `none`). The first three count EVENTS; the last four bound the VOLUME of text a session carries forward, which is the blind spot that let a session hold every event cap while replaying megabytes of retained output into each later request. DEFAULT-OFF for every existing repo: if the session file has no `sessionBudget`, or EVERY cap is null/absent, the guard exits 0 and nothing is enforced. A dimension whose cap is null is not enforced; a dimension whose cap is set but whose usage data is absent (no `turnSnapshots[]`, no `toolCallCount`, no tool-call log, no usage adapter) is skipped — you cannot breach what you cannot measure, and a token dimension is never estimated. Only when a non-null cap is present AND its aggregate is measurable does the guard compare them. RFC3339 timestamps are parsed with jq's `fromdateiso8601` (not the system `date`), so wall-clock math is identical on GNU (WSL/Linux) and BSD (macOS) userland. Enforced mechanically by `bubbles/scripts/session-cap-guard.sh` (exit 0 = no active budget / no cap exceeded; exit 1 = an active aggregate cap exceeded — stderr names the breached dimension(s) and observed-vs-cap; exit 2 = unparseable session.json / non-integer cap or counter / bad usage). State-transition-guard.sh invokes this guard as Check 40 (a NO-OP when no budget is recorded). Exceeding a cap MUST emit a `blocked` RESULT-ENVELOPE with finding `G128` and STOP the session (no further specs/scopes). There is NO `--skip`/`--force`/`--ignore` bypass (matches G082). Hermetic selftest: `bubbles/scripts/session-cap-guard-selftest.sh`. Persistent regression: `tests/regression/test_22_session_cap_enforcement.sh`. Wired into `bubbles/scripts/framework-validate.sh` (selftest + live guard). Cross-reference: G082 (per-spec convergence cap) — G082 keeps a single spec's loop honest; G128 keeps the whole session's aggregate honest. Reference: improvements/IMP-003-autonomy-dial-and-safety-caps.md (SCOPE-2), IMP-039 SCOPE-3 (context-volume dimensions).
 
   # ──────────────────────────────────────────────────────────────────────────
   # DOMAIN-INVARIANT CORRESPONDENCE GATE (G130)
@@ -1408,7 +1408,11 @@ metrics:
     # than any specialist. (IMP-027 SCOPE-6 / COST-1.)
     - bundleCostProxy
     # Dimensions explicitly NOT tracked (not measurable):
-    # - tokenCount            # Not exposed by VS Code Copilot API
+    # - tokenCount            # Not exposed by the VS Code Copilot API; readable
+    #                         # ONLY through a configured usage adapter
+    #                         # (bubbles/adapters/usage/, default none). With no
+    #                         # adapter every surface reports `unmeasured`;
+    #                         # deriving a count any other way is fabrication.
     # - dollarCost            # Derived from unknown tokens = fabricated
     # - thinkingTime          # No visibility into model inference
     # - agentEfficiency       # No meaningful denominator
@@ -1968,6 +1972,52 @@ executionOptions:
       type: integer
       default: null
       meaning: Aggregate tool-call budget for the whole session. null = unbounded (default, opt-in). When non-null, mechanically enforced by Gate G128 (session-cap-guard.sh).
+    # ── Context-volume dimensions (IMP-039 SCOPE-3) ──
+    # The three caps above count events, not text. A session can hold all of
+    # them and still replay megabytes of retained tool output into every later
+    # request. These four cap the volume itself. All default null, so every
+    # existing repository keeps the current no-op posture.
+    # Suggested opt-in starting values, derived from the measured session behind
+    # IMP-039 rather than chosen for roundness: 50000 / 250000 / 220000 / 1000000.
+    # That session exceeded three of the four.
+    maxSingleToolResultBytes:
+      type: integer
+      default: null
+      meaning: Cap on the largest SINGLE retained tool result, in bytes. Measured from .specify/runtime/tool-calls.jsonl (stdoutBytes + stderrBytes per record); needs no usage adapter. null = unbounded (default, opt-in). Enforced by Gate G128.
+    maxCumulativeToolResultBytes:
+      type: integer
+      default: null
+      meaning: Cap on the SUM of all retained tool results for the session, in bytes. Same measurement source as maxSingleToolResultBytes. null = unbounded (default, opt-in). Enforced by Gate G128.
+    maxPromptTokensPerRequest:
+      type: integer
+      default: null
+      meaning: Cap on the largest single request's prompt tokens. Measurable ONLY through a configured usage adapter (bubbles/adapters/usage/, default none); with no adapter the dimension is skipped rather than estimated. null = unbounded (default, opt-in). Enforced by Gate G128.
+    maxCumulativePromptTokens:
+      type: integer
+      default: null
+      meaning: Cap on total prompt tokens across the session. Same adapter requirement as maxPromptTokensPerRequest — skipped when unmeasurable, never guessed. null = unbounded (default, opt-in). Enforced by Gate G128.
+
+  # ── Live-transcript boundary (IMP-039 SCOPE-4) ──
+  # Recorded on .specify/memory/bubbles.session.json by
+  # `state-snapshot.sh --context-boundary <kind>[:<checkpointId>]` at each phase
+  # transition, and checked by Gate G083. sessionBudget bounds how much a session
+  # may carry; this records that the orchestrator actually reached a boundary.
+  # Compacting the ledger while the model transcript keeps growing is the exact
+  # failure it exists to catch.
+  contextBoundary:
+    kind:
+      type: enum
+      values: [ host-checkpoint, fresh-context, unavailable ]
+      default: null
+      meaning: host-checkpoint = a real host compaction checkpoint was taken (checkpointId REQUIRED). fresh-context = the next specialist runs in a new context carrying only the persisted envelope. unavailable = the host exposes no compaction primitive; declare it and start a fresh specialist context. Declaring unavailability is honest; passing while the transcript grows is not.
+    checkpointId:
+      type: string
+      default: null
+      meaning: Host checkpoint identifier. REQUIRED when kind is host-checkpoint — a checkpoint claim with no id cannot be checked against anything, which is the shape a fabricated boundary takes. null for the other kinds.
+    at:
+      type: string
+      default: null
+      meaning: RFC3339 timestamp at which the boundary was reached. Written by state-snapshot.sh from the turn timestamp.
 
   defaultPolicyBehavior:
     scenarioTddDefault: scenario-first

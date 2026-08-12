@@ -37,14 +37,14 @@ Corroborating (grep-derived, advisory) numbers:
 | Gate | Name | Enforced By (declared) | # Modes | state-transition-guard | framework-validate scripts | CI |
 | --- | --- | --- | --- | --- | --- | --- |
 | G001 | artifact_gate | `mode-required` | 55 | — | 15 | — |
-| G002 | scope_definition_gate | `mode-required` | 23 | — | 7 | — |
+| G002 | scope_definition_gate | `mode-required` | 23 | — | 8 | — |
 | G003 | test_integrity_gate | `mode-required` | 25 | — | 7 | — |
 | G004 | test_execution_gate | `mode-required` | 25 | — | 2 | — |
 | G005 | evidence_gate | `mode-required` | 25 | — | 3 | — |
 | G006 | docs_sync_gate | `mode-required` | 46 | — | 1 | — |
 | G007 | validation_gate | `mode-required` | 48 | — | 2 | — |
 | G008 | audit_gate | `mode-required` | 42 | — | 1 | — |
-| G009 | chaos_gate | `mode-required` | 26 | — | 3 | — |
+| G009 | chaos_gate | `mode-required` | 26 | — | 4 | — |
 | G010 | user_validation_gate | `mode-required` | 31 | — | 1 | — |
 | G011 | session_gate | `mode-required` | 55 | — | — | — |
 | G012 | final_promotion_gate | `mode-required` | 55 | — | — | — |
@@ -65,7 +65,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G028 | implementation_reality_scan_gate | `guard-check:16` | 23 | Check 16 | 6 | guard |
 | G029 | integration_completeness_gate | `script:bubbles/scripts/capability-consumer-freshness.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 23 | — | 3 | — |
 | G031 | findings_artifact_update_gate | `mode-required` | 9 | — | 1 | — |
-| G032 | business_analysis_gate | `mode-required` | 4 | — | — | — |
+| G032 | business_analysis_gate | `mode-required` | 4 | — | 1 | — |
 | G033 | design_readiness_gate | `mode-required` | 22 | — | — | — |
 | G034 | security_gate | `script:bubbles/scripts/security-gate.sh`, `behavioral:bubbles.security` | 22 | — | 4 | — |
 | G035 | vertical_slice_gate | `mode-required` | 22 | — | 1 | — |
@@ -108,7 +108,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G080 | trace_contract_evidence_gate | `script:bubbles/scripts/trace-contract-guard.sh` | 0 | — | 1 | — |
 | G081 | build_once_deploy_many_integrity_gate | `mode-required` | 3 | — | — | — |
 | G082 | convergence_cap_enforcement_gate | `script:bubbles/scripts/convergence-cap-guard-selftest.sh`, `script:bubbles/scripts/convergence-cap-guard.sh` | 0 | Check 23 | 5 | guard |
-| G083 | context_compaction_discipline_gate | `script:bubbles/scripts/compaction-discipline-guard-selftest.sh`, `script:bubbles/scripts/compaction-discipline-guard.sh`, `script:bubbles/scripts/context-compactor.sh` | 0 | Check 24 | 3 | guard |
+| G083 | context_compaction_discipline_gate | `script:bubbles/scripts/compaction-discipline-guard-selftest.sh`, `script:bubbles/scripts/compaction-discipline-guard.sh`, `script:bubbles/scripts/context-compactor.sh`, `script:bubbles/scripts/state-snapshot.sh` | 0 | Check 24 | 5 | guard |
 | G084 | pre_existing_deferral_block_gate | `script:bubbles/scripts/pre-existing-deferral-guard-selftest.sh`, `script:bubbles/scripts/pre-existing-deferral-guard.sh` | 0 | Check 25 | 2 | guard |
 | G085 | framework_dogfood_evidence_gate | `guard-check:26` | 0 | Check 26 | 6 | guard |
 | G086 | orchestrator_persistence_lint_gate | `script:bubbles/scripts/orchestrator-persistence-lint-selftest.sh`, `script:bubbles/scripts/orchestrator-persistence-lint.sh` | 0 | Check 27 | 2 | guard |
@@ -182,7 +182,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G079 | impact_aware_validation_plan_gate | — | — | — | — |
 | G080 | trace_contract_evidence_gate | — | 1 | — | observability-check.sh |
 | G082 | convergence_cap_enforcement_gate | Check 23 | 5 | guard | convergence-cap-guard-selftest.sh, convergence-cap-guard.sh, session-cap-guard-selftest.sh, session-cap-guard.sh, state-snapshot.sh |
-| G083 | context_compaction_discipline_gate | Check 24 | 3 | guard | compaction-discipline-guard-selftest.sh, compaction-discipline-guard.sh, context-compactor.sh |
+| G083 | context_compaction_discipline_gate | Check 24 | 5 | guard | compaction-discipline-guard-selftest.sh, compaction-discipline-guard.sh, context-compactor.sh, state-snapshot-selftest.sh, state-snapshot.sh |
 | G084 | pre_existing_deferral_block_gate | Check 25 | 2 | guard | pre-existing-deferral-guard-selftest.sh, pre-existing-deferral-guard.sh |
 | G085 | framework_dogfood_evidence_gate | Check 26 | 6 | guard | evidence-admission-hardening-selftest.sh, framework-dogfood-guard-selftest.sh, framework-dogfood-guard.sh, observability-slo-guard.sh, scaffold-gate.sh, state-transition-guard-selftest.sh |
 | G086 | orchestrator_persistence_lint_gate | Check 27 | 2 | guard | orchestrator-persistence-lint-selftest.sh, orchestrator-persistence-lint.sh |

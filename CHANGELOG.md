@@ -31,6 +31,94 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## [7.26.0] - 2026-08-12
+
+### Runtime Context Economics (IMP-039 / COST-4, COST-5, COST-6, COST-7, EV-7)
+
+One live agent session was audited against the host's own per-request billing
+records: 2,606,430 prompt tokens and 732.468 credits across 13 requests, for
+8,931 completion tokens. Tool results were 49.7% of the prompt; completions were
+0.34% of all tokens. Half the spend was replayed tool output — and the
+framework's own always-on instruction told the agent to keep producing it.
+
+**The output policy no longer contradicts the evidence path.** The shipped
+`terminal-discipline` instruction mandated displaying the whole unfiltered output
+of every command, while `evidence-rules.md` mandated windowing and
+`evidence-capture.sh` already implemented a compact form whose own header argues
+it is *stronger* than a transcript. Section 2 now separates what a command must
+PRODUCE (run unfiltered; never pipe through a discarding filter) from what
+RE-ENTERS context (above 40 lines, capture instead of paste). The capture block
+now also lifts failure-shaped lines out of the omitted region, so bounding can
+never hide the line that explains the exit code.
+`output-policy-coherence-guard.sh` refuses the contradiction if it returns, in
+either phrasing order.
+
+**Cost surfaces stop lying about what they measure.** `bubbles/adapters/usage/`
+follows the existing adapter shape with `none` as the default, so no repository
+changes behavior. There is no estimation path: with no adapter configured every
+consumer reports `unmeasured`, because deriving a token or dollar figure from
+anything but a host record is fabrication. The reachability proxy that
+`bundle-cost-report.sh` produced was renamed from `costProxy` to
+`referenceClosureProxy`, and `bubbles.retro`'s "Context Cost" heading became
+"Reference Closure" — IMP-028 was closed after its reduction premise measured
+false precisely because a proxy was read as spend.
+
+**Session budgets can finally see context volume.** G128 enforced iterations,
+wall-clock, and tool calls; a session could hold all three and still carry 1.77
+MB of terminal records into every later request, which the measured session did.
+Four dimensions were added, every one default-`null` so existing repositories are
+untouched: `maxSingleToolResultBytes`, `maxCumulativeToolResultBytes`,
+`maxPromptTokensPerRequest`, `maxCumulativePromptTokens`. Byte dimensions are
+measurable from the tool-call log today; token dimensions are *skipped rather
+than guessed* when no usage adapter is configured.
+
+**Compaction now governs the transcript, not just the ledger.** G083 checked that
+envelope records carried a `compactedAt` — a repository artifact — while the live
+prompt grew monotonically (162,455 → 513,145 tokens, zero host checkpoints). Each
+phase transition now records `contextBoundary: {kind, checkpointId, at}` through
+`state-snapshot.sh --context-boundary`. `host-checkpoint` requires an id, because
+a claim with no id cannot be checked; `unavailable` is always declarable, so no
+host can block remediation.
+
+**Two over-broad surfaces were narrowed.** `tool-grant-lint.sh` (advisory, with a
+`tool-grants.yaml` registry) reports each agent's unjustified tool families;
+`bubbles.workflow` — a router that was granted `playwright` and `web` — went from
+9 families to 7. The always-on instruction surface went from 26,563 B to 10,259 B
+by introducing a compact universal kernel and narrowing the two largest shipped
+instructions off `applyTo: "**"`. Anti-fabrication, evidence integrity, and the
+repository-binding refusal stay always-on, because they must hold on a request
+that touches no agent file, no test, and no config.
+
+**The verbosity question is settled with a number.** Completions were 0.34% of
+all tokens, so a quieter narrative mode optimizes 0.34% and leaves 99.66%
+untouched. Bubbles ships ONE bounded default and no chatty/not-chatty mode. Where
+a human genuinely needs the whole transcript, `evidence-capture.sh --diagnostic`
+is per-invocation, stamps the block so the waiver is visible, and remains bounded
+by a stated ceiling.
+
+Two enforcement gaps were closed while building rather than deferred. The
+coherence guard's first pattern matched only quantifier-first phrasing, so
+"untruncated output for every command" slipped through — its own adversarial case
+A3 caught that, and both orders are now matched. And nothing bounded the
+always-on surface at all: IMP-036 SCOPE-5 had already cut it once (850 → 545
+lines) and it regrew, which is direct evidence that an unenforced reduction comes
+back, so `always-on-instruction-budget.sh` now enforces both an allowlist and a
+byte ceiling.
+
+**Ownership resolved, not deferred.** `wsl-macos-compatibility.instructions.md`
+was always-on, distributed byte-identical to six downstream repositories, and
+carried no release-manifest entry and no template — so it was outside
+managed-file integrity while governing every repository's shell. It is now
+`bubbles-wsl-macos-compatibility.instructions.md`: the `bubbles-` namespace is
+what the manifest generator inventories, so adopting the convention its eleven
+siblings already follow brings it under managed-file integrity instead of
+special-casing the generator. Its rules are entirely about authoring shell, so
+it moved off `applyTo: "**"` onto shell, hook, workflow, and make surfaces,
+leaving the kernel as the ONLY always-on instruction (4,383 B) and letting the
+budget ceiling tighten from 12,000 B to 8,000 B. `install.sh` gained the rename
+in both legacy-migration lists, so downstream repositories migrate the file
+rather than ending up with two copies of it.
+
 ## [7.25.0] - 2026-08-09
 
 ### Goal Fidelity and Bounded Autonomous Delivery (IMP-038)

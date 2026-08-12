@@ -16,7 +16,7 @@
   "bubbles.handoff.agent.md": 59323,
   "bubbles.harden.agent.md": 189300,
   "bubbles.implement.agent.md": 168481,
-  "bubbles.iterate.agent.md": 302535,
+  "bubbles.iterate.agent.md": 318033,
   "bubbles.journey.agent.md": 29173,
   "bubbles.plan.agent.md": 177185,
   "bubbles.propagate.agent.md": 69602,
@@ -39,5 +39,5 @@
   "bubbles.upkeep.agent.md": 18001,
   "bubbles.ux.agent.md": 135770,
   "bubbles.validate.agent.md": 236220,
-  "bubbles.workflow.agent.md": 586356
+  "bubbles.workflow.agent.md": 615797
 }
