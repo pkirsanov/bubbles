@@ -4058,6 +4058,14 @@ JSON
  "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
 JSON
 
+  # G: claims but NO executionHistory at all. Planning-only and legacy packets
+  # routinely omit the array. An absent record is not evidence of an unbacked
+  # claim, so the check must ABSTAIN here — otherwise widening claim parsing
+  # (cases E/F) turns every history-less planning packet into a false block.
+  cat >"$c7c_dir/no_history.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["analyze","ux","design","plan"]}}
+JSON
+
   c7c_backed="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/backed.json" 2>&1 || true)"
   c7c_unbacked="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/unbacked.json" 2>&1 || true)"
   c7c_excess="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/excess.json" 2>&1 || true)"
@@ -4114,6 +4122,20 @@ JSON
     fail "Check 7C adversarial: a backed plain-string claim was reported UNBACKED — string normalisation over-fires"
   else
     pass "Check 7C adversarial: a backed plain-string claim is NOT reported (string path discriminates)"
+  fi
+
+  c7c_no_history="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/no_history.json" 2>&1 || true)"
+
+  if echo "$c7c_no_history" | grep -q '^NO_HISTORY=1$'; then
+    pass "Check 7C: abstains when executionHistory is absent entirely (planning-only packets are not false-blocked)"
+  else
+    fail "Check 7C: a packet with NO executionHistory was adjudicated instead of abstaining — every history-less planning packet would false-block (observed: $(echo "$c7c_no_history" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7c_no_history" | grep -q '^UNBACKED='; then
+    fail "Check 7C: an absent executionHistory was reported as unbacked claims — absence of a record is not evidence of fabrication"
+  else
+    pass "Check 7C adversarial: an absent executionHistory yields no UNBACKED finding"
   fi
 
   rm -rf "$c7c_dir"

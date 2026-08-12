@@ -1281,9 +1281,14 @@ if [[ "$scope_layout" == "per-scope-directory" ]] && [[ -f "$scope_index_file" ]
   for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
     [[ -f "$scope_path" ]] || continue
     scope_dir_name="$(basename "$(dirname "$scope_path")")"
+    # Two directory conventions are in use: "NN-name" and "SCOPE-N-name".
+    # Reading the ordinal with %%-* yields the literal "SCOPE" for the latter, so
+    # no index row ever matched and parity silently degraded to a warning for
+    # every scope in such a packet. Normalise the prefix away first.
+    scope_dir_core="${scope_dir_name#[Ss][Cc][Oo][Pp][Ee]-}"
     # Strip leading "NN-" prefix to get the scope's natural-language identifier
-    scope_dir_suffix="${scope_dir_name#[0-9]*-}"
-    scope_dir_num="${scope_dir_name%%-*}"
+    scope_dir_suffix="${scope_dir_core#[0-9]*-}"
+    scope_dir_num="${scope_dir_core%%-*}"
     scope_status_local="$(grep -m1 -E '^\*\*Status:\*\*' "$scope_path" \
       | sed -E 's/.*\*\*Status:\*\*[[:space:]]*([A-Za-z ]+).*/\1/' \
       | sed -E 's/[[:space:]]+$//' || true)"
@@ -1311,7 +1316,13 @@ if [[ "$scope_layout" == "per-scope-directory" ]] && [[ -f "$scope_index_file" ]
       continue
     fi
     index_parity_checked=$((index_parity_checked + 1))
-    if [[ "$index_status" != "$scope_status_local" ]]; then
+    # Index tables commonly write the status as a markdown checkbox ("[x] Done")
+    # while scope.md writes the bare word ("Done"). Comparing those raw reports a
+    # fabrication for two spellings of the same status. Strip the checkbox marker
+    # from both sides only — a real mismatch (Done vs In Progress) still fails.
+    index_status_norm="$(echo "$index_status" | sed -E 's/^\[[ xX]\][[:space:]]*//')"
+    scope_status_norm="$(echo "$scope_status_local" | sed -E 's/^\[[ xX]\][[:space:]]*//')"
+    if [[ "$index_status_norm" != "$scope_status_norm" ]]; then
       fail "_index.md says '$index_status' for scope $scope_dir_name but scope.md says '$scope_status_local' — fabrication indicator"
       index_parity_failures=$((index_parity_failures + 1))
     fi
@@ -2311,6 +2322,15 @@ if not claimed:
     print("NO_CLAIMS=1")
     sys.exit(0)
 
+# An entirely ABSENT execution record is not evidence of fabrication — it is a
+# packet that does not track executionHistory (planning-only and legacy shapes
+# routinely omit it). A GAP inside a record that exists is the real signal. This
+# check adjudicates the second and abstains on the first; without it, widening
+# claim parsing turns every history-less planning packet into a false block.
+if not executed:
+    print("NO_HISTORY=1")
+    sys.exit(0)
+
 unbacked = sorted(p for p in claimed if executed.get(p, 0) == 0)
 excess = sorted(
     f"{p}({claimed[p]} claim/{executed.get(p, 0)} run)"
@@ -2328,6 +2348,8 @@ PY
 
 if echo "$claim_backing_analysis" | grep -q '^NO_CLAIMS=1'; then
   info "No completedPhaseClaims recorded — phase-claim backing check skipped"
+elif echo "$claim_backing_analysis" | grep -q '^NO_HISTORY=1'; then
+  info "No executionHistory recorded — phase-claim backing check abstains (an absent record is not evidence of an unbacked claim; a gap inside a present record still fails)"
 elif [[ -z "$claim_backing_analysis" ]]; then
   info "completedPhaseClaims unreadable — phase-claim backing check skipped"
 else

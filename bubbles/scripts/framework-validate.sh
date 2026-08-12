@@ -708,6 +708,24 @@ run_check "Agent-id enum lint selftest (IMP-036)" bash "$SCRIPT_DIR/agent-id-enu
 run_check "Collected-test-count guard selftest (IMP-036)" bash "$SCRIPT_DIR/collected-test-count-guard-selftest.sh"
 run_check "Gate-vintage selftest (IMP-036)" bash "$SCRIPT_DIR/gate-vintage-selftest.sh"
 run_check "Evidence-capture selftest (IMP-036)" bash "$SCRIPT_DIR/evidence-capture-selftest.sh"
+# The gap ID is carried alongside because the identifier IMP-039 is ALSO held by
+# the delivered autonomy-posture work (gate G135), which has its own SCOPE-1 and
+# SCOPE-7. COST-*/EV-* disambiguate; the bare scope number does not.
+run_check "Output-policy coherence selftest (IMP-039 / EV-7)" bash "$SCRIPT_DIR/output-policy-coherence-guard-selftest.sh"
+run_check "Usage-adapter contract selftest (IMP-039 / COST-4)" bash "$SCRIPT_DIR/usage-adapter-contract-selftest.sh"
+run_check "Tool-grant lint selftest (IMP-039 / COST-6)" bash "$SCRIPT_DIR/tool-grant-lint-selftest.sh"
+run_check "Always-on instruction budget selftest (IMP-039 / COST-6)" bash "$SCRIPT_DIR/always-on-instruction-budget-selftest.sh"
+# Advisory by design: the grant frontmatter is runtime-enforced, so an
+# over-narrow grant breaks dispatch silently. Report the delta, narrow one agent
+# at a time, and only then flip a repo to --strict.
+run_check_self_only "Tool-grant lint (IMP-039 / COST-6, advisory)" bash "$SCRIPT_DIR/tool-grant-lint.sh" --quiet
+# Self-only: it reads this repo's own instruction surfaces. A downstream repo
+# gets the coherent text from the template on upgrade, so running it there would
+# report the framework's own upgrade lag as a consumer defect.
+run_check_self_only "Output-policy coherence (IMP-039 / EV-7)" bash "$SCRIPT_DIR/output-policy-coherence-guard.sh" --quiet
+# Self-only for the same reason: a downstream repo's own always-on instructions
+# are its governance call, not the framework's.
+run_check_self_only "Always-on instruction budget (IMP-039 / COST-6)" bash "$SCRIPT_DIR/always-on-instruction-budget.sh" --quiet
 run_check_self_only "Gate-vintage annotation freshness (IMP-036)" bash "$SCRIPT_DIR/gate-vintage-annotate.sh" --check
 run_check_self_only "Gate scaffolder selftest (IMP-011)" bash "$SCRIPT_DIR/scaffold-gate-selftest.sh"
 run_check_self_only "Framework drift-check selftest (IMP-013)" bash "$SCRIPT_DIR/bubbles-drift-check-selftest.sh"

@@ -1093,6 +1093,41 @@ else
   fail "--help should print a Usage banner"
 fi
 
+# ---- Case 12: --context-boundary argument contract (IMP-039 SCOPE-4) --------
+#
+# Argument validation runs before any repository binding, so these cases need no
+# fixture. They are the adversarial half: an unrecognized kind and a checkpoint
+# claim with no id are precisely the two shapes a fabricated boundary takes, and
+# Gate G083 would otherwise be the only thing standing between them and the
+# session file.
+cases=$((cases + 1))
+
+set +e
+cb_missing_out="$("$SNAPSHOT" --context-boundary 2>&1)"; cb_missing_rc=$?
+cb_badkind_out="$("$SNAPSHOT" --context-boundary handled --phase p 2>&1)"; cb_badkind_rc=$?
+cb_noid_out="$("$SNAPSHOT" --context-boundary host-checkpoint --phase p 2>&1)"; cb_noid_rc=$?
+set -e
+
+if [[ "$cb_missing_rc" -eq 2 ]] && printf '%s' "$cb_missing_out" | grep -q 'requires a value'; then
+  pass "--context-boundary without a value is a usage error"
+else
+  fail "--context-boundary without a value should exit 2 (got $cb_missing_rc)"
+fi
+
+if [[ "$cb_badkind_rc" -eq 2 ]] &&
+  printf '%s' "$cb_badkind_out" | grep -q 'host-checkpoint, fresh-context or unavailable'; then
+  pass "an unrecognized boundary kind is rejected with the allowed set"
+else
+  fail "an unrecognized boundary kind should exit 2 naming the allowed kinds (got $cb_badkind_rc)"
+fi
+
+if [[ "$cb_noid_rc" -eq 2 ]] &&
+  printf '%s' "$cb_noid_out" | grep -q 'requires a checkpoint id'; then
+  pass "host-checkpoint without a checkpoint id is rejected"
+else
+  fail "host-checkpoint without an id should exit 2 (got $cb_noid_rc)"
+fi
+
 if [[ "$failures" -gt 0 ]]; then
   echo "state-snapshot selftest failed with $failures issue(s) across $assertions assertions in $cases cases."
   exit 1

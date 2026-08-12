@@ -429,9 +429,58 @@ extract_scenarios() {
   grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//'
 }
 
+# Emits "TRACEID<TAB>TITLE" per scenario, where TRACEID is the SCN/AC/FR/UC id on
+# the nearest preceding heading (empty when the heading carries none). The TITLE
+# field is byte-identical to what extract_scenarios emits, deliberately: the id is
+# carried BESIDE the title rather than prefixed onto it, so the word-overlap
+# scorer sees exactly the same word set it saw before and no existing match can
+# change outcome. Without this the id never reached the comparison at all —
+# extract_scenarios strips everything before "Scenario:", while the id lives on
+# the heading above — which is why the guard reported declared=0 on every packet.
+extract_scenarios_with_ids() {
+  local scope_path="$1"
+  awk '
+    /^[[:space:]]*#{1,6}[[:space:]]/ {
+      heading_id = ""
+      if (match($0, /(SCN|AC|FR|UC)-[A-Za-z0-9_-]+/)) {
+        heading_id = substr($0, RSTART, RLENGTH)
+      }
+      next
+    }
+    /^[[:space:]]*Scenario( Outline)?:/ {
+      title = $0
+      sub(/^[[:space:]]*Scenario( Outline)?:[[:space:]]*/, "", title)
+      print heading_id "\t" title
+    }
+  ' "$scope_path"
+}
+
 extract_trace_ids() {
   local value="$1"
   printf '%s\n' "$value" | grep -Eo '(SCN|AC|FR|UC)-[A-Za-z0-9_-]+' || true
+}
+
+# An explicit shared trace id is stronger evidence of an intended mapping than any
+# similarity score, so it ESTABLISHES a match instead of only grading one that
+# word overlap already found. Previously this comparison existed only inside
+# classify_match_kind, which runs after a match succeeds — so a DoD item naming
+# its scenario outright was still reported as having no faithful DoD item.
+# Returns 1 on an empty id so a heading without an id can never blanket-match.
+trace_id_declared() {
+  local scenario_id="$1"
+  local target="$2"
+  local tid
+
+  [[ -n "$scenario_id" ]] || return 1
+
+  while IFS= read -r tid; do
+    [[ -n "$tid" ]] || continue
+    if [[ "$tid" == "$scenario_id" ]]; then
+      return 0
+    fi
+  done < <(extract_trace_ids "$target")
+
+  return 1
 }
 
 # classify_match_kind — IMP-015 Scope B (informational only).
@@ -441,8 +490,12 @@ extract_trace_ids() {
 classify_match_kind() {
   local scenario="$1"
   local target="$2"
+  local explicit_id="${3:-}"
   local sid tid
-  sid="$(extract_trace_ids "$scenario" | head -n 1 || true)"
+  # The caller may pass the id explicitly because the scenario title never
+  # contains one. Falling back to extraction keeps older callers working.
+  sid="$explicit_id"
+  [[ -n "$sid" ]] || sid="$(extract_trace_ids "$scenario" | head -n 1 || true)"
   if [[ -n "$sid" ]]; then
     while IFS= read -r tid; do
       [[ -n "$tid" ]] || continue
@@ -687,7 +740,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
 
   scenarios=""
   scenario_status=0
-  if scenarios="$(extract_scenarios "$scope_path")"; then
+  if scenarios="$(extract_scenarios_with_ids "$scope_path")"; then
     scenario_status=0
   else
     scenario_status=$?
@@ -729,7 +782,10 @@ for scope_index in "${!scope_analysis_files[@]}"; do
 
   row_total=$((row_total + scope_row_count))
 
-  while IFS= read -r scenario; do
+  while IFS= read -r scenario_record; do
+    [[ -n "$scenario_record" ]] || continue
+    scenario_id="${scenario_record%%$'\t'*}"
+    scenario="${scenario_record#*$'\t'}"
     [[ -n "$scenario" ]] || continue
     scope_scenario_count=$((scope_scenario_count + 1))
     scenario_total=$((scenario_total + 1))
@@ -737,7 +793,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     matched_row=""
     while IFS= read -r row; do
       [[ -n "$row" ]] || continue
-      if scenario_matches_row "$scenario" "$row"; then
+      if scenario_matches_row "$scenario" "$row" || trace_id_declared "$scenario_id" "$row"; then
         matched_row="$row"
         break
       fi
@@ -751,7 +807,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     mapped_total=$((mapped_total + 1))
     pass "$scope_label scenario mapped to Test Plan row: $scenario"
 
-    edge_kind="$(classify_match_kind "$scenario" "$matched_row")"
+    edge_kind="$(classify_match_kind "$scenario" "$matched_row" "$scenario_id")"
     if [[ "$edge_kind" == "inferred" ]]; then
       _amb=0
       while IFS= read -r _r; do
@@ -823,7 +879,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
   scope_label="$(scope_analysis_label "$scope_index")"
   scenarios=""
   scenario_status=0
-  if scenarios="$(extract_scenarios "$scope_path")"; then
+  if scenarios="$(extract_scenarios_with_ids "$scope_path")"; then
     scenario_status=0
   else
     scenario_status=$?
@@ -842,14 +898,17 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     continue
   fi
 
-  while IFS= read -r scenario; do
+  while IFS= read -r scenario_record; do
+    [[ -n "$scenario_record" ]] || continue
+    scenario_id="${scenario_record%%$'\t'*}"
+    scenario="${scenario_record#*$'\t'}"
     [[ -n "$scenario" ]] || continue
     dod_fidelity_total=$((dod_fidelity_total + 1))
 
     matched_dod=""
     while IFS= read -r dod_item; do
       [[ -n "$dod_item" ]] || continue
-      if scenario_matches_dod "$scenario" "$dod_item"; then
+      if scenario_matches_dod "$scenario" "$dod_item" || trace_id_declared "$scenario_id" "$dod_item"; then
         matched_dod="$dod_item"
         break
       fi
@@ -861,7 +920,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     else
       dod_fidelity_mapped=$((dod_fidelity_mapped + 1))
       pass "$scope_label scenario maps to DoD item: $scenario"
-      edge_kind="$(classify_match_kind "$scenario" "$matched_dod")"
+      edge_kind="$(classify_match_kind "$scenario" "$matched_dod" "$scenario_id")"
       if [[ "$edge_kind" == "inferred" ]]; then
         _amb=0
         while IFS= read -r _d; do

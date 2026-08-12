@@ -494,7 +494,20 @@ try:
     with open(sys.argv[1]) as f:
         data = json.load(f)
     rq = data.get("reworkQueue", []) or []
-    print("true" if isinstance(rq, list) and len(rq) > 0 else "false")
+    if not isinstance(rq, list):
+        rq = []
+    # Count only UNRESOLVED rework. Counting every entry meant the only way to
+    # satisfy this gate was to DELETE findings, destroying the record of what was
+    # found and how it was closed — a gate that rewards erasing evidence. A
+    # resolved item carries its resolution and should stay. This matches the
+    # predicate trajectory-inspector.sh already uses on the same field.
+    def _open(item):
+        if not isinstance(item, dict):
+            return True
+        if item.get("resolved") is True:
+            return False
+        return str(item.get("status", "")).strip().lower() != "resolved"
+    print("true" if any(_open(i) for i in rq) else "false")
 except Exception:
     print("false")
 ' "$state_file"
@@ -503,7 +516,7 @@ if [[ "$rework_nonempty" == "true" ]]; then
   fail "state.json still contains non-empty reworkQueue entries — open rework remains (Gate G061)"
   pending_transition_failures=$((pending_transition_failures + 1))
 else
-  pass "state.json reworkQueue is empty"
+  pass "state.json reworkQueue has no unresolved entries"
 fi
 
 if [[ -f "$transition_requests_file" ]]; then

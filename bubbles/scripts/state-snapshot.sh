@@ -24,6 +24,7 @@ usage() {
 Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
          [--posture <autonomy>] \
+         [--context-boundary <kind>[:<checkpointId>]] \
          [--decision <text> [--decision-principle <name>] [--decision-chose <option>] \
           [--decision-considered <csv>]] \
          [--convergence-iteration <N> --spec-dir <path>] \
@@ -96,6 +97,8 @@ SCOPE_ID=""
 NOTE=""
 MODE="start"
 POSTURE=""
+CONTEXT_BOUNDARY_KIND=""
+CONTEXT_BOUNDARY_ID=""
 DECISION=""
 DECISION_PRINCIPLE=""
 DECISION_CHOSE=""
@@ -142,6 +145,28 @@ while [[ $# -gt 0 ]]; do
     --posture)
       [[ $# -ge 2 ]] || { echo "state-snapshot: --posture requires a value" >&2; exit 2; }
       POSTURE="$2"
+      shift 2
+      ;;
+    --context-boundary)
+      # <kind>[:<checkpointId>]. Gate G083 validates the recorded value; this
+      # only splits it. Declaring `unavailable` is always legal and is the
+      # honest answer when the host exposes no compaction primitive.
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --context-boundary requires a value" >&2; exit 2; }
+      CONTEXT_BOUNDARY_KIND="${2%%:*}"
+      if [[ "$2" == *:* ]]; then
+        CONTEXT_BOUNDARY_ID="${2#*:}"
+      fi
+      case "$CONTEXT_BOUNDARY_KIND" in
+        host-checkpoint | fresh-context | unavailable) ;;
+        *)
+          echo "state-snapshot: --context-boundary kind must be host-checkpoint, fresh-context or unavailable (got: '$CONTEXT_BOUNDARY_KIND')" >&2
+          exit 2
+          ;;
+      esac
+      if [[ "$CONTEXT_BOUNDARY_KIND" == "host-checkpoint" && -z "$CONTEXT_BOUNDARY_ID" ]]; then
+        echo "state-snapshot: --context-boundary host-checkpoint requires a checkpoint id (host-checkpoint:<id>)" >&2
+        exit 2
+      fi
       shift 2
       ;;
     --decision)
@@ -651,6 +676,8 @@ jq \
   --arg note "$NOTE" \
   --arg mode "$MODE" \
   --arg posture "$POSTURE" \
+  --arg cbKind "$CONTEXT_BOUNDARY_KIND" \
+  --arg cbId "$CONTEXT_BOUNDARY_ID" \
   --arg decision "$DECISION" \
   --arg dprinciple "$DECISION_PRINCIPLE" \
   --arg dchose "$DECISION_CHOSE" \
@@ -681,6 +708,13 @@ jq \
         }
       ])),
       autonomyPosture: (if $posture == "" then ($root.autonomyPosture // null) else $posture end),
+      contextBoundary: (
+        if $cbKind == "" then ($root.contextBoundary // null)
+        else { kind: $cbKind,
+               checkpointId: (if $cbId == "" then null else $cbId end),
+               at: $timestamp }
+        end
+      ),
       autonomyDecisions: (
         if $decision == "" then ($root.autonomyDecisions // [])
         else (($root.autonomyDecisions // []) + [{

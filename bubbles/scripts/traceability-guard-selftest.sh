@@ -715,6 +715,95 @@ for probe in authentication websocket participant; do
   fi
 done
 
+# ---------------------------------------------------------------------------
+# Declared trace-id mapping.
+#
+# A DoD item or Test Plan row that names the scenario's own SCN- id is the
+# strongest available evidence of an intended mapping, but the id previously
+# never reached the comparison: extract_scenarios strips everything before
+# "Scenario:", while the id lives on the heading above it. The guard therefore
+# reported declared=0 on every packet and failed DoD items that cited their
+# scenario outright. Titles here share almost no words with their DoD item, so
+# only the id can carry the match — word overlap cannot rescue these cases.
+# ---------------------------------------------------------------------------
+write_declared_id_scope() {
+  local feature_dir="$1"
+  local dod_id="$2"
+  local row_id="$3"
+
+  build_clean_feature "$feature_dir"
+
+  cat > "$feature_dir/scopes.md" <<EOF
+# Scope 01: Widget Render
+
+**Status:** In Progress
+
+### Gherkin
+
+#### SCN-77-alpha - governing heading carries the identifier
+
+  Scenario: Zebra telemetry quiesces beneath a lunar eclipse
+    Given an orbital sensor
+    When the umbra passes
+    Then the telemetry quiesces
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --------- | -------- | ------------- | ----------- | ------- | ----------- |
+| E2E       | e2e-ui   | tests/widget-render.e2e.spec.ts | ${row_id} orbital regression | selftest:widget-render | Yes |
+
+### Definition of Done
+
+- [x] ${dod_id} evidence proves the orbital regression holds -> Evidence: report.md#test-evidence
+EOF
+
+  cat > "$feature_dir/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "scenarioId": "SCN-77-alpha",
+      "scope": "01-widget-render",
+      "title": "Zebra telemetry quiesces beneath a lunar eclipse",
+      "linkedTests": [
+        { "file": "tests/widget-render.e2e.spec.ts" }
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+}
+
+declared_dir="$TMPDIR/declared-id"
+write_declared_id_scope "$declared_dir" "SCN-77-alpha" "SCN-77-alpha"
+run_trace_case "$declared_dir" "declared trace id establishes the mapping"
+assert_case_status 0 "Declared id: a DoD item citing the scenario id maps it despite near-zero word overlap"
+assert_case_not_contains "no faithful DoD item preserving its behavioral claim" \
+  "Declared id: the cited scenario is not reported as an unfaithful DoD item"
+assert_case_not_contains "has no traceable Test Plan row" \
+  "Declared id: the cited scenario is not reported as row-less"
+assert_case_contains "declared" "Declared id: the match is counted as declared, not inferred"
+
+# Adversarial twin: if any id satisfied the check, the fix would be a blanket
+# pass rather than a mapping. A DoD item naming a DIFFERENT scenario must still
+# fail, otherwise every scenario in a packet would match every DoD item.
+mismatch_dir="$TMPDIR/declared-id-mismatch"
+write_declared_id_scope "$mismatch_dir" "SCN-77-omega" "SCN-77-alpha"
+run_trace_case "$mismatch_dir" "a different trace id does not establish the mapping"
+assert_case_status 1 "Declared id adversarial: a DoD item citing a DIFFERENT scenario id does not map it"
+assert_case_contains "no faithful DoD item preserving its behavioral claim" \
+  "Declared id adversarial: the mismatched id is still reported unmapped"
+
+# An id-less heading must not blanket-match either, or a packet that simply omits
+# identifiers would silently pass the fidelity check it is meant to fail.
+idless_dir="$TMPDIR/declared-id-absent"
+write_declared_id_scope "$idless_dir" "SCN-77-alpha" "SCN-77-alpha"
+sed -i.bak 's/^#### SCN-77-alpha - governing heading carries the identifier$/#### governing heading carries no identifier/' "$idless_dir/scopes.md"
+rm -f "$idless_dir/scopes.md.bak"
+run_trace_case "$idless_dir" "an id-less heading cannot blanket-match"
+assert_case_status 1 "Declared id adversarial: with no id on the heading the unrelated DoD item is still unmapped"
+
 if [[ "$failures" -eq 0 ]]; then
   echo "[selftest traceability-guard] PASS"
   exit 0
