@@ -4041,6 +4041,23 @@ JSON
  "executionHistory":[{"agent":"bubbles.docs","phasesExecuted":["docs"]}]}
 JSON
 
+  # E/F: the PLAIN-STRING claim shape. Cases A-D above all use the dict form
+  # {"phase":"test"}, but real packets — including this selftest's own
+  # emit_base_fixture — write completedPhaseClaims as bare strings. The analyzer
+  # used to `continue` past every non-dict element, so `claimed` stayed empty and
+  # the gate reported NO_CLAIMS and passed on precisely the shape production
+  # emits. The dict-only fixtures could never see it. E is the regression case;
+  # F is its adversarial twin.
+  cat >"$c7c_dir/str_unbacked.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["test","audit"],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  cat >"$c7c_dir/str_backed.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["test"],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
   c7c_backed="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/backed.json" 2>&1 || true)"
   c7c_unbacked="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/unbacked.json" 2>&1 || true)"
   c7c_excess="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/excess.json" 2>&1 || true)"
@@ -4076,6 +4093,27 @@ JSON
     fail "Check 7C: a TOP-level executionHistory was not read — same container bug as BUG-012, every such packet would false-block"
   else
     pass "Check 7C: reads a TOP-level executionHistory (BUG-012 container fallback honored)"
+  fi
+
+  c7c_str_unbacked="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/str_unbacked.json" 2>&1 || true)"
+  c7c_str_backed="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/str_backed.json" 2>&1 || true)"
+
+  if echo "$c7c_str_unbacked" | grep -q '^UNBACKED=audit$'; then
+    pass "Check 7C: an unbacked PLAIN-STRING claim is reported (the shape real packets write)"
+  else
+    fail "Check 7C: a plain-string claim shape left the gate INERT — every element skipped, claimed empty, NO_CLAIMS reported while an unbacked phase passed (observed: $(echo "$c7c_str_unbacked" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7c_str_unbacked" | grep -q '^NO_CLAIMS=1$'; then
+    fail "Check 7C: string-shape claims produced NO_CLAIMS — the analyzer is not normalising them and the gate is looking at nothing"
+  else
+    pass "Check 7C: string-shape claims are normalised, not discarded as NO_CLAIMS"
+  fi
+
+  if echo "$c7c_str_backed" | grep -q '^UNBACKED='; then
+    fail "Check 7C adversarial: a backed plain-string claim was reported UNBACKED — string normalisation over-fires"
+  else
+    pass "Check 7C adversarial: a backed plain-string claim is NOT reported (string path discriminates)"
   fi
 
   rm -rf "$c7c_dir"

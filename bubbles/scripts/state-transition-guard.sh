@@ -2279,9 +2279,20 @@ if not isinstance(history, list):
 
 claimed = {}
 for claim in claims:
-    if not isinstance(claim, dict):
-        continue
-    phase = claim.get("phase")
+    # completedPhaseClaims is written BOTH ways in the wild: a list of plain
+    # phase-name strings, and a list of {"phase": ...} objects. Accepting only
+    # the dict shape made this gate inert against the string shape — every
+    # element was skipped, `claimed` stayed empty, and an anti-fabrication check
+    # reported NO_CLAIMS and passed. Check 6B's _phase_name already normalises
+    # both; this now matches it.
+    phase = None
+    if isinstance(claim, str):
+        phase = claim
+    elif isinstance(claim, dict):
+        candidate = claim.get("phase")
+        if not isinstance(candidate, str):
+            candidate = claim.get("name")
+        phase = candidate if isinstance(candidate, str) else None
     if isinstance(phase, str) and phase:
         claimed[phase] = claimed.get(phase, 0) + 1
 
