@@ -856,6 +856,44 @@ assert_case_status 0 "Multi-row: a path-bearing row is chosen even when a path-l
 assert_case_not_contains "mapped row has no concrete test file path" \
   "Multi-row: the path-less first row does not decide the concrete-path check"
 
+# --- Not Started scopes defer report evidence, started scopes do not ----------
+# A scope that has not run cannot have produced evidence. Reporting that as a
+# defect describes the framework's own sequential execution model as a failure
+# and buries the findings belonging to scopes actually under way. The twin below
+# is what keeps this from degrading into a blanket exemption.
+build_evidenceless_feature() {
+  local feature_dir="$1"
+  local scope_status="$2"
+  build_clean_feature "$feature_dir"
+  cat > "$feature_dir/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+```
+$ no run has happened yet
+```
+EOF
+  sed -i.bak "s/^\*\*Status:\*\* In Progress\$/**Status:** $scope_status/" "$feature_dir/scopes.md"
+  rm -f "$feature_dir/scopes.md.bak"
+}
+
+notstarted_feature="$TMPDIR/specs/810-notstarted-evidence"
+build_evidenceless_feature "$notstarted_feature" "Not Started"
+run_trace_case "$notstarted_feature" "Not Started scope defers report evidence"
+assert_case_contains 'report evidence DEFERRED (scope is Not Started' "Not Started: the deferral is reported, never silent"
+assert_case_not_contains 'report is missing evidence reference' "Not Started: no missing-evidence failure is raised"
+assert_case_contains 'Report evidence DEFERRED to their own execution (Not Started scopes): 1' "Not Started: the deferral is counted in the summary"
+
+# Adversarial twin: the identical fixture with a started status MUST still fail,
+# or the deferral is a blanket exemption rather than a status-scoped one.
+started_feature="$TMPDIR/specs/811-started-evidence"
+build_evidenceless_feature "$started_feature" "In Progress"
+run_trace_case "$started_feature" "In Progress scope still requires report evidence"
+assert_case_status 1 "Adversarial twin: an In Progress scope exits 1 on missing evidence"
+assert_case_contains 'report is missing evidence reference' "Adversarial twin: a started scope still fails on missing evidence"
+assert_case_not_contains 'report evidence DEFERRED' "Adversarial twin: a started scope is never deferred"
+
 if [[ "$failures" -eq 0 ]]; then
   echo "[selftest traceability-guard] PASS"
   exit 0

@@ -76,6 +76,7 @@ edge_declared=0
 edge_inferred=0
 edge_ambiguous=0
 report_reference_total=0
+deferred_evidence_total=0
 scenario_manifest_total=0
 scenario_manifest_file="$feature_dir/scenario-manifest.json"
 
@@ -736,6 +737,17 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     report_path="$feature_dir/report.md"
   fi
 
+  # A Not Started scope has, by definition, produced no execution evidence yet.
+  # Demanding a report evidence reference from it reports the sequential
+  # execution model the framework itself prescribes as a defect, and buries the
+  # findings that belong to scopes actually under way. This CANNOT weaken the
+  # done gate: promotion to done requires every scope to be Done, so no scope is
+  # Not Started at that point and every deferral has already expired.
+  scope_not_started=0
+  if grep -qE '^\*\*Status:\*\*[[:space:]]*Not Started[[:space:]]*$' "$scope_path" 2>/dev/null; then
+    scope_not_started=1
+  fi
+
   info "Checking traceability for $scope_label"
 
   scenarios=""
@@ -862,6 +874,9 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     if report_mentions_path "$report_path" "$existing_path"; then
       report_reference_total=$((report_reference_total + 1))
       pass "$scope_label report references concrete test evidence: $existing_path"
+    elif [[ "$scope_not_started" -eq 1 ]]; then
+      deferred_evidence_total=$((deferred_evidence_total + 1))
+      info "$scope_label report evidence DEFERRED (scope is Not Started, so no run has produced evidence yet): $existing_path"
     else
       fail "$scope_label report is missing evidence reference for concrete test file: $existing_path"
     fi
@@ -968,6 +983,9 @@ info "Test rows checked: $row_total"
 info "Scenario-to-row mappings: $mapped_total"
 info "Concrete test file references: $file_reference_total"
 info "Report evidence references: $report_reference_total"
+if [[ "$deferred_evidence_total" -gt 0 ]]; then
+  info "Report evidence DEFERRED to their own execution (Not Started scopes): $deferred_evidence_total"
+fi
 info "DoD fidelity scenarios: $dod_fidelity_total (mapped: $dod_fidelity_mapped, unmapped: $dod_fidelity_unmapped)"
 info "Edge confidence (IMP-015 Scope B): declared=$edge_declared inferred=$edge_inferred ambiguous=$edge_ambiguous"
 
