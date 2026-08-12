@@ -218,6 +218,41 @@ The planner identifies the controlling code path, using the code-index adapter
 when one is configured. Without an index it records explicit repository-relative
 owner paths in `productionOwners`, which a shared-consumer scenario must have.
 
+## Source-to-Scenario Impact (IMP-040 SCOPE-9 / REG-8)
+
+Changed-spec validation asks which specs a diff touched, and answers it from
+spec-folder paths. A diff that changes only SOURCE therefore looks like it
+touched no spec at all, and every scenario certified against that source stays
+certified on evidence that no longer describes the code. The blind spot is worst
+where it matters most: a shared consumer, whose single edit invalidates
+scenarios across many specs at once.
+
+`implementationRefs` closes it. Each scenario records the code path that owns its
+asserted result plus the consumer surfaces that render it. `scenario-impact-resolve.sh`
+marks any CERTIFIED scenario whose refs intersect the diff for revalidation,
+regardless of which spec folder the diff touched.
+
+```bash
+git diff --name-only <base>..HEAD \
+  | bash bubbles/scripts/scenario-impact-resolve.sh specs/<NNN-feature> --changed-from -
+```
+
+A ref may name a file, a file plus a symbol (`path#symbol`), or a directory
+(`path/`, matching everything beneath). Symbol suffixes are stripped before
+comparison: without a code index the framework cannot tell which symbol a diff
+touched, and pretending otherwise would UNDER-report — the failure direction
+that leaves stale certification standing. **Over-reporting is the safe direction
+here.** A scenario flagged unnecessarily costs a re-run; a scenario missed keeps
+a false certification.
+
+Only certified scenarios are flagged. An uncertified one has no claim to
+invalidate.
+
+**Ownership is declared, never inferred.** Refs come from the code-index adapter
+when one is configured, and otherwise from explicit repository-relative paths the
+planner records. The resolver matches only against those declared refs — it does
+not guess ownership from a filename resemblance.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

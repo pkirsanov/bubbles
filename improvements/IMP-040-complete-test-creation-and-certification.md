@@ -39,14 +39,6 @@
 
 ## Proposal
 
-### SCOPE-9 — Source-to-scenario impact and revalidation (REG-8)
-
-Add `implementationRefs` to scenario contracts. Populate them from the owning code path and consumer surfaces.
-
-Changed-spec validation must include scenarios whose `implementationRefs` intersect the diff. A change to a shared consumer marks every affected certified scenario for revalidation.
-
-Use the existing code-index adapter when available. Fall back to explicit references and project `testImpact` rules. Never infer ownership from filenames alone.
-
 ### SCOPE-10 — Human acceptance terminal gate (EV-8)
 
 Implement BUG-029 as part of complete certification.
