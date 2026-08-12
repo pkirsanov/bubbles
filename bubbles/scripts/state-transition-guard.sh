@@ -1960,6 +1960,11 @@ echo ""
 #   (a) uniform inter-entry intervals (e.g. exactly 15 minutes apart)
 #   (b) zero-duration entries (start == end) for non-trivial phases
 #   (c) overlapping entries (one agent's run overlaps the next)
+# For (b) and (c) an entry may declare its span weak rather than have it read as
+# fabricated: durationUnmeasured/durationUnmeasuredReason for a span that was
+# never measured, timestampReconstructed/timestampReconstructedReason for one
+# recovered after the fact. Both demand a substantive reason and both are still
+# reported, so neither is a silent bypass.
 echo "--- Check 7A: executionHistory Timestamp Plausibility ---"
 exec_history_analysis="$(python3 - "$state_file" <<'PY'
 import json
@@ -2032,6 +2037,17 @@ for entry in raw:
         "unmeasured": entry.get("durationUnmeasured") is True,
         "unmeasured_reason": (entry.get("durationUnmeasuredReason") or "").strip()
             if isinstance(entry.get("durationUnmeasuredReason"), str) else "",
+        # An entry may separately DECLARE that its span was reconstructed after
+        # the fact rather than measured from a clock. An overlap touching such a
+        # span is evidence that the RECORD is imprecise, not that two agents ran
+        # concurrently, and those are different findings. Without this the only
+        # ways to clear a historical overlap are to invent replacement
+        # timestamps — the fabrication this check exists to catch — or to leave
+        # the packet permanently uncertifiable. Same cost as the declaration
+        # above: the reason must be substantive, and it is reported either way.
+        "reconstructed": entry.get("timestampReconstructed") is True,
+        "reconstructed_reason": (entry.get("timestampReconstructedReason") or "").strip()
+            if isinstance(entry.get("timestampReconstructedReason"), str) else "",
     })
 
 if len(entries) < 3:
@@ -2071,13 +2087,33 @@ if zero_dur_offenders:
 
 # Check overlapping entries (entry N+1 starts before entry N ends)
 overlaps = []
+reconstructed_overlaps = []
+RECONSTRUCTED_REASON_MIN = 20
 for i in range(1, len(entries)):
     prev = entries[i-1]
     curr = entries[i]
     if curr["started"] < prev["completed"]:
-        overlaps.append(
-            f"{prev['agent']}({prev['started'].isoformat()}-{prev['completed'].isoformat()}) overlaps {curr['agent']}({curr['started'].isoformat()})"
+        detail = (
+            f"{prev['agent']}({prev['started'].isoformat()}-{prev['completed'].isoformat()}) "
+            f"overlaps {curr['agent']}({curr['started'].isoformat()})"
         )
+        # ONE declared side is enough. If either span was reconstructed rather
+        # than measured, the pair cannot testify to concurrency at all, so
+        # demanding the declaration on both would force a false declaration
+        # onto the entry whose timestamps are actually trustworthy.
+        declared = [
+            e["agent"] for e in (prev, curr)
+            if e["reconstructed"]
+            and len(e["reconstructed_reason"]) >= RECONSTRUCTED_REASON_MIN
+        ]
+        if declared:
+            reconstructed_overlaps.append(f"{detail} [reconstructed: {','.join(declared)}]")
+        else:
+            overlaps.append(detail)
+if reconstructed_overlaps:
+    print(f"RECONSTRUCTED_OVERLAPS={len(reconstructed_overlaps)}")
+    for line in reconstructed_overlaps:
+        print(f"RECONSTRUCTED_OVERLAP_DETAIL={line}")
 if overlaps:
     print(f"OVERLAPS={len(overlaps)}")
     for line in overlaps:
@@ -2106,6 +2142,17 @@ else
   zero_dur_line="$(echo "$exec_history_analysis" | grep -E '^ZERO_DURATION=' | head -n 1 | sed 's/^ZERO_DURATION=//' || true)"
   if [[ -n "$zero_dur_line" ]]; then
     fail "executionHistory contains zero-duration entries for non-trivial phases: $zero_dur_line"
+  fi
+
+  # Surfaced, never silent: a declared-reconstructed overlap is still a weaker
+  # record than a measured one, so the reader is told which spans carry it and
+  # why the pair was not blocked.
+  reconstructed_overlap_count="$(echo "$exec_history_analysis" | grep -E '^RECONSTRUCTED_OVERLAPS=' | head -n 1 | sed 's/^RECONSTRUCTED_OVERLAPS=//' || true)"
+  if [[ -n "$reconstructed_overlap_count" ]] && [[ "$reconstructed_overlap_count" -gt 0 ]]; then
+    info "executionHistory has $reconstructed_overlap_count overlapping entries whose spans are DECLARED reconstructed (reason given) — recorded as an imprecise record, not concurrent execution"
+    while IFS= read -r detail; do
+      info "$detail"
+    done < <(echo "$exec_history_analysis" | grep -E '^RECONSTRUCTED_OVERLAP_DETAIL=' | sed 's/^RECONSTRUCTED_OVERLAP_DETAIL=//')
   fi
 
   overlap_count="$(echo "$exec_history_analysis" | grep -E '^OVERLAPS=' | head -n 1 | sed 's/^OVERLAPS=//' || true)"

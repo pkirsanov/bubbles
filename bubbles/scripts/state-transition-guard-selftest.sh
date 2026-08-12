@@ -3909,6 +3909,93 @@ else
 fi
 
 # ----------------------------------------------------------------------------
+# Check 7A — declared-reconstructed overlap contract
+#
+# A historical overlap could previously be cleared only by inventing
+# replacement timestamps — the exact fabrication this check exists to catch —
+# so a packet whose real times were unrecoverable stayed permanently
+# uncertifiable. The declaration gives that packet an honest exit. These cases
+# drive the REAL analyzer extracted from guard source, so the test cannot pass
+# while the guard's own logic drifts away from it.
+# ----------------------------------------------------------------------------
+echo "Running Check 7A declared-reconstructed overlap contract..."
+
+c7a_an_start="$(grep -n 'exec_history_analysis="\$(python3' "$GUARD_SCRIPT" | head -n 1 | cut -d: -f1 || true)"
+if [[ -z "$c7a_an_start" ]]; then
+  fail "Check 7A: analyzer block absent from guard source — the check was removed or renamed"
+else
+  pass "Check 7A: analyzer block located in guard source (no test/source drift)"
+
+  c7a_dir="$(mktemp -d)"
+  c7a_an_end="$(awk -v s="$c7a_an_start" 'NR>s && $0=="PY"{print NR; exit}' "$GUARD_SCRIPT")"
+  sed -n "$((c7a_an_start + 1)),$((c7a_an_end - 1))p" "$GUARD_SCRIPT" >"$c7a_dir/analyzer.py"
+
+  # Entry b starts before entry a ends. Start intervals are deliberately uneven
+  # and every span is non-zero, so only the overlap signal can fire.
+  # A: nobody declares anything — the overlap must still block.
+  cat >"$c7a_dir/undeclared.json" <<'JSON'
+{"executionHistory":[
+ {"agent":"bubbles.stabilize","phasesExecuted":["stabilize"],"startedAt":"2026-07-17T10:00:00Z","finishedAt":"2026-07-17T10:20:00Z"},
+ {"agent":"bubbles.audit","phasesExecuted":["audit"],"startedAt":"2026-07-17T10:10:00Z","finishedAt":"2026-07-17T10:30:00Z"},
+ {"agent":"bubbles.docs","phasesExecuted":["docs"],"startedAt":"2026-07-17T10:45:00Z","finishedAt":"2026-07-17T10:52:00Z"}]}
+JSON
+
+  # B: one side declares its span reconstructed, with a substantive reason.
+  cat >"$c7a_dir/declared.json" <<'JSON'
+{"executionHistory":[
+ {"agent":"bubbles.stabilize","phasesExecuted":["stabilize"],"startedAt":"2026-07-17T10:00:00Z","finishedAt":"2026-07-17T10:20:00Z"},
+ {"agent":"bubbles.audit","phasesExecuted":["audit"],"startedAt":"2026-07-17T10:10:00Z","finishedAt":"2026-07-17T10:30:00Z","timestampReconstructed":true,"timestampReconstructedReason":"Recovered from the audit runId after the fast-delivery pass recorded no wall-clock span; no source-backed replacement exists."},
+ {"agent":"bubbles.docs","phasesExecuted":["docs"],"startedAt":"2026-07-17T10:45:00Z","finishedAt":"2026-07-17T10:52:00Z"}]}
+JSON
+
+  # C: the declaration is present but the reason is perfunctory.
+  cat >"$c7a_dir/perfunctory.json" <<'JSON'
+{"executionHistory":[
+ {"agent":"bubbles.stabilize","phasesExecuted":["stabilize"],"startedAt":"2026-07-17T10:00:00Z","finishedAt":"2026-07-17T10:20:00Z"},
+ {"agent":"bubbles.audit","phasesExecuted":["audit"],"startedAt":"2026-07-17T10:10:00Z","finishedAt":"2026-07-17T10:30:00Z","timestampReconstructed":true,"timestampReconstructedReason":"historical"},
+ {"agent":"bubbles.docs","phasesExecuted":["docs"],"startedAt":"2026-07-17T10:45:00Z","finishedAt":"2026-07-17T10:52:00Z"}]}
+JSON
+
+  c7a_undeclared="$(python3 "$c7a_dir/analyzer.py" "$c7a_dir/undeclared.json" 2>&1 || true)"
+  c7a_declared="$(python3 "$c7a_dir/analyzer.py" "$c7a_dir/declared.json" 2>&1 || true)"
+  c7a_perfunctory="$(python3 "$c7a_dir/analyzer.py" "$c7a_dir/perfunctory.json" 2>&1 || true)"
+
+  if echo "$c7a_undeclared" | grep -q '^OVERLAPS=1$'; then
+    pass "Check 7A: an undeclared overlap is still reported as a blocking OVERLAP"
+  else
+    fail "Check 7A: an undeclared overlap went undetected — the declaration weakened the check (observed: $(echo "$c7a_undeclared" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7a_declared" | grep -q '^RECONSTRUCTED_OVERLAPS=1$'; then
+    pass "Check 7A: a substantively declared overlap is surfaced as reconstructed"
+  else
+    fail "Check 7A: a declared reconstructed overlap was not surfaced (observed: $(echo "$c7a_declared" | tr '\n' ' '))"
+  fi
+
+  # The declaration has to actually move the verdict, or it is decoration.
+  if echo "$c7a_declared" | grep -q '^OVERLAPS='; then
+    fail "Check 7A: a declared overlap still counts as blocking — the declaration does nothing"
+  else
+    pass "Check 7A: a declared overlap no longer counts as a blocking OVERLAP"
+  fi
+
+  # And it has to cost something, or it is a silent bypass with extra steps.
+  if echo "$c7a_perfunctory" | grep -q '^OVERLAPS=1$'; then
+    pass "Check 7A adversarial: a perfunctory reason does NOT buy the exemption"
+  else
+    fail "Check 7A adversarial: a one-word reason cleared the overlap — the declaration is a free bypass (observed: $(echo "$c7a_perfunctory" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7a_declared" | grep -q '^RECONSTRUCTED_OVERLAP_DETAIL=.*reconstructed: bubbles.audit'; then
+    pass "Check 7A: the surfaced detail names which span was reconstructed (never silent)"
+  else
+    fail "Check 7A: the reconstructed overlap is not attributed to a named agent (observed: $(echo "$c7a_declared" | tr '\n' ' '))"
+  fi
+
+  rm -rf "$c7a_dir"
+fi
+
+# ----------------------------------------------------------------------------
 # Check 7C — phase-claim execution backing (audit finding A-017-08)
 #
 # Check 7A reads executionHistory only, so a completedPhaseClaims entry with NO
