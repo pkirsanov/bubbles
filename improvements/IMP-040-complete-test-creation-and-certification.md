@@ -39,22 +39,6 @@
 
 ## Proposal
 
-### SCOPE-5 — Production-path fidelity guard (COV-10)
-
-Add a test-fidelity guard that compares category, mechanism, and source patterns.
-
-For `e2e-ui`, the guard rejects these sole proof paths:
-
-- assertions only against hidden or detached nodes.
-- direct calls to render functions when the scenario names a route or page.
-- request interception of internal services.
-- a seeded value asserted unchanged after a pass-through.
-- an early return that skips the required assertion.
-
-The guard accepts mixed tests. A test may inspect runtime state when it also asserts the current visible outcome. A deterministic fixture remains valid when production code computes the asserted result.
-
-Project adapters may add language-specific patterns under the existing project configuration boundary.
-
 ### SCOPE-6 — Dependency-path coverage (COV-9, COV-10)
 
 Add dependency states to the obligation matrix:

@@ -107,6 +107,31 @@ declared trait, not a ban on internal observation. A pure-calculation scenario
 asserting a returned value is correct. Only the shape where an internal surface
 is offered as the SOLE proof of an external claim is refused.
 
+## Production-Path Fidelity (IMP-040 SCOPE-5 / COV-10)
+
+`regression-quality-guard.sh` rejects a test that reaches or observes the
+behavior through an internal door while reporting as end-to-end. The refused
+shapes are a detached render call, an internal-DOM or hidden-node read, and a
+request interception that answers on the dependency's behalf.
+
+**The rule is two-sided.** A shape is a finding only when the file offers it as
+the SOLE proof. A file that also asserts the current visible surface — a role,
+a visible locator, an accessibility snapshot — passes, because inspecting
+internals *in addition to* proving the outcome is legitimate. A one-sided
+version would reject every mixed test, and a guard that rejects correct work is
+a guard teams switch off.
+
+Projects extend the vocabularies through the existing configuration boundary:
+`scans.regressionQuality.pathSubstitutionPatterns` and
+`scans.regressionQuality.currentSurfacePatterns`.
+
+**Not covered here, deliberately.** "A seeded value asserted unchanged after a
+pass-through" is a tautology that cannot be recognised from syntax — deciding it
+needs a judgement about whether production code transformed the value, and any
+pattern guessing at it would fire on every legitimate round-trip assertion. That
+case belongs to the non-vacuity work, where perturbing the input answers it by
+experiment rather than by text matching.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`
