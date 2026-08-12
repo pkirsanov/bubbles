@@ -197,6 +197,34 @@ if [[ "$gherkin_scenario_count" -gt 0 ]]; then
       fi
     fi
 
+    # Obligation-matrix coherence (IMP-040 SCOPE-3 / COV-9). Safe to BLOCK on
+    # day one, unlike the resolver above: behaviorTraits/obligations are new
+    # optional fields, so this is inert on every packet that does not declare
+    # them and cannot retro-break an existing manifest.
+    scenario_obligation_lint="$SCRIPT_DIR/scenario-obligation-lint.sh"
+    if [[ -x "$scenario_obligation_lint" ]]; then
+      scenario_obligation_output=""
+      if scenario_obligation_output="$(bash "$scenario_obligation_lint" "$feature_dir" --quiet 2>&1)"; then
+        pass "scenario obligation matrix is coherent (Gate G057)"
+      else
+        fail "scenario obligation matrix is not coherent (Gate G057)"
+        [[ -n "$scenario_obligation_output" ]] && printf '%s\n' "$scenario_obligation_output"
+      fi
+    fi
+
+    # Mechanism coherence (IMP-040 SCOPE-4 / COV-10). Inert until a scenario
+    # declares testMechanism, so blocking cannot retro-break a packet.
+    test_mechanism_lint="$SCRIPT_DIR/test-mechanism-lint.sh"
+    if [[ -x "$test_mechanism_lint" ]]; then
+      test_mechanism_output=""
+      if test_mechanism_output="$(bash "$test_mechanism_lint" "$feature_dir" --quiet 2>&1)"; then
+        pass "declared test mechanisms support their claims (Gate G057)"
+      else
+        fail "a declared test mechanism does not support its claim (Gate G057)"
+        [[ -n "$test_mechanism_output" ]] && printf '%s\n' "$test_mechanism_output"
+      fi
+    fi
+
     if [[ "$manifest_evidence_count" -eq 0 ]]; then
       fail "scenario-manifest.json is missing evidenceRefs entries (Gate G057)"
     else

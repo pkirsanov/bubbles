@@ -39,49 +39,6 @@
 
 ## Proposal
 
-### SCOPE-3 — Scenario obligation matrix (COV-9)
-
-Extend planning with a behavior-derived obligation matrix. Each active scenario records the applicable obligations below.
-
-| Behavior trait | Required proof |
-| --- | --- |
-| Pure calculation or validation | Production-unit assertion over transformed output |
-| User-visible UI | Visible or accessibility-tree assertion on the current production route |
-| API or wire contract | Real request and externally observable response |
-| Mutable state | Write, read, and persistence round trip |
-| Degraded or unavailable state | Named negative-path assertion with no plausible default |
-| Shared consumer or adapter | Producer-consumer parity plus current consumer-surface assertion |
-| Cache, provider, queue, or transport | Declared dependency-path state and boundary assertion |
-| Responsive or accessible UI | Required viewport and accessibility behavior |
-| SLA-sensitive behavior | Stress or load assertion against the declared threshold |
-
-`bubbles.plan` derives this matrix from scenario traits. It must not add every category to every scenario.
-
-### SCOPE-4 — Test mechanism declaration (COV-10)
-
-Add `testMechanism` to Test Plan rows that satisfy scenario coverage.
-
-```json
-{
-  "entrypoint": "production-route",
-  "inputOrigin": "synthetic-cache",
-  "assertionSurface": "visible-ui",
-  "dependencyPath": "cache-only",
-  "productionOwners": ["path/to/owner"],
-  "negativeControl": "wrong route or changed input fails"
-}
-```
-
-Use closed vocabularies for the first four fields. `productionOwners` accepts repository-relative paths and optional symbols when a code-index adapter exists.
-
-The declaration distinguishes valid claims:
-
-- synthetic inputs may prove deterministic business logic.
-- seeded cache may prove cache consumption.
-- neither may prove live acquisition without a real boundary observation.
-- hidden DOM may prove an internal projection but not a visible UI outcome.
-- a detached renderer call may prove a renderer unit but not route integration.
-
 ### SCOPE-5 — Production-path fidelity guard (COV-10)
 
 Add a test-fidelity guard that compares category, mechanism, and source patterns.

@@ -25,6 +25,88 @@ Purpose: mandatory testing rules for `bubbles.test` and test-facing checks perfo
 - When project config defines `testImpact`, use `bubbles/scripts/test-impact-plan.sh` to choose the narrow-first test order and always-run checks for changed paths, then still execute any required final broad suites.
 - When project config defines `traceContracts`, preserve actual trace/log output for configured workflows so validation can run `bubbles/scripts/trace-contract-guard.sh` against evidence rather than predictions.
 
+## Scenario Obligation Matrix (IMP-040 SCOPE-3 / COV-9)
+
+A scenario can have a Test Plan row and still have no test of the behavior it
+describes: a row proves that SOMETHING was planned, not that the user-visible
+path was proven. Coverage is therefore derived from the scenario's BEHAVIOR
+TRAITS, not from a row count.
+
+For each active scenario, `bubbles.plan` records the obligations its traits
+imply:
+
+| Behavior trait | Required proof |
+|---|---|
+| Pure calculation or validation | Production-unit assertion over transformed output |
+| User-visible UI | Visible or accessibility-tree assertion on the current production route |
+| API or wire contract | Real request and externally observable response |
+| Mutable state | Write, read, and persistence round trip |
+| Degraded or unavailable state | Named negative-path assertion with no plausible default |
+| Shared consumer or adapter | Producer-consumer parity plus current consumer-surface assertion |
+| Cache, provider, queue, or transport | Declared dependency-path state and boundary assertion |
+| Responsive or accessible UI | Required viewport and accessibility behavior |
+| SLA-sensitive behavior | Stress or load assertion against the declared threshold |
+
+**Derive, do not enumerate.** The matrix is applied per scenario from the traits
+that scenario actually has. Attaching every row to every scenario is the failure
+mode this replaces, not a safe default: an obligation set that is always the
+same carries no information about the scenario, and it trains reviewers to skim
+a block that never varies. A pure-calculation scenario owes a production-unit
+assertion and nothing else.
+
+**One trait can imply several obligations.** A scenario that renders a cached
+value on a route is both "user-visible UI" and "cache/provider/transport", and
+owes both proofs — the visible assertion does not discharge the boundary one.
+
+## Test Mechanism Declaration (IMP-040 SCOPE-4 / COV-10)
+
+A test's CATEGORY does not prove its PATH. An `e2e-ui` test can assert against
+hidden legacy DOM, or call a render function directly, and still carry the
+label. Both shapes bypass the current user path while reporting as end-to-end
+coverage. The label states intent; `testMechanism` states mechanism, and unlike
+prose it is checkable because the first four fields are closed vocabularies.
+
+Test Plan rows that satisfy scenario coverage declare:
+
+```json
+{
+  "entrypoint": "production-route",
+  "inputOrigin": "synthetic-cache",
+  "assertionSurface": "visible-ui",
+  "dependencyPath": "cache-only",
+  "productionOwners": ["path/to/owner"],
+  "negativeControl": "wrong route or changed input fails"
+}
+```
+
+| Field | Vocabulary |
+|---|---|
+| `entrypoint` | `production-route`, `production-api`, `production-cli`, `public-function`, `detached-renderer`, `internal-helper` |
+| `inputOrigin` | `live-provider`, `ephemeral-real`, `seeded-store`, `synthetic-cache`, `synthetic-fixture`, `recorded-fixture` |
+| `assertionSurface` | `visible-ui`, `accessibility-tree`, `http-response`, `persisted-state`, `returned-value`, `hidden-dom`, `internal-state` |
+| `dependencyPath` | `not-applicable`, `ephemeral-real`, `same-origin-real`, `external-live`, `synthetic-boundary`, `cache-only` |
+
+`productionOwners` names the production code that computes the asserted result,
+as repository-relative paths plus optional symbols when a code-index adapter is
+configured. `negativeControl` states the perturbation that makes the test fail:
+a test with no stated perturbation has not been shown to be sensitive to what it
+claims.
+
+**What the declaration distinguishes.** Synthetic input may prove deterministic
+business logic, and a seeded cache may prove cache consumption, but neither
+proves live acquisition without a real boundary observation. Hidden DOM may
+prove an internal projection but not a visible outcome. A detached renderer call
+may prove a renderer unit but not route integration.
+
+`test-mechanism-lint.sh` refuses a declaration that contradicts the scenario's
+own `behaviorTraits`. It is inert on any scenario that declares no mechanism, so
+it blocks from day one without retro-breaking an existing packet.
+
+**Mixed tests are accepted.** The rules are coherence checks against the
+declared trait, not a ban on internal observation. A pure-calculation scenario
+asserting a returned value is correct. Only the shape where an internal surface
+is offered as the SOLE proof of an external claim is refused.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

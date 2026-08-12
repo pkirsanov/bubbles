@@ -226,7 +226,7 @@ Template reference: [feature-templates.md](bubbles_shared/feature-templates.md)
 - **Create plan-phase template artifacts if missing:**
   - `report.md` — Create with initial template headers (Summary, Test Evidence, Completion Statement).
   - `uservalidation.md` — Create with checked-by-default baseline template (`- [x]` items).
-  - `scenario-manifest.json` — Create/update so every planned Gherkin scenario has a stable `SCN-...` contract entry with live test expectations.
+  - `scenario-manifest.json` — Create/update so every planned Gherkin scenario has a stable `SCN-...` contract entry with live test expectations. For each active scenario, DERIVE `behaviorTraits` from what the scenario actually does and record the `obligations` those traits imply (see `test-core.md` → "Scenario Obligation Matrix"). Derive per scenario; do NOT attach every trait to every scenario — an obligation set that never varies says nothing about the scenario and is the row-based failure this replaces. `scenario-obligation-lint.sh` refuses a scenario that declares the entire vocabulary, a trait owing no obligation, and an obligation naming an undeclared trait.
 - Update `state.json.execution`: set `activeAgent: "bubbles.plan"`, `currentPhase: "bootstrap"`, capture `statusBefore` and `runStartedAt` for `executionHistory`, and keep `policySnapshot` intact.
 - Run User Validation Gate on `uservalidation.md` (check for unchecked regressions).
 - Determine impacted surfaces by reading spec/design and scanning the repo structure:

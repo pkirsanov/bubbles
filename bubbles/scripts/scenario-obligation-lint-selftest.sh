@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# bubbles/scripts/scenario-obligation-lint-selftest.sh
+#
+# Hermetic selftest for scenario-obligation-lint.sh (IMP-040 SCOPE-3 / COV-9).
+#
+# The load-bearing case is A4: a scenario that declares the ENTIRE trait
+# vocabulary must be refused. That is the failure mode the obligation matrix
+# exists to prevent — an always-identical obligation block is exactly as
+# uninformative as the row count it replaced.
+#
+# P1 is its necessary twin: a packet that declares nothing must stay INERT.
+# These fields are new, so a lint that demanded them would retro-break every
+# existing manifest.
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="$SCRIPT_DIR/scenario-obligation-lint.sh"
+NAME="scenario-obligation-lint-selftest"
+
+failures=0
+checks=0
+ok() { checks=$((checks + 1)); printf '  ok   %s\n' "$1"; }
+bad() {
+  checks=$((checks + 1)); failures=$((failures + 1))
+  printf '  FAIL %s\n' "$1"
+  [[ $# -gt 1 ]] && printf '       %s\n' "$2"
+  return 0
+}
+
+WORK="$(mktemp -d)" || exit 2
+trap 'rm -rf "$WORK"' EXIT INT TERM
+
+make_case() {
+  local root="$WORK/$1"
+  mkdir -p "$root"
+  printf '%s\n' "$2" >"$root/scenario-manifest.json"
+  printf '%s' "$root"
+}
+
+run_lint() {
+  set +e
+  OUT="$(bash "$TARGET" "$1" --quiet 2>&1)"
+  RC=$?
+  set -e
+}
+
+# --- P1. a packet declaring nothing stays inert -----------------------------
+R="$(make_case p1 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","linkedTests":["tests/a.ts"]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P1 a manifest with no behaviorTraits is inert"
+else
+  bad "P1 inert on undeclared" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- P2. a coherent derived matrix passes -----------------------------------
+R="$(make_case p2 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","behaviorTraits":["user-visible-ui","dependency-path"],"obligations":[{"trait":"user-visible-ui","requiredProof":"visible assertion on the production route"},{"trait":"dependency-path","requiredProof":"stale-cache boundary observation"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P2 a coherent two-trait matrix passes"
+else
+  bad "P2 coherent matrix" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- P3. scenarios may legitimately differ in trait count -------------------
+R="$(make_case p3 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"a","requiredTestType":"unit","behaviorTraits":["pure-calculation"],"obligations":[{"trait":"pure-calculation","requiredProof":"assertion over transformed output"}]},{"id":"SCN-001-002","title":"b","requiredTestType":"e2e-ui","behaviorTraits":["user-visible-ui","sla-sensitive"],"obligations":[{"trait":"user-visible-ui","requiredProof":"visible assertion"},{"trait":"sla-sensitive","requiredProof":"stress assertion against the threshold"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P3 differing per-scenario trait sets pass (derivation, not uniformity)"
+else
+  bad "P3 differing trait sets" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A1. ADVERSARIAL: a declared trait with no obligation -------------------
+R="$(make_case a1 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","behaviorTraits":["user-visible-ui","mutable-state"],"obligations":[{"trait":"user-visible-ui","requiredProof":"visible assertion"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'TRAIT-COVERED'; then
+  ok "A1 a declared trait owing no obligation is refused"
+else
+  bad "A1 uncovered trait" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A2. ADVERSARIAL: an obligation for an undeclared trait -----------------
+R="$(make_case a2 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","behaviorTraits":["user-visible-ui"],"obligations":[{"trait":"user-visible-ui","requiredProof":"visible assertion"},{"trait":"sla-sensitive","requiredProof":"stress"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'OBLIGATION-ANCHORED'; then
+  ok "A2 an obligation naming an undeclared trait is refused"
+else
+  bad "A2 unanchored obligation" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A3. ADVERSARIAL: an obligation with no stated proof --------------------
+R="$(make_case a3 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","behaviorTraits":["user-visible-ui"],"obligations":[{"trait":"user-visible-ui","requiredProof":"   "}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'TRAIT-COVERED'; then
+  ok "A3 an obligation with a blank requiredProof is refused"
+else
+  bad "A3 blank proof" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A4. ADVERSARIAL: the enumeration anti-pattern --------------------------
+# The whole point of SCOPE-3: derived, not enumerated.
+ALL='"pure-calculation","user-visible-ui","api-contract","mutable-state","degraded-state","shared-consumer","dependency-path","responsive-accessible","sla-sensitive"'
+OBS='{"trait":"pure-calculation","requiredProof":"x"},{"trait":"user-visible-ui","requiredProof":"x"},{"trait":"api-contract","requiredProof":"x"},{"trait":"mutable-state","requiredProof":"x"},{"trait":"degraded-state","requiredProof":"x"},{"trait":"shared-consumer","requiredProof":"x"},{"trait":"dependency-path","requiredProof":"x"},{"trait":"responsive-accessible","requiredProof":"x"},{"trait":"sla-sensitive","requiredProof":"x"}'
+R="$(make_case a4 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"behaviorTraits\":[$ALL],\"obligations\":[$OBS]}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'NOT-ENUMERATED'; then
+  ok "A4 a scenario declaring the ENTIRE vocabulary is refused"
+else
+  bad "A4 enumeration refused" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- P4. eight of nine traits is NOT flagged --------------------------------
+# Guards A4 against becoming a judgement threshold. A genuinely multi-trait
+# scenario must pass; only the maximal set is unambiguous enumeration.
+ALL8='"pure-calculation","user-visible-ui","api-contract","mutable-state","degraded-state","shared-consumer","dependency-path","responsive-accessible"'
+OBS8='{"trait":"pure-calculation","requiredProof":"x"},{"trait":"user-visible-ui","requiredProof":"x"},{"trait":"api-contract","requiredProof":"x"},{"trait":"mutable-state","requiredProof":"x"},{"trait":"degraded-state","requiredProof":"x"},{"trait":"shared-consumer","requiredProof":"x"},{"trait":"dependency-path","requiredProof":"x"},{"trait":"responsive-accessible","requiredProof":"x"}'
+R="$(make_case p4 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"behaviorTraits\":[$ALL8],\"obligations\":[$OBS8]}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P4 eight of nine traits passes (A4 is not a judgement threshold)"
+else
+  bad "P4 eight traits pass" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A5. ADVERSARIAL: a trait outside the vocabulary ------------------------
+R="$(make_case a5 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","behaviorTraits":["looks-fine"],"obligations":[{"trait":"looks-fine","requiredProof":"x"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'UNKNOWN-TRAIT'; then
+  ok "A5 a trait outside the vocabulary is refused"
+else
+  bad "A5 unknown trait" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- A6. ADVERSARIAL: obligations without any declared traits ---------------
+R="$(make_case a6 '{"schemaVersion":1,"scenarios":[{"id":"SCN-001-001","title":"t","requiredTestType":"e2e-ui","obligations":[{"trait":"user-visible-ui","requiredProof":"x"}]}]}')"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'OBLIGATION-ANCHORED'; then
+  ok "A6 obligations with no behaviorTraits are refused"
+else
+  bad "A6 orphan obligations" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# --- U1. usage -------------------------------------------------------------
+set +e
+bash "$TARGET" >/dev/null 2>&1; u1=$?
+bash "$TARGET" "$WORK/absent" >/dev/null 2>&1; u2=$?
+bypass="$(bash "$TARGET" --force 2>&1)"; u3=$?
+set -e
+if [[ "$u1" -eq 2 && "$u2" -eq 2 && "$u3" -eq 2 ]] && printf '%s' "$bypass" | grep -q 'bypass-shaped'; then
+  ok "U1 missing arg, absent dir and a bypass flag all exit 2"
+else
+  bad "U1 usage" "noarg=$u1 absent=$u2 bypass=$u3"
+fi
+
+printf '%s: %s check(s), %s failure(s)\n' "$NAME" "$checks" "$failures"
+[[ "$failures" -eq 0 ]] || exit 1
+exit 0
