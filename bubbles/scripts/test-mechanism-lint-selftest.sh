@@ -160,6 +160,79 @@ else
   bad "P4 mixed mechanism" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
 fi
 
+# --- IMP-040 SCOPE-7: non-vacuity and mutation proof ------------------------
+#
+# A9-A12 are the rules. P5-P7 are their guards. The important guard is P6: a
+# project with no mutation tooling must still be able to ship a high-risk
+# scenario by NAMING the fallback. Without that, the tier would be unusable
+# outside languages with mutation runners and teams would simply stop declaring
+# riskTier, which removes the signal rather than strengthening it.
+
+MECH_CORE='"entrypoint":"production-route","inputOrigin":"seeded-store","assertionSurface":"visible-ui","dependencyPath":"cache-only","productionOwners":["a.ts"]'
+
+# A9. a tier declared with no mechanism.
+R="$(make_case a9 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"riskTier\":\"medium\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"empty input refuses\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'NON-VACUITY'; then
+  ok "A9 a riskTier with no negativeControlMechanism is refused"
+else
+  bad "A9 tier without mechanism" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A10. a control weaker than the tier, with no stated reason.
+R="$(make_case a10 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"riskTier\":\"high\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"empty input refuses\",\"negativeControlMechanism\":\"adversarial-input\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'NON-VACUITY'; then
+  ok "A10 a control weaker than its tier is refused"
+else
+  bad "A10 weak control" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A11. a control that just restates the scenario title.
+R="$(make_case a11 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Cached price renders\",\"requiredTestType\":\"e2e-ui\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"Cached price renders\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'restates the scenario title'; then
+  ok "A11 a control restating the title is refused as a renamed label"
+else
+  bad "A11 renamed label" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A12. an out-of-vocabulary tier.
+R="$(make_case a12 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"riskTier\":\"critical\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"empty input refuses\",\"negativeControlMechanism\":\"mutation\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'riskTier'; then
+  ok "A12 a tier outside low/medium/high is refused"
+else
+  bad "A12 bad tier" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P5. a control that meets its tier passes.
+R="$(make_case p5 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"riskTier\":\"medium\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"perturbing the seeded price changes the rendered total\",\"negativeControlMechanism\":\"perturbed-input\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P5 a control meeting its tier passes"
+else
+  bad "P5 tier met" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P6. GUARD: a named fallback lets a project without mutation tooling ship.
+R="$(make_case p6 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"riskTier\":\"high\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"perturbing the rate changes the total\",\"negativeControlMechanism\":\"perturbed-input\",\"negativeControlFallbackReason\":\"no mutation adapter is configured for this repository\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P6 a named fallback lets a project without mutation tooling ship"
+else
+  bad "P6 named fallback" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P7. GUARD: the tier rules stay inert when no riskTier is declared.
+R="$(make_case p7 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"t\",\"requiredTestType\":\"e2e-ui\",\"testMechanism\":{$MECH_CORE,\"negativeControl\":\"empty input refuses\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P7 the tier rules are inert when no riskTier is declared"
+else
+  bad "P7 tier inert" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
 # --- U1. usage -------------------------------------------------------------
 set +e
 bash "$TARGET" >/dev/null 2>&1; u1=$?

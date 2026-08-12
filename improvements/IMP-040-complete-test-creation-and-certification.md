@@ -39,18 +39,6 @@
 
 ## Proposal
 
-### SCOPE-7 — Non-vacuity and mutation proof (COV-11)
-
-Require one negative control for every new scenario contract. Risk determines the mechanism.
-
-- Low risk: adversarial input or missing selector proves the assertion fails.
-- Medium risk: perturb one input and require a specified output change or refusal.
-- High risk: bounded mutation testing against the owning branch or predicate.
-
-The negative control must use the production path. It must not duplicate the positive fixture with a renamed label.
-
-Add a project adapter for mutation execution rather than hardcoding a language. Projects without mutation tooling use adversarial input until they opt in.
-
 ### SCOPE-8 — Shared-consumer parity (COV-9, REG-8)
 
 When a feature publishes through a shared adapter, shell, client, serializer, or renderer, require both:

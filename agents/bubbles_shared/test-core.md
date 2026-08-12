@@ -163,6 +163,36 @@ reports impossible work is one authors learn to wave through.
 Live means the real validate-plane dependency, never production infrastructure;
 environment-isolation rules continue to apply.
 
+## Non-Vacuity and Mutation Proof (IMP-040 SCOPE-7 / COV-11)
+
+Every new scenario contract owes one negative control: the perturbation that
+makes the test fail. A test with no stated control has not been shown to be
+sensitive to the behavior it claims to prove.
+
+`riskTier` sets how strong that control must be:
+
+| `riskTier` | Minimum `negativeControlMechanism` | Meaning |
+|---|---|---|
+| `low` | `adversarial-input` | Adversarial input or a missing selector proves the assertion fails |
+| `medium` | `perturbed-input` | Perturb one input, require a specified output change or refusal |
+| `high` | `mutation` | Bounded mutation against the owning branch or predicate |
+
+The control must run through the production path, and it must not duplicate the
+positive fixture under a renamed label — a `negativeControl` that restates the
+scenario title verbatim is refused.
+
+**Tier the scenarios that would actually hurt.** A uniform tier across every
+scenario carries no information, the same way a uniform obligation set does.
+
+**A project without mutation tooling is not blocked.** Mutation execution is a
+project adapter (`mutationExecution:` in project config, default `none`), never
+a hardcoded language runner — Bubbles supports eight languages and hardcoding
+one engine would make the strongest control unreachable in most of them. A
+high-risk scenario may declare a weaker mechanism when it also declares
+`negativeControlFallbackReason`. The point is that a deliberate fallback stays
+distinguishable from a silent downgrade; the resolver refuses a *broken* adapter
+config loudly for the same reason, so a misspelling cannot buy that exemption.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

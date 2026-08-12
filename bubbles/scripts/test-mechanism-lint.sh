@@ -171,6 +171,52 @@ for scenario in scenarios:
                          f"scenario declares api-contract but asserts against '{surface}'. "
                          "A wire contract needs an externally observable response"))
 
+    # --- D. non-vacuity: the negative control matches the risk (SCOPE-7) ----
+    # Ranked weakest to strongest. A negative control that is weaker than the
+    # stakes has not shown the test is sensitive to what it claims.
+    RANK = {"adversarial-input": 1, "perturbed-input": 2, "mutation": 3}
+    TIER_MINIMUM = {"low": 1, "medium": 2, "high": 3}
+
+    tier = scenario.get("riskTier")
+    ncm = mech.get("negativeControlMechanism")
+    fallback = mech.get("negativeControlFallbackReason")
+
+    if tier is not None and tier not in TIER_MINIMUM:
+        findings.append((sid, "VOCABULARY",
+                         f"riskTier = '{tier}' is not one of low, medium, high"))
+    elif tier is not None:
+        if ncm is None:
+            findings.append((sid, "NON-VACUITY",
+                             f"scenario declares riskTier '{tier}' but no "
+                             "negativeControlMechanism. The tier sets how strong the "
+                             "control must be, so it has to say which one it used"))
+        elif ncm not in RANK:
+            findings.append((sid, "VOCABULARY",
+                             f"negativeControlMechanism = '{ncm}' is not one of "
+                             f"{', '.join(sorted(RANK, key=RANK.get))}"))
+        elif RANK[ncm] < TIER_MINIMUM[tier]:
+            # Not blocked outright: a project with no mutation tooling is
+            # expected to use a weaker control. It just has to SAY SO, so a
+            # deliberate fallback is distinguishable from a silent downgrade.
+            if not isinstance(fallback, str) or not fallback.strip():
+                findings.append((sid, "NON-VACUITY",
+                                 f"riskTier '{tier}' needs at least "
+                                 f"'{sorted(RANK, key=RANK.get)[TIER_MINIMUM[tier] - 1]}' "
+                                 f"but the control is '{ncm}'. Strengthen it, or state a "
+                                 "negativeControlFallbackReason naming why it cannot be"))
+
+    # A control that merely restates the scenario is the renamed-label shape the
+    # proposal calls out: it duplicates the positive fixture instead of
+    # perturbing anything.
+    title = scenario.get("title")
+    if isinstance(negative, str) and isinstance(title, str):
+        norm = lambda s: " ".join(s.lower().split())
+        if norm(negative) and norm(negative) == norm(title):
+            findings.append((sid, "NON-VACUITY",
+                             "negativeControl restates the scenario title verbatim. A "
+                             "control has to name a perturbation, not relabel the "
+                             "positive case"))
+
 if findings:
     print("test-mechanism-lint: FAIL — declared mechanism does not support the claim (COV-10)", file=sys.stderr)
     for sid, code, detail in findings:

@@ -50,6 +50,11 @@
             }
           },
           "tags": { "type": "array", "items": { "type": "string" } },
+          "riskTier": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "OPTIONAL (IMP-040 SCOPE-7, COV-11). How much a wrong answer costs, which determines the strength of negative control the scenario owes. A uniform tier across every scenario carries no information; tier the ones that would actually hurt."
+          },
           "behaviorTraits": {
             "type": "array",
             "items": {
@@ -126,6 +131,16 @@
                 "type": "string",
                 "minLength": 1,
                 "description": "The specific perturbation that makes this test fail. A test with no stated negative control has not been shown to be sensitive to the behavior it claims to prove."
+              },
+              "negativeControlMechanism": {
+                "type": "string",
+                "enum": ["adversarial-input", "perturbed-input", "mutation"],
+                "description": "OPTIONAL (IMP-040 SCOPE-7, COV-11). HOW the negative control is executed, ranked weakest to strongest. The scenario's riskTier sets the minimum: low accepts adversarial-input, medium requires at least perturbed-input, high requires mutation. The negative control must run through the production path."
+              },
+              "negativeControlFallbackReason": {
+                "type": "string",
+                "minLength": 1,
+                "description": "OPTIONAL (IMP-040 SCOPE-7). Names why a weaker mechanism than the riskTier requires is being used, e.g. no mutation adapter is configured. Projects without mutation tooling use a weaker control until they opt in, but they state so explicitly rather than downgrading silently."
               }
             }
           },
