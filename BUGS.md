@@ -1794,6 +1794,75 @@ Either exclude `report.md` from the revision-covered set for this purpose, or
 make the guard's own write happen before the revision is computed, so that
 measuring a packet does not change it.
 
+---
+
+## BUG-022 — `state-consistency-scan.sh` counts an UNCHECKED scope-status picker as a Done scope, so every freshly-scaffolded `not_started` packet is reported as hiding finished work
+
+- **Filed:** 2026-08-12
+- **Disposition:** FIXED, same day, in the framework. See "### Fix" below.
+- **Severity:** medium — advisory-only (the scan always exits 0), so it blocks
+  nothing. The harm is trust: the finding fires on the canonical scaffold, so the
+  operator learns to ignore a scan whose whole job is to surface real drift.
+- **Found by:** reviewing the one remaining finding in the `research-lab`
+  downstream install after clearing two genuine mirror-divergences. The finding
+  named `012/bugs/BUG-002` with `doneScopes=2`, but that packet declares itself a
+  "DISCOVERY + ROUTING packet, `status: not_started`" and **nothing in it is
+  checked**.
+
+### Defect
+
+The done-scope counter matched the bare word `Done` anywhere on a `**Status:**`
+line:
+
+```
+grep -hE '^\*\*Status:\*\*.*Done'
+```
+
+The canonical scope scaffold renders all three options on one line, unchecked:
+
+```
+**Status:** [ ] Not started | [ ] In progress | [ ] Done
+```
+
+That line starts with `**Status:**` and contains `Done`, so an untouched template
+counted as a completed scope. Two such lines produced `doneScopes=2` for a packet
+with zero completed scopes.
+
+A second, quieter false positive shared the same root: `[x] In progress | [ ] Done`
+also matched, so a scope explicitly marked *in progress* counted as Done.
+
+### Fix
+
+Require `Done` to be **selected**, not merely present — either a plain
+`**Status:** Done` (the legacy form) or a checked `[x] Done`:
+
+```
+grep -hE '^\*\*Status:\*\*([[:space:]]*Done|.*\[[xX]\][[:space:]]*Done)'
+```
+
+Verified by running both regexes against the exact fixture lines:
+
+| fixture | old | new |
+|---|---|---|
+| `[ ] Not started \| [ ] In progress \| [ ] Done` (the bug) | 1 | **0** |
+| `[x] In progress \| [ ] Done` | 1 | **0** |
+| `[ ] Not started \| [ ] In progress \| [x] Done` | 1 | **1** |
+| `Done` (legacy plain form) | 1 | **1** |
+| `Not Started` | 0 | 0 |
+
+End-to-end on the `research-lab` downstream install: the installed scan reported
+1 status-behind-evidence finding; the fixed scan reports `OK — zero findings
+across 36 spec(s)`.
+
+Three selftest cases were added (11, 12, 13). Two are adversarial controls that
+fail if the fix were written as a blanket disable: a checked `[x] Done` picker
+must still be reported, and the pre-existing plain-`Done` case (4) must keep
+passing. `state-consistency-scan-selftest.sh` is 13/13.
+
+The regex uses only POSIX ERE classes, so it behaves identically under BSD grep;
+`macos-portability-guard.sh` passes on the changed surface.
+
+
 
 
 
