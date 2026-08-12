@@ -1862,6 +1862,183 @@ passing. `state-consistency-scan-selftest.sh` is 13/13.
 The regex uses only POSIX ERE classes, so it behaves identically under BSD grep;
 `macos-portability-guard.sh` passes on the changed surface.
 
+---
+
+## BUG-028 — Check 43 treats identical deterministic output as cloned evidence and lets unrelated specs block each other
+
+- **Filed:** 2026-08-12
+- **Disposition:** open in-repo framework defect. The finding is reproduced and the faulty predicate is identified. No framework code changed in the filing session.
+- **Severity:** high. The check blocks certification and falsely accuses honest executions of evidence reuse.
+- **Found by:** current-policy revalidation of downstream `research-lab/specs/011-volatility-regime-and-sizing-lab`.
+- **Distinct from:** BUG-007 excluded empty stdout. BUG-019 normalized equivalent command spellings. This defect concerns substantive deterministic output from separate commands.
+
+### Reproduction
+
+The downstream transition guard reported:
+
+```text
+BLOCK: Evidence receipt CLONE — one captured stdout is cited by two different commands
+205233224dd1… reused by:
+bash .github/bubbles/scripts/artifact-lint.sh specs/_bugs/BUG-001-central-provider-credential-security
+AND
+bash .github/bubbles/scripts/artifact-lint.sh specs/_bugs/BUG-003-bond-regime-simple-power-model-digest-divergence
+```
+
+The tool log contains separate successful executions with different durations. Both commands produce the same deterministic summary, such as `Artifact lint PASSED.` Their matching output bytes do not prove receipt reuse.
+
+Check 43 reads the repository-wide `.specify/runtime/tool-calls.jsonl`. It groups every non-empty `stdoutHash` across every spec. It then blocks when one hash has more than one normalized command identity.
+
+### Root cause
+
+`state-transition-guard.sh` assumes different commands cannot honestly produce identical substantive stdout. Deterministic validators disprove that premise. The check also ignores the target spec and certifying window, so receipts from unrelated packets block the active transition.
+
+### Expected behavior
+
+Evidence reuse detection must prove that one receipt backed multiple unrelated claims. Equal output content is only similarity evidence. It is not proof that one execution was reused.
+
+### Recommended fix
+
+1. Give each tool-log receipt a stable receipt identifier.
+2. Record receipt references on admitted evidence claims.
+3. Block only when one receipt identifier backs incompatible claims.
+4. Scope the check to the active spec and certifying window.
+5. Keep equal output hashes as advisory diagnostics when receipt identity is unavailable.
+
+Add adversarial selftests for two different spec-scoped artifact-lint runs with equal stdout. They must pass. Reusing one receipt identifier across two incompatible claims must still fail.
+
+---
+
+## BUG-029 — G010 declares unchecked user validation blocking, but terminal transitions do not enforce it
+
+- **Filed:** 2026-08-12
+- **Disposition:** open in-repo framework defect. The policy and missing enforcement are verified. No framework code changed in the filing session.
+- **Severity:** high. A spec can be certified `done` while its human acceptance artifact reports a regression.
+- **Found by:** downstream spec 011 retained an unchecked acceptance item while both status mirrors said `done`.
+
+### Reproduction
+
+The downstream artifact contained:
+
+```markdown
+- [ ] Final `done` certification is confirmed by a green full-suite regression.
+```
+
+The spec was nevertheless certified `done`. The current `state-transition-guard.sh` still does not report this unchecked item.
+
+The framework policy is explicit:
+
+- `artifact-lifecycle.md` says unchecked `uservalidation.md` items represent user-reported regressions and block forward progress.
+- `bubbles.validate.agent.md` says validation fails when any unchecked item exists.
+- G010 is a required `user_validation_gate` for full delivery.
+
+`artifact-lint.sh` checks only that the checklist contains at least one checked-by-default item. It does not reject remaining unchecked items. No state-transition check implements the missing terminal assertion.
+
+### Root cause
+
+G010 is registered as `mode-required` without a script-backed enforcer. The agent policy exists, but the terminal guard does not verify its required state.
+
+### Expected behavior
+
+A terminal completion transition must fail when the checklist contains any unchecked item. Agents must not toggle human acceptance to clear the failure. They must route the reported regression to its owner.
+
+### Recommended fix
+
+Add a dedicated user-validation guard. Wire it into terminal transitions and G010 metadata. The guard should:
+
+1. Parse only the `## Checklist` section.
+2. Reject every unchecked item for a terminal completion target.
+3. Print the item text without changing it.
+4. No-op for planning targets that only create the checked-by-default template.
+5. Include a red fixture with one checked and one unchecked item. This defeats the current `at least one checked` false pass.
+
+---
+
+## BUG-030 — G057 accepts linked test titles that do not exist
+
+- **Filed:** 2026-08-12
+- **Disposition:** open in-repo framework defect. Three stale links reproduced the false pass. No framework code changed in the filing session.
+- **Severity:** high. Scenario certification can claim live coverage that no executable test carries.
+- **Found by:** exact-link audit of downstream spec 011.
+
+### Reproduction
+
+The scenario manifest referenced three absent Playwright titles:
+
+```text
+SCN-011-001 -> Regression BS-001: high-persistence forecast stays elevated and typed forecast
+SCN-011-003 -> Regression BS-003: sizing multiplier throttles to about half in a storm with a worked example
+SCN-011-012 -> Regression BS-012: EWMA-vs-GARCH persistence divergence is shown not averaged
+```
+
+The test file had no tests with those titles. Artifact lint and traceability still passed.
+
+### Root cause
+
+`guards/control-plane-checks.sh` counts `linkedTests` fields but does not parse their values. `traceability-guard.sh` searches for structured `"file"` fields. It does not parse the repository's string form, `path/to/test#exact title`.
+
+G057 promises that each scenario maps to real live-system BDD coverage. Field presence and file existence do not satisfy that contract.
+
+### Expected behavior
+
+Every active linked-test reference must resolve to a real file and a real test declaration. Certification must fail on a missing file, missing title, duplicate ambiguous title, or incompatible test category.
+
+### Recommended fix
+
+1. Parse `scenario-manifest.json` with a structured JSON parser.
+2. Support the documented string form and any structured reference form.
+3. Resolve each path against the repository root.
+4. Resolve each exact test title through a project test adapter or a conservative source declaration scan.
+5. Compare `requiredTestType` with the resolved runner category.
+6. Add red fixtures for a real file with an absent title and for a unit test linked as required E2E coverage.
+
+---
+
+## BUG-031 — downstream repositories receive completion guards but no automatic changed-spec enforcement path
+
+- **Filed:** 2026-08-12
+- **Disposition:** open framework integration defect. The contradictory surfaces and downstream reproduction are verified. No framework code changed in the filing session.
+- **Severity:** high. Certified planning truth can change and deploy without G088 running.
+- **Found by:** the July 30 post-certification edit to downstream spec 011.
+
+### Reproduction
+
+G088 existed in the downstream installation before the edit. The edit changed `spec.md` after `certifiedAt` without setting `requiresRevalidation:true`. The normal Pages workflow still accepted later commits.
+
+The downstream repository has:
+
+- no `pre-commit` hook;
+- no `pre-push` hook;
+- no `core.hooksPath`;
+- no workflow invoking `state-transition-guard.sh`, `done-spec-audit.sh`, or `post-cert-spec-edit-guard.sh`.
+
+The Bubbles CLI rejects hook installation in consumer repositories:
+
+```text
+Bubbles git hooks may only be installed in the Bubbles framework repo.
+Consumer repos should use Bubbles but must not install Bubbles-managed pre-commit/pre-push hooks.
+```
+
+The status-transition skill still states that pre-push runs `done-spec-audit.sh --profile changed` and that the mechanical guard runs in pre-push and CI.
+
+### Root cause
+
+The installer ships guard scripts but no downstream execution surface. Source-repo hook generation cannot satisfy downstream enforcement because the CLI explicitly forbids those hooks there.
+
+### Expected behavior
+
+Every adopted downstream repository needs one supported, generic changed-spec command and one supported CI integration path. A certified planning edit must fail before merge or deployment.
+
+### Recommended fix
+
+1. Add a downstream command that accepts base and head revisions.
+2. Discover every changed spec, including planning files when `state.json` is untouched.
+3. Run G088 and the current changed-spec audit for each target.
+4. Ship a reusable CI workflow or generated workflow template that invokes this command.
+5. Make `doctor` report blocking posture when a repo declares certification-required validation but has no local or CI invocation.
+6. Correct the status-transition documentation so it names the actual supported downstream enforcement path.
+
+Add an integration fixture where only `spec.md` changes after certification. The downstream command and workflow must both reject it.
+
 
 
 
