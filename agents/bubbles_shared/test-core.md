@@ -132,6 +132,37 @@ pattern guessing at it would fire on every legitimate round-trip assertion. That
 case belongs to the non-vacuity work, where perturbing the input answers it by
 experiment rather than by text matching.
 
+## Dependency-Path Coverage (IMP-040 SCOPE-6 / COV-9, COV-10)
+
+A cached read can satisfy a scenario about *rendering* a value. It cannot
+satisfy a scenario about **freshness, fallback, retry, transport or delta**,
+because those are claims about the boundary and a cache-only test never reaches
+the boundary. When a scenario's title or tags name that kind of behavior, a
+`cache-only` dependency path is refused: the test must observe the named
+boundary.
+
+For cache-first behavior the distinct cases are:
+
+| Case token | Behavior |
+|---|---|
+| `fresh-no-fetch` | Fresh cache serves with no fetch |
+| `stale-paints-before-delta` | Stale but meaningful cache paints before the delta completes |
+| `missing-honestly-unavailable` | Missing cache stays honestly unavailable until data arrives |
+| `malformed-rejected` | Malformed or rejected data |
+| `delta-changes-result` | Delta completion changes the owning result |
+
+A cache-first scenario names the cases it claims as `cache-case:<token>` in an
+obligation's `satisfiedBy`. The vocabulary is closed, so a typo is a finding
+rather than a silently uncounted case.
+
+**Cases are named, not counted.** The requirement is that a cache-first scenario
+declare the cases that apply, not that it declare all five. Demanding a fixed
+count would report work that cannot arise for a given scenario, and a gate that
+reports impossible work is one authors learn to wave through.
+
+Live means the real validate-plane dependency, never production infrastructure;
+environment-isolation rules continue to apply.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

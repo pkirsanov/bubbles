@@ -39,29 +39,6 @@
 
 ## Proposal
 
-### SCOPE-6 — Dependency-path coverage (COV-9, COV-10)
-
-Add dependency states to the obligation matrix:
-
-- `not-applicable`.
-- `ephemeral-real`.
-- `same-origin-real`.
-- `external-live`.
-- `synthetic-boundary`.
-- `cache-only`.
-
-When a scenario names freshness, fallback, retry, transport, or delta behavior, `cache-only` cannot satisfy it. The test must observe the named boundary.
-
-For cache-first behavior, require separate cases when applicable:
-
-1. fresh cache with no fetch.
-2. stale meaningful cache that paints before delta completion.
-3. missing cache that remains honestly unavailable until data arrives.
-4. malformed or rejected data.
-5. delta completion that changes the owning result.
-
-Projects still obey environment-isolation rules. Live means the real validate-plane dependency, never production infrastructure.
-
 ### SCOPE-7 — Non-vacuity and mutation proof (COV-11)
 
 Require one negative control for every new scenario contract. Risk determines the mechanism.

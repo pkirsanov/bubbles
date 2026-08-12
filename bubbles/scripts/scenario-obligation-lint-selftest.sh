@@ -142,6 +142,79 @@ else
   bad "A6 orphan obligations" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
 fi
 
+# --- IMP-040 SCOPE-6: dependency-path coverage ------------------------------
+#
+# A7/A8/A9 are the rules. P5/P6/P7 are their guards: cache-only must stay legal
+# for a scenario that is genuinely only about rendering a cached value, and the
+# case requirement must not fire on a scenario with no cache-first mechanism.
+# Without those guards the check would push authors to declare `external-live`
+# on everything, which is the opposite of what it is for.
+
+DEP_OB='"behaviorTraits":["dependency-path"],"obligations":[{"trait":"dependency-path","requiredProof":"boundary assertion"'
+
+# A7. cache-only offered for a freshness claim.
+R="$(make_case a7 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Stale cache is refreshed from the provider\",\"requiredTestType\":\"integration\",$DEP_OB,\"satisfiedBy\":[\"cache-case:fresh-no-fetch\"]}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"synthetic-cache\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"cache-only\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'DEPENDENCY-BOUNDARY'; then
+  ok "A7 cache-only cannot satisfy a scenario naming freshness"
+else
+  bad "A7 cache-only vs freshness" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A8. cache-only offered for a fallback claim, named via tags rather than title.
+R="$(make_case a8 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Provider result renders\",\"tags\":[\"fallback\"],\"requiredTestType\":\"integration\",$DEP_OB,\"satisfiedBy\":[\"cache-case:fresh-no-fetch\"]}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"synthetic-cache\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"cache-only\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'DEPENDENCY-BOUNDARY'; then
+  ok "A8 a boundary claim in tags is caught as well as in the title"
+else
+  bad "A8 tags boundary" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A9. cache-first scenario naming no case at all.
+R="$(make_case a9 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Cached value renders\",\"requiredTestType\":\"integration\",$DEP_OB}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"synthetic-cache\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"cache-only\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'DEPENDENCY-CASE'; then
+  ok "A9 a cache-first scenario naming no cache-case is refused"
+else
+  bad "A9 no cache case" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# A10. a mistyped case token is a finding, not a silently uncounted case.
+R="$(make_case a10 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Cached value renders\",\"requiredTestType\":\"integration\",$DEP_OB,\"satisfiedBy\":[\"cache-case:fresh-nofetch\"]}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"synthetic-cache\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"cache-only\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 1 ]] && printf '%s' "$OUT" | grep -q 'not in the vocabulary'; then
+  ok "A10 a mistyped cache-case token is refused"
+else
+  bad "A10 mistyped case" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P5. cache-only is legal for a scenario that only renders a cached value.
+R="$(make_case p5 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Cached price renders on the summary card\",\"requiredTestType\":\"integration\",$DEP_OB,\"satisfiedBy\":[\"cache-case:fresh-no-fetch\"]}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"synthetic-cache\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"cache-only\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P5 cache-only stays legal for a pure cached-render scenario"
+else
+  bad "P5 cache-only allowed" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P6. a freshness scenario that DOES observe the boundary passes.
+R="$(make_case p6 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Stale cache is refreshed from the provider\",\"requiredTestType\":\"integration\",$DEP_OB,\"satisfiedBy\":[\"cache-case:delta-changes-result\"]}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"ephemeral-real\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"same-origin-real\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P6 a freshness scenario observing a real boundary passes"
+else
+  bad "P6 real boundary" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
+# P7. the case requirement does not fire without a cache-first mechanism.
+R="$(make_case p7 "{\"schemaVersion\":1,\"scenarios\":[{\"id\":\"SCN-001-001\",\"title\":\"Provider result renders\",\"requiredTestType\":\"integration\",$DEP_OB}],\"testMechanism\":{\"entrypoint\":\"production-route\",\"inputOrigin\":\"ephemeral-real\",\"assertionSurface\":\"visible-ui\",\"dependencyPath\":\"same-origin-real\",\"productionOwners\":[\"a.ts\"],\"negativeControl\":\"x\"}}]}")"
+run_lint "$R"
+if [[ "$RC" -eq 0 ]]; then
+  ok "P7 the cache-case requirement is scoped to cache-first mechanisms"
+else
+  bad "P7 non-cache scoped" "rc=$RC out=$(printf '%s' "$OUT" | tr '\n' '|')"
+fi
+
 # --- U1. usage -------------------------------------------------------------
 set +e
 bash "$TARGET" >/dev/null 2>&1; u1=$?

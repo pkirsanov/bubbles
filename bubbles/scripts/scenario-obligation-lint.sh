@@ -89,6 +89,40 @@ VOCABULARY = {
     "responsive-accessible", "sla-sensitive",
 }
 
+# --- IMP-040 SCOPE-6: dependency-path coverage (COV-9, COV-10) --------------
+#
+# A cached read can satisfy a scenario about rendering a value. It cannot
+# satisfy a scenario about FRESHNESS, fallback, retry, transport or delta,
+# because those are claims about the boundary and a cache-only test never
+# reaches the boundary. The words below are how a scenario says it is making
+# that kind of claim.
+BOUNDARY_BEHAVIOR_TERMS = (
+    "fresh", "stale", "fallback", "retry", "transport", "delta", "refresh",
+    "revalidat", "expire", "invalidat", "timeout", "offline", "reconnect",
+    "degrad", "outage", "unavailab",
+)
+
+# Paths that never observe the boundary.
+NON_OBSERVING_PATHS = {"cache-only"}
+CACHE_FIRST_PATHS = {"cache-only", "synthetic-boundary"}
+
+# The distinct cache-first cases. Declared as `cache-case:<token>` in an
+# obligation's satisfiedBy. The list is closed so a typo is a finding rather
+# than a silently uncounted case.
+#
+# The spec says "require separate cases WHEN APPLICABLE", so this does NOT
+# demand all five. Demanding a fixed count would fire on scenarios where a case
+# genuinely cannot arise, and a gate that reports impossible work is one authors
+# learn to wave through. What it demands is that a cache-first scenario NAME the
+# cases it claims, from a vocabulary that cannot absorb a typo.
+CACHE_FIRST_CASES = {
+    "fresh-no-fetch",
+    "stale-paints-before-delta",
+    "missing-honestly-unavailable",
+    "malformed-rejected",
+    "delta-changes-result",
+}
+
 findings = []
 declared = 0
 
@@ -148,6 +182,52 @@ for scenario in scenarios:
     if uncovered:
         findings.append((sid, "TRAIT-COVERED",
                          f"declared trait(s) with no obligation: {', '.join(uncovered)}"))
+
+    # --- D. dependency-path coverage (SCOPE-6) ------------------------------
+    mech = scenario.get("testMechanism")
+    dependency = mech.get("dependencyPath") if isinstance(mech, dict) else None
+
+    # Every cache-case token declared anywhere on this scenario.
+    declared_cases = set()
+    malformed_cases = set()
+    if isinstance(obligations, list):
+        for ob in obligations:
+            if not isinstance(ob, dict):
+                continue
+            for entry in ob.get("satisfiedBy") or []:
+                if not isinstance(entry, str) or not entry.startswith("cache-case:"):
+                    continue
+                token = entry.split(":", 1)[1].strip()
+                if token in CACHE_FIRST_CASES:
+                    declared_cases.add(token)
+                else:
+                    malformed_cases.add(token)
+
+    if malformed_cases:
+        findings.append((sid, "DEPENDENCY-CASE",
+                         f"cache-case token(s) not in the vocabulary: "
+                         f"{', '.join(sorted(malformed_cases))}. Valid: "
+                         f"{', '.join(sorted(CACHE_FIRST_CASES))}"))
+
+    if dependency in NON_OBSERVING_PATHS:
+        haystack = " ".join(
+            [str(scenario.get("title") or "")]
+            + [t for t in (scenario.get("tags") or []) if isinstance(t, str)]
+        ).lower()
+        named = sorted({term for term in BOUNDARY_BEHAVIOR_TERMS if term in haystack})
+        if named:
+            findings.append((sid, "DEPENDENCY-BOUNDARY",
+                             f"scenario names boundary behavior ({', '.join(named)}) but "
+                             f"dependencyPath is '{dependency}'. A cache-only test never "
+                             "reaches the boundary it claims to prove; observe the named "
+                             "boundary instead"))
+
+    if dependency in CACHE_FIRST_PATHS and "dependency-path" in trait_set and not declared_cases:
+        findings.append((sid, "DEPENDENCY-CASE",
+                         f"cache-first scenario (dependencyPath '{dependency}') names no "
+                         "cache-case in any obligation's satisfiedBy. Declare the applicable "
+                         f"case(s) as 'cache-case:<token>' from: "
+                         f"{', '.join(sorted(CACHE_FIRST_CASES))}"))
 
 if findings:
     print("scenario-obligation-lint: FAIL — obligation matrix is not coherent (COV-9)", file=sys.stderr)
