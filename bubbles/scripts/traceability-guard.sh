@@ -794,8 +794,19 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     while IFS= read -r row; do
       [[ -n "$row" ]] || continue
       if scenario_matches_row "$scenario" "$row" || trace_id_declared "$scenario_id" "$row"; then
-        matched_row="$row"
-        break
+        # One scenario is legitimately covered by several rows — a page-integrity
+        # row naming the page, plus the e2e row naming the spec file that
+        # exercises it. Row order in the table is arbitrary, so breaking on the
+        # first match made the concrete-path check below depend on authoring
+        # order: a scenario whose test file was named one row further down
+        # failed as though it had no test at all. Keep the first match as the
+        # fallback so single-match behaviour is unchanged, then upgrade to a
+        # matching row that actually carries a path.
+        [[ -n "$matched_row" ]] || matched_row="$row"
+        if [[ -n "$(extract_path_candidates "$row")" ]]; then
+          matched_row="$row"
+          break
+        fi
       fi
     done <<< "$test_rows"
 

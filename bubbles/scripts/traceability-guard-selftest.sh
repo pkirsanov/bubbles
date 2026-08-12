@@ -804,6 +804,58 @@ rm -f "$idless_dir/scopes.md.bak"
 run_trace_case "$idless_dir" "an id-less heading cannot blanket-match"
 assert_case_status 1 "Declared id adversarial: with no id on the heading the unrelated DoD item is still unmapped"
 
+# One scenario is legitimately covered by more than one row: a page-integrity row
+# naming the page under test, plus the e2e row naming the spec that exercises it.
+# Row order is arbitrary, so matching the first row and stopping made the
+# concrete-path check depend on authoring order. Here the path-less row is listed
+# FIRST, so a first-match-wins implementation fails this fixture.
+multirow_dir="$TMPDIR/multirow-path"
+build_clean_feature "$multirow_dir"
+cat > "$multirow_dir/scopes.md" <<'EOF'
+# Scope 01: Widget Render
+
+**Status:** In Progress
+
+### Gherkin
+
+#### SCN-88-multi - governing heading carries the identifier
+
+  Scenario: Widget renders with provided label
+    Given a label "Hello"
+    When the widget mounts
+    Then the rendered output displays "Hello"
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --------- | -------- | ------------- | ----------- | ------- | ----------- |
+| Page integrity | functional | widget.html | SCN-88-multi page parse with no directory prefix | selftest:page | No |
+| E2E       | e2e-ui   | tests/widget-render.e2e.spec.ts | SCN-88-multi widget renders with provided label and displays it | selftest:widget-render | Yes |
+
+### Definition of Done
+
+- [x] SCN-88-multi widget renders with provided label and displays the rendered output -> Evidence: report.md#test-evidence
+EOF
+cat > "$multirow_dir/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "scenarioId": "SCN-88-multi",
+      "scope": "01-widget-render",
+      "title": "Widget renders with provided label",
+      "linkedTests": [
+        { "file": "tests/widget-render.e2e.spec.ts" }
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_trace_case "$multirow_dir" "multi-row scenario prefers the row carrying a test path"
+assert_case_status 0 "Multi-row: a path-bearing row is chosen even when a path-less row matches first"
+assert_case_not_contains "mapped row has no concrete test file path" \
+  "Multi-row: the path-less first row does not decide the concrete-path check"
+
 if [[ "$failures" -eq 0 ]]; then
   echo "[selftest traceability-guard] PASS"
   exit 0
