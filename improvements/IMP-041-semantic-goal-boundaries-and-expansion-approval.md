@@ -39,28 +39,6 @@
 
 ## Proposal
 
-### SCOPE-6 — Finding-to-scenario admission control (GF-12)
-
-Require every finding-driven DAG amendment to carry `goalImpact` and `contributesTo`.
-
-Apply the existing impact vocabulary:
-
-- `required` may enter the current DAG when it maps to the frozen outcome.
-- `blocking-external` may block the goal but cannot authorize implementation.
-- `independent` routes to a separate proposal, spec, bug, or backlog record.
-
-A specialist cannot promote its own finding from `independent` to `required`. The parent must verify the mapping against the Goal Contract.
-
-The parent reruns pre-dispatch validation after every accepted amendment. The scenario ledger records the finding identifier and contribution mapping.
-
-#### SCOPE-6 tests
-
-- Accept a required finding that maps to a hard constraint.
-- Refuse an independent finding inserted into the current DAG.
-- Preserve a blocking-external finding without creating implementation work.
-- Refuse a finding reported as addressed when it was only routed.
-- Refuse a specialist-authored impact upgrade without a parent decision.
-
 ### SCOPE-7 — Convergence materiality brake (GF-13)
 
 Add a materiality check before every autonomous convergence iteration.

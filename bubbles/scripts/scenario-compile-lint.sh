@@ -349,6 +349,64 @@ if [[ "${NODE_COUNT:-0}" -gt 0 ]]; then
     done <<< "$semantic_violations"
   fi
 
+  # ---- IMP-041 SCOPE-6: finding-to-scenario admission control (GF-12) ------
+  # Findings are the second way a goal grows. Verification legitimately
+  # discovers real problems, and the tempting move is to fix them here, now,
+  # inside the current DAG. That is how a bounded goal acquires work nobody
+  # framed: each amendment is individually defensible and the sum is a
+  # different goal.
+  #
+  # Admission is therefore explicit. A node born from a finding declares its
+  # goalImpact, and only `required` may join the current graph.
+  #
+  # ADDITIVE: a node with no originFinding is untouched, so legacy scenarios and
+  # ordinary planned nodes lint exactly as before.
+  finding_violations=""
+  if ! finding_violations="$(jq -r '
+    [ .nodes[]?
+      | select(.originFinding != null)
+      | . as $n
+      | ($n.id // "<unnamed>") as $id
+      | ($n.goalImpact // "") as $impact
+      | (
+          (if ($impact | IN("required","blocking-external","independent") | not)
+           then "node \($id | tojson): originFinding present but goalImpact \($impact | tojson) is not one of required, blocking-external, independent"
+           else empty end),
+
+          # An independent finding is real work that is NOT this goal. It routes
+          # to its own proposal, spec, or bug — it does not ride along.
+          (if $impact == "independent"
+           then "node \($id | tojson): goalImpact is independent, so it must be routed to a separate proposal, spec, bug, or backlog record rather than added to the current DAG"
+           else empty end),
+
+          # blocking-external may STOP the goal; it may not authorise work.
+          (if $impact == "blocking-external" and (($n.type // "") | IN("delivery","action"))
+           then "node \($id | tojson): a blocking-external finding cannot authorise \($n.type | tojson) work — it may block the goal and be recorded, but implementing it is a separate goal"
+           else empty end),
+
+          # A required finding still has to earn its place against the outcome.
+          (if $impact == "required" and (($n.contributesTo // []) | length) == 0
+           then "node \($id | tojson): a required finding must name the successSignal or hardConstraint it advances in contributesTo"
+           else empty end),
+
+          # The reporter cannot grade its own finding. Self-promotion is the
+          # whole failure mode: a specialist that both raises and upgrades a
+          # finding has silently rewritten the goal it was dispatched under.
+          (if $impact == "required" and (($n.impactDecidedBy // "") == ($n.originFinding.reportedBy // "<none>"))
+           then "node \($id | tojson): goalImpact was decided by \($n.impactDecidedBy | tojson), the same agent that reported the finding — the PARENT must verify a promotion to required"
+           else empty end),
+          (if $impact == "required" and (($n.impactDecidedBy // "") | length) == 0
+           then "node \($id | tojson): a required finding must record impactDecidedBy naming the parent that admitted it"
+           else empty end)
+        )
+    ] | .[]' "$SCENARIO")"; then
+    err "a node carries originFinding but the SCOPE-6 admission check could not evaluate it — the finding declaration is malformed"
+    finding_violations=""
+  fi
+  while IFS= read -r violation; do
+    [[ -n "$violation" ]] && err "$violation"
+  done <<< "$finding_violations"
+
   # dependsOn references + self-ref
   for ((i = 0; i < NODE_COUNT; i++)); do
     nid="$(jq -r ".nodes[$i].id // \"\"" "$SCENARIO")"

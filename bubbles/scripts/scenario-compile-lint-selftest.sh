@@ -369,4 +369,49 @@ write_semantic
 jq '(.nodes[0].goalRef) = {goalId: "gc:sess-041:1", revision: 7}' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
 assert_fail "node goalRef with a stale revision is rejected"
 
+# --- IMP-041 SCOPE-6: finding admission control (GF-12) ---------------------
+# Findings are the second way a goal grows. Each amendment is individually
+# defensible; the sum is a different goal. These cases prove admission is
+# explicit rather than automatic.
+
+add_finding_node() { # add_finding_node <goalImpact> <extra-jq-assignments>
+  write_semantic
+  jq --arg impact "$1" "
+    .nodes[0] += {
+      originFinding: {id: \"F-1\", reportedBy: \"bubbles.audit\"},
+      goalImpact: \$impact,
+      impactDecidedBy: \"bubbles.goal\"
+    } | $2" "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+}
+
+# 34. a required finding that names an anchor and was admitted by the parent.
+add_finding_node required '.'
+assert_pass "a required finding admitted by the parent is accepted"
+
+# 35. an independent finding belongs to its own packet, not this DAG.
+add_finding_node independent '.'
+assert_fail "an independent finding inserted into the current DAG is rejected"
+
+# 36. blocking-external may stop the goal; it may not authorise delivery work.
+add_finding_node blocking-external '(.nodes[0].type) = "delivery"'
+assert_fail "a blocking-external finding cannot authorise delivery work"
+
+# 37. an unknown impact value is not a quiet pass.
+add_finding_node urgent-ish '.'
+assert_fail "an unrecognised goalImpact value is rejected"
+
+# 38. ADVERSARIAL: the reporter cannot grade its own finding. This is the whole
+# failure mode — a specialist that both raises and promotes a finding has
+# rewritten the goal it was dispatched under.
+add_finding_node required '(.nodes[0].impactDecidedBy) = "bubbles.audit"'
+assert_fail "a specialist promoting its own finding to required is rejected"
+
+# 39. a required finding still has to earn its place against the outcome.
+add_finding_node required '(.nodes[0].contributesTo) = []'
+assert_fail "a required finding naming no outcome anchor is rejected"
+
+# 40. ADDITIVITY: a node with no originFinding is untouched.
+write_semantic
+assert_pass "a node with no originFinding is unaffected by SCOPE-6"
+
 echo "All scenario-compile-lint selftests passed."
