@@ -89,15 +89,31 @@ hash_of() {
 tmp="$(mktemp)" || exit 2
 interrupted_rc=""
 child_pid=""
-cleanup() { rm -f "$tmp"; }
+child_group_needs_cleanup=false
+child_group_exists() {
+  [[ -n "$child_pid" ]] || return 1
+  kill -0 -- "-$child_pid" 2>/dev/null || kill -0 "$child_pid" 2>/dev/null
+}
+signal_child_group() {
+  local signal_name="$1"
+
+  [[ -n "$child_pid" ]] || return 0
+  kill -s "$signal_name" -- "-$child_pid" 2>/dev/null ||
+    kill -s "$signal_name" "$child_pid" 2>/dev/null || true
+}
+cleanup() {
+  if [[ "$child_group_needs_cleanup" == "true" ]] && child_group_exists; then
+    signal_child_group KILL
+  fi
+  rm -f "$tmp"
+}
 forward_signal() {
   local exit_code="$1"
   local signal_name="$2"
 
   interrupted_rc="$exit_code"
-  [[ -n "$child_pid" ]] || return 0
-  kill -s "$signal_name" -- "-$child_pid" 2>/dev/null ||
-    kill -s "$signal_name" "$child_pid" 2>/dev/null || true
+  child_group_needs_cleanup=true
+  signal_child_group "$signal_name"
 }
 trap cleanup EXIT
 trap 'forward_signal 130 INT' INT
@@ -122,6 +138,14 @@ while true; do
     break
   fi
 done
+# A direct child can exit while its descendants keep running (for example, a
+# nested timeout can stop one shell while a lock-holding grandchild survives).
+# Give the remaining process group a graceful shutdown opportunity; the EXIT
+# trap supplies a KILL safety net after the evidence block has been emitted.
+if child_group_exists; then
+  child_group_needs_cleanup=true
+  signal_child_group TERM
+fi
 if [[ -n "$interrupted_rc" ]]; then
   rc="$interrupted_rc"
 fi

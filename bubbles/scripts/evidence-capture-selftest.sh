@@ -186,6 +186,27 @@ else
   bad "TERM stops children and preserves interrupted evidence" "rc=$term_rc $(printf '%s' "$term_out" | tr '\n' '|')"
 fi
 
+# --- 15. ADVERSARIAL: a completed parent cannot leave a descendant behind ---
+# Nested wrappers can exit before a background lock holder. Evidence capture
+# owns the complete command tree, so returning to the caller must also mean the
+# process group has drained.
+descendant_pid_file="$(mktemp)"
+set +e
+descendant_out="$(timeout --kill-after=1 5 bash "$TARGET" -- bash -c 'bash -c '\''trap "exit 0" TERM; while :; do :; done'\'' & printf "%s\n" "$!" >"$1"' _ "$descendant_pid_file" 2>&1)"
+descendant_rc=$?
+set -e
+descendant_pid="$(cat "$descendant_pid_file")"
+rm -f "$descendant_pid_file"
+if [[ "$descendant_rc" -eq 0 ]] &&
+  printf '%s' "$descendant_out" | grep -q '^exit: 0$' &&
+  [[ "$descendant_pid" =~ ^[0-9]+$ ]] &&
+  ! kill -0 "$descendant_pid" 2>/dev/null; then
+  ok "completed commands leave no background descendant behind"
+else
+  [[ "$descendant_pid" =~ ^[0-9]+$ ]] && kill -KILL "$descendant_pid" 2>/dev/null || true
+  bad "completed command tree cleanup" "rc=$descendant_rc pid=$descendant_pid $(printf '%s' "$descendant_out" | tr '\n' '|')"
+fi
+
 printf '\n%s: %d/%d checks passed\n' "$NAME" "$((checks - failures))" "$checks"
 if [[ "$failures" -gt 0 ]]; then
   printf '%s: FAILED\n' "$NAME"
