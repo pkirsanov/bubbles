@@ -39,12 +39,6 @@
 
 ## Proposal
 
-### SCOPE-10 — Human acceptance terminal gate (EV-8)
-
-Implement BUG-029 as part of complete certification.
-
-A terminal transition fails on any unchecked item in `uservalidation.md`. The guard prints the item and never changes it. Planning modes may create checked-by-default templates without claiming human execution.
-
 ### SCOPE-11 — Downstream changed-spec gate (COV-12)
 
 Implement BUG-031 with one generic command:

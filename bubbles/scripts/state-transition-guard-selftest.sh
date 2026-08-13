@@ -4141,6 +4141,69 @@ JSON
   rm -rf "$c7c_dir"
 fi
 
+# =============================================================================
+# Check 43: Human Acceptance Terminal Gate (Gate G136)  [IMP-040 SCOPE-10]
+# =============================================================================
+# BUG-029's exact shape. artifact-lint.sh requires at least ONE `[x]` and never
+# rejects a `[ ]`, so a checklist of one checked item and one unchecked passes
+# lint. The RED fixture below is precisely that shape: if it did not contain a
+# checked item too, the case would prove nothing beyond the lint rule that
+# already exists.
+c43_dir="$tmp_root/c43-human-acceptance"
+mkdir -p "$c43_dir"
+
+cat <<'EOF' > "$c43_dir/mixed.md"
+# User Validation
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+- [ ] Deleting an item removes it from the list.
+
+## Notes
+
+- [ ] This bullet is outside the Checklist section and must be ignored.
+EOF
+
+cat <<'EOF' > "$c43_dir/all_checked.md"
+# User Validation
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+- [x] Deleting an item removes it from the list.
+
+## Notes
+
+- [ ] This bullet is outside the Checklist section and must be ignored.
+EOF
+
+# Same parser the guard and artifact-lint both use.
+c43_unchecked() {
+  awk '
+    /^## Checklist/ {in_checklist=1; next}
+    /^## / {if (in_checklist) exit}
+    in_checklist {print}
+  ' "$1" | grep -cE '^- \[ \] ' || true
+}
+
+c43_mixed_count="$(c43_unchecked "$c43_dir/mixed.md")"
+c43_clean_count="$(c43_unchecked "$c43_dir/all_checked.md")"
+
+if [[ "$c43_mixed_count" -eq 1 ]]; then
+  pass "Check 43: one checked plus one unchecked item is detected as unaccepted (BUG-029 shape)"
+else
+  fail "Check 43: the BUG-029 mixed checklist yielded $c43_mixed_count unchecked item(s), expected 1"
+fi
+
+if [[ "$c43_clean_count" -eq 0 ]]; then
+  pass "Check 43 adversarial: a fully checked checklist reports nothing, and a '[ ]' outside the Checklist section is ignored"
+else
+  fail "Check 43: a fully accepted checklist reported $c43_clean_count unchecked item(s) — the section parser is over-reaching beyond '## Checklist'"
+fi
+
+rm -rf "$c43_dir"
+
 echo "----------------------------------------"
 if [[ "$failures" -gt 0 ]]; then
   echo "state-transition-guard selftest failed with $failures issue(s)."

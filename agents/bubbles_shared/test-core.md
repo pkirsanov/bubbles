@@ -253,6 +253,32 @@ when one is configured, and otherwise from explicit repository-relative paths th
 planner records. The resolver matches only against those declared refs — it does
 not guess ownership from a filename resemblance.
 
+## Human Acceptance Is Terminal (IMP-040 SCOPE-10 / EV-8, Gate G136)
+
+A terminal transition fails on **any** unchecked item in `uservalidation.md`.
+
+Artifact lint requires the checklist to carry at least one checked `[x]` and
+never rejects an unchecked one, so one checked plus five unchecked passes lint
+and the spec reaches a terminal status with five behaviors no human accepted.
+
+Lint is the wrong place to repair that. Lint also runs during **planning**, where
+a checked-by-default template is legitimate — the template records what *will* be
+accepted, it does not claim a human already ran it. Tightening lint would either
+break planning or force it to fabricate acceptance up front. The terminal
+transition is the moment the claim stops being provisional, so that is where the
+check belongs.
+
+The gate runs only when the target status is `done`. A ceiling-bound mode
+(`validate-only`, `docs-only`, `spec-scope-hardening`, ...) is not claiming human
+acceptance of delivered behavior, and an open checklist is the correct state for
+it. Only the `## Checklist` section is parsed; a `[ ]` under `## Notes` is
+ignored.
+
+**The guard prints the item and never changes it.** Checking a box on the
+author's behalf would fabricate exactly the human acceptance the gate exists to
+require. Either a human accepts the behavior and checks it, or the item is a real
+regression and the spec is not done.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`
