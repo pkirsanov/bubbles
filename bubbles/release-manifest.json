@@ -487,7 +487,7 @@
     {"path": "bubbles/schemas/tool-trust-registry.schema.json", "sha256": "e48b1671db936cedd93d09683c51965d33a67df9c33e954f0839cbb79f3be127"},
     {"path": "bubbles/schemas/workflows.schema.json", "sha256": "02befe182eff5894c05ccea6f20950dd9a1be8632ad179bf77a7cf8c2dc19acc"},
     {"path": "bubbles/eval/schemas/adversarial-sample.schema.json", "sha256": "6db7125ed5c912a6c75b437c4ac222c3ace7acf31a0f513be6b73ddb4ac39670"},
-    {"path": "bubbles/registry/gates.yaml", "sha256": "faa22be819b9596c3650a17bbe23ef14b6bcdcf871f1784bcdda755b4a4c0400"},
+    {"path": "bubbles/registry/gates.yaml", "sha256": "87b7ca707e517b05fbe3d4ae87dc8f370851b109567c7e1675dd1a65a65d881c"},
     {"path": "bubbles/registry/optional-skills.txt", "sha256": "5a64987fc1e44812b4bd41f52f30ea0322d3245b43d50f76fbfa2f9c5f66ba93"},
     {"path": "bubbles/registry/required-specialists.yaml", "sha256": "88edfc064bfb017f058dc5c4ec13467db48b11def5cc80241a45d0b5feb1c459"},
     {"path": "bubbles/registry/selftest-denylist.txt", "sha256": "86405ec5a99f6f68eee1b05b008f4cb53d7b02647fc820fead93c1a9f5330a31"},
