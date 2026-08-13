@@ -31,6 +31,96 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## [7.27.0] - 2026-08-12
+
+### Complete Test Creation And Certification (IMP-040 / COV-8..COV-12, REG-8, EV-8)
+
+A scenario could hold a Test Plan row, a passing suite, and a terminal status
+while nothing had proven the behavior it described. Thirteen scopes close the
+distinct ways that happened. Each new lint ships with adversarial RED cases AND
+a green guard, because a rule with only RED cases is indistinguishable from one
+that refuses everything.
+
+**Exact scenario target resolution (COV-8, BUG-030).** `scenario-test-resolve.sh`
+resolves every `linkedTests` reference to a real file and, when a title is
+declared, a real title in it — BUG-030 certified three titles that existed in no
+file. Findings: MISSING-FILE, OUTSIDE-REPO, MISSING-TITLE, AMBIGUOUS-TITLE,
+CATEGORY-MISMATCH, UNREADABLE-FILE. Bare paths are file-existence only; a title
+is enforced only where declared.
+
+**Two language-agnostic adapters.** `test-inventory` (COV-8) and `mutation`
+(COV-11), both defaulting to `none`. The neutral adapters report `unmeasured`,
+never an empty inventory or a zero survival count — an empty result is a
+positive claim, and reading it as one would fail every reference in the repo or
+assert that no mutant survived. A configured-but-BROKEN adapter fails loud
+rather than degrading to `none`, so a typo cannot silently buy a weaker gate.
+
+**Obligation matrix (COV-9).** Coverage derives from a scenario's own
+`behaviorTraits`, not a row count. Attaching every obligation to every scenario
+is the failure mode this replaces, not a safe default: a set that never varies
+carries no information and trains reviewers to skim it.
+
+**`testMechanism` (COV-10).** A category label does not prove a path — an
+`e2e-ui` test can assert hidden legacy DOM or call a renderer directly and still
+carry the label. Four closed vocabularies make the claim checkable, and the lint
+refuses a mechanism contradicting the scenario's traits.
+
+**Production-path fidelity (COV-10).** Extends `regression-quality-guard.sh`
+rather than adding a second guard. The rule is TWO-SIDED: a substitution shape is
+a finding only when offered as the SOLE proof, so mixed tests pass. A one-sided
+version would reject correct work and be switched off. The seeded-pass-through
+tautology is deliberately NOT pattern-matched — it needs a dataflow judgement, and
+a regex for it would fire on every legitimate round-trip assertion.
+
+**Dependency-path coverage (COV-9, COV-10).** A cache-only test cannot satisfy a
+scenario naming freshness, fallback, retry, transport or delta. Cache-first
+scenarios NAME the applicable cases from a closed five-token vocabulary — named,
+not counted, because demanding all five would report work that cannot arise.
+
+**Non-vacuity (COV-11).** `riskTier` sets the required negative-control strength.
+A project without mutation tooling is not blocked: it may declare a weaker
+mechanism plus a `negativeControlFallbackReason`, keeping a deliberate fallback
+distinguishable from a silent downgrade.
+
+**Shared-consumer parity (COV-9, REG-8).** Both `parity:` and `consumer-surface:`
+are owed. Parity says nothing about whether the surface a user meets still
+renders the result; certifying either half alone is how a shared change passes
+while a downstream surface is broken.
+
+**Source-to-scenario impact (REG-8).** Changed-spec validation answered "which
+specs did this touch" from spec-folder paths, so a source-only diff looked like
+it touched nothing. `implementationRefs` + `scenario-impact-resolve.sh` mark
+certified scenarios whose refs intersect the diff. Symbol suffixes are stripped
+before comparison: without a code index the framework cannot tell which symbol
+changed, and pretending otherwise would UNDER-report, the direction that leaves
+stale certification standing.
+
+**Gate G136 — human acceptance is terminal (EV-8, BUG-029).** `artifact-lint.sh`
+requires one checked `[x]` and never rejects an unchecked one, so one checked
+plus five unchecked passed lint. The repair is at the TERMINAL transition, not in
+lint: lint also runs during planning, where a checked-by-default template is
+legitimate. The guard prints the item and never edits it — checking a box on the
+author's behalf would fabricate the acceptance the gate requires.
+
+**`verify-changed-specs` (COV-12, BUG-031).** One generic command discovering
+both directly-changed and impact-marked specs. Measured across the six consumer
+repos: five carry a pre-push hook, exactly ONE invokes any Bubbles guard, one has
+no hook. That corrected a false claim in `bubbles-status-transition` that the
+guard "cannot be bypassed" — it was never reached, which from outside is
+indistinguishable from having no gate. Ships a CI workflow TEMPLATE, not a
+Bubbles-managed git hook.
+
+**Agent hardening + evaluation.** plan builds the matrix before implementation;
+test resolves targets before execution; validate REPLAYS the current surface
+rather than re-reading certification-time evidence; audit traces one transformed
+value end to end. A subagent summary is a LEAD until read or executed. An 8-shape
+evaluation corpus (static browser, service API, CLI, compiled, Python data,
+custom runner, no-UI, no-inventory) plus a legacy-untouched case reports 0 false
+acceptance and 0 false rejection across 17 packets in ~1s.
+
+Legacy untouched specs remain grandfathered; every new field is optional, so the
+lints are inert on packets that declare none.
+
 ## [7.26.0] - 2026-08-12
 
 ### Runtime Context Economics (IMP-039 / COST-4, COST-5, COST-6, COST-7, EV-7)
