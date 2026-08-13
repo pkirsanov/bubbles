@@ -39,30 +39,6 @@
 
 ## Proposal
 
-### SCOPE-5 — Bidirectional proportionality enforcement (GF-11)
-
-Make G094 enforce both missing abstraction and premature abstraction.
-
-Use the frozen `executionShape` as the primary applicability signal. Keep keyword detection as a mismatch warning and legacy fallback.
-
-Apply these rules:
-
-- `one-off` requires a non-empty single-implementation justification when trigger words appear.
-- `one-off` refuses `foundation:true` scopes and new extension-point frameworks.
-- `existing-capability-change` may extend the named foundation but cannot create a parallel foundation.
-- `reusable-capability` requires the current capability-foundation sections and foundation-first ordering.
-- A planner cannot change the execution shape. Only a Goal Contract revision can change it.
-
-The guard must inspect planning artifacts and the active Goal Contract reference. It must identify the conflicting scope or section.
-
-#### SCOPE-5 tests
-
-- Accept one-off work with a concrete justification.
-- Refuse a foundation scope under a one-off goal.
-- Refuse a second foundation under an existing-capability change.
-- Require foundation sections for an approved reusable capability.
-- Refuse keyword-only promotion from one-off to reusable capability.
-
 ### SCOPE-6 — Finding-to-scenario admission control (GF-12)
 
 Require every finding-driven DAG amendment to carry `goalImpact` and `contributesTo`.
