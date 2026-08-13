@@ -505,10 +505,15 @@ write_run_state_registry() {
   # The staging path MUST be unique per writer. A shared ".tmp" is not a
   # staging file, it is a shared mutable buffer: two concurrent writers open
   # the same path, the second truncates what the first is still writing, and
-  # whichever renames last publishes the interleaved result. That is the
-  # observed corruption in the wild (a half record spliced onto a whole one,
-  # and records reduced to a bare "{,"). The rename below is atomic; the
-  # staging file was not, so atomicity bought nothing.
+  # whichever renames last publishes the interleaved result. The rename below
+  # is atomic; the staging file was not, so atomicity bought nothing.
+  #
+  # Honest scope: this is hardening against a real race, NOT the explanation
+  # for the corrupted registries found in the field. That signature was traced
+  # to formatting fragility in the reader (see run_state_lines) and reproduces
+  # deterministically from a single-threaded read-modify-write. A shared
+  # staging path could not be made to reproduce it under deliberate contention.
+  # Both defects are real; only one of them was firing.
   #
   # This uses mktemp rather than "$$.$RANDOM". Both of those are unreliable
   # here: inside a subshell `$$` is the PARENT's pid, and subshells forked
