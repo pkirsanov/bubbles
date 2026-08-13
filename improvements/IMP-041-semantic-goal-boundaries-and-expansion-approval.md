@@ -39,44 +39,6 @@
 
 ## Proposal
 
-### SCOPE-3 — Mandatory G134 boundary receipts (GF-7)
-
-Make every mutable top-level runner call the existing G134 boundaries. A prose instruction is not sufficient.
-
-Add a canonical boundary-receipt producer. It calls `goal-fidelity-guard.sh` and emits a canonical receipt only after success.
-
-The receipt binds:
-
-- Goal identifier and revision.
-- Source-request digest.
-- Semantic-boundary digest.
-- Scenario digest when applicable.
-- Boundary name.
-- Candidate repository, spec, and path reach.
-- Planned-delta digest when applicable.
-
-Require receipts at these points:
-
-- `pre-planning` before scenario compilation or a planning specialist dispatch.
-- `post-planning` before a delivery node becomes eligible.
-- `pre-dispatch` before every mutable specialist dispatch.
-- `post-finding` before the parent accepts changed paths or a DAG amendment.
-- `post-compaction` before mutable work resumes.
-- `pre-certification` before validation can certify completion.
-
-Update `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`, and `bubbles.workflow`. Each runner must use the same receipt contract.
-
-The scenario ledger and RESULT-ENVELOPE carry the receipt digest. Missing, stale, or mismatched receipts refuse continuation.
-
-#### SCOPE-3 tests
-
-- Refuse a goal runner that skips pre-planning.
-- Refuse a dispatch with no pre-dispatch receipt.
-- Refuse a result whose receipt names another revision.
-- Refuse a resumed run with a stale post-compaction receipt.
-- Accept the same receipt through compaction without normalization.
-- Prove all four top-level runners use the shared contract.
-
 ### SCOPE-4 — Architecture-expansion approval (GF-10)
 
 Add a planning approval checkpoint before any approval-required change class enters planning or delivery.

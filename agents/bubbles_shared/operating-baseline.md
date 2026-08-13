@@ -422,6 +422,24 @@ If `rawPointer` ever points to a file that does not exist, the compact record is
 
 Operator-supplied context — pasted screenshots, terminal scrollback, another repository's logs, or another session's state — is DIAGNOSTIC INPUT ONLY. It MUST NOT be restated as the agent's own execution evidence, and MUST NOT be used to infer an active work mandate. Work is authorized only by the operator's explicit request in the current conversation (and, for repository selection, by IMP-103 repository-binding preflight).
 
+### Goal-Boundary Receipts (IMP-041 SCOPE-3 / GF-7 — Orchestrator Agents)
+
+G134 is registered as a universal gate, but registry membership is not execution: the only direct call was `bubbles.validate`'s pre-certification check, so a goal could reach planning and dispatch having passed no boundary. A prose instruction to "check the boundary" is not execution either — nothing downstream can tell whether it happened.
+
+Authorized runners therefore obtain a RECEIPT, which the producer prints **only** after the guard exits 0 (otherwise nothing is printed and the guard's exit code propagates):
+
+```
+bubbles/scripts/goal-boundary-receipt.sh emit --boundary <name> \
+    --session-file <session> [guard inputs...] \
+    [--scenario-file <compiled-scenario.json>] [--planned-delta <json>]
+```
+
+Obtain one before: scenario compilation or planning dispatch (`pre-planning`); a delivery node becoming eligible (`post-planning`); every mutable specialist dispatch (`pre-dispatch`); accepting changed paths or a DAG amendment (`post-finding`); resuming after compaction (`post-compaction`); certifying completion (`pre-certification`).
+
+The receipt binds goal id + revision, source-request digest, semantic-boundary digest, scenario digest, boundary name, and planned-delta digest, covering all of them with a `receiptDigest`. Carry that digest in the scenario ledger and the RESULT-ENVELOPE `boundaryReceiptDigest`; a parent checks it with `goal-boundary-receipt.sh verify --receipt-file <path> --session-file <session> --expect-boundary <name>`.
+
+Verification refuses an edited body, a revision superseded by an approved revision, a semantic boundary changed underneath the receipt, and a receipt minted for a **different** boundary — a `pre-planning` receipt proves nothing about `pre-dispatch`. Digests use canonically sorted JSON, so key re-ordering never manufactures false staleness. There is no `--force` / `--skip` / `--assume-passed`.
+
 ## Phase Relevance Resolution (Orchestrator Agents — IMP-038 SCOPE-5 / GF-4)
 
 Authorized top-level runners (`bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`) MUST obtain each phase's skip/run verdict from the shared resolver instead of deciding for themselves:
