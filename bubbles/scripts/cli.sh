@@ -701,6 +701,7 @@ begin_cli_run_state() {
   CURRENT_RUN_STATE_TRACKED=true
 
   ensure_run_state_registry
+  reap_abandoned_active_runs
   active_lines="$(run_state_lines activeRuns)"
   new_line="$(build_run_record_line "$CURRENT_RUN_ID" 'active' "$CURRENT_RUN_STARTED_AT" "$CURRENT_RUN_STARTED_AT" '' 'pending' 0 "$(first_tracking_target "${CURRENT_BUBBLES_ARGS:-}")" "$(runtime_attachment_for_session "$CURRENT_SESSION_ID")" "$CURRENT_RUN_POSTURE" "$CURRENT_RISK_CLASS")"
   if [[ -n "$active_lines" ]]; then
@@ -716,6 +717,79 @@ $new_line"
 trim_recent_run_lines() {
   local recent_lines="$1"
   printf '%s\n' "$recent_lines" | sed '/^$/d' | tail -n 25
+}
+
+# Portable ISO-8601 -> epoch. cli.sh does not source guard-lib.sh, so this
+# mirrors bubbles_iso_to_epoch's GNU-then-BSD fallback rather than importing it.
+run_state_iso_to_epoch() {
+  local ts="$1" epoch
+  if epoch="$(date -d "$ts" +%s 2>/dev/null)" && [[ -n "$epoch" ]]; then
+    printf '%s' "$epoch"; return 0
+  fi
+  if epoch="$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$ts" +%s 2>/dev/null)" && [[ -n "$epoch" ]]; then
+    printf '%s' "$epoch"; return 0
+  fi
+  return 1
+}
+
+# recentRuns is capped at 25; activeRuns had no cap and no reaper, so every run
+# whose process died before finish_run_state could fire — an interrupted
+# framework-validate, a killed release-check, a crashed doctor — leaked an entry
+# that stayed "active" forever. The observed result was 25 entries, the oldest
+# four months old, which makes the ledger useless for its one question: what is
+# running right now?
+#
+# Liveness cannot be tested directly because a record carries no pid, so age is
+# the signal. An entry older than the threshold is reclassified as abandoned and
+# moved to recentRuns, preserving the audit trail rather than deleting it.
+#
+# FAIL-SAFE: an entry whose startedAt cannot be parsed is KEPT. Discarding a
+# record we could not evaluate would be the same class of bug as the leak.
+reap_abandoned_active_runs() {
+  local threshold_hours="${BUBBLES_RUN_STATE_ABANDON_HOURS:-24}"
+  case "$threshold_hours" in
+    ''|*[!0-9]*) threshold_hours=24 ;;
+  esac
+  [[ "$threshold_hours" -gt 0 ]] || return 0
+
+  local active_lines cutoff now kept="" reaped="" line started epoch
+  active_lines="$(run_state_lines activeRuns)"
+  [[ -n "$active_lines" ]] || return 0
+
+  now="$(date -u +%s)"
+  cutoff=$((now - threshold_hours * 3600))
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    started="$(field_from_json_line "$line" 'startedAt')"
+    if epoch="$(run_state_iso_to_epoch "$started")" && [[ -n "$epoch" ]] && [[ "$epoch" -lt "$cutoff" ]]; then
+      reaped="${reaped}$(build_run_record_line \
+        "$(field_from_json_line "$line" 'runId')" \
+        'completed' \
+        "$started" \
+        "$(current_timestamp)" \
+        "$(current_timestamp)" \
+        'abandoned' \
+        0 \
+        "$(field_from_json_line "$line" 'target')" \
+        "$(field_from_json_line "$line" 'runtimeAttachment')" \
+        "$(field_from_json_line "$line" 'posture')" \
+        "$(field_from_json_line "$line" 'riskClass')")
+"
+    else
+      kept="${kept}${line}
+"
+    fi
+  done <<< "$active_lines"
+
+  [[ -n "$reaped" ]] || return 0
+
+  local recent_lines
+  recent_lines="$(run_state_lines recentRuns)"
+  write_run_state_registry \
+    "$(printf '%s' "$kept" | sed '/^$/d')" \
+    "$(trim_recent_run_lines "$(printf '%s%s' "${recent_lines:+$recent_lines
+}" "$reaped")")"
 }
 
 complete_cli_run_state() {
