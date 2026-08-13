@@ -282,6 +282,73 @@ if [[ "${NODE_COUNT:-0}" -gt 0 ]]; then
 
   done
 
+  # ---- IMP-041 SCOPE-2: contribution + planned-delta contract (GF-9) --------
+  # A compiled scenario currently proves SHAPE — valid types, real modes, a sane
+  # graph — but not CONTRIBUTION. Every node could be individually well-formed
+  # while the graph as a whole drifted away from the frozen outcome, which is
+  # how a bounded evaluation grew into a platform.
+  #
+  # ADDITIVE BY DESIGN: these checks activate only when the scenario carries a
+  # canonical .goalContractRef with a v2 semanticBoundary. A legacy scenario
+  # with no such reference lints exactly as it did before.
+  if [[ "$(jq -r 'has("goalContractRef") and (.goalContractRef.semanticBoundary != null)' "$SCENARIO")" == "true" ]]; then
+    # A jq failure here must NOT read as "no violations". Capture the exit code
+    # and turn an evaluation failure into its own refusal, otherwise a malformed
+    # reference would silently buy a clean bill of health.
+    semantic_violations=""
+    if ! semantic_violations="$(jq -r '
+      .goalContractRef as $ref
+      | ($ref.semanticBoundary) as $sb
+      | (($sb.allowedChangeClasses // []) + ($sb.approvalRequiredChangeClasses // [])) as $declared
+      | ($sb.deltaBudget // {}) as $budget
+      | ( [ "successSignal" ]
+          + [ range(0; (.rootOutcome.hardConstraints // []) | length) | "hardConstraints[\(.)]" ]
+          + [ (.rootOutcome.hardConstraints // [])[] ]
+          + [ .rootOutcome.successSignal ] ) as $anchors
+      | [ .nodes[]?
+          | . as $n
+          | ($n.id // "<unnamed>") as $id
+          | (
+              (if (($n.contributesTo // []) | length) == 0
+               then "node \($id | tojson): contributesTo is empty — every node must name the root successSignal or a hardConstraint it advances"
+               else empty end),
+              ( ($n.contributesTo // [])[]
+                | select(. as $c | $anchors | index($c) | not)
+                | "node \($id | tojson): contributesTo names \(. | tojson) which is not the root successSignal or any hardConstraint" ),
+
+              (if (($n.ownershipFit // "") | type != "string") or (($n.ownershipFit // "") | length) == 0
+               then "node \($id | tojson): ownershipFit missing — name the existing requirement, scenario, or command surface that makes this the narrowest valid owner"
+               else empty end),
+
+              (if ($n.plannedDelta | type) != "object"
+               then "node \($id | tojson): plannedDelta missing — a node with no declared delta cannot be checked against the frozen budget"
+               else (
+                 ( ($n.plannedDelta.changeClasses // [])[]
+                   | select(. as $c | $declared | index($c) | not)
+                   | "node \($id | tojson): plannedDelta.changeClasses names \(. | tojson) which the frozen semanticBoundary does not declare — widen the contract with an approval note, or narrow the plan" ),
+                 ( $n.plannedDelta
+                   | to_entries[]
+                   | . as $entry
+                   | select($entry.key | startswith("max"))
+                   | select(($budget | has($entry.key)) and ($entry.value > $budget[$entry.key]))
+                   | "node \($id | tojson): plannedDelta.\($entry.key)=\($entry.value) exceeds the frozen deltaBudget.\($entry.key)=\($budget[$entry.key])" )
+               ) end),
+
+              (if ($n.goalRef != null) and (($n.goalRef.goalId // "") != ($ref.goalId // ""))
+               then "node \($id | tojson): goalRef.goalId \($n.goalRef.goalId | tojson) does not match the scenario goalContractRef \($ref.goalId | tojson) — a substituted reference proves nothing"
+               elif ($n.goalRef != null) and (($n.goalRef.revision // -1) != ($ref.revision // -2))
+               then "node \($id | tojson): goalRef.revision \($n.goalRef.revision | tojson) is stale against the canonical revision \($ref.revision | tojson)"
+               else empty end)
+            )
+        ] | .[]' "$SCENARIO")"; then
+      err "goalContractRef is present but the SCOPE-2 contribution check could not evaluate it — the reference or a node declaration is malformed"
+      semantic_violations=""
+    fi
+    while IFS= read -r violation; do
+      [[ -n "$violation" ]] && err "$violation"
+    done <<< "$semantic_violations"
+  fi
+
   # dependsOn references + self-ref
   for ((i = 0; i < NODE_COUNT; i++)); do
     nid="$(jq -r ".nodes[$i].id // \"\"" "$SCENARIO")"

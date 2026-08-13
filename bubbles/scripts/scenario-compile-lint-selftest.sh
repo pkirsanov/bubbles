@@ -283,4 +283,90 @@ else
   echo "FAIL: under-scoped scenario should exit 1, got $rc"; "$LINT" "$F" "$COVROOT"; exit 1
 fi
 
+# --- IMP-041 SCOPE-2: contribution + planned-delta contract (GF-9) ----------
+# A compiled scenario proved SHAPE but not CONTRIBUTION: every node could be
+# individually well-formed while the graph drifted off the frozen outcome.
+# These checks activate ONLY when a canonical goalContractRef with a v2
+# semanticBoundary is present, so case 24 is the additivity guard.
+
+# write_semantic — a clean scenario plus a frozen v2 reference and, on every
+# node, the three new declarations.
+write_semantic() {
+  write_clean
+  jq '
+    . + {
+      goalContractRef: {
+        goalId: "gc:sess-041:1",
+        revision: 1,
+        sourceRequestDigest: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        workBoundary: { repositoryRoots: ["product"], crossRepoPolicy: "authorized" },
+        semanticBoundary: {
+          executionShape: "one-off",
+          allowedChangeClasses: ["existing-config", "existing-test"],
+          approvalRequiredChangeClasses: ["new-runner", "new-virtual-machine"],
+          deltaBudget: { maxNewScopes: 2, maxNewFiles: 5 }
+        }
+      }
+    }
+    | .nodes |= map(. + {
+        contributesTo: ["successSignal"],
+        ownershipFit: "the existing validate-only mode already owns this command surface",
+        plannedDelta: { changeClasses: ["existing-test"], maxNewFiles: 1 }
+      })
+  ' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+}
+
+# 24. ADDITIVITY: a legacy scenario carrying no goalContractRef is untouched.
+# Without this, every case below could pass while the new checks silently
+# started rejecting every scenario already in the field.
+write_clean
+assert_pass "legacy scenario with no goalContractRef is unaffected by SCOPE-2"
+
+# 25. a fully-declared semantic scenario passes.
+write_semantic
+assert_pass "semantic scenario with contribution, ownership fit and planned delta"
+
+# 26. a node that names no anchor is unmoored from the goal.
+write_semantic
+jq '(.nodes[0].contributesTo) = []' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "node with empty contributesTo is rejected"
+
+# 27. a contribution must name a REAL anchor, not an invented one.
+write_semantic
+jq '(.nodes[0].contributesTo) = ["deliver the platform"]' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "contributesTo naming a non-existent anchor is rejected"
+
+# 28. ownership fit is what stops a node grabbing a wider owner than it needs.
+write_semantic
+jq 'del(.nodes[0].ownershipFit)' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "node with no ownershipFit is rejected"
+
+# 29. a node with no declared delta cannot be checked against the budget.
+write_semantic
+jq 'del(.nodes[0].plannedDelta)' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "node with no plannedDelta is rejected"
+
+# 30. THE INCIDENT SHAPE: the node sits on an allowed repo and an allowed path,
+# but plans a KIND of change the frozen boundary never declared. The v1
+# path boundary cannot see this; the semantic boundary is the only layer that
+# refuses it.
+write_semantic
+jq '(.nodes[0].plannedDelta.changeClasses) = ["new-virtual-machine", "new-runner", "new-cache"]' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "in-boundary node planning an undeclared change class is rejected"
+
+# 31. growth beyond the frozen budget.
+write_semantic
+jq '(.nodes[0].plannedDelta.maxNewFiles) = 99' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "plannedDelta exceeding the frozen deltaBudget is rejected"
+
+# 32/33. a node reference must DERIVE from the canonical one — a substituted or
+# stale reference proves nothing about the goal it claims to serve.
+write_semantic
+jq '(.nodes[0].goalRef) = {goalId: "gc:other-session:1", revision: 1}' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "node goalRef with a substituted goalId is rejected"
+
+write_semantic
+jq '(.nodes[0].goalRef) = {goalId: "gc:sess-041:1", revision: 7}' "$F" > "$F.tmp" && mv "$F.tmp" "$F"
+assert_fail "node goalRef with a stale revision is rejected"
+
 echo "All scenario-compile-lint selftests passed."

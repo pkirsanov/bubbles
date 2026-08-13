@@ -39,44 +39,6 @@
 
 ## Proposal
 
-### SCOPE-2 — Scenario contribution and planned-delta contract (GF-9)
-
-Extend each mutable scenario node with `contributesTo`, `ownershipFit`, and `plannedDelta`.
-
-`contributesTo` contains stable identifiers for the root success signal or hard constraints. Every node must name at least one identifier.
-
-`ownershipFit` records why the selected spec, OPS packet, mode, or agent is the narrowest valid owner. It names the exact existing requirement, scenario, or command surface.
-
-`plannedDelta` records:
-
-- Change classes.
-- New and modified paths when known.
-- Maximum new scopes and files.
-- Maximum new workflows, services, runners, and virtual machines.
-- Whether the node changes shared infrastructure.
-
-Planning nodes may use bounded estimates before detailed planning. Post-planning validation replaces estimates with exact planned paths and counts before delivery.
-
-`scenario-compile-lint.sh` must refuse these conditions:
-
-- A node has no outcome contribution.
-- A node has no ownership-fit record.
-- A change class is absent from the frozen semantic boundary.
-- A planned count exceeds the frozen delta budget.
-- A node claims an existing mechanism but plans a new provider or topology.
-- A node carries a stale or substituted Goal Contract reference.
-
-The scenario plan stores one canonical Goal Contract reference. Node packets derive their reference from it.
-
-#### SCOPE-2 tests
-
-- Accept a compact existing-config evaluation plan.
-- Refuse a shape-valid node with no outcome contribution.
-- Refuse an unrelated infrastructure node inside an allowed path.
-- Refuse a stale Goal Contract revision.
-- Refuse an exceeded scope or file budget.
-- Refuse an ownership-fit record that names no declared target.
-
 ### SCOPE-3 — Mandatory G134 boundary receipts (GF-7)
 
 Make every mutable top-level runner call the existing G134 boundaries. A prose instruction is not sufficient.
