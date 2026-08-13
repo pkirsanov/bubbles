@@ -440,6 +440,12 @@ The receipt binds goal id + revision, source-request digest, semantic-boundary d
 
 Verification refuses an edited body, a revision superseded by an approved revision, a semantic boundary changed underneath the receipt, and a receipt minted for a **different** boundary — a `pre-planning` receipt proves nothing about `pre-dispatch`. Digests use canonically sorted JSON, so key re-ordering never manufactures false staleness. There is no `--force` / `--skip` / `--assume-passed`.
 
+### Convergence Materiality (IMP-041 SCOPE-7 / GF-13)
+
+Before every autonomous convergence iteration, run `bubbles/scripts/convergence-materiality.sh check --session-file <session> --iteration <n> --planned-delta <json> [--scenario-file <path>]`. It compares the iteration against the baseline recorded at the first one and refuses when the plan GREW, naming exactly what grew.
+
+**`neverStopForFixableObstacles` does not apply to goal expansion.** Persistence exists to push through difficulty, not through size; neither that rule nor solution search distinguishes "this is hard" from "this is bigger", which is how persistence amplifies expansion. Solution search may find a narrower implementation inside the boundary; it may not add a change class or a target. A generic continuation resumes the approved graph and nothing more, and a session budget limits runtime cost without ever granting scope. Only an approved contract revision re-baselines the brake — re-baselining at the same revision is refused, because that is how a runner would release the brake from inside the loop.
+
 ## Phase Relevance Resolution (Orchestrator Agents — IMP-038 SCOPE-5 / GF-4)
 
 Authorized top-level runners (`bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, `bubbles.iterate`) MUST obtain each phase's skip/run verdict from the shared resolver instead of deciding for themselves:

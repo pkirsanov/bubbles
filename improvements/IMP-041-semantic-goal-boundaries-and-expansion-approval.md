@@ -39,32 +39,6 @@
 
 ## Proposal
 
-### SCOPE-7 — Convergence materiality brake (GF-13)
-
-Add a materiality check before every autonomous convergence iteration.
-
-Compare the current scenario and planned delta with the last approved digests. Stop when either grows.
-
-Classify undeclared expansion as a new goal. Do not classify it as a fixable obstacle.
-
-Update autonomous-mode rules:
-
-- `neverStopForFixableObstacles` does not apply to goal expansion.
-- Solution search may find narrower implementations inside the boundary.
-- Solution search cannot add a change class or target.
-- A generic continuation resumes only the approved graph.
-- Session budgets limit runtime cost but never grant more scope.
-
-The refusal names the exact added class, target, path, or count. It offers narrowing or an approved Goal Contract revision.
-
-#### SCOPE-7 tests
-
-- Refuse a second iteration that adds a workflow.
-- Refuse a resumed run that adds another repository.
-- Refuse a generic continuation after a material delta increase.
-- Accept a second iteration that narrows paths and keeps the same classes.
-- Prove solution search cannot bypass the semantic boundary.
-
 ### SCOPE-8 — Incident corpus, shadow rollout, and downstream adoption (COV-13)
 
 Add a held-out goal-fidelity corpus. Include repository-neutral incident shapes.
