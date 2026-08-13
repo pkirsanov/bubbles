@@ -39,18 +39,6 @@
 
 ## Proposal
 
-### SCOPE-11 — Downstream changed-spec gate (COV-12)
-
-Implement BUG-031 with one generic command:
-
-```text
-bubbles verify-changed-specs --base-ref [base-ref] --head-ref [head-ref]
-```
-
-The command discovers changed planning files and impacted certified scenarios. It runs G088, G010, G057, Test Plan parity, and applicable project gates.
-
-Ship a reusable CI workflow or generated workflow template. Do not require Bubbles-managed Git hooks in consumer repositories.
-
 ### SCOPE-12 — Agent workflow hardening (COV-9, COV-10, COV-11)
 
 Update `bubbles.plan`, `bubbles.test`, `bubbles.validate`, and `bubbles.audit`.

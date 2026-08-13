@@ -719,6 +719,7 @@ run_check "Scenario obligation matrix selftest (IMP-040 / COV-9)" bash "$SCRIPT_
 run_check "Test-mechanism declaration selftest (IMP-040 / COV-10)" bash "$SCRIPT_DIR/test-mechanism-lint-selftest.sh"
 run_check "Mutation adapter contract selftest (IMP-040 / COV-11)" bash "$SCRIPT_DIR/mutation-adapter-contract-selftest.sh"
 run_check "Scenario impact resolution selftest (IMP-040 / REG-8)" bash "$SCRIPT_DIR/scenario-impact-resolve-selftest.sh"
+run_check "Changed-spec verification selftest (IMP-040 / COV-12)" bash "$SCRIPT_DIR/verify-changed-specs-selftest.sh"
 run_check "Tool-grant lint selftest (IMP-039 / COST-6)" bash "$SCRIPT_DIR/tool-grant-lint-selftest.sh"
 run_check "Always-on instruction budget selftest (IMP-039 / COST-6)" bash "$SCRIPT_DIR/always-on-instruction-budget-selftest.sh"
 # Advisory by design: the grant frontmatter is runtime-enforced, so an

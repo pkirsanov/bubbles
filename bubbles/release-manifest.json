@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "version": "7.26.0",
-  "gitSha": "a5a261cb0dd3e6496962e67eced674fbf6e03dc6",
-  "generatedAt": "2026-08-12T23:45:10+00:00",
+  "gitSha": "379aa1c9867b2b3f89d07e97d94f60ada90e167e",
+  "generatedAt": "2026-08-13T00:29:05+00:00",
   "capabilityLedgerVersion": 1,
   "payloadVerifierRequired": true,
   "supportedProfiles": ["foundation", "delivery", "production", "assured"],
@@ -68,7 +68,7 @@
     {"path": "bubbles/scripts/ci-annotation-emitter-selftest.sh", "sha256": "d4d6548cc32406b3932b11cd635cd966cdbd0e1fee3075cc1cf9fd02adca80d3"},
     {"path": "bubbles/scripts/claim-source-lint-selftest.sh", "sha256": "c664a9f78c0a07cb30025130a37614290301754b00579d734d53bc64c8c9cb59"},
     {"path": "bubbles/scripts/claim-source-lint.sh", "sha256": "62e24bf384656e6c6d37b1642ee6da5d9d458230aba82142401794280a651be8"},
-    {"path": "bubbles/scripts/cli.sh", "sha256": "8a9387753634d2597d2bc464eaf40a4c773121f04805dfdadf6da13f20174f31"},
+    {"path": "bubbles/scripts/cli.sh", "sha256": "af5e148ba814b12e1689eb24d7d603483d8957c16c054b2b482563a1c728c19e"},
     {"path": "bubbles/scripts/closeout-report-selftest.sh", "sha256": "2a8134c63f96c05020209483483c68865ec56209069e89b5604b6cbc344ffd7c"},
     {"path": "bubbles/scripts/closeout-report.sh", "sha256": "a04938e1ae0002e3035bd727f0f4381733274dca0a06edd7e6dc41b4b1d0a95c"},
     {"path": "bubbles/scripts/code-search.sh", "sha256": "7b919681ec9ac70ef6706e792e0c4e55c2b3d2651a99e13e515813ea6848d62d"},
@@ -149,7 +149,7 @@
     {"path": "bubbles/scripts/framework-health-evidence-lint.sh", "sha256": "a1c7869b4ec82b81a3da67144b14d7f83f02d6a06da64158ca78aba877fc725a"},
     {"path": "bubbles/scripts/framework-validate-changed-only-selftest.sh", "sha256": "42bc5d5a636b938d2f9a6a965f0887f07d6accc03d36a8b1d455193a3101eb91"},
     {"path": "bubbles/scripts/framework-validate-tier-selftest.sh", "sha256": "fb0ba3b3caf27a53f1dedde3932bb2631b94152a005932814ef2ac57b1daa72d"},
-    {"path": "bubbles/scripts/framework-validate.sh", "sha256": "2e0470666d6d9f53033feedeadcbe69a58e2e8973d63b2ca653cb0c63e60f3e4"},
+    {"path": "bubbles/scripts/framework-validate.sh", "sha256": "dc95cf6a5742637cead57d5c5a2d5f34b7471cd7fee0629273400f3f91f5883b"},
     {"path": "bubbles/scripts/fun-mode.sh", "sha256": "edfc310d3a5182c680bd1ef79a2115e7be22b030b6da37e8acfbcf6ff2efa00e"},
     {"path": "bubbles/scripts/gate-attribution-selftest.sh", "sha256": "db7d941e925fcea017fb8beedfdfa271248753f8181550e5962510b881be6f8d"},
     {"path": "bubbles/scripts/gate-attribution.sh", "sha256": "dc6c1462bbd2be7dcac983462d915ce467bbb857a2792e481baedfae07ce71ca"},
@@ -749,7 +749,7 @@
     {"path": "agents/bubbles_shared/scope-workflow.md", "sha256": "ad3035e1931bb2e4792864f197d13a78fae747aaa6877d7a5270a33782a4293d"},
     {"path": "agents/bubbles_shared/state-gates.md", "sha256": "6f34d778e18b7edc774add656eb3da59219f880057bd108c1f46b3b3a26c1ac8"},
     {"path": "agents/bubbles_shared/test-bootstrap.md", "sha256": "e932547db9bc4e69a5d0fcc84cee80d5e98c7c93df2c9db291510deaff96bd03"},
-    {"path": "agents/bubbles_shared/test-core.md", "sha256": "d824d6de5cd1845cda61378d0ef9e93f57d008f4127593501106cba689eaf015"},
+    {"path": "agents/bubbles_shared/test-core.md", "sha256": "d3564dbecb634680a1e3e2c798f244230bbdc27baccaff54bc5f6def52b99d78"},
     {"path": "agents/bubbles_shared/test-fidelity.md", "sha256": "2ee45ae1100d8da2cb6f111c0c528b13e3f0017a4803cba59033a55fb0c95841"},
     {"path": "agents/bubbles_shared/untrusted-content.md", "sha256": "65e2d96fcbaaac8fe5d7f0a2a01857a98dc5962d106b85eb1630135bdb0869d9"},
     {"path": "agents/bubbles_shared/ux-bootstrap.md", "sha256": "9d63c4f841ad0b211e08b449520346863b9c0088bdb14509f823e81bc92d3224"},
@@ -854,7 +854,7 @@
     {"path": "skills/bubbles-skill-authoring/SKILL.md", "sha256": "e5a0b74925bd2ba1effa40451b8635674bddfa37614870b8f109ba44a24fed5d"},
     {"path": "skills/bubbles-skills-first-discovery/SKILL.md", "sha256": "59e6659a30760f3f45a6fdff9be9a5dec6b48cb4e367795169bfa5d2a62e64b5"},
     {"path": "skills/bubbles-spec-template-bdd/SKILL.md", "sha256": "1ab9faa04b3702b8d78e92a5f1b0c4f10de1560afea1425e99ea7d4c6bd658f1"},
-    {"path": "skills/bubbles-status-transition/SKILL.md", "sha256": "1b89b98767c2962dc93d798208fa70c53a3fbfa492cca81c5721858581af64b8"},
+    {"path": "skills/bubbles-status-transition/SKILL.md", "sha256": "00edeb85249a73060aa3998eb4101eb11626502df34d13ceacde62f94361131b"},
     {"path": "skills/bubbles-supply-chain-source-locking/SKILL.md", "sha256": "e82b4a8ae44eed825107b260078d92a5ae8fa80ce62535116cf239f731d91535"},
     {"path": "skills/bubbles-technical-prose/SKILL.md", "sha256": "11c2140d1b24a5cd26aa78f85dd6a3b990f3728998814917c0a3389772e4c87d"},
     {"path": "skills/bubbles-test-environment-isolation/SKILL.md", "sha256": "3e5a4e0b9d4fb46b09e365fbdb13503b7087da126346a351b87289cd66a92887"},
@@ -864,7 +864,7 @@
     {"path": "skills/bubbles-workflow-execution-loops/SKILL.md", "sha256": "3bf298fdcdb57519bc15534079f45715765fd9cc5b671d0fd61574b11f6ed2fe"},
     {"path": "skills/bubbles-workflow-mode-resolution/SKILL.md", "sha256": "275531535b0c216042c6b6e89db133fe8314ccf2cf36e48c4fbf3ccc6ea4bb6c"}
   ],
-  "sourceOnlyFileCount": 96,
+  "sourceOnlyFileCount": 97,
   "sourceOnlyFileChecksums": [
     {"path": "bubbles/agent-bundle-budgets.json", "sha256": "890785da39a6c8ee3b046e4c97d583e0b221ea7b284c6e693b3389437e07ab9a"},
     {"path": "bubbles/eval/README.md", "sha256": "354a6fa0beb2139aa747be566e0f6e448366eb48e24455de232f82b93356063b"},
@@ -961,6 +961,7 @@
     {"path": "tests/regression/test_32_skills_first_map_merged_rows.sh", "sha256": "e45d04d60a3fcc49e4a9c9f7237361d5558908b313aed9f6a6f24d1f482e41d1"},
     {"path": "tests/regression/test_33_traceability_current_scope_universe.sh", "sha256": "fc7f458032ed163c703c14619339943c8a4fdd059fc168a80f7449c97928ca9e"},
     {"path": "tests/regression/test_34_domain_invariant.sh", "sha256": "686cc6ba22d70201a4f136cf5947a318e6fbc56515ad6cfa613040ffa73594cf"},
+    {"path": "tests/regression/test_35_human_acceptance_terminal.sh", "sha256": "562b55d33b5db038fa5ebe0aac4b36d2d3449f44cc07e4b39911fa55cd65e84e"},
     {"path": "tests/regression/test_repository_binding.sh", "sha256": "e5114ec024ec7ec08bc0879a5b326ad61cd717e08157d20529cf527f384d631b"}
   ]
 }

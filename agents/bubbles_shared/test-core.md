@@ -279,6 +279,33 @@ author's behalf would fabricate exactly the human acceptance the gate exists to
 require. Either a human accepts the behavior and checks it, or the item is a real
 regression and the spec is not done.
 
+## Changed-Spec Verification (IMP-040 SCOPE-11 / COV-12)
+
+One generic command replaces per-repo reimplementations of "check the specs I
+touched":
+
+```bash
+bubbles verify-changed-specs --base-ref <base-ref> [--head-ref <head-ref>]
+```
+
+It discovers **both** halves and runs the gates on each discovered spec —
+artifact lint (G010), traceability and Test Plan parity (G088), and the scenario
+contract checks (G057):
+
+1. **Changed planning files** — spec directories the diff touched directly.
+2. **Impacted certified scenarios** — specs the diff did *not* touch, whose
+   `implementationRefs` intersect the changed source.
+
+Half 2 is why the command exists. A source-only diff touches no spec folder, so
+discovery built on spec paths alone reports nothing while certified scenarios go
+stale.
+
+**Wiring is the repository's job, and it is the part that actually fails.**
+Measured across the six consumer repos on 2026-08-12: five carry a pre-push hook,
+exactly one invokes any Bubbles guard, and one carries no hook at all. Gates that
+are never reached are indistinguishable from gates that do not exist. The command
+has no bypass flag; what varies between repos is whether it is invoked at all.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`
