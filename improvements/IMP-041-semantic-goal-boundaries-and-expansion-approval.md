@@ -39,53 +39,6 @@
 
 ## Proposal
 
-### SCOPE-1 — Goal Contract v2 semantic boundary (GF-8)
-
-Extend the Goal Contract with a versioned `semanticBoundary` object. New mutable goals must declare it before planning starts.
-
-Use a closed execution-shape enum:
-
-- `one-off` for a bounded evaluation, migration, repair, or operator utility.
-- `existing-capability-change` for work inside an established foundation.
-- `reusable-capability` for an approved new shared foundation.
-
-Use a closed change-class enum. The first version must include:
-
-- `existing-config`.
-- `existing-test`.
-- `new-product-code`.
-- `new-shared-library`.
-- `new-workflow`.
-- `new-runner`.
-- `new-virtual-machine`.
-- `new-daemon`.
-- `new-init-unit`.
-- `new-datastore`.
-- `new-cache`.
-- `new-approval-authority`.
-- `new-network-topology`.
-- `new-deployment-target`.
-
-The boundary declares `allowedChangeClasses` and `approvalRequiredChangeClasses`. The two arrays must not overlap.
-
-The boundary also declares a `deltaBudget`. It records non-negative maxima for new scopes, files, workflows, services, runners, and virtual machines.
-
-`goal-contract.sh freeze` accepts the new fields and writes contract version 2. `verify`, `ref`, `verify-ref`, `mirror`, and `sync-boundary` preserve them.
-
-`goal-contract.sh revise --approval-note` remains the only widening path. A semantic widening increments the revision and invalidates prior references.
-
-Legacy version 1 contracts remain readable. Any revised mutable goal adopts version 2 before more work starts.
-
-#### SCOPE-1 tests
-
-- Freeze and verify every execution shape.
-- Refuse unknown change classes and negative budgets.
-- Refuse overlap between allowed and approval-required classes.
-- Accept semantic narrowing without approval.
-- Refuse semantic widening without an approval note.
-- Invalidate prior references after an approved semantic revision.
-- Preserve version 1 read compatibility.
-
 ### SCOPE-2 — Scenario contribution and planned-delta contract (GF-9)
 
 Extend each mutable scenario node with `contributesTo`, `ownershipFit`, and `plannedDelta`.
