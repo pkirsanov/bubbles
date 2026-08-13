@@ -74,14 +74,27 @@ read_contract() {
   printf '%s' "$contract"
 }
 
-# The classes in this plan that the frozen boundary marks approval-required.
-# Everything else is pre-approved and needs no gate.
+# The classes in this plan that require an approval gate. TWO populations
+# qualify, and missing the second one was a real gap the SCOPE-8 corpus caught:
+#
+#   gated       explicitly listed in approvalRequiredChangeClasses
+#   undeclared  in NEITHER list — neither pre-approved nor gated
+#
+# An undeclared class is the more dangerous of the two: a contract that simply
+# never mentioned virtual machines would otherwise wave them straight through,
+# which is exactly the overbuilt-evaluation shape this IMP exists to refuse.
 expanding_classes() {
   local contract="$1" delta="$2"
   jq -n -r --argjson c "$contract" --argjson d "$delta" '
-    ($c.semanticBoundary.approvalRequiredChangeClasses // []) as $gated
-    | [ ($d.changeClasses // [])[] | select(. as $x | $gated | index($x)) ]
-    | unique | .[]?'
+    if ($c.semanticBoundary // null) == null then empty
+    else
+      ($c.semanticBoundary.approvalRequiredChangeClasses // []) as $gated
+      | ($c.semanticBoundary.allowedChangeClasses // []) as $allowed
+      | [ ($d.changeClasses // [])[] as $x
+          | select(($gated | index($x)) or (($allowed | index($x)) | not))
+          | $x ]
+      | unique | .[]?
+    end'
 }
 
 build_preview() {
@@ -90,11 +103,14 @@ build_preview() {
     --argjson c "$contract" --argjson d "$delta" --argjson r "$reasons" \
     --arg alt "$alternative" --arg rb "$rollback" --arg shared "$shared" '
     ($c.semanticBoundary.approvalRequiredChangeClasses // []) as $gated
+    | ($c.semanticBoundary.allowedChangeClasses // []) as $allowed
     | {
         goalId: $c.goalId,
         revision: $c.revision,
         executionShape: $c.semanticBoundary.executionShape,
-        expandingChangeClasses: ([ ($d.changeClasses // [])[] | select(. as $x | $gated | index($x)) ] | unique),
+        expandingChangeClasses: ([ ($d.changeClasses // [])[] as $x
+                                   | select(($gated | index($x)) or (($allowed | index($x)) | not))
+                                   | $x ] | unique),
         plannedCounts: ($d | with_entries(select(.key | startswith("max")))),
         sharedInfrastructure: ($shared == "true"),
         contributionReasons: $r,
@@ -246,7 +262,10 @@ cmd_verify() {
   sb_digest="$(canon_digest "$(jq -c '.semanticBoundary // null' <<< "$contract")")"
   covered="$(jq -r --argjson d "$delta" --argjson c "$contract" --arg sbd "$sb_digest" '
     ($c.semanticBoundary.approvalRequiredChangeClasses // []) as $gated
-    | ([ ($d.changeClasses // [])[] | select(. as $x | $gated | index($x)) ] | unique) as $want
+    | ($c.semanticBoundary.allowedChangeClasses // []) as $allowed
+    | ([ ($d.changeClasses // [])[] as $x
+         | select(($gated | index($x)) or (($allowed | index($x)) | not))
+         | $x ] | unique) as $want
     | ($d | with_entries(select(.key | startswith("max")))) as $counts
     | [ (.expansionApprovals // [])[]
         | select(.approvedSessionId == ($c.provenance.sessionId // ""))

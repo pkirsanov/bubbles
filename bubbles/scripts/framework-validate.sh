@@ -666,6 +666,7 @@ run_check "Goal-fidelity guard selftest (IMP-038 SCOPE-6 / G134)" bash "$SCRIPT_
 run_check "Goal-boundary receipt selftest (IMP-041 SCOPE-3 / GF-7)" bash "$SCRIPT_DIR/goal-boundary-receipt-selftest.sh"
 run_check "Expansion-approval selftest (IMP-041 SCOPE-4 / GF-10)" bash "$SCRIPT_DIR/expansion-approval-selftest.sh"
 run_check "Convergence-materiality selftest (IMP-041 SCOPE-7 / GF-13)" bash "$SCRIPT_DIR/convergence-materiality-selftest.sh"
+run_check "IMP-041 evaluation corpus (SCOPE-8 / COV-13)" bash "$SCRIPT_DIR/imp041-evaluation-corpus.sh"
 run_check "Goal-fidelity telemetry selftest (IMP-038 SCOPE-7 / GF-5)" bash "$SCRIPT_DIR/goal-fidelity-telemetry-selftest.sh"
 run_check "Phase-relevance resolver selftest (IMP-038 SCOPE-5 / GF-4)" bash "$SCRIPT_DIR/phase-relevance-resolve-selftest.sh"
 run_check "Assurance deploy-eligibility resolver selftest (IMP-100 Phase 2 R4d / Phase 3)" bash "$SCRIPT_DIR/assurance-resolve-selftest.sh"

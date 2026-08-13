@@ -151,6 +151,33 @@ else
   bad "U1 usage" "noargs=$u1 bypass=$u2 unknown=$u3"
 fi
 
+# --- A8. ADVERSARIAL: an UNDECLARED class is gated too --------------------
+# Found by the SCOPE-8 corpus, not by the cases above. The first implementation
+# gated only classes named in approvalRequiredChangeClasses, so a contract that
+# simply never MENTIONED virtual machines waved them straight through — the
+# exact overbuilt-evaluation shape this IMP exists to refuse. A class in neither
+# list is undeclared, and undeclared is the more dangerous population of the two.
+S8="$(new_session a8)"
+r="$(rc_of bash "$EA" verify --session-file "$S8" --planned-delta '{"changeClasses":["new-datastore"],"maxNewFiles":1}')"
+expect 1 "$r" "A8 a class in NEITHER the allowed nor the approval-required list is gated"
+
+r="$(rc_of bash "$EA" verify --session-file "$S8" --planned-delta '{"changeClasses":["existing-test"],"maxNewFiles":1}')"
+expect 0 "$r" "A8b a class explicitly in allowedChangeClasses still needs no approval"
+
+# --- A9. ADVERSARIAL: a v1 contract is out of scope for this gate ---------
+# The undeclared-class rule must not leak into v1, where there is no semantic
+# boundary at all — otherwise every legacy goal would be refused on its first
+# plan. Also caught by the corpus.
+D9="$TMP/a9"
+mkdir -p "$D9"
+printf 'legacy request\n' > "$D9/request.txt"
+bash "$GC" freeze --session-file "$D9/session.json" --source-request-file "$D9/request.txt" \
+  --intent "legacy goal" --success-signal "signal" --runner bubbles.goal \
+  --session-id a9legacy --repository-alias bubbles \
+  --target repository=bubbles --repository-root bubbles >/dev/null 2>&1
+r="$(rc_of bash "$EA" verify --session-file "$D9/session.json" --planned-delta '{"changeClasses":["new-virtual-machine"]}')"
+expect 0 "$r" "A9 a v1 contract with no semantic boundary is out of scope for this gate"
+
 printf 'expansion-approval-selftest: %s check(s), %s failure(s)\n' "$checks" "$failures"
 [[ "$failures" -eq 0 ]] || exit 1
 exit 0
