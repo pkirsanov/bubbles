@@ -39,37 +39,6 @@
 
 ## Proposal
 
-### SCOPE-4 — Architecture-expansion approval (GF-10)
-
-Add a planning approval checkpoint before any approval-required change class enters planning or delivery.
-
-The checkpoint is distinct from host-action approval. It authorizes architecture expansion, not runtime mutation.
-
-The preview shows:
-
-- The new change classes.
-- The reason each class contributes to the outcome.
-- Planned scope and file counts.
-- Planned workflows, services, runners, virtual machines, and datastores.
-- Shared-infrastructure impact.
-- The narrower rejected alternative.
-- Rollback or withdrawal behavior.
-
-Canonicalize the preview and calculate an `expansionDigest`. Approval binds that digest through `goal-contract.sh revise --approval-note`.
-
-A generic `continue`, `approved`, or action approval does not approve architecture expansion. The approval must name the expansion digest.
-
-Any later delta increase invalidates the approval. Narrowing remains valid without a new approval.
-
-#### SCOPE-4 tests
-
-- Refuse planning that introduces a virtual machine without expansion approval.
-- Refuse delivery that adds a runner absent from the approved preview.
-- Refuse a generic continuation message as expansion approval.
-- Refuse approval for an older expansion digest.
-- Accept the exact approved digest once the Goal Contract revision changes.
-- Accept a narrower post-approval plan.
-
 ### SCOPE-5 — Bidirectional proportionality enforcement (GF-11)
 
 Make G094 enforce both missing abstraction and premature abstraction.
