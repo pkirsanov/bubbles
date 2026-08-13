@@ -165,6 +165,8 @@ Example: "refine scope 3 with more detailed Gherkin scenarios"
 
 This prompt produces a **sequential, scope-by-scope execution plan** derived from Spec-Kit artifacts and/or design docs.
 
+**Build the obligation matrix BEFORE implementation.** For each scenario, derive its `behaviorTraits` and record the obligations those traits imply, plus the `implementationRefs` that own the asserted result. Deriving coverage afterwards means deriving it from what was built rather than from what was owed. See [bubbles_shared/test-core.md](bubbles_shared/test-core.md) → Scenario Obligation Matrix.
+
 Core requirements:
 
 1) **Create small, well-defined scopes of work**

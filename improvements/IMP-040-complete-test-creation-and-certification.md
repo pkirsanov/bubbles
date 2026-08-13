@@ -39,17 +39,6 @@
 
 ## Proposal
 
-### SCOPE-12 — Agent workflow hardening (COV-9, COV-10, COV-11)
-
-Update `bubbles.plan`, `bubbles.test`, `bubbles.validate`, and `bubbles.audit`.
-
-- Plan builds the obligation matrix before implementation.
-- Test resolves every linked target before execution.
-- Test records mechanism and negative-control proof.
-- Validate replays current externally observable scenarios.
-- Audit samples at least one transformed value from input through production code to visible output.
-- Every role treats a subagent summary as a lead until it reads or executes the cited proof.
-
 ### SCOPE-13 — Evaluation and rollout (all gaps)
 
 Build a held-out corpus across repository shapes:
