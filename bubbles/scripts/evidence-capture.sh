@@ -88,16 +88,40 @@ hash_of() {
 
 tmp="$(mktemp)" || exit 2
 interrupted_rc=""
+child_pid=""
 cleanup() { rm -f "$tmp"; }
-record_signal() { interrupted_rc="$1"; }
+forward_signal() {
+  local exit_code="$1"
+  local signal_name="$2"
+
+  interrupted_rc="$exit_code"
+  [[ -n "$child_pid" ]] || return 0
+  kill -s "$signal_name" -- "-$child_pid" 2>/dev/null ||
+    kill -s "$signal_name" "$child_pid" 2>/dev/null || true
+}
 trap cleanup EXIT
-trap 'record_signal 130' INT
-trap 'record_signal 143' TERM
+trap 'forward_signal 130 INT' INT
+trap 'forward_signal 143 TERM' TERM
 
 # Interleave stdout and stderr: a runner's failure detail usually arrives on
 # stderr, and evidence that drops it is evidence of the wrong thing.
-"$@" >"$tmp" 2>&1
-rc=$?
+# Job control gives the background command its own process group. The signal
+# traps can therefore stop the complete validator tree instead of killing only
+# this wrapper and leaving a lock-holding grandchild behind.
+set -m
+"$@" >"$tmp" 2>&1 &
+child_pid=$!
+set +m
+
+rc=0
+while true; do
+  wait "$child_pid"
+  wait_rc=$?
+  if ! kill -0 "$child_pid" 2>/dev/null; then
+    rc="$wait_rc"
+    break
+  fi
+done
 if [[ -n "$interrupted_rc" ]]; then
   rc="$interrupted_rc"
 fi
