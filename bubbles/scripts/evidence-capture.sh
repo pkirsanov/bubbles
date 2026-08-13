@@ -101,12 +101,16 @@ signal_child_group() {
   kill -s "$signal_name" -- "-$child_pid" 2>/dev/null ||
     kill -s "$signal_name" "$child_pid" 2>/dev/null || true
 }
+# Invoked indirectly by the EXIT trap.
+# shellcheck disable=SC2317
 cleanup() {
   if [[ "$child_group_needs_cleanup" == "true" ]] && child_group_exists; then
     signal_child_group KILL
   fi
   rm -f "$tmp"
 }
+# Invoked indirectly by the INT/TERM traps.
+# shellcheck disable=SC2317
 forward_signal() {
   local exit_code="$1"
   local signal_name="$2"

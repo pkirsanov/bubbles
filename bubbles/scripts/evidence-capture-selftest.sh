@@ -172,6 +172,8 @@ fi
 # cannot exit unless the wrapper forwards TERM; the outer deadline prevents a
 # broken implementation from hanging this selftest forever.
 set +e
+# PPID expands inside the child shell.
+# shellcheck disable=SC2016
 term_out="$(timeout --kill-after=1 5 bash "$TARGET" -- bash -c 'trap '\''printf "child-terminated\n"; exit 0'\'' TERM; printf "before-signal\n"; kill -TERM "$PPID"; while :; do :; done' 2>&1)"
 term_rc=$?
 set -e
@@ -192,6 +194,8 @@ fi
 # process group has drained.
 descendant_pid_file="$(mktemp)"
 set +e
+# Positional parameters expand inside the child shell.
+# shellcheck disable=SC2016
 descendant_out="$(timeout --kill-after=1 5 bash "$TARGET" -- bash -c 'bash -c '\''trap "exit 0" TERM; while :; do :; done'\'' & printf "%s\n" "$!" >"$1"' _ "$descendant_pid_file" 2>&1)"
 descendant_rc=$?
 set -e
@@ -203,7 +207,9 @@ if [[ "$descendant_rc" -eq 0 ]] &&
   ! kill -0 "$descendant_pid" 2>/dev/null; then
   ok "completed commands leave no background descendant behind"
 else
-  [[ "$descendant_pid" =~ ^[0-9]+$ ]] && kill -KILL "$descendant_pid" 2>/dev/null || true
+  if [[ "$descendant_pid" =~ ^[0-9]+$ ]]; then
+    kill -KILL "$descendant_pid" 2>/dev/null || true
+  fi
   bad "completed command tree cleanup" "rc=$descendant_rc pid=$descendant_pid $(printf '%s' "$descendant_out" | tr '\n' '|')"
 fi
 
