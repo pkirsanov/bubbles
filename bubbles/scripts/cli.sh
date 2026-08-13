@@ -436,18 +436,65 @@ EOF
   fi
 }
 
+# Reads one section of the run registry as ONE COMPACT RECORD PER LINE.
+#
+# The previous implementation printed any line inside the section containing a
+# "{". That silently assumed the file was always written one-record-per-line —
+# an assumption nothing enforced. The moment a registry was pretty-printed (by
+# jq, an editor, a formatter, or any other writer), every record's first line
+# was a bare "{", the reader returned "{" per record, and the writer faithfully
+# published "    {," for each. The read-modify-write cycle then made it
+# permanent.
+#
+# That is not hypothetical: it is the observed state of two downstream consumer
+# registries found in the field — one with every record reduced to a bare "{,"
+# and one with a half record spliced onto a whole one. Both are unparseable, so
+# every consumer of those ledgers — including the abandoned-run reaper — is
+# blind on those repositories.
+#
+# This parses structurally instead: it tracks string state and brace depth, so
+# a record is emitted when its braces balance regardless of how the source was
+# formatted. Whitespace between tokens is dropped, whitespace inside strings is
+# preserved. Deliberately still no jq dependency (see field_from_json_line).
 run_state_lines() {
   local section="$1"
 
   ensure_run_state_registry
 
   awk -v target="$section" '
-    $0 ~ "\"" target "\"[[:space:]]*:[[:space:]]*\\[" { in_target = 1; next }
-    in_target && /^[[:space:]]*\]/ { exit }
-    in_target && /\{/ {
-      gsub(/^[[:space:]]+/, "", $0)
-      sub(/,[[:space:]]*$/, "", $0)
-      print $0
+    BEGIN { started = 0; instr = 0; esc = 0; depth = 0; rec = "" }
+    {
+      line = $0
+      start = 1
+      if (!started) {
+        if (match(line, "\"" target "\"[ \t]*:[ \t]*\\[") == 0) next
+        started = 1
+        start = RSTART + RLENGTH
+      }
+      for (i = start; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (instr) {
+          rec = rec c
+          if (esc) { esc = 0 }
+          else if (c == "\\") { esc = 1 }
+          else if (c == "\"") { instr = 0 }
+          continue
+        }
+        if (c == "\"") { instr = 1; rec = rec c; continue }
+        if (c == "{") { depth++; rec = rec c; continue }
+        if (c == "}") {
+          depth--
+          rec = rec c
+          if (depth == 0) { print rec; rec = "" }
+          continue
+        }
+        if (depth > 0) {
+          if (c == " " || c == "\t") continue
+          rec = rec c
+          continue
+        }
+        if (c == "]") { exit }
+      }
     }
   ' "$CONTROL_PLANE_RUN_STATE_FILE"
 }
@@ -455,7 +502,21 @@ run_state_lines() {
 write_run_state_registry() {
   local active_lines="$1"
   local recent_lines="$2"
-  local tmp_file="$CONTROL_PLANE_RUN_STATE_FILE.tmp"
+  # The staging path MUST be unique per writer. A shared ".tmp" is not a
+  # staging file, it is a shared mutable buffer: two concurrent writers open
+  # the same path, the second truncates what the first is still writing, and
+  # whichever renames last publishes the interleaved result. That is the
+  # observed corruption in the wild (a half record spliced onto a whole one,
+  # and records reduced to a bare "{,"). The rename below is atomic; the
+  # staging file was not, so atomicity bought nothing.
+  #
+  # This uses mktemp rather than "$$.$RANDOM". Both of those are unreliable
+  # here: inside a subshell `$$` is the PARENT's pid, and subshells forked
+  # from one shell replay the SAME $RANDOM sequence, so the "unique" path
+  # collides exactly when contention is highest. mktemp asks the kernel for
+  # an exclusively-created name and cannot collide.
+  local tmp_file
+  tmp_file="$(mktemp "${CONTROL_PLANE_RUN_STATE_FILE}.tmp.XXXXXX")" || return 1
   local active_count=0 recent_count=0 active_index=0 recent_index=0 line
 
   active_count=$(printf '%s\n' "$active_lines" | sed '/^$/d' | wc -l | tr -d ' ')
@@ -487,9 +548,18 @@ write_run_state_registry() {
     done <<< "$recent_lines"
     echo '  ]'
     echo '}'
-  } > "$tmp_file"
+  } > "$tmp_file" || {
+    rm -f "$tmp_file"
+    return 1
+  }
 
-  mv "$tmp_file" "$CONTROL_PLANE_RUN_STATE_FILE"
+  # Publish atomically. A failed rename must not leave the staging file behind,
+  # because a leaked temp is indistinguishable from a live one to the next
+  # writer that tries to clean up.
+  mv "$tmp_file" "$CONTROL_PLANE_RUN_STATE_FILE" || {
+    rm -f "$tmp_file"
+    return 1
+  }
 }
 
 field_from_json_line() {
