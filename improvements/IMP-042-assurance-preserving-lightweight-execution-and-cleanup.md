@@ -234,18 +234,6 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 - Preserve blocked findings, repository binding, goal identity, owner, and raw pointer.
 - Fail closed when the atomic write cannot complete.
 
-### SCOPE-8 - MCP And Mode Contract Repair (REG-9)
-
-- Change `resolve_mode` to accept a primitive plus a tag array.
-- Add an explicit persisted-key grandfather path.
-- Add an MCP `tools/call` regression for tagged v7 modes.
-- Wire or remove `validate_dod.revert_on_fail`.
-- If wired, change its mutation annotations and test isolated state rollback.
-- Replace `list_open_findings` with a real findings projection or rename it to policy selftest.
-- Deprecate the duplicate status-transition alias before removal.
-- Regenerate MCP counts and descriptions from current registries.
-- Replace active bare v5 operator examples with primitive-plus-tag syntax.
-
 ### SCOPE-9 - Proportional Micro-Fix Packet (HO-3, EV-9)
 
 - Add a typed compact packet for localized, contract-preserving defects.
@@ -323,7 +311,7 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-16 - Documentation And Generated Projection Cleanup (DOC-6)
 
-- Replace phantom and bare v5 operator examples.
+- Replace the phantom mode sections that document unregistered keys.
 - Reduce `docs/CATALOG.md` to a distinct decision aid or redirect to the checked recipe index.
 - Repair the governance index claim and its path-aware lint.
 - Preserve block-scalar summaries in generated capability docs.
@@ -399,13 +387,16 @@ Evidence found during implementation that changed a proposed action.
 - The macOS CI claim was imprecise rather than false. A macOS `release-check` leg exists and is gated to pushes, so the hook now states Linux on pull requests and pushes, macOS on pushes.
 - The status agent's duplicated rows moved to SCOPE-10. They are agent-routing prose, not leaf cleanup, and SCOPE-14 requires held-out routing tests before prose deletion.
 - The `--list-modes` regression needed no new test. `mode-alias-selftest.sh` was already stripping `phaseRelevance` itself, so removing that workaround made its existing coverage check the regression.
+- `validate_dod.revert_on_fail` was REMOVED rather than wired. The guard supports the flag, but certification state is validate-owned, so exposing a status rewrite to a model-invocable tool creates a forging vector. The CLI keeps the capability.
+- `search_code` carried the same ignored-input defect as `validate_dod`, and worse: three declared inputs were unrendered while the description promised one of them worked. Fixed under the same scope.
+- Bare v5 operator syntax was corrected during SCOPE-8 because it shares the mode contract. The phantom mode sections remain with SCOPE-16.
 
 ## Migration And Rollout
 
 ### Wave 0 - Leaf Cleanup
 
-- SCOPE-1 is delivered. See the CHANGELOG entry for IMP-042 SCOPE-1.
-- Land the safe parts of SCOPE-8, SCOPE-10, and SCOPE-16 next.
+- SCOPE-1 and SCOPE-8 are delivered. See their CHANGELOG entries.
+- Land the safe parts of SCOPE-10 and SCOPE-16 next.
 - Run focused tests after each edit.
 - Run one core validation after the leaf batch.
 

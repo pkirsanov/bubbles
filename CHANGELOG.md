@@ -31,6 +31,43 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### MCP And Mode Contract Repair (IMP-042 SCOPE-8 / REG-9)
+
+Every boolean input in the MCP tool catalog was silently ignored. The argument
+renderer had no way to turn one into argv: `${var}` renders the literal "False"
+and `${var?}` only drops on null or empty string. A new `${var!}` boolean-flag
+form carries the flag literal and drops the whole element when the value is
+falsy, so `"--no-cap${no_cap!}"` yields `["--no-cap"]` or nothing.
+
+`resolve_mode` could not express a v7 mode at all. It declared a single `mode`
+string and rendered `["${mode}"]`, so a primitive plus tags arrived as ONE argv
+token and the resolver rejected it. It now takes `primitive` plus a `tags` array
+rendered as separate elements, and a `grandfather` boolean for persisted v5 keys,
+which the resolver otherwise refuses with a pointer to the v6 form.
+
+`search_code` declared `paths`, `kind`, and `no_cap` and rendered none of them,
+while its description promised `no_cap=true` worked. All three are now wired, and
+the stated cap is corrected from 200 to the 400 the script actually applies.
+`code-search.sh` gained a single-element `--kind=<lang>` form, because a template
+can only drop the argv element containing the placeholder and a space-separated
+pair would leave a bare `--kind` to swallow the pattern.
+
+`validate_dod` declared `revert_on_fail` and never rendered it. Rather than wire
+a state rewrite into a model-invocable tool, the input is removed: certification
+state is bubbles.validate-owned, so an MCP-driven status revert is a forging
+vector. The guard's `--revert-on-fail` remains available on the CLI.
+
+`list_open_findings` projects no findings and takes no spec; its description now
+says so instead of implying a findings list. `verify_status_transition` is marked
+deprecated, being a byte-identical alias of `validate_dod`. The workflows resource
+no longer restates mode, phase, and gate counts that had drifted to 55/26/101
+against a live 61/30/117.
+
+Three MCP regressions cover this: the v7 tagged form resolves, a removed v5 name
+without grandfather is still rejected, and the grandfather path resolves. The
+middle one is adversarial on purpose, proving the first passes because argv is
+correct rather than because the resolver stopped refusing.
+
 ### Leaf Validation Cleanup (IMP-042 SCOPE-1 / PERF-2, PERF-3, COV-15, DOC-6)
 
 The core validation tier spent 82 of its 109 seconds running ShellCheck twice.

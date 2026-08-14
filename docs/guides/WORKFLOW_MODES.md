@@ -137,8 +137,22 @@ This prevents confirmation bias where the model finds patterns that support its 
 ## Choosing a Mode
 
 ```
-/bubbles.workflow  <mode-name> for <feature/bug>
+/bubbles.workflow  <feature/bug> mode: <registered-key>
 ```
+
+The `mode:` keyword is required. A bare leading mode name is not operator input
+in v7 — it reads as part of the request text and routes through `super` instead
+of selecting the mode you named.
+
+Resolving a mode directly on the CLI uses the v7 primitive-plus-tag form, with
+each tag as its own argument:
+
+```
+bash bubbles/scripts/mode-resolver.sh review action:readiness-synthesis target:system
+```
+
+A removed v5 name is rejected there and the error names its v6 form. Persisted
+v5 keys already stored in a `state.json` still resolve, via `--grandfather`.
 
 If you don't specify a mode, `full-delivery` is the default.
 
