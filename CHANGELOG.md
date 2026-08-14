@@ -31,6 +31,58 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### A Proportionate Packet For Genuinely Small Defects (IMP-042 SCOPE-9 / HO-3, EV-9)
+
+The full bug packet is seven artifacts. That is proportionate to a defect that
+changes a contract and disproportionate to a one-line guard on an off-by-one.
+Paying full ceremony for a trivial fix does not buy assurance; it buys a thinner
+report written under time pressure.
+
+The compact packet trades artifact count for a much narrower admission window.
+`bubbles/registry/micro-fix-packet.yaml` holds the eight admission conditions,
+the three artifacts still required, and the four obligations that may never be
+traded away: reproduce-before-fix, an adversarial regression shown failing
+without the fix and passing with it, a stated root cause, and evidence that is
+execution rather than assertion. `micro-fix-admission.sh` reads that registry
+and refuses anything that fails a condition or drops an obligation.
+
+An unanswered condition is a refusal, not a default. A bypass-shaped flag is
+rejected by name. There is no override, because a discretionary downgrade is how
+a payment defect ships as a typo fix.
+
+The packet is NOT the default and must not become one until packet authoring
+time and defect escape rate are measured, carried as `OW-015`. Selftest case 9
+fails if that caveat is deleted, and case 8 proves the guard reads the registry
+rather than restating it.
+
+### Gate Telemetry Separates Fixtures From Product (IMP-042 SCOPE-17 / COV-15)
+
+The gate-hit log is the only evidence base for retiring a gate, and every record
+in it looked alike. A selftest driving the guard through a fixture repository
+wrote records indistinguishable from production ones, so "G0xx has rejected
+something 40 times" could have been describing the test suite.
+
+Every record now carries a `sourceClass` of product, fixture, selftest or
+migration. The class is DERIVED from the repository root rather than declared,
+because a fixture that forgets to declare itself is exactly the record that
+pollutes the report, and an unrecognised declared class is demoted to fixture
+rather than trusted as product so one misspelling cannot promote test data into
+retirement evidence. `report` counts product records only, names the filter it
+applied, and states how many records it excluded; `--all-classes` and `--class`
+widen it deliberately. Records written before the field existed still count as
+product, so no history is discarded.
+
+This corrects `OW-012`, whose remediation runs `gate-hit-log.sh report` in each
+consuming repository to find gates with zero recorded rejections. That command
+no longer counts fixture rejections toward a shipped gate.
+
+The original COV-15 wording claimed the log had "no per-gate outcomes". That was
+wrong and is corrected in the improvement file: per-gate outcomes already
+existed. The real defect was the missing source class.
+
+`gate-hit-log-selftest.sh` covers this in cases 17 to 22 and is falsifiable:
+reverting the default filter to count every class turns cases 18 and 19 red.
+
 ### The v5 Mode Names Are Not Removable (IMP-042 SCOPE-18 / REG-9)
 
 The removal train was scoped to retire deprecated aliases. Scanning first, which

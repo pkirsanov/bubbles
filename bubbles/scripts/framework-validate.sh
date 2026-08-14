@@ -733,6 +733,7 @@ run_check_self_only "Payload closure guard (IMP-042 / REG-11)" bash "$SCRIPT_DIR
 run_check_self_only "Payload closure guard selftest (IMP-042 / REG-11)" bash "$SCRIPT_DIR/payload-closure-guard-selftest.sh"
 run_check_self_only "Derived-artifact regen wrapper selftest (IMP-007)" bash "$SCRIPT_DIR/regen-derived-selftest.sh"
 run_check "Gate-hit telemetry selftest (IMP-036)" bash "$SCRIPT_DIR/gate-hit-log-selftest.sh"
+run_check "Micro-fix admission selftest (IMP-042 SCOPE-9)" bash "$SCRIPT_DIR/micro-fix-admission-selftest.sh"
 run_check "Agent-id enum lint selftest (IMP-036)" bash "$SCRIPT_DIR/agent-id-enum-lint-selftest.sh"
 run_check "Collected-test-count guard selftest (IMP-036)" bash "$SCRIPT_DIR/collected-test-count-guard-selftest.sh"
 run_check "Gate-vintage selftest (IMP-036)" bash "$SCRIPT_DIR/gate-vintage-selftest.sh"

@@ -149,7 +149,7 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 - **PERF-4 - Repeated global checks:** Each spec transition reruns global framework lints such as ownership and workflow-runner grants.
 - **PERF-4 - No prerequisite graph:** The transition guard continues checks after required structure fails. It cannot mark dependent checks as blocked-not-run.
-- **COV-15 - Fixture telemetry pollution:** The source gate-hit log contains fixture run records but no per-gate outcomes. It cannot support retirement decisions.
+- **COV-15 - Fixture telemetry pollution:** RESOLVED, and the original wording was half wrong. Per-gate outcomes DID already exist: `gate-hit-log.sh` line 125 writes one `kind:"gate"` record per gate carrying `outcome`, and `report` aggregates hits, passes and fails per gate. The real defect was that no record carried a source class, so fixture runs and product runs were indistinguishable in the one store retirement decisions read. Every record now carries `sourceClass`, derived from the repository root rather than declared, and `report` counts product records only.
 - **COV-15 - Existence is not use:** Capability freshness proves consumer paths exist. It does not prove they invoke the capability.
 
 ## Design Principles
@@ -228,12 +228,25 @@ Remaining:
 
 ### SCOPE-9 - Proportional Micro-Fix Packet (HO-3, EV-9)
 
-- Add a typed compact packet for localized, contract-preserving defects.
-- Keep reproduction, changed boundary, risk class, root cause, regression test, commands, evidence, owner, and certification.
-- Admit only low-risk work with no new behavior, schema, auth, payment, secret, deployment, or cross-product effect.
-- Escalate automatically to the full bug packet when any admission condition fails.
-- Preserve reproduce-before-fix and adversarial regression requirements.
+Delivered: the packet, its admission window, and its enforcement.
+`bubbles/registry/micro-fix-packet.yaml` is the single source for the eight
+admission conditions, the three still-required artifacts, and the four
+obligations proportionality may never trade away.
+`bubbles/scripts/micro-fix-admission.sh` READS that registry and refuses a
+declared compact packet that fails any condition or drops any obligation, with
+no override flag. An UNANSWERED condition is a refusal rather than a default,
+because silence is how the inconvenient question gets skipped. Proven by
+`micro-fix-admission-selftest.sh` 9/9, whose case 8 adds a condition to a copied
+registry and requires the guard to start demanding it, so the admission list
+cannot drift into a second copy inside the script.
+
+Remaining, and deliberately not done here:
+
 - Measure packet authoring time and defect escape rate before making it the default.
+
+That measurement is carried as `OW-015`. Until it exists the packet is opt-in
+per bug via `"packet": "micro"` in `state.json`; selftest case 9 fails if the
+registry's NOT THE DEFAULT caveat is ever deleted.
 
 ### SCOPE-10 - Compact Durable Status Tracking (WIP-4, DOC-6)
 
@@ -283,13 +296,24 @@ Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate sha
 
 ### SCOPE-17 - Transition Guard Plan And Gate Telemetry (PERF-4, COV-15)
 
+Delivered: telemetry source classing. Every gate-hit record now carries a
+`sourceClass` of product, fixture, selftest or migration; the class is DERIVED
+from the repository root because a fixture that forgets to declare itself is
+exactly the record that pollutes the report; an unrecognised declared class is
+demoted to fixture rather than trusted; `report` counts product records only and
+states what it excluded; records predating the field still count as product so
+no history is discarded. Proven by `gate-hit-log-selftest.sh` cases 17-22, and
+proven falsifiable by mutating the default filter, which turns cases 18 and 19
+red. This also corrects `OW-012`, whose remediation runs `gate-hit-log.sh report`
+to find never-rejecting gates: that command no longer counts fixture rejections.
+
+Remaining:
+
 - Classify transition checks as spec-local, repo-global, or external.
 - Declare prerequisite edges between transition checks.
 - Emit `BLOCKED_NOT_RUN` for checks whose prerequisites failed.
 - Continue independent checks to preserve one-pass diagnostics.
 - Reuse repo-global receipts only when their input closure is unchanged.
-- Tag telemetry as product, fixture, selftest, or migration.
-- Exclude fixture-only records from retirement reports by default.
 - Require downstream observation windows before retiring any gate.
 
 ### SCOPE-18 - Compatibility Removal Train (REG-9, DOC-6)
