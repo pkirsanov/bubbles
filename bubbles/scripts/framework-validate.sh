@@ -1058,6 +1058,16 @@ if [[ -x "$SCRIPT_DIR/management-truth-lint-selftest.sh" ]]; then
   run_check "Management-truth lint selftest" bash "$SCRIPT_DIR/management-truth-lint-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/managed-docs-existence-lint-selftest.sh" ]]; then
+  run_check "Managed-doc existence lint selftest (IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/managed-docs-existence-lint-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/managed-docs-existence-lint.sh" ]]; then
+  # Skips in a framework source tree; the managed-doc contract governs product
+  # repositories, which is where this has something to check.
+  run_check "Managed-doc existence lint (live, IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/managed-docs-existence-lint.sh" "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/management-truth-lint.sh" ]]; then
   # Live scan is source-only: it checks the framework's OWN recipe catalog
   # (docs/recipes/README.md) and installer --profile help against the live

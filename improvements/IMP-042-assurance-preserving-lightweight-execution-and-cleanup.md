@@ -259,7 +259,6 @@ Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate sha
 
 - Remove the generated gate block only after byte-equivalent queries pass for every remaining reader.
 - Extract one adoption-profile parser and one unknown-value policy.
-- Validate required managed-doc path existence.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

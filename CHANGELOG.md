@@ -31,6 +31,20 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Required Managed Docs Must Exist (IMP-042 SCOPE-13 / REG-12)
+
+`docs-registry.yaml` declares which documents a repository maintains and which
+are required, and nothing checked that a required document's path resolved to a
+real file. The registry could promise a document that was never written, and
+every projection built from it inherited the claim.
+
+`managed-docs-existence-lint.sh` now fails when a required managed doc has no
+file. It skips a framework source tree deliberately and says so: Bubbles owns no
+`docs/Architecture.md` or `docs/API.md` and correctly should not, so running it
+here would report guaranteed failures that say nothing about the framework. Its
+selftest therefore drives product-shaped fixtures, where the check has to
+decide, and covers both directions plus the skip itself.
+
 ### One Copy Of The Specialist Table (IMP-042 SCOPE-13 / REG-10)
 
 Check 6 of `state-transition-guard.sh` carried the mode to required-specialist
