@@ -1,9 +1,9 @@
 # IMP-043 — Close the Learning Loop: Capture, Schedule, Consume
 
 **Status:** PROPOSED (not yet applied) — awaiting owner review
-**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** An operator observed that `lessons.md` is empty in every repo that has one, and absent in the rest. A cross-repository audit of eight installed repositories confirmed it. Zero lessons exist anywhere, no skill proposal has ever been generated, and no recall index has ever been built.
-**Verified gaps addressed:** LRN-4 (capture obligation unreachable), LRN-5 (lifecycle triggers inert), LRN-6 (upgrade never backfills scaffolds), LRN-7 (recall unreachable by construction), COV-18 (no end-to-end loop test), DOC-8 (false auto-compaction claim)
+**Verified gaps addressed:** LRN-4 unreachable capture rule. LRN-5 inert lifecycle triggers. LRN-6 no upgrade backfill. LRN-7 unreachable recall. COV-18 no end-to-end loop test. DOC-8 false compaction claim.
 
 ## Executed Measurements
 

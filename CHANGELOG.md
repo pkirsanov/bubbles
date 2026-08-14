@@ -31,6 +31,24 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Validation Cadence (IMP-042 SCOPE-5 / PERF-4)
+
+`validation-core.md` defined what validation must check but never when to run it,
+so "validate" was read as "run everything" and a full suite followed every scope,
+finding, and documentation correction. It now carries an explicit cadence.
+
+A validation epoch is one tree SHA on one platform with one toolchain, and a
+verdict belongs to the epoch that produced it. Focused validation runs after each
+edit. A repair loop reruns the failed checks and their affected closure, letting
+unrelated side-effect risk accumulate to the next heavy boundary instead of
+forcing a full suite mid-loop. One cold full `release-check` runs on the final
+exact release candidate, and that gate is neither optional nor reusable.
+
+The full-suite fallback stays permanently available, for the reason
+`test-impact-shadow.sh` already states in source: a skipped test and a passing
+test look identical in a summary line, so any narrowing must be reportable before
+it may skip work.
+
 ### Compact Durable Status Tracking (IMP-042 SCOPE-10 partial / WIP-4, DOC-6)
 
 The status agent presented the same command twice as two different steps -- an

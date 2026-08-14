@@ -1,13 +1,13 @@
 {
   "bubbles.analyst.agent.md": 147990,
-  "bubbles.audit.agent.md": 167781,
+  "bubbles.audit.agent.md": 177237,
   "bubbles.bug.agent.md": 199934,
   "bubbles.chaos.agent.md": 230447,
   "bubbles.clarify.agent.md": 114361,
   "bubbles.code-review.agent.md": 16873,
   "bubbles.commands.agent.md": 62821,
   "bubbles.create-skill.agent.md": 55215,
-  "bubbles.design.agent.md": 132561,
+  "bubbles.design.agent.md": 140158,
   "bubbles.devops.agent.md": 92541,
   "bubbles.docs.agent.md": 146825,
   "bubbles.gaps.agent.md": 183410,
@@ -37,7 +37,7 @@
   "bubbles.test.agent.md": 200422,
   "bubbles.train.agent.md": 17849,
   "bubbles.upkeep.agent.md": 18001,
-  "bubbles.ux.agent.md": 135770,
+  "bubbles.ux.agent.md": 143366,
   "bubbles.validate.agent.md": 236220,
   "bubbles.workflow.agent.md": 615797
 }

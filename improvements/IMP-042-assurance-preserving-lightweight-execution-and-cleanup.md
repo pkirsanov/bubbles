@@ -203,17 +203,6 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 - Require identical check IDs, exits, and normalized output hashes before enabling a parallel group.
 - Preserve a serial diagnostic mode for scheduler failures.
 
-### SCOPE-5 - Validation Epochs And Final Assurance (PERF-4)
-
-- Define a validation epoch by tree SHA, work boundary, platform, and toolchain.
-- Permit one heavy baseline early in a large repair batch.
-- After repairs, rerun failed checks and their affected closure only.
-- Accumulate unrelated side-effect risk for the next heavy boundary.
-- Run one cold full `release-check` on the final exact release candidate.
-- Never require a full suite after every scope, finding, or small repair.
-- Never reuse a whole-suite verdict across a changed tree.
-- Keep the full-suite fallback permanently available, as the shadow reporter already requires.
-
 ### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
 
 - Add a deterministic next-step resolver.
