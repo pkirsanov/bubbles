@@ -225,15 +225,6 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 - Resume from the first unresolved occurrence without replaying accepted phases.
 - Keep conversation text diagnostic-only during resume.
 
-### SCOPE-7 - Atomic Context Compaction (COST-8)
-
-- Append the compact record and stamp its source envelope under one lock.
-- Deduplicate by raw pointer and record digest.
-- Make G083 require one matching `compactedHistory` entry per compacted envelope.
-- Keep the latest two raw envelopes as required today.
-- Preserve blocked findings, repository binding, goal identity, owner, and raw pointer.
-- Fail closed when the atomic write cannot complete.
-
 ### SCOPE-9 - Proportional Micro-Fix Packet (HO-3, EV-9)
 
 - Add a typed compact packet for localized, contract-preserving defects.

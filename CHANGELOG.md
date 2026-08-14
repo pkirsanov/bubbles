@@ -31,6 +31,27 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Atomic Context Compaction (IMP-042 SCOPE-7 / COST-8)
+
+Compaction could report success while losing the thing it produced. The compactor
+stamped `compactedAt` on the envelope but emitted the compact record only to
+stdout, leaving the caller to append it to `compactedHistory`. When that append
+did not happen the envelope was marked compacted with its record gone -- the raw
+content discarded and the summary that justified discarding it missing -- and
+G083 still passed, because it only looked for the stamp.
+
+The stamp and the record now land in ONE rewrite of the session file, and the
+record is emitted only after that write succeeds. A write that cannot complete
+refuses with exit 3 rather than reporting a compaction that did not persist.
+Re-running on the same envelope replaces its record rather than appending a
+duplicate. Unbound use over a one-off raw envelope stays a pure stdout
+transformation.
+
+G083 now requires a matching `compactedHistory` entry for every stamped envelope,
+scoped to sessions that carry the key so an upgrade cannot retroactively block a
+session compacted under the older contract. Two paired scenarios cover it: a
+stamped envelope with no record fails, and the same shape with its record passes.
+
 ### Selftest Scheduling And Governance Indexing (IMP-042 SCOPE-11 partial / COV-15)
 
 A comment could silence a selftest. The discovery sweep decided "already wired"
