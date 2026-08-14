@@ -68,6 +68,14 @@ Before parsing goals, estimating or ordering the queue, reading repository state
 ## PHASE ROUTER (EXECUTE TOP-TO-BOTTOM)
 
 ```yaml
+phase_0_continuation_intent:
+  do: run bubbles/scripts/continuation-intent-resolve.sh against the complete raw request before parsing or queuing goals
+  call_runSubagent: no
+  route:
+    CONTINUE: recover the existing non-terminal sprint and its unfinished goals; if none exists, goto phase_4_wrap_up
+    NEW_WORK: continue to phase_1_parse_and_estimate
+    OTHER: continue to phase_1_parse_and_estimate
+
 phase_1_parse_and_estimate:
   do: parse goals, classify types, estimate effort, sort by priority, build queue
   call_runSubagent: only if goal is vague → runSubagent(bubbles.super)
@@ -98,7 +106,8 @@ phase_3_inter_goal:
 
 phase_4_wrap_up:
   do: generate sprint report, record state
-  call_runSubagent: optional → runSubagent(bubbles.docs), runSubagent(bubbles.recap)
+  call_runSubagent: required → runSubagent(bubbles.recap); runSubagent(bubbles.docs) remains optional
+  rule: pass any unfinished active goal as continuation; otherwise recap may derive one read-only next-priority candidate and must not execute it
 ```
 
 ## Agent Identity
@@ -112,6 +121,15 @@ phase_4_wrap_up:
 - If a queued item needs another Bubbles mode, resolve and execute that granted mode in this runtime, invoking only its specialist phase owners through `runSubagent`.
 - Never invoke `bubbles.goal`, `bubbles.workflow`, or another workflow-running orchestrator as a subagent. Record `executionModel: direct-authorized-runner` for each goal and mode.
 - If this sprint runtime lacks `runSubagent`, return a `blocked` RESULT-ENVELOPE naming the missing `agent` tool and the exact phase owner invocation that would have run.
+
+## Terminal Recap Boundary
+
+Invoke `runSubagent(bubbles.recap)` at every sprint terminal stop.
+Do not re-execute completed goals when the user says `continue`, `resume`, `next`, or `keep going`.
+Targeted forms such as `continue the booking sprint` constrain sprint recovery and never create a new queue.
+If no in-progress goal remains, let recap derive at most one candidate from read-only status and open-work surfaces, then stop.
+Starting that candidate requires a new explicit user request.
+Keep the sprint `RESULT-ENVELOPE` as the final block.
 
 ## Experience Recall (Advisory)
 

@@ -246,7 +246,15 @@ bubbles_manifest_entry_is_tracked() {
     return 0
   fi
 
-  git -C "$source_root" ls-files --error-unmatch -- "$relative_path" >/dev/null 2>&1
+  if git -C "$source_root" ls-files --error-unmatch -- "$relative_path" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # New framework files must enter the generated payload before they are
+  # staged; otherwise --check can report a false green while install.sh omits
+  # the new dependency. Ignore only paths Git explicitly classifies as ignored.
+  [[ -f "$source_root/$relative_path" ]] || return 1
+  ! git -C "$source_root" check-ignore -q -- "$relative_path"
 }
 
 bubbles_print_manifest_entry() {
@@ -296,13 +304,13 @@ bubbles_framework_manifest_entries() {
   # would be copied by install.sh yet absent from manifest/checksum protection.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/scripts/guards" -type f 2>/dev/null | LC_ALL=C sort)
 
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/adapters" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -310,7 +318,7 @@ bubbles_framework_manifest_entries() {
   # installed downstream so strict-parser validation can run there too.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/schemas" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -331,7 +339,7 @@ bubbles_framework_manifest_entries() {
   # to compare against.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/registry" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -341,7 +349,7 @@ bubbles_framework_manifest_entries() {
   # and the operator's MCP client can resolve everything.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/mcp" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -351,7 +359,7 @@ bubbles_framework_manifest_entries() {
   # retires the v5.0.1 H7 drift check.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/cheatsheet" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -360,7 +368,7 @@ bubbles_framework_manifest_entries() {
   # mode-resolver can accept both forms during the v6 cycle.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/workflows" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -370,20 +378,20 @@ bubbles_framework_manifest_entries() {
   # downstream so re-validators can run the same check.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/installer" -type f 2>/dev/null | LC_ALL=C sort)
 
   # v5.0.1 (H8): pre-push hook source for maintainer installs.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/bubbles/scripts/hooks" -type f 2>/dev/null | LC_ALL=C sort)
 
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/templates" -type f 2>/dev/null | LC_ALL=C sort)
 
@@ -397,7 +405,7 @@ bubbles_framework_manifest_entries() {
 
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
-    relative_path="${file_path#$source_root/}"
+    relative_path="${file_path#"$source_root"/}"
     bubbles_print_manifest_entry "$source_root" "$relative_path"
   done < <(find "$source_root/docs" -type f | LC_ALL=C sort)
 
@@ -446,7 +454,7 @@ bubbles_framework_manifest_entries() {
     skill_name="$(basename "$skill_dir")"
     while IFS= read -r file_path; do
       [[ -f "$file_path" ]] || continue
-      relative_path="${file_path#$skill_dir}"
+      relative_path="${file_path#"$skill_dir"}"
       bubbles_print_manifest_entry "$source_root" "skills/$skill_name/$relative_path"
     done < <(find "$skill_dir" -type f | LC_ALL=C sort)
   done

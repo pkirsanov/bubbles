@@ -108,6 +108,14 @@ Before the phase router reads files, classifies the goal, resolves workflow stat
 ## PHASE ROUTER (EXECUTE TOP-TO-BOTTOM)
 
 ```yaml
+phase_0_continuation_intent:
+  do: run bubbles/scripts/continuation-intent-resolve.sh against the complete raw request before goal or target classification
+  call_runSubagent: no
+  route:
+    CONTINUE: recover one non-terminal goal constrained by any named target; if none exists, goto phase_8_terminal_recap
+    NEW_WORK: continue to phase_1_understand
+    OTHER: continue to phase_1_understand
+
 phase_1_understand:
   do: read files, search codebase, classify goal
   call_runSubagent: no
@@ -180,6 +188,11 @@ phase_7_convergence:
     all_gates_pass AND all_tests_pass AND zero_findings AND artifact_lint_clean AND all_scopes_done: EXIT_SUCCESS
     max_iterations_reached: EXIT_WITH_STATUS_REPORT
     else: goto phase_4_verify
+
+phase_8_terminal_recap:
+  do: invoke recap with the terminal result; recap may derive one read-only next-priority candidate from status and open-work surfaces
+  call_runSubagent: yes → runSubagent(bubbles.recap)
+  stop: always return control to the user; candidate work requires a new explicit request
 ```
 
 ## Agent Identity
@@ -193,6 +206,16 @@ phase_7_convergence:
 - The user's outcome is the authority. Resolve every needed mode against `workflowModeGrants`, execute each mode contract in this top-level runtime, and invoke its phase owners via `runSubagent`.
 - Never invoke `bubbles.workflow`, `bubbles.goal`, `bubbles.sprint`, or another workflow-running orchestrator as a subagent. Record every mode transition as `executionModel: direct-authorized-runner`.
 - If this goal runtime lacks `runSubagent`, return a `blocked` RESULT-ENVELOPE naming the missing `agent` tool and the exact phase owner invocation that would have run.
+
+## Terminal Recap Boundary
+
+Treat bare `continue`, `resume`, `next`, `keep going`, `go on`, or `proceed` as resume requests.
+Treat targeted forms such as `continue working on <feature>` the same way; the target constrains recovery and does not define a new goal.
+Resume only a recoverable non-terminal goal.
+If the goal is already terminal, invoke `runSubagent(bubbles.recap)` and stop.
+Let recap derive at most one possible next-priority candidate from read-only status and open-work surfaces.
+Starting that work requires a new explicit user request.
+Keep the goal `RESULT-ENVELOPE` as the final block.
 
 ## Workflow Mode Engine (MANDATORY)
 

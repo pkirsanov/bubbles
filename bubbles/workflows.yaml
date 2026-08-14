@@ -638,7 +638,7 @@ gates:
     classification: businessInvariant
     enforcedBy: [ script:bubbles/scripts/orchestrator-persistence-lint-selftest.sh, script:bubbles/scripts/orchestrator-persistence-lint.sh ]
     description: >-
-      BLOCKING gate. Orchestrator prompt files MUST make autonomous persistence the default operating mode: after any non-terminal phase, automatically continue to the next phase, stopping only for convergence achieved, max iterations reached, user requests stop, or fundamental impossibility. Enforced mechanically by `bubbles/scripts/orchestrator-persistence-lint.sh`, which scans exactly `agents/bubbles.goal.agent.md`, `agents/bubbles.workflow.agent.md`, `agents/bubbles.iterate.agent.md`, and `agents/bubbles.sprint.agent.md` for forbidden continuation-prompt phrases outside explicit FORBIDDEN examples and for the required persistence-default language. The guard exits 0 (clean), 1 (findings), or 2 (missing/unreadable target files or invalid invocation). State-transition-guard.sh invokes this guard as Check 27. Hermetic selftest: `bubbles/scripts/orchestrator-persistence-lint-selftest.sh`. Persistent regression: `tests/regression/test_05_orchestrator_persistence.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
+      BLOCKING gate. The four generic orchestrators MUST classify continuation before target/work parsing and auto-continue every non-terminal phase. A closed independent 15-agent minimum roster MUST match workflow grants plus `terminalRecapPolicy.additionalAgents`; every roster agent invokes non-recursive `bubbles.recap` at terminal stops and returns control instead of selecting unrelated work. Enforced mechanically by `bubbles/scripts/orchestrator-persistence-lint.sh`, including classifier ordering, targeted-continuation contradiction, phase-owner upward-return, and recap non-recursion checks. The guard exits 0 (clean), 1 (findings), or 2 (missing/unreadable targets, an empty policy, or invalid invocation). State-transition-guard.sh invokes this guard as Check 27. Hermetic selftest: `bubbles/scripts/orchestrator-persistence-lint-selftest.sh`. Persistent regression: `tests/regression/test_05_orchestrator_persistence.sh`. Wired into `bubbles/scripts/framework-validate.sh`.
   G087:
     since: "5.2.0"
     sinceDate: "2026-06-04"
@@ -1726,7 +1726,7 @@ phases:
 #   specs_hardened   - Planning artifacts improved, no implementation done
 #   docs_updated     - Documentation updated, no implementation done
 #   validated        - Validation/audit completed, no implementation done
-#   in_progress      - Partial work, used for resume-only
+#   in_progress      - Partial work; transient resume requests recover the original mode
 
 # Mode Defaults (applied to ALL modes with statusCeiling: done)
 #

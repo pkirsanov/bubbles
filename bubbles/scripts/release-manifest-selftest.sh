@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015 # Assertion helpers are intentionally used in compact A && pass || fail form.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/trust-metadata.sh"
 
 failures=0
@@ -15,6 +17,11 @@ fail() {
   echo "FAIL: $1"
   failures=$((failures + 1))
 }
+
+fixture_root="$(mktemp -d -t bubbles-release-manifest-selftest-XXXXXXXX)"
+# shellcheck disable=SC2329 # Invoked indirectly by trap.
+cleanup() { rm -rf "$fixture_root"; }
+trap cleanup EXIT INT TERM
 
 manifest_section_has_path() {
   local section_name="$1"
@@ -71,6 +78,22 @@ if grep -q '"path": "bubbles/scripts/cli.sh"' "$manifest_file"; then
   pass "Managed checksum inventory includes shared CLI surface"
 else
   fail "Managed checksum inventory includes shared CLI surface"
+fi
+
+git -C "$fixture_root" init --quiet
+mkdir -p "$fixture_root/bubbles/scripts"
+printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/new-managed.sh"
+printf '%s\n' 'bubbles/scripts/ignored.sh' > "$fixture_root/.gitignore"
+printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/ignored.sh"
+if bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/new-managed.sh'; then
+  pass "New non-ignored managed file enters payload before staging"
+else
+  fail "New non-ignored managed file enters payload before staging"
+fi
+if ! bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/ignored.sh'; then
+  pass "Ignored scratch file stays outside payload"
+else
+  fail "Ignored scratch file stays outside payload"
 fi
 
 source_only_count="$(bubbles_json_number_field "$manifest_file" sourceOnlyFileCount)"

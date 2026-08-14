@@ -32,6 +32,8 @@ Workflow execution is default-deny. Gate G064 requires an authorized top-level r
 
 Continuation-shaped input includes plain `continue`/`next`, but also phrases like `fix all found`, `fix the rest`, and `address the rest` after a workflow run. Those should preserve the active workflow mode whenever workflow packets, run-state, or active spec state make that mode recoverable.
 
+If no non-terminal workflow remains, continuation invokes recap and stops. It may show a next-priority candidate, but it never starts that candidate. Use `/bubbles.iterate` or explicitly ask to pick the next priority when new work should begin.
+
 ## Repository Binding Before Modes And Discovery
 
 Every repository-sensitive front door runs `bubbles/scripts/repository-binding.sh preflight` before reading repository state, expanding relative targets, scanning `specs/`, selecting work, invoking a repository command, or dispatching a specialist. An explicit `repositoryRoot` is normalized to the physical Git top-level and committed as the work boundary before local discovery.
@@ -558,10 +560,10 @@ validate → audit → docs
 Resume from where the last session stopped.
 
 ```
-(reads state.json and continues from last known position)
+(reads state.json, preserves the original workflow mode, and continues only a non-terminal item)
 ```
 
-**Use when:** Picking up interrupted work.
+**Use when:** Picking up interrupted work. `resume-only` is transient: it is never persisted as `state.json.workflowMode`, never mutates lifecycle status, and evaluates completion against the recovered mode. If that work is terminal, recap returns control without selecting another item.
 
 ```
 /bubbles.workflow  resume

@@ -136,6 +136,7 @@ Before loading repository-local workflow state, parsing user targets, resolving 
 - Respect retry limits — when ALL retries for a phase are exhausted AND auto-escalation cannot resolve the issue, mark the spec `blocked` and continue to the next spec if `continueOnBlocked: true`.
 - Preserve deterministic resume state in `.specify/memory/bubbles.session.json` and per-spec `state.json`.
 - Treat continuation-shaped follow-ups such as `continue`, `fix all found`, `fix everything found`, `address rest`, `address the rest`, `fix the rest`, `resolve remaining findings`, or `handle remaining issues` as workflow continuation, not as permission to downshift into raw specialist execution. Resume the active workflow mode and targets whenever they can be recovered from continuation envelopes, recent workflow outputs, run-state, or spec state.
+- **Terminal Recap Boundary:** On every terminal stop, invoke `runSubagent(bubbles.recap)` before composing the final response. Pass the terminal result; recap may derive at most one next-priority candidate from read-only status and open-work surfaces. Never execute that candidate without a new explicit user request. Keep this runner's `RESULT-ENVELOPE` as the final block.
 - **⚠️ RUN-TO-COMPLETION (NON-NEGOTIABLE):** This agent MUST complete the entire workflow for ALL target specs. It MUST NOT stop mid-workflow to suggest commands or recommend the user run a different mode. If different actions are needed (hardening, gap closure, bug fixes, artifact repair), handle them inline via the Auto-Escalation Protocol below. The ONLY acceptable stop reasons are the terminal conditions defined in `autoEscalation.terminalStopConditions` in workflows.yaml.
 - **⚠️ AUTO-MODE-ESCALATION (NON-NEGOTIABLE):** When this agent discovers that the current phase cannot proceed because a prerequisite is unmet (e.g., specs need hardening, artifacts are missing, bugs block progress), it MUST invoke the appropriate specialist agents inline to resolve the issue and then continue the workflow. It MUST NOT stop and suggest the user run `bubbles.workflow` with a different mode.
 - **⚠️ TOOL-AVAILABILITY ESCALATION (NON-NEGOTIABLE):** This agent's frontmatter MUST expose the `agent` tool alias. If this runtime lacks `runSubagent`, emit a `blocked` RESULT-ENVELOPE naming the missing tool and intended phase owner. Never emulate a specialist and never dispatch another workflow runner as a workaround.
@@ -340,7 +341,7 @@ Before Phase 0, follow [workflow-delegation-core.md](bubbles_shared/workflow-del
 
 Perform this literal syntactic check FIRST without reading repository state:
 1. Scan the raw user input for the exact substring `mode:` and for a concrete spec, bug, or ops target token.
-2. If `mode:` is absent, classify the request as `VAGUE`, invoke `bubbles.super` via `runSubagent` for repository-only then bound work resolution, consume its `RESOLUTION-ENVELOPE`, and proceed with that resolved mode.
+2. If `mode:` is absent, apply the no-mode branches in `workflow-delegation-core.md`. Preserve `CONTINUATION`, `CONTINUE`, and `FRAMEWORK`; classify only the remaining plain-English requests as `VAGUE`.
 3. If `mode:` and a concrete target are both present, classify the request as `STRUCTURED`.
 4. If `mode:` is present without a concrete target, classify the request as `TARGETLESS_MODE`. A `repositoryRoot` selects a repository but is not a concrete work target. Apply mode-specific target requirements only after `PREFLIGHT_COMMITTED`; auto-discovery, when the mode permits it, must use the committed decision and `repository-binding.sh discover-specs`.
 5. **There is NO exception to this gate.** Natural language descriptions, action verbs ("execute", "plan", "deliver", "implement"), feature names, repository roots, and numbered lists do not create concrete work-target authority.
@@ -405,12 +406,12 @@ Rules:
 
 **CONTINUE → attempt one-mode workflow resume:**
 
-1. Inspect the current conversation context, any pasted `## CONTINUATION-ENVELOPE`, any recent workflow `## RESULT-ENVELOPE`, `.specify/runtime/workflow-runs.json` (if present), and target specs' `state.json.workflowMode` / `state.json.execution.currentPhase` for a single concrete non-terminal workflow target.
+1. Run `bubbles/scripts/continuation-intent-resolve.sh` against the complete raw request before extracting a target or mode. If it returns `CONTINUE`, inspect the current conversation context, any pasted `## CONTINUATION-ENVELOPE`, any recent workflow `## RESULT-ENVELOPE`, `.specify/runtime/workflow-runs.json` (if present), and target specs' `state.json.workflowMode` / `state.json.execution.currentPhase` for a single concrete non-terminal workflow target. Any named target constrains recovery only.
 2. If an active or recent non-terminal workflow run resolves to a mode granted to `bubbles.workflow`, continue using that exact target and mode.
 3. If the recoverable mode is excluded (`iterate`, `autonomous-goal`, or `autonomous-sprint`), emit `route_required` to its `metaModeOwner` without changing the mode.
-4. If no active mode can be recovered, invoke `bubbles.super` for a resolution envelope and route to its `targetAgent`; do not pick unrelated work.
+4. If no non-terminal mode can be recovered, invoke `runSubagent(bubbles.recap)` and stop. Recap may report at most one candidate from read-only status and open-work surfaces; it remains unstarted and requires a new explicit request.
 
-There is no generic work-discovery fallback inside `bubbles.workflow`. Use `/bubbles.iterate` for priority-driven selection or `/bubbles.goal continue` for outcome-level continuation.
+There is no generic work-execution fallback inside `bubbles.workflow`. Use `/bubbles.iterate` or ask to `pick the next priority` when new work should begin.
 
 #### FRAMEWORK-ENVELOPE Consumer Contract
 

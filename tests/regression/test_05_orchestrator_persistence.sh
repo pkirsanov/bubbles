@@ -20,9 +20,21 @@ TARGET_FILES=(
   "agents/bubbles.workflow.agent.md"
   "agents/bubbles.iterate.agent.md"
   "agents/bubbles.sprint.agent.md"
+  "agents/bubbles.bug.agent.md"
+  "agents/bubbles.releases.agent.md"
+  "agents/bubbles.train.agent.md"
+  "agents/bubbles.upkeep.agent.md"
+  "agents/bubbles.propagate.agent.md"
+  "agents/bubbles.stabilize.agent.md"
+  "agents/bubbles.retro.agent.md"
+  "agents/bubbles.journey.agent.md"
+  "agents/bubbles.super.agent.md"
+  "agents/bubbles.code-review.agent.md"
+  "agents/bubbles.system-review.agent.md"
 )
 
 WORKSPACE="$(mktemp -d -t bubbles-g086-regression-XXXXXXXX)"
+# shellcheck disable=SC2329 # Invoked indirectly by trap.
 cleanup() {
   rm -rf "$WORKSPACE" 2>/dev/null || true
 }
@@ -53,6 +65,17 @@ write_prompt() {
 
 Gate G086 enforces the orchestrator persistence default: after any non-terminal phase, this orchestrator MUST automatically continue to the next phase. It may stop only for convergence achieved, max iterations reached, user requests stop, or fundamental impossibility.
 
+Classify raw input first with bubbles/scripts/continuation-intent-resolve.sh.
+
+phase_1_understand:
+phase_1_parse_and_estimate:
+### Phase 0: Resolve Inputs
+## Scope Selection Priority
+
+## Terminal Recap Boundary
+
+At a terminal stop, invoke runSubagent(bubbles.recap) and return control to the user.
+
 $extra
 EOF
 }
@@ -60,6 +83,38 @@ EOF
 write_all_clean() {
   local repo="$1"
   local rel
+  mkdir -p "$repo/bubbles/scripts" "$repo/agents/bubbles_shared"
+  {
+    echo "workflowModeGrants:"
+    echo "  agents:"
+    for rel in "${TARGET_FILES[@]}"; do
+      agent_name="$(basename "$rel" .agent.md)"
+      echo "    ${agent_name}:"
+      echo "      modes: [ test-mode ]"
+    done
+    echo "resultPolicy:"
+    echo "  allowedOutcomes: [ completed_owned ]"
+    echo "terminalRecapPolicy:"
+    echo "  directInvocationOnly: true"
+    echo "  phaseOwnersReturnUpward: true"
+    echo "  additionalAgents:"
+    echo "  - bubbles.super"
+    echo "  - bubbles.code-review"
+    echo "  - bubbles.system-review"
+  } > "$repo/bubbles/agent-capabilities.yaml"
+  cat > "$repo/bubbles/scripts/continuation-intent-resolve.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' CONTINUE
+EOF
+  chmod +x "$repo/bubbles/scripts/continuation-intent-resolve.sh"
+  cat > "$repo/agents/bubbles_shared/agent-common.md" <<'EOF'
+A dispatched phase-owner subagent MUST NOT invoke recap. It returns upward.
+EOF
+  cat > "$repo/agents/bubbles.recap.agent.md" <<'EOF'
+# Recap fixture
+
+`bubbles.recap` never invokes itself.
+EOF
   for rel in "${TARGET_FILES[@]}"; do
     write_prompt "$repo/$rel" "Clean persistence-default regression fixture for $rel."
   done
@@ -128,6 +183,83 @@ write_prompt "$repo/agents/bubbles.sprint.agent.md" "FORBIDDEN example:\n\`\`\`t
 run_guard "$repo"
 assert_exit "R3 forbidden example" 0
 assert_output_contains "R3" "stdout" "PASS Gate G086"
+
+echo ""
+echo "--- R4: missing terminal recap contract fails ---"
+repo="$(stage_repo r4-missing-terminal-recap)"
+write_all_clean "$repo"
+cat > "$repo/agents/bubbles.workflow.agent.md" <<'EOF'
+# Regression fixture
+
+## Orchestrator Persistence Default (Gate G086)
+
+Gate G086 enforces the orchestrator persistence default: after any non-terminal phase, this orchestrator MUST automatically continue to the next phase. It may stop only for convergence achieved, max iterations reached, user requests stop, or fundamental impossibility.
+EOF
+run_guard "$repo"
+assert_exit "R4 missing terminal recap" 1
+assert_output_contains "R4" "stderr" "terminal recap boundary"
+assert_output_contains "R4" "stderr" "runSubagent(bubbles.recap)"
+
+echo ""
+echo "--- R5: a newly granted runner without recap fails automatically ---"
+repo="$(stage_repo r5-new-granted-runner)"
+write_all_clean "$repo"
+cat > "$repo/bubbles/agent-capabilities.yaml" <<'EOF'
+workflowModeGrants:
+  agents:
+    bubbles.workflow:
+      modes: [ test-mode ]
+    bubbles.goal:
+      modes: [ test-mode ]
+    bubbles.sprint:
+      modes: [ test-mode ]
+    bubbles.iterate:
+      modes: [ test-mode ]
+    bubbles.bug:
+      modes: [ test-mode ]
+    bubbles.releases:
+      modes: [ test-mode ]
+    bubbles.train:
+      modes: [ test-mode ]
+    bubbles.upkeep:
+      modes: [ test-mode ]
+    bubbles.propagate:
+      modes: [ test-mode ]
+    bubbles.stabilize:
+      modes: [ test-mode ]
+    bubbles.retro:
+      modes: [ test-mode ]
+    bubbles.journey:
+      modes: [ test-mode ]
+    bubbles.new-runner:
+      modes: [ test-mode ]
+resultPolicy:
+  allowedOutcomes: [ completed_owned ]
+EOF
+mkdir -p "$repo/agents"
+cat > "$repo/agents/bubbles.new-runner.agent.md" <<'EOF'
+# Regression fixture
+
+This newly granted runner intentionally omits the completion-summary contract.
+EOF
+run_guard "$repo"
+assert_exit "R5 new granted runner" 1
+assert_output_contains "R5" "stderr" "agents/bubbles.new-runner.agent.md"
+assert_output_contains "R5" "stderr" "runSubagent(bubbles.recap)"
+
+echo ""
+echo "--- R6: direct top-level super without recap fails ---"
+repo="$(stage_repo r6-super-missing-recap)"
+write_all_clean "$repo"
+cat > "$repo/agents/bubbles.super.agent.md" <<'EOF'
+# Regression fixture
+
+This direct framework utility intentionally omits terminal recap.
+EOF
+run_guard "$repo"
+assert_exit "R6 super missing recap" 1
+assert_output_contains "R6" "stderr" "agents/bubbles.super.agent.md"
+assert_output_contains "R6" "stderr" "runSubagent(bubbles.recap)"
 
 echo ""
 echo "=== Regression verdict ==="

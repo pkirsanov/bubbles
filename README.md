@@ -357,7 +357,7 @@ Granted domain runners include `bubbles.releases`, `bubbles.train`, `bubbles.upk
 /bubbles.goal  improve the booking feature to be competitive
 /bubbles.goal  fix the calendar bug in page builder
 
-# Continue from where you left off:
+# Resume active work. If it is already complete, Bubbles returns a recap:
 /bubbles.goal  continue
 
 # Use workflow when you want exactly one mode:
@@ -406,8 +406,8 @@ These are the most direct ways users interact with Bubbles.
 # Fix a bug in existing code — reproduce/fix/verify loop with the quality chain
 /bubbles.workflow  fix the calendar bug in page builder
 
-# Keep shipping the next important slice without choosing phases by hand
-/bubbles.workflow  continue
+# Explicitly select and start the next important slice
+/bubbles.iterate
 
 # Release-candidate / no-loose-ends delivery
 /bubbles.workflow  specs/042-catalog-assistant mode: full-delivery
@@ -426,7 +426,7 @@ bash bubbles/scripts/cli.sh lint-budget
 | `mode: brainstorm` | Explores the idea without code and produces reviewable planning artifacts |
 | `improve ...` / `mode: improve-existing` | Runs objective brownfield research, then produces/refines design and scopes before coding |
 | `fix ...` / `mode: bugfix-fastlane` | Runs the focused bug loop with reproduce-before and verify-after evidence |
-| `continue` | Resumes the active workflow if possible; otherwise falls back to `iterate` to pick the next highest-value work |
+| `continue` | Resumes one active non-terminal workflow. If none remains, returns a completion recap and an unstarted next-priority candidate. |
 | `mode: full-delivery` | Keeps looping through implementation, tests, quality sweep, validation, and audit until the feature is truly green or concretely blocked |
 | `/bubbles.retro ...` | Shows slop tax and hotspot data so you can see whether you are shipping progress or just cleaning up rework |
 
@@ -437,7 +437,8 @@ Workflow's Phase -1 classifies your input and delegates:
 | Your Input | What Happens |
 |-----------|-------------|
 | Plain English | Delegates to `super` for NLP resolution → gets mode + spec + tags → executes |
-| "Continue" / "next" | Delegates to `iterate` for work-picking → gets next priority item → executes |
+| "Continue" / "next" | Resumes one active non-terminal workflow. If none remains, invokes recap and stops. |
+| "Pick the next priority" / `/bubbles.iterate` | Selects the next priority item and starts it as explicitly requested. |
 | Structured (`mode:` + spec) | Skips resolution, executes phases directly |
 | Framework ops ("doctor", "hooks") | Delegates to `super` for framework operations |
 
@@ -609,7 +610,7 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 | **Just describe what I want** | **`/bubbles.goal  <describe your outcome>`** |
 | **Run exactly one workflow mode** | **`/bubbles.workflow  <target> mode: <mode>`** |
 | **Multiple goals + time budget** | **`/bubbles.sprint  minutes: N` + goal list** |
-| **Continue toward the active outcome** | **`/bubbles.goal  continue`** |
+| **Continue an active outcome, or recap a completed one** | **`/bubbles.goal  continue`** |
 | Explore an idea before writing code | `/bubbles.workflow  mode: brainstorm for <idea>` |
 | Start a new feature from scratch | `/bubbles.goal  <describe feature>` |
 | Improve an existing feature | `/bubbles.goal  improve <feature>` |

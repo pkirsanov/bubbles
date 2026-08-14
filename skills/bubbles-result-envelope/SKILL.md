@@ -75,6 +75,8 @@ workBoundary:                        # immutable task scope (IMP-100 R6, optiona
 
 The orchestrator routes continuation envelopes through `bubbles.workflow`, not directly to a specialist.
 
+After terminal completion, a read-only surface emits the schema-valid redacted repository projection: `repositoryRoot: <redacted-local-root>`, `repositoryResolution.pathVisibility: redacted`, `repositoryResolution.actionable: false`, `target: none`, and `preferredWorkflowMode: none`. Repository alias and remaining decision provenance stay unchanged. Any possible next priority is listed outside the envelope as `not started`; a new explicit request must establish fresh authority before work begins.
+
 **Binding provenance (multi-root, IMP-025 MR3).** The `provenance` block lets a resumed
 session verify it is still bound to the intended repository + agent source. On resume, the
 orchestrator MUST validate that the envelope's `agentSourceRoot` still matches the

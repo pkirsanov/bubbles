@@ -165,7 +165,7 @@ When the user provides free-text input WITHOUT explicit `type:` or `mode:` param
 
 | User Says | Resolved Parameters |
 |-----------|---------------------|
-| "continue working on the booking feature" | feature: booking, type: implement |
+| "continue working on the booking feature" | continuationTarget: booking; preserve recovered mode; no new work authorization |
 | "fix tests for the page builder" | feature: page-builder, type: tests |
 | "improve this feature" | type: improve |
 | "find what's missing in auth" | feature: auth, type: gaps |
@@ -184,23 +184,34 @@ When the user provides free-text input WITHOUT explicit `type:` or `mode:` param
 | "analyze the search experience" | feature: search, type: analyze |
 
 **Resolution steps:**
-1. Extract feature/spec target from request (spec numbers, feature names, bug references)
-2. Match work type keywords → `type` parameter
-3. Extract time/iteration bounds → `minutes`, `iterations`, `run_mode`
-4. Extract focus area → `focus` parameter
-5. Confirm resolved parameters before starting
+1. Run `bubbles/scripts/continuation-intent-resolve.sh` against the complete raw input before extracting a target or work type.
+2. If it returns `CONTINUE`, preserve any named target only as a recovery constraint. Do not infer `type: implement`, enter scope selection, or create a scope.
+3. If it returns `NEW_WORK`, continue through explicit work selection.
+4. Otherwise extract feature/spec target from request (spec numbers, feature names, bug references).
+5. Match work type keywords → `type` parameter.
+6. Extract time/iteration bounds → `minutes`, `iterations`, `run_mode`.
+7. Extract focus area → `focus` parameter.
+8. Confirm resolved parameters before starting.
 
 ### Vague Intent Delegation to `bubbles.super` (MANDATORY)
 
 When iterate receives free-text input that does NOT match any row in the Natural Language Input Resolution table above — i.e., it cannot confidently extract a `type`, `mode`, feature target, or work-type keyword — it MUST delegate intent resolution to `bubbles.super` via `runSubagent` before proceeding.
 
-**Detection:** If after applying the resolution steps above, BOTH `type` and feature target are unresolved AND the input is not a simple continuation request ("continue", "next", empty), invoke super:
+**Detection:** If after applying the resolution steps above, BOTH `type` and feature target are unresolved AND the input is not a simple continuation request ("continue", "resume", "next", "keep going", "go on", "proceed", empty), invoke super:
 
 > `runSubagent("bubbles.super", "You are being invoked as a subagent by bubbles.iterate to resolve repository intent and then work intent. Return ONLY a RESOLUTION-ENVELOPE. User intent: {raw input}. Candidate descriptors: {host-supplied bounded repository candidate descriptors}. Do not read or list specs before repository binding.")`
 
 Parse the returned `RESOLUTION-ENVELOPE` to extract the canonical repository decision, `mode`, `specTargets`, and `tags`. Validate its actionable packet before repository-local work. If `specTargets` resolves a feature, use it. If `mode` resolves, use it. Then proceed with normal iterate execution using the resolved parameters.
 
-**When NOT to delegate:** If the input clearly maps to a known `type:` or the user said "continue"/"next"/empty — iterate handles these natively without super.
+**When NOT to delegate:** If the input clearly maps to a known `type:`, or the input is empty, iterate handles it natively without super.
+
+### Terminal Recap Boundary
+
+For every input classified `CONTINUE`, including targeted continuation language, inspect current run-state and spec state first.
+Resume only one recoverable non-terminal work item.
+If none exists, do not enter Scope Selection Logic.
+Invoke `runSubagent(bubbles.recap)` and stop; recap may derive one read-only candidate.
+The candidate remains unstarted until the user explicitly requests new work.
 
 ### Subagent Picker Contract (WORK-ENVELOPE)
 
@@ -431,6 +442,7 @@ If `{FEATURE_DIR}/scopes.md` exists:
 
 ### Priority 3: Create New Scope
 If no existing scopes or all are done:
+- Refuse this priority when the raw input was classified `CONTINUE`; terminal continuation recaps and stops instead of creating work.
 - Analyze feature spec/design for gaps
 - Create new scope in `scopes.md`
 - If no feature folder exists and `allow_new_feature_dir: true`:
@@ -779,5 +791,6 @@ At completion, report:
 3. Validation check results (Tier 1 + Tier 2).
 4. Coverage percentage vs threshold.
 5. A final `## Invocation Audit` section listing EVERY `runSubagent` call in execution order. Each entry MUST include: iteration/phase, invoked agent, why it was invoked, what it was asked to do, outcome/status, and the primary artifact/evidence/blocker returned.
+6. A terminal recap produced through `runSubagent(bubbles.recap)` before the final response. If no non-terminal workflow remains, list one candidate-only next priority and state that it was not started.
 
 Do NOT collapse the audit to `specialist agents invoked + status`. The audit must explain what each invoked specialist was asked to do. If no subagents were invoked, state that explicitly.
