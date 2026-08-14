@@ -37,8 +37,14 @@ info() { echo "[management-truth-lint] $*"; }
 findings=0
 
 # ── Check 1: recipe catalog completeness ──────────────────────────────
+#
+# Two inventories list recipes and only one was checked, so docs/CATALOG.md
+# drifted to 61 of 75 entries while docs/recipes/README.md stayed complete. Both
+# are now checked. CATALOG.md is not redundant -- it carries the mode/agent
+# mapping and the decision tree that the categorized index does not.
 recipes_dir="$REPO_ROOT/docs/recipes"
 recipes_readme="$recipes_dir/README.md"
+recipe_catalog="$REPO_ROOT/docs/CATALOG.md"
 if [[ -d "$recipes_dir" && -f "$recipes_readme" ]]; then
   for recipe in "$recipes_dir"/*.md; do
     [[ -e "$recipe" ]] || continue
@@ -46,6 +52,10 @@ if [[ -d "$recipes_dir" && -f "$recipes_readme" ]]; then
     [[ "$base" == "README.md" ]] && continue
     if ! grep -q "($base)" "$recipes_readme"; then
       err "recipe not linked in catalog: docs/recipes/$base"
+      findings=$((findings + 1))
+    fi
+    if [[ -f "$recipe_catalog" ]] && ! grep -q "(recipes/$base)" "$recipe_catalog"; then
+      err "recipe not listed in docs/CATALOG.md: docs/recipes/$base"
       findings=$((findings + 1))
     fi
   done

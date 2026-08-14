@@ -31,6 +31,29 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Documentation Truth (IMP-042 SCOPE-16 / DOC-6)
+
+The mode guide documented four modes that do not exist. `brainstorm`,
+`feature-bootstrap`, `redesign-existing`, and `product-discovery` had full
+sections with phase diagrams and, in one case, a copy-paste invocation example --
+but none is in `modes.yaml`, none has a v6 alias, and none can be selected. An
+operator could read a mode name here, invoke it, and be routed somewhere else.
+They now appear once, in a Retired Modes section, with the legacy phase arms that
+`required-specialists.yaml` still records. Every remaining documented mode
+heading resolves against the live registry.
+
+Two recipe inventories existed and only one was checked, so `docs/CATALOG.md`
+drifted to 61 of 75 recipes. CATALOG is not redundant -- it carries the
+mode/agent mapping and decision tree the categorized index lacks -- so the 14
+missing recipes were added, each mapping derived from the recipe itself, and both
+inventories are now under the same mechanical check.
+
+The six files in `docs/generated/` had no named reader, which is what made
+`framework-stats.md` look unconsumed. They are now indexed as generated surfaces.
+Frozen v4/v5/v6 design records, the dated product review, and ADR-001 are indexed
+as a historical record, labelled as how the framework used to work rather than
+current guidance.
+
 ### Validation Cadence (IMP-042 SCOPE-5 / PERF-4)
 
 `validation-core.md` defined what validation must check but never when to run it,

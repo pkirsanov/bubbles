@@ -245,6 +245,7 @@ Delivered: invocation-based scheduling shared by the sweep and the coverage lint
 - Require the complete downstream `framework-validate` exit code to be zero.
 - Assert every managed executable has its runtime dependencies in the same payload class.
 - Assert source-only tests remain executable in source validation and absent downstream.
+- Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 
@@ -269,17 +270,6 @@ Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate sha
 - Keep identity, prohibitions, ownership, dispatch boundaries, and result contracts in agent files.
 - Require held-out routing tests before deleting policy prose.
 - Measure actual tool-result bytes and host prompt tokens when an adapter exists.
-
-### SCOPE-16 - Documentation And Generated Projection Cleanup (DOC-6)
-
-Delivered: block-scalar preservation, generated-page authority framing, and the generated issue summary column. Remaining:
-
-- Replace the phantom mode sections that document unregistered keys.
-- Reduce `docs/CATALOG.md` to a distinct decision aid or redirect to the checked recipe index.
-- Repair the governance index claim and its path-aware lint.
-- Delete `framework-stats.md` only together with its generator self-check and its manifest entry, or index it as a human surface.
-- Move dated reviews behind a historical review index.
-- Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
 
 ### SCOPE-17 - Transition Guard Plan And Gate Telemetry (PERF-4, COV-15)
 
