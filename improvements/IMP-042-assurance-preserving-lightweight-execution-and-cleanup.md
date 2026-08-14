@@ -282,12 +282,19 @@ Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate sha
 
 ### SCOPE-18 - Compatibility Removal Train (REG-9, DOC-6)
 
-- Inventory deprecated flags, aliases, framing paths, and legacy schemas.
-- Scan all downstream repositories before removal.
-- Announce one versioned removal train.
-- Add migration commands and a release-note matrix.
-- Remove only compatibility paths with zero current consumers.
-- Keep persisted v5 registry keys and grandfathered artifact reads.
+Scanned before proposing any removal, which is what this scope asked for. The
+result is that the v5 mode surface is NOT removable debt:
+
+- `bubbles/workflows/aliases.yaml` states that the v5 names remain the canonical registry KEYS, and carries the invariant that every mode in `workflows.yaml` must appear under `v5Aliases`. Removing an entry breaks resolution rather than retiring a legacy path.
+- All 61 entries appear across the seven downstream repositories (framework-managed subtrees excluded from the scan).
+- 27 of the 61 are live `state.json` mode values across 1,888 downstream state files. `bugfix-fastlane` alone occurs 2,309 times, `full-delivery` 1,402.
+
+So the removal train does not run against modes. Remaining:
+
+- Inventory deprecated flags, framing paths, and legacy schemas -- surfaces OTHER than the v5 mode keys, which are structural.
+- Announce one versioned removal train once a candidate with genuinely zero consumers exists.
+- Add migration commands and a release-note matrix for whatever that train carries.
+- Keep persisted v5 registry keys and grandfathered artifact reads. Confirmed required by the evidence above.
 - Keep legacy terminal-state readers while old artifacts remain.
 
 ## Cleanup Disposition Matrix

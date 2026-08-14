@@ -31,6 +31,20 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The v5 Mode Names Are Not Removable (IMP-042 SCOPE-18 / REG-9)
+
+The removal train was scoped to retire deprecated aliases. Scanning first, which
+is what the scope required, shows there is nothing there to retire.
+`aliases.yaml` states that the v5 names remain the canonical registry keys and
+carries the invariant that every mode in `workflows.yaml` appears under
+`v5Aliases`, so removing one breaks resolution instead of retiring a legacy
+path. All 61 entries appear across the seven downstream repositories, and 27 are
+live `state.json` mode values across 1,888 downstream state files, with
+`bugfix-fastlane` at 2,309 occurrences and `full-delivery` at 1,402.
+
+The train stays parked for this surface. Deprecated flags, framing paths, and
+legacy schemas remain candidates; the mode keys do not.
+
 ### Consumers Name What They Consume (IMP-042 SCOPE-11 / COV-15)
 
 G127 requires every shipped capability to declare consumers whose paths exist,
