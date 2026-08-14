@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### One Copy Of The Specialist Table (IMP-042 SCOPE-13 / REG-10)
+
+Check 6 of `state-transition-guard.sh` carried the mode to required-specialist
+mapping as a 29-arm `case`, and `required-specialists.yaml` mirrored it, and
+`required-specialists-consistency.sh` compared the two on every validation run.
+The guard now reads the registry directly, so there is one copy and nothing to
+compare. The comparator and its selftest are removed, and the rationale prose
+that justified keeping the duplication now sits beside the entry it explains.
+
+The first implementation of that read was wrong in a way worth recording. It
+used `yq -r --arg`, which is jq syntax; the pinned yq is Go yq, which has no
+`--arg` flag, so the primary path returned empty for all 29 modes and Check 6
+would have silently fallen through to phaseOrder derivation for every one of
+them. Nothing surfaced, because the guard routes yq failures into `|| true`.
+The new selftest caught it by asserting that the yq path and the awk fallback
+agree for EVERY mode rather than that either returns something.
+
 ### Health Report Regression (IMP-042)
 
 `retro-framework-health` lost its no-signal marker and its per-item wording in

@@ -255,12 +255,9 @@ downstream-failure contract. Remaining:
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 
-Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, and managed-doc list parsing accepts both YAML sequence indentations with a retention check. Remaining:
+Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, managed-doc list parsing accepts both YAML sequence indentations with a retention check, Check 6 reads `required-specialists.yaml` directly, the shadow comparator is deleted, and the arm rationale moved beside the registry entry. Remaining:
 
 - Remove the generated gate block only after byte-equivalent queries pass for every remaining reader.
-- Make transition Check 6 read `required-specialists.yaml` directly.
-- Move rationale prose beside the registry or into focused docs.
-- Delete the shadow comparator after the runtime consumes the registry.
 - Extract one adoption-profile parser and one unknown-value policy.
 - Validate required managed-doc path existence.
 
