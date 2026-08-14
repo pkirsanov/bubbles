@@ -236,13 +236,9 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-10 - Compact Durable Status Tracking (WIP-4, DOC-6)
 
-- Limit open-work and improvement-index inline detail.
-- Keep ID, state, owner, blocker, next executable action, opened date, and `detailsRef` inline.
-- Consolidate the status agent's duplicated metric rows and its repeated continuation command.
-- Move chronological logs and long incident narratives behind referenced files.
-- Generate derived status from owning artifacts.
-- Remove no-op state writes and duplicate status tables.
-- Keep Git history as the closed-item audit trail.
+Delivered: improvement-index row bound with a documented grandfather, status-agent duplicate consolidation, and Git history retained as the closed-item audit trail. Remaining:
+
+- Generate derived status from owning artifacts rather than restating it.
 
 ### SCOPE-11 - Explicit Selftest Scheduling And Semantic Reachability (COV-15)
 

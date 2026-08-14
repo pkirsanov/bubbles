@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Compact Durable Status Tracking (IMP-042 SCOPE-10 partial / WIP-4, DOC-6)
+
+The status agent presented the same command twice as two different steps -- an
+"ideal continuation path" whose second entry, offered as the higher-assurance
+finish, was byte-identical to the first. Its Health Indicators table restated
+routing the Decision Tree already owned. The duplicate is gone and the health
+table now maps a state to whether work should continue, deferring routing to the
+one table that owns it.
+
+The improvement index had a 13,290-character row against a 2,433-character next
+largest, because a full delivery narrative had been pasted into a Status cell.
+`management-truth-lint.sh` now bounds index rows at 2,500 characters. IMP-037 is
+grandfathered by id, with the reason recorded inline: its IMP file was deleted on
+delivery, so that cell is now the only record and migrating it would risk losing
+an audit trail. Grandfathering by id rather than by raising the bound keeps a NEW
+oversized row failing, which a 3,071-character probe confirms.
+
 ### Evidence Policy Single Source (IMP-042 SCOPE-15 / EV-9)
 
 Three surfaces disagreed about where DoD evidence may live. `evidence-rules.md`

@@ -120,10 +120,39 @@ else
   info "docs registry or resolver not present (skipping check 4)"
 fi
 
+# ── Check 5: improvement-index rows stay scannable ────────────────────
+#
+# The index is a routing surface: id, state, owner, gate, gap codes, date. When
+# a full delivery narrative is pasted into the Status cell the table stops being
+# readable and the row becomes the only copy of that narrative. Long detail
+# belongs in the IMP file, or in git history once the IMP is deleted on delivery.
+#
+# IMP-037 is the single documented exception. Its IMP file was deleted on
+# delivery, so its 13k-character cell is now the only record; migrating it would
+# risk losing an audit trail for zero functional gain. It is grandfathered by id
+# rather than by raising the bound, so a NEW oversized row still fails.
+imp_index="$REPO_ROOT/improvements/INDEX.md"
+index_row_max=2500
+index_row_grandfathered="IMP-037"
+if [[ -f "$imp_index" ]]; then
+  while IFS= read -r row; do
+    [[ -n "$row" ]] || continue
+    row_id="$(printf '%s' "$row" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')"
+    [[ "$row_id" == "$index_row_grandfathered" ]] && continue
+    row_len="${#row}"
+    if [[ "$row_len" -gt "$index_row_max" ]]; then
+      err "improvement-index row '$row_id' is $row_len chars (max $index_row_max); move the narrative into the IMP file and keep the row to id, state, owner, gate, gap codes and date"
+      findings=$((findings + 1))
+    fi
+  done < <( { grep -E '^\| IMP-' "$imp_index" || true; } )
+else
+  info "improvements/INDEX.md not present (skipping check 5)"
+fi
+
 if [[ "$findings" -gt 0 ]]; then
   err "found $findings management-truth catalog omission(s)"
   exit 1
 fi
 
-info "OK — recipe catalog, adoption-profile help, documented counts, and managed-doc sections match the live inventory"
+info "OK — recipe catalog, adoption-profile help, documented counts, managed-doc sections, and improvement-index rows match the live inventory"
 exit 0

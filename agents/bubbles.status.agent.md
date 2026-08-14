@@ -294,13 +294,16 @@ These recommendations are informational only. They do not certify completion, do
 
 ## Health Indicators
 
-| Status         | Condition                  | Action                                 |
+The Decision Tree above is the single routing table. This one maps a health
+state to whether work should continue at all.
+
+| Status         | Condition                  | Meaning                                |
 | -------------- | -------------------------- | -------------------------------------- |
-| 🟢 HEALTHY     | No errors, making progress | Continue with `/bubbles.workflow  <feature> mode: full-delivery` |
+| 🟢 HEALTHY     | No errors, making progress | Continue per the Decision Tree         |
 | 🟡 STUCK       | Same error 2 iterations    | Error auto-retrying, monitor progress  |
 | 🔴 ESCALATION  | Same error 3+ iterations   | Human review required - check fix.log  |
-| ⚪ NOT STARTED | No tasks attempted         | Run `/bubbles.workflow  <feature> mode: full-delivery` |
-| ✅ COMPLETE    | All scopes/tasks done      | Run `/bubbles.workflow  <feature> mode: validate-to-doc` |
+| ⚪ NOT STARTED | No tasks attempted         | Continue per the Decision Tree         |
+| ✅ COMPLETE    | All scopes/tasks done      | Continue per the Decision Tree         |
 
 ## Pre-Implementation Checklist
 
@@ -318,12 +321,11 @@ Before starting implementation, verify Bubbles artifacts are ready:
 
 ```
 /bubbles.workflow  <feature> mode: full-delivery
-
-# Once work exists and you want the highest-assurance finish:
-/bubbles.workflow  <feature> mode: full-delivery
 ```
 
-Docs hardening (recommended when specs/scopes change):
+`full-delivery` already carries the no-loose-ends finish, so there is no second
+command to run after it. Use `docs-only` when specs or scopes changed and only
+the managed docs need to catch up:
 
 ```
 /bubbles.workflow  <feature> mode: docs-only
