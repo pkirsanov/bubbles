@@ -1862,6 +1862,21 @@ cmd_eval() {
   local sub="${1:-run}"
   [[ $# -gt 0 ]] && shift
 
+  # The eval subsystem is source-only: eval-harness.sh, its selftests, and the
+  # labeled corpus under bubbles/eval/ are maintainer measurement surfaces and
+  # are not shipped. cli.sh itself IS shipped, so downstream this subcommand
+  # used to die on a missing file. Say so instead.
+  case "$sub" in
+    run | score | selftest)
+      if [[ ! -f "$SCRIPT_DIR/eval-harness.sh" ]]; then
+        printf '%s\n' "bubbles eval: unavailable in a downstream install." >&2
+        printf '%s\n' "The golden-task eval subsystem is source-only; it measures the framework itself." >&2
+        printf '%s\n' "Run it from a Bubbles source checkout." >&2
+        return 2
+      fi
+      ;;
+  esac
+
   case "$sub" in
     run)
       local suite="$REPO_ROOT/bubbles/eval/tasks"
@@ -1912,6 +1927,14 @@ EOF
 }
 
 cmd_release_check() {
+  # release-check is the framework's own source-repo release gate -- this CLI's
+  # help has always described it as "source-repo release hygiene checks" -- and
+  # it requires install.sh, which downstream installs never carry.
+  if [[ ! -f "$SCRIPT_DIR/release-check.sh" ]]; then
+    printf '%s\n' "bubbles release-check: unavailable in a downstream install." >&2
+    printf '%s\n' "It gates a Bubbles release from a source checkout. Use 'bubbles validate' here." >&2
+    return 2
+  fi
   bash "$SCRIPT_DIR/release-check.sh" "$@"
 }
 
@@ -4160,6 +4183,10 @@ cmd_upgrade() {
   # exactly the read that lands in the rewritten bytes.
   proj_root="$(project_root)"
   local install_rc=0
+  # payload-closure-allow: every install.sh below resolves against an
+  # operator-supplied source checkout, a source override directory, or a fetched
+  # release tarball. None of them is the installed payload, so the payload
+  # closure guard cannot infer reachability here.
   if [[ -n "$local_source" ]]; then
     bash "$local_source/install.sh" --local-source "$local_source" || install_rc=$?
   elif [[ -n "${BUBBLES_SOURCE_OVERRIDE_DIR:-}" ]]; then

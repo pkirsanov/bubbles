@@ -81,7 +81,7 @@ if [[ -f "$RUNS_FILE" ]] && command -v jq >/dev/null 2>&1; then
   stalled_modes="$(jq -r '(.activeRuns[]?, .recentRuns[]?) | select((.result // "pending") != "success") | .command // "unknown"' "$RUNS_FILE" 2>/dev/null \
     | sort | uniq -c | sort -rn | head -3 | awk '{printf "- %s (%d run(s) not completed successfully)\n", $2, $1}' || true)"
 fi
-[[ -z "$stalled_modes" ]] && stalled_modes="- (no unsuccessful run data found in workflow-runs.json)"
+[[ -z "$stalled_modes" ]] && stalled_modes="- (no unsuccessful or pending run data found in workflow-runs.json)"
 
 # Stale capabilities (lastValidated > 90 days)
 stale_caps=""

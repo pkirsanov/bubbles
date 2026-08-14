@@ -238,14 +238,20 @@ Delivered: invocation-based scheduling shared by the sweep and the coverage lint
 
 ### SCOPE-12 - Manifest-Driven Downstream Payload (REG-11)
 
-- Make managed, source-only, generated, optional, and historical classes explicit.
+Delivered: payload-closure guard with its selftest, eval-subsystem and installer
+classification, the real installer fixture, real exit codes, and the enumerated
+downstream-failure contract. Remaining:
+
+- Make generated, optional, and historical classes explicit alongside managed and source-only.
 - Stop treating every top-level script and every documentation file as managed by default.
-- Classify the judge adapter selftest with the eval subsystem, or ship its complete dependency closure.
-- Replace the synthetic partial-copy downstream test with a real installer fixture.
-- Require the complete downstream `framework-validate` exit code to be zero.
-- Assert every managed executable has its runtime dependencies in the same payload class.
-- Assert source-only tests remain executable in source validation and absent downstream.
 - Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
+- Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Each entry is a selftest asserting a framework-source property while scheduled as portable:
+  - `Run-state abandoned-run reaper selftest` (also fails in the source tree; A1 stale-run reaping and A3 audit trail, pre-existing at the review baseline)
+  - `Gate-vintage selftest (IMP-036)` (`annotate --check` reports the registry stale downstream)
+  - `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)` (asserts the framework ships `.specify/memory/open-work.md`)
+  - `Scenario compile lint selftest` (fixture repos rejected as non-canonical Git roots downstream)
+  - `Discovered selftest: profile-transition-selftest.sh` (policy status does not reflect the foundation profile)
+  - `Discovered selftest: repository-binding-selftest.sh` (needs the source layout)
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 

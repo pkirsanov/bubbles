@@ -46,95 +46,57 @@ else
   echo "SKIP: T2 (this selftest is not running from a framework source tree)"
 fi
 
-# Build a minimal downstream-shaped tree that contains just enough for the
-# install-mode detector to report "downstream" and just enough for the three
-# selftests we want to exercise.
+# Build the downstream tree with the REAL installer.
+#
+# This used to be a hand-synthesized partial copy: ~15 named scripts, two
+# registries, and seven agent files. A tree that small can never satisfy a
+# complete framework-validate run, so the downstream exit code had to be
+# discarded to keep the selftest green -- which meant the test proved the SKIP
+# lines were printed and nothing else. Installing for real is the only fixture
+# that can support asserting the downstream exit code, and it exercises the
+# installer on the same path a downstream repository uses.
 tmp_root="$(mktemp -d -t bubbles-v5.3-selftest.XXXXXX)"
 trap 'rm -rf "$tmp_root"' EXIT INT TERM
 
-mkdir -p "$tmp_root/.github/bubbles/scripts"
-mkdir -p "$tmp_root/.github/bubbles/schemas"
-mkdir -p "$tmp_root/.github/bubbles/registry"
-mkdir -p "$tmp_root/.github/agents/bubbles_shared"
-mkdir -p "$tmp_root/.github/docs/guides"
-mkdir -p "$tmp_root/.github/docs/generated"
+git -C "$tmp_root" init --quiet
+git -C "$tmp_root" config user.email "selftest@example.invalid"
+git -C "$tmp_root" config user.name "v5.3 selftest"
+printf '# downstream fixture\n' >"$tmp_root/README.md"
+git -C "$tmp_root" add README.md
+git -C "$tmp_root" commit --quiet -m "fixture base"
 
-# Copy ONLY the scripts the v5.3 selftest exercises. We do NOT copy install.sh
-# / VERSION / README.md into the synthesized tree (that's the whole point of
-# the downstream-install fixture).
-for s in framework-validate.sh guard-lib.sh spec-review-handoff-selftest.sh \
-         workflow-delegation-selftest.sh \
-         capability-ledger-selftest.sh capability-freshness-selftest.sh \
-         competitive-docs-selftest.sh interop-apply-selftest.sh \
-         generate-release-manifest.sh release-manifest-selftest.sh \
-         release-manifest-purity-selftest.sh install-provenance-selftest.sh \
-         trust-doctor-selftest.sh runtime-lease-selftest.sh \
-         trust-metadata.sh; do
-  if [[ -f "$ROOT_DIR/bubbles/scripts/$s" ]]; then
-    cp "$ROOT_DIR/bubbles/scripts/$s" "$tmp_root/.github/bubbles/scripts/$s"
-    chmod +x "$tmp_root/.github/bubbles/scripts/$s"
-  fi
-done
-
-# install-source.json sentinel — what install.sh writes downstream.
-cat >"$tmp_root/.github/bubbles/.install-source.json" <<'EOF'
-{ "source": "synthetic-v5.3-selftest", "sourceGitSha": "0000000000000000000000000000000000000000" }
-EOF
-
-# Asset fixtures needed by the three downstream-resolvable selftests.
-# spec-review-handoff-selftest.sh reads from agents/ + bubbles/workflows.yaml.
-# workflow-delegation-selftest.sh reads from docs/guides/WORKFLOW_MODES.md
-# and bubbles/{workflows.yaml, agent-capabilities.yaml} too.
-# We just copy the real ones from the framework source.
-mkdir -p "$tmp_root/.github/bubbles"
-for f in workflows.yaml agent-capabilities.yaml; do
-  if [[ -f "$ROOT_DIR/bubbles/$f" ]]; then
-    cp "$ROOT_DIR/bubbles/$f" "$tmp_root/.github/bubbles/$f"
-  fi
-done
-# v6.1 (S2 true split): mode definitions live in bubbles/workflows/modes.yaml,
-# not inline in workflows.yaml. The mode-resolver composes the two, so the
-# synthesized tree MUST carry the workflows/ registry dir (modes.yaml +
-# aliases.yaml) or mode resolution returns nothing downstream.
-if [[ -d "$ROOT_DIR/bubbles/workflows" ]]; then
-  mkdir -p "$tmp_root/.github/bubbles/workflows"
-  cp -R "$ROOT_DIR/bubbles/workflows/." "$tmp_root/.github/bubbles/workflows/"
-fi
-if [[ -f "$ROOT_DIR/docs/guides/WORKFLOW_MODES.md" ]]; then
-  cp "$ROOT_DIR/docs/guides/WORKFLOW_MODES.md" "$tmp_root/.github/docs/guides/WORKFLOW_MODES.md"
+install_rc=0
+install_log="$(cd "$tmp_root" && bash "$ROOT_DIR/install.sh" --local-source "$ROOT_DIR" 2>&1)" || install_rc=$?
+if [[ $install_rc -eq 0 ]]; then
+  pass "T0: install.sh --local-source produced a downstream tree"
+else
+  fail "T0: install.sh --local-source failed (rc=$install_rc; tail: $(tail -5 <<<"$install_log"))"
 fi
 
-# Agents tree (selftests grep into these markdown files).
-agent_files=(
-  bubbles.workflow.agent.md
-  bubbles.super.agent.md
-  bubbles.iterate.agent.md
-  bubbles.goal.agent.md
-  bubbles.sprint.agent.md
-  bubbles.bug.agent.md
-  bubbles.spec-review.agent.md
-)
-for f in "${agent_files[@]}"; do
-  if [[ -f "$ROOT_DIR/agents/$f" ]]; then
-    cp "$ROOT_DIR/agents/$f" "$tmp_root/.github/agents/$f"
-  fi
-done
-for f in workflow-delegation-core.md workflow-orchestration-core.md workflow-input-bootstrap.md; do
-  if [[ -f "$ROOT_DIR/agents/bubbles_shared/$f" ]]; then
-    cp "$ROOT_DIR/agents/bubbles_shared/$f" "$tmp_root/.github/agents/bubbles_shared/$f"
-  fi
-done
+# The installer must NOT place install.sh / VERSION at the downstream root --
+# that is what makes the tree downstream rather than a source checkout.
+if [[ -f "$tmp_root/install.sh" || -f "$tmp_root/VERSION" ]]; then
+  fail "T0b: installer leaked source-tree markers (install.sh / VERSION) into the downstream root"
+else
+  pass "T0b: downstream root carries no source-tree markers"
+fi
 
 # --- T1: downstream-mode detection ---
 ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1 | head -30 || true)"
 if grep -q "Install mode: downstream" <<<"$ds_out"; then
-  pass "T1: framework-validate reports install-mode=downstream from synthesized .github/ tree"
+  pass "T1: framework-validate reports install-mode=downstream from a real installed tree"
 else
   fail "T1: framework-validate did NOT report install-mode=downstream (head: ${ds_out:0:200})"
 fi
 
 # --- T3: framework-source-only selftests SKIP under downstream mode ---
-ds_full="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1 || true)"
+#
+# `|| true` inside the command substitution used to swallow the exit code, so
+# this asserted only that the SKIP lines were printed. A downstream install
+# whose validation FAILED would still have satisfied it. Capture the real code
+# and require zero: an install that cannot validate itself is not installed.
+ds_rc=0
+ds_full="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1)" || ds_rc=$?
 self_only_labels=(
   "Capability ledger selftest"
   "Capability freshness selftest"
@@ -170,9 +132,73 @@ for label in "${self_only_labels[@]}"; do
   fi
 done
 
+# --- T3c: the downstream validation run as a whole must succeed -------------
+#
+# `|| true` used to swallow this exit code entirely, so nothing noticed that a
+# downstream install cannot validate itself. Enabling the check surfaced a set
+# of pre-existing failures, each a selftest that asserts a framework-source-repo
+# property while being scheduled as portable.
+#
+# They are enumerated rather than ignored. Any check that fails and is NOT on
+# this list fails the selftest immediately, so new downstream breakage is caught
+# from now on. A listed check that STARTS passing also fails the selftest, which
+# forces the list to shrink as each one is fixed instead of quietly rotting.
+# The list must reach empty.
+known_downstream_failures=(
+  "Run-state abandoned-run reaper selftest"
+  "Gate-vintage selftest (IMP-036)"
+  "Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)"
+  "Scenario compile lint selftest"
+  "Discovered selftest: profile-transition-selftest.sh (IMP-027 SCOPE-2b)"
+  "Discovered selftest: repository-binding-selftest.sh (IMP-027 SCOPE-2b)"
+)
+
+observed_failures=()
+# Read ONLY the trailing "Failed checks:" block. Matching "  - " anywhere in the
+# output instead swept up every guard's remediation hint list and reported 125
+# phantom failures.
+while IFS= read -r line; do
+  [[ -n "$line" ]] && observed_failures+=("$line")
+done < <(printf '%s\n' "$ds_full" | awk '/^Failed checks:/{f=1;next} f&&/^  - /{sub(/^  - /,"");print;next} f{exit}')
+
+unexpected=0
+for observed in ${observed_failures[@]+"${observed_failures[@]}"}; do
+  listed=0
+  for known in "${known_downstream_failures[@]}"; do
+    [[ "$observed" == "$known" ]] && listed=1 && break
+  done
+  if [[ $listed -eq 0 ]]; then
+    fail "T3c: NEW downstream failure not on the known list: '$observed'"
+    unexpected=$((unexpected + 1))
+  fi
+done
+
+fixed=0
+for known in "${known_downstream_failures[@]}"; do
+  still_failing=0
+  for observed in ${observed_failures[@]+"${observed_failures[@]}"}; do
+    [[ "$observed" == "$known" ]] && still_failing=1 && break
+  done
+  if [[ $still_failing -eq 0 ]]; then
+    fail "T3c: '$known' now passes downstream — remove it from known_downstream_failures"
+    fixed=$((fixed + 1))
+  fi
+done
+
+if [[ $unexpected -eq 0 && $fixed -eq 0 ]]; then
+  if [[ ${#known_downstream_failures[@]} -eq 0 && $ds_rc -eq 0 ]]; then
+    pass "T3c: downstream framework-validate exited 0"
+  else
+    pass "T3c: downstream failures match the ${#known_downstream_failures[@]} enumerated known defects (rc=$ds_rc)"
+  fi
+fi
+
 # --- T4: spec-review-handoff-selftest passes under downstream tree ---
-sr_out="$(bash "$tmp_root/.github/bubbles/scripts/spec-review-handoff-selftest.sh" 2>&1 || true)"
-sr_rc=$?
+# `sr_rc=$?` after a `|| true` inside the substitution read the exit status of
+# the ASSIGNMENT, which is always 0, so the rc half of the condition below was
+# inert. Same for T5.
+sr_rc=0
+sr_out="$(bash "$tmp_root/.github/bubbles/scripts/spec-review-handoff-selftest.sh" 2>&1)" || sr_rc=$?
 if [[ $sr_rc -eq 0 ]] && grep -q "spec-review-handoff-selftest: PASSED" <<<"$sr_out"; then
   pass "T4: spec-review-handoff-selftest passes under synthesized downstream tree"
 else
@@ -180,8 +206,8 @@ else
 fi
 
 # --- T5: workflow-delegation-selftest passes under downstream tree ---
-wd_out="$(bash "$tmp_root/.github/bubbles/scripts/workflow-delegation-selftest.sh" 2>&1 || true)"
-wd_rc=$?
+wd_rc=0
+wd_out="$(bash "$tmp_root/.github/bubbles/scripts/workflow-delegation-selftest.sh" 2>&1)" || wd_rc=$?
 if [[ $wd_rc -eq 0 ]] && grep -q "workflow-delegation selftest passed" <<<"$wd_out"; then
   pass "T5: workflow-delegation-selftest passes under synthesized downstream tree"
 else

@@ -31,6 +31,55 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Health Report Regression (IMP-042)
+
+`retro-framework-health` lost its no-signal marker and its per-item wording in
+this release's first commit without the selftest being updated. Worse, the
+selftest's own fixture encoded `workflow-runs.json` as an array of
+mode/outcome records, a schema the file has never used. Fixture and reader
+agreed with each other and disagreed with reality, which is how the original
+defect survived. The fixture now mirrors the real activeRuns/recentRuns shape
+and asserts that a successful run is not counted.
+
+### Downstream Payload Closure (IMP-042 SCOPE-12 / REG-11)
+
+The release manifest sorted files into `managed` and `sourceOnly` but nothing
+checked the two classes against each other, so a shipped executable could reach
+for a file that was never shipped. The eval subsystem was split exactly that way:
+`eval-harness.sh` stayed source-only while three selftests driving it shipped
+downstream, and `eval-corpus-selftest.sh` shipped into every install purely to
+skip. `install.sh` and `VERSION` were in neither class, so nothing tracked their
+integrity and no check could see a dependency on them.
+
+`payload-closure-guard.sh` now fails when a managed shell script reaches a
+source-only one. Three exemptions are accepted because each degrades cleanly, and
+each is covered by its own selftest case: an existence test, `run_check_self_only`
+scheduling read from the scheduler itself, and a `payload-closure-allow` marker
+that must carry a reason. Payload is closed at 859 managed / 105 source-only.
+
+Demoting a script to source-only also requires its framework-validate schedule
+to be self-only and existence-guarded, or it fails downstream purely by being
+absent. That happened to the CI annotation selftest during this work.
+
+`v5.3-selftest.sh` built its downstream tree by hand-copying fifteen scripts. A
+tree that small can never satisfy a full validation run, so the exit code was
+discarded to keep it green -- and `sr_rc=$?` after `|| true` read the assignment's
+status, always zero, leaving those assertions inert. It now installs for real via
+`install.sh --local-source` and checks real exit codes. Doing so revealed that a
+downstream install does not validate cleanly: six checks assert framework-source
+properties while scheduled as portable. They are enumerated by name rather than
+ignored, so new downstream breakage fails immediately, and a listed check that
+starts passing also fails, forcing the list to empty.
+
+### Fixed
+
+- `retro-framework-health` reported no stalled-run data because its selftest
+  fixture encoded `workflow-runs.json` as an array of `{mode, outcome}` -- a shape
+  the file has never had. Fixture and reader agreed on the wrong schema, so both
+  were wrong together and the suite stayed green while the real file held 22
+  active and 12 failed runs. The fixture now mirrors the real
+  `{activeRuns, recentRuns}` shape and asserts a successful run is not counted.
+
 ### Documentation Truth (IMP-042 SCOPE-16 / DOC-6)
 
 The mode guide documented four modes that do not exist. `brainstorm`,

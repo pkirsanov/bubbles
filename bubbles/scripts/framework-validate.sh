@@ -485,7 +485,9 @@ run_check "guard-lib timeout fallback selftest (OW-009)" bubbles_run_with_timeou
 # machine. Check-run annotations ARE readable unauthenticated, so every FAIL
 # also emits `::error::` under GITHUB_ACTIONS. The selftest pins that the
 # annotation is additive, gated (no local noise), and correctly escaped.
-run_check "CI annotation emitter selftest (OW-002)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/ci-annotation-emitter-selftest.sh"
+if [[ -x "$SCRIPT_DIR/ci-annotation-emitter-selftest.sh" ]]; then
+  run_check_self_only "CI annotation emitter selftest (OW-002)" bubbles_run_with_timeout 120 bash "$SCRIPT_DIR/ci-annotation-emitter-selftest.sh"
+fi
 # Bash baseline guard (IMP-102 / SCOPE-5): proves the shipped command surface
 # (cli.sh, framework-validate.sh) fails LOUDLY and EARLY on bash < 4 instead of
 # silently masking declare -A breakage — positive static + functional + an
@@ -657,7 +659,7 @@ fi
 run_check "Result-envelope validate (v6.0 / B3, malformed blocks)" bash "$SCRIPT_DIR/result-envelope-validate.sh"
 run_check "v5.2 aggregate selftest (F1, F3, F6, F7)" bash "$SCRIPT_DIR/v5.2-selftest.sh"
 if [[ -x "$SCRIPT_DIR/v5.3-selftest.sh" ]]; then
-  run_check "v5.3 downstream-install selftest (G1)" bash "$SCRIPT_DIR/v5.3-selftest.sh"
+  run_check_self_only "v5.3 downstream-install selftest (G1)" bash "$SCRIPT_DIR/v5.3-selftest.sh"
 fi
 if [[ -x "$SCRIPT_DIR/mcp-server-selftest.sh" ]]; then
   run_check "v6 MCP server selftest (A5)" bash "$SCRIPT_DIR/mcp-server-selftest.sh"
@@ -721,6 +723,8 @@ run_check_self_only "Interop apply selftest" bash "$SCRIPT_DIR/interop-apply-sel
 run_check_self_only "Interop import selftest" bash "$SCRIPT_DIR/interop-import-selftest.sh"
 run_check_self_only "Release manifest selftest" bash "$SCRIPT_DIR/release-manifest-selftest.sh"
 run_check_self_only "Release manifest purity selftest" bash "$SCRIPT_DIR/release-manifest-purity-selftest.sh"
+run_check_self_only "Payload closure guard (IMP-042 / REG-11)" bash "$SCRIPT_DIR/payload-closure-guard.sh"
+run_check_self_only "Payload closure guard selftest (IMP-042 / REG-11)" bash "$SCRIPT_DIR/payload-closure-guard-selftest.sh"
 run_check_self_only "Derived-artifact regen wrapper selftest (IMP-007)" bash "$SCRIPT_DIR/regen-derived-selftest.sh"
 run_check "Gate-hit telemetry selftest (IMP-036)" bash "$SCRIPT_DIR/gate-hit-log-selftest.sh"
 run_check "Agent-id enum lint selftest (IMP-036)" bash "$SCRIPT_DIR/agent-id-enum-lint-selftest.sh"
