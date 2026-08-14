@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Capability: done-with-concerns-outcome-state, observability-posture-and-slo-gates,
+# Capability: validate-owned-certification, workflow-orchestration,
+# Capability: workflow-runner-authorization
 # =============================================================================
 # state-transition-guard.sh
 # =============================================================================

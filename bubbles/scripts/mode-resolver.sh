@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Capability: mode-template-inheritance, workflow-orchestration
 # bubbles/scripts/mode-resolver.sh
 #
 # Resolve workflow mode definitions from bubbles/workflows.yaml using

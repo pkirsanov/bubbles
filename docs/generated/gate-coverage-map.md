@@ -143,7 +143,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G124 | incident_severity_declared_gate | `mode-required` | 1 | — | 1 | — |
 | G125 | framework_health_evidence_gate | `script:bubbles/scripts/framework-health-evidence-lint.sh`, `script:bubbles/scripts/retro-framework-health.sh` | 1 | — | 3 | — |
 | G126 | model_tier_floor_gate | `script:bubbles/scripts/model-tier-advisory-selftest.sh`, `script:bubbles/scripts/model-tier-advisory.sh` | 0 | — | 4 | — |
-| G127 | capability_consumer_freshness_gate | `script:bubbles/scripts/capability-consumer-freshness-selftest.sh`, `script:bubbles/scripts/capability-consumer-freshness.sh` | 0 | — | 4 | — |
+| G127 | capability_consumer_freshness_gate | `script:bubbles/scripts/capability-consumer-freshness-selftest.sh`, `script:bubbles/scripts/capability-consumer-freshness.sh` | 0 | — | 5 | — |
 | G128 | session_cap_enforcement_gate | `script:bubbles/scripts/session-cap-guard-selftest.sh`, `script:bubbles/scripts/session-cap-guard.sh` | 0 | Check 40 | 8 | guard |
 | G129 | repository_binding_classification_discovery_conformance_gate | `script:bubbles/scripts/repository-binding-conformance-guard.sh` | 0 | — | 1 | — |
 | G130 | domain_invariant_correspondence_gate | `script:bubbles/scripts/domain-invariant-guard-selftest.sh`, `script:bubbles/scripts/domain-invariant-guard.sh` | 0 | Check 41 | 4 | guard |
@@ -202,7 +202,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G100 | observability_slo_evidence_gate | Check 39 | 7 | guard | framework-validate.sh, gate-bands-selftest.sh, gate-bands.sh, observability-check.sh, observability-slo-guard-selftest.sh, observability-slo-guard.sh, +1 more |
 | G101 | release_delivery_reconciliation_gate | — | 7 | — | adversarial-resolve.sh, framework-validate.sh, release-delivery-reconciliation-guard-selftest.sh, release-delivery-reconciliation-guard.sh, scaffold-gate-selftest.sh, scenario-compile-lint-selftest.sh, +1 more |
 | G126 | model_tier_floor_gate | — | 4 | — | framework-validate.sh, model-tier-advisory-selftest.sh, model-tier-advisory.sh, v5.2-selftest.sh |
-| G127 | capability_consumer_freshness_gate | — | 4 | — | capability-consumer-freshness-selftest.sh, capability-consumer-freshness.sh, framework-validate.sh, scaffold-gate-selftest.sh |
+| G127 | capability_consumer_freshness_gate | — | 5 | — | capability-consumer-freshness-selftest.sh, capability-consumer-freshness.sh, capability-consumer-naming.sh, framework-validate.sh, scaffold-gate-selftest.sh |
 | G128 | session_cap_enforcement_gate | Check 40 | 8 | guard | framework-validate.sh, rapid-tool-delivery-mode-selftest.sh, risk-tier-resolve.sh, scaffold-gate-selftest.sh, scenario-test-resolve.sh, session-cap-guard-selftest.sh, +2 more |
 | G129 | repository_binding_classification_discovery_conformance_gate | — | 1 | — | framework-validate.sh |
 | G130 | domain_invariant_correspondence_gate | Check 41 | 4 | guard | domain-invariant-guard-selftest.sh, domain-invariant-guard.sh, domain-model-consistency.sh, framework-validate.sh |

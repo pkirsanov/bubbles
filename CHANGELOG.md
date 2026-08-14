@@ -31,6 +31,19 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Consumers Name What They Consume (IMP-042 SCOPE-11 / COV-15)
+
+G127 requires every shipped capability to declare consumers whose paths exist,
+but that check runs one way: the ledger points at a script and the script has no
+idea it was named. A consumer could be refactored until it no longer touched the
+capability and the ledger would keep claiming the wiring, because the file still
+existed. Of 37 executable consumers, 5 named their capability and 32 did not.
+
+All 37 now carry a `# Capability:` header, and `capability-consumer-naming.sh`
+fails when a shipped capability's executable consumer never names it. Markdown
+and registry consumers stay out of scope, because their relationship to a
+capability is prose and an id string there would be noise rather than evidence.
+
 ### One Adoption-Profile Parser (IMP-042 SCOPE-13 / REG-12)
 
 Four scripts each carried their own copy of the adoption-profile parser, and the

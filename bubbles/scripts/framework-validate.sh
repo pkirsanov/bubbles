@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Capability: framework-self-observation, impact-aware-validation-trace-contracts,
+# Capability: linter-on-edit-gate, observability-posture-and-slo-gates,
+# Capability: session-aware-runtime-coordination, workflow-runner-authorization
 set -euo pipefail
 
 # IMP-102 SCOPE-5: Bubbles requires bash 4.0+ — the framework uses associative
@@ -1064,6 +1067,14 @@ fi
 
 if [[ -x "$SCRIPT_DIR/adoption-profile-lib-selftest.sh" ]]; then
   run_check "Adoption-profile library selftest (IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/adoption-profile-lib-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/capability-consumer-naming-selftest.sh" ]]; then
+  run_check "Capability consumer naming selftest (IMP-042 SCOPE-11)" bash "$SCRIPT_DIR/capability-consumer-naming-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/capability-consumer-naming.sh" ]]; then
+  run_check_self_only "Capability consumer naming (live, IMP-042 SCOPE-11)" bash "$SCRIPT_DIR/capability-consumer-naming.sh" "$REPO_ROOT"
 fi
 
 if [[ -x "$SCRIPT_DIR/managed-docs-existence-lint.sh" ]]; then

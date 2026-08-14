@@ -231,10 +231,7 @@ Delivered: improvement-index row bound with a documented grandfather, status-age
 
 ### SCOPE-11 - Explicit Selftest Scheduling And Semantic Reachability (COV-15)
 
-Delivered: invocation-based scheduling shared by the sweep and the coverage lint, and path-aware governance and skill indexing. Remaining:
-
-- Require executable consumers to name the capability they consume.
-- Keep report-only posture until dynamic-call false positives are calibrated.
+Delivered: invocation-based scheduling shared by the sweep and the coverage lint, path-aware governance and skill indexing, and executable consumers that name the capability they consume, enforced by `capability-consumer-naming.sh`. The reachability guard keeps its report-only posture until dynamic-call false positives are calibrated.
 
 ### SCOPE-12 - Manifest-Driven Downstream Payload (REG-11)
 
