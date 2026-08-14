@@ -1062,6 +1062,10 @@ if [[ -x "$SCRIPT_DIR/managed-docs-existence-lint-selftest.sh" ]]; then
   run_check "Managed-doc existence lint selftest (IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/managed-docs-existence-lint-selftest.sh"
 fi
 
+if [[ -x "$SCRIPT_DIR/adoption-profile-lib-selftest.sh" ]]; then
+  run_check "Adoption-profile library selftest (IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/adoption-profile-lib-selftest.sh"
+fi
+
 if [[ -x "$SCRIPT_DIR/managed-docs-existence-lint.sh" ]]; then
   # Skips in a framework source tree; the managed-doc contract governs product
   # repositories, which is where this has something to check.

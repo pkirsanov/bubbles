@@ -31,6 +31,19 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### One Adoption-Profile Parser (IMP-042 SCOPE-13 / REG-12)
+
+Four scripts each carried their own copy of the adoption-profile parser, and the
+copies had drifted. `cli.sh` and `developer-profile.sh` were byte-identical,
+`repo-readiness.sh` had a better parameterised form, and one variant applied
+`head -1` where another did not.
+
+The unknown-value policy had drifted further, and in a way that mattered:
+`developer-profile.sh` and `repo-readiness.sh` refused an unrecognised profile,
+while `cli.sh` silently fell back to `delivery`. A mistyped `--profile` made the
+CLI quietly behave as a different profile than the one asked for. All three now
+share one parser and one fail-loud policy from `adoption-profile-lib.sh`.
+
 ### Required Managed Docs Must Exist (IMP-042 SCOPE-13 / REG-12)
 
 `docs-registry.yaml` declares which documents a repository maintains and which

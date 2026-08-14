@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/trust-metadata.sh"
 source "$SCRIPT_DIR/interop-registry.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/adoption-profile-lib.sh"
 
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUTPUT_PATH="$REPO_ROOT/bubbles/release-manifest.json"
@@ -55,16 +57,7 @@ done
 }
 
 adoption_profile_ids() {
-  local registry_file="$1"
-
-  awk '
-    /^profiles:/ { in_profiles=1; next }
-    in_profiles && /^  [A-Za-z0-9_-]+:$/ {
-      profile=$1
-      sub(":$", "", profile)
-      print profile
-    }
-  ' "$registry_file"
+  bubbles_adoption_profile_ids "$1"
 }
 
 mapfile -t managed_entries < <(bubbles_framework_manifest_entries "$REPO_ROOT" false)

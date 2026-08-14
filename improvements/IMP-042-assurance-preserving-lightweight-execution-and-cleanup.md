@@ -258,7 +258,6 @@ downstream-failure contract. Remaining:
 Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, managed-doc list parsing accepts both YAML sequence indentations with a retention check, Check 6 reads `required-specialists.yaml` directly, the shadow comparator is deleted, and the arm rationale moved beside the registry entry. Remaining:
 
 - Remove the generated gate block only after byte-equivalent queries pass for every remaining reader.
-- Extract one adoption-profile parser and one unknown-value policy.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

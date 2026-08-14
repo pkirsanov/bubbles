@@ -147,26 +147,14 @@ fi
 die() { echo -e "${RED}Error:${NC} $*" >&2; exit 1; }
 
 source "$SCRIPT_DIR/trust-metadata.sh"
+source "$SCRIPT_DIR/adoption-profile-lib.sh"
 
 active_adoption_profile() {
-  if [[ -f "$CONTROL_PLANE_CONFIG" ]]; then
-    grep -oE '"adoptionProfile"[[:space:]]*:[[:space:]]*"[^"]+"' "$CONTROL_PLANE_CONFIG" 2>/dev/null \
-      | head -1 \
-      | sed -E 's/.*"([^"]+)"$/\1/'
-  fi
+  bubbles_active_adoption_profile "$CONTROL_PLANE_CONFIG"
 }
 
 adoption_profile_ids() {
-  [[ -f "$ADOPTION_PROFILES_FILE" ]] || return 0
-
-  awk '
-    /^profiles:/ { in_profiles=1; next }
-    in_profiles && /^  [A-Za-z0-9_-]+:$/ {
-      profile=$1
-      sub(":$", "", profile)
-      print profile
-    }
-  ' "$ADOPTION_PROFILES_FILE"
+  bubbles_adoption_profile_ids "$ADOPTION_PROFILES_FILE"
 }
 
 adoption_profile_value() {
@@ -220,16 +208,17 @@ effective_adoption_profile() {
     profile='delivery'
   fi
 
-  local known_profile
-  while IFS= read -r known_profile; do
-    [[ -n "$known_profile" ]] || continue
-    if [[ "$known_profile" == "$profile" ]]; then
-      printf '%s' "$profile"
-      return 0
-    fi
-  done < <(adoption_profile_ids)
+  # An unrecognised profile used to resolve to 'delivery' here while
+  # developer-profile.sh and repo-readiness.sh both exited 1 on the same input,
+  # so a typo in bubbles.config.json made the CLI quietly behave as a different
+  # profile than the tools that read the same file.
+  if bubbles_adoption_profile_is_known "$profile" "$ADOPTION_PROFILES_FILE"; then
+    printf '%s' "$profile"
+    return 0
+  fi
 
-  printf '%s' 'delivery'
+  echo "Unknown adoption profile: $profile" >&2
+  exit 1
 }
 
 is_framework_repo() {
