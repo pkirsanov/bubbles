@@ -277,9 +277,29 @@ downstream-failure contract. Remaining:
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 
-Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, managed-doc list parsing accepts both YAML sequence indentations with a retention check, Check 6 reads `required-specialists.yaml` directly, the shadow comparator is deleted, and the arm rationale moved beside the registry entry. Remaining:
+Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, managed-doc list parsing accepts both YAML sequence indentations with a retention check, Check 6 reads `required-specialists.yaml` directly, the shadow comparator is deleted, and the arm rationale moved beside the registry entry.
 
-- Remove the generated gate block only after byte-equivalent queries pass for every remaining reader.
+Also delivered: the LAST reader of the generated block was repointed.
+`registry-consistency-selftest.sh` resolved every `Gxxx` reference against the
+`gates:` block in `workflows.yaml`, so the check that proves gate references are
+valid was validating against a COPY. It now reads `bubbles/registry/gates.yaml`.
+Both sources define 117 gates and its output is byte-identical before and after
+(`603ce87a47e2ee22`).
+
+The removal precondition is now MET and measured. Every remaining reader was
+fingerprinted with the block present and again after the repoint, and all are
+byte-identical: `gate-classification report` `81d599c65ef28fde`,
+`gate-enforcement` `a419685e25babafd`, `gate-bands --check` `cea2b9efb03e5398`,
+`bubbles-hub-report` `93ea03d74aeaaa4b`, `gate-meta list` `689c81d7998a87f1`,
+`gate-meta count` 117. No script parses gate DEFINITIONS from `workflows.yaml`
+any more; the remaining references read per-mode `requiredGates`, the band
+header, or the mode surface, none of which the `gates:` map provides.
+`bubbles/registry/gates.yaml` is in the release manifest, so downstream installs
+keep the canonical source when the block goes.
+
+Remaining:
+
+- Physically delete the 1,031-line `gates:` map from `workflows.yaml` (lines 32 to 1062), then retire `generate-gates-block.sh` and `gates-registry-selftest.sh`, which exist only to keep that copy in sync, and drop `gate-meta.sh`'s now-dead `workflows.yaml` fallback. Keep the `GENERATED:GATE_BANDS_START/END` markers, which `gate-bands.sh` writes and reads independently of the map.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

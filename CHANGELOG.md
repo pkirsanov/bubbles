@@ -31,6 +31,24 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Consistency Check Now Validates Against The Registry (IMP-042 SCOPE-13 / REG-10, REG-12)
+
+`registry-consistency-selftest.sh` proves that every `Gxxx` referenced anywhere
+in the framework resolves to a real gate. It was resolving them against the
+`gates:` block in `workflows.yaml`, which is generated from the registry. The
+check that guards gate references was therefore validating against a copy, and a
+copy is only as trustworthy as the last time it was regenerated.
+
+It now reads `bubbles/registry/gates.yaml` directly. Both sources define 117
+gates and the selftest's output is byte-identical before and after the repoint.
+
+This was the last reader of the generated block. Every remaining gate reader was
+fingerprinted with the block present and again after the repoint, and all are
+unchanged: `gate-classification report`, `gate-enforcement`, `gate-bands
+--check`, `bubbles-hub-report`, and `gate-meta list`. Nothing parses gate
+definitions out of `workflows.yaml` any more, which is the precondition the block
+removal was waiting on.
+
 ### A Proportionate Packet For Genuinely Small Defects (IMP-042 SCOPE-9 / HO-3, EV-9)
 
 The full bug packet is seven artifacts. That is proportionate to a defect that
