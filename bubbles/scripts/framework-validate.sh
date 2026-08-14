@@ -112,6 +112,14 @@ fi
 
 failures=0
 skipped=0
+# Skips are counted per REASON. A single aggregate previously described every
+# skip as framework-source-only and told the operator to "run from a
+# framework-source tree" -- self-contradictory advice for the tier skips that
+# dominate a --tier=core run inside a source tree.
+skipped_tier=0
+skipped_changed_only=0
+skipped_self_only=0
+skipped_denied=0
 declare -a failed_check_labels=()
 # PERF. This suite is serial and its membership grows automatically via the
 # discovery sweep, so its wall clock only ever goes up. Recording each check's
@@ -290,6 +298,7 @@ run_check() {
       echo "==> $label"
       echo "SKIP: $label (tier=core)"
       skipped=$((skipped + 1))
+      skipped_tier=$((skipped_tier + 1))
       echo
     fi
     return 0
@@ -326,6 +335,7 @@ run_check() {
     echo "==> $label"
     echo "SKIP: $label (--changed-only; neither the selftest nor the script it tests was modified)"
     skipped=$((skipped + 1))
+    skipped_changed_only=$((skipped_changed_only + 1))
     echo
     return 0
   fi
@@ -391,6 +401,7 @@ run_check_self_only() {
     echo "==> $label"
     echo "SKIP: $label (framework-source-only; install-mode=$INSTALL_MODE)"
     skipped=$((skipped + 1))
+    skipped_self_only=$((skipped_self_only + 1))
     echo
     return 0
   fi
@@ -405,11 +416,14 @@ echo
 run_check "Repository drift report (informational)" bash "$SCRIPT_DIR/repo-drift-report.sh" --repo-root "$REPO_ROOT"
 run_check "Gate-catalog freshness advisory (informational, IMP-005)" bash "$SCRIPT_DIR/gate-catalog-freshness.sh" --repo-root "$REPO_ROOT"
 run_check_self_only "Portable surface agnosticity" bash "$SCRIPT_DIR/agnosticity-lint.sh" --quiet
-run_check_self_only "Shellcheck lint (v7.0.2, -S warning, zero findings)" bash "$SCRIPT_DIR/shellcheck-lint.sh" --quiet
-run_check_self_only "Shellcheck lint selftest (v7.0.2)" bash "$SCRIPT_DIR/shellcheck-lint-selftest.sh"
-run_check_self_only "Git hook environment sanitization selftest" bash "$SCRIPT_DIR/hooks/git-env-sanitize-selftest.sh"
+# Cheap structural checks run BEFORE the whole-tree ShellCheck scan. A broken
+# registry or malformed schema is a one-second answer, and making the operator
+# wait ~42s to hear it is the difference between a fast loop and a slow one.
 run_check "Registry consistency selftest" bash "$SCRIPT_DIR/registry-consistency-selftest.sh"
 run_check "YAML schema validate" bash "$SCRIPT_DIR/yaml-schema-validate.sh"
+run_check_self_only "Git hook environment sanitization selftest" bash "$SCRIPT_DIR/hooks/git-env-sanitize-selftest.sh"
+run_check_self_only "Shellcheck lint (v7.0.2, -S warning, zero findings)" bash "$SCRIPT_DIR/shellcheck-lint.sh" --quiet
+run_check_self_only "Shellcheck lint selftest (v7.0.2)" bash "$SCRIPT_DIR/shellcheck-lint-selftest.sh"
 run_check_self_only "Cheatsheet generator selftest (v6.0 / B7)" bash "$SCRIPT_DIR/generate-cheatsheet-selftest.sh"
 run_check_self_only "Agent roster coverage (v7.18.0)" bash "$SCRIPT_DIR/agent-roster-coverage.sh" --repo-root "$REPO_ROOT"
 run_check_self_only "Agent roster coverage selftest (v7.18.0)" bash "$SCRIPT_DIR/agent-roster-coverage-selftest.sh"
@@ -705,7 +719,6 @@ run_check_self_only "Capability freshness selftest" bash "$SCRIPT_DIR/capability
 run_check_self_only "Competitive docs selftest" bash "$SCRIPT_DIR/competitive-docs-selftest.sh"
 run_check_self_only "Interop apply selftest" bash "$SCRIPT_DIR/interop-apply-selftest.sh"
 run_check_self_only "Interop import selftest" bash "$SCRIPT_DIR/interop-import-selftest.sh"
-run_check_self_only "Release manifest freshness" bash "$SCRIPT_DIR/generate-release-manifest.sh" --check
 run_check_self_only "Release manifest selftest" bash "$SCRIPT_DIR/release-manifest-selftest.sh"
 run_check_self_only "Release manifest purity selftest" bash "$SCRIPT_DIR/release-manifest-purity-selftest.sh"
 run_check_self_only "Derived-artifact regen wrapper selftest (IMP-007)" bash "$SCRIPT_DIR/regen-derived-selftest.sh"
@@ -1198,6 +1211,7 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
           echo "==> Discovered selftest: $selftest_name"
           echo "SKIP: $selftest_name (denied in bubbles/registry/selftest-denylist.txt)"
           skipped=$((skipped + 1))
+          skipped_denied=$((skipped_denied + 1))
           echo
           continue
           ;;
@@ -1214,6 +1228,13 @@ fi
 if [[ -x "$SCRIPT_DIR/selftest-coverage-lint-selftest.sh" ]]; then
   run_check "Selftest coverage lint selftest (IMP-027 SCOPE-2b)" bash "$SCRIPT_DIR/selftest-coverage-lint-selftest.sh"
 fi
+
+# Manifest freshness runs LAST, and deliberately so. Several checks above
+# regenerate derived artifacts, so a freshness verdict computed mid-run
+# describes a tree that the rest of the run can still change. Asking the
+# question at the end is the only placement that answers it about the tree the
+# operator is actually about to ship.
+run_check_self_only "Release manifest freshness" bash "$SCRIPT_DIR/generate-release-manifest.sh" --check
 
 if [[ "$LIST_TIER_ONLY" == "true" ]]; then
   echo "Tier listing complete (tier=$VALIDATE_TIER). No checks were executed."
@@ -1254,8 +1275,31 @@ if [[ ${#check_durations[@]} -gt 0 ]]; then
   echo
 fi
 
+# Reports skips per reason so the operator can tell tier filtering apart from
+# a genuinely unavailable framework-source check.
+skip_summary() {
+  local parts=""
+  if [[ "$skipped_tier" -gt 0 ]]; then
+    parts="$skipped_tier tier=$VALIDATE_TIER"
+  fi
+  if [[ "$skipped_changed_only" -gt 0 ]]; then
+    parts="${parts:+$parts, }$skipped_changed_only --changed-only"
+  fi
+  if [[ "$skipped_self_only" -gt 0 ]]; then
+    parts="${parts:+$parts, }$skipped_self_only framework-source-only (install-mode=$INSTALL_MODE)"
+  fi
+  if [[ "$skipped_denied" -gt 0 ]]; then
+    parts="${parts:+$parts, }$skipped_denied denylisted"
+  fi
+  printf '%s' "$parts"
+}
+
 if [[ "$failures" -gt 0 ]]; then
-  echo "Framework validation failed with $failures failing check(s)$([[ "$skipped" -gt 0 ]] && echo " ($skipped self-only check(s) skipped under install-mode=$INSTALL_MODE)")."
+  if [[ "$skipped" -gt 0 ]]; then
+    echo "Framework validation failed with $failures failing check(s) ($skipped skipped: $(skip_summary))."
+  else
+    echo "Framework validation failed with $failures failing check(s)."
+  fi
   echo "Failed checks:"
   for failed_label in "${failed_check_labels[@]}"; do
     echo "  - $failed_label"
@@ -1264,7 +1308,10 @@ if [[ "$failures" -gt 0 ]]; then
 fi
 
 if [[ "$skipped" -gt 0 ]]; then
-  echo "Framework validation passed ($skipped self-only check(s) skipped under install-mode=$INSTALL_MODE). Run from a framework-source tree to execute them."
+  echo "Framework validation passed ($skipped skipped: $(skip_summary))."
+  if [[ "$skipped_self_only" -gt 0 ]]; then
+    echo "Run from a framework-source tree to execute the framework-source-only check(s)."
+  fi
 fi
 
 echo "Framework validation passed."

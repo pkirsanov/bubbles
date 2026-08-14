@@ -31,6 +31,48 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Leaf Validation Cleanup (IMP-042 SCOPE-1 / PERF-2, PERF-3, COV-15, DOC-6)
+
+The core validation tier spent 82 of its 109 seconds running ShellCheck twice.
+`shellcheck-lint-selftest.sh` case 4 re-scanned all 516 tracked scripts, which is
+the standalone gate's job and was already being done in the same run. Removing it
+leaves the selftest testing the gate and the gate testing the tree. Core tier is
+now 74 seconds with identical check coverage.
+
+Skips are now counted per reason. One aggregate counter served four different
+skip paths, so a `--tier=core` run inside a source tree reported "288 self-only
+check(s) skipped under install-mode=source. Run from a framework-source tree to
+execute them" -- advice that contradicted itself, about checks that were skipped
+for tier rather than availability. The summary now reads `288 skipped: 286
+tier=core, 2 denylisted`, and the source-tree hint appears only when a
+framework-source-only check was actually skipped.
+
+Cheap structural checks now run before the whole-tree scan, so a broken registry
+or malformed schema answers in about a second instead of after 41. Release
+manifest freshness moved to the final check: earlier checks regenerate derived
+artifacts, so a mid-run verdict described a tree the rest of the run could still
+change. The release-check invocation is retained deliberately and now says why --
+it re-asks after the suite, which no in-suite placement can do.
+
+`mode-resolver.sh --list-modes` no longer emits `phaseRelevance`, a configuration
+block that is not a mode. The inventory now returns 61, matching every other mode
+consumer. `mode-alias-selftest.sh` had been stripping the value itself; dropping
+that workaround turns its coverage check into the regression for the contract.
+
+`retro-framework-health.sh` reported "no non-completed run data" on every run.
+It read the run-state file as a top-level array of records carrying `mode` and
+`outcome`, but the file is an object holding `activeRuns`/`recentRuns` whose
+records carry `command`, `status`, and `result`. jq failed with "Cannot index
+number with string", `2>/dev/null` swallowed it, and the section reported silence
+while 22 active and 12 failed runs sat in the file. It now surfaces them.
+
+The pre-push hook no longer assigns its two log paths twice, states CI coverage
+accurately (Linux on every pull request and push to main, macOS on pushes only),
+and replaces blind `tail -30` diagnostics with a bounded block that leads with
+the failure-shaped lines -- a tail window silently drops the failure when the
+failed-check list is long. The spec dashboard drops its `DONE` column, which
+printed an empty string while `SCOPES` already carried `done/total`.
+
 ## [7.27.0] - 2026-08-12
 
 ### Complete Test Creation And Certification (IMP-040 / COV-8..COV-12, REG-8, EV-8)

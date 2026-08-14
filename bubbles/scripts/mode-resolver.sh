@@ -312,7 +312,9 @@ validate_mode_inherits_cached() {
 }
 
 cmd_list_modes() {
-  yq -r '.modes | keys | .[]' "$WORKFLOWS_FILE"
+  # `phaseRelevance` is a sibling configuration block under `modes:`, not a mode.
+  # Emitting it made the inventory disagree with every other mode consumer.
+  yq -r '.modes | keys | .[] | select(. != "phaseRelevance")' "$WORKFLOWS_FILE"
 }
 
 # ── v6 primitive+tag alias support (B4) ───────────────────────────────

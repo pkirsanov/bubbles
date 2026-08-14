@@ -45,8 +45,12 @@ fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
 command -v yq >/dev/null 2>&1 || { echo "mode-alias-selftest: yq required" >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "mode-alias-selftest: python3 required" >&2; exit 2; }
 
-# Cache aliased modes once.
-v5_in_workflows="$(bash "$RESOLVER" --list-modes | grep -v '^phaseRelevance$' | sort -u)"
+# Cache aliased modes once. Deliberately NOT filtered here: `--list-modes` is
+# contracted to emit modes and nothing else, and this consumer previously had to
+# strip `phaseRelevance` itself. Dropping that workaround turns check 2 below
+# into the regression for the contract -- if the non-mode block leaks back into
+# the inventory, it surfaces as a mode with no alias entry.
+v5_in_workflows="$(bash "$RESOLVER" --list-modes | sort -u)"
 v5_in_aliases="$(yq -r '.v5Aliases | keys[]' "$ALIASES_FILE" | sort -u)"
 v6_primitives="$(yq -r '.v6Primitives[]' "$ALIASES_FILE" | sort -u)"
 
