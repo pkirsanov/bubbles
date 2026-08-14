@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Canonical Registry Reads (IMP-042 SCOPE-13 partial / REG-10, REG-12)
+
+`gate-meta.sh` answered every gate query from `workflows.yaml`, which carries a
+GENERATED copy of the gate registry. A registry edit therefore answered stale
+until `generate-gates-block.sh` ran. It now reads `bubbles/registry/gates.yaml`
+directly and falls back to the generated block only for an installed tree that
+predates the registry. Shadow-compared across all 117 gates before the cutover:
+identical ids, names, and descriptions, no empty fields.
+
+Every managed-doc `requiredSections` list was being dropped. The resolver parses
+with portable awk and accepted a sequence only when indented under its key, while
+the registry writes the flush form, so all seven lists vanished from both the
+framework-default and effective projections while the resolver still exited 0.
+Both indentations are now accepted, and `management-truth-lint.sh` gained a
+retention check comparing declared lists against resolved ones -- proven to fire
+by reverting the parser in a fixture (7 declared, 0 resolved).
+
 ### Atomic Context Compaction (IMP-042 SCOPE-7 / COST-8)
 
 Compaction could report success while losing the thing it produced. The compactor

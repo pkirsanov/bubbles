@@ -100,10 +100,30 @@ compare_doc_count "prompt-shim count" "$prompts_n" "$REPO_ROOT/docs/guides/INSTA
 compare_doc_count "MCP tool count" "$tools_n" "$REPO_ROOT/docs/MCP.md" "annotated tools"
 compare_doc_count "MCP prompt count" "$prompts_n" "$REPO_ROOT/docs/MCP.md" "prompts"
 
+# ── Check 4: managed-doc requiredSections survive resolution ──────────
+#
+# The resolver parses the registry with portable awk, so an indentation
+# assumption is enough to drop a whole list without any error. It accepted only
+# sequences indented under their key while the registry writes them flush, and
+# every requiredSections list vanished from both projections while the resolver
+# still exited 0. Compare declared lists against resolved ones.
+docs_registry="$REPO_ROOT/bubbles/docs-registry.yaml"
+docs_resolver="$REPO_ROOT/bubbles/scripts/docs-registry-resolve.sh"
+if [[ -f "$docs_registry" && -x "$docs_resolver" ]]; then
+  declared_sections="$( { grep -cE '^[[:space:]]+requiredSections:' "$docs_registry" || true; } )"
+  resolved_sections="$( { bash "$docs_resolver" --framework-default 2>/dev/null || true; } | { grep -cE '^[[:space:]]+requiredSections:' || true; } )"
+  if [[ "$declared_sections" -ne "$resolved_sections" ]]; then
+    err "managed-doc requiredSections lost in resolution: $declared_sections declared in bubbles/docs-registry.yaml, $resolved_sections survived docs-registry-resolve.sh --framework-default"
+    findings=$((findings + 1))
+  fi
+else
+  info "docs registry or resolver not present (skipping check 4)"
+fi
+
 if [[ "$findings" -gt 0 ]]; then
   err "found $findings management-truth catalog omission(s)"
   exit 1
 fi
 
-info "OK — recipe catalog, adoption-profile help, and documented counts match the live inventory"
+info "OK — recipe catalog, adoption-profile help, documented counts, and managed-doc sections match the live inventory"
 exit 0

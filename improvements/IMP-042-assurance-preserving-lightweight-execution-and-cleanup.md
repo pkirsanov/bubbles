@@ -263,16 +263,14 @@ Delivered: invocation-based scheduling shared by the sweep and the coverage lint
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 
-- Make `gate-meta.sh` read `registry/gates.yaml` directly.
-- Shadow every query against the generated workflow copy.
-- Remove the generated gate block only after byte-equivalent queries pass.
+Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, and managed-doc list parsing accepts both YAML sequence indentations with a retention check. Remaining:
+
+- Remove the generated gate block only after byte-equivalent queries pass for every remaining reader.
 - Make transition Check 6 read `required-specialists.yaml` directly.
 - Move rationale prose beside the registry or into focused docs.
 - Delete the shadow comparator after the runtime consumes the registry.
 - Extract one adoption-profile parser and one unknown-value policy.
-- Repair managed-doc list parsing without adding a YAML tool dependency.
-- Keep the portable-awk constraint that lets the resolver run on a minimal PATH.
-- Validate required managed-doc path existence and required section retention.
+- Validate required managed-doc path existence.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 
