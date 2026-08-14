@@ -1,6 +1,6 @@
 # IMP-042 — Continuation posture: make `unattended` real, then give it one honest entrypoint
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
+**Status:** ACCEPTED 2026-08-14 — owner approved; implementation may route to the named owners
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
 **Motivation:** An operator asked for a universal "continue, never stop, deliver 100%, do not ask questions" command that works with every Bubbles agent. Reviewing that request against source found that the framework already declares the posture such a command would need (`autonomy: unattended`), but no agent consumes it. The command is therefore not the gap. The unconsumed posture is.
 **Verified gaps addressed:** DOC-6 (a declared posture no runner implements), COV-14 (G135 cannot see an agent-side omission), REG-9 (two authorities count prompt shims)
