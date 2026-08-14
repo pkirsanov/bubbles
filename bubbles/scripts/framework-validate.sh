@@ -22,14 +22,17 @@ else
   REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 fi
 
-# Concurrency guard. framework-validate is NOT safe to run twice at once: a
-# number of selftests and lints below use FIXED scratch paths (e.g.
-# /tmp/bubbles-capability-check, /tmp/bubbles-agent-ownership-lint,
-# $HOME/.cache/bubbles-installer-selftest) with no per-run suffix. Two
-# simultaneous runs therefore delete and rewrite each other's fixtures midway,
-# which surfaces as a scatter of unrelated red checks that ALL pass when re-run
-# individually — an expensive false alarm that looks exactly like a real
-# regression. Measured: 8 spurious failures from one overlapping run.
+# Concurrency guard. framework-validate is NOT safe to run twice at once.
+#
+# The original reason was fixed scratch paths with no per-run suffix, measured at
+# 8 spurious failures from one overlapping run. That specific hazard is gone:
+# capability-freshness and generate-installer both mktemp their fixture roots
+# now, and /tmp/bubbles-agent-ownership-lint no longer exists at all. The guard
+# stays because two concurrent runs still share one working tree and its
+# generated files (release manifest, framework stats, gate coverage map), and
+# regenerating those under another run is the same class of interference. The
+# 8-failure measurement predates the mktemp fixes and is not evidence about the
+# state of the tree today.
 #
 # `flock` holds the lock on fd 9 and the kernel releases it when the process
 # dies, so this cannot leave a stale lock behind and needs no bypass flag. Where
@@ -787,6 +790,7 @@ run_check "Finding closure selftest" bash "$SCRIPT_DIR/finding-closure-selftest.
 run_check "Super surface selftest" bash "$SCRIPT_DIR/super-surface-selftest.sh"
 run_check "Workflow delegation selftest" bash "$SCRIPT_DIR/workflow-delegation-selftest.sh"
 run_check "Top-level-runtime routing selftest" bash "$SCRIPT_DIR/top-level-runtime-routing-selftest.sh"
+run_check "Continuation intent resolver selftest" bash "$SCRIPT_DIR/continuation-intent-resolve-selftest.sh"
 run_check "Continuation routing selftest" bash "$SCRIPT_DIR/continuation-routing-selftest.sh"
 planning_provenance_timeout_seconds="${BUBBLES_WORKFLOW_PLANNING_PROVENANCE_SELFTEST_TIMEOUT_SECONDS:-120}"
 run_check "Workflow planning provenance selftest" bubbles_run_with_timeout "$planning_provenance_timeout_seconds" bash "$SCRIPT_DIR/workflow-planning-provenance-selftest.sh"
@@ -810,6 +814,7 @@ run_check "Domain-invariant guard selftest (G130)" bash "$SCRIPT_DIR/domain-inva
 run_check "Domain-model consistency guard selftest (G131)" bash "$SCRIPT_DIR/domain-model-consistency-selftest.sh"
 run_check "Framework dogfood guard selftest" bash "$SCRIPT_DIR/framework-dogfood-guard-selftest.sh"
 run_check "Orchestrator persistence lint selftest" bash "$SCRIPT_DIR/orchestrator-persistence-lint-selftest.sh"
+run_check_self_only "Orchestrator persistence persistent regression" bash "$REPO_ROOT/tests/regression/test_05_orchestrator_persistence.sh"
 run_check "Validation latency report selftest" bash "$SCRIPT_DIR/validation-latency-report-selftest.sh"
 run_check "Retro convergence health selftest" bash "$SCRIPT_DIR/retro-convergence-health-selftest.sh"
 run_check "Planning workflow chain guard selftest" bash "$SCRIPT_DIR/planning-workflow-chain-guard-selftest.sh"

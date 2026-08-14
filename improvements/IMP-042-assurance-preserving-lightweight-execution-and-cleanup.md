@@ -195,13 +195,25 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-4 - Batched Heavy Validation (PERF-5)
 
+"Give each check a private temporary root" was treated as the prerequisite, on
+the premise that selftests use fixed scratch paths. Verified against the tree:
+that premise is stale. `capability-freshness-selftest.sh` and
+`generate-installer-selftest.sh` both `mktemp` their fixture roots with a
+per-run suffix, `/tmp/bubbles-agent-ownership-lint` does not exist anywhere, and
+no selftest writes into the repository working tree -- the apparent writes in
+`framework-health-evidence-lint-selftest.sh` are the body of a quoted heredoc
+that generates a fixture script. The comments asserting otherwise are corrected.
+
+Remaining:
+
 - Add a bounded scheduler for explicitly isolated checks.
 - Keep unknown checks serial.
-- Give each check a private temporary root and output file.
 - Preserve deterministic report order by check ID or registry order.
 - Shadow serial and parallel plans on the same commit.
 - Require identical check IDs, exits, and normalized output hashes before enabling a parallel group.
 - Preserve a serial diagnostic mode for scheduler failures.
+- Establish whether concurrent checks are safe against the shared working tree and its generated files, which is the interference the re-entrant flock guard still covers.
+- Measure the wall-clock distribution first. The suite is dominated by a few checks (transition guard 611s of a 1625s downstream run), so bounded parallelism may buy less than the ordering already delivered in SCOPE-1.
 
 ### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
 
