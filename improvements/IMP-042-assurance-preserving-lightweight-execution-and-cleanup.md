@@ -255,11 +255,8 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-11 - Explicit Selftest Scheduling And Semantic Reachability (COV-15)
 
-- Replace source-text basename detection with actual scheduled-check accounting.
-- Prove that a selftest mentioned only in a comment still runs.
-- Keep the denylist explicit, justified, and freshness-checked.
-- Extend governance indexing to match repository-relative paths, not basenames.
-- Extend skill indexing to match the skill directory name.
+Delivered: invocation-based scheduling shared by the sweep and the coverage lint, and path-aware governance and skill indexing. Remaining:
+
 - Require executable consumers to name the capability they consume.
 - Keep report-only posture until dynamic-call false positives are calibrated.
 
@@ -388,6 +385,8 @@ Evidence found during implementation that changed a proposed action.
 - `validate_dod.revert_on_fail` was REMOVED rather than wired. The guard supports the flag, but certification state is validate-owned, so exposing a status rewrite to a model-invocable tool creates a forging vector. The CLI keeps the capability.
 - `search_code` carried the same ignored-input defect as `validate_dod`, and worse: three declared inputs were unrendered while the description promised one of them worked. Fixed under the same scope.
 - Bare v5 operator syntax was corrected during SCOPE-8 because it shares the mode contract. The phantom mode sections remain with SCOPE-16.
+- The selftest denylist needed no change. It already required a stated reason per entry and already failed on a stale entry, and both of its two entries are executed through another path.
+- Path-aware skill indexing exposed six skills that no index referenced. The basename rule had been reporting them as indexed because every skill file is named `SKILL.md`.
 
 ## Migration And Rollout
 

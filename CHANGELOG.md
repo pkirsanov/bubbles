@@ -31,6 +31,27 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Selftest Scheduling And Governance Indexing (IMP-042 SCOPE-11 partial / COV-15)
+
+A comment could silence a selftest. The discovery sweep decided "already wired"
+by matching each selftest's basename against the validator's raw source text, so
+any mention at all -- a comment, a rationale, even a denylist note -- removed
+that selftest from the run with nothing reporting the loss. `selftest-coverage-
+lint.sh` used the same rule, so it would have reported full coverage for a
+selftest the sweep had already skipped.
+
+Both now share one builtin-only helper, `bubbles_scheduled_selftests`, which
+detects real `run_check` invocations and reassembles backslash-continued lines
+first. Counts are unchanged on the current tree (238 selftests: 219 enumerated,
+17 discovered, 2 denied), so this is hardening rather than a behavior change.
+
+Governance indexing matched on basename. Every skill file is named `SKILL.md`, so
+one index mentioning that string trivially satisfied all 45 skills at once. The
+lint now matches the repository-relative path, and for a skill its directory
+name. That immediately surfaced six skills that no index referenced at all --
+code-index-adapter, cross-platform-shell, datastore-isolation, isolated-ml-
+sidecar, technical-prose, and vscode-agent-constraints -- all now indexed.
+
 ### Generated Capability Projections (IMP-042 SCOPE-16 partial / DOC-6)
 
 Seven capability summaries rendered as a bare `>` in the generated competitive

@@ -1196,13 +1196,23 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
       done <"$selftest_denylist"
     fi
 
+    # Which selftests are ALREADY wired. Decided from real run_check invocations
+    # rather than from raw source text: a substring match treats ANY mention as
+    # "already covered", so a single comment naming a selftest would remove it
+    # from the run with nothing reporting the loss.
+    #
+    # The trailing newline is re-appended because command substitution strips
+    # every trailing newline, which would leave the LAST scheduled entry without
+    # its delimiter and re-run it a second time.
+    fv_scheduled="$(bubbles_scheduled_selftests "$fv_source")"$'\n'
+
     for selftest_path in "$SCRIPT_DIR"/*-selftest.sh; do
       [[ -f "$selftest_path" ]] || continue
       selftest_name="${selftest_path##*/}"
 
       # Already wired by an enumerated check above.
-      case "$fv_source" in
-        *"$selftest_name"*) continue ;;
+      case "$fv_scheduled" in
+        *$'\n'"$selftest_name"$'\n'*) continue ;;
       esac
 
       # Explicitly denied, with a documented reason.

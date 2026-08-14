@@ -143,6 +143,12 @@ Discoverable procedural workflows packaged as model skills.
 - [bubbles-spec-template-bdd](../skills/bubbles-spec-template-bdd/SKILL.md)
 - [bubbles-test-environment-isolation](../skills/bubbles-test-environment-isolation/SKILL.md)
 - [bubbles-test-integrity](../skills/bubbles-test-integrity/SKILL.md)
+- [bubbles-code-index-adapter](../skills/bubbles-code-index-adapter/SKILL.md)
+- [bubbles-cross-platform-shell](../skills/bubbles-cross-platform-shell/SKILL.md)
+- [bubbles-datastore-isolation](../skills/bubbles-datastore-isolation/SKILL.md)
+- [bubbles-isolated-ml-sidecar](../skills/bubbles-isolated-ml-sidecar/SKILL.md)
+- [bubbles-technical-prose](../skills/bubbles-technical-prose/SKILL.md)
+- [bubbles-vscode-agent-constraints](../skills/bubbles-vscode-agent-constraints/SKILL.md)
 
 ---
 
