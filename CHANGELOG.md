@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Evidence Policy Single Source (IMP-042 SCOPE-15 / EV-9)
+
+Three surfaces disagreed about where DoD evidence may live. `evidence-rules.md`
+and `state-transition-guard.sh` Check 9 support two resolvable reference forms, a
+`report.md#anchor` link and a structured tool-log record, and treat a resolved
+reference as equivalent to an inline block. The agent instructions said the
+opposite -- "Do NOT use `Evidence: [report.md#...]` links" -- and G025 said
+evidence must be recorded INLINE. An agent following the instruction and an agent
+following the guard both believed they were compliant.
+
+The instruction and the gate now state the contract the guard actually enforces.
+Inline placement stays the default and stays fully valid; a reference is
+permitted only in the two resolvable shapes, must carry ≥10 non-blank lines at
+the target, and FAILS the item when it does not resolve. The raw-output substance
+requirement, the `**Claim Source:**` tag, per-item attribution, and the ban on
+carrying the same output twice are unchanged.
+
 ### Canonical Registry Reads (IMP-042 SCOPE-13 partial / REG-10, REG-12)
 
 `gate-meta.sh` answered every gate query from `workflows.yaml`, which carries a

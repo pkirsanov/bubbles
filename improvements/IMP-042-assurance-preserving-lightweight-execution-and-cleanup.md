@@ -285,16 +285,6 @@ Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate sha
 - Require held-out routing tests before deleting policy prose.
 - Measure actual tool-result bytes and host prompt tokens when an adapter exists.
 
-### SCOPE-15 - Evidence Policy Single Source (EV-9)
-
-- Make `evidence-rules.md` the canonical evidence-location contract.
-- Preserve the raw-output substance requirement.
-- Permit one canonical stored block with anchored or receipt-based references.
-- Remove inline-only contradictions from instructions, scope workflow, and G025.
-- Make the transition guard and docs describe the same two reference forms.
-- Keep per-item attribution and individual validation.
-- Reject duplicate pastes when they claim to be separate executions.
-
 ### SCOPE-16 - Documentation And Generated Projection Cleanup (DOC-6)
 
 Delivered: block-scalar preservation, generated-page authority framing, and the generated issue summary column. Remaining:
