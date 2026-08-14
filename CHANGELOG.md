@@ -31,6 +31,24 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Generated Capability Projections (IMP-042 SCOPE-16 partial / DOC-6)
+
+Seven capability summaries rendered as a bare `>` in the generated competitive
+table. The awk field parser stored the YAML block-scalar indicator and dropped
+the indented text that followed it, so the most substantive column in the
+document was empty for every entry that used a folded scalar. The parser now
+collects the continuation lines.
+
+Markdown table cells are pipe-delimited, and one shipped summary documents a
+posture triple as "wired | opted-out | undeclared". That gave its row ten
+delimiters against the header's eight and misaligned every cell after it -- a
+pre-existing break, present at HEAD before this change. Cells are now escaped.
+
+The generated issue page called shipped capabilities "tracked gaps". It now
+states that the ledger is authoritative and that an issue link records follow-up
+work rather than a missing capability. Its summary column is removed, since the
+link and ledger state carry the meaning.
+
 ### MCP And Mode Contract Repair (IMP-042 SCOPE-8 / REG-9)
 
 Every boolean input in the MCP tool catalog was silently ignored. The argument

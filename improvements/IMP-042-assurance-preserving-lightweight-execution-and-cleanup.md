@@ -311,12 +311,11 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-16 - Documentation And Generated Projection Cleanup (DOC-6)
 
+Delivered: block-scalar preservation, generated-page authority framing, and the generated issue summary column. Remaining:
+
 - Replace the phantom mode sections that document unregistered keys.
 - Reduce `docs/CATALOG.md` to a distinct decision aid or redirect to the checked recipe index.
 - Repair the governance index claim and its path-aware lint.
-- Preserve block-scalar summaries in generated capability docs.
-- Keep the capability ledger authoritative and label generated pages as projections.
-- Remove the full summary column from generated issue status.
 - Delete `framework-stats.md` only together with its generator self-check and its manifest entry, or index it as a human surface.
 - Move dated reviews behind a historical review index.
 - Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
@@ -349,7 +348,6 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 | Candidate | Disposition | Required proof |
 | --- | --- | --- |
 | `framework-stats.md` | Delete or index | No downstream or human consumer exists, and the generator self-check plus manifest entry change together |
-| Generated issue summary column | Remove | Links and status remain sufficient |
 
 ### Migrate Before Deletion
 
