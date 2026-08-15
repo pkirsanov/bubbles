@@ -1224,7 +1224,15 @@ fi
 # assignments, install-mode gating, and arguments that a glob cannot infer.
 # ---------------------------------------------------------------------------
 if [[ "$LIST_TIER_ONLY" != "true" ]]; then
-  selftest_denylist="$REPO_ROOT/bubbles/registry/selftest-denylist.txt"
+  # Resolved from the FRAMEWORK directory, not the repository root. The framework
+  # is bubbles/ in the source tree and .github/bubbles/ in an installed
+  # downstream, so a repo-root path resolved to nothing downstream, the denylist
+  # read as EMPTY, and the sweep ran two suites it is contracted not to run --
+  # repository-binding-selftest.sh asserts it was entered through the cli.sh
+  # boundary, so a direct second run fails BY CONSTRUCTION. That is exactly the
+  # fail-open shape the note below exists to prevent, one layer up, and it is
+  # refused just as loudly.
+  selftest_denylist="$SCRIPT_DIR/../registry/selftest-denylist.txt"
 
   # BUG-021. This sweep decides WHAT RUNS by matching each discovered name
   # against this validator's own source, so reading that source is control
@@ -1253,19 +1261,25 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
     failures=$((failures + 1))
     failed_check_labels+=("Discovered selftest sweep (IMP-027 SCOPE-2b)")
     echo
+  elif [[ ! -r "$selftest_denylist" ]]; then
+    echo "==> Discovered selftest sweep (IMP-027 SCOPE-2b)"
+    echo "FAIL: cannot read $selftest_denylist to identify denied selftests"
+    bubbles_ci_annotate_failure "FAIL: cannot read $selftest_denylist to identify denied selftests"
+    echo "      refusing to run suites contracted to run only through their own entry point"
+    failures=$((failures + 1))
+    failed_check_labels+=("Discovered selftest sweep (IMP-027 SCOPE-2b)")
+    echo
   else
     # Newline-delimited denied names, read ONCE with builtins. Semantics match
     # the previous grep pair exactly: blank lines and lines whose first
     # non-space character is '#' are ignored, and a name must match a whole
     # line exactly.
     selftest_denied_names=$'\n'
-    if [[ -f "$selftest_denylist" ]]; then
-      while IFS= read -r selftest_deny_line || [[ -n "$selftest_deny_line" ]]; do
-        selftest_deny_trimmed="${selftest_deny_line#"${selftest_deny_line%%[![:space:]]*}"}"
-        [[ -z "$selftest_deny_trimmed" || "$selftest_deny_trimmed" == '#'* ]] && continue
-        selftest_denied_names+="$selftest_deny_line"$'\n'
-      done <"$selftest_denylist"
-    fi
+    while IFS= read -r selftest_deny_line || [[ -n "$selftest_deny_line" ]]; do
+      selftest_deny_trimmed="${selftest_deny_line#"${selftest_deny_line%%[![:space:]]*}"}"
+      [[ -z "$selftest_deny_trimmed" || "$selftest_deny_trimmed" == '#'* ]] && continue
+      selftest_denied_names+="$selftest_deny_line"$'\n'
+    done <"$selftest_denylist"
 
     # Which selftests are ALREADY wired. Decided from real run_check invocations
     # rather than from raw source text: a substring match treats ANY mention as
