@@ -31,6 +31,34 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Gates-Block Removal Is Reverted, Because Its Precondition Was Not Met (IMP-042 SCOPE-13)
+
+The 1,027-line generated `gates:` map was deleted from `workflows.yaml`, and is
+now restored.
+
+The scope permitted removal "only after byte-equivalent queries pass for every
+remaining reader". Six readers were fingerprinted and all six matched. That
+inventory was built by searching for scripts that parse gate DEFINITIONS out of
+`workflows.yaml`, so it missed every reader that greps the same file for gate
+NAMES — `agent-ownership-lint.sh` looks for `artifact_ownership_enforcement_gate`,
+`G063` and `G064` there and fails without them. A later count found 52 scripts
+referencing both `workflows.yaml` and a gate identifier, so the reader set was
+never actually established.
+
+Three regressions shipped before that was understood: the schema still required
+a `gates` property; `generate-framework-stats.sh` counted gates out of the
+deleted block and published **`gates: 0`** to the stats and the README badge; and
+`agent-ownership-lint` plus `evidence-admission-hardening-selftest` both failed.
+
+Deleting the copy remains the right destination. It needs the full reader
+inventory first, which is exactly what the scope required.
+
+Three improvements from the attempt are KEPT, because each stands on its own:
+the consistency selftest resolves gate references against the registry rather
+than the generated copy; the stats generator counts gates from the registry,
+which is correct either way; and the schema no longer requires `gates`, which
+makes the eventual removal one step smaller.
+
 ### The Metrics Registry Now Describes What Is Actually Produced (IMP-044 SCOPE-2 / REG-14)
 
 `metrics.activityTracking.measuredDimensions` declared eight dimensions against a

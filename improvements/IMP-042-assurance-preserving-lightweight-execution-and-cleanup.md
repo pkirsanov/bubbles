@@ -318,25 +318,38 @@ header, or the mode surface, none of which the `gates:` map provides.
 `bubbles/registry/gates.yaml` is in the release manifest, so downstream installs
 keep the canonical source when the block goes.
 
-COMPLETE. The 1,027-line `gates:` map is deleted from `workflows.yaml`, which
-fell from 2,201 to 1,174 lines with zero lines added. `generate-gates-block.sh`
-and `gates-registry-selftest.sh` are deleted, since both existed only to keep
-that copy in sync, and their two `framework-validate` checks are unwired.
-`gate-meta.sh`'s `workflows.yaml` fallback is gone, because falling back to a
-file that no longer defines gates would silently find none. The
-`GENERATED:GATE_BANDS` markers are kept: `gate-bands.sh` writes and reads them
-independently of the map.
+REVERTED, and the reason matters more than the change. The 1,027-line `gates:`
+map was deleted, and then RESTORED, because this scope's own precondition was
+not actually met.
 
-Every gate reader was re-fingerprinted against the pre-removal baseline and is
-byte-identical: `gate-meta list` `689c81d7998a87f1`, `gate-meta count` 117,
-`gate-classification report` `81d599c65ef28fde`, `gate-enforcement`
-`a419685e25babafd`, `gate-bands --check` `cea2b9efb03e5398`,
-`registry-consistency-selftest` `603ce87a47e2ee22`.
+The precondition reads "only after byte-equivalent queries pass for every
+remaining reader". Six readers were fingerprinted and all six were byte-
+identical. That inventory was built by grepping for scripts that parse gate
+DEFINITIONS out of `workflows.yaml`. It therefore missed the readers that grep
+the same file for gate NAMES: `agent-ownership-lint.sh` looks for
+`artifact_ownership_enforcement_gate`, `G063` and `G064` in `workflows.yaml` and
+fails without them, and `evidence-admission-hardening-selftest.sh` fails with it.
+A later count found 52 scripts referencing both `workflows.yaml` and a gate
+identifier, so the true reader set was never established.
 
-`bubbles-hub-report` is the one intended change: it treats `workflows.yaml` as a
-graph source, so every gate lost one mention and its in-degree fell by one. It
-still resolves 117 gates and exits 0. The new numbers are more accurate, because
-a generated duplicate was inflating every gate's in-degree by exactly one.
+The removal shipped three regressions before this was understood:
+`workflows.schema.json` still required a `gates` property;
+`generate-framework-stats.sh` counted gates out of the deleted block and
+published `gates: 0` to the stats and the README badge; and the two checks above.
+
+Deleting the copy is still the right destination. It needs the full reader
+inventory first, which is what the scope asked for and what was not done.
+
+What is KEPT from the attempt, because each is an improvement independent of the
+removal: `registry-consistency-selftest.sh` resolves gate references against
+`bubbles/registry/gates.yaml` rather than the generated copy;
+`generate-framework-stats.sh` counts gates from the registry, which is correct
+whether or not the copy exists; and `workflows.schema.json` no longer REQUIRES
+`gates`, which is harmless and makes the eventual removal one step smaller.
+
+Remaining:
+
+- Build the complete inventory of readers that depend on the `gates:` block in `workflows.yaml`, including those matching gate NAMES rather than the `gates:` key, then repoint each at the registry and only then delete the copy.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

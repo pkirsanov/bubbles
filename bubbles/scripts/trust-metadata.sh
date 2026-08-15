@@ -333,9 +333,10 @@ bubbles_framework_manifest_entries() {
   bubbles_print_manifest_entry "$source_root" \
     "bubbles/eval/schemas/adversarial-sample.schema.json"
 
-  # bubbles/registry/ holds the canonical registries every reader queries
-  # directly, gates.yaml among them. They ship downstream because a tree without
-  # them has no gate, specialist or packet metadata at all.
+  # v5.2.1 (F4 installer fix): bubbles/registry/gates.yaml is canonical for
+  # the workflows.yaml gates: block. Installed downstream so
+  # generate-gates-block.sh and gates-registry-selftest.sh have something
+  # to compare against.
   while IFS= read -r file_path; do
     [[ -f "$file_path" ]] || continue
     relative_path="${file_path#"$source_root"/}"
