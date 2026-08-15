@@ -31,6 +31,35 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Two Checks That Failed Without Ever Saying Why (BUG-005)
+
+`implementation-reality-scan-selftest` and `v4.1.0-selftest` have been an
+intermittent pair for a long time: both pass when run standalone and both fail
+late in a full suite run. Neither could explain itself, because both discard the
+evidence.
+
+`implementation-reality-scan.sh` ran its sensitive-storage classifier as
+`python3 "$helper" … 2>/dev/null`. When the helper failed, the scan degraded to
+one `SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED` violation per candidate line
+plus a `SENSITIVE_STORAGE_CONFIG_INVALID` on the project config — findings that
+read as facts about the code under scan, with the actual cause thrown away. The
+same reason strings are also emitted when `python3` is absent entirely, so the
+two situations were indistinguishable.
+
+`v4.1.0-selftest` read its registries as `python3 -c "import yaml …"
+2>/dev/null || true`. An interpreter that cannot import `yaml` yields an empty
+string, which is indistinguishable from a registry that declares nothing, so the
+assertion reported `scopeKinds mismatch: got ''` — a mismatch that names the
+wrong defect.
+
+Neither reason string changed, because both are contracted. What changed is that
+stderr is captured and printed, the missing-interpreter case is distinguished
+from the helper-failure case by an explicit diagnostic, and the `v4.1.0` reader
+writes its diagnostics to stderr so they cannot land inside the value they
+explain. Reproduced against an interpreter that cannot import `yaml`: the run now
+prints `python3 stderr: ModuleNotFoundError: No module named yaml` immediately
+before the assertion it caused.
+
 ### The Selftest Deny-List Failed Open In Every Downstream Install
 
 `framework-validate.sh` resolved the deny-list as
