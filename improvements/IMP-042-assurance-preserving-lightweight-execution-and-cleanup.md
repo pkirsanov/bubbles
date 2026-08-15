@@ -392,6 +392,18 @@ precondition met, and no script parses `.gates` structurally out of
 `workflows.yaml` -- the remaining references read per-mode `requiredGates`, the
 band header, or the mode surface, none of which the `gates:` map provides.
 
+The deletion is larger than this bullet implied, and the scope of it is recorded
+here so the next attempt starts from the real surface rather than rediscovering
+it mid-flight. `generate-gates-block.sh` is referenced by twelve files:
+`framework-validate.sh` (drift check plus registry selftest),
+`gates-registry-selftest.sh`, `scaffold-gate.sh` (which regenerates the block
+whenever a gate is added, so the documented five-surface add-a-gate procedure
+changes with it), `dependency-posture.sh`, `trust-metadata.sh`, `install.sh`,
+`bubbles/mcp/resources/gates.json`, `docs/v5.2-design.md`, the header comment in
+`workflows.yaml` itself, `release-manifest.json`, and the CHANGELOG. Retiring a
+generator is a workflow change, not a file deletion, and the first attempt failed
+because it was treated as the latter.
+
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 
 Delivered: the reference-closure rename is now complete EVERYWHERE. IMP-039
