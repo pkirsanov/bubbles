@@ -74,6 +74,19 @@ count_registry_gates() {
   awk '/^  G[0-9][0-9][0-9]:[[:space:]]*$/ { count++ } END { print count + 0 }' "$gates_file"
 }
 
+# IMP-045 SCOPE-3 (REG-9). README's prompt-shim lines were written from
+# agent_count, while management-truth-lint.sh enforces the live prompts/ glob
+# against INSTALLATION.md and MCP.md. The two agree only because the repo
+# happens to hold equal numbers; adding one prompt would make the lint demand
+# N+1 in two files while this generator rewrote README to N.
+count_prompt_shims() {
+  count=0
+  for prompt_file in "$repo_root"/prompts/*.prompt.md; do
+    [ -e "$prompt_file" ] && count=$((count + 1))
+  done
+  echo "$count"
+}
+
 count_section_entries() {
   section_name="$1"
   entry_pattern="$2"
@@ -143,6 +156,7 @@ mkdir -p "$generated_dir"
 version=$(cat "$repo_root/VERSION" | tr -d '[:space:]')
 
 agent_count=$(count_agents)
+prompt_shim_count=$(count_prompt_shims)
 # Gates are defined ONLY in bubbles/registry/gates.yaml. workflows.yaml used to
 # carry a generated copy, and counting that copy is how this generator reported
 # `gates: 0` the moment the copy was deleted (IMP-042 SCOPE-13 follow-up).
@@ -282,7 +296,7 @@ cat <<EOF > "$block_temp"
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # $agent_count prompt shims
+│   └── bubbles.*.prompt.md          # $prompt_shim_count prompt shims
 ├── bubbles/
 │   ├── workflows.yaml               # $workflow_mode_count workflow mode definitions
 │   ├── scripts/                     # Governance scripts
@@ -328,7 +342,7 @@ cat <<EOF > "$block_temp"
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # $agent_count prompt shims
+├── prompts/                   # $prompt_shim_count prompt shims
 EOF
 replace_block "$repo_root/README.md" "GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START" "GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END" "$block_temp"
 
