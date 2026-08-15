@@ -169,6 +169,27 @@ The pass corrected three counts, two latency targets, one parser recommendation,
 
 ### SCOPE-2 - Typed Validation Check Registry (PERF-1, COV-14)
 
+Partial, and deliberately labelled as a stopgap rather than the registry.
+`core_check_label()` selects the PUSH-BLOCKING tier by substring match on check
+LABELS: pre-push runs `--tier=core`, so that function is the list of checks
+allowed to stop a bad push. A prose-keyed substring list has exactly one failure
+mode and it is silent -- rename a check and its pattern stops matching, nothing
+errors, the tier just runs one fewer check, and a guard chosen specifically to
+block pushes stops blocking while every run still reports success. That is the
+unwired-selftest hole COV-2 covered, moved one layer up.
+
+`core-tier-pattern-lint.sh` makes that shape loud: it fails when any core pattern
+matches no scheduled check, and when ZERO patterns parse at all, since an empty
+core tier would pass every push vacuously. It reads 15 patterns against 300
+scheduled checks in the shipped validator and is currently clean. Its selftest is
+6/6, and case 2 is the real one: renaming a check to a label that does not
+contain the old needle turns the lint red and names the dead pattern.
+
+This guard has a stated expiry. It protects a mechanism the rest of this scope
+replaces, so it should be DELETED when the typed registry lands.
+
+Remaining:
+
 - Add a canonical check registry.
 - Give each check a stable `checkId`.
 - Declare argv, tier, push-blocking posture, install mode, timeout, and platform.
@@ -269,8 +290,8 @@ downstream-failure contract. Remaining:
 - Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
 - Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Six at review, five now. Two of the original descriptions were WRONG and are corrected here rather than acted on:
   - FIXED `Discovered selftest: profile-transition-selftest.sh`. It reads the LIVE `.specify/memory/bubbles.config.json` and drives `developer-profile.sh set` against it, so downstream it asserted against whatever profile that repo legitimately chose. Now enumerated as `run_check_self_only`, which also removes it from the discovery sweep that was running it as portable. Still passes in source.
+  - FIXED `Gate-vintage selftest (IMP-036)`. Cases 1 to 8 are hermetic, but case 9 ran `gate-vintage-annotate.sh --check` against the REAL registry. That command derives each gate's vintage from git history, so downstream it read the CONSUMING repo's history, where every gate arrived in a single install commit, and correctly reported stale. The portable selftest was failing every downstream install for being right. Case 9 is removed rather than rescheduled, because framework-validate already runs that exact command as `run_check_self_only "Gate-vintage annotation freshness"`, which is the only context where the answer means anything. Coverage is unchanged and the remaining 8 hermetic cases still run downstream.
   - `Run-state abandoned-run reaper selftest` (also fails in the source tree; A1 stale-run reaping and A3 audit trail, pre-existing at the review baseline). A real defect, not a scheduling error.
-  - `Gate-vintage selftest (IMP-036)` (`annotate --check` reports the registry stale downstream).
   - `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)`. CLAIM CORRECTED: the description said it asserts the framework ships `.specify/memory/open-work.md`. It does not. The scheduled script is `open-work-report-selftest.sh`, it builds every case under `mktemp` fixtures, and it never reads the live register. Rescheduling it source-only would have HIDDEN whatever actually fails downstream. Diagnose the real cause before touching its schedule.
   - `Scenario compile lint selftest` (fixture repos rejected as non-canonical Git roots downstream).
   - `Discovered selftest: repository-binding-selftest.sh`. CLAIM CORRECTED: it is not an unscheduled discovery. It is already listed in `bubbles/registry/selftest-denylist.txt` with a documented reason, because it must run only through the `cli.sh` boundary that sets `BUBBLES_REPOSITORY_BINDING_CLI_BOUNDARY=1`. The remaining downstream failure comes from the enumerated CLI check, not from the sweep, so the fix is not a reschedule.
@@ -313,10 +334,18 @@ producer. No live reader references the retired name; the remaining occurrences
 are historical changelog prose and the finding text that described the drift.
 This also closes the rename half of IMP-044 REG-14.
 
+Also verified, and requiring no change: nothing blocks on link reachability.
+`bundle-cost-report.sh`, the only producer of `referenceClosureProxy`, is never
+scheduled as a check in `framework-validate.sh` -- only its selftest is -- so the
+proxy is already advisory. The three budgets that DO block
+(`instruction-budget-lint` line 718, `effective-bundle-budget` line 1159,
+`agent-bundle-size-budget` line 1174) all measure BYTES of a file or of a
+transitive import closure, which is a counted quantity rather than an inferred
+prompt cost. There is no blocking prompt-cost claim to remove and reference
+closure is already the advisory coupling signal the scope asks for.
+
 Remaining:
 
-- Remove blocking prompt-cost claims based on link reachability.
-- Keep reference closure as an advisory coupling signal.
 - Deprecate global and per-agent bundle budgets after config migration.
 - Move deterministic workflow tables from agent prose into executable resolvers.
 - Load phase-owned policy modules through an explicit context manifest.

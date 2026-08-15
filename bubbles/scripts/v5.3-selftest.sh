@@ -146,7 +146,6 @@ done
 # The list must reach empty.
 known_downstream_failures=(
   "Run-state abandoned-run reaper selftest"
-  "Gate-vintage selftest (IMP-036)"
   "Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)"
   "Scenario compile lint selftest"
   "Discovered selftest: repository-binding-selftest.sh (IMP-027 SCOPE-2b)"

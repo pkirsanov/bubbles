@@ -31,6 +31,50 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Renaming A Check Could Silently Remove It From The Push Gate (IMP-042 SCOPE-2)
+
+Pre-push runs `framework-validate --tier=core`, and the core tier is decided by
+`core_check_label()`, which matches check LABELS by substring. So that function
+is, in practice, the list of checks allowed to block a bad push.
+
+A prose-keyed substring list fails one way, silently. Rename a check and its
+pattern stops matching. Nothing errors. The tier runs one fewer check, and a
+guard chosen specifically to block pushes stops blocking them while every run
+still reports success.
+
+`core-tier-pattern-lint.sh` fails when any core pattern matches no scheduled
+check, and when zero patterns parse at all, because an empty core tier would let
+every push through while reporting nothing wrong. It reads 15 patterns against
+300 scheduled checks and is currently clean.
+
+This is a stopgap with a stated expiry: it guards a mechanism the rest of
+SCOPE-2 replaces with a typed registry keyed on a stable `checkId`, and it should
+be deleted when that lands.
+
+### A Portable Selftest Was Failing Downstream For Being Right (IMP-042 SCOPE-12)
+
+`gate-vintage-selftest.sh` is hermetic in cases 1 to 8, which build their own
+fixture repository. Case 9 was not: it ran `gate-vintage-annotate.sh --check`
+against the real registry. That command derives each gate's vintage from git
+history, so in a consuming repository it reads that repository's history, where
+every gate arrived in a single install commit, and correctly reports the
+annotations stale. The portable selftest therefore failed every downstream
+install because the guard was working.
+
+Case 9 is removed rather than rescheduled. `framework-validate` already runs that
+exact command as `run_check_self_only "Gate-vintage annotation freshness"`, which
+is the only context where the answer means anything, so no coverage is lost and
+the eight hermetic cases keep running downstream.
+
+Tolerated downstream failures drop from five to four.
+
+Also verified, with no change required: nothing in the framework blocks on link
+reachability. `bundle-cost-report.sh`, the only producer of
+`referenceClosureProxy`, is never scheduled as a check — only its selftest is —
+so the proxy is already advisory. The three budgets that do block all measure
+bytes of a file or of a transitive import closure, which is a counted quantity
+rather than an inferred prompt cost.
+
 ### One Tolerated Downstream Failure Fixed, Two Diagnoses Corrected (IMP-042 SCOPE-12)
 
 `profile-transition-selftest.sh` reads the LIVE

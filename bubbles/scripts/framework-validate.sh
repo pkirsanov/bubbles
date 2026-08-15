@@ -779,6 +779,16 @@ run_check_self_only "Scan-lib helpers selftest (IMP-009)" bash "$SCRIPT_DIR/scan
 run_check_self_only "DoD section lib selftest (BUG-026)" bash "$SCRIPT_DIR/dod-section-lib-selftest.sh"
 run_check_self_only "Scope universe resolver selftest (BUG-026)" bash "$SCRIPT_DIR/scope-universe-resolver-selftest.sh"
 run_check_self_only "Framework-validate tiering selftest (IMP-012)" bash "$SCRIPT_DIR/framework-validate-tier-selftest.sh"
+# IMP-042 SCOPE-2: core_check_label() selects the push-blocking tier by substring
+# match on check LABELS, so renaming a check silently drops it from that tier with
+# nothing reporting the loss. Source-only because it reads this validator's own
+# text, which downstream carries under a different path prefix.
+if [[ -x "$SCRIPT_DIR/core-tier-pattern-lint.sh" ]]; then
+  run_check_self_only "Core-tier pattern lint (IMP-042 SCOPE-2)" bash "$SCRIPT_DIR/core-tier-pattern-lint.sh"
+fi
+if [[ -x "$SCRIPT_DIR/core-tier-pattern-lint-selftest.sh" ]]; then
+  run_check_self_only "Core-tier pattern lint selftest (IMP-042 SCOPE-2)" bash "$SCRIPT_DIR/core-tier-pattern-lint-selftest.sh"
+fi
 run_check_self_only "Framework-validate changed-only selftest (IMP-027 SCOPE-7)" bash "$SCRIPT_DIR/framework-validate-changed-only-selftest.sh"
 run_check_self_only "Install provenance selftest" bash "$SCRIPT_DIR/install-provenance-selftest.sh"
 run_check_self_only "Trust doctor selftest" bash "$SCRIPT_DIR/trust-doctor-selftest.sh"
