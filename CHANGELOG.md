@@ -31,6 +31,37 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Intermittent Scan Failure Was A Descriptor It Inherited, Not The Code It Scanned
+
+With the reason no longer discarded, a full run finally said what had been going
+wrong:
+
+```text
+sensitive-storage classifier failed: exit=1
+sensitive-storage classifier stderr: Fatal Python error: init_sys_streams: can't initialize sys standard streams
+sensitive-storage classifier stderr: OSError: [Errno 9] Bad file descriptor
+```
+
+CPython aborts during startup when a standard stream it inherits is a dangling
+descriptor. The helper takes every input from argv and never reads stdin, but it
+inherited whatever the caller left on fd 0. Its stdout is a fresh
+command-substitution pipe and its stderr is a fresh temporary file, so fd 0 was
+the only descriptor it did not own.
+
+The scan then fell into its degraded path and emitted
+`SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED` for every candidate line plus
+`SENSITIVE_STORAGE_CONFIG_INVALID` on the project config — findings that read as
+facts about the code under scan, produced by an interpreter that never ran a
+line. That is why the failure follows the caller rather than the code, and why it
+disappears when the check is run on its own.
+
+Both python invocations now read stdin from `/dev/null`. Stated precisely: the
+captured interpreter error is the evidence, and removing the inherited descriptor
+removes the only input the helper did not control. A local reproduction of the
+dangling descriptor was attempted and not achieved, so this is a defensive
+correction supported by the runtime evidence rather than a reproduced-and-fixed
+case.
+
 ### Two Checks That Failed Without Ever Saying Why (BUG-005)
 
 `implementation-reality-scan-selftest` and `v4.1.0-selftest` have been an

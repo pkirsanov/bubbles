@@ -74,7 +74,11 @@ py_read() { # py_read <label> <python-source>
   local output
   local status=0
   stderr_file="$(mktemp)"
-  output="$(python3 -c "$source" 2>"$stderr_file")" || status=$?
+  # stdin from /dev/null: this reader never uses it, but a dangling descriptor
+  # inherited from the caller aborts CPython during startup with
+  # "init_sys_streams ... Bad file descriptor", which would show up here as an
+  # empty value and be reported as a registry mismatch.
+  output="$(python3 -c "$source" </dev/null 2>"$stderr_file")" || status=$?
   if [[ "$status" -ne 0 || -z "$output" ]]; then
     # stderr, not stdout: this function's stdout IS the captured value, so a
     # diagnostic written there would end up inside the value it explains.
