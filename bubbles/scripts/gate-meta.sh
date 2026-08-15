@@ -19,19 +19,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# bubbles/registry/gates.yaml is canonical; workflows.yaml carries a GENERATED
-# copy. Reading the copy left every gate query one regeneration behind its own
-# source, so a registry edit could answer stale until generate-gates-block.sh
-# ran. Prefer the registry and fall back to the generated block only for an
-# installed tree that predates it.
+# bubbles/registry/gates.yaml is the only gate source. workflows.yaml used to
+# carry a generated copy and was accepted as a fallback for trees installed
+# before the registry existed; that copy was deleted in IMP-042 SCOPE-13, so
+# falling back to it would now silently find no gates at all.
 GATES_REGISTRY="$REPO_ROOT/bubbles/registry/gates.yaml"
-WORKFLOWS="$REPO_ROOT/bubbles/workflows.yaml"
 if [[ -f "$GATES_REGISTRY" ]]; then
   GATES_SOURCE="$GATES_REGISTRY"
-elif [[ -f "$WORKFLOWS" ]]; then
-  GATES_SOURCE="$WORKFLOWS"
 else
-  echo "gate-meta: no gate source found (looked for $GATES_REGISTRY and $WORKFLOWS)" >&2
+  echo "gate-meta: gate registry not found at $GATES_REGISTRY" >&2
   exit 2
 fi
 

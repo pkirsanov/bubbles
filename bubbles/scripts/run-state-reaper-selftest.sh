@@ -18,6 +18,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# bubbles_run_with_timeout resolves timeout -> gtimeout -> a watchdog fallback.
+# A bare `timeout` here made the reaper-triggering subshell fail outright on any
+# box without GNU coreutils, so nothing was reaped and A1/A3 failed while A2/A4
+# passed vacuously on "nothing happened". (IMP-042 SCOPE-12.)
+# shellcheck source=bubbles/scripts/guard-lib.sh
+. "$SCRIPT_DIR/guard-lib.sh"
 # Overridable so the reaper can be mutation-tested against a throwaway copy
 # without relocating this script (which would break REPO_ROOT resolution).
 CLI="${BUBBLES_CLI_UNDER_TEST:-$SCRIPT_DIR/cli.sh}"
@@ -70,7 +76,7 @@ seed_registry() { # seed_registry <line1> [line2]
 
 run_tracked() {
   set +e
-  (cd "$WT" && timeout 120 bash bubbles/scripts/cli.sh upgrade --help >/dev/null 2>&1)
+  (cd "$WT" && bubbles_run_with_timeout 120 bash bubbles/scripts/cli.sh upgrade --help >/dev/null 2>&1)
   set -e
 }
 
@@ -114,7 +120,7 @@ fi
 # distinguishable from one that actually compares against the cutoff.
 seed_registry "$(record wrn_OLD_leaked "$OLD")"
 set +e
-(cd "$WT" && BUBBLES_RUN_STATE_ABANDON_HOURS=100000 timeout 120 bash bubbles/scripts/cli.sh upgrade --help >/dev/null 2>&1)
+(cd "$WT" && BUBBLES_RUN_STATE_ABANDON_HOURS=100000 bubbles_run_with_timeout 120 bash bubbles/scripts/cli.sh upgrade --help >/dev/null 2>&1)
 set -e
 if [[ "$(jq -r '[.activeRuns[] | select(.runId=="wrn_OLD_leaked")] | length' "$REG")" == "1" ]]; then
   ok "A4 a threshold wider than the entry's age leaves it active"

@@ -291,7 +291,7 @@ downstream-failure contract. Remaining:
 - Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Six at review, five now. Two of the original descriptions were WRONG and are corrected here rather than acted on:
   - FIXED `Discovered selftest: profile-transition-selftest.sh`. It reads the LIVE `.specify/memory/bubbles.config.json` and drives `developer-profile.sh set` against it, so downstream it asserted against whatever profile that repo legitimately chose. Now enumerated as `run_check_self_only`, which also removes it from the discovery sweep that was running it as portable. Still passes in source.
   - FIXED `Gate-vintage selftest (IMP-036)`. Cases 1 to 8 are hermetic, but case 9 ran `gate-vintage-annotate.sh --check` against the REAL registry. That command derives each gate's vintage from git history, so downstream it read the CONSUMING repo's history, where every gate arrived in a single install commit, and correctly reported stale. The portable selftest was failing every downstream install for being right. Case 9 is removed rather than rescheduled, because framework-validate already runs that exact command as `run_check_self_only "Gate-vintage annotation freshness"`, which is the only context where the answer means anything. Coverage is unchanged and the remaining 8 hermetic cases still run downstream.
-  - `Run-state abandoned-run reaper selftest` (also fails in the source tree; A1 stale-run reaping and A3 audit trail, pre-existing at the review baseline). A real defect, not a scheduling error.
+  - FIXED `Run-state abandoned-run reaper selftest`. It was a PORTABILITY defect, not a reaper defect, and it had been failing in the source tree too since before the review baseline. Lines 73 and 117 called bare `timeout`, which does not exist on macOS or any box without GNU coreutils (confirmed on this machine: `timeout` absent, `gtimeout` present), and neither call carried a `portable-ok` exemption or sourced `guard-lib.sh`. With `timeout` missing, the subshell that TRIGGERS the reaper never ran, so nothing was reaped. That produced exactly the observed signature: A1 (stale run reclassified) and A3 (reaped record keeps its `startedAt`) failed, while A2 (live run preserved) and A4 (threshold honoured) PASSED VACUOUSLY, because "nothing was reaped" satisfies both. Now sources `guard-lib.sh` and calls `bubbles_run_with_timeout`, which resolves `timeout` then `gtimeout` then a watchdog fallback. 5 of 5 cases pass.
   - `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)`. CLAIM CORRECTED: the description said it asserts the framework ships `.specify/memory/open-work.md`. It does not. The scheduled script is `open-work-report-selftest.sh`, it builds every case under `mktemp` fixtures, and it never reads the live register. Rescheduling it source-only would have HIDDEN whatever actually fails downstream. Diagnose the real cause before touching its schedule.
   - `Scenario compile lint selftest` (fixture repos rejected as non-canonical Git roots downstream).
   - `Discovered selftest: repository-binding-selftest.sh`. CLAIM CORRECTED: it is not an unscheduled discovery. It is already listed in `bubbles/registry/selftest-denylist.txt` with a documented reason, because it must run only through the `cli.sh` boundary that sets `BUBBLES_REPOSITORY_BINDING_CLI_BOUNDARY=1`. The remaining downstream failure comes from the enumerated CLI check, not from the sweep, so the fix is not a reschedule.
@@ -318,9 +318,25 @@ header, or the mode surface, none of which the `gates:` map provides.
 `bubbles/registry/gates.yaml` is in the release manifest, so downstream installs
 keep the canonical source when the block goes.
 
-Remaining:
+COMPLETE. The 1,027-line `gates:` map is deleted from `workflows.yaml`, which
+fell from 2,201 to 1,174 lines with zero lines added. `generate-gates-block.sh`
+and `gates-registry-selftest.sh` are deleted, since both existed only to keep
+that copy in sync, and their two `framework-validate` checks are unwired.
+`gate-meta.sh`'s `workflows.yaml` fallback is gone, because falling back to a
+file that no longer defines gates would silently find none. The
+`GENERATED:GATE_BANDS` markers are kept: `gate-bands.sh` writes and reads them
+independently of the map.
 
-- Physically delete the 1,031-line `gates:` map from `workflows.yaml` (lines 32 to 1062), then retire `generate-gates-block.sh` and `gates-registry-selftest.sh`, which exist only to keep that copy in sync, and drop `gate-meta.sh`'s now-dead `workflows.yaml` fallback. Keep the `GENERATED:GATE_BANDS_START/END` markers, which `gate-bands.sh` writes and reads independently of the map.
+Every gate reader was re-fingerprinted against the pre-removal baseline and is
+byte-identical: `gate-meta list` `689c81d7998a87f1`, `gate-meta count` 117,
+`gate-classification report` `81d599c65ef28fde`, `gate-enforcement`
+`a419685e25babafd`, `gate-bands --check` `cea2b9efb03e5398`,
+`registry-consistency-selftest` `603ce87a47e2ee22`.
+
+`bubbles-hub-report` is the one intended change: it treats `workflows.yaml` as a
+graph source, so every gate lost one mention and its in-degree fell by one. It
+still resolves 117 gates and exits 0. The new numbers are more accurate, because
+a generated duplicate was inflating every gate's in-degree by exactly one.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

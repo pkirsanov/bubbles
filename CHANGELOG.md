@@ -31,6 +31,50 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Gates Are Defined In One File Again (IMP-042 SCOPE-13)
+
+`bubbles/workflows.yaml` carried a 1,027-line `gates:` map generated verbatim
+from `bubbles/registry/gates.yaml`. Keeping that copy honest required a
+generator, a drift check, and a selftest for the drift check. A duplicate that
+needs three mechanisms to stay truthful is a second answer waiting to disagree
+with the first.
+
+The copy is deleted. `workflows.yaml` falls from 2,201 to 1,174 lines with zero
+lines added. `generate-gates-block.sh` and `gates-registry-selftest.sh` are
+deleted with it, their two validator checks are unwired, and `gate-meta.sh` no
+longer falls back to `workflows.yaml` — that fallback would now find a file with
+no gates in it rather than an older copy.
+
+This was gated on evidence, not confidence. Every gate reader was fingerprinted
+before and after and is byte-identical: `gate-meta list` and `count`,
+`gate-classification report`, `gate-enforcement`, `gate-bands --check`, and
+`registry-consistency-selftest`.
+
+One output changed on purpose. `bubbles-hub-report` treats `workflows.yaml` as a
+graph source, so every gate lost one mention and its in-degree fell by one. It
+still resolves 117 gates. The new numbers are the more accurate ones: a generated
+duplicate had been inflating every gate's in-degree by exactly one.
+
+### The Reaper Selftest Was Never Running The Reaper (IMP-042 SCOPE-12)
+
+`run-state-reaper-selftest.sh` had been failing in the source tree since before
+this review began, and the failure was read as a reaper defect. It was a
+portability defect.
+
+Lines 73 and 117 called bare `timeout`, which does not exist on macOS or any
+machine without GNU coreutils, and neither call carried a `portable-ok`
+exemption or sourced `guard-lib.sh`. With `timeout` missing, the subshell that
+TRIGGERS the reaper failed outright, so nothing was ever reaped.
+
+That produced a signature worth recognising elsewhere: A1 and A3, which assert
+something HAPPENED, failed; A2 and A4, which assert something did NOT happen,
+passed vacuously, because "nothing was reaped" satisfies both. Half a suite
+going green on inaction is not partial success, it is a suite testing nothing.
+
+Both calls now use `bubbles_run_with_timeout`, the framework's own helper, which
+resolves `timeout`, then `gtimeout`, then a watchdog fallback. All 5 cases pass.
+Tolerated downstream failures drop from four to three.
+
 ### Renaming A Check Could Silently Remove It From The Push Gate (IMP-042 SCOPE-2)
 
 Pre-push runs `framework-validate --tier=core`, and the core tier is decided by
