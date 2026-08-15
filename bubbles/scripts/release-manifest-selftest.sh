@@ -85,10 +85,16 @@ mkdir -p "$fixture_root/bubbles/scripts"
 printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/new-managed.sh"
 printf '%s\n' 'bubbles/scripts/ignored.sh' > "$fixture_root/.gitignore"
 printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/ignored.sh"
-if bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/new-managed.sh'; then
-  pass "New non-ignored managed file enters payload before staging"
+if ! bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/new-managed.sh'; then
+  pass "Unstaged new file stays outside the payload until it is tracked"
 else
-  fail "New non-ignored managed file enters payload before staging"
+  fail "Unstaged new file stays outside the payload until it is tracked"
+fi
+git -C "$fixture_root" add bubbles/scripts/new-managed.sh >/dev/null 2>&1
+if bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/new-managed.sh'; then
+  pass "A tracked managed file is admitted to the payload"
+else
+  fail "A tracked managed file is admitted to the payload"
 fi
 if ! bubbles_manifest_entry_is_tracked "$fixture_root" 'bubbles/scripts/ignored.sh'; then
   pass "Ignored scratch file stays outside payload"

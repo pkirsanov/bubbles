@@ -250,11 +250,19 @@ bubbles_manifest_entry_is_tracked() {
     return 0
   fi
 
-  # New framework files must enter the generated payload before they are
-  # staged; otherwise --check can report a false green while install.sh omits
-  # the new dependency. Ignore only paths Git explicitly classifies as ignored.
-  [[ -f "$source_root/$relative_path" ]] || return 1
-  ! git -C "$source_root" check-ignore -q -- "$relative_path"
+  # Git tracking is the ONLY admission test. An earlier revision also admitted
+  # untracked-but-not-ignored files so a new framework script would enter the
+  # payload before it was staged. That contradicted the two selftests asserting
+  # manifest purity (release-manifest-purity, install-provenance), and it was
+  # unsafe: install.sh copies exactly the entries this function admits, so a
+  # maintainer's local scratch file under bubbles/scripts/ or bubbles/adapters/
+  # was installed into every downstream repository and recorded as
+  # framework-managed. The hazard the old comment cited -- a false-green --check
+  # while install.sh omits a new dependency -- cannot occur, because the manifest
+  # generator and install.sh share this same enumeration and therefore move
+  # together. A newly COMMITTED script missing from the manifest is still caught,
+  # loudly, by the manifest freshness drift check.
+  return 1
 }
 
 bubbles_print_manifest_entry() {
