@@ -380,7 +380,17 @@ degrades into "mentions a gate somewhere" and nobody believes it.
 
 Remaining:
 
-- Repoint `agent-ownership-lint.sh` at `bubbles/registry/gates.yaml`, prove its output is byte-identical before and after, and delete the copy once the inventory reports empty.
+- Delete the generated `gates:` block from `workflows.yaml` and retire the generator and drift check that keep it in sync with the registry.
+
+The precondition the first attempt asserted but never established is now MET and
+mechanically held. `agent-ownership-lint.sh` resolves gate existence against
+`bubbles/registry/gates.yaml`; its output is byte-identical before and after
+(`a8cda01667403ccf`, exit 0), and removing `concrete_result_gate` from the
+registry still turns it red naming G063, so it is load-bearing against the new
+source rather than merely quiet. The inventory is empty and reports the removal
+precondition met, and no script parses `.gates` structurally out of
+`workflows.yaml` -- the remaining references read per-mode `requiredGates`, the
+band header, or the mode surface, none of which the `gates:` map provides.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

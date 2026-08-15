@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Last Reader Of The Generated Gates Block Is Repointed (IMP-042 SCOPE-13)
+
+`agent-ownership-lint.sh` asserted that six ownership gates exist by grepping
+`workflows.yaml`, which carries a generated COPY of the canonical registry. It
+now reads `bubbles/registry/gates.yaml` directly.
+
+The equivalence is measured rather than assumed, which is the discipline the
+first removal attempt skipped: the lint's output is byte-identical before and
+after, and deleting `concrete_result_gate` from the registry still turns it red
+naming G063 — so it is load-bearing against the new source, not merely quiet
+against it. All six names resolve identically in both files, and the three legacy
+gate names appear only inside description prose, never as a `name:` key.
+
+The reader inventory is now empty and reports the removal precondition met. That
+precondition was previously asserted from a hand-built list, was wrong, and cost
+a revert; it is now computed and guarded.
+
 ### framework-validate Resolves Its Own Interpreter, Whichever Way It Is Entered
 
 `cli.sh` activates the managed Python environment before dispatch, so
