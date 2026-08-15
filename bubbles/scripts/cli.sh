@@ -3814,34 +3814,79 @@ cmd_metrics() {
       fi
       echo "Metrics Summary:"
       echo "  Total events: $(wc -l < "$CONTROL_PLANE_METRICS_FILE")"
+      # IMP-044 SCOPE-1. These two counters look for event types nothing emits.
+      # They are kept and labelled honestly rather than deleted, so a reader can
+      # see the plane is empty instead of assuming it was never consulted.
       local gate_checks phase_completions
       gate_checks="$(grep -c '"type":"gate_check"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || true)"
       phase_completions="$(grep -c '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null || true)"
       gate_checks="${gate_checks:-0}"
       phase_completions="${phase_completions:-0}"
-      echo "  Gate checks: $gate_checks"
-      echo "  Phase completions: $phase_completions"
+      echo "  gate_check events in this plane: $gate_checks (gate history lives in the gate-hit store; see: metrics gates)"
+      echo "  phase_complete events in this plane: $phase_completions (agent history lives in state.json executionHistory; see: metrics agents)"
       if [[ -f "$CONTROL_PLANE_ACTIVITY_FILE" ]]; then
         local activity_total command_invocations avg_duration
         activity_total="$(wc -l < "$CONTROL_PLANE_ACTIVITY_FILE")"
         command_invocations="$(grep -c '"command":' "$CONTROL_PLANE_ACTIVITY_FILE" 2>/dev/null || true)"
         avg_duration="$(awk -F'"durationMs":' 'NF > 1 { split($2, rest, ","); sum += rest[1]; count += 1 } END { if (count == 0) { print 0 } else { printf "%d", sum / count } }' "$CONTROL_PLANE_ACTIVITY_FILE")"
-        echo "  Activity records: $activity_total"
-        echo "  Command invocations tracked: ${command_invocations:-0}"
-        echo "  Avg command duration: ${avg_duration}ms"
+        echo "  CLI activity records: $activity_total"
+        echo "  CLI invocations tracked: ${command_invocations:-0}"
+        echo "  Avg CLI invocation duration: ${avg_duration}ms"
       fi
       ;;
     gates)
-      if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
-      echo "Gate failure frequency:"
-      grep '"type":"gate_check".*"result":"fail"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null \
-        | grep -oE '"gate":"[^"]*"' | sort | uniq -c | sort -rn || echo "  No failures recorded"
+      # IMP-044 SCOPE-1 (REG-13). This used to grep events.jsonl for
+      # `"type":"gate_check"` records, which nothing has ever written, so it
+      # reported "No data." forever while .specify/runtime/gate-hits.jsonl was
+      # full of per-gate outcomes. Read the populated store instead of
+      # backfilling the empty one.
+      local gate_hit_log="$SCRIPT_DIR/gate-hit-log.sh"
+      if [[ ! -x "$gate_hit_log" ]]; then
+        echo "gate-hit-log.sh unavailable — gate telemetry cannot be read."
+        return 1
+      fi
+      # Drop the `gates` subcommand itself before forwarding the remaining
+      # flags, so `metrics gates --all-classes` reaches the report intact.
+      shift || true
+      bash "$gate_hit_log" report --repo-root "$REPO_ROOT" "$@"
       ;;
     agents)
-      if [[ ! -f "$CONTROL_PLANE_METRICS_FILE" ]]; then echo "No data."; return; fi
-      echo "Agent invocations:"
-      grep '"type":"phase_complete"' "$CONTROL_PLANE_METRICS_FILE" 2>/dev/null \
-        | grep -oE '"agent":"[^"]*"' | sort | uniq -c | sort -rn || echo "  No invocations recorded"
+      # IMP-044 SCOPE-1 (REG-13). `"type":"phase_complete"` is likewise never
+      # written. state.json executionHistory is the only place agent identity
+      # per phase actually exists, and bubbles.retro already reads it this way.
+      if ! command -v python3 >/dev/null 2>&1; then
+        echo "python3 is required to read agent history from state.json executionHistory."
+        return 2
+      fi
+      echo "Agent invocations (from state.json executionHistory):"
+      BUBBLES_SPECS_ROOT="$REPO_ROOT/specs" python3 - <<'PY'
+import json, os, pathlib, collections
+
+specs_root = pathlib.Path(os.environ['BUBBLES_SPECS_ROOT'])
+counts = collections.Counter()
+scanned = 0
+if specs_root.is_dir():
+    for state_path in sorted(specs_root.glob('*/state.json')):
+        try:
+            with state_path.open() as fh:
+                doc = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            continue
+        scanned += 1
+        history = doc.get('executionHistory')
+        if not isinstance(history, list):
+            continue
+        for entry in history:
+            if isinstance(entry, dict) and isinstance(entry.get('agent'), str):
+                counts[entry['agent']] += 1
+
+if not counts:
+    print(f"  No agent invocations recorded across {scanned} spec state file(s).")
+else:
+    for agent, count in counts.most_common():
+        print(f"  {count:>6}  {agent}")
+    print(f"  --- {scanned} spec state file(s) scanned")
+PY
       ;;
     *) die "Unknown metrics subcommand: $subcmd. Try: enable, disable, activity-enable, activity-disable, status, summary, gates, agents" ;;
   esac
