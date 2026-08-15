@@ -31,6 +31,56 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Manifest Admission Is Git Tracking, And Two Selftests Stop Contradicting Each Other
+
+`bubbles_manifest_entry_is_tracked` admitted any file that was untracked but not
+gitignored, so that a new framework script would enter the payload before it was
+staged. Two other selftests asserted the exact opposite, and they were right:
+`install.sh` copies precisely the entries this function admits, so a maintainer's
+local scratch file under `bubbles/scripts/` or `bubbles/adapters/` was installed
+into every downstream repository and recorded as framework-managed. Six checks
+failed on this contradiction on every source-repo validation, including at the
+published tip.
+
+Git tracking is now the only admission test. The hazard the old behaviour was
+defending against cannot occur — the manifest generator and `install.sh` share
+this enumeration, so they move together — and a newly committed script missing
+from the manifest is still caught, loudly, by the freshness drift check.
+`release-manifest-selftest` now asserts the tracked contract in both directions:
+an unstaged file is refused, and the same file is admitted once it is staged.
+
+### Three Downstream Checks That Could Never Have Passed Downstream
+
+The downstream-install selftest enumerates its known failures so the list is
+forced to shrink. Three entries were failing for reasons that had nothing to do
+with the framework's downstream behaviour.
+
+`run-state-reaper-selftest` copied the CLI to a hardcoded `bubbles/scripts/`
+inside a throwaway worktree. The framework lives at `.github/bubbles/` once
+installed, and a repository that has not committed its install leaves that
+worktree with no framework in it at all, so the copy failed outright. It now
+materialises the live framework at its own repo-relative path.
+
+`continuation-routing-selftest` asserted a claim against the framework `README.md`,
+which resolves to `.github/README.md` downstream — a file the installer never
+creates. That one assertion now skips explicitly where the document is absent.
+
+The fixture itself was missing the managed documents its own registry declares as
+required, so the managed-doc existence lint reported a real adoption gap in a
+fixture that was never meant to model one. The fixture now asks the resolver
+which documents it owes and writes them.
+
+`Scenario compile lint selftest` has started passing downstream and is removed
+from the known-failure list.
+
+### The Generated Issue-Status Guide And Its Assertions Now Agree
+
+`generate-capability-ledger-docs.sh` emits `Issue-linked capabilities: N.`, and
+deliberately so — the surrounding prose argues that an issue link does not make a
+capability a gap. Two selftests still asserted the retired `Tracked gaps: N
+issue-backed capabilities.` wording, failing four checks while the generator, the
+generated document, and the governance index all agreed with each other.
+
 ### The Gates-Block Removal Is Reverted, Because Its Precondition Was Not Met (IMP-042 SCOPE-13)
 
 The 1,027-line generated `gates:` map was deleted from `workflows.yaml`, and is
