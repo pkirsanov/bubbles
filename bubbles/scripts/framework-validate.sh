@@ -540,6 +540,15 @@ if [[ -x "$SCRIPT_DIR/generate-modes-block.sh" ]]; then
   run_check "Modes split no-duplication (v6.1 / S2)" bash "$SCRIPT_DIR/generate-modes-block.sh" --check
 fi
 run_check "Gates registry selftest (v5.2 / F4)" bash "$SCRIPT_DIR/gates-registry-selftest.sh"
+# IMP-042 / SCOPE-13: the generated gates: block in workflows.yaml is a COPY of
+# the canonical registry. Deleting it once required "byte-equivalent queries for
+# every remaining reader", an inventory that was built by hand, missed the
+# scripts matching gate NAMES rather than the gates: key, and had to be reverted.
+# The inventory is now computed and held mechanically, so it can only shrink
+# deliberately and a new dependency cannot appear silently. The live check is
+# source-only because the declared inventory describes the source tree.
+run_check "Gates-block reader lint selftest (IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/gates-block-reader-lint-selftest.sh"
+run_check_self_only "Gates-block reader inventory (live, IMP-042 SCOPE-13)" bash "$SCRIPT_DIR/gates-block-reader-lint.sh" --repo-root "$REPO_ROOT"
 # IMP-102 / SCOPE-9: gate-coverage map — advisory generated doc mapping every
 # gate to its enforcing surface(s) (modes / state-transition-guard / framework-
 # validate scripts / CI). --check keeps the committed doc fresh; the selftest

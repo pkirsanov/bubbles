@@ -347,9 +347,40 @@ removal: `registry-consistency-selftest.sh` resolves gate references against
 whether or not the copy exists; and `workflows.schema.json` no longer REQUIRES
 `gates`, which is harmless and makes the eventual removal one step smaller.
 
+Now delivered: the inventory exists and is held mechanically.
+`gates-block-reader-lint.sh` computes it EMPIRICALLY rather than by guessing
+which greps look like gate lookups, which is precisely what failed. It derives
+the `gates:` block's line range, collects the gate identifiers that appear inside
+the block and NOWHERE else in the file -- exactly the tokens deletion removes --
+and reports any script that references `workflows.yaml` and contains one. A gate
+id that also appears in a per-mode `requiredGates` list survives deletion and is
+correctly not treated as evidence.
+
+The method's credibility rests on rediscovering what the hand-built inventory
+missed, and it does. It reports exactly one reader, `agent-ownership-lint.sh` --
+the reader whose omission broke the removal. It resolves `workflows.yaml`, then
+asserts on `capability_delegation_gate`, `owner_only_remediation_gate` and
+`artifact_ownership_enforcement_gate`, all of which exist only inside the block.
+
+Two scripts that a first cut of the detector reported were checked and correctly
+dropped: `state-transition-guard.sh` and `gate-id-grep.sh` both resolve
+`workflows.yaml` in code, but each names its only block-exclusive gate in a
+COMMENT, and `gate-id-grep.sh` validates against per-mode `requiredGates` lists,
+which survive the block's deletion.
+`evidence-admission-hardening-selftest.sh`, the second regression, does not
+reference `workflows.yaml` at all; it failed transitively through the guard.
+
+The declared set lives in `bubbles/registry/gates-block-readers.txt`. An
+undeclared reader fails and is named, a declared reader that has been repointed
+fails so the list is forced to shrink, a missing inventory refuses rather than
+passing silently, and an empty inventory states that the removal precondition is
+met. Selftest 9/9, whose case 2 is the load-bearing one: a script naming a gate
+id that also lives outside the block must NOT be reported, or the inventory
+degrades into "mentions a gate somewhere" and nobody believes it.
+
 Remaining:
 
-- Build the complete inventory of readers that depend on the `gates:` block in `workflows.yaml`, including those matching gate NAMES rather than the `gates:` key, then repoint each at the registry and only then delete the copy.
+- Repoint `agent-ownership-lint.sh` at `bubbles/registry/gates.yaml`, prove its output is byte-identical before and after, and delete the copy once the inventory reports empty.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

@@ -31,6 +31,37 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Gates-Block Reader Inventory Is Now Computed, Not Remembered (IMP-042 SCOPE-13)
+
+Deleting the generated `gates:` block from `workflows.yaml` was permitted "only
+after byte-equivalent queries pass for every remaining reader". That inventory
+was assembled by looking for scripts that parse gate DEFINITIONS, so every script
+that greps the same file for a gate NAME was missed. The removal shipped, three
+regressions followed, and it was reverted. A precondition that depends on someone
+remembering to grep a second way is not a precondition.
+
+`gates-block-reader-lint.sh` computes the set empirically instead of guessing
+which greps look like gate lookups. It takes the block's line range, collects the
+gate identifiers that appear inside it and nowhere else in the file — exactly the
+tokens deletion removes — and reports any script that references `workflows.yaml`
+and contains one. A gate id that also appears in a per-mode `requiredGates` list
+survives deletion and is correctly not counted.
+
+The method earns its place by rediscovering what was missed. It reports exactly
+one reader, `agent-ownership-lint.sh` — the reader whose omission broke the
+removal — which resolves `workflows.yaml` and then asserts on
+`capability_delegation_gate`, `owner_only_remediation_gate` and
+`artifact_ownership_enforcement_gate`, none of which exist outside the block. Two
+scripts a first cut reported were checked and correctly dropped:
+`state-transition-guard.sh` and `gate-id-grep.sh` name their only block-exclusive
+gate in a comment, and the latter validates against per-mode `requiredGates`
+lists, which survive deletion.
+
+The declared set lives in `bubbles/registry/gates-block-readers.txt`; an
+undeclared reader fails and is named, a repointed one fails so the list is forced
+to shrink, a missing inventory refuses rather than passing silently, and an empty
+inventory states that the removal precondition is met.
+
 ### Manifest Admission Is Git Tracking, And Two Selftests Stop Contradicting Each Other
 
 `bubbles_manifest_entry_is_tracked` admitted any file that was untracked but not
