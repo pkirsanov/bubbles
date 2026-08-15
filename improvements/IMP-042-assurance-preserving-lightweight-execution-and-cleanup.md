@@ -267,13 +267,13 @@ downstream-failure contract. Remaining:
 - Make generated, optional, and historical classes explicit alongside managed and source-only.
 - Stop treating every top-level script and every documentation file as managed by default.
 - Keep frozen design history in source but exclude maintainer-only history from downstream payloads.
-- Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Each entry is a selftest asserting a framework-source property while scheduled as portable:
-  - `Run-state abandoned-run reaper selftest` (also fails in the source tree; A1 stale-run reaping and A3 audit trail, pre-existing at the review baseline)
-  - `Gate-vintage selftest (IMP-036)` (`annotate --check` reports the registry stale downstream)
-  - `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)` (asserts the framework ships `.specify/memory/open-work.md`)
-  - `Scenario compile lint selftest` (fixture repos rejected as non-canonical Git roots downstream)
-  - `Discovered selftest: profile-transition-selftest.sh` (policy status does not reflect the foundation profile)
-  - `Discovered selftest: repository-binding-selftest.sh` (needs the source layout)
+- Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Six at review, five now. Two of the original descriptions were WRONG and are corrected here rather than acted on:
+  - FIXED `Discovered selftest: profile-transition-selftest.sh`. It reads the LIVE `.specify/memory/bubbles.config.json` and drives `developer-profile.sh set` against it, so downstream it asserted against whatever profile that repo legitimately chose. Now enumerated as `run_check_self_only`, which also removes it from the discovery sweep that was running it as portable. Still passes in source.
+  - `Run-state abandoned-run reaper selftest` (also fails in the source tree; A1 stale-run reaping and A3 audit trail, pre-existing at the review baseline). A real defect, not a scheduling error.
+  - `Gate-vintage selftest (IMP-036)` (`annotate --check` reports the registry stale downstream).
+  - `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)`. CLAIM CORRECTED: the description said it asserts the framework ships `.specify/memory/open-work.md`. It does not. The scheduled script is `open-work-report-selftest.sh`, it builds every case under `mktemp` fixtures, and it never reads the live register. Rescheduling it source-only would have HIDDEN whatever actually fails downstream. Diagnose the real cause before touching its schedule.
+  - `Scenario compile lint selftest` (fixture repos rejected as non-canonical Git roots downstream).
+  - `Discovered selftest: repository-binding-selftest.sh`. CLAIM CORRECTED: it is not an unscheduled discovery. It is already listed in `bubbles/registry/selftest-denylist.txt` with a documented reason, because it must run only through the `cli.sh` boundary that sets `BUBBLES_REPOSITORY_BINDING_CLI_BOUNDARY=1`. The remaining downstream failure comes from the enumerated CLI check, not from the sweep, so the fix is not a reschedule.
 
 ### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
 

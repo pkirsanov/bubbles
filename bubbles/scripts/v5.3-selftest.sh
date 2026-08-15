@@ -149,7 +149,6 @@ known_downstream_failures=(
   "Gate-vintage selftest (IMP-036)"
   "Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)"
   "Scenario compile lint selftest"
-  "Discovered selftest: profile-transition-selftest.sh (IMP-027 SCOPE-2b)"
   "Discovered selftest: repository-binding-selftest.sh (IMP-027 SCOPE-2b)"
 )
 

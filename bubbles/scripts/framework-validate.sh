@@ -443,6 +443,12 @@ run_check "Inventory parity check selftest (IMP-005)" bash "$SCRIPT_DIR/inventor
 # Live parity check is framework-source-only: skills/INVENTORY.md is a source-repo
 # artifact and is not vendored into downstream install trees.
 run_check_self_only "Inventory parity check (live, IMP-005)" bash "$SCRIPT_DIR/inventory-parity-check.sh" "$REPO_ROOT"
+# Framework-source-only for the same reason (IMP-042 SCOPE-12): this selftest reads
+# the LIVE .specify/memory/bubbles.config.json and drives developer-profile.sh set
+# against it, so downstream it asserts against whatever profile that repo chose and
+# fails on a correct configuration. Enumerating it here also removes it from the
+# discovery sweep, which ran it as portable.
+run_check_self_only "Profile transition selftest" bash "$SCRIPT_DIR/profile-transition-selftest.sh"
 # Skill invocation/description-load classification (IMP-021 SCOPE-5): a hermetic
 # selftest proving the report sums auto-discovery description bytes and flags a
 # class-less skill row, PLUS a live source-only report (skills/INVENTORY.md is a

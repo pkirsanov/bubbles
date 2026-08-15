@@ -31,6 +31,28 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### One Tolerated Downstream Failure Fixed, Two Diagnoses Corrected (IMP-042 SCOPE-12)
+
+`profile-transition-selftest.sh` reads the LIVE
+`.specify/memory/bubbles.config.json` and drives `developer-profile.sh set`
+against it. The discovery sweep ran it as portable, so downstream it asserted
+against whatever adoption profile that repository legitimately chose and failed
+on a correct configuration. It is now enumerated as `run_check_self_only`, which
+also removes it from the sweep. It still passes in source, and the tolerated
+list drops from six entries to five.
+
+Two of the remaining descriptions were wrong, and are corrected rather than
+acted on, because acting on them would have hidden real failures:
+
+- The open-work entry was described as asserting that the framework ships
+  `.specify/memory/open-work.md`. The scheduled script builds every case under
+  `mktemp` fixtures and never reads the live register, so rescheduling it
+  source-only would have suppressed whatever actually breaks downstream.
+- The repository-binding entry was described as an unscheduled discovery. It is
+  already denylisted with a documented reason, because it must run only through
+  the `cli.sh` boundary that sets its asserted environment flag. The remaining
+  failure comes from the enumerated CLI check, so a reschedule fixes nothing.
+
 ### The Metrics Registry Declared A Field Nothing Emits (IMP-042 SCOPE-14, IMP-044 REG-14)
 
 IMP-039 renamed the bundle metric from `costProxy` to `referenceClosureProxy` so
