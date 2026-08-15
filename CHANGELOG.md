@@ -42,12 +42,18 @@ difference. What it printed instead was a content mismatch: `scopeKinds mismatch
 got ''`, an empty registry read, when the actual condition was
 `ModuleNotFoundError: No module named 'yaml'`.
 
-The validator now resolves the managed interpreter itself, after the install-mode
-banner and behind a file test. The placement is deliberate: BUG-021 recorded that
-an unconditional source of a sibling helper at the top of this file kills the run
-before install-mode is printed whenever that helper is absent. Activation is a
-no-op when the interpreter already on PATH satisfies, so an operator's working
-environment is never displaced.
+The validator now resolves the managed interpreter itself, by EXECUTING
+`python-env.sh` rather than sourcing it. `cli.sh` can source that helper safely;
+this file cannot, because `repo-drift-report-selftest` deliberately stages it
+against a tree where every sibling is a stub ending in `exit 0` — and in a
+sourced file that terminates the validator's own shell and reports a silent pass
+that validated nothing. The first version of this change did source it, that
+fixture failed exactly as its own comment warns, and a subprocess cannot end the
+run whatever the file contains.
+
+The interpreter is prepended only when the one already on PATH cannot satisfy the
+framework's declared requirements, so an operator's working environment is never
+displaced.
 
 ### A Downstream Install Now Validates Itself With No Enumerated Exceptions
 

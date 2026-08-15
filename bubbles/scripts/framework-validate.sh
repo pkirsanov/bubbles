@@ -429,16 +429,24 @@ echo
 # passed through one entry point and failed through the other, with nothing
 # naming the difference.
 #
-# Placed AFTER the install-mode banner and guarded by a file test, because
-# BUG-021: an unconditional source of a sibling helper at the top of this file
-# kills the run before install-mode is printed whenever the helper is absent.
-# activate is a no-op when PATH's python3 already satisfies, so an operator's own
-# working interpreter is never displaced.
-if [[ -f "$SCRIPT_DIR/python-env.sh" ]]; then
-  # shellcheck source=bubbles/scripts/python-env.sh
-  source "$SCRIPT_DIR/python-env.sh"
-  if declare -F bubbles_python_activate >/dev/null 2>&1; then
-    bubbles_python_activate >/dev/null 2>&1 || true
+# python-env.sh is EXECUTED, never sourced. cli.sh can source it safely because
+# cli.sh is not the script that repo-drift-report-selftest stages against a tree
+# of stubs -- and in that tree every sibling is a stub ending in `exit 0`, which
+# in a SOURCED file terminates this validator's own shell and reports a silent
+# pass that validated nothing. That fixture exists precisely to catch this, and
+# it did. A subprocess cannot end this run no matter what the file contains.
+#
+# The interpreter is only prepended when the one already on PATH cannot satisfy
+# the framework's declared requirements, so an operator's working environment is
+# never displaced. The import list duplicates dependency-posture.sh's declared
+# set; that is a deliberate two-line duplication rather than a second source of
+# truth, because resolving it through the helper would mean sourcing it.
+if [[ -f "$SCRIPT_DIR/python-env.sh" ]] &&
+  ! python3 -c 'import yaml, jsonschema' >/dev/null 2>&1; then
+  bubbles_managed_python="$(bash "$SCRIPT_DIR/python-env.sh" --path 2>/dev/null || true)"
+  if [[ -n "$bubbles_managed_python" && -x "$bubbles_managed_python" ]]; then
+    PATH="$(dirname "$bubbles_managed_python"):$PATH"
+    export PATH
   fi
 fi
 
