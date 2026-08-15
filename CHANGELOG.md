@@ -31,6 +31,26 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### A Selftest That Could Die Between Two Tests And Report Nothing
+
+`v4.1.0-selftest` runs under `set -euo pipefail` and had four unguarded `python3`
+invocations. A full run proved the consequence: tests 1 through 4 passed, and the
+output simply stopped — no summary line, a non-zero exit, and nothing naming
+which call died or why. The suite had aborted at test 5.
+
+Test 5 also carried a false-pass hole. It folded stderr into its captured value
+with `2>&1` and then asserted by grepping for `^BAD:`, so an interpreter
+traceback contains no `BAD:` and the assertion would have PASSED on a run that
+computed nothing.
+
+Every python invocation now goes through a helper that reports. Value-producing
+calls use the existing `py_read`; the two that only write fixtures use a new
+`py_run`, which surfaces stderr and lets the dependent assertion fail on its own
+terms rather than taking the process down. Test 5 additionally refuses an empty
+result instead of treating it as absence of `BAD:`. Proven against an interpreter
+that fails every call: the run now reaches its summary with 12 diagnostics naming
+the cause, where it previously produced silence.
+
 ### The Last Reader Of The Generated Gates Block Is Repointed (IMP-042 SCOPE-13)
 
 `agent-ownership-lint.sh` asserted that six ownership gates exist by grepping
