@@ -31,6 +31,39 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### A Gate Is Now Defined Once (IMP-042 SCOPE-13)
+
+The generated `gates:` map is gone from `workflows.yaml` — 1,027 lines that
+restated `bubbles/registry/gates.yaml` verbatim. The file drops from 2,245 lines
+to 1,217, and `generate-gates-block.sh` and `gates-registry-selftest.sh` are
+retired with it: there is no copy left to generate, and nothing left to detect
+drift against.
+
+This was attempted once and reverted, so the difference matters. The precondition
+— byte-equivalent queries for every remaining reader — was previously asserted
+from a hand-built list that missed every script grepping for a gate NAME. It is
+now computed by `gates-block-reader-lint.sh`, which reports an empty inventory,
+and the one real reader was repointed at the registry with its equivalence
+measured in both directions: byte-identical output, and still red when a gate is
+removed from the new source.
+
+Retiring a generator is a workflow change rather than a file deletion, which is
+the other half of what went wrong the first time. Fourteen surfaces moved with
+it: the drift check and registry selftest in `framework-validate.sh`, the
+now-dead `*"Gates registry"*` core-tier pattern (left in place it would have
+failed `core-tier-pattern-lint`, which exists to catch exactly that), the
+add-a-gate procedure in `scaffold-gate.sh`, the python3 consumer list in
+`dependency-posture.sh`, the installer and payload comments, the MCP gate
+resource description, the `v5.2-selftest.sh` header, and the `workflows.yaml`
+preamble.
+
+`gate-bands.sh` splices its band string into `workflows.yaml` between
+`GENERATED:GATE_BANDS_START/END` markers. Those sit ABOVE the block and survive
+it; had they been inside, stripping would have silently broken a second
+generator. All seventeen consumers of gate data pass, including
+`evidence-admission-hardening-selftest` and `agent-ownership-lint`, the two that
+regressed on the first attempt.
+
 ### A Selftest That Could Die Between Two Tests And Report Nothing
 
 `v4.1.0-selftest` runs under `set -euo pipefail` and had four unguarded `python3`

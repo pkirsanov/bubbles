@@ -378,31 +378,26 @@ met. Selftest 9/9, whose case 2 is the load-bearing one: a script naming a gate
 id that also lives outside the block must NOT be reported, or the inventory
 degrades into "mentions a gate somewhere" and nobody believes it.
 
-Remaining:
+Delivered. The block is gone: `workflows.yaml` drops from 2,245 lines to 1,217,
+and `generate-gates-block.sh` and `gates-registry-selftest.sh` are retired with
+it. `bubbles/registry/gates.yaml` is the only definition of a gate.
 
-- Delete the generated `gates:` block from `workflows.yaml` and retire the generator and drift check that keep it in sync with the registry.
+The precondition was computed rather than remembered this time.
+`agent-ownership-lint.sh` resolves gate existence against the registry; its
+output is byte-identical before and after (`a8cda01667403ccf`, exit 0), and
+removing `concrete_result_gate` from the registry still turns it red naming G063,
+so it is load-bearing against the new source rather than merely quiet.
+`gates-block-reader-lint.sh` reports an empty inventory and, with the block gone,
+reports that nothing can depend on it.
 
-The precondition the first attempt asserted but never established is now MET and
-mechanically held. `agent-ownership-lint.sh` resolves gate existence against
-`bubbles/registry/gates.yaml`; its output is byte-identical before and after
-(`a8cda01667403ccf`, exit 0), and removing `concrete_result_gate` from the
-registry still turns it red naming G063, so it is load-bearing against the new
-source rather than merely quiet. The inventory is empty and reports the removal
-precondition met, and no script parses `.gates` structurally out of
-`workflows.yaml` -- the remaining references read per-mode `requiredGates`, the
-band header, or the mode surface, none of which the `gates:` map provides.
-
-The deletion is larger than this bullet implied, and the scope of it is recorded
-here so the next attempt starts from the real surface rather than rediscovering
-it mid-flight. `generate-gates-block.sh` is referenced by twelve files:
-`framework-validate.sh` (drift check plus registry selftest),
-`gates-registry-selftest.sh`, `scaffold-gate.sh` (which regenerates the block
-whenever a gate is added, so the documented five-surface add-a-gate procedure
-changes with it), `dependency-posture.sh`, `trust-metadata.sh`, `install.sh`,
-`bubbles/mcp/resources/gates.json`, `docs/v5.2-design.md`, the header comment in
-`workflows.yaml` itself, `release-manifest.json`, and the CHANGELOG. Retiring a
-generator is a workflow change, not a file deletion, and the first attempt failed
-because it was treated as the latter.
+Fourteen surfaces moved with the generator, because retiring one is a workflow
+change and not a file deletion -- the other half of what went wrong the first
+time. The `*"Gates registry"*` core-tier pattern went with the checks it matched;
+left in place it would have failed `core-tier-pattern-lint`, the guard built
+earlier in this same scope to catch exactly that. `gate-bands.sh` splices into
+markers ABOVE the block, so it survives; had they been inside, stripping would
+have silently broken a second generator. All seventeen gate-data consumers pass,
+including the two that regressed on the first attempt.
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 

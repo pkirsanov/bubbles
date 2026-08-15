@@ -505,9 +505,8 @@ if [[ -f "$TEMP_DIR/$ADVERSARIAL_SAMPLE_SCHEMA" ]]; then
 fi
 
 # ── Install registry (v5.2.1 / F4 installer fix) ──────────────────────
-# bubbles/registry/gates.yaml is canonical for gate definitions starting
-# in v5.2. generate-gates-block.sh splices it back into workflows.yaml.
-# Drift detection in framework-validate requires this file to be present.
+# bubbles/registry/gates.yaml is the ONLY definition of a gate. Every gate
+# reader downstream resolves it, so the file must be present.
 if [[ -d "$TEMP_DIR/bubbles/registry" ]]; then
   info "Installing framework registry..."
   mkdir -p "${TARGET}/bubbles/registry"
