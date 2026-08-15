@@ -55,9 +55,15 @@ the removal produced. The requirement is dropped; the `gates` shape is retained
 so a downstream tree still carrying the pre-removal copy validates rather than
 erroring mid-upgrade.
 
-This was mine, and the surrounding selftests did not catch it: they resolve modes
-and gates through the registry, which is exactly the path the removal made
-correct. Only the schema check reads the document as a whole.
+`generate-framework-stats.sh` had the same root cause and a louder symptom: it
+counted gates out of the deleted `workflows.yaml` block, so every generated
+surface reported **zero gates** — `framework-stats.json`, `framework-stats.md`,
+and the README badge. It now counts `bubbles/registry/gates.yaml`, and all three
+report 117 again.
+
+Both were mine, and the surrounding selftests did not catch either: they resolve
+modes and gates through the registry, which is exactly the path the removal made
+correct. Only the schema check and the stats generator read the old shape.
 
 ### The Config Writer Deleted Every Key It Did Not Recognise (IMP-044 SCOPE-3 / REG-15)
 
