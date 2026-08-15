@@ -31,6 +31,48 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Selftest Deny-List Failed Open In Every Downstream Install
+
+`framework-validate.sh` resolved the deny-list as
+`$REPO_ROOT/bubbles/registry/selftest-denylist.txt`. The framework is `bubbles/`
+in the source tree and `.github/bubbles/` in an installed downstream, so
+downstream that path resolved to nothing, the list read as empty, and the
+discovery sweep ran the two suites the list exists to withhold.
+
+One of them fails by construction when it is run that way:
+`repository-binding-selftest.sh` asserts it was entered through the `cli.sh`
+boundary that sets its marker, so a direct second run cannot pass. It has been
+carried as an enumerated known downstream failure ever since, attributed to the
+enumerated CLI check rather than to the sweep.
+
+The path is now resolved from the framework directory, which is correct in both
+layouts, and an unreadable deny-list is refused loudly. The surrounding comment
+already warned that "no external tool may decide what this validator executes"
+and defended the same fail-open shape one layer down; a governance file that
+silently reads as empty decides just as much.
+
+### The Open-Work Register Selftest Asked A Downstream Repository For A Source-Repo File
+
+A previous note in IMP-042 recorded that this selftest "builds every case under
+`mktemp` fixtures and never reads the live register", and used that to argue its
+downstream failure had some other cause. That correction was itself wrong, and
+the reproduction says so plainly: 21 cases are hermetic and case `e3` reads the
+live tree.
+
+`e3` had two defects. It resolved the repository root as the framework root,
+which is correct in the source tree and is `.github/` in an installed downstream
+— where `.specify/` sits at the real repository root instead. And it treated the
+absence of a register as a defect, when what the framework ships is
+`templates/open-work.md.tmpl`: a repository that has not adopted a register yet
+correctly has no file, and every downstream install failed for it.
+
+The property the case actually exists to defend, stated in its own comment, is
+that a template must not install into an ignored path. That is checkable
+everywhere, including where no register exists yet, so it is now checked
+everywhere — while a framework SOURCE tree must still ship its own register. 22
+of 22 in source and in a real downstream install, and the enumerated
+downstream-failure list drops from three to one.
+
 ### The Gates-Block Reader Inventory Is Now Computed, Not Remembered (IMP-042 SCOPE-13)
 
 Deleting the generated `gates:` block from `workflows.yaml` was permitted "only
