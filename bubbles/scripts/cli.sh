@@ -2913,6 +2913,42 @@ except Exception:
     fi
   fi
 
+  # Check 17: learning-loop reachability (IMP-043 SCOPE-4 / LRN-6).
+  # lessons.md is empty in every repo that has one and absent in the rest, and
+  # nothing ever said so. Advisory only: an empty learning loop is a gap to
+  # surface, never a reason to refuse a command.
+  if ! is_framework_repo; then
+    if [[ ! -f "$proj_root/.specify/memory/lessons.md" ]]; then
+      echo -e "  ${YELLOW}⚠️${NC}  .specify/memory/lessons.md is missing — the learning loop has nowhere to write. Re-run install.sh to backfill it."
+      advisory_count=$((advisory_count + 1))
+    else
+      local lesson_entry_count
+      lesson_entry_count="$(grep -c 'bubbles-lesson-meta:' "$proj_root/.specify/memory/lessons.md" 2>/dev/null || true)"
+      [[ "$lesson_entry_count" =~ ^[0-9]+$ ]] || lesson_entry_count=0
+      if [[ "$lesson_entry_count" -eq 0 ]]; then
+        echo -e "  ${YELLOW}⚠️${NC}  lessons.md holds 0 lessons — nothing has been captured, so clustering and recall have no input"
+        advisory_count=$((advisory_count + 1))
+      else
+        echo -e "  ${GREEN}✅${NC} Learning loop has $lesson_entry_count captured lesson(s)"
+        passed=$((passed + 1))
+      fi
+    fi
+    local recall_resolver="$SCRIPT_DIR/experience-recall-resolve.sh"
+    if [[ -x "$recall_resolver" ]]; then
+      local recall_adapter_line
+      recall_adapter_line="$(bash "$recall_resolver" --names-only 2>/dev/null || true)"
+      case "$recall_adapter_line" in
+        *adapter=none* | '')
+          echo -e "  ${DIM}ℹ️  experienceRecall.adapter is 'none' (the shipped default); recall is off by design${NC}"
+          ;;
+        *)
+          echo -e "  ${GREEN}✅${NC} experienceRecall adapter configured (${recall_adapter_line#adapter=})"
+          passed=$((passed + 1))
+          ;;
+      esac
+    fi
+  fi
+
   echo ""
   echo -e "${BOLD}Dependency Posture${NC}"
   echo -e "${DIM}IMP-027 SCOPE-4 / SEC-2. Ten guards used to exit 0 on a missing dependency, so a run could go green having checked nothing. They now fail closed. A missing dependency here means those guards will refuse to run.${NC}"
@@ -3849,6 +3885,27 @@ bubbles_lessons_compact() {
   return 0
 }
 
+# IMP-043 SCOPE-5. The recall index was never synchronized by anything, so no
+# repository could reach the opt-in state even after enabling the adapter.
+# Capture is the exact moment new recallable content appears, and `lessons add`
+# is already classified an owned mutation, so syncing here keeps `recall search`
+# read-only rather than turning a read into a write.
+#
+# Silent and best-effort: `none` is the shipped default and stays correct, and a
+# sync failure must never fail the lesson that was already written.
+bubbles_lessons_sync_recall() {
+  local recall="$SCRIPT_DIR/experience-recall.sh"
+  local resolver="$SCRIPT_DIR/experience-recall-resolve.sh"
+  [[ -x "$recall" && -x "$resolver" ]] || return 0
+  local adapter_line
+  adapter_line="$(bash "$resolver" --names-only 2>/dev/null || true)"
+  case "$adapter_line" in
+    *adapter=none* | '') return 0 ;;
+  esac
+  bash "$recall" sync >/dev/null 2>&1 || true
+  return 0
+}
+
 cmd_lessons() {
   local lessons_file="$REPO_ROOT/.specify/memory/lessons.md"
   local subcmd="${1:-}"
@@ -3950,6 +4007,7 @@ cmd_lessons() {
       # unless a human typed the subcommand. Capture is the moment the file
       # grows, so it is the moment to bound it.
       bubbles_lessons_compact "$lessons_file" quiet
+      bubbles_lessons_sync_recall
       ;;
     compact)
       bubbles_lessons_compact "$lessons_file" verbose

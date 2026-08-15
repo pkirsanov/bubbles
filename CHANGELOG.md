@@ -31,6 +31,30 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Learning Loop Is Reachable From A Repository That Already Exists (IMP-043 SCOPE-4, SCOPE-5)
+
+Every learning scaffold lived behind `install.sh --bootstrap`, and `cmd_upgrade`
+never passes that flag. A repository installed before the learning loop existed
+could therefore never acquire the file the loop writes to, and re-bootstrapping a
+live repository touches far more files than the one that is missing.
+
+Scaffold creation is now a function that runs on every install and every
+upgrade. It is strictly non-destructive: it creates the file only when absent and
+never modifies an existing one, because an operator's accumulated lessons are not
+ours to rewrite. Verified on a real install with no `--bootstrap`.
+
+`doctor` now reports the gap instead of leaving it silent: a missing
+`lessons.md`, a lessons file holding zero entries, and whether the recall adapter
+is the shipped `none`. All three are advisories and never change the exit code.
+
+The recall index was also never synchronized by anything, so no repository could
+reach the opt-in state even after configuring an adapter. Synchronization now
+happens at `lessons add`, which is the exact moment new recallable content
+appears and is already classified an owned mutation. That keeps `recall search`
+read-only rather than turning a read into a write. It stays silent when the
+adapter is `none`, which remains the shipped default, and a sync failure can
+never fail a lesson that was already written.
+
 ### A Lesson Decision Is Now Recordable, And Compaction Actually Runs (IMP-043 SCOPE-1, SCOPE-3)
 
 `lessons.md` is empty in every repository that has one and absent in the rest.

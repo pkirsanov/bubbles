@@ -666,6 +666,28 @@ if ! grep -qx 'improvements/' ".gitignore" 2>/dev/null; then
   ok "Added improvements/ to .gitignore"
 fi
 
+# IMP-043 SCOPE-4. The learning scaffold used to live behind --bootstrap, which
+# cmd_upgrade never passes, so a repo installed before the learning loop existed
+# could never acquire the file the loop writes to. Backfilling on upgrade beats
+# asking operators to re-bootstrap a live repo, which touches far more files
+# than the one that is missing.
+#
+# STRICTLY NON-DESTRUCTIVE: creates only when absent, never modifies an existing
+# file. An operator's accumulated lessons are not ours to rewrite.
+bubbles_scaffold_learning_seed() {
+  local lessons_path=".specify/memory/lessons.md"
+  [[ -f "$lessons_path" ]] && return 0
+  mkdir -p "$(dirname "$lessons_path")" 2>/dev/null || return 0
+  cat > "$lessons_path" <<'LESSONSEOF'
+# Lessons
+
+<!-- Skill-evolution learning loop: add one lesson per bullet line below (e.g. "- reproduce the failing scenario before writing the fix"). A lesson recorded 3+ times proposes a new/updated skill (see skillEvolution in bubbles/workflows.yaml); lines starting with '#' are ignored. The file is compacted when a lesson is added, retaining lessonsMemory.maxLines lines and archiving the rest to lessons-archive.md. -->
+LESSONSEOF
+  ok "Created .specify/memory/lessons.md (learning-loop seed)"
+  return 0
+}
+bubbles_scaffold_learning_seed
+
 # ── Install bootstrap scaffolding assets ───────────────────────────
 if [[ -d "$TEMP_DIR/templates" ]]; then
   info "Installing bootstrap templates..."
@@ -1149,17 +1171,10 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
-  # ── Scaffold: lessons.md (skill-evolution learning-loop seed) ─────
-  if [[ ! -f ".specify/memory/lessons.md" ]]; then
-    cat > ".specify/memory/lessons.md" <<'LESSONSEOF'
-# Lessons
-
-<!-- Skill-evolution learning loop: add one lesson per bullet line below (e.g. "- reproduce the failing scenario before writing the fix"). A lesson recorded 3+ times proposes a new/updated skill (see skillEvolution in bubbles/workflows.yaml); lines starting with '#' are ignored. The file is compacted when a lesson is added, retaining lessonsMemory.maxLines lines and archiving the rest to lessons-archive.md. -->
-LESSONSEOF
-    ok "Created .specify/memory/lessons.md (skill-evolution seed)"
-    CREATED_COUNT=$((CREATED_COUNT + 1))
-  else
-    warn "Skipped .specify/memory/lessons.md (already exists)"
+  # ── Scaffold: lessons.md (learning-loop seed) ────────────────────
+  # Already created unconditionally above (IMP-043 SCOPE-4); this branch only
+  # reports it so the bootstrap summary counts stay accurate.
+  if [[ -f ".specify/memory/lessons.md" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
