@@ -419,6 +419,29 @@ echo "Repository: $REPO_ROOT"
 echo "Install mode: $INSTALL_MODE"
 echo
 
+# Resolve the managed interpreter for every check this run spawns.
+#
+# cli.sh does this before dispatch, so `cli.sh framework-validate` has satisfied
+# python3 while `bash framework-validate.sh` does not -- and the latter is a real
+# entry point: v5.3-selftest runs the DOWNSTREAM copy exactly that way. Without
+# it, every python-dependent check reads an empty registry and reports a content
+# mismatch instead of a missing module. That discrepancy produced a check that
+# passed through one entry point and failed through the other, with nothing
+# naming the difference.
+#
+# Placed AFTER the install-mode banner and guarded by a file test, because
+# BUG-021: an unconditional source of a sibling helper at the top of this file
+# kills the run before install-mode is printed whenever the helper is absent.
+# activate is a no-op when PATH's python3 already satisfies, so an operator's own
+# working interpreter is never displaced.
+if [[ -f "$SCRIPT_DIR/python-env.sh" ]]; then
+  # shellcheck source=bubbles/scripts/python-env.sh
+  source "$SCRIPT_DIR/python-env.sh"
+  if declare -F bubbles_python_activate >/dev/null 2>&1; then
+    bubbles_python_activate >/dev/null 2>&1 || true
+  fi
+fi
+
 run_check "Repository drift report (informational)" bash "$SCRIPT_DIR/repo-drift-report.sh" --repo-root "$REPO_ROOT"
 run_check "Gate-catalog freshness advisory (informational, IMP-005)" bash "$SCRIPT_DIR/gate-catalog-freshness.sh" --repo-root "$REPO_ROOT"
 run_check_self_only "Portable surface agnosticity" bash "$SCRIPT_DIR/agnosticity-lint.sh" --quiet

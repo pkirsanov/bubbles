@@ -31,6 +31,24 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### framework-validate Resolves Its Own Interpreter, Whichever Way It Is Entered
+
+`cli.sh` activates the managed Python environment before dispatch, so
+`cli.sh framework-validate` ran with a satisfied `python3` while
+`bash framework-validate.sh` did not. Both are real entry points — `v5.3-selftest`
+runs the downstream copy exactly the second way — so a python-dependent check
+passed through one and failed through the other, and nothing named the
+difference. What it printed instead was a content mismatch: `scopeKinds mismatch:
+got ''`, an empty registry read, when the actual condition was
+`ModuleNotFoundError: No module named 'yaml'`.
+
+The validator now resolves the managed interpreter itself, after the install-mode
+banner and behind a file test. The placement is deliberate: BUG-021 recorded that
+an unconditional source of a sibling helper at the top of this file kills the run
+before install-mode is printed whenever that helper is absent. Activation is a
+no-op when the interpreter already on PATH satisfies, so an operator's working
+environment is never displaced.
+
 ### A Downstream Install Now Validates Itself With No Enumerated Exceptions
 
 `known_downstream_failures` in `v5.3-selftest.sh` is empty. It held six entries
