@@ -31,6 +31,34 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Metrics Registry Now Describes What Is Actually Produced (IMP-044 SCOPE-2 / REG-14)
+
+`metrics.activityTracking.measuredDimensions` declared eight dimensions against a
+store whose records carry timestamp, command, subcommand, result, durationMs,
+target and args. Six of the eight named no producer anywhere, so the registry
+described a measurement nobody was taking. A declared dimension the record shape
+cannot carry is a claim, not a setting.
+
+Nothing was deleted from the framework — the dimensions moved to the block that
+names their real producer. `activityTracking` keeps the two the CLI plane
+genuinely emits. A new `gateTelemetry` block names
+`.specify/runtime/gate-hits.jsonl` and `gate-hit-log.sh`, and records that it is
+always-on regardless of the `metrics.enabled` toggle. `derivedFromState` names
+`executionHistory`, which is how `bubbles.retro` already computes those four.
+`referenceClosure` names `bundle-cost-report.sh`.
+
+### A Schema Regression From The Gates Removal (IMP-042 SCOPE-13 follow-up)
+
+Deleting the generated gates block left `workflows.schema.json` still declaring
+`gates` a required property, so `yaml-schema-validate` failed on the very file
+the removal produced. The requirement is dropped; the `gates` shape is retained
+so a downstream tree still carrying the pre-removal copy validates rather than
+erroring mid-upgrade.
+
+This was mine, and the surrounding selftests did not catch it: they resolve modes
+and gates through the registry, which is exactly the path the removal made
+correct. Only the schema check reads the document as a whole.
+
 ### The Config Writer Deleted Every Key It Did Not Recognise (IMP-044 SCOPE-3 / REG-15)
 
 `save_control_plane_config` rendered a fixed template. Every key that template

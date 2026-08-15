@@ -378,24 +378,59 @@ metrics:
     perAgentTracking: true
     perSpecTracking: true
     perScopeTracking: true
+    # IMP-044 SCOPE-2 (REG-14). This list previously declared eight dimensions
+    # against a store whose records carry timestamp, command, subcommand,
+    # result, durationMs, target and args. Six of the eight named no producer
+    # anywhere, so the registry described a measurement nobody took. A declared
+    # dimension the record shape cannot carry is a claim, not a setting.
+    #
+    # What remains is what THIS plane actually produces.
     measuredDimensions:
-    - invocationCount # How many times each agent was called
-    - phaseDuration # Wall-clock seconds per phase (from terminal timestamps)
+    - invocationCount # Counted from one activity record per CLI invocation
+    - durationMs # Wall-clock milliseconds, written on the same record
+    # The dimensions removed from this list were not deleted from the framework;
+    # they moved to the block that names their real producer, below.
+
+  # Produced by bubbles/scripts/gate-hit-log.sh into an ALWAYS-ON runtime store,
+  # independent of the `metrics.enabled` toggle above. Records carry per-gate
+  # outcomes, which is why gate history survives even when event metrics are off.
+  gateTelemetry:
+    storageFile: .specify/runtime/gate-hits.jsonl
+    producer: bubbles/scripts/gate-hit-log.sh
+    reportCommand: "bubbles/scripts/gate-hit-log.sh report"
+    measuredDimensions:
+    - gatePassFailRate # Per gate ID pass/fail ratio, from kind:"gate" records
+    - parentExpansionRate # Runs using parent-expansion, from kind:"run" records
+    # Retirement evidence counts sourceClass=product only; fixture and selftest
+    # runs are excluded by default (IMP-042 SCOPE-17).
+
+  # Derived from state.json executionHistory, which is the only place agent
+  # identity per phase actually exists. bubbles.retro already computes these the
+  # same way; naming the source here stops the registry implying the activity
+  # store holds them.
+  derivedFromState:
+    source: state.json executionHistory
+    measuredDimensions:
+    - phaseDuration # Wall-clock seconds per phase
     - retryCount # Self-healing retries consumed vs budget
-    - gatePassFailRate # Per gate ID pass/fail ratio
     - scopeCompletionTime # First implement invocation to Done status
-    - linesChanged # git diff --stat per scope
     - phaseSkipRate # Skipped vs executed phases
-    # referenceClosureProxy = effective bundle bytes x dispatch count, emitted
-    # by bundle-cost-report.sh, which is its producer. NOT a token count and NOT
-    # a dollar figure: it is a measured byte size multiplied by a counted
-    # dispatch, so it is comparable over time without inventing either of the
-    # two numbers below. Bundle size alone under-states the orchestrator, which
-    # is dispatched far more often than any specialist. Named for reachability
-    # rather than spend, because a reference closure is not a cost.
-    # (IMP-027 SCOPE-6 / COST-1; renamed IMP-039, registry aligned IMP-044
-    # REG-14 after the declared name outlived the emitted one.)
+
+  # Produced by bubbles/scripts/bundle-cost-report.sh, not by any store above.
+  referenceClosure:
+    producer: bubbles/scripts/bundle-cost-report.sh
+    measuredDimensions:
+    # referenceClosureProxy = effective bundle bytes x dispatch count. NOT a
+    # token count and NOT a dollar figure: it is a measured byte size multiplied
+    # by a counted dispatch, so it is comparable over time without inventing
+    # either of the two numbers below. Bundle size alone under-states the
+    # orchestrator, which is dispatched far more often than any specialist.
+    # Named for reachability rather than spend, because a reference closure is
+    # not a cost. (IMP-027 SCOPE-6 / COST-1; renamed IMP-039, registry aligned
+    # IMP-044 REG-14 after the declared name outlived the emitted one.)
     - referenceClosureProxy
+    # linesChanged is git-derived, not stored: `git diff --stat` per scope.
+    - linesChanged
     # Dimensions explicitly NOT tracked (not measurable):
     # - tokenCount            # Not exposed by the VS Code Copilot API; readable
     #                         # ONLY through a configured usage adapter
