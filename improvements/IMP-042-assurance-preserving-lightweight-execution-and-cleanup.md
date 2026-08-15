@@ -462,11 +462,26 @@ result is that the v5 mode surface is NOT removable debt:
 - All 61 entries appear across the seven downstream repositories (framework-managed subtrees excluded from the scan).
 - 27 of the 61 are live `state.json` mode values across 1,888 downstream state files. `bugfix-fastlane` alone occurs 2,309 times, `full-delivery` 1,402.
 
-So the removal train does not run against modes. Remaining:
+So the removal train does not run against modes.
 
-- Inventory deprecated flags, framing paths, and legacy schemas -- surfaces OTHER than the v5 mode keys, which are structural.
-- Announce one versioned removal train once a candidate with genuinely zero consumers exists.
-- Add migration commands and a release-note matrix for whatever that train carries.
+The inventory of the OTHER surfaces is now done, and it is very small. Scanning
+every framework `*.sh`, `*.yaml` and `*.json` for deprecation markers returns 865
+hits, of which almost all are domain vocabulary (`superseded` scope sections,
+`legacy` in selftest case names) rather than declared-deprecated surfaces.
+Filtering to surfaces that DECLARE themselves deprecated leaves exactly two:
+
+- `done-spec-audit.sh --fix`, which warns "use `--reopen-failing` with `--recertify-all`". Its only consumer in the entire repository is its own selftest, which asserts the deprecation guard. Zero production consumers.
+- The `passes: N` adversarial-aggregate compatibility syntax, still accepted and covered by its own selftest case.
+
+Two legacy SCHEMA surfaces were checked and are NOT candidates.
+`workflows/aliases.yaml` `v5Aliases` has six readers and is structurally load
+bearing, as established above. `legacyOutcomeStates` remains declared in
+`workflows.yaml` and read by the strict-terminal-status guard surface, so it is a
+grandfathered read the scope explicitly says to keep.
+
+Remaining:
+
+- Announce one versioned removal train carrying those two candidates, with migration commands and a release-note matrix. Both are downstream-visible CLI/format breaks, so the train needs a deliberate VERSION cut; the framework's convention is that a maintainer bumps `VERSION` explicitly, which is why this is staged rather than taken unilaterally here.
 - Keep persisted v5 registry keys and grandfathered artifact reads. Confirmed required by the evidence above.
 - Keep legacy terminal-state readers while old artifacts remain.
 
