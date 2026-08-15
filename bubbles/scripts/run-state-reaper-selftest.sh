@@ -61,8 +61,21 @@ fi
 # framework at its own repo-relative path instead of assuming the checkout
 # already carries it -- this is also what makes the selftest exercise the
 # working-tree code rather than HEAD.
-FRAMEWORK_TOPLEVEL="$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$REPO_ROOT")"
-FRAMEWORK_REL="${FRAMEWORK_DIR#"$FRAMEWORK_TOPLEVEL"/}"
+#
+# Both paths are resolved with `pwd -P`. `pwd` reports the LOGICAL path while
+# `git rev-parse --show-toplevel` reports the physical one, so under a symlinked
+# root -- /tmp and /var on macOS -- the prefix strip below silently fails and
+# leaves an ABSOLUTE path. That path still exists, so every command keeps
+# working while pointing at the wrong tree, and the reaper then edits a registry
+# this selftest never inspects.
+FRAMEWORK_TOPLEVEL="$(cd "$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$REPO_ROOT")" && pwd -P)"
+FRAMEWORK_PHYSICAL_DIR="$(cd "$FRAMEWORK_DIR" && pwd -P)"
+FRAMEWORK_REL="${FRAMEWORK_PHYSICAL_DIR#"$FRAMEWORK_TOPLEVEL"/}"
+if [[ "$FRAMEWORK_REL" == /* || "$FRAMEWORK_REL" == "$FRAMEWORK_PHYSICAL_DIR" ]]; then
+  echo "FAIL: could not resolve the framework directory relative to the repository root" >&2
+  echo "       framework=$FRAMEWORK_PHYSICAL_DIR root=$FRAMEWORK_TOPLEVEL" >&2
+  exit 1
+fi
 mkdir -p "$WT/$FRAMEWORK_REL"
 cp -R "$FRAMEWORK_DIR/." "$WT/$FRAMEWORK_REL/"
 if [[ -d "$FRAMEWORK_TOPLEVEL/.specify/memory" ]]; then

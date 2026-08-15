@@ -59,7 +59,13 @@ with the framework's downstream behaviour.
 inside a throwaway worktree. The framework lives at `.github/bubbles/` once
 installed, and a repository that has not committed its install leaves that
 worktree with no framework in it at all, so the copy failed outright. It now
-materialises the live framework at its own repo-relative path.
+materialises the live framework at its own repo-relative path, resolved with
+`pwd -P` on both sides: `pwd` reports the logical path while `git rev-parse
+--show-toplevel` reports the physical one, so under a symlinked root — `/tmp` and
+`/var` on macOS — the prefix strip silently produced an absolute path that still
+existed, and the selftest drove the wrong tree's CLI while asserting against a
+registry nothing had touched. That is the same vacuous-pass signature the bare
+`timeout` defect had. The strip result is now checked instead of trusted.
 
 `continuation-routing-selftest` asserted a claim against the framework `README.md`,
 which resolves to `.github/README.md` downstream — a file the installer never
