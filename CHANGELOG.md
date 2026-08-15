@@ -31,6 +31,37 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### A Lesson Decision Is Now Recordable, And Compaction Actually Runs (IMP-043 SCOPE-1, SCOPE-3)
+
+`lessons.md` is empty in every repository that has one and absent in the rest.
+The components are not the problem: the writer, the clustering engine, and the
+recall index each pass their own selftest. The integration is.
+
+Two integration defects are fixed here.
+
+The result envelope had nowhere to record the lesson decision, so an agent that
+correctly concluded a run produced nothing generalizable left no trace of having
+decided. The envelope schema now declares an optional `learning` object with a
+closed `disposition` of `captured`, `not-applicable`, or `deferred`. This is not
+a per-run lesson quota — `execution-ops.md` argues that forcing one lesson per
+run manufactures filler and degrades clustering, and that reasoning stands. What
+is recorded is that the decision was made.
+
+`result-envelope-validate.sh` refuses `captured` with no `lessonId`, and
+`deferred` with a reason under twenty characters, because "later" is not a
+reason. The refusal lives in the hard-check path that runs in every mode,
+including `--advisory`, rather than in schema validation alone: the script exits
+0 and skips schema checks entirely when `python3` or `jsonschema` is missing, so
+a capture claim would go unchecked exactly where dependencies are thinnest.
+Envelopes with no `learning` key stay valid, so nothing existing breaks.
+
+Compaction was declared under `autoCompactTrigger: workflow_start`, an event no
+host fires, so it only ever ran when a human typed the subcommand. It now runs
+at capture, which is the moment the file grows, and reads
+`lessonsMemory.maxLines` instead of the 150 that `cli.sh` hardcoded twice. The
+two `reviewTrigger: workflow_start` keys are removed for the same reason: a key
+naming an event the framework cannot fire is the defect, not the schedule.
+
 ### Gates Are Defined In One File Again (IMP-042 SCOPE-13)
 
 `bubbles/workflows.yaml` carried a 1,027-line `gates:` map generated verbatim

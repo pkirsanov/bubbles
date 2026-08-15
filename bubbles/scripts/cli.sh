@@ -3803,6 +3803,52 @@ print(json.dumps(metadata, ensure_ascii=True, separators=(",", ":"), sort_keys=T
     "$source_path" "$source_selector" "$source_digest"
 }
 
+# IMP-043 SCOPE-3. `workflows.yaml` declared `lessonsMemory.maxLines` and nothing
+# read it, while this file hardcoded 150 twice. A declared limit no code consults
+# is a claim, not a setting. Reads the registry, falls back to 150 only when the
+# key is genuinely absent.
+bubbles_lessons_max_lines() {
+  local workflows="$REPO_ROOT/bubbles/workflows.yaml"
+  [[ -f "$workflows" ]] || workflows="$REPO_ROOT/.github/bubbles/workflows.yaml"
+  local declared=""
+  if [[ -f "$workflows" ]]; then
+    declared="$(awk '
+      /^lessonsMemory:/ { inside = 1; next }
+      inside && /^[a-zA-Z]/ { inside = 0 }
+      inside && /^[[:space:]]+maxLines:[[:space:]]*[0-9]+/ {
+        gsub(/[^0-9]/, "", $0); print; exit
+      }
+    ' "$workflows" 2>/dev/null)"
+  fi
+  if [[ "$declared" =~ ^[0-9]+$ ]] && [[ "$declared" -gt 0 ]]; then
+    printf '%s' "$declared"
+  else
+    printf '150'
+  fi
+}
+
+bubbles_lessons_compact() {
+  local lessons_file="$1" verbosity="${2:-verbose}" keep
+  keep="$(bubbles_lessons_max_lines)"
+  if [[ ! -f "$lessons_file" ]]; then
+    [[ "$verbosity" == "verbose" ]] && echo "No lessons file found."
+    return 0
+  fi
+  local line_count
+  line_count=$(wc -l < "$lessons_file" | tr -d ' ')
+  if [[ "$line_count" -gt "$keep" ]]; then
+    local archive_file="$REPO_ROOT/.specify/memory/lessons-archive.md"
+    local cut_at=$((line_count - keep))
+    head -n "$cut_at" "$lessons_file" >> "$archive_file"
+    tail -n "$keep" "$lessons_file" > "$lessons_file.tmp"
+    mv "$lessons_file.tmp" "$lessons_file"
+    echo "✅ Archived $cut_at line(s) to lessons-archive.md. Kept $keep."
+  elif [[ "$verbosity" == "verbose" ]]; then
+    echo "✅ File is under $keep lines, no compaction needed."
+  fi
+  return 0
+}
+
 cmd_lessons() {
   local lessons_file="$REPO_ROOT/.specify/memory/lessons.md"
   local subcmd="${1:-}"
@@ -3899,26 +3945,14 @@ cmd_lessons() {
       fi
       printf '%s\n' "$entry" >> "$lessons_file"
       echo "✅ Recorded 1 lesson in .specify/memory/lessons.md"
+      # IMP-043 SCOPE-3. Compaction used to hang off `autoCompactTrigger:
+      # workflow_start`, an event the framework cannot fire, so it never ran
+      # unless a human typed the subcommand. Capture is the moment the file
+      # grows, so it is the moment to bound it.
+      bubbles_lessons_compact "$lessons_file" quiet
       ;;
     compact)
-      if [[ ! -f "$lessons_file" ]]; then
-        echo "No lessons file found."
-        return
-      fi
-      local line_count
-      line_count=$(wc -l < "$lessons_file")
-      echo "Compacting lessons.md ($line_count lines)..."
-      # Simple compaction: keep last 150 lines
-      if [[ "$line_count" -gt 150 ]]; then
-        local archive_file="$REPO_ROOT/.specify/memory/lessons-archive.md"
-        local cut_at=$((line_count - 150))
-        head -n "$cut_at" "$lessons_file" >> "$archive_file"
-        tail -n 150 "$lessons_file" > "$lessons_file.tmp"
-        mv "$lessons_file.tmp" "$lessons_file"
-        echo "✅ Archived $cut_at lines to lessons-archive.md. Kept 150 lines."
-      else
-        echo "✅ File is under 150 lines, no compaction needed."
-      fi
+      bubbles_lessons_compact "$lessons_file" verbose
       ;;
     --all)
       if [[ -f "$lessons_file" ]]; then

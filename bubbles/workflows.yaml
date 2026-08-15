@@ -240,8 +240,11 @@ customGatesDiscovery:
 lessonsMemory:
   file: .specify/memory/lessons.md
   archiveFile: .specify/memory/lessons-archive.md
+  # Read by bubbles_lessons_max_lines() in cli.sh, which compacts at capture.
+  # There is deliberately no trigger key here: `autoCompactTrigger: workflow_start`
+  # named an event the framework cannot fire, so compaction never ran unless a
+  # human typed the subcommand (IMP-043 SCOPE-3).
   maxLines: 150
-  autoCompactTrigger: workflow_start
   recencyTiers:
     recent: 30d # Full detail
     aging: 90d # Problem + fix only
@@ -281,7 +284,9 @@ skillEvolution:
   autoCreate: false # Propose only, user approves
   autoUpdate: false # Propose only, user approves
   reviewAgent: bubbles.super
-  reviewTrigger: workflow_start # Surface proposals at start of workflow
+  # No reviewTrigger key: `workflow_start` was an event nothing fires. Proposals
+  # are regenerated on every `skill-proposals` call, so the surface is already
+  # self-refreshing (IMP-043 SCOPE-3).
   proposalFormat: |
     ## Skill Proposal: {skill_name}
     - Pattern: {pattern_description}
@@ -324,7 +329,8 @@ developerProfile:
     agingDays: 180 # Entries older than this only suggest, don't auto-resolve
     staleAction: surface_for_review # Surfaced for user review
     reviewAgent: bubbles.super
-    reviewTrigger: workflow_start
+    # No reviewTrigger key: `workflow_start` names an event no host fires
+    # (IMP-043 SCOPE-3). Staleness surfaces when the profile is read.
     reviewMessage: |
       Your developer profile has {N} stale preferences (>180 days).
       Review and confirm/remove? [Show / Skip / Clear all stale]
