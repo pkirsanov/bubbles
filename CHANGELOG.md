@@ -31,6 +31,23 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### A Downstream Install Now Validates Itself With No Enumerated Exceptions
+
+`known_downstream_failures` in `v5.3-selftest.sh` is empty. It held six entries
+at review and each one turned out to be a check asserting a framework-source-repo
+property while scheduled as portable, or a deny-list that never loaded. T3c now
+requires the downstream run to exit 0 outright.
+
+Refusing an unreadable deny-list needed one more distinction to be correct. A
+tree with no `bubbles/registry/` directory at all is not a broken payload — it is
+a deliberately partial fixture, such as the stub tree
+`repo-drift-report-selftest` stages to prove this validator runs non-blockingly,
+and the first version of the refusal failed that fixture. The refusal now fires
+only when the registry directory exists and the deny-list within it does not,
+which is the shape of an incomplete install. A partial tree proceeds and says so,
+because the point of the refusal is that an empty deny-list silently decides what
+runs.
+
 ### The Intermittent Scan Failure Was A Descriptor It Inherited, Not The Code It Scanned
 
 With the reason no longer discarded, a full run finally said what had been going

@@ -1261,7 +1261,7 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
     failures=$((failures + 1))
     failed_check_labels+=("Discovered selftest sweep (IMP-027 SCOPE-2b)")
     echo
-  elif [[ ! -r "$selftest_denylist" ]]; then
+  elif [[ ! -r "$selftest_denylist" && -d "$SCRIPT_DIR/../registry" ]]; then
     echo "==> Discovered selftest sweep (IMP-027 SCOPE-2b)"
     echo "FAIL: cannot read $selftest_denylist to identify denied selftests"
     bubbles_ci_annotate_failure "FAIL: cannot read $selftest_denylist to identify denied selftests"
@@ -1275,11 +1275,20 @@ if [[ "$LIST_TIER_ONLY" != "true" ]]; then
     # non-space character is '#' are ignored, and a name must match a whole
     # line exactly.
     selftest_denied_names=$'\n'
-    while IFS= read -r selftest_deny_line || [[ -n "$selftest_deny_line" ]]; do
-      selftest_deny_trimmed="${selftest_deny_line#"${selftest_deny_line%%[![:space:]]*}"}"
-      [[ -z "$selftest_deny_trimmed" || "$selftest_deny_trimmed" == '#'* ]] && continue
-      selftest_denied_names+="$selftest_deny_line"$'\n'
-    done <"$selftest_denylist"
+    if [[ -r "$selftest_denylist" ]]; then
+      while IFS= read -r selftest_deny_line || [[ -n "$selftest_deny_line" ]]; do
+        selftest_deny_trimmed="${selftest_deny_line#"${selftest_deny_line%%[![:space:]]*}"}"
+        [[ -z "$selftest_deny_trimmed" || "$selftest_deny_trimmed" == '#'* ]] && continue
+        selftest_denied_names+="$selftest_deny_line"$'\n'
+      done <"$selftest_denylist"
+    else
+      # No registry directory at all: a deliberately partial tree, such as the
+      # stub fixture repo-drift-report-selftest stages to prove this validator
+      # runs non-blockingly. Proceeding is correct there, but it must be SAID --
+      # the whole point of the branch above is that an empty deny-list silently
+      # decides what runs.
+      echo "NOTE: no registry directory at $SCRIPT_DIR/../registry; running the sweep with an EMPTY deny-list"
+    fi
 
     # Which selftests are ALREADY wired. Decided from real run_check invocations
     # rather than from raw source text: a substring match treats ANY mention as
