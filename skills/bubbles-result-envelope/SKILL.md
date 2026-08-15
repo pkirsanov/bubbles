@@ -123,12 +123,42 @@ Every finding raised in this invocation MUST appear in EXACTLY ONE of:
 
 A finding that disappears between rounds is the cherry-pick anti-pattern and is blocked by the workflow agent's post-fix-cycle verification.
 
+## Learning disposition (mutable runs)
+
+Closing an envelope after a run that CHANGED something is the moment to answer
+one question: did this run teach anything worth keeping? Record the answer in the
+optional `learning` object. There are exactly three legal answers.
+
+| `disposition` | Means | Also required |
+|---|---|---|
+| `captured` | A lesson was written | `lessonId` naming it |
+| `not-applicable` | The run produced nothing generalizable | nothing |
+| `deferred` | A lesson is owed but was not written now | `reason`, 20+ characters |
+
+```json
+"learning": { "disposition": "captured", "lessonId": "lesson-9f2c1a" }
+```
+
+Write the lesson with `bubbles.sh lessons add --problem … --root-cause … --fix …
+--applies-when …`, which returns the id and compacts the file.
+
+**This is not a quota.** `execution-ops.md` argues that forcing one lesson per run
+manufactures filler and degrades clustering, and that argument is preserved
+intact. `not-applicable` is a legitimate, common, and unquestioned answer. What
+is recorded is that the decision was MADE — an agent that decided correctly used
+to leave no trace of having decided at all.
+
+`result-envelope-validate.sh` refuses only what it can falsify: `captured` with
+no resolvable `lessonId`, and `deferred` with a reason shorter than twenty
+characters. Omitting the whole object stays valid.
+
 ## Common mistakes
 - **Claiming `completed_owned` while leaving unchecked DoD items** — guard rejects this.
 - **A diagnostic agent emitting `completed_owned`** — read-only/analysis agents own no DoD; they emit `completed_diagnostic`.
 - **Emitting `done_with_concerns` as a current outcome** — it is legacy-read-only; use `completed_owned`/`completed_diagnostic` with `observations[]` for non-blocking notes, or `blocked` for anything a gate would refuse. Never use an observation to dodge a fixable bug.
 - **Setting `nextRequiredOwner` to `bubbles.workflow`** — workflow is the dispatcher, not the next owner. Name the actual specialist.
 - **Using `@bubbles.X` in envelope or output** — the slash convention applies everywhere: `/bubbles.X` only.
+- **Claiming `learning.disposition: captured` without writing the lesson** — the validator refuses it in every mode, including `--advisory`.
 
 ## Workflow-only continuation (NON-NEGOTIABLE)
 Read-only/advisory surfaces (recap, status, handoff, super, retro, recommend-first) MUST suggest `/bubbles.workflow <mode>` for continuation, not `/bubbles.implement`, `/bubbles.test`, `/bubbles.validate`, or `/bubbles.audit` directly. Direct specialist commands are valid only when the user explicitly requests a surgical invocation.
