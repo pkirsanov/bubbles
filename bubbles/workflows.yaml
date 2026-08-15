@@ -1408,13 +1408,16 @@ metrics:
     - scopeCompletionTime # First implement invocation to Done status
     - linesChanged # git diff --stat per scope
     - phaseSkipRate # Skipped vs executed phases
-    # bundleCostProxy = effective bundle bytes x dispatch count, from
-    # bundle-cost-report.sh. NOT a token count and NOT a dollar figure: it is a
-    # measured byte size multiplied by a counted dispatch, so it is comparable
-    # over time without inventing either of the two numbers below. Bundle size
-    # alone under-states the orchestrator, which is dispatched far more often
-    # than any specialist. (IMP-027 SCOPE-6 / COST-1.)
-    - bundleCostProxy
+    # referenceClosureProxy = effective bundle bytes x dispatch count, emitted
+    # by bundle-cost-report.sh, which is its producer. NOT a token count and NOT
+    # a dollar figure: it is a measured byte size multiplied by a counted
+    # dispatch, so it is comparable over time without inventing either of the
+    # two numbers below. Bundle size alone under-states the orchestrator, which
+    # is dispatched far more often than any specialist. Named for reachability
+    # rather than spend, because a reference closure is not a cost.
+    # (IMP-027 SCOPE-6 / COST-1; renamed IMP-039, registry aligned IMP-044
+    # REG-14 after the declared name outlived the emitted one.)
+    - referenceClosureProxy
     # Dimensions explicitly NOT tracked (not measurable):
     # - tokenCount            # Not exposed by the VS Code Copilot API; readable
     #                         # ONLY through a configured usage adapter

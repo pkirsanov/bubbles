@@ -303,7 +303,18 @@ Remaining:
 
 ### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
 
-- Rename link-closure metrics to reference-closure metrics everywhere.
+Delivered: the reference-closure rename is now complete EVERYWHERE. IMP-039
+renamed `costProxy` to `referenceClosureProxy` in `bundle-cost-report.sh` and
+`bubbles.retro.agent.md`, but `workflows.yaml` kept declaring `bundleCostProxy`,
+so the metrics registry named a dimension its producer had stopped emitting and
+anything reading the registry for that field found nothing. The registry now
+declares `referenceClosureProxy` and names `bundle-cost-report.sh` as its
+producer. No live reader references the retired name; the remaining occurrences
+are historical changelog prose and the finding text that described the drift.
+This also closes the rename half of IMP-044 REG-14.
+
+Remaining:
+
 - Remove blocking prompt-cost claims based on link reachability.
 - Keep reference closure as an advisory coupling signal.
 - Deprecate global and per-agent bundle budgets after config migration.

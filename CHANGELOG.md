@@ -31,6 +31,22 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Metrics Registry Declared A Field Nothing Emits (IMP-042 SCOPE-14, IMP-044 REG-14)
+
+IMP-039 renamed the bundle metric from `costProxy` to `referenceClosureProxy` so
+a reachability proxy would stop reading as spend. The producing script and
+`bubbles.retro` were renamed. `workflows.yaml` was not.
+
+The metrics registry therefore declared `bundleCostProxy` as a measured
+dimension while `bundle-cost-report.sh` emitted `referenceClosureProxy`, so any
+reader resolving that dimension from the registry looked for a field nobody
+wrote. A registry that names a field its producer abandoned is worse than one
+that omits it, because the name looks like a guarantee.
+
+The registry now declares `referenceClosureProxy` and names
+`bundle-cost-report.sh` as its producer rather than implying the activity store
+writes it. No live reader references the retired name.
+
 ### The Consistency Check Now Validates Against The Registry (IMP-042 SCOPE-13 / REG-10, REG-12)
 
 `registry-consistency-selftest.sh` proves that every `Gxxx` referenced anywhere
