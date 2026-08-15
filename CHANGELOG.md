@@ -31,6 +31,114 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+## [7.28.0] - 2026-08-15
+
+### The Suite Was Measured Before It Was Parallelized (IMP-042 SCOPE-4)
+
+SCOPE-4 required measuring the wall-clock distribution before adding a bounded
+parallel scheduler. The measurement is now taken against a full green run, and
+it argues against the scheduler as designed:
+
+```text
+Wall clock: 2918s across 316 executed checks.
+  1017s  v5.3 downstream-install selftest      (35% of the run)
+   358s  Transition guard selftest
+   257s  Install provenance selftest
+   114s  Trust doctor selftest
+    92s  Runtime lease selftest
+    68s  Evidence-admission hardening selftest
+    67s  Repository work-boundary aggregate selftest
+    54s  Payload closure guard
+    53s  Transition contract resolver selftest
+    53s  Doctor hygiene surface selftest
+```
+
+The top ten checks are 2,133s, or 73% of the run. This replaces the figure the
+scope carried — "transition guard 611s of a 1625s downstream run" — which was
+stale in both the total and the leader.
+
+Two consequences follow. Spreading 316 checks across workers cannot reach the
+27% that is not in the top ten, and the floor of any schedule is the longest
+single check, so 1017s is a hard floor at 35% of today's run. The checks holding
+the other 38% are the ones that install into shared roots and regenerate derived
+files, which is precisely the interference the re-entrant flock guard exists to
+serialize. A scheduler would therefore buy a bounded fraction of 27% while
+adding a concurrency surface across the checks least safe to run concurrently.
+The remaining scheduler bullets are recorded as declined-on-evidence rather than
+deferred, because the scope's own last bullet anticipated this outcome.
+
+The dominant check is not a defect and is not reducible by batching. `v5.3`
+installs a real downstream tree and runs a COMPLETE `framework-validate` inside
+it, so roughly a third of the suite is a second suite by construction — that
+nesting is the only thing proving a downstream install can validate itself.
+
+One duplicated-run hypothesis was tested and refuted rather than acted on. The
+selftest appears to validate the installed tree twice, once piped to `head -30`
+for the install-mode line and once captured in full. Measured, the piped form
+costs 0s: `head` closes the pipe and the run ends on SIGPIPE. There was no
+duplicate run to batch, and removing the apparent one would have saved nothing.
+
+What batching remained was real but small. Manifest generation hashed every
+entry with a per-file call that spawns two processes each, across 876 managed
+and 105 source-only entries; `bubbles_sha256_batch` now hashes each inventory in
+one pass, taking a clean-tree generation from 16s to 13s. A short batch result
+falls back to the per-file form, so a tool difference can never silently pair a
+path with another file's hash. The other two hashing paths, `install.sh` and
+`verify-payload-integrity.sh`, were already batched under OW-005.
+
+### One Removal Train, Two Surfaces, Zero Consumers (IMP-042 SCOPE-18)
+
+The compatibility removal train is announced here and departs at 8.0.0. It
+carries exactly two surfaces, which is the whole inventory rather than a first
+batch. Scanning every framework `*.sh`, `*.yaml` and `*.json` for deprecation
+markers returns 865 hits, and almost all of them are domain vocabulary —
+`superseded` scope sections, `legacy` in selftest case names — rather than
+surfaces that declare themselves deprecated. Filtering to the surfaces that
+actually declare it leaves two.
+
+| Surface | Replacement | Removal | Measured consumers |
+| --- | --- | --- | --- |
+| `done-spec-audit.sh --fix` | `--reopen-failing` with `--recertify-all` | 8.0.0 | 0 |
+| `--passes <N>` (adversarial) | `--samples <N>` | 8.0.0 | 0 |
+| `passes: <N>` directive token | `samples: <N>` | 8.0.0 | 0 |
+
+Migration is a rename in each case:
+
+```bash
+# done-spec-audit
+bash bubbles/scripts/done-spec-audit.sh --fix                     # before
+bash bubbles/scripts/done-spec-audit.sh --reopen-failing --recertify-all  # after
+
+# adversarial posture
+bash bubbles/scripts/adversarial-resolve.sh --passes 3            # before
+bash bubbles/scripts/adversarial-resolve.sh --samples 3           # after
+
+# adversarial directive string
+"adversarial: on passes: 3"                                       # before
+"adversarial: on samples: 3"                                      # after
+```
+
+"Zero consumers" is measured, not assumed. Every consuming repository was
+scanned with its framework-managed subtree excluded, because a hit inside
+`.github/bubbles/` is the framework's own copy of itself rather than a consumer.
+`--fix` is passed in none of them, and no file uses the `passes:` syntax. Inside
+this repository the only consumer of each surface is the selftest that asserts
+its own deprecation guard.
+
+The train departs at 8.0.0 rather than here because both are downstream-visible
+breaks and this repository cannot enumerate the consumers of a public framework.
+Six repositories were measured; an unmeasured seventh is exactly what a
+deprecation window exists to protect. Announcing at a MINOR and removing at the
+MAJOR keeps the MAJOR signal meaning what the versioning scheme says it means.
+
+Two legacy schema surfaces were checked and are NOT candidates. The
+`v5Aliases` map in `workflows/aliases.yaml` has six readers and holds the
+canonical registry keys, so removing an entry breaks resolution instead of
+retiring a legacy path — all 61 entries appear across the seven downstream
+repositories, and 27 are live `state.json` mode values across 1,888 state files.
+`legacyOutcomeStates` stays declared in `workflows.yaml` and read by the
+strict-terminal-status guard, which is the grandfathered read the scope keeps.
+
 ### A Gate Is Now Defined Once (IMP-042 SCOPE-13)
 
 The generated `gates:` map is gone from `workflows.yaml` — 1,027 lines that

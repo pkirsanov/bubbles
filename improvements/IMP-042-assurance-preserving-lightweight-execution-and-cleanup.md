@@ -214,28 +214,6 @@ Remaining:
 - Adopt the shadow-first rule that `test-impact-shadow.sh` already fixes in source.
 - Report a proposed subset before any subset is permitted to skip work.
 
-### SCOPE-4 - Batched Heavy Validation (PERF-5)
-
-"Give each check a private temporary root" was treated as the prerequisite, on
-the premise that selftests use fixed scratch paths. Verified against the tree:
-that premise is stale. `capability-freshness-selftest.sh` and
-`generate-installer-selftest.sh` both `mktemp` their fixture roots with a
-per-run suffix, `/tmp/bubbles-agent-ownership-lint` does not exist anywhere, and
-no selftest writes into the repository working tree -- the apparent writes in
-`framework-health-evidence-lint-selftest.sh` are the body of a quoted heredoc
-that generates a fixture script. The comments asserting otherwise are corrected.
-
-Remaining:
-
-- Add a bounded scheduler for explicitly isolated checks.
-- Keep unknown checks serial.
-- Preserve deterministic report order by check ID or registry order.
-- Shadow serial and parallel plans on the same commit.
-- Require identical check IDs, exits, and normalized output hashes before enabling a parallel group.
-- Preserve a serial diagnostic mode for scheduler failures.
-- Establish whether concurrent checks are safe against the shared working tree and its generated files, which is the interference the re-entrant flock guard still covers.
-- Measure the wall-clock distribution first. The suite is dominated by a few checks (transition guard 611s of a 1625s downstream run), so bounded parallelism may buy less than the ordering already delivered in SCOPE-1.
-
 ### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
 
 - Add a deterministic next-step resolver.
@@ -452,38 +430,6 @@ Remaining:
 - Continue independent checks to preserve one-pass diagnostics.
 - Reuse repo-global receipts only when their input closure is unchanged.
 - Require downstream observation windows before retiring any gate.
-
-### SCOPE-18 - Compatibility Removal Train (REG-9, DOC-6)
-
-Scanned before proposing any removal, which is what this scope asked for. The
-result is that the v5 mode surface is NOT removable debt:
-
-- `bubbles/workflows/aliases.yaml` states that the v5 names remain the canonical registry KEYS, and carries the invariant that every mode in `workflows.yaml` must appear under `v5Aliases`. Removing an entry breaks resolution rather than retiring a legacy path.
-- All 61 entries appear across the seven downstream repositories (framework-managed subtrees excluded from the scan).
-- 27 of the 61 are live `state.json` mode values across 1,888 downstream state files. `bugfix-fastlane` alone occurs 2,309 times, `full-delivery` 1,402.
-
-So the removal train does not run against modes.
-
-The inventory of the OTHER surfaces is now done, and it is very small. Scanning
-every framework `*.sh`, `*.yaml` and `*.json` for deprecation markers returns 865
-hits, of which almost all are domain vocabulary (`superseded` scope sections,
-`legacy` in selftest case names) rather than declared-deprecated surfaces.
-Filtering to surfaces that DECLARE themselves deprecated leaves exactly two:
-
-- `done-spec-audit.sh --fix`, which warns "use `--reopen-failing` with `--recertify-all`". Its only consumer in the entire repository is its own selftest, which asserts the deprecation guard. Zero production consumers.
-- The `passes: N` adversarial-aggregate compatibility syntax, still accepted and covered by its own selftest case.
-
-Two legacy SCHEMA surfaces were checked and are NOT candidates.
-`workflows/aliases.yaml` `v5Aliases` has six readers and is structurally load
-bearing, as established above. `legacyOutcomeStates` remains declared in
-`workflows.yaml` and read by the strict-terminal-status guard surface, so it is a
-grandfathered read the scope explicitly says to keep.
-
-Remaining:
-
-- Announce one versioned removal train carrying those two candidates, with migration commands and a release-note matrix. Both are downstream-visible CLI/format breaks, so the train needs a deliberate VERSION cut; the framework's convention is that a maintainer bumps `VERSION` explicitly, which is why this is staged rather than taken unilaterally here.
-- Keep persisted v5 registry keys and grandfathered artifact reads. Confirmed required by the evidence above.
-- Keep legacy terminal-state readers while old artifacts remain.
 
 ## Cleanup Disposition Matrix
 
