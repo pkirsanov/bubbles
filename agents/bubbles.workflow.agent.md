@@ -691,6 +691,13 @@ Follow [workflow-phase-engine.md](bubbles_shared/workflow-phase-engine.md) for t
 Three additive `executionOptions` knobs are resolved at Phase 0; all default to today's fully-autonomous behavior:
 
 - **`autonomy` (default `full`)** — a convenience alias that sets `grillMode`/`socratic` together: `full` = `grillMode off` + `socratic false` (100% autonomous, today's default); `guarded` = `grillMode required-on-ambiguity` + a conditional `clarify` consistency gate; `interactive` = `grillMode on-demand` + `socratic true`. Explicit `grillMode`/`socratic` flags ALWAYS override the alias.
+- **`unattended`** — opt-in posture ABOVE `full`, never the default. REQUIRES a non-null `sessionBudget`; `autonomy-resolve.sh` refuses an unbounded one with `E039-UNATTENDED-UNBOUNDED`, because a run that will not stop on its own forfeits the right to be unbounded. When the resolved posture is `unattended` this agent performs four deltas:
+  1. Interactive questions are FORBIDDEN. Do not call the ask-user tool, and do not open a Socratic loop even when `socratic: true` is also present — the posture wins, and the override is logged.
+  2. Taste-decision overflow auto-resolves and is recorded, instead of routing to `bubbles.clarify` at the `maxPerPhase` threshold.
+  3. `autoCommit` resolves to `scope`. Commits land only after a scope reaches validated Done.
+  4. A `blocked` outcome whose cause is agent-solvable requires a recorded remediation attempt FIRST. An operator-only blocker (an absent credential, absent external access) remains a truthful terminal state and MUST NOT be suppressed.
+
+  The posture governs INTERACTION only. The Autonomy Floor in [critical-requirements.md](bubbles_shared/critical-requirements.md) is never waived, and a security-affecting decision is never auto-resolved — under `unattended` it produces a truthful `blocked` naming the decision rather than a guess.
 - **`sessionBudget` (all fields default `null` = unbounded)** — aggregate caps across the whole session (`maxTotalConvergenceIterations`, `maxWallClockMinutes`, `maxToolCalls`). Advisory: this workflow agent self-enforces them and, when a cap is exceeded, STOPS with a `blocked` RESULT-ENVELOPE. A budget stop is a TERMINAL stop condition of the same class as `max iterations reached` — it joins `autoEscalation.terminalStopConditions`; the run ends without pausing for a fresh prompt.
 - **`dryRun` (default `false`)** — `dryRun: plan` resolves the full plan (target specs/scopes/intended changes) and REPORTS it WITHOUT mutating code or state, then terminates the run. Extends `parallelScopes=dag-dry` to the whole workflow loop.
 
