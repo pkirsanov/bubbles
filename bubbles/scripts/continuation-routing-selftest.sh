@@ -72,7 +72,16 @@ check_pattern "$ROOT_DIR/../agents/bubbles.recap.agent.md" 'repositoryRoot: <red
 check_pattern "$ROOT_DIR/../agents/bubbles.handoff.agent.md" 'repositoryRoot: <redacted-local-root>.*pathVisibility: redacted.*actionable: false.*target: none.*preferredWorkflowMode: none' "Terminal handoff envelope uses a valid redacted projection"
 check_pattern "$ROOT_DIR/../docs/recipes/resume-work.md" 'tries to resume the active workflow context first' "Resume recipe documents active-workflow resume precedence"
 check_pattern "$ROOT_DIR/../docs/recipes/resume-work.md" 'Recap may show one next-priority candidate as `not started`; it does not start that item' "Resume recipe documents terminal recap without execution"
-check_pattern "$ROOT_DIR/../README.md" 'returns a completion recap and an unstarted next-priority candidate' "README documents the completed-state boundary"
+# The framework README is a source-repo artifact. An installed downstream tree
+# puts this selftest under .github/bubbles/scripts, so "$ROOT_DIR/.." is
+# .github/ -- which never contains a README. Assert the claim where the file
+# exists and say so explicitly everywhere else, rather than failing a
+# downstream install for a document it was never given.
+if [[ -f "$ROOT_DIR/../README.md" ]]; then
+  check_pattern "$ROOT_DIR/../README.md" 'returns a completion recap and an unstarted next-priority candidate' "README documents the completed-state boundary"
+else
+  echo "SKIP: README documents the completed-state boundary (no README alongside the framework root)"
+fi
 check_pattern "$ROOT_DIR/scripts/aliases.sh" '\[keep-going\]="resume-only"' "Keep-going alias resolves to resume-only"
 check_pattern "$ROOT_DIR/scripts/aliases.sh" '\[pick-next\]="iterate"' "Pick-next alias explicitly resolves to iterate"
 check_pattern "$ROOT_DIR/scripts/aliases.sh" '\[next-on-the-board\]="bubbles\.iterate"' "Next-on-the-board explicitly selects new work"

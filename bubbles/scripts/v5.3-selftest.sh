@@ -81,6 +81,23 @@ else
   pass "T0b: downstream root carries no source-tree markers"
 fi
 
+# The managed-doc existence lint (correctly) fails a repository that declares
+# required managed docs and has not written them. In this fixture that is an
+# adoption gap, not a defect in the install, so give the fixture the documents
+# its own resolved registry says it must have. The list is ASKED FOR rather
+# than hardcoded so it cannot drift away from the registry.
+while IFS= read -r managed_doc_path; do
+  [[ -n "$managed_doc_path" ]] || continue
+  mkdir -p "$tmp_root/$(dirname "$managed_doc_path")"
+  printf '# %s\n\nDownstream install fixture placeholder.\n' \
+    "$(basename "$managed_doc_path")" >"$tmp_root/$managed_doc_path"
+done < <(
+  cd "$tmp_root" && bash .github/bubbles/scripts/docs-registry-resolve.sh --effective 2>/dev/null | awk '
+    /^    path:[[:space:]]/ { doc_path = $2; next }
+    /^    required:[[:space:]]/ { if ($2 == "true" && doc_path != "") print doc_path; doc_path = ""; next }
+  '
+)
+
 # --- T1: downstream-mode detection ---
 ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1 | head -30 || true)"
 if grep -q "Install mode: downstream" <<<"$ds_out"; then
@@ -146,7 +163,6 @@ done
 # The list must reach empty.
 known_downstream_failures=(
   "Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)"
-  "Scenario compile lint selftest"
   "Discovered selftest: repository-binding-selftest.sh (IMP-027 SCOPE-2b)"
 )
 
