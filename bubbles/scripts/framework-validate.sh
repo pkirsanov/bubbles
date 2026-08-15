@@ -747,6 +747,12 @@ run_check "Micro-fix admission selftest (IMP-042 SCOPE-9)" bash "$SCRIPT_DIR/mic
 if [[ -x "$SCRIPT_DIR/learning-loop-selftest.sh" ]]; then
   run_check "Learning-loop selftest (IMP-043 SCOPE-6 / COV-18)" bash "$SCRIPT_DIR/learning-loop-selftest.sh"
 fi
+# IMP-044 SCOPE-3: the config writer rendered a fixed template, so every key it
+# did not name was destroyed on the next mutation, silently and with a success
+# message.
+if [[ -x "$SCRIPT_DIR/control-plane-config-merge-selftest.sh" ]]; then
+  run_check "Control-plane config merge selftest (IMP-044 SCOPE-3 / REG-15)" bash "$SCRIPT_DIR/control-plane-config-merge-selftest.sh"
+fi
 run_check "Agent-id enum lint selftest (IMP-036)" bash "$SCRIPT_DIR/agent-id-enum-lint-selftest.sh"
 run_check "Collected-test-count guard selftest (IMP-036)" bash "$SCRIPT_DIR/collected-test-count-guard-selftest.sh"
 run_check "Gate-vintage selftest (IMP-036)" bash "$SCRIPT_DIR/gate-vintage-selftest.sh"

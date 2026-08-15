@@ -31,6 +31,28 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Config Writer Deleted Every Key It Did Not Recognise (IMP-044 SCOPE-3 / REG-15)
+
+`save_control_plane_config` rendered a fixed template. Every key that template
+did not name was destroyed on the next `policy set` — silently, and with a
+success message. That took operator settings and framework blocks alike,
+including the `experienceRecall` block IMP-043 asks operators to add.
+
+A policy writer must preserve what it does not understand. The CLI-owned keys are
+now merged into the existing document rather than replacing it.
+
+The merge uses `python3`, not `jq`: `cli.sh` records in two places that its JSON
+handling is deliberately jq-free, and `lessons add` already requires `python3` on
+a mutating path, so this adds no new dependency. When `python3` is absent the
+write is refused with a named remediation rather than falling back to the
+template — overwriting an operator's config because a dependency is missing is
+the exact failure this change exists to prevent.
+
+Proven both ways. With the merge, a `grill.mode` mutation applies and both
+unknown keys survive. With the merge disabled, both are destroyed. That second
+case ships as `control-plane-config-merge-selftest.sh`, so a build where the
+merge silently does nothing cannot pass.
+
 ### The Learning Loop Is Reachable From A Repository That Already Exists (IMP-043 SCOPE-4, SCOPE-5)
 
 Every learning scaffold lived behind `install.sh --bootstrap`, and `cmd_upgrade`

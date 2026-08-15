@@ -1202,7 +1202,69 @@ save_control_plane_config() {
   }
 }
 EOF
+  # Fold the CLI-owned keys into the existing document so operator and framework
+  # keys this template does not name survive the write (IMP-044 SCOPE-3).
+  if [[ -f "$CONTROL_PLANE_CONFIG" ]]; then
+    local merge_rc=0
+    bubbles_merge_control_plane_config "$tmp_file" "$CONTROL_PLANE_CONFIG" || merge_rc=$?
+    if [[ "$merge_rc" -ne 0 ]]; then
+      rm -f "$tmp_file"
+      return "$merge_rc"
+    fi
+  fi
   mv "$tmp_file" "$CONTROL_PLANE_CONFIG"
+}
+
+# IMP-044 SCOPE-3 (REG-15). The writer above renders a FIXED template, so any key
+# it does not know about is destroyed the next time any `config` subcommand runs.
+# That silently deletes operator settings and framework blocks alike -- including
+# `experienceRecall`, which IMP-043 SCOPE-5 asks operators to add.
+#
+# A policy writer must preserve what it does not understand. This merges the
+# CLI-owned keys into the EXISTING document instead of replacing it.
+#
+# python3 rather than jq: cli.sh records at two places that its JSON handling is
+# deliberately jq-free, and `lessons add` already requires python3 on a mutating
+# path, so this adds no new dependency. Absence is a loud refusal, never a silent
+# template rewrite -- overwriting an operator's config because a dependency is
+# missing is the exact failure this function exists to prevent.
+bubbles_merge_control_plane_config() {
+  local rendered="$1" target="$2"
+  [[ -f "$target" ]] || return 1
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "cli: python3 is required to update $target without discarding unknown keys." >&2
+    echo "cli: refusing to rewrite the file from a template. Install python3 and retry." >&2
+    return 2
+  fi
+  RENDERED="$rendered" TARGET="$target" python3 - <<'PY'
+import json, os, sys
+
+rendered_path = os.environ['RENDERED']
+target_path = os.environ['TARGET']
+
+with open(rendered_path) as fh:
+    owned = json.load(fh)
+try:
+    with open(target_path) as fh:
+        existing = json.load(fh)
+except (OSError, json.JSONDecodeError):
+    # An unreadable or malformed existing file has no keys worth preserving;
+    # the rendered document is then the whole truth.
+    existing = {}
+
+def merge(base, overlay):
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merge(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+merged = merge(existing, owned)
+with open(rendered_path, 'w') as fh:
+    json.dump(merged, fh, indent=2)
+    fh.write('\n')
+PY
 }
 
 default_value_for_policy_path() {
