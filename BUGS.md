@@ -2143,6 +2143,51 @@ PyYAML/jsonschema produces ~19 unrelated `G061` failures and aborts the suite
 before Check 43 is reached. Activate the managed environment first
 (`bubbles/scripts/python-env.sh`), or the sibling cases are never exercised.
 
+### Second facet — `cmd_parts` unwraps only a bare leading `bash`/`sh`
+
+Fixing the distinctness rule above exposed a second identity-normalization
+defect in the same check. `cmd_parts` strips only a single leading `bash` or
+`sh` token, so one command spelled three ordinary ways resolves to three
+different families:
+
+| Recorded command | `command_family` |
+| --- | --- |
+| `node -e <script>` | `node` |
+| `env PAGE=p node -e <script>` | `env` |
+| `zsh -c 'PAGE=p node -e <script>'` | `zsh` |
+
+All three ran the same script over the same page, in one scope, with distinct
+session and timestamp provenance. Because the families differ they are treated
+as unrelated commands sharing one stdout, and the group is refused — again the
+re-spelling case the check promises to tolerate. `bash -c <script>` is affected
+too: today it strips `bash` and leaves `-c` as the family.
+
+Generalizing the strip to shell wrappers, `env`, and leading `VAR=value`
+assignments collapses all three spellings to `family=node` with one identity, so
+the group stops being a multi-identity collision at all:
+
+```jq
+def strip_wrappers:
+  if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
+    then (if ((.[1] // "") == "-c") then .[2:] else .[1:] end | strip_wrappers)
+  elif ((.[0] // "") == "env") then (.[1:] | strip_wrappers)
+  elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*=")) then (.[1:] | strip_wrappers)
+  else . end;
+def cmd_parts:
+  ( . / " " | map(select(length > 0)) ) | strip_wrappers;
+```
+
+Both facets are required to clear the downstream feature; the distinctness fix
+alone leaves the wrapper case blocking. With both applied, the downstream
+transition guard reports `failureCount: 0, verdict: PASS`, and the guard still
+discriminates across sibling specs in that repository (observed 67, 4, 1, 0, 30,
+0 failures), so it is not passing by going quiet.
+
+Note `category=other` is also reported for these receipts: an inline `node -e`
+script matches no category heuristic. That is conservative and was left alone —
+once the wrappers normalize, the receipts share one identity and the category
+never has to carry the decision.
+
 
 
 
