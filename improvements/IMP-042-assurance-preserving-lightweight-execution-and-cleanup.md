@@ -229,6 +229,21 @@ available before the work starts, not after it lands.
 
 ### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
 
+Checked for a partial first increment and there is not one, for a reason the
+framework already enforces. Neither piece exists yet: no next-step resolver and
+no persisted cursor, where the only `cursor` matches in the tree are unrelated
+awk locals in `adversarial-resolve.sh`. Shipping the resolver alone would add a
+SECOND capability with no production consumer, which is the state
+`phase-relevance-resolve.sh` is already in -- its only reference outside itself
+is `framework-validate.sh` scheduling its selftest. G127 requires every shipped
+capability to declare a non-empty `consumers:` list whose paths exist, and
+`capability-consumer-naming.sh` closes that loop from the other end for
+executable consumers.
+
+The coordinator is what consumes both the new resolver and the existing
+phase-relevance resolver, so resolver, cursor state and coordinator land
+together or the first one lands unconsumed and unverifiable.
+
 - Add a deterministic next-step resolver.
 - Persist mode digest, phase ordinal, phase occurrence, scope, round, and last accepted result digest.
 - Distinguish repeated phases such as `validate#1` and `validate#2`.
