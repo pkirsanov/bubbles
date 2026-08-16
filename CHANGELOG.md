@@ -31,6 +31,30 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Payload Classes Already Have One Authority (IMP-042 SCOPE-12 closeout)
+
+The last open payload bullet asked for generated, optional, and historical
+classes to be made explicit alongside managed and source-only. Checked against
+the enforcement surface rather than assumed, and the classes that carry meaning
+already exist there.
+
+`verify-payload-integrity.sh` states the contract in one place: every managed
+entry is REQUIRED unless the active install profile explicitly omits it, the
+agents-only profile may omit `instructions/` and `skills/`, a registered
+optional skill may be absent until a repository opts in, and any other missing
+managed file is a hard failure. It receives the install profile explicitly and
+reads the installed optional-skill registry, so only contract-declared omissions
+are allowed. Required and optional are therefore not implicit; they are
+enforced, with the profile and the skill registry as their authority.
+Source-only is a separate manifest section, and historical is now the named
+`demoted_source_only_docs` class.
+
+That leaves labelling those classes a second time inside the manifest, which
+would give one classification two authorities that can disagree. This release
+deleted the generated `gates:` block for exactly that reason. Declined on the
+same ground rather than carried as pending work, and recorded here so the next
+reader does not re-propose it.
+
 ### The Manifest Now Governs Which Docs Ship (IMP-042 SCOPE-12)
 
 The scope is called manifest-driven downstream payload. Docs were not
