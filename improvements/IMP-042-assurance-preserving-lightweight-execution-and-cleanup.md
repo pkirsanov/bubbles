@@ -214,6 +214,25 @@ available before the work starts, not after it lands.
 
 ### SCOPE-3 - Dependency-Complete Receipts And Affected Execution (PERF-4, COV-16)
 
+Depends on SCOPE-2, and the dependency is structural rather than a sequencing
+preference. A receipt keyed by check ID cannot be written while no check has an
+ID: `checkId` appears three times in the whole tree and one of them is
+`core-tier-pattern-lint.sh` line 21 saying that a real `checkId` is the point at
+which "this lint has nothing left to guard and should go". The framework already
+names the same prerequisite this scope needs.
+
+The first bullet is accurate and worth keeping. `changed_surface_touches()` is
+literally same-basename: it takes the selftest's basename, derives
+`subject="${base%-selftest.sh}.sh"`, and matches only those two paths, so a
+selftest whose real inputs are a registry, a schema or a sibling library is
+invalidated by neither. Replacing that with a declared input closure needs a
+place to declare the closure, which is the registry SCOPE-2 builds.
+
+The receipt scripts already in the tree do not cover this. `tool-log.sh`,
+`evidence-receipt-check.sh` and `goal-boundary-receipt.sh` record EVIDENCE for
+spec and DoD claims; none of them records a validation check's result. Reusing
+their vocabulary would conflate two different receipt domains.
+
 - Replace same-basename invalidation with declared input closures.
 - Record a receipt for every check result.
 - Key each receipt by check ID, command, input hashes, toolchain, platform, and validator version.
