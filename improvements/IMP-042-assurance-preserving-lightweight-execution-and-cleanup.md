@@ -190,6 +190,19 @@ replaces, so it should be DELETED when the typed registry lands.
 
 Remaining:
 
+Sized against the tree rather than estimated. `framework-validate.sh` carries 302
+enumerated invocations, 213 `run_check` and 89 `run_check_self_only`, plus a
+discovery sweep that schedules selftests this file never names. Every one of them
+needs an identity before a plan can be generated from a registry, so this lands
+as one vertical or not at all: a registry that covers part of the suite would sit
+beside `core_check_label()` as a SECOND selection authority, which is the
+duplication SCOPE-13 removed for gates.
+
+It also cannot be proven by the core tier. Changing how checks are selected
+changes scheduling for all 302, so the acceptance evidence is a full-suite run
+whose executed-check set is identical before and after. That gate has to be
+available before the work starts, not after it lands.
+
 - Add a canonical check registry.
 - Give each check a stable `checkId`.
 - Declare argv, tier, push-blocking posture, install mode, timeout, and platform.
