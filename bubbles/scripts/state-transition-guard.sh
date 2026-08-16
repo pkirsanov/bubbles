@@ -1757,11 +1757,26 @@ for p in set(names):
     expansion_reason_regex='runSubagent|tool unavailable|nested runtime|capability missing|parent-expand|nested workflow'
     spec_dir_for_evidence="$(dirname "$state_file")"
 
+    # Phase -> owning-agent resolution. The owning specialist is normally named
+    # "bubbles.<phase>", but that identity is a NAMING CONVENTION, not a
+    # guarantee, and deriving it blindly made Check 6B demand agents that have
+    # never existed. `analyze` is owned by bubbles.analyst, so an honest
+    # bubbles.analyst record was read as "phase impersonation" and blocked a
+    # transition no one could fix without falsifying the record. Every other
+    # specialist phase does match its agent name; this table carries only the
+    # genuine exceptions, so a new phase keeps the convention by default.
+    phase_owner_agent() {
+      case "$1" in
+        analyze) printf 'bubbles.analyst' ;;
+        *) printf 'bubbles.%s' "$1" ;;
+      esac
+    }
+
     if [[ -n "$claimed_phases" ]]; then
       provenance_failures=0
       while IFS= read -r claimed_phase; do
         [[ -z "$claimed_phase" ]] && continue
-        expected_agent="bubbles.${claimed_phase}"
+        expected_agent="$(phase_owner_agent "$claimed_phase")"
         matched="false"
 
         # Pass 1: specialist provenance (existing behavior)
