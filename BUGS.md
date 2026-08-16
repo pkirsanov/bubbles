@@ -2062,6 +2062,87 @@ persistent selftest surfaces, mode-aware delivery semantics, documentation
 reconciliation, and exact validation commands. No framework script or selftest
 was changed while filing it.
 
+---
+
+## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
+
+- **Filed:** 2026-08-16
+- **Disposition:** open framework defect, filed from a downstream repository
+  (research-lab). No framework script or selftest was changed in this repository
+  while filing it. A verified fix and its regression coverage are described
+  below so the owner can apply or reject them deliberately.
+- **Severity:** high. It blocks promotion of a downstream feature whose own
+  evidence is sound, and it does so by alleging forgery — the most serious thing
+  this guard can say about honest work.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 43
+  (`deterministic_siblings`), introduced with the BUG-032 D3 sibling work.
+
+### Symptom
+
+A downstream transition is refused with `Evidence receipt CLONE — one substantive
+stdout is cited across incompatible command/category identities or receipts that
+cannot prove independent target/execution provenance`, naming
+`family=artifact-lint.sh category=lint`.
+
+### Root cause
+
+`deterministic_siblings` binds `$targets` with `($rows | map(target_identity))`
+— one entry per RECEIPT — and then requires `all_distinct_nonempty`. A validator
+is routinely re-run over one subject, so an honest log repeats that subject and
+the distinctness test fails on shape alone.
+
+This is the case the check's own comments promise it will never fire on: "an
+honest re-run is routinely spelled differently ... a false CLONE accuses honest
+work of the most serious thing this guard can allege."
+
+### Evidence (real downstream log, `.specify/runtime/tool-calls.jsonl`)
+
+Nine receipts share one stdout hash. Every sibling condition passes except
+target distinctness:
+
+| Condition | Observed |
+| --- | --- |
+| `command_family` distinct | 1 (`artifact-lint.sh`) |
+| `evidence_category` distinct | 1 (`lint`) |
+| `exitCode` distinct | 1 (`0`) |
+| `provenance_identity` distinct | 9 of 9 |
+| `target_identity` distinct | **2 of 9** (5 runs on one spec, 4 on another) |
+
+The 9 receipts carry 9 distinct `sessionId`/`ts` pairs, which is exactly the
+proof of independent execution the rule asks for. `artifact-lint.sh` never
+prints its subject, so two structurally identical packets legitimately produce
+byte-identical stdout.
+
+### Fix that was verified
+
+Take one target per command IDENTITY rather than per receipt:
+
+```jq
+| ($rows | group_by(.cmd | cmd_identity) | map(.[0] | target_identity)) as $targets
+```
+
+Provenance distinctness is unchanged, so each receipt must still prove
+independent execution, and two identities sharing a single target remain a
+refusal.
+
+### Regression coverage that was verified
+
+Three cases added to `state-transition-guard-selftest.sh` beside the existing
+BUG-032 receipt matrix — a re-run fixture (5 receipts on one spec, 4 on another,
+one shared hash) that must be ACCEPTED, an assertion that no clone is reported
+for it, and an adversarial case (`npm run lint` vs `npm run test` over ONE
+target) that must still be REFUSED so the relaxation is not a hole.
+
+With the managed Python environment active, the guard selftest is
+`302 passed, 0 failed`, all three new assertions passing.
+
+### Note for whoever picks this up
+
+Running `state-transition-guard-selftest.sh` with a bare `python3` that lacks
+PyYAML/jsonschema produces ~19 unrelated `G061` failures and aborts the suite
+before Check 43 is reached. Activate the managed environment first
+(`bubbles/scripts/python-env.sh`), or the sibling cases are never exercised.
+
 
 
 
