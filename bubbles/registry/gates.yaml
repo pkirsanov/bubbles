@@ -756,36 +756,7 @@ gates:
     classification: businessInvariant
     enforcedBy: [ script:bubbles/scripts/release-ladder-schema-guard.sh, script:bubbles/scripts/release-ladder-schema-guard-selftest.sh ]
     description: >-
-      BLOCKING gate for repos that DECLARE a release ladder; AUTO-EXEMPT otherwise.
-      Enforces the shape of the ladder that G101 later asserts delivery over. The
-      split of duty is deliberate: the PRODUCT declares its ladder, phase headers,
-      `dependsOn`, and per-feature bindings; the FRAMEWORK enforces only that those
-      declarations are internally consistent. The framework never invents a ladder —
-      a repo with no `<!-- bubbles:release-ladder schemaVersion=1 phases=a,b,c -->`
-      declaration in `docs/releases/README.md` resolves EXEMPT (exit 0), mirroring
-      the G098-G100 and G101 auto-exempt pattern, because most repos have no release
-      ladder and inventing one for them would be a false finding. CHECKS. (1) HEADER:
-      exactly one `bubbles:reconciled-packet` header per declared phase, `schemaVersion=1`
-      refused-not-best-effort-parsed, and the header's declared `phase` equal to its
-      directory. (2) DEPENDSON: when present it MUST equal the FULL transitive
-      predecessor set in ladder order, so a phase can never silently skip a
-      prerequisite. (3) BINDING: `id`/`spec`/`delivery` are mandatory; `delivery` is
-      the closed vocabulary `required|optional|carried|deferred-to:<phase>`; a
-      `deferred-to` target MUST resolve to a known LATER phase — never itself and
-      never backward, because a backward defer is an unreachable promise.
-      (4) ASSURANCE: `implemented|planned` only, and only on a `required` binding
-      (it is meaningless elsewhere). (5) CARRIED: `delivery=carried` MUST declare
-      `carried-regression=blocking|non-blocking`. (6) IDENTITY: one capability id
-      binds one spec across every phase and vice versa — id/spec drift is precisely
-      what makes "the same capability" unprovable from phase to phase. FAIL-LOUD on
-      malformed: a ladder declaration carrying no `phases=` list, a duplicated phase,
-      or an unsupported `schemaVersion` exits 1 rather than degrading to a silent
-      no-op. There is NO `--skip`/`--force`/`--ignore` bypass; the only knob is
-      `--ladder`, which cannot relax any check (a bogus ladder simply fails on the
-      missing phase directories). Exit 0 = clean/exempt, 1 = violation, 2 = usage.
-      Hermetic selftest: `bubbles/scripts/release-ladder-schema-guard-selftest.sh`
-      (17 cases: 1 control, 13 adversarial, plus usage/exempt/declaration paths).
-      Owned by `bubbles.releases`.
+      BLOCKING gate for repos that DECLARE a release ladder; AUTO-EXEMPT otherwise. Enforces the shape of the ladder that G101 later asserts delivery over. The split of duty is deliberate: the PRODUCT declares its ladder, phase headers, `dependsOn`, and per-feature bindings; the FRAMEWORK enforces only that those declarations are internally consistent. The framework never invents a ladder — a repo with no `<!-- bubbles:release-ladder schemaVersion=1 phases=a,b,c -->` declaration in `docs/releases/README.md` resolves EXEMPT (exit 0), mirroring the G098-G100 and G101 auto-exempt pattern, because most repos have no release ladder and inventing one for them would be a false finding. CHECKS. (1) HEADER: exactly one `bubbles:reconciled-packet` header per declared phase, `schemaVersion=1` refused-not-best-effort-parsed, and the header's declared `phase` equal to its directory. (2) DEPENDSON: when present it MUST equal the FULL transitive predecessor set in ladder order, so a phase can never silently skip a prerequisite. (3) BINDING: `id`/`spec`/`delivery` are mandatory; `delivery` is the closed vocabulary `required|optional|carried|deferred-to:<phase>`; a `deferred-to` target MUST resolve to a known LATER phase — never itself and never backward, because a backward defer is an unreachable promise. (4) ASSURANCE: `implemented|planned` only, and only on a `required` binding (it is meaningless elsewhere). (5) CARRIED: `delivery=carried` MUST declare `carried-regression=blocking|non-blocking`. (6) IDENTITY: one capability id binds one spec across every phase and vice versa — id/spec drift is precisely what makes "the same capability" unprovable from phase to phase. FAIL-LOUD on malformed: a ladder declaration carrying no `phases=` list, a duplicated phase, or an unsupported `schemaVersion` exits 1 rather than degrading to a silent no-op. There is NO `--skip`/`--force`/`--ignore` bypass; the only knob is `--ladder`, which cannot relax any check (a bogus ladder simply fails on the missing phase directories). Exit 0 = clean/exempt, 1 = violation, 2 = usage. Hermetic selftest: `bubbles/scripts/release-ladder-schema-guard-selftest.sh` (17 cases: 1 control, 13 adversarial, plus usage/exempt/declaration paths). Owned by `bubbles.releases`.
 
   # ─────────────────────────────────────────────────────────────────────────
   # RELEASE TRAIN + UPKEEP GATES (G110-G120)
