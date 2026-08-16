@@ -66,6 +66,14 @@ Extend `bubbles/scripts/autonomy-posture-guard-selftest.sh` with a paired advers
 
 ### SCOPE-3 — One authority for the prompt-shim count (REG-9)
 
+DELIVERED. `count_prompt_shims()` counts `prompts/*.prompt.md` independently of
+`agents/`, both README substitutions read `$prompt_shim_count`, and `--check`
+now fails when either generated README block carries a stale number. The
+assertion counts BOTH occurrences rather than grepping for one, because README
+states the figure in two generated blocks and a single-match check would pass
+while one of them drifted. Proven falsifiable: perturbing one block in a copied
+tree exits 1 naming the expected count, and the clean tree exits 0.
+
 Teach `bubbles/scripts/generate-framework-stats.sh` to count `prompts/*.prompt.md` independently of `agents/`. Replace both README `$agent_count prompt shims` substitutions with the prompt count. Add a `--check` assertion that fails when README's prompt-shim count is stale, mirroring the existing workflow-mode-count assertion. This scope is a prerequisite for SCOPE-4 and is independently landable today, because it is a no-op while the two counts are equal.
 
 ### SCOPE-4 — Add the `/bubbles.continue` prompt shim
