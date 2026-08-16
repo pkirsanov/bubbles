@@ -31,6 +31,31 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Improvement Index Derives Its Status Instead Of Restating It (IMP-042 SCOPE-10)
+
+`framework-health-evidence-lint.sh` already required every proposal to declare a
+`**Status:**` and to have a row in `improvements/INDEX.md`. Nothing connected the
+two. The row carried its own status cell, so the index could assert a state the
+proposal itself had moved past and both files would still pass, because each one
+was independently well-formed.
+
+Check 4b binds the cell to the owning file. A divergence is now a finding rather
+than two plausible answers, and the proposal is the authority. Rows whose
+proposal file is gone are never reached, because the loop visits existing files
+only. That is the documented grandfather which keeps closed historical rows
+readable after their file is deleted on delivery.
+
+Two details were verified rather than assumed. The row may key on the bare id or
+on the filename, so the match looks for the id CONTAINED in the first cell the
+way the existing index-row check does. An exact-id pattern would have matched
+neither shape in the selftest fixtures and passed by finding nothing, which is a
+check that reports success because it never ran. The legend match also takes the
+longest candidate, so `IN PROGRESS` is never read as a prefix of a shorter
+status.
+
+Selftest goes 11 to 15 cases, and the binding is proven falsifiable: replacing
+the comparison with `false` turns the drift case red.
+
 ## [7.28.0] - 2026-08-15
 
 ### The Suite Was Measured Before It Was Parallelized (IMP-042 SCOPE-4)

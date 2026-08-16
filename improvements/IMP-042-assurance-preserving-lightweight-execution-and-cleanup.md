@@ -247,12 +247,6 @@ That measurement is carried as `OW-015`. Until it exists the packet is opt-in
 per bug via `"packet": "micro"` in `state.json`; selftest case 9 fails if the
 registry's NOT THE DEFAULT caveat is ever deleted.
 
-### SCOPE-10 - Compact Durable Status Tracking (WIP-4, DOC-6)
-
-Delivered: improvement-index row bound with a documented grandfather, status-agent duplicate consolidation, and Git history retained as the closed-item audit trail. Remaining:
-
-- Generate derived status from owning artifacts rather than restating it.
-
 ### SCOPE-11 - Explicit Selftest Scheduling And Semantic Reachability (COV-15)
 
 Delivered: invocation-based scheduling shared by the sweep and the coverage lint, path-aware governance and skill indexing, and executable consumers that name the capability they consume, enforced by `capability-consumer-naming.sh`. The reachability guard keeps its report-only posture until dynamic-call false positives are calibrated.
