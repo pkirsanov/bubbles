@@ -31,6 +31,29 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Two Context-Cleanup Bullets Were Already Satisfied (IMP-042 SCOPE-14)
+
+Both were checked against the tree rather than taken at face value, and neither
+has work left.
+
+Deprecating the bundle budgets contradicts this scope's own finding. The three
+budgets that block measure BYTES of a file or of a transitive import closure,
+which the scope already established is a counted quantity rather than an
+inferred prompt cost, and `effective-bundle-budget.sh` ships with no default
+ceiling at all -- unset means "informational only" and it never blocks. There is
+no prompt-cost inference left to deprecate.
+
+Moving deterministic workflow tables out of agent prose is stale: the agents
+already point at the registry. `bubbles.iterate` dispatches "following the
+mode's `phaseOrder` from `bubbles/workflows.yaml`", `bubbles.super` instructs
+the reader to "Read the live mode registry", and `bubbles.bug` defers to the
+`bugfix-fastlane` phaseOrder. Scanning every agent for a table row carrying a
+phase name returns two, and neither is workflow data: one is an example status
+report, the other an output template with placeholders.
+
+The scope's remaining item is the explicit context manifest for phase-owned
+policy modules, which is unchanged and still open.
+
 ### Payload Classes Already Have One Authority (IMP-042 SCOPE-12 closeout)
 
 The last open payload bullet asked for generated, optional, and historical

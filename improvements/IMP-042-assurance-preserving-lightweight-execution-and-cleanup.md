@@ -396,8 +396,8 @@ closure is already the advisory coupling signal the scope asks for.
 
 Remaining:
 
-- Deprecate global and per-agent bundle budgets after config migration.
-- Move deterministic workflow tables from agent prose into executable resolvers.
+- RESOLVED, and it contradicts this scope's own finding above. The three budgets that block all measure BYTES of a file or of a transitive import closure, which the Delivered section already established is a counted quantity rather than an inferred prompt cost. `effective-bundle-budget.sh` additionally ships with NO default ceiling: with `effectiveBundleMaxBytes` unset it reports "informational only" and never blocks. There is no prompt-cost inference left to deprecate, and deprecating a byte measurement that a repository opts into would remove a working control.
+- RESOLVED, premise is stale. The agents already point at the registry instead of restating it: `bubbles.iterate` dispatches "following the mode's `phaseOrder` from `bubbles/workflows.yaml`" and executes "phases in registry `phaseOrder`", `bubbles.super` instructs the reader to "Read the live mode registry" and the `phases:` block of the live workflow registry, and `bubbles.bug` defers to the `bugfix-fastlane` phaseOrder. Scanning every agent file for a markdown table row carrying a phase name returns exactly two, and neither is workflow data: `bubbles.status` lines 186-189 are an EXAMPLE status report and `bubbles.analyst` line 398 is an output TEMPLATE with placeholders. The status agent's genuine duplication was already consolidated under SCOPE-10.
 - Load phase-owned policy modules through an explicit context manifest.
 - Keep non-active skills and reference modules as on-demand pointers.
 - Keep identity, prohibitions, ownership, dispatch boundaries, and result contracts in agent files.
