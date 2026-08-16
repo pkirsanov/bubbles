@@ -120,6 +120,10 @@ run_check "Framework validation" bash "$SCRIPT_DIR/framework-validate.sh"
 run_check "Capability ledger docs freshness" bash "$SCRIPT_DIR/generate-capability-ledger-docs.sh" --check
 run_check "Framework stats freshness" sh "$SCRIPT_DIR/generate-framework-stats.sh" --check
 run_check "Cheatsheet freshness (v6.0 / B7)" bash "$SCRIPT_DIR/generate-cheatsheet.sh" --check
+# NOT a redundant repeat of framework-validate's own manifest check. That check
+# now runs last inside a ~30-minute suite; this one re-asks the question after
+# the suite AND after the freshness checks above, so a managed file dirtied
+# during the run cannot ship as fresh. The cost is one hash pass.
 run_check "Release manifest freshness" bash "$SCRIPT_DIR/generate-release-manifest.sh" --check
 run_check "Required release files" check_required_files
 run_check "No stray temp or backup files" check_stray_release_files

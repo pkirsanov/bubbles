@@ -2039,6 +2039,155 @@ Every adopted downstream repository needs one supported, generic changed-spec co
 
 Add an integration fixture where only `spec.md` changes after certification. The downstream command and workflow must both reject it.
 
+---
+
+## BUG-032 — planning-maturity guards confuse prose, output equality, and terminality with stronger contract facts
+
+- **Filed:** 2026-08-15
+- **Disposition:** complete planning packet created; implementation deliberately
+  not started in the filing invocation.
+- **Severity:** high. Valid planning can be blocked, honest evidence can be
+  accused of cloning, and planning maturity can be counted as release delivery.
+- **Canonical packet:**
+  [`bugs/BUG-032-planning-maturity-guard-false-positives/`](bugs/BUG-032-planning-maturity-guard-false-positives/bug.md)
+- **Affects:** Check 8B consumer-impact classification, Check 5A SLA/SLO
+  classification, Check 43 receipt clone identity, and G101 release-delivery
+  reconciliation.
+- **Related:** BUG-028 is the standalone predecessor for the deterministic
+  validator receipt-hash defect. BUG-032 subsumes its implementation planning;
+  BUG-028 remains open until BUG-032 D3 is validate-certified.
+
+The packet defines four ordered scopes, exact negative and adversarial fixtures,
+persistent selftest surfaces, mode-aware delivery semantics, documentation
+reconciliation, and exact validation commands. No framework script or selftest
+was changed while filing it.
+
+---
+
+## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
+
+- **Filed:** 2026-08-16
+- **Disposition:** open framework defect, filed from a downstream repository
+  (research-lab). No framework script or selftest was changed in this repository
+  while filing it. A verified fix and its regression coverage are described
+  below so the owner can apply or reject them deliberately.
+- **Severity:** high. It blocks promotion of a downstream feature whose own
+  evidence is sound, and it does so by alleging forgery — the most serious thing
+  this guard can say about honest work.
+- **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 43
+  (`deterministic_siblings`), introduced with the BUG-032 D3 sibling work.
+
+### Symptom
+
+A downstream transition is refused with `Evidence receipt CLONE — one substantive
+stdout is cited across incompatible command/category identities or receipts that
+cannot prove independent target/execution provenance`, naming
+`family=artifact-lint.sh category=lint`.
+
+### Root cause
+
+`deterministic_siblings` binds `$targets` with `($rows | map(target_identity))`
+— one entry per RECEIPT — and then requires `all_distinct_nonempty`. A validator
+is routinely re-run over one subject, so an honest log repeats that subject and
+the distinctness test fails on shape alone.
+
+This is the case the check's own comments promise it will never fire on: "an
+honest re-run is routinely spelled differently ... a false CLONE accuses honest
+work of the most serious thing this guard can allege."
+
+### Evidence (real downstream log, `.specify/runtime/tool-calls.jsonl`)
+
+Nine receipts share one stdout hash. Every sibling condition passes except
+target distinctness:
+
+| Condition | Observed |
+| --- | --- |
+| `command_family` distinct | 1 (`artifact-lint.sh`) |
+| `evidence_category` distinct | 1 (`lint`) |
+| `exitCode` distinct | 1 (`0`) |
+| `provenance_identity` distinct | 9 of 9 |
+| `target_identity` distinct | **2 of 9** (5 runs on one spec, 4 on another) |
+
+The 9 receipts carry 9 distinct `sessionId`/`ts` pairs, which is exactly the
+proof of independent execution the rule asks for. `artifact-lint.sh` never
+prints its subject, so two structurally identical packets legitimately produce
+byte-identical stdout.
+
+### Fix that was verified
+
+Take one target per command IDENTITY rather than per receipt:
+
+```jq
+| ($rows | group_by(.cmd | cmd_identity) | map(.[0] | target_identity)) as $targets
+```
+
+Provenance distinctness is unchanged, so each receipt must still prove
+independent execution, and two identities sharing a single target remain a
+refusal.
+
+### Regression coverage that was verified
+
+Three cases added to `state-transition-guard-selftest.sh` beside the existing
+BUG-032 receipt matrix — a re-run fixture (5 receipts on one spec, 4 on another,
+one shared hash) that must be ACCEPTED, an assertion that no clone is reported
+for it, and an adversarial case (`npm run lint` vs `npm run test` over ONE
+target) that must still be REFUSED so the relaxation is not a hole.
+
+With the managed Python environment active, the guard selftest is
+`302 passed, 0 failed`, all three new assertions passing.
+
+### Note for whoever picks this up
+
+Running `state-transition-guard-selftest.sh` with a bare `python3` that lacks
+PyYAML/jsonschema produces ~19 unrelated `G061` failures and aborts the suite
+before Check 43 is reached. Activate the managed environment first
+(`bubbles/scripts/python-env.sh`), or the sibling cases are never exercised.
+
+### Second facet — `cmd_parts` unwraps only a bare leading `bash`/`sh`
+
+Fixing the distinctness rule above exposed a second identity-normalization
+defect in the same check. `cmd_parts` strips only a single leading `bash` or
+`sh` token, so one command spelled three ordinary ways resolves to three
+different families:
+
+| Recorded command | `command_family` |
+| --- | --- |
+| `node -e <script>` | `node` |
+| `env PAGE=p node -e <script>` | `env` |
+| `zsh -c 'PAGE=p node -e <script>'` | `zsh` |
+
+All three ran the same script over the same page, in one scope, with distinct
+session and timestamp provenance. Because the families differ they are treated
+as unrelated commands sharing one stdout, and the group is refused — again the
+re-spelling case the check promises to tolerate. `bash -c <script>` is affected
+too: today it strips `bash` and leaves `-c` as the family.
+
+Generalizing the strip to shell wrappers, `env`, and leading `VAR=value`
+assignments collapses all three spellings to `family=node` with one identity, so
+the group stops being a multi-identity collision at all:
+
+```jq
+def strip_wrappers:
+  if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
+    then (if ((.[1] // "") == "-c") then .[2:] else .[1:] end | strip_wrappers)
+  elif ((.[0] // "") == "env") then (.[1:] | strip_wrappers)
+  elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*=")) then (.[1:] | strip_wrappers)
+  else . end;
+def cmd_parts:
+  ( . / " " | map(select(length > 0)) ) | strip_wrappers;
+```
+
+Both facets are required to clear the downstream feature; the distinctness fix
+alone leaves the wrapper case blocking. With both applied, the downstream
+transition guard reports `failureCount: 0, verdict: PASS`, and the guard still
+discriminates across sibling specs in that repository (observed 67, 4, 1, 0, 30,
+0 failures), so it is not passing by going quiet.
+
+Note `category=other` is also reported for these receipts: an inline `node -e`
+script matches no category heuristic. That is conservative and was left alone —
+once the wrappers normalize, the receipts share one identity and the category
+never has to carry the decision.
+
 
 
 

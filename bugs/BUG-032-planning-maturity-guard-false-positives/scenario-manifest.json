@@ -1,0 +1,401 @@
+{
+  "version": 1,
+  "featureDir": "bugs/BUG-032-planning-maturity-guard-false-positives",
+  "generatedAt": "2026-08-15T11:42:01Z",
+  "planningOnly": false,
+  "scenarios": [
+    {
+      "scenarioId": "SCN-032-001",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Stale generation path replacement is not an interface mutation",
+      "gherkin": {
+        "given": "A scope says a stale generation path is replaced without changing a consumer identity",
+        "when": "Check 8B classifies the scope",
+        "then": "Consumer Impact Sweep is not required"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F2 Check 8B does not bridge cache cleanup to an unchanged public API contract in another clause"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-red-evidence",
+        "report.md#scope-1-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-002",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Provider and lifecycle replacement is not an interface mutation",
+      "gherkin": {
+        "given": "A scope describes provider or lifecycle replacement without changing a consumer identity",
+        "when": "Check 8B classifies the scope",
+        "then": "Consumer Impact Sweep is not required"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F2 Check 8B does not bridge cache cleanup to an unchanged public API contract in another clause"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-red-evidence",
+        "report.md#scope-1-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-003",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Actual interface rename or removal still triggers",
+      "gherkin": {
+        "given": "A scope explicitly renames or removes a consumer route, path, endpoint, contract, or identifier",
+        "when": "Check 8B classifies the scope",
+        "then": "Consumer Impact Sweep and its DoD requirements remain mandatory"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F1 Check 8B triggers on the exact mutation inflections 'renames' and 'removes'"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B still flags all 5 explicit route/path/endpoint/contract/identifier mutations"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-004",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Explicit no-SLO wording does not trigger stress coverage",
+      "gherkin": {
+        "given": "Observability is opted out and no trace or SLO evidence is injected",
+        "when": "Check 5A classifies the scope",
+        "then": "Stress coverage is not required absent a genuine performance target"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F3 Check 5A accepts explicit no-SLA/no-SLO, negated-target, and not-applicable target prose without stress coverage"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F3 Check 5A does not turn explicit negated or not-applicable target posture into an affirmative contract"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-red-evidence",
+        "report.md#scope-1-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-005",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Genuine performance promises still trigger stress coverage",
+      "gherkin": {
+        "given": "A scope declares a genuine SLO, latency, throughput, p95, p99, or response-time target",
+        "when": "Check 5A classifies the scope",
+        "then": "Explicit stress coverage remains mandatory"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 5A still treats 'no more than 200 ms p95 latency' as an affirmative performance contract"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "Check 5A still flags all 5 genuine SLA declarations (p95 latency, throughput, SLA, SLO, p99 response time)"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-006",
+      "scope": "02-receipt-clone-execution-identity",
+      "title": "Deterministic validator siblings are independent evidence",
+      "gherkin": {
+        "given": "One validator family runs independently over two targets and emits identical non-empty stdout",
+        "when": "Check 43 evaluates command category, target closure, exit, and execution provenance",
+        "then": "No receipt clone is reported"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 accepts independent deterministic validator siblings over distinct targets"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 preserves BUG-019 equivalent command-spelling normalization"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-2-red-evidence",
+        "report.md#scope-2-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-007",
+      "scope": "02-receipt-clone-execution-identity",
+      "title": "Unrelated commands sharing substantive output still block",
+      "gherkin": {
+        "given": "Incompatible test and lint command families share one substantive stdout hash",
+        "when": "Check 43 evaluates the receipts",
+        "then": "A receipt clone is reported"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F4 Check 43 blocks substantive stdout reuse across incompatible categories with one normalized command identity"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG032-IV-F4 Check 43 reports the same-identity incompatible-category receipt clone"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 blocks substantive stdout reuse across incompatible commands"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 reports the incompatible-command receipt clone"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-2-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-008",
+      "scope": "02-receipt-clone-execution-identity",
+      "title": "Empty stdout remains exempt",
+      "gherkin": {
+        "given": "Multiple commands share the empty stdout digest with optional byte metadata present or absent",
+        "when": "Check 43 evaluates the receipts",
+        "then": "No receipt clone is reported"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 preserves empty-stdout exemption without stdoutBytes"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 does not treat empty stdout as substantive cloned evidence"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-2-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-009",
+      "scope": "03-g101-delivery-capable-mode-semantics",
+      "title": "Planning maturity is not release delivery",
+      "gherkin": {
+        "given": "A product-to-planning packet is specs_hardened and validate-certified",
+        "when": "G101 reconciles delivery=required",
+        "then": "The guard exits 1 and reports NOT-DELIVERED"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S13 product-to-planning/specs_hardened is not delivered"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S13 reports planning maturity as NOT-DELIVERED"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-3-red-evidence",
+        "report.md#scope-3-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-010",
+      "scope": "03-g101-delivery-capable-mode-semantics",
+      "title": "Validate-certified done delivery remains accepted",
+      "gherkin": {
+        "given": "A full-delivery packet is done and validate-certified",
+        "when": "G101 reconciles delivery=required",
+        "then": "The guard exits 0 and reports DELIVERED"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S16 full-delivery/done remains delivered"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S16 reports a delivery-capable validate-certified success"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-3-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-011",
+      "scope": "03-g101-delivery-capable-mode-semantics",
+      "title": "Prototype output remains non-deliverable",
+      "gherkin": {
+        "given": "A required feature is delivered_prototype and validate-certified",
+        "when": "G101 reconciles delivery=required",
+        "then": "The guard exits 1 and reports NOT-DELIVERED"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S12 required feature delivered_prototype is refused (prototype never deployable)"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S12 reports prototype output as NOT-DELIVERED"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-3-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-012",
+      "scope": "03-g101-delivery-capable-mode-semantics",
+      "title": "Delivery aliases are resolved through mode semantics",
+      "gherkin": {
+        "given": "A required feature has a terminal status and a resolved workflow mode",
+        "when": "G101 compares status meaning with the effective mode contract",
+        "then": "Only delivery-capable aliases are reported DELIVERED"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "e2e-api",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S17 dark-launch-shipped/pending-activation remains delivered"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S18 rapid-tool-delivery/delivered_fast remains delivered"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S19 unknown mode gains no pending-activation fallback"
+        },
+        {
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "testId": "S20 product-to-planning/done is incoherent, not delivered"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-3-green-evidence"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    }
+  ]
+}

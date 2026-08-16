@@ -65,6 +65,28 @@ count_v6_primitives() {
   ' "$aliases_file"
 }
 
+count_registry_gates() {
+  gates_file="$repo_root/bubbles/registry/gates.yaml"
+  if [ ! -f "$gates_file" ]; then
+    echo 0
+    return
+  fi
+  awk '/^  G[0-9][0-9][0-9]:[[:space:]]*$/ { count++ } END { print count + 0 }' "$gates_file"
+}
+
+# IMP-045 SCOPE-3 (REG-9). README's prompt-shim lines were written from
+# agent_count, while management-truth-lint.sh enforces the live prompts/ glob
+# against INSTALLATION.md and MCP.md. The two agree only because the repo
+# happens to hold equal numbers; adding one prompt would make the lint demand
+# N+1 in two files while this generator rewrote README to N.
+count_prompt_shims() {
+  count=0
+  for prompt_file in "$repo_root"/prompts/*.prompt.md; do
+    [ -e "$prompt_file" ] && count=$((count + 1))
+  done
+  echo "$count"
+}
+
 count_section_entries() {
   section_name="$1"
   entry_pattern="$2"
@@ -134,7 +156,11 @@ mkdir -p "$generated_dir"
 version=$(cat "$repo_root/VERSION" | tr -d '[:space:]')
 
 agent_count=$(count_agents)
-gate_count=$(count_section_entries gates '^  G[0-9][0-9][0-9]:')
+prompt_shim_count=$(count_prompt_shims)
+# Gates are defined ONLY in bubbles/registry/gates.yaml. workflows.yaml used to
+# carry a generated copy, and counting that copy is how this generator reported
+# `gates: 0` the moment the copy was deleted (IMP-042 SCOPE-13 follow-up).
+gate_count=$(count_registry_gates)
 workflow_mode_count=$(count_workflow_modes)
 primitive_count=$(count_v6_primitives)
 if [ "$primitive_count" -gt 0 ] 2>/dev/null && [ "$workflow_mode_count" -ge "$primitive_count" ] 2>/dev/null; then
@@ -214,6 +240,15 @@ if [ "$check_only" = true ]; then
     printf '%s\n' "README generated workflow mode count appears stale. Run bubbles/scripts/generate-framework-stats.sh"
     exit 1
   fi
+  # IMP-045 SCOPE-3 (REG-9). README states the shim count in two generated
+  # blocks. Without this assertion the count silently drifts whenever a prompt
+  # is added or retired, because the surrounding blocks regenerate cleanly and
+  # nothing compares the number itself.
+  if grep -q 'prompt shims' "$repo_root/README.md" && \
+    [ "$(grep -c "# $prompt_shim_count prompt shims" "$repo_root/README.md")" -ne 2 ]; then
+    printf '%s\n' "README generated prompt-shim count appears stale (expected $prompt_shim_count in both generated blocks). Run bubbles/scripts/generate-framework-stats.sh"
+    exit 1
+  fi
   html_file="$repo_root/docs/its-not-rocket-appliances.html"
   if [ -f "$html_file" ]; then
     if ! grep -q "v$version" "$html_file"; then
@@ -270,7 +305,7 @@ cat <<EOF > "$block_temp"
 │       ├── scope-workflow.md
 │       └── ...
 ├── prompts/
-│   └── bubbles.*.prompt.md          # $agent_count prompt shims
+│   └── bubbles.*.prompt.md          # $prompt_shim_count prompt shims
 ├── bubbles/
 │   ├── workflows.yaml               # $workflow_mode_count workflow mode definitions
 │   ├── scripts/                     # Governance scripts
@@ -316,7 +351,7 @@ cat <<EOF > "$block_temp"
 │   ├── bubbles.implement.agent.md
 │   ├── bubbles.super.agent.md # NEW: first-touch assistant + framework operations
 │   └── ...
-├── prompts/                   # $agent_count prompt shims
+├── prompts/                   # $prompt_shim_count prompt shims
 EOF
 replace_block "$repo_root/README.md" "GENERATED:FRAMEWORK_STATS_PROJECT_TREE_START" "GENERATED:FRAMEWORK_STATS_PROJECT_TREE_END" "$block_temp"
 

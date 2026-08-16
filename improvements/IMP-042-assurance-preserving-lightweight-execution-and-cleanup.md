@@ -1,0 +1,661 @@
+# IMP-042 - Assurance-Preserving Lightweight Execution And Framework Cleanup
+
+**Status:** PROPOSED (not yet applied) - awaiting owner review.
+**Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
+**Motivation:** Deep source, runtime, and external-pattern review of clean commit `09a8fc87033940721d8e112f03a838c305a50018` on 2026-08-13.
+**Verified gaps addressed:** PERF-1 through PERF-5, WIP-4, COV-14 through COV-16, REG-9 through REG-12, COST-8, DOC-6, EV-9, HO-3.
+
+## Executive Decision
+
+Bubbles must keep full assurance while removing repeated work.
+
+The framework already has useful primitives. It has validation tiers, changed-only selection, a result cache, test-impact planning, phase relevance, compaction, gate telemetry, and durable state. Several primitives stop before the execution boundary. Agent prose must still remember to call them, and the validation harness lacks declared dependencies.
+
+This proposal adds one deterministic execution model:
+
+1. Declare every check and workflow phase as a typed action.
+2. Hash every declared input before reusing a result.
+3. Run the smallest affected closure during repair loops.
+4. Batch independent heavy work behind bounded parallel groups.
+5. Run one cold full gate for the final exact release candidate.
+6. Delete or demote only assets whose consumers are mechanically disproven.
+
+The proposal does not weaken anti-fabrication, test substance, status ceilings, repository binding, or validate-owned certification.
+
+## Provenance
+
+### Repository Evidence
+
+- Reviewed repository: `/Users/pkirsanov/Projects/bubbles`.
+- Reviewed commit: `09a8fc87033940721d8e112f03a838c305a50018`.
+- The worktree carried no changes while evidence was collected.
+- The only later working-tree changes are this proposal and its index row.
+- `origin/main` advanced to `a5e438c9e2b9963a8ec3a56c88c3ab2384ac22d6` during authoring.
+- That commit changed scenario-compile lint files and the release manifest only.
+- A targeted diff showed no overlap with any manifest entry cited here.
+- Runtime latency input: `.specify/runtime/framework-events.jsonl`.
+- Capability input: `bubbles/capability-ledger.yaml`.
+- Workflow input: `bubbles/workflows.yaml` and `bubbles/workflows/modes.yaml`.
+- Validation input: `bubbles/scripts/framework-validate.sh`, `bubbles/scripts/release-check.sh`, and focused selftests.
+
+### Executed Measurements
+
+- Exact-commit core validation passed in 109 seconds.
+- It executed 17 checks and skipped 288 checks.
+- ShellCheck live validation took 41 seconds.
+- Its selftest took another 41 seconds.
+- Those two checks consumed 82 of 109 seconds.
+- The bounded evidence block has SHA-256 `74a551bceb22ba50b8ca0257494267a70759967489fd317448e723227237d8d7`.
+- Five successful recent core runs took 109 to 111 seconds.
+- Three successful recent full runs took 1,883 to 2,081 seconds.
+- Four successful recent release checks took 1,962 to 2,111 seconds.
+- Focused selftests passed for tiering, changed-only selection, test-impact planning, phase relevance, compaction, and gate-hit logging.
+- Selftest coverage reported 238 selftests as 219 enumerated, 17 discovered, and 2 denied.
+- Governance indexing scanned 185 docs across 45 indexes and found zero orphans.
+- Capability freshness reported 23 shipped capabilities and 78 present consumer paths.
+- ShellCheck lints 516 tracked shell files in a single invocation.
+- No top-level shell script under `bubbles/scripts/` lacked its executable bit.
+
+### Direct Discriminators
+
+- `mode-resolver.sh review action:readiness-synthesis target:system` exited 0.
+- Passing the same v7 form as one argv token exited 1.
+- `mode-resolver.sh --list-modes` emitted `phaseRelevance` as a mode.
+- `cli.sh docs-registry effective` omitted every `requiredSections` list.
+- The `framework-default` projection omitted the same lists.
+- The effective registry redirects architecture and development to `README.md`.
+- It still requires `docs/API.md`, `docs/Testing.md`, `docs/Deployment.md`, and `docs/Operations.md`. None of those files exist.
+- The release manifest classifies `judge-adapter-contract-selftest.sh` as managed.
+- The same manifest classifies `eval-harness.sh` as source-only.
+- The local gate-hit log contains 112 run records and zero gate outcome records.
+- Those run records came from unresolved transition-guard fixtures.
+- That log is runtime-local, so a fresh clone starts with no history.
+
+### Adversarial Re-Review
+
+A second pass tried to falsify this proposal against the same tree.
+
+- Prompt shims are one-to-one with agents. No agent lacks a shim and no shim lacks an agent.
+- `test-impact-plan.sh` and `phase-relevance-resolve.sh` have no caller except their own selftests.
+- The selftest denylist holds exactly two entries, and each is executed through another path.
+- `v4.1.0-selftest.sh` runs only through the discovery sweep, so a comment naming it would silence it.
+- `test-impact-shadow.sh` already fixes a shadow-first rule that forbids automatic test skipping.
+- `generate-framework-stats.sh` verifies its own generated Markdown, so that file is not a free delete.
+
+The pass corrected three counts, two latency targets, one parser recommendation, and one deletion proof. It also added the skip-accounting defect recorded below.
+
+### External Research
+
+- Nx affected execution uses Git plus a dependency graph to select impacted work. See <https://nx.dev/ci/features/affected>.
+- Bazel cache keys cover declared actions, inputs, outputs, command lines, and environment. See <https://bazel.build/remote/caching>.
+- Pytest supports last-failed, failed-first, and stepwise continuation while preserving a cold CI option. See <https://docs.pytest.org/en/stable/how-to/cache.html>.
+- Gradle documentation was unavailable through the review fetcher. No recommendation relies on remembered Gradle behavior.
+
+## Problem (Verified Against Source)
+
+### Validation Cost And Selection
+
+- **PERF-1 - Unstructured check inventory:** `framework-validate.sh` encodes checks as ordered `run_check` calls. A check has no stable ID, declared input closure, execution class, or dependency list.
+- **PERF-2 - Duplicate execution:** ShellCheck scans the complete live shell surface twice. Release-manifest freshness also runs in full validation and again in `release-check`.
+- **PERF-3 - Slow failure discovery:** Cheap registry, schema, and drift checks run after 82 seconds of ShellCheck work.
+- **PERF-4 - Incomplete invalidation:** Changed-only selection and cache keys infer only `X-selftest.sh` and `X.sh`. Shared helpers, schemas, registries, fixtures, and tool versions are absent.
+- **PERF-5 - Serial full suite:** Every check runs synchronously. Some checks use fixed scratch paths, so blanket parallelism would corrupt fixtures.
+- **COV-14 - Label-derived push policy:** Core-tier membership uses substrings from human labels. A label rename can alter pre-push coverage.
+- **COV-15 - Source-text scheduling:** Selftest discovery treats any basename mention in `framework-validate.sh` as scheduled. A comment can suppress a real selftest. `v4.1.0-selftest.sh` depends on discovery today, so it carries that exposure.
+- **COV-15 - Mislabeled skip accounting:** Four distinct skip paths increment one counter. The summary reports every skip as a self-only check skipped under the current install mode and tells the operator to run from a source tree. A core run inside a source tree reported 288 such skips, which were tier skips.
+- **COV-16 - Planned validation is not executed:** `test-impact-plan.sh` builds a plan from a project-owned impact map. No script except its own selftest calls it, so nothing executes the returned checks.
+
+### Continuation And Context
+
+- **WIP-4 - Ambiguous resume cursor:** State records a phase name. Modes intentionally repeat phases, including `validate` and `releases`.
+- **WIP-4 - Incomplete run-state:** CLI run records omit workflow mode, phase ordinal, occurrence, pending owner, and accepted-result digest.
+- **WIP-4 - Model-selected continuation:** `bubbles.workflow` inspects conversation text, run-state, and `state.json`, then asks the model to choose the next step.
+- **COV-16 - Prose-only phase decisions:** `phase-relevance-resolve.sh` is executable and tested. No script except its own selftest calls it.
+- **COST-8 - Tool output dominates context:** The recorded IMP-039 session attributed 49.7 percent of prompt tokens to tool results. Completion prose was only 0.34 percent of total tokens.
+- **COST-8 - Oversized selected runners:** `bubbles.workflow` is 74,439 bytes. `bubbles.iterate` is 56,507 bytes. Much of their text repeats registry and phase behavior.
+- **COST-8 - Non-atomic compaction:** The compactor emits a record and separately stamps `compactedAt`. G083 does not require a matching `compactedHistory` record.
+- **COST-8 - False context budget:** `effective-bundle-measure.sh` now says it measures link reachability. Two budget scripts still describe and enforce it as loaded prompt size.
+
+### Contract Drift And Cleanup
+
+- **REG-9 - Broken MCP v7 mode input:** `resolve_mode` accepts one string. The resolver requires the primitive and tags as separate argv elements.
+- **REG-9 - Stale operator syntax:** The mode guide still teaches a bare leading mode name as operator input. The `mode: <registered-key>` form stays valid and must be preserved.
+- **REG-9 - Misleading MCP tools:** `list_open_findings` runs a policy selftest. `verify_status_transition` duplicates `validate_dod` as an alias.
+- **REG-9 - Ignored MCP input:** `validate_dod` declares `revert_on_fail`, but its argv template never renders the flag. Its annotations still claim read-only behavior.
+- **REG-10 - Duplicate gate registry:** `registry/gates.yaml` is canonical. `workflows.yaml` carries a generated copy, and `gate-meta.sh` reads the generated copy.
+- **REG-10 - Duplicate specialist registry:** `required-specialists.yaml` calls itself canonical but instructs maintainers to edit a hardcoded guard table too.
+- **REG-10 - Duplicated adoption parser:** CLI, developer profile, readiness, and installer each parse adoption profiles. CLI silently maps an unknown profile to `delivery`. The others reject it.
+- **REG-11 - Broken downstream package:** A managed judge selftest invokes a source-only eval harness.
+- **REG-11 - False-clean install test:** `v5.3-selftest.sh` discards the complete downstream validator exit code while claiming the synthetic install is clean.
+- **REG-11 - Broad payload glob:** Every top-level shell script and every file under `docs/` enters the managed payload before narrow exceptions are applied.
+- **REG-12 - Managed-doc parser drift:** The resolver requires six-space list items. The registry uses indentationless YAML sequences, so `requiredSections` vanish.
+- **REG-12 - Missing required docs:** The source override redirects architecture and development only. API, testing, deployment, and operations remain required but absent.
+
+### Bureaucracy And Documentation
+
+- **HO-3 - Fixed six-artifact cost:** Every `directFix` requires a full bug packet. This overhead applies even to a localized, contract-preserving repair.
+- **EV-9 - Evidence policy conflict:** Agent instructions and G025 require inline-only evidence. `evidence-rules.md` and transition Check 9 permit anchored report or tool-log references.
+- **DOC-6 - Phantom modes:** The mode guide documents `brainstorm`, `feature-bootstrap`, `redesign-existing`, and `product-discovery` as full sections. None of those keys exist in the mode registry.
+- **DOC-6 - Duplicate recipe catalogs:** `docs/CATALOG.md` stops at 61 entries. `docs/recipes/README.md` is the mechanically checked catalog and contains more recipes.
+- **DOC-6 - Weak governance indexing:** The index lint matches basenames in any agent or index. Every skill basename is `SKILL.md`, so unrelated mentions can satisfy indexing.
+- **DOC-6 - Generated summary loss:** Block-scalar capability summaries render as a literal `>` in generated competitive docs.
+- **DOC-6 - Generated authority inversion:** Generated issue pages call shipped capabilities tracked gaps and can describe projections as the source of truth.
+- **DOC-6 - Unconsumed projection:** `framework-stats.md` is referenced only by its generator and release manifest. The JSON form has the real consumer.
+- **DOC-6 - Historical docs ship downstream:** Frozen v5/v6 design files and a dated product review enter every downstream package through the all-docs glob.
+- **DOC-6 - Status surface duplication:** The spec dashboard prints an empty `DONE` column. The status agent repeats four metrics and repeats the same continuation command.
+- **DOC-6 - Stale runtime reader:** `retro-framework-health.sh` expects a top-level run array with `mode` and `outcome`. Current run-state uses `activeRuns` and `recentRuns` with `command` and `result`.
+
+### Gate Execution And Telemetry
+
+- **PERF-4 - Repeated global checks:** Each spec transition reruns global framework lints such as ownership and workflow-runner grants.
+- **PERF-4 - No prerequisite graph:** The transition guard continues checks after required structure fails. It cannot mark dependent checks as blocked-not-run.
+- **COV-15 - Fixture telemetry pollution:** RESOLVED, and the original wording was half wrong. Per-gate outcomes DID already exist: `gate-hit-log.sh` line 125 writes one `kind:"gate"` record per gate carrying `outcome`, and `report` aggregates hits, passes and fails per gate. The real defect was that no record carried a source class, so fixture runs and product runs were indistinguishable in the one store retirement decisions read. Every record now carries `sourceClass`, derived from the repository root rather than declared, and `report` counts product records only.
+- **COV-15 - Existence is not use:** Capability freshness proves consumer paths exist. It does not prove they invoke the capability.
+
+## Design Principles
+
+1. Preserve one cold full assurance gate for the final exact tree.
+2. Reuse only results whose declared inputs are unchanged.
+3. Treat unknown dependencies as affected work.
+4. Keep unknown execution classes serial.
+5. Record every skip and cache hit as a check result.
+6. Keep runtime truth in scripts and registries, not duplicated agent prose.
+7. Make source-only and downstream-managed payload classes explicit.
+8. Require two independent signals before deleting an asset.
+9. Keep historical evidence in source when it has audit value.
+10. Do not ship maintainer-only history downstream.
+
+## Proposal
+
+### SCOPE-2 - Typed Validation Check Registry (PERF-1, COV-14)
+
+Partial, and deliberately labelled as a stopgap rather than the registry.
+`core_check_label()` selects the PUSH-BLOCKING tier by substring match on check
+LABELS: pre-push runs `--tier=core`, so that function is the list of checks
+allowed to stop a bad push. A prose-keyed substring list has exactly one failure
+mode and it is silent -- rename a check and its pattern stops matching, nothing
+errors, the tier just runs one fewer check, and a guard chosen specifically to
+block pushes stops blocking while every run still reports success. That is the
+unwired-selftest hole COV-2 covered, moved one layer up.
+
+`core-tier-pattern-lint.sh` makes that shape loud: it fails when any core pattern
+matches no scheduled check, and when ZERO patterns parse at all, since an empty
+core tier would pass every push vacuously. It reads 15 patterns against 300
+scheduled checks in the shipped validator and is currently clean. Its selftest is
+6/6, and case 2 is the real one: renaming a check to a label that does not
+contain the old needle turns the lint red and names the dead pattern.
+
+This guard has a stated expiry. It protects a mechanism the rest of this scope
+replaces, so it should be DELETED when the typed registry lands.
+
+Remaining:
+
+Sized against the tree rather than estimated. `framework-validate.sh` carries 302
+enumerated invocations, 213 `run_check` and 89 `run_check_self_only`, plus a
+discovery sweep that schedules selftests this file never names. Every one of them
+needs an identity before a plan can be generated from a registry, so this lands
+as one vertical or not at all: a registry that covers part of the suite would sit
+beside `core_check_label()` as a SECOND selection authority, which is the
+duplication SCOPE-13 removed for gates.
+
+It also cannot be proven by the core tier. Changing how checks are selected
+changes scheduling for all 302, so the acceptance evidence is a full-suite run
+whose executed-check set is identical before and after. That gate has to be
+available before the work starts, not after it lands.
+
+- Add a canonical check registry.
+- Give each check a stable `checkId`.
+- Declare argv, tier, push-blocking posture, install mode, timeout, and platform.
+- Declare input files, input globs, environment keys, tool versions, and outputs.
+- Declare `serial`, `isolated`, or `timing-sensitive` execution classes.
+- Generate core and full execution plans from this registry.
+- Fail validation when a push-blocking check has no core disposition.
+- Keep unregistered discovered selftests runnable in a conservative serial lane.
+
+### SCOPE-3 - Dependency-Complete Receipts And Affected Execution (PERF-4, COV-16)
+
+Depends on SCOPE-2, and the dependency is structural rather than a sequencing
+preference. A receipt keyed by check ID cannot be written while no check has an
+ID: `checkId` appears three times in the whole tree and one of them is
+`core-tier-pattern-lint.sh` line 21 saying that a real `checkId` is the point at
+which "this lint has nothing left to guard and should go". The framework already
+names the same prerequisite this scope needs.
+
+The first bullet is accurate and worth keeping. `changed_surface_touches()` is
+literally same-basename: it takes the selftest's basename, derives
+`subject="${base%-selftest.sh}.sh"`, and matches only those two paths, so a
+selftest whose real inputs are a registry, a schema or a sibling library is
+invalidated by neither. Replacing that with a declared input closure needs a
+place to declare the closure, which is the registry SCOPE-2 builds.
+
+The receipt scripts already in the tree do not cover this. `tool-log.sh`,
+`evidence-receipt-check.sh` and `goal-boundary-receipt.sh` record EVIDENCE for
+spec and DoD claims; none of them records a validation check's result. Reusing
+their vocabulary would conflate two different receipt domains.
+
+- Replace same-basename invalidation with declared input closures.
+- Record a receipt for every check result.
+- Key each receipt by check ID, command, input hashes, toolchain, platform, and validator version.
+- Store exit code, duration, stdout hash, stderr hash, and cache status.
+- Treat a missing declaration as run-required and cache-forbidden.
+- Compute the affected check closure from changed files and reverse dependencies.
+- Run previous failures first.
+- Run changed checks, dependents, and always-run invariants next.
+- When no declared input changed, reuse cacheable receipts and run only always-run checks.
+- Keep cache disabled for timing-sensitive checks and cold CI lanes.
+- Adopt the shadow-first rule that `test-impact-shadow.sh` already fixes in source.
+- Report a proposed subset before any subset is permitted to skip work.
+
+### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
+
+Checked for a partial first increment and there is not one, for a reason the
+framework already enforces. Neither piece exists yet: no next-step resolver and
+no persisted cursor, where the only `cursor` matches in the tree are unrelated
+awk locals in `adversarial-resolve.sh`. Shipping the resolver alone would add a
+SECOND capability with no production consumer, which is the state
+`phase-relevance-resolve.sh` is already in -- its only reference outside itself
+is `framework-validate.sh` scheduling its selftest. G127 requires every shipped
+capability to declare a non-empty `consumers:` list whose paths exist, and
+`capability-consumer-naming.sh` closes that loop from the other end for
+executable consumers.
+
+The coordinator is what consumes both the new resolver and the existing
+phase-relevance resolver, so resolver, cursor state and coordinator land
+together or the first one lands unconsumed and unverifiable.
+
+- Add a deterministic next-step resolver.
+- Persist mode digest, phase ordinal, phase occurrence, scope, round, and last accepted result digest.
+- Distinguish repeated phases such as `validate#1` and `validate#2`.
+- Make the coordinator invoke `phase-relevance-resolve.sh` before each phase.
+- Make it record skip inputs, verdict, reason, and reevaluation triggers.
+- Make test phases execute `test-impact-plan.sh` output rather than restating it.
+- Resume from the first unresolved occurrence without replaying accepted phases.
+- Keep conversation text diagnostic-only during resume.
+
+### SCOPE-9 - Proportional Micro-Fix Packet (HO-3, EV-9)
+
+Delivered: the packet, its admission window, and its enforcement.
+`bubbles/registry/micro-fix-packet.yaml` is the single source for the eight
+admission conditions, the three still-required artifacts, and the four
+obligations proportionality may never trade away.
+`bubbles/scripts/micro-fix-admission.sh` READS that registry and refuses a
+declared compact packet that fails any condition or drops any obligation, with
+no override flag. An UNANSWERED condition is a refusal rather than a default,
+because silence is how the inconvenient question gets skipped. Proven by
+`micro-fix-admission-selftest.sh` 9/9, whose case 8 adds a condition to a copied
+registry and requires the guard to start demanding it, so the admission list
+cannot drift into a second copy inside the script.
+
+Remaining, and deliberately not done here:
+
+- Measure packet authoring time and defect escape rate before making it the default.
+
+That measurement is carried as `OW-015`. Until it exists the packet is opt-in
+per bug via `"packet": "micro"` in `state.json`; selftest case 9 fails if the
+registry's NOT THE DEFAULT caveat is ever deleted.
+
+### SCOPE-11 - Explicit Selftest Scheduling And Semantic Reachability (COV-15)
+
+Delivered: invocation-based scheduling shared by the sweep and the coverage lint, path-aware governance and skill indexing, and executable consumers that name the capability they consume, enforced by `capability-consumer-naming.sh`. The reachability guard keeps its report-only posture until dynamic-call false positives are calibrated.
+
+### SCOPE-12 - Manifest-Driven Downstream Payload (REG-11)
+
+Delivered: payload-closure guard with its selftest, eval-subsystem and installer
+classification, the real installer fixture, real exit codes, and the enumerated
+downstream-failure contract. Remaining:
+
+- DECLINED ON EVIDENCE, so no work is pending here. The classes that carry meaning already exist on the enforcement surface. `verify-payload-integrity.sh` states the contract in one place: every managed entry is REQUIRED unless the active install profile explicitly omits it, the agents-only profile may omit `instructions/` and `skills/`, a registered optional skill may be absent until a repository opts in, and any other missing managed file is a hard failure. It receives the install profile explicitly and reads the installed optional-skill registry, so only contract-declared omissions are allowed. Required and optional are enforced, with the profile and the skill registry as their authority; source-only is a separate manifest section; historical is now the named `demoted_source_only_docs` class. Labelling the same classes again inside the manifest would give one classification two authorities that can disagree, which is the duplication SCOPE-13 removed for gates in this same release.
+- RESOLVED, already true for scripts: "stop treating every top-level script as managed by default" needs no change. The manifest carries ZERO top-level files. Measured from `release-manifest.json`: 876 managed entries across `bubbles/` 552, `docs/` 116, `agents/` 92, `skills/` 47, `prompts/` 41, `instructions/` 13, `templates/` 11, `.specify/` 4, and no path without a directory component.
+- DELIVERED, and the blocker recorded here earlier was WRONG. That entry claimed `governance-index-lint.sh` forced a choice between a dead link downstream and an orphan in source. It does not: the lint discovers docs only under `agents/bubbles_shared/`, `instructions/`, `skills/*/SKILL.md` and `docs/recipes/`, and never enumerates top-level `docs/*.md`. The claim generalised two lines of the lint without checking what it scans. The real blocker was mechanical and elsewhere: `install.sh` shipped docs with a wholesale `cp -r "$TEMP_DIR"/docs/*`, so the manifest never governed what reached a consuming repository and demoting an entry changed tracking without changing shipping. Docs now install from the manifest's managed set and the existing orphan prune runs for `docs`, which also clears the retired framework docs every consuming repository was still carrying. Five maintainer-only records now stay in source and leave the payload; managed goes 876 to 871 and source-only 105 to 110. `v4.1.0-delivered-pending-activation.md` and `Framework_Convergence_Health.md` keep shipping because installed skills and an installed recipe link them, and the demoted rows carry `ref-ok` so G132 reads them as intentional.
+- The demotable set is also smaller than it looks, and was verified per candidate rather than assumed. Of seven maintainer-only/frozen-history docs, `v4.1.0-delivered-pending-activation.md` carries LIVE markdown links from three shipped skills and `Framework_Convergence_Health.md` from a shipped recipe, so both must keep shipping while G132 grounds those references. The other five have zero live links from shipped surfaces. Corrects a first-pass reading of this scope: the four guards that name `Framework_Convergence_Health.md` do so only in COMMENTS, and `stale-deferral-lint.sh` and `migrate-modes-v5-to-v6.sh` reference the two design docs only as exemption paths (`continue`, `-prune`) that go inert when the file is absent. None of them reads a doc at runtime. Net reachable reduction is five files of 876, or 0.6%.
+- Drive `known_downstream_failures` in `v5.3-selftest.sh` to empty. Six at review, five after the first pass, and now EMPTY: a downstream install validates itself with no enumerated exceptions. Two of the original descriptions were WRONG, and so was one of the corrections; all three are restated here from reproductions rather than from reading.
+  - FIXED `Discovered selftest: profile-transition-selftest.sh`. It reads the LIVE `.specify/memory/bubbles.config.json` and drives `developer-profile.sh set` against it, so downstream it asserted against whatever profile that repo legitimately chose. Now enumerated as `run_check_self_only`, which also removes it from the discovery sweep that was running it as portable. Still passes in source.
+  - FIXED `Gate-vintage selftest (IMP-036)`. Cases 1 to 8 are hermetic, but case 9 ran `gate-vintage-annotate.sh --check` against the REAL registry. That command derives each gate's vintage from git history, so downstream it read the CONSUMING repo's history, where every gate arrived in a single install commit, and correctly reported stale. The portable selftest was failing every downstream install for being right. Case 9 is removed rather than rescheduled, because framework-validate already runs that exact command as `run_check_self_only "Gate-vintage annotation freshness"`, which is the only context where the answer means anything. Coverage is unchanged and the remaining 8 hermetic cases still run downstream.
+  - FIXED `Run-state abandoned-run reaper selftest`. It was a PORTABILITY defect, not a reaper defect, and it had been failing in the source tree too since before the review baseline. Lines 73 and 117 called bare `timeout`, which does not exist on macOS or any box without GNU coreutils (confirmed on this machine: `timeout` absent, `gtimeout` present), and neither call carried a `portable-ok` exemption or sourced `guard-lib.sh`. With `timeout` missing, the subshell that TRIGGERS the reaper never ran, so nothing was reaped. That produced exactly the observed signature: A1 (stale run reclassified) and A3 (reaped record keeps its `startedAt`) failed, while A2 (live run preserved) and A4 (threshold honoured) PASSED VACUOUSLY, because "nothing was reaped" satisfies both. Now sources `guard-lib.sh` and calls `bubbles_run_with_timeout`, which resolves `timeout` then `gtimeout` then a watchdog fallback. 5 of 5 cases pass.
+  - FIXED `Open-work register selftest (IMP-033 / SCOPE-3 — WIP-1, WIP-2)`. THE EARLIER CORRECTION WAS ITSELF WRONG. It claimed the selftest "builds every case under `mktemp` fixtures and never reads the live register", and used that to argue the downstream failure had some other cause. Reproduced in a real install: 21 cases are hermetic and case `e3` reads the live tree. `e3` resolved the repository root as the FRAMEWORK root, which is correct in source and is `.github/` downstream, where `.specify/` sits at the real repository root instead; and it treated the absence of a register as a defect, when what ships is `templates/open-work.md.tmpl`, so a repository that has not adopted a register correctly has no file. The property the case exists to defend — a template must not install into an ignored path — is checkable everywhere and is now checked everywhere, while a framework SOURCE tree must still ship its own register. 22 of 22 in both modes.
+  - FIXED `Scenario compile lint selftest`. It passes downstream and has left the list.
+  - FIXED `Discovered selftest: repository-binding-selftest.sh`. THE EARLIER CORRECTION WAS HALF RIGHT. The denylist entry and its reason are real, but the conclusion that "the remaining downstream failure comes from the enumerated CLI check, not from the sweep" was wrong. `framework-validate.sh` resolved the denylist as `$REPO_ROOT/bubbles/registry/selftest-denylist.txt`; downstream the framework lives under `.github/bubbles/`, so that path resolved to nothing, the list read as EMPTY, and the sweep ran both denied suites. `repository-binding-selftest.sh` asserts it was entered through the `cli.sh` boundary, so a direct second run fails by construction. The denylist is now resolved from the framework directory and an unreadable one is refused loudly, which closes the same fail-open class the surrounding comment already defended one layer down.
+
+### SCOPE-13 - Canonical Registry Consolidation (REG-10, REG-12)
+
+Delivered: `gate-meta.sh` reads the canonical gate registry after a 117-gate shadow comparison, managed-doc list parsing accepts both YAML sequence indentations with a retention check, Check 6 reads `required-specialists.yaml` directly, the shadow comparator is deleted, and the arm rationale moved beside the registry entry.
+
+Also delivered: the LAST reader of the generated block was repointed.
+`registry-consistency-selftest.sh` resolved every `Gxxx` reference against the
+`gates:` block in `workflows.yaml`, so the check that proves gate references are
+valid was validating against a COPY. It now reads `bubbles/registry/gates.yaml`.
+Both sources define 117 gates and its output is byte-identical before and after
+(`603ce87a47e2ee22`).
+
+The removal precondition is now MET and measured. Every remaining reader was
+fingerprinted with the block present and again after the repoint, and all are
+byte-identical: `gate-classification report` `81d599c65ef28fde`,
+`gate-enforcement` `a419685e25babafd`, `gate-bands --check` `cea2b9efb03e5398`,
+`bubbles-hub-report` `93ea03d74aeaaa4b`, `gate-meta list` `689c81d7998a87f1`,
+`gate-meta count` 117. No script parses gate DEFINITIONS from `workflows.yaml`
+any more; the remaining references read per-mode `requiredGates`, the band
+header, or the mode surface, none of which the `gates:` map provides.
+`bubbles/registry/gates.yaml` is in the release manifest, so downstream installs
+keep the canonical source when the block goes.
+
+REVERTED, and the reason matters more than the change. The 1,027-line `gates:`
+map was deleted, and then RESTORED, because this scope's own precondition was
+not actually met.
+
+The precondition reads "only after byte-equivalent queries pass for every
+remaining reader". Six readers were fingerprinted and all six were byte-
+identical. That inventory was built by grepping for scripts that parse gate
+DEFINITIONS out of `workflows.yaml`. It therefore missed the readers that grep
+the same file for gate NAMES: `agent-ownership-lint.sh` looks for
+`artifact_ownership_enforcement_gate`, `G063` and `G064` in `workflows.yaml` and
+fails without them, and `evidence-admission-hardening-selftest.sh` fails with it.
+A later count found 52 scripts referencing both `workflows.yaml` and a gate
+identifier, so the true reader set was never established.
+
+The removal shipped three regressions before this was understood:
+`workflows.schema.json` still required a `gates` property;
+`generate-framework-stats.sh` counted gates out of the deleted block and
+published `gates: 0` to the stats and the README badge; and the two checks above.
+
+Deleting the copy is still the right destination. It needs the full reader
+inventory first, which is what the scope asked for and what was not done.
+
+What is KEPT from the attempt, because each is an improvement independent of the
+removal: `registry-consistency-selftest.sh` resolves gate references against
+`bubbles/registry/gates.yaml` rather than the generated copy;
+`generate-framework-stats.sh` counts gates from the registry, which is correct
+whether or not the copy exists; and `workflows.schema.json` no longer REQUIRES
+`gates`, which is harmless and makes the eventual removal one step smaller.
+
+Now delivered: the inventory exists and is held mechanically.
+`gates-block-reader-lint.sh` computes it EMPIRICALLY rather than by guessing
+which greps look like gate lookups, which is precisely what failed. It derives
+the `gates:` block's line range, collects the gate identifiers that appear inside
+the block and NOWHERE else in the file -- exactly the tokens deletion removes --
+and reports any script that references `workflows.yaml` and contains one. A gate
+id that also appears in a per-mode `requiredGates` list survives deletion and is
+correctly not treated as evidence.
+
+The method's credibility rests on rediscovering what the hand-built inventory
+missed, and it does. It reports exactly one reader, `agent-ownership-lint.sh` --
+the reader whose omission broke the removal. It resolves `workflows.yaml`, then
+asserts on `capability_delegation_gate`, `owner_only_remediation_gate` and
+`artifact_ownership_enforcement_gate`, all of which exist only inside the block.
+
+Two scripts that a first cut of the detector reported were checked and correctly
+dropped: `state-transition-guard.sh` and `gate-id-grep.sh` both resolve
+`workflows.yaml` in code, but each names its only block-exclusive gate in a
+COMMENT, and `gate-id-grep.sh` validates against per-mode `requiredGates` lists,
+which survive the block's deletion.
+`evidence-admission-hardening-selftest.sh`, the second regression, does not
+reference `workflows.yaml` at all; it failed transitively through the guard.
+
+The declared set lives in `bubbles/registry/gates-block-readers.txt`. An
+undeclared reader fails and is named, a declared reader that has been repointed
+fails so the list is forced to shrink, a missing inventory refuses rather than
+passing silently, and an empty inventory states that the removal precondition is
+met. Selftest 9/9, whose case 2 is the load-bearing one: a script naming a gate
+id that also lives outside the block must NOT be reported, or the inventory
+degrades into "mentions a gate somewhere" and nobody believes it.
+
+Delivered. The block is gone: `workflows.yaml` drops from 2,245 lines to 1,217,
+and `generate-gates-block.sh` and `gates-registry-selftest.sh` are retired with
+it. `bubbles/registry/gates.yaml` is the only definition of a gate.
+
+The precondition was computed rather than remembered this time.
+`agent-ownership-lint.sh` resolves gate existence against the registry; its
+output is byte-identical before and after (`a8cda01667403ccf`, exit 0), and
+removing `concrete_result_gate` from the registry still turns it red naming G063,
+so it is load-bearing against the new source rather than merely quiet.
+`gates-block-reader-lint.sh` reports an empty inventory and, with the block gone,
+reports that nothing can depend on it.
+
+Fourteen surfaces moved with the generator, because retiring one is a workflow
+change and not a file deletion -- the other half of what went wrong the first
+time. The `*"Gates registry"*` core-tier pattern went with the checks it matched;
+left in place it would have failed `core-tier-pattern-lint`, the guard built
+earlier in this same scope to catch exactly that. `gate-bands.sh` splices into
+markers ABOVE the block, so it survives; had they been inside, stripping would
+have silently broken a second generator. All seventeen gate-data consumers pass,
+including the two that regressed on the first attempt.
+
+### SCOPE-14 - Context And Agent-Prose Cleanup (COST-8)
+
+Delivered: the reference-closure rename is now complete EVERYWHERE. IMP-039
+renamed `costProxy` to `referenceClosureProxy` in `bundle-cost-report.sh` and
+`bubbles.retro.agent.md`, but `workflows.yaml` kept declaring `bundleCostProxy`,
+so the metrics registry named a dimension its producer had stopped emitting and
+anything reading the registry for that field found nothing. The registry now
+declares `referenceClosureProxy` and names `bundle-cost-report.sh` as its
+producer. No live reader references the retired name; the remaining occurrences
+are historical changelog prose and the finding text that described the drift.
+This also closes the rename half of IMP-044 REG-14.
+
+Also verified, and requiring no change: nothing blocks on link reachability.
+`bundle-cost-report.sh`, the only producer of `referenceClosureProxy`, is never
+scheduled as a check in `framework-validate.sh` -- only its selftest is -- so the
+proxy is already advisory. The three budgets that DO block
+(`instruction-budget-lint` line 718, `effective-bundle-budget` line 1159,
+`agent-bundle-size-budget` line 1174) all measure BYTES of a file or of a
+transitive import closure, which is a counted quantity rather than an inferred
+prompt cost. There is no blocking prompt-cost claim to remove and reference
+closure is already the advisory coupling signal the scope asks for.
+
+Remaining:
+
+- RESOLVED, and it contradicts this scope's own finding above. The three budgets that block all measure BYTES of a file or of a transitive import closure, which the Delivered section already established is a counted quantity rather than an inferred prompt cost. `effective-bundle-budget.sh` additionally ships with NO default ceiling: with `effectiveBundleMaxBytes` unset it reports "informational only" and never blocks. There is no prompt-cost inference left to deprecate, and deprecating a byte measurement that a repository opts into would remove a working control.
+- RESOLVED, premise is stale. The agents already point at the registry instead of restating it: `bubbles.iterate` dispatches "following the mode's `phaseOrder` from `bubbles/workflows.yaml`" and executes "phases in registry `phaseOrder`", `bubbles.super` instructs the reader to "Read the live mode registry" and the `phases:` block of the live workflow registry, and `bubbles.bug` defers to the `bugfix-fastlane` phaseOrder. Scanning every agent file for a markdown table row carrying a phase name returns exactly two, and neither is workflow data: `bubbles.status` lines 186-189 are an EXAMPLE status report and `bubbles.analyst` line 398 is an output TEMPLATE with placeholders. The status agent's genuine duplication was already consolidated under SCOPE-10.
+- Load phase-owned policy modules through an explicit context manifest.
+- Keep non-active skills and reference modules as on-demand pointers.
+- Keep identity, prohibitions, ownership, dispatch boundaries, and result contracts in agent files.
+- Require held-out routing tests before deleting policy prose.
+- Measure actual tool-result bytes and host prompt tokens when an adapter exists.
+
+### SCOPE-17 - Transition Guard Plan And Gate Telemetry (PERF-4, COV-15)
+
+Delivered: telemetry source classing. Every gate-hit record now carries a
+`sourceClass` of product, fixture, selftest or migration; the class is DERIVED
+from the repository root because a fixture that forgets to declare itself is
+exactly the record that pollutes the report; an unrecognised declared class is
+demoted to fixture rather than trusted; `report` counts product records only and
+states what it excluded; records predating the field still count as product so
+no history is discarded. Proven by `gate-hit-log-selftest.sh` cases 17-22, and
+proven falsifiable by mutating the default filter, which turns cases 18 and 19
+red. This also corrects `OW-012`, whose remediation runs `gate-hit-log.sh report`
+to find never-rejecting gates: that command no longer counts fixture rejections.
+
+Remaining:
+
+- Classify transition checks as spec-local, repo-global, or external.
+- Declare prerequisite edges between transition checks.
+- Emit `BLOCKED_NOT_RUN` for checks whose prerequisites failed.
+- Continue independent checks to preserve one-pass diagnostics.
+- Reuse repo-global receipts only when their input closure is unchanged.
+- Require downstream observation windows before retiring any gate.
+
+## Cleanup Disposition Matrix
+
+### Remove Or Consolidate After Focused Proof
+
+| Candidate | Disposition | Required proof |
+| --- | --- | --- |
+| `framework-stats.md` | Delete or index | No downstream or human consumer exists, and the generator self-check plus manifest entry change together |
+
+### Migrate Before Deletion
+
+| Candidate | Migration condition |
+| --- | --- |
+| Generated `gates:` block | Every reader uses `registry/gates.yaml` |
+| Required-specialist guard table | Check 6 consumes the registry |
+| Required-specialist shadow comparator | Runtime registry cutover passes |
+| Effective-bundle budget layers | Config and docs use reference-closure terminology |
+| Managed source-only selftests | Payload-class contract and real downstream fixture pass |
+| MCP alias tools | Usage scan and deprecation window complete |
+| `docs/CATALOG.md` inventory | Checked recipe index is the sole inventory |
+| Deprecated flags and framing | Downstream usage scan is empty |
+
+### Keep
+
+| Asset | Reason |
+| --- | --- |
+| Compact always-on kernel | It carries universal repository and evidence invariants within budget |
+| Downstream agent, skill, prompt, and instruction copies | Installer-managed offline distribution |
+| Prompt shims | Current prompt and agent inventory is one-to-one |
+| Versioned aggregate selftests | They protect supported migration and persisted-artifact contracts. `v4.1.0-selftest.sh` reaches execution through discovery only |
+| `migrate-modes-v5-to-v6.sh` | It is the supported migration tool |
+| Persisted v5 mode keys and grandfathering | Current guards and historical artifacts consume them |
+| Frozen v5/v6 design documents in source | Maintainer history has audit value |
+| Gate coverage map | It has a distinct generated enforcement view and freshness check |
+| Installer templates | The installer consumes them |
+| MCP catalog files | The server loads tool and resource JSON dynamically |
+
+## Delivery Amendments
+
+Evidence found during implementation that changed a proposed action.
+
+- The release-level manifest re-check is RETAINED, not removed. Freshness now runs last inside `framework-validate`, but only a second invocation after the suite can observe a managed file dirtied during the run. The cost is one hash pass against a ~2100 second gate.
+- The macOS CI claim was imprecise rather than false. A macOS `release-check` leg exists and is gated to pushes, so the hook now states Linux on pull requests and pushes, macOS on pushes.
+- The status agent's duplicated rows moved to SCOPE-10. They are agent-routing prose, not leaf cleanup, and SCOPE-14 requires held-out routing tests before prose deletion.
+- The `--list-modes` regression needed no new test. `mode-alias-selftest.sh` was already stripping `phaseRelevance` itself, so removing that workaround made its existing coverage check the regression.
+- `validate_dod.revert_on_fail` was REMOVED rather than wired. The guard supports the flag, but certification state is validate-owned, so exposing a status rewrite to a model-invocable tool creates a forging vector. The CLI keeps the capability.
+- `search_code` carried the same ignored-input defect as `validate_dod`, and worse: three declared inputs were unrendered while the description promised one of them worked. Fixed under the same scope.
+- Bare v5 operator syntax was corrected during SCOPE-8 because it shares the mode contract. The phantom mode sections remain with SCOPE-16.
+- The selftest denylist needed no change. It already required a stated reason per entry and already failed on a stale entry, and both of its two entries are executed through another path.
+- Path-aware skill indexing exposed six skills that no index referenced. The basename rule had been reporting them as indexed because every skill file is named `SKILL.md`.
+
+## Migration And Rollout
+
+### Wave 0 - Leaf Cleanup
+
+- SCOPE-1 and SCOPE-8 are delivered. See their CHANGELOG entries.
+- Land the safe parts of SCOPE-10 and SCOPE-16 next.
+- Run focused tests after each edit.
+- Run one core validation after the leaf batch.
+
+### Wave 1 - Shadow Registries
+
+- Land the typed check registry without changing execution.
+- Compare the generated plan with the current ordered run.
+- Land canonical parser and registry readers behind shadow comparisons.
+
+### Wave 2 - Receipts And Affected Execution
+
+- Enable receipts in report-only mode.
+- Compare affected plans with full cold runs.
+- Require zero missed failures before skipping any check by default.
+
+### Wave 3 - Bounded Parallelism
+
+- Parallelize one audited group first.
+- Compare serial and parallel outputs on the same commit.
+- Expand only after stable parity.
+
+### Wave 4 - Workflow Runtime
+
+- Add the occurrence-aware cursor and executable phase coordinator.
+- Mirror legacy phase names during migration.
+- Validate interrupted and repeated-phase resumes.
+
+### Wave 5 - Payload And Cleanup Migrations
+
+- Cut over payload classes, canonical registries, evidence policy, and managed docs.
+- Remove shadow copies only after their consumers reach zero.
+
+### Heavy Validation Cadence
+
+- Run focused validation immediately after each edit.
+- Rerun only failed checks and their declared affected closure during repair.
+- Batch unrelated side-effect risk for the next heavy boundary.
+- Run a cold full `release-check` once per final exact release candidate.
+- Run macOS and Linux promotion lanes before publishing framework changes.
+- Do not run the full suite after every finding, scope, or documentation correction.
+
+## Risks And Mitigations
+
+- **R1 Stale cache result:** A missing input could preserve a false pass, and a skipped check looks exactly like a passing check. Unknown inputs force execution and disable caching.
+- **R2 Parallel fixture collision:** Two checks could share scratch state. Unknown checks remain serial, and isolated checks receive private roots.
+- **R3 Resume schema drift:** Old state lacks occurrence fields. Additive readers infer a conservative first unresolved occurrence and record migration.
+- **R4 Micro-fix quality loss:** A compact packet could hide design work. Closed admission rules escalate risky or behavior-changing work automatically.
+- **R5 Active asset deletion:** Dynamic callers can defeat grep. Require manifest, runtime, index, and downstream usage checks before deletion.
+- **R6 Policy loss during agent slimming:** Markdown links are not loaded automatically. Require explicit loaders and held-out routing tests first.
+- **R7 Delayed broad regression:** Focused loops can miss an unrelated effect. Preserve the exact-tree cold release gate, keep the permanent full-suite fallback, and batch risk at wave boundaries.
+- **R8 Registry cutover drift:** A consumer may still read a generated copy. Run shadow queries and block deletion while any old reader remains.
+- **R9 Telemetry contamination:** Fixtures can distort gate utility. Tag source class and exclude fixtures from product-retirement reports.
+- **R10 Proposal breadth:** This IMP spans several ownership surfaces. Land each scope independently and keep every intermediate tree green.
+
+## Acceptance Criteria (When Implemented)
+
+### Validation Outcomes
+
+- Core validation p50 is at most 75 seconds after SCOPE-1, measured against 109 seconds that include 41 seconds of duplicated ShellCheck work.
+- Core validation p50 reaches 45 seconds only after ShellCheck input scoping or bounded parallelism lands.
+- A per-check latency profile of the cold full suite is published before any full-suite reduction target is set.
+- The full-suite target is then derived from that profile rather than assumed.
+- Every old and new check ID appears exactly once in a full execution report.
+- Serial and parallel plans produce identical normalized results before parallel default activation.
+- A change to any declared transitive input invalidates every dependent receipt.
+- An undeclared dependency causes execution, never a cache hit.
+- One final cold release check passes on the exact published commit.
+
+### Workflow Outcomes
+
+- An interrupted repeated-phase mode resumes at the correct phase occurrence.
+- Phase relevance decisions are executable, persisted, and reevaluated on declared triggers.
+- Test-impact output drives real commands and records their receipts.
+- Compaction cannot stamp success without a matching history record.
+- A compact micro-fix packet cannot admit high-risk or behavior-changing work.
+
+### Cleanup Outcomes
+
+- No selftest can be suppressed by appearing only in a comment.
+- Every managed executable has a complete managed dependency closure.
+- The real installed downstream tree passes complete framework validation.
+- Gate metadata and required specialists each have one runtime source.
+- Unknown adoption profiles receive the same fail-loud result from every caller.
+- Managed-doc required sections survive resolution.
+- Active docs contain no phantom mode and no rejected bare v5 invocation.
+- Generated capability summaries preserve block scalars.
+- No fixture-only gate telemetry enters the default retirement report.
+- Every deleted file has a recorded consumer scan and migration disposition.
+
+### Context Outcomes
+
+- Always-on framework instructions remain below the current 8,000-byte ceiling.
+- Reference closure is never reported as loaded prompt cost.
+- Tool-result bytes and prompt tokens are reported only from configured usage adapters.
+- The workflow runner shrinks only after held-out routing quality remains unchanged.
+- Open-work rows stay bounded and retain an actionable owner and next action.
+
+## Files To Touch (On Approval)
+
+### Validation Runtime
+
+- `bubbles/scripts/framework-validate.sh`, `bubbles/scripts/release-check.sh`, and `bubbles/scripts/hooks/pre-push.sh` - `bubbles.implement`. PERF-1 through PERF-5.
+- New check-registry, planner, receipt, and scheduler scripts under `bubbles/scripts/` - `bubbles.implement`.
+- Focused and adversarial selftests under `bubbles/scripts/` - `bubbles.test`.
+- `.github/workflows/agnosticity.yml` - `bubbles.devops`.
+
+### Workflow And State
+
+- `bubbles/workflows/modes.yaml`, state schemas, and state templates - `bubbles.implement`. WIP-4.
+- `agents/bubbles.workflow.agent.md` and shared workflow modules - `bubbles.docs` after executable behavior exists.
+- `bubbles/scripts/phase-relevance-resolve.sh` and `bubbles/scripts/test-impact-plan.sh` consumers - `bubbles.implement`.
+- `bubbles/scripts/context-compactor.sh` and G083 guard/selftests - `bubbles.implement` and `bubbles.test`.
+
+### Contracts And Cleanup
+
+- `bubbles/mcp/tools/*.json`, MCP server tests, and mode resolver tests - `bubbles.implement` and `bubbles.test`.
+- `bubbles/registry/gates.yaml`, `bubbles/registry/required-specialists.yaml`, and their readers - `bubbles.implement`.
+- `bubbles/scripts/trust-metadata.sh`, `generate-release-manifest.sh`, `install.sh`, and downstream-install tests - `bubbles.implement` and `bubbles.test`.
+- Adoption-profile and managed-doc parser consumers - `bubbles.implement`.
+- `agents/bubbles_shared/evidence-rules.md`, G025, instructions, and scope workflow - `bubbles.docs`, with guard parity owned by `bubbles.implement`.
+- Operator docs, generated-doc generators, status surfaces, and historical indexes - `bubbles.docs`.
+- `bubbles/scripts/framework-health-evidence-lint.sh` and cleanup inventory checks - `bubbles.test` and `bubbles.implement`.
+
+## Owner Decisions Requested
+
+1. Approve the typed check registry as the validation source of truth.
+2. Approve one final cold full gate per release candidate instead of one full gate per repair.
+3. Approve the compact micro-fix packet pilot for low-risk repairs.
+4. Approve removal of blocking budgets based on reference closure.
+5. Approve a versioned compatibility removal train after downstream usage measurement.

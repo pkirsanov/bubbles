@@ -1,4 +1,4 @@
-# IMP-042 — Continuation posture: make `unattended` real, then give it one honest entrypoint
+# IMP-045 — Continuation posture: make `unattended` real, then give it one honest entrypoint
 
 **Status:** ACCEPTED 2026-08-14 — owner approved; implementation may route to the named owners
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
@@ -66,6 +66,14 @@ Extend `bubbles/scripts/autonomy-posture-guard-selftest.sh` with a paired advers
 
 ### SCOPE-3 — One authority for the prompt-shim count (REG-9)
 
+DELIVERED. `count_prompt_shims()` counts `prompts/*.prompt.md` independently of
+`agents/`, both README substitutions read `$prompt_shim_count`, and `--check`
+now fails when either generated README block carries a stale number. The
+assertion counts BOTH occurrences rather than grepping for one, because README
+states the figure in two generated blocks and a single-match check would pass
+while one of them drifted. Proven falsifiable: perturbing one block in a copied
+tree exits 1 naming the expected count, and the clean tree exits 0.
+
 Teach `bubbles/scripts/generate-framework-stats.sh` to count `prompts/*.prompt.md` independently of `agents/`. Replace both README `$agent_count prompt shims` substitutions with the prompt count. Add a `--check` assertion that fails when README's prompt-shim count is stale, mirroring the existing workflow-mode-count assertion. This scope is a prerequisite for SCOPE-4 and is independently landable today, because it is a no-op while the two counts are equal.
 
 ### SCOPE-4 — Add the `/bubbles.continue` prompt shim
@@ -112,6 +120,19 @@ Change the G086 text in `bubbles/workflows.yaml` and `bubbles/registry/gates.yam
 
 ### SCOPE-8 — Give the decision policy a long-term principle, and make it posture-aware (REG-10)
 
+DELIVERED. `decisionPolicy.mechanicalPrinciples` now opens with `prefer_durable`
+and `forbid_shortcut`, and a ranking comment states that `prefer_durable`
+outranks `prefer_completeness` and `prefer_reversible` — list order alone would
+not have said so, because nothing mechanically reads the order.
+`tasteDecisionHandling.postureOverrides.unattended` sets `auto_resolve_and_log`
+and `record_low_confidence_decision`, and pins `escalateSecurityAction` to
+`blocked_naming_the_decision` so the security exception is expressed as a value
+rather than left to prose. `escalate_security` survives unchanged as a
+principle. Verified: the file parses, `prefer_durable` is first, and
+`mode-resolver.sh --validate` still resolves all 61 modes with no inherits
+cycles. No guard asserts these keys yet and none is claimed; the runners consume
+them in SCOPE-1, which this scope deliberately precedes.
+
 Add two principles to `decisionPolicy.mechanicalPrinciples`:
 
 1. `prefer_durable` — when two approaches both satisfy the spec, choose the one that is better for the long term: fewer future migrations, fewer special cases, and a contract the next change can extend. This principle ranks ABOVE `prefer_completeness` and `prefer_reversible`, because an easily-undone shortcut is still a shortcut.
@@ -157,7 +178,7 @@ Every scope is additive and default-preserving. The framework default stays `ful
 - **R3 — an unbounded unattended run.** Mitigation: already mechanical. `autonomy-resolve.sh` exits 3 with `E039-UNATTENDED-UNBOUNDED`, and SCOPE-4 requires the shim to supply a budget.
 - **R4 — count drift lands as a broken build.** Mitigation: SCOPE-3 lands first and is a no-op at equal counts; `management-truth-lint.sh` then holds both files.
 - **R5 — the new G135 check hard-codes the runner list and rots.** Mitigation: derive the four runners from `bubbles/agent-capabilities.yaml` `workflowModeGrants` where practical, and pair every check with an adversarial fixture so a silent pass is impossible.
-- **R6 — G125 Check 6 refuses the commit.** If the commit that ADDS this file also mutates `bubbles/` or `agents/`, its message MUST name `IMP-042`, or `framework-health-evidence-lint.sh` reports `proposal-untraceable`. Mitigation: name the IMP in the commit message, or commit the proposal separately.
+- **R6 — G125 Check 6 refuses the commit.** If the commit that ADDS this file also mutates `bubbles/` or `agents/`, its message MUST name `IMP-045`, or `framework-health-evidence-lint.sh` reports `proposal-untraceable`. Mitigation: name the IMP in the commit message, or commit the proposal separately.
 - **R7 — `forbid_shortcut` becomes a rhetorical principle the resolver cannot apply.** A principle that cannot decide anything is decoration. Mitigation: state it as a prohibition over concrete, detectable moves — weakening a test, narrowing a DoD claim, deferring required behavior, relabeling incomplete work — each of which already has a gate (G040 deferral language, G025 per-item evidence, the implementation reality scan).
 - **R8 — auto-resolving overflow hides a spec that is genuinely too vague.** `overflowAction: route_to_clarify` exists because more than five taste decisions in one phase is evidence the spec is unclear. Auto-resolving silently loses that signal. Mitigation: SCOPE-8 requires the overflow to be LOGGED, and SCOPE-10's per-iteration reconciliation surfaces the resulting drift against the plan rather than letting it accumulate to certification.
 - **R9 — per-iteration reconciliation slows the loop.** Mitigation: `post-planning` is a single guard invocation against artifacts already in memory, and it runs once per convergence iteration, not per dispatch. If measurement shows it is material, bound it by iteration count rather than removing it.

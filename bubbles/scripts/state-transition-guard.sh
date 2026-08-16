@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Capability: done-with-concerns-outcome-state, observability-posture-and-slo-gates,
+# Capability: validate-owned-certification, workflow-orchestration,
+# Capability: workflow-runner-authorization
 # =============================================================================
 # state-transition-guard.sh
 # =============================================================================
@@ -1407,16 +1410,46 @@ echo ""
 # =============================================================================
 echo "--- Check 5A: SLA Stress Coverage ---"
 sla_scope_count=0
+
+scope_declares_performance_contract() {
+  local scope_path="$1"
+  local performance_line=""
+  local performance_signal='latency|throughput|p95|p99|response[ -]time|\bsla\b|\bslo\b'
+  local affirmative_marker='target|budget|threshold|objective|guarantee|percentile|no more than|at most|at least|less than|greater than|under[[:space:]]+[0-9]|within[[:space:]]+[0-9]|[0-9]+([.][0-9]+)?[[:space:]]*(ms|milliseconds?|seconds?|rps|requests?[[:space:]]+per[[:space:]]+second|%|percent(age)?|ops)'
+  local quantitative_marker='no more than|at most|at least|less than|greater than|under[[:space:]]+[0-9]|within[[:space:]]+[0-9]|[0-9]+([.][0-9]+)?[[:space:]]*(ms|milliseconds?|seconds?|rps|requests?[[:space:]]+per[[:space:]]+second|%|percent(age)?|ops)'
+  local opt_out_marker='observability[^.;]*(opted out|disabled|unavailable|not applicable)|\bno[[:space:]]+(trace[[:space:]]+or[[:space:]]+)?(sla|slo)\b|\b(sla|slo|latency|throughput|p95|p99|response[ -]time)[^.;]*(not applicable|opted out|disabled|unavailable|absent|not declared|not required)|does not declare[^.;]*(sla|slo|latency|throughput|p95|p99|response[ -]time)|\bno[^.;]*(sla|slo|latency|throughput|p95|p99|response[ -]time)[^.;]*(evidence|target|budget|threshold|objective|guarantee)?[^.;]*(injected|captured|declared|required|available)?'
+
+  while IFS= read -r performance_line || [[ -n "$performance_line" ]]; do
+    if ! grep -Eiq "$performance_signal" <<< "$performance_line"; then
+      continue
+    fi
+
+    if grep -Eiq "$opt_out_marker" <<< "$performance_line"; then
+      # A concrete threshold wins over broad negation: "no more than 200 ms"
+      # is an upper bound, while "no SLO target is declared" is an opt-out.
+      if grep -Eiq "$quantitative_marker" <<< "$performance_line"; then
+        return 0
+      fi
+      continue
+    fi
+
+    if grep -Eiq "$affirmative_marker" <<< "$performance_line"; then
+      return 0
+    fi
+
+    return 0
+  done < "$scope_path"
+
+  return 1
+}
+
 for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
-  # `sla` and `slo` are word-bounded; the rest are not. Unbounded, the two
-  # three-letter terms match any word merely CONTAINING them — "slot", "slope",
-  # "slow", "slate", "Slack", "translate" — so a scope that says "slot" once was
-  # told it had a latency SLA and owed stress coverage it had no reason to write.
-  # The longer terms need no boundary: nothing innocent contains "latency" or
-  # "throughput". Guarded by a selftest case below.
-  if grep -Eiq 'latency|throughput|p95|p99|response time|\bsla\b|\bslo\b' "$scope_path"; then
+  # BUG-032: mention is not affirmation. Explicit no-SLA/no-SLO, not-applicable,
+  # unavailable, and opted-out lines are ignored unless the same line carries
+  # a target, budget, threshold, guarantee, comparator, or quantitative unit.
+  if scope_declares_performance_contract "$scope_path"; then
     sla_scope_count=$((sla_scope_count + 1))
     if grep -Eq '^\|[[:space:]]*Stress[[:space:]]*\|' "$scope_path" || grep -Eiq 'stress' "$scope_path"; then
       pass "SLA-sensitive scope includes stress coverage: ${scope_path#$feature_dir/}"
@@ -1529,103 +1562,47 @@ PY
 
 if [[ -n "$state_workflow_mode" ]]; then
   required_specialists=()
-  case "$state_workflow_mode" in
-    value-first-e2e-batch)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
-      ;;
-    full-delivery)
-      required_specialists=("implement" "test" "regression" "simplify" "gaps" "harden" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    feature-bootstrap)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit")
-      ;;
-    bugfix-fastlane)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit")
-      ;;
-    rapid-tool-delivery)
-      # IMP-101 SCOPE-5 (FLOW-101): this delivery mode was absent from the table,
-      # so Check 6 imposed no specialist-completion requirement on it. Its
-      # required specialists are its own declared phaseOrder in modes.yaml
-      # ([select, implement, test, validate, docs, finalize]) minus the select/
-      # finalize bookends. The read-only modes readiness-review and
-      # journey-refinement are intentionally NOT listed: they set
-      # allowImplementationForFindings:false and run review/journey phases, so a
-      # delivery-specialist requirement would be incorrect for them.
-      required_specialists=("implement" "test" "validate" "docs")
-      ;;
-    chaos-hardening)
-      required_specialists=("chaos" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "docs")
-      ;;
-    harden-to-doc)
-      required_specialists=("harden" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
-      ;;
-    gaps-to-doc)
-      required_specialists=("gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
-      ;;
-    harden-gaps-to-doc)
-      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "chaos" "validate" "audit" "docs")
-      ;;
-    reconcile-to-doc)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    test-to-doc)
-      required_specialists=("test" "validate" "audit" "docs")
-      ;;
-    chaos-to-doc)
-      required_specialists=("chaos" "validate" "audit" "docs")
-      ;;
-    batch-implement)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
-      ;;
-    batch-harden)
-      required_specialists=("harden" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    batch-gaps)
-      required_specialists=("gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    batch-harden-gaps)
-      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    batch-improve-existing)
-      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    batch-reconcile-to-doc)
-      required_specialists=("implement" "test" "validate" "audit" "chaos" "docs")
-      ;;
-    product-to-delivery)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
-      ;;
-    improve-existing)
-      required_specialists=("harden" "gaps" "implement" "test" "regression" "simplify" "stabilize" "security" "validate" "audit" "chaos" "docs")
-      ;;
-    redesign-existing)
-      required_specialists=("implement" "test" "regression" "simplify" "stabilize" "security" "docs" "validate" "audit" "chaos")
-      ;;
-    stabilize-to-doc)
-      required_specialists=("stabilize" "implement" "test" "regression" "simplify" "security" "chaos" "validate" "audit" "docs")
-      ;;
-    security-to-doc)
-      required_specialists=("security" "implement" "test" "regression" "simplify" "stabilize" "devops" "chaos" "validate" "audit" "docs")
-      ;;
-    regression-to-doc)
-      required_specialists=("regression" "implement" "test" "simplify" "stabilize" "devops" "security" "chaos" "validate" "audit" "docs")
-      ;;
-    simplify-to-doc)
-      required_specialists=("simplify" "test" "validate" "audit" "docs")
-      ;;
-    iterate)
-      required_specialists=("validate" "audit")
-      ;;
-    stochastic-quality-sweep)
-      required_specialists=("validate" "audit")
-      ;;
-    product-discovery)
-      required_specialists=("harden" "docs" "validate" "audit")
-      ;;
-    validate-to-doc)
-      required_specialists=("validate" "audit" "docs")
-      ;;
-  esac
+  # Read the canonical mode -> required-specialist mapping. This table was
+  # duplicated here as a case statement that required-specialists.yaml mirrored,
+  # with a shadow comparator holding the two in step; the registry is now the
+  # only copy. yq is the normal path, and the awk fallback parses the flow-style
+  # lists so Check 6 still resolves under a minimal PATH. An unresolved mode
+  # leaves the array empty and falls through to the derivation below, which is
+  # the same fail-closed path an unlisted mode always took.
+  _rs_registry="$SCRIPT_DIR/../registry/required-specialists.yaml"
+  if [[ -f "$_rs_registry" ]]; then
+    if command -v yq >/dev/null 2>&1; then
+      # strenv, not --arg: the pinned yq is Go yq, which has no --arg flag and
+      # would return empty for every mode. It also keeps the mode out of the
+      # expression text.
+      _rs_list="$(_rs_mode="$state_workflow_mode" yq -r '.modes[strenv(_rs_mode)] // [] | join(" ")' "$_rs_registry" 2>/dev/null || true)"
+    else
+      _rs_list="$(awk -v want="$state_workflow_mode" '
+        /^modes:[[:space:]]*$/ { in_modes = 1; next }
+        /^[a-zA-Z]/ { in_modes = 0 }
+        in_modes == 1 && $0 ~ /^[[:space:]]+[a-z0-9][a-z0-9-]*:[[:space:]]*\[/ {
+          key = $0
+          sub(/^[[:space:]]*/, "", key)
+          sub(/:.*$/, "", key)
+          if (key != want) next
+          val = $0
+          sub(/^[^[]*\[/, "", val)
+          sub(/\].*$/, "", val)
+          gsub(/,/, " ", val)
+          gsub(/"/, "", val)
+          gsub(/[[:space:]]+/, " ", val)
+          sub(/^ /, "", val)
+          sub(/ $/, "", val)
+          print val
+        }
+      ' "$_rs_registry" 2>/dev/null || true)"
+    fi
+    for _rs_phase in $_rs_list; do
+      required_specialists+=("$_rs_phase")
+    done
+  else
+    warn "Check 6: required-specialists registry missing at $_rs_registry — falling back to phaseOrder derivation"
+  fi
 
   # IMP-105-SCOPE-3-FALLBACK-BEGIN
   # IMP-105 SCOPE-3 — close the Check 6 fail-open hole. A mode ABSENT from the
@@ -1810,11 +1787,26 @@ for p in set(names):
     expansion_reason_regex='runSubagent|tool unavailable|nested runtime|capability missing|parent-expand|nested workflow'
     spec_dir_for_evidence="$(dirname "$state_file")"
 
+    # Phase -> owning-agent resolution. The owning specialist is normally named
+    # "bubbles.<phase>", but that identity is a NAMING CONVENTION, not a
+    # guarantee, and deriving it blindly made Check 6B demand agents that have
+    # never existed. `analyze` is owned by bubbles.analyst, so an honest
+    # bubbles.analyst record was read as "phase impersonation" and blocked a
+    # transition no one could fix without falsifying the record. Every other
+    # specialist phase does match its agent name; this table carries only the
+    # genuine exceptions, so a new phase keeps the convention by default.
+    phase_owner_agent() {
+      case "$1" in
+        analyze) printf 'bubbles.analyst' ;;
+        *) printf 'bubbles.%s' "$1" ;;
+      esac
+    }
+
     if [[ -n "$claimed_phases" ]]; then
       provenance_failures=0
       while IFS= read -r claimed_phase; do
         [[ -z "$claimed_phase" ]] && continue
-        expected_agent="bubbles.${claimed_phase}"
+        expected_agent="$(phase_owner_agent "$claimed_phase")"
         matched="false"
 
         # Pass 1: specialist provenance (existing behavior)
@@ -4093,7 +4085,8 @@ else
       ;;
   esac
 
-  # IMP-027 SCOPE-8 (EV-3): clone detection by receipt hash, not text similarity.
+  # IMP-027 SCOPE-8 (EV-3): clone detection by receipt hash plus execution
+  # identity, not text similarity alone.
   #
   # Check 20 (G021) answers "is this evidence a copy of that evidence?" with an
   # 80%-similarity score over prose. That is a proxy: legitimately similar
@@ -4101,12 +4094,13 @@ else
   # forgery scores low. Receipts carry stdoutHash, which turns the same question
   # into an exact comparison.
   #
-  # The rule is deliberately narrow, because the naive one is wrong: identical
-  # output from a RE-RUN of the SAME command is normal and must never fire.
-  # What cannot happen honestly is identical stdout under DIFFERENT commands —
-  # `cargo test` and `npm run lint` do not produce byte-identical output. That
-  # is the signature of one captured result being reused to back a second,
-  # unrelated claim, which is exactly what G021 exists to catch.
+  # The rule is deliberately narrow. Identical output from a RE-RUN of the same
+  # command is normal. Deterministic validators can also emit identical output
+  # when the same validator category runs independently over distinct targets.
+  # That sibling case is accepted only when family, category, and exit status
+  # agree while target/input closure and execution provenance are all present
+  # and distinct. A substantive collision across incompatible command families
+  # or categories still identifies one result backing unrelated claims.
   if command -v jq >/dev/null 2>&1; then
     # An EMPTY stdout is excluded, and that exclusion is what makes the rule
     # correct rather than merely narrow. Every command that writes nothing to
@@ -4145,30 +4139,110 @@ else
     # catches the case G021 exists for: one captured result reused for an
     # UNRELATED claim.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    c43_clones="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
-      def cmd_identity:
+    c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      def cmd_parts:
         ( . / " " | map(select(length > 0)) ) as $raw
         | ( if (($raw[0] // "") == "bash") or (($raw[0] // "") == "sh")
-            then $raw[1:] else $raw end ) as $t
+            then $raw[1:] else $raw end );
+      def command_family:
+        cmd_parts as $t
         | ( ($t[0] // "") | split("/") | last ) as $exe
+        | $exe;
+      def positional_target:
+        cmd_parts as $t
         | ( reduce ($t[1:][]) as $tok ({skip:false, pos:[]};
               if .skip then {skip:false, pos:.pos}
               elif ($tok | startswith("-"))
                 then {skip: (($tok | contains("=")) | not), pos:.pos}
               else {skip:false, pos:(.pos + [$tok])}
               end)
-            | (.pos[0] // "") ) as $subject
-        | $exe + " " + $subject;
+            | (.pos[0] // "") );
+      def cmd_identity:
+        command_family + " " + positional_target;
+      def tag_category:
+        [(.tags // [])[]?
+          | ascii_downcase
+          | if test("^(test|unit|functional|integration|e2e|e2e-api|e2e-ui|stress|load)$") then "test"
+            elif test("^(lint|clippy|fmt|format|shellcheck)$") then "lint"
+            elif test("^(build|compile)$") then "build"
+            elif test("^(validate|validation|guard|audit)$") then "validate"
+            else empty end]
+        | unique
+        | if length == 1 then .[0]
+          elif length > 1 then "mixed:" + join(",")
+          else "" end;
+      def command_category:
+        ascii_downcase
+        | if test("(^|[ /_-])(test|pytest|jest|vitest|playwright|e2e|stress|load)([ /_.-]|$)") then "test"
+          elif test("(^|[ /_-])(lint|clippy|fmt|format|shellcheck)([ /_.-]|$)") then "lint"
+          elif test("(^|[ /_-])(build|compile)([ /_.-]|$)") then "build"
+          elif test("(^|[ /_-])(validate|validation|guard|audit|check)([ /_.-]|$)") then "validate"
+          else "other" end;
+      def evidence_category:
+        tag_category as $tag
+        | if $tag != "" then $tag else (.cmd | command_category) end;
+      def target_identity:
+        if ((.inputClosure // []) | type) == "array" and ((.inputClosure // []) | length) > 0 then
+          "closure:" + ([.inputClosure[] | ((.path // "") + "@" + (.sha256 // ""))] | sort | join(","))
+        elif ((.spec // "") != "") or ((.scope // "") != "") then
+          "spec:" + (.spec // "") + "|scope:" + (.scope // "")
+        else
+          "target:" + (.cmd | positional_target)
+        end;
+      def provenance_identity:
+        if ((.sessionId // "") != "") or ((.ts // "") != "") then
+          "session:" + (.sessionId // "") + "|ts:" + (.ts // "") + "|duration:" + ((.durationMs // "") | tostring)
+        else "" end;
+      def all_distinct_nonempty:
+        length > 1 and all(.[]; length > 0) and ((unique | length) == length);
+      def deterministic_siblings:
+        . as $rows
+        | ($rows | map(.cmd | command_family)) as $families
+        | ($rows | map(evidence_category)) as $categories
+        | ($rows | map(.exitCode)) as $exits
+        | ($rows | map(target_identity)) as $targets
+        | ($rows | map(provenance_identity)) as $provenance
+        | (($families | unique | length) == 1)
+          and (($families[0] // "") != "")
+          and (($categories | unique | length) == 1)
+          and (($categories[0] // "") != "other")
+          and (($categories[0] // "") | startswith("mixed:") | not)
+          and all($exits[]; type == "number")
+          and (($exits | unique | length) == 1)
+          and ($targets | all_distinct_nonempty)
+          and ($provenance | all_distinct_nonempty);
+      def identity_detail:
+        "family=" + (.cmd | command_family)
+        + " category=" + evidence_category
+        + " target=" + target_identity
+        + " provenance=" + provenance_identity
+        + " cmd=" + .cmd;
       map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutHash != $empty_sha) and ((has("stdoutBytes") and .stdoutBytes == 0) | not)))
       | group_by(.stdoutHash)
-      | map(select((map(.cmd | cmd_identity) | unique | length) > 1))
-      | .[]
-      | "\(.[0].stdoutHash[0:12])… reused by: \(map(.cmd) | unique | join(" AND "))"
+      | {
+          siblings: map(select(
+            (((map(.cmd | cmd_identity) | unique | length) > 1)
+              or ((map(evidence_category) | unique | length) > 1))
+            and deterministic_siblings
+          )),
+          clones: (map(select(
+            (((map(.cmd | cmd_identity) | unique | length) > 1)
+              or ((map(evidence_category) | unique | length) > 1))
+            and (deterministic_siblings | not)
+          )) | map({hash: .[0].stdoutHash, identities: map(identity_detail)}))
+        }
     ' "$c43_log" 2>/dev/null || true)"
+    c43_sibling_count="$(printf '%s' "$c43_analysis" | jq -r '.siblings | length' 2>/dev/null || echo 0)"
+    c43_clones="$(printf '%s' "$c43_analysis" | jq -r '
+      .clones[]?
+      | "\(.hash[0:12])… reused across incompatible or unproven identities: \(.identities | join(" AND "))"
+    ' 2>/dev/null || true)"
     if [[ -n "$c43_clones" ]]; then
-      fail "Evidence receipt CLONE — one captured stdout is cited by two different commands, which cannot happen from honest execution: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 400)"
+      fail "Evidence receipt CLONE — one substantive stdout is cited across incompatible command/category identities or receipts that cannot prove independent target/execution provenance: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 800)"
+    elif [[ "$c43_sibling_count" -gt 0 ]]; then
+      pass "No receipt clones ($c43_sibling_count deterministic sibling hash collision(s) accepted by compatible family/category/exit plus distinct target and execution provenance)"
     else
-      pass "No receipt clones (no stdout hash shared across differing command identities)"
+      pass "No receipt clones (no substantive stdout hash shared across incompatible or unproven receipt identities)"
     fi
   fi
 fi

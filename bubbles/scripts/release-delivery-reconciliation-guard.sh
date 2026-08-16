@@ -8,7 +8,7 @@
 # docs/releases/<phase>/features.md that were never specced (so no per-spec
 # gate ever fires) or specced-but-implement-self-certified. This guard
 # reconciles the PROMISED required-feature set against the DELIVERED
-# (validate-certified, terminal) spec truth.
+# (validate-certified, delivery-capable terminal) spec truth.
 #
 # Machine binding (authored by bubbles.releases inside features.md, as
 # HTML-comment annotations so the human prose tables are untouched):
@@ -38,7 +38,7 @@
 #
 # Exit codes:
 #   0 = clean / grandfathered-warn / EXEMPT
-#   1 = violation (missing/non-terminal/self-certified required feature, or
+#   1 = violation (missing/non-delivery/self-certified required feature, or
 #       malformed reconciled packet)
 #   2 = usage / runtime error
 #
@@ -192,37 +192,58 @@ ann_field() {
   echo "$line" | grep -oE "${key}=[^[:space:]>]+" | head -1 | sed -E "s/^${key}=//"
 }
 
-# Is a status terminal-for-the-spec? Reuse is-terminal-for-mode.sh when present,
-# else fall back to a hardcoded terminal allowlist. "done" is always terminal.
-# in_progress / not_started / blocked / done_with_concerns are NEVER terminal
-# for a required feature.
-is_terminal_status() {
+# Does the status represent delivered implementation for this mode? Terminality
+# and delivery are separate facts: planning, docs, and validation-only modes can
+# finish honestly without shipping product behavior. Resolve the effective mode
+# contract and accept only delivery audit profiles or pending-activation modes
+# that explicitly require a deliverable manifest. A legacy state whose mode is
+# absent or no longer resolvable may retain validate-certified literal `done`;
+# no delivery alias receives that compatibility fallback.
+is_delivered_status() {
   local status="$1" mode="$2"
   case "$status" in
-    done) return 0 ;;
-    # delivered_prototype is a terminal-for-mode state but is NEVER deployable
-    # (the assurance-resolve.sh invariant: prototype tier never ships), so it can
-    # NEVER satisfy a delivery=required feature at a release choke point. Refuse it
-    # explicitly here regardless of any mode that declares it terminal — otherwise
-    # a future prototype-tier mode + the (now alias-aware) is-terminal-for-mode.sh
-    # below would silently accept a prototype as "delivered" (the deploy hole).
     delivered_prototype) return 1 ;;
     in_progress | not_started | blocked | done_with_concerns | "") return 1 ;;
   esac
-  if [[ -n "$mode" && -x "$SCRIPT_DIR/is-terminal-for-mode.sh" ]]; then
-    if bash "$SCRIPT_DIR/is-terminal-for-mode.sh" "$status" "$mode" >/dev/null 2>&1; then
-      return 0
-    fi
-    # is-terminal-for-mode said NOT terminal (rc1) or errored (rc2); fall through
-    # to the hardcoded ceiling allowlist so a parser/mode gap never hard-passes
-    # a non-terminal status.
+
+  if [[ -z "$mode" ]]; then
+    [[ "$status" == "done" ]]
+    return
   fi
-  case "$status" in
-    validated | docs_updated | specs_hardened | delivered_pending_activation)
+
+  local resolved=""
+  if [[ -f "$SCRIPT_DIR/mode-resolver.sh" ]]; then
+    resolved="$(BUBBLES_MODE_GRANDFATHER=1 bash "$SCRIPT_DIR/mode-resolver.sh" "$mode" 2>/dev/null || true)"
+  fi
+  if [[ -z "$resolved" ]]; then
+    [[ "$status" == "done" ]]
+    return
+  fi
+
+  if [[ ! -f "$SCRIPT_DIR/is-terminal-for-mode.sh" ]] \
+    || ! bash "$SCRIPT_DIR/is-terminal-for-mode.sh" "$status" "$mode" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local audit_profile=""
+  local requires_manifest="false"
+  local status_ceiling=""
+  audit_profile="$(printf '%s\n' "$resolved" | yq -r '.transitionAudit.profile // ""' 2>/dev/null || true)"
+  requires_manifest="$(printf '%s\n' "$resolved" | yq -r '.constraints.requireDeliverableManifest // false' 2>/dev/null || true)"
+  status_ceiling="$(printf '%s\n' "$resolved" | yq -r '.statusCeiling // ""' 2>/dev/null || true)"
+
+  case "$audit_profile" in
+    delivery-completion-v1 | delivery-completion-fast-v1)
       return 0
       ;;
-    *) return 1 ;;
   esac
+
+  if [[ "$requires_manifest" == "true" \
+    && "$status_ceiling" == "delivered_pending_activation" ]]; then
+    return 0
+  fi
+
+  return 1
 }
 
 # Does the spec's effective completed-phases record include "validate"?
@@ -359,8 +380,8 @@ for FFILE in "${FEATURE_FILES[@]}"; do
       continue
     fi
 
-    if ! is_terminal_status "$status" "$mode"; then
-      echo "[release-delivery-reconciliation-guard][ERROR] $phase_dir: required feature '$fid' → spec '$fspec' status '$status' is NOT terminal (mode '$mode')" >&2
+    if ! is_delivered_status "$status" "$mode"; then
+      echo "[release-delivery-reconciliation-guard][ERROR] $phase_dir: required feature '$fid' → spec '$fspec' status '$status' does NOT represent delivered implementation (mode '$mode')" >&2
       phase_delivery_rc=1
       SUMMARY_ROWS+=("$phase_dir|$fid|required|$fspec|NOT-DELIVERED ($status)")
       continue
@@ -376,9 +397,9 @@ for FFILE in "${FEATURE_FILES[@]}"; do
     # An "implemented" assurance claim must rest on a mode that actually
     # implements. specs_hardened / docs_updated / validated are planning-only
     # ceilings: reaching one is a legitimate terminal FOR ITS MODE, and
-    # is_terminal_status above correctly accepts it — which is exactly why this
-    # check is needed. Terminal-for-a-planning-mode is not implementation, so a
-    # packet asserting assurance=implemented over it claims work never done.
+    # is_delivered_status above already rejects planning-only modes. Keep the
+    # explicit assurance check so its narrower diagnostic remains stable when
+    # future delivery-capable terminal aliases are added.
     if [[ "$fassurance" == "implemented" ]]; then
       case "$status" in
         specs_hardened | docs_updated | validated)
@@ -450,7 +471,7 @@ if [[ "$OVERALL_RC" -ne 0 ]]; then
     if [[ -n "${PREREQ_BLOCKED// /}" ]]; then
       echo "[release-delivery-reconciliation-guard][ERROR] G101: phase '$PHASE_FILTER' is BLOCKED BY AN OPEN PREREQUISITE —${PREREQ_BLOCKED} still has undelivered required feature(s). A phase cannot be asserted delivered on top of a foundation that is not finished; close the prerequisite phase first." >&2
     fi
-    echo "[release-delivery-reconciliation-guard][ERROR] G101: one or more REQUIRED features are not delivered (validate-certified + terminal). A release phase cannot be reported delivered while required features are missing, non-terminal, blocked, or implement-self-certified." >&2
+    echo "[release-delivery-reconciliation-guard][ERROR] G101: one or more REQUIRED features are not delivered (validate-certified + delivery-capable terminal). A release phase cannot be reported delivered while required features are missing, non-delivery, blocked, or implement-self-certified." >&2
   fi
   exit 1
 fi
@@ -458,6 +479,6 @@ fi
 if [[ "$MODE" == "structural" ]]; then
   echo "[release-delivery-reconciliation-guard] OK (G101 structural: every packet is well-formed and every required feature binds a real spec; delivery NOT asserted)"
 else
-  echo "[release-delivery-reconciliation-guard] OK (G101: all required features delivered + validate-certified)"
+  echo "[release-delivery-reconciliation-guard] OK (G101: all required features delivery-capable + validate-certified)"
 fi
 exit 0

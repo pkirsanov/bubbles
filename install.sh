@@ -185,6 +185,20 @@ release_manifest_owns_managed_path() {
   ' "$RELEASE_MANIFEST_SOURCE"
 }
 
+release_manifest_managed_paths_under() {
+  local path_prefix="$1"
+
+  awk -v path_prefix="$path_prefix" '
+    BEGIN { section_line="  \"managedFileChecksums\": [" }
+    $0 == section_line { in_section=1; next }
+    in_section && ($0 == "  ]," || $0 == "  ]") { exit }
+    in_section && match($0, /"path": "[^"]+"/) {
+      entry_path = substr($0, RSTART + 9, RLENGTH - 10)
+      if (index(entry_path, path_prefix) == 1) print entry_path
+    }
+  ' "$RELEASE_MANIFEST_SOURCE"
+}
+
 ADOPTION_PROFILES_SOURCE="$TEMP_DIR/bubbles/adoption-profiles.yaml"
 [[ -f "$ADOPTION_PROFILES_SOURCE" ]] || fail "Missing adoption profile registry in source payload."
 
@@ -505,9 +519,8 @@ if [[ -f "$TEMP_DIR/$ADVERSARIAL_SAMPLE_SCHEMA" ]]; then
 fi
 
 # ── Install registry (v5.2.1 / F4 installer fix) ──────────────────────
-# bubbles/registry/gates.yaml is canonical for gate definitions starting
-# in v5.2. generate-gates-block.sh splices it back into workflows.yaml.
-# Drift detection in framework-validate requires this file to be present.
+# bubbles/registry/gates.yaml is the ONLY definition of a gate. Every gate
+# reader downstream resolves it, so the file must be present.
 if [[ -d "$TEMP_DIR/bubbles/registry" ]]; then
   info "Installing framework registry..."
   mkdir -p "${TARGET}/bubbles/registry"
@@ -666,6 +679,28 @@ if ! grep -qx 'improvements/' ".gitignore" 2>/dev/null; then
   ok "Added improvements/ to .gitignore"
 fi
 
+# IMP-043 SCOPE-4. The learning scaffold used to live behind --bootstrap, which
+# cmd_upgrade never passes, so a repo installed before the learning loop existed
+# could never acquire the file the loop writes to. Backfilling on upgrade beats
+# asking operators to re-bootstrap a live repo, which touches far more files
+# than the one that is missing.
+#
+# STRICTLY NON-DESTRUCTIVE: creates only when absent, never modifies an existing
+# file. An operator's accumulated lessons are not ours to rewrite.
+bubbles_scaffold_learning_seed() {
+  local lessons_path=".specify/memory/lessons.md"
+  [[ -f "$lessons_path" ]] && return 0
+  mkdir -p "$(dirname "$lessons_path")" 2>/dev/null || return 0
+  cat > "$lessons_path" <<'LESSONSEOF'
+# Lessons
+
+<!-- Skill-evolution learning loop: add one lesson per bullet line below (e.g. "- reproduce the failing scenario before writing the fix"). A lesson recorded 3+ times proposes a new/updated skill (see skillEvolution in bubbles/workflows.yaml); lines starting with '#' are ignored. The file is compacted when a lesson is added, retaining lessonsMemory.maxLines lines and archiving the rest to lessons-archive.md. -->
+LESSONSEOF
+  ok "Created .specify/memory/lessons.md (learning-loop seed)"
+  return 0
+}
+bubbles_scaffold_learning_seed
+
 # ── Install bootstrap scaffolding assets ───────────────────────────
 if [[ -d "$TEMP_DIR/templates" ]]; then
   info "Installing bootstrap templates..."
@@ -685,11 +720,25 @@ if [[ -d "$TEMP_DIR/.specify" ]]; then
 fi
 
 # ── Install framework docs ──────────────────────────────────────────
+#
+# Driven by the manifest, not by `cp -r docs/*`. The wholesale copy shipped
+# whatever the payload happened to contain and never removed what the framework
+# retired, so every downstream repo accumulated docs the manifest had stopped
+# owning. `.github/docs/` is framework territory; repo-authored docs belong
+# outside it.
 if [[ -d "$TEMP_DIR/docs" ]]; then
   info "Installing framework docs..."
   mkdir -p "${TARGET}/docs"
-  cp -r "$TEMP_DIR"/docs/* "${TARGET}/docs/" 2>/dev/null || true
-  ok "$(find "${TARGET}/docs" -type f 2>/dev/null | wc -l) framework docs installed"
+  docs_installed=0
+  while IFS= read -r managed_doc_path; do
+    [[ -n "$managed_doc_path" ]] || continue
+    [[ -f "$TEMP_DIR/$managed_doc_path" ]] || continue
+    mkdir -p "${TARGET}/$(dirname "$managed_doc_path")"
+    cp "$TEMP_DIR/$managed_doc_path" "${TARGET}/$managed_doc_path"
+    docs_installed=$((docs_installed + 1))
+  done < <(release_manifest_managed_paths_under "docs/")
+  bubbles_prune_managed_tree_orphans "docs"
+  ok "$docs_installed framework docs installed"
 fi
 
 # ── Migration: rename legacy shared instruction filenames ──────────
@@ -1149,17 +1198,10 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 
-  # ── Scaffold: lessons.md (skill-evolution learning-loop seed) ─────
-  if [[ ! -f ".specify/memory/lessons.md" ]]; then
-    cat > ".specify/memory/lessons.md" <<'LESSONSEOF'
-# Lessons
-
-<!-- Skill-evolution learning loop: add one lesson per bullet line below (e.g. "- reproduce the failing scenario before writing the fix"). A lesson recorded 3+ times proposes a new/updated skill (see skillEvolution in bubbles/workflows.yaml); lines starting with '#' are ignored and the file auto-compacts past ~150 lines into lessons-archive.md. -->
-LESSONSEOF
-    ok "Created .specify/memory/lessons.md (skill-evolution seed)"
-    CREATED_COUNT=$((CREATED_COUNT + 1))
-  else
-    warn "Skipped .specify/memory/lessons.md (already exists)"
+  # ── Scaffold: lessons.md (learning-loop seed) ────────────────────
+  # Already created unconditionally above (IMP-043 SCOPE-4); this branch only
+  # reports it so the bootstrap summary counts stay accurate.
+  if [[ -f ".specify/memory/lessons.md" ]]; then
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
   fi
 

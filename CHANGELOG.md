@@ -31,6 +31,1208 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Two Context-Cleanup Bullets Were Already Satisfied (IMP-042 SCOPE-14)
+
+Both were checked against the tree rather than taken at face value, and neither
+has work left.
+
+Deprecating the bundle budgets contradicts this scope's own finding. The three
+budgets that block measure BYTES of a file or of a transitive import closure,
+which the scope already established is a counted quantity rather than an
+inferred prompt cost, and `effective-bundle-budget.sh` ships with no default
+ceiling at all -- unset means "informational only" and it never blocks. There is
+no prompt-cost inference left to deprecate.
+
+Moving deterministic workflow tables out of agent prose is stale: the agents
+already point at the registry. `bubbles.iterate` dispatches "following the
+mode's `phaseOrder` from `bubbles/workflows.yaml`", `bubbles.super` instructs
+the reader to "Read the live mode registry", and `bubbles.bug` defers to the
+`bugfix-fastlane` phaseOrder. Scanning every agent for a table row carrying a
+phase name returns two, and neither is workflow data: one is an example status
+report, the other an output template with placeholders.
+
+The scope's remaining item is the explicit context manifest for phase-owned
+policy modules, which is unchanged and still open.
+
+### Payload Classes Already Have One Authority (IMP-042 SCOPE-12 closeout)
+
+The last open payload bullet asked for generated, optional, and historical
+classes to be made explicit alongside managed and source-only. Checked against
+the enforcement surface rather than assumed, and the classes that carry meaning
+already exist there.
+
+`verify-payload-integrity.sh` states the contract in one place: every managed
+entry is REQUIRED unless the active install profile explicitly omits it, the
+agents-only profile may omit `instructions/` and `skills/`, a registered
+optional skill may be absent until a repository opts in, and any other missing
+managed file is a hard failure. It receives the install profile explicitly and
+reads the installed optional-skill registry, so only contract-declared omissions
+are allowed. Required and optional are therefore not implicit; they are
+enforced, with the profile and the skill registry as their authority.
+Source-only is a separate manifest section, and historical is now the named
+`demoted_source_only_docs` class.
+
+That leaves labelling those classes a second time inside the manifest, which
+would give one classification two authorities that can disagree. This release
+deleted the generated `gates:` block for exactly that reason. Declined on the
+same ground rather than carried as pending work, and recorded here so the next
+reader does not re-propose it.
+
+### The Manifest Now Governs Which Docs Ship (IMP-042 SCOPE-12)
+
+The scope is called manifest-driven downstream payload. Docs were not
+manifest-driven at all: `install.sh` copied them with a wholesale
+`cp -r "$TEMP_DIR"/docs/*`, so the payload was whatever the source tree happened
+to contain, and nothing removed what the framework had retired. Every consuming
+repository was still carrying the same retired framework docs, which is the
+signature of a copy that never prunes.
+
+Docs now install from the manifest's managed set, and the existing orphan prune
+runs for `docs`. On today's tree that is a no-op, because all 116 tracked docs
+are managed, so the mechanism lands before it changes anything.
+
+With the manifest actually governing the payload, five maintainer-only records
+stay in source and leave it: the dated product review, the improvements-delivered
+log, the spec-alignment record, and the v5.2 and v6-MCP design records. A
+consuming repository never reads how this repository got here. Managed goes 876
+to 871, source-only 105 to 110.
+
+The five were chosen per candidate rather than by pattern, because two
+neighbours that look like the same class are load-bearing:
+`v4.1.0-delivered-pending-activation.md` carries live markdown links from three
+installed skills and `Framework_Convergence_Health.md` from an installed recipe,
+so demoting either would leave exactly the dangling reference G132 exists to
+catch. The guards and lints that name the demoted five do so in comments, or as
+exemption paths that go inert when the file is absent. The index rows for those
+five carry `ref-ok`, the documented way to mark an intentional dangling link.
+
+One correction is recorded rather than quietly dropped. This scope previously
+claimed the exclusion was blocked by `governance-index-lint.sh` forcing a choice
+between a dead link downstream and an orphan in source. That was wrong: the lint
+discovers docs only under `agents/bubbles_shared/`, `instructions/`, `skills/*/`
+and `docs/recipes/`, and never enumerates top-level `docs/*.md`.
+
+`.github/docs/` is framework territory. Repo-authored docs belong outside it.
+
+### The Improvement Index Derives Its Status Instead Of Restating It (IMP-042 SCOPE-10)
+
+`framework-health-evidence-lint.sh` already required every proposal to declare a
+`**Status:**` and to have a row in `improvements/INDEX.md`. Nothing connected the
+two. The row carried its own status cell, so the index could assert a state the
+proposal itself had moved past and both files would still pass, because each one
+was independently well-formed.
+
+Check 4b binds the cell to the owning file. A divergence is now a finding rather
+than two plausible answers, and the proposal is the authority. Rows whose
+proposal file is gone are never reached, because the loop visits existing files
+only. That is the documented grandfather which keeps closed historical rows
+readable after their file is deleted on delivery.
+
+Two details were verified rather than assumed. The row may key on the bare id or
+on the filename, so the match looks for the id CONTAINED in the first cell the
+way the existing index-row check does. An exact-id pattern would have matched
+neither shape in the selftest fixtures and passed by finding nothing, which is a
+check that reports success because it never ran. The legend match also takes the
+longest candidate, so `IN PROGRESS` is never read as a prefix of a shorter
+status.
+
+Selftest goes 11 to 15 cases, and the binding is proven falsifiable: replacing
+the comparison with `false` turns the drift case red.
+
+## [7.28.0] - 2026-08-15
+
+### The Suite Was Measured Before It Was Parallelized (IMP-042 SCOPE-4)
+
+SCOPE-4 required measuring the wall-clock distribution before adding a bounded
+parallel scheduler. The measurement is now taken against a full green run, and
+it argues against the scheduler as designed:
+
+```text
+Wall clock: 2918s across 316 executed checks.
+  1017s  v5.3 downstream-install selftest      (35% of the run)
+   358s  Transition guard selftest
+   257s  Install provenance selftest
+   114s  Trust doctor selftest
+    92s  Runtime lease selftest
+    68s  Evidence-admission hardening selftest
+    67s  Repository work-boundary aggregate selftest
+    54s  Payload closure guard
+    53s  Transition contract resolver selftest
+    53s  Doctor hygiene surface selftest
+```
+
+The top ten checks are 2,133s, or 73% of the run. This replaces the figure the
+scope carried — "transition guard 611s of a 1625s downstream run" — which was
+stale in both the total and the leader.
+
+Two consequences follow. Spreading 316 checks across workers cannot reach the
+27% that is not in the top ten, and the floor of any schedule is the longest
+single check, so 1017s is a hard floor at 35% of today's run. The checks holding
+the other 38% are the ones that install into shared roots and regenerate derived
+files, which is precisely the interference the re-entrant flock guard exists to
+serialize. A scheduler would therefore buy a bounded fraction of 27% while
+adding a concurrency surface across the checks least safe to run concurrently.
+The remaining scheduler bullets are recorded as declined-on-evidence rather than
+deferred, because the scope's own last bullet anticipated this outcome.
+
+The dominant check is not a defect and is not reducible by batching. `v5.3`
+installs a real downstream tree and runs a COMPLETE `framework-validate` inside
+it, so roughly a third of the suite is a second suite by construction — that
+nesting is the only thing proving a downstream install can validate itself.
+
+One duplicated-run hypothesis was tested and refuted rather than acted on. The
+selftest appears to validate the installed tree twice, once piped to `head -30`
+for the install-mode line and once captured in full. Measured, the piped form
+costs 0s: `head` closes the pipe and the run ends on SIGPIPE. There was no
+duplicate run to batch, and removing the apparent one would have saved nothing.
+
+What batching remained was real but small. Manifest generation hashed every
+entry with a per-file call that spawns two processes each, across 876 managed
+and 105 source-only entries; `bubbles_sha256_batch` now hashes each inventory in
+one pass, taking a clean-tree generation from 16s to 13s. A short batch result
+falls back to the per-file form, so a tool difference can never silently pair a
+path with another file's hash. The other two hashing paths, `install.sh` and
+`verify-payload-integrity.sh`, were already batched under OW-005.
+
+### One Removal Train, Two Surfaces, Zero Consumers (IMP-042 SCOPE-18)
+
+The compatibility removal train is announced here and departs at 8.0.0. It
+carries exactly two surfaces, which is the whole inventory rather than a first
+batch. Scanning every framework `*.sh`, `*.yaml` and `*.json` for deprecation
+markers returns 865 hits, and almost all of them are domain vocabulary —
+`superseded` scope sections, `legacy` in selftest case names — rather than
+surfaces that declare themselves deprecated. Filtering to the surfaces that
+actually declare it leaves two.
+
+| Surface | Replacement | Removal | Measured consumers |
+| --- | --- | --- | --- |
+| `done-spec-audit.sh --fix` | `--reopen-failing` with `--recertify-all` | 8.0.0 | 0 |
+| `--passes <N>` (adversarial) | `--samples <N>` | 8.0.0 | 0 |
+| `passes: <N>` directive token | `samples: <N>` | 8.0.0 | 0 |
+
+Migration is a rename in each case:
+
+```bash
+# done-spec-audit
+bash bubbles/scripts/done-spec-audit.sh --fix                     # before
+bash bubbles/scripts/done-spec-audit.sh --reopen-failing --recertify-all  # after
+
+# adversarial posture
+bash bubbles/scripts/adversarial-resolve.sh --passes 3            # before
+bash bubbles/scripts/adversarial-resolve.sh --samples 3           # after
+
+# adversarial directive string
+"adversarial: on passes: 3"                                       # before
+"adversarial: on samples: 3"                                      # after
+```
+
+"Zero consumers" is measured, not assumed. Every consuming repository was
+scanned with its framework-managed subtree excluded, because a hit inside
+`.github/bubbles/` is the framework's own copy of itself rather than a consumer.
+`--fix` is passed in none of them, and no file uses the `passes:` syntax. Inside
+this repository the only consumer of each surface is the selftest that asserts
+its own deprecation guard.
+
+The train departs at 8.0.0 rather than here because both are downstream-visible
+breaks and this repository cannot enumerate the consumers of a public framework.
+Six repositories were measured; an unmeasured seventh is exactly what a
+deprecation window exists to protect. Announcing at a MINOR and removing at the
+MAJOR keeps the MAJOR signal meaning what the versioning scheme says it means.
+
+Two legacy schema surfaces were checked and are NOT candidates. The
+`v5Aliases` map in `workflows/aliases.yaml` has six readers and holds the
+canonical registry keys, so removing an entry breaks resolution instead of
+retiring a legacy path — all 61 entries appear across the seven downstream
+repositories, and 27 are live `state.json` mode values across 1,888 state files.
+`legacyOutcomeStates` stays declared in `workflows.yaml` and read by the
+strict-terminal-status guard, which is the grandfathered read the scope keeps.
+
+### A Gate Is Now Defined Once (IMP-042 SCOPE-13)
+
+The generated `gates:` map is gone from `workflows.yaml` — 1,027 lines that
+restated `bubbles/registry/gates.yaml` verbatim. The file drops from 2,245 lines
+to 1,217, and `generate-gates-block.sh` and `gates-registry-selftest.sh` are
+retired with it: there is no copy left to generate, and nothing left to detect
+drift against.
+
+This was attempted once and reverted, so the difference matters. The precondition
+— byte-equivalent queries for every remaining reader — was previously asserted
+from a hand-built list that missed every script grepping for a gate NAME. It is
+now computed by `gates-block-reader-lint.sh`, which reports an empty inventory,
+and the one real reader was repointed at the registry with its equivalence
+measured in both directions: byte-identical output, and still red when a gate is
+removed from the new source.
+
+Retiring a generator is a workflow change rather than a file deletion, which is
+the other half of what went wrong the first time. Fourteen surfaces moved with
+it: the drift check and registry selftest in `framework-validate.sh`, the
+now-dead `*"Gates registry"*` core-tier pattern (left in place it would have
+failed `core-tier-pattern-lint`, which exists to catch exactly that), the
+add-a-gate procedure in `scaffold-gate.sh`, the python3 consumer list in
+`dependency-posture.sh`, the installer and payload comments, the MCP gate
+resource description, the `v5.2-selftest.sh` header, and the `workflows.yaml`
+preamble.
+
+`gate-bands.sh` splices its band string into `workflows.yaml` between
+`GENERATED:GATE_BANDS_START/END` markers. Those sit ABOVE the block and survive
+it; had they been inside, stripping would have silently broken a second
+generator. All seventeen consumers of gate data pass, including
+`evidence-admission-hardening-selftest` and `agent-ownership-lint`, the two that
+regressed on the first attempt.
+
+### A Selftest That Could Die Between Two Tests And Report Nothing
+
+`v4.1.0-selftest` runs under `set -euo pipefail` and had four unguarded `python3`
+invocations. A full run proved the consequence: tests 1 through 4 passed, and the
+output simply stopped — no summary line, a non-zero exit, and nothing naming
+which call died or why. The suite had aborted at test 5.
+
+Test 5 also carried a false-pass hole. It folded stderr into its captured value
+with `2>&1` and then asserted by grepping for `^BAD:`, so an interpreter
+traceback contains no `BAD:` and the assertion would have PASSED on a run that
+computed nothing.
+
+Every python invocation now goes through a helper that reports. Value-producing
+calls use the existing `py_read`; the two that only write fixtures use a new
+`py_run`, which surfaces stderr and lets the dependent assertion fail on its own
+terms rather than taking the process down. Test 5 additionally refuses an empty
+result instead of treating it as absence of `BAD:`. Proven against an interpreter
+that fails every call: the run now reaches its summary with 12 diagnostics naming
+the cause, where it previously produced silence.
+
+### The Last Reader Of The Generated Gates Block Is Repointed (IMP-042 SCOPE-13)
+
+`agent-ownership-lint.sh` asserted that six ownership gates exist by grepping
+`workflows.yaml`, which carries a generated COPY of the canonical registry. It
+now reads `bubbles/registry/gates.yaml` directly.
+
+The equivalence is measured rather than assumed, which is the discipline the
+first removal attempt skipped: the lint's output is byte-identical before and
+after, and deleting `concrete_result_gate` from the registry still turns it red
+naming G063 — so it is load-bearing against the new source, not merely quiet
+against it. All six names resolve identically in both files, and the three legacy
+gate names appear only inside description prose, never as a `name:` key.
+
+The reader inventory is now empty and reports the removal precondition met. That
+precondition was previously asserted from a hand-built list, was wrong, and cost
+a revert; it is now computed and guarded.
+
+### framework-validate Resolves Its Own Interpreter, Whichever Way It Is Entered
+
+`cli.sh` activates the managed Python environment before dispatch, so
+`cli.sh framework-validate` ran with a satisfied `python3` while
+`bash framework-validate.sh` did not. Both are real entry points — `v5.3-selftest`
+runs the downstream copy exactly the second way — so a python-dependent check
+passed through one and failed through the other, and nothing named the
+difference. What it printed instead was a content mismatch: `scopeKinds mismatch:
+got ''`, an empty registry read, when the actual condition was
+`ModuleNotFoundError: No module named 'yaml'`.
+
+The validator now resolves the managed interpreter itself, by EXECUTING
+`python-env.sh` rather than sourcing it. `cli.sh` can source that helper safely;
+this file cannot, because `repo-drift-report-selftest` deliberately stages it
+against a tree where every sibling is a stub ending in `exit 0` — and in a
+sourced file that terminates the validator's own shell and reports a silent pass
+that validated nothing. The first version of this change did source it, that
+fixture failed exactly as its own comment warns, and a subprocess cannot end the
+run whatever the file contains.
+
+The interpreter is prepended only when the one already on PATH cannot satisfy the
+framework's declared requirements, so an operator's working environment is never
+displaced.
+
+### A Downstream Install Now Validates Itself With No Enumerated Exceptions
+
+`known_downstream_failures` in `v5.3-selftest.sh` is empty. It held six entries
+at review and each one turned out to be a check asserting a framework-source-repo
+property while scheduled as portable, or a deny-list that never loaded. T3c now
+requires the downstream run to exit 0 outright.
+
+Refusing an unreadable deny-list needed one more distinction to be correct. A
+tree with no `bubbles/registry/` directory at all is not a broken payload — it is
+a deliberately partial fixture, such as the stub tree
+`repo-drift-report-selftest` stages to prove this validator runs non-blockingly,
+and the first version of the refusal failed that fixture. The refusal now fires
+only when the registry directory exists and the deny-list within it does not,
+which is the shape of an incomplete install. A partial tree proceeds and says so,
+because the point of the refusal is that an empty deny-list silently decides what
+runs.
+
+### The Intermittent Scan Failure Was A Descriptor It Inherited, Not The Code It Scanned
+
+With the reason no longer discarded, a full run finally said what had been going
+wrong:
+
+```text
+sensitive-storage classifier failed: exit=1
+sensitive-storage classifier stderr: Fatal Python error: init_sys_streams: can't initialize sys standard streams
+sensitive-storage classifier stderr: OSError: [Errno 9] Bad file descriptor
+```
+
+CPython aborts during startup when a standard stream it inherits is a dangling
+descriptor. The helper takes every input from argv and never reads stdin, but it
+inherited whatever the caller left on fd 0. Its stdout is a fresh
+command-substitution pipe and its stderr is a fresh temporary file, so fd 0 was
+the only descriptor it did not own.
+
+The scan then fell into its degraded path and emitted
+`SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED` for every candidate line plus
+`SENSITIVE_STORAGE_CONFIG_INVALID` on the project config — findings that read as
+facts about the code under scan, produced by an interpreter that never ran a
+line. That is why the failure follows the caller rather than the code, and why it
+disappears when the check is run on its own.
+
+Both python invocations now read stdin from `/dev/null`. Stated precisely: the
+captured interpreter error is the evidence, and removing the inherited descriptor
+removes the only input the helper did not control. A local reproduction of the
+dangling descriptor was attempted and not achieved, so this is a defensive
+correction supported by the runtime evidence rather than a reproduced-and-fixed
+case.
+
+### Two Checks That Failed Without Ever Saying Why (BUG-005)
+
+`implementation-reality-scan-selftest` and `v4.1.0-selftest` have been an
+intermittent pair for a long time: both pass when run standalone and both fail
+late in a full suite run. Neither could explain itself, because both discard the
+evidence.
+
+`implementation-reality-scan.sh` ran its sensitive-storage classifier as
+`python3 "$helper" … 2>/dev/null`. When the helper failed, the scan degraded to
+one `SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED` violation per candidate line
+plus a `SENSITIVE_STORAGE_CONFIG_INVALID` on the project config — findings that
+read as facts about the code under scan, with the actual cause thrown away. The
+same reason strings are also emitted when `python3` is absent entirely, so the
+two situations were indistinguishable.
+
+`v4.1.0-selftest` read its registries as `python3 -c "import yaml …"
+2>/dev/null || true`. An interpreter that cannot import `yaml` yields an empty
+string, which is indistinguishable from a registry that declares nothing, so the
+assertion reported `scopeKinds mismatch: got ''` — a mismatch that names the
+wrong defect.
+
+Neither reason string changed, because both are contracted. What changed is that
+stderr is captured and printed, the missing-interpreter case is distinguished
+from the helper-failure case by an explicit diagnostic, and the `v4.1.0` reader
+writes its diagnostics to stderr so they cannot land inside the value they
+explain. Reproduced against an interpreter that cannot import `yaml`: the run now
+prints `python3 stderr: ModuleNotFoundError: No module named yaml` immediately
+before the assertion it caused.
+
+### The Selftest Deny-List Failed Open In Every Downstream Install
+
+`framework-validate.sh` resolved the deny-list as
+`$REPO_ROOT/bubbles/registry/selftest-denylist.txt`. The framework is `bubbles/`
+in the source tree and `.github/bubbles/` in an installed downstream, so
+downstream that path resolved to nothing, the list read as empty, and the
+discovery sweep ran the two suites the list exists to withhold.
+
+One of them fails by construction when it is run that way:
+`repository-binding-selftest.sh` asserts it was entered through the `cli.sh`
+boundary that sets its marker, so a direct second run cannot pass. It has been
+carried as an enumerated known downstream failure ever since, attributed to the
+enumerated CLI check rather than to the sweep.
+
+The path is now resolved from the framework directory, which is correct in both
+layouts, and an unreadable deny-list is refused loudly. The surrounding comment
+already warned that "no external tool may decide what this validator executes"
+and defended the same fail-open shape one layer down; a governance file that
+silently reads as empty decides just as much.
+
+### The Open-Work Register Selftest Asked A Downstream Repository For A Source-Repo File
+
+A previous note in IMP-042 recorded that this selftest "builds every case under
+`mktemp` fixtures and never reads the live register", and used that to argue its
+downstream failure had some other cause. That correction was itself wrong, and
+the reproduction says so plainly: 21 cases are hermetic and case `e3` reads the
+live tree.
+
+`e3` had two defects. It resolved the repository root as the framework root,
+which is correct in the source tree and is `.github/` in an installed downstream
+— where `.specify/` sits at the real repository root instead. And it treated the
+absence of a register as a defect, when what the framework ships is
+`templates/open-work.md.tmpl`: a repository that has not adopted a register yet
+correctly has no file, and every downstream install failed for it.
+
+The property the case actually exists to defend, stated in its own comment, is
+that a template must not install into an ignored path. That is checkable
+everywhere, including where no register exists yet, so it is now checked
+everywhere — while a framework SOURCE tree must still ship its own register. 22
+of 22 in source and in a real downstream install, and the enumerated
+downstream-failure list drops from three to one.
+
+### The Gates-Block Reader Inventory Is Now Computed, Not Remembered (IMP-042 SCOPE-13)
+
+Deleting the generated `gates:` block from `workflows.yaml` was permitted "only
+after byte-equivalent queries pass for every remaining reader". That inventory
+was assembled by looking for scripts that parse gate DEFINITIONS, so every script
+that greps the same file for a gate NAME was missed. The removal shipped, three
+regressions followed, and it was reverted. A precondition that depends on someone
+remembering to grep a second way is not a precondition.
+
+`gates-block-reader-lint.sh` computes the set empirically instead of guessing
+which greps look like gate lookups. It takes the block's line range, collects the
+gate identifiers that appear inside it and nowhere else in the file — exactly the
+tokens deletion removes — and reports any script that references `workflows.yaml`
+and contains one. A gate id that also appears in a per-mode `requiredGates` list
+survives deletion and is correctly not counted.
+
+The method earns its place by rediscovering what was missed. It reports exactly
+one reader, `agent-ownership-lint.sh` — the reader whose omission broke the
+removal — which resolves `workflows.yaml` and then asserts on
+`capability_delegation_gate`, `owner_only_remediation_gate` and
+`artifact_ownership_enforcement_gate`, none of which exist outside the block. Two
+scripts a first cut reported were checked and correctly dropped:
+`state-transition-guard.sh` and `gate-id-grep.sh` name their only block-exclusive
+gate in a comment, and the latter validates against per-mode `requiredGates`
+lists, which survive deletion.
+
+The declared set lives in `bubbles/registry/gates-block-readers.txt`; an
+undeclared reader fails and is named, a repointed one fails so the list is forced
+to shrink, a missing inventory refuses rather than passing silently, and an empty
+inventory states that the removal precondition is met.
+
+### Manifest Admission Is Git Tracking, And Two Selftests Stop Contradicting Each Other
+
+`bubbles_manifest_entry_is_tracked` admitted any file that was untracked but not
+gitignored, so that a new framework script would enter the payload before it was
+staged. Two other selftests asserted the exact opposite, and they were right:
+`install.sh` copies precisely the entries this function admits, so a maintainer's
+local scratch file under `bubbles/scripts/` or `bubbles/adapters/` was installed
+into every downstream repository and recorded as framework-managed. Six checks
+failed on this contradiction on every source-repo validation, including at the
+published tip.
+
+Git tracking is now the only admission test. The hazard the old behaviour was
+defending against cannot occur — the manifest generator and `install.sh` share
+this enumeration, so they move together — and a newly committed script missing
+from the manifest is still caught, loudly, by the freshness drift check.
+`release-manifest-selftest` now asserts the tracked contract in both directions:
+an unstaged file is refused, and the same file is admitted once it is staged.
+
+### Three Downstream Checks That Could Never Have Passed Downstream
+
+The downstream-install selftest enumerates its known failures so the list is
+forced to shrink. Three entries were failing for reasons that had nothing to do
+with the framework's downstream behaviour.
+
+`run-state-reaper-selftest` copied the CLI to a hardcoded `bubbles/scripts/`
+inside a throwaway worktree. The framework lives at `.github/bubbles/` once
+installed, and a repository that has not committed its install leaves that
+worktree with no framework in it at all, so the copy failed outright. It now
+materialises the live framework at its own repo-relative path, resolved with
+`pwd -P` on both sides: `pwd` reports the logical path while `git rev-parse
+--show-toplevel` reports the physical one, so under a symlinked root — `/tmp` and
+`/var` on macOS — the prefix strip silently produced an absolute path that still
+existed, and the selftest drove the wrong tree's CLI while asserting against a
+registry nothing had touched. That is the same vacuous-pass signature the bare
+`timeout` defect had. The strip result is now checked instead of trusted.
+
+`continuation-routing-selftest` asserted a claim against the framework `README.md`,
+which resolves to `.github/README.md` downstream — a file the installer never
+creates. That one assertion now skips explicitly where the document is absent.
+
+The fixture itself was missing the managed documents its own registry declares as
+required, so the managed-doc existence lint reported a real adoption gap in a
+fixture that was never meant to model one. The fixture now asks the resolver
+which documents it owes and writes them.
+
+`Scenario compile lint selftest` has started passing downstream and is removed
+from the known-failure list.
+
+### The Generated Issue-Status Guide And Its Assertions Now Agree
+
+`generate-capability-ledger-docs.sh` emits `Issue-linked capabilities: N.`, and
+deliberately so — the surrounding prose argues that an issue link does not make a
+capability a gap. Two selftests still asserted the retired `Tracked gaps: N
+issue-backed capabilities.` wording, failing four checks while the generator, the
+generated document, and the governance index all agreed with each other.
+
+### The Gates-Block Removal Is Reverted, Because Its Precondition Was Not Met (IMP-042 SCOPE-13)
+
+The 1,027-line generated `gates:` map was deleted from `workflows.yaml`, and is
+now restored.
+
+The scope permitted removal "only after byte-equivalent queries pass for every
+remaining reader". Six readers were fingerprinted and all six matched. That
+inventory was built by searching for scripts that parse gate DEFINITIONS out of
+`workflows.yaml`, so it missed every reader that greps the same file for gate
+NAMES — `agent-ownership-lint.sh` looks for `artifact_ownership_enforcement_gate`,
+`G063` and `G064` there and fails without them. A later count found 52 scripts
+referencing both `workflows.yaml` and a gate identifier, so the reader set was
+never actually established.
+
+Three regressions shipped before that was understood: the schema still required
+a `gates` property; `generate-framework-stats.sh` counted gates out of the
+deleted block and published **`gates: 0`** to the stats and the README badge; and
+`agent-ownership-lint` plus `evidence-admission-hardening-selftest` both failed.
+
+Deleting the copy remains the right destination. It needs the full reader
+inventory first, which is exactly what the scope required.
+
+Three improvements from the attempt are KEPT, because each stands on its own:
+the consistency selftest resolves gate references against the registry rather
+than the generated copy; the stats generator counts gates from the registry,
+which is correct either way; and the schema no longer requires `gates`, which
+makes the eventual removal one step smaller.
+
+### The Metrics Registry Now Describes What Is Actually Produced (IMP-044 SCOPE-2 / REG-14)
+
+`metrics.activityTracking.measuredDimensions` declared eight dimensions against a
+store whose records carry timestamp, command, subcommand, result, durationMs,
+target and args. Six of the eight named no producer anywhere, so the registry
+described a measurement nobody was taking. A declared dimension the record shape
+cannot carry is a claim, not a setting.
+
+Nothing was deleted from the framework — the dimensions moved to the block that
+names their real producer. `activityTracking` keeps the two the CLI plane
+genuinely emits. A new `gateTelemetry` block names
+`.specify/runtime/gate-hits.jsonl` and `gate-hit-log.sh`, and records that it is
+always-on regardless of the `metrics.enabled` toggle. `derivedFromState` names
+`executionHistory`, which is how `bubbles.retro` already computes those four.
+`referenceClosure` names `bundle-cost-report.sh`.
+
+### A Schema Regression From The Gates Removal (IMP-042 SCOPE-13 follow-up)
+
+Deleting the generated gates block left `workflows.schema.json` still declaring
+`gates` a required property, so `yaml-schema-validate` failed on the very file
+the removal produced. The requirement is dropped; the `gates` shape is retained
+so a downstream tree still carrying the pre-removal copy validates rather than
+erroring mid-upgrade.
+
+`generate-framework-stats.sh` had the same root cause and a louder symptom: it
+counted gates out of the deleted `workflows.yaml` block, so every generated
+surface reported **zero gates** — `framework-stats.json`, `framework-stats.md`,
+and the README badge. It now counts `bubbles/registry/gates.yaml`, and all three
+report 117 again.
+
+Both were mine, and the surrounding selftests did not catch either: they resolve
+modes and gates through the registry, which is exactly the path the removal made
+correct. Only the schema check and the stats generator read the old shape.
+
+### The Config Writer Deleted Every Key It Did Not Recognise (IMP-044 SCOPE-3 / REG-15)
+
+`save_control_plane_config` rendered a fixed template. Every key that template
+did not name was destroyed on the next `policy set` — silently, and with a
+success message. That took operator settings and framework blocks alike,
+including the `experienceRecall` block IMP-043 asks operators to add.
+
+A policy writer must preserve what it does not understand. The CLI-owned keys are
+now merged into the existing document rather than replacing it.
+
+The merge uses `python3`, not `jq`: `cli.sh` records in two places that its JSON
+handling is deliberately jq-free, and `lessons add` already requires `python3` on
+a mutating path, so this adds no new dependency. When `python3` is absent the
+write is refused with a named remediation rather than falling back to the
+template — overwriting an operator's config because a dependency is missing is
+the exact failure this change exists to prevent.
+
+Proven both ways. With the merge, a `grill.mode` mutation applies and both
+unknown keys survive. With the merge disabled, both are destroyed. That second
+case ships as `control-plane-config-merge-selftest.sh`, so a build where the
+merge silently does nothing cannot pass.
+
+### The Learning Loop Is Reachable From A Repository That Already Exists (IMP-043 SCOPE-4, SCOPE-5)
+
+Every learning scaffold lived behind `install.sh --bootstrap`, and `cmd_upgrade`
+never passes that flag. A repository installed before the learning loop existed
+could therefore never acquire the file the loop writes to, and re-bootstrapping a
+live repository touches far more files than the one that is missing.
+
+Scaffold creation is now a function that runs on every install and every
+upgrade. It is strictly non-destructive: it creates the file only when absent and
+never modifies an existing one, because an operator's accumulated lessons are not
+ours to rewrite. Verified on a real install with no `--bootstrap`.
+
+`doctor` now reports the gap instead of leaving it silent: a missing
+`lessons.md`, a lessons file holding zero entries, and whether the recall adapter
+is the shipped `none`. All three are advisories and never change the exit code.
+
+The recall index was also never synchronized by anything, so no repository could
+reach the opt-in state even after configuring an adapter. Synchronization now
+happens at `lessons add`, which is the exact moment new recallable content
+appears and is already classified an owned mutation. That keeps `recall search`
+read-only rather than turning a read into a write. It stays silent when the
+adapter is `none`, which remains the shipped default, and a sync failure can
+never fail a lesson that was already written.
+
+### A Lesson Decision Is Now Recordable, And Compaction Actually Runs (IMP-043 SCOPE-1, SCOPE-3)
+
+`lessons.md` is empty in every repository that has one and absent in the rest.
+The components are not the problem: the writer, the clustering engine, and the
+recall index each pass their own selftest. The integration is.
+
+Two integration defects are fixed here.
+
+The result envelope had nowhere to record the lesson decision, so an agent that
+correctly concluded a run produced nothing generalizable left no trace of having
+decided. The envelope schema now declares an optional `learning` object with a
+closed `disposition` of `captured`, `not-applicable`, or `deferred`. This is not
+a per-run lesson quota — `execution-ops.md` argues that forcing one lesson per
+run manufactures filler and degrades clustering, and that reasoning stands. What
+is recorded is that the decision was made.
+
+`result-envelope-validate.sh` refuses `captured` with no `lessonId`, and
+`deferred` with a reason under twenty characters, because "later" is not a
+reason. The refusal lives in the hard-check path that runs in every mode,
+including `--advisory`, rather than in schema validation alone: the script exits
+0 and skips schema checks entirely when `python3` or `jsonschema` is missing, so
+a capture claim would go unchecked exactly where dependencies are thinnest.
+Envelopes with no `learning` key stay valid, so nothing existing breaks.
+
+Compaction was declared under `autoCompactTrigger: workflow_start`, an event no
+host fires, so it only ever ran when a human typed the subcommand. It now runs
+at capture, which is the moment the file grows, and reads
+`lessonsMemory.maxLines` instead of the 150 that `cli.sh` hardcoded twice. The
+two `reviewTrigger: workflow_start` keys are removed for the same reason: a key
+naming an event the framework cannot fire is the defect, not the schedule.
+
+### Gates Are Defined In One File Again (IMP-042 SCOPE-13)
+
+`bubbles/workflows.yaml` carried a 1,027-line `gates:` map generated verbatim
+from `bubbles/registry/gates.yaml`. Keeping that copy honest required a
+generator, a drift check, and a selftest for the drift check. A duplicate that
+needs three mechanisms to stay truthful is a second answer waiting to disagree
+with the first.
+
+The copy is deleted. `workflows.yaml` falls from 2,201 to 1,174 lines with zero
+lines added. `generate-gates-block.sh` and `gates-registry-selftest.sh` are
+deleted with it, their two validator checks are unwired, and `gate-meta.sh` no
+longer falls back to `workflows.yaml` — that fallback would now find a file with
+no gates in it rather than an older copy.
+
+This was gated on evidence, not confidence. Every gate reader was fingerprinted
+before and after and is byte-identical: `gate-meta list` and `count`,
+`gate-classification report`, `gate-enforcement`, `gate-bands --check`, and
+`registry-consistency-selftest`.
+
+One output changed on purpose. `bubbles-hub-report` treats `workflows.yaml` as a
+graph source, so every gate lost one mention and its in-degree fell by one. It
+still resolves 117 gates. The new numbers are the more accurate ones: a generated
+duplicate had been inflating every gate's in-degree by exactly one.
+
+### The Reaper Selftest Was Never Running The Reaper (IMP-042 SCOPE-12)
+
+`run-state-reaper-selftest.sh` had been failing in the source tree since before
+this review began, and the failure was read as a reaper defect. It was a
+portability defect.
+
+Lines 73 and 117 called bare `timeout`, which does not exist on macOS or any
+machine without GNU coreutils, and neither call carried a `portable-ok`
+exemption or sourced `guard-lib.sh`. With `timeout` missing, the subshell that
+TRIGGERS the reaper failed outright, so nothing was ever reaped.
+
+That produced a signature worth recognising elsewhere: A1 and A3, which assert
+something HAPPENED, failed; A2 and A4, which assert something did NOT happen,
+passed vacuously, because "nothing was reaped" satisfies both. Half a suite
+going green on inaction is not partial success, it is a suite testing nothing.
+
+Both calls now use `bubbles_run_with_timeout`, the framework's own helper, which
+resolves `timeout`, then `gtimeout`, then a watchdog fallback. All 5 cases pass.
+Tolerated downstream failures drop from four to three.
+
+### Renaming A Check Could Silently Remove It From The Push Gate (IMP-042 SCOPE-2)
+
+Pre-push runs `framework-validate --tier=core`, and the core tier is decided by
+`core_check_label()`, which matches check LABELS by substring. So that function
+is, in practice, the list of checks allowed to block a bad push.
+
+A prose-keyed substring list fails one way, silently. Rename a check and its
+pattern stops matching. Nothing errors. The tier runs one fewer check, and a
+guard chosen specifically to block pushes stops blocking them while every run
+still reports success.
+
+`core-tier-pattern-lint.sh` fails when any core pattern matches no scheduled
+check, and when zero patterns parse at all, because an empty core tier would let
+every push through while reporting nothing wrong. It reads 15 patterns against
+300 scheduled checks and is currently clean.
+
+This is a stopgap with a stated expiry: it guards a mechanism the rest of
+SCOPE-2 replaces with a typed registry keyed on a stable `checkId`, and it should
+be deleted when that lands.
+
+### A Portable Selftest Was Failing Downstream For Being Right (IMP-042 SCOPE-12)
+
+`gate-vintage-selftest.sh` is hermetic in cases 1 to 8, which build their own
+fixture repository. Case 9 was not: it ran `gate-vintage-annotate.sh --check`
+against the real registry. That command derives each gate's vintage from git
+history, so in a consuming repository it reads that repository's history, where
+every gate arrived in a single install commit, and correctly reports the
+annotations stale. The portable selftest therefore failed every downstream
+install because the guard was working.
+
+Case 9 is removed rather than rescheduled. `framework-validate` already runs that
+exact command as `run_check_self_only "Gate-vintage annotation freshness"`, which
+is the only context where the answer means anything, so no coverage is lost and
+the eight hermetic cases keep running downstream.
+
+Tolerated downstream failures drop from five to four.
+
+Also verified, with no change required: nothing in the framework blocks on link
+reachability. `bundle-cost-report.sh`, the only producer of
+`referenceClosureProxy`, is never scheduled as a check — only its selftest is —
+so the proxy is already advisory. The three budgets that do block all measure
+bytes of a file or of a transitive import closure, which is a counted quantity
+rather than an inferred prompt cost.
+
+### One Tolerated Downstream Failure Fixed, Two Diagnoses Corrected (IMP-042 SCOPE-12)
+
+`profile-transition-selftest.sh` reads the LIVE
+`.specify/memory/bubbles.config.json` and drives `developer-profile.sh set`
+against it. The discovery sweep ran it as portable, so downstream it asserted
+against whatever adoption profile that repository legitimately chose and failed
+on a correct configuration. It is now enumerated as `run_check_self_only`, which
+also removes it from the sweep. It still passes in source, and the tolerated
+list drops from six entries to five.
+
+Two of the remaining descriptions were wrong, and are corrected rather than
+acted on, because acting on them would have hidden real failures:
+
+- The open-work entry was described as asserting that the framework ships
+  `.specify/memory/open-work.md`. The scheduled script builds every case under
+  `mktemp` fixtures and never reads the live register, so rescheduling it
+  source-only would have suppressed whatever actually breaks downstream.
+- The repository-binding entry was described as an unscheduled discovery. It is
+  already denylisted with a documented reason, because it must run only through
+  the `cli.sh` boundary that sets its asserted environment flag. The remaining
+  failure comes from the enumerated CLI check, so a reschedule fixes nothing.
+
+### The Metrics Registry Declared A Field Nothing Emits (IMP-042 SCOPE-14, IMP-044 REG-14)
+
+IMP-039 renamed the bundle metric from `costProxy` to `referenceClosureProxy` so
+a reachability proxy would stop reading as spend. The producing script and
+`bubbles.retro` were renamed. `workflows.yaml` was not.
+
+The metrics registry therefore declared `bundleCostProxy` as a measured
+dimension while `bundle-cost-report.sh` emitted `referenceClosureProxy`, so any
+reader resolving that dimension from the registry looked for a field nobody
+wrote. A registry that names a field its producer abandoned is worse than one
+that omits it, because the name looks like a guarantee.
+
+The registry now declares `referenceClosureProxy` and names
+`bundle-cost-report.sh` as its producer rather than implying the activity store
+writes it. No live reader references the retired name.
+
+### The Consistency Check Now Validates Against The Registry (IMP-042 SCOPE-13 / REG-10, REG-12)
+
+`registry-consistency-selftest.sh` proves that every `Gxxx` referenced anywhere
+in the framework resolves to a real gate. It was resolving them against the
+`gates:` block in `workflows.yaml`, which is generated from the registry. The
+check that guards gate references was therefore validating against a copy, and a
+copy is only as trustworthy as the last time it was regenerated.
+
+It now reads `bubbles/registry/gates.yaml` directly. Both sources define 117
+gates and the selftest's output is byte-identical before and after the repoint.
+
+This was the last reader of the generated block. Every remaining gate reader was
+fingerprinted with the block present and again after the repoint, and all are
+unchanged: `gate-classification report`, `gate-enforcement`, `gate-bands
+--check`, `bubbles-hub-report`, and `gate-meta list`. Nothing parses gate
+definitions out of `workflows.yaml` any more, which is the precondition the block
+removal was waiting on.
+
+### A Proportionate Packet For Genuinely Small Defects (IMP-042 SCOPE-9 / HO-3, EV-9)
+
+The full bug packet is seven artifacts. That is proportionate to a defect that
+changes a contract and disproportionate to a one-line guard on an off-by-one.
+Paying full ceremony for a trivial fix does not buy assurance; it buys a thinner
+report written under time pressure.
+
+The compact packet trades artifact count for a much narrower admission window.
+`bubbles/registry/micro-fix-packet.yaml` holds the eight admission conditions,
+the three artifacts still required, and the four obligations that may never be
+traded away: reproduce-before-fix, an adversarial regression shown failing
+without the fix and passing with it, a stated root cause, and evidence that is
+execution rather than assertion. `micro-fix-admission.sh` reads that registry
+and refuses anything that fails a condition or drops an obligation.
+
+An unanswered condition is a refusal, not a default. A bypass-shaped flag is
+rejected by name. There is no override, because a discretionary downgrade is how
+a payment defect ships as a typo fix.
+
+The packet is NOT the default and must not become one until packet authoring
+time and defect escape rate are measured, carried as `OW-015`. Selftest case 9
+fails if that caveat is deleted, and case 8 proves the guard reads the registry
+rather than restating it.
+
+### Gate Telemetry Separates Fixtures From Product (IMP-042 SCOPE-17 / COV-15)
+
+The gate-hit log is the only evidence base for retiring a gate, and every record
+in it looked alike. A selftest driving the guard through a fixture repository
+wrote records indistinguishable from production ones, so "G0xx has rejected
+something 40 times" could have been describing the test suite.
+
+Every record now carries a `sourceClass` of product, fixture, selftest or
+migration. The class is DERIVED from the repository root rather than declared,
+because a fixture that forgets to declare itself is exactly the record that
+pollutes the report, and an unrecognised declared class is demoted to fixture
+rather than trusted as product so one misspelling cannot promote test data into
+retirement evidence. `report` counts product records only, names the filter it
+applied, and states how many records it excluded; `--all-classes` and `--class`
+widen it deliberately. Records written before the field existed still count as
+product, so no history is discarded.
+
+This corrects `OW-012`, whose remediation runs `gate-hit-log.sh report` in each
+consuming repository to find gates with zero recorded rejections. That command
+no longer counts fixture rejections toward a shipped gate.
+
+The original COV-15 wording claimed the log had "no per-gate outcomes". That was
+wrong and is corrected in the improvement file: per-gate outcomes already
+existed. The real defect was the missing source class.
+
+`gate-hit-log-selftest.sh` covers this in cases 17 to 22 and is falsifiable:
+reverting the default filter to count every class turns cases 18 and 19 red.
+
+### The v5 Mode Names Are Not Removable (IMP-042 SCOPE-18 / REG-9)
+
+The removal train was scoped to retire deprecated aliases. Scanning first, which
+is what the scope required, shows there is nothing there to retire.
+`aliases.yaml` states that the v5 names remain the canonical registry keys and
+carries the invariant that every mode in `workflows.yaml` appears under
+`v5Aliases`, so removing one breaks resolution instead of retiring a legacy
+path. All 61 entries appear across the seven downstream repositories, and 27 are
+live `state.json` mode values across 1,888 downstream state files, with
+`bugfix-fastlane` at 2,309 occurrences and `full-delivery` at 1,402.
+
+The train stays parked for this surface. Deprecated flags, framing paths, and
+legacy schemas remain candidates; the mode keys do not.
+
+### Consumers Name What They Consume (IMP-042 SCOPE-11 / COV-15)
+
+G127 requires every shipped capability to declare consumers whose paths exist,
+but that check runs one way: the ledger points at a script and the script has no
+idea it was named. A consumer could be refactored until it no longer touched the
+capability and the ledger would keep claiming the wiring, because the file still
+existed. Of 37 executable consumers, 5 named their capability and 32 did not.
+
+All 37 now carry a `# Capability:` header, and `capability-consumer-naming.sh`
+fails when a shipped capability's executable consumer never names it. Markdown
+and registry consumers stay out of scope, because their relationship to a
+capability is prose and an id string there would be noise rather than evidence.
+
+### One Adoption-Profile Parser (IMP-042 SCOPE-13 / REG-12)
+
+Four scripts each carried their own copy of the adoption-profile parser, and the
+copies had drifted. `cli.sh` and `developer-profile.sh` were byte-identical,
+`repo-readiness.sh` had a better parameterised form, and one variant applied
+`head -1` where another did not.
+
+The unknown-value policy had drifted further, and in a way that mattered:
+`developer-profile.sh` and `repo-readiness.sh` refused an unrecognised profile,
+while `cli.sh` silently fell back to `delivery`. A mistyped `--profile` made the
+CLI quietly behave as a different profile than the one asked for. All three now
+share one parser and one fail-loud policy from `adoption-profile-lib.sh`.
+
+### Required Managed Docs Must Exist (IMP-042 SCOPE-13 / REG-12)
+
+`docs-registry.yaml` declares which documents a repository maintains and which
+are required, and nothing checked that a required document's path resolved to a
+real file. The registry could promise a document that was never written, and
+every projection built from it inherited the claim.
+
+`managed-docs-existence-lint.sh` now fails when a required managed doc has no
+file. It skips a framework source tree deliberately and says so: Bubbles owns no
+`docs/Architecture.md` or `docs/API.md` and correctly should not, so running it
+here would report guaranteed failures that say nothing about the framework. Its
+selftest therefore drives product-shaped fixtures, where the check has to
+decide, and covers both directions plus the skip itself.
+
+### One Copy Of The Specialist Table (IMP-042 SCOPE-13 / REG-10)
+
+Check 6 of `state-transition-guard.sh` carried the mode to required-specialist
+mapping as a 29-arm `case`, and `required-specialists.yaml` mirrored it, and
+`required-specialists-consistency.sh` compared the two on every validation run.
+The guard now reads the registry directly, so there is one copy and nothing to
+compare. The comparator and its selftest are removed, and the rationale prose
+that justified keeping the duplication now sits beside the entry it explains.
+
+The first implementation of that read was wrong in a way worth recording. It
+used `yq -r --arg`, which is jq syntax; the pinned yq is Go yq, which has no
+`--arg` flag, so the primary path returned empty for all 29 modes and Check 6
+would have silently fallen through to phaseOrder derivation for every one of
+them. Nothing surfaced, because the guard routes yq failures into `|| true`.
+The new selftest caught it by asserting that the yq path and the awk fallback
+agree for EVERY mode rather than that either returns something.
+
+### Health Report Regression (IMP-042)
+
+`retro-framework-health` lost its no-signal marker and its per-item wording in
+this release's first commit without the selftest being updated. Worse, the
+selftest's own fixture encoded `workflow-runs.json` as an array of
+mode/outcome records, a schema the file has never used. Fixture and reader
+agreed with each other and disagreed with reality, which is how the original
+defect survived. The fixture now mirrors the real activeRuns/recentRuns shape
+and asserts that a successful run is not counted.
+
+### Downstream Payload Closure (IMP-042 SCOPE-12 / REG-11)
+
+The release manifest sorted files into `managed` and `sourceOnly` but nothing
+checked the two classes against each other, so a shipped executable could reach
+for a file that was never shipped. The eval subsystem was split exactly that way:
+`eval-harness.sh` stayed source-only while three selftests driving it shipped
+downstream, and `eval-corpus-selftest.sh` shipped into every install purely to
+skip. `install.sh` and `VERSION` were in neither class, so nothing tracked their
+integrity and no check could see a dependency on them.
+
+`payload-closure-guard.sh` now fails when a managed shell script reaches a
+source-only one. Three exemptions are accepted because each degrades cleanly, and
+each is covered by its own selftest case: an existence test, `run_check_self_only`
+scheduling read from the scheduler itself, and a `payload-closure-allow` marker
+that must carry a reason. Payload is closed at 859 managed / 105 source-only.
+
+Demoting a script to source-only also requires its framework-validate schedule
+to be self-only and existence-guarded, or it fails downstream purely by being
+absent. That happened to the CI annotation selftest during this work.
+
+`v5.3-selftest.sh` built its downstream tree by hand-copying fifteen scripts. A
+tree that small can never satisfy a full validation run, so the exit code was
+discarded to keep it green -- and `sr_rc=$?` after `|| true` read the assignment's
+status, always zero, leaving those assertions inert. It now installs for real via
+`install.sh --local-source` and checks real exit codes. Doing so revealed that a
+downstream install does not validate cleanly: six checks assert framework-source
+properties while scheduled as portable. They are enumerated by name rather than
+ignored, so new downstream breakage fails immediately, and a listed check that
+starts passing also fails, forcing the list to empty.
+
+### Fixed
+
+- `retro-framework-health` reported no stalled-run data because its selftest
+  fixture encoded `workflow-runs.json` as an array of `{mode, outcome}` -- a shape
+  the file has never had. Fixture and reader agreed on the wrong schema, so both
+  were wrong together and the suite stayed green while the real file held 22
+  active and 12 failed runs. The fixture now mirrors the real
+  `{activeRuns, recentRuns}` shape and asserts a successful run is not counted.
+
+### Documentation Truth (IMP-042 SCOPE-16 / DOC-6)
+
+The mode guide documented four modes that do not exist. `brainstorm`,
+`feature-bootstrap`, `redesign-existing`, and `product-discovery` had full
+sections with phase diagrams and, in one case, a copy-paste invocation example --
+but none is in `modes.yaml`, none has a v6 alias, and none can be selected. An
+operator could read a mode name here, invoke it, and be routed somewhere else.
+They now appear once, in a Retired Modes section, with the legacy phase arms that
+`required-specialists.yaml` still records. Every remaining documented mode
+heading resolves against the live registry.
+
+Two recipe inventories existed and only one was checked, so `docs/CATALOG.md`
+drifted to 61 of 75 recipes. CATALOG is not redundant -- it carries the
+mode/agent mapping and decision tree the categorized index lacks -- so the 14
+missing recipes were added, each mapping derived from the recipe itself, and both
+inventories are now under the same mechanical check.
+
+The six files in `docs/generated/` had no named reader, which is what made
+`framework-stats.md` look unconsumed. They are now indexed as generated surfaces.
+Frozen v4/v5/v6 design records, the dated product review, and ADR-001 are indexed
+as a historical record, labelled as how the framework used to work rather than
+current guidance.
+
+### Validation Cadence (IMP-042 SCOPE-5 / PERF-4)
+
+`validation-core.md` defined what validation must check but never when to run it,
+so "validate" was read as "run everything" and a full suite followed every scope,
+finding, and documentation correction. It now carries an explicit cadence.
+
+A validation epoch is one tree SHA on one platform with one toolchain, and a
+verdict belongs to the epoch that produced it. Focused validation runs after each
+edit. A repair loop reruns the failed checks and their affected closure, letting
+unrelated side-effect risk accumulate to the next heavy boundary instead of
+forcing a full suite mid-loop. One cold full `release-check` runs on the final
+exact release candidate, and that gate is neither optional nor reusable.
+
+The full-suite fallback stays permanently available, for the reason
+`test-impact-shadow.sh` already states in source: a skipped test and a passing
+test look identical in a summary line, so any narrowing must be reportable before
+it may skip work.
+
+### Compact Durable Status Tracking (IMP-042 SCOPE-10 partial / WIP-4, DOC-6)
+
+The status agent presented the same command twice as two different steps -- an
+"ideal continuation path" whose second entry, offered as the higher-assurance
+finish, was byte-identical to the first. Its Health Indicators table restated
+routing the Decision Tree already owned. The duplicate is gone and the health
+table now maps a state to whether work should continue, deferring routing to the
+one table that owns it.
+
+The improvement index had a 13,290-character row against a 2,433-character next
+largest, because a full delivery narrative had been pasted into a Status cell.
+`management-truth-lint.sh` now bounds index rows at 2,500 characters. IMP-037 is
+grandfathered by id, with the reason recorded inline: its IMP file was deleted on
+delivery, so that cell is now the only record and migrating it would risk losing
+an audit trail. Grandfathering by id rather than by raising the bound keeps a NEW
+oversized row failing, which a 3,071-character probe confirms.
+
+### Evidence Policy Single Source (IMP-042 SCOPE-15 / EV-9)
+
+Three surfaces disagreed about where DoD evidence may live. `evidence-rules.md`
+and `state-transition-guard.sh` Check 9 support two resolvable reference forms, a
+`report.md#anchor` link and a structured tool-log record, and treat a resolved
+reference as equivalent to an inline block. The agent instructions said the
+opposite -- "Do NOT use `Evidence: [report.md#...]` links" -- and G025 said
+evidence must be recorded INLINE. An agent following the instruction and an agent
+following the guard both believed they were compliant.
+
+The instruction and the gate now state the contract the guard actually enforces.
+Inline placement stays the default and stays fully valid; a reference is
+permitted only in the two resolvable shapes, must carry ≥10 non-blank lines at
+the target, and FAILS the item when it does not resolve. The raw-output substance
+requirement, the `**Claim Source:**` tag, per-item attribution, and the ban on
+carrying the same output twice are unchanged.
+
+### Canonical Registry Reads (IMP-042 SCOPE-13 partial / REG-10, REG-12)
+
+`gate-meta.sh` answered every gate query from `workflows.yaml`, which carries a
+GENERATED copy of the gate registry. A registry edit therefore answered stale
+until `generate-gates-block.sh` ran. It now reads `bubbles/registry/gates.yaml`
+directly and falls back to the generated block only for an installed tree that
+predates the registry. Shadow-compared across all 117 gates before the cutover:
+identical ids, names, and descriptions, no empty fields.
+
+Every managed-doc `requiredSections` list was being dropped. The resolver parses
+with portable awk and accepted a sequence only when indented under its key, while
+the registry writes the flush form, so all seven lists vanished from both the
+framework-default and effective projections while the resolver still exited 0.
+Both indentations are now accepted, and `management-truth-lint.sh` gained a
+retention check comparing declared lists against resolved ones -- proven to fire
+by reverting the parser in a fixture (7 declared, 0 resolved).
+
+### Atomic Context Compaction (IMP-042 SCOPE-7 / COST-8)
+
+Compaction could report success while losing the thing it produced. The compactor
+stamped `compactedAt` on the envelope but emitted the compact record only to
+stdout, leaving the caller to append it to `compactedHistory`. When that append
+did not happen the envelope was marked compacted with its record gone -- the raw
+content discarded and the summary that justified discarding it missing -- and
+G083 still passed, because it only looked for the stamp.
+
+The stamp and the record now land in ONE rewrite of the session file, and the
+record is emitted only after that write succeeds. A write that cannot complete
+refuses with exit 3 rather than reporting a compaction that did not persist.
+Re-running on the same envelope replaces its record rather than appending a
+duplicate. Unbound use over a one-off raw envelope stays a pure stdout
+transformation.
+
+G083 now requires a matching `compactedHistory` entry for every stamped envelope,
+scoped to sessions that carry the key so an upgrade cannot retroactively block a
+session compacted under the older contract. Two paired scenarios cover it: a
+stamped envelope with no record fails, and the same shape with its record passes.
+
+### Selftest Scheduling And Governance Indexing (IMP-042 SCOPE-11 partial / COV-15)
+
+A comment could silence a selftest. The discovery sweep decided "already wired"
+by matching each selftest's basename against the validator's raw source text, so
+any mention at all -- a comment, a rationale, even a denylist note -- removed
+that selftest from the run with nothing reporting the loss. `selftest-coverage-
+lint.sh` used the same rule, so it would have reported full coverage for a
+selftest the sweep had already skipped.
+
+Both now share one builtin-only helper, `bubbles_scheduled_selftests`, which
+detects real `run_check` invocations and reassembles backslash-continued lines
+first. Counts are unchanged on the current tree (238 selftests: 219 enumerated,
+17 discovered, 2 denied), so this is hardening rather than a behavior change.
+
+Governance indexing matched on basename. Every skill file is named `SKILL.md`, so
+one index mentioning that string trivially satisfied all 45 skills at once. The
+lint now matches the repository-relative path, and for a skill its directory
+name. That immediately surfaced six skills that no index referenced at all --
+code-index-adapter, cross-platform-shell, datastore-isolation, isolated-ml-
+sidecar, technical-prose, and vscode-agent-constraints -- all now indexed.
+
+### Generated Capability Projections (IMP-042 SCOPE-16 partial / DOC-6)
+
+Seven capability summaries rendered as a bare `>` in the generated competitive
+table. The awk field parser stored the YAML block-scalar indicator and dropped
+the indented text that followed it, so the most substantive column in the
+document was empty for every entry that used a folded scalar. The parser now
+collects the continuation lines.
+
+Markdown table cells are pipe-delimited, and one shipped summary documents a
+posture triple as "wired | opted-out | undeclared". That gave its row ten
+delimiters against the header's eight and misaligned every cell after it -- a
+pre-existing break, present at HEAD before this change. Cells are now escaped.
+
+The generated issue page called shipped capabilities "tracked gaps". It now
+states that the ledger is authoritative and that an issue link records follow-up
+work rather than a missing capability. Its summary column is removed, since the
+link and ledger state carry the meaning.
+
+### MCP And Mode Contract Repair (IMP-042 SCOPE-8 / REG-9)
+
+Every boolean input in the MCP tool catalog was silently ignored. The argument
+renderer had no way to turn one into argv: `${var}` renders the literal "False"
+and `${var?}` only drops on null or empty string. A new `${var!}` boolean-flag
+form carries the flag literal and drops the whole element when the value is
+falsy, so `"--no-cap${no_cap!}"` yields `["--no-cap"]` or nothing.
+
+`resolve_mode` could not express a v7 mode at all. It declared a single `mode`
+string and rendered `["${mode}"]`, so a primitive plus tags arrived as ONE argv
+token and the resolver rejected it. It now takes `primitive` plus a `tags` array
+rendered as separate elements, and a `grandfather` boolean for persisted v5 keys,
+which the resolver otherwise refuses with a pointer to the v6 form.
+
+`search_code` declared `paths`, `kind`, and `no_cap` and rendered none of them,
+while its description promised `no_cap=true` worked. All three are now wired, and
+the stated cap is corrected from 200 to the 400 the script actually applies.
+`code-search.sh` gained a single-element `--kind=<lang>` form, because a template
+can only drop the argv element containing the placeholder and a space-separated
+pair would leave a bare `--kind` to swallow the pattern.
+
+`validate_dod` declared `revert_on_fail` and never rendered it. Rather than wire
+a state rewrite into a model-invocable tool, the input is removed: certification
+state is bubbles.validate-owned, so an MCP-driven status revert is a forging
+vector. The guard's `--revert-on-fail` remains available on the CLI.
+
+`list_open_findings` projects no findings and takes no spec; its description now
+says so instead of implying a findings list. `verify_status_transition` is marked
+deprecated, being a byte-identical alias of `validate_dod`. The workflows resource
+no longer restates mode, phase, and gate counts that had drifted to 55/26/101
+against a live 61/30/117.
+
+Three MCP regressions cover this: the v7 tagged form resolves, a removed v5 name
+without grandfather is still rejected, and the grandfather path resolves. The
+middle one is adversarial on purpose, proving the first passes because argv is
+correct rather than because the resolver stopped refusing.
+
+### Leaf Validation Cleanup (IMP-042 SCOPE-1 / PERF-2, PERF-3, COV-15, DOC-6)
+
+The core validation tier spent 82 of its 109 seconds running ShellCheck twice.
+`shellcheck-lint-selftest.sh` case 4 re-scanned all 516 tracked scripts, which is
+the standalone gate's job and was already being done in the same run. Removing it
+leaves the selftest testing the gate and the gate testing the tree. Core tier is
+now 74 seconds with identical check coverage.
+
+Skips are now counted per reason. One aggregate counter served four different
+skip paths, so a `--tier=core` run inside a source tree reported "288 self-only
+check(s) skipped under install-mode=source. Run from a framework-source tree to
+execute them" -- advice that contradicted itself, about checks that were skipped
+for tier rather than availability. The summary now reads `288 skipped: 286
+tier=core, 2 denylisted`, and the source-tree hint appears only when a
+framework-source-only check was actually skipped.
+
+Cheap structural checks now run before the whole-tree scan, so a broken registry
+or malformed schema answers in about a second instead of after 41. Release
+manifest freshness moved to the final check: earlier checks regenerate derived
+artifacts, so a mid-run verdict described a tree the rest of the run could still
+change. The release-check invocation is retained deliberately and now says why --
+it re-asks after the suite, which no in-suite placement can do.
+
+`mode-resolver.sh --list-modes` no longer emits `phaseRelevance`, a configuration
+block that is not a mode. The inventory now returns 61, matching every other mode
+consumer. `mode-alias-selftest.sh` had been stripping the value itself; dropping
+that workaround turns its coverage check into the regression for the contract.
+
+`retro-framework-health.sh` reported "no non-completed run data" on every run.
+It read the run-state file as a top-level array of records carrying `mode` and
+`outcome`, but the file is an object holding `activeRuns`/`recentRuns` whose
+records carry `command`, `status`, and `result`. jq failed with "Cannot index
+number with string", `2>/dev/null` swallowed it, and the section reported silence
+while 22 active and 12 failed runs sat in the file. It now surfaces them.
+
+The pre-push hook no longer assigns its two log paths twice, states CI coverage
+accurately (Linux on every pull request and push to main, macOS on pushes only),
+and replaces blind `tail -30` diagnostics with a bounded block that leads with
+the failure-shaped lines -- a tail window silently drops the failure when the
+failed-check list is long. The spec dashboard drops its `DONE` column, which
+printed an empty string while `SCOPES` already carried `done/total`.
+
 ## [7.27.0] - 2026-08-12
 
 ### Complete Test Creation And Certification (IMP-040 / COV-8..COV-12, REG-8, EV-8)
