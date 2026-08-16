@@ -185,6 +185,20 @@ release_manifest_owns_managed_path() {
   ' "$RELEASE_MANIFEST_SOURCE"
 }
 
+release_manifest_managed_paths_under() {
+  local path_prefix="$1"
+
+  awk -v path_prefix="$path_prefix" '
+    BEGIN { section_line="  \"managedFileChecksums\": [" }
+    $0 == section_line { in_section=1; next }
+    in_section && ($0 == "  ]," || $0 == "  ]") { exit }
+    in_section && match($0, /"path": "[^"]+"/) {
+      entry_path = substr($0, RSTART + 9, RLENGTH - 10)
+      if (index(entry_path, path_prefix) == 1) print entry_path
+    }
+  ' "$RELEASE_MANIFEST_SOURCE"
+}
+
 ADOPTION_PROFILES_SOURCE="$TEMP_DIR/bubbles/adoption-profiles.yaml"
 [[ -f "$ADOPTION_PROFILES_SOURCE" ]] || fail "Missing adoption profile registry in source payload."
 
@@ -706,11 +720,25 @@ if [[ -d "$TEMP_DIR/.specify" ]]; then
 fi
 
 # ── Install framework docs ──────────────────────────────────────────
+#
+# Driven by the manifest, not by `cp -r docs/*`. The wholesale copy shipped
+# whatever the payload happened to contain and never removed what the framework
+# retired, so every downstream repo accumulated docs the manifest had stopped
+# owning. `.github/docs/` is framework territory; repo-authored docs belong
+# outside it.
 if [[ -d "$TEMP_DIR/docs" ]]; then
   info "Installing framework docs..."
   mkdir -p "${TARGET}/docs"
-  cp -r "$TEMP_DIR"/docs/* "${TARGET}/docs/" 2>/dev/null || true
-  ok "$(find "${TARGET}/docs" -type f 2>/dev/null | wc -l) framework docs installed"
+  docs_installed=0
+  while IFS= read -r managed_doc_path; do
+    [[ -n "$managed_doc_path" ]] || continue
+    [[ -f "$TEMP_DIR/$managed_doc_path" ]] || continue
+    mkdir -p "${TARGET}/$(dirname "$managed_doc_path")"
+    cp "$TEMP_DIR/$managed_doc_path" "${TARGET}/$managed_doc_path"
+    docs_installed=$((docs_installed + 1))
+  done < <(release_manifest_managed_paths_under "docs/")
+  bubbles_prune_managed_tree_orphans "docs"
+  ok "$docs_installed framework docs installed"
 fi
 
 # ── Migration: rename legacy shared instruction filenames ──────────

@@ -31,6 +31,42 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### The Manifest Now Governs Which Docs Ship (IMP-042 SCOPE-12)
+
+The scope is called manifest-driven downstream payload. Docs were not
+manifest-driven at all: `install.sh` copied them with a wholesale
+`cp -r "$TEMP_DIR"/docs/*`, so the payload was whatever the source tree happened
+to contain, and nothing removed what the framework had retired. Every consuming
+repository was still carrying the same retired framework docs, which is the
+signature of a copy that never prunes.
+
+Docs now install from the manifest's managed set, and the existing orphan prune
+runs for `docs`. On today's tree that is a no-op, because all 116 tracked docs
+are managed, so the mechanism lands before it changes anything.
+
+With the manifest actually governing the payload, five maintainer-only records
+stay in source and leave it: the dated product review, the improvements-delivered
+log, the spec-alignment record, and the v5.2 and v6-MCP design records. A
+consuming repository never reads how this repository got here. Managed goes 876
+to 871, source-only 105 to 110.
+
+The five were chosen per candidate rather than by pattern, because two
+neighbours that look like the same class are load-bearing:
+`v4.1.0-delivered-pending-activation.md` carries live markdown links from three
+installed skills and `Framework_Convergence_Health.md` from an installed recipe,
+so demoting either would leave exactly the dangling reference G132 exists to
+catch. The guards and lints that name the demoted five do so in comments, or as
+exemption paths that go inert when the file is absent. The index rows for those
+five carry `ref-ok`, the documented way to mark an intentional dangling link.
+
+One correction is recorded rather than quietly dropped. This scope previously
+claimed the exclusion was blocked by `governance-index-lint.sh` forcing a choice
+between a dead link downstream and an orphan in source. That was wrong: the lint
+discovers docs only under `agents/bubbles_shared/`, `instructions/`, `skills/*/`
+and `docs/recipes/`, and never enumerates top-level `docs/*.md`.
+
+`.github/docs/` is framework territory. Repo-authored docs belong outside it.
+
 ### The Improvement Index Derives Its Status Instead Of Restating It (IMP-042 SCOPE-10)
 
 `framework-health-evidence-lint.sh` already required every proposal to declare a
