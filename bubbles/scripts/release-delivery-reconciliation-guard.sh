@@ -254,6 +254,11 @@ for FFILE in "${FEATURE_FILES[@]}"; do
     fid="$(ann_field "$line" id)"
     fspec="$(ann_field "$line" spec)"
     fdelivery="$(ann_field "$line" delivery)"
+    # assurance is OPTIONAL, so its extraction must tolerate absence: ann_field
+    # pipes through grep, and under `pipefail` a no-match returns 1, which
+    # `set -e` would turn into a silent early exit on every annotation that
+    # simply does not declare assurance.
+    fassurance="$(ann_field "$line" assurance || true)"
 
     # Malformed: every annotation MUST carry id + spec + delivery.
     if [[ -z "$fid" || -z "$fspec" || -z "$fdelivery" ]]; then
@@ -341,6 +346,23 @@ for FFILE in "${FEATURE_FILES[@]}"; do
       phase_delivery_rc=1
       SUMMARY_ROWS+=("$phase_dir|$fid|required|$fspec|NOT-DELIVERED (self-certified)")
       continue
+    fi
+
+    # An "implemented" assurance claim must rest on a mode that actually
+    # implements. specs_hardened / docs_updated / validated are planning-only
+    # ceilings: reaching one is a legitimate terminal FOR ITS MODE, and
+    # is_terminal_status above correctly accepts it — which is exactly why this
+    # check is needed. Terminal-for-a-planning-mode is not implementation, so a
+    # packet asserting assurance=implemented over it claims work never done.
+    if [[ "$fassurance" == "implemented" ]]; then
+      case "$status" in
+        specs_hardened | docs_updated | validated)
+          echo "[release-delivery-reconciliation-guard][ERROR] $phase_dir: required feature '$fid' → spec '$fspec' declares assurance=implemented but its terminal status '$status' is a planning-only ceiling — planning is not implementation" >&2
+          phase_delivery_rc=1
+          SUMMARY_ROWS+=("$phase_dir|$fid|required|$fspec|NOT-DELIVERED (planning-only: $status)")
+          continue
+          ;;
+      esac
     fi
 
     SUMMARY_ROWS+=("$phase_dir|$fid|required|$fspec|DELIVERED")

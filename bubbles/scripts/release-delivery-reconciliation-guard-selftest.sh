@@ -124,6 +124,26 @@ run_guard() {
   RC=$?
 }
 
+# mk_spec_mode <repo> <specpath> <status> <workflowMode> [phase ...]
+# Needed because mk_spec hardcodes full-delivery, and the planning-only
+# assurance cases turn on the spec's MODE, not just its status.
+mk_spec_mode() {
+  local repo="$1" specpath="$2" status="$3" wfmode="$4"
+  shift 4
+  local dir="$repo/$specpath"
+  mkdir -p "$dir"
+  local phases_json="[]"
+  if [[ $# -gt 0 ]]; then
+    local acc=""
+    local p
+    for p in "$@"; do acc="$acc\"$p\","; done
+    phases_json="[${acc%,}]"
+  fi
+  cat >"$dir/state.json" <<EOF
+{ "version": 3, "specId": "$(basename "$specpath")", "status": "$status", "workflowMode": "$wfmode", "completedPhases": $phases_json }
+EOF
+}
+
 expect_rc() {
   local want="$1" desc="$2"
   if [[ "$RC" -eq "$want" ]]; then
@@ -275,6 +295,36 @@ mk_features "$R17" mvp true \
 mk_spec "$R17" specs/094-ok "done" plan design implement test validate
 run_guard --repo-root "$R17" --phase mvp --mode bogus
 expect_rc 2 "S17 unknown --mode is a usage error"
+
+# ----------------------------------------------------------------------------
+# assurance=implemented must rest on a mode that actually implements.
+# These three cases are a set: S18 proves the refusal, S19 proves it is NOT a
+# blanket ban on assurance, and S20 proves it is classified as delivery rather
+# than grammar. Without S19 the check could be satisfied by refusing everything.
+
+# S18 — planning-only terminal + assurance=implemented → 1
+R18="$(new_repo s18)"
+mk_features "$R18" mvp true \
+  "bubbles:feature id=planned-only spec=specs/095-planning delivery=required assurance=implemented"
+mk_spec_mode "$R18" specs/095-planning "specs_hardened" "spec-scope-hardening" plan design validate
+run_guard --repo-root "$R18" --phase mvp
+expect_rc 1 "S18 assurance=implemented over a planning-only terminal is refused"
+
+# S19 — real delivered implementation carrying the same claim → 0
+R19="$(new_repo s19)"
+mk_features "$R19" mvp true \
+  "bubbles:feature id=really-built spec=specs/096-built delivery=required assurance=implemented"
+mk_spec "$R19" specs/096-built "done" plan design implement test validate
+run_guard --repo-root "$R19" --phase mvp
+expect_rc 0 "S19 assurance=implemented over a delivered implementation passes"
+
+# S20 — the same planning-only packet is a DELIVERY finding, not a grammar one
+R20="$(new_repo s20)"
+mk_features "$R20" mvp true \
+  "bubbles:feature id=planned-only spec=specs/097-planning delivery=required assurance=implemented"
+mk_spec_mode "$R20" specs/097-planning "specs_hardened" "spec-scope-hardening" plan design validate
+run_guard --repo-root "$R20" --phase mvp --mode structural
+expect_rc 0 "S20 structural does not fail planning-only assurance (delivery concern)"
 
 # ----------------------------------------------------------------------------
 echo ""
