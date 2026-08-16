@@ -91,6 +91,24 @@ mk_features() {
   } >"$dir/features.md"
 }
 
+# mk_features_dep <repo> <phase> <dependsOn-csv> [annotation ...]
+# mk_features emits no dependsOn, which the prerequisite cases require.
+mk_features_dep() {
+  local repo="$1" phase="$2" depends="$3"
+  shift 3
+  local dir="$repo/docs/releases/$phase"
+  mkdir -p "$dir"
+  {
+    echo "# $phase — features"
+    echo ""
+    echo "<!-- bubbles:reconciled-packet schemaVersion=1 phase=$phase dependsOn=$depends -->"
+    local ann
+    for ann in "$@"; do
+      echo "<!-- $ann -->"
+    done
+  } >"$dir/features.md"
+}
+
 # mk_spec <repo> <specpath> <status> [phase ...]   (completedPhases)
 mk_spec() {
   local repo="$1" specpath="$2" status="$3"
@@ -325,6 +343,44 @@ mk_features "$R20" mvp true \
 mk_spec_mode "$R20" specs/097-planning "specs_hardened" "spec-scope-hardening" plan design validate
 run_guard --repo-root "$R20" --phase mvp --mode structural
 expect_rc 0 "S20 structural does not fail planning-only assurance (delivery concern)"
+
+# ----------------------------------------------------------------------------
+# An OPEN PREREQUISITE blocks the requested phase. Also a set: S21 proves the
+# block, S22 proves it is not a blanket refusal of any phase that declares a
+# dependsOn, and S23 proves it is a delivery assertion rather than grammar.
+
+# S21 — later phase is asserted while its prerequisite is still open -> 1
+R21="$(new_repo s21)"
+mk_features "$R21" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R21" specs/100-foundation "in_progress" plan design
+mk_features_dep "$R21" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R21" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R21" --phase voyager
+expect_rc 1 "S21 open MVP prerequisite blocks a later phase"
+
+# S22 — same shape, prerequisite actually delivered -> 0
+R22="$(new_repo s22)"
+mk_features "$R22" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R22" specs/100-foundation "done" plan design implement test validate
+mk_features_dep "$R22" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R22" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R22" --phase voyager
+expect_rc 0 "S22 delivered prerequisite does not block the later phase"
+
+# S23 — the prerequisite check is a delivery assertion, not grammar -> 0
+R23="$(new_repo s23)"
+mk_features "$R23" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R23" specs/100-foundation "in_progress" plan design
+mk_features_dep "$R23" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R23" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R23" --phase voyager --mode structural
+expect_rc 0 "S23 structural does not apply the prerequisite block"
 
 # ----------------------------------------------------------------------------
 echo ""

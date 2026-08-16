@@ -134,6 +134,8 @@ RELEASES_DIR="$REPO_ROOT_ABS/docs/releases"
 
 # ---- collect target features.md files ----
 FEATURE_FILES=()
+PREREQ_PHASES=""
+PREREQ_BLOCKED=""
 if [[ -n "$PHASE_FILTER" ]]; then
   f="$RELEASES_DIR/$PHASE_FILTER/features.md"
   if [[ -f "$f" ]]; then
@@ -141,6 +143,29 @@ if [[ -n "$PHASE_FILTER" ]]; then
   else
     echo "[release-delivery-reconciliation-guard][ERROR] no features.md for phase '$PHASE_FILTER' at $f" >&2
     exit 2
+  fi
+
+  # An OPEN PREREQUISITE blocks the requested phase. Asserting a phase delivered
+  # while a phase it depends on still has undelivered required features would be
+  # a delivery claim resting on an unfinished foundation. Only meaningful in
+  # delivery mode — structural mode asserts no delivery anywhere.
+  if [[ "$MODE" == "delivery" ]]; then
+    prereq_hdr="$(grep -h 'bubbles:reconciled-packet' "$f" 2>/dev/null | head -1 || true)"
+    prereq_csv="$(printf '%s' "$prereq_hdr" | grep -oE '(^| )dependsOn=[^[:space:]>]+' | head -1 | sed -E 's/^ ?dependsOn=//' || true)"
+    if [[ -n "$prereq_csv" && "$prereq_csv" != "none" ]]; then
+      prereq_old_ifs="$IFS"
+      IFS=','
+      for prereq_phase in $prereq_csv; do
+        IFS="$prereq_old_ifs"
+        prereq_file="$RELEASES_DIR/$prereq_phase/features.md"
+        if [[ -f "$prereq_file" ]]; then
+          FEATURE_FILES+=("$prereq_file")
+          PREREQ_PHASES="$PREREQ_PHASES $prereq_phase"
+        fi
+        IFS=','
+      done
+      IFS="$prereq_old_ifs"
+    fi
   fi
 else
   if [[ -d "$RELEASES_DIR" ]]; then
@@ -377,6 +402,9 @@ for FFILE in "${FEATURE_FILES[@]}"; do
   # turning "planned but unfinished" into a framework-validation failure.
   if [[ "$MODE" == "delivery" && "$phase_delivery_rc" -ne 0 ]]; then
     OVERALL_RC=1
+    case " $PREREQ_PHASES " in
+      *" $phase_dir "*) PREREQ_BLOCKED="$PREREQ_BLOCKED $phase_dir" ;;
+    esac
   fi
 done
 
@@ -419,6 +447,9 @@ if [[ "$OVERALL_RC" -ne 0 ]]; then
   if [[ "$MODE" == "structural" ]]; then
     echo "[release-delivery-reconciliation-guard][ERROR] G101 (structural): one or more release packets are malformed — a required feature is missing its annotation fields, duplicates an id, declares an invalid delivery value, or binds a spec dir/state.json that does not exist or does not parse." >&2
   else
+    if [[ -n "${PREREQ_BLOCKED// /}" ]]; then
+      echo "[release-delivery-reconciliation-guard][ERROR] G101: phase '$PHASE_FILTER' is BLOCKED BY AN OPEN PREREQUISITE —${PREREQ_BLOCKED} still has undelivered required feature(s). A phase cannot be asserted delivered on top of a foundation that is not finished; close the prerequisite phase first." >&2
+    fi
     echo "[release-delivery-reconciliation-guard][ERROR] G101: one or more REQUIRED features are not delivered (validate-certified + terminal). A release phase cannot be reported delivered while required features are missing, non-terminal, blocked, or implement-self-certified." >&2
   fi
   exit 1
