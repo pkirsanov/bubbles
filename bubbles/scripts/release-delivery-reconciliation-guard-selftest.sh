@@ -29,8 +29,11 @@ set -uo pipefail
 #   S10 source-repo-shaped root (no docs/releases)               → exit 0  (EXEMPT)
 #   S11 reconciled packet; annotation missing 'delivery' field   → exit 1  (ADVERSARIAL: malformed)
 #   S12 reconciled packet; required feature delivered_prototype   → exit 1  (assurance invariant:
-#       (validate-certified)                                                 prototype never deployable)
-#
+#       (validate-certified)                                                 prototype never deployable)#   S13 --mode structural; required feature in_progress          → exit 0  (delivery NOT asserted)
+#   S14 --mode structural; required feature BLOCKED              → exit 0  (delivery NOT asserted)
+#   S15 --mode structural; malformed annotation                  → exit 1  (ADVERSARIAL: teeth)
+#   S16 --mode structural; required feature spec dir MISSING     → exit 1  (ADVERSARIAL: teeth)
+#   S17 --mode bogus                                             → exit 2  (closed vocabulary)#
 # Reference: improvements/IMP-006-release-delivery-reconciliation.md
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -226,6 +229,52 @@ mk_features "$R12" mvp true \
 mk_spec "$R12" specs/080-proto "delivered_prototype" plan design implement test validate
 run_guard --repo-root "$R12" --phase mvp
 expect_rc 1 "S12 required feature delivered_prototype is refused (prototype never deployable)"
+
+# ----------------------------------------------------------------------------
+# Structural mode (G101 R2 split). Structural validates packet GRAMMAR without
+# asserting that a bound spec is finished, so general framework validation can
+# pass while planned delivery stays honestly red. S15/S16 are the adversarial
+# half: if structural ever stopped enforcing grammar it would become the exact
+# silent no-op this guard exists to refuse, and both cases would flip to 0.
+
+# S13 — structural, required feature in_progress → 0 (delivery mode gives 1; cf. S3)
+R13="$(new_repo s13)"
+mk_features "$R13" mvp true \
+  "bubbles:feature id=wip spec=specs/090-wip delivery=required"
+mk_spec "$R13" specs/090-wip "in_progress" plan design
+run_guard --repo-root "$R13" --phase mvp --mode structural
+expect_rc 0 "S13 structural: in_progress required feature does not fail (delivery not asserted)"
+
+# S14 — structural, required feature BLOCKED → 0 (delivery mode gives 1; cf. S9)
+R14="$(new_repo s14)"
+mk_features "$R14" mvp true \
+  "bubbles:feature id=blocked-feat spec=specs/091-blocked delivery=required"
+mk_spec_blocked "$R14" specs/091-blocked "operator-actionable credential rotation"
+run_guard --repo-root "$R14" --phase mvp --mode structural
+expect_rc 0 "S14 structural: blocked required feature does not fail (delivery not asserted)"
+
+# S15 — ADVERSARIAL. structural MUST still refuse a malformed annotation (cf. S11).
+R15="$(new_repo s15)"
+mk_features "$R15" mvp true \
+  "bubbles:feature id=broken spec=specs/092-broken"
+mk_spec "$R15" specs/092-broken "done" plan design implement test validate
+run_guard --repo-root "$R15" --phase mvp --mode structural
+expect_rc 1 "S15 structural STILL refuses malformed annotation (teeth)"
+
+# S16 — ADVERSARIAL. structural MUST still refuse a promised-but-unspecced feature (cf. S2).
+R16="$(new_repo s16)"
+mk_features "$R16" mvp true \
+  "bubbles:feature id=ghost spec=specs/093-never-created delivery=required"
+run_guard --repo-root "$R16" --phase mvp --mode structural
+expect_rc 1 "S16 structural STILL refuses required feature with missing spec dir (teeth)"
+
+# S17 — closed mode vocabulary; an unknown mode is a usage error, never a silent pass.
+R17="$(new_repo s17)"
+mk_features "$R17" mvp true \
+  "bubbles:feature id=ok spec=specs/094-ok delivery=required"
+mk_spec "$R17" specs/094-ok "done" plan design implement test validate
+run_guard --repo-root "$R17" --phase mvp --mode bogus
+expect_rc 2 "S17 unknown --mode is a usage error"
 
 # ----------------------------------------------------------------------------
 echo ""
