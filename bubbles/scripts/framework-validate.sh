@@ -875,6 +875,14 @@ if [[ -x "$SCRIPT_DIR/release-delivery-reconciliation-guard.sh" ]]; then
   run_check "Release delivery reconciliation guard (live, G101)" bash "$SCRIPT_DIR/release-delivery-reconciliation-guard.sh" --repo-root "$REPO_ROOT"
 fi
 
+if [[ -x "$SCRIPT_DIR/release-ladder-schema-guard-selftest.sh" ]]; then
+  run_check "Release ladder schema guard selftest (G137)" bash "$SCRIPT_DIR/release-ladder-schema-guard-selftest.sh"
+fi
+
+if [[ -x "$SCRIPT_DIR/release-ladder-schema-guard.sh" ]]; then
+  run_check "Release ladder schema guard (live, G137)" bash "$SCRIPT_DIR/release-ladder-schema-guard.sh" --repo-root "$REPO_ROOT"
+fi
+
 if [[ -x "$SCRIPT_DIR/workflow-surface-selftest.sh" ]]; then
   run_check "Workflow surface selftest" bash "$SCRIPT_DIR/workflow-surface-selftest.sh"
 fi
