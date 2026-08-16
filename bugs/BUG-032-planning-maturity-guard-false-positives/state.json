@@ -1,0 +1,263 @@
+{
+  "version": 3,
+  "bugId": "BUG-032",
+  "featureDir": "bugs/BUG-032-planning-maturity-guard-false-positives",
+  "featureName": "Planning-Maturity Guard False Positives",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-007",
+    "BUG-019",
+    "BUG-028"
+  ],
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-032-planning-maturity-guard-false-positives"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-032-planning-maturity-guard-false-positives/**",
+      "BUGS.md",
+      "bubbles/release-manifest.json",
+      "bubbles/scripts/guards/planning-checks.sh",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+      "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+      "bubbles/registry/gates.yaml",
+      "bubbles/workflows.yaml",
+      "agents/bubbles_shared/quality-gates.md",
+      "agents/bubbles_shared/scenario-compile.md",
+      "agents/bubbles.goal.agent.md",
+      "agents/bubbles.super.agent.md",
+      "docs/recipes/release-planning.md",
+      "bubbles/cheatsheet/vocabulary.json",
+      "docs/CHEATSHEET.md",
+      "docs/its-not-rocket-appliances.html"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "independently_verified",
+    "goalContractRef": {
+      "goalId": "gc:vscode-1cd624debf3423a7635289b9c293a70c:2",
+      "revision": 2,
+      "sourceRequestDigest": "sha256:83843eddbec5643174eb4e15d13166054e6cc41815b8ef12c06e439d754e9848"
+    },
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "plan",
+    "currentScope": 2,
+    "runStartedAt": "2026-08-15T16:41:51Z",
+    "completedPhaseClaims": [
+      "test"
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.docs",
+    "nextRequiredAction": "Update the ten operator-approved G043/G101 documentation surfaces and BUGS.md, use canonical generators only within the approved boundary, record any proven extra generator path before requesting another revision, then return BUG-032 to bubbles.plan. Certification remains in_progress.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Semantic Consumer And SLA Classifiers",
+        "status": "done",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      },
+      {
+        "scope": 2,
+        "name": "Receipt Clone Execution Identity",
+        "status": "in_progress",
+        "dependsOn": [
+          1
+        ],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      },
+      {
+        "scope": 3,
+        "name": "G101 Delivery-Capable Mode Semantics",
+        "status": "blocked",
+        "dependsOn": [
+          2
+        ],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      },
+      {
+        "scope": 4,
+        "name": "Contract Reconciliation And Full Validation",
+        "status": "not_started",
+        "dependsOn": [
+          1,
+          2,
+          3
+        ],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "source": "operator-request"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "source": "bugfix-fastlane-contract"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "source": "operator-request"
+    },
+    "lockdown": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "regression": {
+      "mode": "protected-scenarios",
+      "source": "bugfix-fastlane-contract"
+    },
+    "validation": {
+      "mode": "certification-required",
+      "source": "repo-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 independent re-verification",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-08-15T15:26:18Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#independent-re-verification---2026-08-15",
+      "addressedFindings": [
+        "BUG032-IV-F1",
+        "BUG032-IV-F2",
+        "BUG032-IV-F3",
+        "BUG032-IV-F4",
+        "BUG032-IV-F5"
+      ]
+    },
+    {
+      "agent": "bubbles.validate",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 validation",
+      "phasesExecuted": [
+        "validate"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-15T16:16:28Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#validate-run-2026-08-15",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "BUG032-VAL-DOCS-CONTRACT",
+        "BUG032-VAL-SCOPE-DEPENDENCY",
+        "BUG032-VAL-STATE-GUARD",
+        "BUG032-VAL-COLD-GATES"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 Goal Contract and work-boundary reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-15T16:41:51Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#planning-boundary-approval-2026-08-15",
+      "addressedFindings": [
+        "BUG032-VAL-SCOPE-DEPENDENCY"
+      ],
+      "unresolvedFindings": [
+        "BUG032-VAL-DOCS-CONTRACT",
+        "BUG032-VAL-STATE-GUARD",
+        "BUG032-VAL-COLD-GATES"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-08-15T16:41:51Z",
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "specs_hardened",
+      "docs_updated",
+      "validated",
+      "done"
+    ],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "scopeDoneGates": [
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G043",
+      "G055",
+      "G056",
+      "G057",
+      "G060",
+      "G101"
+    ],
+    "bugDoneRequires": "All four scopes are done, pre-fix and post-fix evidence is recorded, focused and full validation pass, and bubbles.validate certifies promotion."
+  },
+  "notes": "Goal Contract revision 2 records the operator-approved Bubbles-only boundary expansion. Planning truth is Scope 1 done, Scope 2 in progress, Scope 3 blocked by Scope 2, and Scope 4 not started. BUG-028 reconciliation and all Scope 4 DoD items remain unchecked. Certification status, completed scopes, completed phases, and certifiedAt remain unchanged; bubbles.docs is the next owner."
+}

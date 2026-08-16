@@ -2039,6 +2039,29 @@ Every adopted downstream repository needs one supported, generic changed-spec co
 
 Add an integration fixture where only `spec.md` changes after certification. The downstream command and workflow must both reject it.
 
+---
+
+## BUG-032 — planning-maturity guards confuse prose, output equality, and terminality with stronger contract facts
+
+- **Filed:** 2026-08-15
+- **Disposition:** complete planning packet created; implementation deliberately
+  not started in the filing invocation.
+- **Severity:** high. Valid planning can be blocked, honest evidence can be
+  accused of cloning, and planning maturity can be counted as release delivery.
+- **Canonical packet:**
+  [`bugs/BUG-032-planning-maturity-guard-false-positives/`](bugs/BUG-032-planning-maturity-guard-false-positives/bug.md)
+- **Affects:** Check 8B consumer-impact classification, Check 5A SLA/SLO
+  classification, Check 43 receipt clone identity, and G101 release-delivery
+  reconciliation.
+- **Related:** BUG-028 is the standalone predecessor for the deterministic
+  validator receipt-hash defect. BUG-032 subsumes its implementation planning;
+  BUG-028 remains open until BUG-032 D3 is validate-certified.
+
+The packet defines four ordered scopes, exact negative and adversarial fixtures,
+persistent selftest surfaces, mode-aware delivery semantics, documentation
+reconciliation, and exact validation commands. No framework script or selftest
+was changed while filing it.
+
 
 
 

@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** An operator observed that metrics are never populated. A cross-repository audit confirmed it and found the sharper defect underneath. The framework runs two telemetry planes. The always-on plane is populated and rich. The opt-in plane is nearly empty and shallow. Every dashboard, agent, and recipe reads the empty one.
-**Verified gaps addressed:** REG-13 readers target an unwritten store. REG-14 unproducible declared dimensions. REG-15 policy writer drops unknown keys. DOC-7 three false published claims. COV-17 no metrics lifecycle test.
+**Verified gaps addressed:** REG-13 readers count event types no producer writes. REG-14 declared dimensions never reach the declared store. REG-15 policy writer drops unknown keys. DOC-7 three false published claims. COV-17 no metrics lifecycle test.
 
 ## Executed Measurements
 
@@ -39,6 +39,15 @@ A second pass tried to falsify this proposal against the same tree.
 - The claim "the registry is aspirational and harmless" was rejected. Three shipped surfaces instruct readers to compute values from a file that cannot contain them.
 - The proposed remedy shifted as a result. The first draft added producers for two missing event types. The verified remedy is to stop maintaining a second plane and read the one that already works.
 
+### Second Pass (post-authoring)
+
+A later pass attacked the PROPOSAL rather than the problem, and corrected two claims.
+
+- REG-14 originally read "eight declared dimensions are unproducible". That overstated the evidence. Two of the eight name a real producer in a registry comment. `bundle-cost-report.sh` exists, runs under `doctor`, and has its own selftest. The defensible claim is narrower and is now stated: none of the eight reaches the store that declares them, and six name no producer at all.
+- SCOPE-3 originally proposed a `jq` merge. That was REJECTED against source. `cli.sh` states at line 277 that its JSON field reader is "simple grep-based, no jq dependency" and repeats at line 459 that it is "deliberately still no jq dependency". Its only `jq` use sits inside `doctor` and degrades with a message. The merge now uses `python3`, which `cmd_lessons add` already requires at line 3765.
+- REG-13 originally read "readers target a store no writer targets". The store IS written, with `cli_command` records. The precise defect is that two subcommands count event types no producer writes.
+- One finding was ADDED by this pass. The registry still declares `bundleCostProxy` while the producing script emits `referenceClosureProxy`, renamed under IMP-039.
+
 ## Problem (Verified Against Source)
 
 ### Store And Reader Parity
@@ -50,7 +59,8 @@ A second pass tried to falsify this proposal against the same tree.
 
 ### Declared Versus Producible
 
-- **REG-14 — Eight declared dimensions are unproducible from the record shape.** `workflows.yaml` lines 1403 onward declare `invocationCount`, `phaseDuration`, `retryCount`, `gatePassFailRate`, `scopeCompletionTime`, `linesChanged`, `phaseSkipRate`, and `bundleCostProxy`. The metrics record carries `type`, `timestamp`, `command`, `result`, `durationMs`, and `details`. None of the eight is derivable.
+- **REG-14 — None of the eight declared dimensions reaches the store that declares them.** `workflows.yaml` lines 1403 onward declare eight `measuredDimensions` under `activityTracking`, whose `storageFile` is `activity.jsonl`. That record carries `timestamp`, `command`, `phase`, `result`, `durationMs`, `target`, and `args`. Six of the eight name no producer anywhere. `linesChanged` names git in a comment and `bundleCostProxy` names `bundle-cost-report.sh`, and neither writes to the declared store.
+- **REG-14 — One declared dimension carries a name its producer stopped using.** The registry declares `bundleCostProxy` at line 1417. `bundle-cost-report.sh` emits `referenceClosureProxy`, renamed under IMP-039 so a reachability proxy would stop reading as spend. `bubbles.retro.agent.md` already uses the new name. The registry still carries the old one.
 - **REG-14 — Three declared scopes have no corresponding field.** Lines 1400 onward declare `perAgentTracking`, `perSpecTracking`, and `perScopeTracking` as true. No record carries an agent, spec, or scope identifier.
 - **REG-14 — The activity record redefines `phase` as the command name.** `cli.sh` line 973 assigns `$command_name` to the field named `phase`. Every phase value in smackerel is therefore `upgrade` or `doctor`, neither of which is a workflow phase.
 - **REG-14 — A declared evaluation block has no reader.** `workflows.yaml` line 1428 declares `outcomeEvals` with four dimensions. A repository-wide grep for `outcomeEval` returns that line and one config key. No code reads either.
@@ -95,12 +105,14 @@ A second pass tried to falsify this proposal against the same tree.
 - Move `gatePassFailRate` into a new `gateTelemetry` block naming `.specify/runtime/gate-hits.jsonl` as its store and `gate-hit-log.sh` as its producer.
 - Move `phaseDuration`, `retryCount`, `scopeCompletionTime`, and `phaseSkipRate` into a `derivedFromState` block naming `executionHistory` as the source, matching how `bubbles.retro` already computes them.
 - Rename the `phase` field in the activity record to `subcommand`, because that is the value assigned at `cli.sh` line 973.
+- Rename `bundleCostProxy` to `referenceClosureProxy` so the registry matches the field `bundle-cost-report.sh` emits, and record that script as its producer rather than the activity store.
 - Either give `outcomeEvals` a reader or mark the block unimplemented. Recommendation: mark it unimplemented, since no consumer has appeared since it was declared.
 
 ### SCOPE-3 — Preserve unknown configuration keys (REG-15)
 
 - Replace the fixed heredoc in `save_control_plane_config` with a structured merge that rewrites only the keys the CLI owns.
-- Use `jq` when present. Fall back to refusing the write with a clear message when it is absent, rather than silently rewriting the file from a template.
+- Use `python3`, which `cmd_lessons add` already requires at `cli.sh` line 3765, so the merge adds no new dependency to a mutating path. Do NOT use `jq`. `cli.sh` records at lines 277 and 459 that its JSON handling is deliberately jq-free.
+- Refuse the write with a named remediation when `python3` is absent, rather than silently rewriting the file from a template.
 - Add an adversarial test that writes a config carrying an unknown top-level block, runs `metrics enable`, and asserts the unknown block survives byte for byte.
 - Recommendation: refuse rather than degrade. A policy writer that cannot preserve content must not overwrite it.
 
@@ -139,7 +151,7 @@ A second pass tried to falsify this proposal against the same tree.
 
 - **R1 — Reading the runtime store couples metrics to the guard.** Mitigation: the coupling already exists through `bubbles.retro`, and `gate-hit-log.sh` degrades to a clear "no telemetry yet" message when the log is absent.
 - **R2 — Removing declared dimensions reads as capability loss.** Mitigation: nothing is lost, because no dimension was ever produced. The change moves each one to the block that can actually produce it or marks it unimplemented.
-- **R3 — A structured merge needs a JSON tool that may be missing.** Mitigation: refuse the write with a named remediation instead of falling back to the template that causes the data loss.
+- **R3 — The structured merge needs `python3`, which may be absent.** Mitigation: refuse the write with a named remediation instead of falling back to the template that causes the data loss. `cmd_lessons add` already fails the same way on the same dependency, so the posture is consistent.
 - **R4 — The gate-hit store carries fixture pollution in the source repository.** Mitigation: this is already recorded as COV-15 in IMP-042. SCOPE-1 filters on `kind` and on spec paths outside the temporary directory, and the two proposals should land in either order without conflict.
 - **R5 — Renaming the activity `phase` field breaks a downstream reader.** Mitigation: no downstream reader exists. The only consumer is `bubbles.status.agent.md`, which SCOPE-4 updates in the same proposal.
 

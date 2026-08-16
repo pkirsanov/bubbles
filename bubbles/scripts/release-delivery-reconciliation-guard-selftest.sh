@@ -30,6 +30,14 @@ set -uo pipefail
 #   S11 reconciled packet; annotation missing 'delivery' field   → exit 1  (ADVERSARIAL: malformed)
 #   S12 reconciled packet; required feature delivered_prototype   → exit 1  (assurance invariant:
 #       (validate-certified)                                                 prototype never deployable)
+#   S13 product-to-planning + specs_hardened + validate           → exit 1  (planning is not delivery)
+#   S14 validate-only + validated + validate                      → exit 1  (review is not delivery)
+#   S15 docs-only + docs_updated + validate                       → exit 1  (docs are not delivery)
+#   S16 full-delivery + done + validate                           → exit 0  (delivered control)
+#   S17 dark-launch-shipped + delivered_pending_activation        → exit 0  (shipped, activation pending)
+#   S18 rapid-tool-delivery + delivered_fast                      → exit 0  (rapid delivery alias)
+#   S19 unknown mode + delivered_pending_activation               → exit 1  (no permissive alias fallback)
+#   S20 product-to-planning + done + validate                     → exit 1  (incoherent non-delivery done)
 #
 # Reference: improvements/IMP-006-release-delivery-reconciliation.md
 
@@ -88,10 +96,16 @@ mk_features() {
   } >"$dir/features.md"
 }
 
-# mk_spec <repo> <specpath> <status> [phase ...]   (completedPhases)
+# mk_spec <repo> <specpath> <status> [mode=<workflow-mode>] [phase ...]
+# Defaults to full-delivery so all existing scenarios retain their meaning.
 mk_spec() {
   local repo="$1" specpath="$2" status="$3"
   shift 3
+  local workflow_mode="full-delivery"
+  if [[ "${1:-}" == mode=* ]]; then
+    workflow_mode="${1#mode=}"
+    shift
+  fi
   local dir="$repo/$specpath"
   mkdir -p "$dir"
   local phases_json="[]"
@@ -102,7 +116,7 @@ mk_spec() {
     phases_json="[${acc%,}]"
   fi
   cat >"$dir/state.json" <<EOF
-{ "version": 3, "specId": "$(basename "$specpath")", "status": "$status", "workflowMode": "full-delivery", "completedPhases": $phases_json }
+{ "version": 3, "specId": "$(basename "$specpath")", "status": "$status", "workflowMode": "$workflow_mode", "completedPhases": $phases_json }
 EOF
 }
 
@@ -117,7 +131,7 @@ EOF
 }
 
 run_guard() {
-  bash "$GUARD" "$@" >/dev/null 2>&1
+  RUN_OUTPUT="$(bash "$GUARD" "$@" 2>&1)"
   RC=$?
 }
 
@@ -127,6 +141,15 @@ expect_rc() {
     pass "$desc (rc=$RC)"
   else
     bad "$desc (want $want, got $RC)"
+  fi
+}
+
+expect_output_contains() {
+  local needle="$1" desc="$2"
+  if grep -Fq -- "$needle" <<< "$RUN_OUTPUT"; then
+    pass "$desc"
+  else
+    bad "$desc (missing output: $needle)"
   fi
 }
 
@@ -226,6 +249,76 @@ mk_features "$R12" mvp true \
 mk_spec "$R12" specs/080-proto "delivered_prototype" plan design implement test validate
 run_guard --repo-root "$R12" --phase mvp
 expect_rc 1 "S12 required feature delivered_prototype is refused (prototype never deployable)"
+expect_output_contains "NOT-DELIVERED (delivered_prototype)" "S12 reports prototype output as NOT-DELIVERED"
+
+# S13 — planning maturity is terminal-for-mode but is NOT product delivery.
+R13="$(new_repo s13)"
+mk_features "$R13" mvp true \
+  "bubbles:feature id=planned-only spec=specs/081-planned delivery=required"
+mk_spec "$R13" specs/081-planned "specs_hardened" mode=product-to-planning analyze design plan validate
+run_guard --repo-root "$R13" --phase mvp
+expect_rc 1 "S13 product-to-planning/specs_hardened is not delivered"
+expect_output_contains "does NOT represent delivered implementation (mode 'product-to-planning')" "S13 diagnostic names planning mode as non-delivery"
+expect_output_contains "NOT-DELIVERED (specs_hardened)" "S13 reports planning maturity as NOT-DELIVERED"
+
+# S14 — validate-only completion is review evidence, not implementation delivery.
+R14="$(new_repo s14)"
+mk_features "$R14" mvp true \
+  "bubbles:feature id=validated-only spec=specs/082-validated delivery=required"
+mk_spec "$R14" specs/082-validated "validated" mode=validate-only validate
+run_guard --repo-root "$R14" --phase mvp
+expect_rc 1 "S14 validate-only/validated is not delivered"
+
+# S15 — documentation completion cannot satisfy a required product feature.
+R15="$(new_repo s15)"
+mk_features "$R15" mvp true \
+  "bubbles:feature id=docs-only spec=specs/083-docs delivery=required"
+mk_spec "$R15" specs/083-docs "docs_updated" mode=docs-only docs validate
+run_guard --repo-root "$R15" --phase mvp
+expect_rc 1 "S15 docs-only/docs_updated is not delivered"
+
+# S16 — explicit positive control: ordinary full delivery remains accepted.
+R16="$(new_repo s16)"
+mk_features "$R16" mvp true \
+  "bubbles:feature id=full-delivery spec=specs/084-full delivery=required"
+mk_spec "$R16" specs/084-full "done" mode=full-delivery implement test validate
+run_guard --repo-root "$R16" --phase mvp
+expect_rc 0 "S16 full-delivery/done remains delivered"
+expect_output_contains "all required features delivery-capable + validate-certified" "S16 reports a delivery-capable validate-certified success"
+
+# S17 — shipped implementation awaiting external activation remains delivered.
+R17="$(new_repo s17)"
+mk_features "$R17" mvp true \
+  "bubbles:feature id=dark-launch spec=specs/085-dark delivery=required"
+mk_spec "$R17" specs/085-dark "delivered_pending_activation" mode=dark-launch-shipped implement test validate audit
+run_guard --repo-root "$R17" --phase mvp
+expect_rc 0 "S17 dark-launch-shipped/pending-activation remains delivered"
+
+# S18 — the rapid delivery terminal alias remains accepted under its owner.
+R18="$(new_repo s18)"
+mk_features "$R18" mvp true \
+  "bubbles:feature id=rapid-tool spec=specs/086-rapid delivery=required"
+mk_spec "$R18" specs/086-rapid "delivered_fast" mode=rapid-tool-delivery implement test validate
+run_guard --repo-root "$R18" --phase mvp
+expect_rc 0 "S18 rapid-tool-delivery/delivered_fast remains delivered"
+
+# S19 — an unknown mode cannot borrow a delivery alias from another mode.
+R19="$(new_repo s19)"
+mk_features "$R19" mvp true \
+  "bubbles:feature id=unknown-alias spec=specs/087-unknown delivery=required"
+mk_spec "$R19" specs/087-unknown "delivered_pending_activation" mode=unknown-mode validate
+run_guard --repo-root "$R19" --phase mvp
+expect_rc 1 "S19 unknown mode gains no pending-activation fallback"
+expect_output_contains "NOT-DELIVERED (delivered_pending_activation)" "S19 reports an unknown pending-activation alias as NOT-DELIVERED"
+
+# S20 — universal terminality does not make a planning mode delivery-capable.
+R20="$(new_repo s20)"
+mk_features "$R20" mvp true \
+  "bubbles:feature id=incoherent-planning-done spec=specs/088-incoherent delivery=required"
+mk_spec "$R20" specs/088-incoherent "done" mode=product-to-planning validate
+run_guard --repo-root "$R20" --phase mvp
+expect_rc 1 "S20 product-to-planning/done is incoherent, not delivered"
+expect_output_contains "does NOT represent delivered implementation (mode 'product-to-planning')" "S20 diagnostic rejects non-delivery mode even at literal done"
 
 # ----------------------------------------------------------------------------
 echo ""

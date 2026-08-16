@@ -3,7 +3,7 @@
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** An operator observed that `lessons.md` is empty in every repo that has one, and absent in the rest. A cross-repository audit of eight installed repositories confirmed it. Zero lessons exist anywhere, no skill proposal has ever been generated, and no recall index has ever been built.
-**Verified gaps addressed:** LRN-4 unreachable capture rule. LRN-5 inert lifecycle triggers. LRN-6 no upgrade backfill. LRN-7 unreachable recall. COV-18 no end-to-end loop test. DOC-8 false compaction claim.
+**Verified gaps addressed:** LRN-4 capture rule not reached at closeout. LRN-5 inert lifecycle triggers. LRN-6 no upgrade backfill. LRN-7 recall index never synchronized. COV-18 no end-to-end loop test. DOC-8 false compaction claim.
 
 ## Executed Measurements
 
@@ -39,6 +39,15 @@ A second pass tried to falsify this proposal against the same tree.
 - The claim "a gate should force a lesson per run" was rejected. `execution-ops.md` already argues that a per-run counter manufactures filler and degrades clustering. That reasoning is sound and is preserved below.
 - The claim "recall is broken" was narrowed. Recall is deliberately opt-in with a neutral default. The defect is that no repository can reach the opt-in state, because nothing ever synchronizes the index.
 - The claim "upgrade is broken" was tested by reading `cmd_upgrade`. Upgrade works as written. It simply never passes `--bootstrap`, and every learning scaffold lives behind that flag.
+
+### Second Pass (post-authoring)
+
+A later pass attacked the PROPOSAL rather than the problem, and falsified part of it.
+
+- SCOPE-3 originally proposed a `session-start` hook family. That was REJECTED against source. `bubbles/hooks.json` carries `pre-commit` and `pre-push`, which git executes, and `pre-tool`, which `pre-tool-risk-gate.sh` documents as callable by the CLI, the MCP server, or a host PreToolUse integration. No host fires a session-start event. The scope would have shipped the exact defect it documents under LRN-5, and Design Principle 4 of this proposal forbids it. SCOPE-3 is rewritten to bind the work to call sites that already run.
+- SCOPE-5 originally hung recall synchronization off that same family. It now binds to `cmd_lessons add`, which `action-risk-registry.yaml` already classifies as an owned mutation. This keeps `recall search` read-only rather than turning a read into a write.
+- SCOPE-2 originally named "the closeout section that execution agents already read". No such shared section exists. `workflow-phase-engine.md` carries a closeout contract scoped to `bubbles.workflow` alone. The scope now names real surfaces.
+- SCOPE-1 was checked against the schema and narrowed. `result-envelope.schema.json` sets `additionalProperties: true`, so a `learning` key is already permitted today. Declaring it adds validation, not permission.
 
 ## Problem (Verified Against Source)
 
@@ -91,22 +100,25 @@ A second pass tried to falsify this proposal against the same tree.
 - Require `lessonId` when `disposition` is `captured`, and require a `reason` of at least twenty characters when it is `deferred`.
 - Teach `result-envelope-validate.sh` to refuse `captured` without a resolvable lesson identifier. Absence of the whole object stays valid, so no existing envelope breaks.
 - Recommendation: keep the field optional at the schema level and make it mandatory only for mutable-run outcomes in SCOPE-2. A schema-level requirement would invalidate every advisory envelope for no benefit.
+- Note: the schema sets `additionalProperties: true`, so a `learning` key is already accepted today. Declaring it converts an unvalidated key into a validated one.
+- Note: schema validation alone cannot enforce this. `result-envelope-validate.sh` exits 0 and skips validation when `python3` or the `jsonschema` module is absent. The `captured` refusal therefore belongs in the script's hard-check path, alongside the authority checks that already block in every mode.
 
 ### SCOPE-2 — Put the obligation where the run ends (LRN-4)
 
-- Move the operative rule from `execution-ops.md` into the closeout section that execution agents already read, and leave a pointer behind so the module keeps its single-source role.
+- State the rule at the point every agent already passes through: `skills/bubbles-result-envelope/SKILL.md`, which exists to compose the envelope at the end of every invocation. Leave the long form in `execution-ops.md` so the module keeps its single-source role.
 - State the rule as one decision at result-envelope close with three legal answers, matching the SCOPE-1 enum.
 - Preserve the existing prohibition on a per-run lesson counter verbatim. The proposal adds a recorded decision, never a quota.
 - Add `execution-ops.md` to the implementer, tester, and orchestrator context profiles in `operating-baseline.md` so the module is reachable by the roles that close runs.
 
-### SCOPE-3 — Give the declared triggers an executor (LRN-5)
+### SCOPE-3 — Retire the inert triggers and make the work lazy (LRN-5)
 
-- Add a `session-start` hook family to `bubbles/hooks.json` and register two builtin entries: lessons compaction and skill-proposal refresh.
-- Point the compaction entry at `cli.sh lessons compact` and the refresh entry at `skill-evolution.sh refresh`.
-- Make `cmd_lessons compact` read `lessonsMemory.maxLines` from `workflows.yaml` and fall back to 150 only when the key is absent.
+- Delete `autoCompactTrigger` and `reviewTrigger` from `workflows.yaml`. A key naming an event the framework cannot fire is the defect, not the fix.
+- Compact inside `cmd_lessons add`. The writer already opens the file, already measures it, and already runs at every capture, so compaction needs no external event.
+- Make that compaction read `lessonsMemory.maxLines` and fall back to 150 only when the key is absent. `cli.sh` hardcodes 150 twice today.
+- Leave proposal refresh where it already works. `skill-evolution.sh show` regenerates proposals on every call, so `skill-proposals` is already self-refreshing.
 - Make `skill-evolution.sh` read `sourceFile`, `proposalFile`, and `enabled` from the registry instead of hardcoding two paths and ignoring the toggle.
-- Recommendation: reuse the existing hook mechanism rather than adding a scheduler. The hook runner, its catalog, and its installer already exist and are tested.
-- Alternative considered and rejected: leaving the trigger keys as documentation. A declared trigger with no executor is what produced this defect.
+- Recommendation: bind the work to a call site that already runs, because that is the only executor the framework controls.
+- Alternative considered and REJECTED: a `session-start` hook family. No host fires a session-start event, so the family would be inert on arrival and would reproduce the LRN-5 defect this scope removes.
 
 ### SCOPE-4 — Backfill scaffolds on upgrade and surface the gap (LRN-6)
 
@@ -118,7 +130,7 @@ A second pass tried to falsify this proposal against the same tree.
 ### SCOPE-5 — Make recall reachable without changing its default (LRN-7)
 
 - Keep `none` as the shipped default. The neutral adapter is correct and stays.
-- Add a `recall sync` invocation to the `session-start` hook family from SCOPE-3, guarded so it exits silently when the adapter is `none`.
+- Synchronize the index from `cmd_lessons add`, which `action-risk-registry.yaml` already classifies as an owned mutation and which is the exact moment new recallable content appears. Skip silently when the adapter is `none`. This keeps `recall search` read-only and preserves its recorded risk class.
 - Add an `experienceRecall` block to the project config template with `adapter: none` and a comment naming `local-lexical` as the opt-in value.
 - Teach `bubbles.setup` to propose the opt-in when it finds a populated lessons file, and to leave the config untouched otherwise.
 
@@ -132,7 +144,7 @@ A second pass tried to falsify this proposal against the same tree.
 
 ### SCOPE-7 — Repair the two false documentation claims (DOC-8)
 
-- Correct `docs/recipes/framework-ops.md` line 318 to state that compaction runs at session start once SCOPE-3 lands, or on demand before then.
+- Correct `docs/recipes/framework-ops.md` line 318 to state that compaction runs when a lesson is added and on demand, which is what SCOPE-3 delivers.
 - Correct the installer seed comment in `install.sh` line 1157 to match.
 - Sequence this scope after SCOPE-3 so the corrected sentence describes shipped behavior rather than a plan.
 
@@ -140,17 +152,17 @@ A second pass tried to falsify this proposal against the same tree.
 
 - SCOPE-1 is additive and default-absent. No existing envelope changes meaning.
 - SCOPE-2 is a documentation move plus three profile lines. No script changes.
-- SCOPE-3 introduces a new hook family. Existing hook families are untouched, and the family is inert until installed.
+- SCOPE-3 removes two registry keys and moves compaction into a call site that already runs. It adds no hook family and no new executor.
 - SCOPE-4 changes installer control flow. It must land with the non-destructive guarantee proven by a test that runs the upgrade twice against a repository holding a non-empty lessons file.
 - SCOPE-5 is config-template and agent-guidance only. The runtime default does not change.
-- SCOPE-6 depends on SCOPE-3 for the sync step and should land immediately after it.
+- SCOPE-6 depends on SCOPE-3 and SCOPE-5 for the compaction and sync steps, and should land after both.
 - SCOPE-7 lands last, because it describes what SCOPE-3 delivers.
 - Suggested order: 1, 2, 4, 3, 5, 6, 7. SCOPE-4 is placed early because it unblocks the five repositories that currently have no file to write to.
 
 ## Risks And Mitigations
 
 - **R1 — A recorded disposition becomes a quota by habit.** An agent may write filler to avoid an empty field. Mitigation: `not-applicable` is a first-class legal answer, the enum is closed, and the existing no-counter rule is preserved verbatim in SCOPE-2.
-- **R2 — A session-start hook slows every session.** Mitigation: both entries are bounded and idempotent. Compaction is a line count and a tail. Refresh is a single pass over one file. The sync step exits immediately under the `none` adapter.
+- **R2 — Binding compaction and sync to `lessons add` makes a capture do more work.** Mitigation: both steps are bounded and idempotent. Compaction is a line count and a tail. Sync exits immediately under the `none` adapter, which is the shipped default, so the default path adds one adapter resolution and nothing else.
 - **R3 — Installer backfill overwrites operator content.** Mitigation: create-if-absent only, plus the double-run test named in the rollout section.
 - **R4 — Clustering quality degrades once real volume arrives.** Mitigation: `similarityThreshold` is already a live knob proven by the existing selftest at 1.0, and every proposal already prints its grouped variants for review.
 - **R5 — Enabling recall raises the authority risk that IMP-037 contained.** Mitigation: no authority rule changes. Recall stays tier 4 and advisory, and the envelope validator already refuses a recall record cited as evidence.
@@ -163,8 +175,9 @@ A second pass tried to falsify this proposal against the same tree.
 | `bubbles/scripts/result-envelope-validate.sh` | framework | Validate `captured` against a resolvable lesson id |
 | `agents/bubbles_shared/execution-ops.md` | framework | Keep the rule, add the disposition vocabulary |
 | `agents/bubbles_shared/operating-baseline.md` | framework | Add the module to three context profiles |
-| `bubbles/hooks.json` | framework | Add the `session-start` family |
-| `bubbles/scripts/cli.sh` | framework | Read `maxLines`, add doctor advisories |
+| `bubbles/workflows.yaml` | framework | Remove the two inert trigger keys |
+| `skills/bubbles-result-envelope/SKILL.md` | framework | State the closeout disposition |
+| `bubbles/scripts/cli.sh` | framework | Read `maxLines`, compact and sync on lesson add, add doctor advisories |
 | `bubbles/scripts/skill-evolution.sh` | framework | Read registry paths and the enabled toggle |
 | `install.sh` | framework | Backfill scaffolds outside `--bootstrap` |
 | `bubbles/scripts/learning-loop-selftest.sh` | framework | New end-to-end test |
@@ -179,4 +192,5 @@ A second pass tried to falsify this proposal against the same tree.
 4. `doctor` reports a missing lessons file and a `none` recall adapter as advisories without changing its exit code.
 5. `lessons compact` honors a `maxLines` value other than 150.
 6. An envelope claiming `disposition: captured` with an unresolvable lesson id is refused.
-7. No documentation sentence describes automatic compaction unless the hook that performs it is installed.
+7. No documentation sentence describes automatic compaction except the behavior SCOPE-3 delivers.
+8. `workflows.yaml` declares no trigger key naming an event the framework cannot fire.
