@@ -120,6 +120,19 @@ Change the G086 text in `bubbles/workflows.yaml` and `bubbles/registry/gates.yam
 
 ### SCOPE-8 — Give the decision policy a long-term principle, and make it posture-aware (REG-10)
 
+DELIVERED. `decisionPolicy.mechanicalPrinciples` now opens with `prefer_durable`
+and `forbid_shortcut`, and a ranking comment states that `prefer_durable`
+outranks `prefer_completeness` and `prefer_reversible` — list order alone would
+not have said so, because nothing mechanically reads the order.
+`tasteDecisionHandling.postureOverrides.unattended` sets `auto_resolve_and_log`
+and `record_low_confidence_decision`, and pins `escalateSecurityAction` to
+`blocked_naming_the_decision` so the security exception is expressed as a value
+rather than left to prose. `escalate_security` survives unchanged as a
+principle. Verified: the file parses, `prefer_durable` is first, and
+`mode-resolver.sh --validate` still resolves all 61 modes with no inherits
+cycles. No guard asserts these keys yet and none is claimed; the runners consume
+them in SCOPE-1, which this scope deliberately precedes.
+
 Add two principles to `decisionPolicy.mechanicalPrinciples`:
 
 1. `prefer_durable` — when two approaches both satisfy the spec, choose the one that is better for the long term: fewer future migrations, fewer special cases, and a contract the next change can extend. This principle ranks ABOVE `prefer_completeness` and `prefer_reversible`, because an easily-undone shortcut is still a shortcut.

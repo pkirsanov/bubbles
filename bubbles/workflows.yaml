@@ -1080,6 +1080,13 @@ decisionPolicy:
   # Only applies when agent is invoked by orchestrator, not direct user invocation
   activationCondition: callerMode=orchestrated
   mechanicalPrinciples:
+  # Ranked. prefer_durable outranks prefer_completeness and prefer_reversible:
+  # an easily-undone shortcut is still a shortcut, so reversibility does not
+  # excuse a choice the next change has to migrate away from.
+  - name: prefer_durable
+    description: "When two approaches both satisfy the spec, choose the one better for the long term — fewer future migrations, fewer special cases, and a contract the next change can extend. Outranks prefer_completeness and prefer_reversible."
+  - name: forbid_shortcut
+    description: "Never choose an approach that reaches green by weakening a test, narrowing a DoD claim, deferring required behavior, or relabeling incomplete work. This is critical-requirements.md policies 2, 13 and 16 stated as a decision principle so the auto-resolver can apply it."
   - name: prefer_completeness
     description: "When two approaches differ by <30% effort, choose the more complete one"
   - name: match_existing_patterns
@@ -1098,6 +1105,19 @@ decisionPolicy:
     batchTiming: end_of_phase # Collect during phase, present at boundary
     maxPerPhase: 5 # If >5 taste decisions, the spec needs more clarity — route to bubbles.clarify
     overflowAction: route_to_clarify
+    postureOverrides:
+      # `unattended` forbids interactive questions, so the default overflow and
+      # deferral actions would both convert into a stop the posture cannot take.
+      # These name what happens instead. The posture governs INTERACTION only;
+      # it waives no Autonomy Floor obligation.
+      unattended:
+        overflowAction: auto_resolve_and_log
+        deferAmbiguousAction: record_low_confidence_decision
+        # NON-NEGOTIABLE, and deliberately not auto-resolved under ANY posture.
+        # A run that cannot ask and cannot safely choose stops honestly rather
+        # than guessing about security, which keeps Autonomy Floor items 2 and 3
+        # intact while still forbidding an interactive question.
+        escalateSecurityAction: blocked_naming_the_decision
     format: |
       ## Taste Decisions (Require Your Input)
       1. **{description}**
