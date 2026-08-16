@@ -64,18 +64,6 @@ Add a fifth check to `bubbles/scripts/autonomy-posture-guard.sh`: every value in
 
 Extend `bubbles/scripts/autonomy-posture-guard-selftest.sh` with a paired adversarial fixture: a tree in which one runner omits one enum value MUST exit 1, and the green tree MUST still exit 0. Without the adversarial half the check cannot prove it can fail. Keep the no-bypass rule: no `--skip`, `--force`, or `--ignore`.
 
-### SCOPE-3 — One authority for the prompt-shim count (REG-9)
-
-DELIVERED. `count_prompt_shims()` counts `prompts/*.prompt.md` independently of
-`agents/`, both README substitutions read `$prompt_shim_count`, and `--check`
-now fails when either generated README block carries a stale number. The
-assertion counts BOTH occurrences rather than grepping for one, because README
-states the figure in two generated blocks and a single-match check would pass
-while one of them drifted. Proven falsifiable: perturbing one block in a copied
-tree exits 1 naming the expected count, and the clean tree exits 0.
-
-Teach `bubbles/scripts/generate-framework-stats.sh` to count `prompts/*.prompt.md` independently of `agents/`. Replace both README `$agent_count prompt shims` substitutions with the prompt count. Add a `--check` assertion that fails when README's prompt-shim count is stale, mirroring the existing workflow-mode-count assertion. This scope is a prerequisite for SCOPE-4 and is independently landable today, because it is a no-op while the two counts are equal.
-
 ### SCOPE-4 — Add the `/bubbles.continue` prompt shim
 
 Add `prompts/bubbles.continue.prompt.md` as a thin shim targeting `bubbles.goal`. It MUST NOT restate policy; it supplies existing `executionOptions` only:
@@ -95,7 +83,7 @@ Name decision: `/bubbles.continue`. It matches the vocabulary already used in `a
 | Unblock yourself honestly; do not report a blocker you can resolve | `neverStopFor` (11 conditions, `workflows.yaml` 1242) + `on_obstacle` map + posture delta 4 (recorded remediation attempt first) | SCOPE-1 binds |
 | Authorized | The posture is opt-in; invoking the shim IS the authorization act | exists |
 | Work systematically on the defined scope | `work-boundary-resolve.sh` + `goal-contract.sh verify-ref`; shim preserves the boundary | exists |
-| Always pick the option best for the long term; no shortcuts | `decisionPolicy.mechanicalPrinciples` — NO such principle today | **SCOPE-8** |
+| Always pick the option best for the long term; no shortcuts | `decisionPolicy.mechanicalPrinciples` `prefer_durable` + `forbid_shortcut`, ranked above `prefer_completeness` and `prefer_reversible` | exists |
 | Execute end to end, no stopping, no questions | G086 `orchestrator-persistence-lint.sh` + posture delta 1 | SCOPE-1 binds |
 | Deliver 100% | `phase_7_convergence` exit conditions + `goal-fidelity-guard.sh --boundary pre-certification` — not bound today | **SCOPE-9** |
 | Unblock all blocks; implement, fix, or plan whatever is needed | `on_obstacle.missing_spec` bootstraps planning through `full-delivery` | exists |
@@ -118,30 +106,6 @@ The `IMP-039` row in `improvements/INDEX.md` already records that the identifier
 
 Change the G086 text in `bubbles/workflows.yaml` and `bubbles/registry/gates.yaml` from "orchestrator prompt files" to the four orchestrator agent files the lint actually scans. Alternatively, extend `orchestrator-persistence-lint.sh` to scan prompt shims as well. Recommendation: correct the description. The shims carry no behavior, so scanning them would enforce nothing.
 
-### SCOPE-8 — Give the decision policy a long-term principle, and make it posture-aware (REG-10)
-
-DELIVERED. `decisionPolicy.mechanicalPrinciples` now opens with `prefer_durable`
-and `forbid_shortcut`, and a ranking comment states that `prefer_durable`
-outranks `prefer_completeness` and `prefer_reversible` — list order alone would
-not have said so, because nothing mechanically reads the order.
-`tasteDecisionHandling.postureOverrides.unattended` sets `auto_resolve_and_log`
-and `record_low_confidence_decision`, and pins `escalateSecurityAction` to
-`blocked_naming_the_decision` so the security exception is expressed as a value
-rather than left to prose. `escalate_security` survives unchanged as a
-principle. Verified: the file parses, `prefer_durable` is first, and
-`mode-resolver.sh --validate` still resolves all 61 modes with no inherits
-cycles. No guard asserts these keys yet and none is claimed; the runners consume
-them in SCOPE-1, which this scope deliberately precedes.
-
-Add two principles to `decisionPolicy.mechanicalPrinciples`:
-
-1. `prefer_durable` — when two approaches both satisfy the spec, choose the one that is better for the long term: fewer future migrations, fewer special cases, and a contract the next change can extend. This principle ranks ABOVE `prefer_completeness` and `prefer_reversible`, because an easily-undone shortcut is still a shortcut.
-2. `forbid_shortcut` — never choose an approach that reaches green by weakening a test, narrowing a DoD claim, deferring required behavior, or relabeling incomplete work. This is `critical-requirements.md` policies 2, 13 and 16 stated as a decision principle so the auto-resolver can apply it.
-
-Resolve the contradiction the posture creates. Add a `postureOverrides` block to `tasteDecisionHandling` so `unattended` sets `overflowAction: auto_resolve_and_log` instead of `route_to_clarify`, and so `defer_ambiguous` records a low-confidence decision rather than converting it into a stop.
-
-ONE exception is explicit and non-negotiable: `escalate_security` is NOT auto-resolved under any posture. Under `unattended` a security-affecting decision does not silently pick a side — it produces a truthful `blocked` naming the decision. That keeps Autonomy Floor items 2 and 3 intact while still forbidding an interactive question. Decision taken: a run that cannot ask and cannot safely choose must stop honestly rather than guess about security.
-
 ### SCOPE-9 — Bind a completion predicate to "deliver 100%" (COV-15)
 
 Name the predicate in the four runners and in `docs/guides/AUTONOMOUS_EXECUTION.md`. A run under `unattended` may report success only when ALL hold:
@@ -163,24 +127,24 @@ This is the mechanical form of "all specs and plans MUST be fully delivered befo
 
 ## Migration / rollout
 
-Land in order: SCOPE-3, SCOPE-8, SCOPE-1, SCOPE-9, SCOPE-10, SCOPE-2, SCOPE-4, SCOPE-5. SCOPE-6 and SCOPE-7 are independent and may land at any time.
+Land in order: SCOPE-1, SCOPE-9, SCOPE-10, SCOPE-2, SCOPE-4, SCOPE-5. SCOPE-6 and SCOPE-7 are independent and may land at any time. The prompt-shim counting authority and the decision-policy scope are delivered and have been removed from this file.
 
-SCOPE-8 moves ahead of SCOPE-1 because SCOPE-1 writes the posture contract into the runners, and that contract is self-contradictory until the decision policy stops routing overflow to a human. SCOPE-9 and SCOPE-10 precede SCOPE-2 so the G135 extension holds a complete contract rather than a partial one. SCOPE-3 must precede SCOPE-4 because the 42nd prompt is what makes the count conflict real. SCOPE-1 must precede SCOPE-4 because a shim that requests a posture no runner implements is the exact DOC-6 defect this proposal exists to close.
+SCOPE-9 and SCOPE-10 precede SCOPE-2 so the G135 extension holds a complete contract rather than a partial one. SCOPE-1 must precede SCOPE-4 because a shim that requests a posture no runner implements is the exact DOC-6 defect this proposal exists to close. The decision policy already stops routing taste-decision overflow to a human, so SCOPE-1 can now write a posture contract that is not self-contradictory.
 
-SCOPE-4 is LAST by construction. The directive-to-enforcement map in that scope is its entry condition: the prompt may not ship while any row still reads SCOPE-8, SCOPE-9, or SCOPE-10.
+SCOPE-4 is LAST by construction. The directive-to-enforcement map in that scope is its entry condition: the prompt may not ship while any row still reads SCOPE-9 or SCOPE-10.
 
-Every scope is additive and default-preserving. The framework default stays `full`; `unattended` remains opt-in and refuses to run unbounded. `decisionPolicy` behavior under `full`, `guarded`, and `interactive` is unchanged — SCOPE-8 adds two principles and one posture-conditional override.
+Every scope is additive and default-preserving. The framework default stays `full`; `unattended` remains opt-in and refuses to run unbounded. `decisionPolicy` behavior under `full`, `guarded`, and `interactive` is byte-identical to before the delivered principles and posture override landed.
 
 ## Risks & mitigations
 
 - **R1 — "user approves all" is read as gate-waiving.** A blanket continuation directive is direct pressure to fabricate a terminal state. Mitigation: SCOPE-1 restates the Autonomy Floor inside each runner, SCOPE-4 restates it in the shim, and no scope touches evidence rules, status ceilings, or the transition guard.
 - **R2 — the shim silently fails on `iterate` or `autonomous-sprint`.** A prompt binds one agent, and `bubbles.goal` is not granted those modes. Mitigation: SCOPE-4 requires the shim to name the limitation and route, rather than downshift.
 - **R3 — an unbounded unattended run.** Mitigation: already mechanical. `autonomy-resolve.sh` exits 3 with `E039-UNATTENDED-UNBOUNDED`, and SCOPE-4 requires the shim to supply a budget.
-- **R4 — count drift lands as a broken build.** Mitigation: SCOPE-3 lands first and is a no-op at equal counts; `management-truth-lint.sh` then holds both files.
+- **R4 — count drift lands as a broken build.** Mitigation: the single prompt-shim counting authority is delivered and was a no-op at equal counts; `management-truth-lint.sh` then holds both files.
 - **R5 — the new G135 check hard-codes the runner list and rots.** Mitigation: derive the four runners from `bubbles/agent-capabilities.yaml` `workflowModeGrants` where practical, and pair every check with an adversarial fixture so a silent pass is impossible.
 - **R6 — G125 Check 6 refuses the commit.** If the commit that ADDS this file also mutates `bubbles/` or `agents/`, its message MUST name `IMP-045`, or `framework-health-evidence-lint.sh` reports `proposal-untraceable`. Mitigation: name the IMP in the commit message, or commit the proposal separately.
 - **R7 — `forbid_shortcut` becomes a rhetorical principle the resolver cannot apply.** A principle that cannot decide anything is decoration. Mitigation: state it as a prohibition over concrete, detectable moves — weakening a test, narrowing a DoD claim, deferring required behavior, relabeling incomplete work — each of which already has a gate (G040 deferral language, G025 per-item evidence, the implementation reality scan).
-- **R8 — auto-resolving overflow hides a spec that is genuinely too vague.** `overflowAction: route_to_clarify` exists because more than five taste decisions in one phase is evidence the spec is unclear. Auto-resolving silently loses that signal. Mitigation: SCOPE-8 requires the overflow to be LOGGED, and SCOPE-10's per-iteration reconciliation surfaces the resulting drift against the plan rather than letting it accumulate to certification.
+- **R8 — auto-resolving overflow hides a spec that is genuinely too vague.** `overflowAction: route_to_clarify` exists because more than five taste decisions in one phase is evidence the spec is unclear. Auto-resolving silently loses that signal. Mitigation: the delivered `auto_resolve_and_log` override requires the overflow to be LOGGED, and SCOPE-10's per-iteration reconciliation surfaces the resulting drift against the plan rather than letting it accumulate to certification.
 - **R9 — per-iteration reconciliation slows the loop.** Mitigation: `post-planning` is a single guard invocation against artifacts already in memory, and it runs once per convergence iteration, not per dispatch. If measurement shows it is material, bound it by iteration count rather than removing it.
 
 ## Acceptance criteria (when implemented)
@@ -195,10 +159,10 @@ Every scope is additive and default-preserving. The framework default stays `ful
 - The Autonomy Floor in `agents/bubbles_shared/critical-requirements.md` is unchanged, and `autonomy-posture-guard.sh` still reports the floor intact.
 - `decisionPolicy.mechanicalPrinciples` contains `prefer_durable` and `forbid_shortcut`, and `tasteDecisionHandling` declares a `postureOverrides` entry for `unattended`. Under `full`, `guarded`, and `interactive` the resolved behavior is byte-identical to today.
 - A security-affecting decision under `unattended` produces a truthful `blocked` naming the decision, and is never auto-resolved. A fixture proves it.
-- Every row of the SCOPE-4 directive-to-enforcement map resolves to a shipped mechanism, with no row still reading SCOPE-8, SCOPE-9, or SCOPE-10.
+- Every row of the SCOPE-4 directive-to-enforcement map resolves to a shipped mechanism, with no row still reading SCOPE-9 or SCOPE-10.
 - A run that reaches `max_iterations_reached` reports `EXIT_WITH_STATUS_REPORT`, never success. A fixture proves the distinction.
 - `.specify/memory/bubbles.session.json` records one plan-fidelity reconciliation per convergence iteration, and `state-snapshot-selftest.sh` fails when the record is absent.
 
 ## Files to touch (on approval)
 
-`agents/bubbles.goal.agent.md`, `agents/bubbles.workflow.agent.md`, `agents/bubbles.iterate.agent.md`, `agents/bubbles.sprint.agent.md` (SCOPE-1 posture consumption — owner: the framework maintainer; these are runner contracts, not specialist prompts) · `bubbles/scripts/autonomy-posture-guard.sh` and `bubbles/scripts/autonomy-posture-guard-selftest.sh` (SCOPE-2 gate G135 extension) · `bubbles/scripts/generate-framework-stats.sh` (SCOPE-3 prompt counting) · `prompts/bubbles.continue.prompt.md` (SCOPE-4 new shim) · `docs/guides/AUTONOMOUS_EXECUTION.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/guides/AGENT_MANUAL.md`, `docs/guides/INSTALLATION.md`, `docs/MCP.md`, `docs/CHEATSHEET.md`, `docs/recipes/resume-work.md`, `README.md` (SCOPE-4/SCOPE-5 documentation and counts — owner: `bubbles.docs`) · `improvements/INDEX.md` (SCOPE-6 audit history) · `bubbles/workflows.yaml` and `bubbles/registry/gates.yaml` (SCOPE-7 G086 description) · `bubbles/workflows.yaml` `decisionPolicy` (SCOPE-8 principles and posture overrides — owner: the framework maintainer) · `agents/bubbles.goal.agent.md` and the other three runners plus `docs/guides/AUTONOMOUS_EXECUTION.md` (SCOPE-9 completion predicate) · `bubbles/scripts/state-snapshot.sh` and `bubbles/scripts/state-snapshot-selftest.sh` (SCOPE-10 reconciliation record) · `bubbles/release-manifest.json` (regenerated after any managed-file change).
+`agents/bubbles.goal.agent.md`, `agents/bubbles.workflow.agent.md`, `agents/bubbles.iterate.agent.md`, `agents/bubbles.sprint.agent.md` (SCOPE-1 posture consumption — owner: the framework maintainer; these are runner contracts, not specialist prompts) · `bubbles/scripts/autonomy-posture-guard.sh` and `bubbles/scripts/autonomy-posture-guard-selftest.sh` (SCOPE-2 gate G135 extension) · `prompts/bubbles.continue.prompt.md` (SCOPE-4 new shim) · `docs/guides/AUTONOMOUS_EXECUTION.md`, `docs/guides/WORKFLOW_MODES.md`, `docs/guides/AGENT_MANUAL.md`, `docs/guides/INSTALLATION.md`, `docs/MCP.md`, `docs/CHEATSHEET.md`, `docs/recipes/resume-work.md`, `README.md` (SCOPE-4/SCOPE-5 documentation and counts — owner: `bubbles.docs`) · `improvements/INDEX.md` (SCOPE-6 audit history) · `bubbles/workflows.yaml` and `bubbles/registry/gates.yaml` (SCOPE-7 G086 description) · `agents/bubbles.goal.agent.md` and the other three runners plus `docs/guides/AUTONOMOUS_EXECUTION.md` (SCOPE-9 completion predicate) · `bubbles/scripts/state-snapshot.sh` and `bubbles/scripts/state-snapshot-selftest.sh` (SCOPE-10 reconciliation record) · `bubbles/release-manifest.json` (regenerated after any managed-file change).
