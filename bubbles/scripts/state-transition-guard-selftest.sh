@@ -1820,6 +1820,54 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+# Check 6B phase -> owning-agent resolution. `analyze` is owned by
+# bubbles.analyst, but Check 6B derived the expected agent as
+# "bubbles.${phase}" and so demanded a "bubbles.analyze" that has never
+# existed. An honest bubbles.analyst record was reported as phase
+# impersonation, blocking a transition that could only be "fixed" by
+# falsifying the record. $2 selects the recording agent so the same shape
+# drives the positive case and its adversarial twin.
+mutate_analyze_phase_provenance() {
+  local state_file="$1"
+  local recording_agent="$2"
+
+  python3 - "$state_file" "$recording_agent" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+recording_agent = sys.argv[2]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+# iterate keeps required_specialists small so this fixture isolates Check 6B
+# provenance rather than tripping unrelated delivery-completion requirements.
+data["workflowMode"] = "iterate"
+snapshot = data.get("policySnapshot")
+if isinstance(snapshot, dict):
+    snapshot["workflowMode"] = "iterate"
+
+execution = data.get("execution")
+if not isinstance(execution, dict):
+    execution = {}
+    data["execution"] = execution
+
+execution["completedPhaseClaims"] = ["analyze"]
+execution["executionHistory"] = [
+    {
+        "agent": recording_agent,
+        "phasesExecuted": ["analyze"],
+        "startedAt": "2026-01-01T00:00:00Z",
+        "completedAt": "2026-01-01T00:20:00Z",
+    },
+]
+
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
+}
+
 mutate_dict_shaped_phase_claims() {
   local state_file="$1"
 
@@ -2198,6 +2246,18 @@ mutate_dict_shaped_phase_claims "$dict_phase_claims_dir/state.json"
 partial_certified_phase_claims_dir="$tmp_root/specs/940-transition-guard-selftest-partial-certified-phase-claims"
 cp -R "$positive_feature_dir" "$partial_certified_phase_claims_dir"
 mutate_partial_certified_phases_with_dict_claims "$partial_certified_phase_claims_dir/state.json"
+
+# Check 6B phase -> owning-agent resolution fixtures. The positive case records
+# the REAL owner of `analyze` (bubbles.analyst); the adversarial twin records an
+# unrelated agent for the same claim and must still be refused, so the fix
+# cannot pass by disabling the impersonation check.
+analyst_owned_phase_dir="$tmp_root/specs/941-transition-guard-selftest-analyst-owned-phase"
+cp -R "$positive_feature_dir" "$analyst_owned_phase_dir"
+mutate_analyze_phase_provenance "$analyst_owned_phase_dir/state.json" "bubbles.analyst"
+
+analyze_wrong_agent_dir="$tmp_root/specs/942-transition-guard-selftest-analyze-wrong-agent"
+cp -R "$positive_feature_dir" "$analyze_wrong_agent_dir"
+mutate_analyze_phase_provenance "$analyze_wrong_agent_dir/state.json" "bubbles.simplify"
 
 echo "Running agent ownership lint precheck..."
 lint_log="$tmp_root/agent-ownership-lint.log"
@@ -2738,6 +2798,25 @@ assert_log_not_contains "$partial_certified_log" "unhashable type: 'dict'" "Chec
 # the Check 6 needle asserted above, kept adjacent so both halves sit together.
 assert_log_contains "$partial_certified_log" "Phase 'audit' has specialist provenance from bubbles.audit" "Check 6B: the 'audit' claim record carries specialist provenance from bubbles.audit"
 assert_log_not_contains "$partial_certified_log" "Required phase 'audit' NOT in execution/certification phase records" "Check 6 emits no BLOCK for the same 'audit' record Check 6B accepted above (the two checks agree)"
+
+# Check 6B — a phase whose owning agent is NOT named "bubbles.<phase>" must be
+# resolved through the owner table. Asserting on Check 6B log content only, per
+# the fixture convention above; the fixture's overall exit may be non-zero for
+# unrelated ceiling reasons.
+echo "Running Check 6B phase-owner resolution regression selftest..."
+analyst_owned_log="$tmp_root/analyst-owned-phase.log"
+run_capture "$analyst_owned_log" bash "$GUARD_SCRIPT" "$analyst_owned_phase_dir" >/dev/null
+assert_log_contains "$analyst_owned_log" "Phase 'analyze' has specialist provenance from bubbles.analyst" "Check 6B: the 'analyze' phase resolves to its real owner bubbles.analyst"
+assert_log_not_contains "$analyst_owned_log" "Phase 'analyze' is in completedPhaseClaims but no specialist or parent-expanded provenance found" "Check 6B: an honest bubbles.analyst record is NOT reported as missing provenance (Gate G022 false positive)"
+assert_log_not_contains "$analyst_owned_log" "bubbles.analyze" "Check 6B: the guard never demands a 'bubbles.analyze' agent, which has never existed"
+
+# Adversarial twin. The owner table must not become a blanket pass: an unrelated
+# agent recording the same claim is impersonation and MUST still be refused.
+echo "Running Check 6B phase-owner adversarial selftest..."
+analyze_wrong_agent_log="$tmp_root/analyze-wrong-agent.log"
+run_capture "$analyze_wrong_agent_log" bash "$GUARD_SCRIPT" "$analyze_wrong_agent_dir" >/dev/null
+assert_log_contains "$analyze_wrong_agent_log" "Phase 'analyze' is in completedPhaseClaims but no specialist or parent-expanded provenance found" "Check 6B: an unrelated agent claiming 'analyze' is STILL refused (the impersonation check can fail)"
+assert_log_not_contains "$analyze_wrong_agent_log" "Phase 'analyze' has specialist provenance from bubbles.analyst" "Check 6B: bubbles.simplify is not accepted as provenance for the analyze phase"
 
 echo "Running negative packet-field selftest..."
 negative_log="$tmp_root/negative-guard.log"
