@@ -781,7 +781,7 @@ gates:
   # bubbles/scripts/release-ladder-schema-guard.sh.
   # ─────────────────────────────────────────────────────────────────────────
   G137:
-    since: "7.28.0"
+    since: "7.27.0"
     sinceDate: "2026-08-16"
     name: release_ladder_schema_gate
     classification: businessInvariant
