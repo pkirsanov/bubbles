@@ -2,6 +2,8 @@
 
 > **Why this file exists:** the Bubbles source repo cannot keep `specs/` (G085 dogfood guard), so framework-internal defects are tracked here as the operator-visible bug log. Downstream consumer repos file their bugs in their own `specs/<feature>/bugs/BUG-NNN-*/` structure as usual.
 >
+> **Artifact authority:** [`bubbles/registry/bug-packet.yaml`](bubbles/registry/bug-packet.yaml) is the single answer to "how many artifacts does a bug need". The one-entry form used in this file is its `single-file` form — a DELIBERATE declared case with a stated precondition (G085 forbids `specs/` here), not an exception to the packet contract. The obligations it retains — explicit disposition, reproduction before fix, root cause stated, evidence is execution — are recorded there.
+>
 > Every entry below has an explicit disposition per Gate G095 (Discovered-Issue Disposition).
 
 ---

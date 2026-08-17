@@ -3034,8 +3034,34 @@ for report_path in ${report_files[@]+"${report_files[@]}"}; do
     continue
   fi
 
-  required_headers=("^###[[:space:]]+Summary|^##[[:space:]]+Summary" "^###[[:space:]]+Completion Statement|^##[[:space:]]+Completion Statement" "^###[[:space:]]+Test Evidence|^##[[:space:]]+Test Evidence")
-  for header in "${required_headers[@]}"; do
+  # IMP-047 S-B: the always-required section list is READ from
+  # bubbles/registry/report-sections.yaml, the same authority artifact-lint.sh
+  # reads and the report template is generated from. It used to be restated
+  # here, which is how the guard, the lint, the autofix script and the template
+  # arrived at four different answers.
+  required_headers=()
+  _rs_resolver="$SCRIPT_DIR/report-sections-resolve.sh"
+  if [[ ! -f "$_rs_resolver" ]]; then
+    fail "report-sections-resolve.sh is missing; the report section contract cannot be read"
+  elif ! _rs_facts="$(bash "$_rs_resolver" 2>&1)"; then
+    fail "cannot read bubbles/registry/report-sections.yaml: $_rs_facts"
+  else
+    while IFS= read -r _rs_line; do
+      _rs_heading="${_rs_line#always=}"
+      _rs_shallow="${_rs_heading##*|}"
+      _rs_heading="${_rs_heading%|*}"
+      if [[ "$_rs_shallow" == "yes" ]]; then
+        required_headers+=("^###[[:space:]]+${_rs_heading}|^##[[:space:]]+${_rs_heading}")
+      else
+        required_headers+=("^###[[:space:]]+${_rs_heading}")
+      fi
+    done < <(printf '%s\n' "$_rs_facts" | grep '^always=' || true)
+    # An empty requirement set would silently pass every report. That is the
+    # PD-04 false-PASS shape, so it is a failure, not a skip.
+    [[ ${#required_headers[@]} -gt 0 ]] ||
+      fail "bubbles/registry/report-sections.yaml declares no alwaysRequired sections"
+  fi
+  for header in ${required_headers[@]+"${required_headers[@]}"}; do
     if grep -qE "$header" "$report_path"; then
       pass "$(relative_artifact_path "$report_path") has required report section"
     else

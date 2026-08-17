@@ -1,6 +1,6 @@
 # IMP-047 - Outcome-First Framework Convergence: Spec-to-Live Delivery, Smart Validation, and System Truth
 
-**Status:** PROPOSED (not yet applied) - awaiting owner review.
+**Status:** IN PROGRESS - operator approved delivery on 2026-08-16 and directed full delivery; slices are landing. See `Delivery Log`.
 **Surface:** framework-health (G125) - proposal-first and human-reviewed.
 **Resolved mode:** `framework-health action:proposal-first`.
 **Date:** 2026-08-16.
@@ -9,6 +9,26 @@
 **Motivation:** Consolidate IMP-042 through IMP-046 after two audits, source rechecks, and operator-directed outcome-first redesign.
 **Verified gaps addressed:** All retained PERF, WIP, COV, REG, COST, DOC, EV, HO, LRN, and GF findings from IMP-042 through IMP-046.
 **Revision:** Restructured after an adversarial audit found the previous draft added roughly 14 persistent surfaces, removed 3, and named zero deletions. This revision must net-reduce burden.
+
+## Delivery Log
+
+Landed slices, newest last. Each entry records the commit and the evidence that
+closed it.
+
+- **S-A + PD-11** - commit `82675b8`. Gate telemetry made truthful by recording
+  `fired` and `prevented` as separate facts; framework health repointed to
+  `gate-hits.jsonl`; `enforcedBy` and blocking status generated; the telemetry
+  reader map generated; INDEX status derived from receipts; the
+  `gates-block-reader` apparatus retired; `orphaned-scaffolding-guard.sh` added.
+  PD-11 resolved with the declared `framework-proposal-v1` no-certification
+  audit contract. 7 focused selftests exit 0.
+- **S-B + PD-04** - landing now (uncommitted at the time this entry was
+  written). PD-04: `scenario-test-resolve.sh` category comparison false-cleaned
+  when GNU `timeout` was absent; the A6 selftest moved from exit 1 to exit 0.
+  `report-sections.yaml` and `bug-packet.yaml` created as single authorities;
+  `report-section-autofix.sh` (185 lines) deleted; the report template is now
+  generated, so it satisfies its own lint, and the four previously-absent
+  required sections are present.
 
 ## What This Removes
 

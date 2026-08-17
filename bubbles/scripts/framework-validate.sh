@@ -804,6 +804,8 @@ run_check "Output-policy coherence selftest (IMP-039 / EV-7)" bash "$SCRIPT_DIR/
 run_check "Usage-adapter contract selftest (IMP-039 / COST-4)" bash "$SCRIPT_DIR/usage-adapter-contract-selftest.sh"
 run_check "Test-inventory adapter contract selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/test-inventory-adapter-contract-selftest.sh"
 run_check "Scenario linked-test resolution selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-test-resolve-selftest.sh"
+run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/report-sections-selftest.sh"
+run_check "Bug-packet contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/bug-packet-selftest.sh"
 run_check "Scenario obligation matrix selftest (IMP-040 / COV-9)" bash "$SCRIPT_DIR/scenario-obligation-lint-selftest.sh"
 run_check "Test-mechanism declaration selftest (IMP-040 / COV-10)" bash "$SCRIPT_DIR/test-mechanism-lint-selftest.sh"
 run_check "Mutation adapter contract selftest (IMP-040 / COV-11)" bash "$SCRIPT_DIR/mutation-adapter-contract-selftest.sh"

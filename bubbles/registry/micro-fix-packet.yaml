@@ -6,16 +6,17 @@
 # Paying full ceremony for a trivial fix does not buy assurance; it buys a
 # thinner report written under time pressure.
 #
-# This registry is the SINGLE source for what the compact packet admits, what it
-# still requires, and what it may never drop. `micro-fix-admission.sh` reads it.
-# Do not restate these lists in an agent, a doc, or a script: a second copy is a
-# second answer.
+# This registry owns ADMISSION — which bugs may use the compact form, and which
+# obligations survive the reduction. It does NOT own the artifact question. That
+# has one authority: bubbles/registry/bug-packet.yaml, which records all three
+# admissible forms and their artifacts. IMP-047 S-B collapsed the restatements.
 #
 # NOT THE DEFAULT. IMP-042 SCOPE-9 requires packet authoring time and defect
 # escape rate to be MEASURED before this becomes the default route for any bug.
 # Until that measurement exists it is opt-in per bug, recorded as OW-015.
 
 schemaVersion: micro-fix-packet/v1
+artifactAuthority: bubbles/registry/bug-packet.yaml
 
 # A bug may use the compact packet only when EVERY condition holds. Each is
 # phrased so a reviewer answers yes or no, not "roughly".

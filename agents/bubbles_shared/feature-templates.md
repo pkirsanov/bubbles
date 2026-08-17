@@ -207,6 +207,8 @@ An unresolvable anchor, a <10-line block, or a missing/mismatched tool-log entry
 
 ## report.md Template
 
+<!-- GENERATED:REPORT_TEMPLATE_START — do not edit by hand; run bubbles/scripts/generate-report-template.sh -->
+
 ```markdown
 # Execution Reports
 
@@ -223,18 +225,57 @@ Links: [uservalidation.md](uservalidation.md)
 
 ### Code Diff Evidence
 - Record executed git-backed evidence for implementation-bearing work.
-- Include the exact git command used, relevant output, and at least one non-artifact runtime/source/config/contract file path.
-- Artifact-only paths such as `spec.md`, `design.md`, docs, or `.github/` files are insufficient when claiming delivered implementation.
+- Include the exact git command used, relevant output, and at least one
+  non-artifact runtime/source/config/contract file path.
+- Artifact-only paths such as `spec.md`, `design.md`, docs, or `.github/`
+  files are insufficient when claiming delivered implementation.
+
+### Completion Statement
+State the delivered outcome and the evidence that proves it. A completion
+claim with no executed command behind it is a fabrication, not a summary.
 
 ### Test Evidence
-Use the test evidence sections from scope-workflow.md and include raw terminal output.
+Use the test evidence sections from scope-workflow.md and include raw
+terminal output.
 
-When `policySnapshot.tdd.mode` is `scenario-first`, include explicit red-stage and green-stage evidence for the changed scenario contracts.
+When `policySnapshot.tdd.mode` is `scenario-first`, include explicit
+red-stage and green-stage evidence for the changed scenario contracts.
 
 All required tests must pass with zero skipped required tests.
 
-Claims of completion/success must be evidence-linked; if any required evidence is missing or unknowns remain unresolved, status must be `blocked`.
+Claims of completion/success must be evidence-linked; if any required
+evidence is missing or unknowns remain unresolved, status must be
+`blocked`.
+
+### Validation Evidence
+**Executed:** [YES|NO]
+**Command:** [the exact command that ran]
+**Phase Agent:** bubbles.validate
+**Claim Source:** [executed|interpreted|not-run]
+
+[raw terminal output, or an evidence-capture.sh block above 40 lines]
+
+### Audit Evidence
+**Executed:** [YES|NO]
+**Command:** [the exact command that ran]
+**Phase Agent:** bubbles.audit
+**Claim Source:** [executed|interpreted|not-run]
+
+[raw terminal output, or an evidence-capture.sh block above 40 lines]
+
+### Chaos Evidence
+**Executed:** [YES|NO]
+**Command:** [the exact command that ran]
+**Phase Agent:** bubbles.chaos
+**Claim Source:** [executed|interpreted|not-run]
+
+[raw terminal output, or an evidence-capture.sh block above 40 lines]
+
 ```
+
+Every section above is emitted by `bubbles/scripts/generate-report-template.sh` from [`bubbles/registry/report-sections.yaml`](../../bubbles/registry/report-sections.yaml), which is the same authority `artifact-lint.sh` and `state-transition-guard.sh` read. A report authored from this template satisfies the section checks on first write; there is no autofix step and no second list to keep in sync.
+
+<!-- GENERATED:REPORT_TEMPLATE_END -->
 
 ## uservalidation.md Template
 
