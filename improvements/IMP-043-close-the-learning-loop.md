@@ -1,6 +1,6 @@
 # IMP-043 — Close the Learning Loop: Capture, Schedule, Consume
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
+**Status:** IN PROGRESS 2026-08-16 — SCOPE-1 through SCOPE-7 have landing commits (`d91b045`, `e3b9ce2`, `aeeed2d`). Three residuals are open and are listed under "Residual work" below
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** An operator observed that `lessons.md` is empty in every repo that has one, and absent in the rest. A cross-repository audit of eight installed repositories confirmed it. Zero lessons exist anywhere, no skill proposal has ever been generated, and no recall index has ever been built.
 **Verified gaps addressed:** LRN-4 capture rule not reached at closeout. LRN-5 inert lifecycle triggers. LRN-6 no upgrade backfill. LRN-7 recall index never synchronized. COV-18 no end-to-end loop test. DOC-8 false compaction claim.
@@ -194,3 +194,19 @@ A later pass attacked the PROPOSAL rather than the problem, and falsified part o
 6. An envelope claiming `disposition: captured` with an unresolvable lesson id is refused.
 7. No documentation sentence describes automatic compaction except the behavior SCOPE-3 delivers.
 8. `workflows.yaml` declares no trigger key naming an event the framework cannot fire.
+
+## Residual work (verified 2026-08-16 at `16ff8bd`)
+
+SCOPE-1 through SCOPE-7 all have landing commits. Three residuals were re-checked
+against source and are still open.
+
+1. `bubbles/scripts/skill-evolution.sh` lines 14 to 16 still hardcode
+   `LESSONS_FILE`, `PROPOSALS_FILE` and `DISMISSED_FILE`. It reads no registry
+   path and no `enabled` toggle. SCOPE-4 of the Files-To-Touch table is unmet.
+2. No project-config template carries an `experienceRecall` block. The only
+   project config in the tree is `.github/bubbles-project.yaml`, and
+   `grep experienceRecall` returns nothing from it. `cli.sh` line 3004 already
+   reports the adapter in `doctor`, so the doctor half of SCOPE-5 landed and the
+   template half did not.
+3. `agents/bubbles.setup.agent.md` contains no occurrence of "recall". It
+   proposes no opt-in. The second half of SCOPE-5 is unmet.

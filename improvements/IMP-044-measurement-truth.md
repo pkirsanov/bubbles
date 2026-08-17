@@ -1,6 +1,6 @@
 # IMP-044 — Measurement Truth: One Populated Telemetry Plane
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
+**Status:** IN PROGRESS 2026-08-16 — SCOPE-1, SCOPE-2 and SCOPE-3 landed (`aff3856`, `eed4e53`, `bcad21c`). SCOPE-4, SCOPE-5 and SCOPE-6 are open, and the residuals are listed under "Residual work" below
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** An operator observed that metrics are never populated. A cross-repository audit confirmed it and found the sharper defect underneath. The framework runs two telemetry planes. The always-on plane is populated and rich. The opt-in plane is nearly empty and shallow. Every dashboard, agent, and recipe reads the empty one.
 **Verified gaps addressed:** REG-13 readers count event types no producer writes. REG-14 declared dimensions never reach the declared store. REG-15 policy writer drops unknown keys. DOC-7 three false published claims. COV-17 no metrics lifecycle test.
@@ -176,3 +176,25 @@ A later pass attacked the PROPOSAL rather than the problem, and corrected two cl
 5. `metrics enable` preserves an unknown top-level config block byte for byte.
 6. `metrics-lifecycle-selftest.sh` passes, including the unknown-key and no-producer cases.
 7. No agent or recipe describes a metrics file as containing a field it cannot contain.
+
+## Residual work (verified 2026-08-16 at `16ff8bd`)
+
+SCOPE-1, SCOPE-2 and SCOPE-3 landed. The following were re-checked against source
+and are still open.
+
+1. `bubbles/workflows.yaml` lines 381 to 383 still declare `perAgentTracking`,
+   `perSpecTracking` and `perScopeTracking` as `true`. No producer writes them.
+2. `bubbles/workflows.yaml` line 447 still declares `outcomeEvals`. No reader
+   consumes it.
+3. `agents/bubbles.retro.agent.md` lines 299 to 300 still print a
+   `Gate | Pass | Fail | Failure Rate` table.
+   `agents/bubbles.status.agent.md` line 205 still prints `Gate pass rate`.
+   SCOPE-4 is unmet on both surfaces.
+4. `bubbles/scripts/metrics-lifecycle-selftest.sh` does not exist. SCOPE-5 is
+   unmet.
+5. No doctor advisory reports a stale or unsupported downstream config key.
+   SCOPE-6 is unmet.
+
+The activity-record field was not re-verified in this session, because `cli.sh`
+was opened only at its `open-work` and `experienceRecall` regions. Treat the
+`phase`-versus-`subcommand` residual as unconfirmed until it is re-read.

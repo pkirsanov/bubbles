@@ -1,6 +1,6 @@
 # IMP-042 - Assurance-Preserving Lightweight Execution And Framework Cleanup
 
-**Status:** PROPOSED (not yet applied) - awaiting owner review.
+**Status:** IN PROGRESS 2026-08-16 - SCOPE-9, SCOPE-11, SCOPE-12, SCOPE-13, SCOPE-14 and SCOPE-17 telemetry have landed (see commits `eca887f`, `539e9d3`, `35c90e5`, `5bd00be`, `271497e`, `87831b6`). SCOPE-2, SCOPE-3 and the SCOPE-17 receipt-reuse bullet are now owned by [IMP-046](IMP-046-validation-debt-ledger-and-settlement-boundaries.md). SCOPE-6, SCOPE-14 remainder and the SCOPE-17 transition-check work remain here.
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of `bubbles/*` until approved.
 **Motivation:** Deep source, runtime, and external-pattern review of clean commit `09a8fc87033940721d8e112f03a838c305a50018` on 2026-08-13.
 **Verified gaps addressed:** PERF-1 through PERF-5, WIP-4, COV-14 through COV-16, REG-9 through REG-12, COST-8, DOC-6, EV-9, HO-3.
@@ -203,14 +203,11 @@ changes scheduling for all 302, so the acceptance evidence is a full-suite run
 whose executed-check set is identical before and after. That gate has to be
 available before the work starts, not after it lands.
 
-- Add a canonical check registry.
-- Give each check a stable `checkId`.
-- Declare argv, tier, push-blocking posture, install mode, timeout, and platform.
-- Declare input files, input globs, environment keys, tool versions, and outputs.
-- Declare `serial`, `isolated`, or `timing-sensitive` execution classes.
-- Generate core and full execution plans from this registry.
-- Fail validation when a push-blocking check has no core disposition.
-- Keep unregistered discovered selftests runnable in a conservative serial lane.
+SUPERSEDED. The registry, the stable `checkId`, and the declared argv, tier,
+posture, timeout, platform, input and execution-class fields are now owned by
+[IMP-046](IMP-046-validation-debt-ledger-and-settlement-boundaries.md) SCOPE-1,
+which needs check identity and input closure as one artifact rather than two.
+The diagnosis above stays here as audit history. Do not implement from it.
 
 ### SCOPE-3 - Dependency-Complete Receipts And Affected Execution (PERF-4, COV-16)
 
@@ -233,18 +230,12 @@ The receipt scripts already in the tree do not cover this. `tool-log.sh`,
 spec and DoD claims; none of them records a validation check's result. Reusing
 their vocabulary would conflate two different receipt domains.
 
-- Replace same-basename invalidation with declared input closures.
-- Record a receipt for every check result.
-- Key each receipt by check ID, command, input hashes, toolchain, platform, and validator version.
-- Store exit code, duration, stdout hash, stderr hash, and cache status.
-- Treat a missing declaration as run-required and cache-forbidden.
-- Compute the affected check closure from changed files and reverse dependencies.
-- Run previous failures first.
-- Run changed checks, dependents, and always-run invariants next.
-- When no declared input changed, reuse cacheable receipts and run only always-run checks.
-- Keep cache disabled for timing-sensitive checks and cold CI lanes.
-- Adopt the shadow-first rule that `test-impact-shadow.sh` already fixes in source.
-- Report a proposed subset before any subset is permitted to skip work.
+SUPERSEDED IN WHOLE by
+[IMP-046](IMP-046-validation-debt-ledger-and-settlement-boundaries.md). IMP-046
+takes the declared input closure (SCOPE-1), the reuse vocabulary (SCOPE-3), and
+the affected-execution and batch behaviour (SCOPE-5), and adds the debt ledger
+and settlement boundaries this scope never had. The diagnosis above stays here as
+audit history. Do not implement from it.
 
 ### SCOPE-6 - Executable Workflow Cursor And Phase Coordinator (WIP-4, COV-16)
 
@@ -470,7 +461,9 @@ Remaining:
 - Declare prerequisite edges between transition checks.
 - Emit `BLOCKED_NOT_RUN` for checks whose prerequisites failed.
 - Continue independent checks to preserve one-pass diagnostics.
-- Reuse repo-global receipts only when their input closure is unchanged.
+- SUPERSEDED: repo-global receipt reuse keyed on an unchanged input closure now
+  belongs to [IMP-046](IMP-046-validation-debt-ledger-and-settlement-boundaries.md)
+  SCOPE-1. One closure rule needs one owner.
 - Require downstream observation windows before retiring any gate.
 
 ## Cleanup Disposition Matrix
