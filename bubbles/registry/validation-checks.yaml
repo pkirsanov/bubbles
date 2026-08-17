@@ -94,7 +94,7 @@ checks:
   vc-bubbles-scripts-shellcheck-lint-selftest:
     script: bubbles/scripts/shellcheck-lint-selftest.sh
     label: "Shellcheck lint selftest (v7.0.2)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/shellcheck-lint-selftest.sh
     - bubbles/scripts/shellcheck-lint.sh
@@ -129,7 +129,7 @@ checks:
   vc-bubbles-scripts-agent-roster-coverage-selftest:
     script: bubbles/scripts/agent-roster-coverage-selftest.sh
     label: "Agent roster coverage selftest (v7.18.0)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/agent-roster-coverage-selftest.sh
     - bubbles/scripts/agent-roster-coverage.sh
@@ -139,7 +139,7 @@ checks:
   vc-bubbles-scripts-tool-log-selftest:
     script: bubbles/scripts/tool-log-selftest.sh
     label: "Tool-log selftest (v5.1 / M1)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/tool-log-selftest.sh
     - bubbles/scripts/tool-log.sh
@@ -164,7 +164,7 @@ checks:
   vc-bubbles-scripts-diff-evidence-guard-selftest:
     script: bubbles/scripts/diff-evidence-guard-selftest.sh
     label: "Diff-evidence guard selftest (v6.0 / B2)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/diff-evidence-guard-selftest.sh
     - bubbles/scripts/diff-evidence-guard.sh
@@ -214,7 +214,7 @@ checks:
   vc-bubbles-scripts-skill-evolution-selftest:
     script: bubbles/scripts/skill-evolution-selftest.sh
     label: "Skill-evolution selftest (v7.16.0 / IMP-016)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/skill-evolution-selftest.sh
     - bubbles/scripts/skill-evolution.sh
@@ -225,7 +225,7 @@ checks:
   vc-bubbles-scripts-inventory-parity-check-selftest:
     script: bubbles/scripts/inventory-parity-check-selftest.sh
     label: "Inventory parity check selftest (IMP-005)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/inventory-parity-check-selftest.sh
     - bubbles/scripts/inventory-parity-check.sh
@@ -911,7 +911,7 @@ checks:
   vc-bubbles-scripts-skill-description-load-selftest:
     script: bubbles/scripts/skill-description-load-selftest.sh
     label: "Skill description-load report selftest (IMP-021 SCOPE-5)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/skill-description-load-selftest.sh
     - bubbles/scripts/skill-description-load.sh
@@ -2329,7 +2329,7 @@ checks:
   vc-bubbles-scripts-experience-recall-resolve-selftest:
     script: bubbles/scripts/experience-recall-resolve-selftest.sh
     label: "Experience-recall resolver selftest (IMP-037 / SCOPE-1)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/experience-recall-resolve-selftest.sh
     - bubbles/scripts/experience-recall-resolve.sh
@@ -8454,7 +8454,7 @@ checks:
   vc-bubbles-scripts-gate-retirement-selftest:
     script: bubbles/scripts/gate-retirement-selftest.sh
     label: "Gate retirement selftest (IMP-027 SCOPE-11)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-retirement-selftest.sh
     - bubbles/scripts/gate-retirement.sh
@@ -8485,7 +8485,7 @@ checks:
   vc-bubbles-scripts-security-gate-selftest:
     script: bubbles/scripts/security-gate-selftest.sh
     label: "Security gate selftest (G034, IMP-027 SCOPE-4)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/security-gate-selftest.sh
     - bubbles/scripts/security-gate.sh
@@ -8494,7 +8494,7 @@ checks:
   vc-bubbles-scripts-bundle-cost-report-selftest:
     script: bubbles/scripts/bundle-cost-report-selftest.sh
     label: "Bundle cost report selftest (COST-1, IMP-027 SCOPE-6)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/bundle-cost-report-selftest.sh
     - bubbles/scripts/bundle-cost-report.sh
@@ -9195,7 +9195,7 @@ checks:
   vc-bubbles-scripts-mode-family-inventory-selftest:
     script: bubbles/scripts/mode-family-inventory-selftest.sh
     label: "Mode-family inventory selftest (v6.1 / R5)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/dependency-posture.sh
     - bubbles/scripts/mode-family-inventory-selftest.sh
@@ -9210,7 +9210,7 @@ checks:
   vc-bubbles-scripts-model-tier-advisory-selftest:
     script: bubbles/scripts/model-tier-advisory-selftest.sh
     label: "Model-tier floor selftest (v6.1 / S9 / G126)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
@@ -9256,7 +9256,7 @@ checks:
   vc-bubbles-scripts-autonomy-resolve-selftest:
     script: bubbles/scripts/autonomy-resolve-selftest.sh
     label: "Autonomy-resolve posture selftest (IMP-039 / SCOPE-1)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/autonomy-resolve-selftest.sh
     - bubbles/scripts/autonomy-resolve.sh
@@ -14932,7 +14932,7 @@ checks:
   vc-bubbles-scripts-goal-fidelity-telemetry-selftest:
     script: bubbles/scripts/goal-fidelity-telemetry-selftest.sh
     label: "Goal-fidelity telemetry selftest (IMP-038 SCOPE-7 / GF-5)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/goal-contract.sh
     - bubbles/scripts/goal-fidelity-telemetry-selftest.sh
@@ -17128,7 +17128,7 @@ checks:
   vc-bubbles-scripts-capability-consumer-freshness-selftest:
     script: bubbles/scripts/capability-consumer-freshness-selftest.sh
     label: "Capability consumer freshness selftest (G127)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/capability-consumer-freshness-selftest.sh
     - bubbles/scripts/capability-consumer-freshness.sh
@@ -21193,7 +21193,7 @@ checks:
   vc-bubbles-scripts-gate-hit-log-selftest:
     script: bubbles/scripts/gate-hit-log-selftest.sh
     label: "Gate-hit telemetry selftest (IMP-036)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-hit-log-selftest.sh
     - bubbles/scripts/gate-hit-log.sh
@@ -22548,7 +22548,7 @@ checks:
   vc-bubbles-scripts-agent-id-enum-lint-selftest:
     script: bubbles/scripts/agent-id-enum-lint-selftest.sh
     label: "Agent-id enum lint selftest (IMP-036)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/agent-id-enum-lint-selftest.sh
     - bubbles/scripts/agent-id-enum-lint.sh
@@ -22559,7 +22559,7 @@ checks:
   vc-bubbles-scripts-collected-test-count-guard-selftest:
     script: bubbles/scripts/collected-test-count-guard-selftest.sh
     label: "Collected-test-count guard selftest (IMP-036)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/collected-test-count-guard-selftest.sh
     - bubbles/scripts/collected-test-count-guard.sh
@@ -22605,7 +22605,7 @@ checks:
   vc-bubbles-scripts-usage-adapter-contract-selftest:
     script: bubbles/scripts/usage-adapter-contract-selftest.sh
     label: "Usage-adapter contract selftest (IMP-039 / COST-4)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/usage-adapter-contract-selftest.sh
     - bubbles/scripts/usage-resolve.sh
@@ -24012,7 +24012,7 @@ checks:
   vc-bubbles-scripts-validation-debt-selftest:
     script: bubbles/scripts/validation-debt-selftest.sh
     label: "Validation debt ledger selftest (IMP-047 S-E)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/validation-debt-selftest.sh
     - bubbles/scripts/validation-debt.sh
@@ -37011,7 +37011,7 @@ checks:
   vc-bubbles-scripts-convergence-cap-guard-selftest:
     script: bubbles/scripts/convergence-cap-guard-selftest.sh
     label: "Convergence cap guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/convergence-cap-guard-selftest.sh
     - bubbles/scripts/convergence-cap-guard.sh
@@ -37731,7 +37731,7 @@ checks:
   vc-bubbles-scripts-requirement-mechanism-guard-selftest:
     script: bubbles/scripts/requirement-mechanism-guard-selftest.sh
     label: "Requirement-mechanism guard selftest (G097)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/requirement-mechanism-guard-selftest.sh
     - bubbles/scripts/requirement-mechanism-guard.sh
@@ -38485,7 +38485,7 @@ checks:
   vc-bubbles-scripts-validation-latency-report-selftest:
     script: bubbles/scripts/validation-latency-report-selftest.sh
     label: "Validation latency report selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/validation-latency-report-selftest.sh
     - bubbles/scripts/validation-latency-report.sh
@@ -38495,7 +38495,7 @@ checks:
   vc-bubbles-scripts-retro-convergence-health-selftest:
     script: bubbles/scripts/retro-convergence-health-selftest.sh
     label: "Retro convergence health selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/retro-convergence-health-selftest.sh
     - bubbles/scripts/retro-convergence-health.sh
@@ -38505,7 +38505,7 @@ checks:
   vc-bubbles-scripts-planning-workflow-chain-guard-selftest:
     script: bubbles/scripts/planning-workflow-chain-guard-selftest.sh
     label: "Planning workflow chain guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/planning-workflow-chain-guard-selftest.sh
     - bubbles/scripts/planning-workflow-chain-guard.sh
@@ -39207,7 +39207,7 @@ checks:
   vc-bubbles-scripts-planning-packet-linkage-guard-selftest:
     script: bubbles/scripts/planning-packet-linkage-guard-selftest.sh
     label: "Planning packet linkage guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/planning-packet-linkage-guard-selftest.sh
     - bubbles/scripts/planning-packet-linkage-guard.sh
@@ -39217,7 +39217,7 @@ checks:
   vc-bubbles-scripts-vertical-delivery-plan-guard-selftest:
     script: bubbles/scripts/vertical-delivery-plan-guard-selftest.sh
     label: "Vertical-delivery plan guard selftest (BFW-02 / IMP-022)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/vertical-delivery-plan-guard-selftest.sh
     - bubbles/scripts/vertical-delivery-plan-guard.sh
@@ -40580,7 +40580,7 @@ checks:
   vc-bubbles-scripts-plan-dependency-depth-guard-selftest:
     script: bubbles/scripts/plan-dependency-depth-guard-selftest.sh
     label: "Plan dependency-depth guard selftest (IMP-100 Phase 4 / IMP-022 SCOPE-3+4)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/plan-dependency-depth-guard-selftest.sh
     - bubbles/scripts/plan-dependency-depth-guard.sh
@@ -40599,7 +40599,7 @@ checks:
   vc-bubbles-scripts-evidence-receipt-check-selftest:
     script: bubbles/scripts/evidence-receipt-check-selftest.sh
     label: "Evidence receipt check selftest (IMP-100 Phase 2 / IMP-024 SCOPE-1+2)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/evidence-receipt-check-selftest.sh
     - bubbles/scripts/evidence-receipt-check.sh
@@ -45996,7 +45996,7 @@ checks:
   vc-bubbles-scripts-scope-context-fit-lint-selftest:
     script: bubbles/scripts/scope-context-fit-lint-selftest.sh
     label: "Scope context-fit lint selftest (IMP-100 Phase 4 / IMP-026 SCOPE-6)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/scope-context-fit-lint-selftest.sh
     - bubbles/scripts/scope-context-fit-lint.sh
@@ -46005,7 +46005,7 @@ checks:
   vc-bubbles-scripts-expand-migrate-contract-guard-selftest:
     script: bubbles/scripts/expand-migrate-contract-guard-selftest.sh
     label: "Expand-migrate-contract guard selftest (IMP-100 Phase 4 / IMP-026 SCOPE-2)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
     - bubbles/scripts/expand-migrate-contract-guard.sh
@@ -46040,7 +46040,7 @@ checks:
   vc-bubbles-scripts-inter-spec-dependency-guard-selftest:
     script: bubbles/scripts/inter-spec-dependency-guard-selftest.sh
     label: "Inter-spec dependency guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/inter-spec-dependency-guard-selftest.sh
     - bubbles/scripts/inter-spec-dependency-guard.sh
@@ -46052,7 +46052,7 @@ checks:
   vc-bubbles-scripts-strict-terminal-status-guard-selftest:
     script: bubbles/scripts/strict-terminal-status-guard-selftest.sh
     label: "Strict terminal status guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/inter-spec-dependency-guard-selftest.sh
     - bubbles/scripts/inter-spec-dependency-guard.sh
@@ -46772,7 +46772,7 @@ checks:
   vc-bubbles-scripts-test-impact-plan-selftest:
     script: bubbles/scripts/test-impact-plan-selftest.sh
     label: "Test impact plan selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/test-impact-plan-selftest.sh
     - bubbles/scripts/test-impact-plan.sh
@@ -46783,7 +46783,7 @@ checks:
   vc-bubbles-scripts-trace-contract-guard-selftest:
     script: bubbles/scripts/trace-contract-guard-selftest.sh
     label: "Trace contract guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/trace-contract-guard-selftest.sh
     - bubbles/scripts/trace-contract-guard.sh
@@ -49476,7 +49476,7 @@ checks:
   vc-bubbles-scripts-edit-lint-gate-selftest:
     script: bubbles/scripts/edit-lint-gate-selftest.sh
     label: "Edit lint gate selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/edit-lint-gate-selftest.sh
     - bubbles/scripts/edit-lint-gate.sh
@@ -49488,7 +49488,7 @@ checks:
   vc-bubbles-scripts-gate-id-grep-selftest:
     script: bubbles/scripts/gate-id-grep-selftest.sh
     label: "Gate ID grep selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-id-grep-selftest.sh
     - bubbles/scripts/gate-id-grep.sh
@@ -49511,7 +49511,7 @@ checks:
   vc-bubbles-scripts-release-packet-location-guard-selftest:
     script: bubbles/scripts/release-packet-location-guard-selftest.sh
     label: "Release packet location guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/release-packet-location-guard-selftest.sh
     - bubbles/scripts/release-packet-location-guard.sh
@@ -49520,7 +49520,7 @@ checks:
   vc-bubbles-scripts-release-delivery-reconciliation-guard-selftest:
     script: bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh
     label: "Release delivery reconciliation guard selftest (G101)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/is-terminal-for-mode.sh
     - bubbles/scripts/mode-resolver.sh
@@ -49549,7 +49549,7 @@ checks:
   vc-bubbles-scripts-release-ladder-schema-guard-selftest:
     script: bubbles/scripts/release-ladder-schema-guard-selftest.sh
     label: "Release ladder schema guard selftest (G137)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/release-ladder-schema-guard-selftest.sh
     - bubbles/scripts/release-ladder-schema-guard.sh
@@ -50270,7 +50270,7 @@ checks:
   vc-bubbles-scripts-instruction-budget-lint-selftest:
     script: bubbles/scripts/instruction-budget-lint-selftest.sh
     label: "Instruction budget lint selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/instruction-budget-lint-selftest.sh
     - bubbles/scripts/instruction-budget-lint.sh
@@ -50288,7 +50288,7 @@ checks:
   vc-bubbles-scripts-regression-quality-guard-selftest:
     script: bubbles/scripts/regression-quality-guard-selftest.sh
     label: "Regression quality guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/fun-mode.sh
     - bubbles/scripts/regression-quality-guard-selftest.sh
@@ -50299,7 +50299,7 @@ checks:
   vc-bubbles-scripts-traceability-guard-selftest:
     script: bubbles/scripts/traceability-guard-selftest.sh
     label: "Traceability guard selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/dod-section-lib.sh
     - bubbles/scripts/fun-mode.sh
@@ -50320,7 +50320,7 @@ checks:
   vc-bubbles-scripts-governance-index-lint-selftest:
     script: bubbles/scripts/governance-index-lint-selftest.sh
     label: "Governance index lint selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/governance-index-lint-selftest.sh
     - bubbles/scripts/governance-index-lint.sh
@@ -50343,7 +50343,7 @@ checks:
   vc-bubbles-scripts-orchestrator-tool-frontmatter-lint-selftest:
     script: bubbles/scripts/orchestrator-tool-frontmatter-lint-selftest.sh
     label: "Orchestrator tool frontmatter lint selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/orchestrator-tool-frontmatter-lint-selftest.sh
     - bubbles/scripts/orchestrator-tool-frontmatter-lint.sh
@@ -50352,7 +50352,7 @@ checks:
   vc-bubbles-scripts-trajectory-inspector-selftest:
     script: bubbles/scripts/trajectory-inspector-selftest.sh
     label: "Trajectory inspector selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/is-terminal-for-mode.sh
     - bubbles/scripts/mode-resolver.sh
@@ -50390,7 +50390,7 @@ checks:
   vc-bubbles-scripts-release-train-rollup-selftest:
     script: bubbles/scripts/release-train-rollup-selftest.sh
     label: "Release train rollup selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/release-train-rollup-selftest.sh
     - bubbles/scripts/release-train-rollup.sh
@@ -50399,7 +50399,7 @@ checks:
   vc-bubbles-scripts-release-assurance-gate-selftest:
     script: bubbles/scripts/release-assurance-gate-selftest.sh
     label: "Release assurance gate selftest (IMP-100 Phase 3 choke #3)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/assurance-resolve.sh
     - bubbles/scripts/release-assurance-gate-selftest.sh
@@ -50436,7 +50436,7 @@ checks:
   vc-bubbles-scripts-observability-posture-guard-selftest:
     script: bubbles/scripts/observability-posture-guard-selftest.sh
     label: "Observability posture guard selftest (G098)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/observability-posture-guard-selftest.sh
     - bubbles/scripts/observability-posture-guard.sh
@@ -50445,7 +50445,7 @@ checks:
   vc-bubbles-scripts-observability-opt-out-guard-selftest:
     script: bubbles/scripts/observability-opt-out-guard-selftest.sh
     label: "Observability opt-out guard selftest (G099)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/observability-opt-out-guard-selftest.sh
     - bubbles/scripts/observability-opt-out-guard.sh
@@ -50470,7 +50470,7 @@ checks:
   vc-bubbles-scripts-observability-slo-guard-selftest:
     script: bubbles/scripts/observability-slo-guard-selftest.sh
     label: "Observability SLO guard selftest (G100)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/observability-slo-guard-selftest.sh
     - bubbles/scripts/observability-slo-guard.sh
@@ -50489,7 +50489,7 @@ checks:
   vc-bubbles-scripts-observability-endpoint-resolve-selftest:
     script: bubbles/scripts/observability-endpoint-resolve-selftest.sh
     label: "Observability endpoint resolver selftest (SCOPE-3)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/observability-endpoint-resolve-selftest.sh
     - bubbles/scripts/observability-endpoint-resolve.sh
@@ -50527,7 +50527,7 @@ checks:
   vc-bubbles-scripts-env-pollution-scan-selftest:
     script: bubbles/scripts/env-pollution-scan-selftest.sh
     label: "Env pollution scan selftest (G115)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/env-pollution-scan-selftest.sh
     - bubbles/scripts/env-pollution-scan.sh
@@ -50551,7 +50551,7 @@ checks:
   vc-bubbles-scripts-retro-framework-health-selftest:
     script: bubbles/scripts/retro-framework-health-selftest.sh
     label: "Retro framework-health selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-hit-log.sh
     - bubbles/scripts/goal-fidelity-telemetry.sh
@@ -50630,7 +50630,7 @@ checks:
   vc-bubbles-scripts-stale-deferral-lint-selftest:
     script: bubbles/scripts/stale-deferral-lint-selftest.sh
     label: "Stale-deferral lint selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/stale-deferral-lint-selftest.sh
     - bubbles/scripts/stale-deferral-lint.sh
@@ -52657,7 +52657,7 @@ checks:
   vc-bubbles-scripts-capability-consumer-naming-selftest:
     script: bubbles/scripts/capability-consumer-naming-selftest.sh
     label: "Capability consumer naming selftest (IMP-042 SCOPE-11)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/capability-consumer-naming-selftest.sh
     - bubbles/scripts/capability-consumer-naming.sh
@@ -54010,7 +54010,7 @@ checks:
   vc-bubbles-scripts-gate-strength-lint-selftest:
     script: bubbles/scripts/gate-strength-lint-selftest.sh
     label: "Gate-strength lint selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-strength-lint-selftest.sh
     - bubbles/scripts/gate-strength-lint.sh
@@ -54065,7 +54065,7 @@ checks:
   vc-bubbles-scripts-effective-bundle-budget-selftest:
     script: bubbles/scripts/effective-bundle-budget-selftest.sh
     label: "Effective-bundle budget selftest"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/effective-bundle-budget-selftest.sh
     - bubbles/scripts/effective-bundle-budget.sh
@@ -55467,7 +55467,7 @@ checks:
   vc-bubbles-scripts-phase-coordinator-selftest:
     script: bubbles/scripts/phase-coordinator-selftest.sh
     label: "Phase coordinator selftest (IMP-047 S-C / AC8-AC12)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/phase-coordinator-selftest.sh
     - bubbles/scripts/phase-coordinator.sh
@@ -56899,7 +56899,7 @@ checks:
   vc-bubbles-scripts-gate-classification-selftest:
     script: bubbles/scripts/gate-classification-selftest.sh
     label: "Discovered selftest: gate-classification-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-classification-selftest.sh
     - bubbles/scripts/gate-classification.sh
@@ -56922,7 +56922,7 @@ checks:
   vc-bubbles-scripts-generate-gate-enforcement-selftest:
     script: bubbles/scripts/generate-gate-enforcement-selftest.sh
     label: "Discovered selftest: generate-gate-enforcement-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-id-grep.sh
     - bubbles/scripts/generate-gate-enforcement-selftest.sh
@@ -56938,7 +56938,7 @@ checks:
   vc-bubbles-scripts-generate-telemetry-reader-map-selftest:
     script: bubbles/scripts/generate-telemetry-reader-map-selftest.sh
     label: "Discovered selftest: generate-telemetry-reader-map-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/gate-hit-log.sh
     - bubbles/scripts/generate-telemetry-reader-map-selftest.sh
@@ -57642,7 +57642,7 @@ checks:
   vc-bubbles-scripts-release-train-flag-audit-selftest:
     script: bubbles/scripts/release-train-flag-audit-selftest.sh
     label: "Discovered selftest: release-train-flag-audit-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/release-train-flag-audit-selftest.sh
     - bubbles/scripts/release-train-flag-audit.sh
@@ -58333,7 +58333,7 @@ checks:
   vc-bubbles-scripts-state-consistency-scan-selftest:
     script: bubbles/scripts/state-consistency-scan-selftest.sh
     label: "Discovered selftest: state-consistency-scan-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/state-consistency-scan-selftest.sh
     - bubbles/scripts/state-consistency-scan.sh
@@ -59046,4 +59046,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: cdfdeb4
+derivedAt: d9611c9

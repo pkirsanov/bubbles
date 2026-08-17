@@ -121,14 +121,19 @@ extractor_probe() {
   local probe_dir probe_file out
   probe_dir="$(mktemp -d)"
   probe_file="$probe_dir/probe.sh"
+  # The third line exercises the $REPO_ROOT-rooted shape. Its basename is
+  # DELIBERATELY synthetic: naming a real source-only regression test here made
+  # every mechanical reader of this file -- payload-closure-guard.sh among them
+  # -- read the probe fixture as a runtime dependency on a file that never ships.
+  # The probe tests the SCANNER, so any path of the right shape proves it.
   {
     printf 'source "$SCRIPT_DIR/guard-lib.sh"\n'
     printf 'REG="$SCRIPT_DIR/../registry/gates.yaml"\n'
-    printf 'bash "$REPO_ROOT/tests/regression/test_05_orchestrator_persistence.sh"\n'
+    printf 'bash "$REPO_ROOT/tests/regression/probe_extractor_fixture.sh"\n'
   } >"$probe_file"
   out="$(extract_refs "$probe_file")"
   rm -rf "$probe_dir"
-  if [[ "$out" != *'guard-lib.sh'* || "$out" != *'gates.yaml'* || "$out" != *'test_05_orchestrator_persistence.sh'* ]]; then
+  if [[ "$out" != *'guard-lib.sh'* || "$out" != *'gates.yaml'* || "$out" != *'probe_extractor_fixture.sh'* ]]; then
     printf '%s: the reference extractor matched nothing on its own probe.\n' "$NAME" >&2
     printf '%s: refusing to write a closure map derived by a scanner that is not working.\n' "$NAME" >&2
     return 1
@@ -196,6 +201,35 @@ reads_working_tree() {
   ' "$file"
 }
 
+# Scripts this file invokes with NO argument after the path.
+#
+# This is the discriminator that decides whether a dependency's tree-reading is
+# also the CALLER's. A selftest that runs `bash "$SCRIPT_DIR/guard.sh" "$fixture"`
+# supplies the tree it is pointed at, so the guard's ability to walk a repository
+# adds nothing the caller's own closure does not already contain. A caller that
+# runs `bash "$SCRIPT_DIR/guard.sh"` bare lets the guard resolve its OWN repo
+# root, and that IS the working tree entering the caller's input set.
+bare_invoked_scripts() {
+  local file="$1"
+  LC_ALL=C awk '
+    /^[ \t]*#/ { next }
+    {
+      rest = $0
+      while (match(rest, /(^|[^A-Za-z0-9_])(bash|sh|source|[.])[ \t]+"?[$][{]?(SCRIPT_DIR|REPO_ROOT|repo_root)[}]?\/[A-Za-z0-9_.\/-]*[.]sh"?/)) {
+        tok = substr(rest, RSTART, RLENGTH)
+        rest = substr(rest, RSTART + RLENGTH)
+        tail = rest
+        sub(/^[ \t]*/, "", tail)
+        # Anything other than end-of-command means an argument follows.
+        if (tail != "" && tail !~ /^([;)&|<>#]|2>)/) continue
+        sub(/^[^$]*/, "", tok)
+        gsub(/"/, "", tok)
+        print tok
+      }
+    }
+  ' "$file" | LC_ALL=C sort -u
+}
+
 KNOWN_COMMANDS="yq jq git python3 node npx shellcheck shfmt sha256sum shasum perl"
 
 extract_commands() {
@@ -245,6 +279,7 @@ declare -A FILE_DATA=()
 declare -A FILE_COMMANDS=()
 declare -A FILE_UNRESOLVED=()
 declare -A FILE_TREE=()
+declare -A FILE_BARE=()
 declare -A FILE_SCANNED=()
 
 scan_file() {
@@ -271,6 +306,14 @@ scan_file() {
   FILE_COMMANDS["$path"]="$(extract_commands "$abs" | LC_ALL=C sort -u)"
   if has_unresolved_dispatch "$abs"; then FILE_UNRESOLVED["$path"]=1; else FILE_UNRESOLVED["$path"]=0; fi
   if reads_working_tree "$abs"; then FILE_TREE["$path"]=1; else FILE_TREE["$path"]=0; fi
+
+  local bare="" invoked
+  while IFS= read -r invoked; do
+    [[ -n "$invoked" ]] || continue
+    norm="$(normalize_ref "$invoked")"
+    [[ -n "$norm" ]] && bare+="$norm"$'\n'
+  done < <(bare_invoked_scripts "$abs")
+  FILE_BARE["$path"]="$bare"
 }
 
 # --- closure walk ------------------------------------------------------------
@@ -288,6 +331,7 @@ walk_closure() {
   CLOSURE_UNRESOLVED=0
   CLOSURE_TREE=0
   local -A seen=()
+  local closure_bare=$'\n'
   local queue=("$root") current next
   while [[ "${#queue[@]}" -gt 0 ]]; do
     current="${queue[0]}"
@@ -299,13 +343,41 @@ walk_closure() {
     [[ -n "${FILE_DATA[$current]:-}" ]] && CLOSURE_DATA+="${FILE_DATA[$current]}"$'\n'
     [[ -n "${FILE_COMMANDS[$current]:-}" ]] && CLOSURE_COMMANDS+="${FILE_COMMANDS[$current]}"$'\n'
     [[ "${FILE_UNRESOLVED[$current]:-0}" == "1" ]] && CLOSURE_UNRESOLVED=1
-    [[ "${FILE_TREE[$current]:-0}" == "1" ]] && CLOSURE_TREE=1
+    [[ -n "${FILE_BARE[$current]:-}" ]] && closure_bare+="${FILE_BARE[$current]}"
     while IFS= read -r next; do
       [[ -n "$next" ]] || continue
       [[ -n "${seen[$next]:-}" ]] && continue
       queue+=("$next")
     done <<<"${FILE_SCRIPTS[$current]:-}"
   done
+
+  # Tree-reading is a property of the CHECK, not of everything the check can
+  # reach. OR-ing the flag across the whole closure marked 271 of 332 checks
+  # "inputs not enumerable" -- including selftests whose entire input set is two
+  # files -- purely because some guard they drive against a mktemp fixture can
+  # also walk a repository when pointed at one. An unknown closure is affected
+  # by every change, so `--changed-only` degraded to the full suite: an
+  # over-approximation that made the selection worthless rather than safe.
+  #
+  # The tree enters a check's inputs when the CHECK ROOT itself reads it, or
+  # when the root's closure invokes a tree-reading script BARE, letting that
+  # script resolve its own repo root. Both are recorded; a dependency handed an
+  # explicit fixture path is not.
+  [[ "${FILE_TREE[$root]:-0}" == "1" ]] && CLOSURE_TREE=1
+  if [[ "$CLOSURE_TREE" -eq 0 ]]; then
+    local member
+    while IFS= read -r member; do
+      [[ -n "$member" ]] || continue
+      [[ "${FILE_TREE[$member]:-0}" == "1" ]] || continue
+      case "$closure_bare" in
+        *$'\n'"$member"$'\n'*)
+          CLOSURE_TREE=1
+          break
+          ;;
+      esac
+    done <<<"$CLOSURE_SCRIPTS"
+  fi
+
   CLOSURE_SCRIPTS="$(printf '%s' "$CLOSURE_SCRIPTS" | LC_ALL=C sort -u)"
   CLOSURE_DATA="$(printf '%s' "$CLOSURE_DATA" | LC_ALL=C sort -u)"
   CLOSURE_COMMANDS="$(printf '%s' "$CLOSURE_COMMANDS" | LC_ALL=C sort -u)"

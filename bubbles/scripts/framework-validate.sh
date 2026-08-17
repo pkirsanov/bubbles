@@ -878,7 +878,11 @@ run_check "Usage-adapter contract selftest (IMP-039 / COST-4)" bash "$SCRIPT_DIR
 run_check "Test-inventory adapter contract selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/test-inventory-adapter-contract-selftest.sh"
 run_check "Scenario linked-test resolution selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-test-resolve-selftest.sh"
 run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/report-sections-selftest.sh"
-run_check "Bug-packet contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/bug-packet-selftest.sh"
+# Framework-source-only: check P3 requires the repo-root BUGS.md, which the
+# release manifest classifies as neither managed nor source-only-shipped, so it
+# does not exist in an installed tree. Scheduling it as portable made every
+# downstream install fail a check about a file it can never have.
+run_check_self_only "Bug-packet contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/bug-packet-selftest.sh"
 # IMP-047 S-E. These four cover the apparatus that decides what a run may SKIP:
 # the derived closure map, its consumer, the debt ledger that records every
 # deferral, and the batch executor that settles them. Each one removes work from
