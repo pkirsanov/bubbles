@@ -38,7 +38,17 @@ set -uo pipefail
 #   S18 rapid-tool-delivery + delivered_fast                      → exit 0  (rapid delivery alias)
 #   S19 unknown mode + delivered_pending_activation               → exit 1  (no permissive alias fallback)
 #   S20 product-to-planning + done + validate                     → exit 1  (incoherent non-delivery done)
-#
+#   S21 --mode structural; required feature in_progress           → exit 0  (delivery NOT asserted)
+#   S22 --mode structural; required feature BLOCKED               → exit 0  (delivery NOT asserted)
+#   S23 --mode structural; malformed annotation                   → exit 1  (ADVERSARIAL: teeth)
+#   S24 --mode structural; required feature spec dir MISSING      → exit 1  (ADVERSARIAL: teeth)
+#   S25 --mode bogus                                              → exit 2  (closed vocabulary)
+#   S26 implemented assurance over planning-only terminal         → exit 1
+#   S27 implemented assurance over delivered implementation       → exit 0
+#   S28 structural mode with planning-only assurance              → exit 0
+#   S29 later phase with open prerequisite                        → exit 1
+#   S30 later phase with delivered prerequisite                   → exit 0
+#   S31 structural mode with open prerequisite                    → exit 0
 # Reference: improvements/IMP-006-release-delivery-reconciliation.md
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -96,6 +106,24 @@ mk_features() {
   } >"$dir/features.md"
 }
 
+# mk_features_dep <repo> <phase> <dependsOn-csv> [annotation ...]
+# mk_features emits no dependsOn, which the prerequisite cases require.
+mk_features_dep() {
+  local repo="$1" phase="$2" depends="$3"
+  shift 3
+  local dir="$repo/docs/releases/$phase"
+  mkdir -p "$dir"
+  {
+    echo "# $phase — features"
+    echo ""
+    echo "<!-- bubbles:reconciled-packet schemaVersion=1 phase=$phase dependsOn=$depends -->"
+    local ann
+    for ann in "$@"; do
+      echo "<!-- $ann -->"
+    done
+  } >"$dir/features.md"
+}
+
 # mk_spec <repo> <specpath> <status> [mode=<workflow-mode>] [phase ...]
 # Defaults to full-delivery so all existing scenarios retain their meaning.
 mk_spec() {
@@ -133,6 +161,26 @@ EOF
 run_guard() {
   RUN_OUTPUT="$(bash "$GUARD" "$@" 2>&1)"
   RC=$?
+}
+
+# mk_spec_mode <repo> <specpath> <status> <workflowMode> [phase ...]
+# Needed because mk_spec hardcodes full-delivery, and the planning-only
+# assurance cases turn on the spec's MODE, not just its status.
+mk_spec_mode() {
+  local repo="$1" specpath="$2" status="$3" wfmode="$4"
+  shift 4
+  local dir="$repo/$specpath"
+  mkdir -p "$dir"
+  local phases_json="[]"
+  if [[ $# -gt 0 ]]; then
+    local acc=""
+    local p
+    for p in "$@"; do acc="$acc\"$p\","; done
+    phases_json="[${acc%,}]"
+  fi
+  cat >"$dir/state.json" <<EOF
+{ "version": 3, "specId": "$(basename "$specpath")", "status": "$status", "workflowMode": "$wfmode", "completedPhases": $phases_json }
+EOF
 }
 
 expect_rc() {
@@ -319,6 +367,120 @@ mk_spec "$R20" specs/088-incoherent "done" mode=product-to-planning validate
 run_guard --repo-root "$R20" --phase mvp
 expect_rc 1 "S20 product-to-planning/done is incoherent, not delivered"
 expect_output_contains "does NOT represent delivered implementation (mode 'product-to-planning')" "S20 diagnostic rejects non-delivery mode even at literal done"
+
+# ----------------------------------------------------------------------------
+# Structural mode (G101 R2 split). Structural validates packet GRAMMAR without
+# asserting that a bound spec is finished, so general framework validation can
+# pass while planned delivery stays honestly red. S23/S24 are the adversarial
+# half: if structural ever stopped enforcing grammar it would become the exact
+# silent no-op this guard exists to refuse, and both cases would flip to 0.
+
+# S21 — structural, required feature in_progress → 0 (delivery mode gives 1; cf. S3)
+R21="$(new_repo s21)"
+mk_features "$R21" mvp true \
+  "bubbles:feature id=wip spec=specs/090-wip delivery=required"
+mk_spec "$R21" specs/090-wip "in_progress" plan design
+run_guard --repo-root "$R21" --phase mvp --mode structural
+expect_rc 0 "S21 structural: in_progress required feature does not fail (delivery not asserted)"
+
+# S22 — structural, required feature BLOCKED → 0 (delivery mode gives 1; cf. S9)
+R22="$(new_repo s22)"
+mk_features "$R22" mvp true \
+  "bubbles:feature id=blocked-feat spec=specs/091-blocked delivery=required"
+mk_spec_blocked "$R22" specs/091-blocked "operator-actionable credential rotation"
+run_guard --repo-root "$R22" --phase mvp --mode structural
+expect_rc 0 "S22 structural: blocked required feature does not fail (delivery not asserted)"
+
+# S23 — ADVERSARIAL. structural MUST still refuse a malformed annotation (cf. S11).
+R23="$(new_repo s23)"
+mk_features "$R23" mvp true \
+  "bubbles:feature id=broken spec=specs/092-broken"
+mk_spec "$R23" specs/092-broken "done" plan design implement test validate
+run_guard --repo-root "$R23" --phase mvp --mode structural
+expect_rc 1 "S23 structural STILL refuses malformed annotation (teeth)"
+
+# S24 — ADVERSARIAL. structural MUST still refuse a promised-but-unspecced feature (cf. S2).
+R24="$(new_repo s24)"
+mk_features "$R24" mvp true \
+  "bubbles:feature id=ghost spec=specs/093-never-created delivery=required"
+run_guard --repo-root "$R24" --phase mvp --mode structural
+expect_rc 1 "S24 structural STILL refuses required feature with missing spec dir (teeth)"
+
+# S25 — closed mode vocabulary; an unknown mode is a usage error, never a silent pass.
+R25="$(new_repo s25)"
+mk_features "$R25" mvp true \
+  "bubbles:feature id=ok spec=specs/094-ok delivery=required"
+mk_spec "$R25" specs/094-ok "done" plan design implement test validate
+run_guard --repo-root "$R25" --phase mvp --mode bogus
+expect_rc 2 "S25 unknown --mode is a usage error"
+
+# ----------------------------------------------------------------------------
+# assurance=implemented must rest on a mode that actually implements.
+# These three cases are a set: S18 proves the refusal, S19 proves it is NOT a
+# blanket ban on assurance, and S20 proves it is classified as delivery rather
+# than grammar. Without S19 the check could be satisfied by refusing everything.
+
+# S26 — planning-only terminal + assurance=implemented → 1
+R26="$(new_repo s26)"
+mk_features "$R26" mvp true \
+  "bubbles:feature id=planned-only spec=specs/095-planning delivery=required assurance=implemented"
+mk_spec_mode "$R26" specs/095-planning "specs_hardened" "spec-scope-hardening" plan design validate
+run_guard --repo-root "$R26" --phase mvp
+expect_rc 1 "S26 assurance=implemented over a planning-only terminal is refused"
+
+# S27 — real delivered implementation carrying the same claim → 0
+R27="$(new_repo s27)"
+mk_features "$R27" mvp true \
+  "bubbles:feature id=really-built spec=specs/096-built delivery=required assurance=implemented"
+mk_spec "$R27" specs/096-built "done" plan design implement test validate
+run_guard --repo-root "$R27" --phase mvp
+expect_rc 0 "S27 assurance=implemented over a delivered implementation passes"
+
+# S28 — the same planning-only packet is a DELIVERY finding, not a grammar one
+R28="$(new_repo s28)"
+mk_features "$R28" mvp true \
+  "bubbles:feature id=planned-only spec=specs/097-planning delivery=required assurance=implemented"
+mk_spec_mode "$R28" specs/097-planning "specs_hardened" "spec-scope-hardening" plan design validate
+run_guard --repo-root "$R28" --phase mvp --mode structural
+expect_rc 0 "S28 structural does not fail planning-only assurance (delivery concern)"
+
+# ----------------------------------------------------------------------------
+# An OPEN PREREQUISITE blocks the requested phase. Also a set: S21 proves the
+# block, S22 proves it is not a blanket refusal of any phase that declares a
+# dependsOn, and S23 proves it is a delivery assertion rather than grammar.
+
+# S29 — later phase is asserted while its prerequisite is still open -> 1
+R29="$(new_repo s29)"
+mk_features "$R29" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R29" specs/100-foundation "in_progress" plan design
+mk_features_dep "$R29" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R29" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R29" --phase voyager
+expect_rc 1 "S29 open MVP prerequisite blocks a later phase"
+
+# S30 — same shape, prerequisite actually delivered -> 0
+R30="$(new_repo s30)"
+mk_features "$R30" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R30" specs/100-foundation "done" plan design implement test validate
+mk_features_dep "$R30" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R30" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R30" --phase voyager
+expect_rc 0 "S30 delivered prerequisite does not block the later phase"
+
+# S31 — the prerequisite check is a delivery assertion, not grammar -> 0
+R31="$(new_repo s31)"
+mk_features "$R31" mvp true \
+  "bubbles:feature id=foundation spec=specs/100-foundation delivery=required"
+mk_spec "$R31" specs/100-foundation "in_progress" plan design
+mk_features_dep "$R31" voyager mvp \
+  "bubbles:feature id=later spec=specs/101-later delivery=required"
+mk_spec "$R31" specs/101-later "done" plan design implement test validate
+run_guard --repo-root "$R31" --phase voyager --mode structural
+expect_rc 0 "S31 structural does not apply the prerequisite block"
 
 # ----------------------------------------------------------------------------
 echo ""

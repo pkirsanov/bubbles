@@ -166,7 +166,9 @@ if [[ "$MODE" == "seed" ]]; then
     printf '# To remove an entry, repoint the script at bubbles/registry/gates.yaml and\n'
     printf '# prove its output is byte-identical before and after.\n'
     printf '#\n'
-    printf '%s\n' "$discovered"
+    if [[ -n "$discovered" ]]; then
+      printf '%s\n' "$discovered"
+    fi
   } >"$INVENTORY"
   printf '%s: seeded %s reader(s) into %s\n' "$NAME" "$discovered_count" "${INVENTORY#"$REPO_ROOT"/}"
   exit 0

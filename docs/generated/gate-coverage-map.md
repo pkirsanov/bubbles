@@ -18,8 +18,8 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 
 ## Coverage Summary
 
-- Gates defined: **117**
-- Declared mechanically enforced (`guard-check:` / `script:` / `ci:`): **80**
+- Gates defined: **118**
+- Declared mechanically enforced (`guard-check:` / `script:` / `ci:`): **81**
 - Declared `mode-required` only (a mode requires it; no dedicated mechanical enforcer): **35**
 - Declared `behavioral:` (agent-behavior enforcement, by design): **1**
 - Declared `unbound` (NO enforcement surface — genuine coverage gap): **1** — G071
@@ -27,9 +27,9 @@ Detection is limited to these MECHANICAL surfaces. A gate with none of them may 
 Corroborating (grep-derived, advisory) numbers:
 
 - Referenced by ≥1 workflow mode: **65**
-- Not referenced by any mode: **52**
+- Not referenced by any mode: **53**
   - of those, referenced by state-transition-guard: **36**
-  - of those, referenced by a framework-validate script: **45**
+  - of those, referenced by a framework-validate script: **46**
   - of those, referenced in CI: **36**
 
 ## All Gates
@@ -125,7 +125,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G098 | observability_posture_declared_gate | `script:bubbles/scripts/observability-posture-guard-selftest.sh`, `script:bubbles/scripts/observability-posture-guard.sh` | 0 | Check 37 | 7 | guard |
 | G099 | observability_opt_out_freshness_gate | `script:bubbles/scripts/observability-opt-out-guard-selftest.sh`, `script:bubbles/scripts/observability-opt-out-guard.sh` | 0 | Check 38 | 10 | guard |
 | G100 | observability_slo_evidence_gate | `script:bubbles/scripts/observability-slo-guard-selftest.sh`, `script:bubbles/scripts/observability-slo-guard.sh` | 0 | Check 39 | 7 | guard |
-| G101 | release_delivery_reconciliation_gate | `script:bubbles/scripts/is-terminal-for-mode.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 7 | — |
+| G101 | release_delivery_reconciliation_gate | `script:bubbles/scripts/is-terminal-for-mode.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 8 | — |
 | G110 | release_train_discipline_gate | `script:bubbles/scripts/release-train-guard.sh` | 8 | — | 4 | — |
 | G111 | flag_default_off_on_other_trains_gate | `script:bubbles/scripts/release-train-guard.sh` | 5 | — | 2 | — |
 | G112 | backup_evidence_required_gate | `mode-required` | 2 | — | — | — |
@@ -153,6 +153,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G134 | goal_fidelity_gate | `script:bubbles/scripts/goal-fidelity-guard.sh`, `script:bubbles/scripts/goal-fidelity-guard-selftest.sh` | 0 | — | 4 | — |
 | G135 | autonomy_posture_gate | `script:bubbles/scripts/autonomy-posture-guard.sh`, `script:bubbles/scripts/autonomy-posture-guard-selftest.sh` | 0 | — | 3 | — |
 | G136 | human_acceptance_terminal_gate | `script:bubbles/scripts/guards/tail-delegated-gates.sh`, `script:bubbles/scripts/state-transition-guard-selftest.sh`, `script:tests/regression/test_35_human_acceptance_terminal.sh` | 0 | Check 43 | 2 | guard |
+| G137 | release_ladder_schema_gate | `script:bubbles/scripts/release-ladder-schema-guard.sh`, `script:bubbles/scripts/release-ladder-schema-guard-selftest.sh` | 0 | — | 3 | — |
 
 ## Gates Not Referenced By Any Mode
 
@@ -200,7 +201,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G098 | observability_posture_declared_gate | Check 37 | 7 | guard | cli.sh, framework-validate.sh, observability-check.sh, observability-opt-out-guard.sh, observability-posture-guard-selftest.sh, observability-posture-guard.sh, +1 more |
 | G099 | observability_opt_out_freshness_gate | Check 38 | 10 | guard | cli.sh, framework-validate.sh, gate-hit-log-selftest.sh, gate-id-grep-selftest.sh, observability-opt-out-guard-selftest.sh, observability-opt-out-guard.sh, +4 more |
 | G100 | observability_slo_evidence_gate | Check 39 | 7 | guard | framework-validate.sh, gate-bands-selftest.sh, gate-bands.sh, observability-check.sh, observability-slo-guard-selftest.sh, observability-slo-guard.sh, +1 more |
-| G101 | release_delivery_reconciliation_gate | — | 7 | — | adversarial-resolve.sh, framework-validate.sh, release-delivery-reconciliation-guard-selftest.sh, release-delivery-reconciliation-guard.sh, scaffold-gate-selftest.sh, scenario-compile-lint-selftest.sh, +1 more |
+| G101 | release_delivery_reconciliation_gate | — | 8 | — | adversarial-resolve.sh, framework-validate.sh, release-delivery-reconciliation-guard-selftest.sh, release-delivery-reconciliation-guard.sh, release-ladder-schema-guard.sh, scaffold-gate-selftest.sh, +2 more |
 | G126 | model_tier_floor_gate | — | 4 | — | framework-validate.sh, model-tier-advisory-selftest.sh, model-tier-advisory.sh, v5.2-selftest.sh |
 | G127 | capability_consumer_freshness_gate | — | 5 | — | capability-consumer-freshness-selftest.sh, capability-consumer-freshness.sh, capability-consumer-naming.sh, framework-validate.sh, scaffold-gate-selftest.sh |
 | G128 | session_cap_enforcement_gate | Check 40 | 8 | guard | framework-validate.sh, rapid-tool-delivery-mode-selftest.sh, risk-tier-resolve.sh, scaffold-gate-selftest.sh, scenario-test-resolve.sh, session-cap-guard-selftest.sh, +2 more |
@@ -212,4 +213,5 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G134 | goal_fidelity_gate | — | 4 | — | framework-validate.sh, goal-boundary-receipt-selftest.sh, goal-boundary-receipt.sh, goal-fidelity-guard.sh |
 | G135 | autonomy_posture_gate | — | 3 | — | autonomy-posture-guard-selftest.sh, autonomy-posture-guard.sh, framework-validate.sh |
 | G136 | human_acceptance_terminal_gate | Check 43 | 2 | guard | framework-validate.sh, state-transition-guard-selftest.sh |
+| G137 | release_ladder_schema_gate | — | 3 | — | framework-validate.sh, release-ladder-schema-guard-selftest.sh, release-ladder-schema-guard.sh |
 
