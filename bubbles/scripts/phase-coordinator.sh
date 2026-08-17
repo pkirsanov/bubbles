@@ -2,6 +2,7 @@
 # phase-coordinator.sh — the executable phase coordinator (IMP-047 S-C).
 #
 # Capability: occurrence-aware-phase-execution
+# Capability: impact-aware-validation-trace-contracts
 #
 # WHY THIS EXISTS
 # Phase relevance and test impact were registries that no executable consumed
@@ -63,6 +64,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAME="phase-coordinator"
 RELEVANCE="$SCRIPT_DIR/phase-relevance-resolve.sh"
+TEST_IMPACT="$SCRIPT_DIR/test-impact-plan.sh"
 SCENARIO_RESOLVER="$SCRIPT_DIR/scenario-state-resolve.sh"
 
 SPEC_DIR=""
@@ -255,7 +257,20 @@ for i in "${!OCCURRENCE_IDS[@]}"; do
     fi
   fi
 
-  if [[ "$relevance_verdict" == "skip" ]]; then
+  # TEST IMPACT drives ACTUAL execution here too (IMP-047 S-E, criterion 13).
+  # `test-impact-plan.sh` shipped with no production consumer at all: the ledger
+  # named `framework-validate.sh`, which only SCHEDULED its selftest. A resolver
+  # nothing executes is a claim, not a behaviour, so the coordinator consumes it
+  # for real. It is a no-op when a project declares no `testImpact` section, and
+  # it can only ADD work: a full-suite requirement OVERRIDES a relevance skip and
+  # never creates one, because an impact map must not be able to delete a phase.
+  impact_full_suite="false"
+  if [[ -f "$TEST_IMPACT" && -n "$CHANGED_LIST" ]]; then
+    impact_out="$(bash "$TEST_IMPACT" --changed-file-list "$CHANGED_LIST" --format json 2>/dev/null || true)"
+    [[ "$impact_out" == *'"fullSuiteRequired": true'* ]] && impact_full_suite="true"
+  fi
+
+  if [[ "$relevance_verdict" == "skip" && "$impact_full_suite" != "true" ]]; then
     RESULT_IDS+=("$occ")
     RESULT_OUTCOMES+=("SKIPPED_IRRELEVANT")
     RESULT_REASONS+=("${relevance_reason:-not relevant to this scope}")

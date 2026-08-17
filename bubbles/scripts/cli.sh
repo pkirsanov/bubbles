@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Capability: observability-posture-and-slo-gates,
 # Capability: session-aware-runtime-coordination, supported-interop-apply
+# Capability: dod-gherkin-fidelity-threshold
 # ────────────────────────────────────────────────────────────────────
 # bubbles — Lightweight CLI for Bubbles governance queries and script dispatch
 # ────────────────────────────────────────────────────────────────────
