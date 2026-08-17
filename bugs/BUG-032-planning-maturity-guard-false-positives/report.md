@@ -1466,3 +1466,294 @@ allowed paths:
 No additional generator output path is approved by this note. A later Goal
 Contract revision may add one only after canonical tooling proves that the path
 necessarily changes and that evidence is recorded before the revision.
+
+## Contract Reconciliation Window 2026-08-17
+
+**Agent:** `bubbles.implement`
+**Phase:** implement
+**Outcome:** `route_required`
+
+This window executed the approved documentation reconciliation for Scope 4 and
+re-verified both focused regression suites against the current tree. It did NOT
+certify BUG-032 and did NOT write any terminal status. Certification remains
+`bubbles.validate`-owned and the packet remains `in_progress`.
+
+Two Scope 4 obligations were deliberately NOT attempted in this window because
+the operator withheld the machine-wide validation lock for this session:
+`framework-validate` and `release-check`. Their DoD items remain `[ ]`.
+
+### Repository Authority
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/repository-binding.sh preflight --request-class FRAMEWORK --repository-root /Users/pkirsanov/Projects/bubbles ...`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+REPOSITORY PREFLIGHT CONFIRMED repository=bubbles root=/Users/pkirsanov/Projects/bubbles source=explicit-repositoryRoot affinity=confirmed
+PREFLIGHT_COMMITTED decision=rb:vscode-5b197d35a890c4495645d045edd107a8:33 revision=33 repository=bubbles root=/Users/pkirsanov/Projects/bubbles
+```
+
+### Packet Route Verdict
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/micro-fix-admission.sh bugs/BUG-032-planning-maturity-guard-false-positives`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+[micro-fix-admission] bugs/BUG-032-planning-maturity-guard-false-positives answers no admission condition - it uses the full bug packet.
+MICROFIX_EXIT=0
+```
+
+BUG-032 is NOT admissible to the IMP-047 S-D compact micro-fix route. The full
+bug packet stands, with no override flag involved.
+
+### Focused Regression Re-Verification
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/evidence-capture.sh --label "BUG-032 state-transition-guard selftest" -- bash bubbles/scripts/state-transition-guard-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-032 state-transition-guard selftest
+$ bash bubbles/scripts/state-transition-guard-selftest.sh
+exit: 0
+lines: 368
+sha256: 70319f10240d5e98750036079a8e75e636149e943b019030112e6006cba95dc1
+----------------------------------------
+state-transition-guard selftest passed.
+STG_SELFTEST_CAPTURE_EXIT=0
+```
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+  PASS: S12 required feature delivered_prototype is refused (prototype never deployable) (rc=1)
+  PASS: S13 product-to-planning/specs_hardened is not delivered (rc=1)
+  PASS: S13 diagnostic names planning mode as non-delivery
+  PASS: S14 validate-only/validated is not delivered (rc=1)
+  PASS: S15 docs-only/docs_updated is not delivered (rc=1)
+  PASS: S16 full-delivery/done remains delivered (rc=0)
+  PASS: S17 dark-launch-shipped/pending-activation remains delivered (rc=0)
+  PASS: S18 rapid-tool-delivery/delivered_fast remains delivered (rc=0)
+  PASS: S19 unknown mode gains no pending-activation fallback (rc=1)
+  PASS: S20 product-to-planning/done is incoherent, not delivered (rc=1)
+  PASS: S26 assurance=implemented over a planning-only terminal is refused (rc=1)
+  PASS: S27 assurance=implemented over a delivered implementation passes (rc=0)
+
+release-delivery-reconciliation-guard selftest: 38 passed, 0 failed
+G101_SELFTEST_EXIT=0
+```
+
+### Code Diff Evidence
+
+The D1-D4 production repairs landed on `main` in commit `0531189`. This window
+added no guard-logic change; it changed only contract documentation and the
+canonical derived surfaces.
+
+**Phase:** implement
+**Command:** `git show --stat --oneline 0531189`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+0531189 feat(guard): land the in-flight planning-maturity and reconciliation work
+ bubbles/scripts/guards/planning-checks.sh          |    8 +-
+ ...lease-delivery-reconciliation-guard-selftest.sh |   99 +-
+ .../release-delivery-reconciliation-guard.sh       |   77 +-
+ bubbles/scripts/state-transition-guard-selftest.sh |  319 ++++-
+ bubbles/scripts/state-transition-guard.sh          |  177 ++-
+```
+
+**Phase:** implement
+**Command:** `git diff --stat`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+ BUGS.md                                   | 46 +++++++++++++++++++++++++++----
+ agents/bubbles.goal.agent.md              |  5 ++--
+ agents/bubbles.super.agent.md             |  2 +-
+ agents/bubbles_shared/quality-gates.md    |  2 +-
+ agents/bubbles_shared/scenario-compile.md |  8 ++++--
+ bubbles/cheatsheet/vocabulary.json        |  2 +-
+ bubbles/registry/gates.yaml               |  8 +++---
+ bubbles/release-manifest.json             | 34 +++++++++++++++--------
+ docs/CHEATSHEET.md                        |  2 +-
+ docs/its-not-rocket-appliances.html       |  2 +-
+ docs/recipes/release-planning.md          |  2 +-
+ 11 files changed, 81 insertions(+), 32 deletions(-)
+```
+
+The two `docs/` entries and `bubbles/release-manifest.json` were produced by
+`generate-cheatsheet.sh` and `generate-release-manifest.sh`; no generated file
+was hand-edited, and no `GENERATED:` block inside `gates.yaml` was touched.
+
+### Derived-Surface Freshness
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/regen-derived.sh --check-only` (after `generate-release-manifest.sh`)
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+Verifying derived-artifact freshness...
+==> verifying fresh: framework stats
+Framework stats are current: 41 Agents · 118 Gates · 61 Workflow Modes · 30 Phases (v7.28.0)
+==> verifying fresh: cheatsheet
+==> verifying fresh: capability-ledger docs
+Capability ledger docs are current: 23 shipped, 3 partial, 0 proposed
+==> verifying fresh: release manifest
+Release manifest is current: 7.28.0 (905 managed files)
+regen-derived: all derived artifacts are fresh.
+REGEN_RECHECK_EXIT=0
+```
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/generate-gate-enforcement.sh --check` and `bash bubbles/scripts/generate-report-template.sh --check`
+**Exit Code:** 0 and 0
+**Claim Source:** executed
+
+```text
+generate-gate-enforcement: block is current (118 gates: blocking 112, unknown 6)
+GATE_ENFORCEMENT_CHECK_EXIT=0
+[generate-report-template] OK — feature-templates.md report block is in sync
+REPORT_TEMPLATE_CHECK_EXIT=0
+```
+
+### Packet And Repository Lints
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/artifact-lint.sh bugs/BUG-032-planning-maturity-guard-false-positives`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+✅ uservalidation separates automation readiness from human acceptance
+✅ All checked DoD items in scopes.md have evidence blocks
+✅ No unfilled evidence template placeholders in scopes.md
+✅ No unfilled evidence template placeholders in report.md
+Artifact lint PASSED.
+ARTIFACT_LINT_EXIT=0
+```
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/framework-health-evidence-lint.sh`; `bash bubbles/scripts/management-truth-lint.sh`; `git diff --check`
+**Exit Code:** 0, 0, 0
+**Claim Source:** executed
+
+```text
+[framework-health-evidence-lint] OK — 1 proposal(s) satisfy G125
+FH_EVIDENCE_LINT_EXIT=0
+[management-truth-lint] OK — recipe catalog, adoption-profile help, documented counts, managed-doc sections, and improvement-index rows match the live inventory
+MGMT_TRUTH_LINT_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+```
+
+### Registry-Bound State Guard Verdict
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/state-transition-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives`
+**Exit Code:** 1
+**Claim Source:** executed
+
+```text
+🔴 TRANSITION BLOCKED: 20 failure(s), 1 warning(s)
+
+state.json status MUST NOT be set to 'done'.
+Fix ALL blocking failures above before attempting promotion.
+
+BEGIN TRANSITION_GUARD_RESULT_V1
+schemaVersion: transition-guard-result/v1
+workflowMode: bugfix-fastlane
+auditProfile: delivery-completion-v1
+targetStatus: done
+contractDigest: sha256:aa91472c047d3d985d38c1d308feb1e6081955b2aa553816deb5987d9cdc449f
+targetRevision: sha256:66947ed7c27feae811e0a5e49b23af98d69292fc78d0b61538b9f4a430a1eaf1
+applicableCheckClasses: [universal,mode-required,delivery-completion]
+notApplicableChecks: []
+passedGateIds: [G057,G040,G051,G068,G082,G083,G084,G128,G085,G086,G091,G087,G093,G088,G089,G092,G090,G094,G095,G097,G098,G099,G100,G130,G131]
+failedGateIds: [G055,G060,G022,G053,G027,G136]
+failedChecks: [Check-4-completion,Check-5-all-done]
+blockingCode: DELIVERY_COMPLETION_FAILED
+parentExpandedPhases: 0
+failureCount: 20
+exitStatus: 1
+verdict: FAIL
+END TRANSITION_GUARD_RESULT_V1
+```
+
+The guard refuses. Its verdict is accepted as written; no artifact was edited to
+make the refusal disappear, and `state.json` was not touched. The failure count
+fell from 21 to 20 and `G041` cleared, but the transition is still blocked.
+
+Adding the `### Code Diff Evidence` section above cleared `G053`. The guard was
+re-run afterwards and still refuses.
+
+**Phase:** implement
+**Command:** `bash bubbles/scripts/evidence-capture.sh --label "BUG-032 final state transition guard" -- bash bubbles/scripts/state-transition-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives`
+**Exit Code:** 1
+**Claim Source:** executed
+
+```text
+# BUG-032 final state transition guard
+$ bash bubbles/scripts/state-transition-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives
+exit: 1
+lines: 400
+sha256: 67322f1f42ff4f9c5309ebc66fe6aa2e05c9a67e4dcfc6f7f376582b1b584aff
+BEGIN TRANSITION_GUARD_RESULT_V1
+schemaVersion: transition-guard-result/v1
+workflowMode: bugfix-fastlane
+auditProfile: delivery-completion-v1
+targetStatus: done
+contractDigest: sha256:aa91472c047d3d985d38c1d308feb1e6081955b2aa553816deb5987d9cdc449f
+targetRevision: sha256:f89036e75cee65ad5635f5c56d52d95ff7a7e0e54bbe730315f836ab6f33370b
+applicableCheckClasses: [universal,mode-required,delivery-completion]
+notApplicableChecks: []
+passedGateIds: [G057,G053,G040,G051,G068,G082,G083,G084,G128,G085,G086,G091,G087,G093,G088,G089,G092,G090,G094,G095,G097,G098,G099,G100,G130,G131]
+failedGateIds: [G055,G060,G022,G027,G136]
+failedChecks: [Check-4-completion,Check-5-all-done]
+blockingCode: DELIVERY_COMPLETION_FAILED
+parentExpandedPhases: 0
+failureCount: 19
+exitStatus: 1
+verdict: FAIL
+END TRANSITION_GUARD_RESULT_V1
+```
+
+### Why BUG-032 Is Still Open
+
+| Blocker | Gate / check | Why this window could not close it |
+| --- | --- | --- |
+| Seven specialist phases absent (implement, regression, simplify, stabilize, security, validate, audit) | G022 | Each requires a real specialist run recorded as its own phase claim. The operator withheld subagent dispatch for this session, and hand-writing a phase claim is the exact fabrication G022 exists to detect. |
+| `completedScopes` is empty while phase claims exist | G027 | `certification.*` is `bubbles.validate`-owned. `bubbles.implement` may not mirror scopes into it. |
+| Scope 4 not started; 14 DoD items unchecked | Check-4, Check-5 | Two of them require captured `framework-validate` and `release-check` runs, which the operator withheld this session. `Focused state-transition and G101 selftests pass` is now true but belongs to Scope 4, which `bubbles.plan` owns and which cannot legitimately open while Scope 2 is unclosed. |
+| BUG-028 reconciliation DoD item | Check-4 | Its own text requires *validate-certified* BUG-032 evidence. BUG-032 is not certified, so checking it would be a false claim. `BUGS.md` records BUG-028 as still open and BUG-032 as implemented-but-uncertified. |
+| No RED→GREEN ordering in the certifying window | G060 | The original RED captures live in the earlier implementation window, not this one. Re-establishing ordering is an execution-window concern for the owning delivery run. |
+| Repository-global receipt clones in unrelated historical rows | Check 43 | The colliding receipts belong to BUG-012 and BUG-018 runtime history outside this packet's allowed paths. This is the surface BUG-033 refines; it is not editable from inside BUG-032. |
+| `policySnapshot` provenance | G055 | Provenance vocabulary is `bubbles.plan`-owned policy metadata, not an execution field. |
+| No `## Human Acceptance Record` in `uservalidation.md` | G136 | The gate's own diagnostic says checking a box on the author's behalf fabricates the acceptance. A human must record it. |
+
+`G053` and `G041` are no longer in the failing set. The failure count fell from
+21 (the 2026-08-15 validate run) to 19.
+
+### Residual Out-Of-Boundary Finding
+
+`skills/bubbles-quality-gates-catalog/SKILL.md` still publishes the superseded
+`TERMINAL + VALIDATE-certified` G101 shorthand. That path is NOT in the Goal
+Contract revision 2 `workBoundary.allowedPaths`, so it was left unmodified. It
+needs a further planning-owned boundary revision before it can be corrected.
+
+### Ownership Routing
+
+| Finding | Required owner |
+| --- | --- |
+| Scope 2 closure, Scope 4 opening, `policySnapshot` provenance, and the eleventh-surface boundary revision | `bubbles.plan` |
+| Seven missing specialist phases and the RED→GREEN certifying window | the owning delivery workflow |
+| Human acceptance record | the human operator |
+| `certification.*`, `completedScopes`, and any terminal status | `bubbles.validate` |
