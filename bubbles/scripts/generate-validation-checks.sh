@@ -388,7 +388,7 @@ emit_registry() {
     [[ "$CLOSURE_UNRESOLVED" == "1" ]] && complete="false"
     [[ "$CLOSURE_TREE" == "1" ]] && complete="false"
 
-    printf '  %s:\n' "$id"
+    printf '%s\n' "  $id:"
     printf '    script: %s\n' "$script"
     printf '    label: "%s"\n' "$label"
     printf '    closureComplete: %s\n' "$complete"
@@ -442,7 +442,7 @@ emit_registry() {
     [[ "$CLOSURE_UNRESOLVED" == "1" ]] && sweep_complete="false"
     [[ "$CLOSURE_TREE" == "1" ]] && sweep_complete="false"
 
-    printf '  %s:\n' "$id"
+    printf '%s\n' "  $id:"
     printf '    script: %s\n' "$script"
     printf '    label: "Discovered selftest: %s"\n' "$base"
     printf '    closureComplete: %s\n' "$sweep_complete"

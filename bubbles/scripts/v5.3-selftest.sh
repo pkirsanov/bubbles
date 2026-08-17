@@ -28,6 +28,27 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# shellcheck source=guard-lib.sh
+source "$SCRIPT_DIR/guard-lib.sh"
+
+# Wall-clock bound for the nested downstream framework-validate run (T3). A
+# hang here used to be indistinguishable from slow progress; the bound turns it
+# into a LOUD failure. It is a ceiling, not a budget: it exists to convert a
+# HANG into a failure, NOT to police performance. Do not tighten it to make the
+# suite feel fast -- a bound below the healthy duration produces FALSE failures,
+# and it fails twice, because a truncated log also loses the SKIP lines T3 scans
+# for.
+#
+# Calibrated against measurement, not guesswork. At the previous 1200s the
+# nested run was still making normal forward progress when it was cut off (6,526
+# log lines, log mtime current, real CPU) -- 1200s was inside the healthy
+# duration, so it failed healthy runs. Downstream mode skips the
+# framework-source-only selftests and so runs shorter than the source-mode run
+# (which needs ~22 minutes just to REACH this section), but it is still on the
+# order of 25-35 minutes on a developer host. 3600s clears that with headroom
+# while still catching a true hang in bounded time.
+downstream_validate_timeout_seconds="${BUBBLES_V53_DOWNSTREAM_VALIDATE_TIMEOUT_SECONDS:-3600}"
+
 failures=0
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1" >&2; failures=$((failures + 1)); }
@@ -36,7 +57,8 @@ fail() { echo "FAIL: $1" >&2; failures=$((failures + 1)); }
 if [[ -f "$ROOT_DIR/install.sh" && -f "$ROOT_DIR/VERSION" ]]; then
   # Window must clear any stderr preamble (macOS emits a 3-line flock-absent NOTE
   # before the banner); head still SIGPIPEs the run early so this stays cheap.
-  src_out="$(bash "$SCRIPT_DIR/framework-validate.sh" 2>&1 | head -30 || true)"
+  # stdin is /dev/null so a nested run can never block waiting on input.
+  src_out="$(bash "$SCRIPT_DIR/framework-validate.sh" </dev/null 2>&1 | head -30 || true)"
   if grep -q "Install mode: source" <<<"$src_out"; then
     pass "T2: framework-validate reports install-mode=source from framework repo"
   else
@@ -99,7 +121,7 @@ done < <(
 )
 
 # --- T1: downstream-mode detection ---
-ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1 | head -30 || true)"
+ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" </dev/null 2>&1 | head -30 || true)"
 if grep -q "Install mode: downstream" <<<"$ds_out"; then
   pass "T1: framework-validate reports install-mode=downstream from a real installed tree"
 else
@@ -112,8 +134,26 @@ fi
 # this asserted only that the SKIP lines were printed. A downstream install
 # whose validation FAILED would still have satisfied it. Capture the real code
 # and require zero: an install that cannot validate itself is not installed.
+#
+# The capture MUST NOT be a command substitution. `$(...)` reads its pipe until
+# EOF, and EOF does not arrive while ANY descendant of the nested run still
+# holds the write end -- so a single lingering child wedged the whole suite
+# forever with no output and no CPU. T1/T2 above survive only because `head`
+# SIGPIPEs the run early; T3 captures everything and had nothing to cap it.
+# A temp file has no reader to starve, and `</dev/null` removes the second
+# blocking surface (a nested command waiting on input that never comes).
+# bubbles_run_with_timeout is the backstop: a future hang FAILS LOUD at the
+# bound instead of hanging. 124 is a failure here, never a skip or a pass.
 ds_rc=0
-ds_full="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" 2>&1)" || ds_rc=$?
+ds_log="$(mktemp "${TMPDIR:-/tmp}/bubbles-v5.3-downstream.XXXXXX")"
+trap 'rm -rf "$tmp_root"; rm -f "$ds_log"' EXIT INT TERM
+bubbles_run_with_timeout "$downstream_validate_timeout_seconds" \
+  bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" \
+  >"$ds_log" 2>&1 </dev/null || ds_rc=$?
+ds_full="$(cat "$ds_log")"
+if [[ $ds_rc -eq 124 ]]; then
+  fail "T3: downstream framework-validate did not finish within ${downstream_validate_timeout_seconds}s (timed out; treated as a failure, not a skip)"
+fi
 self_only_labels=(
   "Capability ledger selftest"
   "Capability freshness selftest"
@@ -208,7 +248,7 @@ fi
 # the ASSIGNMENT, which is always 0, so the rc half of the condition below was
 # inert. Same for T5.
 sr_rc=0
-sr_out="$(bash "$tmp_root/.github/bubbles/scripts/spec-review-handoff-selftest.sh" 2>&1)" || sr_rc=$?
+sr_out="$(bash "$tmp_root/.github/bubbles/scripts/spec-review-handoff-selftest.sh" </dev/null 2>&1)" || sr_rc=$?
 if [[ $sr_rc -eq 0 ]] && grep -q "spec-review-handoff-selftest: PASSED" <<<"$sr_out"; then
   pass "T4: spec-review-handoff-selftest passes under synthesized downstream tree"
 else
@@ -217,7 +257,7 @@ fi
 
 # --- T5: workflow-delegation-selftest passes under downstream tree ---
 wd_rc=0
-wd_out="$(bash "$tmp_root/.github/bubbles/scripts/workflow-delegation-selftest.sh" 2>&1)" || wd_rc=$?
+wd_out="$(bash "$tmp_root/.github/bubbles/scripts/workflow-delegation-selftest.sh" </dev/null 2>&1)" || wd_rc=$?
 if [[ $wd_rc -eq 0 ]] && grep -q "workflow-delegation selftest passed" <<<"$wd_out"; then
   pass "T5: workflow-delegation-selftest passes under synthesized downstream tree"
 else

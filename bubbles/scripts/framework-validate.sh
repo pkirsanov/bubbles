@@ -1602,6 +1602,7 @@ if [[ "$RECORD_DEBT" == "true" && "${#deferred_check_ids[@]}" -gt 0 ]]; then
     echo "LEDGER-WRITE-FAILED: $deferred_label — executing it now rather than deferring silently."
     eval "$deferred_cmd" || {
       echo "FAIL: $deferred_label (forced execution after a failed ledger write)"
+      bubbles_ci_annotate_failure "FAIL: $deferred_label (forced execution after a failed ledger write)"
       failures=$((failures + 1))
       failed_check_labels+=("$deferred_label")
     }
