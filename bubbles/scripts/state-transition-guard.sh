@@ -131,9 +131,22 @@ emit_transition_result() {
   local exit_status="$4"
   local gate_id
   local effective_passed_gate_ids=()
+  local observed_passed_gate_ids=()
+  local unevaluated_gate_ids=()
+
+  # IMP-047 S-A. Capture the gates a check ACTUALLY recorded before the blanket
+  # PASS sweep below credits every required id. The emitted passedGateIds list is
+  # unchanged, so existing readers see exactly what they saw before; telemetry
+  # gets the finer fact, which is the only place the difference matters.
+  for gate_id in ${passed_gate_ids[@]+"${passed_gate_ids[@]}"}; do
+    observed_passed_gate_ids+=("$gate_id")
+  done
 
   if [[ "$verdict" == "PASS" ]]; then
     for gate_id in ${transition_required_gate_ids[@]+"${transition_required_gate_ids[@]}"}; do
+      if ! list_contains "$gate_id" ${observed_passed_gate_ids[@]+"${observed_passed_gate_ids[@]}"}; then
+        unevaluated_gate_ids+=("$gate_id")
+      fi
       record_passed_gate "$gate_id"
     done
   fi
@@ -165,12 +178,20 @@ emit_transition_result() {
   # IMP-036 SCOPE-4: append-only gate-hit telemetry. Observes only; retires
   # nothing. The helper swallows its own failures so a read-only log directory
   # can never turn into a blocked commit.
-  local passed_str="" failed_str=""
-  for gate_id in ${effective_passed_gate_ids[@]+"${effective_passed_gate_ids[@]}"}; do
+  #
+  # IMP-047 S-A: firing and prevention are recorded as separate facts. A gate
+  # credited only by the PASS sweep above was never evaluated, so it is reported
+  # as not-evaluated rather than as a pass that never happened.
+  local passed_str="" failed_str="" not_evaluated_str=""
+  for gate_id in ${observed_passed_gate_ids[@]+"${observed_passed_gate_ids[@]}"}; do
+    list_contains "$gate_id" ${failed_gate_ids[@]+"${failed_gate_ids[@]}"} && continue
     passed_str+="$gate_id "
   done
   for gate_id in ${failed_gate_ids[@]+"${failed_gate_ids[@]}"}; do
     failed_str+="$gate_id "
+  done
+  for gate_id in ${unevaluated_gate_ids[@]+"${unevaluated_gate_ids[@]}"}; do
+    not_evaluated_str+="$gate_id "
   done
   if [[ -f "$SCRIPT_DIR/gate-hit-log.sh" ]]; then
     if ! declare -F bubbles_gate_hit_append >/dev/null 2>&1; then
@@ -187,6 +208,7 @@ emit_transition_result() {
         --exit-status "$exit_status" \
         --passed "$passed_str" \
         --failed "$failed_str" \
+        --not-evaluated "$not_evaluated_str" \
         --parent-expanded "${parent_expanded_phases:-0}" >/dev/null 2>&1 || true
     fi
   fi

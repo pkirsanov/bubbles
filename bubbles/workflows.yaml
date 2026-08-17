@@ -19,12 +19,6 @@ workflowExecutionPolicy:
 # generated copy of that registry until IMP-042 SCOPE-13 retired it. Every
 # consumer resolves the registry directly; nothing here defines a gate.
 #
-# The copy was removed once before and restored, because that scope's own
-# precondition — byte-equivalent queries for EVERY remaining reader — had been
-# asserted from a hand-built list rather than established. The inventory is now
-# computed and held by bubbles/scripts/gates-block-reader-lint.sh, which fails
-# when any script starts depending on a gate identifier that exists only here.
-#
 # GENERATED:GATE_BANDS_START — do not edit by hand; run bubbles/scripts/gate-bands.sh
 # Gate-ID bands: the framework RESERVES G001-G199 (currently G001-G016 plus G018-G029 plus G031-G038 plus G040-G044 plus G047-G048 plus G051-G053 plus G055-G061 plus G063-G064 plus G066-G095 plus G097-G101 plus G110-G137).
 # GENERATED:GATE_BANDS_END
