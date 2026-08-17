@@ -1248,6 +1248,30 @@ if [[ -x "$SCRIPT_DIR/agent-bundle-size-budget.sh" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# IMP-047 S-C — the RED-to-GREEN outcome engine.
+#
+# Enumerated rather than left to the discovery sweep below, because these four
+# carry the outcome model itself: every scenario state derived from receipts,
+# every substitution refused by name, tool-log evidence admitted on semantics
+# instead of token overlap, and phase work resumed by occurrence identity.
+# ---------------------------------------------------------------------------
+if [[ -f "$SCRIPT_DIR/scenario-state-resolve-selftest.sh" ]]; then
+  run_check "Scenario-state resolver selftest (IMP-047 S-C)" bash "$SCRIPT_DIR/scenario-state-resolve-selftest.sh"
+fi
+
+if [[ -f "$SCRIPT_DIR/receipt-identity-selftest.sh" ]]; then
+  run_check "Receipt identity selftest (IMP-047 S-C)" bash "$SCRIPT_DIR/receipt-identity-selftest.sh"
+fi
+
+if [[ -f "$SCRIPT_DIR/tool-log-semantic-admission-selftest.sh" ]]; then
+  run_check "Tool-log semantic admission selftest (IMP-047 S-C / AC13)" bash "$SCRIPT_DIR/tool-log-semantic-admission-selftest.sh"
+fi
+
+if [[ -f "$SCRIPT_DIR/phase-coordinator-selftest.sh" ]]; then
+  run_check "Phase coordinator selftest (IMP-047 S-C / AC8-AC12)" bash "$SCRIPT_DIR/phase-coordinator-selftest.sh"
+fi
+
+# ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #
 # Everything above is an ENUMERATED check: a human wired it by hand. That

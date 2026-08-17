@@ -1085,7 +1085,25 @@ fi
 echo ""
 
 # =============================================================================
-# CHECK 4: ALL DoD items must be checked [x] — ZERO unchecked allowed
+# CHECK 4: Completion basis
+#
+# IMP-047 S-C (AC5, AC7). There is ONE completion authority per spec, never two.
+#
+# A checkbox proves that somebody ticked a box. What certification needs to know
+# is whether the named scenario went RED and then GREEN on the SAME test with
+# the SAME negative control — the only shape that distinguishes "the change
+# worked" from "the test always passed". So when a spec carries a
+# scenario-manifest.json, the required SCENARIO STATES are the basis and the
+# checkbox count is NOT: the count is still reported, because an unchecked item
+# is useful information, but it no longer decides certification.
+#
+# The legacy checkbox basis survives ONLY where the replacement cannot apply —
+# a spec with no manifest. That is the migration rule from
+# bubbles/registry/scenario-states.yaml, not an escape hatch: adding a manifest
+# moves the spec onto the receipt basis permanently.
+#
+# Gate passes never advance a state (AC5): the resolver derives states from
+# receipts carrying a scenarioBinding, and a passing gate carries none.
 # =============================================================================
 echo "--- Check 4: DoD Completion (Zero Unchecked) ---"
 total_checked=0
@@ -1099,11 +1117,54 @@ total_dod=$((total_checked + total_unchecked))
 
 info "DoD items total: $total_dod (checked: $total_checked, unchecked: $total_unchecked)"
 
+scenario_basis="none"
+if [[ -f "$feature_dir/scenario-manifest.json" && -f "$SCRIPT_DIR/scenario-state-resolve.sh" ]]; then
+  # The basis applies only when the manifest declares a scenario the resolver
+  # can KEY — a canonical `id`. A manifest whose scenarios carry no id cannot be
+  # resolved at all, and refusing it would reject the spec on a schema
+  # technicality rather than on evidence. That case keeps the legacy basis, the
+  # same way a spec with no manifest does.
+  if MANIFEST="$feature_dir/scenario-manifest.json" python3 -c '
+import json, os, sys
+try:
+    data = json.load(open(os.environ["MANIFEST"], encoding="utf-8"))
+except Exception:
+    sys.exit(1)
+rows = data if isinstance(data, list) else (data.get("scenarios") or [])
+sys.exit(0 if any(isinstance(r, dict) and (r.get("id") or "").strip() for r in rows) else 1)
+' 2>/dev/null; then
+    scenario_basis="scenario-states"
+  fi
+fi
+
 if [[ "$total_dod" -eq 0 ]]; then
   record_failed_check Check-4-structure
   fail "Resolved scope artifacts have ZERO DoD checkbox items — cannot verify completion"
 elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
+  # A planning ceiling claims no delivery, so neither basis applies: there is no
+  # completion to verify, by either accounting.
   info "NOT_APPLICABLE: Check-4-completion — planning maturity permits unchecked implementation DoD"
+elif [[ "$scenario_basis" == "scenario-states" ]]; then
+  info "Completion basis: REQUIRED SCENARIO STATES (checkbox counts are reported, not decisive)"
+  scenario_rc=0
+  scenario_out="$(bash "$SCRIPT_DIR/scenario-state-resolve.sh" --spec-dir "$feature_dir" \
+    --require RED_VERIFIED --require IMPLEMENTED --require GREEN_TARGETED \
+    --require GREEN_LIVE --require REGRESSION_GREEN --require OBSERVED \
+    --certifiable 2>&1)" || scenario_rc=$?
+  if [[ "$scenario_rc" -eq 0 ]]; then
+    pass "Every required scenario state is receipt-derived for every applicable scenario"
+  elif [[ "$scenario_rc" -eq 2 ]]; then
+    record_failed_check Check-4-scenario-states
+    fail "Scenario-state resolution could not run for $feature_dir — completion cannot be verified"
+    printf '%s\n' "$scenario_out" | while IFS= read -r _line; do echo "   → $_line"; done
+  else
+    record_failed_check Check-4-scenario-states
+    fail "Required scenario states are NOT receipt-derived — certification refused"
+    printf '%s\n' "$scenario_out" | while IFS= read -r _line; do echo "   → $_line"; done
+  fi
+  if [[ "$total_unchecked" -gt 0 ]]; then
+    info "$total_unchecked unchecked DoD item(s) remain; reported for the operator, not counted as the completion basis"
+  fi
 elif [[ "$total_unchecked" -gt 0 ]]; then
   record_failed_check Check-4-completion
   fail "Resolved scope artifacts have $total_unchecked UNCHECKED DoD items — ALL must be [x] for 'done'"
@@ -1120,7 +1181,7 @@ elif [[ "$total_unchecked" -gt 0 ]]; then
     done < <(grep -E '^\- \[ \] ' "$scope_path" || true)
   done
 else
-  pass "All $total_checked DoD items are checked [x]"
+  pass "All $total_checked DoD items are checked [x] (legacy basis: no scenario-manifest.json)"
 fi
 echo ""
 
@@ -2578,16 +2639,30 @@ check9_advisory_count=0
 checked_without_evidence=0
 checked_with_evidence=0
 
-# v5.2 / F1: Tool-log primary evidence path. Returns 0 (covers DoD) when
-# the spec's tool-call log contains an entry whose `cmd` shares ≥2 distinct
-# alpha-tokens with the DoD line body AND `exitCode == 0`. Returns 1 otherwise.
+# IMP-047 S-C (AC13): tool-log SEMANTIC admission.
 #
-# Safe to call even when no log exists or python3 is unavailable (returns 1).
-# The decision is local — we do NOT mutate anti-fabrication policy:
-#   - Markdown evidence paths (cases 1-3) remain valid.
-#   - When neither markdown nor tool-log covers the item, fail (case 4 else).
+# WHAT THIS REPLACED, AND WHY
+# The previous rule admitted an exit-zero tool call when its command line shared
+# TWO non-stopword tokens with a checked DoD item. Two tokens is a coincidence,
+# not a proof: `npm run lint` and a DoD item about "lint the run-time config"
+# overlap on `lint` and `run` while proving nothing about each other. Lexical
+# coincidence presented as evidence is the exact fabrication shape the evidence
+# rules exist to stop, so the token path is REMOVED rather than kept alongside.
 #
-# Cheap matcher; v6 will replace with MCP query_tool_log RPC.
+# WHAT REPLACES IT
+# Five bindings, all required, from bubbles/registry/scenario-states.yaml:
+#   scenario  the DoD item POINTS AT a scenario (`Receipt: SCN-...`) and the
+#             receipt is filed under that same scenario. Intent, not accident.
+#   claim     the receipt's claim COVERS the DoD item: every content word of the
+#             item appears in the claim. Directional and total, so a two-word
+#             brush cannot satisfy it.
+#   command   the receipt records the literal command that ran.
+#   revision  the receipt cites the resolved source revision. Drift refuses,
+#             because a receipt proves what the tree WAS.
+#   outcome   exit zero, unless the item explicitly asserts an expected failure.
+#
+# Safe to call when no log exists or python3 is unavailable (returns 1). The
+# markdown evidence paths (cases 1-3) are untouched and remain valid.
 _tool_log_covers_dod_item() {
   local scope_dir="$1"
   local dod_line="$2"
@@ -2598,6 +2673,8 @@ _tool_log_covers_dod_item() {
   local log_path="$repo_root/.specify/runtime/tool-calls.jsonl"
   [[ -f "$log_path" ]] || return 1
   local schema_path="$SCRIPT_DIR/../schemas/tool-call.schema.json"
+  local source_revision
+  source_revision="$(git -C "$repo_root" rev-parse --verify HEAD 2>/dev/null || true)"
   local spec_slug
   spec_slug="$(basename "$(cd "$scope_dir" && (cd .. 2>/dev/null && pwd) || pwd)")"
   # If the scope_dir IS the spec dir (single-file mode), use its basename.
@@ -2605,27 +2682,44 @@ _tool_log_covers_dod_item() {
     spec_slug="$(basename "$scope_dir")"
   fi
   SCOPE_DIR="$scope_dir" SPEC_SLUG="$spec_slug" LOG_PATH="$log_path" DOD_LINE="$dod_line" \
-  SCHEMA_PATH="$schema_path" \
+  SCHEMA_PATH="$schema_path" SOURCE_REVISION="$source_revision" \
     python3 - <<'PY'
 import json, os, re, sys
 log_path = os.environ['LOG_PATH']
 spec_slug = os.environ['SPEC_SLUG']
 dod = os.environ['DOD_LINE']
+source_revision = os.environ.get('SOURCE_REVISION', '').strip()
 
-# Tokenize DoD body (lower, strip leading `- [x]`/`- [X]`, keep alpha-num/dot/slash/dash tokens).
-# IMP-102 SCOPE-1 fix #5: accept uppercase `[X]` identically to `[x]`.
 body = re.sub(r'^- \[[xX]\] ', '', dod)
+
+# SCENARIO BINDING, caller side. Without an explicit pointer there is no claim
+# of coverage to verify, and a guard that infers the pointer is back to guessing.
+pointer = re.search(r'receipt:\s*([A-Za-z][A-Za-z0-9_.-]*)', body, re.IGNORECASE)
+if not pointer:
+    sys.exit(1)
+wanted_scenario = pointer.group(1)
+
+# The claim must cover the ITEM, so the pointer and any evidence anchor are
+# removed first: they are addressing, not assertion.
+claim_subject = re.sub(r'(?:\u2192\s*)?receipt:\s*[A-Za-z][A-Za-z0-9_.-]*', ' ', body, flags=re.IGNORECASE)
+claim_subject = re.sub(r'(?:\u2192\s*)?evidence:\s*\S+', ' ', claim_subject, flags=re.IGNORECASE)
+
 toks_re = re.compile(r'[a-zA-Z][a-zA-Z0-9._/-]{2,}')
-STOP = {'the','and','for','with','this','that','from','into','have','test','tests','file','files','code','docs','doc'}
-dod_toks = {t.lower() for t in toks_re.findall(body)} - STOP
-if len(dod_toks) < 2:
+STOP = {'the', 'and', 'for', 'with', 'this', 'that', 'from', 'into', 'have',
+        'has', 'was', 'were', 'are', 'its', 'via', 'per', 'all', 'any', 'each'}
+
+def content(text):
+    return {t.lower() for t in toks_re.findall(text)} - STOP
+
+item_toks = content(claim_subject)
+if not item_toks:
     sys.exit(1)
 
-# IMP-102 SCOPE-1 fix #4b: authenticate each tool-log line against the
-# tool-call schema when jsonschema is importable. A line that does NOT validate
-# (e.g. a forged entry with unknown keys under additionalProperties:false) is
-# NON-matching. When jsonschema is NOT importable, skip validation gracefully
-# and fall back to the token match so honest offline flows are unaffected.
+# OUTCOME BINDING. An item that asserts an expected failure is proven by a
+# non-zero exit; treating both as "exit 0" would make the outcome unfalsifiable.
+expects_failure = bool(re.search(r'\b(fails?|failing|refus\w+|rejects?|blocked)\b',
+                                 claim_subject, re.IGNORECASE))
+
 _validator = None
 _schema_path = os.environ.get('SCHEMA_PATH', '')
 if _schema_path and os.path.isfile(_schema_path):
@@ -2646,24 +2740,51 @@ try:
                 d = json.loads(raw)
             except Exception:
                 continue
-            # IMP-102 SCOPE-1 fix #4b: a schema-invalid (e.g. forged) line is
-            # NON-matching when a validator is available.
+            # A schema-invalid (e.g. forged) line is NON-matching when a
+            # validator is available.
             if _validator is not None and next(_validator.iter_errors(d), None) is not None:
                 continue
-            # Match this spec. IMP-102 SCOPE-1 fix #6: an entry with an EMPTY
-            # spec names nothing — it MUST NOT bleed into every spec's evidence.
-            # Treat an empty spec as NON-matching (the entry must name its spec).
+            # An entry with an EMPTY spec names nothing and must not bleed into
+            # every spec's evidence.
             sf = (d.get('spec') or '').strip()
             if not sf:
                 continue
             if sf != spec_slug and not sf.startswith(spec_slug.split('-', 1)[0]):
                 continue
-            if d.get('exitCode') != 0:
+
+            binding = d.get('scenarioBinding')
+            if not isinstance(binding, dict):
                 continue
-            cmd = (d.get('cmd') or '').lower()
-            cmd_toks = {t.lower() for t in toks_re.findall(cmd)} - STOP
-            if len(dod_toks & cmd_toks) >= 2:
-                sys.exit(0)
+            if (binding.get('scenarioId') or '').strip() != wanted_scenario:
+                continue
+
+            # COMMAND BINDING.
+            if not (d.get('cmd') or '').strip():
+                continue
+
+            # SOURCE-REVISION BINDING. Drift invalidates the receipt.
+            rev = (binding.get('sourceRevision') or '').strip()
+            if not rev or (source_revision and rev != source_revision):
+                continue
+
+            # OUTCOME BINDING.
+            exit_code = d.get('exitCode')
+            if not isinstance(exit_code, int):
+                continue
+            if expects_failure:
+                if exit_code == 0:
+                    continue
+            elif exit_code != 0:
+                continue
+
+            # CLAIM BINDING. Total coverage, not partial overlap.
+            claim = (binding.get('claim') or '').strip()
+            if not claim:
+                continue
+            if item_toks - content(claim):
+                continue
+
+            sys.exit(0)
 except FileNotFoundError:
     sys.exit(1)
 sys.exit(1)
@@ -4188,10 +4309,24 @@ else
     # UNRELATED claim.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      # BUG-033 facet 2: unwrap every TRANSPARENT prefix, not just a bare
+      # leading `bash`/`sh`. A shell invoked with `-c`, an `env` prefix, and
+      # leading `VAR=value` assignments do not change WHICH program ran, so
+      # three ordinary spellings of one command must resolve to one family.
+      # Before this, `node -e x`, `env P=1 node -e x` and `zsh -c node -e x`
+      # resolved to `node`, `env` and `zsh`, and the group was refused as a
+      # multi-identity collision — the re-spelling case the rule above promises
+      # to tolerate. `bash -c x` was worse still: it stripped `bash` and left
+      # `-c`, so the family was a flag. The recursion is what makes composed
+      # prefixes (`env A=1 zsh -c ...`) collapse rather than half-collapse.
+      def strip_wrappers:
+        if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
+          then (if ((.[1] // "") == "-c") then (.[2:] | strip_wrappers) else (.[1:] | strip_wrappers) end)
+        elif ((.[0] // "") == "env") then (.[1:] | strip_wrappers)
+        elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*=")) then (.[1:] | strip_wrappers)
+        else . end;
       def cmd_parts:
-        ( . / " " | map(select(length > 0)) ) as $raw
-        | ( if (($raw[0] // "") == "bash") or (($raw[0] // "") == "sh")
-            then $raw[1:] else $raw end );
+        ( . / " " | map(select(length > 0)) ) | strip_wrappers;
       def command_family:
         cmd_parts as $t
         | ( ($t[0] // "") | split("/") | last ) as $exe
@@ -4248,7 +4383,15 @@ else
         | ($rows | map(.cmd | command_family)) as $families
         | ($rows | map(evidence_category)) as $categories
         | ($rows | map(.exitCode)) as $exits
-        | ($rows | map(target_identity)) as $targets
+        # BUG-033 facet 1: one target per command IDENTITY, not per RECEIPT.
+        # A validator is routinely re-run over one subject, so an honest log
+        # repeats that subject; measuring distinctness per receipt failed on
+        # SHAPE ALONE before any question of forgery was asked, and refused
+        # nine honest re-runs as forged evidence. Provenance distinctness below
+        # is still measured PER RECEIPT, so every receipt must still prove
+        # independent execution, and two identities sharing one target remain a
+        # refusal because the grouped list still carries a duplicate.
+        | ($rows | group_by(.cmd | cmd_identity) | map(.[0] | target_identity)) as $targets
         | ($rows | map(provenance_identity)) as $provenance
         | (($families | unique | length) == 1)
           and (($families[0] // "") != "")

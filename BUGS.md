@@ -2190,8 +2190,27 @@ script matches no category heuristic. That is conservative and was left alone �
 once the wrappers normalize, the receipts share one identity and the category
 never has to carry the decision.
 
+### Disposition — FIXED, packet opened (2026-08-17)
 
+Both facets are fixed in `bubbles/scripts/state-transition-guard.sh`. This entry
+is retained as the filing record; the working artifacts live in the full packet
+at `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/`.
 
+The packet form was resolved mechanically rather than chosen. The compact
+micro-fix packet is the DEFAULT route since IMP-047 S-D, and
+`bubbles/scripts/micro-fix-admission.sh` refused it here:
 
+```
+[micro-fix-admission] bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization fails admission (no-new-behavior no-cross-product-effect) - it escalates automatically to the full bug packet.
+[micro-fix-admission] Escalation is mechanical. There is no reviewer discretion and no override flag.
+```
 
+`no-new-behavior` fails because a refused transition becomes an accepted one,
+and `no-cross-product-effect` fails because the guard ships into every consuming
+repository.
 
+Regression surface: `bubbles/scripts/receipt-identity-selftest.sh` extracts the
+Check 43 jq program FROM THE GUARD SOURCE and drives it against six fixtures —
+one acceptance and one adversarial bound per facet, plus the BUG-007 and BUG-032
+pins. End-to-end cases run the whole guard in
+`bubbles/scripts/state-transition-guard-selftest.sh`.

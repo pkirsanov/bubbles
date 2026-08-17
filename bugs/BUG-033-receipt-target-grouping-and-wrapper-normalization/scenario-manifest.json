@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-033-receipt-target-grouping-and-wrapper-normalization",
+  "scenarios": [
+    {
+      "id": "SCN-B033-001",
+      "title": "Repeated honest re-runs are not cloned evidence",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Restore per-receipt target distinctness; the 9-re-run fixture is reported as one clone group.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-002",
+      "title": "Two identities over one target are still refused",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Drop the target-distinctness condition entirely; the single-target fixture stops being refused.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-003",
+      "title": "Wrapper spellings resolve to one command family",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Restore the single-token bash/sh strip; `bash -c node X` resolves to family `-c`.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-004",
+      "title": "Wrappers do not hide a genuine identity difference",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Strip the program token as well as the wrappers; cargo and npm collapse into one family and the clone stops being reported.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
+      }
+    }
+  ]
+}

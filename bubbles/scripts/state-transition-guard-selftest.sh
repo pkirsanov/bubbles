@@ -3846,6 +3846,98 @@ assert_log_contains "$bug032_receipt_ambiguous_log" \
   "Evidence receipt CLONE" \
   "BUG-032 Check 43 reports provenance-poor substantive collisions"
 
+# BUG-033: Check 43 accused honest re-runs of forgery through two independent
+# identity-normalization defects. Facet 1 measured target distinctness PER
+# RECEIPT, so a validator re-run over one subject failed on shape alone. Facet 2
+# unwrapped only a bare leading `bash`/`sh`, so one command spelled three
+# ordinary ways resolved to three different families. Each facet gets an
+# acceptance case AND an adversarial partner that must still refuse, because a
+# relaxation with no tested bound is a hole.
+echo "Running BUG-033 Check 43 re-run grouping and wrapper normalization..."
+
+# Facet 1 acceptance: 5 honest re-runs over specs/alpha and 4 over specs/beta,
+# one shared stdout hash (artifact-lint never prints its subject), 9 distinct
+# session/ts pairs. Two identities, two targets, nine independent executions.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-16T09:00:01Z","sessionId":"bug033-rerun-a1","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":101,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:02Z","sessionId":"bug033-rerun-a2","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":102,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:03Z","sessionId":"bug033-rerun-a3","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":103,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:04Z","sessionId":"bug033-rerun-a4","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":104,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:05Z","sessionId":"bug033-rerun-a5","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":105,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:06Z","sessionId":"bug033-rerun-b1","spec":"specs/beta","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/beta","exitCode":0,"durationMs":106,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:07Z","sessionId":"bug033-rerun-b2","spec":"specs/beta","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/beta","exitCode":0,"durationMs":107,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:08Z","sessionId":"bug033-rerun-b3","spec":"specs/beta","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/beta","exitCode":0,"durationMs":108,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:00:09Z","sessionId":"bug033-rerun-b4","spec":"specs/beta","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/beta","exitCode":0,"durationMs":109,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_rerun_log="$tmp_root/bug033-receipt-rerun.log"
+bug033_rerun_status="$(run_capture "$bug033_rerun_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_rerun_status" -eq 0 ]]; then
+  pass "BUG-033 facet 1: Check 43 accepts repeated honest re-runs of one validator over two targets"
+else
+  fail "BUG-033 facet 1: Check 43 must accept repeated honest re-runs (observed $bug033_rerun_status)"
+fi
+assert_log_not_contains "$bug033_rerun_log" \
+  "Evidence receipt CLONE" \
+  "BUG-033 facet 1: Check 43 does not report cloned evidence for repeated honest re-runs"
+
+# Facet 1 adversarial partner: two DIFFERENT command identities over ONE target,
+# sharing one stdout. Grouping targets by identity must not make this pass.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-16T09:10:01Z","sessionId":"bug033-onetarget-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"npm run lint","exitCode":0,"durationMs":201,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-16T09:10:03Z","sessionId":"bug033-onetarget-b","spec":"specs/alpha","scope":"SCOPE-1","cmd":"npm run test","exitCode":0,"durationMs":203,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+bug033_onetarget_log="$tmp_root/bug033-receipt-one-target.log"
+bug033_onetarget_status="$(run_capture "$bug033_onetarget_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_onetarget_status" -ne 0 ]]; then
+  pass "BUG-033 facet 1 bound: Check 43 still refuses two identities sharing one target and one stdout"
+else
+  fail "BUG-033 facet 1 bound: identity-grouped targets must not admit two commands over ONE target"
+fi
+assert_log_contains "$bug033_onetarget_log" \
+  "Evidence receipt CLONE" \
+  "BUG-033 facet 1 bound: Check 43 reports the single-target multi-identity clone"
+
+# Facet 2 acceptance: one command spelled three ordinary ways. After wrapper
+# normalization all three resolve to family=node over one target, so the group
+# is a single identity and never becomes a multi-identity collision at all.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-16T09:20:01Z","sessionId":"bug033-wrap-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"node scripts/check-page.mjs alpha","exitCode":0,"durationMs":301,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:20:02Z","sessionId":"bug033-wrap-b","spec":"specs/alpha","scope":"SCOPE-1","cmd":"env PAGE=alpha node scripts/check-page.mjs alpha","exitCode":0,"durationMs":302,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:20:03Z","sessionId":"bug033-wrap-c","spec":"specs/alpha","scope":"SCOPE-1","cmd":"zsh -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":303,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:20:04Z","sessionId":"bug033-wrap-d","spec":"specs/alpha","scope":"SCOPE-1","cmd":"PAGE=alpha node scripts/check-page.mjs alpha","exitCode":0,"durationMs":304,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:20:05Z","sessionId":"bug033-wrap-e","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":305,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+EOF
+bug033_wrapper_log="$tmp_root/bug033-receipt-wrapper.log"
+bug033_wrapper_status="$(run_capture "$bug033_wrapper_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_wrapper_status" -eq 0 ]]; then
+  pass "BUG-033 facet 2: Check 43 accepts one command spelled through shell, env and assignment wrappers"
+else
+  fail "BUG-033 facet 2: Check 43 must normalize wrapper spellings to one identity (observed $bug033_wrapper_status)"
+fi
+assert_log_not_contains "$bug033_wrapper_log" \
+  "Evidence receipt CLONE" \
+  "BUG-033 facet 2: Check 43 does not report cloned evidence for equivalent wrapper spellings"
+
+# Facet 2 adversarial partner: the SAME wrappers over two genuinely different
+# programs. Unwrapping must reveal the difference, not hide it.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-16T09:30:01Z","sessionId":"bug033-wrapadv-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"zsh -c cargo test","exitCode":0,"durationMs":401,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-08-16T09:30:03Z","sessionId":"bug033-wrapadv-b","spec":"specs/beta","scope":"SCOPE-1","cmd":"env CI=1 npm run lint","exitCode":0,"durationMs":403,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_wrapper_adv_log="$tmp_root/bug033-receipt-wrapper-adversarial.log"
+bug033_wrapper_adv_status="$(run_capture "$bug033_wrapper_adv_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_wrapper_adv_status" -ne 0 ]]; then
+  pass "BUG-033 facet 2 bound: Check 43 still refuses two different programs behind identical wrappers"
+else
+  fail "BUG-033 facet 2 bound: wrapper normalization must not collapse cargo-test and npm-lint into one identity"
+fi
+assert_log_contains "$bug033_wrapper_adv_log" \
+  "family=cargo category=test" \
+  "BUG-033 facet 2 bound: unwrapping reveals the cargo identity behind the shell wrapper"
+assert_log_contains "$bug033_wrapper_adv_log" \
+  "family=npm category=lint" \
+  "BUG-033 facet 2 bound: unwrapping reveals the npm identity behind the env wrapper"
+
 echo "Running Check 8 basename-only planning-maturity exemption (flat-layout root deliverables)..."
 # A flat-layout repository keeps its deliverables at the repository root (for example
 # `rldata.js`), so a planned NEW root-level module can only be referenced by basename —

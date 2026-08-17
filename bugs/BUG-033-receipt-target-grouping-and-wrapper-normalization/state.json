@@ -1,0 +1,98 @@
+{
+  "version": 3,
+  "bugId": "BUG-033",
+  "featureDir": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization",
+  "featureName": "Receipt Target Grouping And Wrapper Normalization",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "default route resolved by micro-fix-admission.sh: no-new-behavior and no-cross-product-effect both fail, so the compact packet escalates automatically to full",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-007",
+    "BUG-019",
+    "BUG-032"
+  ],
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/**",
+      "BUGS.md",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/receipt-identity-selftest.sh",
+      "bubbles/scripts/framework-validate.sh"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      "implement"
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Run validate-owned certification over this packet. Implementation and its red/green evidence are recorded in report.md; certification is not claimed here.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Receipt Target Grouping And Wrapper Normalization",
+        "status": "implemented",
+        "certified": false
+      }
+    ],
+    "lockdownState": "unlocked"
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "standard",
+      "provenance": "framework-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "provenance": "framework-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "provenance": "operator-directive"
+    },
+    "lockdown": {
+      "mode": "unlocked",
+      "provenance": "framework-default"
+    },
+    "regression": {
+      "mode": "required",
+      "provenance": "framework-default"
+    },
+    "validation": {
+      "mode": "required",
+      "provenance": "framework-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": []
+}
