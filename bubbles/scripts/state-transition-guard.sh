@@ -1870,18 +1870,61 @@ for p in set(names):
     expansion_reason_regex='runSubagent|tool unavailable|nested runtime|capability missing|parent-expand|nested workflow'
     spec_dir_for_evidence="$(dirname "$state_file")"
 
+    # BUG-020: the set of agents that may execute a phase owned by
+    # `activeWorkflowRunner`. agent-capabilities.yaml `workflowModeGrants.agents`
+    # is the same list Gate G064 lints, so it is the only copy. yq is the normal
+    # path; without it the resolution degrades to the parent-expansion allowlist
+    # above rather than introducing a new hard dependency.
+    workflow_runner_agents=""
+    capabilities_registry_file=""
+    for _pa_candidate in \
+      "$guard_repo_root/bubbles/agent-capabilities.yaml" \
+      "$guard_repo_root/.github/bubbles/agent-capabilities.yaml" \
+      "$script_repo_root/bubbles/agent-capabilities.yaml" \
+      "$script_repo_root/.github/bubbles/agent-capabilities.yaml"; do
+      if [[ -f "$_pa_candidate" ]]; then
+        capabilities_registry_file="$_pa_candidate"
+        break
+      fi
+    done
+    if [[ -n "$capabilities_registry_file" ]] && command -v yq >/dev/null 2>&1; then
+      workflow_runner_agents="$(yq -r '.workflowModeGrants.agents // {} | keys | join(" ")' "$capabilities_registry_file" 2>/dev/null || true)"
+    fi
+    [[ -n "$workflow_runner_agents" ]] || workflow_runner_agents="$orchestrator_allowlist"
+
     # Phase -> owning-agent resolution. The owning specialist is normally named
     # "bubbles.<phase>", but that identity is a NAMING CONVENTION, not a
     # guarantee, and deriving it blindly made Check 6B demand agents that have
-    # never existed. `analyze` is owned by bubbles.analyst, so an honest
-    # bubbles.analyst record was read as "phase impersonation" and blocked a
-    # transition no one could fix without falsifying the record. Every other
-    # specialist phase does match its agent name; this table carries only the
-    # genuine exceptions, so a new phase keeps the convention by default.
+    # never existed (`bubbles.bug-discovery`, `bubbles.certify-state`,
+    # `bubbles.interrogate`, `bubbles.select`, the removed `bubbles.bootstrap`).
+    #
+    # BUG-020: workflows.yaml `phases.<phase>.owner` is the single source of
+    # truth, so the owner is READ from the registry instead of concatenated.
+    # `activeWorkflowRunner` means the phase runs in whichever orchestrator is
+    # driving, so any granted workflow runner is accepted. The convention is kept
+    # alongside the declared owner purely for backward compatibility: a phase the
+    # registry does not declare, and the historical `analyze` -> bubbles.analyst
+    # record, keep passing exactly as they do today.
     phase_owner_agent() {
-      case "$1" in
-        analyze) printf 'bubbles.analyst' ;;
-        *) printf 'bubbles.%s' "$1" ;;
+      local phase="$1"
+      local declared=""
+      local legacy=""
+
+      case "$phase" in
+        analyze) legacy='bubbles.analyst' ;;
+        *) legacy="bubbles.$phase" ;;
+      esac
+
+      if [[ -n "$workflow_registry_file" ]] && command -v yq >/dev/null 2>&1; then
+        # strenv, not --arg: the pinned yq is Go yq, which has no --arg flag.
+        declared="$(_pa_phase="$phase" yq -r '.phases[strenv(_pa_phase)].owner // ""' "$workflow_registry_file" 2>/dev/null || true)"
+      fi
+
+      case "$declared" in
+        '') printf '%s' "$legacy" ;;
+        activeWorkflowRunner) printf '%s %s' "$workflow_runner_agents" "$legacy" ;;
+        "$legacy") printf '%s' "$legacy" ;;
+        *) printf '%s %s' "$declared" "$legacy" ;;
       esac
     }
 
@@ -1892,9 +1935,19 @@ for p in set(names):
         expected_agent="$(phase_owner_agent "$claimed_phase")"
         matched="false"
 
-        # Pass 1: specialist provenance (existing behavior)
-        if echo "$execution_history_block" | awk -F'\t' -v a="$expected_agent" -v p="$claimed_phase" '$1==a && $2==p && ($3=="" || $3=="specialist") {found=1} END{exit !found}'; then
-          pass "Phase '$claimed_phase' has specialist provenance from $expected_agent"
+        # Pass 1: specialist provenance (existing behavior). BUG-020: the owner
+        # is now a SET (a registry-declared owner plus the legacy convention, or
+        # every granted workflow runner for an `activeWorkflowRunner` phase), so
+        # awk reports which member actually supplied the provenance.
+        matched_agent="$(echo "$execution_history_block" | awk -F'\t' -v alist="$expected_agent" -v p="$claimed_phase" '
+          BEGIN { owner_count = split(alist, owners, " ") }
+          $2==p && ($3=="" || $3=="specialist") {
+            for (i = 1; i <= owner_count; i++) {
+              if ($1 == owners[i]) { print $1; exit }
+            }
+          }')"
+        if [[ -n "$matched_agent" ]]; then
+          pass "Phase '$claimed_phase' has specialist provenance from $matched_agent"
           matched="true"
         # bubbles.bug delegation shortcut for implement/test
         elif [[ "$claimed_phase" == "implement" || "$claimed_phase" == "test" ]] && echo "$execution_history_block" | awk -F'\t' -v p="$claimed_phase" '$1=="bubbles.bug" && $2==p && ($3=="" || $3=="specialist") {found=1} END{exit !found}'; then
@@ -2924,7 +2977,13 @@ resolve_evidence_by_reference() {
     # what closes the gap between README's stated guarantee and the code — a
     # narrative "all tests pass" with no terminal output is now refused, while
     # "architecture decision recorded in design.md" still passes on prose.
-    if ! printf '%s\n' "$block_text" | grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:'; then
+    #
+    # BUG-009: this MUST NOT pipe into `grep -q`. `grep -q` exits on the first
+    # match, so a block larger than the 64 KiB pipe buffer kills the still-
+    # writing `printf` with SIGPIPE; under `set -o pipefail` the pipeline then
+    # reports 141 even though the pattern WAS found, and the leading `!` turned
+    # that into a false "prose-only" block. A herestring is a file, not a pipe.
+    if ! grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:' <<< "$block_text"; then
       if dod_item_claims_execution "$dod_item_text"; then
         check9_prose_execution_anchor="$anchor"
         return 1
@@ -3053,7 +3112,11 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
         # fenced command-output signature is accepted as prose documentation /
         # attestation evidence, but counted as an advisory (R1, non-blocking).
         _c9_inline_nonblank="$(printf '%s\n' "$next_lines" | grep -cE '\S' || true)"
-        if [[ "${_c9_inline_nonblank:-0}" -ge 10 ]] && ! printf '%s\n' "$next_lines" | grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:'; then
+        # BUG-009: herestring, not a pipe — see the same fix in
+        # resolved_block_has_execution_signature. `grep -q` closing the pipe
+        # early SIGPIPEs `printf`, and `pipefail` turns a FOUND pattern into a
+        # non-zero status that `!` reads as "no command-output signature".
+        if [[ "${_c9_inline_nonblank:-0}" -ge 10 ]] && ! grep -qE '```|Exit Code:|^[[:space:]]*\$ |Executed:|Command:' <<< "$next_lines"; then
           check9_advisory_count=$((${check9_advisory_count:-0} + 1))
           info "Check-9 ADVISORY: inline evidence block in $(relative_artifact_path "$scope_path") has no command-output signature (prose-only); accepted as documentation/attestation evidence"
         fi
