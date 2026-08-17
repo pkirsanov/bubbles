@@ -248,12 +248,25 @@ in that area (stderr was being merged into the parsed record stream) — that wa
 real defect found while reading the code, but it is NOT known to be this bug's
 cause and was not claimed as a fix for it.
 
+### 2026-08-17 — SIGPIPE excluded for small-output guards (correction)
+
+`bubbles/scripts/diff-evidence-guard.sh` emits roughly 43 bytes of output, far
+below the 64 KiB pipe buffer, so the BUG-009 SIGPIPE mechanism CANNOT explain a
+flake observed in that guard's selftest.
+
+Recorded honestly: an intermittent failure of `diff-evidence-guard-selftest.sh`
+case 3 was observed inside a saturated full validate on 2026-08-17 and was
+initially attributed to SIGPIPE in commit `62ef790`. That attribution was WRONG
+for this small-output case. The herestring change made there is still correct —
+it removes a real latent class — but it is NOT proven to have fixed the observed
+flake, and the flake's cause remains unknown.
+
 ---
 
 ## BUG-006 — the pre-push hook releases the `framework-validate` lock between its two phases, so a concurrent run can fail `release-check`
 
 - **Filed:** 2026-08-02
-- **Disposition:** open in-repo framework defect, DEFERRED. Diagnosed but not fixed: the candidate fixes (hold one lock across both phases, or let a nested run inherit the parent's lock) change the concurrency contract of the release gate, which is an owner decision rather than a mid-session edit. Per Gate G095 this is a tracked OPEN defect with a recorded reason.
+- **Disposition:** **FIXED**, before 2026-08-17. `bubbles/scripts/hooks/pre-push.sh` now takes the lock once per push: the core tier runs `framework-validate.sh --tier=core` exactly once (line 70) and exits, and the full tier runs `release-check.sh` alone. The hook's own comment (lines 81-83) records that `release-check.sh` runs `framework-validate.sh` as its own first check, so the sequential validate-then-release-check pair that opened the lock gap is gone. The ledger was stale: the fix landed but this entry was never updated.
 - **Discovered by:** repeated push failures on a multi-agent machine — bubbles needed six push attempts in one session, several lost to this.
 - **Severity:** medium for throughput, none for enforcement. It only ever produces a false FAILURE; it cannot admit bad work.
 - **Affects:** `bubbles/scripts/hooks/pre-push.sh`, `bubbles/scripts/release-check.sh`, `bubbles/scripts/framework-validate.sh` (the flock guard added at `1a49aba`).
@@ -587,7 +600,7 @@ is intermittent rather than absolute.
 ## BUG-009 — Check 9's command-output signature test is a SIGPIPE race under `pipefail`; an evidence block larger than the pipe buffer is intermittently misreported as "prose-only"
 
 - **Filed:** 2026-08-07
-- **Disposition:** open framework defect — reproduced deterministically at scale, fix identified, not yet applied.
+- **Disposition:** **FIXED** 2026-08-17 in `9ffc483`. The entry's own recommended herestring fix was applied — at BOTH sites, including a second occurrence this entry did not record. Measured after the fix on a 200001-line block: the old pipe form false-blocked 20/20, the herestring 0/20. Verified by state-transition-guard selftest 310 passed / 0 failed.
 - **Discovered by:** downstream `quantitativeFinance` delivery of spec 109 (FC.1), while diagnosing an intermittent `state-transition-guard` verdict flip on an otherwise-clean packet.
 - **Severity:** medium. It cannot pass work that should fail — it does the opposite, producing a FALSE BLOCK on legitimate evidence. The cost is an unreproducible red verdict that invites an author to "fix" evidence that was already correct.
 - **Affects:** `bubbles/scripts/state-transition-guard.sh`, `resolve_evidence_by_reference()`, the command-output signature test.
@@ -988,10 +1001,11 @@ analysis, because it was never applied to them.
 ## BUG-014 — the `doctor` subagent-nesting probe never reads remote VS Code user settings, so every WSL / Remote-SSH install reports "not enabled" regardless of the real value
 
 - **Filed:** 2026-08-09
-- **Disposition:** open in-repo framework defect, fix is a one-line path
-  addition. DEFERRED only because `cli.sh` sits beside the same concurrently
-  modified guard files described in BUG-013; recorded here with the exact path
-  so it can be applied cleanly. Per Gate G095 this is a tracked OPEN defect.
+- **Disposition:** **FIXED**, before 2026-08-17. `bubbles/scripts/cli.sh` now
+  scans `$HOME/.vscode-server/data/User/settings.json` (line 3214) alongside the
+  `Machine` entry, together with the two `-insiders` equivalents, so a remote
+  install's real user-scoped value is read. The ledger was stale: the fix landed
+  but this entry was never updated.
 - **Discovered by:** enabling `chat.subagents.allowInvocationsFromSubagents` on
   a WSL host and observing `doctor` continue to report it unset.
 - **Severity:** low-to-moderate. The probe is explicitly advisory and never
@@ -1438,12 +1452,16 @@ measured 32s, 73s, 90s and 103s on one machine. That is why the failure looked
 non-deterministic: the budget sits inside the spread, so the verdict tracked
 machine load rather than the packet.
 
-## BUG-017 — 31 of 33 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
+## BUG-017 — 29 of 32 workflow modes with a below-`done` ceiling declare no `transitionAudit`, so the transition contract refuses to resolve and the ceiling they advertise is mechanically unreachable
 
 - **Filed:** 2026-08-11
-- **Disposition:** open. The fix is a design decision (a fourth audit profile, or
-  an explicit "no audit contract applies" declaration), not a one-line change, so
-  it is filed rather than patched.
+- **Disposition:** open. Re-measured 2026-08-17 against `bubbles/workflows/modes.yaml`:
+  **29 of 32** modes with a below-`done` ceiling declare no `transitionAudit`, and
+  three declare one — `spec-scope-hardening`, `product-to-planning` and
+  `framework-health`. The filed 31-of-33 and "two" figures repeated in the body
+  below are superseded by that measurement. The fix is still a design decision (a
+  fourth audit profile, or an explicit "no audit contract applies" declaration),
+  not a one-line change, so it remains filed rather than patched.
 - **Discovered by:** certifying downstream research-lab packets. `BUG-005`,
   `015` and `016` all certified cleanly at `specs_hardened` because
   `product-to-planning` is one of the **two** below-`done` modes that declare a
@@ -1713,9 +1731,18 @@ predicate-extraction test keeps resolving.
 ## BUG-020 — Check 6B requires an `executionHistory` agent named literally `bubbles.<phase>`, so `analyze` and `bootstrap` can never be certified
 
 - **Filed:** 2026-08-11
-- **Disposition:** open in-repo framework defect, ANALYZED not fixed. The
-  workaround below is truthful and costs nothing, so this is not urgent, but the
-  certified phase list it produces understates what actually ran.
+- **Disposition:** **FIXED** 2026-08-17 in `9ffc483`. The filed scope understated
+  it. `phase_owner_agent()` hardcoded `bubbles.<phase>`; `bubbles/workflows.yaml`
+  declares owners for 30 phases and 8 of them disagree, not the two named below:
+  `analyze`, `bootstrap`, `discover` and `finalize` (owner `activeWorkflowRunner`),
+  `bug-discovery` (`bubbles.bug`), `certify-state` (`bubbles.validate`),
+  `interrogate` (`bubbles.grill`) and `select` (`bubbles.iterate`). For all 8 the
+  guard demanded an agent that does not exist — `bubbles.bootstrap` was deleted
+  upstream in `8a4f32d`. The owner is now READ from the registry;
+  `activeWorkflowRunner` phases accept any agent in `agent-capabilities.yaml`
+  `workflowModeGrants.agents`, the list Gate G064 already lints, so there is no
+  second copy. The legacy name-derived value is retained, so the 22 already-correct
+  phases are behaviourally identical.
 - **Severity:** medium — it does not corrupt state and it fails safe (it refuses
   a claim rather than admitting a false one), but it makes a complete phase list
   unreachable, so `certifiedCompletedPhases` cannot be read as "what ran".
@@ -1913,7 +1940,7 @@ Add adversarial selftests for two different spec-scoped artifact-lint runs with 
 ## BUG-029 — G010 declares unchecked user validation blocking, but terminal transitions do not enforce it
 
 - **Filed:** 2026-08-12
-- **Disposition:** open in-repo framework defect. The policy and missing enforcement are verified. No framework code changed in the filing session.
+- **Disposition:** **FIXED**, before 2026-08-17. Gate `G136` is registered in `bubbles/registry/gates.yaml` (line 1037, with its `enforcedBy` entry at line 1177), and `bash tests/regression/test_35_human_acceptance_terminal.sh` reports 9 passed, 0 failed, exit 0. The ledger was stale: the fix landed but this entry was never updated.
 - **Severity:** high. A spec can be certified `done` while its human acceptance artifact reports a regression.
 - **Found by:** downstream spec 011 retained an unchecked acceptance item while both status mirrors said `done`.
 
@@ -1958,7 +1985,7 @@ Add a dedicated user-validation guard. Wire it into terminal transitions and G01
 ## BUG-030 — G057 accepts linked test titles that do not exist
 
 - **Filed:** 2026-08-12
-- **Disposition:** open in-repo framework defect. Three stale links reproduced the false pass. No framework code changed in the filing session.
+- **Disposition:** open — reclassified 2026-08-17 as **mechanism delivered, enforcement opt-in**. The resolver exists and is wired: `bubbles/scripts/scenario-test-resolve.sh` is invoked by `bubbles/scripts/guards/control-plane-checks.sh` (line 166) and by `bubbles/scripts/verify-changed-specs.sh` (line 178). Its default posture is ADVISORY: `control-plane-checks.sh` sets `scenario_resolution_mode="advisory"` and, when a linked test fails to resolve, warns "linked tests do not resolve — ADVISORY until scenarioResolution: block is set" (line 194). It blocks only when a repository opts in with `scenarioResolution: block` in `.github/bubbles-project.yaml` or `bubbles-project.yaml` (line 182). G057 therefore still ACCEPTS linked test titles that do not exist in the default configuration, so the original defect persists there.
 - **Severity:** high. Scenario certification can claim live coverage that no executable test carries.
 - **Found by:** exact-link audit of downstream spec 011.
 
@@ -1998,7 +2025,7 @@ Every active linked-test reference must resolve to a real file and a real test d
 ## BUG-031 — downstream repositories receive completion guards but no automatic changed-spec enforcement path
 
 - **Filed:** 2026-08-12
-- **Disposition:** open framework integration defect. The contradictory surfaces and downstream reproduction are verified. No framework code changed in the filing session.
+- **Disposition:** narrowed 2026-08-17. The integration defect is RESOLVED except for one residual item. `bubbles/scripts/verify-changed-specs.sh` and the CI workflow template `templates/bubbles-verify-changed-specs.yml.tmpl` now ship downstream — both are listed in `bubbles/release-manifest.json` — so an adopting repository receives the changed-spec command and the CI integration path it lacked. The residual open item is recommendation 5 below: `doctor` still does not report blocking posture when a repository declares certification-required validation but has no local or CI invocation of that command. That item stays open; the rest of this entry is closed.
 - **Severity:** high. Certified planning truth can change and deploy without G088 running.
 - **Found by:** the July 30 post-certification edit to downstream spec 011.
 
@@ -2105,10 +2132,16 @@ reconciliation, and exact validation commands.
 ## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
 
 - **Filed:** 2026-08-16
-- **Disposition:** open framework defect, filed from a downstream repository
-  (research-lab). No framework script or selftest was changed in this repository
-  while filing it. A verified fix and its regression coverage are described
-  below so the owner can apply or reject them deliberately.
+- **Disposition:** **FIXED**, before 2026-08-17. The fix described below is
+  present in `bubbles/scripts/state-transition-guard.sh`: Check 43 binds
+  `$targets` with `group_by(.cmd | cmd_identity) | map(.[0] | target_identity)`
+  (line 4457), together with the facet-2 wrapper normalisation.
+  `bash bubbles/scripts/receipt-identity-selftest.sh` reports 15 passed, 0 failed.
+  The packet's own `state.json` remains `in_progress`: on 2026-08-17
+  `state-transition-guard.sh` refused the `done` transition for
+  `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization` with 28
+  failures (`blockingCode: DELIVERY_COMPLETION_FAILED`), so the status was left
+  exactly as the guard found it.
 - **Severity:** high. It blocks promotion of a downstream feature whose own
   evidence is sound, and it does so by alleging forgery — the most serious thing
   this guard can say about honest work.
