@@ -3,29 +3,37 @@ set -euo pipefail
 
 # Persistent regression for Gate G136 - human_acceptance_terminal_gate.
 #
-# BUG-029. artifact-lint.sh requires uservalidation.md to carry at least ONE
-# checked `[x]` entry and never rejects an unchecked one, so a checklist of one
-# checked item and five unchecked passes lint and the spec reaches a terminal
+# BUG-029. artifact-lint.sh required uservalidation.md to carry at least ONE
+# checked `[x]` entry and never rejected an unchecked one, so a checklist of one
+# checked item and five unchecked passed lint and the spec reached a terminal
 # status with five behaviors no human ever accepted.
 #
-# This regression pins the DETECTION RULE the guard's Check 43 applies, at the
-# level the bug actually occurred: the section reader plus the unchecked scan.
-# It asserts the mixed shape is detected, a fully accepted list is not, and a
-# `[ ]` outside the `## Checklist` section is ignored — that last one is what
-# stops the rule from over-reaching into prose and being switched off.
+# IMP-047 PD-12 found the deeper half: the TEMPLATE shipped checked, because
+# lint demanded it, so the planning artifact alone satisfied this gate with no
+# human act. Acceptance now needs an authored `## Human Acceptance Record`, and
+# automation readiness lives in its own section that grants nothing.
 #
-# The parser here is byte-identical to the one in guards/tail-delegated-gates.sh
-# and artifact-lint.sh ON PURPOSE. If a future edit desyncs them, this test
-# still encodes the contract all three are supposed to share.
+# This regression pins the DETECTION RULE the guard's Check 43 applies, through
+# the SHARED reader the guard itself uses. The parser used to be duplicated here
+# on purpose; it is now sourced, so a desync is impossible rather than merely
+# noticed late.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 GUARD_FRAGMENT="$REPO_ROOT/bubbles/scripts/guards/tail-delegated-gates.sh"
+ACCEPTANCE_LIB="$REPO_ROOT/bubbles/scripts/acceptance-authority-lib.sh"
 
 if [[ ! -f "$GUARD_FRAGMENT" ]]; then
   echo "test_35_human_acceptance_terminal: guard fragment missing: $GUARD_FRAGMENT" >&2
   exit 2
 fi
+if [[ ! -f "$ACCEPTANCE_LIB" ]]; then
+  echo "test_35_human_acceptance_terminal: acceptance library missing: $ACCEPTANCE_LIB" >&2
+  exit 2
+fi
+
+# shellcheck source=../../bubbles/scripts/acceptance-authority-lib.sh
+source "$ACCEPTANCE_LIB"
 
 WORKSPACE="$(mktemp -d -t bubbles-g136-regression-XXXXXXXX)"
 trap 'rm -rf "$WORKSPACE"' EXIT INT TERM
@@ -45,11 +53,17 @@ assert_eq() {
 }
 
 count_unchecked() {
-  awk '
-    /^## Checklist/ {in_checklist=1; next}
-    /^## / {if (in_checklist) exit}
-    in_checklist {print}
-  ' "$1" | grep -cE '^- \[ \] ' || true
+  local items
+  items="$(bubbles_acceptance_unchecked_items "$1")"
+  if [[ -z "$items" ]]; then
+    printf '0\n'
+  else
+    printf '%s\n' "$items" | grep -c . || true
+  fi
+}
+
+terminal_verdict_codes() {
+  bubbles_acceptance_terminal_verdict "$1" 2>&1 | sed -E 's/:.*//' | sort -u | tr '\n' ' ' | sed -E 's/ $//'
 }
 
 # --- Fixture 1: the BUG-029 shape ------------------------------------------
@@ -101,6 +115,52 @@ assert_eq "adversarial: a fully accepted checklist reports zero" \
 assert_eq "adversarial: a '[ ]' under '## Notes' is not counted" \
   "0" "$(count_unchecked "$WORKSPACE/single.md")"
 
+# --- PD-12: checked boxes alone are no longer terminal acceptance -----------
+# THE regression case for the deeper half of the defect. Fixture 2 is fully
+# checked and carries no acceptance record; before PD-12 it satisfied the gate,
+# which is exactly what a shipped template used to provide for free.
+assert_eq "adversarial: a fully checked list with no acceptance record is refused" \
+  "PD12-NO-RECORD" "$(terminal_verdict_codes "$WORKSPACE/accepted.md")"
+
+cat > "$WORKSPACE/human-accepted.md" <<'EOF'
+# User Validation
+
+## Automation Readiness
+
+- [x] Both behaviors verified by automation.
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+- [x] Deleting an item removes it from the list.
+
+## Human Acceptance Record
+
+- acceptedBy: p.kirsanov
+- acceptedAt: 2026-08-16T10:00:00Z
+- method: human-interactive
+EOF
+
+assert_eq "a human-owned acceptance record with every box checked is accepted" \
+  "" "$(terminal_verdict_codes "$WORKSPACE/human-accepted.md")"
+
+cat > "$WORKSPACE/agent-accepted.md" <<'EOF'
+# User Validation
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+
+## Human Acceptance Record
+
+- acceptedBy: bubbles.validate
+- acceptedAt: 2026-08-16T10:00:00Z
+- method: human-interactive
+EOF
+
+assert_eq "adversarial: an agent id as acceptedBy cannot grant acceptance" \
+  "PD12-AUTOMATION-ACCEPTOR" "$(terminal_verdict_codes "$WORKSPACE/agent-accepted.md")"
+
 # --- The guard fragment must actually carry the gate ------------------------
 if grep -q 'Gate G136' "$GUARD_FRAGMENT"; then
   pass_count=$((pass_count + 1))
@@ -123,6 +183,7 @@ fi
 
 # The guard must never edit uservalidation.md. Checking a box on the author's
 # behalf would fabricate the acceptance the gate exists to require.
+# portable-ok: the sed -i token below is a SEARCH PATTERN asserting the ABSENCE of an in-place write in the guard fragment, not an invocation of sed
 if grep -nE '^\s*(sed -i|>+\s*"?\$uservalidation_terminal_file)' "$GUARD_FRAGMENT" | grep -q .; then
   fail_count=$((fail_count + 1))
   printf '  FAIL: the guard writes to uservalidation.md — it must only report\n'

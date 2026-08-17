@@ -45,7 +45,10 @@ forms:
       - id: report.md
         purpose: Evidence with raw terminal output, in the sections report-sections.yaml declares.
       - id: uservalidation.md
-        purpose: Checked-by-default validation checklist.
+        purpose: >-
+          Acceptance checklist shipped UNCHECKED, with automation readiness and
+          the human acceptance record as separate sections (IMP-047 PD-12).
+          Shape authority: bubbles/registry/acceptance-authority.yaml.
       - id: scenario-manifest.json
         purpose: >-
           Required before any completion claim when the bug scope defines Gherkin
@@ -60,10 +63,14 @@ forms:
     name: Compact micro-fix packet
     appliesTo: >-
       A bug that clears EVERY admission condition in micro-fix-packet.yaml.
-      Opt-in per bug, not the default: IMP-042 SCOPE-9 requires packet authoring
-      time and defect escape rate to be measured first (OW-015).
+      THE DEFAULT ROUTE since IMP-047 S-D: a bug answering all 8 conditions
+      admissibly uses this form without opting in. Any failed condition
+      escalates automatically to `full`, with no reviewer discretion and no
+      override. A bug that answers no condition has not been assessed and uses
+      `full`.
     workflowMode: bugfix-fastlane
     admissionAuthority: bubbles/registry/micro-fix-packet.yaml
+    outcomeTelemetry: bubbles/scripts/micro-fix-outcome-log.sh
     artifacts:
       - id: bug.md
       - id: report.md

@@ -4461,14 +4461,26 @@ fi
 
 # =============================================================================
 # Check 43: Human Acceptance Terminal Gate (Gate G136)  [IMP-040 SCOPE-10]
+#           IMP-047 PD-12: automation readiness is not human acceptance.
 # =============================================================================
-# BUG-029's exact shape. artifact-lint.sh requires at least ONE `[x]` and never
-# rejects a `[ ]`, so a checklist of one checked item and one unchecked passes
+# BUG-029's exact shape. artifact-lint.sh required at least ONE `[x]` and never
+# rejected a `[ ]`, so a checklist of one checked item and one unchecked passed
 # lint. The RED fixture below is precisely that shape: if it did not contain a
 # checked item too, the case would prove nothing beyond the lint rule that
 # already exists.
+#
+# PD-12 adds the case the original could not see. The TEMPLATE shipped checked,
+# so a fully checked list was obtainable with no human act at all — the gate was
+# satisfiable by automation writing a file. `all_checked.md` therefore now has
+# to be REFUSED at a terminal transition unless a human record exists.
+#
+# The cases run through the SHARED reader the guard sources, so the selftest
+# cannot pass against a parser the guard does not use.
 c43_dir="$tmp_root/c43-human-acceptance"
 mkdir -p "$c43_dir"
+
+# shellcheck source=acceptance-authority-lib.sh
+source "$SCRIPT_DIR/acceptance-authority-lib.sh"
 
 cat <<'EOF' > "$c43_dir/mixed.md"
 # User Validation
@@ -4496,13 +4508,33 @@ cat <<'EOF' > "$c43_dir/all_checked.md"
 - [ ] This bullet is outside the Checklist section and must be ignored.
 EOF
 
-# Same parser the guard and artifact-lint both use.
+cat <<'EOF' > "$c43_dir/human_accepted.md"
+# User Validation
+
+## Automation Readiness
+
+- [x] Both behaviors verified by automation.
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+- [x] Deleting an item removes it from the list.
+
+## Human Acceptance Record
+
+- acceptedBy: p.kirsanov
+- acceptedAt: 2026-08-16T10:00:00Z
+- method: human-interactive
+
+## Notes
+
+- [ ] This bullet is outside the Checklist section and must be ignored.
+EOF
+
 c43_unchecked() {
-  awk '
-    /^## Checklist/ {in_checklist=1; next}
-    /^## / {if (in_checklist) exit}
-    in_checklist {print}
-  ' "$1" | grep -cE '^- \[ \] ' || true
+  local items
+  items="$(bubbles_acceptance_unchecked_items "$1")"
+  if [[ -z "$items" ]]; then printf '0\n'; else printf '%s\n' "$items" | grep -c . || true; fi
 }
 
 c43_mixed_count="$(c43_unchecked "$c43_dir/mixed.md")"
@@ -4515,9 +4547,22 @@ else
 fi
 
 if [[ "$c43_clean_count" -eq 0 ]]; then
-  pass "Check 43 adversarial: a fully checked checklist reports nothing, and a '[ ]' outside the Checklist section is ignored"
+  pass "Check 43 adversarial: a fully checked checklist reports no unchecked item, and a '[ ]' outside the Checklist section is ignored"
 else
   fail "Check 43: a fully accepted checklist reported $c43_clean_count unchecked item(s) — the section parser is over-reaching beyond '## Checklist'"
+fi
+
+c43_all_checked_verdict="$(bubbles_acceptance_terminal_verdict "$c43_dir/all_checked.md" 2>&1 || true)"
+if printf '%s' "$c43_all_checked_verdict" | grep -q 'PD12-NO-RECORD'; then
+  pass "Check 43 (PD-12): a fully checked list with no human acceptance record is refused at a terminal transition"
+else
+  fail "Check 43 (PD-12): a fully checked list with no acceptance record was accepted — a shipped template would satisfy human sign-off again"
+fi
+
+if bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" > /dev/null 2>&1; then
+  pass "Check 43 (PD-12): checked items plus an authored human record satisfy terminal acceptance"
+else
+  fail "Check 43 (PD-12): a valid human acceptance record was refused: $(bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" 2>&1 || true)"
 fi
 
 rm -rf "$c43_dir"

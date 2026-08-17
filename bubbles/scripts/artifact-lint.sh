@@ -6,6 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source fun mode support
 source "$SCRIPT_DIR/fun-mode.sh"
 
+# IMP-047 PD-12. The acceptance reader is SHARED with guards/tail-delegated-gates.sh
+# (Gate G136). Both used to carry private copies of the same section parser with
+# a comment asking the next author to keep them in step; a comment is not a
+# mechanism. Sourced rather than re-implemented so a change to one is a change
+# to both.
+source "$SCRIPT_DIR/acceptance-authority-lib.sh"
+
 # Portable ISO/date -> epoch, kept self-contained (NO cross-file source) for
 # isolation robustness (a fixture may copy this script without its sibling libs).
 # GNU date uses -d; BSD/macOS date uses -j -f (also handles a bare YYYY-MM-DD).
@@ -539,28 +546,22 @@ if [[ -f "$uservalidation_file" ]]; then
   if grep -Eq '^## Checklist' "$uservalidation_file"; then
     pass "Found Checklist section in uservalidation.md"
 
-    checklist_section_content="$({
-      awk '
-        /^## Checklist/ {in_checklist=1; next}
-        /^## / {if (in_checklist) exit}
-        in_checklist {print}
-      ' "$uservalidation_file"
-    } || true)"
-
-    checklist_checkbox_lines="$({ echo "$checklist_section_content" | grep -E '^- \[(x| )\] '; } || true)"
+    checklist_checkbox_lines="$(bubbles_acceptance_checklist_items "$uservalidation_file")"
     if [[ -z "$checklist_checkbox_lines" ]]; then
       fail "uservalidation checklist has no checkbox entries"
     else
       pass "uservalidation checklist contains checkbox entries"
     fi
 
-    baseline_checked_lines="$({ echo "$checklist_section_content" | grep -E '^- \[x\] '; } || true)"
-    if [[ -z "$baseline_checked_lines" ]]; then
-      fail "uservalidation checklist has no checked-by-default [x] entry"
-    else
-      pass "uservalidation checklist has checked-by-default entries"
-    fi
-
+    # IMP-047 PD-12. There is deliberately NO "must carry a checked [x] entry"
+    # check here any more. That rule is what made a shipped template satisfy
+    # Gate G136's terminal human acceptance with no human act: the template
+    # arrived checked because lint demanded it, and the terminal gate then read
+    # those boxes as sign-off. Acceptance items now ship UNCHECKED, automation
+    # readiness is a separate section that grants nothing, and terminal
+    # acceptance additionally requires a human-owned record. Lint keeps only
+    # the SHAPE questions, which are the ones that are true during planning.
+    checklist_section_content="$(bubbles_acceptance_section_body "$uservalidation_file" '## Checklist')"
     checklist_bullet_lines="$({ echo "$checklist_section_content" | grep -E '^- '; } || true)"
     invalid_checklist_bullets="$({ echo "$checklist_bullet_lines" | grep -Ev '^- \[(x| )\] '; } || true)"
     if [[ -n "$invalid_checklist_bullets" ]]; then
@@ -568,6 +569,14 @@ if [[ -f "$uservalidation_file" ]]; then
       echo "$invalid_checklist_bullets" | sed 's/^/   -> /'
     else
       pass "All checklist bullet items use checkbox syntax"
+    fi
+
+    acceptance_shape_findings="$(bubbles_acceptance_shape_verdict "$uservalidation_file" || true)"
+    if [[ -n "$acceptance_shape_findings" ]]; then
+      fail "uservalidation acceptance authority is malformed (IMP-047 PD-12)"
+      echo "$acceptance_shape_findings" | sed 's/^/   -> /'
+    else
+      pass "uservalidation separates automation readiness from human acceptance"
     fi
   else
     legacy_checklist_section="$({
