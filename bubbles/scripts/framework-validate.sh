@@ -66,6 +66,18 @@ fi
 # therefore does lock. `framework-validate-tier-selftest.sh` asserts that the
 # executing-flag list here still matches the parser's own case arms, so the two
 # cannot drift apart silently.
+#
+# IMP-049 SCOPE-2. Whether THIS invocation is the outermost one is decided here,
+# before anything can set the marker, and it governs the run receipt below.
+# Several selftests run a NESTED framework-validate as part of their fixture, and
+# a nested run that wrote a receipt would describe a synthesized fixture while
+# appearing to describe this tree. The marker is deliberately separate from the
+# lock marker, which is never set when `flock` is absent (stock macOS) and would
+# therefore report every nested run on a Mac as outermost.
+_fv_outermost=false
+[[ -z "${BUBBLES_FRAMEWORK_VALIDATE_DEPTH:-}" ]] && _fv_outermost=true
+export BUBBLES_FRAMEWORK_VALIDATE_DEPTH=$((${BUBBLES_FRAMEWORK_VALIDATE_DEPTH:-0} + 1))
+
 _fv_executes_checks=true
 if [[ $# -gt 0 ]]; then
   _fv_executes_checks=false
@@ -361,6 +373,53 @@ for _arg in "$@"; do
       ;;
   esac
 done
+
+# IMP-049 SCOPE-2: the run receipt. release-check.sh runs this entire suite as
+# its first check — 3743s across 338 checks, measured — on a tree a validate run
+# may have proven minutes earlier. A receipt lets that consumer re-derive the
+# tree digest itself and decide, rather than re-running on faith.
+#
+# THE PREVIOUS RECEIPT DIES HERE, before the first check. The tree can be
+# byte-identical to the one that passed last time while THIS run is on its way
+# to discovering a failure, so a surviving pass-receipt would be consumed on a
+# tree whose verdict has just changed. Removing it first is what makes a receipt
+# describe only runs that reached an end.
+_fv_receipt_ready=false
+if [[ "$_fv_outermost" == "true" && "$_fv_executes_checks" == "true" && "$LIST_TIER_ONLY" == "false" ]] &&
+  [[ -f "$SCRIPT_DIR/validation-receipt.sh" ]]; then
+  # Same defence as the validate-cache source above, and for the same reason:
+  # `source` runs in THIS shell, so a sibling that merely exits would terminate
+  # framework-validate mid-run — and because it exits 0, the run would look like
+  # a silent PASS that validated nothing. Confirming the API is actually defined
+  # keeps a stubbed or truncated sibling from being able to end the run. Checked
+  # with builtins only, before the portability harness has a full PATH.
+  _fv_receipt_src="$(<"$SCRIPT_DIR/validation-receipt.sh")"
+  if [[ "$_fv_receipt_src" == *"validation_receipt_invalidate()"* ]]; then
+    # shellcheck source=bubbles/scripts/validation-receipt.sh
+    source "$SCRIPT_DIR/validation-receipt.sh"
+  fi
+  unset _fv_receipt_src
+  if declare -F validation_receipt_invalidate >/dev/null 2>&1; then
+    if validation_receipt_invalidate "$REPO_ROOT"; then
+      _fv_receipt_ready=true
+    else
+      # A receipt we cannot delete is a receipt a later release-check might
+      # consume against a tree this run has not finished judging. Say so; the
+      # consumer still re-derives the digest, but the operator should know the
+      # invalidation did not take.
+      printf 'NOTE: could not clear the previous validation receipt; no receipt will be written this run.\n' >&2
+    fi
+  fi
+fi
+
+# fv_write_receipt <verdict> — best-effort, never fails the run. A missing
+# receipt costs a consumer nothing but a re-run, which is the safe direction.
+fv_write_receipt() {
+  [[ "$_fv_receipt_ready" == "true" ]] || return 0
+  declare -F validation_receipt_write >/dev/null 2>&1 || return 0
+  validation_receipt_write "$REPO_ROOT" "$VALIDATE_TIER" "$1" \
+    "${#check_durations[@]}" "$SECONDS" "$CHANGED_ONLY" "$CACHE_ENABLED" 2>/dev/null || true
+}
 
 # A check is CORE (fast, high-signal, deterministic) when its label matches one
 # of these substrings. The set is intentionally small — structural registry/lint
@@ -888,6 +947,7 @@ run_check_self_only "Competitive docs selftest" bash "$SCRIPT_DIR/competitive-do
 run_check_self_only "Interop apply selftest" bash "$SCRIPT_DIR/interop-apply-selftest.sh"
 run_check_self_only "Interop import selftest" bash "$SCRIPT_DIR/interop-import-selftest.sh"
 run_check_self_only "Release manifest selftest" bash "$SCRIPT_DIR/release-manifest-selftest.sh"
+run_check "Validation run receipt selftest (IMP-049 SCOPE-2)" bash "$SCRIPT_DIR/validation-receipt-selftest.sh"
 run_check_self_only "Release manifest purity selftest" bash "$SCRIPT_DIR/release-manifest-purity-selftest.sh"
 run_check_self_only "Payload closure guard (IMP-042 / REG-11)" bash "$SCRIPT_DIR/payload-closure-guard.sh"
 run_check_self_only "Payload closure guard selftest (IMP-042 / REG-11)" bash "$SCRIPT_DIR/payload-closure-guard-selftest.sh"
@@ -1631,6 +1691,7 @@ skip_summary() {
 }
 
 if [[ "$failures" -gt 0 ]]; then
+  fv_write_receipt fail
   if [[ "$skipped" -gt 0 ]]; then
     echo "Framework validation failed with $failures failing check(s) ($skipped skipped: $(skip_summary))."
   else
@@ -1695,6 +1756,7 @@ if [[ "$RECORD_DEBT" == "true" && "${#deferred_check_ids[@]}" -gt 0 ]]; then
   echo
 
   if [[ "$failures" -gt 0 ]]; then
+    fv_write_receipt fail
     echo "Framework validation failed with $failures failing check(s) after forced execution."
     exit 1
   fi
@@ -1706,5 +1768,10 @@ if [[ "$skipped" -gt 0 ]]; then
     echo "Run from a framework-source tree to execute the framework-source-only check(s)."
   fi
 fi
+
+# The receipt is written LAST, for the same reason the manifest freshness check
+# runs last: several checks above regenerate derived artifacts, so a digest taken
+# any earlier would describe a tree the rest of the run could still change.
+fv_write_receipt pass
 
 echo "Framework validation passed."
