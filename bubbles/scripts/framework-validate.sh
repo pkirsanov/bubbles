@@ -1391,6 +1391,13 @@ if [[ -f "$SCRIPT_DIR/session-liveness-selftest.sh" ]]; then
   run_check "Session liveness selftest (IMP-048 SCOPE-7 / WIP-5)" bash "$SCRIPT_DIR/session-liveness-selftest.sh"
 fi
 
+# Mutation receipts are the same earned-receipt rule applied to the strongest
+# negative control: test-mechanism-lint.sh checks the declaration EXISTS, this
+# checks the declared mutation actually RAN, in isolation, and was restored.
+if [[ -f "$SCRIPT_DIR/mutation-receipt-selftest.sh" ]]; then
+  run_check "Mutation receipt selftest (IMP-048 SCOPE-4 / EV-11)" bash "$SCRIPT_DIR/mutation-receipt-selftest.sh"
+fi
+
 # ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #
