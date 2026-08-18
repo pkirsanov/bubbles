@@ -1326,24 +1326,35 @@ else
   pass "All $done_scopes scope(s) are marked Done"
 fi
 
-state_completed_scopes_count="$({
-  certification_scopes_block="$({
-    grep -A40 '"certification"' "$state_file" 2>/dev/null \
-      | awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
-  } || true)"
-
-  if [[ -n "$certification_scopes_block" ]]; then
-    echo "$certification_scopes_block" \
-      | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
-      | grep -cE '"[^"]+"' || true
-  else
-    awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file" \
-      | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' \
-      | grep -cE '"[^"]+"' || true
-  fi
+certification_scopes_block="$({
+  grep -A40 '"certification"' "$state_file" 2>/dev/null \
+    | awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}'
 } || true)"
 
-if [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
+if [[ -n "$certification_scopes_block" ]]; then
+  completed_scopes_body="$(printf '%s\n' "$certification_scopes_block" \
+    | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//' || true)"
+else
+  completed_scopes_body="$({
+    awk '/"completedScopes"[[:space:]]*:/ {capture=1} capture {print} capture && /\]/ {exit}' "$state_file" \
+      | sed -E '1s/.*"completedScopes"[[:space:]]*:[[:space:]]*\[//'
+  } || true)"
+fi
+
+state_completed_scopes_count="$(printf '%s\n' "$completed_scopes_body" | grep -cE '"[^"]+"' || true)"
+
+# BUG-011: an integer-ordinal array ([1,2,3,…]) matches no quoted string, so the
+# count above reads 0 — the SAME value a genuinely empty array produces. The two
+# states then report the identical "is EMPTY" message, which is what made a
+# writer/reader type mismatch cost a schema comparison across four other specs to
+# diagnose. Anything between the brackets that is not whitespace or a separator
+# means the array is POPULATED, whatever its element type.
+completed_scopes_payload="$(printf '%s\n' "$completed_scopes_body" \
+  | sed -e '/\]/q' | sed -E 's/\].*$//' | tr -d '[:space:],')"
+
+if [[ -n "$completed_scopes_payload" ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
+  fail "completedScopes is present but its entries are not string scope IDs (found: ${completed_scopes_payload:0:60}) — entries must be quoted scope IDs such as \"01-core-scope\", not ordinals; nothing can map an ordinal to a scope artifact"
+elif [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
   fail "Resolved scope artifacts report $done_scopes Done scope(s) but state.json completedScopes is EMPTY — state.json integrity failure"
 elif [[ "$done_scopes" -ne "$state_completed_scopes_count" ]]; then
   fail "completedScopes count ($state_completed_scopes_count) does not match artifact Done scope count ($done_scopes) — state.json integrity failure"
@@ -2111,6 +2122,9 @@ import sys
 from datetime import datetime
 
 ZERO_DURATION_EXEMPT = {"finalize", "select"}
+# One threshold for every "I am declaring this record weak" escape on this
+# surface. Three literals drift; one does not.
+DECLARED_REASON_MIN = 20
 
 def parse_ts(value):
     if not isinstance(value, str) or not value:
@@ -2122,6 +2136,29 @@ def parse_ts(value):
         return datetime.fromisoformat(value)
     except Exception:
         return None
+
+def uniform_interval(instants):
+    """Constant positive spacing over >=3 instants — the fabrication signature.
+
+    Shared by BOTH timestamp surfaces this check analyses (executionHistory
+    spans and completedPhaseClaims[].claimedAt). A second copy of this rule is
+    exactly how the two G068 implementations drifted apart in BUG-004.
+    """
+    if len(instants) < 3:
+        return None
+    gaps = [int((instants[i] - instants[i - 1]).total_seconds())
+            for i in range(1, len(instants))]
+    if len(set(gaps)) == 1 and gaps[0] > 0:
+        return gaps[0]
+    return None
+
+def first_backwards_step(labelled):
+    """First point where a recorded sequence of instants runs backwards."""
+    for i in range(1, len(labelled)):
+        if labelled[i][1] < labelled[i - 1][1]:
+            return (f"{labelled[i - 1][0]}@{labelled[i - 1][1].isoformat()}"
+                    f" -> {labelled[i][0]}@{labelled[i][1].isoformat()}")
+    return None
 
 try:
     with open(sys.argv[1], encoding="utf-8") as fh:
@@ -2189,6 +2226,52 @@ for entry in raw:
             if isinstance(entry.get("timestampReconstructedReason"), str) else "",
     })
 
+# --- Second input set: completedPhaseClaims[].claimedAt (BUG-013) ------------
+# executionHistory is the narrative log; completedPhaseClaims is the load-bearing
+# assertion Gates G022/G027 read to decide whether a phase was performed. This
+# analysis only ever ran over the log, so ten claims sitting on an exact
+# 600-second grid — the precise signature `uniform_interval` recognises — were
+# read by no check at all. Same helpers, second input set: not a second copy.
+# Emitted BEFORE the history early-exit so a packet with a short history still
+# gets its claims analysed.
+claims_raw = execution_obj.get("completedPhaseClaims")
+if not isinstance(claims_raw, list):
+    claims_raw = data.get("completedPhaseClaims")
+if not isinstance(claims_raw, list):
+    # Absence is not evidence of fabrication — abstain, as Check 7C does for an
+    # absent executionHistory.
+    print("CLAIMS_ABSENT=1")
+else:
+    claim_instants = []
+    claim_unreconciled = []
+    for claim in claims_raw:
+        if not isinstance(claim, dict):
+            continue
+        claimed = parse_ts(claim.get("claimedAt"))
+        if claimed is None:
+            continue
+        label = claim.get("phase") or claim.get("agent") or "<unknown>"
+        reason = claim.get("claimedAtUnreconciledReason")
+        reason = reason.strip() if isinstance(reason, str) else ""
+        # The claim-side equivalent of the durationUnmeasured escape: a claim
+        # whose instant could never be reconciled against a real run may DECLARE
+        # that, and is then excluded from the grid rather than blocked. Same cost
+        # as the other declarations — an absent or perfunctory reason buys
+        # nothing, or the escape is a bypass with extra steps.
+        if claim.get("claimedAtUnreconciled") is True and len(reason) >= DECLARED_REASON_MIN:
+            claim_unreconciled.append(label)
+            continue
+        claim_instants.append((label, claimed))
+    if claim_unreconciled:
+        print(f"CLAIM_UNRECONCILED={'|'.join(claim_unreconciled)}")
+    print(f"CLAIM_COUNT={len(claim_instants)}")
+    claim_disorder = first_backwards_step(claim_instants)
+    if claim_disorder:
+        print(f"CLAIM_OUT_OF_ORDER={claim_disorder}")
+    claim_interval = uniform_interval([instant for _, instant in claim_instants])
+    if claim_interval is not None:
+        print(f"CLAIM_UNIFORM_INTERVAL={claim_interval}")
+
 if len(entries) < 3:
     print(f"COUNT={len(entries)}")
     sys.exit(0)
@@ -2197,16 +2280,13 @@ entries.sort(key=lambda e: e["started"])
 print(f"COUNT={len(entries)}")
 
 # Check uniform intervals between consecutive runStartedAt timestamps
-intervals = []
-for i in range(1, len(entries)):
-    intervals.append(int((entries[i]["started"] - entries[i-1]["started"]).total_seconds()))
-if intervals and len(set(intervals)) == 1 and intervals[0] > 0:
-    print(f"UNIFORM_INTERVAL={intervals[0]}")
+history_interval = uniform_interval([e["started"] for e in entries])
+if history_interval is not None:
+    print(f"UNIFORM_INTERVAL={history_interval}")
 
 # Check zero-duration entries (excluding intentionally zero phases)
 zero_dur_offenders = []
 unmeasured_spans = []
-UNMEASURED_REASON_MIN = 20
 for e in entries:
     duration = (e["completed"] - e["started"]).total_seconds()
     if duration <= 0:
@@ -2215,7 +2295,7 @@ for e in entries:
             # A declared-unmeasured span is surfaced, not blocked. An EMPTY or
             # perfunctory reason is still an offender: the declaration has to
             # cost something or it is just a bypass with extra steps.
-            if e["unmeasured"] and len(e["unmeasured_reason"]) >= UNMEASURED_REASON_MIN:
+            if e["unmeasured"] and len(e["unmeasured_reason"]) >= DECLARED_REASON_MIN:
                 unmeasured_spans.append(label)
             else:
                 zero_dur_offenders.append(label)
@@ -2227,7 +2307,6 @@ if zero_dur_offenders:
 # Check overlapping entries (entry N+1 starts before entry N ends)
 overlaps = []
 reconstructed_overlaps = []
-RECONSTRUCTED_REASON_MIN = 20
 for i in range(1, len(entries)):
     prev = entries[i-1]
     curr = entries[i]
@@ -2243,7 +2322,7 @@ for i in range(1, len(entries)):
         declared = [
             e["agent"] for e in (prev, curr)
             if e["reconstructed"]
-            and len(e["reconstructed_reason"]) >= RECONSTRUCTED_REASON_MIN
+            and len(e["reconstructed_reason"]) >= DECLARED_REASON_MIN
         ]
         if declared:
             reconstructed_overlaps.append(f"{detail} [reconstructed: {','.join(declared)}]")
@@ -2304,6 +2383,37 @@ else
 
   if [[ -z "$uniform_interval" ]] && [[ -z "$zero_dur_line" ]] && { [[ -z "$overlap_count" ]] || [[ "$overlap_count" -eq 0 ]]; }; then
     pass "executionHistory timestamps look plausible (no uniform spacing, zero-duration entries, or overlaps)"
+  fi
+fi
+
+# BUG-013: the SAME uniform-interval and ordering analysis over the second
+# timestamp surface. It is reported outside the executionHistory branch above
+# because a packet with a short history still carries load-bearing phase claims.
+claim_unreconciled_line="$(echo "$exec_history_analysis" | grep -E '^CLAIM_UNRECONCILED=' | head -n 1 | sed 's/^CLAIM_UNRECONCILED=//' || true)"
+if [[ -n "$claim_unreconciled_line" ]]; then
+  info "completedPhaseClaims declares unreconciled claim timestamps (reason given): $claim_unreconciled_line"
+fi
+
+claim_count="$(echo "$exec_history_analysis" | grep -E '^CLAIM_COUNT=' | head -n 1 | sed 's/^CLAIM_COUNT=//' || true)"
+if echo "$exec_history_analysis" | grep -qE '^CLAIMS_ABSENT=1$'; then
+  info "No completedPhaseClaims recorded — claim-timestamp plausibility abstains (an absent record is not evidence of fabrication)"
+elif [[ -z "$claim_count" ]] || [[ "$claim_count" -lt 3 ]]; then
+  info "completedPhaseClaims has fewer than 3 reconcilable claimedAt values — claim-timestamp plausibility skipped"
+else
+  info "completedPhaseClaims claimedAt values analyzed: $claim_count"
+
+  claim_uniform_interval="$(echo "$exec_history_analysis" | grep -E '^CLAIM_UNIFORM_INTERVAL=' | head -n 1 | sed 's/^CLAIM_UNIFORM_INTERVAL=//' || true)"
+  if [[ -n "$claim_uniform_interval" ]]; then
+    fail "completedPhaseClaims has $claim_count claimedAt values with identical ${claim_uniform_interval}s intervals — FABRICATION INDICATOR"
+  fi
+
+  claim_disorder_line="$(echo "$exec_history_analysis" | grep -E '^CLAIM_OUT_OF_ORDER=' | head -n 1 | sed 's/^CLAIM_OUT_OF_ORDER=//' || true)"
+  if [[ -n "$claim_disorder_line" ]]; then
+    fail "completedPhaseClaims claimedAt runs backwards: $claim_disorder_line — a phase cannot be claimed complete before the phase recorded ahead of it"
+  fi
+
+  if [[ -z "$claim_uniform_interval" ]] && [[ -z "$claim_disorder_line" ]]; then
+    pass "completedPhaseClaims claimedAt timestamps look plausible (no uniform spacing, no backwards ordering)"
   fi
 fi
 echo ""
