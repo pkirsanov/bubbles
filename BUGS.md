@@ -97,7 +97,18 @@ Route the upstream issue to the sub-agent request serialization path in
 ## BUG-004 — G068 scenario→DoD matching has drifted between its two implementations, contradicting the in-file "MUST stay aligned" contract
 
 - **Filed:** 2026-07-30
-- **Disposition:** open in-repo framework defect, DEFERRED (not fixed in the discovering session). Reconciling the drift changes G068 enforcement semantics for every downstream repo that has adopted `SCN-*` IDs, so the direction is an owner decision rather than a mid-session edit. Per Gate G095 this is a tracked OPEN defect with a recorded reason for deferral, not a silent omission.
+- **Disposition:** **FIXED** 2026-08-17 in `276a81f`. Neither semantics was
+  chosen over the other — the DUPLICATION was removed. One implementation now
+  lives in `bubbles/scripts/scenario-match-lib.sh`, and the difference that had
+  drifted is now a DECLARED policy argument: `structural-strict` (used by
+  `state-transition-guard.sh`, behaviour unchanged) and `id-hint-lenient` (used
+  by `traceability-guard.sh`, behaviour unchanged). Because the owner decision
+  this entry was waiting on turned out to be unnecessary, downstream enforcement
+  semantics moved in NEITHER direction: the 103 scenarios are **not** newly
+  failed. `bubbles/scripts/scenario-match-lib-selftest.sh` (43 passed / 0
+  failed) asserts that both call paths agree when given identical policy, so the
+  pair cannot silently drift again, and it is registered in `framework-validate`.
+  A golden-master corpus confirmed byte-identical verdicts before and after.
 - **Discovered by:** a downstream (WanderAide) certification-debt census that measured G068 across 264 `done` packets, then traced the false-positive rate to the matcher.
 - **Severity:** medium. The drift is currently in the SAFE direction (`traceability-guard.sh` is more lenient than `state-transition-guard.sh`), so it opens no enforcement hole. It does mean an artifact can pass the traceability guard and then fail the transition guard on the same G068 concern, which reads as a contradiction to an operator.
 - **Affects:** `bubbles/scripts/traceability-guard.sh` (`scenario_matches_dod`) and `bubbles/scripts/state-transition-guard.sh` (`stg_scenario_matches_dod`).
@@ -737,7 +748,7 @@ bug. Do not edit correct artifacts in response to it.
 ## BUG-011 — `bubbles.validate` writes `certification.completedScopes` as integers; the guard counts quoted strings, so six entries are read as zero
 
 - **Filed:** 2026-08-08
-- **Disposition:** open framework defect — root cause isolated and confirmed on both sides. NOT fixed here because the correct owner is ambiguous between the writer and the reader, and picking one silently would bake in whichever shape happened to be convenient. Per Gate G095 this is a tracked OPEN defect with a recorded reason and a recommended resolution.
+- **Disposition:** **FIXED** 2026-08-17 in `dbc63c2`. Both sides were addressed rather than one picked silently. The READER now distinguishes "populated but not string scope IDs" from "empty" — previously both produced the identical EMPTY message, which is precisely what made the type mismatch expensive to diagnose. The WRITER contract was added as `bubbles.validate` rule 4. Mutation-proven: reverting the guard change fails the new assertions.
 - **Discovered by:** downstream `research-lab` certification of spec `017-decision-attention-and-developing-situations`, when the guard reported `completedScopes` EMPTY on a `state.json` that visibly contained six entries.
 - **Severity:** medium. It produces a FALSE BLOCK, never a false pass. Its real cost is that it looks like two framework components contradicting each other — the validate agent reports six completed scopes, the guard reports zero — which invites an author to distrust the guard or to hand-edit `certification.*`, and hand-editing `certification.*` is exactly the fabrication Gates G022/G027 exist to catch.
 - **Affects:** the `bubbles.validate` agent (writer) and `bubbles/scripts/state-transition-guard.sh` (reader, the `state_completed_scopes_count` extractor).
@@ -920,13 +931,15 @@ unread one.
 ## BUG-013 — the uniform-interval fabrication detector runs on `executionHistory` only; `completedPhaseClaims[].claimedAt` is read by no check at all
 
 - **Filed:** 2026-08-09
-- **Disposition:** open in-repo framework defect, DEFERRED with a concrete fix
-  recommended below. NOT applied in the discovering session for one specific
-  reason: `bubbles/scripts/state-transition-guard.sh` currently carries **+181
-  uncommitted lines from a concurrent session** in this shared working copy, and
-  adding a check to a file another agent is mid-edit in would risk clobbering
-  unrelated in-flight work. Per Gate G095 this is a tracked OPEN defect with a
-  recorded reason, not a silent omission.
+- **Disposition:** **FIXED** 2026-08-17 in `dbc63c2`.
+  `execution.completedPhaseClaims[].claimedAt` is now analysed by the SAME
+  `uniform_interval` / `first_backwards_step` helpers that already analyse
+  `executionHistory` — one implementation reused, not a second copy; BUG-004 in
+  this same ledger is why that distinction was treated as load-bearing. Absence
+  of `claimedAt` ABSTAINS rather than accuses, and excluding the surface
+  requires an explicit `claimedAtUnreconciled` carrying a reason of at least 20
+  characters. Mutation-proven: with the fix reverted, a fabricated 10-point
+  600-second grid returned exit 0.
 - **Discovered by:** delivery of downstream research-lab
   `specs/017-decision-attention-and-developing-situations`, immediately after
   BUG-012's fix landed. BUG-012 made Check 7A *work*; this entry is about where
@@ -1461,7 +1474,9 @@ machine load rather than the packet.
   `framework-health`. The filed 31-of-33 and "two" figures repeated in the body
   below are superseded by that measurement. The fix is still a design decision (a
   fourth audit profile, or an explicit "no audit contract applies" declaration),
-  not a one-line change, so it remains filed rather than patched.
+  not a one-line change, so it remains filed rather than patched. See the dated
+  sub-note at the end of this entry for the measured ceiling breakdown and for a
+  separate, narrower applicability finding that WAS fixed on 2026-08-17.
 - **Discovered by:** certifying downstream research-lab packets. `BUG-005`,
   `015` and `016` all certified cleanly at `specs_hardened` because
   `product-to-planning` is one of the **two** below-`done` modes that declare a
@@ -1547,6 +1562,52 @@ Decide per mode, do not blanket-assign:
 
 The distinction matters: today both cases look identical to the resolver, which
 is exactly why the gap went unnoticed.
+
+### 2026-08-17 — measured shape and the applicability finding
+
+Measured against `bubbles/workflows/modes.yaml`. **32** modes declare a
+below-`done` `statusCeiling`. **3** of them declare a `transitionAudit`:
+`spec-scope-hardening` and `product-to-planning` (both `planning-maturity-v1`,
+ceiling `specs_hardened`) and `framework-health` (`framework-proposal-v1`,
+ceiling `framework_proposal_written`). The remaining **29** declare none, and
+those are the unreachable ceilings.
+
+The 29 unreachable ceilings break down as: `validated` (5), `docs_updated` (5),
+`delivered_pending_activation` (3), and one each of `backup_verified`,
+`bcdr_verified`, `compliance_swept`, `flags_audited`, `incident_mitigated`,
+`patched`, `propagated_backward`, `propagated_forward`, `propagation_audited`,
+`restore_verified`, `secrets_rotated`, `train_cut`, `train_promoted`,
+`train_retired`, `train_rolled_back`, `train_status_reported`. Note that
+`specs_hardened` and `framework_proposal_written` are NOT in this list: those are
+exactly the ceilings of the three modes that DO declare a contract, so they are
+reachable.
+
+Every one of the 29 is an OPERATIONAL outcome, not a spec-completion claim, and
+neither existing profile fits: `delivery-completion-v1` asserts scope/DoD
+completion these modes have no scopes for, and `planning-maturity-v1` asserts a
+planning maturity they are not producing. That confirms this entry's own
+suggested direction — a further audit profile expressing completeness for
+operational outcomes — as the shape of the fix, and it remains a design decision
+rather than a patch.
+
+**Separate finding, fixed in this session.** `state-transition-guard.sh` mapped
+only 2 of the 4 supported audit profiles to check classes, so
+`delivery-completion-fast-v1` and `framework-proposal-v1` reported
+`applicableCheckClasses: []` — an empty, false declaration inside a
+machine-readable contract. Branches were added for both. This list is **REPORTED
+ONLY**: it is consumed at exactly one place, the `applicableCheckClasses` line of
+the `TRANSITION_GUARD_RESULT_V1` block, and it gates no check execution.
+
+A second, larger defect was discovered while verifying that fix and is NOT fixed
+here: the guard's own contract validator accepts only `planning-maturity-v1` and
+`delivery-completion-v1`, so a contract on either of the other two supported
+profiles is rejected as malformed (`E009-AUDIT-PROFILE-CONTRADICTION`, exit 2)
+before the mapping is reached. `rapid-tool-delivery` and `framework-health`
+therefore cannot pass the transition guard at all today, and the two new branches
+are unreachable until that validator is reconciled with the resolver. Widening it
+is a design decision, not a patch: it would newly admit those modes into the full
+check suite, and an audit-only mode measurably fails the delivery-completion
+checks when admitted.
 
 ---
 
@@ -1896,7 +1957,9 @@ The regex uses only POSIX ERE classes, so it behaves identically under BSD grep;
 ## BUG-028 — Check 43 treats identical deterministic output as cloned evidence and lets unrelated specs block each other
 
 - **Filed:** 2026-08-12
-- **Disposition:** open in-repo framework defect. The finding is reproduced and the faulty predicate is identified. No framework code changed in the filing session.
+- **Disposition:** **FIXED** 2026-08-17 in `3c03201` — for the false-accusation defect; recommendations 1-2 remain **OPEN** (see below). Check 43 no longer treats a differing `evidence_category` as grounds for a forgery allegation: category comes from operator-supplied tags and describes a run, not the program that ran. Identity is now judged by the PROGRAM (`program_identity`); a dispatch verb (`run`/`exec`) keeps the script name, so `npm run lint` and `npm run test` stay distinct; and `target_identity` now carries the positional subject, so two files handled in one scope are distinct. Live effect on this repo's tool log: **5 clone groups → 0**, with 3 of them correctly accepted as deterministic siblings. All adversarial bounds retained (cargo-vs-npm, facet-1 single-target, facet-2 wrappers, IV-F4).
+  - **Rejected approach, recorded so it is not retried blind:** spec-scoping the clone groups (restricting a group to the certifying spec) was implemented and MEASURED — it silenced **all 14** adversarial assertions, because receipts rarely carry the certifying spec's name. It was REVERTED as a false-PASS regression.
+  - **Still open:** correct scoping depends on this entry's own recommendations 1-2 (receipt identifiers recorded on admitted claims), which remain unimplemented. That part of BUG-028 stays explicitly OPEN as a follow-up; the false-accusation defect is closed.
 - **Severity:** high. The check blocks certification and falsely accuses honest executions of evidence reuse.
 - **Found by:** current-policy revalidation of downstream `research-lab/specs/011-volatility-regime-and-sizing-lab`.
 - **Distinct from:** BUG-007 excluded empty stdout. BUG-019 normalized equivalent command spellings. This defect concerns substantive deterministic output from separate commands.

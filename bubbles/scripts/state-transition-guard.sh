@@ -351,13 +351,28 @@ while IFS= read -r gate_id; do
 done < <(jq -r '.requiredGates[]' "$transition_contract_stdout")
 rm -f "$transition_contract_stdout"
 
+# These two lists are REPORTED in the TRANSITION_GUARD_RESULT_V1 block and gate
+# no check execution. That is exactly why every profile the resolver supports
+# needs a branch: a supported profile with no branch keeps the empty initialiser
+# and publishes `applicableCheckClasses: []`, a false declaration about itself.
 case "$transition_audit_profile" in
   planning-maturity-v1)
     transition_applicable_check_classes=(universal mode-required planning-maturity)
     transition_not_applicable_checks=(Check-4-completion Check-5-all-done Check-8-file-existence Check-11-execution-evidence)
     ;;
-  delivery-completion-v1)
+  delivery-completion-v1 | delivery-completion-fast-v1)
+    # The fast lane keeps full implement+test+validate assurance and only omits
+    # the heavyweight `audit` phase (transition-contract-resolver.sh:280-286), so
+    # it asserts the same completion classes as the full delivery profile.
     transition_applicable_check_classes=(universal mode-required delivery-completion)
+    ;;
+  framework-proposal-v1)
+    # IMP-047 PD-11: audit-only, never implements, never certifies delivery
+    # (transition-contract-resolver.sh:264-278 requires audit_only, forbids
+    # implement/test, and pins the ceiling to framework_proposal_written), so no
+    # completion class is true for it.
+    transition_applicable_check_classes=(universal mode-required)
+    transition_not_applicable_checks=(Check-4-completion Check-5-all-done Check-8-file-existence Check-11-execution-evidence)
     ;;
 esac
 
