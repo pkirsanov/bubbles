@@ -2346,3 +2346,96 @@ Check 43 jq program FROM THE GUARD SOURCE and drives it against six fixtures —
 one acceptance and one adversarial bound per facet, plus the BUG-007 and BUG-032
 pins. End-to-end cases run the whole guard in
 `bubbles/scripts/state-transition-guard-selftest.sh`.
+
+---
+
+## BUG-034 — a superseded receipt blocks certification forever, so any spec that records receipts and then commits can never certify
+
+- **Filed:** 2026-08-18
+- **Disposition:** **FIXED** in `bubbles/scripts/scenario-state-resolve.sh` on
+  2026-08-18. `certifiable` and the exit code now consider only
+  `blocking_refusals` — every refusal code EXCEPT `SCS-REVISION-DRIFT`. Drift is
+  still reported, and the receipt is still excluded from derivation; it simply no
+  longer votes on certifiability. `bash bubbles/scripts/scenario-state-resolve-selftest.sh`
+  reports 38 passed, 0 failed.
+- **Severity:** high. It makes receipt-derived certification unreachable for
+  every spec in the long run, and it does so silently — the operator sees
+  `certifiable: no` beside a full set of green scenarios and no unsatisfied
+  state, with nothing named as the cause.
+- **Affects:** `bubbles/scripts/scenario-state-resolve.sh` (certifiability
+  computation and exit code), and therefore Check 4 of
+  `bubbles/scripts/state-transition-guard.sh`, which invokes the resolver with
+  `--certifiable`.
+- **Discovered by:** a downstream `bubbles.goal` session driving
+  guestHost `specs/160-booking-status-vocabulary` to certification.
+
+### Symptom
+
+All 13 scenarios resolve `REGRESSION_GREEN`, `unsatisfied` is empty, and
+certification is still refused:
+
+```
+{ "certifiable": false,
+  "requiredStates": ["RED_VERIFIED","IMPLEMENTED","GREEN_TARGETED","GREEN_LIVE","REGRESSION_GREEN","OBSERVED"],
+  "unsatisfied": [],
+  "refusalCodes": ["SCS-REVISION-DRIFT"] }
+```
+
+The guard reports `failedChecks: [Check-4-scenario-states]` with the message
+`Required scenario states are NOT receipt-derived — certification refused`,
+which is the opposite of what the resolver just computed: every required state
+IS receipt-derived.
+
+### Root cause
+
+`certifiable = (not refusals) and (not unsatisfied)`, and `if refusals: sys.exit(1)`.
+Both counted `SCS-REVISION-DRIFT`.
+
+`receipt_binding_ok()` already returns False for a stale receipt, so a drift
+receipt contributes no state — it can only WITHHOLD evidence, never contradict
+it. A scenario left without fresh evidence therefore already lands in
+`unsatisfied`, which is the condition that genuinely blocks. Counting drift a
+second time adds no detection power.
+
+It does add a false block, and a permanent one. `tool-calls.jsonl` is
+append-only and receipts are pinned to a source revision, so the first commit
+after a receipt campaign converts that whole campaign into drift. Every later
+campaign inherits it. The failure is therefore not specific to spec 160 — 160 is
+just the first packet to have recorded receipts, committed, and recorded again.
+
+### Evidence (execution)
+
+Observed downstream at guestHost HEAD `65c52e72`: 65 refusals, all
+`SCS-REVISION-DRIFT`, against 13 scenarios each holding every required state.
+
+Adversarial proof that the new regression case is load-bearing — the fix was
+reverted in place (`blocking_refusals = list(refusals)`) and the suite was
+re-run:
+
+```
+FAIL: source-revision drift should report and not block (exit 1)
+scenario-state-resolve-selftest: 37 passed, 1 failed
+```
+
+then restored: `38 passed, 0 failed`.
+
+### Regression surface
+
+Three cases in `bubbles/scripts/scenario-state-resolve-selftest.sh`:
+
+- drift is reported and `blockingRefusalCount` is 0, exit 0 — the fix itself;
+- drift-only evidence still fails `--certifiable` via `unsatisfied` — proves the
+  exclusion still denies certification, so the change did not make drift
+  cosmetic;
+- a `SCS-NO-NEGATIVE-CONTROL` receipt alongside drift still blocks — proves the
+  exemption is scoped to one code and did not neutralise the others.
+
+`--ignore-drift` remains rejected by name, so this is a correction to what drift
+MEANS, not a bypass of it.
+
+### Micro-fix admission
+
+Escalates, on the same two answers as BUG-033: `no-new-behavior` fails because a
+refused transition becomes an accepted one, and `no-cross-product-effect` fails
+because the resolver ships into every consuming repository.
+
