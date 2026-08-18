@@ -454,13 +454,13 @@ Before every autonomous convergence iteration, run `bubbles/scripts/convergence-
 
 ## In-Session Review Cadence (IMP-048 SCOPE-1 / LRN-8 — Orchestrator Agents)
 
-Every learning surface this framework had was post-hoc, so five days of real diagnosis could produce zero durable learning. At each phase boundary — never mid-tool — ask `bubbles/scripts/session-review.sh check` whether a review is due, passing the observations you already hold: turns and minutes since the last review, retained tool-result bytes, repeated failure signatures, resultless dispatches, and budget consumption. Defaults are 8 turns, 45 minutes, 150 KB, a signature seen twice, one resultless dispatch, and each of 50/70/90% once. First to fire wins, and the winner is the most diagnostic dimension that fired.
+At each phase boundary — never mid-tool — ask `bubbles/scripts/session-review.sh check` whether a review is due, passing turns and minutes since the last review, retained tool-result bytes, repeated failure signatures, resultless dispatches, and budget consumption. Defaults: 8 turns, 45 minutes, 150 KB, a signature seen twice, one resultless dispatch, each of 50/70/90% once. First to fire wins; the winner is the most diagnostic dimension.
 
-Record the outcome with `session-review.sh emit`. **Adjustment is free; artifacts are expensive.** The common outcome is Class A: change your own behaviour for the rest of the session, state it in one line, write no artifact. Class B is a buffered candidate that reaches `lessons.md` only at `emit --close`, only after recurring twice, and at most three per session. Class C is a user-only action — hand off, approve a widening, supply a credential — deduplicated until its metric worsens by 25%. A review that found nothing records `netEffect: no-adjustment`, which is a valid and expected result; a review that found nothing **while a repeated failure signature or a resultless dispatch was observed** is refused, because that is the record a stuck session writes.
+Record the outcome with `session-review.sh emit`. Class A: change your behaviour for the rest of the session, state it in one line, write no artifact. Class B buffers a candidate that reaches `lessons.md` only at `emit --close`, only after recurring twice, at most three per session. Class C is a user-only action — hand off, approve a widening, supply a credential — deduplicated until its metric worsens by 25%. A review that found nothing records `netEffect: no-adjustment`; one that found nothing **while a repeated failure signature or a resultless dispatch was observed** is refused.
 
-The review is read, not filed. Before selecting the next phase, take the active corrections from `session-review.sh show --active-adjustments` and honour them; carry them into every dispatch packet as `activeAdjustments[]` so a subagent inherits the correction instead of rediscovering it; report back through the OPTIONAL `reviewCompliance` field in the RESULT-ENVELOPE, naming each adjustment honoured or why one did not apply. An adjustment contradicted twice stops being a correction and becomes a Class B candidate. Review records compact under G083 exactly like envelopes — the two most recent stay raw.
+Before the next phase, honour active corrections from `session-review.sh show --active-adjustments`; carry them into every dispatch packet as `activeAdjustments[]`; report them through the OPTIONAL `reviewCompliance` field in the RESULT-ENVELOPE, naming each honoured or why it did not apply. An adjustment contradicted twice becomes a Class B candidate. Review records compact under G083 — the two most recent stay raw.
 
-The loop never writes under `bubbles/`, `agents/`, or `workflows.yaml`, the same proposal-first boundary `retro-framework-health.sh` honours, and it is enforced on the resolved physical path rather than promised. Promotion appends to the one lessons corpus `skill-evolution.sh` already clusters; there is no second mechanism. Default-off per repo: with no `sessionReview:` block every subcommand is a no-op that writes nothing.
+Proposal-first like `retro-framework-health.sh`: the loop never writes under `bubbles/`, `agents/`, or `workflows.yaml`, enforced on the resolved physical path. Promotion appends to the lessons corpus `skill-evolution.sh` clusters. Default-off per repo: with no `sessionReview:` block every subcommand is a no-op.
 
 ## Phase Relevance Resolution (Orchestrator Agents — IMP-038 SCOPE-5 / GF-4)
 
@@ -568,12 +568,12 @@ Hard dependency: `jq` is required (already used elsewhere in the framework). If 
 
 ### The obligation (IMP-048 SCOPE-7)
 
-Snapshotting is owed, not encouraged. A run past 3 turns that appended no `turnSnapshots[]` entry for its own `hostSessionId` is a FINDING, reported by `bash bubbles/scripts/session-liveness.sh check --session-id <id> --turns <n>`. Three turns of grace exist so a short read-only answer is not required to write session state; past that, a run long enough to need resuming is long enough to owe a trajectory.
+A run past 3 turns that appended no `turnSnapshots[]` entry for its own `hostSessionId` is a FINDING, reported by `bash bubbles/scripts/session-liveness.sh check --session-id <id> --turns <n>`.
 
-Two rules follow from the store being shared:
+Two rules follow:
 
-- **Attribution.** `hostSessionId` keys each record, so two concurrent sessions in ONE repository read back their own trajectory instead of each other's. Records with no `hostSessionId` are reported as `unattributed`, never counted as another session's.
-- **An empty store is UNMEASURED, never PASS.** G083, G128 and `trajectory-inspector.sh --health` all read this file; over silence they measure nothing, and reporting that as healthy is the same defect `retro-framework-health.sh` corrected when it replaced "no stale capabilities detected" with an explicit `UNMEASURED`. `session-liveness.sh` reaches `verdict=PASS` only from measured snapshots AND measured freshness. `doctor` additionally reports a session file whose newest snapshot predates the newest commit as STALE, advisory only.
+- **Attribution.** `hostSessionId` keys each record. Records with no `hostSessionId` are `unattributed`, never counted as another session's.
+- **An empty store is UNMEASURED, never PASS.** G083, G128 and `trajectory-inspector.sh --health` all read this file; over silence they measure nothing. `session-liveness.sh` reaches `verdict=PASS` only from measured snapshots AND freshness. `doctor` also reports a session file whose newest snapshot predates the newest commit as STALE, advisory only.
 
 ### Why
 
