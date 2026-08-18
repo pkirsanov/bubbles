@@ -4,7 +4,7 @@
 - **Severity:** high
 - **Disposition:** open framework defect, filed from a downstream repository
   (research-lab), now picked up in the canonical source repo as the S-C
-  prerequisite named by `improvements/IMP-047-outcome-first-framework-convergence.md`.
+  prerequisite named by IMP-047 (see `improvements/INDEX.md`).
 - **Affects:** `bubbles/scripts/state-transition-guard.sh`, Check 43
   (`deterministic_siblings`), introduced with the BUG-032 D3 sibling work.
 
