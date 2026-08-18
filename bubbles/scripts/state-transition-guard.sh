@@ -4370,6 +4370,16 @@ else
     # most serious thing this guard can allege, and the surviving rule still
     # catches the case G021 exists for: one captured result reused for an
     # UNRELATED claim.
+    #
+    # BUG-028 fix A: a differing CATEGORY no longer TRIGGERS the allegation.
+    # `evidence_category` is derived from operator-supplied `tags`, which are
+    # metadata ABOUT a run, not a statement of WHAT ran. Two honest executions
+    # of one command — identical cmd, identical family, identical identity —
+    # two days apart in two sessions were accused of forgery solely because one
+    # was tagged `test` and the other `validate`. Category survives INSIDE
+    # `deterministic_siblings`, where it still constrains the multi-identity
+    # case that is now the only reachable one; it just cannot, alone, allege
+    # forgery when command identity is single.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
       # BUG-033 facet 2: unwrap every TRANSPARENT prefix, not just a bare
@@ -4394,6 +4404,11 @@ else
         cmd_parts as $t
         | ( ($t[0] // "") | split("/") | last ) as $exe
         | $exe;
+      # BUG-028 fix C: a generic dispatch verb is not a subject. Keeping only
+      # the FIRST positional made `npm run lint` and `npm run test` one
+      # identity, discarding the script name that is the actual claim, so one
+      # receipt covering both escaped detection. When the first positional is
+      # `run` or `exec`, the next one is retained; no wider verb list is used.
       def positional_target:
         cmd_parts as $t
         | ( reduce ($t[1:][]) as $tok ({skip:false, pos:[]};
@@ -4402,9 +4417,22 @@ else
                 then {skip: (($tok | contains("=")) | not), pos:.pos}
               else {skip:false, pos:(.pos + [$tok])}
               end)
-            | (.pos[0] // "") );
+            | .pos ) as $pos
+        | ($pos[0] // "") as $first
+        | if ($first | test("^(run|exec)$")) and (($pos | length) > 1)
+            then $first + " " + $pos[1]
+            else $first end;
       def cmd_identity:
-        command_family + " " + positional_target;
+        [command_family, positional_target] | map(select(length > 0)) | join(" ");
+      # BUG-028 fix D: the PROGRAM that ran, without its plain subject. One
+      # deterministic validator over several subjects must resolve to one
+      # program (`artifact-lint.sh`), while a dispatched script name is part of
+      # the program itself (`npm run lint` vs `npm run test`). The dispatch-verb
+      # decision is reused from `positional_target` rather than restated, so the
+      # two definitions can never disagree about what a subject is.
+      def program_identity:
+        positional_target as $pt
+        | if ($pt | test("^(run|exec) ")) then command_family + " " + $pt else command_family end;
       def tag_category:
         [(.tags // [])[]?
           | ascii_downcase
@@ -4431,7 +4459,12 @@ else
         if ((.inputClosure // []) | type) == "array" and ((.inputClosure // []) | length) > 0 then
           "closure:" + ([.inputClosure[] | ((.path // "") + "@" + (.sha256 // ""))] | sort | join(","))
         elif ((.spec // "") != "") or ((.scope // "") != "") then
-          "spec:" + (.spec // "") + "|scope:" + (.scope // "")
+          # BUG-028 fix E: a spec/scope pair names WHERE the work sits, not WHAT
+          # was examined. Two runs of one validator over two different files in
+          # one scope collapsed to a single target and were refused for it, so
+          # the subject is carried alongside. This only ever splits targets
+          # further apart; it can never merge two that were distinct.
+          "spec:" + (.spec // "") + "|scope:" + (.scope // "") + "|subject:" + (.cmd | positional_target)
         else
           "target:" + (.cmd | positional_target)
         end;
@@ -4444,6 +4477,7 @@ else
       def deterministic_siblings:
         . as $rows
         | ($rows | map(.cmd | command_family)) as $families
+        | ($rows | map(.cmd | program_identity)) as $programs
         | ($rows | map(evidence_category)) as $categories
         | ($rows | map(.exitCode)) as $exits
         # BUG-033 facet 1: one target per command IDENTITY, not per RECEIPT.
@@ -4458,9 +4492,16 @@ else
         | ($rows | map(provenance_identity)) as $provenance
         | (($families | unique | length) == 1)
           and (($families[0] // "") != "")
-          and (($categories | unique | length) == 1)
-          and (($categories[0] // "") != "other")
-          and (($categories[0] // "") | startswith("mixed:") | not)
+          # BUG-028 fix D: a tag describes a run, it does not name the program.
+          # One deterministic validator over several subjects is expected to
+          # repeat its output, so identity is judged by the program that ran
+          # plus distinct subjects and distinct executions — not by how an agent
+          # labelled the run. Category survives only as a sanity floor applied
+          # to every row: an unclassifiable or self-contradictory tagging still
+          # blocks, but honest runs may legitimately carry different labels.
+          and (($programs | unique | length) == 1)
+          and (($programs[0] // "") != "")
+          and all($categories[]; . != "other" and ((startswith("mixed:")) | not))
           and all($exits[]; type == "number")
           and (($exits | unique | length) == 1)
           and ($targets | all_distinct_nonempty)
@@ -4475,13 +4516,11 @@ else
       | group_by(.stdoutHash)
       | {
           siblings: map(select(
-            (((map(.cmd | cmd_identity) | unique | length) > 1)
-              or ((map(evidence_category) | unique | length) > 1))
+            ((map(.cmd | cmd_identity) | unique | length) > 1)
             and deterministic_siblings
           )),
           clones: (map(select(
-            (((map(.cmd | cmd_identity) | unique | length) > 1)
-              or ((map(evidence_category) | unique | length) > 1))
+            ((map(.cmd | cmd_identity) | unique | length) > 1)
             and (deterministic_siblings | not)
           )) | map({hash: .[0].stdoutHash, identities: map(identity_detail)}))
         }
