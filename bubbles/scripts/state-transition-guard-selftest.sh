@@ -3805,8 +3805,8 @@ mutate_delivery_contract "$bug032_receipt_feature/state.json"
 git -C "$bug032_receipt_repo" init -q
 mkdir -p "$(dirname "$bug032_receipt_log")"
 
-bug032_nonempty_hash="9f2c1a77b3e45d6081ca2be7f4d0913ac5e8b26df1074a3c9e5b0d8f6a271c43"
-bug032_empty_hash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+bug032_nonempty_hash="$(printf '%s' 'bug032-nonempty-output' | { if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi; } | awk '{print $1}')"
+bug032_empty_hash="$c43_empty_sha"
 
 cat > "$bug032_receipt_log" <<EOF
 {"ts":"2026-08-15T10:00:01Z","sessionId":"receipt-sibling-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/artifact-lint.sh specs/alpha","exitCode":0,"durationMs":101,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
