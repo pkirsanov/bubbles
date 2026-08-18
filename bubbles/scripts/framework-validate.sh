@@ -943,6 +943,12 @@ run_check "Always-on instruction budget selftest (IMP-039 / COST-6)" bash "$SCRI
 # over-narrow grant breaks dispatch silently. Report the delta, narrow one agent
 # at a time, and only then flip a repo to --strict.
 run_check_self_only "Tool-grant lint (IMP-039 / COST-6, advisory)" bash "$SCRIPT_DIR/tool-grant-lint.sh" --quiet
+# IMP-049 SCOPE-6 / COST-1. Exact documentation wording that used to gate a
+# release: generated cheatsheet markup, rendered table rows, and literal English
+# sentences. The owning selftests now assert the structure underneath each one,
+# so rewording a doc no longer breaks a build. This reports drift and always
+# exits 0. Self-only: it reads this repo's own docs, prompts, and README.
+run_check_self_only "Documentation wording (IMP-049 / COST-1, advisory)" bash "$SCRIPT_DIR/docs-wording-advisory.sh" --quiet
 # Self-only: it reads this repo's own instruction surfaces. A downstream repo
 # gets the coherent text from the template on upgrade, so running it there would
 # report the framework's own upgrade lag as a consumer defect.
