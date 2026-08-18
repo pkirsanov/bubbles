@@ -1364,6 +1364,13 @@ if [[ -f "$SCRIPT_DIR/phase-coordinator-selftest.sh" ]]; then
   run_check "Phase coordinator selftest (IMP-047 S-C / AC8-AC12)" bash "$SCRIPT_DIR/phase-coordinator-selftest.sh"
 fi
 
+# Dispatch receipts extend the same occurrence model UP one level, from the
+# phase to the dispatch that was supposed to resolve it, so they are enumerated
+# beside the coordinator rather than left to the sweep below.
+if [[ -f "$SCRIPT_DIR/dispatch-receipt-selftest.sh" ]]; then
+  run_check "Dispatch receipt selftest (IMP-048 SCOPE-2 / HO-4)" bash "$SCRIPT_DIR/dispatch-receipt-selftest.sh"
+fi
+
 # ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #
