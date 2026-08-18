@@ -51,6 +51,17 @@ run_capture() {
   echo "$status"
 }
 
+sha256_text() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$1" | sha256sum | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$1" | shasum -a 256 | awk '{print $1}'
+  else
+    printf 'state-transition-guard-selftest: sha256sum or shasum is required\n' >&2
+    return 2
+  fi
+}
+
 clone_framework_surface() {
   local destination_root="$1"
 
@@ -3805,7 +3816,7 @@ mutate_delivery_contract "$bug032_receipt_feature/state.json"
 git -C "$bug032_receipt_repo" init -q
 mkdir -p "$(dirname "$bug032_receipt_log")"
 
-bug032_nonempty_hash="$(printf '%s' 'bug032-nonempty-output' | { if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi; } | awk '{print $1}')"
+bug032_nonempty_hash="$(sha256_text 'bug032-nonempty-output')"
 bug032_empty_hash="$c43_empty_sha"
 
 cat > "$bug032_receipt_log" <<EOF
