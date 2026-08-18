@@ -1377,6 +1377,13 @@ if [[ -f "$SCRIPT_DIR/test-leaf-receipt-selftest.sh" ]]; then
   run_check "Test-leaf receipt selftest (IMP-048 SCOPE-3 / PERF-9)" bash "$SCRIPT_DIR/test-leaf-receipt-selftest.sh"
 fi
 
+# The review loop CONSUMES the signals the two receipt surfaces above produce —
+# a repeated failure signature, a dispatch that returned no envelope — so it is
+# enumerated with them rather than left to the sweep below.
+if [[ -f "$SCRIPT_DIR/session-review-selftest.sh" ]]; then
+  run_check "Session review selftest (IMP-048 SCOPE-1 / LRN-8)" bash "$SCRIPT_DIR/session-review-selftest.sh"
+fi
+
 # ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #
