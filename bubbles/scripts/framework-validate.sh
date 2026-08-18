@@ -343,6 +343,13 @@ core_check_label() {
       *"guard-lib timeout fallback"*) # portable-ok: case pattern matching a check NAME, not a timeout invocation
       return 0
       ;;
+    # The one LIVE check in core: 14s, and the cheapest detector of a stale
+    # committed release manifest. Without it a stale manifest survives the core
+    # tier and only surfaces in a full validate, where one root cause presents
+    # as many unrelated-looking failures (interop, install provenance, trust doctor).
+    *"Release manifest freshness"*)
+      return 0
+      ;;
     *) return 1 ;;
   esac
 }
