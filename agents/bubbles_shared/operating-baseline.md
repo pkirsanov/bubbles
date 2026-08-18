@@ -564,7 +564,16 @@ Hard dependency: `jq` is required (already used elsewhere in the framework). If 
 ### What
 
 - Orchestrators snapshot each turn boundary with `bash bubbles/scripts/state-snapshot.sh --mode <start|end> --phase <p> --session-id <session-id> --session-control-file <control-file> --binding-packet-file <packet-file>`. Goal-node calls add the required pair `--scenario-file <compiled-scenario.json> --node-id <node-id>`.
-- Each invocation appends a single record to `.specify/memory/bubbles.session.json` `turnSnapshots[]` carrying: `turnNumber` (auto-incremented), `timestamp` (UTC ISO8601), `phase`, `scopeId` (or null), `mode` (`start` | `end`), `note` (or null), and `agent` (from `$BUBBLES_AGENT_NAME`, defaulting to `unknown`).
+- Each invocation appends a single record to `.specify/memory/bubbles.session.json` `turnSnapshots[]` carrying: `turnNumber` (auto-incremented), `timestamp` (UTC ISO8601), `phase`, `scopeId` (or null), `mode` (`start` | `end`), `note` (or null), `agent` (from `$BUBBLES_AGENT_NAME`, defaulting to `unknown`), and `hostSessionId` (from the already-required `--session-id`).
+
+### The obligation (IMP-048 SCOPE-7)
+
+Snapshotting is owed, not encouraged. A run past 3 turns that appended no `turnSnapshots[]` entry for its own `hostSessionId` is a FINDING, reported by `bash bubbles/scripts/session-liveness.sh check --session-id <id> --turns <n>`. Three turns of grace exist so a short read-only answer is not required to write session state; past that, a run long enough to need resuming is long enough to owe a trajectory.
+
+Two rules follow from the store being shared:
+
+- **Attribution.** `hostSessionId` keys each record, so two concurrent sessions in ONE repository read back their own trajectory instead of each other's. Records with no `hostSessionId` are reported as `unattributed`, never counted as another session's.
+- **An empty store is UNMEASURED, never PASS.** G083, G128 and `trajectory-inspector.sh --health` all read this file; over silence they measure nothing, and reporting that as healthy is the same defect `retro-framework-health.sh` corrected when it replaced "no stale capabilities detected" with an explicit `UNMEASURED`. `session-liveness.sh` reaches `verdict=PASS` only from measured snapshots AND measured freshness. `doctor` additionally reports a session file whose newest snapshot predates the newest commit as STALE, advisory only.
 
 ### Why
 

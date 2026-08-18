@@ -1384,6 +1384,13 @@ if [[ -f "$SCRIPT_DIR/session-review-selftest.sh" ]]; then
   run_check "Session review selftest (IMP-048 SCOPE-1 / LRN-8)" bash "$SCRIPT_DIR/session-review-selftest.sh"
 fi
 
+# Liveness is what makes the session controls above readable at all: G083, G128
+# and trajectory health all read the session store, so it is enumerated beside
+# the cap guard whose store it keeps honest.
+if [[ -f "$SCRIPT_DIR/session-liveness-selftest.sh" ]]; then
+  run_check "Session liveness selftest (IMP-048 SCOPE-7 / WIP-5)" bash "$SCRIPT_DIR/session-liveness-selftest.sh"
+fi
+
 # ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #

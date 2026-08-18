@@ -83,12 +83,37 @@ modes:
       reevaluated: boolean # true if skip was re-evaluated and upheld
       reevaluationTrigger: string # which trigger caused re-evaluation (if any)
 
+  # ── Delivery session budgets (IMP-048 SCOPE-6 / COST-9) ──
+  #
+  # SELECTION RULE, applied mechanically rather than by taste: a mode carries a
+  # `sessionBudget` default IFF its `phaseOrder` contains BOTH `implement` and
+  # `test`. That is the property that makes a session long and expensive — it
+  # writes code and then has to prove it — and it is readable straight off the
+  # registry, so a new mode inherits the rule instead of an opinion. A planning,
+  # docs, review, train, upkeep or propagate mode has no such phase pair and
+  # stays unbounded.
+  #
+  # The four values below come from the measured 5-day incident behind IMP-048,
+  # not from roundness. They are FRAMEWORK defaults, not per-repo config: G128
+  # reads `sessionBudget` from `.specify/memory/bubbles.session.json` and NOTHING
+  # mechanically copies these values there, so declaring them here cannot newly
+  # block any existing repository. An orchestrator SEEDS them at session start
+  # (see the per-mode seeding note in the runner agents); an explicit operator
+  # budget always wins.
+  #
+  # `rapid-tool-delivery` keeps its own TIGHTER caps and is never overwritten.
+
   value-first-e2e-batch:
     description: Discover highest-value next work (spec/scope/bug/gap/hardening/new feature), bootstrap missing artifacts, then run full E2E delivery loop.
     statusCeiling: done
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ discover, select, bootstrap, implement, test, regression, simplify, stabilize, devops, security, docs, validate, audit, chaos, redteam, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       valueFirstSelection: true
@@ -153,6 +178,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, interrogate, implement, test, regression, simplify, gaps, harden, stabilize, devops, security, validate, audit, chaos, redteam, docs, finalize ]
     requiredGates: [ G002 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       continueOnBlocked: false
@@ -209,6 +239,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, implement, test, regression, simplify, gaps, harden, stabilize, devops, security, validate, audit, chaos, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       continueOnBlocked: false
@@ -268,6 +303,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, implement, test, regression, simplify, gaps, harden, stabilize, devops, security, validate, audit, finalize ]
     requiredGates: [ G002, G060 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       requireBugReproductionBeforeFix: true
       requireBugVerificationAfterFix: true
@@ -373,6 +413,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, chaos, implement, test, regression, simplify, stabilize, devops, security, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G058, G059, G060, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -400,6 +445,11 @@ modes:
     inherits: [ base-delivery, delivery-gate-baseline, delivery-quality-constraints, finding-owned-remediation ]
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, validate, harden, implement, test, regression, simplify, stabilize, devops, security, chaos, validate, audit, docs, finalize ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
 
   gaps-to-doc:
@@ -408,6 +458,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, validate, gaps, implement, test, regression, simplify, stabilize, devops, security, chaos, validate, audit, docs, finalize ]
     requiredGates: [ G002 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
 
   harden-gaps-to-doc:
@@ -416,6 +471,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, validate, harden, gaps, implement, test, regression, simplify, stabilize, devops, security, chaos, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       sequentialSpecCompletion: true
@@ -437,6 +497,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, validate, implement, test, regression, simplify, stabilize, devops, security, validate, audit, chaos, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -595,6 +660,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ analyze, select, bootstrap, implement, test, regression, simplify, stabilize, devops, security, docs, validate, audit, chaos, releases, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G032, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       requireBusinessAnalysis: true
@@ -629,6 +699,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, validate, stabilize, devops, implement, test, regression, simplify, security, chaos, validate, audit, docs, finalize ]
     requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -654,6 +729,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, security, implement, test, regression, simplify, stabilize, devops, chaos, validate, audit, docs, finalize ]
     requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -679,6 +759,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, bootstrap, regression, implement, test, simplify, stabilize, devops, security, chaos, validate, audit, docs, finalize ]
     requiredGates: [ G001, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -704,6 +789,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ analyze, select, validate, harden, gaps, implement, test, regression, simplify, stabilize, devops, security, validate, audit, chaos, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G032, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 3
     constraints:
       requireFindingOwnedPlanningWorkflow: true
@@ -831,6 +921,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, retro, harden, gaps, implement, test, regression, simplify, stabilize, security, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       requireExistingImplementation: true
       retroModes: [ hotspots ]
@@ -886,6 +981,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ analyze, releases, select, bootstrap, implement, test, regression, simplify, stabilize, devops, security, docs, validate, audit, chaos, redteam, releases, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G013, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G032, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       # Fan-out mode: full lifecycle dispatches multiple specialists across both
@@ -940,6 +1040,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, retro, simplify, harden, gaps, implement, test, regression, stabilize, devops, security, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       # Fan-out mode: the authorized top-level runner resolves mapped modes per
       # hotspot/finding and invokes every specialist phase owner directly. See
@@ -966,6 +1071,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ select, chaos, harden, gaps, simplify, stabilize, devops, security, regression, validate, bug, implement, test, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     maxChaosRounds: 5
     constraints:
       # Fan-out mode: each round resolves a mapped workflow that spans multiple
@@ -1040,6 +1150,11 @@ modes:
     # Each iteration selects a SUBSET based on auto-mode-selection (Work-Type-to-Mode Mapping).
     phaseOrder: [ discover, select, analyze, bootstrap, harden, gaps, simplify, stabilize, devops, security, regression, bug, implement, test, docs, validate, audit, chaos, finalize ]
     requiredGates: [ G002 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       # Fan-out mode: each iteration auto-selects and dispatches a delivery child
       # workflow (full-delivery / bugfix-fastlane / chaos-hardening / ...) that
@@ -1105,6 +1220,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ discover, analyze, bootstrap, implement, test, validate, audit, chaos, redteam, harden, gaps, security, regression, simplify, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       # Fan-out mode: convergence loop dispatches remediationWorkflowModes per
       # finding (chaos-hardening / harden-to-doc / gaps-to-doc / ...). Each
@@ -1153,6 +1273,11 @@ modes:
     transitionAudit: { profile: delivery-completion-v1, target: statusCeiling }
     phaseOrder: [ discover, select, analyze, bootstrap, implement, test, validate, audit, chaos, redteam, harden, gaps, security, regression, simplify, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G008, G009, G010, G011, G012, G014, G015, G016, G018, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G031, G033, G034, G035, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       # Fan-out mode: each goal runs the autonomous-goal convergence loop, which
       # itself executes remediation modes per finding through the sprint's active
@@ -1208,6 +1333,11 @@ modes:
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G027, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073, G074 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       defaultScopeKind: deploy-pointer
       requiresLockdownDeclaration: true
@@ -1229,6 +1359,11 @@ modes:
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, regression, simplify, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       defaultScopeKind: runtime-behavior
       requiresLockdownDeclaration: true
@@ -1248,6 +1383,11 @@ modes:
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, regression, security, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G027, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073 ]
+    sessionBudget:
+      maxWallClockMinutes: 180
+      maxToolCalls: 350
+      maxSingleToolResultBytes: 50000
+      maxCumulativeToolResultBytes: 250000
     constraints:
       defaultScopeKind: contract-only
       requiresLockdownDeclaration: true
