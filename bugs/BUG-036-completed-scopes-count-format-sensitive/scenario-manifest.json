@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-036-completed-scopes-count-format-sensitive",
+  "scenarios": [
+    {
+      "id": "SCN-B036-001",
+      "title": "Compact string array counts every entry",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["state-machine", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Restore line counting. Three string IDs on one physical line count as one.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 5 is a repository-state guard with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B036-002",
+      "title": "Ordinal arrays remain a type error",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["state-machine", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Count every JSON element without type validation. The ordinal fixture is incorrectly accepted.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 5 is a repository-state guard with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B036-003",
+      "title": "Certification array takes precedence",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["state-machine", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Reverse the precedence. The fixture reads the stale legacy array and fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 5 is a repository-state guard with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B036-004",
+      "title": "Phantom scope protection remains active",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["state-machine", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Disable Check 5C. The phantom identifier is accepted and the adversarial fixture fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 5C is a repository-state guard with no rendered product surface."
+      }
+    }
+  ]
+}

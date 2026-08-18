@@ -31,13 +31,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=guard-lib.sh
 source "$SCRIPT_DIR/guard-lib.sh"
 
-# Wall-clock bound for the nested downstream framework-validate run (T3). A
-# hang here used to be indistinguishable from slow progress; the bound turns it
-# into a LOUD failure. It is a ceiling, not a budget: it exists to convert a
-# HANG into a failure, NOT to police performance. Do not tighten it to make the
-# suite feel fast -- a bound below the healthy duration produces FALSE failures,
-# and it fails twice, because a truncated log also loses the SKIP lines T3 scans
-# for.
+# Progress and absolute bounds for the nested downstream framework-validate run
+# (T3). A fixed wall deadline confuses slow progress with a hang. The idle bound
+# catches a silent stall; the absolute bound catches an endlessly chatty run.
+# Do not tighten either to police performance: they are reliability ceilings.
 #
 # Calibrated against measurement, not guesswork. At the previous 1200s the
 # nested run was still making normal forward progress when it was cut off (6,526
@@ -45,9 +42,11 @@ source "$SCRIPT_DIR/guard-lib.sh"
 # duration, so it failed healthy runs. Downstream mode skips the
 # framework-source-only selftests and so runs shorter than the source-mode run
 # (which needs ~22 minutes just to REACH this section), but it is still on the
-# order of 25-35 minutes on a developer host. 3600s clears that with headroom
-# while still catching a true hang in bounded time.
-downstream_validate_timeout_seconds="${BUBBLES_V53_DOWNSTREAM_VALIDATE_TIMEOUT_SECONDS:-3600}"
+# order of 25-35 minutes on an idle developer host and exceeded 60 minutes while
+# still producing output on a contended shared host. Fifteen idle minutes catches
+# a real stall; two hours keeps active progress bounded.
+downstream_validate_idle_timeout_seconds="${BUBBLES_V53_DOWNSTREAM_VALIDATE_IDLE_TIMEOUT_SECONDS:-900}"
+downstream_validate_absolute_timeout_seconds="${BUBBLES_V53_DOWNSTREAM_VALIDATE_ABSOLUTE_TIMEOUT_SECONDS:-7200}"
 
 failures=0
 pass() { echo "PASS: $1"; }
@@ -61,6 +60,36 @@ downstream_check_detail() {
     capture { print }
   ' "$ds_log" | tail -80
 }
+
+downstream_result_contract_passes() {
+  local child_rc="$1"
+  local known_count="$2"
+  local unexpected_count="$3"
+  local fixed_count="$4"
+
+  [[ "$unexpected_count" -eq 0 && "$fixed_count" -eq 0 ]] || return 1
+  if [[ "$known_count" -eq 0 ]]; then
+    [[ "$child_rc" -eq 0 ]]
+  else
+    [[ "$child_rc" -ne 0 ]]
+  fi
+}
+
+if downstream_result_contract_passes 0 0 0 0; then
+  pass "T3c contract: zero known failures requires child exit 0"
+else
+  fail "T3c contract rejected a clean child exit"
+fi
+if downstream_result_contract_passes 7 0 0 0; then
+  fail "T3c contract accepted an unexplained nonzero child exit"
+else
+  pass "T3c contract: unexplained nonzero child exit fails closed"
+fi
+if downstream_result_contract_passes 1 1 0 0; then
+  pass "T3c contract: one exactly enumerated known failure accepts a nonzero child exit"
+else
+  fail "T3c contract rejected an exactly enumerated known failure"
+fi
 
 # --- T2: source-mode detection on the framework repo itself ---
 if [[ -f "$ROOT_DIR/install.sh" && -f "$ROOT_DIR/VERSION" ]]; then
@@ -89,6 +118,10 @@ fi
 tmp_root="$(mktemp -d -t bubbles-v5.3-selftest.XXXXXX)"
 trap 'rm -rf "$tmp_root"' EXIT INT TERM
 
+run_in_downstream_root() {
+  (cd "$tmp_root" && "$@")
+}
+
 git -C "$tmp_root" init --quiet
 git -C "$tmp_root" config user.email "selftest@example.invalid"
 git -C "$tmp_root" config user.name "v5.3 selftest"
@@ -112,6 +145,14 @@ else
   pass "T0b: downstream root carries no source-tree markers"
 fi
 
+expected_downstream_root="$(cd "$tmp_root" && pwd -P)"
+actual_downstream_root="$(run_in_downstream_root pwd -P)"
+if [[ "$actual_downstream_root" == "$expected_downstream_root" ]]; then
+  pass "T0c: downstream command wrapper executes from the installed repository root"
+else
+  fail "T0c: downstream command wrapper leaked ambient CWD (expected=$expected_downstream_root actual=$actual_downstream_root)"
+fi
+
 # The managed-doc existence lint (correctly) fails a repository that declares
 # required managed docs and has not written them. In this fixture that is an
 # adoption gap, not a defect in the install, so give the fixture the documents
@@ -130,7 +171,7 @@ done < <(
 )
 
 # --- T1: downstream-mode detection ---
-ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" --list-tier=core </dev/null 2>&1)"
+ds_out="$(run_in_downstream_root bash .github/bubbles/scripts/framework-validate.sh --list-tier=core </dev/null 2>&1)"
 if grep -q "Install mode: downstream" <<<"$ds_out"; then
   pass "T1: framework-validate reports install-mode=downstream from a real installed tree"
 else
@@ -151,17 +192,21 @@ fi
 # SIGPIPEs the run early; T3 captures everything and had nothing to cap it.
 # A temp file has no reader to starve, and `</dev/null` removes the second
 # blocking surface (a nested command waiting on input that never comes).
-# bubbles_run_with_timeout is the backstop: a future hang FAILS LOUD at the
-# bound instead of hanging. 124 is a failure here, never a skip or a pass.
+# bubbles_run_with_progress_timeout is the backstop: a future silent or chatty
+# hang FAILS LOUD at the correct bound instead of truncating healthy progress.
 ds_rc=0
 ds_log="$(mktemp "${TMPDIR:-/tmp}/bubbles-v5.3-downstream.XXXXXX")"
 trap 'rm -rf "$tmp_root"; rm -f "$ds_log"' EXIT INT TERM
-bubbles_run_with_timeout "$downstream_validate_timeout_seconds" \
-  bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" \
-  >"$ds_log" 2>&1 </dev/null || ds_rc=$?
+bubbles_run_with_progress_timeout \
+  "$downstream_validate_idle_timeout_seconds" \
+  "$downstream_validate_absolute_timeout_seconds" \
+  "$ds_log" \
+  run_in_downstream_root bash .github/bubbles/scripts/framework-validate.sh || ds_rc=$?
 ds_full="$(cat "$ds_log")"
 if [[ $ds_rc -eq 124 ]]; then
-  fail "T3: downstream framework-validate did not finish within ${downstream_validate_timeout_seconds}s (timed out; treated as a failure, not a skip)"
+  fail "T3: downstream framework-validate made no log progress for ${downstream_validate_idle_timeout_seconds}s (idle timeout; treated as a failure, not a skip)"
+elif [[ $ds_rc -eq 125 ]]; then
+  fail "T3: downstream framework-validate exceeded the ${downstream_validate_absolute_timeout_seconds}s absolute ceiling while still producing output (treated as a failure, not a skip)"
 fi
 self_only_labels=(
   "Capability ledger selftest"
@@ -181,25 +226,27 @@ self_only_labels=(
   "Validation run receipt selftest (IMP-049 SCOPE-2)"
   "Generated gate-enforcement block current"
 )
-t3_failures=0
-for label in "${self_only_labels[@]}"; do
-  if grep -Fq "SKIP: $label (framework-source-only" <<<"$ds_full"; then
-    :
-  else
-    fail "T3: '$label' was not SKIPPED under install-mode=downstream"
-    t3_failures=$((t3_failures + 1))
+if [[ $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
+  t3_failures=0
+  for label in "${self_only_labels[@]}"; do
+    if grep -Fq "SKIP: $label (framework-source-only" <<<"$ds_full"; then
+      :
+    else
+      fail "T3: '$label' was not SKIPPED under install-mode=downstream"
+      t3_failures=$((t3_failures + 1))
+    fi
+  done
+  if [[ $t3_failures -eq 0 ]]; then
+    pass "T3: all ${#self_only_labels[@]} framework-source-only selftests SKIPPED under install-mode=downstream"
   fi
-done
-if [[ $t3_failures -eq 0 ]]; then
-  pass "T3: all ${#self_only_labels[@]} framework-source-only selftests SKIPPED under install-mode=downstream"
-fi
 
-# Also assert no FAIL line for those same labels (defense against silent regression).
-for label in "${self_only_labels[@]}"; do
-  if grep -Fq "FAIL: $label" <<<"$ds_full"; then
-    fail "T3b: '$label' FAILED instead of SKIPPING under install-mode=downstream"
-  fi
-done
+  # Also assert no FAIL line for those same labels (defense against silent regression).
+  for label in "${self_only_labels[@]}"; do
+    if grep -Fq "FAIL: $label" <<<"$ds_full"; then
+      fail "T3b: '$label' FAILED instead of SKIPPING under install-mode=downstream"
+    fi
+  done
+fi
 
 # --- T3c: the downstream validation run as a whole must succeed -------------
 #
@@ -220,7 +267,7 @@ observed_failures=()
 # nested fixture output it printed. On failure, read only the LAST contiguous
 # "Failed checks:" block; the first block can belong to a nested selftest that
 # intentionally exercised a red framework-validate fixture.
-if [[ $ds_rc -ne 0 ]]; then
+if [[ $ds_rc -ne 0 && $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
   while IFS= read -r line; do
     [[ -n "$line" ]] && observed_failures+=("$line")
   done < <(printf '%s\n' "$ds_full" | awk '
@@ -232,7 +279,7 @@ if [[ $ds_rc -ne 0 ]]; then
 fi
 
 unexpected=0
-if [[ $ds_rc -ne 0 && ${#observed_failures[@]} -eq 0 ]]; then
+if [[ $ds_rc -ne 0 && $ds_rc -ne 124 && $ds_rc -ne 125 && ${#observed_failures[@]} -eq 0 ]]; then
   fail "T3c: downstream framework-validate exited $ds_rc without a trailing Failed checks block"
   unexpected=$((unexpected + 1))
 fi
@@ -266,11 +313,18 @@ for known in "${known_downstream_failures[@]}"; do
   fi
 done
 
-if [[ $unexpected -eq 0 && $fixed -eq 0 ]]; then
-  if [[ ${#known_downstream_failures[@]} -eq 0 && $ds_rc -eq 0 ]]; then
-    pass "T3c: downstream framework-validate exited 0"
+if [[ $unexpected -eq 0 && $fixed -eq 0 && $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
+  if downstream_result_contract_passes \
+    "$ds_rc" "${#known_downstream_failures[@]}" "$unexpected" "$fixed"; then
+    if [[ ${#known_downstream_failures[@]} -eq 0 ]]; then
+      pass "T3c: downstream framework-validate exited 0"
+    else
+      pass "T3c: downstream failures match the ${#known_downstream_failures[@]} enumerated known defects (rc=$ds_rc)"
+    fi
+  elif [[ ${#known_downstream_failures[@]} -eq 0 ]]; then
+    fail "T3c: downstream framework-validate exited $ds_rc without a Failed checks block"
   else
-    pass "T3c: downstream failures match the ${#known_downstream_failures[@]} enumerated known defects (rc=$ds_rc)"
+    fail "T3c: downstream framework-validate exited 0 while known failures remain enumerated"
   fi
 fi
 
@@ -279,7 +333,7 @@ fi
 # the ASSIGNMENT, which is always 0, so the rc half of the condition below was
 # inert. Same for T5.
 sr_rc=0
-sr_out="$(bash "$tmp_root/.github/bubbles/scripts/spec-review-handoff-selftest.sh" </dev/null 2>&1)" || sr_rc=$?
+sr_out="$(run_in_downstream_root bash .github/bubbles/scripts/spec-review-handoff-selftest.sh </dev/null 2>&1)" || sr_rc=$?
 if [[ $sr_rc -eq 0 ]] && grep -q "spec-review-handoff-selftest: PASSED" <<<"$sr_out"; then
   pass "T4: spec-review-handoff-selftest passes under synthesized downstream tree"
 else
@@ -288,7 +342,7 @@ fi
 
 # --- T5: workflow-delegation-selftest passes under downstream tree ---
 wd_rc=0
-wd_out="$(bash "$tmp_root/.github/bubbles/scripts/workflow-delegation-selftest.sh" </dev/null 2>&1)" || wd_rc=$?
+wd_out="$(run_in_downstream_root bash .github/bubbles/scripts/workflow-delegation-selftest.sh </dev/null 2>&1)" || wd_rc=$?
 if [[ $wd_rc -eq 0 ]] && grep -q "workflow-delegation selftest passed" <<<"$wd_out"; then
   pass "T5: workflow-delegation-selftest passes under synthesized downstream tree"
 else

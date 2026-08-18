@@ -327,7 +327,11 @@ extract_scenarios_with_ids() {
     /^[[:space:]]*Scenario( Outline)?:/ {
       title = $0
       sub(/^[[:space:]]*Scenario( Outline)?:[[:space:]]*/, "", title)
-      print heading_id "\t" title
+      scenario_id = heading_id
+      if (scenario_id == "" && match(title, /(SCN|AC|FR|UC)-[A-Za-z0-9_-]+/)) {
+        scenario_id = substr(title, RSTART, RLENGTH)
+      }
+      print scenario_id "\t" title
     }
   ' "$scope_path"
 }
@@ -542,32 +546,45 @@ if [[ "$scope_defined_scenarios" -gt 0 ]]; then
   if [[ ! -f "$scenario_manifest_file" ]]; then
     fail "Resolved scopes define $scope_defined_scenarios Gherkin scenarios but scenario-manifest.json is missing"
   else
-    scenario_manifest_total="$(grep -cE '"scenarioId"[[:space:]]*:' "$scenario_manifest_file" || true)"
-    if [[ "$scenario_manifest_total" -lt "$scope_defined_scenarios" ]]; then
-      fail "scenario-manifest.json covers only $scenario_manifest_total scenarios but scopes define $scope_defined_scenarios"
-    else
-      pass "scenario-manifest.json covers $scenario_manifest_total scenario contract(s)"
+    manifest_scenarios_filter='if type == "array" then . elif type == "object" and (.scenarios | type == "array") then .scenarios else error("expected object.scenarios[] or legacy top-level array") end'
+    manifest_parseable=true
+    if ! command -v jq >/dev/null 2>&1; then
+      fail "scenario-manifest.json requires jq for structured validation"
+      manifest_parseable=false
+    elif ! jq -e "($manifest_scenarios_filter) | type == \"array\"" "$scenario_manifest_file" >/dev/null 2>&1; then
+      fail "scenario-manifest.json is malformed or has an unsupported envelope"
+      manifest_parseable=false
     fi
 
-    manifest_missing_files=0
-    while IFS= read -r manifest_test_file; do
-      [[ -n "$manifest_test_file" ]] || continue
-      if path_exists "$manifest_test_file" "$feature_dir"; then
-        pass "scenario-manifest.json linked test exists: $manifest_test_file"
+    if [[ "$manifest_parseable" == "true" ]]; then
+      scenario_manifest_total="$(jq -r "($manifest_scenarios_filter) | map(select(((.id // .scenarioId // \"\") | type) == \"string\" and ((.id // .scenarioId // \"\") | length) > 0)) | length" "$scenario_manifest_file")"
+      if [[ "$scenario_manifest_total" -lt "$scope_defined_scenarios" ]]; then
+        fail "scenario-manifest.json covers only $scenario_manifest_total scenarios but scopes define $scope_defined_scenarios"
       else
-        fail "scenario-manifest.json references missing linked test file: $manifest_test_file"
-        manifest_missing_files=$((manifest_missing_files + 1))
+        pass "scenario-manifest.json covers $scenario_manifest_total scenario contract(s)"
       fi
-    done < <(grep -Eo '"file"[[:space:]]*:[[:space:]]*"[^"]+"' "$scenario_manifest_file" 2>/dev/null | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/' || true)
 
-    if grep -qE '"evidenceRefs"[[:space:]]*:[[:space:]]*\[' "$scenario_manifest_file"; then
-      pass "scenario-manifest.json records evidenceRefs"
-    else
-      fail "scenario-manifest.json is missing evidenceRefs entries"
-    fi
+      manifest_missing_files=0
+      while IFS= read -r manifest_test_file; do
+        [[ -n "$manifest_test_file" ]] || continue
+        if path_exists "$manifest_test_file" "$feature_dir"; then
+          pass "scenario-manifest.json linked test exists: $manifest_test_file"
+        else
+          fail "scenario-manifest.json references missing linked test file: $manifest_test_file"
+          manifest_missing_files=$((manifest_missing_files + 1))
+        fi
+      done < <(jq -r "($manifest_scenarios_filter)[] | (.linkedTests // [])[]? | if type == \"string\" then . elif type == \"object\" then (.file // empty) else empty end" "$scenario_manifest_file")
 
-    if [[ "$manifest_missing_files" -eq 0 ]]; then
-      pass "All linked tests from scenario-manifest.json exist"
+      manifest_evidence_refs="$(jq -r "($manifest_scenarios_filter) | map(select((.evidenceRefs | type) == \"array\")) | length" "$scenario_manifest_file")"
+      if [[ "$manifest_evidence_refs" -eq "$scenario_manifest_total" ]]; then
+        pass "scenario-manifest.json records evidenceRefs for all $scenario_manifest_total scenario contract(s)"
+      else
+        fail "scenario-manifest.json records evidenceRefs for only $manifest_evidence_refs of $scenario_manifest_total scenario contract(s)"
+      fi
+
+      if [[ "$manifest_missing_files" -eq 0 ]]; then
+        pass "All linked tests from scenario-manifest.json exist"
+      fi
     fi
 
     # IMP-106 SCOPE-3 (DOM-LINEAGE) — advisory scenario→invariant lineage edges.
@@ -674,9 +691,23 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     scenario_total=$((scenario_total + 1))
 
     matched_row=""
-    while IFS= read -r row; do
-      [[ -n "$row" ]] || continue
-      if scenario_matches_row "$scenario" "$row" || trace_id_declared "$scenario_id" "$row"; then
+    if [[ -n "$scenario_id" ]]; then
+      while IFS= read -r row; do
+        [[ -n "$row" ]] || continue
+        if trace_id_declared "$scenario_id" "$row"; then
+          [[ -n "$matched_row" ]] || matched_row="$row"
+          if [[ -n "$(extract_path_candidates "$row")" ]]; then
+            matched_row="$row"
+            break
+          fi
+        fi
+      done <<< "$test_rows"
+    fi
+
+    if [[ -z "$matched_row" ]]; then
+      while IFS= read -r row; do
+        [[ -n "$row" ]] || continue
+        if scenario_matches_row "$scenario" "$row"; then
         # One scenario is legitimately covered by several rows — a page-integrity
         # row naming the page, plus the e2e row naming the spec file that
         # exercises it. Row order in the table is arbitrary, so breaking on the
@@ -690,8 +721,9 @@ for scope_index in "${!scope_analysis_files[@]}"; do
           matched_row="$row"
           break
         fi
-      fi
-    done <<< "$test_rows"
+        fi
+      done <<< "$test_rows"
+    fi
 
     if [[ -z "$matched_row" ]]; then
       fail "$scope_label scenario has no traceable Test Plan row: $scenario"
@@ -803,13 +835,24 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     dod_fidelity_total=$((dod_fidelity_total + 1))
 
     matched_dod=""
-    while IFS= read -r dod_item; do
-      [[ -n "$dod_item" ]] || continue
-      if bubbles_scenario_matches_dod "$scenario" "$dod_item" id-hint-lenient || trace_id_declared "$scenario_id" "$dod_item"; then
-        matched_dod="$dod_item"
-        break
-      fi
-    done <<< "$dod_items"
+    if [[ -n "$scenario_id" ]]; then
+      while IFS= read -r dod_item; do
+        [[ -n "$dod_item" ]] || continue
+        if trace_id_declared "$scenario_id" "$dod_item"; then
+          matched_dod="$dod_item"
+          break
+        fi
+      done <<< "$dod_items"
+    fi
+    if [[ -z "$matched_dod" ]]; then
+      while IFS= read -r dod_item; do
+        [[ -n "$dod_item" ]] || continue
+        if bubbles_scenario_matches_dod "$scenario" "$dod_item" id-hint-lenient; then
+          matched_dod="$dod_item"
+          break
+        fi
+      done <<< "$dod_items"
+    fi
 
     if [[ -z "$matched_dod" ]]; then
       fail "$scope_label Gherkin scenario has no faithful DoD item preserving its behavioral claim: $scenario"

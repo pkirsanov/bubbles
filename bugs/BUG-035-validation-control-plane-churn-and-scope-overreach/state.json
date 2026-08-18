@@ -1,0 +1,125 @@
+{
+  "version": 3,
+  "bugId": "BUG-035",
+  "featureDir": "bugs/BUG-035-validation-control-plane-churn-and-scope-overreach",
+  "featureName": "Validation Control-Plane Churn And Scope Overreach",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "operator-directed source root packet; BUGS.md was explicitly excluded, and defect D7 records the source packet contract contradiction",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-032",
+    "BUG-033"
+  ],
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-035-validation-control-plane-churn-and-scope-overreach"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-035-validation-control-plane-churn-and-scope-overreach/**"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implementation_in_progress",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentScope": 1,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Complete D1-D7 on the delivered IMP-048 foundation while preserving all fourteen adversarial scenario bounds, then run aggregate validation and independent certification.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Validation Control-Plane Convergence",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "provenance": "operator-request"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "provenance": "bugfix-fastlane-contract"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "provenance": "operator-request"
+    },
+    "lockdown": {
+      "mode": "unlocked",
+      "provenance": "framework-default"
+    },
+    "regression": {
+      "mode": "required",
+      "provenance": "framework-default"
+    },
+    "validation": {
+      "mode": "required",
+      "provenance": "framework-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "specs_hardened",
+      "docs_updated",
+      "validated",
+      "done"
+    ],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "All fourteen scenarios pass persistent adversarial regressions, full framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
+  },
+  "notes": "Filing only. No implementation, green-stage, audit, or validate-owned certification is claimed. BUGS.md is outside the work boundary by operator instruction."
+}

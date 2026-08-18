@@ -64,7 +64,7 @@ assert_contains() {
   local expected="$1"
   local label="$2"
 
-  if printf '%s\n' "$RUN_OUTPUT" | grep -Fq -- "$expected"; then
+  if grep -Fq -- "$expected" <<<"$RUN_OUTPUT"; then
     pass "$label"
   else
     fail "$label (missing: $expected)"
@@ -75,7 +75,7 @@ assert_not_contains() {
   local forbidden="$1"
   local label="$2"
 
-  if printf '%s\n' "$RUN_OUTPUT" | grep -Fq -- "$forbidden"; then
+  if grep -Fq -- "$forbidden" <<<"$RUN_OUTPUT"; then
     fail "$label (unexpected: $forbidden)"
   else
     pass "$label"

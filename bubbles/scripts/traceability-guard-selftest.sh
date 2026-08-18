@@ -18,6 +18,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUARD="$SCRIPT_DIR/traceability-guard.sh"
+# shellcheck source=guard-lib.sh
+source "$SCRIPT_DIR/guard-lib.sh"
 
 if [[ ! -f "$GUARD" ]]; then
   echo "[selftest traceability-guard] FAIL: target script missing at $GUARD" >&2
@@ -390,6 +392,58 @@ else
   fail "expected 'scenario→row match confidence: inferred' in Case 1 log"
   sed -n '1,120p' "$log1"
 fi
+
+# --- Case 1b: canonical manifest id + string linkedTests are first-class -----
+canonical_feature="$TMPDIR/specs/101-canonical-manifest"
+build_clean_feature "$canonical_feature"
+cat > "$canonical_feature/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-CANON-001",
+      "title": "Widget renders with provided label",
+      "requiredTestType": "e2e-ui",
+      "linkedTests": ["tests/widget-render.e2e.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_trace_case "$canonical_feature" "canonical manifest id and string linked test"
+assert_case_status 0 "canonical scenario-manifest envelope exits 0"
+assert_case_contains "scenario-manifest.json covers 1 scenario contract(s)" \
+  "canonical id is counted as a scenario contract"
+assert_case_contains "scenario-manifest.json linked test exists: tests/widget-render.e2e.spec.ts" \
+  "canonical string linkedTests path is validated"
+assert_case_contains "scenario-manifest.json records evidenceRefs for all 1 scenario contract(s)" \
+  "canonical evidenceRefs array is recognized"
+
+# --- Case 1c: canonical string linkedTests missing path remains blocking ------
+canonical_missing_feature="$TMPDIR/specs/102-canonical-missing-test"
+build_clean_feature "$canonical_missing_feature"
+cat > "$canonical_missing_feature/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-CANON-002",
+      "title": "Widget renders with provided label",
+      "requiredTestType": "e2e-ui",
+      "linkedTests": ["tests/missing-widget.e2e.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_trace_case "$canonical_missing_feature" "canonical manifest missing linked test"
+if [[ "$CASE_STATUS" -ne 0 ]]; then
+  pass "canonical missing linked test exits nonzero"
+else
+  fail "canonical missing linked test should fail"
+fi
+assert_case_contains "scenario-manifest.json references missing linked test file: tests/missing-widget.e2e.spec.ts" \
+  "canonical missing string linkedTests path is named"
 
 # --- Case 2: scenario without matching Test Plan row → exit non-zero ---
 broken_feature="$TMPDIR/specs/200-broken-feature"
@@ -786,6 +840,57 @@ assert_case_not_contains "has no traceable Test Plan row" \
   "Declared id: the cited scenario is not reported as row-less"
 assert_case_contains "declared" "Declared id: the match is counted as declared, not inferred"
 
+# A path-bearing fuzzy match may appear before the exact-id row. Explicit
+# identity must win before prose scoring or the first row steals the scenario.
+exact_second_dir="$TMPDIR/declared-id-exact-second"
+build_clean_feature "$exact_second_dir"
+cat > "$exact_second_dir/tests/fuzzy-first.e2e.spec.ts" <<'EOF'
+export const fuzzyFirst = true;
+EOF
+cat > "$exact_second_dir/scopes.md" <<'EOF'
+# Scope 01: Exact Identity Before Fuzzy Prose
+
+**Status:** In Progress
+
+### Gherkin
+
+  Scenario: SCN-99-exact Widget renders with provided label
+    Given a label "Hello"
+    When the widget mounts
+    Then the rendered output displays "Hello"
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --------- | -------- | ------------- | ----------- | ------- | ----------- |
+| E2E | e2e-ui | tests/fuzzy-first.e2e.spec.ts | Widget renders with provided label | selftest:fuzzy | Yes |
+| E2E | e2e-ui | tests/widget-render.e2e.spec.ts | SCN-99-exact exact identity row | selftest:exact | Yes |
+
+### Definition of Done
+
+- [x] SCN-99-exact exact identity behavior -> Evidence: report.md#test-evidence
+EOF
+cat > "$exact_second_dir/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-99-001",
+      "title": "SCN-99-exact Widget renders with provided label",
+      "requiredTestType": "e2e-ui",
+      "linkedTests": ["tests/widget-render.e2e.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_trace_case "$exact_second_dir" "exact-id row follows a path-bearing fuzzy row"
+assert_case_status 0 "Exact-id precedence: later exact row wins over earlier fuzzy path row"
+assert_case_contains "scenario maps to concrete test file: tests/widget-render.e2e.spec.ts" \
+  "Exact-id precedence: selected path belongs to the exact row"
+assert_case_not_contains "report is missing evidence reference for concrete test file: tests/fuzzy-first.e2e.spec.ts" \
+  "Exact-id precedence: fuzzy-first row does not steal evidence ownership"
+
 # Adversarial twin: if any id satisfied the check, the fix would be a blanket
 # pass rather than a mapping. A DoD item naming a DIFFERENT scenario must still
 # fail, otherwise every scenario in a packet would match every DoD item.
@@ -800,8 +905,9 @@ assert_case_contains "no faithful DoD item preserving its behavioral claim" \
 # identifiers would silently pass the fidelity check it is meant to fail.
 idless_dir="$TMPDIR/declared-id-absent"
 write_declared_id_scope "$idless_dir" "SCN-77-alpha" "SCN-77-alpha"
-sed -i.bak 's/^#### SCN-77-alpha - governing heading carries the identifier$/#### governing heading carries no identifier/' "$idless_dir/scopes.md"
-rm -f "$idless_dir/scopes.md.bak"
+bubbles_sed_inplace \
+  's/^#### SCN-77-alpha - governing heading carries the identifier$/#### governing heading carries no identifier/' \
+  "$idless_dir/scopes.md"
 run_trace_case "$idless_dir" "an id-less heading cannot blanket-match"
 assert_case_status 1 "Declared id adversarial: with no id on the heading the unrelated DoD item is still unmapped"
 
@@ -875,8 +981,9 @@ build_evidenceless_feature() {
 $ no run has happened yet
 ```
 EOF
-  sed -i.bak "s/^\*\*Status:\*\* In Progress\$/**Status:** $scope_status/" "$feature_dir/scopes.md"
-  rm -f "$feature_dir/scopes.md.bak"
+  bubbles_sed_inplace \
+    "s/^\*\*Status:\*\* In Progress\$/**Status:** $scope_status/" \
+    "$feature_dir/scopes.md"
 }
 
 notstarted_feature="$TMPDIR/specs/810-notstarted-evidence"

@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-035-validation-control-plane-churn-and-scope-overreach",
+  "scenarios": [
+    {
+      "id": "SCN-B035-001",
+      "title": "A bounded session resumes without operator nudges",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["mutable-state", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/session-review-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/session-cap-guard.sh",
+        "bubbles/scripts/phase-coordinator.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/session-cap-guard.sh",
+          "bubbles/scripts/phase-coordinator.sh"
+        ],
+        "negativeControl": "Disable soft rollover. The fixture requires a manual continuation and fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Session rollover is a framework workflow transition with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B035-002",
+      "title": "Accepted proof is reused across compatible consumers",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/phase-coordinator-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/phase-coordinator.sh",
+        "bubbles/scripts/framework-validate.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/phase-coordinator.sh",
+          "bubbles/scripts/framework-validate.sh"
+        ],
+        "negativeControl": "Change one covering input digest. Reuse must stop and the leaf must execute.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Receipt reuse is an execution-integrity behavior with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B035-003",
+      "title": "Certification projects lifecycle state atomically",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["mutable-state", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/transition-contract-resolver-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/transition-contract-resolver.sh",
+        "bubbles/scripts/state-certification-reconcile.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/transition-contract-resolver.sh",
+          "bubbles/scripts/state-certification-reconcile.sh"
+        ],
+        "negativeControl": "Write only one compatibility projection. The fixture must report a stale projection without losing authoritative certification.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Certification projection is a control-plane state transition."
+      }
+    },
+    {
+      "id": "SCN-B035-004",
+      "title": "An unrelated finding routes without taking over the task",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/work-boundary-resolve-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/work-boundary-resolve.sh",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/work-boundary-resolve.sh",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Mark a shared security floor as route-only. The adversarial fixture must refuse the parent transition.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Finding disposition is a framework routing result."
+      }
+    },
+    {
+      "id": "SCN-B035-005",
+      "title": "Validation depth follows resolved risk",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/risk-tier-resolve-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/risk-tier-resolve.sh",
+        "bubbles/workflows/modes.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/risk-tier-resolve.sh",
+          "bubbles/workflows/modes.yaml"
+        ],
+        "negativeControl": "Remove one high-risk trait. The adversarial fixture must detect the unsafe downgrade.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Risk resolution selects a workflow contract before product execution."
+      }
+    },
+    {
+      "id": "SCN-B035-006",
+      "title": "Unchanged assurance closure stops equivalent replay",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["mutable-state", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/assurance-closure-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/framework-validate.sh",
+        "bubbles/scripts/validation-closure.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/framework-validate.sh",
+          "bubbles/scripts/validation-closure.sh"
+        ],
+        "negativeControl": "Change the candidate digest after closure. The fixture must invalidate closure reuse.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Assurance closure is a framework evidence contract."
+      }
+    },
+    {
+      "id": "SCN-B035-007",
+      "title": "Source bug artifacts use a declared packet form",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["static-metadata", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh",
+        "bubbles/scripts/bug-packet-contract-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#d7-canonical-scenario-manifest-reader"],
+      "implementationRefs": [
+        "bubbles/registry/bug-packet.yaml",
+        "bubbles/scripts/framework-dogfood-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/registry/bug-packet.yaml",
+          "bubbles/scripts/framework-dogfood-guard.sh"
+        ],
+        "negativeControl": "Add a root packet shape absent from the registry. The contract fixture must refuse it.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Bug packet admission is a repository artifact contract."
+      }
+    },
+    {
+      "id": "SCN-B035-008",
+      "title": "Payload closure is deterministic",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/payload-closure-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#d8-payload-closure-green-stage"],
+      "implementationRefs": ["bubbles/scripts/payload-closure-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/payload-closure-guard.sh"],
+        "negativeControl": "Remove the self-only wrapper. The unguarded fixture must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Payload closure is a repository guard with no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B035-009",
+      "title": "Changed-only validation uses exact source HEAD",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/framework-validate-changed-only-selftest.sh"],
+      "evidenceRefs": ["report.md#d9-detached-changed-only-green-stage"],
+      "implementationRefs": ["bubbles/scripts/framework-validate-changed-only-selftest.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/framework-validate-changed-only-selftest.sh"],
+        "negativeControl": "Force the fixture to clone stale branch main. Patch application must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Changed-only selection is a framework validation behavior."
+      }
+    },
+    {
+      "id": "SCN-B035-010",
+      "title": "Large-output assertions are deterministic",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/autonomy-posture-guard-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "bubbles/scripts/requirement-mechanism-guard-selftest.sh",
+        "bubbles/scripts/vertical-delivery-plan-guard-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "evidenceRefs": ["report.md#d10-stable-large-output-assertions"],
+      "implementationRefs": [
+        "bubbles/scripts/autonomy-posture-guard-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "bubbles/scripts/requirement-mechanism-guard-selftest.sh",
+        "bubbles/scripts/vertical-delivery-plan-guard-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/autonomy-posture-guard-selftest.sh",
+          "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "bubbles/scripts/requirement-mechanism-guard-selftest.sh",
+          "bubbles/scripts/vertical-delivery-plan-guard-selftest.sh",
+          "tests/regression/test_24_g028_sensitive_client_storage.sh"
+        ],
+        "negativeControl": "Remove the required diagnostic from captured output. The contains assertion must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Captured-output assertions validate a framework scanner."
+      }
+    },
+    {
+      "id": "SCN-B035-011",
+      "title": "Performance contention is confirmed before failure",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["sla-sensitive", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/state-transition-guard-perf-selftest.sh"],
+      "evidenceRefs": ["report.md#d11-confirmed-performance-check"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard-perf-selftest.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard-perf-selftest.sh"],
+        "negativeControl": "Restore the historical fork-storm. Both bounded samples remain over budget and the test fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The performance assertion measures a repository guard."
+      }
+    },
+    {
+      "id": "SCN-B035-012",
+      "title": "Core-tier pattern matching is deterministic",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/core-tier-pattern-lint-selftest.sh"],
+      "evidenceRefs": ["report.md#d12-deterministic-core-tier-pattern-matching"],
+      "implementationRefs": ["bubbles/scripts/core-tier-pattern-lint.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/core-tier-pattern-lint.sh"],
+        "negativeControl": "Rename a scheduled core check. The lint must fail and name the dead pattern.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Core-tier pattern lint is a repository validation guard."
+      }
+    },
+    {
+      "id": "SCN-B035-013",
+      "title": "Downstream validation distinguishes progress from a hang",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "degraded-state", "shared-consumer"],
+      "riskTier": "medium",
+      "linkedTests": [
+        "bubbles/scripts/guard-lib-timeout-selftest.sh",
+        "bubbles/scripts/v5.3-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#d13-progress-aware-downstream-validation"],
+      "implementationRefs": [
+        "bubbles/scripts/guard-lib.sh",
+        "bubbles/scripts/v5.3-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guard-lib.sh",
+          "bubbles/scripts/v5.3-selftest.sh"
+        ],
+        "negativeControl": "Run a silent child, an endlessly chatty child, and an unexplained nonzero child. Each must fail through its distinct contract path.",
+        "negativeControlMechanism": "perturbed-input"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The scenario validates framework process supervision and installed-tree conformance."
+      }
+    },
+    {
+      "id": "SCN-B035-014",
+      "title": "Evidence capture fails closed when output disappears",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state", "shared-consumer"],
+      "riskTier": "medium",
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "evidenceRefs": ["report.md#d14-fail-closed-evidence-capture-storage"],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
+        "negativeControl": "Allow finalization after the capture path is deleted. The fixture must fail because the wrapper no longer returns the capture-integrity exit and diagnostic.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Evidence capture is a command-line framework wrapper with no rendered product surface."
+      }
+    }
+  ]
+}
