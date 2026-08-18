@@ -49,6 +49,11 @@ source "$SCRIPT_DIR/scan-lib.sh"
 # by Check 4A (G041 list-format policy) and Check 22 (G068 checkbox fidelity).
 source "$SCRIPT_DIR/dod-section-lib.sh"
 
+# Shared scenario->DoD matcher (BUG-004): ONE implementation of the G068 rule,
+# consumed here and by traceability-guard.sh. Check 22 passes the
+# structural-strict id policy; see scenario-match-lib.sh for what that means.
+source "$SCRIPT_DIR/scenario-match-lib.sh"
+
 transition_workflow_mode="UNRESOLVED"
 transition_audit_profile="UNRESOLVED"
 transition_target_status="UNRESOLVED"
@@ -4172,157 +4177,20 @@ echo ""
 # failure mode where DoD items are silently rewritten by execution agents
 # to match what was delivered instead of what the spec planned.
 #
-# Uses the same fuzzy matching approach as traceability-guard.sh:
-# - Extract significant words (4+ chars, excluding stop words) from each
-#   Gherkin scenario
-# - Check that at least 2-3 of those words appear in at least one DoD item
-# - If no DoD item preserves the scenario's behavioral claim, flag it
+# The matcher itself lives in scenario-match-lib.sh (BUG-004), which is the ONE
+# implementation of the G068 rule. This check consumes it with the
+# `structural-strict` id policy: SCN ids only, and a scenario that carries an
+# SCN id whose DoD item does not cite it fails outright with no lexical
+# fallback (the IMP-027 SCOPE-8 decision — when a stable id exists the linkage
+# is a fact, not something a tunable word-overlap proxy may override).
+# Scenarios that carry no id keep the lexical behavior exactly.
+#
+# traceability-guard.sh consumes the SAME function with the `id-hint-lenient`
+# policy. That difference is now a declared argument rather than two copies
+# drifting apart, and scenario-match-lib-selftest.sh asserts the two policies
+# differ ONLY where documented.
 # =============================================================================
 echo "--- Check 22: DoD-Gherkin Content Fidelity (Gate G068) ---"
-
-# Helper: extract significant words from text (same logic as traceability-guard.sh)
-stg_normalize_text() {
-  local value="$1"
-  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
-  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')"
-  printf '%s' "$value"
-}
-
-stg_significant_words() {
-  local text="$1"
-  local normalized
-  local word
-
-  normalized="$(stg_normalize_text "$text")"
-  for word in $normalized; do
-    # G068 false-positive fix (v3.8.0): lowered min word length 4 -> 3 so
-    # 3-letter domain words (API, DoD, SLA, CSV, CSP, JWT, SDK, CLI, CRD,
-    # SBOM) are counted as significant instead of stripped as noise.
-    if [[ ${#word} -lt 3 ]]; then
-      continue
-    fi
-    # G068 false-positive fix (v3.8.0): trimmed exclusion list to TRUE stop
-    # words only. Removed domain-relevant words (user, users, system, should,
-    # must, have, has, will, given, after, before, where, their, there,
-    # about, only) that are frequently the distinguishing words in Gherkin
-    # scenario titles.
-    case "$word" in
-      the|are|was|were|been|being|for|from|with|and|but|not|then|else|when|while|that|this|these|those|its|into|onto|out|all|any|each|every|some|more|less|also)
-        continue
-        ;;
-    esac
-    printf '%s\n' "$word"
-  done
-}
-
-# G068 false-positive fix: whole-word overlap with no stemming meant a single
-# singular/plural mismatch could sink an otherwise near-verbatim DoD item.
-# Scenario "JSON request rejected" scored 2 against DoD "JSON requests rejected
-# with 415" — below the >=3 floor — because "request" != "requests".
-# Kept to regular -s/-es forms; no general stemmer, so unrelated words still
-# cannot collide. MUST stay aligned with word_matches_text in traceability-guard.sh.
-stg_word_matches_text() {
-  local word="$1"
-  local text=" $2 "
-  local singular
-  local tok
-
-  case "$text" in
-    *" $word "* | *" ${word}s "* | *" ${word}es "*) return 0 ;;
-  esac
-
-  if [[ "$word" == *es && ${#word} -gt 4 ]]; then
-    singular="${word%es}"
-    case "$text" in *" $singular "*) return 0 ;; esac
-  fi
-  if [[ "$word" == *s && ${#word} -gt 3 ]]; then
-    singular="${word%s}"
-    case "$text" in *" $singular "*) return 0 ;; esac
-  fi
-
-  # Inflection/derivation, e.g. persisted~persist and stale~staleness. Bounded
-  # to stems of 5+ chars so short roots cannot collide (test~testament).
-  [[ ${#word} -ge 5 ]] || return 1
-  for tok in $2; do
-    case "$tok" in "$word"*) return 0 ;; esac
-    [[ ${#tok} -ge 5 ]] || continue
-    case "$word" in "$tok"*) return 0 ;; esac
-  done
-
-  return 1
-}
-
-stg_scenario_matches_dod() {
-  local scenario="$1"
-  local dod_item="$2"
-  local dod_norm
-  local words
-  local word
-  local score=0
-  local word_count=0
-  local half_threshold=0
-
-  # IMP-027 SCOPE-8 (EV-3): structural linkage beats a lexical proxy.
-  #
-  # Word overlap is an INFERENCE about whether a DoD item preserves a
-  # scenario's behavioral claim, and every threshold it uses (>=3 words, >=50%)
-  # is a tuning knob rather than a fact. That is the documented root of the
-  # G068 false-positive/false-negative pair: rewording a scenario breaks the
-  # match, and unrelated items sharing vocabulary create one.
-  #
-  # When the scenario carries a stable SCN-* ID, the linkage is a FACT and no
-  # inference is needed: the DoD item either cites that ID or it does not. This
-  # is deterministic and has no threshold to tune.
-  #
-  # Deliberately NO-OP-UNLESS-EARNED, matching Check 43's pattern: the ID path
-  # engages ONLY when the scenario actually carries an ID. Specs that have not
-  # adopted SCN-* IDs keep today's word-overlap behavior EXACTLY, so this
-  # cannot newly fail an existing artifact and removes no enforcement.
-  #
-  # Divergence from the proposal, recorded deliberately: it also asked that the
-  # lexical scan be demoted to advisory. That is NOT done here. Demoting it
-  # would silently switch G068 off for every project that has not adopted IDs
-  # — which today is effectively all of them — trading a tuning-accuracy
-  # problem for a no-enforcement problem. The lexical path stays authoritative
-  # exactly where no structural fact is available to replace it.
-  local scenario_scn
-  scenario_scn="$(printf '%s' "$scenario" | grep -oE 'SCN-[A-Za-z0-9][A-Za-z0-9_-]*' | head -1 || true)"
-  if [[ -n "$scenario_scn" ]]; then
-    # Word-boundary compare so SCN-1 does not match SCN-12.
-    if printf '%s' "$dod_item" | grep -qE "(^|[^A-Za-z0-9_-])${scenario_scn}([^A-Za-z0-9_-]|\$)"; then
-      return 0
-    fi
-    return 1
-  fi
-
-  dod_norm="$(stg_normalize_text "$dod_item")"
-  words="$(stg_significant_words "$scenario")"
-  if [[ -z "$words" ]]; then
-    [[ "$dod_norm" == *"$(stg_normalize_text "$scenario")"* ]]
-    return
-  fi
-
-  while IFS= read -r word; do
-    [[ -n "$word" ]] || continue
-    word_count=$((word_count + 1))
-    if stg_word_matches_text "$word" "$dod_norm"; then
-      score=$((score + 1))
-    fi
-  done <<< "$words"
-
-  # G068 false-positive fix (v3.8.0): percentage-based threshold with floor.
-  # - Very small scenarios (<3 significant words): require ALL words to match
-  #   so a hard >=3 floor doesn't penalize them.
-  # - Larger scenarios: require BOTH (overlap >= ceil(50% * word_count))
-  #   AND (overlap >= 3) — percentage threshold with absolute floor.
-  if [[ "$word_count" -lt 3 ]]; then
-    [[ "$score" -eq "$word_count" ]]
-    return
-  fi
-
-  half_threshold=$(( (word_count + 1) / 2 ))
-  [[ "$score" -ge 3 && "$score" -ge "$half_threshold" ]]
-}
 
 dod_fidelity_failures=0
 dod_fidelity_total=0
@@ -4356,7 +4224,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     matched=0
     while IFS= read -r dod_item; do
       [[ -n "$dod_item" ]] || continue
-      if stg_scenario_matches_dod "$scenario" "$dod_item"; then
+      if bubbles_scenario_matches_dod "$scenario" "$dod_item" structural-strict; then
         matched=1
         break
       fi
