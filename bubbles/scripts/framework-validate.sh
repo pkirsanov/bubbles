@@ -1371,6 +1371,12 @@ if [[ -f "$SCRIPT_DIR/dispatch-receipt-selftest.sh" ]]; then
   run_check "Dispatch receipt selftest (IMP-048 SCOPE-2 / HO-4)" bash "$SCRIPT_DIR/dispatch-receipt-selftest.sh"
 fi
 
+# Leaf receipts extend that same occurrence model DOWN one level, from the phase
+# to the individual test commands it is made of, so all three sit together.
+if [[ -f "$SCRIPT_DIR/test-leaf-receipt-selftest.sh" ]]; then
+  run_check "Test-leaf receipt selftest (IMP-048 SCOPE-3 / PERF-9)" bash "$SCRIPT_DIR/test-leaf-receipt-selftest.sh"
+fi
+
 # ---------------------------------------------------------------------------
 # IMP-027 SCOPE-2b — selftest discovery sweep
 #
