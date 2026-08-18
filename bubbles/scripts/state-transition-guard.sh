@@ -323,10 +323,17 @@ if [[ "$transition_resolver_status" -ne 0 ]]; then
 fi
 rm -f "$transition_contract_stderr"
 
+# The auditProfile allow-list below is the exact set transition-contract-resolver.sh
+# accepts (its own four-way check). Both lists MUST move together: a profile the
+# resolver supports but this list omits is rejected here as MALFORMED, which
+# blocks the mode outright before any applicability branch is reached.
 if ! jq -e '
   .schemaVersion == "transition-contract/v1"
   and (.workflowMode | type == "string" and length > 0)
-  and (.auditProfile == "planning-maturity-v1" or .auditProfile == "delivery-completion-v1")
+  and (.auditProfile == "planning-maturity-v1"
+    or .auditProfile == "delivery-completion-v1"
+    or .auditProfile == "delivery-completion-fast-v1"
+    or .auditProfile == "framework-proposal-v1")
   and (.targetStatus | type == "string" and length > 0)
   and (.currentStatus | type == "string" and length > 0)
   and (.contractDigest | type == "string" and test("^sha256:[0-9a-f]{64}$"))
@@ -375,6 +382,26 @@ case "$transition_audit_profile" in
     transition_not_applicable_checks=(Check-4-completion Check-5-all-done Check-8-file-existence Check-11-execution-evidence)
     ;;
 esac
+
+# The declared exclusions are ENFORCED for framework-proposal-v1 only. That
+# profile has no passing users yet, so enforcing them there has zero blast
+# radius and is the only way an audit-only mode can clear delivery-completion
+# checks it declares do not apply. planning-maturity-v1 and
+# delivery-completion-v1 are in live use and already pass with their list purely
+# declarative; honouring it for them would newly ADMIT packets those checks
+# currently refuse, so this helper is a no-op under every other profile.
+check_is_applicable() {
+  local check_id="$1"
+  local declared
+
+  [[ "$transition_audit_profile" == "framework-proposal-v1" ]] || return 0
+  for declared in ${transition_not_applicable_checks[@]+"${transition_not_applicable_checks[@]}"}; do
+    if [[ "$declared" == "$check_id" ]]; then
+      return 1
+    fi
+  done
+  return 0
+}
 
 resolve_script_repo_root() {
   if [[ "$(basename "$(dirname "$SCRIPT_DIR")")" == "bubbles" && "$(basename "$(dirname "$(dirname "$SCRIPT_DIR")")")" == ".github" ]]; then
@@ -1164,6 +1191,8 @@ elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
   # A planning ceiling claims no delivery, so neither basis applies: there is no
   # completion to verify, by either accounting.
   info "NOT_APPLICABLE: Check-4-completion — planning maturity permits unchecked implementation DoD"
+elif ! check_is_applicable Check-4-completion; then
+  info "NOT_APPLICABLE: Check-4-completion — a framework proposal never implements, so it certifies no DoD completion"
 elif [[ "$scenario_basis" == "scenario-states" ]]; then
   info "Completion basis: REQUIRED SCENARIO STATES (checkbox counts are reported, not decisive)"
   scenario_rc=0
@@ -1333,6 +1362,8 @@ elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
       fail "Planning scope claims Done while unchecked DoD remain in ${scope_path#$feature_dir/} — false completion claim"
     fi
   done
+elif ! check_is_applicable Check-5-all-done; then
+  info "NOT_APPLICABLE: Check-5-all-done — a framework proposal terminates at a written proposal and certifies no scope delivery"
 elif [[ "$not_started_scopes" -gt 0 ]]; then
   record_failed_check Check-5-all-done
   fail "Resolved scope artifacts have $not_started_scopes scope(s) still marked 'Not Started' — ALL scopes must be Done"
@@ -2765,6 +2796,8 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
     if [[ -f "$test_path" ]]; then
       if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
         info "Planned test file already exists; physical existence is not used as planning-maturity proof: $test_path"
+      elif ! check_is_applicable Check-8-file-existence; then
+        info "Planned test file already exists; physical existence is not used as framework-proposal proof: $test_path"
       else
         pass "Test file exists: $test_path"
       fi
@@ -2784,6 +2817,9 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
     elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
       info "Future implementation-owned test file is not physically required at planning maturity: $test_path"
       missing_test_files=$((missing_test_files + 1))
+    elif ! check_is_applicable Check-8-file-existence; then
+      info "Future implementation-owned test file is not physically required for a framework proposal: $test_path"
+      missing_test_files=$((missing_test_files + 1))
     else
       record_failed_check Check-8-file-existence
       fail "Test Plan references non-existent file: $test_path"
@@ -2793,12 +2829,16 @@ if [[ ${#test_files_in_plan[@]} -gt 0 ]]; then
   if [[ "$missing_test_files" -gt 0 ]]; then
     if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
       info "NOT_APPLICABLE: Check-8-file-existence — $missing_test_files future implementation-owned test file(s) are absent"
+    elif ! check_is_applicable Check-8-file-existence; then
+      info "NOT_APPLICABLE: Check-8-file-existence — $missing_test_files future implementation-owned test file(s) are absent"
     else
       record_failed_check Check-8-file-existence
       fail "$missing_test_files of ${#test_files_in_plan[@]} test files from Test Plan DO NOT EXIST"
     fi
   elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
     info "NOT_APPLICABLE: Check-8-file-existence — planning maturity validates test contracts, not delivery file presence"
+  elif ! check_is_applicable Check-8-file-existence; then
+    info "NOT_APPLICABLE: Check-8-file-existence — a framework proposal validates test contracts, not delivery file presence"
   fi
 else
   warn "No concrete test file paths found in Test Plan across resolved scope files (all may be placeholders)"
@@ -3453,6 +3493,8 @@ for report_path in ${report_files[@]+"${report_files[@]}"}; do
     elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
       record_failed_check Check-11-execution-honesty
       fail "$(relative_artifact_path "$report_path") has ZERO evidence code blocks but state or scope artifacts claim completed delivery work"
+    elif ! check_is_applicable Check-11-execution-evidence; then
+      info "Framework proposal report has zero execution-evidence blocks: $(relative_artifact_path "$report_path")"
     else
       record_failed_check Check-11-execution-evidence
       fail "$(relative_artifact_path "$report_path") has ZERO evidence code blocks — no execution evidence exists"
@@ -3478,6 +3520,8 @@ for report_path in ${report_files[@]+"${report_files[@]}"}; do
 done
 if [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
   info "NOT_APPLICABLE: Check-11-execution-evidence — honest unimplemented scope reports need no delivery execution block"
+elif ! check_is_applicable Check-11-execution-evidence; then
+  info "NOT_APPLICABLE: Check-11-execution-evidence — a framework proposal runs no delivery execution, so it produces no delivery execution block"
 fi
 echo ""
 

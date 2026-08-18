@@ -2040,6 +2040,8 @@ g040_cw_pre_skipped_dir="$tmp_root/specs/934-g040-cw-pre-marker-skipped"
 g040_cw_post_blocks_dir="$tmp_root/specs/935-g040-cw-post-marker-blocks"
 g040_cw_no_marker_dir="$tmp_root/specs/936-g040-cw-no-marker-full-enforcement"
 g040_cw_two_markers_dir="$tmp_root/specs/937-g040-cw-two-markers-fail-loud"
+fast_lane_profile_dir="$tmp_root/specs/940-fast-lane-profile-resolve"
+framework_proposal_profile_dir="$tmp_root/specs/941-framework-proposal-profile-resolve"
 g064_framework_root="$tmp_root/framework-g064"
 g064_feature_dir="$g064_framework_root/specs/902-transition-guard-selftest-unauthorized-workflow-runner"
 mkdir -p "$tmp_root/specs"
@@ -2081,6 +2083,17 @@ cp -R "$s03_planning_feature_dir" "$s03_g068_dir"
 break_gherkin_dod_fidelity "$s03_g068_dir/scopes.md"
 cp -R "$s03_delivery_negative_dir" "$s03_delivery_checked_dir"
 mark_first_dod_checked "$s03_delivery_checked_dir/scopes.md"
+# The other two profiles transition-contract-resolver.sh supports. Both were
+# unreachable through the guard until the contract validator's auditProfile
+# allow-list was widened to the resolver's full four-profile set, so neither had
+# any fixture at all. The fast-lane packet is an otherwise-passing delivery
+# packet re-pointed at rapid-tool-delivery; the framework-proposal packet is the
+# honestly-unimplemented delivery negative re-pointed at framework-health, so it
+# carries exactly the four artifacts the declared exclusions cover.
+cp -R "$positive_feature_dir" "$fast_lane_profile_dir"
+set_fixture_contract "$fast_lane_profile_dir/state.json" "rapid-tool-delivery" "in_progress"
+cp -R "$s03_delivery_negative_dir" "$framework_proposal_profile_dir"
+set_fixture_contract "$framework_proposal_profile_dir/state.json" "framework-health" "in_progress"
 # BUG-026 G060 profile-awareness: isolate Check 3E's scenario-first enforcement to
 # the audit profile. Each fixture is cloned from an already-PASSING packet and
 # only flips policySnapshot.tdd.mode -> scenario-first, so the SOLE differentiator
@@ -3024,6 +3037,60 @@ assert_transition_result "$s03_delivery_log" \
 s03_delivery_checked_log="$tmp_root/s03-delivery-checked.log"
 run_capture "$s03_delivery_checked_log" bash "$GUARD_SCRIPT" "$s03_delivery_checked_dir" >/dev/null
 assert_log_contains "$s03_delivery_checked_log" "DoD item [x] has NO evidence block" "BUG-009 S03: delivery Check 9 checked-item evidence remains blocking"
+
+echo "Running four-profile transition-contract resolution matrix..."
+# transition-contract-resolver.sh supports four audit profiles. The guard's
+# contract validator once accepted only two, so a packet on either other profile
+# was rejected as MALFORMED (E009-AUDIT-PROFILE-CONTRADICTION) before any
+# applicability branch could run — rapid-tool-delivery and framework-health could
+# not clear the guard at all. These cases pin BOTH previously-unreachable
+# profiles: each must RESOLVE, and only framework-proposal-v1 may actually skip
+# the delivery-completion checks it declares non-applicable.
+fast_lane_profile_log="$tmp_root/fast-lane-profile-resolve.log"
+fast_lane_profile_status="$(run_capture "$fast_lane_profile_log" bash "$GUARD_SCRIPT" "$fast_lane_profile_dir")"
+if [[ "$fast_lane_profile_status" -ne 2 ]]; then
+  pass "Four-profile matrix: rapid-tool-delivery resolves its transition contract instead of blocking (exit $fast_lane_profile_status)"
+else
+  fail "Four-profile matrix: rapid-tool-delivery must not be blocked at contract resolution (observed $fast_lane_profile_status)"
+  sed -n '1,260p' "$fast_lane_profile_log"
+fi
+assert_log_not_contains "$fast_lane_profile_log" "E009-AUDIT-PROFILE-CONTRADICTION" "Four-profile matrix: delivery-completion-fast-v1 is not rejected as a malformed contract"
+assert_log_not_contains "$fast_lane_profile_log" "auditProfile: UNRESOLVED" "Four-profile matrix: rapid-tool-delivery reaches a resolved audit profile"
+assert_log_contains "$fast_lane_profile_log" "auditProfile: delivery-completion-fast-v1" "Four-profile matrix: rapid-tool-delivery reports its declared fast-lane profile"
+assert_log_contains "$fast_lane_profile_log" "applicableCheckClasses: [universal,mode-required,delivery-completion]" "Four-profile matrix: the fast lane asserts the full delivery-completion classes"
+assert_log_contains "$fast_lane_profile_log" "notApplicableChecks: []" "Four-profile matrix: the fast lane declares no delivery exclusion"
+assert_log_not_contains "$fast_lane_profile_log" "NOT_APPLICABLE: Check-4-completion" "Four-profile matrix: the fast lane skips no completion check"
+assert_log_not_contains "$fast_lane_profile_log" "NOT_APPLICABLE: Check-11-execution-evidence" "Four-profile matrix: the fast lane skips no execution-evidence check"
+
+framework_proposal_profile_log="$tmp_root/framework-proposal-profile-resolve.log"
+framework_proposal_profile_status="$(run_capture "$framework_proposal_profile_log" bash "$GUARD_SCRIPT" "$framework_proposal_profile_dir")"
+if [[ "$framework_proposal_profile_status" -ne 2 ]]; then
+  pass "Four-profile matrix: framework-health resolves its transition contract instead of blocking (exit $framework_proposal_profile_status)"
+else
+  fail "Four-profile matrix: framework-health must not be blocked at contract resolution (observed $framework_proposal_profile_status)"
+  sed -n '1,260p' "$framework_proposal_profile_log"
+fi
+assert_log_not_contains "$framework_proposal_profile_log" "E009-AUDIT-PROFILE-CONTRADICTION" "Four-profile matrix: framework-proposal-v1 is not rejected as a malformed contract"
+assert_log_not_contains "$framework_proposal_profile_log" "auditProfile: UNRESOLVED" "Four-profile matrix: framework-health reaches a resolved audit profile"
+assert_log_contains "$framework_proposal_profile_log" "auditProfile: framework-proposal-v1" "Four-profile matrix: framework-health reports its declared proposal profile"
+assert_log_contains "$framework_proposal_profile_log" "notApplicableChecks: $s03_not_applicable" "Four-profile matrix: framework-health declares the four delivery-completion exclusions"
+assert_log_contains "$framework_proposal_profile_log" "NOT_APPLICABLE: Check-4-completion" "Four-profile matrix: framework proposal skips the DoD completion check"
+assert_log_contains "$framework_proposal_profile_log" "NOT_APPLICABLE: Check-5-all-done" "Four-profile matrix: framework proposal skips the all-scopes-Done check"
+assert_log_contains "$framework_proposal_profile_log" "NOT_APPLICABLE: Check-8-file-existence" "Four-profile matrix: framework proposal skips the test-file existence check"
+assert_log_contains "$framework_proposal_profile_log" "NOT_APPLICABLE: Check-11-execution-evidence" "Four-profile matrix: framework proposal skips the delivery execution-evidence check"
+assert_log_not_contains "$framework_proposal_profile_log" "UNCHECKED DoD items" "Four-profile matrix: a skipped Check 4 emits no completion failure"
+assert_log_not_contains "$framework_proposal_profile_log" "still marked 'Not Started'" "Four-profile matrix: a skipped Check 5 emits no all-Done failure"
+assert_log_not_contains "$framework_proposal_profile_log" "Test Plan references non-existent file" "Four-profile matrix: a skipped Check 8 emits no missing-file failure"
+assert_log_not_contains "$framework_proposal_profile_log" "has ZERO evidence code blocks" "Four-profile matrix: a skipped Check 11 emits no missing-evidence failure"
+
+# Paired contrast against the SAME artifact content under delivery-completion-v1
+# (the s03 delivery negative above is the identical packet on autonomous-goal):
+# the exclusions are enforced for framework-proposal-v1 ONLY, so every one of
+# these four checks must still adjudicate — and fail — under the live profile.
+assert_log_contains "$s03_delivery_log" "UNCHECKED DoD items" "Four-profile matrix: delivery-completion-v1 still runs the DoD completion check"
+assert_log_contains "$s03_delivery_log" "still marked 'Not Started'" "Four-profile matrix: delivery-completion-v1 still runs the all-scopes-Done check"
+assert_log_contains "$s03_delivery_log" "Test Plan references non-existent file" "Four-profile matrix: delivery-completion-v1 still runs the test-file existence check"
+assert_log_contains "$s03_delivery_log" "has ZERO evidence code blocks" "Four-profile matrix: delivery-completion-v1 still runs the execution-evidence check"
 
 echo "Running BUG-026 G060 profile-awareness matrix (Check 3E honors the audit profile)..."
 # Case 1 — planning-maturity exemption: a product-to-planning/specs_hardened packet
