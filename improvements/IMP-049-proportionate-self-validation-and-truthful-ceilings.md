@@ -70,13 +70,17 @@ Recorded because a proposal that only lists confirmations is not a review:
 
 ## Proposal
 
-### SCOPE-1 — Prove downstream only what only downstream can prove (VAL-1)
+### SCOPE-1 — WITHDRAWN: prove downstream only what only downstream can prove (VAL-1)
 
-Replace the nested full `framework-validate` with a mechanically selected path-sensitive subset plus the existing integrity verification.
+**Withdrawn 2026-08-18 after implementation, on measurement. The problem statement P1 was wrong in two independent ways, and both were found by building the thing and testing it.**
 
-Selection is **derived, never a hand-maintained list**: a classifier marks a selftest path-sensitive when it references `ROOT_DIR`, `REPO_ROOT`, `$SCRIPT_DIR/../`, or any path that escapes its own directory. Anything the classifier cannot confidently classify is treated as path-sensitive and runs. The selection is printed so a reviewer can audit what was skipped and why.
+**The classification rule was unsafe.** "References `ROOT_DIR` / `REPO_ROOT` / `$SCRIPT_DIR/../`" describes the selftest's own text, but layout dependence usually lives in the SUBJECT the selftest drives. `bubbles/scripts/v7-selftest.sh` contains zero root identifiers and would have been skipped; it invokes `mode-resolver.sh`, which resolves the repository root itself and reads `bubbles/workflows.yaml`. Run against a byte-identical copy of the script directory with no repository around it, it exits 1 with 5 failures. The rule would have silenced exactly the regression the nested downstream run exists to catch. A correct classifier must close transitively over invoked siblings, which drops the provably-local set from 52 to **8**.
 
-The skip is justified by an *existing* proof, not by assumption: a selftest is eligible only when its bytes are covered by `managedFileChecksums` and `verify-payload-integrity` passed for the installed tree. If integrity verification did not run or did not pass, the full nested run happens.
+**The saving was not there anyway.** The ~790s figure assumed cost is proportional to count. It is not, and the correlation runs the wrong way: a selftest that cannot observe the layout is one that builds a `mktemp` fixture and hands its subject an explicit root — and those are the cheap ones. Measured at millisecond resolution, the 8 provably-local selftests cost **2.376s**, 0.06% of a 3743s run. Even the unsafe 52-file ceiling is 58.3s, 1.6%.
+
+The 1341s is real, but it is not in the checks a correct rule can remove. Attacking it requires measuring where that time actually goes inside the nested run — the path-sensitive selftests and the live guards — which this proposal did not do. Recorded as an open question rather than a plan.
+
+A conservative classifier and an integrity-gated selection mechanism were built and proven (10/10 fixtures, 5/5 integrity cases, including two false negatives its own fixtures caught on the first pass). Neither is retained: unwired machinery is exactly the weight this proposal argues against.
 
 ### SCOPE-2 — Consume a validation that already happened (VAL-2)
 
@@ -115,8 +119,8 @@ Every scope is additive and default-safe. SCOPE-1 and SCOPE-2 change only *when*
 
 ## Acceptance criteria (when implemented)
 
-1. A full `framework-validate` reports a wall clock materially below the 3743s baseline, with the new figure recorded from an actual run.
-2. The downstream selection is printed and auditable; a mutation that mis-classifies a path-sensitive selftest fails a test.
+1. ~~A full `framework-validate` reports a wall clock materially below the 3743s baseline.~~ **Void — SCOPE-1 withdrawn.** The measurement that would have satisfied this instead disproved it: the removable share is 2.376s, not ~790s. No wall-clock reduction to `framework-validate` is claimed.
+2. ~~The downstream selection is printed and auditable; a mutation that mis-classifies a path-sensitive selftest fails a test.~~ **Void — SCOPE-1 withdrawn.** The mutation was performed and is what withdrew the scope: `v7-selftest.sh`, which the proposed rule classified as skippable, fails with 5 errors under a bare tree.
 3. `release-check` on an unchanged tree consumes the receipt and does not re-run the suite; a one-byte change forces a re-run.
 4. `--list-tier` and `--help` answer with exit 0 while another run holds the lock.
 5. No mode declares a below-`done` ceiling without a `transitionAudit` route; BUG-017 closes with evidence.
