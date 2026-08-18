@@ -49,7 +49,40 @@ fi
 # exported marker below is inherited only by descendants of a holding run, so
 # nested invocations pass through while two INDEPENDENT top-level runs still
 # contend.
-if [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]] && command -v flock >/dev/null 2>&1; then
+#
+# IMP-049 SCOPE-3. The lock protects the SHARED SCRATCH FIXTURES that executing
+# checks build. An invocation that executes no check touches none of them, so
+# making it wait is protection against nothing. Before this, the lock was taken
+# here and arguments were parsed ~250 lines later, which meant `--help`,
+# `--list-tier` AND an ordinary typo all exited 1 with a lock error whenever any
+# run was in flight — observed while preparing IMP-049 by the review that needed
+# `--list-tier=full` and could not get an answer.
+#
+# The predicate is "will this invocation execute checks?", not "is it one of the
+# read-only flags". That direction matters: an argument this pre-scan does not
+# recognise means the parser below is about to reject it with exit 2, so holding
+# the lock for it would replace a precise usage error with a misleading lock
+# error. No arguments at all is the default full run, which does execute and
+# therefore does lock. `framework-validate-tier-selftest.sh` asserts that the
+# executing-flag list here still matches the parser's own case arms, so the two
+# cannot drift apart silently.
+_fv_executes_checks=true
+if [[ $# -gt 0 ]]; then
+  _fv_executes_checks=false
+  for _fv_arg in "$@"; do
+    case "$_fv_arg" in
+      --tier=core | --tier=full | --changed-only | --cache | --no-cache | --record-debt)
+        _fv_executes_checks=true
+        ;;
+      -h | --help | --list-tier=core | --list-tier=full) ;;
+      *)
+        _fv_executes_checks=false
+        break
+        ;;
+    esac
+  done
+fi
+if [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]] && command -v flock >/dev/null 2>&1; then
   _fv_lockfile="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"
   # Probe writability on a THROWAWAY command first. `exec 9>file` with no command
   # applies its redirections to the shell PERMANENTLY, so appending an error
@@ -65,7 +98,7 @@ if [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]] && command -v flock >/de
     fi
     export BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD=1
   fi
-elif [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
+elif [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
   # flock absent (stock macOS ships none). The guard degrades to a no-op, so say
   # so — a silent degrade lets an operator believe concurrent-run protection is
   # active when it is not.
