@@ -526,6 +526,50 @@ while [[ "$_idx" -lt "${#post_cert_entries[@]}" ]]; do
 done
 post_cert_entries=("${drift_entries[@]+"${drift_entries[@]}"}")
 
+# ---------------------------------------------------------------------------
+# IMP-049 SCOPE-3 — carried-finding ledger.
+#
+# The measured downstream state was 40 certified specs whose findings were being
+# carried with no record anywhere. Carrying is the option actually taken and the
+# one the framework never recorded, so the erosion was invisible.
+#
+# A carry is a RECORD, never an EXEMPTION. Declaring one does NOT change the
+# exit code: the finding still fails. That is deliberate — a ledger entry that
+# cleared a blocking gate would be exactly the unvalidated self-assertion this
+# proposal refuses (see requiresRevalidation, and Option B). What the ledger
+# buys is attribution: who decided, why, and when, plus an aggregate that can be
+# argued about instead of a silence that becomes the norm.
+#
+# Shape, in state.json:
+#   "g088Carry": [ { "file": "...", "reason": "...", "owner": "...", "date": "..." } ]
+# An entry missing any of the four fields is malformed and does NOT count as
+# declared, so a half-filled ledger cannot launder a finding into looking owned.
+# ---------------------------------------------------------------------------
+carry_files=""
+if jq -e 'has("g088Carry") and (.g088Carry | type == "array")' "$STATE_FILE" >/dev/null 2>&1; then
+  carry_files="$(jq -r '
+    [ .g088Carry[]?
+      | select(((.file // "") | tostring | length) > 0
+            and ((.reason // "") | tostring | length) > 0
+            and ((.owner // "") | tostring | length) > 0
+            and ((.date // "") | tostring | length) > 0)
+      | .file ] | .[]?' "$STATE_FILE" 2>/dev/null || true)"
+fi
+
+carry_declared=0
+carry_undeclared=0
+_i=0
+while [[ "$_i" -lt "${#post_cert_entries[@]}" ]]; do
+  _entry_file="${post_cert_entries[$_i]#*file=}"
+  _entry_file="${_entry_file%% subject=*}"
+  if [[ -n "$carry_files" ]] && printf '%s\n' "$carry_files" | grep -Fxq "$_entry_file"; then
+    carry_declared=$((carry_declared + 1))
+  else
+    carry_undeclared=$((carry_undeclared + 1))
+  fi
+  _i=$((_i + 1))
+done
+
 if [[ "${#post_cert_entries[@]}" -gt 0 && "$requires_revalidation" == "true" ]]; then
   if [[ "$QUIET" != "true" ]]; then
     echo "post-cert-spec-edit-guard: PASS Gate G088 (post_certification_spec_edit_gate) - spec=$spec_rel status=$status requiresRevalidation=true postCertEdits=${#post_cert_entries[@]}"
@@ -541,6 +585,8 @@ if [[ "${#post_cert_entries[@]}" -gt 0 ]]; then
   echo "  trackedFiles: ${#tracked_paths[@]}" >&2
   echo "  postCertEdits: ${#post_cert_entries[@]}" >&2
   echo "  clearedAsRedaction: ${#redaction_entries[@]}" >&2
+  echo "  carriedDeclared: $carry_declared" >&2
+  echo "  carriedUndeclared: $carry_undeclared" >&2
   echo "  remediation: demote status out of done, set requiresRevalidation:true, or complete a current bubbles.spec-review recertification and update certifiedAt after the edit" >&2
   echo "  G092: legacy done_with_concerns is read-only compatibility only; touched or recertified specs must migrate to done plus observations or blocked" >&2
   echo "  commits/files:" >&2

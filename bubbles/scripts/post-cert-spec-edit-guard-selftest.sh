@@ -513,6 +513,50 @@ run_guard "$repo"
 assert_exit "C12 concrete-to-concrete swap still fails" 1
 
 echo ""
+echo "=== IMP-049 SCOPE-3 — carried-finding ledger ==="
+# A carry is a RECORD, never an EXEMPTION. The decisive assertion is L1: a fully
+# declared carry must STILL fail. A ledger entry that cleared a blocking gate
+# would be the same unvalidated self-assertion the proposal refuses.
+
+l_stage() {
+  local sid="$1" carry="$2"
+  local repo
+  repo="$(stage_repo "$sid")"
+  write_truth_files "$repo"
+  printf '%s\n' 'The system MUST retain audit records for 30 days.' > "$repo/specs/300-certified/spec.md"
+  write_state "$repo" "done" '"2026-05-01T00:00:00Z"' "false" '[]' "$carry"
+  commit_all "$repo" "2026-04-30T00:00:00Z" "baseline certified spec"
+  printf '%s\n' 'The system MUST retain audit records for 90 days.' > "$repo/specs/300-certified/spec.md"
+  commit_all "$repo" "2026-05-02T00:00:00Z" "docs(specs): reconcile stale annotations"
+  printf '%s' "$repo"
+}
+
+echo ""
+echo "--- L1: a fully declared carry is recorded but STILL FAILS ---"
+repo="$(l_stage l1-declared ',
+  "g088Carry": [ { "file": "specs/300-certified/spec.md", "reason": "reconciliation", "owner": "release-owner", "date": "2026-05-03" } ]')"
+run_guard "$repo"
+assert_exit "L1 declared carry still fails" 1
+assert_stderr_contains "L1" "carriedDeclared: 1"
+assert_stderr_contains "L1" "carriedUndeclared: 0"
+
+echo ""
+echo "--- L2: a carry missing a required field does NOT count as declared ---"
+repo="$(l_stage l2-malformed ',
+  "g088Carry": [ { "file": "specs/300-certified/spec.md", "reason": "reconciliation", "date": "2026-05-03" } ]')"
+run_guard "$repo"
+assert_exit "L2 malformed carry still fails" 1
+assert_stderr_contains "L2" "carriedDeclared: 0"
+assert_stderr_contains "L2" "carriedUndeclared: 1"
+
+echo ""
+echo "--- L3: no ledger at all reports the finding as undeclared ---"
+repo="$(l_stage l3-noledger '')"
+run_guard "$repo"
+assert_exit "L3 no ledger still fails" 1
+assert_stderr_contains "L3" "carriedUndeclared: 1"
+
+echo ""
 echo "=== Selftest verdict ==="
 printf '  Total assertions: %d\n' "$((PASS_COUNT + FAIL_COUNT))"
 printf '  Passed:           %d\n' "$PASS_COUNT"
