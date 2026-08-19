@@ -5,6 +5,11 @@
 **Motivation:** A downstream consumer measurement found that 40 of 99 certified specs fail Gate G088, and that 76% of the flagged edits are mandated PII/genericization redactions that change no requirement. The gate's own remediation menu has no proportionate response at that scale, so the failures are carried. A blocking gate whose failures are routinely carried stops being read, and that precedent is the real damage.
 **Verified gaps addressed:** EV-13 (certification-drift detection is path-level, so a mandated mechanical redaction is indistinguishable from a requirements change); EV-14 (the only escape from a G088 finding is an unvalidated boolean, so the gate's remediation menu offers no proportionate, evidence-backed response)
 
+## Provenance
+
+- Framework source audit baseline: commit `fc2e7ca692942f14826935dc83248f023f78613c`.
+- Downstream portfolio measurement: `smackerel` commit `57bcb187c55f876ae931149da257ee693ba5c0e5` on 2026-08-18.
+
 ## Problem (verified against source)
 
 All line citations below were re-checked against `bubbles/scripts/post-cert-spec-edit-guard.sh`

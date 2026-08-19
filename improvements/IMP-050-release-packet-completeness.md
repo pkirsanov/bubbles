@@ -5,6 +5,12 @@
 **Motivation:** A human-directed audit in a downstream consumer found a release phase directory holding 5 of the 8 canonical packet docs. Both mechanical checks that touch release packets — `release-packet-location-guard.sh` and Gate G101 — passed it. The three absent docs were `marketing.md`, `monetization.md`, and `ops-scalability.md`, so the phase could have reached "all required features delivered, all gates green" with no recorded monetization posture, no scaling thresholds, and no operational-readiness statement. Nothing in the framework announces an absence, so the packet reads complete to every automated check and to a casual reader.
 **Verified gaps addressed:** COV-20 (no gate asserts that a release phase directory holds the complete canonical document set; the location guard knows all eight names but uses them only to recognise a misplaced file); DOC-9 (the published "exactly 8 docs per phase, no more and no fewer" contract has mechanical backing for "no more" and none whatsoever for "no fewer")
 
+## Provenance
+
+- Framework source audit baseline: commit `f4225a27f3538fcebae4c017aae9f8f32e8121ff`.
+- Downstream incomplete-packet measurement: `smackerel` commit `60098b78398b110dfe2227030ba3b8f6af10cede`.
+- Downstream packet repair: `smackerel` commit `7a24b83d13966168e286a4509f7820af2bc1f6cd`.
+
 ## Problem (verified against source)
 
 Every line citation below was re-checked against this repository at HEAD
