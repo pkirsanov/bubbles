@@ -1,9 +1,9 @@
-# IMP-051 — G022 synthesises a phantom phase owner, so an honest packet has no satisfiable path
+# IMP-052 — G022 synthesises a phantom phase owner, so an honest packet has no satisfiable path
 
 **Status:** PROPOSED (not yet applied) — awaiting owner review
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
 **Motivation:** A downstream bug packet recorded three phases truthfully — `discovery`, `documentation`, `analysis`, all executed by `bubbles.bug`, which is the agent the framework's own bug-agent definition instructs to execute them — and Gate G022 Check 6B refused all three. It refused them because it derived their owners by string concatenation, demanding `bubbles.discovery`, `bubbles.documentation`, and `bubbles.analysis`, none of which have ever existed as agents. Every route to a green gate from that state requires writing something false: a fabricated expansion reason, a fabricated executor, or the deletion of a true record. An anti-fabrication gate whose only satisfiable path is a false record is teaching agents to lie to it, and that is a worse outcome than the gate not existing.
-**Verified gaps addressed:** EV-15 (a provenance gate can reach a state where no truthful record satisfies it, so its incentive inverts from honesty to fabrication); REG-16 (`executionHistory[].agent` is enum-constrained against a registry while the phase-name fields beside it are unconstrained free text, and the two shipped surfaces that name phases disagree)
+**Verified gaps addressed:** EV-15 (a provenance gate can reach a state where no truthful record satisfies it, so its incentive inverts from honesty to fabrication); REG-17 (`executionHistory[].agent` is enum-constrained against a registry while the phase-name fields beside it are unconstrained free text, and the two shipped surfaces that name phases disagree)
 
 ## Problem (verified against source)
 
@@ -83,7 +83,7 @@ viable.
   would require asserting a cause that did not occur. The gate's only unlocked
   door opens onto a lie.
 
-- **REG-16 — the three names are not phases with a missing owner; they are not
+- **REG-17 — the three names are not phases with a missing owner; they are not
   phases at all (CORRECTED — this is the material correction).** The reporting
   brief described `discovery`, `documentation`, and `analysis` as phases that
   "have NO declared owner". The `yq` probe it prescribed does return
@@ -106,13 +106,13 @@ viable.
   three phases" is not adding an `owner:` key to three existing entries, it is
   adding three new entries to the phase registry.
 
-- **REG-16 — the nearest registered phases already exist and are already owned
+- **REG-17 — the nearest registered phases already exist and are already owned
   correctly (NEW).** `bug-discovery` is owned by `bubbles.bug`, `docs` by
   `bubbles.docs`, and `analyze` by `activeWorkflowRunner`. The framework has
   already applied the spirit of "declare the real owner" — to a different
   spelling of the same three concepts.
 
-- **REG-16 — the unregistered names come from a shipped framework agent, not from
+- **REG-17 — the unregistered names come from a shipped framework agent, not from
   a careless packet (NEW, and it is the root of the contradiction).**
   `agents/bubbles.bug.agent.md` instructs the agent to write exactly these
   strings: line 291 `execution.currentPhase: "discovery"`, line 339
@@ -123,7 +123,7 @@ viable.
   shipped framework surfaces name phases and they disagree, and the guard
   validates against one of them while the agent writes the other.
 
-- **REG-16 — the sibling field is enum-constrained; the phase fields are not
+- **REG-17 — the sibling field is enum-constrained; the phase fields are not
   (NEW).** `bubbles/scripts/agent-id-enum-lint.sh` exists precisely to stop
   free-text drift in this record. Its header states the contract: "agent MUST be a
   registered id from bubbles/agent-capabilities.yaml", motivated by a measured 163
@@ -201,7 +201,7 @@ Four candidate mechanisms, then a recommendation. SCOPE-1 chooses the corrective
 SCOPE-2 states the constraint that binds whichever corrective is chosen; SCOPE-3
 is the preventive and is landable independently.
 
-### SCOPE-1 — Decide how an unregistered phase name resolves its owner (EV-15, REG-16)
+### SCOPE-1 — Decide how an unregistered phase name resolves its owner (EV-15, REG-17)
 
 **Option A — register the three names as phases owned by `bubbles.bug`.** Add
 `discovery`, `documentation`, and `analysis` to `.phases` in
@@ -306,7 +306,7 @@ must not fall silent.
   in the gate chain as the precedent consciously not repeated here. No new
   self-asserted exemption field is introduced by this proposal.
 
-### SCOPE-3 — Constrain phase names at declaration time, as agent ids already are (REG-16)
+### SCOPE-3 — Constrain phase names at declaration time, as agent ids already are (REG-17)
 
 `bubbles/scripts/agent-id-enum-lint.sh` already solves the identical problem for
 the adjacent column of the same record, including the migration strategy. Reuse

@@ -53,12 +53,21 @@ failures=0
 pass() { echo "PASS: $1"; }
 fail() { echo "FAIL: $1" >&2; failures=$((failures + 1)); }
 
+downstream_check_detail() {
+  local label="$1"
+  awk -v heading="==> $label" '
+    $0 == heading { capture=1; print; next }
+    capture && /^==> / { exit }
+    capture { print }
+  ' "$ds_log" | tail -80
+}
+
 # --- T2: source-mode detection on the framework repo itself ---
 if [[ -f "$ROOT_DIR/install.sh" && -f "$ROOT_DIR/VERSION" ]]; then
-  # Window must clear any stderr preamble (macOS emits a 3-line flock-absent NOTE
-  # before the banner); head still SIGPIPEs the run early so this stays cheap.
-  # stdin is /dev/null so a nested run can never block waiting on input.
-  src_out="$(bash "$SCRIPT_DIR/framework-validate.sh" </dev/null 2>&1 | head -30 || true)"
+  # The list path reports install mode but executes zero checks. Starting a full
+  # validator and truncating it with `head` can leave descendants alive after
+  # SIGPIPE; they then overlap T3 and corrupt its shared validation fixtures.
+  src_out="$(bash "$SCRIPT_DIR/framework-validate.sh" --list-tier=core </dev/null 2>&1)"
   if grep -q "Install mode: source" <<<"$src_out"; then
     pass "T2: framework-validate reports install-mode=source from framework repo"
   else
@@ -121,7 +130,7 @@ done < <(
 )
 
 # --- T1: downstream-mode detection ---
-ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" </dev/null 2>&1 | head -30 || true)"
+ds_out="$(bash "$tmp_root/.github/bubbles/scripts/framework-validate.sh" --list-tier=core </dev/null 2>&1)"
 if grep -q "Install mode: downstream" <<<"$ds_out"; then
   pass "T1: framework-validate reports install-mode=downstream from a real installed tree"
 else
@@ -169,6 +178,8 @@ self_only_labels=(
   "Installer manifest check (v6.0 / B9)"
   "Installer manifest selftest (v6.0 / B9)"
   "Bug-packet contract selftest (IMP-047 / S-B)"
+  "Validation run receipt selftest (IMP-049 SCOPE-2)"
+  "Generated gate-enforcement block current"
 )
 t3_failures=0
 for label in "${self_only_labels[@]}"; do
@@ -205,14 +216,26 @@ done
 known_downstream_failures=()
 
 observed_failures=()
-# Read ONLY the trailing "Failed checks:" block. Matching "  - " anywhere in the
-# output instead swept up every guard's remediation hint list and reported 125
-# phantom failures.
-while IFS= read -r line; do
-  [[ -n "$line" ]] && observed_failures+=("$line")
-done < <(printf '%s\n' "$ds_full" | awk '/^Failed checks:/{f=1;next} f&&/^  - /{sub(/^  - /,"");print;next} f{exit}')
+# A successful top-level validator has no failures regardless of any expected
+# nested fixture output it printed. On failure, read only the LAST contiguous
+# "Failed checks:" block; the first block can belong to a nested selftest that
+# intentionally exercised a red framework-validate fixture.
+if [[ $ds_rc -ne 0 ]]; then
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && observed_failures+=("$line")
+  done < <(printf '%s\n' "$ds_full" | awk '
+    /^Failed checks:$/ { block=""; capture=1; next }
+    capture && /^  - / { line=$0; sub(/^  - /,"",line); block=block line ORS; next }
+    capture { capture=0 }
+    END { printf "%s", block }
+  ')
+fi
 
 unexpected=0
+if [[ $ds_rc -ne 0 && ${#observed_failures[@]} -eq 0 ]]; then
+  fail "T3c: downstream framework-validate exited $ds_rc without a trailing Failed checks block"
+  unexpected=$((unexpected + 1))
+fi
 for observed in ${observed_failures[@]+"${observed_failures[@]}"}; do
   listed=0
   for known in "${known_downstream_failures[@]}"; do
@@ -220,6 +243,13 @@ for observed in ${observed_failures[@]+"${observed_failures[@]}"}; do
   done
   if [[ $listed -eq 0 ]]; then
     fail "T3c: NEW downstream failure not on the known list: '$observed'"
+    detail="$(downstream_check_detail "$observed")"
+    if [[ -n "$detail" ]]; then
+      printf '%s\n%s\n%s\n' \
+        "--- downstream failure detail: $observed ---" \
+        "$detail" \
+        "--- end downstream failure detail ---" >&2
+    fi
     unexpected=$((unexpected + 1))
   fi
 done

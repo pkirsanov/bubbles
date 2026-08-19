@@ -242,6 +242,43 @@ else
   bad "A10 REUSED assertion is non-vacuous" "mutated=$(printf '%s' "$mutated_branch" | tr '\n' '|')"
 fi
 
+# A11 the generated registry must be readable by a YAML parser.
+#
+# It never was. `commands:` followed by a bare `[]` on the NEXT line at the SAME
+# indent is a sibling key, not a value, so every consumer that actually parses
+# this file refused the whole document -- 60 occurrences. Bubbles never noticed
+# because nothing here parses it; it is read with grep and awk. A downstream
+# consumer's YAML check found it. A generated file nobody parses is a file whose
+# syntax nobody checks, so the check belongs next to the generator.
+if command -v yq >/dev/null 2>&1; then
+  a11_registry="$SCRIPT_DIR/../registry/validation-checks.yaml"
+  if yq -o=json '.' "$a11_registry" >/dev/null 2>&1; then
+    ok "A11 generated validation-checks.yaml parses as YAML"
+  else
+    bad "A11 generated validation-checks.yaml parses as YAML" \
+      "yq refused the document: $(yq -o=json '.' "$a11_registry" 2>&1 | head -1)"
+  fi
+
+  # Non-vacuity: the assertion must reject the exact shape that shipped.
+  # Written as a heredoc rather than a printf carrying escaped newlines, because
+  # the agnosticity lint's Windows drive-letter rule matches any letter followed
+  # by a colon and a backslash -- which an escaped newline after a YAML key
+  # produces. The rule is right; the printf was the wrong way to spell this.
+  cat >"$WORK/a11-bad.yaml" <<'A11_BAD_YAML'
+checks:
+  a:
+    commands:
+    []
+A11_BAD_YAML
+  if yq -o=json '.' "$WORK/a11-bad.yaml" >/dev/null 2>&1; then
+    bad "A11 parser rejects the shipped defect" "yq accepted 'commands:' with a bare [] on the next line"
+  else
+    ok "A11 parser rejects the shipped defect (non-vacuous)"
+  fi
+else
+  ok "A11 skipped — yq not installed, no YAML parser available"
+fi
+
 printf '%s: %s check(s), %s failure(s)\n' "$NAME" "$checks" "$failures"
 [[ "$failures" -eq 0 ]] || exit 1
 exit 0
