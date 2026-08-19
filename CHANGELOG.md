@@ -31,6 +31,26 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Downstream Validation No Longer Disables Child Signal Cleanup
+
+The portable timeout fallback launched its command as an asynchronous job while
+job control was off. Bash therefore gave the child an inherited ignored
+`SIGINT` disposition, which a nested non-interactive Bash could not trap. The
+adversarial resolver's INT cleanup cases hung until their watchdog sent KILL,
+returned 137 instead of 130, and left their writers and fixtures behind.
+
+The fallback now enables monitor mode only while launching the child and then
+restores the caller's setting. Its owning selftest proves a fallback-launched
+child can trap INT and return 130; the adversarial resolver passes all 1,139
+assertions through the same nested watchdog ancestry.
+
+The v5.3 downstream-install selftest also no longer starts full validators and
+truncates them with `head` merely to detect install mode. Its read-only tier-list
+probes execute no checks and leave no descendants. If the real downstream run
+fails, T3c reads only its final failure-summary block and prints the bounded
+section for each unexpected check instead of attributing a nested fixture's
+expected red output to the top-level run.
+
 ### Two Context-Cleanup Bullets Were Already Satisfied (IMP-042 SCOPE-14)
 
 Both were checked against the tree rather than taken at face value, and neither
