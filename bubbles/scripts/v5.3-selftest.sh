@@ -169,6 +169,7 @@ self_only_labels=(
   "Installer manifest check (v6.0 / B9)"
   "Installer manifest selftest (v6.0 / B9)"
   "Bug-packet contract selftest (IMP-047 / S-B)"
+  "Validation run receipt selftest (IMP-049 SCOPE-2)"
 )
 t3_failures=0
 for label in "${self_only_labels[@]}"; do

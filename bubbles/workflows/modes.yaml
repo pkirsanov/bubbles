@@ -352,6 +352,7 @@ modes:
   docs-only:
     description: Documentation maintenance without implementation changes.
     statusCeiling: docs_updated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ docs_updated ]
     phaseOrder: [ select, docs, validate, audit, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073 ]
@@ -364,6 +365,7 @@ modes:
   journey-refinement:
     description: Guided walkthrough of the live product toward a user goal; captures friction via real UI/API/telemetry, refines scenarios, routes concerns. Read-only on code.
     statusCeiling: docs_updated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     phaseOrder: [ select, journey, docs, finalize ]
     requiredGates: [ G001, G010, G011, G012 ]
     constraints:
@@ -374,6 +376,7 @@ modes:
   validate-only:
     description: Validation-only run with evidence output.
     statusCeiling: validated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ validated ]
     phaseOrder: [ select, validate, finalize ]
     requiredGates: [ G001, G007, G011, G012, G073 ]
@@ -386,6 +389,7 @@ modes:
   audit-only:
     description: Audit-only run for already validated scopes.
     statusCeiling: validated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ validated ]
     phaseOrder: [ select, audit, finalize ]
     requiredGates: [ G001, G008, G011, G012, G073 ]
@@ -397,6 +401,7 @@ modes:
   readiness-review:
     description: Read-only system release-readiness synthesizer. Runs the review family + verification lenses and produces one consolidated readiness verdict. Never mutates code; routes required changes via packets.
     statusCeiling: validated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ validated ]
     phaseOrder: [ select, spec-review, code-review, system-review, security, regression, redteam, validate, finalize ]
     requiredGates: [ G001, G007, G008, G011, G012, G073 ]
@@ -602,6 +607,7 @@ modes:
   production-adversarial-probe:
     description: Bounded, armed, read-only adversarial probing of a LIVE / production system (Green Bastard on a leash — the chaos-monkey mode). Requires explicit arming AND a target allowlist; observes and injects bounded hostile input on the READ-ONLY operate plane only; restores any mutated state before completing; never certifies and never edits source.
     statusCeiling: validated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ validated ]
     phaseOrder: [ select, redteam, finalize ]
     requiredGates: [ G001, G009, G011, G012, G073 ]
@@ -624,6 +630,7 @@ modes:
   validate-to-doc:
     description: Run validation, audit, and docs sync. For specs needing final quality verification without re-running tests or chaos.
     statusCeiling: validated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ validated ]
     phaseOrder: [ select, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073 ]
@@ -877,6 +884,7 @@ modes:
   spec-review-to-doc:
     description: Audit all or selected specs for freshness, classify trust levels, and produce a maintenance context report. Read-only — no code changes, only spec trust classification and reporting.
     statusCeiling: docs_updated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ docs_updated ]
     phaseOrder: [ select, spec-review, docs, finalize ]
     requiredGates: [ G001, G010, G011, G012, G073 ]
@@ -945,6 +953,7 @@ modes:
   retro-to-review:
     description: "Data-driven code review: run retro hotspot analysis to identify the highest-risk files, then perform a targeted code review on those areas. Read-only diagnostic — produces findings and recommendations, no code changes."
     statusCeiling: docs_updated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ docs_updated ]
     phaseOrder: [ select, retro, code-review, docs, finalize ]
     requiredGates: [ G001, G010, G011, G012 ]
@@ -959,6 +968,7 @@ modes:
   release-planning-to-doc:
     description: "Phase release packet planning. Owned by bubbles.releases (Sonny Iron Lung Smith). Reads the Product Direction Surfaces trio (docs/INVESTOR_OVERVIEW.md, docs/Product-Principles.md, .github/instructions/product-principles.instructions.md), reconciles current product capabilities, then produces or refreshes a phase release packet (vision, features, actions, business-plan, deployment, marketing, monetization, ops-scalability) under docs/plans/<phase>/ and docs/releases/<phase>.md, plus updates the Phase Overview table in docs/INVESTOR_OVERVIEW.md. Refuses to run on a repo missing the trio — routes to bubbles.setup first. Supports modes: bootstrap, refresh, extend, cross-product."
     statusCeiling: docs_updated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ docs_updated ]
     phaseOrder: [ select, releases, docs, finalize ]
     requiredGates: [ G001, G010, G011, G012 ]
@@ -1330,6 +1340,7 @@ modes:
   adapter-readiness-to-packet:
     description: "Deploy-adapter readiness mode. Ships an adapter (apply.sh / verify.sh / rollback.sh / manifest schema) plus an operator activation packet to `delivered_pending_activation`. Contract-level tests, shellcheck, yamllint, manifest schema validation, and dry-run apply are required. Live runtime E2E is honestly deferred until the operator commits per-host params and runs the activation packet. Every deferred DoD item MUST cite the lockdown FR (typically the explicit live-activation lockdown FR in the spec)."
     statusCeiling: delivered_pending_activation
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G027, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073, G074 ]
@@ -1356,6 +1367,7 @@ modes:
   dark-launch-shipped:
     description: "Dark-launch mode. Ships a feature behind an off-by-default feature flag to `delivered_pending_activation`. Full implement + test + audit + integration tests with flag forced on in a sealed test env required. Live production E2E is honestly deferred until rollout. Every deferred runtime-E2E DoD item MUST cite the rollout lockdown FR plus the rollout owner (unblocker) and expectedActivation milestone."
     statusCeiling: delivered_pending_activation
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, regression, simplify, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G026, G027, G028, G029, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073 ]
@@ -1380,6 +1392,7 @@ modes:
   migration-shipped-pending-cutover:
     description: "Migration mode. Ships forward/backward-compatible migration code (DB schema, API version, protocol upgrade) to `delivered_pending_activation`. Backward-compat contract tests, dual-read or dual-write tests, and explicit rollback plan are required. Live cutover E2E is honestly deferred until the scheduled cutover window. Every deferred DoD item MUST cite the cutover lockdown FR, the cutover window (expectedActivation), and the rollback path (unblocker)."
     statusCeiling: delivered_pending_activation
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ delivered_pending_activation ]
     phaseOrder: [ select, bootstrap, implement, test, validate, audit, regression, security, docs, finalize ]
     requiredGates: [ G001, G002, G003, G004, G005, G006, G007, G009, G010, G011, G012, G019, G020, G021, G022, G023, G024, G025, G027, G040, G044, G047, G048, G051, G055, G056, G057, G059, G061, G073 ]
@@ -1413,6 +1426,7 @@ modes:
   release-train-cut:
     description: "Cut a release-train candidate. Tags trunk at SHA, triggers CI to build signed image digests + per-train config bundle. Cut produces evidence (build manifest + bundle SHA + signature receipts) but does NOT deploy. Refuses if any spec on this train has off-train flags defaulted ON (G111) or missing compliance declarations (G117-G120)."
     statusCeiling: train_cut
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ train_cut ]
     phaseOrder: [ select, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G074, G081, G110, G111, G117, G118, G120 ]
@@ -1431,6 +1445,7 @@ modes:
   release-train-promote:
     description: "Promote a release-train candidate from one slot to another (typically staging → prod). Pure pointer-swap on knb-side <product>/<target>/manifest.yaml to the candidate's digests + bundle. Requires staging soak evidence + passing backup-freshness gate (G112). Refuses if restore-drill has not run within cadence (G113)."
     statusCeiling: train_promoted
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ train_promoted ]
     phaseOrder: [ select, validate, devops, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G074, G081, G110, G112, G113, G117 ]
@@ -1450,6 +1465,7 @@ modes:
   release-train-rollback:
     description: "Roll back a release-train slot to the previous manifest commit. Pure pointer-swap on knb-side <product>/<target>/manifest.yaml. Never rebuilds. Reads previous manifest from `git show HEAD~1:...`, calls adapter apply.sh with old digests + bundle."
     statusCeiling: train_rolled_back
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ train_rolled_back ]
     phaseOrder: [ select, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G081, G110, G117 ]
@@ -1466,6 +1482,7 @@ modes:
   release-train-retire:
     description: "Retire a release train. Pre-step requires ALL flags introduced by specs on this train to be cleaned up (removed from code + bundle) via flag-cleanup audits. Transitions train phase to `retired`. After retire, no cuts or promotes are allowed."
     statusCeiling: train_retired
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ train_retired ]
     phaseOrder: [ select, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111 ]
@@ -1481,6 +1498,7 @@ modes:
   release-train-status-all:
     description: "Read-only rollup of every train declared in config/release-trains.yaml. Reports id, phase, target_slot, flags_bundle, retention, pii, and open-flag count per train. Invoked via `/bubbles.train status --all-trains` or NL phrases routed by intent-routes.yaml (`what's in prod and dev`, `release status`). Never mutates state."
     statusCeiling: train_status_reported
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ train_status_reported ]
     phaseOrder: [ select, audit, finalize ]
     requiredGates: [ G001, G006, G007, G011, G012, G073, G110 ]
@@ -1502,6 +1520,7 @@ modes:
   upkeep-backup-verify:
     description: "Daily backup verification. Runs T1 (ZFS snapshot) + T2 (host-local restic). Conditionally runs T3 (USB) and T4 (offsite cloud) based on OFFSITE_BACKEND env. Writes ledger entry with restic check exit code. Failure packets to bubbles.devops."
     statusCeiling: backup_verified
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ backup_verified ]
     phaseOrder: [ select, devops, validate, docs, finalize ]
     requiredGates: [ G001, G006, G007, G011, G012, G073, G112, G115, G117, G118 ]
@@ -1517,6 +1536,7 @@ modes:
   upkeep-restore-drill:
     description: "Weekly restore drill. Restores latest T2 snapshot into isolated `restore-test` namespace, runs product's smoke check, tears down namespace. Proves backup is restorable. Failure blocks next release-train-promote for that product (G113)."
     statusCeiling: restore_verified
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ restore_verified ]
     phaseOrder: [ select, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G113, G115, G117 ]
@@ -1533,6 +1553,7 @@ modes:
   upkeep-bcdr-drill:
     description: "Quarterly BCDR drill. Full DR exercise restoring entire product stack into isolated namespace. Warns when OFFSITE_BACKEND=local-only (true BCDR impossible against single host). Records RTO/RPO actuals in ledger."
     statusCeiling: bcdr_verified
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ bcdr_verified ]
     phaseOrder: [ select, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G114, G115, G116, G117 ]
@@ -1549,6 +1570,7 @@ modes:
   upkeep-patch-cycle:
     description: "Monthly patch cycle. Base-image refresh + dependency audit. Produces a candidate via release-train-cut for the affected trains. Failure packets to bubbles.security if CVE-related, bubbles.stabilize otherwise."
     statusCeiling: patched
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ patched ]
     phaseOrder: [ select, security, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117 ]
@@ -1563,6 +1585,7 @@ modes:
   upkeep-secret-rotation:
     description: "Quarterly secret rotation. Rotates managed secrets (DB passwords, JWT keys, API tokens, OAuth secrets). Records old/new key-id hashes (NEVER values) in ledger (G119). Coordinates with bubbles.security if any secret is suspected compromised."
     statusCeiling: secrets_rotated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ secrets_rotated ]
     phaseOrder: [ select, security, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117, G119 ]
@@ -1577,6 +1600,7 @@ modes:
   upkeep-flag-cleanup:
     description: "Monthly flag-cleanup audit. Identifies flags whose owning train has graduated > 1 cycle ago and are still live in code. Packets cleanup work to bubbles.train (owner of flag lifecycle). Audit-only; never edits code."
     statusCeiling: flags_audited
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ flags_audited ]
     phaseOrder: [ select, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G111 ]
@@ -1590,6 +1614,7 @@ modes:
   upkeep-compliance-sweep:
     description: "Quarterly compliance sweep. Verifies G117 (audit-trail-immutable), G118 (backup-retention-declared), G119 (secret-rotation-recorded), G120 (pii-classification-declared). Generates docs/Compliance_Report.md with evidence; packets to bubbles.audit for sign-off. Treena gathers evidence, Ted certifies."
     statusCeiling: compliance_swept
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ compliance_swept ]
     phaseOrder: [ select, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G117, G118, G119, G120 ]
@@ -1613,6 +1638,7 @@ modes:
   propagate-forward:
     description: "Cherry-pick latest commits forward across declared train edges. For each `defaultFlow` edge with `auto: true`, identifies commits on the source train not yet on the target, routes cherry-pick to bubbles.devops, routes receiving-train validation per `receivingTrainValidationMode`, appends ledger entry. NEVER moves changes backward. NEVER edits flag bundles."
     statusCeiling: propagated_forward
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ propagated_forward ]
     phaseOrder: [ select, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111, G117, G121, G122, G123 ]
@@ -1631,6 +1657,7 @@ modes:
   propagate-backport:
     description: "Cherry-pick a fix backward (later train → earlier train) under approval guard. Refuses unless edge has `backportable: true` in policy AND operator supplies `--approval-token=<sha>` when `backportRequiresApproval: true`. Records approval token in ledger entry. Used for hotfixes shipped first to prod that need to flow back to trunk."
     statusCeiling: propagated_backward
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ propagated_backward ]
     phaseOrder: [ select, devops, validate, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G111, G117, G121, G122, G123 ]
@@ -1649,6 +1676,7 @@ modes:
   propagate-audit:
     description: "Read-only drift report. For each `defaultFlow` edge, lists commits on the source train not yet on the target. No cherry-pick, no validation, no ledger entry. Used before release windows to see what's drifted."
     statusCeiling: propagation_audited
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ propagation_audited ]
     phaseOrder: [ select, audit, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G121 ]
@@ -1669,6 +1697,7 @@ modes:
   incident-fastlane:
     description: "Production incident response chain. bubbles.stabilize diagnoses with severity tagging (G124); any `incident` severity routes pointer-swap rollback authority to bubbles.train (DVS); bubbles.devops executes the redeploy via repo CLI; bubbles.validate confirms the rollback target is live; bubbles.docs records post-incident notes (optional). Routed by NL phrases like 'prod is broken', 'rollback prod', 'production incident'. Preserves ownership boundaries — stabilize never rolls back inline."
     statusCeiling: incident_mitigated
+    transitionAudit: { profile: operational-completion-v1, target: statusCeiling }
     terminalAliases: [ incident_mitigated ]
     phaseOrder: [ select, stabilize, devops, validate, audit, redteam, docs, finalize ]
     requiredGates: [ G001, G006, G007, G008, G011, G012, G073, G110, G117, G124 ]
