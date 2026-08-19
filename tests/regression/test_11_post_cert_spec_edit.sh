@@ -119,6 +119,40 @@ echo "--- R2: staged fixture post-cert edit guard pass with G092 legacy-read-onl
 fixture_spec="$(stage_post_cert_fixture)"
 run_check "R2 staged fixture" bash "$GUARD" "$fixture_spec"
 
+# IMP-049 Option C: the classifier must clear a mandated redaction and must NOT
+# clear a requirements change. Both directions are persistent regressions, not
+# only hermetic selftest scenarios, because a filter bug that silently suppresses
+# real drift is the worst outcome this gate can have (IMP-049 R1).
+echo ""
+echo "--- R3: a concrete-value -> placeholder redaction is cleared, not reported as drift ---"
+r3_spec="$(stage_post_cert_fixture)"
+r3_repo="$(cd "$r3_spec/../.." && pwd -P)"
+# The certified baseline must actually carry the concrete value, so the later
+# edit is a one-line substitution rather than a whole-file rewrite.
+printf 'Deploy to prod-01.internal.example-corp.com nightly.\n' > "$r3_spec/spec.md"
+GIT_AUTHOR_DATE="2026-04-30T00:00:00Z" GIT_COMMITTER_DATE="2026-04-30T00:00:00Z" \
+  git -C "$r3_repo" commit -aq --amend --no-edit >/dev/null 2>&1
+printf 'Deploy to <DEPLOY_HOST> nightly.\n' > "$r3_spec/spec.md"
+GIT_AUTHOR_DATE="2026-05-02T00:00:00Z" GIT_COMMITTER_DATE="2026-05-02T00:00:00Z" \
+  git -C "$r3_repo" commit -aqm "chore(genericize): remove machine-local values" >/dev/null 2>&1
+run_check "R3 redaction cleared" bash "$GUARD" "$r3_spec"
+
+echo ""
+echo "--- R4 ADVERSARIAL: a requirements change is still reported as drift ---"
+r4_spec="$(stage_post_cert_fixture)"
+r4_repo="$(cd "$r4_spec/../.." && pwd -P)"
+printf 'The system MUST retain audit records for 30 days.\n' > "$r4_spec/spec.md"
+GIT_AUTHOR_DATE="2026-04-30T00:00:00Z" GIT_COMMITTER_DATE="2026-04-30T00:00:00Z" \
+  git -C "$r4_repo" commit -aq --amend --no-edit >/dev/null 2>&1
+printf 'The system MUST retain audit records for 90 days.\n' > "$r4_spec/spec.md"
+GIT_AUTHOR_DATE="2026-05-02T00:00:00Z" GIT_COMMITTER_DATE="2026-05-02T00:00:00Z" \
+  git -C "$r4_repo" commit -aqm "chore(genericize): remove machine-local values" >/dev/null 2>&1
+if bash "$GUARD" "$r4_spec" >/dev/null 2>&1; then
+  fail "R4 requirements change was wrongly cleared as a redaction"
+else
+  pass "R4 requirements change still reported as drift"
+fi
+
 echo ""
 echo "=== Regression verdict ==="
 printf '  Total checks: %d\n' "$((PASS_COUNT + FAIL_COUNT))"
