@@ -114,12 +114,15 @@ CASE_INDEX=0
 run_trace_case() {
   local feature_dir="$1"
   local case_label="$2"
+  local scope_mode="${3:-}"
   local case_log
 
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug018-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
+  if [[ -n "$scope_mode" ]] && bash "$GUARD" "$feature_dir" "$scope_mode" >"$case_log" 2>&1; then
+    CASE_STATUS=0
+  elif [[ -z "$scope_mode" ]] && bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -894,6 +897,211 @@ run_trace_case "$started_feature" "In Progress scope still requires report evide
 assert_case_status 1 "Adversarial twin: an In Progress scope exits 1 on missing evidence"
 assert_case_contains 'report is missing evidence reference' "Adversarial twin: a started scope still fails on missing evidence"
 assert_case_not_contains 'report evidence DEFERRED' "Adversarial twin: a started scope is never deferred"
+
+# --- Current-scope manifest projection preserves sequential execution ---------
+# Scope 03 declares a planned test file that does not exist yet. Scope 02 is the
+# current scope and depends on completed Scope 01. --current-scope must omit the
+# Not Started descendant from BOTH the scope-file checks and manifest file
+# checks; default --all-scopes remains strict and must fail on the same fixture.
+build_current_scope_projection_feature() {
+  local feature_dir="$1"
+  mkdir -p \
+    "$feature_dir/scopes/01-prerequisite" \
+    "$feature_dir/scopes/02-current" \
+    "$feature_dir/scopes/03-future" \
+    "$feature_dir/tests"
+
+  cat > "$feature_dir/tests/prerequisite.spec.ts" <<'EOF'
+export const prerequisite = true;
+EOF
+  cat > "$feature_dir/tests/current.spec.ts" <<'EOF'
+export const current = true;
+EOF
+  mkdir -p \
+    "$feature_dir/scopes/01-prerequisite/tests" \
+    "$feature_dir/scopes/02-current/tests"
+  cp "$feature_dir/tests/prerequisite.spec.ts" "$feature_dir/scopes/01-prerequisite/tests/prerequisite.spec.ts"
+  cp "$feature_dir/tests/current.spec.ts" "$feature_dir/scopes/02-current/tests/current.spec.ts"
+
+  cat > "$feature_dir/scopes/01-prerequisite/scope.md" <<'EOF'
+# Scope 01: Prerequisite
+
+**Status:** Done
+
+### Gherkin
+
+#### SCN-812-001
+
+Scenario: Prerequisite behavior remains available
+  Given a completed prerequisite
+  When the current scope starts
+  Then prerequisite behavior remains available
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| E2E | e2e-ui | tests/prerequisite.spec.ts | SCN-812-001 prerequisite behavior remains available | selftest:prerequisite | Yes |
+
+### Definition of Done
+
+- [x] SCN-812-001 prerequisite behavior remains available -> Evidence: report.md#test-evidence
+EOF
+  cat > "$feature_dir/scopes/01-prerequisite/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+tests/prerequisite.spec.ts passed.
+EOF
+
+  cat > "$feature_dir/scopes/02-current/scope.md" <<'EOF'
+# Scope 02: Current
+
+**Status:** In Progress
+
+### Gherkin
+
+#### SCN-812-002
+
+Scenario: Current behavior executes before future work
+  Given the prerequisite is complete
+  When current behavior executes
+  Then future work is not required yet
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| E2E | e2e-ui | tests/current.spec.ts | SCN-812-002 current behavior executes before future work | selftest:current | Yes |
+
+### Definition of Done
+
+- [x] SCN-812-002 current behavior executes before future work -> Evidence: report.md#test-evidence
+EOF
+  cat > "$feature_dir/scopes/02-current/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+tests/current.spec.ts passed.
+EOF
+
+  cat > "$feature_dir/scopes/03-future/scope.md" <<'EOF'
+# Scope 03: Future
+
+**Status:** Not Started
+
+### Gherkin
+
+#### SCN-812-003
+
+Scenario: Future behavior runs after current completion
+  Given the current scope is complete
+  When future behavior runs
+  Then its own test proves the result
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| E2E | e2e-ui | tests/future-not-authored.spec.ts | SCN-812-003 future behavior runs after current completion | selftest:future | Yes |
+
+### Definition of Done
+
+- [ ] SCN-812-003 future behavior runs after current completion -> Evidence: report.md#test-evidence
+EOF
+  cat > "$feature_dir/scopes/03-future/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+No future execution has occurred.
+EOF
+
+  cat > "$feature_dir/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "scenarioId": "SCN-812-001",
+      "scopeRef": "scopes/01-prerequisite/scope.md",
+      "title": "Prerequisite behavior remains available",
+      "linkedTests": [{"file": "tests/prerequisite.spec.ts"}],
+      "evidenceRefs": ["scopes/01-prerequisite/report.md#test-evidence"]
+    },
+    {
+      "scenarioId": "SCN-812-002",
+      "scopeRef": "scopes/02-current/scope.md",
+      "title": "Current behavior executes before future work",
+      "linkedTests": [{"file": "tests/current.spec.ts"}],
+      "evidenceRefs": ["scopes/02-current/report.md#test-evidence"]
+    },
+    {
+      "scenarioId": "SCN-812-003",
+      "scopeRef": "scopes/03-future/scope.md",
+      "title": "Future behavior runs after current completion",
+      "linkedTests": [{"file": "tests/future-not-authored.spec.ts", "testState": "planned-not-authored"}],
+      "evidenceRefs": ["scopes/03-future/report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+
+  cat > "$feature_dir/state.json" <<'EOF'
+{
+  "version": 3,
+  "status": "in_progress",
+  "scopeLayout": "per-scope-directory",
+  "execution": {
+    "currentPhase": "implement",
+    "currentScope": 2,
+    "scopeProgress": [
+      {"scope": 1, "scopeId": "01-prerequisite", "scopeDir": "scopes/01-prerequisite", "status": "done", "dependsOn": []},
+      {"scope": 2, "scopeId": "02-current", "scopeDir": "scopes/02-current", "status": "in_progress", "dependsOn": ["01-prerequisite"]},
+      {"scope": 3, "scopeId": "03-future", "scopeDir": "scopes/03-future", "status": "not_started", "dependsOn": ["02-current"]}
+    ]
+  },
+  "certification": {
+    "status": "in_progress",
+    "scopeProgress": [
+      {"scope": 1, "scopeId": "01-prerequisite", "scopeDir": "scopes/01-prerequisite", "status": "done", "dependsOn": []},
+      {"scope": 2, "scopeId": "02-current", "scopeDir": "scopes/02-current", "status": "in_progress", "dependsOn": ["01-prerequisite"]},
+      {"scope": 3, "scopeId": "03-future", "scopeDir": "scopes/03-future", "status": "not_started", "dependsOn": ["02-current"]}
+    ]
+  }
+}
+EOF
+}
+
+current_scope_feature="$TMPDIR/specs/812-current-scope-projection"
+build_current_scope_projection_feature "$current_scope_feature"
+run_trace_case "$current_scope_feature" "current scope omits a future planned manifest test" "--current-scope"
+assert_case_status 0 "Current-scope projection: a future Not Started test does not block the current scope"
+assert_case_contains 'scenario-manifest.json linked test exists: tests/current.spec.ts' \
+  "Current-scope projection: the current manifest binding is still validated"
+assert_case_not_contains 'future-not-authored.spec.ts' \
+  "Current-scope projection: the future descendant is absent from the applicable manifest universe"
+
+run_trace_case "$current_scope_feature" "all scopes remain strict about a future missing test" "--all-scopes"
+assert_case_status 1 "All-scope adversarial: the same future missing test still fails terminal/all-scope validation"
+assert_case_contains 'scenario-manifest.json references missing linked test file: tests/future-not-authored.spec.ts' \
+  "All-scope adversarial: the missing future manifest binding is named"
+
+mv "$current_scope_feature/tests/current.spec.ts" "$current_scope_feature/tests/current.spec.ts.saved"
+run_trace_case "$current_scope_feature" "current scope still fails on its own missing test" "--current-scope"
+assert_case_status 1 "Current-scope adversarial: a missing current test is never deferred"
+assert_case_contains 'scenario-manifest.json references missing linked test file: tests/current.spec.ts' \
+  "Current-scope adversarial: the missing current manifest binding is named"
+mv "$current_scope_feature/tests/current.spec.ts.saved" "$current_scope_feature/tests/current.spec.ts"
+
+unknown_scope_feature="$TMPDIR/specs/813-current-scope-unknown-reference"
+build_current_scope_projection_feature "$unknown_scope_feature"
+sed -i.bak 's#scopes/03-future/scope.md#scopes/99-unknown/scope.md#' "$unknown_scope_feature/scenario-manifest.json"
+rm -f "$unknown_scope_feature/scenario-manifest.json.bak"
+run_trace_case "$unknown_scope_feature" "current scope fails closed on an unknown manifest scope" "--current-scope"
+assert_case_status 1 "Current-scope fail-closed: an unknown scenario scope reference is refused"
+assert_case_contains 'linked-test scope projection failed' \
+  "Current-scope fail-closed: the projection failure is explicit"
 
 if [[ "$failures" -eq 0 ]]; then
   echo "[selftest traceability-guard] PASS"
