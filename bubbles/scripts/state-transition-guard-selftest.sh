@@ -1924,14 +1924,8 @@ if not isinstance(execution, dict):
   data["execution"] = execution
 
 execution["completedPhaseClaims"] = ["totally-made-up-phase"]
-execution["executionHistory"] = [
-  {
-    "agent": "bubbles.bug",
-    "phasesExecuted": ["totally-made-up-phase"],
-    "startedAt": "2026-01-01T00:00:00Z",
-    "completedAt": "2026-01-01T00:20:00Z",
-  },
-]
+execution.pop("executionHistory", None)
+data.pop("executionHistory", None)
 
 with open(path, "w", encoding="utf-8") as handle:
   json.dump(data, handle, indent=2)
@@ -2925,6 +2919,7 @@ assert_log_contains "$unregistered_phase_log" "Phase 'totally-made-up-phase' is 
 assert_log_contains "$unregistered_phase_log" "refusing without synthesizing a phantom owner" "Check 6B: the refusal explains that no owner was invented"
 assert_log_not_contains "$unregistered_phase_log" "bubbles.totally-made-up-phase" "Check 6B: the guard never demands a fabricated agent identity"
 assert_log_contains "$unregistered_phase_log" "framework integrity check failed" "Check 6B: an unknown phase cannot degrade to a pass"
+assert_log_not_contains "$unregistered_phase_log" "phase provenance check skipped" "Check 6B: missing execution history cannot bypass phase registry validation"
 
 echo "Running Check 6B broken declared-owner adversarial selftest..."
 broken_phase_owner_log="$tmp_root/broken-phase-owner.log"
