@@ -1,9 +1,26 @@
 # IMP-052 — G022 synthesises a phantom phase owner, so an honest packet has no satisfiable path
 
-**Status:** PROPOSED (not yet applied) — awaiting owner review
+**Status:** IN PROGRESS 2026-08-19 — SCOPE-1 and SCOPE-2 delivered; SCOPE-3 not started
 **Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
 **Motivation:** A downstream bug packet recorded three phases truthfully — `discovery`, `documentation`, `analysis`, all executed by `bubbles.bug`, which is the agent the framework's own bug-agent definition instructs to execute them — and Gate G022 Check 6B refused all three. It refused them because it derived their owners by string concatenation, demanding `bubbles.discovery`, `bubbles.documentation`, and `bubbles.analysis`, none of which have ever existed as agents. Every route to a green gate from that state requires writing something false: a fabricated expansion reason, a fabricated executor, or the deletion of a true record. An anti-fabrication gate whose only satisfiable path is a false record is teaching agents to lie to it, and that is a worse outcome than the gate not existing.
 **Verified gaps addressed:** EV-15 (a provenance gate can reach a state where no truthful record satisfies it, so its incentive inverts from honesty to fabrication); REG-17 (`executionHistory[].agent` is enum-constrained against a registry while the phase-name fields beside it are unconstrained free text, and the two shipped surfaces that name phases disagree)
+
+## Provenance
+
+Authored from direct source reading rather than a runtime telemetry export, and
+independently re-verified against the committed baseline before delivery.
+
+| Input | What it established |
+|---|---|
+| `bubbles/scripts/state-transition-guard.sh` at the committed baseline (4830 lines) | `phase_owner_agent()` is defined at lines 1970-1993; line 1976 special-cases `analyze) legacy='bubbles.analyst'`; line 1977 is the unguarded general rule `*) legacy="bubbles.$phase"` |
+| A downstream bug packet recording `discovery`, `documentation`, `analysis`, all executed by `bubbles.bug` | Gate G022 Check 6B refused all three, demanding `bubbles.discovery`, `bubbles.documentation`, `bubbles.analysis` — none of which exist as agents |
+| `bubbles/workflows.yaml` phase registry vs the bug-agent definition | the two shipped surfaces that name phases disagree, so a truthful packet can name a phase the registry never declares |
+| Independent re-verification via `git show HEAD` | the concatenation rule reproduces exactly at the committed baseline, and is NOT reachable in the delivered resolver, where `resolve_phase_owner()` returns `owner-missing` before any derivation is attempted |
+| `state-transition-guard-selftest.sh` after the change | passes with 0 failures; adds 53 lines of new coverage and introduces no new shellcheck findings (92 at baseline, 92 after) |
+
+Claims carried in from the reporting brief are marked CONFIRMED where they
+reproduced exactly and CORRECTED where they did not; two required correction,
+and one of those corrections materially changed which remedies were viable.
 
 ## Problem (verified against source)
 
