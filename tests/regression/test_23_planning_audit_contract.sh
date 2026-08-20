@@ -256,8 +256,8 @@ EOF
   "planningOnlyJustification": "The fixture certifies planning maturity without implementation or delivery claims.",
   "execution": {
     "currentScope": null,
-    "currentPhase": "plan",
-    "completedPhaseClaims": ["analyze", "ux", "design", "plan"],
+    "currentPhase": "bootstrap",
+    "completedPhaseClaims": ["analyze", "bootstrap"],
     "pendingTransitionRequests": [],
     "audit": {
       "schemaVersion": "audit-run/v1",
@@ -268,7 +268,7 @@ EOF
   },
   "certification": {
     "status": "in_progress",
-    "certifiedCompletedPhases": ["analyze", "ux", "design", "plan"],
+    "certifiedCompletedPhases": ["analyze", "bootstrap"],
     "completedScopes": [],
     "scopeProgress": [
       {
@@ -297,27 +297,31 @@ EOF
     {
       "phase": "analyze",
       "agent": "bubbles.analyst",
+      "phasesExecuted": ["analyze"],
       "outcome": "completed_diagnostic",
       "startedAt": "2026-07-10T10:00:00Z",
       "completedAt": "2026-07-10T10:01:13Z"
     },
     {
-      "phase": "ux",
+      "phase": "analyze",
       "agent": "bubbles.ux",
+      "phasesExecuted": ["analyze"],
       "outcome": "completed_diagnostic",
       "startedAt": "2026-07-10T10:02:01Z",
       "completedAt": "2026-07-10T10:04:29Z"
     },
     {
-      "phase": "design",
+      "phase": "bootstrap",
       "agent": "bubbles.design",
+      "phasesExecuted": ["bootstrap"],
       "outcome": "completed_diagnostic",
       "startedAt": "2026-07-10T10:05:17Z",
       "completedAt": "2026-07-10T10:08:52Z"
     },
     {
-      "phase": "plan",
+      "phase": "bootstrap",
       "agent": "bubbles.plan",
+      "phasesExecuted": ["bootstrap"],
       "outcome": "completed_diagnostic",
       "startedAt": "2026-07-10T10:09:31Z",
       "completedAt": "2026-07-10T10:14:47Z"

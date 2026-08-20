@@ -173,15 +173,19 @@ emit_mapped_sites() {
   cat <<'SITES'
 ACC-PASS|passed_gate_ids|1|result-accumulation
 RESULT-PASSED-LOOP|passed_gate_ids|2|result-construction
+RESULT-PASSED-FILTER|passed_gate_ids|3|result-construction
 ACC-FAILED-GATE|failed_gate_ids|1|result-accumulation
 RESULT-FAILED-FILTER|failed_gate_ids|2|result-construction
 RESULT-FAILED-GATE-FORMAT|failed_gate_ids|3|result-serialization
-FINAL-GATE-LOOKUP|failed_gate_ids|4|final-classification
+TELEMETRY-PASSED-FILTER|failed_gate_ids|4|telemetry
+TELEMETRY-FAILED-LOOP|failed_gate_ids|5|telemetry
+FINAL-GATE-LOOKUP|failed_gate_ids|6|final-classification
 ACC-FAILED-CHECK|failed_check_ids|1|result-accumulation
 RESULT-FAILED-CHECK-FORMAT|failed_check_ids|2|result-serialization
 RESULT-REQUIRED-LOOP|transition_required_gate_ids|1|result-construction
 RESULT-APPLICABLE-FORMAT|transition_applicable_check_classes|1|result-serialization
 RESULT-NOT-APPLICABLE-FORMAT|transition_not_applicable_checks|1|result-serialization
+NOT-APPLICABLE-LOOKUP|transition_not_applicable_checks|2|applicability
 RESULT-PASSED-FORMAT|effective_passed_gate_ids|1|result-serialization
 SCOPE-BUILD-UNITS|scope_files|1|scope-discovery
 SCOPE-COPY|scope_files|2|scope-discovery
@@ -207,10 +211,10 @@ SCOPE-ENV-FAILURE-SCAN|scope_files|22|scope-discovery
 SCOPE-EVIDENCE-SIMILARITY|scope_files|23|scope-discovery
 REPORT-TEMPLATE-SCAN|report_files|1|report-discovery
 REPORT-REQUIRED-SECTIONS|report_files|2|report-discovery
-REPORT-DELTA-EVIDENCE|report_files|3|report-discovery
-REPORT-DEFERRAL-SCAN|report_files|4|report-discovery
-REPORT-ENV-FAILURE-SCAN|report_files|5|report-discovery
-EVIDENCE-FIRST-COMPARE|evidence_hashes|1|evidence-comparison
+REPORT-DUPLICATE-EVIDENCE|report_files|3|report-discovery
+REPORT-DELTA-EVIDENCE|report_files|4|report-discovery
+REPORT-DEFERRAL-SCAN|report_files|5|report-discovery
+REPORT-ENV-FAILURE-SCAN|report_files|6|report-discovery
 SITES
 }
 
@@ -348,24 +352,24 @@ evidence_hashes
 ARRAYS
   done <"$source_file"
 
-  if [[ "$COUNT_PASSED" -ne 2 \
-    || "$COUNT_FAILED_GATE" -ne 4 \
+  if [[ "$COUNT_PASSED" -ne 3 \
+    || "$COUNT_FAILED_GATE" -ne 6 \
     || "$COUNT_FAILED_CHECK" -ne 2 \
     || "$COUNT_REQUIRED" -ne 1 \
     || "$COUNT_APPLICABLE" -ne 1 \
-    || "$COUNT_NOT_APPLICABLE" -ne 1 \
+    || "$COUNT_NOT_APPLICABLE" -ne 2 \
     || "$COUNT_EFFECTIVE" -ne 1 \
     || "$COUNT_SCOPE" -ne 23 \
-    || "$COUNT_REPORT" -ne 5 \
-    || "$COUNT_EVIDENCE" -ne 1 ]]; then
+    || "$COUNT_REPORT" -ne 6 \
+    || "$COUNT_EVIDENCE" -ne 0 ]]; then
     printf 'INVENTORY_ERROR unexpected_counts passed=%s failedGate=%s failedCheck=%s required=%s applicable=%s notApplicable=%s effective=%s scope=%s report=%s evidence=%s\n' \
       "$COUNT_PASSED" "$COUNT_FAILED_GATE" "$COUNT_FAILED_CHECK" "$COUNT_REQUIRED" \
       "$COUNT_APPLICABLE" "$COUNT_NOT_APPLICABLE" "$COUNT_EFFECTIVE" "$COUNT_SCOPE" \
       "$COUNT_REPORT" "$COUNT_EVIDENCE" >>"$output_file"
     errors=$((errors + 1))
   fi
-  if [[ $((mapped_guarded + mapped_raw)) -ne 40 ]]; then
-    printf 'INVENTORY_ERROR mapped_total=%s expected=40\n' "$((mapped_guarded + mapped_raw))" >>"$output_file"
+  if [[ $((mapped_guarded + mapped_raw)) -ne 44 ]]; then
+    printf 'INVENTORY_ERROR mapped_total=%s expected=44\n' "$((mapped_guarded + mapped_raw))" >>"$output_file"
     errors=$((errors + 1))
   fi
 
@@ -375,7 +379,7 @@ ARRAYS
   INVENTORY_MAPPED_RAW="$mapped_raw"
   INVENTORY_ERRORS="$errors"
 
-  [[ "$mapped_guarded" -eq 40 \
+  [[ "$mapped_guarded" -eq 44 \
     && "$mapped_raw" -eq 0 \
     && "$control_raw" -eq 1 \
     && "$control_guarded" -eq 0 \
@@ -833,12 +837,12 @@ JSON
   "planningOnlyJustification": "This fixture evaluates planning maturity without delivery claims.",
   "execution": {
     "currentScope": null,
-    "currentPhase": "plan",
-    "completedPhaseClaims": ["analyze", "ux", "design", "plan"]
+    "currentPhase": "bootstrap",
+    "completedPhaseClaims": ["analyze", "bootstrap"]
   },
   "certification": {
     "status": "specs_hardened",
-    "certifiedCompletedPhases": ["analyze", "ux", "design", "plan"],
+    "certifiedCompletedPhases": ["analyze", "bootstrap"],
     "completedScopes": [],
     "scopeProgress": [
       { "scopeId": "S01", "scopeName": "Honest Planning Maturity", "status": "not_started" }
@@ -857,10 +861,10 @@ JSON
   "transitionRequests": [],
   "reworkQueue": [],
   "executionHistory": [
-    { "phase": "analyze", "agent": "bubbles.analyst", "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:00:00Z", "runCompletedAt": "2026-07-10T10:01:13Z" },
-    { "phase": "ux", "agent": "bubbles.ux", "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:02:01Z", "runCompletedAt": "2026-07-10T10:04:29Z" },
-    { "phase": "design", "agent": "bubbles.design", "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:05:17Z", "runCompletedAt": "2026-07-10T10:08:52Z" },
-    { "phase": "plan", "agent": "bubbles.plan", "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:09:31Z", "runCompletedAt": "2026-07-10T10:14:03Z" }
+    { "phase": "analyze", "agent": "bubbles.analyst", "phasesExecuted": ["analyze"], "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:00:00Z", "runCompletedAt": "2026-07-10T10:01:13Z" },
+    { "phase": "analyze", "agent": "bubbles.ux", "phasesExecuted": ["analyze"], "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:02:01Z", "runCompletedAt": "2026-07-10T10:04:29Z" },
+    { "phase": "bootstrap", "agent": "bubbles.design", "phasesExecuted": ["bootstrap"], "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:05:17Z", "runCompletedAt": "2026-07-10T10:08:52Z" },
+    { "phase": "bootstrap", "agent": "bubbles.plan", "phasesExecuted": ["bootstrap"], "outcome": "completed_diagnostic", "runStartedAt": "2026-07-10T10:09:31Z", "runCompletedAt": "2026-07-10T10:14:03Z" }
   ]
 }
 JSON
@@ -1161,14 +1165,31 @@ assert_complete_result() {
 
 classify_primary_abort() {
   local output_file="$1"
-  if output_contains "$output_file" 'unbound variable' \
-    && { output_contains "$output_file" 'passed_gate_ids[@]' \
-      || output_contains "$output_file" 'failed_gate_ids[@]' \
-      || output_contains "$output_file" 'failed_check_ids[@]' \
-      || output_contains "$output_file" 'transition_applicable_check_classes[@]' \
-      || output_contains "$output_file" 'scope_files[@]' \
-      || output_contains "$output_file" 'report_files[@]' \
-      || output_contains "$output_file" 'evidence_hashes[@]'; }; then
+  local site_id=""
+  local relative_path=""
+  local array_name=""
+  local ordinal=""
+  local family=""
+  local recognized_abort="false"
+
+  if output_contains "$output_file" 'unbound variable'; then
+    while IFS='|' read -r site_id array_name ordinal family; do
+      if output_contains "$output_file" "${array_name}[@]"; then
+        recognized_abort="true"
+        break
+      fi
+    done < <(emit_mapped_sites)
+    if [[ "$recognized_abort" == "false" ]]; then
+      while IFS='|' read -r site_id relative_path array_name ordinal family; do
+        if output_contains "$output_file" "${array_name}[@]"; then
+          recognized_abort="true"
+          break
+        fi
+      done < <(emit_module_mapped_sites)
+    fi
+  fi
+
+  if [[ "$recognized_abort" == "true" ]]; then
     PRIMARY_INTENDED_NOUNSET_ABORTS=$((PRIMARY_INTENDED_NOUNSET_ABORTS + 1))
   elif output_contains "$output_file" 'END TRANSITION_GUARD_RESULT_V1' \
     && output_contains "$output_file" "exitStatus: $RUN_STATUS"; then
@@ -1433,7 +1454,7 @@ prepare_repaired_reference() {
     harness_die 'temporary repaired-reference sourced guard module does not parse'
   fi
   if scan_inventory "$REPAIRED_REFERENCE_ROOT/bubbles/scripts/state-transition-guard.sh" "$inventory_output"; then
-    pass 'temporary repaired-reference contains all 40 guarded sites and one raw control'
+    pass 'temporary repaired-reference contains all 44 guarded sites and one raw control'
   else
     cat "$inventory_output"
     harness_die 'temporary repaired-reference inventory is not green'
@@ -1476,7 +1497,7 @@ prepare_family_mutant() {
   inventory_status=0
   scan_inventory "$source_file" "$inventory_output" || inventory_status=$?
   if [[ "$inventory_status" -ne 0 \
-    && "$INVENTORY_MAPPED_GUARDED" -eq 39 \
+    && "$INVENTORY_MAPPED_GUARDED" -eq 43 \
     && "$INVENTORY_MAPPED_RAW" -eq 1 \
     && "$INVENTORY_ERRORS" -eq 0 \
     && "$(grep -Fc "site=$site_id" "$inventory_output")" -eq 1 ]]; then
@@ -1527,7 +1548,7 @@ run_family_mutants() {
   run_family_mutant M-SCOPE-LOOP SCOPE-BUILD-UNITS planning empty-scopes
   run_family_mutant M-SCOPE-COPY SCOPE-COPY planning empty-scopes
   run_family_mutant M-REPORT-LOOP REPORT-TEMPLATE-SCAN planning no-reports
-  run_family_mutant M-EVIDENCE-FIRST EVIDENCE-FIRST-COMPARE planning evidence-one
+  run_family_mutant M-REPORT-DUPLICATE-EVIDENCE REPORT-DUPLICATE-EVIDENCE planning no-reports
   run_family_mutant M-FINAL-GATE-LOOKUP FINAL-GATE-LOOKUP planning untagged
 }
 
@@ -1554,7 +1575,7 @@ run_site_inventory_mutants() {
     inventory_status=0
     scan_inventory "$mutant_file" "$inventory_output" || inventory_status=$?
     if [[ "$inventory_status" -ne 0 \
-      && "$INVENTORY_MAPPED_GUARDED" -eq 39 \
+      && "$INVENTORY_MAPPED_GUARDED" -eq 43 \
       && "$INVENTORY_MAPPED_RAW" -eq 1 \
       && "$INVENTORY_ERRORS" -eq 0 \
       && "$(grep -Fc "site=$site_id" "$inventory_output")" -eq 1 ]]; then
@@ -1801,8 +1822,8 @@ if [[ "$FAMILY_MUTANT_RUNS" -eq 10 ]]; then
 else
   harness_fail "expected 10 named family mutants, observed $FAMILY_MUTANT_RUNS"
 fi
-if [[ "$SITE_MUTANT_RUNS" -eq 43 && "$SITE_MUTANT_REJECTIONS" -eq 43 ]]; then
-  pass 'all 43 mapped one-site mutants were independently rejected'
+if [[ "$SITE_MUTANT_RUNS" -eq 47 && "$SITE_MUTANT_REJECTIONS" -eq 47 ]]; then
+  pass 'all 47 mapped one-site mutants were independently rejected'
 else
   harness_fail "site mutant matrix incomplete: runs=$SITE_MUTANT_RUNS rejections=$SITE_MUTANT_REJECTIONS"
 fi
@@ -1817,21 +1838,21 @@ if [[ "$HARNESS_FAILURES" -eq 0 \
   && "$CONTROL_FAILURES" -eq 0 \
   && "$CANONICAL_INVENTORY_ERRORS" -eq 0 \
   && "$CANONICAL_MAPPED_GUARDED" -eq 0 \
-  && "$CANONICAL_MAPPED_RAW" -eq 40 \
+  && "$CANONICAL_MAPPED_RAW" -eq 44 \
   && "$CANONICAL_MODULE_INVENTORY_ERRORS" -eq 0 \
   && "$CANONICAL_MODULE_MAPPED_GUARDED" -eq 0 \
   && "$CANONICAL_MODULE_MAPPED_RAW" -eq 3 \
   && "$PRIMARY_INTENDED_NOUNSET_ABORTS" -eq 11 \
   && "$PRIMARY_UNRELATED_ABORTS" -eq 0 \
   && "$FAMILY_MUTANT_RUNS" -eq 10 \
-  && "$SITE_MUTANT_REJECTIONS" -eq 43 \
+  && "$SITE_MUTANT_REJECTIONS" -eq 47 \
   && "$PRIMARY_CONTRACT_FAILURES" -gt 0 \
   && "$CONTRACT_FAILURES" -eq "$PRIMARY_CONTRACT_FAILURES" ]]; then
   RED_DISPOSITION="VALID_PRE_FIX_RED"
 elif [[ "$HARNESS_FAILURES" -eq 0 \
   && "$CONTROL_FAILURES" -eq 0 \
   && "$CANONICAL_INVENTORY_STATUS" -eq 0 \
-  && "$CANONICAL_MAPPED_GUARDED" -eq 40 \
+  && "$CANONICAL_MAPPED_GUARDED" -eq 44 \
   && "$CANONICAL_MAPPED_RAW" -eq 0 \
   && "$CANONICAL_MODULE_INVENTORY_STATUS" -eq 0 \
   && "$CANONICAL_MODULE_MAPPED_GUARDED" -eq 3 \
