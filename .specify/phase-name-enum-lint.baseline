@@ -1,0 +1,6 @@
+# phase-name-enum-lint baseline (IMP-052 SCOPE-3)
+# Pre-existing free-text phase names, frozen so the lint can run at all.
+# This file may only SHRINK. Never add a new name here to silence a failure.
+# The durable fix is to register the phase in bubbles/workflows.yaml, or to
+# change the authoring surface to name a registered phase.
+plan
