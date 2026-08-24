@@ -31,6 +31,40 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### Full Declared Scope And The Durable Path Are Now Stated Policy
+
+`critical-requirements.md` policies 12 and 13 previously covered fidelity and
+shortcuts without naming two obligations agents kept violating: delivering the
+whole declared scope, and preferring the approach that is better for the long
+run. Policy 12 is now **Full-Fidelity Implementation Required — Deliver The
+Whole Declared Scope** and states that slicing controls scope SIZE and never
+scope COVERAGE, so a requirement the plan omits is a planning defect rather
+than an implicit deferral. Policy 13 is now **No Shortcuts — Take The Durable
+Path** and states that when two approaches both satisfy the spec the durable
+one wins, that an easily-undone shortcut is still a shortcut, and that
+corner-cutting is never justified by schedule, session length, context budget,
+or an instruction to move fast.
+
+The long-run rule previously existed only as `decisionPolicy.mechanicalPrinciples`
+`prefer_durable` in `workflows.yaml`, which activates only when
+`callerMode=orchestrated`. An agent invoked directly had no durability rule at
+all. Both principles now cite the policy they restate, so the auto-resolver and
+the universal contract cannot drift apart.
+
+`bubbles.plan` core requirement 1 is retitled *Create small, well-defined scopes
+that TOGETHER cover the whole spec*, because "each scope is a minimal, shippable
+increment" was readable as permission to plan less than the spec owes.
+
+Three defects in `critical-requirements.md` were fixed in the same pass. The
+policy list contained **two** items numbered 21; everything after it is
+renumbered, so Grounded Claims Only is now policy 25 and the
+`bubbles-claim-grounding` skill was updated to match. The Detection Scans
+section claimed to enforce "policies 4-8" and its table carried five stale
+policy numbers, none of which matched the list above it.
+
+Per-agent bundle ceilings were re-seeded for the six agents whose closures
+include `critical-requirements.md` and had under 1.5 KB of headroom.
+
 ### Downstream Validation No Longer Disables Child Signal Cleanup
 
 The portable timeout fallback launched its command as an asynchronous job while
