@@ -125,6 +125,37 @@ printf '{"ts":"2026-07-20T00:00:02Z","cmd":"ok","inputClosure":[{"path":"src.txt
 bash "$CHECK" --log "$d/valid.jsonl" --repo-root "$d" --strict >/dev/null 2>&1 && rc=0 || rc=$?
 if [[ "$rc" -eq 0 ]]; then pass "T8 --strict all-valid → exit 0"; else fail "T8 expected exit 0 (rc=$rc)"; fi
 
+# T9: re-running the same evidence identity refreshes a stale receipt. The
+# historical row remains append-only in the log but no longer blocks strict
+# freshness once a newer current receipt records the new input hash.
+refresh_log="$d/refresh.jsonl"
+old_hash="$(sha "$d/src.txt")"
+printf '{"ts":"2026-07-20T00:00:03Z","cwd":"%s","spec":"spec-a","scope":"scope-a","cmd":"run tests","inputClosure":[{"path":"src.txt","sha256":"%s"}]}\n' \
+  "$d" "$old_hash" > "$refresh_log"
+printf 'refreshed input\n' > "$d/src.txt"
+printf '{"ts":"2026-07-20T00:00:04Z","cwd":"%s","spec":"spec-a","scope":"scope-a","cmd":"run tests","inputClosure":[{"path":"src.txt","sha256":"%s"}]}\n' \
+  "$d" "$(sha "$d/src.txt")" >> "$refresh_log"
+out="$(bash "$CHECK" --log "$refresh_log" --repo-root "$d" --strict)" && rc=0 || rc=$?
+if [[ "$rc" -eq 0 && "$(field "$out" total)" -eq 2 && "$(field "$out" current)" -eq 1 && "$(field "$out" superseded)" -eq 1 && "$(field "$out" valid)" -eq 1 && "$(field "$out" stale)" -eq 0 ]]; then
+  pass "T9 fresh rerun supersedes stale receipt with the same evidence identity"
+else
+  fail "T9 expected one current valid and one superseded receipt (rc=$rc, out=$out)"
+fi
+
+# T10: the same command in another scope is a distinct claim. A fresh scope-b
+# run must not hide stale evidence still current for scope-a.
+scope_log="$d/scope-isolation.jsonl"
+printf '{"ts":"2026-07-20T00:00:05Z","cwd":"%s","spec":"spec-a","scope":"scope-a","cmd":"run tests","inputClosure":[{"path":"src.txt","sha256":"%s"}]}\n' \
+  "$d" "$old_hash" > "$scope_log"
+printf '{"ts":"2026-07-20T00:00:06Z","cwd":"%s","spec":"spec-a","scope":"scope-b","cmd":"run tests","inputClosure":[{"path":"src.txt","sha256":"%s"}]}\n' \
+  "$d" "$(sha "$d/src.txt")" >> "$scope_log"
+out="$(bash "$CHECK" --log "$scope_log" --repo-root "$d" --strict)" && rc=0 || rc=$?
+if [[ "$rc" -eq 1 && "$(field "$out" total)" -eq 2 && "$(field "$out" current)" -eq 2 && "$(field "$out" superseded)" -eq 0 && "$(field "$out" valid)" -eq 1 && "$(field "$out" stale)" -eq 1 ]]; then
+  pass "T10 fresh receipt in another scope does not supersede stale evidence"
+else
+  fail "T10 expected scope-isolated valid=1 stale=1 (rc=$rc, out=$out)"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "evidence-receipt-check-selftest FAILED with $FAILURES issue(s)."
