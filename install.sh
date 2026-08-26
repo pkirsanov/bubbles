@@ -112,9 +112,22 @@ if [[ -z "$LOCAL_SOURCE" ]]; then
   command -v tar  >/dev/null 2>&1 || fail "tar is required. Install it first."
 fi
 
-if [[ ! -d ".git" ]]; then
+# A worktree or submodule has .git as a FILE holding a gitdir: pointer, not a directory.
+if [[ ! -d ".git" && ! -f ".git" ]]; then
   fail "Not a git repo. Run this from your project root."
 fi
+
+# Repo IDENTITY must come from the primary checkout: inside a worktree
+# --show-toplevel is the worktree path, which would name the install after a
+# throwaway directory and corrupt the targetRepoSlug binding marker.
+primary_repo_root() {
+  local top common
+  top="$(git rev-parse --show-toplevel 2>/dev/null)" || { pwd; return; }
+  [[ -n "$top" ]] || { pwd; return; }
+  common="$(cd "$top" && git rev-parse --git-common-dir 2>/dev/null)" || { printf '%s\n' "$top"; return; }
+  [[ -n "$common" ]] || { printf '%s\n' "$top"; return; }
+  ( cd "$top" && cd "$common/.." 2>/dev/null && pwd ) || printf '%s\n' "$top"
+}
 
 CURRENT_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if [[ -f "$CURRENT_REPO_ROOT/install.sh" && -f "$CURRENT_REPO_ROOT/VERSION" && -d "$CURRENT_REPO_ROOT/agents" && -d "$CURRENT_REPO_ROOT/prompts" && -d "$CURRENT_REPO_ROOT/bubbles" && -f "$CURRENT_REPO_ROOT/bubbles/scripts/cli.sh" ]]; then
@@ -557,7 +570,7 @@ fi
 # no-op on re-install when the entry is already current.
 if command -v python3 >/dev/null 2>&1; then
   info "Registering Bubbles MCP server in .vscode/mcp.json (unique per-repo id)..."
-  mcp_repo_basename="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+  mcp_repo_basename="$(basename "$(primary_repo_root)")"
   mcp_repo_slug="$(printf '%s' "$mcp_repo_basename" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed -e 's/[^a-z0-9]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//')"
   [[ -n "$mcp_repo_slug" ]] || mcp_repo_slug="repo"
   mcp_server_id="bubbles-${mcp_repo_slug}"
@@ -958,7 +971,7 @@ INSTALL_VERSION="${VERSION:-$(bubbles_json_string_field "$RELEASE_MANIFEST_SOURC
 # always be stamped. Repo-RELATIVE only (repo basename slug) — never an absolute
 # path. repo-binding-preflight.sh reads this targetRepoSlug marker to refuse a
 # foreign workspace-root agent editing this repo.
-TARGET_REPO_SLUG="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+TARGET_REPO_SLUG="$(basename "$(primary_repo_root)")"
 TARGET_REPO_SLUG="$(printf '%s' "$TARGET_REPO_SLUG" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed -e 's/[^a-z0-9]/-/g' -e 's/--*/-/g' -e 's/^-//' -e 's/-$//')"
 [[ -n "$TARGET_REPO_SLUG" ]] || TARGET_REPO_SLUG="repo"
 
@@ -1035,7 +1048,7 @@ if [[ "$DO_BOOTSTRAP" == "true" ]]; then
     PROJECT_NAME="$NAME_OVERRIDE"
   else
     # Try git remote name, fall back to directory name
-    PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+    PROJECT_NAME=$(basename "$(primary_repo_root)")
     # Title-case it: my-project → My Project
     PROJECT_NAME=$(echo "$PROJECT_NAME" | sed 's/[-_]/ /g' | sed 's/\b\(.\)/\u\1/g')
   fi
