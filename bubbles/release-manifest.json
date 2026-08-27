@@ -219,7 +219,7 @@
     {"path": "bubbles/scripts/governance-index-lint-selftest.sh", "sha256": "f983201fc7439324030644a609505e249d4968564a2374ad8fb8d0c86fe3b00c"},
     {"path": "bubbles/scripts/governance-index-lint.sh", "sha256": "e9f7e1c1b04a4c651915c3c90a355524a523c955213f4fdfa82353a1f165dfe1"},
     {"path": "bubbles/scripts/guard-lib-timeout-selftest.sh", "sha256": "790857a3c1f2b861865ceebf97e902a4ad871be80abca17f2b221a20a9488c49"},
-    {"path": "bubbles/scripts/guard-lib.sh", "sha256": "0c5f9cfb8d61eb59e37f0d98de02cce8936a59800b9fc6e6a3fb01e9d7c0750c"},
+    {"path": "bubbles/scripts/guard-lib.sh", "sha256": "c27cad8f23ec9dafb3049fe21b9be3b95c9f973fd70e094293752b2d99ae787c"},
     {"path": "bubbles/scripts/handoff-cycle-check.sh", "sha256": "9a0938a3c8dccfdf27caa60775eecb1d92ffebf5b18dce7626af4589c9972367"},
     {"path": "bubbles/scripts/imp021-interaction-contracts-selftest.sh", "sha256": "284f308d31fad5c64979094e52daaf95b00704f2954616eab605d7f86e144b35"},
     {"path": "bubbles/scripts/imp040-evaluation-corpus.sh", "sha256": "12cf5137c33d1d1658f362d344868a50e8d329903d6b7a5559a47feed71defd2"},

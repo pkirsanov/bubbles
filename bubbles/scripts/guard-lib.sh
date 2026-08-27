@@ -129,6 +129,12 @@ bubbles_run_with_progress_timeout() {
     kill -0 "$cmd_pid" 2>/dev/null || break
 
     current_size="$(wc -c 2>/dev/null < "$log_file")" || current_size=""
+    # BSD `wc` right-aligns its count in a fixed-width field ("      12"); GNU
+    # does not, and command substitution strips only the TRAILING newline. The
+    # raw capture therefore failed `^[0-9]+$` on the first poll of every BSD
+    # host, returning 2 before either deadline was ever evaluated. Normalize
+    # before the numeric test; an unreadable log still yields "" and fails loud.
+    current_size="${current_size//[[:space:]]/}"
     if [[ ! "$current_size" =~ ^[0-9]+$ ]]; then
       timeout_rc=2
       break
