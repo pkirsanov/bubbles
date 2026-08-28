@@ -657,6 +657,12 @@ phases:
   bug:
     owner: bubbles.bug
     requiredGates: [ G001, G031 ]
+  plan:
+    owner: bubbles.plan
+    requiredGates: []
+  design:
+    owner: bubbles.design
+    requiredGates: []
   implement:
     owner: bubbles.implement
     requiredGates: [ G002, G033, G047, G048 ]
