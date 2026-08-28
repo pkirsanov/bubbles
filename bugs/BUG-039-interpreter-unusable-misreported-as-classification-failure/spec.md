@@ -1,5 +1,22 @@
 # Spec: BUG-039 Expected Behaviour
 
+## Outcome Contract
+
+**Intent:** Report an unusable Scan 2B classifier interpreter as one actionable prerequisite skip, never as classification failures or earned passes. Preserve fail-closed scanner classification and every semantic and configuration assertion when an interpreter is usable.
+
+**Success Signal:** Success requires current-session evidence that SCN-B039-001 through SCN-B039-004 each produce their declared observable outcome on one immutable candidate. That same candidate must make the full `framework-validate` and `release-check` gates exit 0.
+
+**Hard Constraints:** Every constraint below must remain true.
+
+- The scanner preserves fail-closed classification when its classifier cannot execute.
+- A skipped coverage claim is never counted or labeled as a pass.
+- With a usable interpreter, every Scan 2B semantic and configuration assertion executes. A genuine mismatch remains fatal.
+- The repair does not migrate unrelated `command -v python3` call sites or perform cross-repository work.
+- Automation does not create, check, or imply a human acceptance record.
+- Certification requires current-session evidence tied to the exact clean, immutable candidate under review.
+
+**Failure Condition:** The outcome fails if any result required by SCN-B039-001 through SCN-B039-004 is absent or contradicted. It also fails if either full gate exits nonzero, a Hard Constraint breaks, or certification uses stale, mutable, or prior-session evidence.
+
 ## Requirement 1 — A Prerequisite Is Named, Not Misattributed
 
 When the Scan 2B classifier's interpreter cannot execute, the managed selftest
