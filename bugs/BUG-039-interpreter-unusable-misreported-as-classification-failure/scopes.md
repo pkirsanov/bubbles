@@ -8,7 +8,7 @@
 ```gherkin
 Feature: A missing prerequisite is named, not misattributed
 
-  Scenario: Unusable interpreter produces a named skip, not classification failures
+  Scenario: SCN-B039-001 - Unusable interpreter produces a named skip, not classification failures
     Given the active developer directory has an unaccepted Xcode licence
       And python3 resolves on PATH but exits 69 without running
     When the managed selftest runs under the sanitized system-only PATH
@@ -17,19 +17,19 @@ Feature: A missing prerequisite is named, not misattributed
       And it emits zero FAIL lines
       And it exits 0
 
-  Scenario: A usable interpreter under the same PATH runs everything
+  Scenario: SCN-B039-002 - A usable interpreter under the same PATH runs everything
     Given DEVELOPER_DIR points at an accepted toolchain
     When the managed selftest runs under the sanitized system-only PATH
     Then no skip is emitted
       And every Scan 2B semantic and config-integrity assertion executes
 
-  Scenario: The assertions still catch a real classifier regression
+  Scenario: SCN-B039-003 - The assertions still catch a real classifier regression
     Given a usable interpreter
       And the classifier's classification ladder is mutated
     When the managed selftest runs
     Then it exits 1 and reports the mismatched semantic tuples
 
-  Scenario: A skipped coverage claim is never counted as a pass
+  Scenario: SCN-B039-004 - A skipped coverage claim is never counted as a pass
     Given the managed selftest emitted the unavailable sentinel
     When test_24 evaluates the managed selftest run
     Then it records a SKIP rather than the coverage PASS label
@@ -51,12 +51,12 @@ Feature: A missing prerequisite is named, not misattributed
 
 ### Test Plan
 
-| Test type | Surface | Mechanism |
-|---|---|---|
-| functional | managed selftest, 3 environments | production script, real exit codes |
-| adversarial / mutation | classifier classification ladder | one-token mutation, RED then GREEN, byte-identity verified |
-| regression (cascade) | `test_24_g028_sensitive_client_storage.sh` | production test, real exit code |
-| static | both touched `.sh` files | `shellcheck -x`, `shfmt -d`, attributed against HEAD |
+| Test type | Scenario ID | Concrete test file | Mechanism |
+| --- | --- | --- | --- |
+| functional | SCN-B039-001 | `bubbles/scripts/implementation-reality-scan-selftest.sh` | Run the managed harness with an unusable interpreter under the sanitized system-only PATH; assert the unavailable sentinel, named skip, zero classification `FAIL` lines, and exit 0. |
+| functional | SCN-B039-002 | `bubbles/scripts/implementation-reality-scan-selftest.sh` | Run the managed harness under the same sanitized PATH with a usable interpreter; assert no skip and execution of every Scan 2B semantic and config-integrity assertion. |
+| adversarial / mutation | SCN-B039-003 | `bubbles/scripts/implementation-reality-scan-selftest.sh` | Apply the one-token classifier-ladder mutation, assert exit 1 and mismatched semantic tuples, then verify GREEN restoration and byte identity. |
+| regression (cascade) | SCN-B039-004 | `tests/regression/test_24_g028_sensitive_client_storage.sh` | Run the production regression harness; assert the unavailable sentinel records a `SKIP`, withholds the coverage `PASS` label, and reports skips separately from passes and failures. |
 
 ### Definition of Done
 
@@ -70,15 +70,15 @@ Feature: A missing prerequisite is named, not misattributed
   - Evidence: probe + gated block in `implementation-reality-scan-selftest.sh`; sentinel branch in `test_24_g028_sensitive_client_storage.sh`.
 - [x] Pre-fix reproduction FAILS with the misnamed verdict
   - Evidence: [report.md](report.md) §3. `A_EXIT=1`, "failed with 11 issue(s)", all 11 in the Scan 2B block.
-- [x] Post-fix behaviour correct in all three environments
+- [x] SCN-B039-002 — Post-fix behaviour correct in all three environments; under the same sanitized PATH, the usable-interpreter control emits no skip and executes every Scan 2B semantic and config-integrity assertion
   - Evidence: [report.md](report.md) §6. V1 exit 0/0 skips, V2 exit 0/1 skip, V3 exit 0/0 skips.
-- [x] Adversarial mutation proves the assertions still bite with a usable interpreter
+- [x] SCN-B039-003 — Adversarial mutation proves the assertions still bite with a usable interpreter and reports the mismatched semantic tuples
   - Evidence: [report.md](report.md) §7. Mutant exit 1 with 3 FAILs under BOTH normal PATH and sanitized PATH + `DEVELOPER_DIR`.
 - [x] Mutation reverted and file byte-identical
   - Evidence: [report.md](report.md) §7. sha256 `77a02ff1…` matches pre-mutation; `git diff --quiet` exit 0; GREEN restored.
-- [x] Skip path contains no silent-pass bailout — it withholds a verdict and says so
+- [x] SCN-B039-001 — Skip path contains no silent-pass bailout — it withholds a verdict and says so; the unusable-interpreter run emits the sentinel, a named skip, zero classification `FAIL` lines, and exit 0
   - Evidence: [report.md](report.md) §6, §7 row 3. Skip is counted, sentinel-marked, and the limitation is stated explicitly rather than hidden.
-- [x] Cascade resolved honestly — a skip is not a pass
+- [x] SCN-B039-004 — Cascade resolved honestly — a skip is not a pass; `test_24` records the skip separately and withholds the coverage `PASS` label
   - Evidence: [report.md](report.md) §8. `57 passed, 0 failed, 1 skipped`; coverage PASS label withheld.
 - [x] Static analysis clean; pre-existing findings attributed
   - Evidence: [report.md](report.md) §9. `shellcheck -x` exit 0 on both; `shfmt` diff 250/127 identical at HEAD and after, none of the new code in the diff.

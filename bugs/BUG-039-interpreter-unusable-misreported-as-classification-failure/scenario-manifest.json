@@ -10,6 +10,7 @@
       "behaviorTraits": ["environment-dependent", "shared-consumer"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "evidenceRefs": ["report.md#v2-sanitized-path-no-locator-the-named-skip"],
       "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -33,6 +34,7 @@
       "behaviorTraits": ["environment-dependent"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "evidenceRefs": ["report.md#v3-sanitized-path-home-restored-the-control-that-matters"],
       "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -56,6 +58,7 @@
       "behaviorTraits": ["classifier-contract", "shared-consumer"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "evidenceRefs": ["report.md#7-mutation-proof-the-guarantee-survives"],
       "implementationRefs": ["bubbles/scripts/guards/sensitive-client-storage-scan.py"],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -79,6 +82,7 @@
       "behaviorTraits": ["shared-consumer", "reporting-integrity"],
       "riskTier": "high",
       "linkedTests": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
+      "evidenceRefs": ["report.md#8-cascade-test24"],
       "implementationRefs": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
       "testMechanism": {
         "entrypoint": "production-cli",
