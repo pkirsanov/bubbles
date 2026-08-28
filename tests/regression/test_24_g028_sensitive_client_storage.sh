@@ -45,6 +45,7 @@ RUN_STATUS=0
 PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
+BUG039_CASCADE_VERIFIED=0
 
 cleanup() {
   rm -rf "$WORKSPACE"
@@ -579,9 +580,36 @@ printf '%s\n' "$RUN_OUTPUT"
 assert_status 1 "parser-unavailable config fails closed"
 assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "parser-unavailable config reports integrity reason"
 
-printf '%s\n' '=== BUG-013 managed selftest sanitized macOS path ==='
+printf '%s\n' '=== BUG-039 managed selftest deterministic unavailable interpreter ==='
+# The managed candidate emits an Xcode-like exit 69. The PATH candidate passes
+# the public probe but cannot run the helper. A presence/sentinel-only resolver
+# falls through and misclassifies the harness; the trusted managed-only resolver
+# must stop on the managed provenance and emit the unavailable sentinel. This
+# makes the cascade branch independent of the host's real python installation.
+FORCED_UNAVAILABLE_HOME="$WORKSPACE/forced-unavailable-python"
+FORCED_FALLTHROUGH_PATH="$WORKSPACE/forced-fallthrough-path"
+mkdir -p "$FORCED_UNAVAILABLE_HOME/bin" "$FORCED_FALLTHROUGH_PATH"
+cat > "$FORCED_UNAVAILABLE_HOME/bin/python3" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' 'You have not agreed to the Xcode license agreements. CASCADE_SECRET_MUST_NOT_LEAK' >&2
+exit 69
+SH
+chmod +x "$FORCED_UNAVAILABLE_HOME/bin/python3"
+cat > "$FORCED_FALLTHROUGH_PATH/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-c" && "${2:-}" == *bubbles-python-runs* ]]; then
+  printf '%s' 'bubbles-python-runs'
+  exit 0
+fi
+printf '%s\n' 'CASCADE_SECRET_MUST_NOT_LEAK helper failure' >&2
+exit 73
+SH
+chmod +x "$FORCED_FALLTHROUGH_PATH/python3"
+
 SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
-if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
+if env -i PATH="$FORCED_FALLTHROUGH_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
 else
   RUN_STATUS=$?
@@ -597,11 +625,22 @@ printf '%s\n' "$RUN_OUTPUT"
 # classification failures. Branch on its sentinel: coverage that did not run is
 # recorded as a SKIP, never as a PASS. Exit 0 is still required either way,
 # because a selftest that skips must not also be failing.
+assert_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "deterministic unavailable interpreter emits the machine sentinel"
+assert_contains "status=69 diagnostic=XCODE_LICENSE_UNACCEPTED" "deterministic unavailable interpreter reports sanitized exit 69"
+assert_not_contains "CASCADE_SECRET_MUST_NOT_LEAK" "deterministic unavailable diagnostics never replay executable output"
 if grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT"; then
+  pass_before_sentinel=$PASS_COUNT
+  skip_before_sentinel=$SKIP_COUNT
   skip "managed selftest Scan 2B coverage (classifier interpreter unusable; selftest reported the cause and remediation)"
+  if [[ "$PASS_COUNT" -eq "$pass_before_sentinel" && "$SKIP_COUNT" -eq $((skip_before_sentinel + 1)) ]]; then
+    pass "unavailable sentinel increments only the skip counter"
+    BUG039_CASCADE_VERIFIED=1
+  else
+    fail "unavailable sentinel must increment skip, never pass"
+  fi
   assert_status 0 "managed selftest exits cleanly when it skips an absent prerequisite"
 else
-  assert_status 0 "managed selftest runs with the system-only PATH"
+  fail "deterministic unavailable interpreter did not reach the sentinel branch"
 fi
 assert_contains "PORTABLE_WATCHDOG_FALLBACK=124" "managed selftest preserves watchdog exit 124"
 
@@ -666,6 +705,7 @@ fi
 
 printf '%s\n' '=== BUG-013 regression summary ==='
 printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
+printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1
 fi

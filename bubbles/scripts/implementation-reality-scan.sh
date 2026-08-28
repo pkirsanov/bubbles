@@ -53,15 +53,17 @@ fi
 # Scan 2B's classifier is a python helper, so this scan needs an interpreter
 # that RUNS. `command -v python3` cannot answer that: it reports a file on PATH,
 # and PATH is not a stable interpreter identity. python-env.sh is the framework's
-# usability-aware resolver and owns the ordered contract ($BUBBLES_PYTHON, then
-# the managed venv, then PATH), so the resolution lives there rather than being
-# re-guessed here. Sourcing it defines functions and changes nothing else.
-# The helper imports only the stdlib, so the RUNNABLE resolver is the right one:
-# demanding PyYAML and jsonschema would refuse an interpreter that runs it.
-if [[ ! -f "$SCRIPT_DIR/python-env.sh" ]]; then
-  echo "implementation-reality-scan: framework file missing: $SCRIPT_DIR/python-env.sh" >&2
+# usability-aware resolver. Security-sensitive execution uses its explicit
+# managed-venv-only trust contract; BUBBLES_PYTHON and PATH remain available to
+# general consumers but are not silently promoted into classifier trust roots.
+# Every probe and helper run goes through guard-lib's portable, complete-tree
+# timeout. Sourcing both modules defines functions and changes no shell options.
+if [[ ! -f "$SCRIPT_DIR/guard-lib.sh" || ! -f "$SCRIPT_DIR/python-env.sh" ]]; then
+  echo "implementation-reality-scan: framework file missing: guard-lib.sh or python-env.sh" >&2
   exit 2
 fi
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/guard-lib.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/python-env.sh"
 
@@ -696,6 +698,175 @@ echo "--- Scan 2B: Sensitive Client Storage ---"
 
 SENSITIVE_STORAGE_HELPER="$SCRIPT_DIR/guards/sensitive-client-storage-scan.py"
 SENSITIVE_STORAGE_FALLBACK_PATTERN='localStorage\.|sessionStorage\.|AsyncStorage\.|SharedPreferences\b|indexedDB\.|IDBObjectStore\b|\.objectStore[[:space:]]*\(|\.(setString|setStringList|setInt|setBool|setDouble|putString|putStringSet|putInt|putBoolean|putFloat|putLong)[[:space:]]*\('
+SENSITIVE_STORAGE_PROTOCOL_VERSION='SCS1'
+SENSITIVE_STORAGE_CLASSIFIER_IDLE_SECONDS=15
+SENSITIVE_STORAGE_CLASSIFIER_ABSOLUTE_SECONDS=120
+SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES=4194304
+SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS=8192
+SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='NOT_RUN'
+SENSITIVE_STORAGE_PROTOCOL_SCANNED=0
+SENSITIVE_STORAGE_PROTOCOL_FINDINGS=0
+
+# The helper file remains the owner of classification. This driver imports that
+# production module, calls its parse/analyze functions, and emits completion
+# only after every source file returns from analyze_file. A bare process exit 0
+# can therefore never be confused with a genuine zero-finding classification.
+SENSITIVE_STORAGE_PROTOCOL_DRIVER='
+import importlib.util
+import os
+import sys
+from pathlib import Path
+
+helper_path = Path(sys.argv[1])
+repo_root = Path(sys.argv[2]).resolve()
+config_path = Path(sys.argv[3]).resolve()
+source_paths = [Path(value) for value in sys.argv[4:]]
+spec = importlib.util.spec_from_file_location("bubbles_sensitive_client_storage_scan", helper_path)
+if spec is None or spec.loader is None:
+    raise RuntimeError("classifier module cannot be loaded")
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+try:
+    approvals, _ = module.parse_project_config(config_path, repo_root)
+except module.ConfigError as exc:
+    module.Finding(
+        path=os.path.relpath(config_path, repo_root).replace(os.sep, "/"),
+        line=exc.line,
+        reason="SENSITIVE_STORAGE_CONFIG_INVALID",
+        storage="configuration",
+        operation="parse",
+        key="unresolved",
+        provider="unresolved",
+        config_match="invalid",
+    ).emit()
+    approvals = []
+scanned = 0
+for source_path in source_paths:
+    for finding in module.analyze_file(source_path, repo_root, approvals):
+        finding.emit()
+    scanned += 1
+print(f"COMPLETE\tSCS1\t{scanned}")
+'
+
+sensitive_storage_protocol_validate() {
+  local output="$1"
+  local expected_scanned="$2"
+  local line="" record_type="" finding_path="" finding_line=""
+  local finding_reason="" finding_storage="" finding_operation=""
+  local finding_key="" finding_provider="" finding_config_match=""
+  local completion_version="" completion_scanned="" extra=""
+  local tab_count=0 rest="" saw_completion=0
+  local token_re='^[A-Za-z0-9._:@/+~-]+$'
+  local path_re='^[A-Za-z0-9._/@+,:=() /-]+$'
+
+  SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='NOT_RUN'
+  SENSITIVE_STORAGE_PROTOCOL_SCANNED=0
+  SENSITIVE_STORAGE_PROTOCOL_FINDINGS=0
+  if [[ -z "$output" ]]; then
+    SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_OUTPUT_EMPTY'
+    return 1
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$saw_completion" -eq 1 ]]; then
+      if [[ "$line" == COMPLETE$'\t'* ]]; then
+        SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_COMPLETION_DUPLICATE'
+      else
+        SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_AFTER_COMPLETION'
+      fi
+      return 1
+    fi
+    tab_count=0
+    rest="$line"
+    while [[ "$rest" == *$'\t'* ]]; do
+      rest="${rest#*$'\t'}"
+      tab_count=$((tab_count + 1))
+    done
+    record_type="${line%%$'\t'*}"
+    case "$record_type" in
+      FINDING)
+        if [[ "$tab_count" -ne 8 ]]; then
+          SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'
+          return 1
+        fi
+        IFS=$'\t' read -r record_type finding_path finding_line finding_reason \
+          finding_storage finding_operation finding_key finding_provider \
+          finding_config_match extra <<<"$line"
+        if [[ -n "$extra" ]] || [[ -z "$finding_path" ]] || [[ "${#finding_path}" -gt 1024 ]] ||
+          [[ ! "$finding_path" =~ $path_re ]] || [[ "$finding_path" == /* ]] ||
+          [[ "/$finding_path/" == */../* ]] || [[ ! "$finding_line" =~ ^[0-9]+$ ]] ||
+          [[ "${#finding_key}" -gt 512 ]] || [[ "${#finding_provider}" -gt 512 ]] ||
+          [[ ! "$finding_key" =~ $token_re ]] || [[ ! "$finding_provider" =~ $token_re ]]; then
+          SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'
+          return 1
+        fi
+        case "$finding_reason" in
+          SENSITIVE_STORAGE_CONFIG_INVALID | SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED | \
+            FORBIDDEN_SECRET_CLASS | DURABLE_CREDENTIAL_STORAGE | SESSION_PROVIDER_UNKNOWN | \
+            SESSION_CREDENTIAL_UNAPPROVED) ;;
+          *) SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'; return 1 ;;
+        esac
+        case "$finding_storage" in
+          localStorage | sessionStorage | AsyncStorage | SharedPreferences | indexedDB | configuration | unknown) ;;
+          *) SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'; return 1 ;;
+        esac
+        case "$finding_operation" in
+          persist | read | parse | unresolved | remove | clear) ;;
+          *) SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'; return 1 ;;
+        esac
+        case "$finding_config_match" in
+          exact | unresolved | invalid | provider-mismatch | absent) ;;
+          *) SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'; return 1 ;;
+        esac
+        SENSITIVE_STORAGE_PROTOCOL_FINDINGS=$((SENSITIVE_STORAGE_PROTOCOL_FINDINGS + 1))
+        ;;
+      COMPLETE)
+        if [[ "$tab_count" -ne 2 ]]; then
+          SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'
+          return 1
+        fi
+        IFS=$'\t' read -r record_type completion_version completion_scanned extra <<<"$line"
+        if [[ -n "$extra" ]] || [[ "$completion_version" != "$SENSITIVE_STORAGE_PROTOCOL_VERSION" ]] ||
+          [[ ! "$completion_scanned" =~ ^[0-9]+$ ]]; then
+          SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'
+          return 1
+        fi
+        if [[ "$completion_scanned" -ne "$expected_scanned" ]]; then
+          SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_SCANNED_COUNT_MISMATCH'
+          return 1
+        fi
+        saw_completion=1
+        SENSITIVE_STORAGE_PROTOCOL_SCANNED=$completion_scanned
+        ;;
+      *)
+        SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_RECORD_MALFORMED'
+        return 1
+        ;;
+    esac
+  done <<<"$output"
+
+  if [[ "$saw_completion" -ne 1 ]]; then
+    SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='CLASSIFIER_COMPLETION_MISSING'
+    return 1
+  fi
+  SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='OK'
+  return 0
+}
+
+sensitive_storage_fail_closed() {
+  local impl_file="" line_num=""
+  if [[ -f "$PROJECT_CONFIG" ]] && grep -qE '^[[:space:]]*sensitiveClientStorage[[:space:]]*:' "$PROJECT_CONFIG" 2>/dev/null; then
+    violation "$PROJECT_CONFIG_DISPLAY" "0" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CONFIG_INVALID storage=configuration operation=parse key=unresolved provider=unresolved configMatch=invalid"
+  fi
+  for impl_file in "${sensitive_storage_files[@]}"; do
+    while IFS=: read -r line_num _; do
+      [[ -z "$line_num" ]] && continue
+      violation "$impl_file" "$line_num" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED storage=unknown operation=unresolved key=unresolved provider=unresolved configMatch=unresolved"
+    done < <(grep -nE "$SENSITIVE_STORAGE_FALLBACK_PATTERN" "$impl_file" 2>/dev/null || true)
+  done
+}
+
 sensitive_storage_files=()
 for impl_file in "${impl_files[@]}"; do
   file_ext="${impl_file##*.}"
@@ -708,76 +879,64 @@ for impl_file in "${impl_files[@]}"; do
 done
 
 if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
-  # Not `$(bubbles_python_resolve_runnable)`: a command substitution resolves in
-  # a subshell and the failure reason would never reach the diagnostic below.
+  # Not a command substitution: resolver status/diagnostic globals must survive.
   sensitive_storage_python=""
-  if bubbles_python_resolve_runnable >/dev/null; then
-    sensitive_storage_python="$BUBBLES_PYTHON_RUNNABLE"
+  if bubbles_python_resolve_trusted_runnable >/dev/null; then
+    sensitive_storage_python="$BUBBLES_PYTHON_TRUSTED"
   fi
   if [[ -z "$sensitive_storage_python" ]] || [[ ! -f "$SENSITIVE_STORAGE_HELPER" ]]; then
-    # Say WHICH precondition failed. Both degradation paths below emit the same
-    # reason strings, which are contracted, so the distinction has to live in a
-    # diagnostic line rather than in the violation itself.
     if [[ -z "$sensitive_storage_python" ]]; then
-      echo "   sensitive-storage classifier unavailable: no runnable python3 — $BUBBLES_PYTHON_RUNNABLE_REASON"
+      echo "   sensitive-storage classifier unavailable: status=$BUBBLES_PYTHON_TRUSTED_STATUS diagnostic=$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
     else
-      echo "   sensitive-storage classifier unavailable: helper missing at $SENSITIVE_STORAGE_HELPER"
+      echo "   sensitive-storage classifier unavailable: status=127 diagnostic=HELPER_MISSING trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
     fi
-    if [[ -f "$PROJECT_CONFIG" ]] && grep -qE '^[[:space:]]*sensitiveClientStorage[[:space:]]*:' "$PROJECT_CONFIG" 2>/dev/null; then
-      violation "$PROJECT_CONFIG_DISPLAY" "0" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CONFIG_INVALID storage=configuration operation=parse key=unresolved provider=unresolved configMatch=invalid"
-    fi
-    for impl_file in "${sensitive_storage_files[@]}"; do
-      while IFS=: read -r line_num _; do
-        [[ -z "$line_num" ]] && continue
-        violation "$impl_file" "$line_num" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED storage=unknown operation=unresolved key=unresolved provider=unresolved configMatch=unresolved"
-      done < <(grep -nE "$SENSITIVE_STORAGE_FALLBACK_PATTERN" "$impl_file" 2>/dev/null || true)
-    done
+    sensitive_storage_fail_closed
   else
     sensitive_storage_output=""
     sensitive_storage_status=0
-    # stdout is a tab-delimited record stream parsed below; merging stderr into it would corrupt a record.
-    #
-    # stderr used to go to /dev/null, which made a helper failure
-    # indistinguishable from a malformed config: the scan degraded to one
-    # CLASSIFICATION_UNRESOLVED violation per candidate line, reported them as
-    # findings about the code under scan, and discarded the only evidence of
-    # why. That is what made this check an unexplainable intermittent failure.
-    # Keep the streams separate, and print stderr when the helper fails.
-    # stdin comes from /dev/null. The helper takes every input from argv and
-    # never reads stdin, but it INHERITS whatever descriptor the caller left on
-    # fd 0 -- and a dangling one aborts CPython before it runs a line of code:
-    # "Fatal Python error: init_sys_streams: can't initialize sys standard
-    # streams / OSError: [Errno 9] Bad file descriptor". The scan then degraded
-    # to CLASSIFICATION_UNRESOLVED for every candidate line and reported it as a
-    # finding about the code under scan. That is the intermittent failure this
-    # check has carried for a long time: it depends on the caller's descriptors,
-    # not on the code being scanned, which is why it passes standalone.
-    sensitive_storage_stderr="$(mktemp)"
-    if sensitive_storage_output="$("$sensitive_storage_python" "$SENSITIVE_STORAGE_HELPER" --repo-root "$REPO_ROOT" --config "$PROJECT_CONFIG" "${sensitive_storage_files[@]}" </dev/null 2>"$sensitive_storage_stderr")"; then
+    sensitive_storage_diagnostic='OK'
+    sensitive_storage_log="$(mktemp)"
+    if bubbles_run_with_progress_timeout \
+      "$SENSITIVE_STORAGE_CLASSIFIER_IDLE_SECONDS" \
+      "$SENSITIVE_STORAGE_CLASSIFIER_ABSOLUTE_SECONDS" \
+      "$sensitive_storage_log" \
+      /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
+      "$SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS" \
+      "$sensitive_storage_python" -c "$SENSITIVE_STORAGE_PROTOCOL_DRIVER" \
+      "$SENSITIVE_STORAGE_HELPER" "$REPO_ROOT" "$PROJECT_CONFIG" \
+      "${sensitive_storage_files[@]}"; then
       sensitive_storage_status=0
     else
       sensitive_storage_status=$?
     fi
-    if [[ "$sensitive_storage_status" -ne 0 ]]; then
-      echo "   sensitive-storage classifier failed: exit=$sensitive_storage_status helper=$SENSITIVE_STORAGE_HELPER"
-      echo "   sensitive-storage classifier inputs: config=$PROJECT_CONFIG files=${#sensitive_storage_files[@]} python3=$sensitive_storage_python"
-      while IFS= read -r sensitive_storage_stderr_line; do
-        [[ -z "$sensitive_storage_stderr_line" ]] && continue
-        echo "   sensitive-storage classifier stderr: $sensitive_storage_stderr_line"
-      done <"$sensitive_storage_stderr"
-    fi
-    rm -f "$sensitive_storage_stderr"
-    if [[ "$sensitive_storage_status" -ne 0 ]]; then
-      if [[ -f "$PROJECT_CONFIG" ]] && grep -qE '^[[:space:]]*sensitiveClientStorage[[:space:]]*:' "$PROJECT_CONFIG" 2>/dev/null; then
-        violation "$PROJECT_CONFIG_DISPLAY" "0" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CONFIG_INVALID storage=configuration operation=parse key=unresolved provider=unresolved configMatch=invalid"
+    sensitive_storage_output_bytes="$(wc -c <"$sensitive_storage_log" 2>/dev/null || true)"
+    sensitive_storage_output_bytes="${sensitive_storage_output_bytes//[[:space:]]/}"
+    if [[ "$sensitive_storage_status" -eq 124 ]]; then
+      sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT'
+    elif [[ "$sensitive_storage_status" -eq 125 ]]; then
+      sensitive_storage_diagnostic='CLASSIFIER_ABSOLUTE_TIMEOUT'
+    elif [[ "$sensitive_storage_status" -ne 0 ]]; then
+      if grep -Eiq 'Xcode (license|licence)|license agreements' "$sensitive_storage_log" 2>/dev/null; then
+        sensitive_storage_diagnostic='XCODE_LICENSE_UNACCEPTED'
+      else
+        sensitive_storage_diagnostic='CLASSIFIER_EXIT_NONZERO'
       fi
-      for impl_file in "${sensitive_storage_files[@]}"; do
-        while IFS=: read -r line_num _; do
-          [[ -z "$line_num" ]] && continue
-          violation "$impl_file" "$line_num" "SENSITIVE_CLIENT_STORAGE" "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED storage=unknown operation=unresolved key=unresolved provider=unresolved configMatch=unresolved"
-        done < <(grep -nE "$SENSITIVE_STORAGE_FALLBACK_PATTERN" "$impl_file" 2>/dev/null || true)
-      done
+    elif [[ ! "$sensitive_storage_output_bytes" =~ ^[0-9]+$ ]] ||
+      [[ "$sensitive_storage_output_bytes" -gt "$SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES" ]]; then
+      sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT'
     else
+      sensitive_storage_output="$(cat "$sensitive_storage_log")"
+      if ! sensitive_storage_protocol_validate "$sensitive_storage_output" "${#sensitive_storage_files[@]}"; then
+        sensitive_storage_diagnostic="$SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC"
+      fi
+    fi
+    rm -f "$sensitive_storage_log"
+
+    if [[ "$sensitive_storage_diagnostic" != 'OK' ]]; then
+      echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic trust=$BUBBLES_PYTHON_TRUST_CONTRACT protocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"
+      sensitive_storage_fail_closed
+    else
+      echo "   sensitive-storage classifier protocol complete: version=$SENSITIVE_STORAGE_PROTOCOL_VERSION scanned=$SENSITIVE_STORAGE_PROTOCOL_SCANNED findings=$SENSITIVE_STORAGE_PROTOCOL_FINDINGS"
       while IFS=$'\t' read -r record_type finding_path finding_line finding_reason finding_storage finding_operation finding_key finding_provider finding_config_match; do
         [[ "$record_type" == "FINDING" ]] || continue
         violation "$finding_path" "$finding_line" "SENSITIVE_CLIENT_STORAGE" "reason=$finding_reason storage=$finding_storage operation=$finding_operation key=$finding_key provider=$finding_provider configMatch=$finding_config_match"

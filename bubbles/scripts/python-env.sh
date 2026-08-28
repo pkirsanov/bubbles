@@ -122,14 +122,75 @@ bubbles_python_resolve() {
 # active developer directory: with an unaccepted Xcode licence it resolves, is
 # executable, and then exits 69 without running a line. A payload is demanded
 # back rather than an exit code alone, so a wrapper that exits 0 while printing
-# a warning cannot pass as healthy either.
+# a warning cannot pass as healthy either. The process is always bounded through
+# guard-lib.sh's progress-aware portable timeout. Arbitrary process output stays
+# in a private temporary capture and is never replayed; callers receive only the
+# numeric status and one closed diagnostic enum.
 BUBBLES_PYTHON_RUN_SENTINEL='bubbles-python-runs'
+BUBBLES_PYTHON_PROBE_IDLE_SECONDS=5
+BUBBLES_PYTHON_PROBE_ABSOLUTE_SECONDS=10
+BUBBLES_PYTHON_PROBE_FILE_BLOCKS=1
+BUBBLES_PYTHON_RUN_STATUS=127
+BUBBLES_PYTHON_RUN_DIAGNOSTIC='NOT_RUN'
 
 bubbles_python_runs() {
-  local py="${1:-}" probe=""
+  local py="${1:-}" probe="" probe_log="" probe_status=0 probe_bytes=""
+  BUBBLES_PYTHON_RUN_STATUS=127
+  BUBBLES_PYTHON_RUN_DIAGNOSTIC='INTERPRETER_ABSENT'
+
   [[ -n "$py" && -x "$py" ]] || return 1
-  probe="$("$py" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')" </dev/null 2>/dev/null)" || return 1
-  [[ "$probe" == "$BUBBLES_PYTHON_RUN_SENTINEL" ]]
+  if ! declare -F bubbles_run_with_progress_timeout >/dev/null 2>&1; then
+    BUBBLES_PYTHON_RUN_STATUS=125
+    BUBBLES_PYTHON_RUN_DIAGNOSTIC='TIMEOUT_API_UNAVAILABLE'
+    return 1
+  fi
+  probe_log="$(mktemp)" || {
+    BUBBLES_PYTHON_RUN_STATUS=125
+    BUBBLES_PYTHON_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'
+    return 1
+  }
+
+  if bubbles_run_with_progress_timeout \
+    "$BUBBLES_PYTHON_PROBE_IDLE_SECONDS" \
+    "$BUBBLES_PYTHON_PROBE_ABSOLUTE_SECONDS" \
+    "$probe_log" \
+    /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
+    "$BUBBLES_PYTHON_PROBE_FILE_BLOCKS" \
+    "$py" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')"; then
+    probe_status=0
+  else
+    probe_status=$?
+  fi
+  BUBBLES_PYTHON_RUN_STATUS=$probe_status
+
+  if [[ "$probe_status" -eq 124 ]]; then
+    BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_TIMEOUT'
+  elif [[ "$probe_status" -eq 125 ]]; then
+    BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_ABSOLUTE_TIMEOUT'
+  elif [[ "$probe_status" -ne 0 ]]; then
+    if grep -Eiq 'Xcode (license|licence)|license agreements' "$probe_log" 2>/dev/null; then
+      BUBBLES_PYTHON_RUN_DIAGNOSTIC='XCODE_LICENSE_UNACCEPTED'
+    else
+      BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_EXIT_NONZERO'
+    fi
+  else
+    probe_bytes="$(wc -c <"$probe_log" 2>/dev/null || true)"
+    probe_bytes="${probe_bytes//[[:space:]]/}"
+    if [[ ! "$probe_bytes" =~ ^[0-9]+$ ]] || [[ "$probe_bytes" -gt 128 ]]; then
+      BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_OUTPUT_LIMIT'
+    else
+      probe="$(cat "$probe_log")"
+      if [[ "$probe_bytes" -eq 0 ]]; then
+        BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_EMPTY'
+      elif [[ "$probe_bytes" -eq "${#BUBBLES_PYTHON_RUN_SENTINEL}" && "$probe" == "$BUBBLES_PYTHON_RUN_SENTINEL" ]]; then
+        BUBBLES_PYTHON_RUN_DIAGNOSTIC='OK'
+      else
+        BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_PROTOCOL_INVALID'
+      fi
+    fi
+  fi
+  rm -f "$probe_log"
+  [[ "$BUBBLES_PYTHON_RUN_DIAGNOSTIC" == 'OK' ]]
 }
 
 # bubbles_python_resolve_runnable — the SAME ordered, non-ambient contract as
@@ -201,6 +262,55 @@ bubbles_python_resolve_runnable() {
   # shellcheck disable=SC2034  # cross-file output; read by implementation-reality-scan.sh
   BUBBLES_PYTHON_RUNNABLE_REASON="${declined%; }"
   return 1
+}
+
+# bubbles_python_resolve_trusted_runnable — security-sensitive interpreter
+# resolution. Trust is rooted ONLY in the explicitly located managed venv.
+#
+# BUBBLES_PYTHON and PATH remain available to general consumers through
+# bubbles_python_resolve_runnable, but neither is silently promoted to a trust
+# root for a security classifier. BUBBLES_PYTHON_HOME / XDG_CACHE_HOME / HOME
+# locate the operator-managed environment; provisioning it is an explicit act.
+# This is a provenance policy, not an authenticity claim against an attacker who
+# can already replace files inside the operator-controlled managed directory.
+# shellcheck disable=SC2034  # cross-file contract; read by security consumers
+BUBBLES_PYTHON_TRUST_CONTRACT='managed-venv-only-v1'
+BUBBLES_PYTHON_TRUSTED=''
+BUBBLES_PYTHON_TRUSTED_PROVENANCE='none'
+BUBBLES_PYTHON_TRUSTED_STATUS=127
+BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC='NOT_RUN'
+
+bubbles_python_resolve_trusted_runnable() {
+  local candidate=""
+  BUBBLES_PYTHON_TRUSTED=''
+  BUBBLES_PYTHON_TRUSTED_PROVENANCE='none'
+  BUBBLES_PYTHON_TRUSTED_STATUS=127
+  BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC='NOT_RUN'
+
+  if ! candidate="$(bubbles_python_venv_python)"; then
+    BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC='NO_LOCATOR'
+    return 1
+  fi
+  # shellcheck disable=SC2034  # cross-file diagnostic output
+  BUBBLES_PYTHON_TRUSTED_PROVENANCE='managed-venv'
+  if [[ ! -x "$candidate" ]]; then
+    BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC='INTERPRETER_ABSENT'
+    return 1
+  fi
+  if ! bubbles_python_runs "$candidate"; then
+    BUBBLES_PYTHON_TRUSTED_STATUS=$BUBBLES_PYTHON_RUN_STATUS
+    BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC=$BUBBLES_PYTHON_RUN_DIAGNOSTIC
+    return 1
+  fi
+
+  # shellcheck disable=SC2034  # cross-file resolved interpreter output
+  BUBBLES_PYTHON_TRUSTED="$candidate"
+  # shellcheck disable=SC2034  # cross-file diagnostic output
+  BUBBLES_PYTHON_TRUSTED_STATUS=0
+  # shellcheck disable=SC2034  # cross-file diagnostic output
+  BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC='OK'
+  printf '%s\n' "$candidate"
+  return 0
 }
 
 # bubbles_python_activate — make a bare `python3` call resolve to a satisfying

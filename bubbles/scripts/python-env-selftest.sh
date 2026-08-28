@@ -20,16 +20,36 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_SH="$SCRIPT_DIR/python-env.sh"
 POSTURE_SH="$SCRIPT_DIR/dependency-posture.sh"
+GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
 
-if [[ ! -f "$ENV_SH" ]]; then
-  echo "python-env-selftest: python-env.sh not found: $ENV_SH" >&2
+if [[ ! -f "$ENV_SH" || ! -f "$GUARD_LIB" ]]; then
+  echo "python-env-selftest: required surface missing (python-env.sh or guard-lib.sh)" >&2
   exit 2
 fi
+
+# Probe execution must use the same portable timeout API as production callers.
+# shellcheck source=/dev/null
+source "$GUARD_LIB"
+# shellcheck source=/dev/null
+source "$ENV_SH"
 
 pass=0
 fail=0
 TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
-trap 'rm -rf "$TMP_ROOT"' EXIT INT TERM
+SELFTEST_COMPLETED=0
+
+selftest_cleanup() {
+  local status=$?
+  trap - EXIT INT TERM
+  rm -rf "$TMP_ROOT"
+  if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
+    echo "FAIL: python-env selftest exited before its completion summary" >&2
+    status=1
+  fi
+  exit "$status"
+}
+
+trap selftest_cleanup EXIT INT TERM
 
 ok() {
   echo "PASS: $1"
@@ -337,6 +357,12 @@ make_probe_python() {
         echo "printf %s 'bubbles-python-runs'"
         echo 'exit 69'
         ;;
+      xcode)
+        echo "echo 'You have not agreed to the Xcode license agreements.' >&2"
+        echo 'exit 69'
+        ;;
+      hang) echo 'while :; do sleep 30; done' ;;
+      malformed) echo "printf %s 'not-the-probe-protocol'" ;;
     esac
   } >"$path"
   chmod +x "$path"
@@ -399,8 +425,8 @@ make_probe_python "$a7/dead/python3" dead
 
 # probe_runs <interpreter> — echo yes/no for bubbles_python_runs.
 probe_runs() {
-  no_locator bash -c '. "$1"; if bubbles_python_runs "$2"; then echo yes; else echo no; fi' \
-    _ "$ENV_SH" "$1" 2>/dev/null || echo no
+  no_locator bash -c '. "$1"; . "$2"; if bubbles_python_runs "$3"; then echo yes; else echo no; fi' \
+    _ "$GUARD_LIB" "$ENV_SH" "$1" 2>/dev/null || echo no
 }
 
 assert_runs() {
@@ -417,6 +443,80 @@ assert_runs healthy yes "an interpreter that executes and returns the payload is
 assert_runs silent no "an interpreter that exits 0 while producing NOTHING is not usable"
 assert_runs noisy no "an interpreter that pollutes stdout cannot pass the payload check"
 assert_runs dead no "an interpreter that emits the payload and then exits 69 is not usable"
+
+# ── ADVERSARIAL A8: security consumers trust only the managed venv ────────
+# BUBBLES_PYTHON and PATH remain valid general-consumer candidates, but neither
+# is a provenance root for a security classifier. These assertions call the
+# production resolver and inspect its closed numeric-status/reason contract.
+trusted_resolution() {
+  local home="$1"
+  shift
+  env BUBBLES_PYTHON_HOME="$home" "$@" bash -c \
+    '. "$1"; . "$2"; if bubbles_python_resolve_trusted_runnable >/dev/null; then result=RESOLVED; else result=DECLINED; fi; printf "%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_TRUSTED_STATUS" "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" "$BUBBLES_PYTHON_TRUST_CONTRACT"' \
+    _ "$GUARD_LIB" "$ENV_SH"
+}
+
+a8="$TMP_ROOT/a8"
+mkdir -p "$a8/absent" "$a8/path" "$a8/override"
+make_probe_python "$a8/path/python3" healthy
+make_probe_python "$a8/override/python3" healthy
+
+a8_no_locator="$(env -u BUBBLES_PYTHON_HOME -u XDG_CACHE_HOME -u HOME \
+  BUBBLES_PYTHON="$a8/override/python3" PATH="$a8/path:/usr/bin:/bin" bash -c \
+  '. "$1"; . "$2"; if bubbles_python_resolve_trusted_runnable >/dev/null; then result=RESOLVED; else result=DECLINED; fi; printf "%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_TRUSTED_STATUS" "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" "$BUBBLES_PYTHON_TRUST_CONTRACT"' \
+  _ "$GUARD_LIB" "$ENV_SH" 2>/dev/null || true)"
+if [[ "$a8_no_locator" == "DECLINED|127|NO_LOCATOR|managed-venv-only-v1" ]]; then
+  ok "A8: trusted resolver refuses override/PATH candidates when no managed locator exists"
+else
+  bad "A8: no-locator trust result was '$a8_no_locator'"
+fi
+
+a8_absent="$(trusted_resolution "$a8/absent" env PATH="$a8/path:/usr/bin:/bin" BUBBLES_PYTHON="$a8/override/python3" 2>/dev/null || true)"
+if [[ "$a8_absent" == "DECLINED|127|INTERPRETER_ABSENT|managed-venv-only-v1" ]]; then
+  ok "A8b: trusted resolver names an absent managed interpreter"
+else
+  bad "A8b: absent-interpreter trust result was '$a8_absent'"
+fi
+
+for probe_mode in silent malformed xcode healthy hang; do
+  probe_home="$a8/$probe_mode"
+  make_probe_python "$probe_home/bin/python3" "$probe_mode"
+done
+
+a8_silent="$(trusted_resolution "$a8/silent" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+if [[ "$a8_silent" == "DECLINED|0|PROBE_EMPTY|managed-venv-only-v1" ]]; then
+  ok "A8c: silent-success probe is rejected with its numeric status"
+else
+  bad "A8c: silent-success trust result was '$a8_silent'"
+fi
+
+a8_malformed="$(trusted_resolution "$a8/malformed" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+if [[ "$a8_malformed" == "DECLINED|0|PROBE_PROTOCOL_INVALID|managed-venv-only-v1" ]]; then
+  ok "A8d: malformed probe payload is rejected by the closed protocol"
+else
+  bad "A8d: malformed-probe trust result was '$a8_malformed'"
+fi
+
+a8_xcode="$(trusted_resolution "$a8/xcode" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+if [[ "$a8_xcode" == "DECLINED|69|XCODE_LICENSE_UNACCEPTED|managed-venv-only-v1" ]]; then
+  ok "A8e: Xcode-like failure retains exit 69 as a sanitized reason enum"
+else
+  bad "A8e: Xcode-like trust result was '$a8_xcode'"
+fi
+
+a8_healthy="$(trusted_resolution "$a8/healthy" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+if [[ "$a8_healthy" == "RESOLVED|0|OK|managed-venv-only-v1" ]]; then
+  ok "A8f: managed interpreter with the exact probe protocol is trusted"
+else
+  bad "A8f: healthy trust result was '$a8_healthy'"
+fi
+
+a8_hang="$(trusted_resolution "$a8/hang" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+if [[ "$a8_hang" == "DECLINED|124|PROBE_TIMEOUT|managed-venv-only-v1" ]]; then
+  ok "A8g: hanging interpreter is terminated with portable timeout status 124"
+else
+  bad "A8g: hanging-interpreter trust result was '$a8_hang'"
+fi
 
 # ── Case 13: the absent-locator reason names the cause, not the interpreters ──
 # The failure text is the deliverable here. "no interpreter satisfies" sends a
@@ -443,4 +543,5 @@ fi
 
 echo
 echo "python-env selftest: $pass passed, $fail failed"
+SELFTEST_COMPLETED=1
 [[ "$fail" -eq 0 ]]

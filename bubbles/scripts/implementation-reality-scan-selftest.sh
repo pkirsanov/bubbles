@@ -48,12 +48,10 @@ skip() {
 # while naming the code under scan, when the real subject is the absent
 # prerequisite.
 #
-# This asks the SAME resolver the scan asks (python-env.sh's ordered
-# $BUBBLES_PYTHON -> managed venv -> PATH contract, each candidate validated by
-# execution). Probing PATH directly would answer a different question than the
-# one the scan will act on, and a skip decision that disagrees with the scan is
-# the same misreport in the other direction: skipping coverage that would have
-# run, because the managed venv resolves independently of PATH.
+# This asks the SAME resolver the scan asks: python-env.sh's explicit
+# managed-venv-only security trust contract. BUBBLES_PYTHON and PATH remain
+# candidates for general consumers, but probing either here would answer a
+# different question than the scanner acts on and could silently expand trust.
 CLASSIFIER_UNAVAILABLE_REASON=""
 CLASSIFIER_REMEDIATION=""
 
@@ -61,29 +59,24 @@ sensitive_storage_classifier_usable() {
   CLASSIFIER_UNAVAILABLE_REASON=""
   CLASSIFIER_REMEDIATION=""
 
-  # Not `$(bubbles_python_resolve_runnable)`: a command substitution resolves in
-  # a subshell, so the failure reason would arrive empty and the skip line would
-  # name no cause at all.
-  if bubbles_python_resolve_runnable >/dev/null; then
+  # Not a command substitution: the resolver's numeric status and closed
+  # diagnostic globals must survive for the skip contract below.
+  if bubbles_python_resolve_trusted_runnable >/dev/null; then
     return 0
   fi
 
-  CLASSIFIER_UNAVAILABLE_REASON="no runnable python3 — $BUBBLES_PYTHON_RUNNABLE_REASON"
-
-  # The Xcode-licence case is the one with a remedy the operator can act on
-  # directly, so name it when the PATH candidate is what declined.
-  local path_python probe_output=""
-  path_python="$(command -v python3 2>/dev/null || true)"
-  if [[ -n "$path_python" ]]; then
-    probe_output="$("$path_python" -c 'import sys' </dev/null 2>&1 || true)"
-  fi
-  if grep -Fq 'Xcode license' <<<"$probe_output"; then
-    local active_developer_dir
-    active_developer_dir="$(xcode-select -p </dev/null 2>/dev/null || echo unknown)"
-    CLASSIFIER_REMEDIATION="provision the managed environment ('bash bubbles/scripts/python-env.sh --provision'), which resolves independently of PATH. The python3 on PATH ($path_python) dispatches through an active developer directory ($active_developer_dir) with an unaccepted Xcode licence; repairing that instead needs operator privileges ('sudo xcodebuild -license accept', or 'sudo xcode-select -s /Library/Developer/CommandLineTools')."
-  else
-    CLASSIFIER_REMEDIATION="provision the managed environment ('bash bubbles/scripts/python-env.sh --provision'), or repair the python3 on PATH so that 'python3 -c pass' succeeds."
-  fi
+  CLASSIFIER_UNAVAILABLE_REASON="status=$BUBBLES_PYTHON_TRUSTED_STATUS diagnostic=$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
+  case "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" in
+    NO_LOCATOR)
+      CLASSIFIER_REMEDIATION="set one managed-environment locator ($BUBBLES_PYTHON_LOCATOR_VARS), then run 'bash bubbles/scripts/python-env.sh --provision'"
+      ;;
+    XCODE_LICENSE_UNACCEPTED)
+      CLASSIFIER_REMEDIATION="repair the managed environment with 'bash bubbles/scripts/python-env.sh --provision'; if its base is the Xcode shim, an operator may instead run 'sudo xcodebuild -license accept' or 'sudo xcode-select -s /Library/Developer/CommandLineTools'"
+      ;;
+    *)
+      CLASSIFIER_REMEDIATION="create or repair the managed environment with 'bash bubbles/scripts/python-env.sh --provision'"
+      ;;
+  esac
   return 1
 }
 
@@ -117,6 +110,47 @@ run_scan_in_repo() {
     cd "$repo_root" || exit 2
     bubbles_run_with_timeout 180 bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ) >"$output_file" 2>&1; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$output_file")"
+  printf '%s\n' "$RUN_OUTPUT"
+}
+
+run_scan_in_repo_with_home() {
+  local repo_root="$1"
+  local feature_dir="$2"
+  local python_home="$3"
+  local output_file="$TMPDIR/run-scan-with-home.txt"
+  RUN_OUTPUT=""
+  RUN_STATUS=0
+  if (
+    cd "$repo_root" || exit 2
+    bubbles_run_with_progress_timeout 30 180 "$output_file" \
+      env BUBBLES_PYTHON="" BUBBLES_PYTHON_HOME="$python_home" \
+      bash "$SCAN_SCRIPT" "$feature_dir" --verbose
+  ); then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$output_file")"
+  printf '%s\n' "$RUN_OUTPUT"
+}
+
+run_scan_in_repo_without_locator() {
+  local repo_root="$1"
+  local feature_dir="$2"
+  local output_file="$TMPDIR/run-scan-without-locator.txt"
+  RUN_OUTPUT=""
+  RUN_STATUS=0
+  if (
+    cd "$repo_root" || exit 2
+    bubbles_run_with_progress_timeout 30 180 "$output_file" \
+      env -u BUBBLES_PYTHON -u BUBBLES_PYTHON_HOME \
+      -u XDG_CACHE_HOME -u HOME bash "$SCAN_SCRIPT" "$feature_dir" --verbose
+  ); then
     RUN_STATUS=0
   else
     RUN_STATUS=$?
@@ -523,6 +557,96 @@ scans:
 EOF
 }
 
+create_classifier_protocol_fixture() {
+  PROTOCOL_REPO="$FIXTURE_ROOT/classifier-protocol-repo"
+  PROTOCOL_FEATURE="$PROTOCOL_REPO/specs/001-classifier-protocol"
+  PROTOCOL_SOURCE="$PROTOCOL_REPO/src/view.js"
+  mkdir -p "$PROTOCOL_FEATURE" "$(dirname "$PROTOCOL_SOURCE")"
+
+  cat > "$PROTOCOL_FEATURE/scopes.md" <<'EOF'
+# Scope 1: Classifier Protocol Selftest
+
+### Implementation Files
+
+- `src/view.js`
+EOF
+
+  cat > "$PROTOCOL_SOURCE" <<'EOF'
+export function cacheSnapshot(snapshot) {
+  localStorage.setItem("marketCache:latest", JSON.stringify(snapshot));
+}
+EOF
+}
+
+# A managed-interpreter fixture is production input, not a substitute parser.
+# Every assertion below observes implementation-reality-scan.sh. The fixture
+# only controls what the executable does at the probe/helper trust boundary.
+make_classifier_python_fixture() {
+  local home="$1"
+  local mode="$2"
+  local path="$home/bin/python3"
+  mkdir -p "$(dirname "$path")"
+  cat > "$path" <<EOF
+#!/usr/bin/env bash
+mode='$mode'
+if [[ "\${1:-}" == "-c" && "\${2:-}" == *bubbles-python-runs* ]]; then
+  case "\$mode" in
+    probe-silent) exit 0 ;;
+    probe-malformed) printf '%s' 'not-the-probe-protocol'; exit 0 ;;
+    probe-hang) while :; do sleep 30; done ;;
+    xcode) printf '%s\n' 'You have not agreed to the Xcode license agreements. SECRET_MUST_NOT_LEAK' >&2; exit 69 ;;
+    *) printf '%s' 'bubbles-python-runs'; exit 0 ;;
+  esac
+fi
+case "\$mode" in
+  helper-hang) while :; do sleep 30; done ;;
+  helper-failure)
+    printf '%s\n' 'SECRET_MUST_NOT_LEAK helper failure bytes' >&2
+    exit 73
+    ;;
+  helper-empty) exit 0 ;;
+  helper-malformed) printf '%s\n' 'NOT_A_CLASSIFIER_RECORD SECRET_MUST_NOT_LEAK' ;;
+  helper-missing-completion)
+    printf 'FINDING\tsrc/view.js\t2\tDURABLE_CREDENTIAL_STORAGE\tlocalStorage\tpersist\tmarketProvider:twelvedata:apiKey\ttwelvedata\tabsent\n'
+    ;;
+  helper-duplicate-completion)
+    printf 'COMPLETE\tSCS1\t1\nCOMPLETE\tSCS1\t1\n'
+    ;;
+  helper-count-mismatch) printf 'COMPLETE\tSCS1\t2\n' ;;
+  valid-zero) printf 'COMPLETE\tSCS1\t1\n' ;;
+  valid-finding)
+    printf 'FINDING\tsrc/view.js\t2\tDURABLE_CREDENTIAL_STORAGE\tlocalStorage\tpersist\tmarketProvider:twelvedata:apiKey\ttwelvedata\tabsent\n'
+    printf 'COMPLETE\tSCS1\t1\n'
+    ;;
+  *) exit 74 ;;
+esac
+EOF
+  chmod +x "$path"
+}
+
+assert_classifier_boundary_failure() {
+  local mode="$1"
+  local expected_status="$2"
+  local expected_diagnostic="$3"
+  local home="$FIXTURE_ROOT/classifier-python-$mode"
+  local observed_diagnostic=""
+  make_classifier_python_fixture "$home" "$mode"
+  run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
+  if [[ "$RUN_STATUS" -eq 1 ]]; then
+    pass "$mode fails closed"
+  else
+    fail "$mode fails closed (expected scanner exit 1, got $RUN_STATUS)"
+  fi
+  if grep -Fq -- "status=$expected_status diagnostic=$expected_diagnostic" <<<"$RUN_OUTPUT"; then
+    pass "$mode reports bounded numeric status and closed diagnostic"
+  else
+    observed_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
+    fail "$mode expected status=$expected_status diagnostic=$expected_diagnostic; observed: $observed_diagnostic"
+  fi
+  assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "$mode produces unresolved source findings"
+  assert_output_not_contains "SECRET_MUST_NOT_LEAK" "$mode never replays executable output"
+}
+
 assert_sensitive_invalid_config() {
   local label="$1"
   run_scan_in_repo "$SENSITIVE_REPO" "$SENSITIVE_FEATURE"
@@ -541,6 +665,7 @@ create_fake_connector_fixture
 create_telemetry_noop_adapter_fixture
 create_fake_noop_integration_fixture
 create_sensitive_storage_fixture
+create_classifier_protocol_fixture
 
 echo "Running implementation-reality-scan discovery selftest..."
 echo "Scenario: shell-heavy fixtures resolve honest implementation inventory."
@@ -560,6 +685,56 @@ run_expect_success "$FIXTURE_ROOT/telemetry-noop-adapter-feature" "Telemetry no-
 
 echo "Scenario: a bare non-telemetry no-op integration body is STILL flagged (exclusion opens no hole)."
 run_expect_fake_integration_failure "$FIXTURE_ROOT/fake-noop-integration-feature" "Bare non-telemetry, non-quoted no-op integration body is still flagged as FAKE_INTEGRATION"
+
+echo "Scenario: Scan 2B trusts only the managed interpreter provenance and fails closed on unavailable probes."
+run_scan_in_repo_without_locator "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "No locator fails closed"
+else
+  fail "No locator fails closed (expected scanner exit 1, got $RUN_STATUS)"
+fi
+assert_output_contains "status=127 diagnostic=NO_LOCATOR" "No locator has a numeric status and closed diagnostic"
+
+absent_home="$FIXTURE_ROOT/classifier-python-absent"
+mkdir -p "$absent_home"
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$absent_home"
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "Absent managed interpreter fails closed"
+else
+  fail "Absent managed interpreter fails closed (expected scanner exit 1, got $RUN_STATUS)"
+fi
+assert_output_contains "status=127 diagnostic=INTERPRETER_ABSENT" "Absent interpreter has a numeric status and closed diagnostic"
+
+assert_classifier_boundary_failure probe-silent 0 PROBE_EMPTY
+assert_classifier_boundary_failure probe-malformed 0 PROBE_PROTOCOL_INVALID
+assert_classifier_boundary_failure xcode 69 XCODE_LICENSE_UNACCEPTED
+assert_classifier_boundary_failure helper-failure 73 CLASSIFIER_EXIT_NONZERO
+assert_classifier_boundary_failure helper-empty 0 CLASSIFIER_OUTPUT_EMPTY
+assert_classifier_boundary_failure helper-malformed 0 CLASSIFIER_RECORD_MALFORMED
+assert_classifier_boundary_failure helper-missing-completion 0 CLASSIFIER_COMPLETION_MISSING
+assert_classifier_boundary_failure helper-duplicate-completion 0 CLASSIFIER_COMPLETION_DUPLICATE
+assert_classifier_boundary_failure helper-count-mismatch 0 CLASSIFIER_SCANNED_COUNT_MISMATCH
+
+valid_zero_home="$FIXTURE_ROOT/classifier-python-valid-zero"
+make_classifier_python_fixture "$valid_zero_home" valid-zero
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$valid_zero_home"
+if [[ "$RUN_STATUS" -eq 0 ]]; then
+  pass "Valid zero-finding completion is distinguishable from empty output"
+else
+  fail "Valid zero-finding completion is distinguishable from empty output (scanner exit $RUN_STATUS)"
+fi
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Zero-finding completion reports the honest scanned count"
+
+valid_finding_home="$FIXTURE_ROOT/classifier-python-valid-finding"
+make_classifier_python_fixture "$valid_finding_home" valid-finding
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$valid_finding_home"
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "Finding before completion remains blocking"
+else
+  fail "Finding before completion remains blocking (scanner exit $RUN_STATUS)"
+fi
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=1" "Finding stream completion reports one scanned file and one finding"
+assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist" "Valid finding tuple remains compatible"
 
 if sensitive_storage_classifier_usable; then
   echo "Scenario: semantic Scan 2B distinguishes storage operations and exact session classification."
@@ -686,7 +861,11 @@ NO_TIMEOUT_PATH="$TMPDIR/no-timeout-path"
 mkdir -p "$NO_TIMEOUT_PATH"
 ln -s "$(command -v sleep)" "$NO_TIMEOUT_PATH/sleep"
 portable_timeout_status=0
-if PATH="$NO_TIMEOUT_PATH" bubbles_run_with_timeout 1 /bin/sleep 5; then
+if (
+  PATH="$NO_TIMEOUT_PATH"
+  hash -r
+  bubbles_run_with_timeout 1 /bin/sleep 5
+); then
   portable_timeout_status=0
 else
   portable_timeout_status=$?
@@ -698,6 +877,19 @@ else
   echo "PORTABLE_WATCHDOG_FALLBACK=$portable_timeout_status"
   fail "Portable watchdog preserves exit 124"
 fi
+
+echo "Scenario: hostile probe/helper hangs are bounded and leave the next classifier run healthy."
+assert_classifier_boundary_failure probe-hang 124 PROBE_TIMEOUT
+assert_classifier_boundary_failure helper-hang 124 CLASSIFIER_TIMEOUT
+post_timeout_home="$FIXTURE_ROOT/classifier-python-post-timeout-valid-zero"
+make_classifier_python_fixture "$post_timeout_home" valid-zero
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$post_timeout_home"
+if [[ "$RUN_STATUS" -eq 0 ]]; then
+  pass "Classifier remains reusable after both watchdog timeouts"
+else
+  fail "Classifier remains reusable after both watchdog timeouts (scanner exit $RUN_STATUS)"
+fi
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Post-timeout classifier completes its protocol"
 
 if [[ "$skips" -gt 0 ]]; then
   echo "implementation-reality-scan selftest skipped $skips scenario group(s) for an absent prerequisite."
