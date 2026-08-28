@@ -1,11 +1,15 @@
 # Report: BUG-039
 
-All output below came from commands executed in this session, with their real
-exit codes. Nothing is reconstructed.
+Sections through `## Completion Statement` preserve evidence from
+earlier BUG-039 implementation runs. They are diagnostic input in this session,
+not current-session execution proof. Their captured output remains unchanged.
+Current-session evidence begins at `## Security Remediation SEC-B039-001..003`.
 
 ---
 
 ## 1. Machine Context
+
+**Claim Source:** not-run
 
 ```
 $ xcode-select -p
@@ -23,6 +27,8 @@ framework cannot depend on it having been taken.
 
 ## 2. Files Clean At HEAD Before Any Change
 
+**Claim Source:** not-run
+
 ```
 $ git status --short -- bubbles/scripts/implementation-reality-scan-selftest.sh \
                         bubbles/scripts/guards/sensitive-client-storage-scan.py \
@@ -33,6 +39,8 @@ $ git status --short -- bubbles/scripts/implementation-reality-scan-selftest.sh 
 Confirms the defect is pre-existing, not introduced by in-flight work.
 
 ## 3. Bug Reproduction — Before Fix
+
+**Claim Source:** not-run
 
 Single-variable A/B, reproduced independently rather than taken on trust.
 
@@ -86,6 +94,8 @@ correct and is starved of an interpreter.**
 
 ## 4. Correction To The Reported Blast Radius
 
+**Claim Source:** not-run
+
 The eleven reds are not the whole failure. Measured:
 
 ```
@@ -111,6 +121,8 @@ covers both groups, not only the visibly-failing one.
 
 ## 5. Packet Route
 
+**Claim Source:** not-run
+
 ```
 $ bash bubbles/scripts/micro-fix-admission.sh bugs/BUG-039-...
 [micro-fix-admission] ... fails admission (no-new-behavior contract-preserving)
@@ -123,6 +135,8 @@ admission_exit=0
 Route: **full packet**.
 
 ## 6. After Fix — Three Environments
+
+**Claim Source:** not-run
 
 | Run | Command | Exit | FAIL | SKIP |
 |---|---|---|---|---|
@@ -152,6 +166,8 @@ V3 is the control that matters: **same sanitized PATH, usable interpreter, zero
 skips.** The skip is conditioned on measured usability, not applied blanket.
 
 ## 7. Mutation Proof — The Guarantee Survives
+
+**Claim Source:** not-run
 
 Mutation applied to `bubbles/scripts/guards/sensitive-client-storage-scan.py`,
 one token in the classification ladder:
@@ -200,6 +216,8 @@ red.
 
 ## 8. Cascade — `test_24`
 
+**Claim Source:** not-run
+
 ```
 $ bash tests/regression/test_24_g028_sensitive_client_storage.sh </dev/null
 TEST24_EXIT=0
@@ -219,6 +237,8 @@ emitted, because that claim was not established. `FAIL_COUNT` still governs the
 exit code, so a genuine regression remains fatal.
 
 ## 9. Lint
+
+**Claim Source:** not-run
 
 ```
 $ shellcheck -x bubbles/scripts/implementation-reality-scan-selftest.sh          # exit 0
@@ -241,6 +261,8 @@ than reformatted into an unrelated diff.
 
 ## 10. Consumer Safety
 
+**Claim Source:** not-run
+
 `framework-validate` judges selftests by exit status
 (`run_check "Discovered selftest: …" bash "$selftest_path"`), not by parsing
 stdout. The contract it depends on is preserved: exit 0 when nothing failed,
@@ -249,6 +271,8 @@ sentence.
 
 ## Test Evidence
 
+**Claim Source:** not-run
+
 Every figure below was produced by a command executed in this session, on the
 working tree as delivered. Runs over 40 lines went through
 `bubbles/scripts/evidence-capture.sh`, whose emitted block carries the command,
@@ -256,6 +280,8 @@ the exit code, the line count and a sha256 over every line produced; the hash is
 re-derivable with `--verify` using the pointer recorded beside each run.
 
 ### Verdict table
+
+**Claim Source:** not-run
 
 | # | Condition | Exit | FAIL | SKIP | Sentinel |
 |---|---|---|---|---|---|
@@ -279,6 +305,8 @@ V3: exit=0 FAIL=0 SKIP=0 sentinel=0
 
 ### V1 — normal PATH, full coverage
 
+**Claim Source:** not-run
+
 ```
 # V1 implementation-reality-scan-selftest normal PATH
 $ bash bubbles/scripts/implementation-reality-scan-selftest.sh
@@ -295,6 +323,8 @@ implementation-reality-scan selftest passed.
 <!-- verify: bash bubbles/scripts/evidence-capture.sh --verify 5adde28ce7d3e1478aefedc37d764e96572bd04a3e7ad64b205919587211e930 -- bash bubbles/scripts/implementation-reality-scan-selftest.sh -->
 
 ### V2 — sanitized PATH, no locator: the named skip
+
+**Claim Source:** not-run
 
 The environment is emptied, so `HOME` is gone and the managed venv cannot be
 named at all. The only interpreter left is `/usr/bin/python3`, which on this
@@ -318,6 +348,8 @@ as classification defects.
 
 ### V3 — sanitized PATH, HOME restored: the control that matters
 
+**Claim Source:** not-run
+
 One variable is re-introduced. PATH is still system-only, so this is the same
 environment that produced eleven false failures before the fix.
 
@@ -337,6 +369,8 @@ conditioned on measured usability, not applied blanket to a sanitized
 environment.
 
 ### T24 — the cascade
+
+**Claim Source:** not-run
 
 ```
 # test_24 G028 sensitive client storage regression
@@ -362,6 +396,8 @@ sound, and it is named here rather than counted quietly.** See
 `## Finding Raised While Recording This Evidence` below.
 
 ### PE — `python-env-selftest.sh`, the second widening
+
+**Claim Source:** not-run
 
 Baseline before the file was touched, and the result after:
 
@@ -390,6 +426,8 @@ PYENV_SELFTEST_EXIT=0
 24 → 35 is 11 added assertions and no existing case altered.
 
 ### Mutation proof for the added assertions
+
+**Claim Source:** not-run
 
 Coverage that cannot go red is decoration. The mutation chosen is the original
 defect itself: the historical unguarded `${XDG_CACHE_HOME:-$HOME/.cache}`
@@ -450,6 +488,8 @@ above, so the verdict table reflects the reverted tree, not the mutant.
 
 ### Lint on the file this session touched
 
+**Claim Source:** not-run
+
 `bubbles/scripts/python-env-selftest.sh` is the only `.sh` modified in this
 session. Findings were compared against HEAD before being attributed.
 
@@ -484,6 +524,8 @@ The pre-existing deviations were left alone rather than reformatted into an
 unrelated diff.
 
 ## Finding Raised While Recording This Evidence
+
+**Claim Source:** not-run
 
 > **Superseded — see "Finding Above — Now Repaired In-Boundary" below.** The
 > section as written stands as the record of what was known when it was written:
@@ -544,12 +586,16 @@ unearned one.
 
 ## Finding Above — Now Repaired In-Boundary
 
+**Claim Source:** not-run
+
 The parent runner reviewed the routed finding, confirmed it independently, and
 returned it for repair. `tests/regression/test_24_g028_sensitive_client_storage.sh`
 is already in this packet's ratified `workBoundary.allowedPaths`, so no widening
 was needed. Everything below was executed in that session.
 
 ### R1 — diagnosis reconfirmed before touching anything
+
+**Claim Source:** not-run
 
 ```
 $ grep -nE '^[[:space:]]*(source|\.)[[:space:]]+' tests/regression/test_24_g028_sensitive_client_storage.sh
@@ -586,6 +632,8 @@ $ git show HEAD:tests/…/test_24….sh | grep -c 'BUG-040 managed selftest'  �
 
 ### R2 — sourcing verified safe before relying on it
 
+**Claim Source:** not-run
+
 `python-env.sh` documents itself SOURCEABLE. That claim was checked, not taken:
 
 ```
@@ -612,6 +660,8 @@ invokes.
 
 ### R3 — the repair
 
+**Claim Source:** not-run
+
 Two hunks, nothing else:
 
 1. `PYTHON_ENV` added to the required-surface list and sourced after
@@ -622,6 +672,8 @@ Two hunks, nothing else:
    path, so pulling the `-x` case out splits the REASON, never the decision.
 
 ### R4 — the six assertions on their first-ever execution
+
+**Claim Source:** not-run
 
 All six PASS. None was weakened, deleted, or re-disabled.
 
@@ -646,6 +698,8 @@ BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
 skip. The counts move by the amount the repair claims and by nothing else.
 
 ### R5 — non-vacuity
+
+**Claim Source:** not-run
 
 All mutations are ENVIRONMENT-only. No framework file was edited, deliberately:
 a `v5.3-selftest.sh` run was in flight and mutating a script it reads could
@@ -702,6 +756,8 @@ BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
 
 ### R6 — verification, with attribution
 
+**Claim Source:** not-run
+
 | Command | Exit | Result |
 |---|---|---|
 | `bash tests/regression/test_24_g028_sensitive_client_storage.sh` | 0 | 63 passed, 0 failed, 1 skipped |
@@ -723,6 +779,8 @@ instruction because a `v5.3-selftest.sh` run was in flight.
 
 ## Summary
 
+**Claim Source:** not-run
+
 One missing prerequisite was being reported as eleven classification defects,
 and the same dead interpreter was silently manufacturing twelve meaningless
 passes. The scanner was correct throughout. The selftest now probes interpreter
@@ -741,8 +799,246 @@ skip that remains now names which of three conditions produced it.
 
 ## Completion Statement
 
-Implementation and its evidence are complete and recorded above with real exit
-codes. Certification is **not** claimed: `framework-validate` and
-`release-check` were excluded by operator instruction and are owned by the
-parent runner, and human acceptance has not been recorded. Status remains
-`in_progress`.
+**Claim Source:** not-run
+
+The prior implementation run stated that its implementation evidence was
+complete while certification remained `in_progress`. The security review
+invalidated that statement for the current candidate. It is retained here as
+historical context and does not support acceptance, certification, or terminal
+status in this session.
+
+## Security Remediation SEC-B039-001..003
+
+### Root-Cause Verification And RED Proof
+
+**Phase:** implement
+**Claim Source:** interpreted
+**Interpretation:** The commands and failure lines are directly executed; the
+mapping from those failures to the three security root causes is the analysis
+recorded after the raw blocks.
+
+The new tests were written before production remediation. Each executed the
+real resolver, scanner, selftest, or cascade path and failed against the
+starting candidate `3ad43cee9b54e4d8767b470b7ef3b1d343cfc1ee`.
+
+```
+# SEC-B039 RED python-env trust and diagnostic contract
+$ bash bubbles/scripts/python-env-selftest.sh
+exit: 1
+lines: 43
+sha256: bd2b6b7bde45831083f158511f1136140e89af4d5525613bd7761b4f57d17bc3
+FAIL: A8: no-locator trust result was 'DECLINED|||'
+FAIL: A8b: absent-interpreter trust result was 'DECLINED|||'
+FAIL: A8c: silent-success trust result was 'DECLINED|||'
+FAIL: A8d: malformed-probe trust result was 'DECLINED|||'
+FAIL: A8e: Xcode-like trust result was 'DECLINED|||'
+FAIL: A8f: healthy trust result was 'DECLINED|||'
+python-env selftest: 35 passed, 6 failed
+```
+
+```
+# SEC-B039 corrected RED classifier protocol and trust boundary
+$ bash bubbles/scripts/implementation-reality-scan-selftest.sh
+exit: 1
+lines: 1337
+sha256: f8fd75634527137407bb890571797f0e95d16c84cf7125d0efc3f443de9dbb6b
+FAIL: No locator fails closed (expected scanner exit 1, got 0)
+FAIL: Absent managed interpreter fails closed (expected scanner exit 1, got 0)
+FAIL: probe-silent fails closed (expected scanner exit 1, got 0)
+FAIL: probe-malformed fails closed (expected scanner exit 1, got 0)
+implementation-reality-scan selftest failed with 28 issue(s).
+```
+
+```
+# SEC-B039 RED deterministic sentinel cascade
+$ bash tests/regression/test_24_g028_sensitive_client_storage.sh
+exit: 1
+lines: 4317
+sha256: c805c6afa403b9f1a07501b308de0d4f750afcf878fc4db2e5112a7298a33714
+FAIL: managed selftest runs with the system-only PATH and the managed interpreter
+=== BUG-013 regression summary ===
+test_24_g028_sensitive_client_storage: 62 passed, 4 failed, 0 skipped
+```
+
+These failures independently confirmed all three reported roots: security
+consumers accepted probe-passing ambient executables, successful but incomplete
+classifier output had no completion contract, and the sentinel cascade depended
+on host Python state.
+
+### Protocol And Trust Design
+
+**Phase:** implement
+**Claim Source:** interpreted
+**Interpretation:** The design below describes the implemented control flow
+observed in the committed source and exercised by the GREEN tests in the next
+section.
+
+- Security-sensitive resolution uses `managed-venv-only-v1`. The general
+  `BUBBLES_PYTHON` and PATH resolver remains available to non-security callers,
+  but Scan 2B never executes either as a trust root.
+- Probe execution uses the repository's progress-aware portable timeout with a
+  5-second idle limit, a 10-second absolute limit, process-group termination,
+  and a one-block output file limit. Exit `124` remains distinct.
+- Probe diagnostics expose only a numeric status and one closed reason enum.
+  Captured executable output is never replayed. The Xcode signature maps to
+  `XCODE_LICENSE_UNACCEPTED` while retaining numeric status `69`.
+- Classifier execution uses a 15-second idle limit, a 120-second absolute limit,
+  and a 4 MiB file/output ceiling. Stderr and malformed bytes stay in the
+  private capture and are never printed.
+- Protocol `SCS1` accepts only closed `FINDING` tuples followed by exactly one
+  final `COMPLETE\tSCS1\t<count>` record. The driver increments the count only
+  after the production helper returns from each source file. Empty, malformed,
+  incomplete, duplicate, post-completion, and count-mismatched streams all
+  degrade to the existing fail-closed unresolved findings.
+- Valid `FINDING` tuple behavior remains compatible. A valid completion with
+  zero findings is explicitly distinguishable from empty helper output.
+
+### Deterministic Test Matrix And GREEN Proof
+
+**Phase:** implement
+**Claim Source:** interpreted
+**Interpretation:** The three commands exited zero. Their persistent assertions
+map each listed fixture to production resolver/scanner behavior; the bounded
+hashes cover every emitted line, including assertions outside the retained
+first and last windows.
+
+The persistent tests cover no locator, absent managed interpreter, silent probe
+success, malformed probe payload, Xcode-like exit `69`, probe hang, helper hang,
+helper exit `73`, empty helper output, malformed record, missing completion,
+duplicate completion, completion-count mismatch, valid zero-finding completion,
+and a valid sensitive-storage finding before completion. The cascade supplies a
+dead managed interpreter and a probe-passing ambient substitute, so it reaches
+the skip branch independently of the host interpreter. Its counter assertion
+fails if that branch calls `pass()` instead of `skip()`.
+
+```
+# SEC-B039 final committed-candidate Python environment matrix
+$ /bin/bash bubbles/scripts/python-env-selftest.sh
+exit: 0
+lines: 44
+sha256: 80e71904790f1d63306d34acdaafc76c7e1a1a90247a3e78b1b1b8499e2d9e46
+PASS: A8: trusted resolver refuses override/PATH candidates when no managed locator exists
+PASS: A8b: trusted resolver names an absent managed interpreter
+PASS: A8c: silent-success probe is rejected with its numeric status
+PASS: A8d: malformed probe payload is rejected by the closed protocol
+PASS: A8e: Xcode-like failure retains exit 69 as a sanitized reason enum
+PASS: A8f: managed interpreter with the exact probe protocol is trusted
+PASS: A8g: hanging interpreter is terminated with portable timeout status 124
+python-env selftest: 42 passed, 0 failed
+```
+
+```
+# SEC-B039 Bash 3.2 nested-timeout-free classifier matrix
+$ /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh
+exit: 0
+lines: 1767
+sha256: cdec519891c2342eb14db7d88ebe94b8e31cdd63e93ab825fde838cb9557fea4
+Files scanned:  1
+Violations:     0
+Warnings:       0
+🟢 PASSED: No source code reality violations detected
+PASS: Classifier remains reusable after both watchdog timeouts
+PASS: Post-timeout classifier completes its protocol
+implementation-reality-scan selftest passed.
+```
+
+```
+# SEC-B039 final deterministic G028 cascade under macOS Bash 3.2
+$ /bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh
+exit: 0
+lines: 4463
+sha256: 5ef6a794598c32bf5bb4b74fb9cb45819cf190a4c2302ed7c388c613bc39816e
+PASS: Classifier remains reusable after both watchdog timeouts
+PASS: Post-timeout classifier completes its protocol
+implementation-reality-scan selftest passed.
+test_24_g028_sensitive_client_storage: 67 passed, 0 failed, 1 skipped
+BUG039_DETERMINISTIC_CASCADE_VERIFIED=1
+BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
+```
+
+### Bash And Boundary Checks
+
+**Phase:** implement
+**Command:** `/bin/bash -n` on all five changed shell files; `shellcheck -x -S warning` on the same files; `git diff --check`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```
+FINAL_BASH32_SYNTAX_EXIT=0
+FINAL_WARNING_SHELLCHECK_EXIT=0
+FINAL_SOURCE_TEST_DIFF_CHECK_EXIT=0
+WORK_BOUNDARY_ALL_CHANGED_PATHS_EXIT=0
+disposition=in-boundary
+repoMatch=true
+reason=candidate repo 'bubbles' is within repositoryRoots and within any declared spec/path scope
+SOURCE_TEST_STAGED_DIFF_CHECK_EXIT=0
+SOURCE_TEST_COMMIT_EXIT=0
+```
+
+The source/test commit is
+`7573d8812f1ef8d676bd5501d3889a075927e459`, with parent
+`3ad43cee9b54e4d8767b470b7ef3b1d343cfc1ee`.
+
+### Artifact And Traceability Checks
+
+**Phase:** implement
+**Claim Source:** executed
+
+The first artifact-lint run correctly rejected the renamed completion heading.
+The heading was restored without changing the non-terminal statement, and the
+rerun passed. The traceability guard retained all four scenario edges.
+
+```
+[claim-source-lint] OK — every execution-evidence block carries a valid Claim Source tag
+CLAIM_SOURCE_LINT_EXIT=0
+# SEC-B039 artifact lint after report provenance repair
+exit: 1
+lines: 40
+sha256: 242bfb4fe37bb3b9973fd6412c9f5a8622248e21e53a33de02e0c6f706b9c195
+❌ report.md missing required section matching: ###[[:space:]]+Completion Statement|^##[[:space:]]+Completion Statement
+Artifact lint FAILED with 1 issue(s).
+# SEC-B039 artifact lint after canonical completion heading repair
+exit: 0
+lines: 40
+sha256: 182cf27f7948b167f9fdebccae5bf6994636355face5d8ae0a4d55666dc9b567
+Artifact lint PASSED.
+REPAIRED_ARTIFACT_LINT_EXIT=0
+```
+
+```
+# SEC-B039 traceability guard after security remediation
+$ bash bubbles/scripts/traceability-guard.sh bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure
+exit: 0
+lines: 55
+sha256: f5ae6bc9557936a61c323ef066fe53c63ba9b99d2f7c481b5b6c90cfcbe3f026
+✅ scenario-manifest.json covers 4 scenario contract(s)
+ℹ️  Scenarios checked: 4
+ℹ️  Test rows checked: 4
+ℹ️  Scenario-to-row mappings: 4
+ℹ️  Concrete test file references: 4
+ℹ️  Report evidence references: 4
+ℹ️  DoD fidelity scenarios: 4 (mapped: 4, unmapped: 0)
+ℹ️  Edge confidence (IMP-015 Scope B): declared=8 inferred=0 ambiguous=0
+RESULT: PASSED (0 warnings)
+TRACEABILITY_GUARD_EXIT=0
+```
+
+### Planning Artifact Reconciliation Required
+
+**Phase:** implement
+**Claim Source:** interpreted
+**Interpretation:** The implementation and tests now enforce a stricter security
+contract than the active planner-owned text. This agent did not modify those
+foreign-owned artifacts or validate-owned certification.
+
+| Artifact | Exact contradiction | Owner |
+|---|---|---|
+| `spec.md` | Requirements 1 and 2 require an interpreter path and arbitrary underlying diagnostic. The implementation emits numeric status plus a closed diagnostic enum and trusts only the managed venv. The success signal also requires full gates excluded from this invocation. | `bubbles.analyst` |
+| `design.md` | The active text describes `$BUBBLES_PYTHON → managed venv → PATH`, raw probe output, and active developer-directory reporting. It must describe `managed-venv-only-v1`, bounded captures, `SCS1`, and no raw stderr replay. | `bubbles.design` |
+| `scopes.md` | The four scenarios and Test Plan omit deterministic hostile interpreter/protocol fixtures. All DoD boxes remain checked against prior evidence even though certification is `in_progress` and the security contract changed. | `bubbles.plan` |
+| `uservalidation.md` | The checklist is host-dependent, asks for raw diagnostics, records acceptance-style checked boxes, and expects `57 passed`; the current persistent regression reports `67 passed, 0 failed, 1 skipped`. | `bubbles.plan` |
+| `scenario-manifest.json` | The four declared edges remain present, but their negative-control text still describes the old presence-only and host-toolchain behavior rather than the deterministic trust/protocol fixtures. | `bubbles.plan` |
+
+Certification remains untouched and `in_progress`. No human acceptance or
+terminal completion is claimed. Full `framework-validate` and `release-check`
+were not run because this invocation explicitly excludes them.
