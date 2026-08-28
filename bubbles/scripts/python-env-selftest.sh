@@ -27,7 +27,7 @@ if [[ ! -f "$ENV_SH" || ! -f "$GUARD_LIB" ]]; then
   exit 2
 fi
 
-# Probe execution must use the same portable timeout API as production callers.
+# Probe execution must use the same bounded watchdog API as production callers.
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
 # shellcheck source=/dev/null
@@ -513,7 +513,7 @@ fi
 
 a8_hang="$(trusted_resolution "$a8/hang" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
 if [[ "$a8_hang" == "DECLINED|124|PROBE_TIMEOUT|managed-venv-only-v1" ]]; then
-  ok "A8g: hanging interpreter is terminated with portable timeout status 124"
+  ok "A8g: hanging interpreter is terminated with watchdog status 124"
 else
   bad "A8g: hanging-interpreter trust result was '$a8_hang'"
 fi

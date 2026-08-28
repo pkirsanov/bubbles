@@ -34,6 +34,19 @@ source "$GUARD_LIB"
 # shellcheck source=/dev/null
 source "$PYTHON_ENV"
 
+# The managed selftest's successful producer contract always executes real
+# Python. Resolve that prerequisite through the production API before entering
+# sanitized fixtures, then pass the exact executable explicitly. A host with no
+# runnable Python cannot satisfy this persistent regression and fails loudly.
+SELFTEST_REAL_PYTHON=""
+if bubbles_python_resolve_runnable >/dev/null; then
+  SELFTEST_REAL_PYTHON="$BUBBLES_PYTHON_RUNNABLE"
+else
+  printf 'test_24_g028_sensitive_client_storage: runnable Python prerequisite failed: %s\n' \
+    "$BUBBLES_PYTHON_RUNNABLE_REASON" >&2
+  exit 2
+fi
+
 WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug013-XXXXXXXX")"
 FIXTURE_REPO="$WORKSPACE/repo"
 FEATURE_DIR="$FIXTURE_REPO/specs/001-sensitive-storage"
@@ -608,6 +621,7 @@ chmod +x "$FORCED_FALLTHROUGH_PATH/python3"
 
 SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
 if env -i PATH="$FORCED_FALLTHROUGH_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON="$SELFTEST_REAL_PYTHON" \
   BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
   /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
@@ -643,6 +657,11 @@ else
   fail "deterministic unavailable interpreter did not reach the sentinel branch"
 fi
 assert_contains "PORTABLE_WATCHDOG_FALLBACK=124" "managed selftest preserves watchdog exit 124"
+assert_contains "PASS: Real zero-finding producer executes the production driver and helper" "managed selftest executes the real zero-finding producer"
+assert_contains "PASS: Real classifier emits the exact durable-credential finding tuple" "managed selftest executes real classifier classification"
+assert_contains "PASS: Deleting production completion emission makes the real-finding contract red" "managed selftest proves completion-emission teeth"
+assert_contains "PASS: Corrupting production classification makes the real-finding contract red" "managed selftest proves classification teeth"
+assert_contains "PASS: Real finding producer creates no helper-side bytecode cache" "managed selftest proves helper bytecode suppression"
 
 printf '%s\n' '=== BUG-040 managed selftest sanitized PATH with the managed interpreter ==='
 # The scenario above sanitizes the WHOLE environment, so on a machine whose only
@@ -685,7 +704,8 @@ if [[ -n "$MANAGED_PYTHON_SKIP_REASON" ]]; then
   skip "managed selftest full Scan 2B coverage under a sanitized PATH ($MANAGED_PYTHON_SKIP_REASON; provision with 'bash bubbles/scripts/python-env.sh --provision')"
 else
   MANAGED_OUTPUT_FILE="$WORKSPACE/selftest-managed-output.txt"
-  if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin BUBBLES_PYTHON_HOME="$MANAGED_PYTHON_HOME" \
+  if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+    BUBBLES_PYTHON="$SELFTEST_REAL_PYTHON" BUBBLES_PYTHON_HOME="$MANAGED_PYTHON_HOME" \
     /bin/bash "$SELFTEST" >"$MANAGED_OUTPUT_FILE" 2>&1 </dev/null; then
     RUN_STATUS=0
   else

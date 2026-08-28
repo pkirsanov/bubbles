@@ -717,6 +717,8 @@ import os
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+
 helper_path = Path(sys.argv[1])
 repo_root = Path(sys.argv[2]).resolve()
 config_path = Path(sys.argv[3]).resolve()
@@ -902,6 +904,7 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
       "$sensitive_storage_log" \
       /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
       "$SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS" \
+      env PYTHONDONTWRITEBYTECODE=1 \
       "$sensitive_storage_python" -c "$SENSITIVE_STORAGE_PROTOCOL_DRIVER" \
       "$SENSITIVE_STORAGE_HELPER" "$REPO_ROOT" "$PROJECT_CONFIG" \
       "${sensitive_storage_files[@]}"; then

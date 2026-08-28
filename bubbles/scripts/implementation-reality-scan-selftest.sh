@@ -6,8 +6,21 @@ SCAN_SCRIPT="$SCRIPT_DIR/implementation-reality-scan.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
 TMPDIR="$(mktemp -d)"
 FIXTURE_ROOT="$TMPDIR/fixtures"
+CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 
-trap 'rm -rf "$TMPDIR"' EXIT INT TERM
+selftest_cleanup() {
+  local status=$?
+  trap - EXIT INT TERM
+  rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
+  exit "$status"
+}
+
+trap selftest_cleanup EXIT INT TERM
+
+# Importing the production classifier must never leave generated state beside
+# a security helper. Remove residue from an earlier run before testing, and the
+# EXIT trap repeats this cleanup even when an assertion fails.
+rm -rf "$CLASSIFIER_HELPER_CACHE_DIR"
 
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
@@ -17,6 +30,20 @@ source "$GUARD_LIB"
 # coverage the scan would have run.
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/python-env.sh"
+
+# Successful producer tests need a real interpreter independently of the
+# managed-path trust fixture used by the scanner. Resolve it through the
+# production API, then pass the exact resolved executable to that wrapper. A
+# machine with no runnable Python cannot execute this required contract and
+# therefore fails the selftest prerequisite instead of reporting a skip.
+CLASSIFIER_TEST_PYTHON=""
+if bubbles_python_resolve_runnable >/dev/null; then
+  CLASSIFIER_TEST_PYTHON="$BUBBLES_PYTHON_RUNNABLE"
+else
+  printf 'implementation-reality-scan selftest prerequisite failed: runnable Python required: %s\n' \
+    "$BUBBLES_PYTHON_RUNNABLE_REASON" >&2
+  exit 2
+fi
 
 failures=0
 skips=0
@@ -129,6 +156,7 @@ run_scan_in_repo_with_home() {
     cd "$repo_root" || exit 2
     bubbles_run_with_progress_timeout 30 180 "$output_file" \
       env BUBBLES_PYTHON="" BUBBLES_PYTHON_HOME="$python_home" \
+      BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON" \
       bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ); then
     RUN_STATUS=0
@@ -571,6 +599,10 @@ create_classifier_protocol_fixture() {
 - `src/view.js`
 EOF
 
+  write_protocol_boundary_source
+}
+
+write_protocol_boundary_source() {
   cat > "$PROTOCOL_SOURCE" <<'EOF'
 export function cacheSnapshot(snapshot) {
   localStorage.setItem("marketCache:latest", JSON.stringify(snapshot));
@@ -578,9 +610,28 @@ export function cacheSnapshot(snapshot) {
 EOF
 }
 
+write_protocol_zero_source() {
+  cat > "$PROTOCOL_SOURCE" <<'EOF'
+export function formatLabel(value) {
+  return String(value);
+}
+EOF
+}
+
+write_protocol_finding_source() {
+  cat > "$PROTOCOL_SOURCE" <<'EOF'
+export function persistCredential(providerCredential) {
+  localStorage.setItem("marketProvider:twelvedata:apiKey", providerCredential);
+}
+EOF
+}
+
 # A managed-interpreter fixture is production input, not a substitute parser.
 # Every assertion below observes implementation-reality-scan.sh. The fixture
 # only controls what the executable does at the probe/helper trust boundary.
+# The real-forward mode execs the independently resolved Python with every
+# production argument unchanged. Mutation modes alter only a copied driver
+# string in the temporary fixture so the assertions prove they have teeth.
 make_classifier_python_fixture() {
   local home="$1"
   local mode="$2"
@@ -589,6 +640,7 @@ make_classifier_python_fixture() {
   cat > "$path" <<EOF
 #!/usr/bin/env bash
 mode='$mode'
+real_python="\${BUBBLES_SELFTEST_REAL_PYTHON:-}"
 if [[ "\${1:-}" == "-c" && "\${2:-}" == *bubbles-python-runs* ]]; then
   case "\$mode" in
     probe-silent) exit 0 ;;
@@ -598,6 +650,42 @@ if [[ "\${1:-}" == "-c" && "\${2:-}" == *bubbles-python-runs* ]]; then
     *) printf '%s' 'bubbles-python-runs'; exit 0 ;;
   esac
 fi
+case "\$mode" in
+  real-forward)
+    [[ -n "\$real_python" && -x "\$real_python" ]] || exit 75
+    exec "\$real_python" "\$@"
+    ;;
+  mutate-completion)
+    [[ -n "\$real_python" && -x "\$real_python" ]] || exit 75
+    if [[ "\${1:-}" == "-c" && "\${2:-}" == *COMPLETE* && "\${2:-}" == *SCS1* ]]; then
+      mutation_prefix='import builtins
+_bubbles_original_print = builtins.print
+def _bubbles_mutated_print(*args, **kwargs):
+    if args and isinstance(args[0], str) and args[0].startswith("COMPLETE\\tSCS1\\t"):
+        return None
+    return _bubbles_original_print(*args, **kwargs)
+print = _bubbles_mutated_print
+'
+      mutated_driver="\$mutation_prefix
+\$2"
+      shift 2
+      exec "\$real_python" -c "\$mutated_driver" "\$@"
+    fi
+    exec "\$real_python" "\$@"
+    ;;
+  mutate-classification)
+    [[ -n "\$real_python" && -x "\$real_python" ]] || exit 75
+    if [[ "\${1:-}" == "-c" && "\${2:-}" == *'for finding in module.analyze_file(source_path, repo_root, approvals):'* ]]; then
+      original_driver="\$2"
+      classification_line='for finding in module.analyze_file(source_path, repo_root, approvals):'
+      mutated_driver="\${original_driver//\$classification_line/for finding in ():}"
+      [[ "\$mutated_driver" != "\$original_driver" ]] || exit 76
+      shift 2
+      exec "\$real_python" -c "\$mutated_driver" "\$@"
+    fi
+    exec "\$real_python" "\$@"
+    ;;
+esac
 case "\$mode" in
   helper-hang) while :; do sleep 30; done ;;
   helper-failure)
@@ -613,11 +701,6 @@ case "\$mode" in
     printf 'COMPLETE\tSCS1\t1\nCOMPLETE\tSCS1\t1\n'
     ;;
   helper-count-mismatch) printf 'COMPLETE\tSCS1\t2\n' ;;
-  valid-zero) printf 'COMPLETE\tSCS1\t1\n' ;;
-  valid-finding)
-    printf 'FINDING\tsrc/view.js\t2\tDURABLE_CREDENTIAL_STORAGE\tlocalStorage\tpersist\tmarketProvider:twelvedata:apiKey\ttwelvedata\tabsent\n'
-    printf 'COMPLETE\tSCS1\t1\n'
-    ;;
   *) exit 74 ;;
 esac
 EOF
@@ -645,6 +728,22 @@ assert_classifier_boundary_failure() {
   fi
   assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "$mode produces unresolved source findings"
   assert_output_not_contains "SECRET_MUST_NOT_LEAK" "$mode never replays executable output"
+}
+
+assert_classifier_helper_cache_absent() {
+  local label="$1"
+  if [[ -e "$CLASSIFIER_HELPER_CACHE_DIR" ]]; then
+    fail "$label (unexpected helper cache: $CLASSIFIER_HELPER_CACHE_DIR)"
+  else
+    pass "$label"
+  fi
+}
+
+real_finding_contract_holds() {
+  [[ "$RUN_STATUS" -eq 1 ]] || return 1
+  grep -Fq -- "classifier protocol complete: version=SCS1 scanned=1 findings=1" <<<"$RUN_OUTPUT" || return 1
+  grep -Fq -- "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata configMatch=absent" <<<"$RUN_OUTPUT" || return 1
+  return 0
 }
 
 assert_sensitive_invalid_config() {
@@ -715,26 +814,71 @@ assert_classifier_boundary_failure helper-missing-completion 0 CLASSIFIER_COMPLE
 assert_classifier_boundary_failure helper-duplicate-completion 0 CLASSIFIER_COMPLETION_DUPLICATE
 assert_classifier_boundary_failure helper-count-mismatch 0 CLASSIFIER_SCANNED_COUNT_MISMATCH
 
-valid_zero_home="$FIXTURE_ROOT/classifier-python-valid-zero"
-make_classifier_python_fixture "$valid_zero_home" valid-zero
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$valid_zero_home"
-if [[ "$RUN_STATUS" -eq 0 ]]; then
-  pass "Valid zero-finding completion is distinguishable from empty output"
-else
-  fail "Valid zero-finding completion is distinguishable from empty output (scanner exit $RUN_STATUS)"
-fi
-assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Zero-finding completion reports the honest scanned count"
+assert_classifier_helper_cache_absent "Selftest removes prior bytecode from the real helper directory"
 
-valid_finding_home="$FIXTURE_ROOT/classifier-python-valid-finding"
-make_classifier_python_fixture "$valid_finding_home" valid-finding
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$valid_finding_home"
-if [[ "$RUN_STATUS" -eq 1 ]]; then
-  pass "Finding before completion remains blocking"
+write_protocol_zero_source
+real_zero_home="$FIXTURE_ROOT/classifier-python-real-zero"
+make_classifier_python_fixture "$real_zero_home" real-forward
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_zero_home"
+if [[ "$RUN_STATUS" -eq 0 ]]; then
+  pass "Real zero-finding producer executes the production driver and helper"
 else
-  fail "Finding before completion remains blocking (scanner exit $RUN_STATUS)"
+  fail "Real zero-finding producer executes the production driver and helper (scanner exit $RUN_STATUS)"
 fi
-assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=1" "Finding stream completion reports one scanned file and one finding"
-assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist" "Valid finding tuple remains compatible"
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Real zero-finding completion reports the honest scanned count"
+assert_output_not_contains "VIOLATION [SENSITIVE_CLIENT_STORAGE]" "Source without a sensitive operation has no storage finding"
+assert_classifier_helper_cache_absent "Real zero-finding producer creates no helper-side bytecode cache"
+
+write_protocol_finding_source
+real_finding_home="$FIXTURE_ROOT/classifier-python-real-finding"
+make_classifier_python_fixture "$real_finding_home" real-forward
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_finding_home"
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "Real finding producer remains blocking after protocol completion"
+else
+  fail "Real finding producer remains blocking after protocol completion (scanner exit $RUN_STATUS)"
+fi
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=1" "Real finding completion reports one scanned file and one finding"
+assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata configMatch=absent" "Real classifier emits the exact durable-credential finding tuple"
+assert_classifier_helper_cache_absent "Real finding producer creates no helper-side bytecode cache"
+
+completion_mutant_home="$FIXTURE_ROOT/classifier-python-mutate-completion"
+make_classifier_python_fixture "$completion_mutant_home" mutate-completion
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$completion_mutant_home"
+if real_finding_contract_holds; then
+  fail "Deleting production completion emission must make the real-finding contract red"
+else
+  pass "Deleting production completion emission makes the real-finding contract red"
+fi
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "Completion-emission mutant fails through the production scanner path"
+else
+  fail "Completion-emission mutant fails through the production scanner path (scanner exit $RUN_STATUS)"
+fi
+if grep -Fq -- "diagnostic=CLASSIFIER_COMPLETION_MISSING" <<<"$RUN_OUTPUT"; then
+  pass "Completion-emission mutant is rejected by the closed protocol"
+else
+  completion_mutant_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
+  fail "Completion-emission mutant expected diagnostic=CLASSIFIER_COMPLETION_MISSING; observed: $completion_mutant_diagnostic"
+fi
+assert_classifier_helper_cache_absent "Completion-emission mutant leaves the helper directory clean"
+
+classification_mutant_home="$FIXTURE_ROOT/classifier-python-mutate-classification"
+make_classifier_python_fixture "$classification_mutant_home" mutate-classification
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$classification_mutant_home"
+if real_finding_contract_holds; then
+  fail "Corrupting production classification must make the real-finding contract red"
+else
+  pass "Corrupting production classification makes the real-finding contract red"
+fi
+if [[ "$RUN_STATUS" -eq 0 ]]; then
+  pass "Classification mutant demonstrates the exact finding assertion is required"
+else
+  fail "Classification mutant should remove the finding before the persistent assertion (scanner exit $RUN_STATUS)"
+fi
+assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Classification mutant removes the production finding"
+assert_output_not_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist" "Classification mutant cannot satisfy the real-finding tuple assertion"
+assert_classifier_helper_cache_absent "Classification mutant leaves the helper directory clean"
 
 if sensitive_storage_classifier_usable; then
   echo "Scenario: semantic Scan 2B distinguishes storage operations and exact session classification."
@@ -879,10 +1023,12 @@ else
 fi
 
 echo "Scenario: hostile probe/helper hangs are bounded and leave the next classifier run healthy."
+write_protocol_boundary_source
 assert_classifier_boundary_failure probe-hang 124 PROBE_TIMEOUT
 assert_classifier_boundary_failure helper-hang 124 CLASSIFIER_TIMEOUT
-post_timeout_home="$FIXTURE_ROOT/classifier-python-post-timeout-valid-zero"
-make_classifier_python_fixture "$post_timeout_home" valid-zero
+write_protocol_zero_source
+post_timeout_home="$FIXTURE_ROOT/classifier-python-post-timeout-real-zero"
+make_classifier_python_fixture "$post_timeout_home" real-forward
 run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$post_timeout_home"
 if [[ "$RUN_STATUS" -eq 0 ]]; then
   pass "Classifier remains reusable after both watchdog timeouts"
@@ -890,6 +1036,7 @@ else
   fail "Classifier remains reusable after both watchdog timeouts (scanner exit $RUN_STATUS)"
 fi
 assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Post-timeout classifier completes its protocol"
+assert_classifier_helper_cache_absent "Post-timeout real producer leaves the helper directory clean"
 
 if [[ "$skips" -gt 0 ]]; then
   echo "implementation-reality-scan selftest skipped $skips scenario group(s) for an absent prerequisite."
