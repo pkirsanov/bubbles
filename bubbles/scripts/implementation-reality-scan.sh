@@ -50,6 +50,21 @@ else
   fun_message() { :; }
 fi
 
+# Scan 2B's classifier is a python helper, so this scan needs an interpreter
+# that RUNS. `command -v python3` cannot answer that: it reports a file on PATH,
+# and PATH is not a stable interpreter identity. python-env.sh is the framework's
+# usability-aware resolver and owns the ordered contract ($BUBBLES_PYTHON, then
+# the managed venv, then PATH), so the resolution lives there rather than being
+# re-guessed here. Sourcing it defines functions and changes nothing else.
+# The helper imports only the stdlib, so the RUNNABLE resolver is the right one:
+# demanding PyYAML and jsonschema would refuse an interpreter that runs it.
+if [[ ! -f "$SCRIPT_DIR/python-env.sh" ]]; then
+  echo "implementation-reality-scan: framework file missing: $SCRIPT_DIR/python-env.sh" >&2
+  exit 2
+fi
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/python-env.sh"
+
 feature_dir="${1:-}"
 verbose="false"
 
@@ -693,12 +708,18 @@ for impl_file in "${impl_files[@]}"; do
 done
 
 if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
-  if ! command -v python3 >/dev/null 2>&1 || [[ ! -f "$SENSITIVE_STORAGE_HELPER" ]]; then
+  # Not `$(bubbles_python_resolve_runnable)`: a command substitution resolves in
+  # a subshell and the failure reason would never reach the diagnostic below.
+  sensitive_storage_python=""
+  if bubbles_python_resolve_runnable >/dev/null; then
+    sensitive_storage_python="$BUBBLES_PYTHON_RUNNABLE"
+  fi
+  if [[ -z "$sensitive_storage_python" ]] || [[ ! -f "$SENSITIVE_STORAGE_HELPER" ]]; then
     # Say WHICH precondition failed. Both degradation paths below emit the same
     # reason strings, which are contracted, so the distinction has to live in a
     # diagnostic line rather than in the violation itself.
-    if ! command -v python3 >/dev/null 2>&1; then
-      echo "   sensitive-storage classifier unavailable: python3 not on PATH"
+    if [[ -z "$sensitive_storage_python" ]]; then
+      echo "   sensitive-storage classifier unavailable: no runnable python3 — $BUBBLES_PYTHON_RUNNABLE_REASON"
     else
       echo "   sensitive-storage classifier unavailable: helper missing at $SENSITIVE_STORAGE_HELPER"
     fi
@@ -732,14 +753,14 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
     # check has carried for a long time: it depends on the caller's descriptors,
     # not on the code being scanned, which is why it passes standalone.
     sensitive_storage_stderr="$(mktemp)"
-    if sensitive_storage_output="$(python3 "$SENSITIVE_STORAGE_HELPER" --repo-root "$REPO_ROOT" --config "$PROJECT_CONFIG" "${sensitive_storage_files[@]}" </dev/null 2>"$sensitive_storage_stderr")"; then
+    if sensitive_storage_output="$("$sensitive_storage_python" "$SENSITIVE_STORAGE_HELPER" --repo-root "$REPO_ROOT" --config "$PROJECT_CONFIG" "${sensitive_storage_files[@]}" </dev/null 2>"$sensitive_storage_stderr")"; then
       sensitive_storage_status=0
     else
       sensitive_storage_status=$?
     fi
     if [[ "$sensitive_storage_status" -ne 0 ]]; then
       echo "   sensitive-storage classifier failed: exit=$sensitive_storage_status helper=$SENSITIVE_STORAGE_HELPER"
-      echo "   sensitive-storage classifier inputs: config=$PROJECT_CONFIG files=${#sensitive_storage_files[@]} python3=$(command -v python3 2>/dev/null || echo none)"
+      echo "   sensitive-storage classifier inputs: config=$PROJECT_CONFIG files=${#sensitive_storage_files[@]} python3=$sensitive_storage_python"
       while IFS= read -r sensitive_storage_stderr_line; do
         [[ -z "$sensitive_storage_stderr_line" ]] && continue
         echo "   sensitive-storage classifier stderr: $sensitive_storage_stderr_line"

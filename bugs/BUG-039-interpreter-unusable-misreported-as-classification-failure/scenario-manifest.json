@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-039-interpreter-unusable-misreported-as-classification-failure",
+  "scenarios": [
+    {
+      "id": "SCN-B039-001",
+      "title": "Unusable interpreter produces a named skip, not classification failures",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["environment-dependent", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "real-environment",
+        "assertionSurface": "process-exit-and-stdout",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+        "negativeControl": "Restore the presence-only command -v predicate. The semantic assertions run against a dead classifier and 11 failures return, naming the code under scan.",
+        "negativeControlMechanism": "observed-at-head"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The managed selftest is a shell harness with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B039-002",
+      "title": "A usable interpreter under the same sanitized PATH runs everything",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["environment-dependent"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "real-environment",
+        "assertionSurface": "process-exit-and-stdout",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+        "negativeControl": "Widen the probe to skip whenever the sanitized PATH is in use. The scenario group is skipped even with a working interpreter and the coverage silently disappears.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The managed selftest is a shell harness with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B039-003",
+      "title": "The semantic assertions still catch a real classifier regression",
+      "requiredTestType": "adversarial",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["classifier-contract", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/guards/sensitive-client-storage-scan.py"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit-and-stdout",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["bubbles/scripts/guards/sensitive-client-storage-scan.py"],
+        "negativeControl": "Mutate the classification ladder from storage != sessionStorage to storage != localStorage. The selftest exits 1 with 3 semantic failures under both a normal PATH and the sanitized PATH with a usable interpreter.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The classifier is a static analysis guard with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B039-004",
+      "title": "A skipped coverage claim is never counted as a pass",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["shared-consumer", "reporting-integrity"],
+      "riskTier": "high",
+      "linkedTests": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
+      "implementationRefs": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "real-environment",
+        "assertionSurface": "process-exit-and-stdout",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
+        "negativeControl": "Route the sentinel branch to pass() instead of skip(). The summary reports 58 passed 0 skipped and the unmet coverage becomes indistinguishable from satisfied coverage.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The regression test is a shell harness with no rendered product surface."
+      }
+    }
+  ]
+}

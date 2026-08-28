@@ -12,8 +12,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SCANNER="$REPO_ROOT/bubbles/scripts/implementation-reality-scan.sh"
 SELFTEST="$REPO_ROOT/bubbles/scripts/implementation-reality-scan-selftest.sh"
 GUARD_LIB="$REPO_ROOT/bubbles/scripts/guard-lib.sh"
+PYTHON_ENV="$REPO_ROOT/bubbles/scripts/python-env.sh"
 
-for required_file in "$SCANNER" "$SELFTEST" "$GUARD_LIB"; do
+for required_file in "$SCANNER" "$SELFTEST" "$GUARD_LIB" "$PYTHON_ENV"; do
   if [[ ! -f "$required_file" ]]; then
     printf 'test_24_g028_sensitive_client_storage: required canonical surface missing: %s\n' "$required_file" >&2
     exit 2
@@ -22,6 +23,16 @@ done
 
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
+
+# The managed-interpreter scenario below decides its own reachability with the
+# SAME resolver the scan uses, so it can never skip coverage the scan would have
+# run. python-env.sh is listed as a required surface above rather than probed
+# for here: an unsourced resolver made every call to it a `command not found`,
+# the scenario skipped under EVERY environment, and the skip line then reported
+# the absent function as a statement about where the venv lives. Refusing loudly
+# on a missing module is the only outcome that cannot be misread as that again.
+# shellcheck source=/dev/null
+source "$PYTHON_ENV"
 
 WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug013-XXXXXXXX")"
 FIXTURE_REPO="$WORKSPACE/repo"
@@ -33,6 +44,7 @@ RUN_OUTPUT=""
 RUN_STATUS=0
 PASS_COUNT=0
 FAIL_COUNT=0
+SKIP_COUNT=0
 
 cleanup() {
   rm -rf "$WORKSPACE"
@@ -47,6 +59,13 @@ pass() {
 fail() {
   FAIL_COUNT=$((FAIL_COUNT + 1))
   printf 'FAIL: %s\n' "$1" >&2
+}
+
+# A skip is not a pass. It is counted and reported separately so an unmet
+# coverage claim can never be scraped out of this transcript as a satisfied one.
+skip() {
+  SKIP_COUNT=$((SKIP_COUNT + 1))
+  printf 'SKIP: %s\n' "$1"
 }
 
 assert_status() {
@@ -562,18 +581,91 @@ assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "parser-unavailable co
 
 printf '%s\n' '=== BUG-013 managed selftest sanitized macOS path ==='
 SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
-if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1; then
+if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
 else
   RUN_STATUS=$?
 fi
 RUN_OUTPUT="$(cat "$SELFTEST_OUTPUT_FILE")"
 printf '%s\n' "$RUN_OUTPUT"
-assert_status 0 "managed selftest runs with the system-only PATH"
+
+# BUG-039. The managed selftest's Scan 2B scenarios need a python3 that can
+# actually execute, and under the sanitized PATH that is not guaranteed: on
+# macOS /usr/bin/python3 dispatches through the active developer directory, so
+# an unaccepted Xcode licence makes it resolve and then exit 69. The selftest
+# now says so explicitly instead of reporting the missing prerequisite as
+# classification failures. Branch on its sentinel: coverage that did not run is
+# recorded as a SKIP, never as a PASS. Exit 0 is still required either way,
+# because a selftest that skips must not also be failing.
+if grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT"; then
+  skip "managed selftest Scan 2B coverage (classifier interpreter unusable; selftest reported the cause and remediation)"
+  assert_status 0 "managed selftest exits cleanly when it skips an absent prerequisite"
+else
+  assert_status 0 "managed selftest runs with the system-only PATH"
+fi
 assert_contains "PORTABLE_WATCHDOG_FALLBACK=124" "managed selftest preserves watchdog exit 124"
 
+printf '%s\n' '=== BUG-040 managed selftest sanitized PATH with the managed interpreter ==='
+# The scenario above sanitizes the WHOLE environment, so on a machine whose only
+# usable interpreter is the managed venv there is no locator left to name it and
+# the run degrades to the BUG-039 skip. That skip is correct, and it stays: the
+# scenario above is what keeps it exercised.
+#
+# It is not the best available answer, though. The managed venv owns its own
+# interpreter at an absolute path, so it resolves WITHOUT consulting PATH. This
+# scenario re-introduces exactly one fact -- where that venv lives -- and nothing
+# else, then demands FULL Scan 2B coverage under the same system-only PATH.
+# BUBBLES_PYTHON_HOME is chosen over HOME deliberately: it hands back the venv
+# location and no other ambient value.
+#
+# The property under test is unchanged. PATH is still system-only, and the
+# assertions below only pass if the classifier really classified.
+#
+# Three different things can make this scenario unreachable, and collapsing them
+# into one sentence is what BUG-039 is about. "No managed venv" asserted while a
+# working venv sits on disk is a false report, so each condition names itself:
+# an absent LOCATOR is a statement about the environment, an absent INTERPRETER
+# is a statement about provisioning, and an interpreter that is present but does
+# not execute is a statement about the interpreter. The gate is unchanged --
+# bubbles_python_runs already returns 1 for a non-executable path, so splitting
+# the -x case out only splits the REASON, never the decision.
+MANAGED_PYTHON_HOME=""
+MANAGED_PYTHON=""
+MANAGED_PYTHON_SKIP_REASON=""
+if ! MANAGED_PYTHON_HOME="$(bubbles_python_home)"; then
+  MANAGED_PYTHON_SKIP_REASON="no locator names the managed venv (none of $BUBBLES_PYTHON_LOCATOR_VARS is set), so its path cannot be resolved"
+else
+  MANAGED_PYTHON="$MANAGED_PYTHON_HOME/bin/python3"
+  if [[ ! -x "$MANAGED_PYTHON" ]]; then
+    MANAGED_PYTHON_SKIP_REASON="no managed venv interpreter at $MANAGED_PYTHON"
+  elif ! bubbles_python_runs "$MANAGED_PYTHON"; then
+    MANAGED_PYTHON_SKIP_REASON="the managed venv interpreter at $MANAGED_PYTHON is present but does not execute"
+  fi
+fi
+if [[ -n "$MANAGED_PYTHON_SKIP_REASON" ]]; then
+  skip "managed selftest full Scan 2B coverage under a sanitized PATH ($MANAGED_PYTHON_SKIP_REASON; provision with 'bash bubbles/scripts/python-env.sh --provision')"
+else
+  MANAGED_OUTPUT_FILE="$WORKSPACE/selftest-managed-output.txt"
+  if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin BUBBLES_PYTHON_HOME="$MANAGED_PYTHON_HOME" \
+    /bin/bash "$SELFTEST" >"$MANAGED_OUTPUT_FILE" 2>&1 </dev/null; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$MANAGED_OUTPUT_FILE")"
+  printf '%s\n' "$RUN_OUTPUT"
+  assert_status 0 "managed selftest runs with the system-only PATH and the managed interpreter"
+  assert_not_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "managed interpreter removes the classifier-unavailable degradation"
+  assert_not_contains "SKIP:" "managed interpreter leaves no skipped scenario group"
+  # Teeth: these three pass only when the classifier actually distinguished the
+  # cases. A scan that fell back to CLASSIFICATION_UNRESOLVED cannot produce them.
+  assert_contains "PASS: Exact configured session credential is allowed" "managed interpreter runs the exact-approval semantic assertion"
+  assert_contains "PASS: Unknown session provider is blocked distinctly" "managed interpreter runs the unknown-provider semantic assertion"
+  assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "managed interpreter runs the config-integrity assertion"
+fi
+
 printf '%s\n' '=== BUG-013 regression summary ==='
-printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed\n' "$PASS_COUNT" "$FAIL_COUNT"
+printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1
 fi

@@ -1,0 +1,94 @@
+{
+  "version": 3,
+  "bugId": "BUG-039",
+  "featureDir": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure",
+  "featureName": "Unusable Interpreter Misreported As Classification Failures",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full packet required; micro-fix-admission.sh escalated automatically on no-new-behavior and contract-preserving",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-013"],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure"],
+    "allowedPaths": [
+      "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/**",
+      "bubbles/scripts/implementation-reality-scan-selftest.sh",
+      "bubbles/scripts/implementation-reality-scan.sh",
+      "bubbles/scripts/python-env.sh",
+      "bubbles/scripts/python-env-selftest.sh",
+      "tests/regression/test_24_g028_sensitive_client_storage.sh"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "validate",
+    "currentScope": 1,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Run framework-validate and release-check on the combined source revision, which the operator excluded from this session and assigned to the parent runner, then independently certify the BUG-039 scenario evidence. Human acceptance remains separate. The finding previously routed here is now CLOSED in-boundary: tests/regression/test_24_g028_sensitive_client_storage.sh now sources bubbles/scripts/python-env.sh, its BUG-040 block executes, and its skip names one of three distinct conditions. Re-verify that repair as part of certification.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Interpreter Usability Probe, Named Skip, And Honest Cascade",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {"active": false, "lockedScenarioIds": []}
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "required", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "All four scenarios pass adversarial regression, full framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
+  },
+  "notes": "Implementation and local evidence are complete with real exit codes; report.md now carries the Test Evidence section and artifact-lint passes (exit 0). Second widening declared and recorded in design.md: bubbles/scripts/python-env-selftest.sh is admitted because the first widening added new API to python-env.sh (bubbles_python_runs, bubbles_python_resolve_runnable, BUBBLES_PYTHON_RUNNABLE, BUBBLES_PYTHON_RUNNABLE_REASON) and changed the bubbles_python_home / bubbles_python_venv_python contract. Coverage added as Cases 12/12b/12c, A6/A6b, A7 x4, and Cases 13/13b: 24 -> 35 assertions, no existing case altered. Non-vacuity proved by restoring the historical unguarded ${XDG_CACHE_HOME:-$HOME/.cache}; the mutant publishes /bin/python3 with rc=0 for a path that does not exist, five assertions go red (selftest exit 1, 30 passed 5 failed), and after revert python-env.sh hashes 23a345fbdfec46d11508bcb69777684352e080b46ddbe470d40e681dacd23300 with the selftest green at 35/0. ROUTED FINDING NOW CLOSED IN-BOUNDARY (superseding the earlier 'reported, not repaired' disposition; the historical record is preserved in report.md rather than retracted): the parent runner confirmed the finding independently and returned it for repair, and tests/regression/test_24_g028_sensitive_client_storage.sh was already in this packet's ratified workBoundary.allowedPaths so no widening was needed. Two hunks: python-env.sh added to the required-surface list and sourced after guard-lib, and the skip reason split into three self-naming conditions (no locator / venv interpreter absent / present but does not execute). The gate decision is unchanged because bubbles_python_runs already returns 1 for a non-executable path. Sourcing verified safe before use: source under set -uo pipefail exits 0 emitting zero bytes, zero function-name collisions against guard-lib's 16 functions and test_24's own 15, zero global collisions (BUBBLES_PYTHON_* vs test_24's names), and the module sets no shell options. The framework-validate.sh 'EXECUTED, never sourced' caveat was read and does not apply: it is scoped to repo-drift-report-selftest's stub tree, and implementation-reality-scan-selftest.sh:19 already sources the module the same way. Measured outcome: working-tree baseline 57 passed / 0 failed / 2 skipped with 'bubbles_python_home: command not found' at line 614, and after repair 63 passed / 0 failed / 1 skipped at exit 0 -- exactly +6 assertions and -1 unearned skip. All six previously-dead assertions PASS on first execution; none was weakened, deleted, or re-disabled. Non-vacuity by environment-only mutation (no framework file edited, because a v5.3-selftest.sh run was in flight): a probe-only interpreter that forwards -c to a real python but refuses to run a program opens the gate and takes the suite to exit 1 with 29 passed / 34 failed, 3 of the 6 assertions red including 2 of the 3 teeth. A first mutation attempt that hid yaml/jsonschema did NOT bite and is recorded as a design error of the experiment rather than suppressed: implementation-reality-scan.sh:714 resolves the classifier through the stdlib-only bubbles_python_resolve_runnable, so PyYAML is irrelevant to it. Three further mutations confirm each skip reason names its own condition and none claims 'no managed venv' while a venv exists. Verification exit codes this session: test_24 0 (63/0/1), python-env-selftest 0 (35 passed 0 failed, unchanged), implementation-reality-scan-selftest 0, bash -n 0, shellcheck -x 0, artifact-lint 0; shfmt exits 1 with 14 hunks that the HEAD copy reproduces identically and that flag none of the added lines, so the formatting findings are pre-existing. framework-validate and release-check were excluded by operator instruction and belong to the parent runner, so no framework-wide certification is claimed and status stays in_progress. BUGS.md deliberately untouched: it is modified by in-flight work this session must not disturb."
+}

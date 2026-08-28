@@ -53,16 +53,36 @@ BUBBLES_PYTHON_MODULES=(yaml jsonschema)
 # bubbles_python_home — durable root of the managed virtualenv.
 # NOT under /tmp: a temp-dir venv is erased on reboot, which is exactly the
 # shortcut this module replaces.
+#
+# Every locator is expanded GUARDED, and "there is no locator" is returned as a
+# condition rather than printed as a path. An unguarded $HOME inside a `:-`
+# default still aborts under `set -u`; because resolution reads this through a
+# command substitution, that abort arrived at the caller as an EMPTY candidate
+# and was reported as "no interpreter satisfies the required modules" — a
+# sentence about interpreters, when the actual subject was an absent locator.
+# Naming the two apart is the whole point of returning 1 here.
+BUBBLES_PYTHON_LOCATOR_VARS='BUBBLES_PYTHON_HOME, XDG_CACHE_HOME, or HOME'
+
 bubbles_python_home() {
   if [[ -n "${BUBBLES_PYTHON_HOME:-}" ]]; then
     printf '%s\n' "${BUBBLES_PYTHON_HOME%/}"
     return 0
   fi
-  printf '%s\n' "${XDG_CACHE_HOME:-$HOME/.cache}/bubbles/python"
+  if [[ -n "${XDG_CACHE_HOME:-}" ]]; then
+    printf '%s\n' "${XDG_CACHE_HOME%/}/bubbles/python"
+    return 0
+  fi
+  if [[ -n "${HOME:-}" ]]; then
+    printf '%s\n' "${HOME%/}/.cache/bubbles/python"
+    return 0
+  fi
+  return 1
 }
 
 bubbles_python_venv_python() {
-  printf '%s\n' "$(bubbles_python_home)/bin/python3"
+  local home
+  home="$(bubbles_python_home)" || return 1
+  printf '%s\n' "$home/bin/python3"
 }
 
 # bubbles_python_satisfies <interpreter> — true when it imports every required module.
@@ -83,8 +103,7 @@ bubbles_python_resolve() {
     printf '%s\n' "$BUBBLES_PYTHON"
     return 0
   fi
-  candidate="$(bubbles_python_venv_python)"
-  if bubbles_python_satisfies "$candidate"; then
+  if candidate="$(bubbles_python_venv_python)" && bubbles_python_satisfies "$candidate"; then
     printf '%s\n' "$candidate"
     return 0
   fi
@@ -96,13 +115,101 @@ bubbles_python_resolve() {
   return 1
 }
 
+# bubbles_python_runs <interpreter> — true only when the interpreter EXECUTES.
+#
+# `command -v python3` answers "is there a file on PATH", which is a different
+# question. On macOS /usr/bin/python3 is a shim that dispatches through the
+# active developer directory: with an unaccepted Xcode licence it resolves, is
+# executable, and then exits 69 without running a line. A payload is demanded
+# back rather than an exit code alone, so a wrapper that exits 0 while printing
+# a warning cannot pass as healthy either.
+BUBBLES_PYTHON_RUN_SENTINEL='bubbles-python-runs'
+
+bubbles_python_runs() {
+  local py="${1:-}" probe=""
+  [[ -n "$py" && -x "$py" ]] || return 1
+  probe="$("$py" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')" </dev/null 2>/dev/null)" || return 1
+  [[ "$probe" == "$BUBBLES_PYTHON_RUN_SENTINEL" ]]
+}
+
+# bubbles_python_resolve_runnable — the SAME ordered, non-ambient contract as
+# bubbles_python_resolve, for consumers whose helper needs only a working
+# stdlib interpreter.
+#
+# Why a second resolver rather than reusing the first: the required-module set
+# (yaml, jsonschema) belongs to the guards that parse YAML, not to every python
+# consumer. A helper that imports nothing outside the stdlib would be refused an
+# interpreter that runs it perfectly well, which trades one wrong answer for
+# another. What every consumer DOES share is the part `command -v python3` gets
+# wrong: presence is not usability, and PATH is not a stable identity.
+#
+# On failure BUBBLES_PYTHON_RUNNABLE_REASON names each candidate and how it
+# declined, so the caller can report the absent prerequisite instead of
+# inventing a finding about the code it was asked to inspect. Both the reason
+# and the resolved path are published as GLOBALS as well as printed: a caller
+# that reads the path with `$(...)` runs this in a subshell, where an assignment
+# to the reason is discarded and the diagnostic arrives empty — which is the
+# same lost-cause failure this function exists to prevent. Read the globals
+# after calling it directly:
+#
+#   if bubbles_python_resolve_runnable >/dev/null; then
+#     py="$BUBBLES_PYTHON_RUNNABLE"
+#   else
+#     echo "unavailable: $BUBBLES_PYTHON_RUNNABLE_REASON"
+#   fi
+BUBBLES_PYTHON_RUNNABLE=''
+BUBBLES_PYTHON_RUNNABLE_REASON=''
+
+bubbles_python_resolve_runnable() {
+  local candidate declined=''
+  BUBBLES_PYTHON_RUNNABLE=''
+  BUBBLES_PYTHON_RUNNABLE_REASON=''
+
+  if [[ -n "${BUBBLES_PYTHON:-}" ]]; then
+    if bubbles_python_runs "$BUBBLES_PYTHON"; then
+      BUBBLES_PYTHON_RUNNABLE="$BUBBLES_PYTHON"
+      printf '%s\n' "$BUBBLES_PYTHON"
+      return 0
+    fi
+    declined="${declined}BUBBLES_PYTHON ($BUBBLES_PYTHON) does not execute; "
+  fi
+
+  if candidate="$(bubbles_python_venv_python)"; then
+    if bubbles_python_runs "$candidate"; then
+      BUBBLES_PYTHON_RUNNABLE="$candidate"
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    declined="${declined}the managed venv ($candidate) is absent or does not execute; "
+  else
+    declined="${declined}the managed venv has no locator ($BUBBLES_PYTHON_LOCATOR_VARS are all unset); "
+  fi
+
+  candidate="$(command -v python3 2>/dev/null || true)"
+  if [[ -n "$candidate" ]]; then
+    if bubbles_python_runs "$candidate"; then
+      # shellcheck disable=SC2034  # cross-file output; read by implementation-reality-scan.sh
+      BUBBLES_PYTHON_RUNNABLE="$candidate"
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    declined="${declined}python3 on PATH ($candidate) resolves but exits without running; "
+  else
+    declined="${declined}no python3 on PATH; "
+  fi
+
+  # shellcheck disable=SC2034  # cross-file output; read by implementation-reality-scan.sh
+  BUBBLES_PYTHON_RUNNABLE_REASON="${declined%; }"
+  return 1
+}
+
 # bubbles_python_activate — make a bare `python3` call resolve to a satisfying
 # interpreter, so the ~77 scripts that invoke `python3` directly need no edit.
 # Only prepends when PATH's python3 does NOT already satisfy, so an operator who
 # provisioned deps their own way keeps their interpreter. Idempotent.
 bubbles_python_activate() {
   local venv_python bin_dir path_python
-  venv_python="$(bubbles_python_venv_python)"
+  venv_python="$(bubbles_python_venv_python)" || return 1
   bubbles_python_satisfies "$venv_python" || return 1
   path_python="$(command -v python3 2>/dev/null || true)"
   bubbles_python_satisfies "$path_python" && return 0
@@ -142,7 +249,11 @@ bubbles_python_requirements_default() {
 # bubbles_python_provision <requirements-file> — idempotent create-or-repair.
 bubbles_python_provision() {
   local requirements="${1:-}" venv_dir venv_python base
-  venv_dir="$(bubbles_python_home)"
+  if ! venv_dir="$(bubbles_python_home)"; then
+    echo "python-env: cannot locate the managed environment: $BUBBLES_PYTHON_LOCATOR_VARS are all unset" >&2
+    echo "  set one of them, then re-run --provision." >&2
+    return 2
+  fi
   venv_python="$venv_dir/bin/python3"
 
   if [[ ! -f "$requirements" ]]; then
@@ -206,9 +317,13 @@ bubbles_python_provision() {
 }
 
 bubbles_python_report() {
-  local resolved module status_line satisfied=0
+  local resolved module status_line satisfied=0 home
   echo "Bubbles managed Python posture"
-  echo "  managed venv : $(bubbles_python_home)"
+  if home="$(bubbles_python_home)"; then
+    echo "  managed venv : $home"
+  else
+    echo "  managed venv : NONE — no locator ($BUBBLES_PYTHON_LOCATOR_VARS are all unset)"
+  fi
   if resolved="$(bubbles_python_resolve)"; then
     satisfied=1
     echo "  resolved     : $resolved"
@@ -242,7 +357,9 @@ Usage: bash bubbles/scripts/python-env.sh [--check | --provision | --path]
   --help        This text.
 
 Resolution order: $BUBBLES_PYTHON, then the managed venv, then python3 on PATH.
-Override the venv location with BUBBLES_PYTHON_HOME.
+The managed venv is located from BUBBLES_PYTHON_HOME, else XDG_CACHE_HOME, else
+HOME. With none of those set the venv cannot be named at all, which is reported
+as an absent locator, not as an interpreter that failed its modules.
 There is no --skip/--force: an unsatisfied posture is reported, never bypassed.
 EOF
   }
@@ -264,7 +381,11 @@ EOF
         exit 0
       fi
       echo >&2
-      echo "Remediate with: bash bubbles/scripts/python-env.sh --provision" >&2
+      if bubbles_python_home >/dev/null; then
+        echo "Remediate with: bash bubbles/scripts/python-env.sh --provision" >&2
+      else
+        echo "Remediate by setting one of $BUBBLES_PYTHON_LOCATOR_VARS, then --provision." >&2
+      fi
       exit 1
       ;;
     --provision)
@@ -282,7 +403,15 @@ EOF
         printf '%s\n' "$resolved_path"
         exit 0
       fi
-      echo "python-env: no interpreter satisfies the required modules" >&2
+      # Two failures reach here and they call for different operator actions.
+      # Reporting both as "no interpreter satisfies" sent the reader to inspect
+      # interpreters when nothing had been able to name one.
+      if bubbles_python_home >/dev/null; then
+        echo "python-env: no interpreter satisfies the required modules" >&2
+      else
+        echo "python-env: cannot locate the managed environment: $BUBBLES_PYTHON_LOCATOR_VARS are all unset" >&2
+        echo "  no interpreter was rejected for missing modules; none could be named." >&2
+      fi
       exit 1
       ;;
     --help | -h)

@@ -285,6 +285,162 @@ if [[ -f "$REQ" ]]; then
   fi
 fi
 
+# ---------------------------------------------------------------------------
+# BUG-039 additions (Cases 12-15). python-env.sh is the module the framework
+# designates to answer "which interpreter", and this packet added new API to it:
+# bubbles_python_runs, bubbles_python_resolve_runnable, and a locator contract
+# that can now DECLINE instead of always printing.
+#
+# These exist because of what the file did NOT cover. Every case above passed
+# throughout, while the module published /bin/python3 — a path that does not
+# exist — as a resolved interpreter whenever no locator was set:
+# "${XDG_CACHE_HOME:-$HOME/.cache}" aborted inside a command substitution under
+# set -u, the empty result was concatenated with "/bin/python3", and the caller
+# then reported "no interpreter satisfies the required modules" — a sentence
+# about interpreters, when nothing had been able to name one.
+#
+# ADVERSARIAL A6 is that exact defect: it goes red against the historical
+# unguarded expansion and green against the guarded one.
+# ---------------------------------------------------------------------------
+
+# no_locator <command...> — run with every locator variable REMOVED (not
+# emptied): this is the state in which the module used to fabricate a path.
+no_locator() {
+  env -u BUBBLES_PYTHON_HOME -u XDG_CACHE_HOME -u HOME "$@"
+}
+
+# Pinned here as a LITERAL rather than read back from python-env.sh. Sourcing
+# the module for its own expected value would make the assertion agree with
+# whatever the module currently says, which is the opposite of pinning it.
+LOCATOR_VARS_EXPECTED='BUBBLES_PYTHON_HOME, XDG_CACHE_HOME, or HOME'
+
+# make_probe_python <path> <mode> — a shim for the EXECUTION probe, which is a
+# different question from make_fake_python's module imports. Modes mirror the
+# ways a real interpreter can be present and still unusable.
+make_probe_python() {
+  local path="$1" mode="$2"
+  mkdir -p "$(dirname "$path")"
+  {
+    echo '#!/usr/bin/env bash'
+    echo '# probe shim for python-env-selftest'
+    case "$mode" in
+      healthy) echo "printf %s 'bubbles-python-runs'" ;;
+      # exits 0 and emits nothing: the wrapper an exit-code-only check accepts.
+      silent) echo 'exit 0' ;;
+      # emits the payload but on a polluted stdout.
+      noisy)
+        echo "echo 'warning: deprecated interpreter'"
+        echo "printf %s 'bubbles-python-runs'"
+        ;;
+      # the macOS Xcode-licence shape: resolves, is executable, exits 69.
+      dead)
+        echo "printf %s 'bubbles-python-runs'"
+        echo 'exit 69'
+        ;;
+    esac
+  } >"$path"
+  chmod +x "$path"
+}
+
+# ── Case 12: the locator order is ordered, not incidental ─────────────────
+c12="$TMP_ROOT/c12"
+mkdir -p "$c12/explicit" "$c12/xdg" "$c12/venvroot"
+
+c12a="$(env BUBBLES_PYTHON_HOME="$c12/explicit" XDG_CACHE_HOME="$c12/xdg" HOME="$c12/venvroot" \
+  bash -c '. "$1"; bubbles_python_home' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$c12a" == "$c12/explicit" ]]; then
+  ok "Case 12: BUBBLES_PYTHON_HOME outranks XDG_CACHE_HOME and HOME"
+else
+  bad "Case 12: locator printed '$c12a', expected '$c12/explicit'"
+fi
+
+c12b="$(env -u BUBBLES_PYTHON_HOME XDG_CACHE_HOME="$c12/xdg/" HOME="$c12/venvroot" \
+  bash -c '. "$1"; bubbles_python_home' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$c12b" == "$c12/xdg/bubbles/python" ]]; then
+  ok "Case 12b: XDG_CACHE_HOME outranks HOME, with the trailing slash normalized"
+else
+  bad "Case 12b: locator printed '$c12b', expected '$c12/xdg/bubbles/python'"
+fi
+
+c12c="$(env -u BUBBLES_PYTHON_HOME -u XDG_CACHE_HOME HOME="$c12/venvroot" \
+  bash -c '. "$1"; bubbles_python_home' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$c12c" == "$c12/venvroot/.cache/bubbles/python" ]]; then
+  ok "Case 12c: HOME is the last locator, under .cache"
+else
+  bad "Case 12c: locator printed '$c12c', expected '$c12/venvroot/.cache/bubbles/python'"
+fi
+
+# ── ADVERSARIAL A6: an absent locator is a CONDITION, never a fabricated path ──
+# This is the original defect. Under the historical unguarded expansion
+# bubbles_python_home returned 0 with empty output and bubbles_python_venv_python
+# then published "/bin/python3". Both halves are asserted: a resolver that
+# reports success while printing nothing is just as wrong as one that prints a
+# path it invented.
+a6_home="$(no_locator bash -c '. "$1"; out="$(bubbles_python_home)" || { printf "DECLINED|%s" "$out"; exit 0; }; printf "RESOLVED|%s" "$out"' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$a6_home" == "DECLINED|" ]]; then
+  ok "A6: bubbles_python_home declines when no locator is set"
+else
+  bad "A6: bubbles_python_home returned '$a6_home', expected 'DECLINED|' (a fabricated or empty-but-successful home is the BUG-039 defect)"
+fi
+
+a6_venv="$(no_locator bash -c '. "$1"; out="$(bubbles_python_venv_python)" || { printf "DECLINED|%s" "$out"; exit 0; }; printf "RESOLVED|%s" "$out"' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$a6_venv" == "DECLINED|" ]]; then
+  ok "A6b: bubbles_python_venv_python declines instead of publishing a path"
+else
+  bad "A6b: bubbles_python_venv_python returned '$a6_venv', expected 'DECLINED|' — publishing a nonexistent interpreter path (historically '/bin/python3') is the BUG-039 defect"
+fi
+
+# ── ADVERSARIAL A7: usability is proven by PAYLOAD, not by exit code ──────
+a7="$TMP_ROOT/a7"
+make_probe_python "$a7/healthy/python3" healthy
+make_probe_python "$a7/silent/python3" silent
+make_probe_python "$a7/noisy/python3" noisy
+make_probe_python "$a7/dead/python3" dead
+
+# probe_runs <interpreter> — echo yes/no for bubbles_python_runs.
+probe_runs() {
+  no_locator bash -c '. "$1"; if bubbles_python_runs "$2"; then echo yes; else echo no; fi' \
+    _ "$ENV_SH" "$1" 2>/dev/null || echo no
+}
+
+assert_runs() {
+  local mode="$1" want="$2" why="$3" got
+  got="$(probe_runs "$a7/$mode/python3")"
+  if [[ "$got" == "$want" ]]; then
+    ok "A7 ($mode): $why"
+  else
+    bad "A7 ($mode): bubbles_python_runs said '$got', expected '$want' — $why"
+  fi
+}
+
+assert_runs healthy yes "an interpreter that executes and returns the payload is usable"
+assert_runs silent no "an interpreter that exits 0 while producing NOTHING is not usable"
+assert_runs noisy no "an interpreter that pollutes stdout cannot pass the payload check"
+assert_runs dead no "an interpreter that emits the payload and then exits 69 is not usable"
+
+# ── Case 13: the absent-locator reason names the cause, not the interpreters ──
+# The failure text is the deliverable here. "no interpreter satisfies" sends a
+# reader to inspect interpreters; the honest text says none could be named.
+c13_empty="$TMP_ROOT/c13/emptypath"
+mkdir -p "$c13_empty"
+c13_reason="$(env -i PATH="$c13_empty" /bin/bash -c \
+  '. "$1"; if bubbles_python_resolve_runnable >/dev/null 2>&1; then printf "UNEXPECTED_RESOLVE"; else printf "%s" "$BUBBLES_PYTHON_RUNNABLE_REASON"; fi' \
+  _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$c13_reason" == *"the managed venv has no locator"* &&
+  "$c13_reason" == *"$LOCATOR_VARS_EXPECTED"* ]]; then
+  ok "Case 13: absent-locator reason names the locator variables"
+else
+  bad "Case 13: reason was '$c13_reason', expected it to name 'the managed venv has no locator' and '$LOCATOR_VARS_EXPECTED'"
+fi
+# Teeth: the reason must not describe a venv it never located. Under the
+# historical defect this branch reported "the managed venv (/bin/python3) is
+# absent or does not execute", which is a claim about a path nothing chose.
+if [[ "$c13_reason" == *"the managed venv ("* ]]; then
+  bad "Case 13b: reason names a concrete venv path while no locator is set: '$c13_reason'"
+else
+  ok "Case 13b: reason claims no venv path when none could be named"
+fi
+
 echo
 echo "python-env selftest: $pass passed, $fail failed"
 [[ "$fail" -eq 0 ]]
