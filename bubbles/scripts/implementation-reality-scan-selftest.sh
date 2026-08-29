@@ -11,6 +11,15 @@ CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
 SELFTEST_ACTIVE_CHILD=''
+SELFTEST_TARGET="${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET:-}"
+
+case "$SELFTEST_TARGET" in
+  '' | authority-bypass) ;;
+  *)
+    printf 'implementation-reality-scan selftest target is invalid: %s\n' "$SELFTEST_TARGET" >&2
+    exit 2
+    ;;
+esac
 
 selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
@@ -988,7 +997,7 @@ assert_output_contains "trust=root-protected-native-python-v1" "SCN-B039-005 sca
 assert_output_not_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "SCN-B039-005 forged clean SCS1 cannot satisfy Scan 2B"
 
 echo "Scenario: SCN-B039-005 copied authentication bypass turns the forged-runtime assertions red."
-authority_live_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+authority_live_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/fun-mode.sh" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
 authority_root="$FIXTURE_ROOT/authority-bypass-mutation"
 authority_scripts="$authority_root/bubbles/scripts"
 authority_env="$authority_scripts/python-env.sh"
@@ -997,26 +1006,63 @@ authority_fake_bin="$authority_root/caller-bin"
 authority_fake="$authority_fake_bin/python3"
 authority_marker="$authority_root/caller-runtime-executed.marker"
 authority_untrusted_developer="$authority_root/untrusted-developer"
+authority_trace="$authority_root/authentication-bypass.trace"
 authority_output="$TMPDIR/authority-bypass-mutation.output"
+authority_mutation_status=0
+authority_mutation_preconditions=0
+authority_source_hash=""
+authority_mutant_hash=""
+authority_auth_marker_count=0
+authority_candidate_marker_count=0
 mkdir -p "$authority_scripts/guards" "$authority_fake_bin" "$authority_untrusted_developer"
 /bin/cp "$SCRIPT_DIR/python-env.sh" "$authority_env"
 /bin/cp "$GUARD_LIB" "$authority_scripts/guard-lib.sh"
 /bin/cp "$SCAN_SCRIPT" "$authority_scanner"
+/bin/cp "$SCRIPT_DIR/fun-mode.sh" "$authority_scripts/fun-mode.sh"
 /bin/cp "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py" "$authority_scripts/guards/sensitive-client-storage-scan.py"
-/usr/bin/awk '
+authority_source_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" | /usr/bin/awk '{print $1}')"
+if /usr/bin/awk '
   /^_bubbles_python_security_authenticate_path\(\) \{/ {
     print
+    print "  # B039-NEG-AUTHENTICATION-BYPASS"
+    print "  printf \"%s|%s|%s|%s\\n\" B039_AUTH_BYPASS \"${1:-}\" \"${2:-}\" \"${3:-}\" >>\"${BUBBLES_AUTHORITY_BYPASS_TRACE:?trace required}\""
     print "  BUBBLES_PYTHON_SECURITY_PATH_RESOLVED=\"$1\""
     print "  BUBBLES_PYTHON_SECURITY_PATH_REJECTION=NONE"
     print "  BUBBLES_PYTHON_SECURITY_PATH_DIAGNOSTIC=OK"
     print "  return 0"
     print "}"
+    authentication_bypass=authentication_bypass + 1
     skipping=1
     next
   }
   skipping && /^}/ { skipping=0; next }
+  !skipping && index($0, "for candidate in \"${candidates[@]}\"; do") {
+    print "  # B039-NEG-FORCE-CALLER-CANDIDATE"
+    print "  candidates=(\"${BUBBLES_AUTHORITY_BYPASS_CANDIDATE:?candidate required}\")"
+    print "  BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT=1"
+    candidate_force=candidate_force + 1
+  }
   !skipping { print }
-' "$SCRIPT_DIR/python-env.sh" >"$authority_env"
+  END {
+    if (authentication_bypass != 1 || candidate_force != 1 || skipping) exit 42
+  }
+' "$SCRIPT_DIR/python-env.sh" >"$authority_env"; then
+  authority_mutation_status=0
+else
+  authority_mutation_status=$?
+fi
+authority_mutant_hash="$(/usr/bin/shasum -a 256 "$authority_env" | /usr/bin/awk '{print $1}')"
+authority_auth_marker_count="$(/usr/bin/grep -cF 'B039-NEG-AUTHENTICATION-BYPASS' "$authority_env" || true)"
+authority_candidate_marker_count="$(/usr/bin/grep -cF 'B039-NEG-FORCE-CALLER-CANDIDATE' "$authority_env" || true)"
+if [[ "$authority_mutation_status" -eq 0 &&
+  "$authority_source_hash" != "$authority_mutant_hash" &&
+  "$authority_auth_marker_count" -eq 1 &&
+  "$authority_candidate_marker_count" -eq 1 ]]; then
+  authority_mutation_preconditions=1
+  pass "SCN-B039-005 authority mutation changes exactly one authentication branch and forces one caller-owned candidate branch"
+else
+  fail "SCN-B039-005 authority mutation preconditions failed (status=$authority_mutation_status authMarkers=$authority_auth_marker_count candidateMarkers=$authority_candidate_marker_count sourceHash=$authority_source_hash mutantHash=$authority_mutant_hash)"
+fi
 cat >"$authority_fake" <<EOF
 #!/bin/bash
 program=''
@@ -1049,16 +1095,40 @@ EOF
 chmod +x "$authority_fake"
 RUN_OUTPUT=""
 RUN_STATUS=0
-if (
-  cd "$PROTOCOL_REPO" || exit 2
-  PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-    DEVELOPER_DIR="$authority_untrusted_developer" \
-    /bin/bash "$authority_scanner" "$PROTOCOL_FEATURE" --verbose
-) >"$authority_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
-RUN_OUTPUT="$(/bin/cat "$authority_output")"
-authority_after_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+if [[ "$authority_mutation_preconditions" -eq 1 ]]; then
+  if (
+    cd "$PROTOCOL_REPO" || exit 2
+    BUBBLES_AUTHORITY_BYPASS_CANDIDATE="$authority_fake" \
+      BUBBLES_AUTHORITY_BYPASS_TRACE="$authority_trace" \
+      PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+      DEVELOPER_DIR="$authority_untrusted_developer" \
+        "$BASH" "$authority_scanner" "$PROTOCOL_FEATURE" --verbose
+  ) >"$authority_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+  RUN_OUTPUT="$(/bin/cat "$authority_output")"
+else
+  RUN_STATUS=125
+  RUN_OUTPUT='authority-bypass copied scanner was not run because mutation preconditions failed'
+fi
+if [[ "$SELFTEST_TARGET" == authority-bypass ]]; then
+  printf '%s\n' '=== SCN-B039-005 authority-bypass copied scanner output ==='
+  printf '%s\n' "$RUN_OUTPUT"
+  printf '%s\n' '=== SCN-B039-005 authority-bypass authentication trace ==='
+  if [[ -f "$authority_trace" ]]; then
+    /bin/cat "$authority_trace"
+  else
+    printf '%s\n' 'trace absent'
+  fi
+fi
+authority_after_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/fun-mode.sh" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+if [[ -f "$authority_trace" ]] &&
+  /usr/bin/grep -Fq "B039_AUTH_BYPASS|$authority_fake|executable|1" "$authority_trace"; then
+  pass "SCN-B039-005 forced caller-owned runtime reaches the copied authentication bypass"
+else
+  fail "SCN-B039-005 forced caller-owned runtime did not reach the copied authentication bypass"
+fi
 if [[ "$RUN_STATUS" -eq 0 && -e "$authority_marker" ]] &&
-  grep -Fq 'classifier protocol complete: version=SCS1 scanned=1 findings=0' <<<"$RUN_OUTPUT"; then
+  grep -Fq 'classifier protocol complete: version=SCS1 scanned=1 findings=0' <<<"$RUN_OUTPUT" &&
+  grep -Fq 'candidates=1' <<<"$RUN_OUTPUT"; then
   pass "SCN-B039-005 authority-bypass mutation makes forged clean output and marker assertions red"
 else
   fail "SCN-B039-005 authority-bypass mutation did not expose the expected compromise (status=$RUN_STATUS marker=$([[ -e "$authority_marker" ]] && echo present || echo absent))"
@@ -1067,6 +1137,14 @@ if [[ "$authority_live_hashes" == "$authority_after_hashes" ]]; then
   pass "SCN-B039-005 authority mutation leaves live production bytes identical"
 else
   fail "SCN-B039-005 authority mutation changed live production bytes"
+fi
+if [[ "$SELFTEST_TARGET" == authority-bypass ]]; then
+  printf 'implementation-reality-scan authority-bypass target summary: failures=%s skips=%s\n' "$failures" "$skips"
+  SELFTEST_COMPLETED=1
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
 fi
 
 # The production path must have an authenticated positive control on this host
