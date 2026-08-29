@@ -29,6 +29,13 @@ case "${1:-}" in
     fi
     SELFTEST_ENTRYPOINT=authority-bypass
     ;;
+  --internal-mutation-runner-control)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-mutation-runner-v1 ]]; then
+      printf '%s\n' 'implementation-reality-scan mutation runner control requires its explicit internal token' >&2
+      exit 2
+    fi
+    SELFTEST_ENTRYPOINT=mutation-runner
+    ;;
   *)
     printf 'implementation-reality-scan selftest argument is invalid: %s\n' "$1" >&2
     exit 2
@@ -41,6 +48,10 @@ CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
 SELFTEST_ACTIVE_CHILD=''
+SELFTEST_WATCHDOG_PID=''
+SELFTEST_MUTATION_SEQUENCE=0
+SELFTEST_MUTATION_TIMED_OUT=0
+SELFTEST_MUTATION_RUN_DIAGNOSTIC=NOT_RUN
 
 selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
@@ -49,6 +60,14 @@ selftest_stop_exact_child() {
     builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
   fi
   SELFTEST_LIFECYCLE_PID=''
+}
+
+selftest_stop_watchdog() {
+  if [[ "$SELFTEST_WATCHDOG_PID" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+    builtin wait "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+  fi
+  SELFTEST_WATCHDOG_PID=''
 }
 
 selftest_stop_active_child() {
@@ -60,10 +79,110 @@ selftest_stop_active_child() {
   SELFTEST_ACTIVE_CHILD=''
 }
 
+selftest_run_mutation_bounded() {
+  local output_file="$1"
+  local wall_seconds="$2"
+  shift 2
+  local launched_pid=""
+  local child_status=0
+  local timeout_record=""
+
+  SELFTEST_MUTATION_TIMED_OUT=0
+  SELFTEST_MUTATION_RUN_DIAGNOSTIC=NOT_RUN
+  if [[ ! "$wall_seconds" =~ ^[1-9][0-9]*$ || "$#" -eq 0 ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=ARGUMENT_INVALID
+    return 2
+  fi
+
+  SELFTEST_MUTATION_SEQUENCE=$((SELFTEST_MUTATION_SEQUENCE + 1))
+  timeout_record="$TMPDIR/mutation-wall-$SELFTEST_MUTATION_SEQUENCE"
+  /bin/rm -f "$timeout_record"
+
+  "$@" >"$output_file" 2>&1 </dev/null &
+  SELFTEST_ACTIVE_CHILD=$!
+  launched_pid="$SELFTEST_ACTIVE_CHILD"
+  if [[ ! "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ||
+    "$SELFTEST_ACTIVE_CHILD" != "$launched_pid" ]]; then
+    if [[ "$launched_pid" =~ ^[1-9][0-9]*$ ]]; then
+      builtin kill -TERM "$launched_pid" 2>/dev/null || true
+      builtin kill -KILL "$launched_pid" 2>/dev/null || true
+      builtin wait "$launched_pid" 2>/dev/null || true
+    fi
+    SELFTEST_ACTIVE_CHILD=''
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=REGISTRATION_INVALID
+    return 125
+  fi
+
+  (
+    /bin/sleep "$wall_seconds"
+    if builtin kill -TERM "$launched_pid" 2>/dev/null; then
+      printf '%s\n' TIMEOUT >"$timeout_record"
+      /bin/sleep 2
+      builtin kill -KILL "$launched_pid" 2>/dev/null || true
+    fi
+  ) &
+  SELFTEST_WATCHDOG_PID=$!
+
+  if builtin wait "$launched_pid" 2>/dev/null; then
+    child_status=0
+  else
+    child_status=$?
+  fi
+  SELFTEST_ACTIVE_CHILD=''
+  selftest_stop_watchdog
+
+  if [[ -f "$timeout_record" ]]; then
+    SELFTEST_MUTATION_TIMED_OUT=1
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=TIMEOUT
+    child_status=124
+  else
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=OK
+  fi
+  /bin/rm -f "$timeout_record"
+  return "$child_status"
+}
+
+selftest_run_internal_mutation_runner_control() {
+  local output_file="$TMPDIR/internal-mutation-runner.output"
+  local runner_status=0
+
+  if [[ -n "${BUBBLES_MUTATION_RUNNER_ROOT_RECORD:-}" ]]; then
+    printf '%s\n' "$TMPDIR" >"$BUBBLES_MUTATION_RUNNER_ROOT_RECORD"
+    output_file="${BUBBLES_MUTATION_RUNNER_ROOT_RECORD}.output"
+  fi
+  SELFTEST_COMPLETED=1
+  if selftest_run_mutation_bounded "$output_file" 1 /bin/sleep 2; then
+    runner_status=0
+  else
+    runner_status=$?
+  fi
+  printf 'MUTATION_RUNNER_RESULT status=%s timed_out=%s diagnostic=%s active=%s watchdog=%s\n' \
+    "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
+    "${SELFTEST_ACTIVE_CHILD:-clear}" "${SELFTEST_WATCHDOG_PID:-clear}"
+
+  if [[ "$runner_status" -eq 124 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 1 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == TIMEOUT &&
+    -z "$SELFTEST_ACTIVE_CHILD" && -z "$SELFTEST_WATCHDOG_PID" ]]; then
+    printf '%s\n' 'PASS: mutation runner enforces its hard wall and clears exact-child registrations'
+    return 0
+  fi
+  if [[ "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == REGISTRATION_INVALID ]]; then
+    printf '%s\n' 'RED: NEG-B039-MUTATION-REGISTRATION bypassed registration violates the exact-child invariant' >&2
+  elif [[ "$runner_status" -eq 0 && "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == OK ]]; then
+    printf '%s\n' 'RED: NEG-B039-MUTATION-BOUND bypassed wall violates the deadline invariant' >&2
+  else
+    printf '%s\n' 'FAIL: mutation runner control returned an unexpected lifecycle result' >&2
+  fi
+  return 1
+}
+
 selftest_cleanup() {
   local status=$?
   builtin trap - EXIT HUP INT TERM
-  bubbles_python_security_cleanup || true
+  if declare -F bubbles_python_security_cleanup >/dev/null 2>&1; then
+    bubbles_python_security_cleanup || true
+  fi
+  selftest_stop_watchdog
   selftest_stop_active_child
   selftest_stop_exact_child
   /bin/rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
@@ -84,6 +203,16 @@ trap selftest_cleanup EXIT
 trap 'selftest_signal 129' HUP
 trap 'selftest_signal 130' INT
 trap 'selftest_signal 143' TERM
+
+if [[ "$SELFTEST_ENTRYPOINT" == mutation-runner ]]; then
+  mutation_runner_status=0
+  if selftest_run_internal_mutation_runner_control; then
+    mutation_runner_status=0
+  else
+    mutation_runner_status=$?
+  fi
+  exit "$mutation_runner_status"
+fi
 
 # Private child modes exercise this script's own EXIT/INT/TERM contract. They
 # are entered only by the bounded parent regression below. The ready file lives
@@ -216,10 +345,17 @@ assert_selftest_lifecycle_fails_closed() {
     return
   fi
 
-  if [[ "$signal_name" != "NONE" ]]; then
-    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  if [[ ! "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ||
+    "$SELFTEST_LIFECYCLE_PID" != "$child_pid" ]]; then
+    fail "$label exact direct-child registration is invalid before builtin wait"
+    SELFTEST_LIFECYCLE_PID="$child_pid"
+    selftest_stop_exact_child
+    return
   fi
-  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
+  if [[ "$signal_name" != "NONE" ]]; then
+    builtin kill -"$signal_name" "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
   SELFTEST_LIFECYCLE_PID=''
 
   if [[ "$child_status" -eq "$expected_status" ]]; then
@@ -233,7 +369,6 @@ assert_selftest_lifecycle_fails_closed() {
     fail "$label removes its temporary tree (still present: $child_tmp)"
     [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
   fi
-  pass "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'implementation-reality-scan selftest passed' "$output_file"; then
     fail "$label must not emit a success summary"
   else
@@ -246,6 +381,70 @@ assert_selftest_lifecycle_fails_closed premature-exit NONE 1 "Premature EXIT"
 assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
 assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
 assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
+
+make_mutation_runner_selftest() {
+  local mode="$1"
+  local destination="$2"
+  /usr/bin/awk -v mode="$mode" '
+    mode == "bound" && /selftest_run_mutation_bounded "\$output_file" 1 \/bin\/sleep 2/ {
+      sub(/ 1 \/bin\/sleep 2/, " 3 /bin/sleep 2")
+      print
+      changed=changed + 1
+      next
+    }
+    { print }
+    mode == "registration" && /launched_pid="\$SELFTEST_ACTIVE_CHILD"/ {
+      print "  SELFTEST_ACTIVE_CHILD=\047\047 # B039-NEG-MUTATION-REGISTRATION-BYPASS"
+      changed=changed + 1
+    }
+    END { if (changed != 1) exit 42 }
+  ' "$SELFTEST_SCRIPT" >"$destination"
+}
+
+assert_mutation_runner_negative_control() {
+  local mode="$1"
+  local expected_assertion="$2"
+  local mutation_dir="$TMPDIR/mutation-runner-$mode"
+  local mutant_script="$mutation_dir/implementation-reality-scan-selftest.sh"
+  local output_file="$mutation_dir/mutant.output"
+  local internal_tmp_parent="$TMPDIR/mutation-runner-inner-$mode"
+  local root_record="$mutation_dir/internal-root.record"
+  local control_status=0
+  local internal_root=""
+
+  mkdir -p "$mutation_dir" "$internal_tmp_parent"
+  if ! make_mutation_runner_selftest "$mode" "$mutant_script"; then
+    fail "NEG-B039-MUTATION-$mode copied mutation construction is exact"
+    return
+  fi
+  if selftest_run_mutation_bounded "$output_file" 10 /usr/bin/env \
+    TMPDIR="$internal_tmp_parent" BUBBLES_MUTATION_RUNNER_ROOT_RECORD="$root_record" \
+    "$BASH" "$mutant_script" \
+    --internal-mutation-runner-control b039-mutation-runner-v1; then
+    control_status=0
+  else
+    control_status=$?
+  fi
+  /bin/cat "$output_file"
+  internal_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
+
+  if [[ "$control_status" -eq 1 && "${internal_root##*/}" == tmp.* &&
+    ! -e "$internal_root" && -z "$SELFTEST_ACTIVE_CHILD" && -z "$SELFTEST_WATCHDOG_PID" ]] &&
+    /usr/bin/grep -Fq "$expected_assertion" "$output_file"; then
+    printf 'RED: NEG-B039-MUTATION-%s mutant_exit=1 root_absent=yes active_child=clear watchdog=clear\n' "$mode"
+    pass "NEG-B039-MUTATION-$mode copied mutation turns its owning lifecycle assertion RED without residue"
+  else
+    fail "NEG-B039-MUTATION-$mode expected exit 1 and absent registered residue, got exit=$control_status root=${internal_root:-missing}"
+  fi
+}
+
+echo "Scenario: copied mutation-runner bound and registration bypasses must turn RED."
+assert_mutation_runner_negative_control \
+  registration \
+  'RED: NEG-B039-MUTATION-REGISTRATION bypassed registration violates the exact-child invariant'
+assert_mutation_runner_negative_control \
+  bound \
+  'RED: NEG-B039-MUTATION-BOUND bypassed wall violates the deadline invariant'
 
 # Is the Scan 2B classifier's interpreter USABLE -- not merely present?
 #
@@ -1140,14 +1339,17 @@ chmod +x "$authority_fake"
 RUN_OUTPUT=""
 RUN_STATUS=0
 if [[ "$authority_mutation_preconditions" -eq 1 ]]; then
-  if (
-    cd "$PROTOCOL_REPO" || exit 2
+  if selftest_run_mutation_bounded "$authority_output" 180 /usr/bin/env \
     BUBBLES_AUTHORITY_BYPASS_CANDIDATE="$authority_fake" \
-      BUBBLES_AUTHORITY_BYPASS_TRACE="$authority_trace" \
-      PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
-      DEVELOPER_DIR="$authority_untrusted_developer" \
-        "$BASH" "$authority_scanner" "$PROTOCOL_FEATURE" --verbose
-  ) >"$authority_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+    BUBBLES_AUTHORITY_BYPASS_TRACE="$authority_trace" \
+    PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+    DEVELOPER_DIR="$authority_untrusted_developer" \
+    "$BASH" -c 'repo_root="$1"; shift; cd "$repo_root" || exit 2; exec "$@"' \
+    _ "$PROTOCOL_REPO" "$BASH" "$authority_scanner" "$PROTOCOL_FEATURE" --verbose; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
   RUN_OUTPUT="$(/bin/cat "$authority_output")"
 else
   RUN_STATUS=125
@@ -1175,6 +1377,14 @@ if [[ "$RUN_STATUS" -eq 0 && -e "$authority_marker" ]] &&
   grep -Fq 'candidates=1' <<<"$RUN_OUTPUT"; then
   pass "SCN-B039-005 authority-bypass mutation makes forged clean output and marker assertions red"
 else
+  printf '%s\n' '=== SCN-B039-005 failed authority-bypass copied scanner output ==='
+  /bin/cat "$authority_output"
+  printf '%s\n' '=== SCN-B039-005 failed authority-bypass authentication trace ==='
+  if [[ -f "$authority_trace" ]]; then
+    /bin/cat "$authority_trace"
+  else
+    printf '%s\n' 'trace absent'
+  fi
   fail "SCN-B039-005 authority-bypass mutation did not expose the expected compromise (status=$RUN_STATUS marker=$([[ -e "$authority_marker" ]] && echo present || echo absent))"
 fi
 if [[ "$authority_live_hashes" == "$authority_after_hashes" ]]; then
@@ -1222,10 +1432,14 @@ run_copied_scan_with_helper() {
   fi
   RUN_OUTPUT=""
   RUN_STATUS=0
-  if (
-    cd "$PROTOCOL_REPO" || exit 2
-    DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$copy_scanner" "$PROTOCOL_FEATURE" --verbose
-  ) >"$output_file" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+  if selftest_run_mutation_bounded "$output_file" 180 /usr/bin/env \
+    DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+    /bin/bash -c 'repo_root="$1"; shift; cd "$repo_root" || exit 2; exec "$@"' \
+    _ "$PROTOCOL_REPO" /bin/bash "$copy_scanner" "$PROTOCOL_FEATURE" --verbose; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
   RUN_OUTPUT="$(/bin/cat "$output_file")"
   printf '%s\n' "$RUN_OUTPUT"
 }
@@ -1265,10 +1479,14 @@ classification_digest="$(/usr/bin/shasum -a 256 "$classification_copy" | /usr/bi
 /usr/bin/perl -pi -e "s/$classification_previous_digest/$classification_digest/g" "$classification_env"
 RUN_OUTPUT=""
 RUN_STATUS=0
-if (
-  cd "$SENSITIVE_REPO" || exit 2
-  DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$classification_scanner" "$SENSITIVE_FEATURE" --verbose
-) >"$TMPDIR/classification-mutation.output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+if selftest_run_mutation_bounded "$TMPDIR/classification-mutation.output" 180 /usr/bin/env \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  /bin/bash -c 'repo_root="$1"; shift; cd "$repo_root" || exit 2; exec "$@"' \
+  _ "$SENSITIVE_REPO" /bin/bash "$classification_scanner" "$SENSITIVE_FEATURE" --verbose; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
 RUN_OUTPUT="$(/bin/cat "$TMPDIR/classification-mutation.output")"
 if [[ "$RUN_STATUS" -eq 1 ]] && ! grep -Fq 'diagnostic=HELPER_DIGEST_MISMATCH' <<<"$RUN_OUTPUT" &&
   grep -Fq 'classifier protocol complete: version=SCS1' <<<"$RUN_OUTPUT" &&
@@ -1297,10 +1515,14 @@ completion_record_before="$(/usr/bin/grep -cF 'print("COMPLETE\tSCS1\t%d" % scan
 completion_record_after="$(/usr/bin/grep -cF 'print("COMPLETE\tSCS1\t%d" % scanned)' "$completion_env" || true)"
 RUN_OUTPUT=""
 RUN_STATUS=0
-if (
-  cd "$PROTOCOL_REPO" || exit 2
-  DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$completion_scanner" "$PROTOCOL_FEATURE" --verbose
-) >"$completion_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+if selftest_run_mutation_bounded "$completion_output" 180 /usr/bin/env \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  /bin/bash -c 'repo_root="$1"; shift; cd "$repo_root" || exit 2; exec "$@"' \
+  _ "$PROTOCOL_REPO" /bin/bash "$completion_scanner" "$PROTOCOL_FEATURE" --verbose; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
 RUN_OUTPUT="$(/bin/cat "$completion_output")"
 if [[ "$completion_record_before" -eq 1 && "$completion_record_after" -eq 0 &&
   "$RUN_STATUS" -eq 1 &&
@@ -1320,6 +1542,10 @@ same_byte_replacement="$TMPDIR/same-byte-replacement.py"
 same_byte_driver_raw="$TMPDIR/same-byte-driver.raw.py"
 same_byte_driver="$TMPDIR/same-byte-driver.py"
 same_byte_reopen="$TMPDIR/same-byte-reopen.py"
+same_byte_output="$TMPDIR/same-byte-driver.output"
+same_byte_reopen_output="$TMPDIR/same-byte-reopen.output"
+same_byte_status=0
+same_byte_reopen_status=0
 same_byte_live_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh")"
 cat >"$same_byte_helper" <<EOF
 from pathlib import Path
@@ -1359,13 +1585,18 @@ _bubbles_python_security_scan_driver >"$same_byte_driver_raw"
     printf "    os.replace(Path(\"%s\"), helper_path)\n", replacement
   }
 ' "$same_byte_driver_raw" >"$same_byte_driver"
-if "$SECURITY_RUNTIME" -I -S -B "$same_byte_driver" \
+if selftest_run_mutation_bounded "$same_byte_output" 30 "$SECURITY_RUNTIME" -I -S -B "$same_byte_driver" \
   "$same_byte_helper" "$same_byte_digest" 262144 \
-  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE" &&
-  [[ -e "$same_byte_marker" && ! -e "$replacement_marker" ]]; then
+  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE"; then
+  same_byte_status=0
+else
+  same_byte_status=$?
+fi
+/bin/cat "$same_byte_output"
+if [[ "$same_byte_status" -eq 0 && -e "$same_byte_marker" && ! -e "$replacement_marker" ]]; then
   pass "SCN-B039-006 production driver executes its checked byte buffer after path replacement"
 else
-  fail "SCN-B039-006 production driver did not preserve the checked byte buffer"
+  fail "SCN-B039-006 production driver did not preserve the checked byte buffer (status=$same_byte_status)"
 fi
 /bin/rm -f "$same_byte_marker" "$replacement_marker"
 cat >"$same_byte_helper" <<EOF
@@ -1405,13 +1636,18 @@ same_byte_digest="$(/usr/bin/shasum -a 256 "$same_byte_helper" | /usr/bin/awk '{
   }
   { print }
 ' "$same_byte_driver" >"$same_byte_reopen"
-if "$SECURITY_RUNTIME" -I -S -B "$same_byte_reopen" \
+if selftest_run_mutation_bounded "$same_byte_reopen_output" 30 "$SECURITY_RUNTIME" -I -S -B "$same_byte_reopen" \
   "$same_byte_helper" "$same_byte_digest" 262144 \
-  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE" &&
-  [[ ! -e "$same_byte_marker" && -e "$replacement_marker" ]]; then
+  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE"; then
+  same_byte_reopen_status=0
+else
+  same_byte_reopen_status=$?
+fi
+/bin/cat "$same_byte_reopen_output"
+if [[ "$same_byte_reopen_status" -eq 0 && ! -e "$same_byte_marker" && -e "$replacement_marker" ]]; then
   pass "SCN-B039-006 copied production-driver reopen mutation turns the same-byte assertion red"
 else
-  fail "SCN-B039-006 copied production-driver reopen mutation did not execute replacement bytes"
+  fail "SCN-B039-006 copied production-driver reopen mutation did not execute replacement bytes (status=$same_byte_reopen_status)"
 fi
 same_byte_after_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh")"
 if [[ "$same_byte_live_hash" == "$same_byte_after_hash" ]]; then

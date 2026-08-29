@@ -674,10 +674,17 @@ assert_selftest_lifecycle_fails_closed() {
     return
   fi
 
-  if [[ "$signal_name" != "NONE" ]]; then
-    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  if [[ ! "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ||
+    "$SELFTEST_LIFECYCLE_PID" != "$child_pid" ]]; then
+    bad "$label exact direct-child registration is invalid before builtin wait"
+    SELFTEST_LIFECYCLE_PID="$child_pid"
+    selftest_stop_exact_child
+    return
   fi
-  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
+  if [[ "$signal_name" != "NONE" ]]; then
+    builtin kill -"$signal_name" "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
   SELFTEST_LIFECYCLE_PID=''
   if [[ "$child_status" -eq "$expected_status" ]]; then
     ok "$label preserves fatal exit $expected_status"
@@ -690,7 +697,6 @@ assert_selftest_lifecycle_fails_closed() {
     bad "$label removes its temporary tree (still present: $child_tmp)"
     [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
   fi
-  ok "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'python-env selftest:' "$output_file"; then
     bad "$label must not emit a success summary"
   else

@@ -332,10 +332,17 @@ assert_test_lifecycle_fails_closed() {
     return
   fi
 
-  if [[ "$signal_name" != "NONE" ]]; then
-    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  if [[ ! "$TEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ||
+    "$TEST_LIFECYCLE_PID" != "$child_pid" ]]; then
+    fail "$label exact direct-child registration is invalid before builtin wait"
+    TEST_LIFECYCLE_PID="$child_pid"
+    stop_test_exact_child
+    return
   fi
-  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
+  if [[ "$signal_name" != "NONE" ]]; then
+    builtin kill -"$signal_name" "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if builtin wait "$TEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
   TEST_LIFECYCLE_PID=''
   if [[ "$child_status" -eq "$expected_status" ]]; then
     pass "$label preserves fatal exit $expected_status"
@@ -348,7 +355,6 @@ assert_test_lifecycle_fails_closed() {
     fail "$label removes its temporary tree (still present: $child_workspace)"
     [[ -z "$child_workspace" ]] || rm -rf "$child_workspace"
   fi
-  pass "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'test_24_g028_sensitive_client_storage: ' "$output_file"; then
     fail "$label must not emit a success summary"
   else
