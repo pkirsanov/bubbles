@@ -5,21 +5,42 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCAN_SCRIPT="$SCRIPT_DIR/implementation-reality-scan.sh"
 SELFTEST_SCRIPT="$SCRIPT_DIR/implementation-reality-scan-selftest.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
+SELFTEST_ENTRYPOINT=full
+
+case "${1:-}" in
+  '')
+    if [[ "$#" -ne 0 ]]; then
+      printf '%s\n' 'implementation-reality-scan selftest accepts no empty positional arguments' >&2
+      exit 2
+    fi
+    ;;
+  --internal-dispatch-probe)
+    if [[ "$#" -ne 1 ]]; then
+      printf '%s\n' 'implementation-reality-scan selftest dispatch probe accepts no additional arguments' >&2
+      exit 2
+    fi
+    printf '%s\n' 'IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE'
+    exit 0
+    ;;
+  --internal-authority-bypass-control)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-authority-bypass-v1 ]]; then
+      printf '%s\n' 'implementation-reality-scan authority control requires its explicit internal token' >&2
+      exit 2
+    fi
+    SELFTEST_ENTRYPOINT=authority-bypass
+    ;;
+  *)
+    printf 'implementation-reality-scan selftest argument is invalid: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
+
 TMPDIR="$(mktemp -d)"
 FIXTURE_ROOT="$TMPDIR/fixtures"
 CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
 SELFTEST_ACTIVE_CHILD=''
-SELFTEST_TARGET="${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET:-}"
-
-case "$SELFTEST_TARGET" in
-  '' | authority-bypass) ;;
-  *)
-    printf 'implementation-reality-scan selftest target is invalid: %s\n' "$SELFTEST_TARGET" >&2
-    exit 2
-    ;;
-esac
 
 selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
@@ -144,6 +165,29 @@ skip() {
   echo "SKIP: $1"
   skips=$((skips + 1))
 }
+
+assert_legacy_target_environment_is_inert() {
+  local output_file="$TMPDIR/legacy-target-dispatch-probe.output"
+  local probe_status=0
+
+  if bubbles_run_with_timeout 10 env \
+    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET=authority-bypass \
+    "$BASH" "$SELFTEST_SCRIPT" --internal-dispatch-probe >"$output_file" 2>&1 </dev/null; then
+    probe_status=0
+  else
+    probe_status=$?
+  fi
+  /bin/cat "$output_file"
+  if [[ "$probe_status" -eq 0 ]] &&
+    /usr/bin/grep -Fqx 'IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE' "$output_file"; then
+    pass "TEST-B039-001 legacy SELFTEST_TARGET cannot select an ambient subset"
+  else
+    fail "TEST-B039-001 legacy SELFTEST_TARGET changed dispatch (exit=$probe_status)"
+  fi
+}
+
+echo "Scenario: TEST-B039-001 inherited subset selectors cannot replace the full-suite entrypoint."
+assert_legacy_target_environment_is_inert
 
 assert_selftest_lifecycle_fails_closed() {
   local mode="$1"
@@ -1109,7 +1153,7 @@ else
   RUN_STATUS=125
   RUN_OUTPUT='authority-bypass copied scanner was not run because mutation preconditions failed'
 fi
-if [[ "$SELFTEST_TARGET" == authority-bypass ]]; then
+if [[ "$SELFTEST_ENTRYPOINT" == authority-bypass ]]; then
   printf '%s\n' '=== SCN-B039-005 authority-bypass copied scanner output ==='
   printf '%s\n' "$RUN_OUTPUT"
   printf '%s\n' '=== SCN-B039-005 authority-bypass authentication trace ==='
@@ -1138,15 +1182,14 @@ if [[ "$authority_live_hashes" == "$authority_after_hashes" ]]; then
 else
   fail "SCN-B039-005 authority mutation changed live production bytes"
 fi
-if [[ "$SELFTEST_TARGET" == authority-bypass ]]; then
-  printf 'implementation-reality-scan authority-bypass target summary: failures=%s skips=%s\n' "$failures" "$skips"
+if [[ "$SELFTEST_ENTRYPOINT" == authority-bypass ]]; then
+  printf 'implementation-reality-scan authority-bypass control summary: failures=%s skips=%s\n' "$failures" "$skips"
   SELFTEST_COMPLETED=1
   if [[ "$failures" -gt 0 ]]; then
     exit 1
   fi
   exit 0
 fi
-
 # The production path must have an authenticated positive control on this host
 # before helper-identity tests can claim anything about classifier execution.
 if DEVELOPER_DIR=/Library/Developer/CommandLineTools bubbles_python_resolve_security_runtime; then
@@ -1633,4 +1676,5 @@ if [[ "$skips" -gt 0 ]]; then
   exit 0
 fi
 
+echo "IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1"
 echo "implementation-reality-scan selftest passed."

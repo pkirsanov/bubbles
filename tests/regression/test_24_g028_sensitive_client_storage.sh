@@ -102,8 +102,9 @@ test24_run_sentinel_to_pass_negative_control() {
     return 2
   fi
   if env -u BUBBLES_TEST24_NEGATIVE_CONTROL \
-    BUBBLES_TEST24_CHILD_MODE=sentinel-accounting \
-    "$BASH" "$mutant_script" >"$mutant_output" 2>&1 </dev/null; then
+    "$BASH" "$mutant_script" \
+    --internal-sentinel-accounting b039-sentinel-accounting-v1 \
+    >"$mutant_output" 2>&1 </dev/null; then
     mutant_status=0
   else
     mutant_status=$?
@@ -126,18 +127,42 @@ test24_run_sentinel_to_pass_negative_control() {
   return 2
 }
 
-if [[ "${BUBBLES_TEST24_CHILD_MODE:-}" == sentinel-accounting ]]; then
-  printf '%s\n' '=== NEG-B039-SENTINEL-TO-PASS bounded accounting child ==='
-  bug039_record_unavailable_cascade
-  printf 'test_24 sentinel child: %s passed, %s failed, %s skipped\n' \
-    "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
-  printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
-  if [[ "$FAIL_COUNT" -eq 0 && "$PASS_COUNT" -eq 1 && "$SKIP_COUNT" -eq 1 &&
-    "$BUG039_CASCADE_VERIFIED" -eq 1 ]]; then
+case "${1:-}" in
+  '')
+    if [[ "$#" -ne 0 ]]; then
+      printf '%s\n' 'test_24 accepts no empty positional arguments' >&2
+      exit 2
+    fi
+    ;;
+  --internal-sentinel-accounting)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-sentinel-accounting-v1 ]]; then
+      printf '%s\n' 'test_24 sentinel accounting requires its explicit internal token' >&2
+      exit 2
+    fi
+    printf '%s\n' '=== NEG-B039-SENTINEL-TO-PASS bounded accounting child ==='
+    bug039_record_unavailable_cascade
+    printf 'test_24 sentinel child: %s passed, %s failed, %s skipped\n' \
+      "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
+    printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
+    if [[ "$FAIL_COUNT" -eq 0 && "$PASS_COUNT" -eq 1 && "$SKIP_COUNT" -eq 1 &&
+      "$BUG039_CASCADE_VERIFIED" -eq 1 ]]; then
+      exit 0
+    fi
+    exit 1
+    ;;
+  --internal-dispatch-probe)
+    if [[ "$#" -ne 1 ]]; then
+      printf '%s\n' 'test_24 dispatch probe accepts no additional arguments' >&2
+      exit 2
+    fi
+    printf '%s\n' 'TEST24_ZERO_ARGUMENT_ENTRY=FULL_SUITE'
     exit 0
-  fi
-  exit 1
-fi
+    ;;
+  *)
+    printf 'test_24 argument is invalid: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
 
 if [[ -n "${BUBBLES_TEST24_NEGATIVE_CONTROL:-}" ]]; then
   negative_control_status=0
@@ -253,12 +278,12 @@ trap 'test_signal 129' HUP
 trap 'test_signal 130' INT
 trap 'test_signal 143' TERM
 
-if [[ -n "${BUBBLES_TEST24_CHILD_MODE:-}" ]]; then
+if [[ -n "${BUBBLES_TEST24_LIFECYCLE_CHILD_MODE:-}" ]]; then
   if [[ -z "${BUBBLES_TEST24_READY_FILE:-}" ]]; then
     echo "test_24 child mode requires a ready file" >&2
     exit 2
   fi
-  case "$BUBBLES_TEST24_CHILD_MODE" in
+  case "$BUBBLES_TEST24_LIFECYCLE_CHILD_MODE" in
     premature-exit)
       printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
       exit 0
@@ -293,7 +318,7 @@ assert_test_lifecycle_fails_closed() {
   local read_status=0
 
   /usr/bin/mkfifo "$ready_fifo"
-  BUBBLES_TEST24_CHILD_MODE="$mode" \
+  BUBBLES_TEST24_LIFECYCLE_CHILD_MODE="$mode" \
     BUBBLES_TEST24_READY_FILE="$ready_fifo" \
     /bin/bash "$TEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
   child_pid=$!
@@ -428,6 +453,26 @@ assert_bug039_sentinel_negative_control() {
     pass "NEG-B039-SENTINEL-TO-PASS copied skip-to-pass mutation turns counter accounting RED"
   else
     fail "NEG-B039-SENTINEL-TO-PASS expected copied mutant exit 1 with PASS_COUNT=1 and SKIP_COUNT=0, got exit $control_status"
+  fi
+}
+
+assert_test24_legacy_child_environment_is_inert() {
+  local output_file="$WORKSPACE/legacy-child-dispatch-probe.output"
+  local probe_status=0
+
+  if bubbles_run_with_timeout 10 env \
+    BUBBLES_TEST24_CHILD_MODE=sentinel-accounting \
+    "$BASH" "$TEST_SCRIPT" --internal-dispatch-probe >"$output_file" 2>&1 </dev/null; then
+    probe_status=0
+  else
+    probe_status=$?
+  fi
+  /bin/cat "$output_file"
+  if [[ "$probe_status" -eq 0 ]] &&
+    /usr/bin/grep -Fqx 'TEST24_ZERO_ARGUMENT_ENTRY=FULL_SUITE' "$output_file"; then
+    pass "TEST-B039-001 legacy TEST24_CHILD_MODE cannot select sentinel accounting"
+  else
+    fail "TEST-B039-001 legacy TEST24_CHILD_MODE changed dispatch (exit=$probe_status)"
   fi
 }
 
@@ -663,6 +708,9 @@ assert_invalid_config() {
 }
 
 write_fixture
+
+printf '%s\n' '=== TEST-B039-001 inherited selector dispatch control ==='
+assert_test24_legacy_child_environment_is_inert
 
 printf '%s\n' '=== BUG-039 sentinel-accounting mutation control ==='
 assert_bug039_sentinel_negative_control
@@ -1014,4 +1062,5 @@ TEST_COMPLETED=1
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1
 fi
+printf '%s\n' 'TEST24_FULL_SUITE_COMPLETED=1'
 printf '%s\n' 'BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED'

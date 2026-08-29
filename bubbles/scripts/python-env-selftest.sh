@@ -40,6 +40,8 @@ TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
 SELFTEST_ACTIVE_CHILD=''
+SELFTEST_WATCHDOG_PID=''
+SELFTEST_WINDOW_RELEASE_OPEN=0
 SELFTEST_MUTANT_PRIVATE_ROOT_RECORD=''
 
 selftest_stop_exact_child() {
@@ -51,13 +53,52 @@ selftest_stop_exact_child() {
   SELFTEST_LIFECYCLE_PID=''
 }
 
-selftest_stop_active_child() {
-  if [[ "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
-    builtin kill -TERM "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
-    builtin kill -KILL "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
-    builtin wait "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+selftest_stop_watchdog() {
+  if [[ "$SELFTEST_WATCHDOG_PID" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+    builtin wait "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+  fi
+  SELFTEST_WATCHDOG_PID=''
+}
+
+selftest_release_mutant_window() {
+  if [[ "$SELFTEST_WINDOW_RELEASE_OPEN" -eq 1 ]]; then
+    printf '%s\n' RELEASE >&6 2>/dev/null || true
+    exec 6>&-
+    SELFTEST_WINDOW_RELEASE_OPEN=0
+  fi
+}
+
+selftest_wait_runner_bounded() {
+  local runner_pid="$1"
+  local term_after="$2"
+  local kill_after="$3"
+  local runner_status=0
+
+  (
+    /bin/sleep "$term_after"
+    builtin kill -TERM "$runner_pid" 2>/dev/null || true
+    /bin/sleep "$kill_after"
+    builtin kill -KILL "$runner_pid" 2>/dev/null || true
+  ) &
+  SELFTEST_WATCHDOG_PID=$!
+  if builtin wait "$runner_pid" 2>/dev/null; then
+    runner_status=0
+  else
+    runner_status=$?
   fi
   SELFTEST_ACTIVE_CHILD=''
+  selftest_stop_watchdog
+  return "$runner_status"
+}
+
+selftest_stop_active_child() {
+  selftest_release_mutant_window
+  if [[ "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
+    selftest_wait_runner_bounded "$SELFTEST_ACTIVE_CHILD" 2 1 || true
+  fi
+  SELFTEST_ACTIVE_CHILD=''
+  return 0
 }
 
 selftest_remove_recorded_private_root() {
@@ -66,7 +107,7 @@ selftest_remove_recorded_private_root() {
     -f "$SELFTEST_MUTANT_PRIVATE_ROOT_RECORD" ]]; then
     recorded_root="$(/bin/cat "$SELFTEST_MUTANT_PRIVATE_ROOT_RECORD" 2>/dev/null || true)"
     case "$recorded_root" in
-      /tmp/bubbles-python-security.*) /bin/rm -rf "$recorded_root" ;;
+      "$TMP_ROOT"/neg-b039-*/bubbles-python-security.*) /bin/rm -rf "$recorded_root" ;;
     esac
   fi
   SELFTEST_MUTANT_PRIVATE_ROOT_RECORD=''
@@ -76,6 +117,8 @@ selftest_cleanup() {
   local status=$?
   builtin trap - EXIT HUP INT TERM
   bubbles_python_security_cleanup || true
+  selftest_stop_watchdog
+  selftest_release_mutant_window
   selftest_stop_active_child
   selftest_stop_exact_child
   selftest_remove_recorded_private_root
@@ -146,9 +189,13 @@ runner_launch_registration_is_adjacent() {
 make_runner_mutation() {
   local mode="$1"
   local destination="$2"
-  /usr/bin/awk -v mode="$mode" '
+  local private_prefix="${3:-}"
+  /usr/bin/awk -v mode="$mode" -v private_prefix="$private_prefix" '
+    BEGIN {
+      launch_mode = (mode == "launch-window" || mode == "launch-window-no-wait" || mode == "launch-readiness")
+    }
     /local wall_seconds=30/ && mode == "timeout" { sub(/30/, "1") }
-    /local wall_seconds=30/ && mode == "launch-window" { sub(/30/, "3") }
+    /local wall_seconds=30/ && launch_mode { sub(/30/, "3") }
     /command_args=\(\/usr\/bin\/env -i LC_ALL=C "\$runtime" -I -S -B -c "\$runtime_program"\)/ {
       if (mode == "child73") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(73)\")"; next }
       if (mode == "child143") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(143)\")"; next }
@@ -156,8 +203,9 @@ make_runner_mutation() {
       if (mode == "signal-hup") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGHUP); time.sleep(300)\")"; next }
       if (mode == "signal-int") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGINT); time.sleep(300)\")"; next }
       if (mode == "signal-term") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGTERM); time.sleep(300)\")"; next }
-      if (mode == "launch-window") {
-        print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import time; time.sleep(300)\")"
+      if (launch_mode) {
+        print "      # B039-MUTATION-LAUNCH"
+        print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import time; time.sleep(2)\")"
         launch_runtime=launch_runtime + 1
         next
       }
@@ -168,43 +216,100 @@ make_runner_mutation() {
     /\/usr\/bin\/mkfifo "\$BUBBLES_PYTHON_SECURITY_FIFO_PATH"/ && mode == "setup125" {
       sub(/\/usr\/bin\/mkfifo/, "/definitely/missing/mkfifo")
     }
+    index($0, "/tmp/bubbles-python-security.*) /bin/rm -rf") && mode == "cleanup-omit-root" {
+      gsub("/tmp/bubbles-python-security", private_prefix)
+      sub(/\/bin\/rm -rf "\$private_root" \|\| cleanup_status=1/, ":")
+      cleanup_omission=cleanup_omission + 1
+      private_rewrites=private_rewrites + 1
+      print
+      next
+    }
+    private_prefix != "" && index($0, "/tmp/bubbles-python-security.") {
+      gsub("/tmp/bubbles-python-security", private_prefix)
+      private_rewrites=private_rewrites + 1
+      print
+      next
+    }
     /_bubbles_python_security_stop_active_child\(\) \{/ { in_stop=1 }
-    in_stop && /BUBBLES_PYTHON_SECURITY_ACTIVE_PID='\'''\''/ && mode == "launch-window" {
-      print "    printf \"%s\\n\" EXACT_WAIT_COMPLETED >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
-      launch_wait=launch_wait + 1
+    in_stop && launch_mode && /if builtin wait "\$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" 2>\/dev\/null; then/ {
+      print "    _bubbles_python_mutant_waited_pid=\"$BUBBLES_PYTHON_SECURITY_ACTIVE_PID\""
+      if (mode == "launch-window-no-wait") {
+        print "    # B039-MUTATION-WAIT-BYPASS"
+        print "    if false; then"
+        wait_bypass=wait_bypass + 1
+      } else {
+        print "    # B039-MUTATION-WAIT-INSTRUMENTATION"
+        print "    if builtin wait \"$_bubbles_python_mutant_waited_pid\" 2>/dev/null; then"
+        wait_instrumentation=wait_instrumentation + 1
+      }
+      in_wait_block=1
+      next
+    }
+    in_stop && in_wait_block && /^[[:space:]]*fi$/ {
+      print
+      if (mode == "launch-window-no-wait") {
+        print "    printf \"WAIT_BYPASSED|%s|%s\\n\" \"$_bubbles_python_mutant_waited_pid\" \"$child_status\" >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
+      } else {
+        print "    printf \"WAIT|%s|%s\\n\" \"$_bubbles_python_mutant_waited_pid\" \"$child_status\" >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
+      }
+      wait_block_end=wait_block_end + 1
+      in_wait_block=0
+      next
+    }
+    in_stop && /^[[:space:]]*BUBBLES_PYTHON_SECURITY_ACTIVE_PID=/ && launch_mode {
+      print
+      print "    printf \"PID_CLEARED\\n\" >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
+      pid_clear=pid_clear + 1
+      next
     }
     in_stop && /^}/ { in_stop=0 }
-    /\) >"\$BUBBLES_PYTHON_SECURITY_STDOUT_PATH".*&$/ && mode == "launch-window" {
+    /\) >"\$BUBBLES_PYTHON_SECURITY_STDOUT_PATH".*&$/ && launch_mode {
       print
+      print "  # B039-MUTATION-REGISTRATION-WINDOW"
       print "  printf \"%s\\n\" \"$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT\" >\"${BUBBLES_PYTHON_MUTANT_ROOT_RECORD:?root record required}\""
-      print "  printf \"%s\\n\" READY >\"${BUBBLES_PYTHON_MUTANT_WINDOW_READY:?window ready required}\""
+      if (mode == "launch-readiness") {
+        print "  printf \"%s\\n\" MALFORMED >\"${BUBBLES_PYTHON_MUTANT_WINDOW_READY:?window ready required}\""
+      } else {
+        print "  printf \"%s\\n\" READY >\"${BUBBLES_PYTHON_MUTANT_WINDOW_READY:?window ready required}\""
+      }
       print "  builtin read -r -t 10 _bubbles_python_mutant_release <\"${BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE:?window release required}\""
       launch_window=launch_window + 1
       next
     }
-    /BUBBLES_PYTHON_SECURITY_STATE='\''REGISTERED'\''/ && mode == "launch-window" {
+    /BUBBLES_PYTHON_SECURITY_ACTIVE_PID=\$!/ && launch_mode {
       print
+      print "  # B039-MUTATION-PID-PUBLICATION"
+      print "  printf \"PUBLISHED|%s\\n\" \"$BUBBLES_PYTHON_SECURITY_ACTIVE_PID\" >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
+      launch_publication=launch_publication + 1
+      next
+    }
+    /BUBBLES_PYTHON_SECURITY_STATE='\''REGISTERED'\''/ && launch_mode {
+      print
+      print "  # B039-MUTATION-REGISTRATION-TRACE"
       print "  printf \"REGISTERED|%s\\n\" \"$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL\" >>\"${BUBBLES_PYTHON_MUTANT_TRACE:?trace required}\""
       launch_registered=launch_registered + 1
       next
     }
-    index($0, "/tmp/bubbles-python-security.*) /bin/rm -rf") && mode == "cleanup-omit-root" {
-      print "      /tmp/bubbles-python-security.*) : ;;"
-      cleanup_omission=cleanup_omission + 1
-      next
-    }
     { print }
     END {
-      if (mode == "launch-window" &&
-        (launch_runtime != 1 || launch_window != 1 || launch_registered != 1 || launch_wait != 1)) exit 42
-      if (mode == "cleanup-omit-root" && cleanup_omission != 1) exit 42
+      if (launch_mode &&
+        (launch_runtime != 1 || launch_window != 1 || launch_publication != 1 ||
+          launch_registered != 1 || wait_block_end != 1 || pid_clear != 1 || private_rewrites != 2)) exit 42
+      if (launch_mode && mode != "launch-window-no-wait" &&
+        (wait_instrumentation != 1 || wait_bypass != 0)) exit 42
+      if (mode == "launch-window-no-wait" &&
+        (wait_instrumentation != 0 || wait_bypass != 1)) exit 42
+      if (mode == "cleanup-omit-root" &&
+        (cleanup_omission != 1 || private_rewrites != 2)) exit 42
     }
   ' "$ENV_SH" >"$destination"
 }
 
 run_launch_window_negative_control() {
-  local mutation_dir="$TMP_ROOT/neg-b039-launch-window"
+  local mode="${1:-launch-window}"
+  local mutation_dir="$TMP_ROOT/neg-b039-$mode"
   local mutant="$mutation_dir/python-env.sh"
+  local private_prefix="$mutation_dir/bubbles-python-security"
   local ready_fifo="$mutation_dir/window.ready.fifo"
   local release_fifo="$mutation_dir/window.release.fifo"
   local root_record="$mutation_dir/private-root.record"
@@ -213,20 +318,49 @@ run_launch_window_negative_control() {
   local runtime=""
   local runner_pid=""
   local ready_record=""
+  local ready_status=0
   local runner_status=0
   local signal_status=0
   local recorded_root=""
+  local published_pid=""
+  local waited_pid=""
+  local wait_status=""
+  local bypassed_pid=""
+  local published_count=0
+  local waited_count=0
+  local bypassed_count=0
+  local cleared_count=0
+  local registered_count=0
+  local launch_count=0
+  local publication_count=0
+  local wait_construction_count=0
+  local registration_window_count=0
 
   mkdir -p "$mutation_dir"
   /usr/bin/mkfifo "$ready_fifo" "$release_fifo"
-  make_runner_mutation launch-window "$mutant" || {
-    printf '%s\n' 'NEG-B039-LAUNCH-WINDOW setup failed: copied mutation did not match exactly' >&2
+  make_runner_mutation "$mode" "$mutant" "$private_prefix" || {
+    printf 'NEG-B039-LAUNCH setup failed: copied %s mutation did not match exactly\n' "$mode" >&2
     return 2
   }
+  launch_count="$(/usr/bin/grep -cF 'B039-MUTATION-LAUNCH' "$mutant" || true)"
+  publication_count="$(/usr/bin/grep -cF 'B039-MUTATION-PID-PUBLICATION' "$mutant" || true)"
+  registration_window_count="$(/usr/bin/grep -cF 'B039-MUTATION-REGISTRATION-WINDOW' "$mutant" || true)"
+  if [[ "$mode" == launch-window-no-wait ]]; then
+    wait_construction_count="$(/usr/bin/grep -cF 'B039-MUTATION-WAIT-BYPASS' "$mutant" || true)"
+  else
+    wait_construction_count="$(/usr/bin/grep -cF 'B039-MUTATION-WAIT-INSTRUMENTATION' "$mutant" || true)"
+  fi
+  printf 'MUTATION_COUNTS mode=%s launch=%s pid_publication=%s wait=%s registration_window=%s\n' \
+    "$mode" "$launch_count" "$publication_count" "$wait_construction_count" "$registration_window_count"
+  if [[ "$launch_count" -ne 1 || "$publication_count" -ne 1 ||
+    "$wait_construction_count" -ne 1 || "$registration_window_count" -ne 1 ]]; then
+    printf 'NEG-B039-LAUNCH setup failed: %s construction counts are not exact\n' "$mode" >&2
+    return 2
+  fi
   if DEVELOPER_DIR=/Library/Developer/CommandLineTools bubbles_python_resolve_security_runtime; then
     runtime="$BUBBLES_PYTHON_SECURITY_RUNTIME"
   else
-    printf 'NEG-B039-LAUNCH-WINDOW setup failed: authenticated runtime status=%s diagnostic=%s\n' \
+    printf 'NEG-B039-LAUNCH setup failed: authenticated runtime status=%s diagnostic=%s\n' \
       "$BUBBLES_PYTHON_SECURITY_STATUS" "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" >&2
     return 2
   fi
@@ -234,6 +368,7 @@ run_launch_window_negative_control() {
   SELFTEST_MUTANT_PRIVATE_ROOT_RECORD="$root_record"
   exec 5<>"$ready_fifo"
   exec 6<>"$release_fifo"
+  SELFTEST_WINDOW_RELEASE_OPEN=1
   env \
     BUBBLES_PYTHON_MUTANT_WINDOW_READY="$ready_fifo" \
     BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE="$release_fifo" \
@@ -251,27 +386,46 @@ run_launch_window_negative_control() {
       bubbles_python_run_security_operation runtime-probe || operation_status=$?
       printf "RESULT|%s|%s|%s\n" "$operation_status" \
         "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" "$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT"
+      cleanup_status=0
+      bubbles_python_security_cleanup || cleanup_status=$?
+      if [[ "$operation_status" -eq 0 && "$cleanup_status" -ne 0 ]]; then
+        exit "$cleanup_status"
+      fi
       exit "$operation_status"
     ' _ "$mutant" "$runtime" >"$runner_output" 2>&1 &
   runner_pid=$!
   SELFTEST_ACTIVE_CHILD="$runner_pid"
 
   if builtin read -r -t 10 ready_record <&5; then
-    :
+    ready_status=0
   else
-    exec 5>&-
-    exec 6>&-
-    selftest_stop_active_child
-    /bin/cat "$runner_output"
-    printf '%s\n' 'NEG-B039-LAUNCH-WINDOW setup failed: copied runner did not reach its window' >&2
-    return 2
+    ready_status=$?
   fi
   exec 5>&-
-  if [[ "$ready_record" != READY ]]; then
-    exec 6>&-
-    selftest_stop_active_child
+  if [[ "$ready_status" -ne 0 ]]; then
+    selftest_release_mutant_window
+    if selftest_wait_runner_bounded "$runner_pid" 6 1; then runner_status=0; else runner_status=$?; fi
     /bin/cat "$runner_output"
-    printf 'NEG-B039-LAUNCH-WINDOW setup failed: ready record was %s\n' "$ready_record" >&2
+    printf 'NEG-B039-LAUNCH setup failed: %s copied runner did not reach its window (read=%s wait=%s)\n' \
+      "$mode" "$ready_status" "$runner_status" >&2
+    return 2
+  fi
+  if [[ "$ready_record" != READY ]]; then
+    selftest_release_mutant_window
+    if selftest_wait_runner_bounded "$runner_pid" 6 1; then runner_status=0; else runner_status=$?; fi
+    /bin/cat "$runner_output"
+    recorded_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
+    if [[ "$mode" == launch-readiness && "$ready_record" == MALFORMED &&
+      "$runner_status" -eq 0 && "$recorded_root" == "$private_prefix".* &&
+      ! -e "$recorded_root" ]]; then
+      SELFTEST_MUTANT_PRIVATE_ROOT_RECORD=''
+      printf 'RED: NEG-B039-LAUNCH-READINESS abnormal_ready=%s runner_exit=%s private_root_absent=yes\n' \
+        "$ready_record" "$runner_status"
+      printf '%s\n' 'FAIL: NEG-B039-LAUNCH-READINESS: abnormal readiness terminates within the watchdog and leaves no private runner root' >&2
+      return 1
+    fi
+    printf 'NEG-B039-LAUNCH setup failed: mode=%s ready=%s wait=%s root=%s\n' \
+      "$mode" "$ready_record" "$runner_status" "${recorded_root:-missing}" >&2
     return 2
   fi
 
@@ -280,37 +434,81 @@ run_launch_window_negative_control() {
   else
     signal_status=$?
   fi
-  printf '%s\n' RELEASE >&6
-  exec 6>&-
-  if builtin wait "$runner_pid" 2>/dev/null; then
+  selftest_release_mutant_window
+  if selftest_wait_runner_bounded "$runner_pid" 6 1; then
     runner_status=0
   else
     runner_status=$?
   fi
-  SELFTEST_ACTIVE_CHILD=''
   /bin/cat "$runner_output"
   recorded_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
 
-  if [[ "$signal_status" -eq 0 && "$runner_status" -eq 129 &&
-    -n "$recorded_root" && ! -e "$recorded_root" ]] &&
+  if [[ -f "$trace_file" ]]; then
+    while IFS='|' read -r trace_kind trace_value trace_status _trace_extra; do
+      case "$trace_kind" in
+        PUBLISHED)
+          published_pid="$trace_value"
+          published_count=$((published_count + 1))
+          ;;
+        WAIT)
+          waited_pid="$trace_value"
+          wait_status="$trace_status"
+          waited_count=$((waited_count + 1))
+          ;;
+        WAIT_BYPASSED)
+          bypassed_pid="$trace_value"
+          bypassed_count=$((bypassed_count + 1))
+          ;;
+        PID_CLEARED)
+          cleared_count=$((cleared_count + 1))
+          ;;
+        REGISTERED)
+          [[ "$trace_value" == HUP ]] && registered_count=$((registered_count + 1))
+          ;;
+      esac
+    done <"$trace_file"
+  fi
+
+  if [[ "$mode" == launch-window-no-wait && "$signal_status" -eq 0 &&
+    "$runner_status" -eq 129 && "$published_pid" =~ ^[1-9][0-9]*$ &&
+    "$bypassed_pid" == "$published_pid" && "$published_count" -eq 1 &&
+    "$waited_count" -eq 0 && "$bypassed_count" -eq 1 && "$cleared_count" -eq 1 &&
+    "$registered_count" -eq 1 && "$recorded_root" == "$private_prefix".* &&
+    ! -e "$recorded_root" ]] &&
     /usr/bin/grep -Fq 'RESULT|129|SIGNAL_HUP|0' "$runner_output" &&
-    /usr/bin/grep -Fq 'REGISTERED|HUP' "$trace_file" &&
-    /usr/bin/grep -Fq 'EXACT_WAIT_COMPLETED' "$trace_file" &&
     ! runner_launch_registration_is_adjacent "$mutant"; then
     SELFTEST_MUTANT_PRIVATE_ROOT_RECORD=''
-    printf '%s\n' 'CONTROL: NEG-B039-LAUNCH-WINDOW pending HUP registered, exact direct child waited, status 129 preserved, private root absent'
+    printf 'RED: NEG-B039-EXACT-WAIT published_pid=%s wait_bypassed_pid=%s pid_clear=1 wait_records=0\n' \
+      "$published_pid" "$bypassed_pid"
+    printf '%s\n' 'FAIL: NEG-B039-EXACT-WAIT: copied wait bypass retains PID clear but cannot satisfy the exact-wait assertion' >&2
+    return 1
+  fi
+
+  if [[ "$mode" == launch-window && "$signal_status" -eq 0 && "$runner_status" -eq 129 &&
+    "$published_pid" =~ ^[1-9][0-9]*$ && "$waited_pid" == "$published_pid" &&
+    "$wait_status" =~ ^(137|143)$ && "$published_count" -eq 1 && "$waited_count" -eq 1 &&
+    "$bypassed_count" -eq 0 && "$cleared_count" -eq 1 && "$registered_count" -eq 1 &&
+    "$recorded_root" == "$private_prefix".* && ! -e "$recorded_root" ]] &&
+    /usr/bin/grep -Fq 'RESULT|129|SIGNAL_HUP|0' "$runner_output" &&
+    ! runner_launch_registration_is_adjacent "$mutant"; then
+    SELFTEST_MUTANT_PRIVATE_ROOT_RECORD=''
+    printf 'CONTROL: NEG-B039-LAUNCH-WINDOW published_pid=%s waited_pid=%s actual_wait_status=%s private_root_absent=yes\n' \
+      "$published_pid" "$waited_pid" "$wait_status"
     printf '%s\n' 'FAIL: NEG-B039-LAUNCH-WINDOW: synchronized command exists between child launch and active-PID publication' >&2
     return 1
   fi
 
-  printf 'NEG-B039-LAUNCH-WINDOW control failed unexpectedly: signal=%s wait=%s root=%s\n' \
-    "$signal_status" "$runner_status" "${recorded_root:-missing}" >&2
+  printf 'NEG-B039-LAUNCH control failed unexpectedly: mode=%s signal=%s wait=%s published=%s waited=%s waitStatus=%s bypassed=%s cleared=%s registered=%s root=%s\n' \
+    "$mode" "$signal_status" "$runner_status" "${published_pid:-missing}" \
+    "${waited_pid:-missing}" "${wait_status:-missing}" "${bypassed_pid:-missing}" \
+    "$cleared_count" "$registered_count" "${recorded_root:-missing}" >&2
   return 2
 }
 
 run_cleanup_omission_negative_control() {
   local mutation_dir="$TMP_ROOT/neg-b039-cleanup-omission"
   local mutant="$mutation_dir/python-env.sh"
+  local private_prefix="$mutation_dir/bubbles-python-security"
   local root_record="$mutation_dir/private-root.record"
   local runner_output="$mutation_dir/runner.output"
   local runtime=""
@@ -319,7 +517,7 @@ run_cleanup_omission_negative_control() {
   local leak_removed=0
 
   mkdir -p "$mutation_dir"
-  make_runner_mutation cleanup-omit-root "$mutant" || {
+  make_runner_mutation cleanup-omit-root "$mutant" "$private_prefix" || {
     printf '%s\n' 'NEG-B039-CLEANUP-OMISSION setup failed: copied mutation did not match exactly' >&2
     return 2
   }
@@ -361,7 +559,7 @@ run_cleanup_omission_negative_control() {
   fi
   /bin/cat "$runner_output"
   recorded_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
-  if [[ "$runner_status" -eq 1 && "$recorded_root" == /tmp/bubbles-python-security.* &&
+  if [[ "$runner_status" -eq 1 && "$recorded_root" == "$private_prefix".* &&
     -e "$recorded_root" ]] &&
     /usr/bin/grep -Fq 'FAIL: NEG-B039-CLEANUP-OMISSION: private execution root remains after real mutated cleanup' "$runner_output"; then
     /bin/rm -rf "$recorded_root"
@@ -387,8 +585,9 @@ assert_python_negative_control() {
   local output_file="$TMP_ROOT/$mode-negative-control.output"
   local control_status=0
 
-  if env BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL="$mode" "$BASH" "$SELFTEST_SCRIPT" \
-    >"$output_file" 2>&1 </dev/null; then
+  if bubbles_run_with_timeout 30 env \
+    BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL="$mode" \
+    "$BASH" "$SELFTEST_SCRIPT" >"$output_file" 2>&1 </dev/null; then
     control_status=0
   else
     control_status=$?
@@ -406,7 +605,13 @@ if [[ -n "${BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL:-}" ]]; then
   negative_control_status=0
   case "$BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL" in
     launch-window)
-      if run_launch_window_negative_control; then negative_control_status=0; else negative_control_status=$?; fi
+      if run_launch_window_negative_control launch-window; then negative_control_status=0; else negative_control_status=$?; fi
+      ;;
+    exact-wait-bypass)
+      if run_launch_window_negative_control launch-window-no-wait; then negative_control_status=0; else negative_control_status=$?; fi
+      ;;
+    launch-readiness)
+      if run_launch_window_negative_control launch-readiness; then negative_control_status=0; else negative_control_status=$?; fi
       ;;
     cleanup-omission)
       if run_cleanup_omission_negative_control; then negative_control_status=0; else negative_control_status=$?; fi
@@ -425,6 +630,14 @@ assert_python_negative_control \
   NEG-B039-LAUNCH-WINDOW \
   launch-window \
   'FAIL: NEG-B039-LAUNCH-WINDOW: synchronized command exists between child launch and active-PID publication'
+assert_python_negative_control \
+  NEG-B039-EXACT-WAIT \
+  exact-wait-bypass \
+  'FAIL: NEG-B039-EXACT-WAIT: copied wait bypass retains PID clear but cannot satisfy the exact-wait assertion'
+assert_python_negative_control \
+  NEG-B039-LAUNCH-READINESS \
+  launch-readiness \
+  'FAIL: NEG-B039-LAUNCH-READINESS: abnormal readiness terminates within the watchdog and leaves no private runner root'
 assert_python_negative_control \
   NEG-B039-CLEANUP-OMISSION \
   cleanup-omission \
