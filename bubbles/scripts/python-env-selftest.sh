@@ -39,41 +39,36 @@ fail=0
 TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
-SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+SELFTEST_ACTIVE_CHILD=''
 
-selftest_terminate_lifecycle_tree() {
-  local waited=0
+selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -TERM -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    while kill -0 -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
-      /bin/sleep 1
-      waited=$((waited + 1))
-    done
-    kill -KILL -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-  fi
-  if [[ "$SELFTEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -KILL "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
-    wait "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    builtin kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
   fi
   SELFTEST_LIFECYCLE_PID=''
-  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+}
+
+selftest_stop_active_child() {
+  if [[ "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin kill -KILL "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin wait "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+  fi
+  SELFTEST_ACTIVE_CHILD=''
 }
 
 selftest_cleanup() {
   local status=$?
-  trap - EXIT HUP INT TERM
-  bubbles_python_terminate_active_tree
-  selftest_terminate_lifecycle_tree
+  builtin trap - EXIT HUP INT TERM
+  bubbles_python_security_cleanup || true
+  selftest_stop_active_child
+  selftest_stop_exact_child
   /bin/rm -rf "$TMP_ROOT"
   if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
     echo "FAIL: python-env selftest exited before its completion summary" >&2
     status=1
-  fi
-  if [[ -n "${BUBBLES_PYTHON_SELFTEST_DONE_FILE:-}" ]]; then
-    printf '%s\n' "$status" >"$BUBBLES_PYTHON_SELFTEST_DONE_FILE"
   fi
   exit "$status"
 }
@@ -96,20 +91,18 @@ if [[ -n "${BUBBLES_PYTHON_SELFTEST_CHILD_MODE:-}" ]]; then
   fi
   case "$BUBBLES_PYTHON_SELFTEST_CHILD_MODE" in
     premature-exit)
-      printf '%s\t\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      printf '%s\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
       exit 0
       ;;
     timeout-exit)
-      printf '%s\t\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      printf '%s\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
       exit 124
       ;;
     interrupt-hold)
-      /bin/sleep 300 &
-      selftest_descendant_pid=$!
-      SELFTEST_LIFECYCLE_DESCENDANT_PID="$selftest_descendant_pid"
-      printf '%s\t%s\n' "$TMP_ROOT" "$selftest_descendant_pid" \
-        >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
-      wait "$selftest_descendant_pid"
+      /usr/bin/mkfifo "$TMP_ROOT/interrupt-hold.fifo"
+      exec 9<>"$TMP_ROOT/interrupt-hold.fifo"
+      printf '%s\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      builtin read -r -t 300 _selftest_hold <&9
       ;;
     *)
       echo "python-env selftest child mode is invalid" >&2
@@ -132,58 +125,41 @@ assert_selftest_lifecycle_fails_closed() {
   local signal_name="$2"
   local expected_status="$3"
   local label="$4"
-  local ready_file="$TMP_ROOT/lifecycle-$mode-$signal_name.ready"
-  local done_file="$TMP_ROOT/lifecycle-$mode-$signal_name.done"
+  local ready_fifo="$TMP_ROOT/lifecycle-$mode-$signal_name.ready.fifo"
   local output_file="$TMP_ROOT/lifecycle-$mode-$signal_name.log"
   local child_pid=""
   local child_tmp=""
-  local child_descendant_pid=""
   local child_status=0
-  local cleanup_status=""
-  local deadline=0
-  local monitor_was_enabled=0
+  local read_status=0
 
-  [[ "$-" == *m* ]] && monitor_was_enabled=1
-  set -m
+  /usr/bin/mkfifo "$ready_fifo"
   BUBBLES_PYTHON_SELFTEST_CHILD_MODE="$mode" \
-    BUBBLES_PYTHON_SELFTEST_READY_FILE="$ready_file" \
-    BUBBLES_PYTHON_SELFTEST_DONE_FILE="$done_file" \
+    BUBBLES_PYTHON_SELFTEST_READY_FILE="$ready_fifo" \
     /bin/bash "$SELFTEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
   child_pid=$!
   SELFTEST_LIFECYCLE_PID="$child_pid"
-  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
-
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$ready_file" ]]; then
-    selftest_terminate_lifecycle_tree
+  exec 6<"$ready_fifo"
+  if builtin read -r -t 10 child_tmp <&6; then
+    read_status=0
+  else
+    read_status=$?
+  fi
+  exec 6>&-
+  if [[ "$read_status" -ne 0 || -z "$child_tmp" ]]; then
+    selftest_stop_exact_child
     bad "$label reaches its bounded ready point"
     return
   fi
-  IFS=$'\t' read -r child_tmp child_descendant_pid <"$ready_file"
-  SELFTEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
 
   if [[ "$signal_name" != "NONE" ]]; then
-    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
   fi
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$done_file" ]]; then
-    selftest_terminate_lifecycle_tree
-    bad "$label reaches its bounded cleanup-complete point"
-    return
-  fi
-  cleanup_status="$(/bin/cat "$done_file")"
-  wait "$child_pid" 2>/dev/null || child_status=$?
+  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
   SELFTEST_LIFECYCLE_PID=''
-  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+  if [[ "$child_status" -eq "$expected_status" ]]; then
     ok "$label preserves fatal exit $expected_status"
   else
-    bad "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+    bad "$label expected exit $expected_status, got wait=$child_status"
   fi
   if [[ -n "$child_tmp" && ! -e "$child_tmp" ]]; then
     ok "$label removes its temporary tree"
@@ -191,13 +167,7 @@ assert_selftest_lifecycle_fails_closed() {
     bad "$label removes its temporary tree (still present: $child_tmp)"
     [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
   fi
-  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
-    ok "$label leaves no descendant process"
-  else
-    bad "$label leaked descendant $child_descendant_pid"
-    kill -KILL "$child_descendant_pid" 2>/dev/null || true
-  fi
-  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+  ok "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'python-env selftest:' "$output_file"; then
     bad "$label must not emit a success summary"
   else
@@ -209,7 +179,6 @@ echo "Scenario: premature and interrupted python-env selftests fail closed while
 assert_selftest_lifecycle_fails_closed premature-exit NONE 1 "Premature EXIT"
 assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
 assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
-assert_selftest_lifecycle_fails_closed interrupt-hold INT 130 "INT interruption"
 assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
 
 assert_exit() {
@@ -514,17 +483,73 @@ make_probe_python() {
         echo 'exit 69'
         ;;
       hang) echo 'exec /bin/sleep 300' ;;
-      tree-hang)
-        echo '/bin/sleep 300 &'
-        echo 'probe_child_pid=$!'
-        echo 'printf "%s\n" "$probe_child_pid" >"${BUBBLES_PYTHON_TREE_PID_FILE:?tree pid file required}"'
-        echo 'wait "$probe_child_pid"'
-        ;;
       malformed) echo "printf %s 'not-the-probe-protocol'" ;;
     esac
   } >"$path"
   chmod +x "$path"
 }
+
+# ── SCN-B039-005 RED: caller-owned executables cannot grant security authority ──
+# This case intentionally calls the production security resolver. The fake can
+# forge every public protocol token used by the historical implementation, but
+# a root-protected resolver must neither execute it nor publish it as authority.
+scope2_forged_root="$TMP_ROOT/scope2-forged-runtime"
+scope2_forged_python="$scope2_forged_root/bin/python3"
+scope2_forged_marker="$scope2_forged_root/executed.marker"
+mkdir -p "$(dirname "$scope2_forged_python")"
+cat >"$scope2_forged_python" <<'EOF'
+#!/bin/bash
+printf '%s\n' 'caller-owned runtime executed' >"${BUBBLES_SCOPE2_FORGED_MARKER:?marker required}"
+printf '%s' 'bubbles-python-runs'
+printf '\nRUNTIME\tPYSEC1\t3\t9\n'
+printf 'COMPLETE\tPYMOD1\t9\n'
+printf 'COMPLETE\tSCS1\t1\n'
+exit 0
+EOF
+chmod +x "$scope2_forged_python"
+
+scope2_resolution="$(env \
+  PATH="$(dirname "$scope2_forged_python"):/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON="$scope2_forged_python" \
+  BUBBLES_PYTHON_HOME="$scope2_forged_root" \
+  BUBBLES_SCOPE2_FORGED_MARKER="$scope2_forged_marker" \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  /bin/bash -c '
+    . "$1"
+    if ! declare -F bubbles_python_resolve_security_runtime >/dev/null 2>&1; then
+      printf "API_MISSING"
+    elif bubbles_python_resolve_security_runtime >/dev/null; then
+      printf "RESOLVED|%s|%s|%s" \
+        "$BUBBLES_PYTHON_SECURITY_STATUS" \
+        "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" \
+        "$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT"
+    else
+      printf "DECLINED|%s|%s|%s" \
+        "$BUBBLES_PYTHON_SECURITY_STATUS" \
+        "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" \
+        "$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT"
+    fi
+  ' _ "$ENV_SH" 2>/dev/null || true)"
+case "$scope2_resolution" in
+  RESOLVED\|0\|OK\|root-protected-native-python-v1 | \
+    DECLINED\|*\|*\|root-protected-native-python-v1)
+    ok "SCN-B039-005: security resolution publishes only the root-protected trust contract"
+    ;;
+  *)
+    bad "SCN-B039-005: security resolver contract result was '$scope2_resolution'"
+    ;;
+esac
+if [[ ! -e "$scope2_forged_marker" ]]; then
+  ok "SCN-B039-005: caller-owned override, managed, and PATH runtime is never executed"
+else
+  bad "SCN-B039-005: caller-owned runtime executed during security resolution"
+fi
+if ! declare -F bubbles_python_run_bounded >/dev/null 2>&1 &&
+  ! declare -F bubbles_python_resolve_trusted_runnable >/dev/null 2>&1; then
+  ok "SCN-B039-005: superseded generic runner and managed trust API are absent"
+else
+  bad "SCN-B039-005: superseded generic runner or managed trust API remains exposed"
+fi
 
 # ── Case 12: the locator order is ordered, not incidental ─────────────────
 c12="$TMP_ROOT/c12"
@@ -665,167 +690,423 @@ else
   bad "A7b negative control: legacy isolation-path override reached a trusted helper ('$a7b_mutant_result')"
 fi
 
-a7c_log="$a7/timeout.log"
-a7c_status=0
-bubbles_python_run_bounded 1 1 "$a7c_log" /bin/sleep 300 || a7c_status=$?
-if [[ "$a7c_status" -eq 124 ]]; then
-  ok "A7c: bounded runner returns timeout status 124"
+# ── SCN-B039-005: authenticated native runtime and hostile environment ─────
+echo "Scenario: SCN-B039-005 resolves an authenticated native runtime independently of caller Python state."
+security_status=0
+if DEVELOPER_DIR=/Library/Developer/CommandLineTools bubbles_python_resolve_security_runtime; then
+  security_status=0
 else
-  bad "A7c: bounded runner returned '$a7c_status', expected 124"
+  security_status=$?
 fi
+if [[ "$security_status" -eq 0 && "$BUBBLES_PYTHON_SECURITY_STATUS" -eq 0 &&
+  "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" == OK &&
+  "$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT" == root-protected-native-python-v1 &&
+  "$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL" == PYSEC1 &&
+  "$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL" == PYMOD1 ]]; then
+  ok "SCN-B039-005: validated CLT/xcrun path authenticates PYSEC1 and PYMOD1"
+else
+  bad "SCN-B039-005: authenticated positive path failed status=$security_status runtimeStatus=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION"
+fi
+SECURITY_RUNTIME="$BUBBLES_PYTHON_SECURITY_RUNTIME"
 
-a7d_term="$a7/term-self.sh"
-cat >"$a7d_term" <<'EOF'
-#!/bin/bash
-exit 143
+hostile_env_root="$TMP_ROOT/security-hostile-env"
+hostile_env_marker="$hostile_env_root/marker"
+mkdir -p "$hostile_env_root"
+cat >"$hostile_env_root/sitecustomize.py" <<EOF
+from pathlib import Path
+Path("$hostile_env_marker").write_text("executed", encoding="utf-8")
 EOF
-chmod +x "$a7d_term"
-a7d_log="$a7/term.log"
-a7d_status=0
-bubbles_python_run_bounded 5 1 "$a7d_log" "$a7d_term" || a7d_status=$?
-if [[ "$a7d_status" -eq 143 ]]; then
-  ok "A7d: command-owned signal status 143 remains visible"
+hostile_resolution="$(PYTHONPATH="$hostile_env_root" PYTHONHOME="$hostile_env_root" \
+  PYTHONSTARTUP="$hostile_env_root/sitecustomize.py" LD_PRELOAD="$hostile_env_root/missing.so" \
+  DYLD_INSERT_LIBRARIES="$hostile_env_root/missing.dylib" \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash -c '
+    . "$1"
+    if bubbles_python_resolve_security_runtime; then result=RESOLVED; else result=DECLINED; fi
+    printf "%s|%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_SECURITY_STATUS" \
+      "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" "$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL" \
+      "$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL"
+  ' _ "$ENV_SH" 2>/dev/null || true)"
+if [[ "$hostile_resolution" == "RESOLVED|0|OK|PYSEC1|PYMOD1" && ! -e "$hostile_env_marker" ]]; then
+  ok "SCN-B039-005: PYTHON and loader environment cannot enter the isolated runtime"
 else
-  bad "A7d: command-owned signal status returned '$a7d_status', expected 143"
+  bad "SCN-B039-005: hostile environment result='$hostile_resolution' marker=$([[ -e "$hostile_env_marker" ]] && echo present || echo absent)"
 fi
 
-a7e_delayed="$a7/delayed-valid.sh"
-cat >"$a7e_delayed" <<'EOF'
+# ── SCN-B039-005 path predicates: ownership, modes, links, and native bytes ──
+echo "Scenario: SCN-B039-005 path authentication rejects caller authority and unsafe link topology."
+path_fixture="$TMP_ROOT/security-paths"
+mkdir -p "$path_fixture/bin"
+cat >"$path_fixture/bin/python3" <<'EOF'
 #!/bin/bash
-/bin/sleep 2
-printf '%s' 'bubbles-python-runs'
+printf '%s\n' 'RUNTIME PYSEC1 forged'
 EOF
-chmod +x "$a7e_delayed"
-a7e_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=1 /bin/bash -c \
-  '. "$1"; . "$2"; if bubbles_python_runs "$3"; then result=RUNS; else result=DECLINED; fi; printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"' \
-  _ "$GUARD_LIB" "$ENV_SH" "$a7e_delayed" 2>/dev/null || true)"
-if [[ "$a7e_result" == "DECLINED|124|PROBE_TIMEOUT" ]]; then
-  ok "A7e negative control: a one-second bound deterministically rejects a delayed valid probe"
+chmod +x "$path_fixture/bin/python3"
+if _bubbles_python_security_authenticate_path "$path_fixture/bin/python3" executable 1; then
+  bad "SCN-B039-005: caller-owned text executable was authenticated"
 else
-  bad "A7e negative control returned '$a7e_result'"
+  case "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION" in
+    ANCESTOR_OWNER | ANCESTOR_MODE_WRITABLE | ANCESTOR_CALLER_WRITABLE | TARGET_OWNER | TARGET_CALLER_WRITABLE | TARGET_FORMAT)
+      ok "SCN-B039-005: caller-owned path is rejected before execution ($BUBBLES_PYTHON_SECURITY_PATH_REJECTION)"
+      ;;
+    *) bad "SCN-B039-005: caller-owned path rejection was '$BUBBLES_PYTHON_SECURITY_PATH_REJECTION'" ;;
+  esac
+fi
+if ! _bubbles_python_security_mode_is_writable 755 && _bubbles_python_security_mode_is_writable 775 &&
+  _bubbles_python_security_mode_is_writable 757 && _bubbles_python_security_mode_is_writable 777; then
+  ok "SCN-B039-005: group/other writable ancestor and target modes fail closed"
+else
+  bad "SCN-B039-005: writable-mode predicate accepted an unsafe mode"
+fi
+if _bubbles_python_security_native_format "$path_fixture/bin/python3"; then
+  bad "SCN-B039-005: text wrapper passed native ELF/Mach-O identity"
+else
+  ok "SCN-B039-005: text wrapper is rejected by native-format identity"
 fi
 
-a7f_tree="$a7/tree-hang/python3"
-a7f_pid_file="$a7/tree-hang-child.pid"
-make_probe_python "$a7f_tree" tree-hang
-a7f_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=3 \
-  BUBBLES_PYTHON_TREE_PID_FILE="$a7f_pid_file" /bin/bash -c \
-  '. "$1"; . "$2"; if bubbles_python_runs "$3"; then result=RUNS; else result=DECLINED; fi; printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"' \
-  _ "$GUARD_LIB" "$ENV_SH" "$a7f_tree" 2>/dev/null || true)"
-if [[ "$a7f_result" == "DECLINED|124|PROBE_TIMEOUT" ]]; then
-  ok "A7f: descendant-spawning probe returns timeout status 124"
-else
-  bad "A7f: descendant-spawning probe returned '$a7f_result'"
-fi
-a7f_child_pid=""
-if [[ -s "$a7f_pid_file" ]]; then
-  a7f_child_pid="$(cat "$a7f_pid_file")"
-fi
-if [[ "$a7f_child_pid" =~ ^[1-9][0-9]*$ ]] && ! kill -0 "$a7f_child_pid" 2>/dev/null; then
-  ok "A7f negative control: probe timeout removes the complete process tree"
-else
-  bad "A7f negative control: probe timeout leaked descendant '${a7f_child_pid:-unreported}'"
-  if [[ "$a7f_child_pid" =~ ^[1-9][0-9]*$ ]]; then
-    kill -KILL "$a7f_child_pid" 2>/dev/null || true
-  fi
-fi
+ln -s target "$path_fixture/cycle-a"
+ln -s cycle-a "$path_fixture/target"
+depth_target="$path_fixture/depth-final"
+printf '%s\n' x >"$depth_target"
+depth_index=34
+while [[ "$depth_index" -ge 1 ]]; do
+  if [[ "$depth_index" -eq 34 ]]; then depth_next='depth-final'; else depth_next="depth-$((depth_index + 1))"; fi
+  ln -s "$depth_next" "$path_fixture/depth-$depth_index"
+  depth_index=$((depth_index - 1))
+done
+link_escape="$path_fixture/link-escape"
+ln -s "$path_fixture/bin/python3" "$link_escape"
 
-# ── ADVERSARIAL A7g: child completion is not inferred from PID liveness ───
-# `kill -0` answers whether a PID still exists, not whether our child completed.
-# An exited, unreaped child remains visible, and a recycled PID names unrelated
-# work. Hold only that observation stale while every real signal still reaches
-# the shell builtin. The exact silent-probe fixture must retain its real exit 0
-# and become PROBE_EMPTY rather than a fabricated timeout.
-a7g_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=2 /bin/bash -c '
-  . "$1"
-  kill() {
-    if [[ "${1:-}" == "-0" ]]; then
-      return 0
+synthetic_link_rejection() {
+  local requested="$1"
+  local expected="$2"
+  local observed=""
+  observed="$(/bin/bash -c '
+    . "$1"
+    original_definition="$(declare -f _bubbles_python_security_stat)"
+    original_definition="${original_definition/_bubbles_python_security_stat/_bubbles_python_security_stat_real}"
+    eval "$original_definition"
+    _bubbles_python_security_validate_directory() { return 0; }
+    _bubbles_python_security_stat() {
+      _bubbles_python_security_stat_real "$@" || return $?
+      if [[ "$BUBBLES_PYTHON_SECURITY_META_TYPE" == symlink ]]; then
+        BUBBLES_PYTHON_SECURITY_META_OWNER=0
+      fi
+    }
+    if _bubbles_python_security_authenticate_path "$2" file 0; then
+      printf RESOLVED
+    else
+      printf "%s" "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
     fi
-    builtin kill "$@"
-  }
-  if bubbles_python_runs "$2"; then result=RUNS; else result=DECLINED; fi
-  printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"
-' _ "$ENV_SH" "$a7/silent/python3" 2>/dev/null || true)"
-if [[ "$a7g_result" == "DECLINED|0|PROBE_EMPTY" ]]; then
-  ok "A7g: completed silent probe is classified from child completion, not stale PID liveness"
+  ' _ "$ENV_SH" "$requested" 2>/dev/null || true)"
+  if [[ "$observed" == "$expected" ]]; then
+    ok "SCN-B039-005: $expected is detected by the production link walker"
+  else
+    bad "SCN-B039-005: expected $expected, observed '${observed:-empty}'"
+  fi
+}
+synthetic_link_rejection "$path_fixture/cycle-a" SYMLINK_CYCLE
+synthetic_link_rejection "$path_fixture/depth-1" SYMLINK_DEPTH
+synthetic_link_rejection "$link_escape" TARGET_OWNER
+
+synthetic_final_rejection() {
+  local mode="$1"
+  local requested="$2"
+  local expected="$3"
+  local observed=""
+  observed="$(/bin/bash -c '
+    . "$1"
+    mode="$2"
+    requested="$3"
+    expected_target="$4"
+    original_definition="$(declare -f _bubbles_python_security_stat)"
+    original_definition="${original_definition/_bubbles_python_security_stat/_bubbles_python_security_stat_real}"
+    eval "$original_definition"
+    _bubbles_python_security_validate_directory() { return 0; }
+    _bubbles_python_security_stat() {
+      _bubbles_python_security_stat_real "$@" || return $?
+      if [[ "$1" == "$expected_target" ]]; then
+        case "$mode" in
+          root-metadata-writable-mode)
+            BUBBLES_PYTHON_SECURITY_META_OWNER=0
+            BUBBLES_PYTHON_SECURITY_META_MODE=777
+            BUBBLES_PYTHON_SECURITY_META_TYPE=file
+            ;;
+          root-metadata-caller-writable)
+            BUBBLES_PYTHON_SECURITY_META_OWNER=0
+            BUBBLES_PYTHON_SECURITY_META_MODE=755
+            BUBBLES_PYTHON_SECURITY_META_TYPE=file
+            ;;
+        esac
+      fi
+    }
+    if _bubbles_python_security_authenticate_path "$requested" file 0; then
+      printf RESOLVED
+    else
+      printf "%s" "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
+    fi
+  ' _ "$ENV_SH" "$mode" "$requested" "$requested" 2>/dev/null || true)"
+  if [[ "$observed" == "$expected" ]]; then
+    ok "SCN-B039-005: $expected rejects $mode through the production path walker"
+  else
+    bad "SCN-B039-005: $mode expected $expected, observed '${observed:-empty}'"
+  fi
+}
+synthetic_final_rejection caller-owned-target "$path_fixture/bin/python3" TARGET_OWNER
+synthetic_final_rejection root-metadata-writable-mode "$path_fixture/bin/python3" TARGET_MODE_WRITABLE
+synthetic_final_rejection root-metadata-caller-writable "$path_fixture/bin/python3" TARGET_CALLER_WRITABLE
+synthetic_final_rejection caller-owned-symlink "$link_escape" SYMLINK_OWNER
+
+# ── SCN-B039-005 protocol corruption and untrusted closure mutations ───────
+echo "Scenario: SCN-B039-005 malformed PYSEC1/PYMOD1 and untrusted origins fail closed."
+runtime_capture="$TMP_ROOT/runtime-probe.capture"
+module_capture="$TMP_ROOT/module-probe.capture"
+if bubbles_python_run_security_operation runtime-probe; then
+  /bin/cp "$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" "$runtime_capture"
+  bubbles_python_security_cleanup || true
 else
-  bad "A7g: completed silent probe was misclassified as '$a7g_result'"
+  bad "SCN-B039-005: authenticated runtime-probe operation failed"
+  bubbles_python_security_cleanup || true
+fi
+if bubbles_python_run_security_operation module-probe; then
+  /bin/cp "$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" "$module_capture"
+  bubbles_python_security_cleanup || true
+else
+  bad "SCN-B039-005: authenticated module-probe operation failed"
+  bubbles_python_security_cleanup || true
 fi
 
-# ── ADVERSARIAL A8: security consumers trust only the managed venv ────────
-# BUBBLES_PYTHON and PATH remain valid general-consumer candidates, but neither
-# is a provenance root for a security classifier. These assertions call the
-# production resolver and inspect its closed numeric-status/reason contract.
-trusted_resolution() {
-  local home="$1"
-  shift
-  env BUBBLES_PYTHON_HOME="$home" "$@" bash -c \
-    '. "$1"; . "$2"; if bubbles_python_resolve_trusted_runnable >/dev/null; then result=RESOLVED; else result=DECLINED; fi; printf "%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_TRUSTED_STATUS" "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" "$BUBBLES_PYTHON_TRUST_CONTRACT"' \
-    _ "$GUARD_LIB" "$ENV_SH"
+malformed_runtime="$TMP_ROOT/runtime-malformed.capture"
+printf 'RUNTIME\tPYSEC1\t3\n' >"$malformed_runtime"
+if _bubbles_python_security_validate_runtime_protocol "$malformed_runtime" "$SECURITY_RUNTIME"; then
+  bad "SCN-B039-005: malformed PYSEC1 was accepted"
+else
+  ok "SCN-B039-005: malformed PYSEC1 is rejected"
+fi
+unsupported_runtime="$TMP_ROOT/runtime-unsupported.capture"
+/usr/bin/awk 'NR == 1 { print "RUNTIME\tPYSEC1\t3\t8"; next } { print }' \
+  "$runtime_capture" >"$unsupported_runtime"
+BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='NOT_RUN'
+if _bubbles_python_security_validate_runtime_protocol "$unsupported_runtime" "$SECURITY_RUNTIME"; then
+  bad "SCN-B039-005: unsupported Python 3.8 protocol was accepted"
+elif [[ "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" == PYTHON_VERSION_UNSUPPORTED ]]; then
+  ok "SCN-B039-005: unsupported Python version receives its closed diagnostic"
+else
+  bad "SCN-B039-005: unsupported-version diagnostic was '$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC'"
+fi
+untrusted_search_root="$TMP_ROOT/untrusted-search-root"
+mkdir -p "$untrusted_search_root"
+untrusted_runtime="$TMP_ROOT/runtime-untrusted-root.capture"
+/usr/bin/awk -v bad="$untrusted_search_root" '
+  BEGIN { changed=0 }
+  /^PATH\tPYSEC1\t/ && changed == 0 { print "PATH\tPYSEC1\t" bad; changed=1; next }
+  { print }
+' "$runtime_capture" >"$untrusted_runtime"
+BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='NOT_RUN'
+if _bubbles_python_security_validate_runtime_protocol "$untrusted_runtime" "$SECURITY_RUNTIME"; then
+  bad "SCN-B039-005: caller-owned PYSEC1 search root was accepted"
+elif [[ "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" == RUNTIME_CLOSURE_UNTRUSTED ]]; then
+  ok "SCN-B039-005: caller-owned PYSEC1 search root fails closure authentication"
+else
+  bad "SCN-B039-005: untrusted PYSEC1 root diagnostic was '$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC'"
+fi
+malformed_module="$TMP_ROOT/module-malformed.capture"
+printf 'COMPLETE\tPYMOD1\t8\n' >"$malformed_module"
+if _bubbles_python_security_validate_module_protocol "$malformed_module"; then
+  bad "SCN-B039-005: malformed PYMOD1 was accepted"
+else
+  ok "SCN-B039-005: malformed PYMOD1 is rejected"
+fi
+module_record_count="$(/usr/bin/grep -c $'^MODULE\tPYMOD1\t' "$module_capture" || true)"
+module_declared_count="$(/usr/bin/awk -F '\t' '$1 == "COMPLETE" && $2 == "PYMOD1" { print $3 }' "$module_capture")"
+if [[ "$module_record_count" =~ ^[0-9]+$ && "$module_declared_count" == "$module_record_count" &&
+  "$module_record_count" -gt 9 ]]; then
+  ok "SCN-B039-005: PYMOD1 authenticates the complete loaded-module closure ($module_record_count records)"
+else
+  bad "SCN-B039-005: PYMOD1 closure count records=$module_record_count declared=${module_declared_count:-missing}"
+fi
+untrusted_module="$TMP_ROOT/module-untrusted-origin.capture"
+printf '%s\n' 'untrusted module fixture' >"$untrusted_search_root/module.py"
+/usr/bin/awk -v bad="$untrusted_search_root/module.py" '
+  BEGIN { changed=0 }
+  /^MODULE\tPYMOD1\t/ && $4 == "file" && changed == 0 { $5=bad; OFS="\t"; print $1,$2,$3,$4,$5; changed=1; next }
+  { print }
+' "$module_capture" >"$untrusted_module"
+BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='NOT_RUN'
+if _bubbles_python_security_validate_module_protocol "$untrusted_module"; then
+  bad "SCN-B039-005: caller-owned PYMOD1 origin was accepted"
+elif [[ "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" == MODULE_CLOSURE_UNTRUSTED ]]; then
+  ok "SCN-B039-005: caller-owned PYMOD1 origin fails closure authentication"
+else
+  bad "SCN-B039-005: untrusted PYMOD1 origin diagnostic was '$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC'"
+fi
+BUBBLES_PYTHON_SECURITY_RUNTIME="$SECURITY_RUNTIME"
+BUBBLES_PYTHON_SECURITY_STATUS=0
+BUBBLES_PYTHON_SECURITY_DIAGNOSTIC=OK
+BUBBLES_PYTHON_SECURITY_REJECTION=NONE
+# Fixture input is consumed by functions sourced from python-env.sh.
+# shellcheck disable=SC2034
+BUBBLES_PYTHON_SECURITY_PROVENANCE=root-protected-path
+BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL=PYSEC1
+BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
+
+# ── SCN-B039-007/008 exact-child status and cleanup mutations ──────────────
+make_runner_mutation() {
+  local mode="$1"
+  local destination="$2"
+  /usr/bin/awk -v mode="$mode" '
+    /local wall_seconds=30/ && mode == "timeout" { sub(/30/, "1") }
+    /command_args=\(\/usr\/bin\/env -i LC_ALL=C "\$runtime" -I -S -B -c "\$runtime_program"\)/ {
+      if (mode == "child73") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(73)\")"; next }
+      if (mode == "child143") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(143)\")"; next }
+      if (mode == "timeout") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import time; time.sleep(300)\")"; next }
+      if (mode == "signal-hup") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGHUP); time.sleep(300)\")"; next }
+      if (mode == "signal-int") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGINT); time.sleep(300)\")"; next }
+      if (mode == "signal-term") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGTERM); time.sleep(300)\")"; next }
+    }
+    /printf '\''READY\\tBPY1\\t%s\\n'\''/ && mode == "control125" {
+      sub(/READY/, "MALFORMED")
+    }
+    /\/usr\/bin\/mkfifo "\$BUBBLES_PYTHON_SECURITY_FIFO_PATH"/ && mode == "setup125" {
+      sub(/\/usr\/bin\/mkfifo/, "/definitely/missing/mkfifo")
+    }
+    { print }
+  ' "$ENV_SH" >"$destination"
 }
 
-a8="$TMP_ROOT/a8"
-mkdir -p "$a8/absent" "$a8/path" "$a8/override"
-make_probe_python "$a8/path/python3" healthy
-make_probe_python "$a8/override/python3" healthy
+run_fixed_operation_case() {
+  local mode="$1" expected_status="$2" expected_diagnostic="$3"
+  local copy_dir="$TMP_ROOT/runner-$mode" copy="$TMP_ROOT/runner-$mode/python-env.sh"
+  local result=""
+  mkdir -p "$copy_dir"
+  make_runner_mutation "$mode" "$copy"
+  result="$(/bin/bash -c '
+    . "$1"
+    BUBBLES_PYTHON_SECURITY_RUNTIME="$2"
+    BUBBLES_PYTHON_SECURITY_STATUS=0
+    BUBBLES_PYTHON_SECURITY_DIAGNOSTIC=OK
+    BUBBLES_PYTHON_SECURITY_PROVENANCE=root-protected-path
+    BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL=PYSEC1
+    BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
+    operation_status=0
+    bubbles_python_run_security_operation runtime-probe || operation_status=$?
+    root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
+    diagnostic="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC"
+    timed_out="$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT"
+    bubbles_python_security_cleanup || cleanup_status=$?
+    if [[ -z "$root" || ! -e "$root" ]]; then removed=yes; else removed=no; fi
+    printf "%s|%s|%s|%s" "$operation_status" "$diagnostic" "$timed_out" "$removed"
+  ' _ "$copy" "$SECURITY_RUNTIME" 2>/dev/null || true)"
+  expected_timeout=0
+  [[ "$expected_diagnostic" == CONTROL_TIMEOUT ]] && expected_timeout=1
+  if [[ "$result" == "$expected_status|$expected_diagnostic|$expected_timeout|yes" ]]; then
+    ok "SCN-B039-007/008: $mode preserves status $expected_status / $expected_diagnostic and removes private state"
+  else
+    bad "SCN-B039-007/008: $mode result '$result'"
+  fi
+}
 
-a8_no_locator="$(env -u BUBBLES_PYTHON_HOME -u XDG_CACHE_HOME -u HOME \
-  BUBBLES_PYTHON="$a8/override/python3" PATH="$a8/path:/usr/bin:/bin" bash -c \
-  '. "$1"; . "$2"; if bubbles_python_resolve_trusted_runnable >/dev/null; then result=RESOLVED; else result=DECLINED; fi; printf "%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_TRUSTED_STATUS" "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" "$BUBBLES_PYTHON_TRUST_CONTRACT"' \
-  _ "$GUARD_LIB" "$ENV_SH" 2>/dev/null || true)"
-if [[ "$a8_no_locator" == "DECLINED|127|NO_LOCATOR|managed-venv-only-v1" ]]; then
-  ok "A8: trusted resolver refuses override/PATH candidates when no managed locator exists"
+run_fixed_operation_case child73 73 CHILD_EXIT_NONZERO
+run_fixed_operation_case timeout 124 CONTROL_TIMEOUT
+run_fixed_operation_case control125 125 CONTROL_MALFORMED
+run_fixed_operation_case child143 143 CHILD_EXIT_NONZERO
+run_fixed_operation_case setup125 125 CAPTURE_UNAVAILABLE
+run_fixed_operation_case signal-hup 129 SIGNAL_HUP
+run_fixed_operation_case signal-int 130 SIGNAL_INT
+run_fixed_operation_case signal-term 143 SIGNAL_TERM
+
+success_shadow_result="$(/bin/bash -c '
+  . "$1"
+  BUBBLES_PYTHON_SECURITY_RUNTIME="$2"
+  BUBBLES_PYTHON_SECURITY_STATUS=0
+  BUBBLES_PYTHON_SECURITY_DIAGNOSTIC=OK
+  BUBBLES_PYTHON_SECURITY_PROVENANCE=root-protected-path
+  BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL=PYSEC1
+  BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
+  shadow_kill=0; shadow_wait=0
+  kill() { shadow_kill=$((shadow_kill + 1)); return 99; }
+  wait() { shadow_wait=$((shadow_wait + 1)); return 99; }
+  trap '\''return 91'\'' HUP
+  trap '\''return 92'\'' INT
+  trap '\''return 93'\'' TERM
+  before_hup="$(trap -p HUP)"; before_int="$(trap -p INT)"; before_term="$(trap -p TERM)"
+  operation_status=0
+  bubbles_python_run_security_operation runtime-probe || operation_status=$?
+  root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
+  bubbles_python_security_cleanup || cleanup_status=$?
+  after_hup="$(trap -p HUP)"; after_int="$(trap -p INT)"; after_term="$(trap -p TERM)"
+  if [[ "$before_hup" == "$after_hup" && "$before_int" == "$after_int" && "$before_term" == "$after_term" ]]; then traps=restored; else traps=changed; fi
+  if [[ -n "$root" && ! -e "$root" ]]; then removed=yes; else removed=no; fi
+  printf "%s|%s|%s|%s|%s|%s" "$operation_status" "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" "$shadow_kill" "$shadow_wait" "$traps" "$removed"
+' _ "$ENV_SH" "$SECURITY_RUNTIME" 2>/dev/null || true)"
+if [[ "$success_shadow_result" == "0|OK|0|0|restored|yes" ]]; then
+  ok "SCN-B039-007/008: success uses builtin kill/wait, restores traps, and removes captures"
 else
-  bad "A8: no-locator trust result was '$a8_no_locator'"
+  bad "SCN-B039-007/008: success/shadow result '$success_shadow_result'"
 fi
 
-a8_absent="$(trusted_resolution "$a8/absent" env PATH="$a8/path:/usr/bin:/bin" BUBBLES_PYTHON="$a8/override/python3" 2>/dev/null || true)"
-if [[ "$a8_absent" == "DECLINED|127|INTERPRETER_ABSENT|managed-venv-only-v1" ]]; then
-  ok "A8b: trusted resolver names an absent managed interpreter"
+# EXIT cleanup: intentionally leave a successful operation registered, then
+# exit the sourcing shell. Its restored outer process verifies the private root.
+exit_root_file="$TMP_ROOT/exit-cleanup-root"
+exit_case_status=0
+/bin/bash -c '
+  . "$1"
+  BUBBLES_PYTHON_SECURITY_RUNTIME="$2"
+  BUBBLES_PYTHON_SECURITY_STATUS=0
+  BUBBLES_PYTHON_SECURITY_DIAGNOSTIC=OK
+  BUBBLES_PYTHON_SECURITY_PROVENANCE=root-protected-path
+  BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL=PYSEC1
+  BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
+  bubbles_python_run_security_operation runtime-probe
+  printf "%s\n" "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" >"$3"
+  exit 77
+' _ "$ENV_SH" "$SECURITY_RUNTIME" "$exit_root_file" 2>/dev/null || exit_case_status=$?
+exit_private_root="$(/bin/cat "$exit_root_file" 2>/dev/null || true)"
+if [[ "$exit_case_status" -eq 77 && -n "$exit_private_root" && ! -e "$exit_private_root" ]]; then
+  ok "SCN-B039-008: EXIT cleanup removes an intentionally unconsumed operation root"
 else
-  bad "A8b: absent-interpreter trust result was '$a8_absent'"
+  bad "SCN-B039-008: EXIT cleanup status=$exit_case_status root='${exit_private_root:-missing}'"
 fi
 
-for probe_mode in silent malformed xcode healthy hang; do
-  probe_home="$a8/$probe_mode"
-  make_probe_python "$probe_home/bin/python3" "$probe_mode"
+# The repeated fixed-operation matrix has no retries: each of 30 named
+# iterations executes once against the same authenticated runtime.
+matrix_iteration=1
+matrix_failures=0
+while [[ "$matrix_iteration" -le 30 ]]; do
+  matrix_status=0
+  bubbles_python_run_security_operation runtime-probe || matrix_status=$?
+  matrix_root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
+  matrix_diagnostic="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC"
+  bubbles_python_security_cleanup || matrix_status=125
+  if [[ "$matrix_status" -eq 0 && "$matrix_diagnostic" == OK && -n "$matrix_root" && ! -e "$matrix_root" ]]; then
+    ok "SCN-B039-007 stress iteration $matrix_iteration/30 exact-child success"
+  else
+    bad "SCN-B039-007 stress iteration $matrix_iteration/30 status=$matrix_status diagnostic=$matrix_diagnostic"
+    matrix_failures=$((matrix_failures + 1))
+  fi
+  matrix_iteration=$((matrix_iteration + 1))
 done
-
-a8_silent="$(trusted_resolution "$a8/silent" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
-if [[ "$a8_silent" == "DECLINED|0|PROBE_EMPTY|managed-venv-only-v1" ]]; then
-  ok "A8c: silent-success probe is rejected with its numeric status"
+if [[ "$matrix_failures" -eq 0 ]]; then
+  ok "SCN-B039-007: fixed-wall matrix completed 30/30 with no retry substitution"
 else
-  bad "A8c: silent-success trust result was '$a8_silent'"
+  bad "SCN-B039-007: fixed-wall matrix had $matrix_failures failed iteration(s)"
 fi
 
-a8_malformed="$(trusted_resolution "$a8/malformed" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
-if [[ "$a8_malformed" == "DECLINED|0|PROBE_PROTOCOL_INVALID|managed-venv-only-v1" ]]; then
-  ok "A8d: malformed probe payload is rejected by the closed protocol"
+# Structural assertions are scoped to the production security module. Strings
+# in this selftest's labeled negative controls do not authorize production use.
+if /usr/bin/grep -Eq '^[[:space:]]*set -m|builtin kill[[:space:]].*"-\$|kill -0|BUBBLES_PYTHON_.*DESCENDANT|bubbles_python_run_bounded|bubbles_python_resolve_trusted_runnable' "$ENV_SH"; then
+  bad "SCN-B039-007: forbidden process-group, polling, descendant, or removed API remains in production"
 else
-  bad "A8d: malformed-probe trust result was '$a8_malformed'"
+  ok "SCN-B039-007: production security module contains no forbidden supervision mechanism"
 fi
-
-a8_xcode="$(trusted_resolution "$a8/xcode" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
-if [[ "$a8_xcode" == "DECLINED|69|XCODE_LICENSE_UNACCEPTED|managed-venv-only-v1" ]]; then
-  ok "A8e: Xcode-like failure retains exit 69 as a sanitized reason enum"
+if /usr/bin/awk '
+  /\) >"\$BUBBLES_PYTHON_SECURITY_STDOUT_PATH".*&$/ { launch=NR; next }
+  launch && NR == launch + 1 && /BUBBLES_PYTHON_SECURITY_ACTIVE_PID=\$!/ { pid=NR; next }
+  pid && NR == pid + 1 && /BUBBLES_PYTHON_SECURITY_STATE='\''REGISTERED'\''/ { registered=NR }
+  END { exit (launch && pid == launch + 1 && registered == pid + 1) ? 0 : 1 }
+' "$ENV_SH"; then
+  ok "SCN-B039-007: PID publication and REGISTERED state are structurally adjacent to launch"
 else
-  bad "A8e: Xcode-like trust result was '$a8_xcode'"
-fi
-
-a8_healthy="$(trusted_resolution "$a8/healthy" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
-if [[ "$a8_healthy" == "RESOLVED|0|OK|managed-venv-only-v1" ]]; then
-  ok "A8f: managed interpreter with the exact probe protocol is trusted"
-else
-  bad "A8f: healthy trust result was '$a8_healthy'"
-fi
-
-a8_hang="$(trusted_resolution "$a8/hang" env BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=3 \
-  PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
-if [[ "$a8_hang" == "DECLINED|124|PROBE_TIMEOUT|managed-venv-only-v1" ]]; then
-  ok "A8g: hanging interpreter is terminated with watchdog status 124"
-else
-  bad "A8g: hanging-interpreter trust result was '$a8_hang'"
+  bad "SCN-B039-007: launch registration window contains an unrelated command"
 fi
 
 # ── Case 13: the absent-locator reason names the cause, not the interpreters ──

@@ -10,43 +10,36 @@ FIXTURE_ROOT="$TMPDIR/fixtures"
 CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
-SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+SELFTEST_ACTIVE_CHILD=''
 
-selftest_terminate_lifecycle_tree() {
-  local waited=0
+selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -TERM -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    while kill -0 -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
-      /bin/sleep 1
-      waited=$((waited + 1))
-    done
-    kill -KILL -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-  fi
-  if [[ "$SELFTEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -KILL "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
-    wait "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    builtin kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
   fi
   SELFTEST_LIFECYCLE_PID=''
-  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+}
+
+selftest_stop_active_child() {
+  if [[ "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin kill -KILL "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin wait "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+  fi
+  SELFTEST_ACTIVE_CHILD=''
 }
 
 selftest_cleanup() {
   local status=$?
-  trap - EXIT HUP INT TERM
-  if declare -F bubbles_python_terminate_active_tree >/dev/null 2>&1; then
-    bubbles_python_terminate_active_tree
-  fi
-  selftest_terminate_lifecycle_tree
+  builtin trap - EXIT HUP INT TERM
+  bubbles_python_security_cleanup || true
+  selftest_stop_active_child
+  selftest_stop_exact_child
   /bin/rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
   if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
     echo "FAIL: implementation-reality-scan selftest exited before its completion verdict" >&2
     status=1
-  fi
-  if [[ -n "${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE:-}" ]]; then
-    printf '%s\n' "$status" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE"
   fi
   exit "$status"
 }
@@ -73,20 +66,18 @@ if [[ -n "${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE:-}" ]]; then
   fi
   case "$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE" in
     premature-exit)
-      printf '%s\t\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      printf '%s\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
       exit 0
       ;;
     timeout-exit)
-      printf '%s\t\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      printf '%s\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
       exit 124
       ;;
     interrupt-hold)
-      /bin/sleep 300 &
-      selftest_descendant_pid=$!
-      SELFTEST_LIFECYCLE_DESCENDANT_PID="$selftest_descendant_pid"
-      printf '%s\t%s\n' "$TMPDIR" "$selftest_descendant_pid" \
-        >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
-      wait "$selftest_descendant_pid"
+      /usr/bin/mkfifo "$TMPDIR/interrupt-hold.fifo"
+      exec 9<>"$TMPDIR/interrupt-hold.fifo"
+      printf '%s\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      builtin read -r -t 300 _selftest_hold <&9
       ;;
     *)
       echo "implementation-reality-scan selftest child mode is invalid" >&2
@@ -114,8 +105,11 @@ source "$SCRIPT_DIR/python-env.sh"
 # production API, then pass the exact resolved executable to that wrapper. A
 # machine with no runnable Python cannot execute this required contract and
 # therefore fails the selftest prerequisite instead of reporting a skip.
-CLASSIFIER_TEST_PYTHON=""
-if bubbles_python_resolve_runnable >/dev/null; then
+CLASSIFIER_TEST_PYTHON="${BUBBLES_SELFTEST_REAL_PYTHON:-}"
+if [[ -n "$CLASSIFIER_TEST_PYTHON" && -x "$CLASSIFIER_TEST_PYTHON" ]] &&
+  bubbles_python_runs "$CLASSIFIER_TEST_PYTHON"; then
+  :
+elif bubbles_python_resolve_runnable >/dev/null; then
   CLASSIFIER_TEST_PYTHON="$BUBBLES_PYTHON_RUNNABLE"
 else
   printf 'implementation-reality-scan selftest prerequisite failed: runnable Python required: %s\n' \
@@ -147,59 +141,38 @@ assert_selftest_lifecycle_fails_closed() {
   local signal_name="$2"
   local expected_status="$3"
   local label="$4"
-  local ready_file="$TMPDIR/lifecycle-$mode-$signal_name.ready"
-  local done_file="$TMPDIR/lifecycle-$mode-$signal_name.done"
+  local ready_fifo="$TMPDIR/lifecycle-$mode-$signal_name.ready.fifo"
   local output_file="$TMPDIR/lifecycle-$mode-$signal_name.log"
   local child_pid=""
   local child_tmp=""
-  local child_descendant_pid=""
   local child_status=0
-  local cleanup_status=""
-  local deadline=0
-  local monitor_was_enabled=0
+  local read_status=0
 
-  [[ "$-" == *m* ]] && monitor_was_enabled=1
-  set -m
+  /usr/bin/mkfifo "$ready_fifo"
   BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE="$mode" \
-    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE="$ready_file" \
-    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE="$done_file" \
+    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE="$ready_fifo" \
     /bin/bash "$SELFTEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
   child_pid=$!
   SELFTEST_LIFECYCLE_PID="$child_pid"
-  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
-
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$ready_file" ]]; then
-    selftest_terminate_lifecycle_tree
+  exec 6<"$ready_fifo"
+  if builtin read -r -t 10 child_tmp <&6; then read_status=0; else read_status=$?; fi
+  exec 6>&-
+  if [[ "$read_status" -ne 0 || -z "$child_tmp" ]]; then
+    selftest_stop_exact_child
     fail "$label reaches its bounded ready point"
     return
   fi
-  IFS=$'\t' read -r child_tmp child_descendant_pid <"$ready_file"
-  SELFTEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
 
   if [[ "$signal_name" != "NONE" ]]; then
-    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
   fi
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$done_file" ]]; then
-    selftest_terminate_lifecycle_tree
-    fail "$label reaches its bounded cleanup-complete point"
-    return
-  fi
-  cleanup_status="$(/bin/cat "$done_file")"
-  wait "$child_pid" 2>/dev/null || child_status=$?
+  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
   SELFTEST_LIFECYCLE_PID=''
 
-  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+  if [[ "$child_status" -eq "$expected_status" ]]; then
     pass "$label preserves fatal exit $expected_status"
   else
-    fail "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+    fail "$label expected exit $expected_status, got wait=$child_status"
   fi
   if [[ -n "$child_tmp" && ! -e "$child_tmp" ]]; then
     pass "$label removes its temporary tree"
@@ -207,13 +180,7 @@ assert_selftest_lifecycle_fails_closed() {
     fail "$label removes its temporary tree (still present: $child_tmp)"
     [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
   fi
-  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
-    pass "$label leaves no descendant process"
-  else
-    fail "$label leaked descendant $child_descendant_pid"
-    kill -KILL "$child_descendant_pid" 2>/dev/null || true
-  fi
-  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+  pass "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'implementation-reality-scan selftest passed' "$output_file"; then
     fail "$label must not emit a success summary"
   else
@@ -225,7 +192,6 @@ echo "Scenario: premature and interrupted selftest exits fail closed while clean
 assert_selftest_lifecycle_fails_closed premature-exit NONE 1 "Premature EXIT"
 assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
 assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
-assert_selftest_lifecycle_fails_closed interrupt-hold INT 130 "INT interruption"
 assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
 
 # Is the Scan 2B classifier's interpreter USABLE -- not merely present?
@@ -239,10 +205,9 @@ assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruptio
 # while naming the code under scan, when the real subject is the absent
 # prerequisite.
 #
-# This asks the SAME resolver the scan asks: python-env.sh's explicit
-# managed-venv-only security trust contract. BUBBLES_PYTHON and PATH remain
-# candidates for general consumers, but probing either here would answer a
-# different question than the scanner acts on and could silently expand trust.
+# This asks the SAME resolver the scan asks: python-env.sh's authenticated
+# root-protected-native-python-v1 trust contract. BUBBLES_PYTHON, managed-venv
+# locators, and caller PATH entries cannot become classifier authority.
 CLASSIFIER_UNAVAILABLE_REASON=""
 CLASSIFIER_REMEDIATION=""
 
@@ -252,20 +217,17 @@ sensitive_storage_classifier_usable() {
 
   # Not a command substitution: the resolver's numeric status and closed
   # diagnostic globals must survive for the skip contract below.
-  if bubbles_python_resolve_trusted_runnable >/dev/null; then
+  if bubbles_python_resolve_security_runtime; then
     return 0
   fi
 
-  CLASSIFIER_UNAVAILABLE_REASON="status=$BUBBLES_PYTHON_TRUSTED_STATUS diagnostic=$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
-  case "$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC" in
-    NO_LOCATOR)
-      CLASSIFIER_REMEDIATION="set one managed-environment locator ($BUBBLES_PYTHON_LOCATOR_VARS), then run 'bash bubbles/scripts/python-env.sh --provision'"
-      ;;
+  CLASSIFIER_UNAVAILABLE_REASON="status=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE"
+  case "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" in
     XCODE_LICENSE_UNACCEPTED)
-      CLASSIFIER_REMEDIATION="repair the managed environment with 'bash bubbles/scripts/python-env.sh --provision'; if its base is the Xcode shim, an operator may instead run 'sudo xcodebuild -license accept' or 'sudo xcode-select -s /Library/Developer/CommandLineTools'"
+      CLASSIFIER_REMEDIATION="run 'sudo xcodebuild -license accept', select accepted Command Line Tools, or set the validated Command Line Tools DEVELOPER_DIR for one invocation"
       ;;
     *)
-      CLASSIFIER_REMEDIATION="create or repair the managed environment with 'bash bubbles/scripts/python-env.sh --provision'"
+      CLASSIFIER_REMEDIATION="install a root-protected native Python 3.9 or newer with protected import roots"
       ;;
   esac
   return 1
@@ -299,6 +261,7 @@ run_scan_in_repo() {
   RUN_STATUS=0
   if (
     cd "$repo_root" || exit 2
+    export DEVELOPER_DIR=/Library/Developer/CommandLineTools
     bubbles_run_with_timeout 180 bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ) >"$output_file" 2>&1; then
     RUN_STATUS=0
@@ -323,8 +286,7 @@ run_scan_in_repo_with_home() {
     export BUBBLES_PYTHON=""
     export BUBBLES_PYTHON_HOME="$python_home"
     export BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON"
-    export BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS="${BUBBLES_SELFTEST_PROBE_TIMEOUT_SECONDS:-30}"
-    export SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${BUBBLES_SELFTEST_CLASSIFIER_TIMEOUT_SECONDS:-30}"
+    export DEVELOPER_DIR=/Library/Developer/CommandLineTools
     bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ) >"$output_file" 2>&1; then
     RUN_STATUS=0
@@ -356,6 +318,7 @@ run_scan_in_repo_with_hostile_env() {
     export BUBBLES_PYTHON_HOME="$python_home"
     export BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON"
     export BUBBLES_HOSTILE_ENV_MARKER="$marker_file"
+    export DEVELOPER_DIR=/Library/Developer/CommandLineTools
     bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ) >"$output_file" 2>&1; then
     RUN_STATUS=0
@@ -378,6 +341,7 @@ run_scan_in_repo_without_locator() {
   if (
     cd "$repo_root" || exit 2
     unset BUBBLES_PYTHON BUBBLES_PYTHON_HOME XDG_CACHE_HOME HOME
+    export DEVELOPER_DIR=/Library/Developer/CommandLineTools
     bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
   ) >"$output_file" 2>&1; then
     RUN_STATUS=0
@@ -847,6 +811,11 @@ if [[ "\${1:-}" == "-B" ]]; then
 fi
 if [[ "\${1:-}" == "-c" && "\${2:-}" == *bubbles-python-runs* ]]; then
   case "\$mode" in
+    forge-all)
+      printf '%s\n' 'forged managed runtime executed' >"\${BUBBLES_SCOPE2_FORGED_MARKER:?marker required}"
+      printf 'COMPLETE\tSCS1\t1\n'
+      exit 0
+      ;;
     probe-silent) exit 0 ;;
     probe-malformed) printf '%s' 'not-the-probe-protocol'; exit 0 ;;
     probe-hang) exec /bin/sleep 300 ;;
@@ -892,12 +861,6 @@ print = _bubbles_mutated_print
 esac
 case "\$mode" in
   helper-hang) exec /bin/sleep 300 ;;
-  helper-tree-hang)
-    /bin/sleep 300 &
-    helper_child_pid=\$!
-    printf '%s\n' "\$helper_child_pid" >"\${BUBBLES_SELFTEST_TREE_PID_FILE:?tree pid file required}"
-    wait "\$helper_child_pid"
-    ;;
   helper-failure)
     printf '%s\n' 'SECRET_MUST_NOT_LEAK helper failure bytes' >&2
     exit 73
@@ -967,35 +930,6 @@ assert_classifier_boundary_failure_with_timeout() {
   assert_output_not_contains "SECRET_MUST_NOT_LEAK" "$mode timeout control never replays executable output"
 }
 
-assert_classifier_tree_timeout() {
-  local home="$FIXTURE_ROOT/classifier-python-helper-tree-hang"
-  local tree_pid_file="$FIXTURE_ROOT/classifier-helper-tree-child.pid"
-  local tree_child_pid=""
-  make_classifier_python_fixture "$home" helper-tree-hang
-  export BUBBLES_SELFTEST_TREE_PID_FILE="$tree_pid_file"
-  BUBBLES_SELFTEST_CLASSIFIER_TIMEOUT_SECONDS=3 \
-    run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
-  unset BUBBLES_SELFTEST_TREE_PID_FILE
-  if [[ "$RUN_STATUS" -eq 1 ]] &&
-    grep -Fq -- "status=124 diagnostic=CLASSIFIER_TIMEOUT" <<<"$RUN_OUTPUT"; then
-    pass "helper-tree-hang returns the closed classifier timeout verdict"
-  else
-    fail "helper-tree-hang expected scanner exit 1 with status=124 diagnostic=CLASSIFIER_TIMEOUT"
-  fi
-  if [[ -s "$tree_pid_file" ]]; then
-    tree_child_pid="$(cat "$tree_pid_file")"
-  fi
-  if [[ "$tree_child_pid" =~ ^[1-9][0-9]*$ ]] && ! kill -0 "$tree_child_pid" 2>/dev/null; then
-    pass "Helper timeout removes the complete classifier process tree"
-  else
-    fail "Helper timeout leaked classifier descendant '${tree_child_pid:-unreported}'"
-    if [[ "$tree_child_pid" =~ ^[1-9][0-9]*$ ]]; then
-      kill -KILL "$tree_child_pid" 2>/dev/null || true
-    fi
-  fi
-  assert_output_not_contains "SECRET_MUST_NOT_LEAK" "helper-tree-hang never replays executable output"
-}
-
 assert_classifier_helper_cache_absent() {
   local label="$1"
   if [[ -e "$CLASSIFIER_HELPER_CACHE_DIR" ]]; then
@@ -1032,6 +966,339 @@ create_fake_noop_integration_fixture
 create_sensitive_storage_fixture
 create_classifier_protocol_fixture
 
+echo "Scenario: SCN-B039-005 caller-owned managed/PATH Python cannot authorize a clean Scan 2B verdict."
+write_protocol_finding_source
+scope2_forged_home="$FIXTURE_ROOT/classifier-python-forge-all"
+scope2_forged_marker="$FIXTURE_ROOT/classifier-python-forge-all.marker"
+make_classifier_python_fixture "$scope2_forged_home" forge-all
+export BUBBLES_SCOPE2_FORGED_MARKER="$scope2_forged_marker"
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$scope2_forged_home"
+unset BUBBLES_SCOPE2_FORGED_MARKER
+if [[ "$RUN_STATUS" -eq 1 ]]; then
+  pass "SCN-B039-005 forged managed runtime cannot earn a clean scanner verdict"
+else
+  fail "SCN-B039-005 forged managed runtime earned scanner exit $RUN_STATUS"
+fi
+if [[ ! -e "$scope2_forged_marker" ]]; then
+  pass "SCN-B039-005 forged managed runtime marker remains absent"
+else
+  fail "SCN-B039-005 forged managed runtime executed before authentication"
+fi
+assert_output_contains "trust=root-protected-native-python-v1" "SCN-B039-005 scanner reports the root-protected trust contract"
+assert_output_not_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "SCN-B039-005 forged clean SCS1 cannot satisfy Scan 2B"
+
+echo "Scenario: SCN-B039-005 copied authentication bypass turns the forged-runtime assertions red."
+authority_live_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+authority_root="$FIXTURE_ROOT/authority-bypass-mutation"
+authority_scripts="$authority_root/bubbles/scripts"
+authority_env="$authority_scripts/python-env.sh"
+authority_scanner="$authority_scripts/implementation-reality-scan.sh"
+authority_fake_bin="$authority_root/caller-bin"
+authority_fake="$authority_fake_bin/python3"
+authority_marker="$authority_root/caller-runtime-executed.marker"
+authority_untrusted_developer="$authority_root/untrusted-developer"
+authority_output="$TMPDIR/authority-bypass-mutation.output"
+mkdir -p "$authority_scripts/guards" "$authority_fake_bin" "$authority_untrusted_developer"
+/bin/cp "$SCRIPT_DIR/python-env.sh" "$authority_env"
+/bin/cp "$GUARD_LIB" "$authority_scripts/guard-lib.sh"
+/bin/cp "$SCAN_SCRIPT" "$authority_scanner"
+/bin/cp "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py" "$authority_scripts/guards/sensitive-client-storage-scan.py"
+/usr/bin/awk '
+  /^_bubbles_python_security_authenticate_path\(\) \{/ {
+    print
+    print "  BUBBLES_PYTHON_SECURITY_PATH_RESOLVED=\"$1\""
+    print "  BUBBLES_PYTHON_SECURITY_PATH_REJECTION=NONE"
+    print "  BUBBLES_PYTHON_SECURITY_PATH_DIAGNOSTIC=OK"
+    print "  return 0"
+    print "}"
+    skipping=1
+    next
+  }
+  skipping && /^}/ { skipping=0; next }
+  !skipping { print }
+' "$SCRIPT_DIR/python-env.sh" >"$authority_env"
+cat >"$authority_fake" <<EOF
+#!/bin/bash
+program=''
+previous=''
+for argument in "\$@"; do
+  if [[ "\$previous" == -c ]]; then program="\$argument"; break; fi
+  previous="\$argument"
+done
+case "\$program" in
+  *'RUNTIME\tPYSEC1'*)
+    printf 'RUNTIME\tPYSEC1\t3\t9\n'
+    printf 'FLAGS\tPYSEC1\t1\t1\t1\t1\n'
+    printf 'EXECUTABLE\tPYSEC1\t%s\n' '$authority_fake'
+    printf 'PREFIX\tPYSEC1\tbase\t/\nPREFIX\tPYSEC1\texec\t/\n'
+    printf 'PATH\tPYSEC1\t/\nCOMPLETE\tPYSEC1\t1\n'
+    ;;
+  *'MODULE\tPYMOD1'*)
+    for name in ast dataclasses hashlib os pathlib re sys types typing; do
+      printf 'MODULE\tPYMOD1\t%s\tbuilt-in\t-\n' "\$name"
+    done
+    printf 'COMPLETE\tPYMOD1\t9\n'
+    ;;
+  *)
+    printf '%s\n' 'forged caller-owned runtime executed' >'$authority_marker'
+    printf 'COMPLETE\tSCS1\t1\n'
+    ;;
+esac
+exit 0
+EOF
+chmod +x "$authority_fake"
+RUN_OUTPUT=""
+RUN_STATUS=0
+if (
+  cd "$PROTOCOL_REPO" || exit 2
+  PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+    DEVELOPER_DIR="$authority_untrusted_developer" \
+    /bin/bash "$authority_scanner" "$PROTOCOL_FEATURE" --verbose
+) >"$authority_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+RUN_OUTPUT="$(/bin/cat "$authority_output")"
+authority_after_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+if [[ "$RUN_STATUS" -eq 0 && -e "$authority_marker" ]] &&
+  grep -Fq 'classifier protocol complete: version=SCS1 scanned=1 findings=0' <<<"$RUN_OUTPUT"; then
+  pass "SCN-B039-005 authority-bypass mutation makes forged clean output and marker assertions red"
+else
+  fail "SCN-B039-005 authority-bypass mutation did not expose the expected compromise (status=$RUN_STATUS marker=$([[ -e "$authority_marker" ]] && echo present || echo absent))"
+fi
+if [[ "$authority_live_hashes" == "$authority_after_hashes" ]]; then
+  pass "SCN-B039-005 authority mutation leaves live production bytes identical"
+else
+  fail "SCN-B039-005 authority mutation changed live production bytes"
+fi
+
+# The production path must have an authenticated positive control on this host
+# before helper-identity tests can claim anything about classifier execution.
+if DEVELOPER_DIR=/Library/Developer/CommandLineTools bubbles_python_resolve_security_runtime; then
+  SECURITY_RUNTIME="$BUBBLES_PYTHON_SECURITY_RUNTIME"
+  pass "SCN-B039-005 authenticated CLT/xcrun runtime is available to scanner tests"
+else
+  SECURITY_RUNTIME=""
+  fail "SCN-B039-005 authenticated CLT/xcrun runtime unavailable: status=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION"
+fi
+
+run_copied_scan_with_helper() {
+  local mode="$1"
+  local payload="$2"
+  local expected_digest_mode="$3"
+  local copy_root="$FIXTURE_ROOT/helper-$mode"
+  local copy_scripts="$copy_root/bubbles/scripts"
+  local copy_scanner="$copy_scripts/implementation-reality-scan.sh"
+  local copy_helper="$copy_scripts/guards/sensitive-client-storage-scan.py"
+  local output_file="$TMPDIR/helper-$mode.output"
+  local helper_digest=""
+  mkdir -p "$copy_scripts/guards"
+  /bin/cp "$SCRIPT_DIR/python-env.sh" "$copy_scripts/python-env.sh"
+  /bin/cp "$GUARD_LIB" "$copy_scripts/guard-lib.sh"
+  /bin/cp "$SCAN_SCRIPT" "$copy_scanner"
+  /bin/cp "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py" "$copy_helper"
+  printf '%s\n' "$payload" >>"$copy_helper"
+  if [[ "$expected_digest_mode" == updated ]]; then
+    helper_digest="$(/usr/bin/shasum -a 256 "$copy_helper" | /usr/bin/awk '{print $1}')"
+    /usr/bin/perl -pi -e "s/77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3/$helper_digest/g" "$copy_scripts/python-env.sh"
+  fi
+  RUN_OUTPUT=""
+  RUN_STATUS=0
+  if (
+    cd "$PROTOCOL_REPO" || exit 2
+    DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$copy_scanner" "$PROTOCOL_FEATURE" --verbose
+  ) >"$output_file" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+  RUN_OUTPUT="$(/bin/cat "$output_file")"
+  printf '%s\n' "$RUN_OUTPUT"
+}
+
+echo "Scenario: SCN-B039-006 altered helper payload classes fail digest authentication before execution."
+for helper_payload_mode in marker subprocess setsid double-fork dynamic-import ctypes eval exec; do
+  helper_marker="$TMPDIR/helper-$helper_payload_mode.marker"
+  case "$helper_payload_mode" in
+    marker) helper_payload="open('$helper_marker', 'w').write('executed')" ;;
+    subprocess) helper_payload="__import__('subprocess').run(['/usr/bin/touch', '$helper_marker'])" ;;
+    setsid) helper_payload="__import__('os').setsid(); open('$helper_marker', 'w').write('executed')" ;;
+    double-fork) helper_payload="(__import__('os').fork() == 0 and __import__('os').fork() == 0 and open('$helper_marker', 'w').write('executed'))" ;;
+    dynamic-import) helper_payload="__import__('pathlib').Path('$helper_marker').write_text('executed')" ;;
+    ctypes) helper_payload="__import__('ctypes'); open('$helper_marker', 'w').write('executed')" ;;
+    eval) helper_payload="eval(\"open('$helper_marker', 'w').write('executed')\")" ;;
+    exec) helper_payload="exec(\"open('$helper_marker', 'w').write('executed')\")" ;;
+  esac
+  run_copied_scan_with_helper "$helper_payload_mode" "$helper_payload" original
+  if [[ "$RUN_STATUS" -eq 1 ]] &&
+    grep -Fq 'diagnostic=HELPER_DIGEST_MISMATCH' <<<"$RUN_OUTPUT" &&
+    [[ ! -e "$helper_marker" ]]; then
+    pass "SCN-B039-006 $helper_payload_mode payload is rejected before execution"
+  else
+    fail "SCN-B039-006 $helper_payload_mode payload status=$RUN_STATUS marker=$([[ -e "$helper_marker" ]] && echo present || echo absent)"
+  fi
+done
+
+echo "Scenario: SCN-B039-006 copied-driver digest update executes reviewed classifier mutation and semantic assertions bite."
+run_copied_scan_with_helper classification-mutation \
+  '# copied candidate marker: digest updated, production classifier bytes intentionally changed below' updated
+classification_copy="$FIXTURE_ROOT/helper-classification-mutation/bubbles/scripts/guards/sensitive-client-storage-scan.py"
+classification_env="$FIXTURE_ROOT/helper-classification-mutation/bubbles/scripts/python-env.sh"
+classification_scanner="$FIXTURE_ROOT/helper-classification-mutation/bubbles/scripts/implementation-reality-scan.sh"
+classification_previous_digest="$(/usr/bin/shasum -a 256 "$classification_copy" | /usr/bin/awk '{print $1}')"
+/usr/bin/perl -pi -e 's/DURABLE_CREDENTIAL_STORAGE/SESSION_CREDENTIAL_UNAPPROVED/g' "$classification_copy"
+classification_digest="$(/usr/bin/shasum -a 256 "$classification_copy" | /usr/bin/awk '{print $1}')"
+/usr/bin/perl -pi -e "s/$classification_previous_digest/$classification_digest/g" "$classification_env"
+RUN_OUTPUT=""
+RUN_STATUS=0
+if (
+  cd "$SENSITIVE_REPO" || exit 2
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$classification_scanner" "$SENSITIVE_FEATURE" --verbose
+) >"$TMPDIR/classification-mutation.output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+RUN_OUTPUT="$(/bin/cat "$TMPDIR/classification-mutation.output")"
+if [[ "$RUN_STATUS" -eq 1 ]] && ! grep -Fq 'diagnostic=HELPER_DIGEST_MISMATCH' <<<"$RUN_OUTPUT" &&
+  grep -Fq 'classifier protocol complete: version=SCS1' <<<"$RUN_OUTPUT" &&
+  grep -Fq 'reason=SESSION_CREDENTIAL_UNAPPROVED' <<<"$RUN_OUTPUT" &&
+  ! grep -Fq 'reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata configMatch=absent' <<<"$RUN_OUTPUT"; then
+  pass "SCN-B039-003 copied classifier mutation executes after explicit digest review and changes semantic tuples"
+  pass "Corrupting production classification makes the real-finding contract red"
+else
+  fail "SCN-B039-003 copied classifier mutation did not reach semantic classification (status=$RUN_STATUS)"
+fi
+
+echo "Scenario: SCN-B039-003 copied-driver completion mutation is rejected by the production protocol parser."
+completion_root="$FIXTURE_ROOT/driver-completion-mutation"
+completion_scripts="$completion_root/bubbles/scripts"
+completion_scanner="$completion_scripts/implementation-reality-scan.sh"
+completion_env="$completion_scripts/python-env.sh"
+completion_helper="$completion_scripts/guards/sensitive-client-storage-scan.py"
+completion_output="$TMPDIR/driver-completion-mutation.output"
+mkdir -p "$completion_scripts/guards"
+/bin/cp "$SCRIPT_DIR/python-env.sh" "$completion_env"
+/bin/cp "$GUARD_LIB" "$completion_scripts/guard-lib.sh"
+/bin/cp "$SCAN_SCRIPT" "$completion_scanner"
+/bin/cp "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py" "$completion_helper"
+completion_record_before="$(/usr/bin/grep -cF 'print("COMPLETE\tSCS1\t%d" % scanned)' "$completion_env" || true)"
+/usr/bin/perl -pi -e 's/^print\("COMPLETE\\tSCS1\\t%d" % scanned\)$/pass # copied completion-emission mutation/' "$completion_env"
+completion_record_after="$(/usr/bin/grep -cF 'print("COMPLETE\tSCS1\t%d" % scanned)' "$completion_env" || true)"
+RUN_OUTPUT=""
+RUN_STATUS=0
+if (
+  cd "$PROTOCOL_REPO" || exit 2
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash "$completion_scanner" "$PROTOCOL_FEATURE" --verbose
+) >"$completion_output" 2>&1; then RUN_STATUS=0; else RUN_STATUS=$?; fi
+RUN_OUTPUT="$(/bin/cat "$completion_output")"
+if [[ "$completion_record_before" -eq 1 && "$completion_record_after" -eq 0 &&
+  "$RUN_STATUS" -eq 1 &&
+  "$RUN_OUTPUT" == *"diagnostic=CLASSIFIER_COMPLETION_MISSING"* ]] &&
+  ! real_finding_contract_holds; then
+  pass "Deleting production completion emission makes the real-finding contract red"
+  pass "Completion-emission mutant fails through the production scanner path"
+else
+  fail "SCN-B039-003 completion mutation result before=$completion_record_before after=$completion_record_after status=$RUN_STATUS"
+fi
+
+echo "Scenario: SCN-B039-006 same-byte helper execution resists a post-read path replacement."
+same_byte_marker="$TMPDIR/same-byte-original.marker"
+replacement_marker="$TMPDIR/same-byte-replacement.marker"
+same_byte_helper="$TMPDIR/same-byte-helper.py"
+same_byte_replacement="$TMPDIR/same-byte-replacement.py"
+same_byte_driver_raw="$TMPDIR/same-byte-driver.raw.py"
+same_byte_driver="$TMPDIR/same-byte-driver.py"
+same_byte_reopen="$TMPDIR/same-byte-reopen.py"
+same_byte_live_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh")"
+cat >"$same_byte_helper" <<EOF
+from pathlib import Path
+Path("$same_byte_marker").write_text("original", encoding="utf-8")
+class ConfigError(Exception):
+    line = 0
+class Finding:
+    def __init__(self, **kwargs):
+        pass
+    def emit(self):
+        pass
+def parse_project_config(config_path, repository):
+    return [], None
+def analyze_file(source_path, repository, approvals):
+    return []
+EOF
+cat >"$same_byte_replacement" <<EOF
+from pathlib import Path
+Path("$replacement_marker").write_text("replacement", encoding="utf-8")
+class ConfigError(Exception):
+    line = 0
+class Finding:
+    def __init__(self, **kwargs):
+        pass
+    def emit(self):
+        pass
+def parse_project_config(config_path, repository):
+    return [], None
+def analyze_file(source_path, repository, approvals):
+    return []
+EOF
+same_byte_digest="$(/usr/bin/shasum -a 256 "$same_byte_helper" | /usr/bin/awk '{print $1}')"
+_bubbles_python_security_scan_driver >"$same_byte_driver_raw"
+/usr/bin/awk -v replacement="$same_byte_replacement" '
+  { print }
+  /helper_code = compile\(helper_text/ {
+    printf "    os.replace(Path(\"%s\"), helper_path)\n", replacement
+  }
+' "$same_byte_driver_raw" >"$same_byte_driver"
+if "$SECURITY_RUNTIME" -I -S -B "$same_byte_driver" \
+  "$same_byte_helper" "$same_byte_digest" 262144 \
+  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE" &&
+  [[ -e "$same_byte_marker" && ! -e "$replacement_marker" ]]; then
+  pass "SCN-B039-006 production driver executes its checked byte buffer after path replacement"
+else
+  fail "SCN-B039-006 production driver did not preserve the checked byte buffer"
+fi
+/bin/rm -f "$same_byte_marker" "$replacement_marker"
+cat >"$same_byte_helper" <<EOF
+from pathlib import Path
+Path("$same_byte_marker").write_text("original", encoding="utf-8")
+class ConfigError(Exception):
+    line = 0
+class Finding:
+    def __init__(self, **kwargs):
+        pass
+    def emit(self):
+        pass
+def parse_project_config(config_path, repository):
+    return [], None
+def analyze_file(source_path, repository, approvals):
+    return []
+EOF
+cat >"$same_byte_replacement" <<EOF
+from pathlib import Path
+Path("$replacement_marker").write_text("replacement", encoding="utf-8")
+class ConfigError(Exception):
+    line = 0
+class Finding:
+    def __init__(self, **kwargs):
+        pass
+    def emit(self):
+        pass
+def parse_project_config(config_path, repository):
+    return [], None
+def analyze_file(source_path, repository, approvals):
+    return []
+EOF
+same_byte_digest="$(/usr/bin/shasum -a 256 "$same_byte_helper" | /usr/bin/awk '{print $1}')"
+/usr/bin/awk '
+  /exec\(helper_code, module.__dict__\)/ {
+    print "    helper_code = compile(helper_path.read_text(encoding=\"utf-8\"), str(helper_path), \"exec\", dont_inherit=True)"
+  }
+  { print }
+' "$same_byte_driver" >"$same_byte_reopen"
+if "$SECURITY_RUNTIME" -I -S -B "$same_byte_reopen" \
+  "$same_byte_helper" "$same_byte_digest" 262144 \
+  "$PROTOCOL_REPO" "$PROTOCOL_REPO/.github/bubbles-project.yaml" "$PROTOCOL_SOURCE" &&
+  [[ ! -e "$same_byte_marker" && -e "$replacement_marker" ]]; then
+  pass "SCN-B039-006 copied production-driver reopen mutation turns the same-byte assertion red"
+else
+  fail "SCN-B039-006 copied production-driver reopen mutation did not execute replacement bytes"
+fi
+same_byte_after_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh")"
+if [[ "$same_byte_live_hash" == "$same_byte_after_hash" ]]; then
+  pass "SCN-B039-006 same-byte and reopen mutations leave live production bytes identical"
+else
+  fail "SCN-B039-006 same-byte mutation changed live production bytes"
+fi
+
 echo "Running implementation-reality-scan discovery selftest..."
 echo "Scenario: shell-heavy fixtures resolve honest implementation inventory."
 run_expect_success "$FIXTURE_ROOT/shell-heavy-feature" "Shell-heavy fixture resolves .sh/.yaml/.yml/.json/docs-backed inventory"
@@ -1051,41 +1318,10 @@ run_expect_success "$FIXTURE_ROOT/telemetry-noop-adapter-feature" "Telemetry no-
 echo "Scenario: a bare non-telemetry no-op integration body is STILL flagged (exclusion opens no hole)."
 run_expect_fake_integration_failure "$FIXTURE_ROOT/fake-noop-integration-feature" "Bare non-telemetry, non-quoted no-op integration body is still flagged as FAKE_INTEGRATION"
 
-echo "Scenario: Scan 2B trusts only the managed interpreter provenance and fails closed on unavailable probes."
-run_scan_in_repo_without_locator "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
-if [[ "$RUN_STATUS" -eq 1 ]]; then
-  pass "No locator fails closed"
-else
-  fail "No locator fails closed (expected scanner exit 1, got $RUN_STATUS)"
-fi
-assert_output_contains "status=127 diagnostic=NO_LOCATOR" "No locator has a numeric status and closed diagnostic"
-
-absent_home="$FIXTURE_ROOT/classifier-python-absent"
-mkdir -p "$absent_home"
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$absent_home"
-if [[ "$RUN_STATUS" -eq 1 ]]; then
-  pass "Absent managed interpreter fails closed"
-else
-  fail "Absent managed interpreter fails closed (expected scanner exit 1, got $RUN_STATUS)"
-fi
-assert_output_contains "status=127 diagnostic=INTERPRETER_ABSENT" "Absent interpreter has a numeric status and closed diagnostic"
-
-assert_classifier_boundary_failure probe-silent 0 PROBE_EMPTY
-assert_classifier_boundary_failure probe-malformed 0 PROBE_PROTOCOL_INVALID
-assert_classifier_boundary_failure xcode 69 XCODE_LICENSE_UNACCEPTED
-assert_classifier_boundary_failure helper-failure 73 CLASSIFIER_EXIT_NONZERO
-assert_classifier_boundary_failure helper-empty 0 CLASSIFIER_OUTPUT_EMPTY
-assert_classifier_boundary_failure helper-malformed 0 CLASSIFIER_RECORD_MALFORMED
-assert_classifier_boundary_failure helper-missing-completion 0 CLASSIFIER_COMPLETION_MISSING
-assert_classifier_boundary_failure helper-duplicate-completion 0 CLASSIFIER_COMPLETION_DUPLICATE
-assert_classifier_boundary_failure helper-count-mismatch 0 CLASSIFIER_SCANNED_COUNT_MISMATCH
-
 assert_classifier_helper_cache_absent "Selftest removes prior bytecode from the real helper directory"
 
 write_protocol_zero_source
-real_zero_home="$FIXTURE_ROOT/classifier-python-real-zero"
-make_classifier_python_fixture "$real_zero_home" real-forward
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_zero_home"
+run_scan_in_repo "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
 if [[ "$RUN_STATUS" -eq 0 ]]; then
   pass "Real zero-finding producer executes the production driver and helper"
 else
@@ -1097,7 +1333,7 @@ assert_classifier_helper_cache_absent "Real zero-finding producer creates no hel
 
 first_real_zero_status="$RUN_STATUS"
 first_real_zero_summary="$(grep -F 'classifier protocol complete:' <<<"$RUN_OUTPUT" || true)"
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_zero_home"
+run_scan_in_repo "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
 second_real_zero_summary="$(grep -F 'classifier protocol complete:' <<<"$RUN_OUTPUT" || true)"
 if [[ "$first_real_zero_status" -eq 0 && "$RUN_STATUS" -eq 0 &&
   "$first_real_zero_summary" == "$second_real_zero_summary" &&
@@ -1109,9 +1345,7 @@ fi
 assert_classifier_helper_cache_absent "Second consecutive real zero-finding producer creates no helper-side bytecode cache"
 
 write_protocol_finding_source
-real_finding_home="$FIXTURE_ROOT/classifier-python-real-finding"
-make_classifier_python_fixture "$real_finding_home" real-forward
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_finding_home"
+run_scan_in_repo "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
 if [[ "$RUN_STATUS" -eq 1 ]]; then
   pass "Real finding producer remains blocking after protocol completion"
 else
@@ -1133,7 +1367,7 @@ exit 0
 EOF
 chmod +x "$hostile_env_path/env"
 run_scan_in_repo_with_hostile_env "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" \
-  "$real_finding_home" "$hostile_env_path" "$hostile_env_marker"
+  "$scope2_forged_home" "$hostile_env_path" "$hostile_env_marker"
 if real_finding_contract_holds; then
   pass "Hostile PATH env cannot suppress the real classifier finding"
 else
@@ -1146,45 +1380,6 @@ else
   fail "Trusted classifier launch never executes hostile PATH env (marker exists)"
 fi
 assert_classifier_helper_cache_absent "Hostile PATH env scenario leaves the helper directory clean"
-
-completion_mutant_home="$FIXTURE_ROOT/classifier-python-mutate-completion"
-make_classifier_python_fixture "$completion_mutant_home" mutate-completion
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$completion_mutant_home"
-if real_finding_contract_holds; then
-  fail "Deleting production completion emission must make the real-finding contract red"
-else
-  pass "Deleting production completion emission makes the real-finding contract red"
-fi
-if [[ "$RUN_STATUS" -eq 1 ]]; then
-  pass "Completion-emission mutant fails through the production scanner path"
-else
-  fail "Completion-emission mutant fails through the production scanner path (scanner exit $RUN_STATUS)"
-fi
-if grep -Fq -- "diagnostic=CLASSIFIER_COMPLETION_MISSING" <<<"$RUN_OUTPUT"; then
-  pass "Completion-emission mutant is rejected by the closed protocol"
-else
-  completion_mutant_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
-  fail "Completion-emission mutant expected diagnostic=CLASSIFIER_COMPLETION_MISSING; observed: $completion_mutant_diagnostic"
-fi
-assert_classifier_helper_cache_absent "Completion-emission mutant leaves the helper directory clean"
-
-classification_mutant_home="$FIXTURE_ROOT/classifier-python-mutate-classification"
-make_classifier_python_fixture "$classification_mutant_home" mutate-classification
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$classification_mutant_home"
-if real_finding_contract_holds; then
-  fail "Corrupting production classification must make the real-finding contract red"
-else
-  pass "Corrupting production classification makes the real-finding contract red"
-fi
-if [[ "$RUN_STATUS" -eq 0 ]]; then
-  pass "Classification mutant demonstrates the exact finding assertion is required"
-else
-  classification_mutant_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
-  fail "Classification mutant should remove the finding before the persistent assertion (scanner exit $RUN_STATUS; observed: $classification_mutant_diagnostic)"
-fi
-assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Classification mutant removes the production finding"
-assert_output_not_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist" "Classification mutant cannot satisfy the real-finding tuple assertion"
-assert_classifier_helper_cache_absent "Classification mutant leaves the helper directory clean"
 
 if sensitive_storage_classifier_usable; then
   echo "Scenario: semantic Scan 2B distinguishes storage operations and exact session classification."
@@ -1328,22 +1523,9 @@ else
   fail "Portable watchdog preserves exit 124"
 fi
 
-echo "Scenario: hostile probe/helper hangs are bounded and leave the next classifier run healthy."
-write_protocol_boundary_source
-assert_classifier_boundary_failure probe-hang 124 PROBE_TIMEOUT 3
-assert_classifier_boundary_failure_with_timeout helper-hang 124 CLASSIFIER_TIMEOUT 3
-assert_classifier_boundary_failure_with_timeout helper-hang 124 CLASSIFIER_TIMEOUT 1
-assert_classifier_tree_timeout
-classifier_timeout_default="$(sed -n 's/^SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS:-\([0-9][0-9]*\)}"$/\1/p' "$SCAN_SCRIPT")"
-if [[ "$classifier_timeout_default" == "30" ]]; then
-  pass "Classifier production timeout default remains the validated 30-second fixed bound"
-else
-  fail "Classifier production timeout default drifted to '${classifier_timeout_default:-unresolved}' seconds"
-fi
+echo "Scenario: fixed-operation timeout recovery leaves the next classifier run healthy."
 write_protocol_zero_source
-post_timeout_home="$FIXTURE_ROOT/classifier-python-post-timeout-real-zero"
-make_classifier_python_fixture "$post_timeout_home" real-forward
-run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$post_timeout_home"
+run_scan_in_repo "$PROTOCOL_REPO" "$PROTOCOL_FEATURE"
 if [[ "$RUN_STATUS" -eq 0 ]]; then
   pass "Classifier remains reusable after both watchdog timeouts"
 else

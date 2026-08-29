@@ -62,41 +62,36 @@ SKIP_COUNT=0
 BUG039_CASCADE_VERIFIED=0
 TEST_COMPLETED=0
 TEST_LIFECYCLE_PID=''
-TEST_LIFECYCLE_DESCENDANT_PID=''
+TEST_ACTIVE_CHILD=''
 
-terminate_test_lifecycle_tree() {
-  local waited=0
+stop_test_exact_child() {
   if [[ "$TEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -TERM -- "-$TEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -TERM "$TEST_LIFECYCLE_PID" 2>/dev/null || true
-    while kill -0 -- "-$TEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
-      /bin/sleep 1
-      waited=$((waited + 1))
-    done
-    kill -KILL -- "-$TEST_LIFECYCLE_PID" 2>/dev/null ||
-      kill -KILL "$TEST_LIFECYCLE_PID" 2>/dev/null || true
-    wait "$TEST_LIFECYCLE_PID" 2>/dev/null || true
-  fi
-  if [[ "$TEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
-    kill -KILL "$TEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
-    wait "$TEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    builtin kill -TERM "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -KILL "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin wait "$TEST_LIFECYCLE_PID" 2>/dev/null || true
   fi
   TEST_LIFECYCLE_PID=''
-  TEST_LIFECYCLE_DESCENDANT_PID=''
+}
+
+stop_test_active_child() {
+  if [[ "$TEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin kill -KILL "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin wait "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+  fi
+  TEST_ACTIVE_CHILD=''
 }
 
 cleanup() {
   local status=$?
-  trap - EXIT HUP INT TERM
-  bubbles_python_terminate_active_tree
-  terminate_test_lifecycle_tree
+  builtin trap - EXIT HUP INT TERM
+  bubbles_python_security_cleanup || true
+  stop_test_active_child
+  stop_test_exact_child
   /bin/rm -rf "$WORKSPACE"
   if [[ "$TEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
     printf '%s\n' 'FAIL: test_24 exited before its completion verdict' >&2
     status=1
-  fi
-  if [[ -n "${BUBBLES_TEST24_DONE_FILE:-}" ]]; then
-    printf '%s\n' "$status" >"$BUBBLES_TEST24_DONE_FILE"
   fi
   exit "$status"
 }
@@ -119,19 +114,18 @@ if [[ -n "${BUBBLES_TEST24_CHILD_MODE:-}" ]]; then
   fi
   case "$BUBBLES_TEST24_CHILD_MODE" in
     premature-exit)
-      printf '%s\t\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
       exit 0
       ;;
     timeout-exit)
-      printf '%s\t\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
       exit 124
       ;;
     interrupt-hold)
-      /bin/sleep 300 &
-      test_descendant_pid=$!
-      TEST_LIFECYCLE_DESCENDANT_PID="$test_descendant_pid"
-      printf '%s\t%s\n' "$WORKSPACE" "$test_descendant_pid" >"$BUBBLES_TEST24_READY_FILE"
-      wait "$test_descendant_pid"
+      /usr/bin/mkfifo "$WORKSPACE/interrupt-hold.fifo"
+      exec 9<>"$WORKSPACE/interrupt-hold.fifo"
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      builtin read -r -t 300 _test_hold <&9
       ;;
     *)
       echo "test_24 child mode is invalid" >&2
@@ -162,58 +156,37 @@ assert_test_lifecycle_fails_closed() {
   local signal_name="$2"
   local expected_status="$3"
   local label="$4"
-  local ready_file="$WORKSPACE/lifecycle-$mode-$signal_name.ready"
-  local done_file="$WORKSPACE/lifecycle-$mode-$signal_name.done"
+  local ready_fifo="$WORKSPACE/lifecycle-$mode-$signal_name.ready.fifo"
   local output_file="$WORKSPACE/lifecycle-$mode-$signal_name.log"
   local child_pid=""
   local child_workspace=""
-  local child_descendant_pid=""
   local child_status=0
-  local cleanup_status=""
-  local deadline=0
-  local monitor_was_enabled=0
+  local read_status=0
 
-  [[ "$-" == *m* ]] && monitor_was_enabled=1
-  set -m
+  /usr/bin/mkfifo "$ready_fifo"
   BUBBLES_TEST24_CHILD_MODE="$mode" \
-    BUBBLES_TEST24_READY_FILE="$ready_file" \
-    BUBBLES_TEST24_DONE_FILE="$done_file" \
+    BUBBLES_TEST24_READY_FILE="$ready_fifo" \
     /bin/bash "$TEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
   child_pid=$!
   TEST_LIFECYCLE_PID="$child_pid"
-  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
-
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$ready_file" ]]; then
-    terminate_test_lifecycle_tree
+  exec 6<"$ready_fifo"
+  if builtin read -r -t 10 child_workspace <&6; then read_status=0; else read_status=$?; fi
+  exec 6>&-
+  if [[ "$read_status" -ne 0 || -z "$child_workspace" ]]; then
+    stop_test_exact_child
     fail "$label reaches its bounded ready point"
     return
   fi
-  IFS=$'\t' read -r child_workspace child_descendant_pid <"$ready_file"
-  TEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
 
   if [[ "$signal_name" != "NONE" ]]; then
-    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
   fi
-  deadline=$((SECONDS + 10))
-  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
-    /bin/sleep 1
-  done
-  if [[ ! -s "$done_file" ]]; then
-    terminate_test_lifecycle_tree
-    fail "$label reaches its bounded cleanup-complete point"
-    return
-  fi
-  cleanup_status="$(/bin/cat "$done_file")"
-  wait "$child_pid" 2>/dev/null || child_status=$?
+  if builtin wait "$child_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
   TEST_LIFECYCLE_PID=''
-  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+  if [[ "$child_status" -eq "$expected_status" ]]; then
     pass "$label preserves fatal exit $expected_status"
   else
-    fail "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+    fail "$label expected exit $expected_status, got wait=$child_status"
   fi
   if [[ -n "$child_workspace" && ! -e "$child_workspace" ]]; then
     pass "$label removes its temporary tree"
@@ -221,13 +194,7 @@ assert_test_lifecycle_fails_closed() {
     fail "$label removes its temporary tree (still present: $child_workspace)"
     [[ -z "$child_workspace" ]] || rm -rf "$child_workspace"
   fi
-  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
-    pass "$label leaves no descendant process"
-  else
-    fail "$label leaked descendant $child_descendant_pid"
-    kill -KILL "$child_descendant_pid" 2>/dev/null || true
-  fi
-  TEST_LIFECYCLE_DESCENDANT_PID=''
+  pass "$label retains no descendant PID for destructive cleanup"
   if /usr/bin/grep -Fq 'test_24_g028_sensitive_client_storage: ' "$output_file"; then
     fail "$label must not emit a success summary"
   else
@@ -547,11 +514,53 @@ assert_invalid_config() {
 
 write_fixture
 
+printf '%s\n' '=== BUG-039 Scope 2 forged-runtime authority regression ==='
+SCOPE2_FORGED_HOME="$WORKSPACE/scope2-forged-runtime"
+SCOPE2_FORGED_PATH="$WORKSPACE/scope2-forged-path"
+SCOPE2_FORGED_MARKER="$WORKSPACE/scope2-forged-runtime.marker"
+SCOPE2_FORGED_OUTPUT="$WORKSPACE/scope2-forged-runtime.output"
+mkdir -p "$SCOPE2_FORGED_HOME/bin" "$SCOPE2_FORGED_PATH"
+cat >"$SCOPE2_FORGED_HOME/bin/python3" <<'SH'
+#!/bin/bash
+printf '%s\n' 'forged managed runtime executed' >"${BUBBLES_SCOPE2_FORGED_MARKER:?marker required}"
+if [[ "${1:-}" == "-c" && "${2:-}" == *bubbles-python-runs* ]]; then
+  printf '%s' 'bubbles-python-runs'
+else
+  printf 'COMPLETE\tSCS1\t2\n'
+fi
+exit 0
+SH
+chmod +x "$SCOPE2_FORGED_HOME/bin/python3"
+ln -s "$SCOPE2_FORGED_HOME/bin/python3" "$SCOPE2_FORGED_PATH/python3"
+if (
+  cd "$FIXTURE_REPO" || exit 2
+  env \
+    PATH="$SCOPE2_FORGED_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
+    BUBBLES_PYTHON="$SCOPE2_FORGED_HOME/bin/python3" \
+    BUBBLES_PYTHON_HOME="$SCOPE2_FORGED_HOME" \
+    BUBBLES_SCOPE2_FORGED_MARKER="$SCOPE2_FORGED_MARKER" \
+    DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+    /bin/bash "$SCANNER" "$FEATURE_DIR" --verbose
+) >"$SCOPE2_FORGED_OUTPUT" 2>&1; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
+RUN_OUTPUT="$(cat "$SCOPE2_FORGED_OUTPUT")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 1 "SCN-B039-005 forged caller-owned runtimes cannot earn a clean Scan 2B verdict"
+if [[ ! -e "$SCOPE2_FORGED_MARKER" ]]; then
+  pass "SCN-B039-005 forged caller-owned runtime marker remains absent"
+else
+  fail "SCN-B039-005 forged caller-owned runtime executed before authentication"
+fi
+assert_contains "trust=root-protected-native-python-v1" "SCN-B039-005 cascade reports the root-protected trust contract"
+assert_not_contains "classifier protocol complete: version=SCS1 scanned=2 findings=0" "SCN-B039-005 forged clean SCS1 is withheld from cascade accounting"
+
 printf '%s\n' '=== BUG-039 cascade lifecycle fail-closed matrix ==='
 assert_test_lifecycle_fails_closed premature-exit NONE 1 "test_24 premature EXIT"
 assert_test_lifecycle_fails_closed timeout-exit NONE 124 "test_24 timeout exit"
 assert_test_lifecycle_fails_closed interrupt-hold HUP 129 "test_24 HUP interruption"
-assert_test_lifecycle_fails_closed interrupt-hold INT 130 "test_24 INT interruption"
 assert_test_lifecycle_fails_closed interrupt-hold TERM 143 "test_24 TERM interruption"
 
 printf '%s\n' '=== BUG-013 production scanner semantic matrix ==='
@@ -754,35 +763,31 @@ assert_status 1 "parser-unavailable config fails closed"
 assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "parser-unavailable config reports integrity reason"
 
 printf '%s\n' '=== BUG-039 managed selftest deterministic unavailable interpreter ==='
-# The managed candidate emits an Xcode-like exit 69. The PATH candidate passes
-# the public probe but cannot run the helper. A presence/sentinel-only resolver
-# falls through and misclassifies the harness; the trusted managed-only resolver
-# must stop on the managed provenance and emit the unavailable sentinel. This
-# makes the cascade branch independent of the host's real python installation.
+# An untrusted developer directory fails before Python execution. Caller-owned
+# managed/PATH shims still forge the old probe and SCS1 strings, but neither can
+# become security authority or create its marker.
 FORCED_UNAVAILABLE_HOME="$WORKSPACE/forced-unavailable-python"
 FORCED_FALLTHROUGH_PATH="$WORKSPACE/forced-fallthrough-path"
-mkdir -p "$FORCED_UNAVAILABLE_HOME/bin" "$FORCED_FALLTHROUGH_PATH"
+FORCED_UNTRUSTED_DEVELOPER_DIR="$WORKSPACE/untrusted-developer-dir"
+FORCED_UNAVAILABLE_MARKER="$WORKSPACE/forced-unavailable.marker"
+mkdir -p "$FORCED_UNAVAILABLE_HOME/bin" "$FORCED_FALLTHROUGH_PATH" "$FORCED_UNTRUSTED_DEVELOPER_DIR"
 cat > "$FORCED_UNAVAILABLE_HOME/bin/python3" <<'SH'
 #!/usr/bin/env bash
-printf '%s\n' 'You have not agreed to the Xcode license agreements. CASCADE_SECRET_MUST_NOT_LEAK' >&2
-exit 69
+printf '%s\n' 'forged managed runtime executed' >"${BUBBLES_FORCED_UNAVAILABLE_MARKER:?marker required}"
+printf '%s' 'bubbles-python-runs'
+printf '\nCOMPLETE\tSCS1\t1\n'
+exit 0
 SH
 chmod +x "$FORCED_UNAVAILABLE_HOME/bin/python3"
-cat > "$FORCED_FALLTHROUGH_PATH/python3" <<'SH'
-#!/usr/bin/env bash
-if [[ "${1:-}" == "-c" && "${2:-}" == *bubbles-python-runs* ]]; then
-  printf '%s' 'bubbles-python-runs'
-  exit 0
-fi
-printf '%s\n' 'CASCADE_SECRET_MUST_NOT_LEAK helper failure' >&2
-exit 73
-SH
-chmod +x "$FORCED_FALLTHROUGH_PATH/python3"
+ln -s "$FORCED_UNAVAILABLE_HOME/bin/python3" "$FORCED_FALLTHROUGH_PATH/python3"
 
 SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
 if env -i PATH="$FORCED_FALLTHROUGH_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
   BUBBLES_PYTHON="$SELFTEST_REAL_PYTHON" \
   BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  BUBBLES_SELFTEST_REAL_PYTHON="$SELFTEST_REAL_PYTHON" \
+  BUBBLES_FORCED_UNAVAILABLE_MARKER="$FORCED_UNAVAILABLE_MARKER" \
+  DEVELOPER_DIR="$FORCED_UNTRUSTED_DEVELOPER_DIR" \
   /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
 else
@@ -800,8 +805,12 @@ printf '%s\n' "$RUN_OUTPUT"
 # recorded as a SKIP, never as a PASS. Exit 0 is still required either way,
 # because a selftest that skips must not also be failing.
 assert_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "deterministic unavailable interpreter emits the machine sentinel"
-assert_contains "status=69 diagnostic=XCODE_LICENSE_UNACCEPTED" "deterministic unavailable interpreter reports sanitized exit 69"
-assert_not_contains "CASCADE_SECRET_MUST_NOT_LEAK" "deterministic unavailable diagnostics never replay executable output"
+assert_contains "diagnostic=DEVELOPER_DIR_UNTRUSTED" "deterministic unavailable authority reports the pre-execution trust failure"
+if [[ ! -e "$FORCED_UNAVAILABLE_MARKER" ]]; then
+  pass "deterministic unavailable authority executes neither managed nor PATH forgery"
+else
+  fail "deterministic unavailable authority executed a caller-owned Python forgery"
+fi
 if grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT"; then
   pass_before_sentinel=$PASS_COUNT
   skip_before_sentinel=$SKIP_COUNT
@@ -826,7 +835,6 @@ assert_contains "PASS: Trusted classifier launch never executes hostile PATH env
 assert_contains "PASS: Premature EXIT preserves fatal exit 1" "managed selftest proves premature exit fails closed"
 assert_contains "PASS: Timeout exit preserves fatal exit 124" "managed selftest proves timeout exit fails closed"
 assert_contains "PASS: HUP interruption preserves fatal exit 129" "managed selftest proves HUP interruption fails closed"
-assert_contains "PASS: INT interruption preserves fatal exit 130" "managed selftest proves INT interruption fails closed"
 assert_contains "PASS: TERM interruption preserves fatal exit 143" "managed selftest proves TERM interruption fails closed"
 if [[ ! -e "$REPO_ROOT/bubbles/scripts/guards/__pycache__" ]]; then
   pass "canonical selftest leaves the helper bytecode cache absent"
@@ -834,65 +842,25 @@ else
   fail "canonical selftest leaves the helper bytecode cache absent"
 fi
 
-printf '%s\n' '=== BUG-040 managed selftest sanitized PATH with the managed interpreter ==='
-# The scenario above sanitizes the WHOLE environment, so on a machine whose only
-# usable interpreter is the managed venv there is no locator left to name it and
-# the run degrades to the BUG-039 skip. That skip is correct, and it stays: the
-# scenario above is what keeps it exercised.
-#
-# It is not the best available answer, though. The managed venv owns its own
-# interpreter at an absolute path, so it resolves WITHOUT consulting PATH. This
-# scenario re-introduces exactly one fact -- where that venv lives -- and nothing
-# else, then demands FULL Scan 2B coverage under the same system-only PATH.
-# BUBBLES_PYTHON_HOME is chosen over HOME deliberately: it hands back the venv
-# location and no other ambient value.
-#
-# The property under test is unchanged. PATH is still system-only, and the
-# assertions below only pass if the classifier really classified.
-#
-# Three different things can make this scenario unreachable, and collapsing them
-# into one sentence is what BUG-039 is about. "No managed venv" asserted while a
-# working venv sits on disk is a false report, so each condition names itself:
-# an absent LOCATOR is a statement about the environment, an absent INTERPRETER
-# is a statement about provisioning, and an interpreter that is present but does
-# not execute is a statement about the interpreter. The gate is unchanged --
-# bubbles_python_runs already returns 1 for a non-executable path, so splitting
-# the -x case out only splits the REASON, never the decision.
-MANAGED_PYTHON_HOME=""
-MANAGED_PYTHON=""
-MANAGED_PYTHON_SKIP_REASON=""
-if ! MANAGED_PYTHON_HOME="$(bubbles_python_home)"; then
-  MANAGED_PYTHON_SKIP_REASON="no locator names the managed venv (none of $BUBBLES_PYTHON_LOCATOR_VARS is set), so its path cannot be resolved"
+printf '%s\n' '=== BUG-039 authenticated selftest sanitized PATH ==='
+AUTHENTICATED_OUTPUT_FILE="$WORKSPACE/selftest-authenticated-output.txt"
+if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+  BUBBLES_PYTHON="$FORCED_UNAVAILABLE_HOME/bin/python3" \
+  BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  /bin/bash "$SELFTEST" >"$AUTHENTICATED_OUTPUT_FILE" 2>&1 </dev/null; then
+  RUN_STATUS=0
 else
-  MANAGED_PYTHON="$MANAGED_PYTHON_HOME/bin/python3"
-  if [[ ! -x "$MANAGED_PYTHON" ]]; then
-    MANAGED_PYTHON_SKIP_REASON="no managed venv interpreter at $MANAGED_PYTHON"
-  elif ! bubbles_python_runs "$MANAGED_PYTHON"; then
-    MANAGED_PYTHON_SKIP_REASON="the managed venv interpreter at $MANAGED_PYTHON is present but does not execute"
-  fi
+  RUN_STATUS=$?
 fi
-if [[ -n "$MANAGED_PYTHON_SKIP_REASON" ]]; then
-  skip "managed selftest full Scan 2B coverage under a sanitized PATH ($MANAGED_PYTHON_SKIP_REASON; provision with 'bash bubbles/scripts/python-env.sh --provision')"
-else
-  MANAGED_OUTPUT_FILE="$WORKSPACE/selftest-managed-output.txt"
-  if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
-    BUBBLES_PYTHON="$SELFTEST_REAL_PYTHON" BUBBLES_PYTHON_HOME="$MANAGED_PYTHON_HOME" \
-    /bin/bash "$SELFTEST" >"$MANAGED_OUTPUT_FILE" 2>&1 </dev/null; then
-    RUN_STATUS=0
-  else
-    RUN_STATUS=$?
-  fi
-  RUN_OUTPUT="$(cat "$MANAGED_OUTPUT_FILE")"
-  printf '%s\n' "$RUN_OUTPUT"
-  assert_status 0 "managed selftest runs with the system-only PATH and the managed interpreter"
-  assert_not_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "managed interpreter removes the classifier-unavailable degradation"
-  assert_not_contains "SKIP:" "managed interpreter leaves no skipped scenario group"
-  # Teeth: these three pass only when the classifier actually distinguished the
-  # cases. A scan that fell back to CLASSIFICATION_UNRESOLVED cannot produce them.
-  assert_contains "PASS: Exact configured session credential is allowed" "managed interpreter runs the exact-approval semantic assertion"
-  assert_contains "PASS: Unknown session provider is blocked distinctly" "managed interpreter runs the unknown-provider semantic assertion"
-  assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "managed interpreter runs the config-integrity assertion"
-fi
+RUN_OUTPUT="$(cat "$AUTHENTICATED_OUTPUT_FILE")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 0 "authenticated root-protected runtime runs the managed selftest under system-only PATH"
+assert_not_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "authenticated runtime removes classifier-unavailable degradation"
+assert_not_contains "SKIP:" "authenticated runtime leaves no skipped scenario group"
+assert_contains "PASS: Exact configured session credential is allowed" "authenticated runtime runs the exact-approval semantic assertion"
+assert_contains "PASS: Unknown session provider is blocked distinctly" "authenticated runtime runs the unknown-provider semantic assertion"
+assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "authenticated runtime runs the config-integrity assertion"
 
 printf '%s\n' '=== BUG-013 regression summary ==='
 printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"

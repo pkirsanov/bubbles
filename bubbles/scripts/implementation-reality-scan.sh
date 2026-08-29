@@ -50,16 +50,12 @@ else
   fun_message() { :; }
 fi
 
-# Scan 2B's classifier is a python helper, so this scan needs an interpreter
-# that RUNS. `command -v python3` cannot answer that: it reports a file on PATH,
-# and PATH is not a stable interpreter identity. python-env.sh is the framework's
-# usability-aware resolver. Security-sensitive execution uses its explicit
-# managed-venv-only trust contract; BUBBLES_PYTHON and PATH remain available to
-# general consumers but are not silently promoted into classifier trust roots.
-# Every probe and helper run goes through python-env.sh's fixed-wall,
-# complete-process-tree runner. That runner and this scanner name trust-boundary
-# helpers by absolute path; ambient PATH cannot replace them. Sourcing both
-# modules defines functions and changes no shell options.
+# Scan 2B accepts output only from python-env.sh's authenticated
+# root-protected-native-python-v1 runtime. General interpreter overrides,
+# managed virtualenv locators, and caller PATH executables remain valid for
+# non-security consumers but cannot authorize a clean classifier result. The
+# fixed operation pins and executes one helper byte buffer, supervises one exact
+# direct child, and exposes no executable or Python-program vector.
 if [[ ! -f "$SCRIPT_DIR/guard-lib.sh" || ! -f "$SCRIPT_DIR/python-env.sh" ]]; then
   echo "implementation-reality-scan: framework file missing: guard-lib.sh or python-env.sh" >&2
   exit 2
@@ -72,7 +68,7 @@ source "$SCRIPT_DIR/python-env.sh"
 implementation_reality_scan_cleanup() {
   local status=$?
   trap - EXIT HUP INT TERM
-  bubbles_python_terminate_active_tree
+  bubbles_python_security_cleanup || true
   exit "$status"
 }
 
@@ -716,63 +712,12 @@ echo ""
 # =============================================================================
 echo "--- Scan 2B: Sensitive Client Storage ---"
 
-SENSITIVE_STORAGE_HELPER="$SCRIPT_DIR/guards/sensitive-client-storage-scan.py"
 SENSITIVE_STORAGE_FALLBACK_PATTERN='localStorage\.|sessionStorage\.|AsyncStorage\.|SharedPreferences\b|indexedDB\.|IDBObjectStore\b|\.objectStore[[:space:]]*\(|\.(setString|setStringList|setInt|setBool|setDouble|putString|putStringSet|putInt|putBoolean|putFloat|putLong)[[:space:]]*\('
 SENSITIVE_STORAGE_PROTOCOL_VERSION='SCS1'
-# The Python driver buffers its closed protocol until classification finishes.
-# Log growth therefore cannot distinguish progress from a hang. A fixed
-# 30-second wall deadline is ten times the measured healthy fixture duration
-# and still kills a driver that never returns.
-SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS:-30}"
 SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES=4194304
-SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS=8192
 SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='NOT_RUN'
 SENSITIVE_STORAGE_PROTOCOL_SCANNED=0
 SENSITIVE_STORAGE_PROTOCOL_FINDINGS=0
-
-# The helper file remains the owner of classification. This driver imports that
-# production module, calls its parse/analyze functions, and emits completion
-# only after every source file returns from analyze_file. A bare process exit 0
-# can therefore never be confused with a genuine zero-finding classification.
-SENSITIVE_STORAGE_PROTOCOL_DRIVER='
-import importlib.util
-import os
-import sys
-from pathlib import Path
-
-sys.dont_write_bytecode = True
-
-helper_path = Path(sys.argv[1])
-repo_root = Path(sys.argv[2]).resolve()
-config_path = Path(sys.argv[3]).resolve()
-source_paths = [Path(value) for value in sys.argv[4:]]
-spec = importlib.util.spec_from_file_location("bubbles_sensitive_client_storage_scan", helper_path)
-if spec is None or spec.loader is None:
-    raise RuntimeError("classifier module cannot be loaded")
-module = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = module
-spec.loader.exec_module(module)
-try:
-    approvals, _ = module.parse_project_config(config_path, repo_root)
-except module.ConfigError as exc:
-    module.Finding(
-        path=os.path.relpath(config_path, repo_root).replace(os.sep, "/"),
-        line=exc.line,
-        reason="SENSITIVE_STORAGE_CONFIG_INVALID",
-        storage="configuration",
-        operation="parse",
-        key="unresolved",
-        provider="unresolved",
-        config_match="invalid",
-    ).emit()
-    approvals = []
-scanned = 0
-for source_path in source_paths:
-    for finding in module.analyze_file(source_path, repo_root, approvals):
-        finding.emit()
-    scanned += 1
-print(f"COMPLETE\tSCS1\t{scanned}")
-'
 
 sensitive_storage_protocol_validate() {
   local output="$1"
@@ -904,60 +849,90 @@ for impl_file in "${impl_files[@]}"; do
 done
 
 if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
-  # Not a command substitution: resolver status/diagnostic globals must survive.
-  sensitive_storage_python=""
-  if bubbles_python_resolve_trusted_runnable >/dev/null; then
-    sensitive_storage_python="$BUBBLES_PYTHON_TRUSTED"
+  sensitive_storage_runtime_status=0
+  if bubbles_python_resolve_security_runtime; then
+    sensitive_storage_runtime_status=0
+  else
+    sensitive_storage_runtime_status=$?
   fi
-  if [[ -z "$sensitive_storage_python" ]] || [[ ! -f "$SENSITIVE_STORAGE_HELPER" ]]; then
-    if [[ -z "$sensitive_storage_python" ]]; then
-      echo "   sensitive-storage classifier unavailable: status=$BUBBLES_PYTHON_TRUSTED_STATUS diagnostic=$BUBBLES_PYTHON_TRUSTED_DIAGNOSTIC trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
-    else
-      echo "   sensitive-storage classifier unavailable: status=127 diagnostic=HELPER_MISSING trust=$BUBBLES_PYTHON_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_TRUSTED_PROVENANCE"
-    fi
+  case "$BUBBLES_PYTHON_SECURITY_STATUS" in
+    129 | 130 | 143)
+      exit "$BUBBLES_PYTHON_SECURITY_STATUS"
+      ;;
+  esac
+  if [[ "$sensitive_storage_runtime_status" -ne 0 ]]; then
+    echo "   sensitive-storage classifier unavailable: status=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=SECURITY_RUNTIME_UNAVAILABLE runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
     sensitive_storage_fail_closed
   else
     sensitive_storage_output=""
     sensitive_storage_status=0
     sensitive_storage_diagnostic='OK'
-    sensitive_storage_log="$(/usr/bin/mktemp)"
-    if bubbles_python_run_bounded \
-      "$SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS" \
-      "$SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS" \
-      "$sensitive_storage_log" \
-      "$sensitive_storage_python" -B -c "$SENSITIVE_STORAGE_PROTOCOL_DRIVER" \
-      "$SENSITIVE_STORAGE_HELPER" "$REPO_ROOT" "$PROJECT_CONFIG" \
-      "${sensitive_storage_files[@]}"; then
+    sensitive_storage_stdout_path=""
+    sensitive_storage_stderr_path=""
+    sensitive_storage_driver_token=""
+    sensitive_storage_source_paths=()
+    for impl_file in "${sensitive_storage_files[@]}"; do
+      if [[ "$impl_file" == /* ]]; then
+        sensitive_storage_source_paths+=("$impl_file")
+      else
+        sensitive_storage_source_paths+=("$REPO_ROOT/$impl_file")
+      fi
+    done
+    if bubbles_python_run_security_operation scan2b-classify \
+      "$REPO_ROOT" "$PROJECT_CONFIG" "${sensitive_storage_source_paths[@]}"; then
       sensitive_storage_status=0
     else
       sensitive_storage_status=$?
     fi
-    sensitive_storage_output_bytes="$(/usr/bin/wc -c <"$sensitive_storage_log" 2>/dev/null || true)"
-    sensitive_storage_output_bytes="${sensitive_storage_output_bytes//[[:space:]]/}"
-    if [[ "$sensitive_storage_status" -eq 124 ]]; then
-      sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT'
-    elif [[ "$sensitive_storage_status" -ne 0 ]]; then
-      if /usr/bin/grep -Eiq 'Xcode (license|licence)|license agreements' "$sensitive_storage_log" 2>/dev/null; then
-        sensitive_storage_diagnostic='XCODE_LICENSE_UNACCEPTED'
-      else
-        sensitive_storage_diagnostic='CLASSIFIER_EXIT_NONZERO'
-      fi
-    elif [[ ! "$sensitive_storage_output_bytes" =~ ^[0-9]+$ ]] ||
-      [[ "$sensitive_storage_output_bytes" -gt "$SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES" ]]; then
-      sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT'
-    else
-      sensitive_storage_output="$(/bin/cat "$sensitive_storage_log")"
-      if ! sensitive_storage_protocol_validate "$sensitive_storage_output" "${#sensitive_storage_files[@]}"; then
-        sensitive_storage_diagnostic="$SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC"
-      fi
+    sensitive_storage_stdout_path="$BUBBLES_PYTHON_SECURITY_STDOUT_PATH"
+    sensitive_storage_stderr_path="$BUBBLES_PYTHON_SECURITY_STDERR_PATH"
+
+    case "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" in
+      OK)
+        if ! _bubbles_python_security_capture "$sensitive_storage_stdout_path" "$SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES"; then
+          sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT'
+        else
+          sensitive_storage_output="$BUBBLES_PYTHON_SECURITY_CAPTURE_TEXT"
+          if ! sensitive_storage_protocol_validate "$sensitive_storage_output" "${#sensitive_storage_files[@]}"; then
+            sensitive_storage_diagnostic="$SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC"
+          fi
+        fi
+        ;;
+      CONTROL_TIMEOUT) sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT' ;;
+      OUTPUT_LIMIT) sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT' ;;
+      CAPTURE_UNAVAILABLE | LIMIT_SETUP_FAILED | CONTROL_MALFORMED | INTERNAL | ARGUMENT_INVALID)
+        sensitive_storage_diagnostic='RUNNER_INTERNAL'
+        ;;
+      SIGNAL_HUP | SIGNAL_INT | SIGNAL_TERM)
+        bubbles_python_security_cleanup || true
+        exit "$sensitive_storage_status"
+        ;;
+      CHILD_EXIT_NONZERO)
+        if [[ -f "$sensitive_storage_stderr_path" ]]; then
+          sensitive_storage_driver_token="$(/usr/bin/sed -n '1p' "$sensitive_storage_stderr_path" 2>/dev/null || true)"
+        fi
+        case "$sensitive_storage_driver_token" in
+          $'PYDRIVER1\tHELPER_MISSING') sensitive_storage_diagnostic='HELPER_MISSING' ;;
+          $'PYDRIVER1\tHELPER_TOO_LARGE') sensitive_storage_diagnostic='HELPER_TOO_LARGE' ;;
+          $'PYDRIVER1\tHELPER_DIGEST_MISMATCH') sensitive_storage_diagnostic='HELPER_DIGEST_MISMATCH' ;;
+          $'PYDRIVER1\tHELPER_DECODE_INVALID') sensitive_storage_diagnostic='HELPER_DECODE_INVALID' ;;
+          $'PYDRIVER1\tHELPER_COMPILE_INVALID') sensitive_storage_diagnostic='HELPER_COMPILE_INVALID' ;;
+          $'PYDRIVER1\tDATA_PATH_INVALID') sensitive_storage_diagnostic='RUNNER_INTERNAL' ;;
+          *) sensitive_storage_diagnostic='CLASSIFIER_EXIT_NONZERO' ;;
+        esac
+        ;;
+      *) sensitive_storage_diagnostic='RUNNER_INTERNAL' ;;
+    esac
+    if ! bubbles_python_security_cleanup; then
+      sensitive_storage_status=125
+      sensitive_storage_diagnostic='RUNNER_INTERNAL'
     fi
-    /bin/rm -f "$sensitive_storage_log"
 
     if [[ "$sensitive_storage_diagnostic" != 'OK' ]]; then
-      echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic trust=$BUBBLES_PYTHON_TRUST_CONTRACT protocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"
+      echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
       sensitive_storage_fail_closed
     else
-      echo "   sensitive-storage classifier protocol complete: version=$SENSITIVE_STORAGE_PROTOCOL_VERSION scanned=$SENSITIVE_STORAGE_PROTOCOL_SCANNED findings=$SENSITIVE_STORAGE_PROTOCOL_FINDINGS"
+      echo "   sensitive-storage classifier protocol complete: version=$SENSITIVE_STORAGE_PROTOCOL_VERSION scanned=$SENSITIVE_STORAGE_PROTOCOL_SCANNED findings=$SENSITIVE_STORAGE_PROTOCOL_FINDINGS status=0 diagnostic=OK runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"
       while IFS=$'\t' read -r record_type finding_path finding_line finding_reason finding_storage finding_operation finding_key finding_provider finding_config_match; do
         [[ "$record_type" == "FINDING" ]] || continue
         violation "$finding_path" "$finding_line" "SENSITIVE_CLIENT_STORAGE" "reason=$finding_reason storage=$finding_storage operation=$finding_operation key=$finding_key provider=$finding_provider configMatch=$finding_config_match"
