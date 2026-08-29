@@ -123,15 +123,119 @@ bubbles_python_resolve() {
 # executable, and then exits 69 without running a line. A payload is demanded
 # back rather than an exit code alone, so a wrapper that exits 0 while printing
 # a warning cannot pass as healthy either. The process is always bounded through
-# guard-lib.sh's progress-aware portable timeout. Arbitrary process output stays
+# a fixed-wall timeout. Arbitrary process output stays
 # in a private temporary capture and is never replayed; callers receive only the
-# numeric status and one closed diagnostic enum.
+# numeric status and one closed diagnostic enum. The probe emits one payload at
+# completion, so output-idle is not a liveness signal. A fixed 30-second wall
+# bound replaces the disproven 5/10-second bounds that intermittently killed
+# healthy probes under load, while still terminating a probe that never returns.
+# The runner names every external utility by an absolute system path. Ambient
+# PATH and the retired BUBBLES_PYTHON_ISOLATION_PATH override cannot supply a
+# helper inside this interpreter trust boundary.
 BUBBLES_PYTHON_RUN_SENTINEL='bubbles-python-runs'
-BUBBLES_PYTHON_PROBE_IDLE_SECONDS=5
-BUBBLES_PYTHON_PROBE_ABSOLUTE_SECONDS=10
+BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS="${BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS:-30}"
 BUBBLES_PYTHON_PROBE_FILE_BLOCKS=1
 BUBBLES_PYTHON_RUN_STATUS=127
 BUBBLES_PYTHON_RUN_DIAGNOSTIC='NOT_RUN'
+BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
+BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+
+# bubbles_python_terminate_process_group <pgid> <leader-pid>
+#
+# The bounded runner launches one process group per command. Termination always
+# addresses that group first, then the leader as a fail-safe. This catches a
+# helper that forks and waits as well as a helper whose leader exits while a
+# descendant retains the capture file. Every wait is finite and every external
+# utility is an explicit absolute path available on both Linux and macOS.
+bubbles_python_terminate_process_group() {
+  local process_group="${1:-}"
+  local leader_pid="${2:-}"
+
+  [[ "$process_group" =~ ^[1-9][0-9]*$ ]] || return 2
+  [[ "$leader_pid" =~ ^[1-9][0-9]*$ ]] || return 2
+
+  kill -TERM -- "-$process_group" 2>/dev/null || kill -TERM "$leader_pid" 2>/dev/null || true
+  kill -KILL -- "-$process_group" 2>/dev/null || true
+  kill -KILL "$leader_pid" 2>/dev/null || true
+}
+
+# Public cleanup hook for a caller's EXIT/signal trap. It is normally a no-op;
+# while bubbles_python_run_bounded owns a command, it terminates and reaps that
+# exact process tree. Selftests and the production scanner call this before
+# removing their temporary captures so an interrupted run cannot orphan work.
+bubbles_python_terminate_active_tree() {
+  local process_group="$BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP"
+  local leader_pid="$BUBBLES_PYTHON_ACTIVE_PROCESS_PID"
+
+  if [[ "$process_group" =~ ^[1-9][0-9]*$ ]] &&
+    [[ "$leader_pid" =~ ^[1-9][0-9]*$ ]]; then
+    bubbles_python_terminate_process_group "$process_group" "$leader_pid" || true
+    wait "$leader_pid" 2>/dev/null || true
+  fi
+  BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
+  BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+}
+
+# bubbles_python_run_bounded <seconds> <file-blocks> <log-file> <command...>
+#
+# Security-sensitive Python execution cannot delegate its isolation boundary to
+# an ambient `timeout`, `gtimeout`, `env`, or utility shim. The generic timeout
+# fallback also enables job control, whose asynchronous status notifications can
+# pollute an exact protocol capture on Bash 3.2. This runner therefore redirects
+# the command before enabling monitor mode only for launch. Monitor mode gives
+# the command one process group; the parent restores its prior state immediately
+# and synchronously polls that group. Timeout is always 124. A command's own
+# signal status, including 143, is preserved when the wall deadline did not fire.
+bubbles_python_run_bounded() {
+  local seconds="${1:-}"
+  local file_blocks="${2:-}"
+  local log_file="${3:-}"
+  local command_pid=""
+  local command_status=0
+  local monitor_was_enabled=0
+  local started_at=0
+  local timed_out=0
+
+  shift 3 2>/dev/null || return 2
+  if [[ ! "$seconds" =~ ^[1-9][0-9]*$ ]] ||
+    [[ ! "$file_blocks" =~ ^[1-9][0-9]*$ ]] ||
+    [[ -z "$log_file" ]] || [[ $# -eq 0 ]]; then
+    return 2
+  fi
+
+  : >"$log_file" || return 2
+
+  [[ "$-" == *m* ]] && monitor_was_enabled=1
+  set -m
+  /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
+    "$file_blocks" "$@" >"$log_file" 2>&1 </dev/null &
+  command_pid=$!
+  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
+
+  BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP="$command_pid"
+  BUBBLES_PYTHON_ACTIVE_PROCESS_PID="$command_pid"
+  started_at=$SECONDS
+  while kill -0 "$command_pid" 2>/dev/null; do
+    if (( SECONDS - started_at >= seconds )); then
+      timed_out=1
+      break
+    fi
+    /bin/sleep 1
+  done
+
+  if [[ "$timed_out" -eq 1 ]]; then
+    bubbles_python_terminate_active_tree
+    return 124
+  fi
+
+  wait "$command_pid" 2>/dev/null || command_status=$?
+  if kill -0 -- "-$command_pid" 2>/dev/null; then
+    bubbles_python_terminate_process_group "$command_pid" "$command_pid" || true
+  fi
+  BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
+  BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+  return "$command_status"
+}
 
 bubbles_python_runs() {
   local py="${1:-}" probe="" probe_log="" probe_status=0 probe_bytes=""
@@ -139,23 +243,21 @@ bubbles_python_runs() {
   BUBBLES_PYTHON_RUN_DIAGNOSTIC='INTERPRETER_ABSENT'
 
   [[ -n "$py" && -x "$py" ]] || return 1
-  if ! declare -F bubbles_run_with_progress_timeout >/dev/null 2>&1; then
+  if [[ ! "$BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
     BUBBLES_PYTHON_RUN_STATUS=125
-    BUBBLES_PYTHON_RUN_DIAGNOSTIC='TIMEOUT_API_UNAVAILABLE'
+    BUBBLES_PYTHON_RUN_DIAGNOSTIC='TIMEOUT_CONFIG_INVALID'
     return 1
   fi
-  probe_log="$(mktemp)" || {
+  probe_log="$(/usr/bin/mktemp)" || {
     BUBBLES_PYTHON_RUN_STATUS=125
     BUBBLES_PYTHON_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'
     return 1
   }
 
-  if bubbles_run_with_progress_timeout \
-    "$BUBBLES_PYTHON_PROBE_IDLE_SECONDS" \
-    "$BUBBLES_PYTHON_PROBE_ABSOLUTE_SECONDS" \
-    "$probe_log" \
-    /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
+  if bubbles_python_run_bounded \
+    "$BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS" \
     "$BUBBLES_PYTHON_PROBE_FILE_BLOCKS" \
+    "$probe_log" \
     "$py" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')"; then
     probe_status=0
   else
@@ -165,21 +267,19 @@ bubbles_python_runs() {
 
   if [[ "$probe_status" -eq 124 ]]; then
     BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_TIMEOUT'
-  elif [[ "$probe_status" -eq 125 ]]; then
-    BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_ABSOLUTE_TIMEOUT'
   elif [[ "$probe_status" -ne 0 ]]; then
-    if grep -Eiq 'Xcode (license|licence)|license agreements' "$probe_log" 2>/dev/null; then
+    if /usr/bin/grep -Eiq 'Xcode (license|licence)|license agreements' "$probe_log" 2>/dev/null; then
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='XCODE_LICENSE_UNACCEPTED'
     else
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_EXIT_NONZERO'
     fi
   else
-    probe_bytes="$(wc -c <"$probe_log" 2>/dev/null || true)"
+    probe_bytes="$(/usr/bin/wc -c <"$probe_log" 2>/dev/null || true)"
     probe_bytes="${probe_bytes//[[:space:]]/}"
     if [[ ! "$probe_bytes" =~ ^[0-9]+$ ]] || [[ "$probe_bytes" -gt 128 ]]; then
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_OUTPUT_LIMIT'
     else
-      probe="$(cat "$probe_log")"
+      probe="$(/bin/cat "$probe_log")"
       if [[ "$probe_bytes" -eq 0 ]]; then
         BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_EMPTY'
       elif [[ "$probe_bytes" -eq "${#BUBBLES_PYTHON_RUN_SENTINEL}" && "$probe" == "$BUBBLES_PYTHON_RUN_SENTINEL" ]]; then
@@ -189,7 +289,7 @@ bubbles_python_runs() {
       fi
     fi
   fi
-  rm -f "$probe_log"
+  /bin/rm -f "$probe_log"
   [[ "$BUBBLES_PYTHON_RUN_DIAGNOSTIC" == 'OK' ]]
 }
 

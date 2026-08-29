@@ -9,6 +9,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TEST_SCRIPT="$SCRIPT_DIR/test_24_g028_sensitive_client_storage.sh"
 SCANNER="$REPO_ROOT/bubbles/scripts/implementation-reality-scan.sh"
 SELFTEST="$REPO_ROOT/bubbles/scripts/implementation-reality-scan-selftest.sh"
 GUARD_LIB="$REPO_ROOT/bubbles/scripts/guard-lib.sh"
@@ -59,11 +60,85 @@ PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
 BUG039_CASCADE_VERIFIED=0
+TEST_COMPLETED=0
+TEST_LIFECYCLE_PID=''
+TEST_LIFECYCLE_DESCENDANT_PID=''
+
+terminate_test_lifecycle_tree() {
+  local waited=0
+  if [[ "$TEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -TERM -- "-$TEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -TERM "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    while kill -0 -- "-$TEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
+      /bin/sleep 1
+      waited=$((waited + 1))
+    done
+    kill -KILL -- "-$TEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -KILL "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    wait "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if [[ "$TEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -KILL "$TEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    wait "$TEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+  fi
+  TEST_LIFECYCLE_PID=''
+  TEST_LIFECYCLE_DESCENDANT_PID=''
+}
 
 cleanup() {
-  rm -rf "$WORKSPACE"
+  local status=$?
+  trap - EXIT HUP INT TERM
+  bubbles_python_terminate_active_tree
+  terminate_test_lifecycle_tree
+  /bin/rm -rf "$WORKSPACE"
+  if [[ "$TEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
+    printf '%s\n' 'FAIL: test_24 exited before its completion verdict' >&2
+    status=1
+  fi
+  if [[ -n "${BUBBLES_TEST24_DONE_FILE:-}" ]]; then
+    printf '%s\n' "$status" >"$BUBBLES_TEST24_DONE_FILE"
+  fi
+  exit "$status"
 }
-trap cleanup EXIT INT TERM
+
+test_signal() {
+  local status="$1"
+  trap - HUP INT TERM
+  exit "$status"
+}
+
+trap cleanup EXIT
+trap 'test_signal 129' HUP
+trap 'test_signal 130' INT
+trap 'test_signal 143' TERM
+
+if [[ -n "${BUBBLES_TEST24_CHILD_MODE:-}" ]]; then
+  if [[ -z "${BUBBLES_TEST24_READY_FILE:-}" ]]; then
+    echo "test_24 child mode requires a ready file" >&2
+    exit 2
+  fi
+  case "$BUBBLES_TEST24_CHILD_MODE" in
+    premature-exit)
+      printf '%s\t\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      exit 0
+      ;;
+    timeout-exit)
+      printf '%s\t\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      exit 124
+      ;;
+    interrupt-hold)
+      /bin/sleep 300 &
+      test_descendant_pid=$!
+      TEST_LIFECYCLE_DESCENDANT_PID="$test_descendant_pid"
+      printf '%s\t%s\n' "$WORKSPACE" "$test_descendant_pid" >"$BUBBLES_TEST24_READY_FILE"
+      wait "$test_descendant_pid"
+      ;;
+    *)
+      echo "test_24 child mode is invalid" >&2
+      exit 2
+      ;;
+  esac
+fi
 
 pass() {
   PASS_COUNT=$((PASS_COUNT + 1))
@@ -80,6 +155,84 @@ fail() {
 skip() {
   SKIP_COUNT=$((SKIP_COUNT + 1))
   printf 'SKIP: %s\n' "$1"
+}
+
+assert_test_lifecycle_fails_closed() {
+  local mode="$1"
+  local signal_name="$2"
+  local expected_status="$3"
+  local label="$4"
+  local ready_file="$WORKSPACE/lifecycle-$mode-$signal_name.ready"
+  local done_file="$WORKSPACE/lifecycle-$mode-$signal_name.done"
+  local output_file="$WORKSPACE/lifecycle-$mode-$signal_name.log"
+  local child_pid=""
+  local child_workspace=""
+  local child_descendant_pid=""
+  local child_status=0
+  local cleanup_status=""
+  local deadline=0
+  local monitor_was_enabled=0
+
+  [[ "$-" == *m* ]] && monitor_was_enabled=1
+  set -m
+  BUBBLES_TEST24_CHILD_MODE="$mode" \
+    BUBBLES_TEST24_READY_FILE="$ready_file" \
+    BUBBLES_TEST24_DONE_FILE="$done_file" \
+    /bin/bash "$TEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
+  child_pid=$!
+  TEST_LIFECYCLE_PID="$child_pid"
+  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
+
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$ready_file" ]]; then
+    terminate_test_lifecycle_tree
+    fail "$label reaches its bounded ready point"
+    return
+  fi
+  IFS=$'\t' read -r child_workspace child_descendant_pid <"$ready_file"
+  TEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
+
+  if [[ "$signal_name" != "NONE" ]]; then
+    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  fi
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$done_file" ]]; then
+    terminate_test_lifecycle_tree
+    fail "$label reaches its bounded cleanup-complete point"
+    return
+  fi
+  cleanup_status="$(/bin/cat "$done_file")"
+  wait "$child_pid" 2>/dev/null || child_status=$?
+  TEST_LIFECYCLE_PID=''
+  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+    pass "$label preserves fatal exit $expected_status"
+  else
+    fail "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+  fi
+  if [[ -n "$child_workspace" && ! -e "$child_workspace" ]]; then
+    pass "$label removes its temporary tree"
+  else
+    fail "$label removes its temporary tree (still present: $child_workspace)"
+    [[ -z "$child_workspace" ]] || rm -rf "$child_workspace"
+  fi
+  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
+    pass "$label leaves no descendant process"
+  else
+    fail "$label leaked descendant $child_descendant_pid"
+    kill -KILL "$child_descendant_pid" 2>/dev/null || true
+  fi
+  TEST_LIFECYCLE_DESCENDANT_PID=''
+  if /usr/bin/grep -Fq 'test_24_g028_sensitive_client_storage: ' "$output_file"; then
+    fail "$label must not emit a success summary"
+  else
+    pass "$label emits no success summary"
+  fi
 }
 
 assert_status() {
@@ -394,6 +547,13 @@ assert_invalid_config() {
 
 write_fixture
 
+printf '%s\n' '=== BUG-039 cascade lifecycle fail-closed matrix ==='
+assert_test_lifecycle_fails_closed premature-exit NONE 1 "test_24 premature EXIT"
+assert_test_lifecycle_fails_closed timeout-exit NONE 124 "test_24 timeout exit"
+assert_test_lifecycle_fails_closed interrupt-hold HUP 129 "test_24 HUP interruption"
+assert_test_lifecycle_fails_closed interrupt-hold INT 130 "test_24 INT interruption"
+assert_test_lifecycle_fails_closed interrupt-hold TERM 143 "test_24 TERM interruption"
+
 printf '%s\n' '=== BUG-013 production scanner semantic matrix ==='
 run_scanner
 assert_status 1 "semantic matrix retains blocking findings"
@@ -662,6 +822,17 @@ assert_contains "PASS: Real classifier emits the exact durable-credential findin
 assert_contains "PASS: Deleting production completion emission makes the real-finding contract red" "managed selftest proves completion-emission teeth"
 assert_contains "PASS: Corrupting production classification makes the real-finding contract red" "managed selftest proves classification teeth"
 assert_contains "PASS: Real finding producer creates no helper-side bytecode cache" "managed selftest proves helper bytecode suppression"
+assert_contains "PASS: Trusted classifier launch never executes hostile PATH env" "managed selftest proves PATH env cannot replace the trusted launch"
+assert_contains "PASS: Premature EXIT preserves fatal exit 1" "managed selftest proves premature exit fails closed"
+assert_contains "PASS: Timeout exit preserves fatal exit 124" "managed selftest proves timeout exit fails closed"
+assert_contains "PASS: HUP interruption preserves fatal exit 129" "managed selftest proves HUP interruption fails closed"
+assert_contains "PASS: INT interruption preserves fatal exit 130" "managed selftest proves INT interruption fails closed"
+assert_contains "PASS: TERM interruption preserves fatal exit 143" "managed selftest proves TERM interruption fails closed"
+if [[ ! -e "$REPO_ROOT/bubbles/scripts/guards/__pycache__" ]]; then
+  pass "canonical selftest leaves the helper bytecode cache absent"
+else
+  fail "canonical selftest leaves the helper bytecode cache absent"
+fi
 
 printf '%s\n' '=== BUG-040 managed selftest sanitized PATH with the managed interpreter ==='
 # The scenario above sanitizes the WHOLE environment, so on a machine whose only
@@ -726,6 +897,7 @@ fi
 printf '%s\n' '=== BUG-013 regression summary ==='
 printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
+TEST_COMPLETED=1
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1
 fi

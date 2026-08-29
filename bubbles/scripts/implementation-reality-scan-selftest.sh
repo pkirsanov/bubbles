@@ -3,19 +3,97 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCAN_SCRIPT="$SCRIPT_DIR/implementation-reality-scan.sh"
+SELFTEST_SCRIPT="$SCRIPT_DIR/implementation-reality-scan-selftest.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
 TMPDIR="$(mktemp -d)"
 FIXTURE_ROOT="$TMPDIR/fixtures"
 CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
+SELFTEST_COMPLETED=0
+SELFTEST_LIFECYCLE_PID=''
+SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+
+selftest_terminate_lifecycle_tree() {
+  local waited=0
+  if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -TERM -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    while kill -0 -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
+      /bin/sleep 1
+      waited=$((waited + 1))
+    done
+    kill -KILL -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if [[ "$SELFTEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -KILL "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    wait "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+  fi
+  SELFTEST_LIFECYCLE_PID=''
+  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+}
 
 selftest_cleanup() {
   local status=$?
-  trap - EXIT INT TERM
-  rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
+  trap - EXIT HUP INT TERM
+  if declare -F bubbles_python_terminate_active_tree >/dev/null 2>&1; then
+    bubbles_python_terminate_active_tree
+  fi
+  selftest_terminate_lifecycle_tree
+  /bin/rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
+  if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
+    echo "FAIL: implementation-reality-scan selftest exited before its completion verdict" >&2
+    status=1
+  fi
+  if [[ -n "${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE:-}" ]]; then
+    printf '%s\n' "$status" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE"
+  fi
   exit "$status"
 }
 
-trap selftest_cleanup EXIT INT TERM
+selftest_signal() {
+  local status="$1"
+  trap - HUP INT TERM
+  exit "$status"
+}
+
+trap selftest_cleanup EXIT
+trap 'selftest_signal 129' HUP
+trap 'selftest_signal 130' INT
+trap 'selftest_signal 143' TERM
+
+# Private child modes exercise this script's own EXIT/INT/TERM contract. They
+# are entered only by the bounded parent regression below. The ready file lives
+# outside the child's TMPDIR so the parent can prove that the EXIT cleanup
+# removed the exact temporary tree the child created.
+if [[ -n "${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE:-}" ]]; then
+  if [[ -z "${BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE:-}" ]]; then
+    echo "implementation-reality-scan selftest child mode requires a ready file" >&2
+    exit 2
+  fi
+  case "$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE" in
+    premature-exit)
+      printf '%s\t\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      exit 0
+      ;;
+    timeout-exit)
+      printf '%s\t\n' "$TMPDIR" >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      exit 124
+      ;;
+    interrupt-hold)
+      /bin/sleep 300 &
+      selftest_descendant_pid=$!
+      SELFTEST_LIFECYCLE_DESCENDANT_PID="$selftest_descendant_pid"
+      printf '%s\t%s\n' "$TMPDIR" "$selftest_descendant_pid" \
+        >"$BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE"
+      wait "$selftest_descendant_pid"
+      ;;
+    *)
+      echo "implementation-reality-scan selftest child mode is invalid" >&2
+      exit 2
+      ;;
+  esac
+fi
 
 # Importing the production classifier must never leave generated state beside
 # a security helper. Remove residue from an earlier run before testing, and the
@@ -63,6 +141,92 @@ skip() {
   echo "SKIP: $1"
   skips=$((skips + 1))
 }
+
+assert_selftest_lifecycle_fails_closed() {
+  local mode="$1"
+  local signal_name="$2"
+  local expected_status="$3"
+  local label="$4"
+  local ready_file="$TMPDIR/lifecycle-$mode-$signal_name.ready"
+  local done_file="$TMPDIR/lifecycle-$mode-$signal_name.done"
+  local output_file="$TMPDIR/lifecycle-$mode-$signal_name.log"
+  local child_pid=""
+  local child_tmp=""
+  local child_descendant_pid=""
+  local child_status=0
+  local cleanup_status=""
+  local deadline=0
+  local monitor_was_enabled=0
+
+  [[ "$-" == *m* ]] && monitor_was_enabled=1
+  set -m
+  BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE="$mode" \
+    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE="$ready_file" \
+    BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_DONE_FILE="$done_file" \
+    /bin/bash "$SELFTEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
+  child_pid=$!
+  SELFTEST_LIFECYCLE_PID="$child_pid"
+  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
+
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$ready_file" ]]; then
+    selftest_terminate_lifecycle_tree
+    fail "$label reaches its bounded ready point"
+    return
+  fi
+  IFS=$'\t' read -r child_tmp child_descendant_pid <"$ready_file"
+  SELFTEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
+
+  if [[ "$signal_name" != "NONE" ]]; then
+    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  fi
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$done_file" ]]; then
+    selftest_terminate_lifecycle_tree
+    fail "$label reaches its bounded cleanup-complete point"
+    return
+  fi
+  cleanup_status="$(/bin/cat "$done_file")"
+  wait "$child_pid" 2>/dev/null || child_status=$?
+  SELFTEST_LIFECYCLE_PID=''
+
+  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+    pass "$label preserves fatal exit $expected_status"
+  else
+    fail "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+  fi
+  if [[ -n "$child_tmp" && ! -e "$child_tmp" ]]; then
+    pass "$label removes its temporary tree"
+  else
+    fail "$label removes its temporary tree (still present: $child_tmp)"
+    [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
+  fi
+  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
+    pass "$label leaves no descendant process"
+  else
+    fail "$label leaked descendant $child_descendant_pid"
+    kill -KILL "$child_descendant_pid" 2>/dev/null || true
+  fi
+  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+  if /usr/bin/grep -Fq 'implementation-reality-scan selftest passed' "$output_file"; then
+    fail "$label must not emit a success summary"
+  else
+    pass "$label emits no success summary"
+  fi
+}
+
+echo "Scenario: premature and interrupted selftest exits fail closed while cleaning up."
+assert_selftest_lifecycle_fails_closed premature-exit NONE 1 "Premature EXIT"
+assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
+assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
+assert_selftest_lifecycle_fails_closed interrupt-hold INT 130 "INT interruption"
+assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
 
 # Is the Scan 2B classifier's interpreter USABLE -- not merely present?
 #
@@ -150,21 +314,59 @@ run_scan_in_repo_with_home() {
   local feature_dir="$2"
   local python_home="$3"
   local output_file="$TMPDIR/run-scan-with-home.txt"
+  local started_at=$SECONDS
+  local elapsed_seconds=0
   RUN_OUTPUT=""
   RUN_STATUS=0
   if (
     cd "$repo_root" || exit 2
-    bubbles_run_with_progress_timeout 30 180 "$output_file" \
-      env BUBBLES_PYTHON="" BUBBLES_PYTHON_HOME="$python_home" \
-      BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON" \
-      bash "$SCAN_SCRIPT" "$feature_dir" --verbose
-  ); then
+    export BUBBLES_PYTHON=""
+    export BUBBLES_PYTHON_HOME="$python_home"
+    export BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON"
+    export BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS="${BUBBLES_SELFTEST_PROBE_TIMEOUT_SECONDS:-30}"
+    export SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${BUBBLES_SELFTEST_CLASSIFIER_TIMEOUT_SECONDS:-30}"
+    bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
+  ) >"$output_file" 2>&1; then
     RUN_STATUS=0
   else
     RUN_STATUS=$?
   fi
   RUN_OUTPUT="$(cat "$output_file")"
   printf '%s\n' "$RUN_OUTPUT"
+  elapsed_seconds=$((SECONDS - started_at))
+  printf 'SELFTEST_SCAN_METRIC fixture=%s status=%s elapsed_seconds=%s\n' \
+    "${python_home##*/}" "$RUN_STATUS" "$elapsed_seconds"
+}
+
+run_scan_in_repo_with_hostile_env() {
+  local repo_root="$1"
+  local feature_dir="$2"
+  local python_home="$3"
+  local hostile_path="$4"
+  local marker_file="$5"
+  local output_file="$TMPDIR/run-scan-with-hostile-env.txt"
+  local started_at=$SECONDS
+  local elapsed_seconds=0
+  RUN_OUTPUT=""
+  RUN_STATUS=0
+  if (
+    cd "$repo_root" || exit 2
+    unset BUBBLES_PYTHON BUBBLES_PYTHON_HOME XDG_CACHE_HOME HOME
+    export PATH="$hostile_path:${PATH:-}"
+    export BUBBLES_PYTHON_HOME="$python_home"
+    export BUBBLES_SELFTEST_REAL_PYTHON="$CLASSIFIER_TEST_PYTHON"
+    export BUBBLES_HOSTILE_ENV_MARKER="$marker_file"
+    bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
+  ) >"$output_file" 2>&1; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$output_file")"
+  printf '%s\n' "$RUN_OUTPUT"
+  elapsed_seconds=$((SECONDS - started_at))
+  printf 'SELFTEST_SCAN_METRIC fixture=hostile-env status=%s elapsed_seconds=%s\n' \
+    "$RUN_STATUS" "$elapsed_seconds"
 }
 
 run_scan_in_repo_without_locator() {
@@ -175,10 +377,9 @@ run_scan_in_repo_without_locator() {
   RUN_STATUS=0
   if (
     cd "$repo_root" || exit 2
-    bubbles_run_with_progress_timeout 30 180 "$output_file" \
-      env -u BUBBLES_PYTHON -u BUBBLES_PYTHON_HOME \
-      -u XDG_CACHE_HOME -u HOME bash "$SCAN_SCRIPT" "$feature_dir" --verbose
-  ); then
+    unset BUBBLES_PYTHON BUBBLES_PYTHON_HOME XDG_CACHE_HOME HOME
+    bubbles_run_with_timeout 180 /bin/bash "$SCAN_SCRIPT" "$feature_dir" --verbose
+  ) >"$output_file" 2>&1; then
     RUN_STATUS=0
   else
     RUN_STATUS=$?
@@ -638,14 +839,17 @@ make_classifier_python_fixture() {
   local path="$home/bin/python3"
   mkdir -p "$(dirname "$path")"
   cat > "$path" <<EOF
-#!/usr/bin/env bash
+#!/bin/bash
 mode='$mode'
 real_python="\${BUBBLES_SELFTEST_REAL_PYTHON:-}"
+if [[ "\${1:-}" == "-B" ]]; then
+  shift
+fi
 if [[ "\${1:-}" == "-c" && "\${2:-}" == *bubbles-python-runs* ]]; then
   case "\$mode" in
     probe-silent) exit 0 ;;
     probe-malformed) printf '%s' 'not-the-probe-protocol'; exit 0 ;;
-    probe-hang) while :; do sleep 30; done ;;
+    probe-hang) exec /bin/sleep 300 ;;
     xcode) printf '%s\n' 'You have not agreed to the Xcode license agreements. SECRET_MUST_NOT_LEAK' >&2; exit 69 ;;
     *) printf '%s' 'bubbles-python-runs'; exit 0 ;;
   esac
@@ -687,7 +891,13 @@ print = _bubbles_mutated_print
     ;;
 esac
 case "\$mode" in
-  helper-hang) while :; do sleep 30; done ;;
+  helper-hang) exec /bin/sleep 300 ;;
+  helper-tree-hang)
+    /bin/sleep 300 &
+    helper_child_pid=\$!
+    printf '%s\n' "\$helper_child_pid" >"\${BUBBLES_SELFTEST_TREE_PID_FILE:?tree pid file required}"
+    wait "\$helper_child_pid"
+    ;;
   helper-failure)
     printf '%s\n' 'SECRET_MUST_NOT_LEAK helper failure bytes' >&2
     exit 73
@@ -711,10 +921,12 @@ assert_classifier_boundary_failure() {
   local mode="$1"
   local expected_status="$2"
   local expected_diagnostic="$3"
+  local probe_timeout_seconds="${4:-30}"
   local home="$FIXTURE_ROOT/classifier-python-$mode"
   local observed_diagnostic=""
   make_classifier_python_fixture "$home" "$mode"
-  run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
+  BUBBLES_SELFTEST_PROBE_TIMEOUT_SECONDS="$probe_timeout_seconds" \
+    run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
   if [[ "$RUN_STATUS" -eq 1 ]]; then
     pass "$mode fails closed"
   else
@@ -728,6 +940,60 @@ assert_classifier_boundary_failure() {
   fi
   assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "$mode produces unresolved source findings"
   assert_output_not_contains "SECRET_MUST_NOT_LEAK" "$mode never replays executable output"
+}
+
+assert_classifier_boundary_failure_with_timeout() {
+  local mode="$1"
+  local expected_status="$2"
+  local expected_diagnostic="$3"
+  local timeout_seconds="$4"
+  local home="$FIXTURE_ROOT/classifier-python-$mode-timeout-$timeout_seconds"
+  local observed_diagnostic=""
+  make_classifier_python_fixture "$home" "$mode"
+  BUBBLES_SELFTEST_CLASSIFIER_TIMEOUT_SECONDS="$timeout_seconds" \
+    run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
+  if [[ "$RUN_STATUS" -eq 1 ]]; then
+    pass "$mode timeout control fails closed"
+  else
+    fail "$mode timeout control fails closed (expected scanner exit 1, got $RUN_STATUS)"
+  fi
+  if grep -Fq -- "status=$expected_status diagnostic=$expected_diagnostic" <<<"$RUN_OUTPUT"; then
+    pass "$mode timeout control reports bounded numeric status and closed diagnostic"
+  else
+    observed_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
+    fail "$mode timeout control expected status=$expected_status diagnostic=$expected_diagnostic; observed: $observed_diagnostic"
+  fi
+  assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "$mode timeout control produces unresolved source findings"
+  assert_output_not_contains "SECRET_MUST_NOT_LEAK" "$mode timeout control never replays executable output"
+}
+
+assert_classifier_tree_timeout() {
+  local home="$FIXTURE_ROOT/classifier-python-helper-tree-hang"
+  local tree_pid_file="$FIXTURE_ROOT/classifier-helper-tree-child.pid"
+  local tree_child_pid=""
+  make_classifier_python_fixture "$home" helper-tree-hang
+  export BUBBLES_SELFTEST_TREE_PID_FILE="$tree_pid_file"
+  BUBBLES_SELFTEST_CLASSIFIER_TIMEOUT_SECONDS=3 \
+    run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$home"
+  unset BUBBLES_SELFTEST_TREE_PID_FILE
+  if [[ "$RUN_STATUS" -eq 1 ]] &&
+    grep -Fq -- "status=124 diagnostic=CLASSIFIER_TIMEOUT" <<<"$RUN_OUTPUT"; then
+    pass "helper-tree-hang returns the closed classifier timeout verdict"
+  else
+    fail "helper-tree-hang expected scanner exit 1 with status=124 diagnostic=CLASSIFIER_TIMEOUT"
+  fi
+  if [[ -s "$tree_pid_file" ]]; then
+    tree_child_pid="$(cat "$tree_pid_file")"
+  fi
+  if [[ "$tree_child_pid" =~ ^[1-9][0-9]*$ ]] && ! kill -0 "$tree_child_pid" 2>/dev/null; then
+    pass "Helper timeout removes the complete classifier process tree"
+  else
+    fail "Helper timeout leaked classifier descendant '${tree_child_pid:-unreported}'"
+    if [[ "$tree_child_pid" =~ ^[1-9][0-9]*$ ]]; then
+      kill -KILL "$tree_child_pid" 2>/dev/null || true
+    fi
+  fi
+  assert_output_not_contains "SECRET_MUST_NOT_LEAK" "helper-tree-hang never replays executable output"
 }
 
 assert_classifier_helper_cache_absent() {
@@ -829,6 +1095,19 @@ assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 fin
 assert_output_not_contains "VIOLATION [SENSITIVE_CLIENT_STORAGE]" "Source without a sensitive operation has no storage finding"
 assert_classifier_helper_cache_absent "Real zero-finding producer creates no helper-side bytecode cache"
 
+first_real_zero_status="$RUN_STATUS"
+first_real_zero_summary="$(grep -F 'classifier protocol complete:' <<<"$RUN_OUTPUT" || true)"
+run_scan_in_repo_with_home "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" "$real_zero_home"
+second_real_zero_summary="$(grep -F 'classifier protocol complete:' <<<"$RUN_OUTPUT" || true)"
+if [[ "$first_real_zero_status" -eq 0 && "$RUN_STATUS" -eq 0 &&
+  "$first_real_zero_summary" == "$second_real_zero_summary" &&
+  "$second_real_zero_summary" == *"version=SCS1 scanned=1 findings=0"* ]]; then
+  pass "Consecutive real zero-finding production runs have identical verdict summaries"
+else
+  fail "Consecutive real zero-finding production runs diverged (first=$first_real_zero_status/$first_real_zero_summary second=$RUN_STATUS/$second_real_zero_summary)"
+fi
+assert_classifier_helper_cache_absent "Second consecutive real zero-finding producer creates no helper-side bytecode cache"
+
 write_protocol_finding_source
 real_finding_home="$FIXTURE_ROOT/classifier-python-real-finding"
 make_classifier_python_fixture "$real_finding_home" real-forward
@@ -841,6 +1120,32 @@ fi
 assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=1" "Real finding completion reports one scanned file and one finding"
 assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata configMatch=absent" "Real classifier emits the exact durable-credential finding tuple"
 assert_classifier_helper_cache_absent "Real finding producer creates no helper-side bytecode cache"
+
+echo "Scenario: a hostile PATH env cannot replace the trusted classifier launch."
+hostile_env_path="$FIXTURE_ROOT/hostile-env-path"
+hostile_env_marker="$FIXTURE_ROOT/hostile-env-executed"
+mkdir -p "$hostile_env_path"
+cat >"$hostile_env_path/env" <<'EOF'
+#!/bin/bash
+printf '%s\n' 'hostile env executed' >"$BUBBLES_HOSTILE_ENV_MARKER"
+printf 'COMPLETE\tSCS1\t1\n'
+exit 0
+EOF
+chmod +x "$hostile_env_path/env"
+run_scan_in_repo_with_hostile_env "$PROTOCOL_REPO" "$PROTOCOL_FEATURE" \
+  "$real_finding_home" "$hostile_env_path" "$hostile_env_marker"
+if real_finding_contract_holds; then
+  pass "Hostile PATH env cannot suppress the real classifier finding"
+else
+  hostile_env_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
+  fail "Hostile PATH env cannot suppress the real classifier finding (scanner exit $RUN_STATUS; observed: $hostile_env_diagnostic)"
+fi
+if [[ ! -e "$hostile_env_marker" ]]; then
+  pass "Trusted classifier launch never executes hostile PATH env"
+else
+  fail "Trusted classifier launch never executes hostile PATH env (marker exists)"
+fi
+assert_classifier_helper_cache_absent "Hostile PATH env scenario leaves the helper directory clean"
 
 completion_mutant_home="$FIXTURE_ROOT/classifier-python-mutate-completion"
 make_classifier_python_fixture "$completion_mutant_home" mutate-completion
@@ -874,7 +1179,8 @@ fi
 if [[ "$RUN_STATUS" -eq 0 ]]; then
   pass "Classification mutant demonstrates the exact finding assertion is required"
 else
-  fail "Classification mutant should remove the finding before the persistent assertion (scanner exit $RUN_STATUS)"
+  classification_mutant_diagnostic="$(grep -F 'sensitive-storage classifier' <<<"$RUN_OUTPUT" || true)"
+  fail "Classification mutant should remove the finding before the persistent assertion (scanner exit $RUN_STATUS; observed: $classification_mutant_diagnostic)"
 fi
 assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Classification mutant removes the production finding"
 assert_output_not_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist" "Classification mutant cannot satisfy the real-finding tuple assertion"
@@ -1024,8 +1330,16 @@ fi
 
 echo "Scenario: hostile probe/helper hangs are bounded and leave the next classifier run healthy."
 write_protocol_boundary_source
-assert_classifier_boundary_failure probe-hang 124 PROBE_TIMEOUT
-assert_classifier_boundary_failure helper-hang 124 CLASSIFIER_TIMEOUT
+assert_classifier_boundary_failure probe-hang 124 PROBE_TIMEOUT 3
+assert_classifier_boundary_failure_with_timeout helper-hang 124 CLASSIFIER_TIMEOUT 3
+assert_classifier_boundary_failure_with_timeout helper-hang 124 CLASSIFIER_TIMEOUT 1
+assert_classifier_tree_timeout
+classifier_timeout_default="$(sed -n 's/^SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS:-\([0-9][0-9]*\)}"$/\1/p' "$SCAN_SCRIPT")"
+if [[ "$classifier_timeout_default" == "30" ]]; then
+  pass "Classifier production timeout default remains the validated 30-second fixed bound"
+else
+  fail "Classifier production timeout default drifted to '${classifier_timeout_default:-unresolved}' seconds"
+fi
 write_protocol_zero_source
 post_timeout_home="$FIXTURE_ROOT/classifier-python-post-timeout-real-zero"
 make_classifier_python_fixture "$post_timeout_home" real-forward
@@ -1037,6 +1351,13 @@ else
 fi
 assert_output_contains "classifier protocol complete: version=SCS1 scanned=1 findings=0" "Post-timeout classifier completes its protocol"
 assert_classifier_helper_cache_absent "Post-timeout real producer leaves the helper directory clean"
+
+# Only a run that reaches this point may return its verdict. The EXIT trap
+# converts every earlier zero-status exit into failure, while preserving any
+# original nonzero status and the dedicated INT/TERM statuses.
+SELFTEST_COMPLETED=1
+
+echo "implementation-reality-scan selftest summary: failures=$failures skips=$skips"
 
 if [[ "$skips" -gt 0 ]]; then
   echo "implementation-reality-scan selftest skipped $skips scenario group(s) for an absent prerequisite."

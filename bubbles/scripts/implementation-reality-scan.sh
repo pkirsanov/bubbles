@@ -56,8 +56,10 @@ fi
 # usability-aware resolver. Security-sensitive execution uses its explicit
 # managed-venv-only trust contract; BUBBLES_PYTHON and PATH remain available to
 # general consumers but are not silently promoted into classifier trust roots.
-# Every probe and helper run goes through guard-lib's portable, complete-tree
-# timeout. Sourcing both modules defines functions and changes no shell options.
+# Every probe and helper run goes through python-env.sh's fixed-wall,
+# complete-process-tree runner. That runner and this scanner name trust-boundary
+# helpers by absolute path; ambient PATH cannot replace them. Sourcing both
+# modules defines functions and changes no shell options.
 if [[ ! -f "$SCRIPT_DIR/guard-lib.sh" || ! -f "$SCRIPT_DIR/python-env.sh" ]]; then
   echo "implementation-reality-scan: framework file missing: guard-lib.sh or python-env.sh" >&2
   exit 2
@@ -66,6 +68,24 @@ fi
 source "$SCRIPT_DIR/guard-lib.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/python-env.sh"
+
+implementation_reality_scan_cleanup() {
+  local status=$?
+  trap - EXIT HUP INT TERM
+  bubbles_python_terminate_active_tree
+  exit "$status"
+}
+
+implementation_reality_scan_signal() {
+  local status="$1"
+  trap - HUP INT TERM
+  exit "$status"
+}
+
+trap implementation_reality_scan_cleanup EXIT
+trap 'implementation_reality_scan_signal 129' HUP
+trap 'implementation_reality_scan_signal 130' INT
+trap 'implementation_reality_scan_signal 143' TERM
 
 feature_dir="${1:-}"
 verbose="false"
@@ -699,8 +719,11 @@ echo "--- Scan 2B: Sensitive Client Storage ---"
 SENSITIVE_STORAGE_HELPER="$SCRIPT_DIR/guards/sensitive-client-storage-scan.py"
 SENSITIVE_STORAGE_FALLBACK_PATTERN='localStorage\.|sessionStorage\.|AsyncStorage\.|SharedPreferences\b|indexedDB\.|IDBObjectStore\b|\.objectStore[[:space:]]*\(|\.(setString|setStringList|setInt|setBool|setDouble|putString|putStringSet|putInt|putBoolean|putFloat|putLong)[[:space:]]*\('
 SENSITIVE_STORAGE_PROTOCOL_VERSION='SCS1'
-SENSITIVE_STORAGE_CLASSIFIER_IDLE_SECONDS=15
-SENSITIVE_STORAGE_CLASSIFIER_ABSOLUTE_SECONDS=120
+# The Python driver buffers its closed protocol until classification finishes.
+# Log growth therefore cannot distinguish progress from a hang. A fixed
+# 30-second wall deadline is ten times the measured healthy fixture duration
+# and still kills a driver that never returns.
+SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS="${SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS:-30}"
 SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES=4194304
 SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS=8192
 SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC='NOT_RUN'
@@ -897,29 +920,24 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
     sensitive_storage_output=""
     sensitive_storage_status=0
     sensitive_storage_diagnostic='OK'
-    sensitive_storage_log="$(mktemp)"
-    if bubbles_run_with_progress_timeout \
-      "$SENSITIVE_STORAGE_CLASSIFIER_IDLE_SECONDS" \
-      "$SENSITIVE_STORAGE_CLASSIFIER_ABSOLUTE_SECONDS" \
-      "$sensitive_storage_log" \
-      /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
+    sensitive_storage_log="$(/usr/bin/mktemp)"
+    if bubbles_python_run_bounded \
+      "$SENSITIVE_STORAGE_CLASSIFIER_TIMEOUT_SECONDS" \
       "$SENSITIVE_STORAGE_CLASSIFIER_FILE_BLOCKS" \
-      env PYTHONDONTWRITEBYTECODE=1 \
-      "$sensitive_storage_python" -c "$SENSITIVE_STORAGE_PROTOCOL_DRIVER" \
+      "$sensitive_storage_log" \
+      "$sensitive_storage_python" -B -c "$SENSITIVE_STORAGE_PROTOCOL_DRIVER" \
       "$SENSITIVE_STORAGE_HELPER" "$REPO_ROOT" "$PROJECT_CONFIG" \
       "${sensitive_storage_files[@]}"; then
       sensitive_storage_status=0
     else
       sensitive_storage_status=$?
     fi
-    sensitive_storage_output_bytes="$(wc -c <"$sensitive_storage_log" 2>/dev/null || true)"
+    sensitive_storage_output_bytes="$(/usr/bin/wc -c <"$sensitive_storage_log" 2>/dev/null || true)"
     sensitive_storage_output_bytes="${sensitive_storage_output_bytes//[[:space:]]/}"
     if [[ "$sensitive_storage_status" -eq 124 ]]; then
       sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT'
-    elif [[ "$sensitive_storage_status" -eq 125 ]]; then
-      sensitive_storage_diagnostic='CLASSIFIER_ABSOLUTE_TIMEOUT'
     elif [[ "$sensitive_storage_status" -ne 0 ]]; then
-      if grep -Eiq 'Xcode (license|licence)|license agreements' "$sensitive_storage_log" 2>/dev/null; then
+      if /usr/bin/grep -Eiq 'Xcode (license|licence)|license agreements' "$sensitive_storage_log" 2>/dev/null; then
         sensitive_storage_diagnostic='XCODE_LICENSE_UNACCEPTED'
       else
         sensitive_storage_diagnostic='CLASSIFIER_EXIT_NONZERO'
@@ -928,12 +946,12 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
       [[ "$sensitive_storage_output_bytes" -gt "$SENSITIVE_STORAGE_CLASSIFIER_MAX_OUTPUT_BYTES" ]]; then
       sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT'
     else
-      sensitive_storage_output="$(cat "$sensitive_storage_log")"
+      sensitive_storage_output="$(/bin/cat "$sensitive_storage_log")"
       if ! sensitive_storage_protocol_validate "$sensitive_storage_output" "${#sensitive_storage_files[@]}"; then
         sensitive_storage_diagnostic="$SENSITIVE_STORAGE_PROTOCOL_DIAGNOSTIC"
       fi
     fi
-    rm -f "$sensitive_storage_log"
+    /bin/rm -f "$sensitive_storage_log"
 
     if [[ "$sensitive_storage_diagnostic" != 'OK' ]]; then
       echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic trust=$BUBBLES_PYTHON_TRUST_CONTRACT protocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"

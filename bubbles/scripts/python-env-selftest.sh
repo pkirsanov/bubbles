@@ -19,6 +19,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_SH="$SCRIPT_DIR/python-env.sh"
+SELFTEST_SCRIPT="$SCRIPT_DIR/python-env-selftest.sh"
 POSTURE_SH="$SCRIPT_DIR/dependency-posture.sh"
 GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
 
@@ -37,19 +38,85 @@ pass=0
 fail=0
 TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
 SELFTEST_COMPLETED=0
+SELFTEST_LIFECYCLE_PID=''
+SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+
+selftest_terminate_lifecycle_tree() {
+  local waited=0
+  if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -TERM -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    while kill -0 -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null && [[ "$waited" -lt 5 ]]; do
+      /bin/sleep 1
+      waited=$((waited + 1))
+    done
+    kill -KILL -- "-$SELFTEST_LIFECYCLE_PID" 2>/dev/null ||
+      kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if [[ "$SELFTEST_LIFECYCLE_DESCENDANT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    kill -KILL "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+    wait "$SELFTEST_LIFECYCLE_DESCENDANT_PID" 2>/dev/null || true
+  fi
+  SELFTEST_LIFECYCLE_PID=''
+  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+}
 
 selftest_cleanup() {
   local status=$?
-  trap - EXIT INT TERM
-  rm -rf "$TMP_ROOT"
+  trap - EXIT HUP INT TERM
+  bubbles_python_terminate_active_tree
+  selftest_terminate_lifecycle_tree
+  /bin/rm -rf "$TMP_ROOT"
   if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
     echo "FAIL: python-env selftest exited before its completion summary" >&2
     status=1
   fi
+  if [[ -n "${BUBBLES_PYTHON_SELFTEST_DONE_FILE:-}" ]]; then
+    printf '%s\n' "$status" >"$BUBBLES_PYTHON_SELFTEST_DONE_FILE"
+  fi
   exit "$status"
 }
 
-trap selftest_cleanup EXIT INT TERM
+selftest_signal() {
+  local status="$1"
+  trap - HUP INT TERM
+  exit "$status"
+}
+
+trap selftest_cleanup EXIT
+trap 'selftest_signal 129' HUP
+trap 'selftest_signal 130' INT
+trap 'selftest_signal 143' TERM
+
+if [[ -n "${BUBBLES_PYTHON_SELFTEST_CHILD_MODE:-}" ]]; then
+  if [[ -z "${BUBBLES_PYTHON_SELFTEST_READY_FILE:-}" ]]; then
+    echo "python-env selftest child mode requires a ready file" >&2
+    exit 2
+  fi
+  case "$BUBBLES_PYTHON_SELFTEST_CHILD_MODE" in
+    premature-exit)
+      printf '%s\t\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      exit 0
+      ;;
+    timeout-exit)
+      printf '%s\t\n' "$TMP_ROOT" >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      exit 124
+      ;;
+    interrupt-hold)
+      /bin/sleep 300 &
+      selftest_descendant_pid=$!
+      SELFTEST_LIFECYCLE_DESCENDANT_PID="$selftest_descendant_pid"
+      printf '%s\t%s\n' "$TMP_ROOT" "$selftest_descendant_pid" \
+        >"$BUBBLES_PYTHON_SELFTEST_READY_FILE"
+      wait "$selftest_descendant_pid"
+      ;;
+    *)
+      echo "python-env selftest child mode is invalid" >&2
+      exit 2
+      ;;
+  esac
+fi
 
 ok() {
   echo "PASS: $1"
@@ -59,6 +126,91 @@ bad() {
   echo "FAIL: $1"
   fail=$((fail + 1))
 }
+
+assert_selftest_lifecycle_fails_closed() {
+  local mode="$1"
+  local signal_name="$2"
+  local expected_status="$3"
+  local label="$4"
+  local ready_file="$TMP_ROOT/lifecycle-$mode-$signal_name.ready"
+  local done_file="$TMP_ROOT/lifecycle-$mode-$signal_name.done"
+  local output_file="$TMP_ROOT/lifecycle-$mode-$signal_name.log"
+  local child_pid=""
+  local child_tmp=""
+  local child_descendant_pid=""
+  local child_status=0
+  local cleanup_status=""
+  local deadline=0
+  local monitor_was_enabled=0
+
+  [[ "$-" == *m* ]] && monitor_was_enabled=1
+  set -m
+  BUBBLES_PYTHON_SELFTEST_CHILD_MODE="$mode" \
+    BUBBLES_PYTHON_SELFTEST_READY_FILE="$ready_file" \
+    BUBBLES_PYTHON_SELFTEST_DONE_FILE="$done_file" \
+    /bin/bash "$SELFTEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
+  child_pid=$!
+  SELFTEST_LIFECYCLE_PID="$child_pid"
+  [[ "$monitor_was_enabled" -eq 1 ]] || set +m
+
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$ready_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$ready_file" ]]; then
+    selftest_terminate_lifecycle_tree
+    bad "$label reaches its bounded ready point"
+    return
+  fi
+  IFS=$'\t' read -r child_tmp child_descendant_pid <"$ready_file"
+  SELFTEST_LIFECYCLE_DESCENDANT_PID="$child_descendant_pid"
+
+  if [[ "$signal_name" != "NONE" ]]; then
+    kill -"$signal_name" -- "-$child_pid" 2>/dev/null || kill -"$signal_name" "$child_pid" 2>/dev/null || true
+  fi
+  deadline=$((SECONDS + 10))
+  while [[ ! -s "$done_file" ]] && kill -0 "$child_pid" 2>/dev/null && [[ "$SECONDS" -lt "$deadline" ]]; do
+    /bin/sleep 1
+  done
+  if [[ ! -s "$done_file" ]]; then
+    selftest_terminate_lifecycle_tree
+    bad "$label reaches its bounded cleanup-complete point"
+    return
+  fi
+  cleanup_status="$(/bin/cat "$done_file")"
+  wait "$child_pid" 2>/dev/null || child_status=$?
+  SELFTEST_LIFECYCLE_PID=''
+  if [[ "$child_status" -eq "$expected_status" && "$cleanup_status" == "$expected_status" ]]; then
+    ok "$label preserves fatal exit $expected_status"
+  else
+    bad "$label expected exit $expected_status, got wait=$child_status cleanup=$cleanup_status"
+  fi
+  if [[ -n "$child_tmp" && ! -e "$child_tmp" ]]; then
+    ok "$label removes its temporary tree"
+  else
+    bad "$label removes its temporary tree (still present: $child_tmp)"
+    [[ -z "$child_tmp" ]] || rm -rf "$child_tmp"
+  fi
+  if [[ -z "$child_descendant_pid" ]] || ! kill -0 "$child_descendant_pid" 2>/dev/null; then
+    ok "$label leaves no descendant process"
+  else
+    bad "$label leaked descendant $child_descendant_pid"
+    kill -KILL "$child_descendant_pid" 2>/dev/null || true
+  fi
+  SELFTEST_LIFECYCLE_DESCENDANT_PID=''
+  if /usr/bin/grep -Fq 'python-env selftest:' "$output_file"; then
+    bad "$label must not emit a success summary"
+  else
+    ok "$label emits no success summary"
+  fi
+}
+
+echo "Scenario: premature and interrupted python-env selftests fail closed while cleaning up."
+assert_selftest_lifecycle_fails_closed premature-exit NONE 1 "Premature EXIT"
+assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
+assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
+assert_selftest_lifecycle_fails_closed interrupt-hold INT 130 "INT interruption"
+assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
 
 assert_exit() {
   local expected="$1" label="$2"
@@ -341,7 +493,7 @@ make_probe_python() {
   local path="$1" mode="$2"
   mkdir -p "$(dirname "$path")"
   {
-    echo '#!/usr/bin/env bash'
+    echo '#!/bin/bash'
     echo '# probe shim for python-env-selftest'
     case "$mode" in
       healthy) echo "printf %s 'bubbles-python-runs'" ;;
@@ -361,7 +513,13 @@ make_probe_python() {
         echo "echo 'You have not agreed to the Xcode license agreements.' >&2"
         echo 'exit 69'
         ;;
-      hang) echo 'while :; do sleep 30; done' ;;
+      hang) echo 'exec /bin/sleep 300' ;;
+      tree-hang)
+        echo '/bin/sleep 300 &'
+        echo 'probe_child_pid=$!'
+        echo 'printf "%s\n" "$probe_child_pid" >"${BUBBLES_PYTHON_TREE_PID_FILE:?tree pid file required}"'
+        echo 'wait "$probe_child_pid"'
+        ;;
       malformed) echo "printf %s 'not-the-probe-protocol'" ;;
     esac
   } >"$path"
@@ -444,6 +602,134 @@ assert_runs silent no "an interpreter that exits 0 while producing NOTHING is no
 assert_runs noisy no "an interpreter that pollutes stdout cannot pass the payload check"
 assert_runs dead no "an interpreter that emits the payload and then exits 69 is not usable"
 
+# ── ADVERSARIAL A7b: isolation utilities resolve only from the closed path ──
+# Each hostile wrapper preserves the real utility's behavior after recording a
+# marker. Without the function-local closed PATH in bubbles_python_runs, this
+# test stays behaviorally green but the marker proves the trust boundary ran an
+# ambient executable. That makes the assertion non-vacuous without racing a
+# timeout or depending on the host's Python installation.
+a7b="$TMP_ROOT/a7b"
+a7b_bin="$a7b/bin"
+a7b_marker="$a7b/ambient-utility-executed"
+mkdir -p "$a7b_bin"
+make_hostile_passthrough() {
+  local tool="$1"
+  local real_tool=""
+  real_tool="$(PATH=/usr/bin:/bin:/usr/sbin:/sbin command -v "$tool" 2>/dev/null || true)"
+  if [[ -z "$real_tool" ]]; then
+    bad "A7b fixture requires $tool in the closed system path"
+    return
+  fi
+  cat >"$a7b_bin/$tool" <<EOF
+#!/bin/bash
+printf '%s\n' '$tool' >>"\${BUBBLES_PYTHON_HOSTILE_MARKER:?marker required}"
+exec '$real_tool' "\$@"
+EOF
+  chmod +x "$a7b_bin/$tool"
+}
+for isolation_tool in mktemp sleep wc grep cat rm; do
+  make_hostile_passthrough "$isolation_tool"
+done
+for isolation_tool in timeout gtimeout; do
+  cat >"$a7b_bin/$isolation_tool" <<'EOF'
+#!/bin/bash
+printf '%s\n' 'timeout-runner' >>"${BUBBLES_PYTHON_HOSTILE_MARKER:?marker required}"
+printf '%s' 'bubbles-python-runs'
+exit 0
+EOF
+  chmod +x "$a7b_bin/$isolation_tool"
+done
+a7b_result="$(PATH="$a7b_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON_HOSTILE_MARKER="$a7b_marker" /bin/bash -c \
+  '. "$1"; . "$2"; if bubbles_python_runs "$3"; then printf "RUNS|%s|%s" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"; else printf "DECLINED|%s|%s" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"; fi' \
+  _ "$GUARD_LIB" "$ENV_SH" "$a7/healthy/python3" 2>/dev/null || true)"
+if [[ "$a7b_result" == "RUNS|0|OK" ]]; then
+  ok "A7b: closed-path probe still accepts the real healthy interpreter"
+else
+  bad "A7b: closed-path probe returned '$a7b_result'"
+fi
+if [[ ! -e "$a7b_marker" ]]; then
+  ok "A7b: interpreter isolation executes no ambient PATH utility"
+else
+  bad "A7b: interpreter isolation executed ambient utility: $(tr '\n' ' ' <"$a7b_marker")"
+fi
+
+a7b_mutant_result="$(PATH="$a7b_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON_ISOLATION_PATH="$a7b_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON_HOSTILE_MARKER="$a7b_marker" /bin/bash -c \
+  '/bin/rm -f "$4"; . "$1"; . "$2"; if bubbles_python_runs "$3"; then result=RUNS; else result=DECLINED; fi; if [[ -e "$4" ]]; then marker=PRESENT; else marker=ABSENT; fi; printf "%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC" "$marker"' \
+  _ "$GUARD_LIB" "$ENV_SH" "$a7/healthy/python3" "$a7b_marker" 2>/dev/null || true)"
+if [[ "$a7b_mutant_result" == "RUNS|0|OK|ABSENT" ]]; then
+  ok "A7b negative control: a legacy isolation-path override cannot inject a trusted helper"
+else
+  bad "A7b negative control: legacy isolation-path override reached a trusted helper ('$a7b_mutant_result')"
+fi
+
+a7c_log="$a7/timeout.log"
+a7c_status=0
+bubbles_python_run_bounded 1 1 "$a7c_log" /bin/sleep 300 || a7c_status=$?
+if [[ "$a7c_status" -eq 124 ]]; then
+  ok "A7c: bounded runner returns timeout status 124"
+else
+  bad "A7c: bounded runner returned '$a7c_status', expected 124"
+fi
+
+a7d_term="$a7/term-self.sh"
+cat >"$a7d_term" <<'EOF'
+#!/bin/bash
+exit 143
+EOF
+chmod +x "$a7d_term"
+a7d_log="$a7/term.log"
+a7d_status=0
+bubbles_python_run_bounded 5 1 "$a7d_log" "$a7d_term" || a7d_status=$?
+if [[ "$a7d_status" -eq 143 ]]; then
+  ok "A7d: command-owned signal status 143 remains visible"
+else
+  bad "A7d: command-owned signal status returned '$a7d_status', expected 143"
+fi
+
+a7e_delayed="$a7/delayed-valid.sh"
+cat >"$a7e_delayed" <<'EOF'
+#!/bin/bash
+/bin/sleep 2
+printf '%s' 'bubbles-python-runs'
+EOF
+chmod +x "$a7e_delayed"
+a7e_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=1 /bin/bash -c \
+  '. "$1"; . "$2"; if bubbles_python_runs "$3"; then result=RUNS; else result=DECLINED; fi; printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"' \
+  _ "$GUARD_LIB" "$ENV_SH" "$a7e_delayed" 2>/dev/null || true)"
+if [[ "$a7e_result" == "DECLINED|124|PROBE_TIMEOUT" ]]; then
+  ok "A7e negative control: a one-second bound deterministically rejects a delayed valid probe"
+else
+  bad "A7e negative control returned '$a7e_result'"
+fi
+
+a7f_tree="$a7/tree-hang/python3"
+a7f_pid_file="$a7/tree-hang-child.pid"
+make_probe_python "$a7f_tree" tree-hang
+a7f_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=3 \
+  BUBBLES_PYTHON_TREE_PID_FILE="$a7f_pid_file" /bin/bash -c \
+  '. "$1"; . "$2"; if bubbles_python_runs "$3"; then result=RUNS; else result=DECLINED; fi; printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"' \
+  _ "$GUARD_LIB" "$ENV_SH" "$a7f_tree" 2>/dev/null || true)"
+if [[ "$a7f_result" == "DECLINED|124|PROBE_TIMEOUT" ]]; then
+  ok "A7f: descendant-spawning probe returns timeout status 124"
+else
+  bad "A7f: descendant-spawning probe returned '$a7f_result'"
+fi
+a7f_child_pid=""
+if [[ -s "$a7f_pid_file" ]]; then
+  a7f_child_pid="$(cat "$a7f_pid_file")"
+fi
+if [[ "$a7f_child_pid" =~ ^[1-9][0-9]*$ ]] && ! kill -0 "$a7f_child_pid" 2>/dev/null; then
+  ok "A7f negative control: probe timeout removes the complete process tree"
+else
+  bad "A7f negative control: probe timeout leaked descendant '${a7f_child_pid:-unreported}'"
+  if [[ "$a7f_child_pid" =~ ^[1-9][0-9]*$ ]]; then
+    kill -KILL "$a7f_child_pid" 2>/dev/null || true
+  fi
+fi
+
 # ── ADVERSARIAL A8: security consumers trust only the managed venv ────────
 # BUBBLES_PYTHON and PATH remain valid general-consumer candidates, but neither
 # is a provenance root for a security classifier. These assertions call the
@@ -511,7 +797,8 @@ else
   bad "A8f: healthy trust result was '$a8_healthy'"
 fi
 
-a8_hang="$(trusted_resolution "$a8/hang" env PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
+a8_hang="$(trusted_resolution "$a8/hang" env BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=3 \
+  PATH="$a8/path:/usr/bin:/bin" 2>/dev/null || true)"
 if [[ "$a8_hang" == "DECLINED|124|PROBE_TIMEOUT|managed-venv-only-v1" ]]; then
   ok "A8g: hanging interpreter is terminated with watchdog status 124"
 else
