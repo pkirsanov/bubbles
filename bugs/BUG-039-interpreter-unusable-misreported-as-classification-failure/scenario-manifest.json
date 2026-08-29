@@ -1,101 +1,450 @@
 {
   "schemaVersion": 1,
   "spec": "BUG-039-interpreter-unusable-misreported-as-classification-failure",
+  "implementationEpoch": "root-protected-native-python-v1",
+  "implementationStatus": "planned",
+  "evidencePolicy": "Current evidenceRefs stay empty until every accepted run names one stabilized immutable candidate. Historical managed-runtime evidence cannot satisfy this manifest.",
   "scenarios": [
     {
       "id": "SCN-B039-001",
       "title": "Unusable interpreter produces a named skip, not classification failures",
       "requiredTestType": "functional",
-      "scopeRef": "Scope 1",
-      "behaviorTraits": ["environment-dependent", "shared-consumer"],
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "historicalScopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The production selftest names unavailable authenticated execution and withholds every classifier-dependent verdict.",
+          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The scanner selftest and regression cascade agree that unavailable coverage is a skip and never a pass.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "consumer-surface:tests/regression/test_24_g028_sensitive_client_storage.sh"
+          ]
+        }
+      ],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
-      "evidenceRefs": ["report.md#v2-sanitized-path-no-locator-the-named-skip"],
-      "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "tags": ["persistent-regression", "security", "unavailable-runtime"],
+      "linkedTests": [
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "evidenceRefs": [],
+      "historicalEvidenceRefs": ["report.md#v2-sanitized-path-no-locator-the-named-skip"],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "real-environment",
-        "assertionSurface": "process-exit-and-stdout",
-        "dependencyPath": "real-framework-runtime",
-        "productionOwners": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
-        "negativeControl": "Restore the presence-only command -v predicate. The semantic assertions run against a dead classifier and 11 failures return, naming the code under scan.",
-        "negativeControlMechanism": "observed-at-head"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "The managed selftest is a shell harness with no rendered product surface."
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/python-env.sh",
+          "bubbles/scripts/implementation-reality-scan.sh"
+        ],
+        "negativeControl": "Mutate the unavailable branch to emit classifier PASS labels or omit the sentinel. The selftest or cascade must fail through the production path.",
+        "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-002",
-      "title": "A usable interpreter under the same sanitized PATH runs everything",
+      "title": "A usable authenticated interpreter under the same sanitized PATH runs everything",
       "requiredTestType": "functional",
-      "scopeRef": "Scope 1",
-      "behaviorTraits": ["environment-dependent"],
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "historicalScopeRef": "Scope 1",
+      "behaviorTraits": ["shared-consumer", "dependency-path"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The authenticated runtime, production scanner, and cascade execute the same semantic and configuration assertions.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "consumer-surface:tests/regression/test_24_g028_sensitive_client_storage.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "The test crosses the authenticated runtime boundary and observes complete classifier execution without a skip.",
+          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+        }
+      ],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
-      "evidenceRefs": ["report.md#v3-sanitized-path-home-restored-the-control-that-matters"],
-      "implementationRefs": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
+      "tags": ["persistent-regression", "security", "authenticated-runtime"],
+      "linkedTests": [
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "evidenceRefs": [],
+      "historicalEvidenceRefs": ["report.md#v3-sanitized-path-home-restored-the-control-that-matters"],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "real-environment",
-        "assertionSurface": "process-exit-and-stdout",
-        "dependencyPath": "real-framework-runtime",
-        "productionOwners": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
-        "negativeControl": "Widen the probe to skip whenever the sanitized PATH is in use. The scenario group is skipped even with a working interpreter and the coverage silently disappears.",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/python-env.sh",
+          "bubbles/scripts/implementation-reality-scan.sh"
+        ],
+        "negativeControl": "Mutate authenticated success to take the unavailable branch. The no-skip and complete semantic matrix assertions must fail.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "The managed selftest is a shell harness with no rendered product surface."
       }
     },
     {
       "id": "SCN-B039-003",
       "title": "The semantic assertions still catch a real classifier regression",
-      "requiredTestType": "adversarial",
-      "scopeRef": "Scope 1",
-      "behaviorTraits": ["classifier-contract", "shared-consumer"],
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "historicalScopeRef": "Scope 1",
+      "behaviorTraits": ["shared-consumer", "dependency-path"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The digest-authorized classifier and scanner assertions agree on every semantic finding tuple.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "consumer-surface:tests/regression/test_24_g028_sensitive_client_storage.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "A copied candidate updates the expected digest for a one-token classifier mutation, executes those reviewed mutant bytes, and fails on semantic tuple mismatches.",
+          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+        }
+      ],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/implementation-reality-scan-selftest.sh"],
-      "evidenceRefs": ["report.md#7-mutation-proof-the-guarantee-survives"],
-      "implementationRefs": ["bubbles/scripts/guards/sensitive-client-storage-scan.py"],
+      "tags": ["persistent-regression", "security", "classifier-mutation"],
+      "linkedTests": [
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "evidenceRefs": [],
+      "historicalEvidenceRefs": ["report.md#7-mutation-proof-the-guarantee-survives"],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/guards/sensitive-client-storage-scan.py",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit-and-stdout",
-        "dependencyPath": "real-framework-runtime",
-        "productionOwners": ["bubbles/scripts/guards/sensitive-client-storage-scan.py"],
-        "negativeControl": "Mutate the classification ladder from storage != sessionStorage to storage != localStorage. The selftest exits 1 with 3 semantic failures under both a normal PATH and the sanitized PATH with a usable interpreter.",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/guards/sensitive-client-storage-scan.py",
+          "bubbles/scripts/implementation-reality-scan.sh"
+        ],
+        "negativeControl": "In a copied candidate, mutate one classifier-ladder token and update the copied expected digest. Both normal and sanitized authenticated runs must fail on semantic tuples before byte-identical restoration.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "The classifier is a static analysis guard with no rendered product surface."
       }
     },
     {
       "id": "SCN-B039-004",
       "title": "A skipped coverage claim is never counted as a pass",
-      "requiredTestType": "regression",
-      "scopeRef": "Scope 1",
-      "behaviorTraits": ["shared-consumer", "reporting-integrity"],
-      "riskTier": "high",
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "historicalScopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The unavailable sentinel increments only the skip accounting path and withholds the coverage pass label.",
+          "satisfiedBy": ["tests/regression/test_24_g028_sensitive_client_storage.sh"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The selftest sentinel and test_24 summary preserve the same skipped-coverage meaning.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "consumer-surface:tests/regression/test_24_g028_sensitive_client_storage.sh"
+          ]
+        }
+      ],
+      "riskTier": "medium",
+      "tags": ["persistent-regression", "reporting-integrity", "skip-accounting"],
       "linkedTests": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
-      "evidenceRefs": ["report.md#8-cascade-test24"],
-      "implementationRefs": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
+      "evidenceRefs": [],
+      "historicalEvidenceRefs": ["report.md#8-cascade-test24"],
+      "implementationRefs": [
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "real-environment",
-        "assertionSurface": "process-exit-and-stdout",
-        "dependencyPath": "real-framework-runtime",
-        "productionOwners": ["tests/regression/test_24_g028_sensitive_client_storage.sh"],
-        "negativeControl": "Route the sentinel branch to pass() instead of skip(). The summary reports 58 passed 0 skipped and the unmet coverage becomes indistinguishable from satisfied coverage.",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "tests/regression/test_24_g028_sensitive_client_storage.sh"
+        ],
+        "negativeControl": "Mutate the sentinel branch to call pass instead of skip. The counter and withheld-label assertions must fail.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "The regression test is a shell harness with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B039-005",
+      "title": "Caller-owned Python output cannot authorize a clean verdict",
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["degraded-state", "dependency-path", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "A rejected caller-owned runtime produces a named fail-closed outcome and no earned clean verdict.",
+          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "The production scanner exercises candidate discovery, path authentication, isolated probes, and classifier execution boundaries.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Hostile BUBBLES_PYTHON, managed-venv, HOME, and PATH values execute through production resolution but cannot grant security authority.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "tags": ["persistent-regression", "security", "forged-runtime"],
+      "linkedTests": [
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/python-env.sh",
+          "bubbles/scripts/implementation-reality-scan.sh"
+        ],
+        "negativeControl": "Caller-owned PATH and managed executables forge the expected probe, PYSEC1, PYMOD1, and clean SCS1 records plus a marker. Mutating one trust predicate to accept them must make the production-path assertions red.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-006",
+      "title": "Fixed operations execute pinned helper bytes with repository content treated as data",
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["shared-consumer", "dependency-path"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The runtime driver and production scanner agree on the fixed operation, helper identity, source count, and complete SCS1 result.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/python-env-selftest.sh",
+            "consumer-surface:bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Tests cross helper read, digest, compile, execution, repository-containment, and protocol boundaries through the production scanner.",
+          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+        }
+      ],
+      "riskTier": "high",
+      "tags": ["persistent-regression", "security", "helper-identity", "fixed-operation"],
+      "linkedTests": [
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/guards/sensitive-client-storage-scan.py",
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/python-env.sh",
+          "bubbles/scripts/implementation-reality-scan.sh",
+          "bubbles/scripts/guards/sensitive-client-storage-scan.py"
+        ],
+        "negativeControl": "Altered helpers attempt marker writes, subprocess launch, setsid, double fork, dynamic import, ctypes, eval, and exec with the original digest. A separate copied-driver mutation reopens the path after validation. Each must make its owning assertion red without executing replacement bytes.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-007",
+      "title": "Exact-child supervision preserves lifecycle and status on macOS and Linux",
+      "requiredTestType": "stress",
+      "requiredTestTypes": ["functional", "stress"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["degraded-state", "dependency-path", "sla-sensitive"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Every child, control, timeout, and caller-signal path retains its specified status and diagnostic owner.",
+          "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Tests execute readiness, FIFO EOF, signal, exact wait, and cleanup through the production runner.",
+          "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
+        },
+        {
+          "trait": "sla-sensitive",
+          "requiredProof": "The repeated fixed-wall matrix completes with fixed deadlines, one recorded result per iteration, and no retry substitution.",
+          "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
+        }
+      ],
+      "riskTier": "high",
+      "tags": ["persistent-regression", "security", "exact-child", "cross-platform"],
+      "linkedTests": ["bubbles/scripts/python-env-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/python-env-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": ["bubbles/scripts/python-env.sh"],
+        "negativeControl": "Copied-runner mutations add unqualified kill or wait, negative-PID signaling, job control, kill-zero polling, descendant PID retention, a command in the launch registration window, or collapsed status ownership. Every matching lifecycle assertion must fail on macOS and Linux.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-008",
+      "title": "Every lifecycle path removes private execution resources",
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["degraded-state", "dependency-path"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Partial setup, child failure, timeout, signals, and EXIT all leave no registered private resource behind.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "tests/regression/test_24_g028_sensitive_client_storage.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Tests inspect real descriptors, FIFOs, captures, temporary roots, traps, and exact-child wait state around the production cleanup path.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "tags": ["persistent-regression", "security", "cleanup", "signal-path"],
+      "linkedTests": [
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/python-env.sh",
+          "bubbles/scripts/implementation-reality-scan.sh"
+        ],
+        "negativeControl": "Copied-runner mutations omit one cleanup registration, descriptor close, exact wait, private-root removal, lifecycle clear, or trap restoration. The corresponding leak assertion must fail on normal, setup, child, timeout, signal, or EXIT paths.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-009",
+      "title": "Final closure accepts one immutable candidate epoch only",
+      "requiredTestType": "functional",
+      "requiredTestTypes": ["functional"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["static-metadata"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Artifact and validation records identify one candidate commit, reject historical evidence, and invalidate affected proof after any implementation change.",
+          "satisfiedBy": [
+            "bubbles/scripts/traceability-guard.sh",
+            "bubbles/scripts/state-transition-guard.sh"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "tags": ["persistent-regression", "security", "evidence-epoch", "certification-boundary"],
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard.sh",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md",
+        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scenario-manifest.json",
+        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md",
+          "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scenario-manifest.json",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Present a prior candidate identifier as current evidence, then change one implementation byte after capture. Planning, security review, or validation must reject both stale-evidence shapes.",
+        "negativeControlMechanism": "mutation"
       }
     }
   ]
