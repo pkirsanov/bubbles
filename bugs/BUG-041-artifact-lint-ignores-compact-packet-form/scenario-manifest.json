@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-041-artifact-lint-ignores-compact-packet-form",
+  "scenarios": [
+    {
+      "id": "SCN-B041-001",
+      "title": "An admitted compact packet passes the artifact check",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": [
+        "shared-consumer",
+        "state-machine"
+      ],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/bug-packet-resolve-selftest.sh"
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/artifact-lint.sh",
+        "bubbles/scripts/bug-packet-resolve.sh",
+        "bubbles/registry/bug-packet.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": [
+          "bubbles/scripts/artifact-lint.sh"
+        ],
+        "negativeControl": "Restore the literal required_files array. The three-artifact fixture reports four missing artifacts again.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "artifact-lint.sh is a repository-state lint with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B041-002",
+      "title": "A packet with no form declaration is linted as full",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": [
+        "shared-consumer",
+        "state-machine"
+      ],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/bug-packet-resolve-selftest.sh"
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/artifact-lint.sh",
+        "bubbles/registry/bug-packet.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": [
+          "bubbles/scripts/artifact-lint.sh"
+        ],
+        "negativeControl": "Change the absent-declaration default from full to compact. A fixture missing design.md then passes, and the assertion goes red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "artifact-lint.sh is a repository-state lint with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B041-003",
+      "title": "Declaring the compact form does not bypass admission",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": [
+        "shared-consumer",
+        "state-machine"
+      ],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/micro-fix-admission-selftest.sh"
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/artifact-lint.sh",
+        "bubbles/scripts/micro-fix-admission.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": [
+          "bubbles/scripts/artifact-lint.sh",
+          "bubbles/scripts/micro-fix-admission.sh"
+        ],
+        "negativeControl": "Trust the declaration without calling --resolve-form. A fixture answering no-payment-surface = yes then receives the reduced set, and the assertion goes red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Admission is a repository-state check with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B041-004",
+      "title": "An unreadable or empty registry refuses rather than degrades",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": [
+        "shared-consumer",
+        "failure-path"
+      ],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/bug-packet-resolve-selftest.sh"
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/bug-packet-resolve.sh",
+        "bubbles/scripts/artifact-lint.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": [
+          "bubbles/scripts/bug-packet-resolve.sh"
+        ],
+        "negativeControl": "Add a hard-coded fallback artifact list to the resolver. The absent-registry fixture then passes silently, and the assertion goes red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The resolver is a registry reader with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B041-005",
+      "title": "Both enforcement surfaces agree on one packet",
+      "requiredTestType": "integration",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": [
+        "shared-consumer",
+        "state-machine"
+      ],
+      "riskTier": "high",
+      "linkedTests": [
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/artifact-lint.sh",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "real-framework-runtime",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Repair only artifact-lint.sh and leave the guard's literal list. The guard then rejects the packet the lint accepts, and the assertion goes red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The transition guard is a repository-state guard with no rendered product surface."
+      }
+    }
+  ]
+}
