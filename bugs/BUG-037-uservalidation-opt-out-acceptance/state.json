@@ -1,0 +1,285 @@
+{
+  "version": 3,
+  "bugId": "BUG-037",
+  "featureDir": "bugs/BUG-037-uservalidation-opt-out-acceptance",
+  "featureName": "Opt-Out User Acceptance And Stale G136 Governance Surfaces",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "escalated to full by micro-fix-admission: no-new-behavior fails because a refused terminal transition becomes an accepted one, and no-cross-product-effect fails because the template, registry, lint and guard all ship into every consuming repository",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-029",
+    "BUG-032"
+  ],
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-037-uservalidation-opt-out-acceptance"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-037-uservalidation-opt-out-acceptance/**",
+      "BUGS.md",
+      "CHANGELOG.md",
+      "bubbles/registry/acceptance-authority.yaml",
+      "bubbles/registry/bug-packet.yaml",
+      "bubbles/registry/gates.yaml",
+      "bubbles/registry/validation-checks.yaml",
+      "bubbles/release-manifest.json",
+      "bubbles/scripts/acceptance-authority-lib.sh",
+      "bubbles/scripts/acceptance-authority-selftest.sh",
+      "bubbles/scripts/artifact-lint.sh",
+      "bubbles/scripts/guards/tail-delegated-gates.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/generate-gate-coverage-map.sh",
+      "bubbles/scripts/generate-validation-checks.sh",
+      "bubbles/scripts/generate-release-manifest.sh",
+      "tests/regression/test_35_human_acceptance_terminal.sh",
+      "agents/bubbles_shared/feature-templates.md",
+      "agents/bubbles_shared/quality-gates.md",
+      "agents/bubbles_shared/test-core.md",
+      "skills/bubbles-quality-gates-catalog/SKILL.md",
+      "docs/generated/gate-coverage-map.md",
+      "improvements/INDEX.md"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentScope": 4,
+    "runStartedAt": "2026-08-23T17:36:33Z",
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Scopes 1, 2 and 3 are complete with executed evidence recorded in report.md. Scope 4's CONTENT is complete: 11 of its 13 DoD items are met and closed with executed evidence (G136.description rewritten with both false assertions removed; quality-gates.md, test-core.md and skills/bubbles-quality-gates-catalog/SKILL.md rewritten to the opt-out contract; CHANGELOG.md carries the BUG-037 entry with the full D-1 upgrade note, the backfilled IMP-047 PD-12 entry, and the corrected BUG-029 entry; G057.description carries the D-3 three-way split and declares rows 2 and 3 advisory, proven by control-plane-checks.sh containing zero uservalidation references; improvements/INDEX.md carries the D-4 verbatim text and S4-T9 proves no path under bugs/BUG-032- was modified; all three generated artifacts regenerate byte-identically; the design.md section 2.5 sweep re-run returns 16 of 16 needing no change). Scope 4 remains BLOCKED on exactly two DoD items, which remain UNCHECKED and whose wording was not weakened: S4-T5 'framework-validate passes end to end with a real exit code' and S4-T6 'release-check passes with a real exit code'. BOTH PREVIOUSLY RECORDED BLOCKERS ARE NOW RESOLVED. (1) OW-009, the pre-existing macOS portability defect in the progress-aware timeout runner, was fixed under its own packet bugs/BUG-038-progress-timeout-bsd-wc-padding/ by normalizing the BSD wc fixed-width padding out of current_size before the numeric test in bubbles_run_with_progress_timeout (bubbles/scripts/guard-lib.sh:137); bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102. (2) The BUG-033 Check-43 / evidence-admission blocker is ALSO resolved: BUG-033's selftest migration removed the evidence-admission receipt-clone failure, and the most recent framework-validate run REACHED AND PASSED all three Check 43 acceptance cases, including BUG-037's own: 'PASS: Check 43: one checked plus one unchecked item is detected as unaccepted (BUG-029 shape)', 'PASS: Check 43 adversarial: a fully checked checklist reports no unchecked item, and a [ ] outside the Checklist section is ignored', and 'PASS: Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal'. BUG-037's OWN GATE BEHAVIOR IS THEREFORE PROVEN GREEN INSIDE framework-validate. THE REMAINING OBSTACLE IS A REPOSITORY-WIDE RED VERDICT, NOT A BUG-037 DEFECT. A framework-validate run has now COMPLETED rather than timing out, so a real verdict finally exists, and it is red: /tmp/fv-full.log, 18568 lines, /tmp/fv-full.exit = 1, tallying 5107 PASS and 31 FAIL. PROVENANCE: that run was executed by a CONCURRENT SESSION, so its figures are DIAGNOSTIC INPUT, not this session's execution evidence. NONE of the 31 failures is a BUG-037 defect and NONE lies in this packet's workBoundary.allowedPaths. They fall into four unrelated families: 16 downstream install-mode failures (fifteen 'T3: <check> was not SKIPPED under install-mode=downstream' lines plus the v5.3 downstream-install selftest (G1) parent), 12 client credential and durable-storage failures reported under 'BUG-013 sensitive client storage regression', the Mode-family inventory selftest (v6.1 / R5), and 'managed selftest runs with the system-only PATH' plus 'guard-lib timeout fallback selftest (OW-009)'. Attribution was established by command in this session: bubbles/scripts/v5.3-selftest.sh, bubbles/scripts/mode-family-inventory-selftest.sh and bubbles/scripts/guard-lib-timeout-selftest.sh are all CLEAN AT HEAD, so those failures are PRE-EXISTING, and none of the three is in allowedPaths; the only DIRTY failing surface is bubbles/scripts/guard-lib.sh, which carries this session's BUG-038 fix and is likewise out of boundary. BUG-037's OWN behavior is demonstrated GREEN inside that same run: 9 lines match 'PASS: Check 43' and ZERO lines match the acceptance-related failure pattern. The accurate finding is recorded as BLOCKED-ON-REPO-WIDE-RED in reworkQueue, severity blocking, disposition out-of-boundary, owner bubbles.validate. HISTORICAL DETAIL, NOW SUPERSEDED: earlier, four consecutive bounded attempts all returned exit 142 (SIGALRM) - 1500s (9021 lines, sha256 8f506c771ee408be9260bac37ba6ef477d6dd63fbdf2b5e0c4ed1ba42e8621ae), 3600s (2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7) and 5400s (8984 lines, sha256 0e93db45398fdad509ff2c61ada5f9ef928771f1cdf94ebed2d454c7ac4355f7). Total runtime now exceeds 90 minutes, materially because BUG-033 added about 518 lines to bubbles/scripts/state-transition-guard-selftest.sh, which alone takes roughly 25 minutes. Compounding this, the shared working tree is being CONCURRENTLY MUTATED by another session, so each run validates a moving target: the 5400s run reported 'FAIL: Committed release manifest is current', 'FAIL: Release manifest selftest', 'FAIL: Interop apply/import selftest', 'FAIL: Install provenance selftest', 'FAIL: Trust doctor selftest' and 'Framework-managed file drift detected: agents/bubbles.workflow.agent.md' - yet git diff --stat -- agents/bubbles.workflow.agent.md is EMPTY, proving that file is unmodified. The drift is measured against bubbles/release-manifest.json, which went stale mid-run because another session concurrently modified agents/bubbles.plan.agent.md, agents/bubbles_shared/critical-requirements.md, bubbles/agent-bundle-budgets.json, bubbles/workflows.yaml and skills/bubbles-claim-grounding/SKILL.md. None of those paths are BUG-037's. That environmental characterization is retained for the trail but is recorded as SUPERSEDED in reworkQueue, because a completed run now exists and 'cannot produce a verdict / exceeds 90 minutes' is no longer the accurate description. NEXT ACTION, owned by bubbles.validate: drive the repository to a GREEN framework-validate as a SEPARATE concern - route each of the four failure families to its own owner or packet, none of which is BUG-037 - then re-run bubbles/scripts/cli.sh framework-validate and bubbles/scripts/cli.sh release-check and record their REAL exit codes as the evidence for S4-T5 and S4-T6. Neither DoD item may be checked until a run PASSES: a completed run that exits 1 is a real verdict but not a passing one, and a timed-out run is not a pass either. Do NOT repair any of the 31 failures inside this packet - every one of them is outside workBoundary.allowedPaths.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Invert the acceptance contract and the shared reader",
+        "status": "done",
+        "certified": false
+      },
+      {
+        "scope": 2,
+        "name": "Template, lint, and authoring agents",
+        "status": "done",
+        "certified": false
+      },
+      {
+        "scope": 3,
+        "name": "Guard Check 43 and the regression surfaces",
+      "status": "done",
+        "certified": false
+      },
+      {
+        "scope": 4,
+        "name": "Governance documentation and generated artifacts",
+        "status": "blocked",
+        "certified": false
+      }
+    ],
+    "lockdownState": "unlocked"
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "standard",
+      "provenance": "framework-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "provenance": "framework-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "provenance": "framework-default"
+    },
+    "lockdown": {
+      "mode": "unlocked",
+      "provenance": "framework-default"
+    },
+    "regression": {
+      "mode": "required",
+      "provenance": "framework-default"
+    },
+    "validation": {
+      "mode": "required",
+      "provenance": "framework-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [
+    {
+      "findingId": "OW-009",
+      "raisedBy": "bubbles.implement",
+      "raisedAt": "2026-08-23T00:00:00Z",
+      "severity": "blocking",
+      "owner": "bugs/BUG-038-progress-timeout-bsd-wc-padding",
+      "status": "resolved",
+      "resolvedAt": "2026-08-23T00:00:00Z",
+      "resolvedBy": "bugs/BUG-038-progress-timeout-bsd-wc-padding",
+      "resolution": "FIXED under its own packet, bugs/BUG-038-progress-timeout-bsd-wc-padding/. Root cause: BSD wc right-pads its count in a fixed-width field, so current_size=\"$(wc -c < \"$log_file\")\" in bubbles_run_with_progress_timeout (bubbles/scripts/guard-lib.sh) failed the ^[0-9]+$ test on the first poll of every BSD host and returned rc=2 before either deadline was evaluated. Fix: normalize with current_size=\"${current_size//[[:space:]]/}\" before the numeric test - fork-free, no macOS special-case. Present at bubbles/scripts/guard-lib.sh:137.",
+      "resolutionEvidence": "Parent runner: bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102, 'guard-lib timeout selftest: OK (10 cases)'. Up from the RED run recorded in this entry's evidence field.",
+      "resolutionNotes": "The BUG-038 packet itself is still status in_progress and uncertified; only the OW-009 defect it owns is fixed and proven GREEN. This entry is retained rather than deleted so the finding trail is preserved; bubbles.validate owns whether reworkQueue is cleared at certification (G061).",
+      "disposition": "out-of-boundary",
+      "surface": "bubbles/scripts/guard-lib.sh (progress-aware timeout runner), surfaced by bubbles/scripts/guard-lib-timeout-selftest.sh",
+      "summary": "PRE-EXISTING macOS portability defect in the progress-aware timeout runner. guard-lib-timeout-selftest.sh exits 1 with 4 failures: 'progress-aware command returned rc=2 after 2s', 'idle timeout returned rc=2 reason=none after 2s', 'absolute timeout returned rc=2 reason=none after 2s', and 'timed-out validator leaked or blocked: rc=2 reason=none'. All four return rc=2 with reason=none, which is the runner failing rather than the cases mis-asserting.",
+      "evidence": "bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 1, 11 lines, sha256 489b2ef0a79c0d3379d5c5b0bd3b191608fab9ccee1f7c550751197fe44d7e4a (recorded in report.md, section 'GREEN Scope 4 - BLOCKED').",
+      "attribution": "NOT a BUG-037 regression. git status --short and git diff HEAD over bubbles/scripts/guard-lib.sh and bubbles/scripts/guard-lib-timeout-selftest.sh both emit zero lines, so both files are unmodified from HEAD. Neither path is in this packet's workBoundary.allowedPaths.",
+      "impact": "Blocks BUG-037 Scope 4 DoD items S4-T5 (framework-validate) and S4-T6 (release-check). Both gate runs returned exit 142 (SIGALRM at a 1500s bound) and produced no verdict; a full framework-validate on this host also needs a bound above 1500s.",
+      "action": "Deliberately NOT fixed inside BUG-037 - repairing it would be an out-of-boundary edit. Route to a dedicated packet, or obtain an explicit bubbles.validate ruling to certify BUG-037 with it outstanding.",
+      "notes": "The 'Installer manifest check (v6.0 / B9)' failure seen in the parent's two gate runs is a stripped-working-directory artifact (paths resolved against a different workspace folder) and is explicitly NOT a finding."
+    },
+    {
+      "findingId": "BLOCKED-ON-BUG-033",
+      "raisedBy": "bubbles.implement",
+      "raisedAt": "2026-08-23T00:00:00Z",
+      "severity": "blocking",
+      "owner": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization",
+      "status": "resolved",
+      "resolvedAt": "2026-08-24T00:00:00Z",
+      "resolvedBy": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization",
+      "resolution": "RESOLVED. BUG-033's selftest migration removed the evidence-admission / receipt-clone failure recorded in this entry's summary and evidence fields. The most recent framework-validate run REACHED AND PASSED all three Check 43 acceptance cases rather than failing at the clone case, so the cross-packet sequencing dependency this entry recorded no longer holds.",
+      "resolutionEvidence": "Three PASS lines emitted by the most recent framework-validate run: 'PASS: Check 43: one checked plus one unchecked item is detected as unaccepted (BUG-029 shape)'; 'PASS: Check 43 adversarial: a fully checked checklist reports no unchecked item, and a [ ] outside the Checklist section is ignored'; 'PASS: Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal'. The 'FAIL: CHECK 43 (clone)' and 'FAIL: Evidence-admission hardening selftest (IMP-102 / SCOPE-1)' lines quoted in this entry's summary are NOT present in that run.",
+      "resolutionNotes": "This entry is RETAINED rather than deleted so the finding trail survives. Resolving it does NOT unblock S4-T5 or S4-T6: framework-validate still cannot produce a completion verdict for an unrelated, environmental reason, recorded as the separate finding BLOCKED-ON-VALIDATION-ENVIRONMENT below. bubbles.validate owns whether reworkQueue is cleared at certification (G061).",
+      "disposition": "out-of-boundary",
+      "surface": "bubbles/scripts/state-transition-guard.sh (Check 43, deterministic_siblings), surfaced by bubbles/scripts/evidence-admission-hardening-selftest.sh (IMP-102 / SCOPE-1)",
+      "summary": "CROSS-PACKET SEQUENCING DEPENDENCY. A framework-validate run DID acquire the machine-wide lock and execute, and before hitting its bound it produced REAL failures owned by in-flight BUG-033 work on the shared state-transition guard: 'FAIL: CHECK 43 (clone): one stdout hash cited by TWO DIFFERENT commands BLOCKS - blocked but WITHOUT the expected Check-9 reason: Evidence receipt CLONE', and 'FAIL: Evidence-admission hardening selftest (IMP-102 / SCOPE-1)' with 7 sub-failures: bugfix behavioral positive passes (expected exit 0, observed 1); bugfix positive reports passed (field evaluationStatus did not equal 'passed'); bugfix positive is certifying v2 output (field certified did not equal true); bugfix required executable oracle passes (check bugfix-end-state was not passed); feature behavioral positive passes (expected exit 0, observed 1); feature positive reports passed (field evaluationStatus did not equal 'passed'); feature positive is certifying v2 output (field certified did not equal true).",
+      "evidence": "/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 3600 bash bubbles/scripts/cli.sh framework-validate -> exit 142 (SIGALRM at the 3600s bound, so still no completion verdict), 2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7. The exit 142 is a bound overrun, but the FAIL lines quoted in summary were emitted by the run before the alarm fired and are real, executed results.",
+      "attribution": "Established by command, not by inference. git status --short shows bubbles/scripts/state-transition-guard.sh (+298), bubbles/scripts/receipt-identity-selftest.sh (+118) and bubbles/scripts/state-transition-guard-selftest.sh (+518) DIRTY from in-flight BUG-033 work. bubbles/scripts/evidence-admission-hardening-selftest.sh is CLEAN at HEAD, so the failing selftest is itself unmodified and fails only because the guard it exercises is mid-edit. Of the four paths, three (state-transition-guard.sh, receipt-identity-selftest.sh, evidence-admission-hardening-selftest.sh) are NOT in this packet's workBoundary.allowedPaths; state-transition-guard-selftest.sh IS in allowedPaths because BUG-037 Scope 3 legitimately edits it, so its dirty state is not attributable to BUG-033 alone. Both surfaces that actually FAIL are outside this packet's boundary. BUG-033's title is 'Check 43 accuses honest re-runs of evidence forgery' and its bug.md names bubbles/scripts/state-transition-guard.sh Check 43 (deterministic_siblings) as the affected surface, which is precisely the failing check.",
+      "impact": "Blocks BUG-037 Scope 4 DoD items S4-T5 (framework-validate) and S4-T6 (release-check). Neither can be satisfied in this working tree while BUG-033 is mid-flight. Separately, exit 142 at a 3600s bound proves the run also exceeds one hour under concurrent load, so the eventual re-run needs a bound larger than 3600s.",
+      "action": "Deliberately NOT fixed inside BUG-037 - state-transition-guard.sh, receipt-identity-selftest.sh and evidence-admission-hardening-selftest.sh are all outside workBoundary.allowedPaths and belong to BUG-033. Wait for BUG-033 to reach a terminal state and for the shared guard to no longer be mid-edit, then re-run framework-validate and release-check with a bound above 3600s and record their real exit codes.",
+      "notes": "THIS IS NOT A BUG-037 DEFECT. It is not the already-resolved OW-009 either; OW-009 (BSD wc padding in the progress-aware timeout runner) was fixed under bugs/BUG-038-progress-timeout-bsd-wc-padding/ and is recorded resolved above. It also supersedes the previous, incomplete lock-contention-plus-insufficient-timeout explanation: the lock WAS acquired and the run DID execute."
+    },
+    {
+      "findingId": "BLOCKED-ON-VALIDATION-ENVIRONMENT",
+      "raisedBy": "bubbles.implement",
+      "raisedAt": "2026-08-24T00:00:00Z",
+      "severity": "blocking",
+      "owner": "bubbles.validate",
+      "status": "superseded",
+      "supersededAt": "2026-08-24T00:00:00Z",
+      "supersededBy": "BLOCKED-ON-REPO-WIDE-RED",
+      "supersessionNote": "SUPERSEDED, NOT DELETED. This entry's central characterization - 'framework-validate cannot reach a stable completion verdict', 'the suite now exceeds 90 minutes', 'four consecutive bounded attempts all returned exit 142 (SIGALRM) and therefore produced NO verdict' - is no longer the accurate description of the situation. A framework-validate run has since COMPLETED rather than timing out: /tmp/fv-full.log, 18568 lines, /tmp/fv-full.exit = 1, tallying 5107 PASS and 31 FAIL. A completed run that exits 1 is a REAL VERDICT, so the blocker is no longer 'no verdict is obtainable' but 'the verdict is red for reasons outside this packet'. That accurate replacement is recorded as BLOCKED-ON-REPO-WIDE-RED below. The runtime and concurrent-mutation observations recorded here remain historically true of the four bounded attempts they describe, and are retained for the finding trail; they are simply no longer the operative blocker. IMPORTANT PROVENANCE: the completed run was executed by a CONCURRENT SESSION, not by the session recording this supersession, so its figures are DIAGNOSTIC INPUT rather than this session's execution evidence.",
+      "disposition": "environmental",
+      "surface": "bubbles/scripts/cli.sh framework-validate on this host, and the shared bubbles working tree it validates (bubbles/release-manifest.json coherence)",
+      "summary": "ENVIRONMENTAL VALIDATION BLOCKER, NOT A BUG-037 DEFECT. framework-validate cannot reach a stable completion verdict on this host for two compounding reasons. (1) RUNTIME: the suite now exceeds 90 minutes, materially because BUG-033 added about 518 lines to bubbles/scripts/state-transition-guard-selftest.sh, which alone takes roughly 25 minutes. Four consecutive bounded attempts all returned exit 142 (SIGALRM) and therefore produced NO verdict - neither a pass nor a fail. (2) CONCURRENT MUTATION: the shared working tree is being modified by another session while the suite runs, so each run validates a moving target and bubbles/release-manifest.json goes stale mid-run.",
+      "evidence": "Four bounded attempts, all exit 142 (SIGALRM): 1500s -> exit 142, 9021 lines, sha256 8f506c771ee408be9260bac37ba6ef477d6dd63fbdf2b5e0c4ed1ba42e8621ae; 3600s -> exit 142, 2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7; 5400s -> exit 142, 8984 lines, sha256 0e93db45398fdad509ff2c61ada5f9ef928771f1cdf94ebed2d454c7ac4355f7. The 5400s run reported 'FAIL: Committed release manifest is current', 'FAIL: Release manifest selftest', 'FAIL: Interop apply/import selftest', 'FAIL: Install provenance selftest', 'FAIL: Trust doctor selftest', and 'Framework-managed file drift detected: agents/bubbles.workflow.agent.md'.",
+      "attribution": "Established by command, not by inference. The decisive detail: git diff --stat -- agents/bubbles.workflow.agent.md is EMPTY, so the file reported as drifted is UNMODIFIED. The drift is therefore measured against bubbles/release-manifest.json, which went stale mid-run because ANOTHER SESSION concurrently modified agents/bubbles.plan.agent.md, agents/bubbles_shared/critical-requirements.md, bubbles/agent-bundle-budgets.json, bubbles/workflows.yaml and skills/bubbles-claim-grounding/SKILL.md. None of those five paths is a BUG-037 edit; none is claimed by this packet's work. The five manifest/interop/provenance/trust-doctor FAIL lines are all downstream of that same stale-manifest condition.",
+      "impact": "Blocks BUG-037 Scope 4 DoD items S4-T5 (framework-validate) and S4-T6 (release-check). Both remain UNCHECKED. BUG-037's OWN behavior is NOT implicated: the same runs reached and PASSED all three Check 43 acceptance cases, including 'PASS: Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal'.",
+      "action": "Deliberately NOT worked around inside BUG-037. Do NOT regenerate bubbles/release-manifest.json while the tree is being concurrently edited - the regenerated manifest would be stale again immediately and could conflict with the other session's in-flight work. Instead, bubbles.validate must run bubbles/scripts/cli.sh framework-validate against a QUIESCENT tree (no other session editing framework-managed paths, release manifest current for the tree under test) with a bound of AT LEAST 10800s, then run bubbles/scripts/cli.sh release-check, and record their REAL exit codes.",
+      "notes": "THIS IS NOT A BUG-037 DEFECT. It supersedes BLOCKED-ON-BUG-033 as the operative blocker; that finding's Check-43 half is now RESOLVED and recorded above. A timed-out run (exit 142) is not a pass and must never be recorded as one."
+    },
+    {
+      "findingId": "BLOCKED-ON-REPO-WIDE-RED",
+      "raisedBy": "bubbles.implement",
+      "raisedAt": "2026-08-24T00:00:00Z",
+      "severity": "blocking",
+      "owner": "bubbles.validate",
+      "status": "open",
+      "disposition": "out-of-boundary",
+      "supersedes": "BLOCKED-ON-VALIDATION-ENVIRONMENT",
+      "surface": "the shared bubbles working tree repository-wide, across four unrelated failure families; NOT any acceptance, uservalidation or G136 surface",
+      "summary": "REPOSITORY-WIDE RED, NOT A BUG-037 DEFECT. A framework-validate run has now COMPLETED rather than timing out, so a real verdict finally exists, and that verdict is red: 5107 PASS and 31 FAIL, exit 1. NONE of the 31 failures is a BUG-037 defect and NONE of them lies in this packet's workBoundary.allowedPaths. BUG-037's own gate behavior is demonstrated GREEN inside that same run: 9 lines matching 'PASS: Check 43' and ZERO lines matching the acceptance-related failure pattern. The blocker is therefore no longer that a verdict cannot be obtained (which is what the superseded BLOCKED-ON-VALIDATION-ENVIRONMENT entry recorded); it is that the obtainable verdict is red for pre-existing reasons this packet neither caused nor may repair.",
+      "tally": "5107 PASS / 31 FAIL, exit 1, 18568 lines. Source: /tmp/fv-full.log with /tmp/fv-full.exit = 1.",
+      "failureFamilies": [
+        "FAMILY 1 (16 failures) - downstream install-mode. Fifteen lines of the shape 'FAIL: T3: <check-name> was not SKIPPED under install-mode=downstream' (Capability ledger selftest, Capability freshness selftest, Competitive docs selftest, Interop apply selftest, Release manifest freshness, Release manifest selftest, Release manifest purity selftest, Install provenance selftest, Trust doctor selftest, Installer manifest check (v6.0 / B9), Installer manifest selftest (v6.0 / B9), Bug-packet contract selftest (IMP-047 / S-B), Validation run receipt selftest (IMP-049 SCOPE-2), Generated gate-enforcement block current), plus 'FAIL: T3c: downstream framework-validate exited 2 without a trailing Failed checks block', plus the parent line 'FAIL: v5.3 downstream-install selftest (G1)'. Surfaced by bubbles/scripts/v5.3-selftest.sh.",
+        "FAMILY 2 (12 failures) - client credential / durable storage, reported under the parent line 'FAIL: BUG-013 sensitive client storage regression'. Covers DURABLE_CREDENTIAL_STORAGE, SESSION_PROVIDER_UNKNOWN, FORBIDDEN_SECRET_CLASS, and IndexedDB / SharedPreferences / AsyncStorage read and persist coverage.",
+        "FAMILY 3 (1 failure) - 'FAIL: Mode-family inventory selftest (v6.1 / R5)'. Surfaced by bubbles/scripts/mode-family-inventory-selftest.sh.",
+        "FAMILY 4 (2 failures) - 'FAIL: managed selftest runs with the system-only PATH (expected exit 0, got 1)' and 'FAIL: guard-lib timeout fallback selftest (OW-009)'."
+      ],
+      "attribution": "Established by command in the session recording this finding, not by inference. git status --porcelain over the three selftest surfaces that own families 1, 3 and 4 emits ZERO lines each - bubbles/scripts/v5.3-selftest.sh, bubbles/scripts/mode-family-inventory-selftest.sh and bubbles/scripts/guard-lib-timeout-selftest.sh are all CLEAN AT HEAD, so their failures are PRE-EXISTING and were not introduced by any in-flight work. NONE of those three paths is in this packet's workBoundary.allowedPaths (verified by loading allowedPaths from this file and testing membership). The only DIRTY failing surface is bubbles/scripts/guard-lib.sh, which carries the recording session's BUG-038 fix and is likewise NOT in this packet's allowedPaths.",
+      "bug037OwnBehavior": "GREEN. grep -c 'PASS: Check 43' /tmp/fv-full.log returns 9. grep -nE 'FAIL.*[Cc]heck 43|FAIL.*acceptance|FAIL.*uservalidation|FAIL.*G136' /tmp/fv-full.log returns ZERO matches. So across the whole completed run there is not one acceptance-related, uservalidation-related or G136-related failure, while the acceptance checks this packet owns pass nine times.",
+      "ow009Observation": "OBSERVATION, NOT A PROVEN ROOT CAUSE - the failing run was neither executed nor instrumented by the recording session. The OW-009 entry in that run is STALE relative to the current working tree: re-running the same selftest on an idle machine in the recording session gives bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102, 'guard-lib timeout selftest: OK (10 cases)'. A LOAD-SENSITIVITY EXPLANATION WAS CONSIDERED AND IS NOT SUPPORTED BY THE LOG. The selftest does assert wall-clock bounds (elapsed -le 3, -le 5, -ge 3 -le 7, -le 8, -le 12 at lines 52, 63, 76, 103, 119, 133, 148, 178, 193), so it IS timing-sensitive in principle - but none of the four observed failures is an elapsed-bound miss. All four report rc=2 reason=none ('progress-aware command returned rc=2 after 2s', 'idle timeout returned rc=2 reason=none after 2s', 'absolute timeout returned rc=2 reason=none after 2s', 'timed-out validator leaked or blocked: pid=72074 rc=2 reason=none elapsed=6s'), which is the runner failing rather than a bound being exceeded, and is the EXACT signature of the pre-fix BSD wc defect. A better-supported - but still unproven - explanation is that the run exercised guard-lib.sh WITHOUT the BUG-038 fix: git show HEAD:bubbles/scripts/guard-lib.sh has no current_size normalization at all, the normalization exists ONLY in the dirty working tree, so any execution against HEAD or a clean clone reproduces rc=2. Confirming this would require instrumenting the failing run, which the recording session did not do.",
+      "impact": "Blocks BUG-037 Scope 4 DoD items S4-T5 (framework-validate passes end to end with a real exit code) and S4-T6 (release-check passes with a real exit code). BOTH REMAIN UNCHECKED. The DoD wording requires a PASSING run; a completed run that exits 1 is a real verdict but not a passing one, so neither item may be ticked. BUG-037's own behavior is NOT implicated - see bug037OwnBehavior above.",
+      "action": "Deliberately NOT worked around and NOT repaired inside BUG-037. All four failure families are outside this packet's workBoundary.allowedPaths, so repairing any of them would be an out-of-boundary edit. bubbles.validate owns the routing: drive the repository to a green framework-validate as a SEPARATE concern (each family to its own owner or packet), then re-run bubbles/scripts/cli.sh framework-validate and bubbles/scripts/cli.sh release-check and record their REAL exit codes as the evidence for S4-T5 and S4-T6.",
+      "notes": "THIS IS NOT A BUG-037 DEFECT. PROVENANCE: the 5107/31/exit-1 figures, the 31 FAIL lines and the four families are read from /tmp/fv-full.log, a run executed by a CONCURRENT SESSION - they are DIAGNOSTIC INPUT, not the recording session's execution evidence. What the recording session DID execute is the grep tally over that log, the git status attribution, the allowedPaths membership test, and the OW-009 selftest re-run; those are executed evidence. framework-validate and release-check were NOT run by the recording session."
+    }
+  ],
+  "executionHistory": [
+    {
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "startedAt": "2026-08-23T17:36:33Z",
+      "completedAt": "2026-08-23T18:14:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Confirmed the root cause and resolved section 1.1's open question in favour of the narrower reading, on new evidence that agents/bubbles.plan.agent.md:230 and docs/guides/FRAMEWORK_CONCEPTS.md:59 already describe opt-out and were never updated by 9e41da4. Completed the section 2.5 sweep: 16 of 16 entries dispositioned, none requiring a change. Closed D-1 (dated grandfather, documented not automated), D-2 (lint stays shape-only; backstop moves to a template-registry agreement check), D-3 (three-way split with the authoring permission on bubbles.plan and the absolute prohibition retained on bubbles.journey; G057's uservalidation clause narrowed and declared advisory because its enforcer never reads the file), D-4 (BUG-032 out of scope; exact INDEX.md replacement text specified), D-5 (keep the PD12 prefix, retire only PD12-NO-RECORD, record it as historical). Recorded the give-up plainly in design.md section 3.6 and routed two owner-awareness items in section 8. Updated scopes.md: Scope 1 gained S1-T10 and one DoD item; Scope 2 gained S2-T8 and S2-T9 with four DoD items rewritten; Scope 4 gained S4-T8 and S4-T9 with five DoD items rewritten. Scope 3 unchanged. No registry, guard, lint or agent definition was edited."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-08-23T00:00:00Z",
+      "completedAt": "2026-08-23T00:00:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Scope 4 closeout. Committed repository binding (PREFLIGHT_COMMITTED, revision 7, repository=bubbles) before any local read or write, and wrapped every command as 'bash -c cd /Users/pkirsanov/Projects/bubbles && ...' so the working directory could not be stripped. Verified and closed 11 of Scope 4's 13 DoD items against actual file content with executed commands: G136.description scanned in isolation shows both false assertions absent and names exactly the six PD12-* codes acceptance-authority.yaml declares; quality-gates.md:272, test-core.md section 'User Acceptance Is Terminal', and skills/bubbles-quality-gates-catalog/SKILL.md:57 all carry the opt-out contract; CHANGELOG.md carries the BUG-037 entry with the complete D-1 upgrade note, the backfilled IMP-047 PD-12 entry, and the corrected BUG-029 entry; G057.description carries the D-3 three-way split with rows 2 and 3 declared advisory, proven by grep -c uservalidation over guards/control-plane-checks.sh returning 0; improvements/INDEX.md carries the D-4 verbatim text with the superseded sentence count at 0, and S4-T9 (git status --porcelain plus git diff HEAD over bugs/BUG-032-*) emitted zero lines; all three generated artifacts were regenerated and hashed byte-identical across a second regeneration; the design.md section 2.5 sweep was re-run per entry (13 ruled-out entries still matches=0, 5 claim/neutral entries verbatim unchanged) for 16 of 16 needing no change, and the repository-wide stale-text sweep returned grep exit 1 (zero hits). Supporting: agnosticity exit 0 (744 files). Two fidelity defects found and fixed in-boundary: an inverted 'below'/'above' cross-reference in the BUG-029 changelog entry, and a missing terminal period on the D-4 verbatim sentence in INDEX.md. TWO DoD ITEMS LEFT UNCHECKED AND UNWEAKENED: S4-T5 framework-validate and S4-T6 release-check, both exit 142 (SIGALRM at 1500s) and therefore no verdict, blocked on pre-existing finding OW-009 in guard-lib-timeout-selftest.sh (exit 1, 4 failures) whose two owning files git proves unmodified from HEAD and which are absent from workBoundary.allowedPaths. OW-009 routed to reworkQueue and deliberately not fixed. generate-gate-coverage-map-selftest.sh SKIPPED (PyYAML absent) and is recorded as a skip, not a pass. Scope 4 recorded blocked; packet status left in_progress; no certification.status written; certified remains false."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-08-23T00:00:00Z",
+      "completedAt": "2026-08-23T00:00:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Stale-blocker state correction only; no code, gate or DoD change. Finding OW-009 was still recorded as open and was still named as the blocker for Scope 4's two gate DoD items, but it has since been root-caused and fixed under its own packet, bugs/BUG-038-progress-timeout-bsd-wc-padding/ (BSD wc right-pads its count in a fixed-width field, so current_size failed the ^[0-9]+$ test on the first poll of every BSD host and bubbles_run_with_progress_timeout returned rc=2 before either deadline was evaluated; the fix normalizes the padding away at bubbles/scripts/guard-lib.sh:137). Verified present in this checkout by reading guard-lib.sh; the parent runner reports guard-lib-timeout-selftest.sh at exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102. Edits: the OW-009 reworkQueue entry moved from status open to status resolved with resolvedAt, resolvedBy, resolution, resolutionEvidence and resolutionNotes recorded (the entry was RETAINED, not deleted, so the finding trail survives); execution.nextRequiredAction rewritten so it no longer misreports OW-009 as the blocker and instead states that the only remaining obstacle is that a full framework-validate has not yet run to completion in this checkout, the machine-wide lock being held by a concurrent BUG-033 validation run and the earlier 1500s-bounded attempts having returned exit 142 (SIGALRM). DELIBERATELY UNCHANGED: S4-T5 (framework-validate) and S4-T6 (release-check) remain UNCHECKED and unverified - no real exit code exists for either; certification.scopeProgress[3].status remains blocked; execution.nextRequiredOwner remains bubbles.validate; packet status remains in_progress; no certification.status written. framework-validate and release-check were NOT executed here - the parent runner owns them and the lock is held elsewhere."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-08-23T00:00:00Z",
+      "completedAt": "2026-08-23T00:00:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Blocker-accuracy state correction only; no code, gate, test or DoD change. The previously recorded blocker for Scope 4's two gate DoD items - machine-wide lock contention held by a concurrent BUG-033 validation run, plus insufficient timeout bounds - was INCOMPLETE. A framework-validate run DID acquire the lock and execute: /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 3600 bash bubbles/scripts/cli.sh framework-validate -> exit 142, 2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7. Before the alarm fired it emitted REAL failures: CHECK 43 (clone) blocked without the expected Check-9 'Evidence receipt CLONE' reason, and the Evidence-admission hardening selftest (IMP-102 / SCOPE-1) with 7 sub-failures across the bugfix and feature behavioral positives. Attribution was established by command: git status --short shows state-transition-guard.sh (+298), receipt-identity-selftest.sh (+118) and state-transition-guard-selftest.sh (+518) dirty from in-flight BUG-033 work, while evidence-admission-hardening-selftest.sh is CLEAN at HEAD and fails only because the guard it exercises is mid-edit; BUG-033's title is 'Check 43 accuses honest re-runs of evidence forgery' and its bug.md names state-transition-guard.sh Check 43 (deterministic_siblings) as the affected surface. ONE ASSERTED FACT WAS CORRECTED RATHER THAN COPIED: it is not true that none of the four paths is in workBoundary.allowedPaths - state-transition-guard-selftest.sh IS in allowedPaths because BUG-037 Scope 3 legitimately edits it. The three that are outside are state-transition-guard.sh, receipt-identity-selftest.sh and evidence-admission-hardening-selftest.sh, and both surfaces that actually FAIL are among them, so the conclusion is unchanged. Edits: execution.nextRequiredAction rewritten to replace the lock-contention/timeout explanation with the accurate cross-packet one, including the note that exit 142 at a 3600s bound means the re-run needs a bound above 3600s; a new reworkQueue finding BLOCKED-ON-BUG-033 appended (severity blocking, disposition out-of-boundary, status open, owner bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization) carrying the sha256, the failure list, the attribution and an explicit note that this is NOT a BUG-037 defect; a matching subsection appended to report.md. DELIBERATELY UNCHANGED: S4-T5 (framework-validate) and S4-T6 (release-check) remain UNCHECKED and unweakened; certification.scopeProgress[3].status remains blocked; execution.nextRequiredOwner remains bubbles.validate; packet status remains in_progress; certification.status remains in_progress. framework-validate and release-check were NOT executed in this session, and nothing under bugs/BUG-033- or bugs/BUG-032- was modified. state-transition-guard.sh, receipt-identity-selftest.sh and evidence-admission-hardening-selftest.sh were left untouched - they belong to BUG-033."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-08-24T00:00:00Z",
+      "completedAt": "2026-08-24T00:00:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Blocker-accuracy state correction only; no code, gate, test or DoD change, and neither gate DoD item was checked. The recorded blocker for Scope 4's two gate DoD items - BUG-033 landing - is SUPERSEDED by better evidence. TWO THINGS ARE NOW ESTABLISHED BY EXECUTION. (1) BUG-037's OWN GATE BEHAVIOR IS PROVEN GREEN INSIDE framework-validate: the most recent run reached and passed all three Check 43 acceptance cases - 'PASS: Check 43: one checked plus one unchecked item is detected as unaccepted (BUG-029 shape)', 'PASS: Check 43 adversarial: a fully checked checklist reports no unchecked item, and a [ ] outside the Checklist section is ignored', and 'PASS: Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal'. The evidence-admission / receipt-clone failure that blocked the prior run is GONE, resolved by BUG-033's selftest migration. (2) framework-validate STILL cannot produce a verdict: four consecutive bounded attempts all returned exit 142 (SIGALRM) - 1500s (9021 lines, sha256 8f506c771ee408be9260bac37ba6ef477d6dd63fbdf2b5e0c4ed1ba42e8621ae), 3600s (2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7) and 5400s (8984 lines, sha256 0e93db45398fdad509ff2c61ada5f9ef928771f1cdf94ebed2d454c7ac4355f7). Runtime now exceeds 90 minutes, materially because BUG-033 added about 518 lines to state-transition-guard-selftest.sh, which alone takes roughly 25 minutes. The tree is also being CONCURRENTLY MUTATED, so each run validates a moving target: the 5400s run reported 'FAIL: Committed release manifest is current', 'FAIL: Release manifest selftest', 'FAIL: Interop apply/import selftest', 'FAIL: Install provenance selftest', 'FAIL: Trust doctor selftest' and 'Framework-managed file drift detected: agents/bubbles.workflow.agent.md' - yet git diff --stat over that agent file is EMPTY, proving it is unmodified and that the drift is measured against a bubbles/release-manifest.json that went stale mid-run after another session modified agents/bubbles.plan.agent.md, agents/bubbles_shared/critical-requirements.md, bubbles/agent-bundle-budgets.json, bubbles/workflows.yaml and skills/bubbles-claim-grounding/SKILL.md, none of which are BUG-037's. EDITS: execution.nextRequiredAction rewritten to state the accurate position (scopes 1-3 complete, Scope 4 content complete, S4-T5 and S4-T6 unchecked, both prior blockers resolved, the remaining obstacle environmental, and the next action a framework-validate run against a QUIESCENT tree at a bound of at least 10800s followed by release-check); the BLOCKED-ON-BUG-033 reworkQueue entry moved from open to resolved with the three PASS lines cited as resolutionEvidence and the entry RETAINED so the finding trail survives; a new reworkQueue finding BLOCKED-ON-VALIDATION-ENVIRONMENT added (severity blocking, disposition environmental) carrying the three sha256 values, the >90-minute runtime, the concurrent-mutation evidence including the empty-diff-yet-reported-drifted detail, and an explicit statement that it is NOT a BUG-037 defect; report.md gained a subsection recording all of the above including the three PASS lines. DELIBERATELY UNCHANGED: S4-T5 (framework-validate) and S4-T6 (release-check) remain UNCHECKED - a timed-out run is not a pass and no real exit code exists for either; certification.scopeProgress[3].status remains blocked; execution.nextRequiredOwner remains bubbles.validate; packet status remains in_progress and certification.status remains in_progress. framework-validate and release-check were NOT executed here. bubbles/release-manifest.json was NOT regenerated - the tree is being concurrently edited, so a regenerated manifest would be stale again immediately and could conflict with the other session's work. No path under bugs/BUG-033-, bugs/BUG-032- or any other session's files was touched."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-08-24T00:00:00Z",
+      "completedAt": "2026-08-24T00:00:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "summary": "Blocker-accuracy state correction only; no code, gate, test or DoD change, and NEITHER gate DoD item was checked. The recorded blocker BLOCKED-ON-VALIDATION-ENVIRONMENT characterized framework-validate as unable to reach a verdict at all - more than 90 minutes of runtime, four consecutive exit-142 timeouts, and a concurrently mutated tree. That characterization is no longer accurate, because a framework-validate run has since COMPLETED. PROVENANCE, STATED PLAINLY: the completed run was executed by a CONCURRENT SESSION, not by this one. Its figures are DIAGNOSTIC INPUT and are labelled as such wherever they are recorded; this session did NOT run framework-validate or release-check. DIAGNOSTIC INPUT (concurrent session's run, read from /tmp/fv-full.log with /tmp/fv-full.exit = 1): 18568 lines, 5107 PASS, 31 FAIL, exit 1. EXECUTED BY THIS SESSION: the grep tally over that log (grep -cE '^PASS: ' -> 5107, grep -cE '^FAIL: ' -> 31, grep -c 'PASS: Check 43' -> 9, grep -nE 'FAIL.*[Cc]heck 43|FAIL.*acceptance|FAIL.*uservalidation|FAIL.*G136' -> ZERO matches); the enumeration of all 31 FAIL lines into four families (16 downstream install-mode, 12 client credential and durable storage under BUG-013, the Mode-family inventory selftest, and the system-only-PATH managed selftest plus OW-009); the git status --porcelain attribution showing bubbles/scripts/v5.3-selftest.sh, bubbles/scripts/mode-family-inventory-selftest.sh and bubbles/scripts/guard-lib-timeout-selftest.sh ALL CLEAN AT HEAD while only bubbles/scripts/guard-lib.sh is dirty (this session's BUG-038 fix); and the allowedPaths membership test showing NONE of those four paths is in this packet's workBoundary.allowedPaths. CONCLUSION: none of the 31 failures is a BUG-037 defect and none is repairable inside this boundary, while BUG-037's own acceptance behavior is demonstrated GREEN nine times over with zero acceptance-related failures anywhere in the run. ALSO EXECUTED HERE: the OW-009 selftest was re-run on an idle machine - bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102, 'guard-lib timeout selftest: OK (10 cases)' - proving that run's OW-009 entry is stale relative to the current working tree. A LOAD-SENSITIVITY EXPLANATION FOR THAT STALENESS WAS CONSIDERED AND IS RECORDED AS NOT SUPPORTED rather than repeated: the selftest does assert wall-clock bounds, but all four observed failures report rc=2 reason=none, which is the runner failing rather than a bound being exceeded, and git show HEAD:bubbles/scripts/guard-lib.sh has no current_size normalization at all - the BUG-038 fix exists ONLY in the dirty working tree. That points at an unfixed guard-lib being exercised, but it is recorded as an OBSERVATION and explicitly NOT as a proven root cause, because this session neither executed nor instrumented the failing run. EDITS: the BLOCKED-ON-VALIDATION-ENVIRONMENT reworkQueue entry moved from status open to status superseded with supersededAt, supersededBy and supersessionNote recorded (RETAINED, not deleted, so the finding trail survives); a new reworkQueue finding BLOCKED-ON-REPO-WIDE-RED appended, severity blocking, disposition out-of-boundary, owner bubbles.validate, carrying the tally, the four families, the clean-at-HEAD attribution, the 9-PASS/zero-FAIL acceptance result, the OW-009 observation, and an explicit statement that NONE of the 31 is a BUG-037 defect and none lies in allowedPaths; execution.nextRequiredAction rewritten so the operative blocker is the repository-wide red verdict rather than an unobtainable one, with the superseded environmental detail retained inline; and this executionHistory entry added. DELIBERATELY UNCHANGED: S4-T5 (framework-validate) and S4-T6 (release-check) remain UNCHECKED and unweakened - the DoD requires a PASSING run and the completed run exited 1, which is a real verdict but not a pass; certification.scopeProgress[3].status remains blocked; execution.nextRequiredOwner remains bubbles.validate; packet status remains in_progress; certification.status remains in_progress. No attempt was made to fix any of the 31 failures - all are outside this packet's boundary. framework-validate and release-check were NOT run here. No path under bugs/BUG-033-, bugs/BUG-032- or any other session's files was touched, and no git command that discards changes was run."
+    }
+  ]
+}
