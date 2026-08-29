@@ -730,6 +730,29 @@ else
   fi
 fi
 
+# ── ADVERSARIAL A7g: child completion is not inferred from PID liveness ───
+# `kill -0` answers whether a PID still exists, not whether our child completed.
+# An exited, unreaped child remains visible, and a recycled PID names unrelated
+# work. Hold only that observation stale while every real signal still reaches
+# the shell builtin. The exact silent-probe fixture must retain its real exit 0
+# and become PROBE_EMPTY rather than a fabricated timeout.
+a7g_result="$(BUBBLES_PYTHON_PROBE_TIMEOUT_SECONDS=2 /bin/bash -c '
+  . "$1"
+  kill() {
+    if [[ "${1:-}" == "-0" ]]; then
+      return 0
+    fi
+    builtin kill "$@"
+  }
+  if bubbles_python_runs "$2"; then result=RUNS; else result=DECLINED; fi
+  printf "%s|%s|%s" "$result" "$BUBBLES_PYTHON_RUN_STATUS" "$BUBBLES_PYTHON_RUN_DIAGNOSTIC"
+' _ "$ENV_SH" "$a7/silent/python3" 2>/dev/null || true)"
+if [[ "$a7g_result" == "DECLINED|0|PROBE_EMPTY" ]]; then
+  ok "A7g: completed silent probe is classified from child completion, not stale PID liveness"
+else
+  bad "A7g: completed silent probe was misclassified as '$a7g_result'"
+fi
+
 # ── ADVERSARIAL A8: security consumers trust only the managed venv ────────
 # BUBBLES_PYTHON and PATH remain valid general-consumer candidates, but neither
 # is a provenance root for a security classifier. These assertions call the

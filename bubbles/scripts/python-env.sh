@@ -139,6 +139,7 @@ BUBBLES_PYTHON_RUN_STATUS=127
 BUBBLES_PYTHON_RUN_DIAGNOSTIC='NOT_RUN'
 BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
 BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+BUBBLES_PYTHON_ACTIVE_COMPLETION_FILE=''
 
 # bubbles_python_terminate_process_group <pgid> <leader-pid>
 #
@@ -166,14 +167,19 @@ bubbles_python_terminate_process_group() {
 bubbles_python_terminate_active_tree() {
   local process_group="$BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP"
   local leader_pid="$BUBBLES_PYTHON_ACTIVE_PROCESS_PID"
+  local completion_file="$BUBBLES_PYTHON_ACTIVE_COMPLETION_FILE"
 
   if [[ "$process_group" =~ ^[1-9][0-9]*$ ]] &&
     [[ "$leader_pid" =~ ^[1-9][0-9]*$ ]]; then
     bubbles_python_terminate_process_group "$process_group" "$leader_pid" || true
     wait "$leader_pid" 2>/dev/null || true
   fi
+  if [[ -n "$completion_file" ]]; then
+    /bin/rm -f "$completion_file"
+  fi
   BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
   BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+  BUBBLES_PYTHON_ACTIVE_COMPLETION_FILE=''
 }
 
 # bubbles_python_run_bounded <seconds> <file-blocks> <log-file> <command...>
@@ -183,15 +189,20 @@ bubbles_python_terminate_active_tree() {
 # fallback also enables job control, whose asynchronous status notifications can
 # pollute an exact protocol capture on Bash 3.2. This runner therefore redirects
 # the command before enabling monitor mode only for launch. Monitor mode gives
-# the command one process group; the parent restores its prior state immediately
-# and synchronously polls that group. Timeout is always 124. A command's own
-# signal status, including 143, is preserved when the wall deadline did not fire.
+# the command one process group; the parent restores its prior state immediately.
+# The group leader writes the command status to a private completion file, then
+# remains alive until the parent records that status and terminates the group.
+# This is an explicit completion handoff: `kill -0` cannot provide one because
+# it remains true for an exited, unreaped child and can observe a recycled PID.
+# Timeout is always 124. A command's own signal status, including 143, is
+# preserved when the wall deadline did not fire.
 bubbles_python_run_bounded() {
   local seconds="${1:-}"
   local file_blocks="${2:-}"
   local log_file="${3:-}"
   local command_pid=""
   local command_status=0
+  local completion_file=""
   local monitor_was_enabled=0
   local started_at=0
   local timed_out=0
@@ -204,18 +215,30 @@ bubbles_python_run_bounded() {
   fi
 
   : >"$log_file" || return 2
+  completion_file="$(/usr/bin/mktemp)" || return 2
 
   [[ "$-" == *m* ]] && monitor_was_enabled=1
   set -m
-  /bin/bash -c 'ulimit -f "$1"; shift; exec "$@"' _ \
-    "$file_blocks" "$@" >"$log_file" 2>&1 </dev/null &
+  /bin/bash -c '
+    file_blocks="$1"
+    completion_file="$2"
+    shift 2
+    command_status=0
+    ulimit -f "$file_blocks" || command_status=$?
+    if [[ "$command_status" -eq 0 ]]; then
+      "$@" || command_status=$?
+    fi
+    printf "%s\n" "$command_status" >"$completion_file" || exit 125
+    while :; do /bin/sleep 300; done
+  ' _ "$file_blocks" "$completion_file" "$@" >"$log_file" 2>&1 </dev/null &
   command_pid=$!
   [[ "$monitor_was_enabled" -eq 1 ]] || set +m
 
   BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP="$command_pid"
   BUBBLES_PYTHON_ACTIVE_PROCESS_PID="$command_pid"
+  BUBBLES_PYTHON_ACTIVE_COMPLETION_FILE="$completion_file"
   started_at=$SECONDS
-  while kill -0 "$command_pid" 2>/dev/null; do
+  while [[ ! -s "$completion_file" ]]; do
     if (( SECONDS - started_at >= seconds )); then
       timed_out=1
       break
@@ -228,12 +251,11 @@ bubbles_python_run_bounded() {
     return 124
   fi
 
-  wait "$command_pid" 2>/dev/null || command_status=$?
-  if kill -0 -- "-$command_pid" 2>/dev/null; then
-    bubbles_python_terminate_process_group "$command_pid" "$command_pid" || true
+  command_status="$(/bin/cat "$completion_file" 2>/dev/null || true)"
+  if [[ ! "$command_status" =~ ^[0-9]+$ ]] || [[ "$command_status" -gt 255 ]]; then
+    command_status=125
   fi
-  BUBBLES_PYTHON_ACTIVE_PROCESS_GROUP=''
-  BUBBLES_PYTHON_ACTIVE_PROCESS_PID=''
+  bubbles_python_terminate_active_tree
   return "$command_status"
 }
 
