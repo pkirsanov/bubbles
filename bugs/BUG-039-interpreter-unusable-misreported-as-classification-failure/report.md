@@ -2411,3 +2411,723 @@ Linux lane. No result for those surfaces is claimed.
 The focused and full selftest evidence above addresses the test-harness
 `HAR-R1` finding for return to `bubbles.security`. It does not certify security,
 acceptance, Scope 2 completion, or BUG-039 completion.
+
+## Formal Security Remediation HAR-R1 And HAR-R3
+
+### Formal Finding Set And Test Boundary
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The operator supplied the formal `TP-S2-10` result for
+candidate `b52cf813e4f6a85269b977552e7533fad9491b4c`. This invocation did not
+perform a security review. It implemented test-owned corrections for both
+returned high findings.
+
+The supplied formal result retained these dispositions:
+
+- `SEC-R1`: pass.
+- `SEC-R2`: pass.
+- `HAR-R1`: open high. Prior proof SHA-256 was
+  `41f1d312ae1852a07fb8d7ce0372fdf8de85d688780d5c72652f33cee43af6a6`.
+- `HAR-R2`: pass.
+- `HAR-R3`: open high. Prior proof SHA-256 was
+  `5c76ff1a55222cd35ec221853ede0a2e68774d1db598cd3bbbc0631967c91026`.
+
+Those two hashes are operator-supplied diagnostic inputs. They are not claimed
+as this test invocation's execution evidence.
+
+The active epoch stayed `privileged-native-supervision-v2`. The immutable base
+was `b52cf813e4f6a85269b977552e7533fad9491b4c`. Its parent was
+`52dfbde09417d2bd1a0e947c8ef478e36d11a99d`. Its tree was
+`bc2ec4916179fd4dd0f81deeb79abc89ddcdf043`.
+
+This correction changes exactly three allowed paths:
+
+- `bubbles/scripts/implementation-reality-scan-selftest.sh`.
+- `bubbles/scripts/state-transition-guard-selftest.sh`.
+- This append-only evidence section.
+
+Production, planning, acceptance, scenario, and certification files remain
+unchanged. This section makes no security, acceptance, certification, scope,
+or BUG completion claim.
+
+### Immutable Entry Identity
+
+**Phase:** test
+**Command:**
+
+```bash
+/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 120 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --diagnostic --label 'BUG-039 HAR-R1 HAR-R3 immutable entry identity' -- /bin/zsh -f -c 'set -eu
+GIT=/opt/local/bin/git
+EXPECTED_HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+EXPECTED_PARENT=52dfbde09417d2bd1a0e947c8ef478e36d11a99d
+EXPECTED_TREE=bc2ec4916179fd4dd0f81deeb79abc89ddcdf043
+print IMMUTABLE_ENTRY_BEGIN
+root=$($GIT rev-parse --show-toplevel)
+head=$($GIT rev-parse HEAD)
+parent=$($GIT rev-parse HEAD^)
+tree=$($GIT rev-parse HEAD^{tree})
+status_text=$($GIT status --porcelain=v1 --untracked-files=all)
+print -r -- "ROOT=$root"
+print -r -- "HEAD=$head"
+print -r -- "PARENT=$parent"
+print -r -- "TREE=$tree"
+print -r -- "WORKTREE_STATUS=${status_text:-clean}"
+$GIT show --no-patch --format="COMMIT=%H%nPARENTS=%P%nTREE=%T%nSUBJECT=%s" HEAD
+[[ "$root" == /private/tmp/bubbles-bug039-native-supervisor ]]
+[[ "$head" == "$EXPECTED_HEAD" ]]
+[[ "$parent" == "$EXPECTED_PARENT" ]]
+[[ "$tree" == "$EXPECTED_TREE" ]]
+[[ -z "$status_text" ]]
+print IMMUTABLE_ENTRY_RESULT=PASS
+print IMMUTABLE_ENTRY_END'
+```
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 HAR-R3 immutable entry identity
+exit: 0
+lines: 12
+sha256: 9b8632394f5f2729c8b207a409b5cf85ca359587746409609f864f0ec522c5e9
+IMMUTABLE_ENTRY_BEGIN
+ROOT=/private/tmp/bubbles-bug039-native-supervisor
+HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+PARENT=52dfbde09417d2bd1a0e947c8ef478e36d11a99d
+TREE=bc2ec4916179fd4dd0f81deeb79abc89ddcdf043
+WORKTREE_STATUS=clean
+COMMIT=b52cf813e4f6a85269b977552e7533fad9491b4c
+PARENTS=52dfbde09417d2bd1a0e947c8ef478e36d11a99d
+TREE=bc2ec4916179fd4dd0f81deeb79abc89ddcdf043
+SUBJECT=test(bug039): close HAR-R1 mutation runner race
+IMMUTABLE_ENTRY_RESULT=PASS
+IMMUTABLE_ENTRY_END
+```
+
+### HAR-R1 Independent Pre-Fix RED
+
+**Phase:** test
+**Command:**
+
+```bash
+/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 120 /bin/bash bubbles/scripts/evidence-capture.sh --diagnostic --label 'BUG-039 HAR-R1 corrected pre-fix exact wait-to-clear DEBUG adversary' -- /bin/bash -c 'set -u
+SOURCE=bubbles/scripts/implementation-reality-scan-selftest.sh
+SELFTEST_LIFECYCLE_PID=""
+first_wait_status=255
+boundary_observed=0
+source_sha=$(/usr/bin/shasum -a 256 "$SOURCE")
+source_sha=${source_sha%% *}
+printf "%s\n" HAR_R1_PRE_FIX_BEGIN
+printf "HEAD=%s\n" "$(/usr/bin/git rev-parse HEAD)"
+printf "SOURCE_SHA256=%s\n" "$source_sha"
+/usr/bin/sed -n "56p;68,74p;816,828p" "$SOURCE"
+/bin/sh -c "exit 0" &
+SELFTEST_LIFECYCLE_PID=$!
+printf "REGISTERED_HANDLE=%s\n" "$SELFTEST_LIFECYCLE_PID"
+har_r1_debug_adversary() {
+  if [[ "$boundary_observed" -eq 0 && "$BASH_COMMAND" == "SELFTEST_LIFECYCLE_PID="* ]]; then
+    builtin trap - DEBUG
+    boundary_observed=1
+    observed_handle="$SELFTEST_LIFECYCLE_PID"
+    process_text="$(/bin/ps -p "$observed_handle" -o pid= 2>&1)"
+    process_status=$?
+    printf "BOUNDARY_OBSERVED numericHandle=%s firstWait=%s processStatus=%s processText=%q\n" "$observed_handle" "$first_wait_status" "$process_status" "$process_text"
+    SELFTEST_LIFECYCLE_PID=""
+    printf "%s\n" "SIGNAL_SAFETY=stale helper not invoked; no PID signal issued"
+    if [[ "$observed_handle" =~ ^[1-9][0-9]*$ && "$first_wait_status" -eq 0 && "$process_status" -eq 1 && -z "$process_text" ]]; then
+      printf "%s\n" "RED: HAR-R1 definitive wait returned and child was gone while kill-capable global handle remained numeric"
+      printf "%s\n" HAR_R1_PRE_FIX_RESULT=RED_EXIT_97
+      exit 97
+    fi
+    printf "%s\n" HAR_R1_PRE_FIX_RESULT=SETUP_FAILURE
+    exit 96
+  fi
+}
+builtin trap har_r1_debug_adversary DEBUG
+if builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null; then first_wait_status=0; else first_wait_status=$?; fi
+SELFTEST_LIFECYCLE_PID=""
+builtin trap - DEBUG
+printf "BOUNDARY_OBSERVED=%s\n" "$boundary_observed"
+printf "%s\n" HAR_R1_PRE_FIX_RESULT=VACUOUS
+exit 95'
+```
+**Exit Code:** 97
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 corrected pre-fix exact wait-to-clear DEBUG adversary
+exit: 97
+lines: 29
+sha256: 8c2d50a2fc9ef22e9fd8083bf8cc74d49594f1e1c090130a493beeaa7f7da47b
+HAR_R1_PRE_FIX_BEGIN
+HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+SOURCE_SHA256=9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69
+SELFTEST_LIFECYCLE_PID=''
+selftest_stop_exact_child() {
+  if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  SELFTEST_LIFECYCLE_PID=''
+  if [[ ! "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ||
+    "$SELFTEST_LIFECYCLE_PID" != "$child_pid" ]]; then
+    fail "$label exact direct-child registration is invalid before builtin wait"
+    SELFTEST_LIFECYCLE_PID="$child_pid"
+    selftest_stop_exact_child
+    return
+  fi
+  if [[ "$signal_name" != "NONE" ]]; then
+    builtin kill -"$signal_name" "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
+  SELFTEST_LIFECYCLE_PID=''
+REGISTERED_HANDLE=5081
+BOUNDARY_OBSERVED numericHandle=5081 firstWait=0 processStatus=1 processText=''
+SIGNAL_SAFETY=stale helper not invoked; no PID signal issued
+RED: HAR-R1 definitive wait returned and child was gone while kill-capable global handle remained numeric
+HAR_R1_PRE_FIX_RESULT=RED_EXIT_97
+```
+
+The adversary cleared the handle before exit and issued no signal.
+
+### HAR-R3 Independent Pre-Fix RED
+
+<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->
+
+**Phase:** test
+**Command:**
+
+```bash
+/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 120 /bin/bash bubbles/scripts/evidence-capture.sh --diagnostic --label 'BUG-039 HAR-R3 pre-fix exact source archive parser adversary' -- /bin/bash -c 'set -u
+SOURCE=bubbles/scripts/state-transition-guard-selftest.sh
+source_sha=$(/usr/bin/shasum -a 256 "$SOURCE")
+source_sha=${source_sha%% *}
+eval "$(/usr/bin/sed -n "73,124p" "$SOURCE")"
+printf "%s\n" HAR_R3_PRE_FIX_BEGIN
+printf "HEAD=%s\n" "$(/usr/bin/git rev-parse HEAD)"
+printf "SOURCE_SHA256=%s\n" "$source_sha"
+/usr/bin/sed -n "73,105p" "$SOURCE"
+well_formed="$(bug039_active_contract_stream <(printf "%s\n" ACTIVE_BEFORE BUG-039-HISTORICAL-BEGIN BPY1 BUG-039-HISTORICAL-END ACTIVE_AFTER) source)"
+well_status=$?
+printf "WELL_FORMED status=%s output=%q\n" "$well_status" "$well_formed"
+outside_hits="$(bug039_active_stale_hits <(printf "%s\n" ACTIVE_BEFORE BPY1 ACTIVE_AFTER) source)"
+outside_status=$?
+printf "OUTSIDE_STALE status=%s hits=%q\n" "$outside_status" "$outside_hits"
+if nested_output="$(bug039_active_contract_stream <(printf "%s\n" ACTIVE_BEFORE BUG-039-HISTORICAL-BEGIN BUG-039-HISTORICAL-BEGIN BPY1 BUG-039-HISTORICAL-END ACTIVE_AFTER) source 2>&1)"; then nested_status=0; else nested_status=$?; fi
+if unclosed_output="$(bug039_active_contract_stream <(printf "%s\n" ACTIVE_BEFORE BUG-039-HISTORICAL-BEGIN BPY1 ACTIVE_AFTER) source 2>&1)"; then unclosed_status=0; else unclosed_status=$?; fi
+if unmatched_output="$(bug039_active_contract_stream <(printf "%s\n" BUG-039-HISTORICAL-END ACTIVE_AFTER) source 2>&1)"; then unmatched_status=0; else unmatched_status=$?; fi
+printf "MALFORMED_NESTED status=%s output=%q\n" "$nested_status" "$nested_output"
+printf "MALFORMED_UNCLOSED status=%s output=%q\n" "$unclosed_status" "$unclosed_output"
+printf "MALFORMED_UNMATCHED status=%s output=%q\n" "$unmatched_status" "$unmatched_output"
+if [[ "$well_status" -eq 0 && "$well_formed" == $'"'"'ACTIVE_BEFORE\nACTIVE_AFTER'"'"' && "$outside_status" -eq 0 && "$outside_hits" == *BPY1* && "$nested_status" -eq 0 && "$unclosed_status" -eq 0 && "$unmatched_status" -eq 0 && "$unclosed_output" == ACTIVE_BEFORE ]]; then
+  printf "%s\n" "RED: HAR-R3 source parser accepts nested, unclosed, and unmatched markers; unclosed archive hides following active content"
+  printf "%s\n" HAR_R3_PRE_FIX_RESULT=RED_EXIT_1
+  exit 1
+fi
+printf "%s\n" HAR_R3_PRE_FIX_RESULT=SETUP_FAILURE
+exit 96'
+```
+**Exit Code:** 1
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R3 pre-fix exact source archive parser adversary
+exit: 1
+lines: 43
+sha256: 65c2233a980bced36dcfbf4982f94eea57b731fd213ad05f1a60d3ee93438c01
+HAR_R3_PRE_FIX_BEGIN
+HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+SOURCE_SHA256=119c5e1001a3822febd17a3dfc9667497ab5fc6355860bc214e47fba386da0e2
+WELL_FORMED status=0 output=$'ACTIVE_BEFORE\nACTIVE_AFTER'
+OUTSIDE_STALE status=0 hits=2:BPY1
+MALFORMED_NESTED status=0 output=$'ACTIVE_BEFORE\nACTIVE_AFTER'
+MALFORMED_UNCLOSED status=0 output=ACTIVE_BEFORE
+MALFORMED_UNMATCHED status=0 output=ACTIVE_AFTER
+RED: HAR-R3 source parser accepts nested, unclosed, and unmatched markers; unclosed archive hides following active content
+HAR_R3_PRE_FIX_RESULT=RED_EXIT_1
+```
+
+The command evaluated the exact current parser function. The well-formed and
+active-stale controls passed first. All three malformed forms then returned
+zero, which made the adversary fail for the intended reason.
+
+<!-- BUG-039-REPORT-ARCHIVE-END -->
+
+### HAR-R1 Atomic Ownership And Non-Vacuity
+
+`selftest_wait_exact_child()` now transfers the registered direct-child handle
+to one local wait owner. One assignment command clears global cleanup authority
+before `wait` can return.
+
+`selftest_stop_exact_child()` uses the same atomic transfer. It may signal only
+the unreaped direct child held by that local owner. Cleanup never receives a
+post-reap numeric handle.
+
+The persistent boundary control waits for a real child. It confirms that the
+child is absent from the process table. It invokes cleanup at that boundary and
+observes zero cleanup signal attempts.
+
+The copied mutation removes the atomic clear exactly once. It exits 97 at the
+same boundary. It invokes the real cleanup branch in record-only mode. Cleanup
+clears the stale handle and records two suppressed signals before returning RED.
+
+**Phase:** test
+**Command:** `/usr/bin/env -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u SELFTEST_MUTATION_SUPERVISOR_TEST_MODE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=20s 540 /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh --internal-mutation-runner-focused-control b039-mutation-runner-focused-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 definitive cleanup-path lifecycle and BMR1 adversaries
+exit: 0
+lines: 43
+sha256: 58f1374e3311bf04e34718acf536e56b061f29d515a59547f930dea678673292
+LIFECYCLE_WAIT_BOUNDARY_CASE waitStatus=0 processStatus=1 processText='' observedHandleState=absent cleanupStatus=0 cleanupSignalsBefore=0 cleanupSignalsAfter=0
+PASS: lifecycle wait clears cleanup authority before definitive reap returns to Bash
+LIFECYCLE_WAIT_BOUNDARY_SUMMARY status=0 observed=1 cleanupSignals=0 handleState=absent
+PASS: exact wait-to-clear boundary invokes cleanup with no numeric signal authority
+PASS: lifecycle exact-boundary positive control is green
+LIFECYCLE_WAIT_BOUNDARY_CASE waitStatus=0 processStatus=1 processText='' observedHandleState=numeric cleanupStatus=97 cleanupSignalsBefore=0 cleanupSignalsAfter=2
+RED: NEG-B039-LIFECYCLE-WAIT-BOUNDARY cleanup reached stale numeric handle and recorded two suppressed signals
+LIFECYCLE_WAIT_BOUNDARY_SUMMARY status=97 observed=0 cleanupSignals=2 handleState=absent
+RED: NEG-B039-LIFECYCLE-WAIT-BOUNDARY mutantExit=97 rootAbsent=yes cleanupSignalsRecorded=2 osSignalsSent=0 outerProtocol=BMR1
+PASS: NEG-B039-LIFECYCLE-WAIT-BOUNDARY copied mutation executes cleanup and catches post-reap numeric authority without signaling it
+MUTATION_RUNNER_CASE name=timeout status=124 timedOut=1 diagnostic=TIMEOUT protocol=BMR1 completed=1 ownership=1 owner=supervisor kind=signal events=FORK,OWNERSHIP_REGISTER,TERM_SIGNAL_OWNED,WAITPID,OWNERSHIP_CLEAR,COMPLETE
+PASS: mutation runner native supervisor enforces timeout status 124
+MUTATION_RUNNER_CASE name=child-124 status=124 timedOut=0 diagnostic=CHILD_EXIT_NONZERO owner=worker kind=exit completion=1
+PASS: mutation runner distinguishes child exit 124 from supervisor timeout 124
+MUTATION_RUNNER_CASE name=fast-nonzero status=73 timedOut=0 diagnostic=CHILD_EXIT_NONZERO owner=worker kind=exit completion=1
+PASS: mutation runner preserves fast nonzero status and rejects worker-authored control text
+MUTATION_RUNNER_CASE name=real-signal status=143 timedOut=0 diagnostic=CHILD_SIGNAL owner=worker kind=signal completion=1
+PASS: mutation runner preserves a real child signal as status 143
+MUTATION_RUNNER_CASE name=deadline-edge status=0 timedOut=0 diagnostic=OK owner=worker kind=exit completion=1 signalDecision=skipped-post-reap events=FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,DEADLINE_EDGE,SIGNAL_SKIPPED_UNOWNED,COMPLETE
+PASS: mutation runner deadline edge orders waitpid then ownership clear then no signal
+MUTATION_RUNNER_FOCUSED_SUMMARY failures=0 cases=5 protocol=BMR1 bashWorkerPidState=absent bashWatchdogPidState=absent
+RED: NEG-B039-MUTATION-REGISTRATION native supervisor omitted ownership registration
+PASS: NEG-B039-MUTATION-registration copied mutation turns its owning lifecycle assertion RED without residue
+RED: NEG-B039-MUTATION-BOUND native supervisor exceeded the declared wall
+PASS: NEG-B039-MUTATION-bound copied mutation turns its owning lifecycle assertion RED without residue
+RED: NEG-B039-MUTATION-GUARD post-reap deadline made a forbidden signal decision
+PASS: NEG-B039-MUTATION-guard copied mutation turns its owning lifecycle assertion RED without residue
+MUTATION_RUNNER_COPIED_MUTATION_SUMMARY failures=0 mutations=3 exactConstruction=required setupFailureIsRed=no
+```
+
+### HAR-R3 Fail-Closed Source Archive Proof
+
+The source branch now recognizes exact source comment markers. It rejects a
+nested open marker, an unmatched close marker, and EOF while archived.
+
+The positive source fixture hides one archived stale label. The same label
+outside the archive remains visible to the stale scan. Every malformed stream
+causes both the parser and its stale-scan consumer to return status 2.
+
+**Phase:** test
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=10s 240 /bin/bash bubbles/scripts/state-transition-guard-selftest.sh --internal-bug039-scope2-red-controls privileged-native-supervision-v2`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R3 final focused source and report archive adversaries
+exit: 0
+lines: 14
+sha256: 37b33163613954ba710642ad059b6f530f1df20bcf22bc5a402e2c7ed5f33f47
+Scenario: TP-S2-01 SEC-R1 transition-guard Check 16 enters the privileged child directly.
+PASS: TP-S2-01 SEC-R1: Check 16 launches env -i /bin/bash -p with direct BSEC1 before scanner sourcing
+Scenario: TP-S2-01 HAR-R3 active records use one current identifier and epoch set.
+PASS: TP-S2-01 HAR-R3: active source, tests, and current evidence use only current findings and epoch
+PASS: TP-S2-01 HAR-R3 negative control: archived report labels are allowed and the same active stale label is rejected
+PASS: TP-S2-01 HAR-R3 negative control: nested, unclosed, and unmatched report archive markers fail closed
+PASS: TP-S2-01 HAR-R3 source control: a well-formed archive hides only archived stale labels and the same active label is rejected
+SOURCE_ARCHIVE_MALFORMED name=nested parserStatus=2 staleScanStatus=2 output=ACTIVE_SOURCE_BEFORE staleOutput=''
+SOURCE_ARCHIVE_MALFORMED name=unclosed parserStatus=2 staleScanStatus=2 output=ACTIVE_SOURCE_BEFORE staleOutput=''
+SOURCE_ARCHIVE_MALFORMED name=unmatched-end parserStatus=2 staleScanStatus=2 output='' staleOutput=''
+PASS: TP-S2-01 HAR-R3 source control: nested BEGIN, EOF while archived, and END before an open marker fail closed and cannot hide following content
+TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2
+TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1
+state-transition-guard BUG-039 Scope 2 RED summary: failures=0
+```
+
+### Full Scanner Regression On Final Test Bytes
+
+**Phase:** test
+**Command:** `/usr/bin/env -u BUBBLES_AUTHORITY_BYPASS_CANDIDATE -u BUBBLES_AUTHORITY_BYPASS_TRACE -u BUBBLES_PYTHON_SELFTEST_CHILD_MODE -u BUBBLES_PYTHON_SELFTEST_READY_FILE -u BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL -u BUBBLES_PYTHON_LATE_SIGNAL_NAME -u BUBBLES_PYTHON_SELFTEST_LATE_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_WINDOW_READY -u BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE -u BUBBLES_PYTHON_MUTANT_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_TRACE -u BUBBLES_SELFTEST_REAL_PYTHON -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u SELFTEST_MUTATION_SUPERVISOR_TEST_MODE -u BUBBLES_TEST24_CHILD_MODE -u BUBBLES_TEST24_NEGATIVE_CONTROL -u BUBBLES_TEST24_LIFECYCLE_CHILD_MODE -u BUBBLES_TEST24_READY_FILE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=300s 7080 /bin/bash -c 'printf "BUG039_REMEDIATION_BASE_HEAD=%s\n" "$(/opt/local/bin/git rev-parse HEAD)"; test_sha=$(/usr/bin/shasum -a 256 bubbles/scripts/implementation-reality-scan-selftest.sh); printf "BUG039_SCANNER_SELFTEST_SHA256=%s\n" "${test_sha%% *}"; printf "%s\n" BUG039_REMEDIATION_EPOCH=privileged-native-supervision-v2; /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh; test_status=$?; printf "BUG039_FULL_SCANNER_SELFTEST_EXIT=%s\n" "$test_status"; exit "$test_status"'`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 HAR-R3 definitive full stock Bash scanner selftest
+exit: 0
+lines: 1782
+sha256: 5bf291c9e71d21fe90b099566dcb74a520e01a5420d08617aac03db0b09e7cb1
+--- first 20 ---
+BUG039_REMEDIATION_BASE_HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+BUG039_SCANNER_SELFTEST_SHA256=15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365
+BUG039_REMEDIATION_EPOCH=privileged-native-supervision-v2
+Scenario: TEST-B039-001 inherited subset selectors cannot replace the full-suite entrypoint.
+IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE
+PASS: TEST-B039-001 legacy SELFTEST_TARGET cannot select an ambient subset
+Scenario: premature and interrupted selftest exits fail closed while cleaning up.
+PASS: Premature EXIT preserves fatal exit 1
+PASS: Premature EXIT removes its temporary tree
+PASS: Premature EXIT emits no success summary
+PASS: Timeout exit preserves fatal exit 124
+PASS: Timeout exit removes its temporary tree
+PASS: Timeout exit emits no success summary
+PASS: HUP interruption preserves fatal exit 129
+PASS: HUP interruption removes its temporary tree
+PASS: HUP interruption emits no success summary
+PASS: TERM interruption preserves fatal exit 143
+PASS: TERM interruption removes its temporary tree
+PASS: TERM interruption emits no success summary
+Scenario: native mutation-runner focused lifecycle and copied negative controls stay green.
+--- omitted 1742 line(s); sha256 above covers the full output ---
+--- last 20 ---
+--- Scan 8: Silent Decode Failure Detection (Gate G048) ---
+IMPLEMENTATION REALITY SCAN RESULT
+Files scanned:  1
+Violations:     0
+Warnings:       0
+PASSED: No source code reality violations detected
+PASS: Classifier remains reusable after both watchdog timeouts
+PASS: Post-timeout classifier completes its protocol
+PASS: Post-timeout real producer leaves the helper directory clean
+implementation-reality-scan selftest summary: failures=0 skips=0
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+implementation-reality-scan selftest passed.
+BUG039_FULL_SCANNER_SELFTEST_EXIT=0
+```
+
+This was the definitive complete scanner selftest on SHA-256
+`15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365`.
+The 30-by-7 matrix code did not change, so this invocation did not rerun that
+matrix.
+
+### Preserved SEC-R1, SEC-R2, And HAR-R2 Controls
+
+**Phase:** test
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=30s 1740 /bin/bash bubbles/scripts/state-transition-guard-selftest.sh --internal-bug039-check16-controls b039-check16-integration-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 preserved SEC-R1 SEC-R2 HAR-R2 Check16 caller controls
+exit: 0
+lines: 32
+sha256: ec1bc31b6548102add0942bd887f41c1fa0f65c94aebcbf12f13d563d31678cd
+PASS: TP-S2-06 Check 16 SETUP: canonical fixture lint path exists
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking implementation paths exist
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking source bytes match their exact controls
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking fixtures pass artifact lint before guard invocation
+Running BUG-039 TP-S2-06 Check 16 caller integration selftest...
+PASS: TP-S2-06 Check 16 clean fixture preserves guard exit 0
+PASS: TP-S2-06 Check 16 preserves a clean scanner status
+PASS: TP-S2-06 Check 16 clean case enters direct BSEC1
+PASS: TP-S2-06 Check 16 clean case validates native BPS1 completion
+PASS: TP-S2-06 Check 16 clean case exposes no ordinary-Bash compatibility authority
+PASS: TP-S2-06 Check 16 production child remains fixed /bin/bash -p
+PASS: TP-S2-06 Check 16 propagates exact blocking scanner exit 1 to the transition guard
+PASS: TP-S2-06 Check 16 blocking case executes the real sensitive-storage classifier
+PASS: TP-S2-06 Check 16 blocking case reports the exact durable auth-token violation
+PASS: TP-S2-06 Check 16 reports the scanner's blocking result
+PASS: TP-S2-06 Check 16 blocking case enters direct BSEC1
+PASS: TP-S2-06 Check 16 blocking case validates native BPS1 completion
+PASS: TP-S2-06 Check 16 blocking case exposes no ordinary-Bash compatibility authority
+PASS: TP-S2-06 Check 16 blocking case does not degrade to unresolved classification
+PASS: TP-S2-06 Check 16 blocking case fails only for one sensitive-client-storage violation
+PASS: TP-S2-06 Check 16 excludes hostile BASH_ENV and exported source before scanner startup
+TP-S2-06_CHECK16_RESULTS cleanGuardExit=0 blockingGuardExit=1 cleanViolations=0 blockingViolations=1 hostileMarker=absent guardBash=/opt/homebrew/bin/bash scannerEntry=/bin/bash-p
+state-transition-guard BUG-039 Check 16 summary: failures=0
+```
+
+The command preserved direct `BSEC1`, native `BPS1`, hostile-startup exclusion,
+the clean status, and the real blocking status. Production security files and
+the `test_24` cascade remained byte-identical to the immutable base.
+
+### Static, Portability, And Regression Quality
+
+**Phase:** test
+**Commands:**
+
+- `/bin/bash -n bubbles/scripts/implementation-reality-scan-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh`
+- `/opt/homebrew/bin/bash -n bubbles/scripts/implementation-reality-scan-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh`
+- `/opt/homebrew/bin/shellcheck -S warning -x bubbles/scripts/implementation-reality-scan-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh`
+- `/opt/local/bin/git diff --check`
+- `/bin/bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/implementation-reality-scan-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 HAR-R3 definitive static portability and regression quality
+exit: 0
+lines: 32
+sha256: 4e047f4ca9f55030f1459b3014130621ca379b4fe09927564fdd9533b2dcdcb3
+FINAL_STATIC_BEGIN
+STOCK_BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+BUBBLES REGRESSION QUALITY GUARD
+Repo: /private/tmp/bubbles-bug039-native-supervisor
+Bugfix mode: true
+Scanning bubbles/scripts/implementation-reality-scan-selftest.sh
+Adversarial signal detected in bubbles/scripts/implementation-reality-scan-selftest.sh
+Scanning bubbles/scripts/state-transition-guard-selftest.sh
+Adversarial signal detected in bubbles/scripts/state-transition-guard-selftest.sh
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 2
+Files with adversarial signals: 2
+REGRESSION_QUALITY_EXIT=0
+HAR_R1_STALE_GLOBAL_WAIT_COUNT=0
+HAR_R1_STALE_GLOBAL_SIGNAL_COUNT=0
+HAR_R1_ATOMIC_TAKE_MARKER_COUNT=3
+HAR_R1_BOUNDARY_ADVERSARY_REFERENCE_COUNT=6
+HAR_R1_RECORD_ONLY_REFERENCE_COUNT=2
+HAR_R3_NESTED_AND_EOF_GUARD_COUNT=2
+HAR_R3_UNMATCHED_GUARD_COUNT=1
+FINAL_STATIC_FAILURES=0
+FINAL_STATIC_END
+```
+
+### Definitive Test Byte Identities
+
+**Phase:** test
+**Commands:**
+
+- `/bin/zsh -f -c 'set -eu; print DEFINITIVE_TEST_IDENTITIES_BEGIN; print -r -- BASE_HEAD=$(/opt/local/bin/git rev-parse HEAD); for p in bubbles/scripts/implementation-reality-scan-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh; do sha=$(/usr/bin/shasum -a 256 -- $p); print -r -- TEST_IDENTITY path=$p sha256=${sha%% *} gitObject=$(/opt/local/bin/git hash-object --no-filters -- $p) bytes=$(/usr/bin/stat -f %z -- $p); done; print DEFINITIVE_TEST_IDENTITIES_RESULT=PASS; print DEFINITIVE_TEST_IDENTITIES_END'`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 definitive test byte identities
+exit: 0
+lines: 6
+sha256: 786258f3f50b83a80aa0bb3d6fc8c09e08a48b955d57e9a4d42d41806bfd5810
+DEFINITIVE_TEST_IDENTITIES_BEGIN
+BASE_HEAD=b52cf813e4f6a85269b977552e7533fad9491b4c
+TEST_IDENTITY path=bubbles/scripts/implementation-reality-scan-selftest.sh sha256=15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365 gitObject=efcd2a0872aaaedaee613cefd4bfe99a206f8f7f bytes=102156
+TEST_IDENTITY path=bubbles/scripts/state-transition-guard-selftest.sh sha256=9d19226639bcd6f4576fe91a008cca8d38975529faac801909d0c3c42a19eff2 gitObject=b9024b70d2305195266a6ec4cae6ee08131ab6d5 bytes=301975
+DEFINITIVE_TEST_IDENTITIES_RESULT=PASS
+DEFINITIVE_TEST_IDENTITIES_END
+```
+
+### Failed Attempts Retained
+
+Failed commands remain failures. They do not replace accepted proof.
+
+| Attempt | Exit | Full-output SHA-256 | Disposition |
+| --- | ---: | --- | --- |
+| First HAR-R1 wait-cache probe | 96 | `8517ac471a7afeff037b9d4087e1232fe47f3c584273def3ee85347a1a1965f6` | Setup failure. Bash returned the cached wait status, so the command proved no gone-process predicate. |
+| First strict HAR-R3 run | 1 | `9bdf1f9ef5f72ca0844bdf3f65401d5ca5834b17b53e845ef5ae9829c921b3f1` | Real self-scan failure. Literal fixture markers appeared as active source markers. Split exact marker construction corrected it. |
+| First final-static bundle | 1 | `74f0c9c2edaf8743732b458e6f9a591d4e45d580b8d69e3bc3f7ece8c9399667` | Command assertion error. It expected two unmatched-marker guards where the source branch contains exactly one. |
+| First residue command | 143 | `a78db89e03325c01b6e6ebffe53d36a5e098ac778e5b7a0e06de96340650c9c8` | Timed out before its staged-path process substitution completed. It supplies no cleanup evidence. |
+| Second residue command | 1 | `d498e6d4448021526b610642915abb7fee58d8444408f9a347de1f4370196c51` | Shell parse failure before any residue assertion ran. |
+| First completed residue classification | 3 | `f73eae1659f56d7057b085d52862468e76af67d2946ea8f34dfe3220607e1a66` | Correctly found one independently running `test_24`, its private root, and bytecode while that bounded run was active. It supplies no clean-state evidence. |
+
+Passing intermediate runs were also superseded by stronger final bytes.
+
+| Intermediate execution | Exit | Full-output SHA-256 | Superseding reason |
+| --- | ---: | --- | --- |
+| Focused atomic boundary before real cleanup entry | 0 | `b31186b964f0cda427f28f58eaabe4f372b16fca128b0e65936223c943ba6ee5` | The final adversary enters cleanup in safe record-only mode. |
+| Focused cleanup branch with numeric diagnostic | 0 | `ceaae0b4e1657ea1ba0c20dfadd468d030bc1fab4b780a33e6cf7e795fdae3be` | The final diagnostic reports only handle state. |
+| Full scanner before proof strengthening | 0 | `feba0ce0778c2d213e4634787702b9024f471aeb32b77de8a9211eb0a7102f7e` | Final test SHA-256 changed to `15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365`. |
+| Static checks before proof strengthening | 0 | `d017c90a26732208e7afce5f66ea9b10b83ccb5f2a354c25508d71bcc8b5e871` | Final static proof also asserts record-only cleanup instrumentation. |
+
+### Explicit Remaining Ownership
+
+**Phase:** test
+**Claim Source:** not-run
+
+No Linux lane, full `framework-validate`, full `release-check`, human
+acceptance, or validate-owned certification ran in this correction epoch. No
+result is claimed for those surfaces.
+
+Formal security must review `HAR-R1` and `HAR-R3` on the committed correction
+epoch. `SEC-R1`, `SEC-R2`, and `HAR-R2` retain current executed control evidence.
+
+## Isolated Successor R2 Implement Retry
+
+**Phase:** implement
+**Claim Source:** executed
+
+This retry used only `/private/tmp/bubbles-bug039-native-supervisor-r2` after
+the read-only snapshot. The contested predecessor supplied no execution
+evidence for this section.
+
+### Snapshot And Isolation Proof
+
+The snapshot captured exactly three deltas over
+`b52cf813e4f6a85269b977552e7533fad9491b4c`. Git materialized tree
+`50dbaa062764c4279cd11d8b91a98d37392478c3` as unverified checkpoint
+`60fc6d982db9eff55ed65ed4228d7043f82faebf`.
+
+The two test hashes matched the required observations. The report snapshot
+hash was captured once as required.
+
+```text
+ISOLATION_VERIFY_BEGIN
+SUCCESSOR_ROOT=/private/tmp/bubbles-bug039-native-supervisor-r2
+SUCCESSOR_HEAD=60fc6d982db9eff55ed65ed4228d7043f82faebf
+SUCCESSOR_BRANCH=fix/bug039-native-supervisor-r2
+SUCCESSOR_TREE=50dbaa062764c4279cd11d8b91a98d37392478c3
+SUCCESSOR_PARENT=b52cf813e4f6a85269b977552e7533fad9491b4c
+SUCCESSOR_SUBJECT=BUG-039 unverified isolation checkpoint (not completion)
+SUCCESSOR_STATUS=clean
+CHECKPOINT_DELTA code=M class=expected path=bubbles/scripts/implementation-reality-scan-selftest.sh
+CHECKPOINT_DELTA code=M class=expected path=bubbles/scripts/state-transition-guard-selftest.sh
+CHECKPOINT_DELTA code=M class=expected path=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+SUCCESSOR_FILE sha256=15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365 path=bubbles/scripts/implementation-reality-scan-selftest.sh
+SUCCESSOR_FILE sha256=9d19226639bcd6f4576fe91a008cca8d38975529faac801909d0c3c42a19eff2 path=bubbles/scripts/state-transition-guard-selftest.sh
+SUCCESSOR_FILE sha256=d7a8e4c6c6c89cded9df562f4133bd779f5f265d1a85eb04eaf11ab38cf99d72 path=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+SUCCESSOR_PROCESS_COUNT=0
+ISOLATION_VERIFY_FAILURES=0
+ISOLATION_VERIFY_RESULT=PASS
+ISOLATION_VERIFY_END
+```
+
+The predecessor report later changed externally to SHA-256
+`48e7864557302f45bce6aeb82f1a0ca46e479a7f662acef17c20ed8c66588428`.
+The predecessor test hashes remained unchanged. This external report mutation
+is excluded from the successor and from all evidence below.
+
+### Dual-Shell Python Environment Reproduction
+
+Both complete runs exercised the unchanged production implementation before
+the focused scanner tests. Each run reported `78 passed, 0 failed` for the
+privileged suite and `59 passed, 0 failed` for the outer suite.
+
+```text
+PYTHON_ENV_DUAL_SHELL_BEGIN
+shell=/bin/bash
+exit=0
+lines=199
+sha256=4e2ef711410c61afc1060a914880a0963d3d48f249fcfa65d2fbcaf5047ceffe
+privilegedSummary=python-env selftest: 78 passed, 0 failed
+outerSummary=python-env selftest: 59 passed, 0 failed
+shell=/opt/homebrew/bin/bash
+exit=0
+lines=199
+sha256=43b521bb7a5d7d67674d7c266c51aa2c447acb1afc827db1892e3344906b176e
+privilegedSummary=python-env selftest: 78 passed, 0 failed
+outerSummary=python-env selftest: 59 passed, 0 failed
+perRunRepositoryResidue=0
+perRunProcessResidue=0
+globalPrivateRootsAfterRuns=0
+PYTHON_ENV_DUAL_SHELL_RESULT=PASS
+PYTHON_ENV_DUAL_SHELL_END
+```
+
+The zero per-run residue distinguishes these runs from predecessor-path
+pollution. No cleanup assertion was weakened.
+
+### Static And Focused Delta Proof
+
+```text
+STATIC_AND_FOCUSED_BEGIN
+STOCK_BASH_SYNTAX_EXIT=0
+HOMEBREW_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+SCANNER_SHA256=15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365
+GUARD_SHA256=9d19226639bcd6f4576fe91a008cca8d38975529faac801909d0c3c42a19eff2
+HAR_R1_EXIT=0
+HAR_R1_LINES=43
+HAR_R1_OUTPUT_SHA256=58f1374e3311bf04e34718acf536e56b061f29d515a59547f930dea678673292
+HAR_R1_ATOMIC_TAKE=PASS
+HAR_R1_RECORD_ONLY_MUTATION=PASS
+HAR_R3_EXIT=0
+HAR_R3_LINES=14
+HAR_R3_OUTPUT_SHA256=37b33163613954ba710642ad059b6f530f1df20bcf22bc5a402e2c7ed5f33f47
+HAR_R3_NESTED_PARSER_STATUS=2
+HAR_R3_UNCLOSED_PARSER_STATUS=2
+HAR_R3_UNMATCHED_END_PARSER_STATUS=2
+HAR_R3_FAIL_CLOSED=PASS
+STATIC_AND_FOCUSED_RESULT=PASS
+STATIC_AND_FOCUSED_END
+```
+
+`HAR-R1` clears the global cleanup handle in the same assignment command that
+takes its local wait handle. Its copied mutation reaches real cleanup in
+record-only mode. The mutation records two suppressed signal attempts and
+sends no operating-system signal.
+
+`HAR-R3` matches exact source archive markers. Nested open markers, unmatched
+close markers, and end-of-file while archived each return status 2 from both
+the parser and its stale-label consumer.
+
+### Full Scanner Selftests On Exact Test Bytes
+
+The scanner test SHA-256 stayed
+`15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365`.
+Therefore, no hash-difference supersession marker applies to an earlier
+receipt. These isolated runs supersede predecessor-path executions only for
+this retry's evidence selection.
+
+```text
+FULL_SCANNER_DUAL_SHELL_BEGIN
+shell=/bin/bash
+exit=0
+lines=1778
+sha256=fc1788839ee4d5e15a33817391e63cbc97f0a4ce62e165a1f6e06fa52f8cb43f
+summary=implementation-reality-scan selftest summary: failures=0 skips=0
+authorizedMutation=BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+fullSuite=IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+shell=/opt/homebrew/bin/bash
+exit=0
+lines=1778
+sha256=c189e4fcbd3f7b9ecd7baecf455ae4632fa1f16e9fafc272258437a137a1f3b9
+summary=implementation-reality-scan selftest summary: failures=0 skips=0
+authorizedMutation=BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+fullSuite=IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+scannerTestSha256=15171571cb896cabdf627a67348d2c77c4ef5ade8c77391e1ca57f4f86cd2365
+guardTestSha256=9d19226639bcd6f4576fe91a008cca8d38975529faac801909d0c3c42a19eff2
+FULL_SCANNER_DUAL_SHELL_RESULT=PASS
+FULL_SCANNER_DUAL_SHELL_END
+```
+
+### Finding Closure Before Test-Owner Matrix Handoff
+
+| Finding | Implement-retry disposition |
+| --- | --- |
+| `B039-TEST-MATRIX-FAIL` | Addressed. Both complete Python environment suites and both complete scanner suites exited 0 on exact unchanged test bytes. |
+| `B039-IMMUTABLE-EPOCH-INVALIDATED` | Addressed for this retry. Every accepted run used immutable checkpoint `60fc6d982db9eff55ed65ed4228d7043f82faebf` and names the exact test hashes above. |
+| `B039-EXECUTION-OVERLAP` | Addressed in the successor. Creation found zero process references to the new path, and every residue-sensitive command ran serially. |
+| `B039-DIRTY-CODE-REPORT-MISMATCH` | Addressed. The read-only snapshot committed the exact two test deltas and captured report as one clean tree before execution. |
+| `B039-HAR-R1-DELTA-REVIEW` | Addressed. Source review, focused positive proof, and safe copied mutation all agree on atomic handle transfer before wait. |
+| `B039-HAR-R3-DELTA-REVIEW` | Addressed. Source review and malformed-stream controls prove exact-marker parsing fails closed. |
+
+`B039-TEST24-INCOMPLETE` is accounted for in the next subsection using the
+same isolated checkpoint and exact test hashes.
+
+### Full Stock-Bash Test 24 Cascade
+
+**Command:** `/usr/bin/env -u BUBBLES_SECURITY_ENTRY_MODE -u BUBBLES_AUTHORITY_BYPASS_CANDIDATE -u BUBBLES_AUTHORITY_BYPASS_TRACE -u BUBBLES_PYTHON_SELFTEST_CHILD_MODE -u BUBBLES_PYTHON_SELFTEST_READY_FILE -u BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL -u BUBBLES_PYTHON_LATE_SIGNAL_NAME -u BUBBLES_PYTHON_SELFTEST_LATE_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_WINDOW_READY -u BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE -u BUBBLES_PYTHON_MUTANT_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_TRACE -u BUBBLES_SELFTEST_REAL_PYTHON -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u SELFTEST_MUTATION_SUPERVISOR_TEST_MODE -u BUBBLES_TEST24_CHILD_MODE -u BUBBLES_TEST24_NEGATIVE_CONTROL -u BUBBLES_TEST24_LIFECYCLE_CHILD_MODE -u BUBBLES_TEST24_READY_FILE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=300s 7200 /bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 successor-r2 full test_24 stock Bash
+exit: 0
+lines: 4603
+sha256: 80a076ff3d7101e855205d7be7054b79caf5c7b28e1920dd0fba706fe0525d84
+PASS: NEG-B039-SENTINEL-TO-PASS copied skip-to-pass mutation turns counter accounting RED
+PASS: authenticated root-protected runtime runs the managed selftest under system-only PATH
+PASS: authenticated runtime removes classifier-unavailable degradation
+PASS: authenticated runtime leaves no skipped scenario group
+PASS: authenticated root-protected runtime leaves the poisoned Python marker absent
+PASS: authenticated runtime executes the privileged BSEC1 path
+PASS: authenticated runtime executes the native BPS1 supervisor path
+PASS: authenticated runtime runs the exact-approval semantic assertion
+PASS: authenticated runtime runs the unknown-provider semantic assertion
+PASS: authenticated runtime runs the config-integrity assertion
+PASS: authenticated runtime preserves the authorized classifier mutation control
+test_24_g028_sensitive_client_storage: 101 passed, 0 failed, 1 skipped
+BUG039_DETERMINISTIC_CASCADE_VERIFIED=1
+BUG039_UNAVAILABLE_PATH_VERIFIED=1
+TEST24_FULL_SUITE_COMPLETED=1
+BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
+```
+
+`B039-TEST24-INCOMPLETE` is addressed for this implement retry. The one skip is
+the deliberately unavailable classifier prerequisite. The persistent
+negative control proves that converting the skip into a pass remains fatal.

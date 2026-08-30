@@ -73,6 +73,8 @@ fail() {
 bug039_active_contract_stream() {
   local file="$1"
   local surface_kind="$2"
+  local source_archive_begin='# BUG-039-HISTORICAL-'"BEGIN"
+  local source_archive_end='# BUG-039-HISTORICAL-'"END"
   if [[ "$surface_kind" == report ]]; then
     /usr/bin/awk '
       $0 == "<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->" {
@@ -96,10 +98,21 @@ bug039_active_contract_stream() {
       }
     ' "$file"
   else
-    /usr/bin/awk '
-      /BUG-039-HISTORICAL-BEGIN/ { archived=1; next }
-      /BUG-039-HISTORICAL-END/ { archived=0; next }
+    /usr/bin/awk -v archive_begin="$source_archive_begin" -v archive_end="$source_archive_end" '
+      $0 == archive_begin {
+        if (archived) exit 2
+        archived=1
+        next
+      }
+      $0 == archive_end {
+        if (!archived) exit 2
+        archived=0
+        next
+      }
       !archived { print }
+      END {
+        if (archived) exit 2
+      }
     ' "$file"
   fi
 }
@@ -135,8 +148,30 @@ run_bug039_scope2_red_contract() {
   local nested="$tmp_root/bug039-har-r3-active-window-nested.txt"
   local unclosed="$tmp_root/bug039-har-r3-active-window-unclosed.txt"
   local unmatched="$tmp_root/bug039-har-r3-active-window-unmatched.txt"
+  local source_fixture="$tmp_root/bug039-har-r3-source-window.txt"
+  local source_mutant="$tmp_root/bug039-har-r3-source-window-mutant.txt"
+  local source_nested="$tmp_root/bug039-har-r3-source-window-nested.txt"
+  local source_unclosed="$tmp_root/bug039-har-r3-source-window-unclosed.txt"
+  local source_unmatched="$tmp_root/bug039-har-r3-source-window-unmatched.txt"
+  local source_archive_begin='# BUG-039-HISTORICAL-'"BEGIN"
+  local source_archive_end='# BUG-039-HISTORICAL-'"END"
   local fixture_hits=""
   local mutant_hits=""
+  local source_fixture_hits=""
+  local source_mutant_hits=""
+  local source_active_text=""
+  local source_nested_output=""
+  local source_unclosed_output=""
+  local source_unmatched_output=""
+  local source_nested_hits=""
+  local source_unclosed_hits=""
+  local source_unmatched_hits=""
+  local source_nested_status=0
+  local source_unclosed_status=0
+  local source_unmatched_status=0
+  local source_nested_hit_status=0
+  local source_unclosed_hit_status=0
+  local source_unmatched_hit_status=0
   local expected_mutant=""
   local active_text=""
   local malformed_failures=0
@@ -245,6 +280,90 @@ EOF
     pass "TP-S2-01 HAR-R3 negative control: nested, unclosed, and unmatched report archive markers fail closed"
   else
     fail "TP-S2-01 HAR-R3 SETUP: malformed report archive markers were not all rejected"
+  fi
+
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' "$source_archive_end"
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_fixture"
+  /bin/cp -p "$source_fixture" "$source_mutant"
+  printf '%s%s\n' 'BP' 'Y1' >>"$source_mutant"
+  source_active_text="$(bug039_active_contract_stream "$source_fixture" source)"
+  source_fixture_hits="$(bug039_active_stale_hits "$source_fixture" source)"
+  source_mutant_hits="$(bug039_active_stale_hits "$source_mutant" source)"
+  if [[ "$source_active_text" == $'ACTIVE_SOURCE_BEFORE\nACTIVE_SOURCE_AFTER' &&
+    -z "$source_fixture_hits" ]] &&
+    printf '%s\n' "$source_mutant_hits" | /usr/bin/grep -Fq "$expected_mutant"; then
+    pass "TP-S2-01 HAR-R3 source control: a well-formed archive hides only archived stale labels and the same active label is rejected"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: source archive positive and active-stale controls did not discriminate"
+  fi
+
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' "$source_archive_end"
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_nested"
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_unclosed"
+  {
+    printf '%s\n' "$source_archive_end"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_unmatched"
+
+  if source_nested_output="$(bug039_active_contract_stream "$source_nested" source 2>&1)"; then
+    source_nested_status=0
+  else
+    source_nested_status=$?
+  fi
+  if source_unclosed_output="$(bug039_active_contract_stream "$source_unclosed" source 2>&1)"; then
+    source_unclosed_status=0
+  else
+    source_unclosed_status=$?
+  fi
+  if source_unmatched_output="$(bug039_active_contract_stream "$source_unmatched" source 2>&1)"; then
+    source_unmatched_status=0
+  else
+    source_unmatched_status=$?
+  fi
+  if source_nested_hits="$(bug039_active_stale_hits "$source_nested" source 2>&1)"; then
+    source_nested_hit_status=0
+  else
+    source_nested_hit_status=$?
+  fi
+  if source_unclosed_hits="$(bug039_active_stale_hits "$source_unclosed" source 2>&1)"; then
+    source_unclosed_hit_status=0
+  else
+    source_unclosed_hit_status=$?
+  fi
+  if source_unmatched_hits="$(bug039_active_stale_hits "$source_unmatched" source 2>&1)"; then
+    source_unmatched_hit_status=0
+  else
+    source_unmatched_hit_status=$?
+  fi
+  printf 'SOURCE_ARCHIVE_MALFORMED name=nested parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_nested_status" "$source_nested_hit_status" "$source_nested_output" "$source_nested_hits"
+  printf 'SOURCE_ARCHIVE_MALFORMED name=unclosed parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_unclosed_status" "$source_unclosed_hit_status" "$source_unclosed_output" "$source_unclosed_hits"
+  printf 'SOURCE_ARCHIVE_MALFORMED name=unmatched-end parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_unmatched_status" "$source_unmatched_hit_status" "$source_unmatched_output" "$source_unmatched_hits"
+  if [[ "$source_nested_status" -eq 2 && "$source_unclosed_status" -eq 2 &&
+    "$source_unmatched_status" -eq 2 && "$source_nested_hit_status" -eq 2 &&
+    "$source_unclosed_hit_status" -eq 2 && "$source_unmatched_hit_status" -eq 2 ]]; then
+    pass "TP-S2-01 HAR-R3 source control: nested BEGIN, EOF while archived, and END before an open marker fail closed and cannot hide following content"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: malformed source archive markers were not all rejected by parser and stale scan"
   fi
 
   printf '%s\n' 'TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2'

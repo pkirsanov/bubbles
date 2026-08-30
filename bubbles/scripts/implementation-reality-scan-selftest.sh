@@ -43,6 +43,13 @@ case "${1:-}" in
     fi
     SELFTEST_ENTRYPOINT=mutation-runner-focused
     ;;
+  --internal-lifecycle-wait-boundary-control)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-lifecycle-wait-boundary-v1 ]]; then
+      printf '%s\n' 'implementation-reality-scan lifecycle wait-boundary control requires its explicit internal token' >&2
+      exit 2
+    fi
+    SELFTEST_ENTRYPOINT=lifecycle-wait-boundary
+    ;;
   *)
     printf 'implementation-reality-scan selftest argument is invalid: %s\n' "$1" >&2
     exit 2
@@ -54,6 +61,10 @@ FIXTURE_ROOT="$TMPDIR/fixtures"
 CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
+SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS=0
+SELFTEST_LIFECYCLE_SIGNAL_MODE=normal
+SELFTEST_LIFECYCLE_BOUNDARY_CONTROL=0
+SELFTEST_LIFECYCLE_BOUNDARY_OBSERVED=0
 SELFTEST_MUTATION_TIMED_OUT=0
 SELFTEST_MUTATION_RUN_DIAGNOSTIC=NOT_RUN
 SELFTEST_MUTATION_SUPERVISOR_PROTOCOL=none
@@ -66,12 +77,100 @@ SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION=none
 SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
 
 selftest_stop_exact_child() {
-  if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
-    builtin kill -TERM "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    builtin kill -KILL "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
-    builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+  local child_pid=''
+
+  child_pid="$SELFTEST_LIFECYCLE_PID" SELFTEST_LIFECYCLE_PID=''
+  if [[ "$child_pid" =~ ^[1-9][0-9]*$ ]]; then
+    if [[ "$SELFTEST_LIFECYCLE_SIGNAL_MODE" == record-only ]]; then
+      SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS=$((SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS + 2))
+      return 97
+    fi
+    SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS=$((SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS + 1))
+    builtin kill -TERM "$child_pid" 2>/dev/null || true
+    SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS=$((SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS + 1))
+    builtin kill -KILL "$child_pid" 2>/dev/null || true
+    builtin wait "$child_pid" 2>/dev/null || true
   fi
-  SELFTEST_LIFECYCLE_PID=''
+  return 0
+}
+
+selftest_lifecycle_post_wait_adversary() {
+  local child_pid="$1"
+  local child_status="$2"
+  local observed_handle="$SELFTEST_LIFECYCLE_PID"
+  local process_text=''
+  local process_status=0
+  local attempts_before="$SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS"
+  local attempts_after=0
+  local cleanup_status=0
+  local observed_handle_state=invalid
+
+  if [[ -z "$observed_handle" ]]; then
+    observed_handle_state=absent
+  elif [[ "$observed_handle" =~ ^[1-9][0-9]*$ ]]; then
+    observed_handle_state=numeric
+  fi
+
+  if process_text="$(/bin/ps -p "$child_pid" -o pid= 2>&1)"; then
+    process_status=0
+  else
+    process_status=$?
+  fi
+  SELFTEST_LIFECYCLE_SIGNAL_MODE=record-only
+  if selftest_stop_exact_child; then
+    cleanup_status=0
+  else
+    cleanup_status=$?
+  fi
+  SELFTEST_LIFECYCLE_SIGNAL_MODE=normal
+  attempts_after="$SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS"
+  printf 'LIFECYCLE_WAIT_BOUNDARY_CASE waitStatus=%s processStatus=%s processText=%q observedHandleState=%s cleanupStatus=%s cleanupSignalsBefore=%s cleanupSignalsAfter=%s\n' \
+    "$child_status" "$process_status" "$process_text" "$observed_handle_state" \
+    "$cleanup_status" "$attempts_before" "$attempts_after"
+  if [[ "$observed_handle" =~ ^[1-9][0-9]*$ ]]; then
+    if [[ "$cleanup_status" -eq 97 && -z "$SELFTEST_LIFECYCLE_PID" &&
+      "$attempts_after" -eq $((attempts_before + 2)) ]]; then
+      printf '%s\n' 'RED: NEG-B039-LIFECYCLE-WAIT-BOUNDARY cleanup reached stale numeric handle and recorded two suppressed signals' >&2
+      return 97
+    fi
+    printf '%s\n' 'FAIL: lifecycle wait-boundary stale-handle adversary did not execute the safe cleanup branch' >&2
+    return 96
+  fi
+  if [[ "$child_status" -eq 0 && "$process_status" -eq 1 && -z "$process_text" &&
+    -z "$observed_handle" && "$cleanup_status" -eq 0 && -z "$SELFTEST_LIFECYCLE_PID" &&
+    "$attempts_before" -eq "$attempts_after" ]]; then
+    SELFTEST_LIFECYCLE_BOUNDARY_OBSERVED=1
+    printf '%s\n' 'PASS: lifecycle wait clears cleanup authority before definitive reap returns to Bash'
+    return 0
+  fi
+  printf '%s\n' 'FAIL: lifecycle wait-boundary adversary did not reach a reaped child with empty cleanup authority' >&2
+  return 96
+}
+
+selftest_wait_exact_child() {
+  local expected_pid="$1"
+  local child_pid=''
+  local child_status=0
+  local boundary_status=0
+
+  child_pid="$SELFTEST_LIFECYCLE_PID" SELFTEST_LIFECYCLE_PID='' # B039-LIFECYCLE-ATOMIC-TAKE
+  if [[ ! "$child_pid" =~ ^[1-9][0-9]*$ || "$child_pid" != "$expected_pid" ]]; then
+    return 125
+  fi
+  if builtin wait "$child_pid" 2>/dev/null; then
+    child_status=0
+  else
+    child_status=$?
+  fi
+  if [[ "$SELFTEST_LIFECYCLE_BOUNDARY_CONTROL" -eq 1 ]]; then
+    if selftest_lifecycle_post_wait_adversary "$child_pid" "$child_status"; then
+      boundary_status=0
+    else
+      boundary_status=$?
+    fi
+    [[ "$boundary_status" -eq 0 ]] || return "$boundary_status"
+  fi
+  return "$child_status"
 }
 
 selftest_mutation_supervisor_program() {
@@ -597,9 +696,112 @@ selftest_check_mutation_runner_negative_control() {
   return 1
 }
 
+make_lifecycle_wait_boundary_mutant() {
+  local destination="$1"
+  /usr/bin/awk '
+    /B039-LIFECYCLE-ATOMIC-TAKE$/ {
+      sub(/ SELFTEST_LIFECYCLE_PID=.*/, " # B039-LIFECYCLE-ATOMIC-TAKE-MUTANT")
+      print
+      changed=changed + 1
+      next
+    }
+    { print }
+    END { if (changed != 1) exit 42 }
+  ' "$SELFTEST_SCRIPT" >"$destination"
+}
+
+selftest_run_lifecycle_wait_boundary_control() {
+  local child_pid=''
+  local child_status=0
+
+  if [[ -n "${BUBBLES_MUTATION_RUNNER_ROOT_RECORD:-}" ]]; then
+    printf '%s\n' "$TMPDIR" >"$BUBBLES_MUTATION_RUNNER_ROOT_RECORD"
+  fi
+  SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS=0
+  SELFTEST_LIFECYCLE_SIGNAL_MODE=normal
+  SELFTEST_LIFECYCLE_BOUNDARY_OBSERVED=0
+  /bin/sh -c 'exit 0' &
+  child_pid=$!
+  SELFTEST_LIFECYCLE_PID="$child_pid"
+  SELFTEST_LIFECYCLE_BOUNDARY_CONTROL=1
+  if selftest_wait_exact_child "$child_pid"; then
+    child_status=0
+  else
+    child_status=$?
+  fi
+  SELFTEST_LIFECYCLE_BOUNDARY_CONTROL=0
+  printf 'LIFECYCLE_WAIT_BOUNDARY_SUMMARY status=%s observed=%s cleanupSignals=%s handleState=%s\n' \
+    "$child_status" "$SELFTEST_LIFECYCLE_BOUNDARY_OBSERVED" \
+    "$SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS" \
+    "$([[ -z "$SELFTEST_LIFECYCLE_PID" ]] && printf absent || printf present)"
+  if [[ "$child_status" -ne 0 ]]; then
+    return "$child_status"
+  fi
+  if [[ "$SELFTEST_LIFECYCLE_BOUNDARY_OBSERVED" -eq 1 &&
+    "$SELFTEST_LIFECYCLE_CLEANUP_SIGNAL_ATTEMPTS" -eq 0 &&
+    -z "$SELFTEST_LIFECYCLE_PID" ]]; then
+    printf '%s\n' 'PASS: exact wait-to-clear boundary invokes cleanup with no numeric signal authority'
+    return 0
+  fi
+  printf '%s\n' 'FAIL: exact wait-to-clear boundary control was vacuous or retained cleanup signal authority' >&2
+  return 96
+}
+
+selftest_check_lifecycle_wait_boundary_negative_control() {
+  local mutation_dir="$TMPDIR/lifecycle-wait-boundary-mutant"
+  local mutant_script="$mutation_dir/implementation-reality-scan-selftest.sh"
+  local output_file="$mutation_dir/mutant.output"
+  local internal_tmp_parent="$TMPDIR/lifecycle-wait-boundary-inner"
+  local root_record="$mutation_dir/internal-root.record"
+  local control_status=0
+  local internal_root=''
+
+  mkdir -p "$mutation_dir" "$internal_tmp_parent"
+  if ! make_lifecycle_wait_boundary_mutant "$mutant_script"; then
+    printf '%s\n' 'FAIL: NEG-B039-LIFECYCLE-WAIT-BOUNDARY copied mutation construction did not match exactly once' >&2
+    return 1
+  fi
+  if selftest_run_mutation_bounded "$output_file" 10 /usr/bin/env \
+    TMPDIR="$internal_tmp_parent" BUBBLES_MUTATION_RUNNER_ROOT_RECORD="$root_record" \
+    /bin/bash "$mutant_script" \
+    --internal-lifecycle-wait-boundary-control b039-lifecycle-wait-boundary-v1; then
+    control_status=0
+  else
+    control_status=$?
+  fi
+  /bin/cat "$output_file"
+  internal_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
+
+  if [[ "$control_status" -eq 97 && "${internal_root##*/}" == tmp.* &&
+    ! -e "$internal_root" && "$SELFTEST_MUTATION_SUPERVISOR_PROTOCOL" == BMR1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == worker &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == CHILD_EXIT_NONZERO ]] &&
+    /usr/bin/grep -Fq \
+      'RED: NEG-B039-LIFECYCLE-WAIT-BOUNDARY cleanup reached stale numeric handle and recorded two suppressed signals' \
+      "$output_file"; then
+    printf '%s\n' 'RED: NEG-B039-LIFECYCLE-WAIT-BOUNDARY mutantExit=97 rootAbsent=yes cleanupSignalsRecorded=2 osSignalsSent=0 outerProtocol=BMR1'
+    printf '%s\n' 'PASS: NEG-B039-LIFECYCLE-WAIT-BOUNDARY copied mutation executes cleanup and catches post-reap numeric authority without signaling it'
+    return 0
+  fi
+  printf 'FAIL: NEG-B039-LIFECYCLE-WAIT-BOUNDARY expected safe exit 97 and absent residue; got exit=%s root=%s diagnostic=%s\n' \
+    "$control_status" "${internal_root:-missing}" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" >&2
+  return 1
+}
+
 selftest_run_internal_mutation_runner_focused_control() {
   local focused_failures=0
 
+  if selftest_run_lifecycle_wait_boundary_control; then
+    printf '%s\n' 'PASS: lifecycle exact-boundary positive control is green'
+  else
+    printf '%s\n' 'FAIL: lifecycle exact-boundary positive control failed' >&2
+    focused_failures=$((focused_failures + 1))
+  fi
+  if ! selftest_check_lifecycle_wait_boundary_negative_control; then
+    focused_failures=$((focused_failures + 1))
+  fi
   if selftest_run_internal_mutation_runner_control; then
     printf '%s\n' 'PASS: focused mutation runner positive lifecycle matrix is green'
   else
@@ -671,6 +873,16 @@ if [[ "$SELFTEST_ENTRYPOINT" == mutation-runner-focused ]]; then
     mutation_runner_status=$?
   fi
   exit "$mutation_runner_status"
+fi
+if [[ "$SELFTEST_ENTRYPOINT" == lifecycle-wait-boundary ]]; then
+  lifecycle_boundary_status=0
+  SELFTEST_COMPLETED=1
+  if selftest_run_lifecycle_wait_boundary_control; then
+    lifecycle_boundary_status=0
+  else
+    lifecycle_boundary_status=$?
+  fi
+  exit "$lifecycle_boundary_status"
 fi
 
 # Private child modes exercise this script's own EXIT/INT/TERM contract. They
@@ -821,10 +1033,9 @@ assert_selftest_lifecycle_fails_closed() {
     return
   fi
   if [[ "$signal_name" != "NONE" ]]; then
-    builtin kill -"$signal_name" "$SELFTEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -"$signal_name" "$child_pid" 2>/dev/null || true
   fi
-  if builtin wait "$SELFTEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
-  SELFTEST_LIFECYCLE_PID=''
+  if selftest_wait_exact_child "$child_pid"; then child_status=0; else child_status=$?; fi
 
   if [[ "$child_status" -eq "$expected_status" ]]; then
     pass "$label preserves fatal exit $expected_status"
