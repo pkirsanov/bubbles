@@ -1108,7 +1108,9 @@ UNCHANGED_FROM_HEAD=0 for all five paths
 | `SEC-R2` | `SCN-B039-006` | Production reports zero fixed Perl-supervisor, `fork`, `waitpid`, `BPS1`, unreaped-owner guard, and boundary API signals. The closed operation-vector control remains green. |
 | `HAR-R1` | `SCN-B039-007` | Production carries 32 Bash worker/FIFO-authority references, no supervisor wait handle, no supervisor reap/clear order, and no post-reap pending-signal return point. |
 | `HAR-R2` | `SCN-B039-008` | Forged control becomes `CONTROL_MALFORMED` instead of an independent supervisor timeout; worker-closed control returns `OK` early; a descriptor-holding descendant drives FIFO timeout instead of direct-worker completion. Static control reports 12 worker-held FIFO/EOF references and no `waitpid` or `BPS1`. |
+<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->
 | `HAR-R3` | `SCN-B039-009` | The active-window scan reports five stale `BPY1` source/test lines while every current identifier and current epoch/trust label is present. Its negative control allows archive-bracketed historical labels and rejects one active stale-label mutation. |
+<!-- BUG-039-REPORT-ARCHIVE-END -->
 
 ### Intended RED Execution
 
@@ -1341,3 +1343,136 @@ The repository scan found no FIFO, `__pycache__`, `.pyc`, or `.pyo`. The bounded
 temporary scan found no current-run private root, FIFO, capture directory, or
 mutation fixture. Older global temporary directories predated the authoritative
 binding epoch and were left untouched because they are not owned by this run.
+
+### TP-S2-01 Test Contract Correction
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The parent executed the functional correction receipts on
+the exact three-path dirty tree. This invocation reran only static and residue
+checks. The correction repairs test meaning and does not establish production
+implementation.
+
+The earlier TP-S2-01 RED receipts remain intact above. This correction
+supersedes only their test-contract interpretation. It neither erases their
+observed RED state nor converts any production finding to green.
+
+#### Correction Dispositions
+
+| Finding | Disposition | Corrected contract |
+| --- | --- | --- |
+| `TST-R1` | Addressed | The historical Bash worker and FIFO mutation builder is replaced by native `BPS1` and Perl lifecycle mutations. Missing preimplementation anchors emit intended RED findings. They do not emit a setup failure. Mutation construction starts only after the future contract anchors exist. |
+| `TST-R2` | Addressed | The security-specific suite executes through a real empty environment and privileged `/bin/bash -p`. Its setup marker proves hostile `BASH_ENV` and exported functions did not enter. General tests retain ordinary execution. |
+| `TST-R3` | Addressed | Report archive markers exclude only bracketed historical labels. The same stale label remains detectable outside the archive. Nested, unclosed, and unmatched markers fail closed. |
+
+#### Parent-Executed Correction Receipts
+
+**Phase:** test
+**Claim Source:** executed
+**Execution attribution:** These receipts came from the current parent
+`bubbles.test` execution named in the dispatch. This invocation did not present
+them as its own reruns.
+
+```text
+PARENT_CORRECTION_RECEIPTS_BEGIN
+STATIC_EXIT=0
+STATIC_SIGNAL=TEST_CONTRACT_STATIC_FAILURES=0
+STATIC_SHA256=not-emitted-in-dispatch
+TARGETED_TRANSITION_RED_EXIT=1
+TARGETED_TRANSITION_RED_LINES=11
+TARGETED_TRANSITION_RED_SHA256=571f86ec8363c9906cbec3875c678dd561390ebc8a07c7068f9710e4600ddcbd
+TARGETED_TRANSITION_RED_FAILURES=SEC-R1-ordinary-Check16,HAR-R3-4-active-stale-lines
+TARGETED_TRANSITION_ARCHIVE_DISCRIMINATION=PASS
+TARGETED_TRANSITION_MALFORMED_MARKERS_FAIL_CLOSED=PASS
+STOCK_BASH_PYTHON_RED_EXIT=1
+STOCK_BASH_PYTHON_RED_LINES=96
+STOCK_BASH_PYTHON_RED_SHA256=41a3056cc1d2af48ff6061516f12cfe31efee59a941da4cba6d46fc69adfedeb
+GENERAL_SUITE_SUMMARY=51-passed,7-missing-production-failures
+PRIVILEGED_CHILD_SETUP=PASS
+PRIVILEGED_SECURITY_SUMMARY=0-passed,9-intended-missing-production-failures
+PRIVILEGED_SECURITY_CONTRADICTION_FAILURES=0
+PRIVILEGED_SECURITY_SETUP_FAILURES=0
+PRIVILEGED_SECURITY_TEST_CONTRACT_FAILURES=0
+REGRESSION_QUALITY_EXIT=0
+REGRESSION_QUALITY_LINES=17
+REGRESSION_QUALITY_SHA256=597f53c2c61e49a8571b2e2f790e684b27c053892131babcdd0f064ad6181db4
+REGRESSION_QUALITY_FILES=2
+REGRESSION_QUALITY_ADVERSARIAL_SIGNALS=2
+REGRESSION_QUALITY_VIOLATIONS=0
+REGRESSION_QUALITY_WARNINGS=0
+PARENT_PROCESS_RESIDUE_COUNT=0
+PARENT_REPO_RESIDUE_COUNT=0
+PARENT_CORRECTION_RESIDUE_FAILURES=0
+PARENT_RESIDUE_EXIT=0
+PARENT_RESIDUE_SHA256=not-emitted-in-dispatch
+PARENT_CORRECTION_RECEIPTS_END
+```
+
+The targeted transition receipt fails only the ordinary Check 16 production
+entry and four active stale-label lines. Its archive discrimination control
+passes. All three malformed-marker controls also fail closed.
+
+The stock-Bash receipt separates setup from production RED. The privileged
+child setup passes. Its inner suite reports nine intended missing-production
+failures, zero contradiction failures, and no setup or test-contract failure.
+
+#### Current-Invocation Static Recheck
+
+**Phase:** test
+**Command:** bounded macOS Bash 3.2 syntax, modern Bash syntax, warning-level
+ShellCheck, and `git diff --check` over the three authorized paths.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 correction static recheck
+exit: 0
+lines: 12
+sha256: 6293f5f3e20ead6cee6a0633858b69e7c9fe8e39465aac72ec550815541bc6c4
+TEST_CONTRACT_STATIC_BEGIN
+STATIC_FILE=bubbles/scripts/python-env-selftest.sh
+BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+STATIC_FILE=bubbles/scripts/state-transition-guard-selftest.sh
+BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_PATH=/opt/homebrew/bin/shellcheck
+SHELLCHECK_WARNING_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+TEST_CONTRACT_STATIC_FAILURES=0
+TEST_CONTRACT_STATIC_END
+```
+
+#### Current-Invocation Residue Recheck
+
+**Phase:** test
+**Command:** bounded active-process and repository FIFO, bytecode, and cache
+scan for the isolated BUG-039 checkout.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 correction residue recheck
+exit: 0
+lines: 7
+sha256: b47eb47b8a3f09756ab9bfa9ddd21a7702fcf701afb9e64b0505175b3807074e
+CORRECTION_RESIDUE_BEGIN
+REPO_RESIDUE_SCAN_BEGIN
+REPO_RESIDUE_SCAN_END
+PROCESS_RESIDUE_COUNT=0
+REPO_RESIDUE_COUNT=0
+CORRECTION_RESIDUE_FAILURES=0
+CORRECTION_RESIDUE_END
+```
+
+#### Production Status After The Test Correction
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** Passing setup and test-contract controls prove that the RED
+failures now identify absent production invariants. They do not prove those
+invariants exist.
+
+`SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3` remain RED for production.
+No implementation-green result is claimed. `TP-S2-01` remains unchecked, and
+the production findings remain owned by `bubbles.implement`.

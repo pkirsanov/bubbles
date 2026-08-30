@@ -66,8 +66,25 @@ bug039_active_contract_stream() {
   local surface_kind="$2"
   if [[ "$surface_kind" == report ]]; then
     /usr/bin/awk '
-      /<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->/ { active=1; next }
-      active { print }
+      $0 == "<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->" {
+        if (active || archived) exit 2
+        active=1
+        next
+      }
+      $0 == "<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->" {
+        if (!active || archived) exit 2
+        archived=1
+        next
+      }
+      $0 == "<!-- BUG-039-REPORT-ARCHIVE-END -->" {
+        if (!active || !archived) exit 2
+        archived=0
+        next
+      }
+      active && !archived { print }
+      END {
+        if (!active || archived) exit 2
+      }
     ' "$file"
   else
     /usr/bin/awk '
@@ -81,10 +98,19 @@ bug039_active_contract_stream() {
 bug039_active_stale_hits() {
   local file="$1"
   local surface_kind="$2"
+  local active_text=""
+  local grep_status=0
   local stale_pattern=""
   stale_pattern='SEC-'"B039-"'[0-9]|SEC-'"OBS-002"'|managed-'"venv-only-v1"'|BP'"Y1"
-  bug039_active_contract_stream "$file" "$surface_kind" |
-    /usr/bin/grep -nE "$stale_pattern" || true
+  if ! active_text="$(bug039_active_contract_stream "$file" "$surface_kind")"; then
+    return 2
+  fi
+  if printf '%s\n' "$active_text" | /usr/bin/grep -nE "$stale_pattern"; then
+    return 0
+  else
+    grep_status=$?
+  fi
+  [[ "$grep_status" -eq 1 ]]
 }
 
 run_bug039_scope2_red_contract() {
@@ -97,9 +123,14 @@ run_bug039_scope2_red_contract() {
   local required_missing=0
   local fixture="$tmp_root/bug039-har-r3-active-window.txt"
   local mutant="$tmp_root/bug039-har-r3-active-window-mutant.txt"
+  local nested="$tmp_root/bug039-har-r3-active-window-nested.txt"
+  local unclosed="$tmp_root/bug039-har-r3-active-window-unclosed.txt"
+  local unmatched="$tmp_root/bug039-har-r3-active-window-unmatched.txt"
   local fixture_hits=""
   local mutant_hits=""
   local expected_mutant=""
+  local active_text=""
+  local malformed_failures=0
   local file=""
   local kind=""
   local file_hits=""
@@ -124,11 +155,15 @@ run_bug039_scope2_red_contract() {
       fail "TP-S2-01 HAR-R3 SETUP: required active surface missing: $file"
       continue
     }
-    file_hits="$(bug039_active_stale_hits "$file" "$kind")"
+    if ! active_text="$(bug039_active_contract_stream "$file" "$kind")"; then
+      fail "TP-S2-01 HAR-R3 SETUP: malformed archive contract in active surface: $file"
+      continue
+    fi
+    file_hits="$(printf '%s\n' "$active_text" | /usr/bin/grep -nE 'SEC-'"B039-"'[0-9]|SEC-'"OBS-002"'|managed-'"venv-only-v1"'|BP'"Y1" || true)"
     if [[ -n "$file_hits" ]]; then
       active_hits="${active_hits}${active_hits:+$'\n'}${file#$repo_root/}:$file_hits"
     fi
-    current_contract_text="${current_contract_text}${current_contract_text:+$'\n'}$(bug039_active_contract_stream "$file" "$kind")"
+    current_contract_text="${current_contract_text}${current_contract_text:+$'\n'}${active_text}"
   done <<EOF
 source|$repo_root/bubbles/scripts/python-env.sh
 source|$repo_root/bubbles/scripts/implementation-reality-scan.sh
@@ -157,25 +192,50 @@ EOF
   fi
 
   {
-    printf '%s\n' '# BUG-039-HISTORICAL-BEGIN'
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
     printf '%s%s\n' 'SEC-' 'B039-001'
     printf '%s%s\n' 'SEC-' 'OBS-002'
     printf '%s%s\n' 'managed-' 'venv-only-v1'
     printf '%s%s\n' 'BP' 'Y1'
-    printf '%s\n' '# BUG-039-HISTORICAL-END'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
     printf '%s\n' 'SEC-R1 SEC-R2 HAR-R1 HAR-R2 HAR-R3'
     printf '%s\n' 'privileged-native-supervision-v2 root-protected-native-python-v1'
   } >"$fixture"
   /bin/cp -p "$fixture" "$mutant"
-  printf '%s%s\n' 'SEC-' 'B039-999' >>"$mutant"
-  fixture_hits="$(bug039_active_stale_hits "$fixture" source)"
-  mutant_hits="$(bug039_active_stale_hits "$mutant" source)"
-  expected_mutant="$(printf '%s%s' 'SEC-' 'B039-999')"
+  printf '%s%s\n' 'BP' 'Y1' >>"$mutant"
+  fixture_hits="$(bug039_active_stale_hits "$fixture" report)"
+  mutant_hits="$(bug039_active_stale_hits "$mutant" report)"
+  expected_mutant="$(printf '%s%s' 'BP' 'Y1')"
   if [[ -z "$fixture_hits" ]] &&
     printf '%s\n' "$mutant_hits" | /usr/bin/grep -Fq "$expected_mutant"; then
-    pass "TP-S2-01 HAR-R3 negative control: archived labels are allowed and one active stale-label mutation is rejected"
+    pass "TP-S2-01 HAR-R3 negative control: archived report labels are allowed and the same active stale label is rejected"
   else
-    fail "TP-S2-01 HAR-R3 SETUP: archive-aware stale-label negative control did not discriminate"
+    fail "TP-S2-01 HAR-R3 SETUP: report archive negative control did not discriminate"
+  fi
+
+  {
+    /bin/cat "$fixture"
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
+  } >"$nested"
+  {
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s%s\n' 'BP' 'Y1'
+  } >"$unclosed"
+  {
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
+  } >"$unmatched"
+  bug039_active_contract_stream "$nested" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  bug039_active_contract_stream "$unclosed" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  bug039_active_contract_stream "$unmatched" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  if [[ "$malformed_failures" -eq 3 ]]; then
+    pass "TP-S2-01 HAR-R3 negative control: nested, unclosed, and unmatched report archive markers fail closed"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: malformed report archive markers were not all rejected"
   fi
 
   printf '%s\n' 'TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2'
