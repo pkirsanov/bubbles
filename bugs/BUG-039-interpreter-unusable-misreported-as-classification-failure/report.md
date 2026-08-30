@@ -1725,3 +1725,191 @@ defect and proves the copied bypass can compromise classification without either
 ambient fixture-path variable. It does not certify the four implementation-owned
 production edits or close the production findings. Production disposition stays
 with `bubbles.implement`.
+
+## T24-R1 authenticated child real-interpreter handoff
+
+### Immutable red receipt
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** This preserves the operator-supplied prior-session result
+as diagnostic RED context only. It is not current execution evidence.
+
+The operator supplied the prior failed cascade as diagnostic input. This
+invocation did not relabel it as current execution evidence. It exited 1 after
+2,785 lines with SHA-256
+`783c457cee054ac485a3255a045672f6a106a761eb20125bc5d66589aea239b0`.
+Its summary was `93 passed, 5 failed, 1 skipped`. The five authenticated-child
+failures remain the RED side of T24-R1.
+
+### Test-only correction and security boundary
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The authenticated `env -i` child now receives the same
+independently resolved producer interpreter as the deterministic unavailable
+lane. The poisoned caller runtime remains present and is asserted inert.
+
+The one-line handoff is exactly
+`BUBBLES_SELFTEST_REAL_PYTHON="$SELFTEST_REAL_PYTHON"`. The authenticated lane
+still passes the poisoned `BUBBLES_PYTHON` and `BUBBLES_PYTHON_HOME` values. It
+passes no other ambient variable. New assertions require the poison marker to
+remain absent and require authenticated `BSEC1` and `BPS1` path signals.
+
+Security authority remains fixed and root-protected. It does not derive from
+`BUBBLES_SELFTEST_REAL_PYTHON`. That variable supports only the child selftest's
+real producer and classifier tests after the privileged boundary authenticates
+the actual runtime.
+
+### General resolver and handoff proof
+
+**Phase:** test
+**Command:** value-safe production resolver and exact-handoff probe recorded by
+`bubbles/scripts/tool-log.sh` with tag `T24-R1,general-resolver,handoff-proof,corrected`
+**Exit Code:** 0
+**Claim Source:** executed
+
+An initial richer probe exited 1 only because it incorrectly required a
+nonempty diagnostic reason on resolver success. The corrected probe recognizes
+that the production API leaves its reason empty on success. It did not rerun
+the cascade.
+
+```text
+T24_R1_RESOLVER_HANDOFF_BEGIN
+PRODUCTION_RESOLVER_MODULES_PRESENT=1
+GENERAL_RESOLVER_API_PRESENT=1
+GENERAL_RUNNABLE_PROBE_API_PRESENT=1
+GENERAL_RESOLVER_EXIT=0
+RESOLVED_INTERPRETER_NONEMPTY=1
+RESOLVED_INTERPRETER_EXECUTABLE=1
+RESOLVED_INTERPRETER_RUNNABLE_EXIT=0
+GENERAL_RESOLVER_SUCCESS_REASON_EMPTY=1
+REAL_INTERPRETER_HANDOFF_OCCURRENCES=2
+AUTH_POISONED_BUBBLES_PYTHON_OCCURRENCES=1
+POISONED_BUBBLES_PYTHON_HOME_OCCURRENCES=2
+T24_R1_RESOLVER_HANDOFF_FAILURES=0
+T24_R1_RESOLVER_HANDOFF_END
+```
+
+### Static validation
+
+**Phase:** test
+**Command:** stock and modern Bash syntax checks, warning-level ShellCheck,
+diff check, and bugfix regression-quality guard over the permitted test path
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 T24-R1 authenticated handoff static validation
+exit: 0
+lines: 24
+sha256: 2c4a751936e2a3df413d4b12aaa167a799ea56cb9e0fc3140a9c5f634f843a0e
+T24_R1_STATIC_BEGIN
+STOCK_BASH_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+DIFF_CHECK_EXIT=0
+============================================================
+  BUBBLES REGRESSION QUALITY GUARD
+  Bugfix mode: true
+============================================================
+Scanning tests/regression/test_24_g028_sensitive_client_storage.sh
+Adversarial signal detected in tests/regression/test_24_g028_sensitive_client_storage.sh
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 1
+Files with adversarial signals: 1
+REGRESSION_QUALITY_EXIT=0
+d3302f8a46e719b8bb93ab5a42bb56b6f64c5ee6e329989a9493dd1372e7dc6e  tests/regression/test_24_g028_sensitive_client_storage.sh
+T24_R1_STATIC_FAILURES=0
+T24_R1_STATIC_END
+```
+
+### Single post-edit stock-Bash cascade
+
+**Phase:** test
+**Command:** process-group-bounded `tool-log.sh` and `evidence-capture.sh`
+execution of `/bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh`
+under the explicitly sanitized current-session environment
+**Exit Code:** 0
+**Claim Source:** executed
+
+The full stock macOS Bash cascade ran exactly once after the test bytes changed.
+The compact capture covers all 4,531 lines.
+
+```text
+# BUG-039 T24-R1 authenticated child real-interpreter handoff stock Bash cascade
+exit: 0
+lines: 4531
+sha256: f30058b7e940f1827c10777fabe134cfe48b72ba53e29587e567f2cb6e8cbf49
+=== TEST-B039-001 inherited selector dispatch control ===
+TEST24_ZERO_ARGUMENT_ENTRY=FULL_SUITE
+PASS: TEST-B039-001 legacy TEST24_CHILD_MODE cannot select sentinel accounting
+ENTRY   BSEC1   privileged-bash-entry-v1        compat-reexec
+implementation-reality-scan selftest summary: failures=0 skips=0
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+implementation-reality-scan selftest passed.
+PASS: authenticated root-protected runtime runs the managed selftest under system-only PATH
+PASS: authenticated runtime removes classifier-unavailable degradation
+PASS: authenticated runtime leaves no skipped scenario group
+PASS: authenticated root-protected runtime leaves the poisoned Python marker absent
+PASS: authenticated runtime executes the privileged BSEC1 path
+PASS: authenticated runtime executes the native BPS1 supervisor path
+PASS: authenticated runtime runs the exact-approval semantic assertion
+PASS: authenticated runtime runs the unknown-provider semantic assertion
+PASS: authenticated runtime runs the config-integrity assertion
+PASS: authenticated runtime preserves the authorized classifier mutation control
+test_24_g028_sensitive_client_storage: 101 passed, 0 failed, 1 skipped
+BUG039_DETERMINISTIC_CASCADE_VERIFIED=1
+BUG039_UNAVAILABLE_PATH_VERIFIED=1
+TEST24_FULL_SUITE_COMPLETED=1
+BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
+```
+
+The single skip is the required deterministic unavailable-prerequisite lane.
+The authenticated lane emitted no skip and exercised both current security
+protocols.
+
+### Residue and production-byte proof
+
+**Phase:** test
+**Claim Source:** executed
+
+The first residue scan exited 1 with SHA-256
+`ee13d8b9a684b1a1ab30d6b76f86e2b57d9052b94afcf3d92bf4a3e39c1c28ec`.
+It found two current-user private roots with retained launch-window FIFOs.
+Both roots were mode 0700, and `lsof +D` returned 1 for each. Exact guarded
+cleanup removed only those two inactive roots. The cascade was not rerun.
+
+**Command:** bounded final process, private-root, FIFO, bytecode, mutation,
+untracked-path, and protected production-hash scan
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 T24-R1 clean residue and production integrity
+exit: 0
+lines: 12
+sha256: cfafd61eb267e6848892d83cf3d230c2518219dab1ee68b8850e8c12d6e27e13
+T24_R1_CLEAN_INTEGRITY_BEGIN
+PROCESS_RESIDUE_COUNT=0
+PRIVATE_ROOT_FIFO_MUTATION_RESIDUE_COUNT=0
+REPOSITORY_FIFO_COUNT=0
+REPOSITORY_PYTHON_CACHE_COUNT=0
+UNTRACKED_PATH_COUNT=0
+PRODUCTION_HASH_UNCHANGED=00ec96982dbfc19d5e0616496c094cd642b9d7eae7353c45cc9b618c57df30e4 bubbles/scripts/cli.sh
+PRODUCTION_HASH_UNCHANGED=4eb25cbb959c37caaf4f835742128d837e08935b59cba793359ca2fd78a5e9fb bubbles/scripts/implementation-reality-scan.sh
+PRODUCTION_HASH_UNCHANGED=64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a bubbles/scripts/python-env.sh
+PRODUCTION_HASH_UNCHANGED=cabce8c9d223dc4a3637dab649fe293867466b7c95fd28192e37820ddf83d07e bubbles/scripts/state-transition-guard.sh
+T24_R1_CLEAN_INTEGRITY_FAILURES=0
+T24_R1_CLEAN_INTEGRITY_END
+```
+
+### T24-R1 disposition
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The current cascade and static evidence close T24-R1's
+test-harness handoff defect without changing production bytes. The production
+implementation and broader Scope 2 verification remain open under
+`bubbles.implement` ownership.

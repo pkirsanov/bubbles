@@ -1054,6 +1054,7 @@ AUTHENTICATED_OUTPUT_FILE="$WORKSPACE/selftest-authenticated-output.txt"
 if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
   BUBBLES_PYTHON="$FORCED_UNAVAILABLE_HOME/bin/python3" \
   BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  BUBBLES_SELFTEST_REAL_PYTHON="$SELFTEST_REAL_PYTHON" \
   DEVELOPER_DIR=/Library/Developer/CommandLineTools \
   /bin/bash "$SELFTEST" >"$AUTHENTICATED_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
@@ -1065,6 +1066,13 @@ printf '%s\n' "$RUN_OUTPUT"
 assert_status 0 "authenticated root-protected runtime runs the managed selftest under system-only PATH"
 assert_not_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "authenticated runtime removes classifier-unavailable degradation"
 assert_not_contains "SKIP:" "authenticated runtime leaves no skipped scenario group"
+if [[ ! -e "$FORCED_UNAVAILABLE_MARKER" ]]; then
+  pass "authenticated root-protected runtime leaves the poisoned Python marker absent"
+else
+  fail "authenticated root-protected runtime executed the poisoned Python marker"
+fi
+assert_contains "entry=BSEC1" "authenticated runtime executes the privileged BSEC1 path"
+assert_contains "supervisorProtocol=BPS1" "authenticated runtime executes the native BPS1 supervisor path"
 assert_contains "PASS: Exact configured session credential is allowed" "authenticated runtime runs the exact-approval semantic assertion"
 assert_contains "PASS: Unknown session provider is blocked distinctly" "authenticated runtime runs the unknown-provider semantic assertion"
 assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "authenticated runtime runs the config-integrity assertion"
