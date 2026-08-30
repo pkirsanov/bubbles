@@ -1476,3 +1476,62 @@ invariants exist.
 `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3` remain RED for production.
 No implementation-green result is claimed. `TP-S2-01` remains unchecked, and
 the production findings remain owned by `bubbles.implement`.
+
+## TP-S2-01 BSD awk oracle correction
+
+### Immutable failed receipt
+
+**Phase:** test
+**Claim Source:** not-run
+
+The prior stock-Bash run remains immutable diagnostic input. It exited 1 after
+119 lines with output SHA-256
+`6b367b1454ac132ae7bbbc38b5eb0131e668f42efb85dd63ba4cdea9765713d0`.
+Its BSD `/usr/bin/awk: newline in regular expression` diagnostic caused the
+consequent `TEST-CONTRACT` failure. This invocation did not relabel that run.
+
+### Corrected oracle and current execution
+
+**Phase:** test
+**Claim Source:** executed
+
+The corrected `bubbles/scripts/python-env-selftest.sh` SHA-256 is
+`76aaf240552b2f9b38b9b2c241a9cb8782cc78ae7f5063fc18c83556c1a4c35f`.
+The oracle constructs the literal single-quote pair and matches it with
+`index()`. Its strengthened ordering checks cover supervisor launch, reap,
+wait-handle clear, cleanup, late owner clear, post-reap signal, worker-authored
+completion, and caller authority.
+
+```text
+# BUG-039 TP-S2-01 BSD awk oracle static validation
+exit: 0
+lines: 7
+sha256: 60daeeda90f8ac971b93a66e0b738cbcf8bfe453a98b49f29a61f8148cfc644f
+BSD_AWK_ORACLE_EXIT=0
+STOCK_BASH_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0 BIN=/opt/homebrew/bin/shellcheck
+TEST_DIFF_CHECK_EXIT=0
+TEST_CORRECTION_SHA256=76aaf240552b2f9b38b9b2c241a9cb8782cc78ae7f5063fc18c83556c1a4c35f
+STATIC_VALIDATION_EXIT=0
+```
+
+The full stock macOS `/bin/bash` contract ran exactly once after those test
+bytes changed. It exited 0 after 149 lines with output SHA-256
+`439793581cb9465b84778142ef0cd2e45341fbdb6e1753f331d9d6773da1c61e`.
+The captured output contains no failure-shaped section or BSD awk syntax
+diagnostic. It ends with `66 passed, 0 failed` for the general suite and
+`58 passed, 0 failed` for the privileged security suite. The setup signal is a
+`PASS`; no `SETUP` failure or `TEST-CONTRACT` failure was observed.
+
+### Disposition
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The corrected stock-Bash test contract is green on the
+current production bytes. This proves `TST-R4` is addressed. It does not certify
+the production implementation or close its owner-controlled change set.
+
+The remaining production-owned findings are exactly `SEC-R1`, `SEC-R2`,
+`HAR-R1`, `HAR-R2`, and `HAR-R3`. Their disposition remains with
+`bubbles.implement`.

@@ -78,6 +78,7 @@ pass=0
 fail=0
 TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
 SELFTEST_COMPLETED=0
+SELFTEST_ROOT_SUBSHELL=$BASH_SUBSHELL
 SELFTEST_LIFECYCLE_PID=''
 SECURITY_BOUNDARY_READY=0
 SECURITY_BOUNDARY_RECORD=''
@@ -93,6 +94,9 @@ selftest_stop_exact_child() {
 
 selftest_cleanup() {
   local exit_status=$?
+  if [[ "$BASH_SUBSHELL" -ne "$SELFTEST_ROOT_SUBSHELL" ]]; then
+    return "$exit_status"
+  fi
   builtin trap - EXIT HUP INT TERM
   if [[ "$RUN_SECURITY" -eq 1 && "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
     bubbles_python_security_cleanup || true
@@ -150,21 +154,23 @@ make_native_supervisor_mutation() {
   local source_mode=""
 
   /usr/bin/awk -v mode="$mode" '
+    BEGIN { supervisor_wait_clear="BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=" sprintf("%c%c", 39, 39) }
     {
       lines[NR]=$0
-      if ($0 ~ /^_bubbles_python_run_closed_operation\(\) \{/) in_run=1
-      if (in_run && waitpid_line == 0 && $0 ~ /waitpid[[:space:]]*\(/) waitpid_line=NR
-      if (in_run && complete_line == 0 && $0 ~ /COMPLETE\\tBPS1/) complete_line=NR
-      if (in_run && owner_clear_line == 0 &&
+      if ($0 ~ /^_bubbles_python_security_supervisor_program\(\) \{/) in_supervisor=1
+      if (in_supervisor && waitpid_line == 0 && $0 ~ /waitpid[[:space:]]*\(/) waitpid_line=NR
+      if (in_supervisor && complete_line == 0 && $0 ~ /COMPLETE\\tBPS1/) complete_line=NR
+      if (in_supervisor && owner_clear_line == 0 &&
         $0 ~ /worker(_is)?_owned.*=[[:space:]]*0|owned_worker.*=[[:space:]]*0/) owner_clear_line=NR
-      if (in_run && worker_kill_line == 0 && $0 ~ /kill.*worker|kill.*worker_pid/) worker_kill_line=NR
-      if (in_run && control_close_line == 0 && tolower($0) ~ /close.*(control|bps)/) control_close_line=NR
-      if (in_run && eof_line == 0 && $0 ~ /EOF|eof|read.*==[[:space:]]*0/) eof_line=NR
+      if (in_supervisor && worker_kill_line == 0 && $0 ~ /kill.*worker|kill.*worker_pid/) worker_kill_line=NR
+      if (in_supervisor && control_close_line == 0 && $0 ~ /^[[:space:]]*close[[:space:]]*\(CONTROL\)/ && tolower($0) ~ /worker.*(control|bps).*descriptor/) control_close_line=NR
+      if (in_supervisor && eof_line == 0 && $0 ~ /EOF|eof|read.*==[[:space:]]*0/) eof_line=NR
+      if (in_supervisor && $0 ~ /^PERL$/) in_supervisor=0
+      if ($0 ~ /^_bubbles_python_run_closed_operation\(\) \{/) in_run=1
       if (in_run && runtime_line == 0 && $0 ~ /print\("RUNTIME\\tPYSEC1/) runtime_line=NR
       if (in_run && supervisor_wait_line == 0 &&
         $0 ~ /builtin wait .*BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID/) supervisor_wait_line=NR
-      if (in_run && supervisor_wait_line > 0 && supervisor_clear_line == 0 &&
-        $0 ~ /BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID='\''\''/) supervisor_clear_line=NR
+      if (in_run && supervisor_wait_line > 0 && supervisor_clear_line == 0 && index($0, supervisor_wait_clear) > 0) supervisor_clear_line=NR
       if (in_run && supervisor_clear_line > 0 && cleanup_line == 0 &&
         $0 ~ /bubbles_python_security_cleanup/) cleanup_line=NR
       if ($0 ~ /^bubbles_python_run_security_operation\(\) \{/) { in_run=0; in_api=1 }
@@ -285,28 +291,42 @@ scope2_native_contract_ready() {
 scope2_native_contract_structurally_valid() {
   local source_file="$1"
   /usr/bin/awk '
-    /^_bubbles_python_run_closed_operation\(\) \{/ { in_run=1 }
-    in_run && waitpid_line == 0 && /waitpid[[:space:]]*\(/ { waitpid_line=NR }
-    in_run && complete_line == 0 && /COMPLETE\\tBPS1/ { complete_line=NR }
-    in_run && owner_clear_line == 0 && /worker(_is)?_owned.*=[[:space:]]*0|owned_worker.*=[[:space:]]*0/ { owner_clear_line=NR }
-    in_run && /kill.*worker|kill.*worker_pid/ {
+    BEGIN {
+      supervisor_wait_clear="BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=" sprintf("%c%c", 39, 39)
+      supervisor_wait_start="BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=$!"
+    }
+    /^_bubbles_python_security_supervisor_program\(\) \{/ { in_supervisor=1 }
+    in_supervisor && waitpid_line == 0 && /waitpid[[:space:]]*\(/ { waitpid_line=NR }
+    in_supervisor && complete_line == 0 && /COMPLETE\\tBPS1/ { complete_line=NR }
+    in_supervisor && /worker(_is)?_owned.*=[[:space:]]*0|owned_worker.*=[[:space:]]*0/ {
+      if (owner_clear_line == 0) owner_clear_line=NR
+      if (complete_line > 0 && NR > complete_line) owner_clear_after_complete=1
+    }
+    in_supervisor && /kill.*worker|kill.*worker_pid/ {
       if (worker_kill_line == 0) worker_kill_line=NR
       if (owner_clear_line > 0 && NR > owner_clear_line) signal_after_reap=1
     }
-    in_run && control_close_line == 0 && tolower($0) ~ /close.*(control|bps)/ { control_close_line=NR }
+    in_supervisor && control_close_line == 0 && /^[[:space:]]*close[[:space:]]*\(CONTROL\)/ && tolower($0) ~ /worker.*(control|bps).*descriptor/ { control_close_line=NR }
+    in_supervisor && /^PERL$/ { in_supervisor=0 }
+    /^_bubbles_python_run_closed_operation\(\) \{/ { in_run=1 }
+    in_run && /print\("COMPLETE\\tBPS1/ { worker_bps1=1 }
+    in_run && supervisor_launch_line == 0 && index($0, supervisor_wait_start) > 0 { supervisor_launch_line=NR }
     in_run && supervisor_wait_line == 0 && /builtin wait .*BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID/ { supervisor_wait_line=NR }
-    in_run && supervisor_wait_line > 0 && supervisor_clear_line == 0 &&
-      /BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID='\''\''/ { supervisor_clear_line=NR }
-    in_run && supervisor_clear_line > 0 && cleanup_line == 0 && /bubbles_python_security_cleanup/ { cleanup_line=NR }
+    in_run && supervisor_wait_line > 0 && supervisor_clear_line == 0 && index($0, supervisor_wait_clear) > 0 { supervisor_clear_line=NR }
+    in_run && /bubbles_python_security_cleanup/ {
+      if (supervisor_launch_line > 0 && supervisor_clear_line == 0) cleanup_before_reap=1
+      if (supervisor_clear_line > 0 && cleanup_line == 0) cleanup_line=NR
+    }
     /^bubbles_python_run_security_operation\(\) \{/ { in_run=0; in_api=1 }
     in_api && /caller-program/ { caller_vector=1 }
     END {
       valid=(waitpid_line > 0 && complete_line > waitpid_line &&
         owner_clear_line >= waitpid_line && owner_clear_line < complete_line &&
-        worker_kill_line > 0 && signal_after_reap == 0 &&
+        owner_clear_after_complete == 0 && worker_kill_line > 0 && signal_after_reap == 0 &&
         control_close_line > 0 && control_close_line < complete_line &&
-        supervisor_wait_line > 0 && supervisor_clear_line > supervisor_wait_line &&
-        cleanup_line > supervisor_clear_line && caller_vector == 0)
+        supervisor_launch_line > 0 && supervisor_wait_line > supervisor_launch_line &&
+        supervisor_clear_line > supervisor_wait_line && cleanup_before_reap == 0 &&
+        cleanup_line > supervisor_clear_line && worker_bps1 == 0 && caller_vector == 0)
       exit valid ? 0 : 1
     }
   ' "$source_file"
@@ -369,6 +389,7 @@ if [[ "$RUN_SECURITY" -eq 1 ]]; then
     "TP-S2-01 HAR-R2 EOF-as-completion"
   assert_native_supervisor_negative_control HAR-R1 cleanup-before-reap \
     "TP-S2-01 HAR-R1 cleanup-before-reap"
+  printf '%s\n' 'TP-S2-01_NATIVE_MUTATION_MATRIX_COMPLETED=1'
 fi
 
 assert_selftest_lifecycle_fails_closed() {
@@ -768,6 +789,7 @@ EOF
 chmod +x "$scope2_forged_python"
 
 scope2_resolution="$(
+  builtin trap - EXIT
     PATH="$(dirname "$scope2_forged_python"):/usr/bin:/bin:/usr/sbin:/sbin"
     BUBBLES_PYTHON="$scope2_forged_python"
     BUBBLES_PYTHON_HOME="$scope2_forged_root"
@@ -786,7 +808,7 @@ scope2_resolution="$(
         "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" \
         "$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT"
     fi
-  ) 2>/dev/null || true)"
+)" 2>/dev/null || true
 case "$scope2_resolution" in
   RESOLVED\|0\|OK\|root-protected-native-python-v1 | \
     DECLINED\|*\|*\|root-protected-native-python-v1)
@@ -978,6 +1000,7 @@ from pathlib import Path
 Path("$hostile_env_marker").write_text("executed", encoding="utf-8")
 EOF
 hostile_resolution="$(
+  builtin trap - EXIT
     PYTHONPATH="$hostile_env_root"
     PYTHONHOME="$hostile_env_root"
     PYTHONSTARTUP="$hostile_env_root/sitecustomize.py"
@@ -988,7 +1011,7 @@ hostile_resolution="$(
     printf "%s|%s|%s|%s|%s" "$result" "$BUBBLES_PYTHON_SECURITY_STATUS" \
       "$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC" "$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL" \
       "$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL"
-  ) 2>/dev/null || true)"
+)" 2>/dev/null || true
 if [[ "$hostile_resolution" == "RESOLVED|0|OK|PYSEC1|PYMOD1" && ! -e "$hostile_env_marker" ]]; then
   ok "SCN-B039-005: PYTHON and loader environment cannot enter the isolated runtime"
 else
@@ -1044,6 +1067,7 @@ synthetic_link_rejection() {
   local expected="$2"
   local observed=""
   observed="$(
+    builtin trap - EXIT
     original_definition="$(declare -f _bubbles_python_security_stat)"
     original_definition="${original_definition/_bubbles_python_security_stat/_bubbles_python_security_stat_real}"
     eval "$original_definition"
@@ -1059,7 +1083,7 @@ synthetic_link_rejection() {
     else
       printf "%s" "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
     fi
-  ) 2>/dev/null || true)"
+)" 2>/dev/null || true
   if [[ "$observed" == "$expected" ]]; then
     ok "SCN-B039-005: $expected is detected by the production link walker"
   else
@@ -1076,6 +1100,7 @@ synthetic_final_rejection() {
   local expected="$3"
   local observed=""
   observed="$(
+    builtin trap - EXIT
     expected_target="$requested"
     original_definition="$(declare -f _bubbles_python_security_stat)"
     original_definition="${original_definition/_bubbles_python_security_stat/_bubbles_python_security_stat_real}"
@@ -1084,21 +1109,20 @@ synthetic_final_rejection() {
     _bubbles_python_security_stat() {
       _bubbles_python_security_stat_real "$@" || return $?
       if [[ "$1" == "$expected_target" ]]; then
-        case "$mode" in
-          root-metadata-writable-mode)
-            # shellcheck disable=SC2034
-            BUBBLES_PYTHON_SECURITY_META_OWNER=0
-            BUBBLES_PYTHON_SECURITY_META_MODE=777
-            BUBBLES_PYTHON_SECURITY_META_TYPE='file'
-            ;;
-          root-metadata-caller-writable)
-            # shellcheck disable=SC2034
-            BUBBLES_PYTHON_SECURITY_META_OWNER=0
-            # shellcheck disable=SC2034
-            BUBBLES_PYTHON_SECURITY_META_MODE=755
-            BUBBLES_PYTHON_SECURITY_META_TYPE='file'
-            ;;
-        esac
+        # Stock Bash 3.2 misparses nested case patterns in command substitutions,
+        # so keep these equivalent predicates free of case syntax.
+        if [[ "$mode" == root-metadata-writable-mode ]]; then
+          # shellcheck disable=SC2034
+          BUBBLES_PYTHON_SECURITY_META_OWNER=0
+          BUBBLES_PYTHON_SECURITY_META_MODE=777
+          BUBBLES_PYTHON_SECURITY_META_TYPE='file'
+        elif [[ "$mode" == root-metadata-caller-writable ]]; then
+          # shellcheck disable=SC2034
+          BUBBLES_PYTHON_SECURITY_META_OWNER=0
+          # shellcheck disable=SC2034
+          BUBBLES_PYTHON_SECURITY_META_MODE=755
+          BUBBLES_PYTHON_SECURITY_META_TYPE='file'
+        fi
       fi
     }
     if _bubbles_python_security_authenticate_path "$requested" file 0; then
@@ -1106,7 +1130,7 @@ synthetic_final_rejection() {
     else
       printf "%s" "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
     fi
-  ) 2>/dev/null || true)"
+)" 2>/dev/null || true
   if [[ "$observed" == "$expected" ]]; then
     ok "SCN-B039-005: $expected rejects $mode through the production path walker"
   else
@@ -1214,6 +1238,7 @@ BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
 # ── SCN-B039-007/008 native-supervisor status and cleanup assertions ───────
 
 success_shadow_result="$(
+  builtin trap - EXIT
   BUBBLES_PYTHON_SECURITY_RUNTIME="$SECURITY_RUNTIME"
   BUBBLES_PYTHON_SECURITY_STATUS=0
   BUBBLES_PYTHON_SECURITY_DIAGNOSTIC=OK
@@ -1237,7 +1262,7 @@ success_shadow_result="$(
   if [[ "$before_hup" == "$after_hup" && "$before_int" == "$after_int" && "$before_term" == "$after_term" ]]; then traps=restored; else traps=changed; fi
   if [[ "$cleanup_status" -eq 0 && -n "$root" && ! -e "$root" ]]; then removed=yes; else removed=no; fi
   printf "%s|%s|%s|%s|%s|%s" "$operation_status" "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" "$shadow_kill" "$shadow_wait" "$traps" "$removed"
-) 2>/dev/null || true)"
+)" 2>/dev/null || true
 if [[ "$success_shadow_result" == "0|OK|0|0|restored|yes" ]]; then
   ok "SCN-B039-007/008: success uses builtin kill/wait, restores traps, and removes captures"
 else
