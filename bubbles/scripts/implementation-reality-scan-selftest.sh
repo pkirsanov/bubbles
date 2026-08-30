@@ -36,6 +36,13 @@ case "${1:-}" in
     fi
     SELFTEST_ENTRYPOINT=mutation-runner
     ;;
+  --internal-mutation-runner-focused-control)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-mutation-runner-focused-v1 ]]; then
+      printf '%s\n' 'implementation-reality-scan focused mutation runner control requires its explicit internal token' >&2
+      exit 2
+    fi
+    SELFTEST_ENTRYPOINT=mutation-runner-focused
+    ;;
   *)
     printf 'implementation-reality-scan selftest argument is invalid: %s\n' "$1" >&2
     exit 2
@@ -47,11 +54,16 @@ FIXTURE_ROOT="$TMPDIR/fixtures"
 CLASSIFIER_HELPER_CACHE_DIR="$SCRIPT_DIR/guards/__pycache__"
 SELFTEST_COMPLETED=0
 SELFTEST_LIFECYCLE_PID=''
-SELFTEST_ACTIVE_CHILD=''
-SELFTEST_WATCHDOG_PID=''
-SELFTEST_MUTATION_SEQUENCE=0
 SELFTEST_MUTATION_TIMED_OUT=0
 SELFTEST_MUTATION_RUN_DIAGNOSTIC=NOT_RUN
+SELFTEST_MUTATION_SUPERVISOR_PROTOCOL=none
+SELFTEST_MUTATION_SUPERVISOR_COMPLETED=0
+SELFTEST_MUTATION_SUPERVISOR_OWNER=none
+SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND=none
+SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED=0
+SELFTEST_MUTATION_SUPERVISOR_EVENTS=none
+SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION=none
+SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
 
 selftest_stop_exact_child() {
   if [[ "$SELFTEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
@@ -62,118 +74,556 @@ selftest_stop_exact_child() {
   SELFTEST_LIFECYCLE_PID=''
 }
 
-selftest_stop_watchdog() {
-  if [[ "$SELFTEST_WATCHDOG_PID" =~ ^[1-9][0-9]*$ ]]; then
-    builtin kill -TERM "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
-    builtin wait "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
-  fi
-  SELFTEST_WATCHDOG_PID=''
+selftest_mutation_supervisor_program() {
+  /bin/cat <<'PERL'
+sub untaint_blob {
+  my ($raw, $maximum) = @_;
+  return undef if !defined($raw) || length($raw) > $maximum;
+  return $1 if $raw =~ /\A([^\0]*)\z/s;
+  return undef;
 }
 
-selftest_stop_active_child() {
-  if [[ "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
-    builtin kill -TERM "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
-    builtin kill -KILL "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
-    builtin wait "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
-  fi
-  SELFTEST_ACTIVE_CHILD=''
+sub untaint_absolute_path {
+  my ($raw) = @_;
+  return undef if !defined($raw);
+  return $1 if $raw =~ m{\A(/[^\0\r\n\t]{0,4095})\z};
+  return undef;
+}
+
+sub emit_control {
+  my ($control, $status, $owner, $timed_out, $worker_kind, $ownership_registered, $events) = @_;
+  my $record = join("\t", "COMPLETE", "BMR1", $status, $owner, $timed_out,
+    $worker_kind, $ownership_registered, $events) . "\n";
+  my $offset = 0;
+  while ($offset < length($record)) {
+    my $written = syswrite($control, $record, length($record) - $offset, $offset);
+    return 0 if !defined($written) || $written <= 0;
+    $offset += $written;
+  }
+  return 1;
+}
+
+my $output_path = untaint_absolute_path(shift @ARGV);
+my $raw_wall_seconds = shift @ARGV;
+my $raw_test_mode = shift @ARGV;
+exit 2 if !defined($output_path) || !defined($raw_wall_seconds) ||
+  $raw_wall_seconds !~ /\A([1-9][0-9]{0,2})\z/;
+my $wall_seconds = 0 + $1;
+exit 2 if !defined($raw_test_mode) || $raw_test_mode !~ /\A(normal|deadline-edge)\z/;
+my $test_mode = $1;
+my @command = ();
+my $aggregate_bytes = 0;
+for my $raw (@ARGV) {
+  my $value = untaint_blob($raw, 262144);
+  exit 2 if !defined($value);
+  $aggregate_bytes += length($value);
+  exit 2 if $aggregate_bytes > 1048576;
+  push @command, $value;
+}
+exit 2 if !@command || !defined(untaint_absolute_path($command[0]));
+
+open(my $control_writer, ">&", \*STDOUT) or exit 125;
+open(my $worker_output, ">", $output_path) or exit 125;
+my $worker_pid = fork();
+if (!defined($worker_pid)) {
+  emit_control($control_writer, 125, "supervisor", 0, "not-started", 0, "SETUP_FAILED");
+  close($control_writer);
+  close($worker_output);
+  exit 125;
+}
+if ($worker_pid == 0) {
+  close($control_writer);
+  open(STDIN, "<", "/dev/null") or exit 126;
+  open(STDOUT, ">&", $worker_output) or exit 126;
+  open(STDERR, ">&", $worker_output) or exit 126;
+  close($worker_output);
+  $SIG{"HUP"} = "DEFAULT";
+  $SIG{"INT"} = "DEFAULT";
+  $SIG{"TERM"} = "DEFAULT";
+  $SIG{"PIPE"} = "DEFAULT";
+  %ENV = ("LC_ALL" => "C", "PATH" => "/usr/bin:/bin");
+  exec { $command[0] } @command or do {
+    print STDERR "MUTATION_WORKER_EXEC_FAILED\n";
+    exit 126;
+  };
+}
+close($worker_output);
+
+my @events = ("FORK");
+my $worker_is_owned = 1;
+my $ownership_registered = 1; # B039-MUTATION-OWNERSHIP-REGISTRATION
+push @events, $ownership_registered ? "OWNERSHIP_REGISTER" : "OWNERSHIP_MISSING";
+my $raw_wait_status = 0;
+my $wait_failed = 0;
+my $wall_expired = 0;
+my $grace_expired = 0;
+my $alarm_phase = "wall";
+my $termination_reason = "";
+my $term_sent = 0;
+my $kill_sent = 0;
+my $pending_signal = "";
+my $pending_signal_status = 0;
+my $grace_seconds = 2;
+
+$SIG{"HUP"} = sub { if ($pending_signal eq "") { $pending_signal = "HUP"; $pending_signal_status = 129; } };
+$SIG{"INT"} = sub { if ($pending_signal eq "") { $pending_signal = "INT"; $pending_signal_status = 130; } };
+$SIG{"TERM"} = sub { if ($pending_signal eq "") { $pending_signal = "TERM"; $pending_signal_status = 143; } };
+$SIG{"ALRM"} = sub {
+  if ($alarm_phase eq "wall") { $wall_expired = 1; }
+  else { $grace_expired = 1; }
+};
+
+my $signal_owned_worker = sub {
+  my ($signal_number) = @_;
+  if (!$worker_is_owned) { # B039-MUTATION-POST-REAP-GUARD
+    push @events, "SIGNAL_SKIPPED_UNOWNED";
+    return 0;
+  }
+  if ($test_mode eq "deadline-edge") {
+    push @events, $worker_is_owned ? "SIGNAL_WOULD_SEND_OWNED" : "SIGNAL_WOULD_SEND_UNOWNED";
+    return 1;
+  }
+  my $sent = kill($signal_number, $worker_pid);
+  push @events, $signal_number == 15 ? "TERM_SIGNAL_OWNED" : "KILL_SIGNAL_OWNED";
+  return $sent;
+};
+
+alarm($wall_seconds); # B039-MUTATION-WALL-BOUND
+while ($worker_is_owned) {
+  my $waited_pid = waitpid($worker_pid, 1);
+  if ($waited_pid == $worker_pid) {
+    $raw_wait_status = $?;
+    push @events, "WAITPID";
+    $worker_is_owned = 0;
+    push @events, "OWNERSHIP_CLEAR";
+    last;
+  }
+  if ($waited_pid == -1) {
+    $wait_failed = 1;
+    push @events, "WAITPID_ERROR";
+    $worker_is_owned = 0;
+    push @events, "OWNERSHIP_CLEAR";
+    last;
+  }
+
+  if ($termination_reason eq "") {
+    if ($pending_signal ne "") {
+      $termination_reason = "caller-signal";
+    } elsif ($wall_expired) {
+      $termination_reason = "timeout";
+    }
+  }
+  if ($termination_reason ne "" && !$term_sent) {
+    $signal_owned_worker->(15);
+    $term_sent = 1;
+    $alarm_phase = "grace";
+    $grace_expired = 0;
+    alarm($grace_seconds);
+  } elsif ($term_sent && $grace_expired && !$kill_sent) {
+    $signal_owned_worker->(9);
+    $kill_sent = 1;
+  }
+  select(undef, undef, undef, 0.01);
+}
+alarm(0);
+
+if ($test_mode eq "deadline-edge" && !$wait_failed) {
+  $wall_expired = 1;
+  push @events, "DEADLINE_EDGE";
+  $signal_owned_worker->(15);
+}
+
+my $final_status = 0;
+my $final_owner = "worker";
+my $timed_out = 0;
+my $worker_kind = "exit";
+if ($wait_failed) {
+  $final_status = 125;
+  $final_owner = "supervisor";
+  $worker_kind = "not-started";
+} elsif ($termination_reason eq "caller-signal") {
+  $final_status = $pending_signal_status;
+  $final_owner = "caller-signal";
+  $worker_kind = ($raw_wait_status & 127) ? "signal" : "exit";
+} elsif ($termination_reason eq "timeout") {
+  $final_status = 124;
+  $final_owner = "supervisor";
+  $timed_out = 1;
+  $worker_kind = ($raw_wait_status & 127) ? "signal" : "exit";
+} elsif ($raw_wait_status & 127) {
+  $final_status = 128 + ($raw_wait_status & 127);
+  $worker_kind = "signal";
+} else {
+  $final_status = ($raw_wait_status >> 8) & 255;
+}
+push @events, "COMPLETE";
+my $event_record = join(",", @events);
+emit_control($control_writer, $final_status, $final_owner, $timed_out, $worker_kind,
+  $ownership_registered, $event_record) or exit 125;
+close($control_writer);
+exit $final_status;
+PERL
+}
+
+selftest_fixed_perl_is_trusted_for_harness() {
+  local metadata="" mode="" _links="" uid="" _gid="" _remainder=""
+  [[ -x /usr/bin/perl ]] || return 1
+  metadata="$(LC_ALL=C /bin/ls -Lldn /usr/bin/perl 2>/dev/null)" || return 1
+  read -r mode _links uid _gid _remainder <<<"$metadata"
+  [[ ${#mode} -ge 10 && "${mode:0:1}" == - && "$uid" == 0 ]] || return 1
+  [[ "${mode:5:1}" != w && "${mode:8:1}" != w ]] || return 1
+  return 0
 }
 
 selftest_run_mutation_bounded() {
   local output_file="$1"
   local wall_seconds="$2"
   shift 2
-  local launched_pid=""
-  local child_status=0
-  local timeout_record=""
+  local supervisor_program=""
+  local control_record=""
+  local record_type="" protocol="" record_status="" owner="" timed_out=""
+  local worker_kind="" ownership_registered="" events="" extra=""
+  local supervisor_status=0
+  local test_mode="$SELFTEST_MUTATION_SUPERVISOR_TEST_MODE"
 
   SELFTEST_MUTATION_TIMED_OUT=0
   SELFTEST_MUTATION_RUN_DIAGNOSTIC=NOT_RUN
-  if [[ ! "$wall_seconds" =~ ^[1-9][0-9]*$ || "$#" -eq 0 ]]; then
+  SELFTEST_MUTATION_SUPERVISOR_PROTOCOL=none
+  SELFTEST_MUTATION_SUPERVISOR_COMPLETED=0
+  SELFTEST_MUTATION_SUPERVISOR_OWNER=none
+  SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND=none
+  SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED=0
+  SELFTEST_MUTATION_SUPERVISOR_EVENTS=none
+  SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION=none
+  if [[ "$output_file" != /* || "$output_file" == *$'\n'* ||
+    ! "$wall_seconds" =~ ^[1-9][0-9]{0,2}$ || "$#" -eq 0 ||
+    "$1" != /* || ( "$test_mode" != normal && "$test_mode" != deadline-edge ) ]]; then
     SELFTEST_MUTATION_RUN_DIAGNOSTIC=ARGUMENT_INVALID
     return 2
   fi
+  if [[ ! -x /usr/bin/perl ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_UNAVAILABLE
+    return 127
+  fi
+  if ! selftest_fixed_perl_is_trusted_for_harness; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_UNTRUSTED
+    return 127
+  fi
 
-  SELFTEST_MUTATION_SEQUENCE=$((SELFTEST_MUTATION_SEQUENCE + 1))
-  timeout_record="$TMPDIR/mutation-wall-$SELFTEST_MUTATION_SEQUENCE"
-  /bin/rm -f "$timeout_record"
-
-  "$@" >"$output_file" 2>&1 </dev/null &
-  SELFTEST_ACTIVE_CHILD=$!
-  launched_pid="$SELFTEST_ACTIVE_CHILD"
-  if [[ ! "$SELFTEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ||
-    "$SELFTEST_ACTIVE_CHILD" != "$launched_pid" ]]; then
-    if [[ "$launched_pid" =~ ^[1-9][0-9]*$ ]]; then
-      builtin kill -TERM "$launched_pid" 2>/dev/null || true
-      builtin kill -KILL "$launched_pid" 2>/dev/null || true
-      builtin wait "$launched_pid" 2>/dev/null || true
-    fi
-    SELFTEST_ACTIVE_CHILD=''
-    SELFTEST_MUTATION_RUN_DIAGNOSTIC=REGISTRATION_INVALID
+  # BMR1 is test-harness infrastructure, not security authority. Its fixed
+  # /usr/bin/perl program may execute arbitrary absolute argv only so copied
+  # scanner mutations can run. The native supervisor alone forks, signals,
+  # and reaps that worker. Bash receives only the post-waitpid control record.
+  supervisor_program="$(selftest_mutation_supervisor_program)"
+  if control_record="$(/usr/bin/perl -T -w -e "$supervisor_program" \
+    "$output_file" "$wall_seconds" "$test_mode" "$@")"; then
+    supervisor_status=0
+  else
+    supervisor_status=$?
+  fi
+  IFS=$'\t' read -r record_type protocol record_status owner timed_out \
+    worker_kind ownership_registered events extra <<<"$control_record"
+  if [[ -n "$extra" || "$record_type" != COMPLETE || "$protocol" != BMR1 ||
+    ! "$record_status" =~ ^[0-9]+$ || "$record_status" -ne "$supervisor_status" ||
+    ( "$owner" != worker && "$owner" != supervisor && "$owner" != caller-signal ) ||
+    ! "$timed_out" =~ ^[01]$ ||
+    ( "$worker_kind" != exit && "$worker_kind" != signal && "$worker_kind" != not-started ) ||
+    ! "$ownership_registered" =~ ^[01]$ || -z "$events" ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_PROTOCOL_INVALID
     return 125
   fi
 
-  (
-    /bin/sleep "$wall_seconds"
-    if builtin kill -TERM "$launched_pid" 2>/dev/null; then
-      printf '%s\n' TIMEOUT >"$timeout_record"
-      /bin/sleep 2
-      builtin kill -KILL "$launched_pid" 2>/dev/null || true
-    fi
-  ) &
-  SELFTEST_WATCHDOG_PID=$!
+  SELFTEST_MUTATION_SUPERVISOR_PROTOCOL=BMR1
+  SELFTEST_MUTATION_SUPERVISOR_COMPLETED=1
+  SELFTEST_MUTATION_SUPERVISOR_OWNER="$owner"
+  SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND="$worker_kind"
+  SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED="$ownership_registered"
+  SELFTEST_MUTATION_SUPERVISOR_EVENTS="$events"
+  SELFTEST_MUTATION_TIMED_OUT="$timed_out"
+  case "$events" in
+    *SIGNAL_WOULD_SEND_UNOWNED*) SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION='forbidden-post-reap' ;;
+    *SIGNAL_SKIPPED_UNOWNED*) SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION='skipped-post-reap' ;;
+    *TERM_SIGNAL_OWNED* | *KILL_SIGNAL_OWNED*) SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION='owned-worker' ;;
+    *) SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION=none ;;
+  esac
 
-  if builtin wait "$launched_pid" 2>/dev/null; then
-    child_status=0
-  else
-    child_status=$?
+  if [[ "$events" == SETUP_FAILED && "$owner" == supervisor &&
+    "$record_status" -eq 125 && "$ownership_registered" -eq 0 ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_SETUP_FAILED
+    return 125
   fi
-  SELFTEST_ACTIVE_CHILD=''
-  selftest_stop_watchdog
+  if [[ "$ownership_registered" -ne 1 || "$events" == *OWNERSHIP_MISSING* ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=OWNERSHIP_REGISTRATION_INVALID
+    return 125
+  fi
+  if [[ "$events" != FORK,OWNERSHIP_REGISTER,*WAITPID,OWNERSHIP_CLEAR,*COMPLETE ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_EVENT_ORDER_INVALID
+    return 125
+  fi
+  if [[ "$events" == *SIGNAL_WOULD_SEND_UNOWNED* ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=POST_REAP_SIGNAL_DECISION
+    return 125
+  fi
+  if [[ "$test_mode" == deadline-edge &&
+    "$events" != FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,DEADLINE_EDGE,SIGNAL_SKIPPED_UNOWNED,COMPLETE ]]; then
+    SELFTEST_MUTATION_RUN_DIAGNOSTIC=DEADLINE_EDGE_ORDER_INVALID
+    return 125
+  fi
 
-  if [[ -f "$timeout_record" ]]; then
-    SELFTEST_MUTATION_TIMED_OUT=1
-    SELFTEST_MUTATION_RUN_DIAGNOSTIC=TIMEOUT
-    child_status=124
-  else
-    SELFTEST_MUTATION_RUN_DIAGNOSTIC=OK
-  fi
-  /bin/rm -f "$timeout_record"
-  return "$child_status"
+  case "$owner:$record_status:$timed_out:$worker_kind" in
+    worker:0:0:exit) SELFTEST_MUTATION_RUN_DIAGNOSTIC=OK ;;
+    worker:*:0:signal) SELFTEST_MUTATION_RUN_DIAGNOSTIC=CHILD_SIGNAL ;;
+    worker:*:0:exit) SELFTEST_MUTATION_RUN_DIAGNOSTIC=CHILD_EXIT_NONZERO ;;
+    supervisor:124:1:*) SELFTEST_MUTATION_RUN_DIAGNOSTIC=TIMEOUT ;;
+    caller-signal:129:0:*) SELFTEST_MUTATION_RUN_DIAGNOSTIC=SIGNAL_HUP ;;
+    caller-signal:130:0:*) SELFTEST_MUTATION_RUN_DIAGNOSTIC=SIGNAL_INT ;;
+    caller-signal:143:0:*) SELFTEST_MUTATION_RUN_DIAGNOSTIC=SIGNAL_TERM ;;
+    *) SELFTEST_MUTATION_RUN_DIAGNOSTIC=SUPERVISOR_PROTOCOL_INVALID; return 125 ;;
+  esac
+  return "$supervisor_status"
 }
 
 selftest_run_internal_mutation_runner_control() {
-  local output_file="$TMPDIR/internal-mutation-runner.output"
+  local output_dir="$TMPDIR/internal-mutation-runner"
+  local output_file=""
   local runner_status=0
+  local control_failures=0
+
+  mkdir -p "$output_dir"
 
   if [[ -n "${BUBBLES_MUTATION_RUNNER_ROOT_RECORD:-}" ]]; then
     printf '%s\n' "$TMPDIR" >"$BUBBLES_MUTATION_RUNNER_ROOT_RECORD"
-    output_file="${BUBBLES_MUTATION_RUNNER_ROOT_RECORD}.output"
   fi
-  SELFTEST_COMPLETED=1
+
+  output_file="$output_dir/timeout.output"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
   if selftest_run_mutation_bounded "$output_file" 1 /bin/sleep 2; then
     runner_status=0
   else
     runner_status=$?
   fi
-  printf 'MUTATION_RUNNER_RESULT status=%s timed_out=%s diagnostic=%s active=%s watchdog=%s\n' \
+  printf 'MUTATION_RUNNER_CASE name=timeout status=%s timedOut=%s diagnostic=%s protocol=%s completed=%s ownership=%s owner=%s kind=%s events=%s\n' \
     "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
-    "${SELFTEST_ACTIVE_CHILD:-clear}" "${SELFTEST_WATCHDOG_PID:-clear}"
-
+    "$SELFTEST_MUTATION_SUPERVISOR_PROTOCOL" "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" \
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED" "$SELFTEST_MUTATION_SUPERVISOR_OWNER" \
+    "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" "$SELFTEST_MUTATION_SUPERVISOR_EVENTS"
+  if [[ "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == OWNERSHIP_REGISTRATION_INVALID ]]; then
+    printf '%s\n' 'RED: NEG-B039-MUTATION-REGISTRATION native supervisor omitted ownership registration' >&2
+    return 1
+  fi
+  if [[ "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 && "$runner_status" -eq 0 &&
+    "$SELFTEST_MUTATION_TIMED_OUT" -eq 0 && "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == OK ]]; then
+    printf '%s\n' 'RED: NEG-B039-MUTATION-BOUND native supervisor exceeded the declared wall' >&2
+    return 1
+  fi
   if [[ "$runner_status" -eq 124 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 1 &&
     "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == TIMEOUT &&
-    -z "$SELFTEST_ACTIVE_CHILD" && -z "$SELFTEST_WATCHDOG_PID" ]]; then
-    printf '%s\n' 'PASS: mutation runner enforces its hard wall and clears exact-child registrations'
+    "$SELFTEST_MUTATION_SUPERVISOR_PROTOCOL" == BMR1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == supervisor ]]; then
+    printf '%s\n' 'PASS: mutation runner native supervisor enforces timeout status 124'
+  else
+    printf '%s\n' 'FAIL: mutation runner timeout control returned an unexpected native-supervisor result' >&2
+    control_failures=$((control_failures + 1))
+  fi
+
+  output_file="$output_dir/child-124.output"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
+  if selftest_run_mutation_bounded "$output_file" 3 /bin/sh -c 'exit 124'; then
+    runner_status=0
+  else
+    runner_status=$?
+  fi
+  printf 'MUTATION_RUNNER_CASE name=child-124 status=%s timedOut=%s diagnostic=%s owner=%s kind=%s completion=%s\n' \
+    "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" \
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED"
+  if [[ "$runner_status" -eq 124 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 0 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == CHILD_EXIT_NONZERO &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == worker &&
+    "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" == exit ]]; then
+    printf '%s\n' 'PASS: mutation runner distinguishes child exit 124 from supervisor timeout 124'
+  else
+    printf '%s\n' 'FAIL: mutation runner child-124 distinction failed' >&2
+    control_failures=$((control_failures + 1))
+  fi
+
+  output_file="$output_dir/fast-nonzero.output"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
+  if selftest_run_mutation_bounded "$output_file" 3 /bin/sh -c \
+    'printf "COMPLETE\tBMR1\t0\tworker\t0\texit\t1\tFORGED\n"; exit 73'; then
+    runner_status=0
+  else
+    runner_status=$?
+  fi
+  printf 'MUTATION_RUNNER_CASE name=fast-nonzero status=%s timedOut=%s diagnostic=%s owner=%s kind=%s completion=%s\n' \
+    "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" \
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED"
+  if [[ "$runner_status" -eq 73 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 0 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == CHILD_EXIT_NONZERO &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == worker &&
+    "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" == exit ]] &&
+    /usr/bin/grep -Fq $'COMPLETE\tBMR1\t0\tworker\t0\texit\t1\tFORGED' "$output_file"; then
+    printf '%s\n' 'PASS: mutation runner preserves fast nonzero status and rejects worker-authored control text'
+  else
+    printf '%s\n' 'FAIL: mutation runner fast-nonzero or private-control proof failed' >&2
+    control_failures=$((control_failures + 1))
+  fi
+
+  output_file="$output_dir/real-signal.output"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
+  if selftest_run_mutation_bounded "$output_file" 3 /bin/sh -c 'kill -TERM "$$"'; then
+    runner_status=0
+  else
+    runner_status=$?
+  fi
+  printf 'MUTATION_RUNNER_CASE name=real-signal status=%s timedOut=%s diagnostic=%s owner=%s kind=%s completion=%s\n' \
+    "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" \
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED"
+  if [[ "$runner_status" -eq 143 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 0 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == CHILD_SIGNAL &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == worker &&
+    "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" == signal ]]; then
+    printf '%s\n' 'PASS: mutation runner preserves a real child signal as status 143'
+  else
+    printf '%s\n' 'FAIL: mutation runner real-signal status ownership failed' >&2
+    control_failures=$((control_failures + 1))
+  fi
+
+  output_file="$output_dir/deadline-edge.output"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=deadline-edge
+  if selftest_run_mutation_bounded "$output_file" 3 /bin/sh -c 'exit 0'; then
+    runner_status=0
+  else
+    runner_status=$?
+  fi
+  printf 'MUTATION_RUNNER_CASE name=deadline-edge status=%s timedOut=%s diagnostic=%s owner=%s kind=%s completion=%s signalDecision=%s events=%s\n' \
+    "$runner_status" "$SELFTEST_MUTATION_TIMED_OUT" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" \
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" "$SELFTEST_MUTATION_SUPERVISOR_WORKER_KIND" \
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" "$SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION" \
+    "$SELFTEST_MUTATION_SUPERVISOR_EVENTS"
+  SELFTEST_MUTATION_SUPERVISOR_TEST_MODE=normal
+  if [[ "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == POST_REAP_SIGNAL_DECISION ]]; then
+    printf '%s\n' 'RED: NEG-B039-MUTATION-GUARD post-reap deadline made a forbidden signal decision' >&2
+    return 1
+  fi
+  if [[ "$runner_status" -eq 0 && "$SELFTEST_MUTATION_TIMED_OUT" -eq 0 &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == OK &&
+    "$SELFTEST_MUTATION_SUPERVISOR_SIGNAL_DECISION" == skipped-post-reap &&
+    "$SELFTEST_MUTATION_SUPERVISOR_EVENTS" == FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,DEADLINE_EDGE,SIGNAL_SKIPPED_UNOWNED,COMPLETE ]]; then
+    printf '%s\n' 'PASS: mutation runner deadline edge orders waitpid then ownership clear then no signal'
+  else
+    printf '%s\n' 'FAIL: mutation runner deadline-edge post-reap ownership order failed' >&2
+    control_failures=$((control_failures + 1))
+  fi
+
+  printf 'MUTATION_RUNNER_FOCUSED_SUMMARY failures=%s cases=5 protocol=BMR1 bashWorkerPidState=absent bashWatchdogPidState=absent\n' \
+    "$control_failures"
+  [[ "$control_failures" -eq 0 ]]
+}
+
+make_mutation_runner_selftest() {
+  local mode="$1"
+  local destination="$2"
+  /usr/bin/awk -v mode="$mode" '
+    mode == "bound" && /^[[:space:]]*alarm\(\$wall_seconds\); # B039-MUTATION-WALL-BOUND$/ {
+      sub(/alarm\(\$wall_seconds\)/, "alarm($wall_seconds + 2)")
+      print
+      changed=changed + 1
+      next
+    }
+    mode == "registration" && /^[[:space:]]*my \$ownership_registered = 1; # B039-MUTATION-OWNERSHIP-REGISTRATION$/ {
+      sub(/my \$ownership_registered = 1/, "my $ownership_registered = 0")
+      print
+      changed=changed + 1
+      next
+    }
+    mode == "guard" && /^[[:space:]]*if \(!\$worker_is_owned\) \{ # B039-MUTATION-POST-REAP-GUARD$/ {
+      sub(/if \(!\$worker_is_owned\)/, "if (0)")
+      print
+      changed=changed + 1
+      next
+    }
+    { print }
+    END { if (changed != 1) exit 42 }
+  ' "$SELFTEST_SCRIPT" >"$destination"
+}
+
+selftest_check_mutation_runner_negative_control() {
+  local mode="$1"
+  local expected_assertion="$2"
+  local mutation_dir="$TMPDIR/mutation-runner-$mode"
+  local mutant_script="$mutation_dir/implementation-reality-scan-selftest.sh"
+  local output_file="$mutation_dir/mutant.output"
+  local internal_tmp_parent="$TMPDIR/mutation-runner-inner-$mode"
+  local root_record="$mutation_dir/internal-root.record"
+  local control_status=0
+  local internal_root=""
+
+  mkdir -p "$mutation_dir" "$internal_tmp_parent"
+  if ! make_mutation_runner_selftest "$mode" "$mutant_script"; then
+    printf 'FAIL: NEG-B039-MUTATION-%s copied mutation construction did not match exactly once\n' "$mode" >&2
+    return 1
+  fi
+  if selftest_run_mutation_bounded "$output_file" 10 /usr/bin/env \
+    TMPDIR="$internal_tmp_parent" BUBBLES_MUTATION_RUNNER_ROOT_RECORD="$root_record" \
+    /bin/bash "$mutant_script" \
+    --internal-mutation-runner-control b039-mutation-runner-v1; then
+    control_status=0
+  else
+    control_status=$?
+  fi
+  /bin/cat "$output_file"
+  internal_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
+
+  if [[ "$control_status" -eq 1 && "${internal_root##*/}" == tmp.* &&
+    ! -e "$internal_root" && "$SELFTEST_MUTATION_SUPERVISOR_PROTOCOL" == BMR1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_COMPLETED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNERSHIP_REGISTERED" -eq 1 &&
+    "$SELFTEST_MUTATION_SUPERVISOR_OWNER" == worker &&
+    "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == CHILD_EXIT_NONZERO ]] &&
+    /usr/bin/grep -Fq "$expected_assertion" "$output_file"; then
+    printf 'RED: NEG-B039-MUTATION-%s mutantExit=1 rootAbsent=yes outerProtocol=BMR1 outerOwnership=registered bashWorkerPidState=absent bashWatchdogPidState=absent\n' "$mode"
+    printf 'PASS: NEG-B039-MUTATION-%s copied mutation turns its owning lifecycle assertion RED without residue\n' "$mode"
     return 0
   fi
-  if [[ "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == REGISTRATION_INVALID ]]; then
-    printf '%s\n' 'RED: NEG-B039-MUTATION-REGISTRATION bypassed registration violates the exact-child invariant' >&2
-  elif [[ "$runner_status" -eq 0 && "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" == OK ]]; then
-    printf '%s\n' 'RED: NEG-B039-MUTATION-BOUND bypassed wall violates the deadline invariant' >&2
-  else
-    printf '%s\n' 'FAIL: mutation runner control returned an unexpected lifecycle result' >&2
-  fi
+  printf 'FAIL: NEG-B039-MUTATION-%s expected exit 1, native-supervisor completion, and absent residue; got exit=%s root=%s diagnostic=%s\n' \
+    "$mode" "$control_status" "${internal_root:-missing}" "$SELFTEST_MUTATION_RUN_DIAGNOSTIC" >&2
   return 1
+}
+
+selftest_run_internal_mutation_runner_focused_control() {
+  local focused_failures=0
+
+  if selftest_run_internal_mutation_runner_control; then
+    printf '%s\n' 'PASS: focused mutation runner positive lifecycle matrix is green'
+  else
+    printf '%s\n' 'FAIL: focused mutation runner positive lifecycle matrix failed' >&2
+    focused_failures=$((focused_failures + 1))
+  fi
+  if ! selftest_check_mutation_runner_negative_control \
+    registration \
+    'RED: NEG-B039-MUTATION-REGISTRATION native supervisor omitted ownership registration'; then
+    focused_failures=$((focused_failures + 1))
+  fi
+  if ! selftest_check_mutation_runner_negative_control \
+    bound \
+    'RED: NEG-B039-MUTATION-BOUND native supervisor exceeded the declared wall'; then
+    focused_failures=$((focused_failures + 1))
+  fi
+  if ! selftest_check_mutation_runner_negative_control \
+    guard \
+    'RED: NEG-B039-MUTATION-GUARD post-reap deadline made a forbidden signal decision'; then
+    focused_failures=$((focused_failures + 1))
+  fi
+  printf 'MUTATION_RUNNER_COPIED_MUTATION_SUMMARY failures=%s mutations=3 exactConstruction=required setupFailureIsRed=no\n' \
+    "$focused_failures"
+  [[ "$focused_failures" -eq 0 ]]
 }
 
 selftest_cleanup() {
@@ -182,8 +632,6 @@ selftest_cleanup() {
   if declare -F bubbles_python_security_cleanup >/dev/null 2>&1; then
     bubbles_python_security_cleanup || true
   fi
-  selftest_stop_watchdog
-  selftest_stop_active_child
   selftest_stop_exact_child
   /bin/rm -rf "$TMPDIR" "$CLASSIFIER_HELPER_CACHE_DIR"
   if [[ "$SELFTEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
@@ -206,7 +654,18 @@ trap 'selftest_signal 143' TERM
 
 if [[ "$SELFTEST_ENTRYPOINT" == mutation-runner ]]; then
   mutation_runner_status=0
+  SELFTEST_COMPLETED=1
   if selftest_run_internal_mutation_runner_control; then
+    mutation_runner_status=0
+  else
+    mutation_runner_status=$?
+  fi
+  exit "$mutation_runner_status"
+fi
+if [[ "$SELFTEST_ENTRYPOINT" == mutation-runner-focused ]]; then
+  mutation_runner_status=0
+  SELFTEST_COMPLETED=1
+  if selftest_run_internal_mutation_runner_focused_control; then
     mutation_runner_status=0
   else
     mutation_runner_status=$?
@@ -391,69 +850,12 @@ assert_selftest_lifecycle_fails_closed timeout-exit NONE 124 "Timeout exit"
 assert_selftest_lifecycle_fails_closed interrupt-hold HUP 129 "HUP interruption"
 assert_selftest_lifecycle_fails_closed interrupt-hold TERM 143 "TERM interruption"
 
-make_mutation_runner_selftest() {
-  local mode="$1"
-  local destination="$2"
-  /usr/bin/awk -v mode="$mode" '
-    mode == "bound" && /selftest_run_mutation_bounded "\$output_file" 1 \/bin\/sleep 2/ {
-      sub(/ 1 \/bin\/sleep 2/, " 3 /bin/sleep 2")
-      print
-      changed=changed + 1
-      next
-    }
-    { print }
-    mode == "registration" && /launched_pid="\$SELFTEST_ACTIVE_CHILD"/ {
-      print "  SELFTEST_ACTIVE_CHILD=\047\047 # B039-NEG-MUTATION-REGISTRATION-BYPASS"
-      changed=changed + 1
-    }
-    END { if (changed != 1) exit 42 }
-  ' "$SELFTEST_SCRIPT" >"$destination"
-}
-
-assert_mutation_runner_negative_control() {
-  local mode="$1"
-  local expected_assertion="$2"
-  local mutation_dir="$TMPDIR/mutation-runner-$mode"
-  local mutant_script="$mutation_dir/implementation-reality-scan-selftest.sh"
-  local output_file="$mutation_dir/mutant.output"
-  local internal_tmp_parent="$TMPDIR/mutation-runner-inner-$mode"
-  local root_record="$mutation_dir/internal-root.record"
-  local control_status=0
-  local internal_root=""
-
-  mkdir -p "$mutation_dir" "$internal_tmp_parent"
-  if ! make_mutation_runner_selftest "$mode" "$mutant_script"; then
-    fail "NEG-B039-MUTATION-$mode copied mutation construction is exact"
-    return
-  fi
-  if selftest_run_mutation_bounded "$output_file" 10 /usr/bin/env \
-    TMPDIR="$internal_tmp_parent" BUBBLES_MUTATION_RUNNER_ROOT_RECORD="$root_record" \
-    "$BASH" "$mutant_script" \
-    --internal-mutation-runner-control b039-mutation-runner-v1; then
-    control_status=0
-  else
-    control_status=$?
-  fi
-  /bin/cat "$output_file"
-  internal_root="$(/bin/cat "$root_record" 2>/dev/null || true)"
-
-  if [[ "$control_status" -eq 1 && "${internal_root##*/}" == tmp.* &&
-    ! -e "$internal_root" && -z "$SELFTEST_ACTIVE_CHILD" && -z "$SELFTEST_WATCHDOG_PID" ]] &&
-    /usr/bin/grep -Fq "$expected_assertion" "$output_file"; then
-    printf 'RED: NEG-B039-MUTATION-%s mutant_exit=1 root_absent=yes active_child=clear watchdog=clear\n' "$mode"
-    pass "NEG-B039-MUTATION-$mode copied mutation turns its owning lifecycle assertion RED without residue"
-  else
-    fail "NEG-B039-MUTATION-$mode expected exit 1 and absent registered residue, got exit=$control_status root=${internal_root:-missing}"
-  fi
-}
-
-echo "Scenario: copied mutation-runner bound and registration bypasses must turn RED."
-assert_mutation_runner_negative_control \
-  registration \
-  'RED: NEG-B039-MUTATION-REGISTRATION bypassed registration violates the exact-child invariant'
-assert_mutation_runner_negative_control \
-  bound \
-  'RED: NEG-B039-MUTATION-BOUND bypassed wall violates the deadline invariant'
+echo "Scenario: native mutation-runner focused lifecycle and copied negative controls stay green."
+if selftest_run_internal_mutation_runner_focused_control; then
+  pass "Mutation runner focused native-supervisor suite covers lifecycle, deadline edge, and copied mutations"
+else
+  fail "Mutation runner focused native-supervisor suite failed"
+fi
 
 # Is the Scan 2B classifier's interpreter USABLE -- not merely present?
 #

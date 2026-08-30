@@ -2078,3 +2078,336 @@ BUG039_TP_S2_06_RESIDUE_END
 The local portions of `TP-S2-03`, `TP-S2-05`, and `TP-S2-06` have current
 execution receipts. `TP-S2-04` carries only the local fixed-Perl negative
 receipt and makes no Linux completion claim.
+
+## HAR-R1 Mutation Harness Single-Owner Remediation
+
+### Formal Finding And Change Boundary
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The formal security verdict was supplied by the operator for
+base commit `52dfbde09417d2bd1a0e947c8ef478e36d11a99d`. This invocation did not
+perform or impersonate a new security review. It produced test-owner proof for
+the one returned harness finding only.
+
+The supplied verdict marked `SEC-R1`, `SEC-R2`, `HAR-R2`, and `HAR-R3` clear.
+It left `HAR-R1` blocking because the active mutation runner reaped its worker
+before stopping a separately sleeping Bash watchdog. A deadline wake after the
+reap could therefore act on recyclable numeric PID text.
+
+The edit boundary stayed exact:
+
+- test code: `bubbles/scripts/implementation-reality-scan-selftest.sh`;
+- test evidence: this append-only section in `report.md`;
+- production, other tests, planning, state, acceptance, certification, and
+  scenario-manifest bytes: unchanged.
+
+Production commit `769856e` remained immutable. No security-certification or
+terminal-status claim is made here. The required independent owner after this
+test remediation is `bubbles.security`.
+
+### Immutable Pre-Fix Facts
+
+**Phase:** test
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=30s 120 /bin/bash -c 'printf "%s\n" "HAR_R1_PREF_FIX_FACTS_BEGIN"; printf "HEAD=%s\n" "$(git rev-parse HEAD)"; printf "PARENT=%s\n" "$(git rev-parse HEAD^)"; printf "SELFTEST_HEAD_BLOB=%s\n" "$(git rev-parse HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh)"; printf "PRODUCTION_HEAD_BLOB=%s\n" "$(git rev-parse HEAD:bubbles/scripts/implementation-reality-scan.sh)"; git grep -n -E "SELFTEST_ACTIVE_CHILD|SELFTEST_WATCHDOG_PID|selftest_stop_watchdog|selftest_stop_active_child|launched_pid=|/bin/sleep.*wall_seconds|builtin kill -TERM.*launched_pid|builtin wait.*launched_pid" HEAD -- bubbles/scripts/implementation-reality-scan-selftest.sh; grep_status=$?; printf "PREF_FIX_PATTERN_SEARCH_EXIT=%s\n" "$grep_status"; printf "%s\n" "HAR_R1_PREF_FIX_FACTS_END"; exit "$grep_status"'`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 immutable pre-fix HEAD facts
+exit: 0
+lines: 41
+sha256: 64a7eb868533a5a19fca2a7ff01396cd8f18f70f4cde5ae63ca0ca2d9c40f7c5
+HAR_R1_PREF_FIX_FACTS_BEGIN
+HEAD=52dfbde09417d2bd1a0e947c8ef478e36d11a99d
+PARENT=77d91fd7549d30faf201e7946358ca64452c1375
+SELFTEST_HEAD_BLOB=8c9de51c0b97b38149966f5e2b8abc6420978430
+PRODUCTION_HEAD_BLOB=fdce8ed9df73e34bd4ee674d477931f3b1d813b3
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:50:SELFTEST_ACTIVE_CHILD=''
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:51:SELFTEST_WATCHDOG_PID=''
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:65:selftest_stop_watchdog() {
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:67:    builtin kill -TERM "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:68:    builtin wait "$SELFTEST_WATCHDOG_PID" 2>/dev/null || true
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:73:selftest_stop_active_child() {
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:75:    builtin kill -TERM "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:77:    builtin wait "$SELFTEST_ACTIVE_CHILD" 2>/dev/null || true
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:102:  SELFTEST_ACTIVE_CHILD=$!
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:117:    /bin/sleep "$wall_seconds"
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:118:    if builtin kill -TERM "$launched_pid" 2>/dev/null; then
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:124:  SELFTEST_WATCHDOG_PID=$!
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:126:  if builtin wait "$launched_pid" 2>/dev/null; then
+HEAD:bubbles/scripts/implementation-reality-scan-selftest.sh:132:  selftest_stop_watchdog
+PREF_FIX_PATTERN_SEARCH_EXIT=0
+HAR_R1_PREF_FIX_FACTS_END
+```
+
+These are immutable `HEAD` facts, not a reconstruction from the edited working
+tree. The captured ordering is the exact race returned as `HAR-R1`.
+
+### Test-Only Single-Owner Design
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The code and execution records below establish the harness
+mechanism. They do not strengthen the production security verdict.
+
+`selftest_run_mutation_bounded()` now invokes one fixed embedded program with
+fixed `/usr/bin/perl -T -w -e`. This is explicitly test-harness infrastructure,
+not security authority. It accepts arbitrary absolute argv only because the
+selftest must execute copied scanner mutations.
+
+The Perl supervisor owns one direct worker from `fork` through `waitpid`. It
+redirects worker stdout and stderr directly to the caller-selected private
+output file. The worker closes the duplicated supervisor control descriptor
+before replacing standard output and executing the requested argv. Bash stores
+no worker PID, watchdog PID, process group, descendant list, or liveness probe.
+
+The private `BMR1` record carries status owner, timeout ownership, worker kind,
+ownership registration, and ordered events only after `waitpid`. Bash validates
+that record and sets `SELFTEST_MUTATION_TIMED_OUT` plus
+`SELFTEST_MUTATION_RUN_DIAGNOSTIC`. Numeric status remains exact for child exit
+`124`, fast nonzero `73`, real signal `143`, and supervisor timeout `124`.
+
+The separate outer-selftest lifecycle fixture still registers its own direct
+test child so it can deliver the HUP and TERM cases it exists to test. It starts
+no sleeper or watchdog, and it signals before its direct `wait`. The retired
+mutation-worker and watchdog symbols are absent. The existing portable-timeout
+scenario remains unchanged because it tests `guard-lib.sh` behavior and does not
+own the mutation runner.
+
+### Focused BMR1 And Negative-Control Proof
+
+**Phase:** test
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=30s 180 /usr/bin/env -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u SELFTEST_MUTATION_SUPERVISOR_TEST_MODE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh --internal-mutation-runner-focused-control b039-mutation-runner-focused-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 final warning-free focused native runner proof
+exit: 0
+lines: 33
+sha256: 9a592d58f4728afcafcf93dfe744499685fa8a3a81819ffaaac82fc739e7f433
+MUTATION_RUNNER_CASE name=timeout status=124 timedOut=1 diagnostic=TIMEOUT protocol=BMR1 completed=1 ownership=1 owner=supervisor kind=signal events=FORK,OWNERSHIP_REGISTER,TERM_SIGNAL_OWNED,WAITPID,OWNERSHIP_CLEAR,COMPLETE
+PASS: mutation runner native supervisor enforces timeout status 124
+MUTATION_RUNNER_CASE name=child-124 status=124 timedOut=0 diagnostic=CHILD_EXIT_NONZERO owner=worker kind=exit completion=1
+PASS: mutation runner distinguishes child exit 124 from supervisor timeout 124
+MUTATION_RUNNER_CASE name=fast-nonzero status=73 timedOut=0 diagnostic=CHILD_EXIT_NONZERO owner=worker kind=exit completion=1
+PASS: mutation runner preserves fast nonzero status and rejects worker-authored control text
+MUTATION_RUNNER_CASE name=real-signal status=143 timedOut=0 diagnostic=CHILD_SIGNAL owner=worker kind=signal completion=1
+PASS: mutation runner preserves a real child signal as status 143
+MUTATION_RUNNER_CASE name=deadline-edge status=0 timedOut=0 diagnostic=OK owner=worker kind=exit completion=1 signalDecision=skipped-post-reap events=FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,DEADLINE_EDGE,SIGNAL_SKIPPED_UNOWNED,COMPLETE
+PASS: mutation runner deadline edge orders waitpid then ownership clear then no signal
+MUTATION_RUNNER_FOCUSED_SUMMARY failures=0 cases=5 protocol=BMR1 bashWorkerPidState=absent bashWatchdogPidState=absent
+PASS: focused mutation runner positive lifecycle matrix is green
+MUTATION_RUNNER_CASE name=timeout status=125 timedOut=1 diagnostic=OWNERSHIP_REGISTRATION_INVALID protocol=BMR1 completed=1 ownership=0 owner=supervisor kind=signal events=FORK,OWNERSHIP_MISSING,TERM_SIGNAL_OWNED,WAITPID,OWNERSHIP_CLEAR,COMPLETE
+RED: NEG-B039-MUTATION-REGISTRATION native supervisor omitted ownership registration
+RED: NEG-B039-MUTATION-registration mutantExit=1 rootAbsent=yes outerProtocol=BMR1 outerOwnership=registered bashWorkerPidState=absent bashWatchdogPidState=absent
+PASS: NEG-B039-MUTATION-registration copied mutation turns its owning lifecycle assertion RED without residue
+MUTATION_RUNNER_CASE name=timeout status=0 timedOut=0 diagnostic=OK protocol=BMR1 completed=1 ownership=1 owner=worker kind=exit events=FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,COMPLETE
+RED: NEG-B039-MUTATION-BOUND native supervisor exceeded the declared wall
+RED: NEG-B039-MUTATION-bound mutantExit=1 rootAbsent=yes outerProtocol=BMR1 outerOwnership=registered bashWorkerPidState=absent bashWatchdogPidState=absent
+PASS: NEG-B039-MUTATION-bound copied mutation turns its owning lifecycle assertion RED without residue
+MUTATION_RUNNER_CASE name=timeout status=124 timedOut=1 diagnostic=TIMEOUT protocol=BMR1 completed=1 ownership=1 owner=supervisor kind=signal events=FORK,OWNERSHIP_REGISTER,TERM_SIGNAL_OWNED,WAITPID,OWNERSHIP_CLEAR,COMPLETE
+PASS: mutation runner native supervisor enforces timeout status 124
+MUTATION_RUNNER_CASE name=deadline-edge status=125 timedOut=0 diagnostic=POST_REAP_SIGNAL_DECISION owner=worker kind=exit completion=1 signalDecision=forbidden-post-reap events=FORK,OWNERSHIP_REGISTER,WAITPID,OWNERSHIP_CLEAR,DEADLINE_EDGE,SIGNAL_WOULD_SEND_UNOWNED,COMPLETE
+RED: NEG-B039-MUTATION-GUARD post-reap deadline made a forbidden signal decision
+RED: NEG-B039-MUTATION-guard mutantExit=1 rootAbsent=yes outerProtocol=BMR1 outerOwnership=registered bashWorkerPidState=absent bashWatchdogPidState=absent
+PASS: NEG-B039-MUTATION-guard copied mutation turns its owning lifecycle assertion RED without residue
+MUTATION_RUNNER_COPIED_MUTATION_SUMMARY failures=0 mutations=3 exactConstruction=required setupFailureIsRed=no
+```
+
+The deadline-edge seam is trace-only after reap. The unmutated sequence is
+`WAITPID -> OWNERSHIP_CLEAR -> SIGNAL_SKIPPED_UNOWNED`. The copied guard mutant
+records `SIGNAL_WOULD_SEND_UNOWNED` and turns the owning assertion RED. It never
+calls the operating-system signal primitive after reap. The registration and
+wall mutations each match exactly once, execute the intended copied path, and
+produce their own exact RED signal. A setup failure does not satisfy any RED
+assertion.
+
+The fast-nonzero worker writes forged `BMR1` text to its output file. The private
+supervisor record still reports worker-owned status `73`, which proves worker
+text cannot author completion evidence.
+
+### Static And Regression-Quality Proof
+
+**Phase:** test
+**Command:** stock `/bin/bash -n`; modern `/opt/homebrew/bin/bash -n`; `/opt/homebrew/bin/shellcheck -S warning -x`; `git diff --check`; `bash bubbles/scripts/regression-quality-guard.sh --bugfix`; retired-runner symbol scans
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 corrected final static and regression quality proof
+exit: 0
+lines: 27
+sha256: 4a46405eab514fca7ff5a24129f0ec6a17281a59de5c151fc856fe4d07356b68
+HAR_R1_STATIC_BEGIN
+STOCK_BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+BUBBLES REGRESSION QUALITY GUARD
+Repo: /private/tmp/bubbles-bug039-native-supervisor
+Bugfix mode: true
+Scanning bubbles/scripts/implementation-reality-scan-selftest.sh
+Adversarial signal detected in bubbles/scripts/implementation-reality-scan-selftest.sh
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 1
+Files with adversarial signals: 1
+REGRESSION_QUALITY_EXIT=0
+HAR_R1_OLD_MUTATION_PID_STATE_COUNT=0
+HAR_R1_STALE_SIGNAL_PRIMITIVE_COUNT=0
+HAR_R1_FIXED_PERL_ENTRY_COUNT=1
+HAR_R1_PERL_MODULE_IMPORT_COUNT=0
+HAR_R1_STATIC_FAILURES=0
+HAR_R1_STATIC_END
+```
+
+The first static bundle used an over-broad `setsid` text pattern. It exited 1
+with output SHA-256
+`4daaef97051b56e18b847a3b4fd9d1f665dbfb9f08752493b055113ec68e98aa`.
+Both matches were the retained hostile-helper mutation, not lifecycle code.
+The corrected command above preserves that required mutation and scopes the
+absence check to retired PID, watchdog, liveness-probe, job-control, and
+process-group signal primitives.
+
+### One Full Stock-Bash Selftest On Final Test Bytes
+
+**Phase:** test
+**Command:** `/usr/bin/env -u BUBBLES_AUTHORITY_BYPASS_CANDIDATE -u BUBBLES_AUTHORITY_BYPASS_TRACE -u BUBBLES_PYTHON_SELFTEST_CHILD_MODE -u BUBBLES_PYTHON_SELFTEST_READY_FILE -u BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL -u BUBBLES_PYTHON_LATE_SIGNAL_NAME -u BUBBLES_PYTHON_SELFTEST_LATE_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_WINDOW_READY -u BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE -u BUBBLES_PYTHON_MUTANT_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_TRACE -u BUBBLES_SELFTEST_REAL_PYTHON -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u SELFTEST_MUTATION_SUPERVISOR_TEST_MODE -u BUBBLES_TEST24_CHILD_MODE -u BUBBLES_TEST24_NEGATIVE_CONTROL -u BUBBLES_TEST24_LIFECYCLE_CHILD_MODE -u BUBBLES_TEST24_READY_FILE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=300s 7200 /bin/bash -c 'printf "BUG039_HAR_R1_BASE_HEAD=%s\n" "$(git rev-parse HEAD)"; printf "BUG039_HAR_R1_TEST_SHA256=%s\n" "$(/usr/bin/shasum -a 256 bubbles/scripts/implementation-reality-scan-selftest.sh | /usr/bin/awk "{print \$1}")"; printf "BUG039_HAR_R1_PRODUCTION_BLOB=%s\n" "$(git rev-parse HEAD:bubbles/scripts/implementation-reality-scan.sh)"; printf "%s\n" "BUG039_HAR_R1_EPOCH=privileged-native-supervision-v2"; /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh; test_status=$?; printf "BUG039_HAR_R1_FULL_SELFTEST_EXIT=%s\n" "$test_status"; exit "$test_status"'`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 single full stock Bash selftest final test bytes
+exit: 0
+lines: 1773
+sha256: 00805637c21a62e12c99f2228d509b1e239fec0b3c6fb515164f35cd2e394ce3
+--- first 20 ---
+BUG039_HAR_R1_BASE_HEAD=52dfbde09417d2bd1a0e947c8ef478e36d11a99d
+BUG039_HAR_R1_TEST_SHA256=9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69
+BUG039_HAR_R1_PRODUCTION_BLOB=fdce8ed9df73e34bd4ee674d477931f3b1d813b3
+BUG039_HAR_R1_EPOCH=privileged-native-supervision-v2
+Scenario: TEST-B039-001 inherited subset selectors cannot replace the full-suite entrypoint.
+IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE
+PASS: TEST-B039-001 legacy SELFTEST_TARGET cannot select an ambient subset
+Scenario: premature and interrupted selftest exits fail closed while cleaning up.
+PASS: Premature EXIT preserves fatal exit 1
+PASS: Premature EXIT removes its temporary tree
+PASS: Premature EXIT emits no success summary
+PASS: Timeout exit preserves fatal exit 124
+PASS: Timeout exit removes its temporary tree
+PASS: Timeout exit emits no success summary
+PASS: HUP interruption preserves fatal exit 129
+PASS: HUP interruption removes its temporary tree
+PASS: HUP interruption emits no success summary
+PASS: TERM interruption preserves fatal exit 143
+PASS: TERM interruption removes its temporary tree
+PASS: TERM interruption emits no success summary
+--- omitted 1733 line(s); sha256 above covers the full output ---
+--- last 20 ---
+--- Scan 8: Silent Decode Failure Detection (Gate G048) ---
+IMPLEMENTATION REALITY SCAN RESULT
+Files scanned:  1
+Violations:     0
+Warnings:       0
+PASSED: No source code reality violations detected
+PASS: Classifier remains reusable after both watchdog timeouts
+PASS: Post-timeout classifier completes its protocol
+PASS: Post-timeout real producer leaves the helper directory clean
+implementation-reality-scan selftest summary: failures=0 skips=0
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+implementation-reality-scan selftest passed.
+BUG039_HAR_R1_FULL_SELFTEST_EXIT=0
+```
+
+This was the only full scanner-selftest execution on final test SHA-256
+`9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69`.
+It preserved all classifier, helper, authority, same-byte, skip-accounting, and
+full-entrypoint sentinels with zero failures and zero skips.
+
+### Residue, Byte Identity, And Linked-Test Resolution
+
+**Phase:** test
+**Command:** bounded process, private-root, FIFO, bytecode, mutation-residue, live-hash, protected-path, and worktree-delta checks
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 post-full residue and live-byte identity
+exit: 0
+lines: 15
+sha256: 15d58b8cb26ee8793cbbf4e536d2d1cd8d4cf462df0eef353e6983c38420349b
+HAR_R1_RESIDUE_IDENTITY_BEGIN
+ACTIVE_HAR_R1_PROCESS_COUNT=0
+REPOSITORY_FIFO_COUNT=0
+REPOSITORY_PYTHON_CACHE_COUNT=0
+REPOSITORY_MUTATION_RESIDUE_COUNT=0
+PRIVATE_MUTATION_RESIDUE_COUNT=0
+LIVE_TEST_SHA256=9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69
+FULL_EVIDENCE_TEST_SHA256=9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69
+LIVE_PRODUCTION_BLOB=fdce8ed9df73e34bd4ee674d477931f3b1d813b3
+IMMUTABLE_PRODUCTION_BLOB=fdce8ed9df73e34bd4ee674d477931f3b1d813b3
+PRODUCTION_OTHER_TESTS_DOCS_PLANNING_DIFF_EXIT=0
+WORKTREE_DELTA
+bubbles/scripts/implementation-reality-scan-selftest.sh
+HAR_R1_RESIDUE_IDENTITY_FAILURES=0
+HAR_R1_RESIDUE_IDENTITY_END
+```
+
+**Phase:** test
+**Command:** `/opt/homebrew/bin/bash bubbles/scripts/scenario-test-resolve.sh bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure --repo-root /private/tmp/bubbles-bug039-native-supervisor`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 HAR-R1 linked scenario test resolution
+exit: 0
+lines: 1
+sha256: fc09dd35a2552de3ec38df88b13faaa0ca32d9075151aa877fd71f81a6f01ff8
+[scenario-test-resolve] OK — 20 reference(s) resolved via literal-scan
+```
+
+The exact executable candidate is base
+`52dfbde09417d2bd1a0e947c8ef478e36d11a99d`, parent
+`77d91fd7549d30faf201e7946358ca64452c1375`, epoch
+`privileged-native-supervision-v2`, test SHA-256
+`9bc4aafba19ed31f55e56a2bd5b759701b7c8539fbb253d69590a30f0db62c69`,
+and immutable production blob
+`fdce8ed9df73e34bd4ee674d477931f3b1d813b3`. The final Git commit identity is
+reported after Git creates it; a commit cannot contain its own object ID.
+
+### Remediation Execution Ledger
+
+Every remediation command remained bounded. Failed candidates stay failures and
+are not substituted for accepted proof.
+
+| Execution | Exit | Full-output SHA-256 | Disposition |
+| --- | ---: | --- | --- |
+| Initial stock and modern Bash syntax preflight | 0 | `858e34fc6ac075fa8e603cb71afe2c0001a5c0901ec4e76b3cbe991b7ad7d8d6` | Accepted syntax evidence before focused execution. |
+| First focused BMR1 candidate | 1 | `4eec4da1771cccee68cf09b01db8f878c8a6c48561c88776645172df4ca72a45` | Invalid as RED proof. Taint mode rejected inherited worker environment before intended commands. |
+| Focused core after closed worker environment | 0 | `a2a2b2449275146cb3093c9aa0c78d8c8c6016c9a80d4ffb220f5c3e7206a20c` | Intermediate green core before copied controls were added. |
+| Focused core plus three copied mutations | 0 | `9a592d58f4728afcafcf93dfe744499685fa8a3a81819ffaaac82fc739e7f433` | Accepted focused proof. |
+| Private-control candidate with Perl reopen warnings | 0 | `d381b5585107c4ed2f6e5e8ffed0fd5665e834fd543fa8a3790e2b3e0ada8edd` | Rejected as final evidence because warning-mode output was not clean. |
+| Final warning-free focused candidate | 0 | `9a592d58f4728afcafcf93dfe744499685fa8a3a81819ffaaac82fc739e7f433` | Accepted final focused proof on the final test bytes. |
+| Over-broad static surface | 1 | `4daaef97051b56e18b847a3b4fd9d1f665dbfb9f08752493b055113ec68e98aa` | Invalid static failure. It matched required `setsid` adversarial payload text. |
+| Corrected static and regression-quality surface | 0 | `4a46405eab514fca7ff5a24129f0ec6a17281a59de5c151fc856fe4d07356b68` | Accepted static proof. |
+| Single full stock-Bash scanner selftest | 0 | `00805637c21a62e12c99f2228d509b1e239fec0b3c6fb515164f35cd2e394ce3` | Accepted full-suite proof on final test bytes. |
+| Post-full residue and identity check | 0 | `15d58b8cb26ee8793cbbf4e536d2d1cd8d4cf462df0eef353e6983c38420349b` | Accepted cleanup and immutable-byte proof. |
+| Immutable pre-fix HEAD fact capture | 0 | `64a7eb868533a5a19fca2a7ff01396cd8f18f70f4cde5ae63ca0ca2d9c40f7c5` | Accepted pre-fix code-fact proof. |
+| Linked scenario-test resolution | 0 | `fc09dd35a2552de3ec38df88b13faaa0ca32d9075151aa877fd71f81a6f01ff8` | Accepted reference-resolution proof. |
+
+### Explicit Non-Runs And Evidence Invalidation
+
+**Phase:** test
+**Claim Source:** not-run
+
+The earlier `TP-S2-08` candidate was stopped after the formal security finding.
+It remains invalidated and supplies no evidence for this remediation. Per the
+operator's exact execution boundary, this invocation did not rerun the
+30-by-7 lifecycle matrix, `test_24`, `framework-validate`, `release-check`, or a
+Linux lane. No result for those surfaces is claimed.
+
+The focused and full selftest evidence above addresses the test-harness
+`HAR-R1` finding for return to `bubbles.security`. It does not certify security,
+acceptance, Scope 2 completion, or BUG-039 completion.
