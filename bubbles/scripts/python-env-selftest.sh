@@ -25,6 +25,9 @@ GUARD_LIB="$SCRIPT_DIR/guard-lib.sh"
 
 RUN_GENERAL=1
 RUN_SECURITY=0
+RUN_STRESS=0
+RUN_FIXED_PERL=0
+RUN_CLI_INTEGRATION=0
 case "${1:-}" in
   '')
     if [[ "$#" -ne 0 ]]; then
@@ -40,6 +43,31 @@ case "${1:-}" in
     RUN_GENERAL=0
     RUN_SECURITY=1
     ;;
+  --internal-stress-lifecycle)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-native-supervisor-stress-v1 ]]; then
+      printf '%s\n' 'python-env stress lifecycle mode requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_SECURITY=1
+    RUN_STRESS=1
+    ;;
+  --internal-fixed-perl-negative-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-fixed-perl-negative-controls-v1 ]]; then
+      printf '%s\n' 'python-env fixed-Perl negative-control mode requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_FIXED_PERL=1
+    ;;
+  --internal-cli-caller-integration)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-cli-caller-integration-v1 ]]; then
+      printf '%s\n' 'python-env CLI caller integration mode requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_CLI_INTEGRATION=1
+    ;;
   *)
     printf 'python-env selftest mode is invalid: %s\n' "$1" >&2
     exit 2
@@ -51,7 +79,7 @@ if [[ ! -f "$ENV_SH" || ! -f "$GUARD_LIB" ]]; then
   exit 2
 fi
 
-if [[ "$RUN_SECURITY" -eq 1 ]]; then
+if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ]]; then
   case "$-" in
     *p*) ;;
     *)
@@ -98,7 +126,8 @@ selftest_cleanup() {
     return "$exit_status"
   fi
   builtin trap - EXIT HUP INT TERM
-  if [[ "$RUN_SECURITY" -eq 1 && "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
+  if [[ ( "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ) &&
+    "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
     bubbles_python_security_cleanup || true
   fi
   selftest_stop_exact_child
@@ -246,7 +275,411 @@ bad() {
   fail=$((fail + 1))
 }
 
-if [[ "$RUN_SECURITY" -eq 1 ]]; then
+scope2_sha256_file() {
+  local path="$1"
+  local hash_tool=""
+  if [[ -x /usr/bin/sha256sum ]]; then
+    /usr/bin/sha256sum "$path" | /usr/bin/awk '{ print $1 }'
+    return ${PIPESTATUS[0]}
+  fi
+  if [[ -x /usr/bin/shasum ]]; then
+    /usr/bin/shasum -a 256 "$path" | /usr/bin/awk '{ print $1 }'
+    return ${PIPESTATUS[0]}
+  fi
+  hash_tool="$(command -v sha256sum 2>/dev/null || true)"
+  if [[ -n "$hash_tool" ]]; then
+    "$hash_tool" "$path" | /usr/bin/awk '{ print $1 }'
+    return ${PIPESTATUS[0]}
+  fi
+  hash_tool="$(command -v shasum 2>/dev/null || true)"
+  if [[ -n "$hash_tool" ]]; then
+    "$hash_tool" -a 256 "$path" | /usr/bin/awk '{ print $1 }'
+    return ${PIPESTATUS[0]}
+  fi
+  return 1
+}
+
+scope2_file_mode() {
+  local path="$1"
+  local mode=""
+  if mode="$(/usr/bin/stat -f '%Lp' "$path" 2>/dev/null)" &&
+    [[ "$mode" =~ ^[0-7]+$ ]]; then
+    printf '%s\n' "$mode"
+    return 0
+  fi
+  if mode="$(/usr/bin/stat -c '%a' "$path" 2>/dev/null)" &&
+    [[ "$mode" =~ ^[0-7]+$ ]]; then
+    printf '%s\n' "$mode"
+    return 0
+  fi
+  return 1
+}
+
+scope2_security_private_root_count() {
+  local candidate=""
+  local count=0
+  for candidate in /tmp/bubbles-python-security.*; do
+    [[ -e "$candidate" ]] || continue
+    count=$((count + 1))
+  done
+  printf '%s\n' "$count"
+}
+
+SCOPE2_FIXED_PERL_SIBLING_COUNT=0
+SCOPE2_FIXED_PERL_SIBLING_MISMATCH=''
+
+scope2_verify_fixed_perl_candidate_siblings() {
+  local framework_root="$1"
+  local copied_framework="$2"
+  local source_path=""
+  local copied_path=""
+  local relative_path=""
+  local source_mode=""
+  local copied_mode=""
+  local source_count=0
+  local copied_count=0
+  local mismatch=""
+
+  while IFS= read -r source_path || [[ -n "$source_path" ]]; do
+    [[ -n "$source_path" ]] || continue
+    relative_path="${source_path#"$framework_root"/}"
+    [[ "$relative_path" == scripts/python-env.sh ]] && continue
+    source_count=$((source_count + 1))
+    copied_path="$copied_framework/$relative_path"
+    if [[ ! -f "$copied_path" ]] || ! /usr/bin/cmp -s "$source_path" "$copied_path"; then
+      mismatch="content:$relative_path"
+      break
+    fi
+    source_mode="$(scope2_file_mode "$source_path" 2>/dev/null || true)"
+    copied_mode="$(scope2_file_mode "$copied_path" 2>/dev/null || true)"
+    if [[ -z "$source_mode" || "$copied_mode" != "$source_mode" ]]; then
+      mismatch="mode:$relative_path:${source_mode:-missing}:${copied_mode:-missing}"
+      break
+    fi
+  done < <(/usr/bin/find "$framework_root" -type f -print)
+
+  while IFS= read -r copied_path || [[ -n "$copied_path" ]]; do
+    [[ -n "$copied_path" ]] || continue
+    relative_path="${copied_path#"$copied_framework"/}"
+    [[ "$relative_path" == scripts/python-env.sh ]] && continue
+    copied_count=$((copied_count + 1))
+  done < <(/usr/bin/find "$copied_framework" -type f -print)
+
+  SCOPE2_FIXED_PERL_SIBLING_COUNT=$source_count
+  SCOPE2_FIXED_PERL_SIBLING_MISMATCH="$mismatch"
+  [[ -z "$mismatch" && "$source_count" -gt 0 && "$copied_count" -eq "$source_count" ]]
+}
+
+scope2_fixed_perl_region_reference_count() {
+  local path="$1"
+  local needle="$2"
+  /usr/bin/awk -v needle="$needle" '
+    /^_bubbles_python_run_closed_operation\(\) \{/ { in_operation=1; regions++ }
+    /^bubbles_python_run_security_operation\(\) \{/ { in_operation=0 }
+    in_operation && index($0, needle) > 0 { references++ }
+    END { print regions + 0, references + 0 }
+  ' "$path"
+}
+
+SCOPE2_FIXED_PERL_SOURCE_HASH=''
+SCOPE2_FIXED_PERL_MUTANT_HASH=''
+SCOPE2_FIXED_PERL_SOURCE_MODE=''
+SCOPE2_FIXED_PERL_MUTATION_MATCHES=0
+SCOPE2_FIXED_PERL_REFERENCE_COUNT=0
+
+scope2_mutate_fixed_perl_anchor() {
+  local candidate="$1"
+  local replacement="$2"
+  local temporary="$candidate.b039-mutating"
+  local reconstructed="$candidate.b039-reconstructed"
+  local source_hash_before=""
+  local source_hash_after=""
+  local copied_hash_before=""
+  local copied_hash_after=""
+  local source_mode=""
+  local copied_mode=""
+  local source_shape=""
+  local copied_shape=""
+
+  [[ "$replacement" =~ ^/[A-Za-z0-9._/-]+$ ]] || return 42
+  source_hash_before="$(scope2_sha256_file "$ENV_SH")" || return 42
+  copied_hash_before="$(scope2_sha256_file "$candidate")" || return 42
+  source_mode="$(scope2_file_mode "$ENV_SH")" || return 42
+  copied_mode="$(scope2_file_mode "$candidate")" || return 42
+  [[ "$source_hash_before" == "$copied_hash_before" && "$source_mode" == "$copied_mode" ]] || return 42
+  source_shape="$(scope2_fixed_perl_region_reference_count "$ENV_SH" /usr/bin/perl)" || return 42
+  [[ "$source_shape" == '1 3' ]] || return 42
+
+  if ! /usr/bin/awk -v replacement="$replacement" '
+    /^_bubbles_python_run_closed_operation\(\) \{/ { in_operation=1; regions++ }
+    /^bubbles_python_run_security_operation\(\) \{/ { in_operation=0 }
+    {
+      line=$0
+      if (in_operation) replacements += gsub(/\/usr\/bin\/perl/, replacement, line)
+      print line
+    }
+    END { if (regions != 1 || replacements != 3) exit 42 }
+  ' "$candidate" >"$temporary"; then
+    /bin/rm -f "$temporary"
+    return 42
+  fi
+  /bin/chmod "$source_mode" "$temporary" || {
+    /bin/rm -f "$temporary"
+    return 42
+  }
+  /bin/mv "$temporary" "$candidate" || return 42
+
+  copied_shape="$(scope2_fixed_perl_region_reference_count "$candidate" "$replacement")" || return 42
+  [[ "$copied_shape" == '1 3' ]] || return 42
+  [[ "$(scope2_fixed_perl_region_reference_count "$candidate" /usr/bin/perl)" == '1 0' ]] || return 42
+
+  /usr/bin/awk -v replacement="$replacement" '
+    /^_bubbles_python_run_closed_operation\(\) \{/ { in_operation=1 }
+    /^bubbles_python_run_security_operation\(\) \{/ { in_operation=0 }
+    {
+      line=$0
+      if (in_operation && index(line, replacement) > 0) {
+        prefix=substr(line, 1, index(line, replacement) - 1)
+        suffix=substr(line, index(line, replacement) + length(replacement))
+        line=prefix "/usr/bin/perl" suffix
+      }
+      print line
+    }
+  ' "$candidate" >"$reconstructed" || return 42
+  if ! /usr/bin/cmp -s "$ENV_SH" "$reconstructed"; then
+    /bin/rm -f "$reconstructed"
+    return 42
+  fi
+  /bin/rm -f "$reconstructed"
+
+  source_hash_after="$(scope2_sha256_file "$ENV_SH")" || return 42
+  copied_hash_after="$(scope2_sha256_file "$candidate")" || return 42
+  copied_mode="$(scope2_file_mode "$candidate")" || return 42
+  [[ "$source_hash_after" == "$source_hash_before" &&
+    "$copied_hash_after" != "$source_hash_before" &&
+    "$copied_mode" == "$source_mode" ]] || return 42
+
+  SCOPE2_FIXED_PERL_SOURCE_HASH="$source_hash_after"
+  SCOPE2_FIXED_PERL_MUTANT_HASH="$copied_hash_after"
+  SCOPE2_FIXED_PERL_SOURCE_MODE="$source_mode"
+  SCOPE2_FIXED_PERL_MUTATION_MATCHES=1
+  SCOPE2_FIXED_PERL_REFERENCE_COUNT=3
+  return 0
+}
+
+scope2_assert_fixed_perl_negative() {
+  local mode="$1"
+  local expected_diagnostic="$2"
+  local framework_root=""
+  local candidate_root="$TMP_ROOT/fixed-perl-$mode-candidate"
+  local copied_framework="$candidate_root/bubbles"
+  local copied_env="$copied_framework/scripts/python-env.sh"
+  local copied_scanner="$copied_framework/scripts/implementation-reality-scan.sh"
+  local fallback_bin="$candidate_root/fallback-bin"
+  local fallback_marker="$candidate_root/fallback-perl.executed"
+  local anchor_marker="$candidate_root/anchor-perl.executed"
+  local worker_marker="$candidate_root/worker.executed"
+  local worker_path="$candidate_root/worker-probe"
+  local anchor_path=""
+  local module_output="$candidate_root/module-negative.output"
+  local scanner_output="$candidate_root/scanner-negative.output"
+  local module_status=0
+  local scanner_status=0
+  local private_before=0
+  local private_after=0
+  local mutation_residue_count=0
+  local residue_path=""
+
+  framework_root="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+  case "$mode" in
+    absent)
+      anchor_path=/usr/bin/bubbles-bug039-absent-perl
+      if [[ -e "$anchor_path" || -L "$anchor_path" ]]; then
+        bad "TP-S2-04 fixed-Perl absent SETUP: controlled absent anchor unexpectedly exists"
+        return
+      fi
+      ;;
+    untrusted)
+      anchor_path="$candidate_root/caller-owned-perl"
+      ;;
+    *)
+      bad "TP-S2-04 fixed-Perl SETUP: unknown negative-control mode '$mode'"
+      return
+      ;;
+  esac
+
+  /bin/mkdir -p "$candidate_root" "$fallback_bin"
+  /bin/cp -Rp "$framework_root" "$copied_framework" || {
+    bad "TP-S2-04 fixed-Perl $mode SETUP: production framework copy failed"
+    return
+  }
+  /bin/mkdir -p "$candidate_root/specs/001-fixed-perl-negative" "$candidate_root/src"
+  cat >"$candidate_root/specs/001-fixed-perl-negative/scopes.md" <<'EOF'
+# Scope 1: Fixed Perl negative control
+
+### Implementation Files
+
+- `src/fixed-perl-negative.js`
+EOF
+  cat >"$candidate_root/src/fixed-perl-negative.js" <<'EOF'
+export function persistForbiddenFixedPerlCredential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+  cat >"$fallback_bin/perl" <<EOF
+#!/bin/bash
+printf '%s\n' fallback-perl >"$fallback_marker"
+exec /usr/bin/perl "\$@"
+EOF
+  /bin/chmod 700 "$fallback_bin/perl"
+  cat >"$worker_path" <<EOF
+#!/bin/bash
+printf '%s\n' worker >"$worker_marker"
+printf '%s' bubbles-python-runs
+EOF
+  /bin/chmod 700 "$worker_path"
+  if [[ "$mode" == untrusted ]]; then
+    cat >"$anchor_path" <<EOF
+#!/bin/bash
+printf '%s\n' anchor-perl >"$anchor_marker"
+exec /usr/bin/perl "\$@"
+EOF
+    /bin/chmod 700 "$anchor_path"
+  fi
+
+  if ! scope2_verify_fixed_perl_candidate_siblings "$framework_root" "$copied_framework" ||
+    ! /usr/bin/cmp -s "$ENV_SH" "$copied_env"; then
+    bad "TP-S2-04 fixed-Perl $mode SETUP: copied candidate did not preserve source siblings and modes ($SCOPE2_FIXED_PERL_SIBLING_MISMATCH)"
+    return
+  fi
+  if ! scope2_mutate_fixed_perl_anchor "$copied_env" "$anchor_path"; then
+    bad "TP-S2-04 fixed-Perl $mode SETUP: fixed anchor mutation was not one reversible three-reference change"
+    return
+  fi
+  if ! /bin/bash -n "$copied_env" ||
+    ! scope2_verify_fixed_perl_candidate_siblings "$framework_root" "$copied_framework"; then
+    bad "TP-S2-04 fixed-Perl $mode SETUP: mutated candidate changed a sibling, mode, or Bash syntax"
+    return
+  fi
+  ok "TP-S2-04 fixed-Perl $mode copy changes one operation region, changes its hash, and preserves modes plus $SCOPE2_FIXED_PERL_SIBLING_COUNT siblings"
+
+  private_before="$(scope2_security_private_root_count)"
+  if /usr/bin/env -i \
+    LC_ALL=C \
+    PATH="$fallback_bin:/usr/bin:/bin" \
+    BUBBLES_SECURITY_ENTRY_MODE=direct \
+    /bin/bash -p -c '
+      copied_env="$1"
+      worker_path="$2"
+      mode="$3"
+      boundary_status=0
+      operation_status=0
+      boundary_record=""
+      . "$copied_env"
+      boundary_record="$(bubbles_python_security_require_boundary 2>/dev/null)" || boundary_status=$?
+      if [[ "$boundary_status" -eq 0 &&
+        "$boundary_record" == "$(printf "ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect")" ]]; then
+        boundary_state=valid
+      else
+        boundary_state=invalid
+      fi
+      _bubbles_python_run_closed_operation general-probe "$worker_path" || operation_status=$?
+      if [[ -z "$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" ]]; then control_state=empty; else control_state=present; fi
+      if [[ -z "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" ]]; then private_state=empty; else private_state=present; fi
+      printf "FIXED_PERL_MODULE mode=%s boundary=%s operationStatus=%s runStatus=%s diagnostic=%s rejection=%s operation=%s owner=%s timedOut=%s workerKind=%s stdoutBytes=%s stderrBytes=%s supervisor=%s supervisorProtocol=%s controlPath=%s privateRoot=%s\n" \
+        "$mode" "$boundary_state" "$operation_status" \
+        "$BUBBLES_PYTHON_SECURITY_RUN_STATUS" "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" \
+        "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_REJECTION" "$BUBBLES_PYTHON_SECURITY_RUN_OPERATION" \
+        "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" "$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT" \
+        "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" \
+        "$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES" "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT" \
+        "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL" "$control_state" "$private_state"
+    ' _ "$copied_env" "$worker_path" "$mode" >"$module_output" 2>&1; then
+    module_status=0
+  else
+    module_status=$?
+  fi
+  /bin/cat "$module_output"
+
+  if [[ "$module_status" -eq 0 ]] &&
+    /usr/bin/grep -Fq "FIXED_PERL_MODULE mode=$mode boundary=valid operationStatus=127 runStatus=127 diagnostic=$expected_diagnostic" "$module_output" &&
+    /usr/bin/grep -Fq 'operation=general-probe owner=supervisor timedOut=0 workerKind=not-started stdoutBytes=0 stderrBytes=0 supervisor=none supervisorProtocol=none controlPath=empty privateRoot=empty' "$module_output"; then
+    if [[ "$mode" == absent ]] && /usr/bin/grep -Fq 'rejection=ABSENT' "$module_output"; then
+      ok "TP-S2-04 fixed-Perl absent real security operation returns 127/SUPERVISOR_UNAVAILABLE before worker launch"
+    elif [[ "$mode" == untrusted ]] &&
+      /usr/bin/grep -Eq 'rejection=(ANCESTOR_OWNER|ANCESTOR_MODE_WRITABLE|ANCESTOR_CALLER_WRITABLE|TARGET_OWNER|TARGET_MODE_WRITABLE|TARGET_CALLER_WRITABLE|TARGET_FORMAT)' "$module_output"; then
+      ok "TP-S2-04 fixed-Perl untrusted real security operation returns 127/SUPERVISOR_UNTRUSTED before worker launch"
+    else
+      bad "TP-S2-04 fixed-Perl $mode returned the wrong closed path rejection"
+    fi
+  else
+    bad "TP-S2-04 fixed-Perl $mode did not reach the real operation's exact fail-closed tuple"
+  fi
+
+  if (
+    cd "$candidate_root" || exit 2
+    /usr/bin/env -i \
+      LC_ALL=C \
+      PATH="$fallback_bin:/usr/bin:/bin" \
+      DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+      BUBBLES_SECURITY_ENTRY_MODE=direct \
+      /bin/bash -p "$copied_scanner" "$candidate_root/specs/001-fixed-perl-negative" \
+      >"$scanner_output" 2>&1 </dev/null
+  ); then
+    scanner_status=0
+  else
+    scanner_status=$?
+  fi
+
+  if [[ "$scanner_status" -eq 1 ]] &&
+    /usr/bin/grep -Fq $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' "$scanner_output" &&
+    /usr/bin/grep -Fq 'sensitive-storage classifier unavailable: status=127 diagnostic=SECURITY_RUNTIME_UNAVAILABLE' "$scanner_output" &&
+    /usr/bin/grep -Fq 'supervisor=none supervisorProtocol=none' "$scanner_output" &&
+    /usr/bin/grep -Fq 'classifierProtocol=none' "$scanner_output" &&
+    /usr/bin/grep -Fq 'VIOLATION [SENSITIVE_CLIENT_STORAGE]' "$scanner_output" &&
+    ! /usr/bin/grep -Fq 'supervisorProtocol=BPS1' "$scanner_output" &&
+    ! /usr/bin/grep -Fq 'classifierProtocol=SCS1' "$scanner_output"; then
+    ok "TP-S2-04 fixed-Perl $mode copied scanner fails closed with no clean BPS1 or SCS1"
+  else
+    /bin/cat "$scanner_output"
+    bad "TP-S2-04 fixed-Perl $mode copied scanner did not preserve fail-closed status and protocol absence (exit=$scanner_status)"
+  fi
+
+  if [[ ! -e "$fallback_marker" && ! -e "$anchor_marker" && ! -e "$worker_marker" ]]; then
+    ok "TP-S2-04 fixed-Perl $mode executes no anchor, PATH fallback, or worker marker"
+  else
+    bad "TP-S2-04 fixed-Perl $mode executed a forbidden anchor, PATH fallback, or worker marker"
+  fi
+
+  private_after="$(scope2_security_private_root_count)"
+  while IFS= read -r residue_path || [[ -n "$residue_path" ]]; do
+    [[ -n "$residue_path" ]] || continue
+    mutation_residue_count=$((mutation_residue_count + 1))
+  done < <(/usr/bin/find "$candidate_root" \
+    \( -type p -o -type d -name __pycache__ -o -type f -name '*.pyc' \
+    -o -type f -name '*.b039-mutating' -o -type f -name '*.b039-reconstructed' \) -print)
+  if [[ "$private_before" -eq "$private_after" && "$mutation_residue_count" -eq 0 ]] &&
+    scope2_verify_fixed_perl_candidate_siblings "$framework_root" "$copied_framework" &&
+    [[ "$(scope2_sha256_file "$ENV_SH")" == "$SCOPE2_FIXED_PERL_SOURCE_HASH" ]]; then
+    ok "TP-S2-04 fixed-Perl $mode leaves production bytes, siblings, private roots, FIFOs, bytecode, and mutation temporaries unchanged"
+  else
+    bad "TP-S2-04 fixed-Perl $mode residue/integrity mismatch private=$private_before/$private_after mutationResidue=$mutation_residue_count siblings=$SCOPE2_FIXED_PERL_SIBLING_MISMATCH"
+  fi
+
+  printf 'TP-S2-04_FIXED_PERL_NEGATIVE mode=%s status=127 diagnostic=%s mutationMatches=%s anchorReferences=%s sourceHash=%s mutantHash=%s modeBits=%s siblingFiles=%s fallback=absent workerMarker=absent BPS1=absent SCS1=absent residue=0 retry=0\n' \
+    "$mode" "$expected_diagnostic" "$SCOPE2_FIXED_PERL_MUTATION_MATCHES" \
+    "$SCOPE2_FIXED_PERL_REFERENCE_COUNT" "$SCOPE2_FIXED_PERL_SOURCE_HASH" \
+    "$SCOPE2_FIXED_PERL_MUTANT_HASH" "$SCOPE2_FIXED_PERL_SOURCE_MODE" \
+    "$SCOPE2_FIXED_PERL_SIBLING_COUNT"
+  /bin/rm -rf "$candidate_root"
+  if [[ ! -e "$candidate_root" ]]; then
+    ok "TP-S2-04 fixed-Perl $mode copied candidate is removed after verification"
+  else
+    bad "TP-S2-04 fixed-Perl $mode copied candidate remains after verification"
+  fi
+}
+
+if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ]]; then
   if ! declare -F bubbles_python_security_require_boundary >/dev/null 2>&1; then
     printf '%s\n' 'RED: TP-S2-01 SEC-R1 privilegedChild=ready BSEC1=missing boundaryApi=absent'
     bad "TP-S2-01 SEC-R1: actual privileged child cannot establish production BSEC1"
@@ -263,6 +696,14 @@ if [[ "$RUN_SECURITY" -eq 1 ]]; then
       bad "TP-S2-01 SEC-R1: production boundary did not establish the exact direct BSEC1 record"
     fi
   fi
+fi
+
+if [[ ( "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ) &&
+  "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
+  echo "Scenario: TP-S2-04 fixed-Perl absence and untrusted-anchor controls fail closed without fallback."
+  scope2_assert_fixed_perl_negative absent SUPERVISOR_UNAVAILABLE
+  scope2_assert_fixed_perl_negative untrusted SUPERVISOR_UNTRUSTED
+  printf '%s\n' 'TP-S2-04_FIXED_PERL_NEGATIVE_MATRIX_COMPLETED=1 cases=2 retries=0'
 fi
 
 SCOPE2_NATIVE_CONTRACT_MISSING=''
@@ -1294,26 +1735,257 @@ fi
 
 # The repeated native-supervisor matrix has no retries. Each named iteration
 # executes once against the same authenticated runtime.
+scope2_private_root_count() {
+  local candidate=""
+  local count=0
+  for candidate in /tmp/bubbles-python-security.*; do
+    [[ -e "$candidate" ]] || continue
+    count=$((count + 1))
+  done
+  printf '%s\n' "$count"
+}
+
+scope2_control_line_count() {
+  local control_path="${1:-}"
+  local line=""
+  local count=0
+  [[ -f "$control_path" ]] || {
+    printf '%s\n' 0
+    return 0
+  }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    count=$((count + 1))
+  done <"$control_path"
+  printf '%s\n' "$count"
+}
+
 matrix_iteration=1
 matrix_failures=0
 while [[ "$matrix_iteration" -le 30 ]]; do
+  matrix_private_before="$(scope2_private_root_count)"
   matrix_status=0
   bubbles_python_run_security_operation runtime-probe || matrix_status=$?
   matrix_root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
   matrix_diagnostic="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC"
-  bubbles_python_security_cleanup || matrix_status=125
-  if [[ "$matrix_status" -eq 0 && "$matrix_diagnostic" == OK && -n "$matrix_root" && ! -e "$matrix_root" ]]; then
+  matrix_owner="$BUBBLES_PYTHON_SECURITY_RUN_OWNER"
+  matrix_timed_out="$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT"
+  matrix_worker_kind="$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND"
+  matrix_stdout_bytes="$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES"
+  matrix_stderr_bytes="$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES"
+  matrix_stdout_actual="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH")"
+  matrix_stderr_actual="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDERR_PATH")"
+  matrix_stdout_actual="${matrix_stdout_actual//[[:space:]]/}"
+  matrix_stderr_actual="${matrix_stderr_actual//[[:space:]]/}"
+  matrix_control_lines="$(scope2_control_line_count "$BUBBLES_PYTHON_SECURITY_CONTROL_PATH")"
+  matrix_ordering=0
+  scope2_native_contract_structurally_valid "$ENV_SH" || matrix_ordering=$?
+  matrix_cleanup=0
+  bubbles_python_security_cleanup || matrix_cleanup=$?
+  matrix_private_after="$(scope2_private_root_count)"
+  if [[ "$matrix_status" -eq 0 && "$matrix_diagnostic" == OK &&
+    "$matrix_owner" == worker && "$matrix_timed_out" -eq 0 && "$matrix_worker_kind" == exit &&
+    "$matrix_stdout_bytes" -gt 0 && "$matrix_stdout_bytes" -eq "$matrix_stdout_actual" &&
+    "$matrix_stderr_bytes" -eq "$matrix_stderr_actual" && "$matrix_control_lines" -eq 1 &&
+    "$matrix_ordering" -eq 0 && "$matrix_cleanup" -eq 0 &&
+    -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" &&
+    "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE && -n "$matrix_root" && ! -e "$matrix_root" &&
+    "$matrix_private_before" -eq "$matrix_private_after" ]]; then
+    printf 'TP-S2-05_MATRIX class=success iteration=%s/30 status=%s owner=%s timedOut=%s workerKind=%s stdoutBytes=%s stderrBytes=%s completionRecords=1 ordering=waitpid-owner-clear-bps1 oneReap=1 postReapSignals=0 residue=0 retry=0\n' \
+      "$matrix_iteration" "$matrix_status" "$matrix_owner" "$matrix_timed_out" \
+      "$matrix_worker_kind" "$matrix_stdout_bytes" "$matrix_stderr_bytes"
     ok "SCN-B039-007 stress iteration $matrix_iteration/30 native-supervisor success"
   else
-    bad "SCN-B039-007 stress iteration $matrix_iteration/30 status=$matrix_status diagnostic=$matrix_diagnostic"
+    bad "SCN-B039-007 stress iteration $matrix_iteration/30 status=$matrix_status diagnostic=$matrix_diagnostic owner=$matrix_owner timedOut=$matrix_timed_out workerKind=$matrix_worker_kind stdout=$matrix_stdout_bytes/$matrix_stdout_actual stderr=$matrix_stderr_bytes/$matrix_stderr_actual completionRecords=$matrix_control_lines ordering=$matrix_ordering cleanup=$matrix_cleanup roots=$matrix_private_before/$matrix_private_after"
     matrix_failures=$((matrix_failures + 1))
   fi
   matrix_iteration=$((matrix_iteration + 1))
 done
 if [[ "$matrix_failures" -eq 0 ]]; then
-  ok "SCN-B039-007: native-supervisor matrix completed 30/30 with no retry substitution"
+  ok "TP-S2-05 success matrix completed 30/30 with exact BPS1 bytes, one reap, zero post-reap signals, no residue, and no retry substitution"
 else
-  bad "SCN-B039-007: native-supervisor matrix had $matrix_failures failed iteration(s)"
+  bad "TP-S2-05 success matrix had $matrix_failures failed iteration(s)"
+fi
+
+scope2_write_lifecycle_worker() {
+  local lifecycle_class="$1"
+  local destination="$2"
+  case "$lifecycle_class" in
+    timeout)
+      cat >"$destination" <<'EOF'
+#!/bin/bash
+trap '' TERM
+exec /bin/sleep 300
+EOF
+      ;;
+    output-limit)
+      cat >"$destination" <<'EOF'
+#!/bin/bash
+exec /usr/bin/yes x
+EOF
+      ;;
+    signal-hup | signal-int | signal-term)
+      cat >"$destination" <<'EOF'
+#!/bin/bash
+printf '%s' 'bubbles-python-runs'
+exec /bin/sleep 3
+EOF
+      ;;
+    *) return 2 ;;
+  esac
+  /bin/chmod 700 "$destination"
+}
+
+scope2_run_lifecycle_iteration() {
+  local lifecycle_class="$1"
+  local iteration="$2"
+  local worker_path="$TMP_ROOT/tp-s2-05-$lifecycle_class.worker"
+  local worker_program=""
+  local expected_status=0
+  local expected_diagnostic=""
+  local expected_owner=""
+  local expected_timed_out=0
+  local expected_worker_kind=""
+  local expected_stdout_bytes=0
+  local signal_name=""
+  local parent_pid="$$"
+  local sender_pid=""
+  local sender_status=0
+  local run_status=0
+  local private_before=0
+  local private_after=0
+  local root=""
+  local control_path=""
+  local control_lines=0
+  local stdout_actual=0
+  local stderr_actual=0
+  local ordering_status=0
+  local cleanup_status=0
+  local root_removed=0
+
+  case "$lifecycle_class" in
+    fast-exit)
+      worker_program=/usr/bin/false
+      expected_status=1
+      expected_diagnostic=WORKER_EXIT_NONZERO
+      expected_owner=worker
+      expected_timed_out=0
+      expected_worker_kind='exit'
+      expected_stdout_bytes=0
+      ;;
+    timeout)
+      scope2_write_lifecycle_worker "$lifecycle_class" "$worker_path" || return 2
+      worker_program="$worker_path"
+      expected_status=124
+      expected_diagnostic=SUPERVISOR_TIMEOUT
+      expected_owner=supervisor
+      expected_timed_out=1
+      expected_worker_kind=signal
+      expected_stdout_bytes=0
+      ;;
+    output-limit)
+      scope2_write_lifecycle_worker "$lifecycle_class" "$worker_path" || return 2
+      worker_program="$worker_path"
+      expected_status=125
+      expected_diagnostic=OUTPUT_LIMIT
+      expected_owner=supervisor
+      expected_timed_out=0
+      expected_worker_kind=signal
+      expected_stdout_bytes=16384
+      ;;
+    signal-hup | signal-int | signal-term)
+      scope2_write_lifecycle_worker "$lifecycle_class" "$worker_path" || return 2
+      worker_program="$worker_path"
+      expected_owner=caller-signal
+      expected_timed_out=0
+      expected_worker_kind='exit'
+      expected_stdout_bytes=19
+      case "$lifecycle_class" in
+        signal-hup) signal_name=HUP; expected_status=129; expected_diagnostic=SIGNAL_HUP ;;
+        signal-int) signal_name=INT; expected_status=130; expected_diagnostic=SIGNAL_INT ;;
+        signal-term) signal_name=TERM; expected_status=143; expected_diagnostic=SIGNAL_TERM ;;
+      esac
+      ;;
+    *) return 2 ;;
+  esac
+
+  private_before="$(scope2_private_root_count)"
+  if [[ -n "$signal_name" ]]; then
+    (
+      /bin/sleep 1
+      builtin kill -"$signal_name" "$parent_pid"
+    ) &
+    sender_pid=$!
+  fi
+  _bubbles_python_run_closed_operation general-probe "$worker_program" || run_status=$?
+  if [[ -n "$sender_pid" ]]; then
+    if builtin wait "$sender_pid"; then sender_status=0; else sender_status=$?; fi
+  fi
+
+  root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
+  control_path="$BUBBLES_PYTHON_SECURITY_CONTROL_PATH"
+  if [[ -n "$control_path" ]]; then
+    control_lines="$(scope2_control_line_count "$control_path")"
+    stdout_actual="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH")"
+    stderr_actual="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDERR_PATH")"
+    stdout_actual="${stdout_actual//[[:space:]]/}"
+    stderr_actual="${stderr_actual//[[:space:]]/}"
+  else
+    control_lines=1
+    stdout_actual="$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES"
+    stderr_actual="$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES"
+  fi
+  scope2_native_contract_structurally_valid "$ENV_SH" || ordering_status=$?
+  bubbles_python_security_cleanup || cleanup_status=$?
+  private_after="$(scope2_private_root_count)"
+  if [[ -z "$root" || ! -e "$root" ]]; then
+    root_removed=1
+  fi
+
+  if [[ "$run_status" -eq "$expected_status" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" == "$expected_diagnostic" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" == "$expected_owner" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT" -eq "$expected_timed_out" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" == "$expected_worker_kind" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" -eq "$expected_stdout_bytes" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" -eq "$stdout_actual" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES" -eq "$stderr_actual" &&
+    "$control_lines" -eq 1 && "$ordering_status" -eq 0 && "$cleanup_status" -eq 0 &&
+    "$sender_status" -eq 0 && -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" &&
+    "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE && "$private_before" -eq "$private_after" &&
+    "$root_removed" -eq 1 ]]; then
+    printf 'TP-S2-05_MATRIX class=%s iteration=%s/30 status=%s owner=%s timedOut=%s workerKind=%s stdoutBytes=%s stderrBytes=%s completionRecords=1 ordering=waitpid-owner-clear-bps1 oneReap=1 postReapSignals=0 residue=0 retry=0\n' \
+      "$lifecycle_class" "$iteration" "$run_status" \
+      "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" "$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT" \
+      "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" \
+      "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" "$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES"
+    ok "TP-S2-05 $lifecycle_class iteration $iteration/30 preserves the complete native-supervisor lifecycle contract"
+    return 0
+  fi
+
+  bad "TP-S2-05 $lifecycle_class iteration $iteration/30 observed status=$run_status diagnostic=$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC owner=$BUBBLES_PYTHON_SECURITY_RUN_OWNER timedOut=$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT workerKind=$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND stdout=$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES/$stdout_actual stderr=$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES/$stderr_actual completionRecords=$control_lines ordering=$ordering_status cleanup=$cleanup_status sender=$sender_status roots=$private_before/$private_after"
+  return 1
+}
+
+if [[ "$RUN_STRESS" -eq 1 ]]; then
+  printf '%s\n' 'TP-S2-05_STRESS_MATRIX_BEGIN classes=success,fast-exit,timeout,output-limit,HUP,INT,TERM iterations=30 retry=forbidden'
+  for lifecycle_class in fast-exit timeout output-limit signal-hup signal-int signal-term; do
+    lifecycle_iteration=1
+    lifecycle_failures=0
+    while [[ "$lifecycle_iteration" -le 30 ]]; do
+      if scope2_run_lifecycle_iteration "$lifecycle_class" "$lifecycle_iteration"; then
+        :
+      else
+        lifecycle_failures=$((lifecycle_failures + 1))
+      fi
+      lifecycle_iteration=$((lifecycle_iteration + 1))
+    done
+    if [[ "$lifecycle_failures" -eq 0 ]]; then
+      ok "TP-S2-05 $lifecycle_class matrix completed 30/30 with fixed production limits and no retry substitution"
+    else
+      bad "TP-S2-05 $lifecycle_class matrix had $lifecycle_failures failed iteration(s)"
+    fi
+  done
+  printf '%s\n' 'TP-S2-05_STRESS_MATRIX_END attemptedPerClass=30 retries=0'
 fi
 
 # Structural assertions are scoped to the production security module. Strings
@@ -1415,6 +2087,7 @@ if [[ "$c13_reason" == *"the managed venv ("* ]]; then
   bad "Case 13b: reason names a concrete venv path while no locator is set: '$c13_reason'"
 else
   ok "Case 13b: reason claims no venv path when none could be named"
+fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -1564,22 +2237,67 @@ scope2_assert_cli_entry_case() {
     bad "TP-S2-01 SEC-R1: $mode crossed the canonical CLI caller before env -i /bin/bash -p"
   elif [[ "$entry_status" -eq 0 && "$marker_count" -eq 0 ]] &&
     /usr/bin/grep -Fq $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' "$output_file"; then
-    ok "TP-S2-01 SEC-R1: $mode is excluded before the direct BSEC1 privileged child"
+    ok "TP-S2-01/TP-S2-06 SEC-R1: $mode is excluded before the direct BSEC1 privileged child"
   else
     /bin/cat "$output_file"
     bad "TP-S2-01 SEC-R1 SETUP/CONTRACT: $mode unexpected caller result exit=$entry_status hostileScannerSources=$marker_count"
   fi
 }
 
-echo "Scenario: TP-S2-01 SEC-R1 canonical callers exclude hostile Bash startup state."
-scope2_modern_bash="$(scope2_fixed_modern_bash || true)"
-if [[ -n "$scope2_modern_bash" ]]; then
-  scope2_assert_cli_entry_case bash-env "$scope2_modern_bash"
-  scope2_assert_cli_entry_case exported-functions "$scope2_modern_bash"
-else
-  bad "TP-S2-01 SEC-R1 SETUP: no fixed Bash 4+ path is available for the canonical CLI caller"
+scope2_assert_cli_status_preservation() {
+  local modern_bash="$1"
+  local fixture_root="$TMP_ROOT/scope2-entry-status-preservation"
+  local output_file="$fixture_root/caller.output"
+  local copied_cli="$fixture_root/bubbles/scripts/cli.sh"
+  local entry_status=0
+  local fixed_path="/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+  if ! scope2_prepare_entry_fixture "$fixture_root"; then
+    bad "TP-S2-06 SETUP: copied CLI status fixture did not preserve every required sibling and mode"
+    return
+  fi
+  cat >"$fixture_root/src/scope2-entry.js" <<'EOF'
+export function persistForbiddenCredential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+
+  if /usr/bin/env \
+    PATH="$fixed_path" \
+    DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+    "$modern_bash" "$copied_cli" scan specs/001-scope2-entry \
+    >"$output_file" 2>&1 </dev/null; then
+    entry_status=0
+  else
+    entry_status=$?
+  fi
+
+  if [[ "$entry_status" -eq 1 ]] &&
+    /usr/bin/grep -Fq $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' "$output_file" &&
+    /usr/bin/grep -Fq 'supervisorProtocol=BPS1' "$output_file" &&
+    /usr/bin/grep -Fq 'VIOLATION [SENSITIVE_CLIENT_STORAGE]' "$output_file" &&
+    ! /usr/bin/grep -Fq 'entryMode=compat-reexec' "$output_file"; then
+    ok "TP-S2-06 CLI scan preserves scanner exit 1 through direct BSEC1 with valid BPS1 and no ordinary-Bash authority"
+  else
+    /bin/cat "$output_file"
+    bad "TP-S2-06 CLI scan status preservation expected exit 1 with direct BSEC1, BPS1, and the real sensitive-storage finding; observed exit=$entry_status"
+  fi
+}
+
+if [[ "$RUN_GENERAL" -eq 1 || "$RUN_CLI_INTEGRATION" -eq 1 ]]; then
+  echo "Scenario: TP-S2-01/TP-S2-06 canonical CLI callers enter direct BSEC1 and preserve scanner status."
+  scope2_modern_bash="$(scope2_fixed_modern_bash || true)"
+  if [[ -n "$scope2_modern_bash" ]]; then
+    scope2_assert_cli_entry_case bash-env "$scope2_modern_bash"
+    scope2_assert_cli_entry_case exported-functions "$scope2_modern_bash"
+    scope2_assert_cli_status_preservation "$scope2_modern_bash"
+  else
+    bad "TP-S2-06 SETUP: no fixed Bash 4+ path is available for the canonical CLI caller"
+  fi
+  printf '%s\n' 'TP-S2-06_CLI_INTEGRATION_COMPLETED=1 cases=3 retries=0'
 fi
 
+if [[ "$RUN_GENERAL" -eq 1 ]]; then
 scope2_scanner="$SCRIPT_DIR/implementation-reality-scan.sh"
 scope2_compat_line="$(/usr/bin/grep -nF 'BUBBLES_SECURITY_ENTRY_MODE=compat-reexec' "$scope2_scanner" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
 scope2_first_source_line="$(/usr/bin/grep -nE '^[[:space:]]*(source|\.)[[:space:]]+' "$scope2_scanner" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"

@@ -10,6 +10,7 @@ OWNERSHIP_LINT_SCRIPT="$SCRIPT_DIR/agent-ownership-lint.sh"
 source "$SCRIPT_DIR/guard-lib.sh"
 
 BUG039_SCOPE2_RED_ONLY=0
+BUG039_CHECK16_ONLY=0
 case "${1:-}" in
   '')
     [[ "$#" -eq 0 ]] || {
@@ -23,6 +24,13 @@ case "${1:-}" in
       exit 2
     fi
     BUG039_SCOPE2_RED_ONLY=1
+    ;;
+  --internal-bug039-check16-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-check16-integration-v1 ]]; then
+      printf '%s\n' 'BUG-039 Check 16 controls require the b039-check16-integration-v1 token' >&2
+      exit 2
+    fi
+    BUG039_CHECK16_ONLY=1
     ;;
   *)
     printf 'state-transition-guard selftest argument is invalid: %s\n' "$1" >&2
@@ -42,7 +50,8 @@ tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXX
 failures=0
 
 cleanup() {
-  if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 && "${KEEP_SELFTEST_TMP:-0}" != "1" ]] ||
+  if [[ ( "$BUG039_SCOPE2_RED_ONLY" -eq 1 || "$BUG039_CHECK16_ONLY" -eq 1 ) &&
+    "${KEEP_SELFTEST_TMP:-0}" != "1" ]] ||
     { [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; }; then
     rm -rf "$tmp_root"
   else
@@ -242,7 +251,9 @@ EOF
   printf '%s\n' 'TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
 }
 
-run_bug039_scope2_red_contract
+if [[ "$BUG039_CHECK16_ONLY" -eq 0 ]]; then
+  run_bug039_scope2_red_contract
+fi
 if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 ]]; then
   echo "state-transition-guard BUG-039 Scope 2 RED summary: failures=$failures"
   if [[ "$failures" -gt 0 ]]; then
@@ -1068,8 +1079,6 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
   echo "state-transition-guard G061 selftest passed."
   exit 0
 fi
-
-run_g061_regression_cases
 
 emit_honest_planning_fixture() {
   local feature_dir="$1"
@@ -2469,10 +2478,364 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+append_bug039_check16_delta_evidence() {
+  local fixture_dir="$1"
+  local source_file="$2"
+  local report_file="$fixture_dir/report.md"
+  local relative_source="${source_file#"$tmp_root"/}"
+  local status_line=""
+
+  status_line="$(git -C "$tmp_root" status --short --untracked-files=all -- "$relative_source")" || return 2
+  if [[ "$status_line" != "?? $relative_source" ]]; then
+    return 2
+  fi
+
+  cat >>"$report_file" <<EOF
+
+### Code Diff Evidence
+
+This nonterminal selftest fixture records its real untracked implementation
+delta. It does not claim an overall terminal state or release.
+
+**Command:** git status --short --untracked-files=all -- $relative_source
+**Exit Code:** 0
+**Claim Source:** executed
+
+\`\`\`text
+$status_line
+\`\`\`
+EOF
+}
+
+prepare_bug039_check16_fixtures() {
+  local base_feature_dir="$1"
+  local positive_dir="$2"
+  local negative_dir="$3"
+  local positive_source="$tmp_root/check16-implementation/positive/check16-consumer.js"
+  local negative_source="$tmp_root/check16-implementation/negative/check16-consumer.js"
+  local positive_source_relative="${positive_source#"$tmp_root"/}"
+  local negative_source_relative="${negative_source#"$tmp_root"/}"
+  local negative_surface=""
+
+  /bin/cp -R "$base_feature_dir" "$positive_dir" || return 2
+  # test-to-doc executes Check 16 while requiring exactly the test, validate,
+  # audit, and docs claims already present in this delivery fixture. Using the
+  # broader bugfix-fastlane mode would manufacture unrelated phase failures.
+  set_fixture_contract "$positive_dir/state.json" "test-to-doc" "in_progress"
+  /bin/mkdir -p "$(/usr/bin/dirname "$positive_source")" "$(/usr/bin/dirname "$negative_source")"
+  cat >"$positive_source" <<'EOF'
+export function normalizeCheck16Value(value) {
+  return String(value).trim();
+}
+EOF
+  cat >>"$positive_dir/scopes.md" <<EOF
+
+### Implementation Files
+
+- \`$positive_source\`
+EOF
+  /bin/cp -R "$positive_dir" "$negative_dir" || return 2
+  for negative_surface in \
+    "$negative_dir/scopes.md" \
+    "$negative_dir/report.md" \
+    "$negative_dir/test-plan.json"; do
+    [[ -f "$negative_surface" ]] || continue
+    bubbles_sed_inplace "s|$positive_source|$negative_source|g" "$negative_surface"
+    bubbles_sed_inplace "s|$positive_source_relative|$negative_source_relative|g" "$negative_surface"
+  done
+  cat >"$negative_source" <<'EOF'
+export function persistForbiddenCheck16Credential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+  append_bug039_check16_delta_evidence "$positive_dir" "$positive_source" || return 2
+  append_bug039_check16_delta_evidence "$negative_dir" "$negative_source" || return 2
+}
+
+run_bug039_check16_controls() {
+  local positive_dir="$1"
+  local negative_dir="$2"
+  local positive_lint_log="$tmp_root/bug039-check16-positive-artifact-lint.log"
+  local negative_lint_log="$tmp_root/bug039-check16-negative-artifact-lint.log"
+  local positive_log="$tmp_root/bug039-check16-positive.log"
+  local negative_log="$tmp_root/bug039-check16-negative.log"
+  local hostile_startup="$tmp_root/bug039-check16-hostile-startup.sh"
+  local hostile_marker="$tmp_root/bug039-check16-hostile.marker"
+  local positive_lint_status=0
+  local negative_lint_status=0
+  local positive_status=0
+  local negative_status=0
+  local positive_violation_count=0
+  local positive_block_count=0
+  local positive_check16_count=0
+  local negative_violation_count=0
+  local negative_sensitive_count=0
+  local negative_block_count=0
+  local negative_expected_block_count=0
+  local negative_check16_count=0
+  local guard_bash=""
+  local candidate_bash=""
+  local candidate_major=""
+  local check16_source=""
+  local positive_source="$tmp_root/check16-implementation/positive/check16-consumer.js"
+  local negative_source="$tmp_root/check16-implementation/negative/check16-consumer.js"
+  local positive_source_relative="${positive_source#"$tmp_root"/}"
+  local negative_source_relative="${negative_source#"$tmp_root"/}"
+  local expected_positive_source="$tmp_root/bug039-check16-positive-expected.js"
+  local expected_negative_source="$tmp_root/bug039-check16-negative-expected.js"
+  local negative_status_line=""
+  local setup_failures=0
+  local failures_before="$failures"
+
+  if [[ -f "$SCRIPT_DIR/artifact-lint.sh" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: canonical fixture lint path exists"
+  else
+    fail "TP-S2-06 Check 16 SETUP: canonical fixture lint path is missing"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ -f "$positive_source" && -f "$negative_source" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking implementation paths exist"
+  else
+    fail "TP-S2-06 Check 16 SETUP: clean or blocking implementation path is missing"
+    setup_failures=$((setup_failures + 1))
+  fi
+  cat >"$expected_positive_source" <<'EOF'
+export function normalizeCheck16Value(value) {
+  return String(value).trim();
+}
+EOF
+  cat >"$expected_negative_source" <<'EOF'
+export function persistForbiddenCheck16Credential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+  if /usr/bin/cmp -s "$expected_positive_source" "$positive_source" &&
+    /usr/bin/cmp -s "$expected_negative_source" "$negative_source"; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking source bytes match their exact controls"
+  else
+    fail "TP-S2-06 Check 16 SETUP: clean or blocking source bytes differ from the exact control"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ "$negative_source" == "$tmp_root/$negative_source_relative" ]] &&
+    /usr/bin/cmp -s "$expected_negative_source" "$tmp_root/$negative_source_relative"; then
+    pass "TP-S2-06 Check 16 SETUP: absolute and repository-relative blocking paths resolve to the exact source"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking absolute or repository-relative path does not resolve to the exact source"
+    setup_failures=$((setup_failures + 1))
+  fi
+  negative_status_line="$(git -C "$tmp_root" status --short --untracked-files=all -- "$negative_source_relative")" ||
+    negative_status_line=""
+  if [[ "$negative_status_line" == "?? $negative_source_relative" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: blocking repository-relative path has exact untracked git status"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking repository-relative path has mismatched git status"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if /usr/bin/grep -Fq "\`$negative_source\`" "$negative_dir/scopes.md" &&
+    ! /usr/bin/grep -Fq "$positive_source" "$negative_dir/scopes.md" &&
+    ! /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/scopes.md"; then
+    pass "TP-S2-06 Check 16 SETUP: blocking scopes references only the absolute blocking implementation path"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking scopes retains a clean path or omits the blocking implementation path"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if /usr/bin/grep -Fq "**Command:** git status --short --untracked-files=all -- $negative_source_relative" "$negative_dir/report.md" &&
+    /usr/bin/grep -Fq "?? $negative_source_relative" "$negative_dir/report.md" &&
+    ! /usr/bin/grep -Fq "$positive_source" "$negative_dir/report.md" &&
+    ! /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/report.md"; then
+    pass "TP-S2-06 Check 16 SETUP: blocking report records only the repository-relative blocking path"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking report retains a clean path or omits exact relative-path evidence"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ -f "$negative_dir/test-plan.json" ]]; then
+    if /usr/bin/grep -Fq "$positive_source" "$negative_dir/test-plan.json" ||
+      /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/test-plan.json"; then
+      fail "TP-S2-06 Check 16 SETUP: blocking test plan retains a clean implementation path"
+      setup_failures=$((setup_failures + 1))
+    elif /usr/bin/grep -Fq "$negative_source" "$negative_dir/test-plan.json" ||
+      /usr/bin/grep -Fq "$negative_source_relative" "$negative_dir/test-plan.json"; then
+      pass "TP-S2-06 Check 16 SETUP: blocking test plan carries only a blocking implementation path"
+    else
+      pass "TP-S2-06 Check 16 SETUP: blocking test plan makes no implementation-path claim"
+    fi
+  fi
+  if [[ "$setup_failures" -gt 0 ]]; then
+    return
+  fi
+
+  # state-transition-guard.sh has a real declare -A in Check 9. The selftest
+  # entry remains stock-Bash-compatible, but the nested guard needs a fixed
+  # Bash 4+ executable. Check 16 itself still launches fixed /bin/bash -p.
+  for candidate_bash in /opt/homebrew/bin/bash /opt/local/bin/bash /usr/local/bin/bash /usr/bin/bash /bin/bash; do
+    [[ -x "$candidate_bash" ]] || continue
+    candidate_major="$("$candidate_bash" -c 'printf "%s" "${BASH_VERSINFO[0]:-0}"' 2>/dev/null || true)"
+    if [[ "$candidate_major" =~ ^[0-9]+$ && "$candidate_major" -ge 4 ]]; then
+      guard_bash="$candidate_bash"
+      break
+    fi
+  done
+  if [[ -z "$guard_bash" ]]; then
+    fail "TP-S2-06 Check 16 SETUP: no fixed Bash 4+ path is available for the transition guard"
+    return
+  fi
+
+  positive_lint_status="$(run_capture "$positive_lint_log" "$guard_bash" "$SCRIPT_DIR/artifact-lint.sh" "$positive_dir")"
+  negative_lint_status="$(run_capture "$negative_lint_log" "$guard_bash" "$SCRIPT_DIR/artifact-lint.sh" "$negative_dir")"
+  if [[ "$positive_lint_status" -eq 0 && "$negative_lint_status" -eq 0 ]]; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking fixtures pass artifact lint before guard invocation"
+  else
+    fail "TP-S2-06 Check 16 SETUP: fixture artifact lint failed before guard invocation"
+    /bin/cat "$positive_lint_log"
+    /bin/cat "$negative_lint_log"
+    return
+  fi
+
+  echo "Running BUG-039 TP-S2-06 Check 16 caller integration selftest..."
+  positive_status="$(
+    cd "$tmp_root" || exit 2
+    run_capture "$positive_log" "$guard_bash" "$GUARD_SCRIPT" "$positive_dir"
+  )"
+  if [[ "$positive_status" -eq 0 ]]; then
+    pass "TP-S2-06 Check 16 clean fixture preserves guard exit 0"
+  else
+    fail "TP-S2-06 Check 16 clean fixture returned $positive_status instead of 0"
+  fi
+  assert_log_contains "$positive_log" \
+    "Implementation reality scan passed — no stub/fake/hardcoded data patterns detected" \
+    "TP-S2-06 Check 16 preserves a clean scanner status"
+  assert_log_contains "$positive_log" $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' \
+    "TP-S2-06 Check 16 clean case enters direct BSEC1"
+  assert_log_contains "$positive_log" "supervisorProtocol=BPS1" \
+    "TP-S2-06 Check 16 clean case validates native BPS1 completion"
+  assert_log_contains "$positive_log" \
+    "Implementation delta evidence recorded with git-backed proof and non-artifact file paths (Gate G053)" \
+    "TP-S2-06 Check 16 clean fixture satisfies G053 with its real nonterminal source delta"
+  assert_log_not_contains "$positive_log" "entryMode=compat-reexec" \
+    "TP-S2-06 Check 16 clean case exposes no ordinary-Bash compatibility authority"
+  positive_violation_count="$(/usr/bin/grep -c '^🔴 VIOLATION ' "$positive_log" || true)"
+  positive_block_count="$(/usr/bin/grep -c '^🔴 BLOCK:' "$positive_log" || true)"
+  positive_check16_count="$(/usr/bin/grep -c '^--- Check 16: Implementation Reality Scan' "$positive_log" || true)"
+  if [[ "$positive_violation_count" -eq 0 && "$positive_block_count" -eq 0 && "$positive_check16_count" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 clean case has one Check 16 execution and no unrelated violation or gate block"
+  else
+    fail "TP-S2-06 Check 16 clean case has unrelated or duplicate failure signals"
+  fi
+  check16_source="$(/usr/bin/sed -n '/CHECK 16: Implementation Reality Scan/,/CHECK 17: Strict Mode/p' "$GUARD_SCRIPT")"
+  if /usr/bin/grep -Fq '/bin/bash -p -- "$reality_scan_script"' <<<"$check16_source"; then
+    pass "TP-S2-06 Check 16 production child remains fixed /bin/bash -p"
+  else
+    fail "TP-S2-06 Check 16 production child is not fixed /bin/bash -p"
+  fi
+
+  cat >"$hostile_startup" <<EOF
+source() {
+  case "\${0:-}:\${1:-}" in
+    */implementation-reality-scan.sh:*/guard-lib.sh)
+      printf '%s\\n' CHECK16_HOSTILE_SOURCE_INTERCEPTED >>"$hostile_marker"
+      ;;
+  esac
+  builtin source "\$@"
+}
+export -f source
+EOF
+  negative_status="$(
+    cd "$tmp_root" || exit 2
+    run_capture "$negative_log" \
+      /usr/bin/env BASH_ENV="$hostile_startup" \
+      "$guard_bash" "$GUARD_SCRIPT" "$negative_dir"
+  )"
+  if [[ "$negative_status" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 propagates exact blocking scanner exit 1 to the transition guard"
+  else
+    fail "TP-S2-06 Check 16 blocking fixture returned $negative_status instead of 1"
+  fi
+  assert_log_contains "$negative_log" "VIOLATION [SENSITIVE_CLIENT_STORAGE]" \
+    "TP-S2-06 Check 16 blocking case executes the real sensitive-storage classifier"
+  assert_log_contains "$negative_log" \
+    "reason=FORBIDDEN_SECRET_CLASS storage=localStorage operation=persist key=authToken" \
+    "TP-S2-06 Check 16 blocking case reports the exact durable auth-token violation"
+  assert_log_contains "$negative_log" \
+    "Implementation reality scan found 1 source code violation(s)" \
+    "TP-S2-06 Check 16 reports the scanner's blocking result"
+  assert_log_contains "$negative_log" $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' \
+    "TP-S2-06 Check 16 blocking case enters direct BSEC1"
+  assert_log_contains "$negative_log" "supervisorProtocol=BPS1" \
+    "TP-S2-06 Check 16 blocking case validates native BPS1 completion"
+  assert_log_not_contains "$negative_log" "entryMode=compat-reexec" \
+    "TP-S2-06 Check 16 blocking case exposes no ordinary-Bash compatibility authority"
+  assert_log_not_contains "$negative_log" "SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" \
+    "TP-S2-06 Check 16 blocking case does not degrade to unresolved classification"
+  assert_log_not_contains "$negative_log" "SENSITIVE_STORAGE_CONFIG_INVALID" \
+    "TP-S2-06 Check 16 blocking case has no unrelated storage-config failure"
+  assert_log_not_contains "$negative_log" "ZERO_FILES_RESOLVED" \
+    "TP-S2-06 Check 16 blocking case resolves the declared implementation file"
+  assert_log_contains "$negative_log" "$negative_source_relative:" \
+    "TP-S2-06 Check 16 blocking case scans the blocking fixture source file"
+  negative_violation_count="$(/usr/bin/grep -c '^🔴 VIOLATION ' "$negative_log" || true)"
+  negative_sensitive_count="$(/usr/bin/grep -c '^🔴 VIOLATION \[SENSITIVE_CLIENT_STORAGE\]' "$negative_log" || true)"
+  negative_block_count="$(/usr/bin/grep -c '^🔴 BLOCK:' "$negative_log" || true)"
+  negative_expected_block_count="$(/usr/bin/grep -c '^🔴 BLOCK: Implementation reality scan found 1 source code violation(s)' "$negative_log" || true)"
+  negative_check16_count="$(/usr/bin/grep -c '^--- Check 16: Implementation Reality Scan' "$negative_log" || true)"
+  if [[ "$negative_violation_count" -eq 1 && "$negative_sensitive_count" -eq 1 &&
+    "$negative_block_count" -eq 1 && "$negative_expected_block_count" -eq 1 &&
+    "$negative_check16_count" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 blocking case fails only for one sensitive-client-storage violation"
+  else
+    fail "TP-S2-06 Check 16 blocking case contains unrelated, missing, or duplicate failure signals"
+  fi
+  if [[ ! -e "$hostile_marker" ]]; then
+    pass "TP-S2-06 Check 16 excludes hostile BASH_ENV and exported source before scanner startup"
+  else
+    fail "TP-S2-06 Check 16 allowed hostile startup state to intercept scanner sourcing"
+  fi
+  printf 'TP-S2-06_CHECK16_RESULTS cleanGuardExit=%s blockingGuardExit=%s cleanViolations=%s blockingViolations=%s hostileMarker=%s guardBash=%s scannerEntry=/bin/bash-p\n' \
+    "$positive_status" "$negative_status" \
+    "$positive_violation_count" "$negative_violation_count" \
+    "$([[ -e "$hostile_marker" ]] && printf present || printf absent)" \
+    "$guard_bash"
+  if [[ "$failures" -gt "$failures_before" ]]; then
+    echo "--- complete BUG-039 Check 16 clean guard log ---"
+    /bin/cat "$positive_log"
+    echo "--- complete BUG-039 Check 16 blocking guard log ---"
+    /bin/cat "$negative_log"
+    echo "--- end complete BUG-039 Check 16 guard logs ---"
+  fi
+}
+
+if [[ "$BUG039_CHECK16_ONLY" -eq 1 ]]; then
+  focused_base_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
+  focused_positive_dir="$tmp_root/specs/900c-bug039-check16-positive"
+  focused_negative_dir="$tmp_root/specs/900d-bug039-check16-negative"
+  /bin/mkdir -p "$tmp_root/specs" "$tmp_root/.specify/memory"
+  clone_framework_surface "$tmp_root"
+  git -C "$tmp_root" init -q
+  export BUBBLES_REPO_ROOT="$tmp_root"
+  cat >"$tmp_root/.specify/memory/bubbles.session.json" <<'EOF'
+{
+  "executionRuntime": "manual"
+}
+EOF
+  emit_base_fixture "$focused_base_dir"
+  mutate_delivery_contract "$focused_base_dir/state.json"
+  prepare_bug039_check16_fixtures \
+    "$focused_base_dir" "$focused_positive_dir" "$focused_negative_dir"
+  run_bug039_check16_controls "$focused_positive_dir" "$focused_negative_dir"
+  echo "state-transition-guard BUG-039 Check 16 summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
+
+run_g061_regression_cases
+
 assert_transition_result_contract_matches_emitter \
   "TRANSITION_GUARD_RESULT_V1 emitter field order matches this suite's expectation"
 
 positive_feature_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
+bug039_check16_positive_dir="$tmp_root/specs/900c-bug039-check16-positive"
+bug039_check16_negative_dir="$tmp_root/specs/900d-bug039-check16-negative"
 repo_root_isolation_feature_dir="$tmp_root/specs/900b-transition-guard-repo-root-isolation"
 repo_root_isolation_ambient_dir="$tmp_root/ambient-hostile-cwd"
 negative_feature_dir="$tmp_root/specs/901-transition-guard-selftest-missing-owner"
@@ -2545,6 +2908,8 @@ EOF
 
 emit_base_fixture "$positive_feature_dir"
 mutate_delivery_contract "$positive_feature_dir/state.json"
+prepare_bug039_check16_fixtures \
+  "$positive_feature_dir" "$bug039_check16_positive_dir" "$bug039_check16_negative_dir"
 cp -R "$positive_feature_dir" "$repo_root_isolation_feature_dir"
 mkdir -p "$repo_root_isolation_ambient_dir/.github"
 cat <<'EOF' > "$repo_root_isolation_ambient_dir/.github/bubbles-project.yaml"
@@ -2876,6 +3241,8 @@ assert_log_not_contains "$positive_log" "unbound variable" "BUG-022 empty result
 assert_log_contains "$positive_log" "notApplicableChecks: []" "BUG-022 empty not-applicable checks serialize exactly"
 assert_log_contains "$positive_log" "failedGateIds: []" "BUG-022 empty failed gates serialize exactly"
 assert_log_contains "$positive_log" "failedChecks: []" "BUG-022 empty failed checks serialize exactly"
+
+run_bug039_check16_controls "$bug039_check16_positive_dir" "$bug039_check16_negative_dir"
 
 echo "Running guarded-repository root isolation selftest..."
 repo_root_isolation_log="$tmp_root/repo-root-isolation-guard.log"

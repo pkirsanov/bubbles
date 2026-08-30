@@ -1913,3 +1913,168 @@ T24_R1_CLEAN_INTEGRITY_END
 test-harness handoff defect without changing production bytes. The production
 implementation and broader Scope 2 verification remain open under
 `bubbles.implement` ownership.
+
+## Scope 2 Local Test Receipts — Privileged Native Supervision V2
+
+### Retained Successful Receipts
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The structured receipts below were produced earlier in the
+current repository-bound session. This closeout preserved their commands,
+statuses, and hashes without rerunning the completed platform, stress, or CLI
+lanes. The `python-env-selftest.sh` bytes remained unchanged while the Check 16
+fixture correction changed only `state-transition-guard-selftest.sh`.
+
+| Test Plan row | Proven local surface | Exit | Structured tool-log `stdoutHash` |
+| --- | --- | ---: | --- |
+| `TP-S2-03` | Stock macOS Bash 3.2 focused positive and negative matrix | 0 | `9a6a498085496411a0ce075206de007e055a023cc9718e465483ea8ede64624f` |
+| `TP-S2-04` | Local fixed-Perl absent and untrusted negative controls only | 0 | `6c5535b99321fb50226368cbe9b39a903c5fe8d4820b673d71e1b4ee978db9c3` |
+| `TP-S2-05` | Thirty iterations of all seven native-supervisor lifecycle classes | 0 | `8c71d8aef362c9789d5976d9e01523482419e1300fe49e6ca3334158064f1130` |
+| `TP-S2-06` | Canonical CLI caller integration | 0 | `2ba86940ba95adc06dce7d4d89c48ef26beadbfd4eacdc1c5de164f1b028a260` |
+
+Current byte identity used by the Check 16 closeout:
+
+```text
+BUG039_TP_S2_06_FINAL_STATIC_BEGIN
+STATIC_FILE=bubbles/scripts/python-env-selftest.sh
+BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+7696b39d7714bd5a9803e59a1024e80e7180486d2d4a7ae845b1c4b08a349376  bubbles/scripts/python-env-selftest.sh
+STATIC_FILE=bubbles/scripts/state-transition-guard-selftest.sh
+BASH32_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+119c5e1001a3822febd17a3dfc9667497ab5fc6355860bc214e47fba386da0e2  bubbles/scripts/state-transition-guard-selftest.sh
+GIT_DIFF_CHECK_EXIT=0
+STATIC_FAILURES=0
+BUG039_TP_S2_06_FINAL_STATIC_END
+```
+
+### Check 16 Failed-Run Preservation
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The six failed Check 16 executions remain failures. Their
+structured hashes are copied from the current-session tool log. The two raw
+capture hashes available to this closeout are recorded separately and are not
+substituted for any earlier receipt.
+
+| Current-session order | Exit | Structured tool-log `stdoutHash` | Disposition |
+| ---: | ---: | --- | --- |
+| 1 | 1 | `153575cc6d20c935324517b81ae2e07389415d83f5d02b019641d0295d8a3d64` | Failed focused caller integration |
+| 2 | 1 | `149fa454f9a4aa676b447dd2dd429786053150ab40252ca202bc4ccc3fbf9ed3` | Failed corrected focused dispatch |
+| 3 | 1 | `a613c326a8a1c6c21168bcf8318f3bfb8b3c74d703349b7648fcb25008b5e594` | Failed fixed-modern-guard fixture |
+| 4 | 1 | `caa585d219f3ac2a0ca5a1719637ed5050511dd6c64df1673f3051d77d0cf222` | Failed post-change caller integration |
+| 5 | 1 | `32c6818c75ff442d352fa003ffd09678b57b527ea86ad384e598a69bfe6409e6` | Failed setup-only path-form control |
+| 6 | 1 | `2bbd88010ac06a3faca11fda466e3d1db1fc759fb6300c6586afc03ef2c47241` | Failed absolute log-path assertion after setup passed |
+
+The operator-supplied setup-only capture remains diagnostic input with five
+lines and SHA-256
+`cdf56cb7695ac0d526aab914b0dedf4194416eeb7c81b6a30e931194d54a2fcf`.
+The closeout-executed absolute log-path assertion failure remains immutable at
+810 lines and SHA-256
+`20624ec7759af82c2d781f2d0989a5541a4f8a33f76a8445b31f570e74723251`.
+
+### Final Focused Check 16 Control
+
+**Phase:** test
+**Command:** `/usr/bin/env -i LC_ALL=C PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin HOME=/Users/pkirsanov DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=120s 1980 /bin/bash bubbles/scripts/state-transition-guard-selftest.sh --internal-bug039-check16-controls b039-check16-integration-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-06 focused Check16 final changed bytes single post-change run
+exit: 0
+lines: 32
+sha256: ec1bc31b6548102add0942bd887f41c1fa0f65c94aebcbf12f13d563d31678cd
+PASS: TP-S2-06 Check 16 SETUP: canonical fixture lint path exists
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking implementation paths exist
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking source bytes match their exact controls
+PASS: TP-S2-06 Check 16 SETUP: absolute and repository-relative blocking paths resolve to the exact source
+PASS: TP-S2-06 Check 16 SETUP: blocking repository-relative path has exact untracked git status
+PASS: TP-S2-06 Check 16 SETUP: blocking scopes references only the absolute blocking implementation path
+PASS: TP-S2-06 Check 16 SETUP: blocking report records only the repository-relative blocking path
+PASS: TP-S2-06 Check 16 SETUP: clean and blocking fixtures pass artifact lint before guard invocation
+Running BUG-039 TP-S2-06 Check 16 caller integration selftest...
+PASS: TP-S2-06 Check 16 clean fixture preserves guard exit 0
+PASS: TP-S2-06 Check 16 preserves a clean scanner status
+PASS: TP-S2-06 Check 16 clean case enters direct BSEC1
+PASS: TP-S2-06 Check 16 clean case validates native BPS1 completion
+PASS: TP-S2-06 Check 16 clean fixture satisfies G053 with its real nonterminal source delta
+PASS: TP-S2-06 Check 16 clean case exposes no ordinary-Bash compatibility authority
+PASS: TP-S2-06 Check 16 clean case has one Check 16 execution and no unrelated violation or gate block
+PASS: TP-S2-06 Check 16 production child remains fixed /bin/bash -p
+PASS: TP-S2-06 Check 16 propagates exact blocking scanner exit 1 to the transition guard
+PASS: TP-S2-06 Check 16 blocking case executes the real sensitive-storage classifier
+PASS: TP-S2-06 Check 16 blocking case reports the exact durable auth-token violation
+PASS: TP-S2-06 Check 16 reports the scanner's blocking result
+PASS: TP-S2-06 Check 16 blocking case enters direct BSEC1
+PASS: TP-S2-06 Check 16 blocking case validates native BPS1 completion
+PASS: TP-S2-06 Check 16 blocking case exposes no ordinary-Bash compatibility authority
+PASS: TP-S2-06 Check 16 blocking case does not degrade to unresolved classification
+PASS: TP-S2-06 Check 16 blocking case has no unrelated storage-config failure
+PASS: TP-S2-06 Check 16 blocking case resolves the declared implementation file
+PASS: TP-S2-06 Check 16 blocking case scans the blocking fixture source file
+PASS: TP-S2-06 Check 16 blocking case fails only for one sensitive-client-storage violation
+PASS: TP-S2-06 Check 16 excludes hostile BASH_ENV and exported source before scanner startup
+TP-S2-06_CHECK16_RESULTS cleanGuardExit=0 blockingGuardExit=1 cleanViolations=0 blockingViolations=1 hostileMarker=absent guardBash=/opt/homebrew/bin/bash scannerEntry=/bin/bash-p
+state-transition-guard BUG-039 Check 16 summary: failures=0
+```
+
+**Test mechanism:** The focused dispatcher clones the real transition guard,
+scanner, classifier helper, and fixture contracts into one temporary git root.
+It drives a clean source and an adversarial `localStorage` auth-token source
+through Check 16 and observes the guard's real status and scanner output.
+
+**Negative control:** The blocking source must produce exactly one
+`SENSITIVE_CLIENT_STORAGE` violation and exact guard exit 1. A positive-path
+reference, missing git-backed delta, hostile Bash startup interception,
+ordinary-Bash authority, missing `BPS1`, duplicate Check 16, or unrelated block
+turns the focused selftest red.
+
+### Lightweight Closeout Checks
+
+**Phase:** test
+**Claim Source:** executed
+**Command:** `bash bubbles/scripts/scenario-test-resolve.sh bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure --repo-root /private/tmp/bubbles-bug039-native-supervisor`; `bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/python-env-selftest.sh bubbles/scripts/state-transition-guard-selftest.sh`; `bash bubbles/scripts/cli.sh lint bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure`; bounded residue scan
+**Exit Code:** 0
+
+```text
+[scenario-test-resolve] OK — 20 reference(s) resolved via literal-scan
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 2
+Files with adversarial signals: 2
+Artifact lint PASSED.
+BUG039_TP_S2_06_RESIDUE_BEGIN
+REPO_RESIDUE_BEGIN
+REPO_RESIDUE_END
+RECENT_PRIVATE_ROOTS_BEGIN
+RECENT_PRIVATE_ROOTS_END
+REPO_RESIDUE_COUNT=0
+RECENT_PRIVATE_ROOT_COUNT=0
+ACTIVE_TEST_PROCESS_COUNT=0
+RESIDUE_FAILURES=0
+BUG039_TP_S2_06_RESIDUE_END
+```
+
+### Linux Platform Non-Claim
+
+**Phase:** test
+**Claim Source:** not-run
+
+> **Uncertainty Declaration**
+> **What was attempted:** The local fixed-Perl absent and untrusted controls ran
+> on macOS and produced structured receipt
+> `6c5535b99321fb50226368cbe9b39a903c5fe8d4820b673d71e1b4ee978db9c3`.
+> **What was observed:** The local negative controls exited 0. No live Linux
+> command executed in this repository-bound invocation.
+> **Why this is uncertain:** A macOS process result cannot establish the
+> supported Linux platform lane required by `TP-S2-04`.
+> **What would resolve this:** Execute the planned focused positive and negative
+> matrix on the supported Linux runner against this exact committed candidate.
+
+The local portions of `TP-S2-03`, `TP-S2-05`, and `TP-S2-06` have current
+execution receipts. `TP-S2-04` carries only the local fixed-Perl negative
+receipt and makes no Linux completion claim.
