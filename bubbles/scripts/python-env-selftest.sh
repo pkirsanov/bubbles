@@ -190,12 +190,19 @@ make_runner_mutation() {
   local mode="$1"
   local destination="$2"
   local private_prefix="${3:-}"
+  local source_mode=""
   /usr/bin/awk -v mode="$mode" -v private_prefix="$private_prefix" '
     BEGIN {
       launch_mode = (mode == "launch-window" || mode == "launch-window-no-wait" || mode == "launch-readiness")
+      scope2_completion_mode = (mode == "scope2-forged-control" || mode == "scope2-early-eof" || mode == "scope2-descriptor-descendant")
+      sq = sprintf("%c", 39)
     }
     /local wall_seconds=30/ && mode == "timeout" { sub(/30/, "1") }
     /local wall_seconds=30/ && launch_mode { sub(/30/, "3") }
+    /local wall_seconds=30/ && scope2_completion_mode {
+      sub(/30/, "1")
+      scope2_wall=scope2_wall + 1
+    }
     /command_args=\(\/usr\/bin\/env -i LC_ALL=C "\$runtime" -I -S -B -c "\$runtime_program"\)/ {
       if (mode == "child73") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(73)\")"; next }
       if (mode == "child143") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import sys; sys.exit(143)\")"; next }
@@ -203,6 +210,45 @@ make_runner_mutation() {
       if (mode == "signal-hup") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGHUP); time.sleep(300)\")"; next }
       if (mode == "signal-int") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGINT); time.sleep(300)\")"; next }
       if (mode == "signal-term") { print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import os, signal, time; os.kill(os.getppid(), signal.SIGTERM); time.sleep(300)\")"; next }
+      if (mode == "scope2-forged-control") {
+        print "      # B039-SCOPE2-scope2-forged-control"
+        print "      runtime_program=" sq "import os"
+        print "import time"
+        print "try:"
+        print "    os.write(9, (\"COMPLETE\" + chr(9) + \"BPS1\" + chr(9) + \"runtime-probe\" + chr(10)).encode())"
+        print "except OSError:"
+        print "    pass"
+        print "time.sleep(3)" sq
+        print
+        scope2_runtime=scope2_runtime + 1
+        next
+      }
+      if (mode == "scope2-early-eof") {
+        print "      # B039-SCOPE2-scope2-early-eof"
+        print "      runtime_program=" sq "import os"
+        print "import time"
+        print "try:"
+        print "    os.close(9)"
+        print "except OSError:"
+        print "    pass"
+        print "time.sleep(3)" sq
+        print
+        scope2_runtime=scope2_runtime + 1
+        next
+      }
+      if (mode == "scope2-descriptor-descendant") {
+        print "      # B039-SCOPE2-scope2-descriptor-descendant"
+        print "      runtime_program=" sq "import os"
+        print "import time"
+        print "child = os.fork()"
+        print "if child == 0:"
+        print "    time.sleep(2)"
+        print "    os._exit(0)"
+        print "os._exit(0)" sq
+        print
+        scope2_runtime=scope2_runtime + 1
+        next
+      }
       if (launch_mode) {
         print "      # B039-MUTATION-LAUNCH"
         print "      command_args=(/usr/bin/env -i LC_ALL=C \"$runtime\" -I -S -B -c \"import time; time.sleep(2)\")"
@@ -301,8 +347,18 @@ make_runner_mutation() {
         (wait_instrumentation != 0 || wait_bypass != 1)) exit 42
       if (mode == "cleanup-omit-root" &&
         (cleanup_omission != 1 || private_rewrites != 2)) exit 42
+      if (scope2_completion_mode &&
+        (scope2_runtime != 1 || scope2_wall != 1)) exit 42
     }
   ' "$ENV_SH" >"$destination"
+  if source_mode="$(/usr/bin/stat -f '%Lp' "$ENV_SH" 2>/dev/null)"; then
+    :
+  elif source_mode="$(/usr/bin/stat -c '%a' "$ENV_SH" 2>/dev/null)"; then
+    :
+  else
+    return 42
+  fi
+  /bin/chmod "$source_mode" "$destination"
 }
 
 run_launch_window_negative_control() {
@@ -1482,10 +1538,35 @@ BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL=PYMOD1
 
 run_fixed_operation_case() {
   local mode="$1" expected_status="$2" expected_diagnostic="$3"
+  local finding_label="${4:-SCN-B039-007/008}"
   local copy_dir="$TMP_ROOT/runner-$mode" copy="$TMP_ROOT/runner-$mode/python-env.sh"
   local result=""
+  local mutation_marker_count=0
+  local source_mode=""
+  local copy_mode=""
+  local expected_timeout=0
   mkdir -p "$copy_dir"
-  make_runner_mutation "$mode" "$copy"
+  if ! make_runner_mutation "$mode" "$copy"; then
+    bad "$finding_label SETUP: $mode copied mutation did not match the production source exactly"
+    return
+  fi
+  case "$mode" in
+    scope2-*)
+      mutation_marker_count="$(/usr/bin/grep -cF "B039-SCOPE2-$mode" "$copy" || true)"
+      if source_mode="$(/usr/bin/stat -f '%Lp' "$ENV_SH" 2>/dev/null)"; then
+        copy_mode="$(/usr/bin/stat -f '%Lp' "$copy" 2>/dev/null || true)"
+      else
+        source_mode="$(/usr/bin/stat -c '%a' "$ENV_SH" 2>/dev/null || true)"
+        copy_mode="$(/usr/bin/stat -c '%a' "$copy" 2>/dev/null || true)"
+      fi
+      if [[ "$mutation_marker_count" -ne 1 || -z "$source_mode" || "$copy_mode" != "$source_mode" ]]; then
+        bad "$finding_label SETUP: $mode fixture marker/mode verification failed (markers=$mutation_marker_count sourceMode=${source_mode:-missing} copyMode=${copy_mode:-missing})"
+        return
+      fi
+      printf 'TP-S2-01_FIXTURE_READY mode=%s markerCount=%s sourceMode=%s copyMode=%s\n' \
+        "$mode" "$mutation_marker_count" "$source_mode" "$copy_mode"
+      ;;
+  esac
   result="$(/bin/bash -c '
     . "$1"
     BUBBLES_PYTHON_SECURITY_RUNTIME="$2"
@@ -1503,12 +1584,11 @@ run_fixed_operation_case() {
     if [[ -z "$root" || ! -e "$root" ]]; then removed=yes; else removed=no; fi
     printf "%s|%s|%s|%s" "$operation_status" "$diagnostic" "$timed_out" "$removed"
   ' _ "$copy" "$SECURITY_RUNTIME" 2>/dev/null || true)"
-  expected_timeout=0
-  [[ "$expected_diagnostic" == CONTROL_TIMEOUT ]] && expected_timeout=1
+  [[ "$expected_diagnostic" == CONTROL_TIMEOUT || "$expected_diagnostic" == SUPERVISOR_TIMEOUT ]] && expected_timeout=1
   if [[ "$result" == "$expected_status|$expected_diagnostic|$expected_timeout|yes" ]]; then
-    ok "SCN-B039-007/008: $mode preserves status $expected_status / $expected_diagnostic and removes private state"
+    ok "$finding_label: $mode preserves status $expected_status / $expected_diagnostic and removes private state"
   else
-    bad "SCN-B039-007/008: $mode result '$result'"
+    bad "$finding_label: $mode result '$result', expected '$expected_status|$expected_diagnostic|$expected_timeout|yes'"
   fi
 }
 
@@ -1520,6 +1600,14 @@ run_fixed_operation_case setup125 125 CAPTURE_UNAVAILABLE
 run_fixed_operation_case signal-hup 129 SIGNAL_HUP
 run_fixed_operation_case signal-int 130 SIGNAL_INT
 run_fixed_operation_case signal-term 143 SIGNAL_TERM
+
+echo "Scenario: TP-S2-01 HAR-R2 target-controlled channels cannot authorize native completion."
+run_fixed_operation_case scope2-forged-control 124 SUPERVISOR_TIMEOUT \
+  "TP-S2-01 HAR-R2 worker cannot write supervisor control"
+run_fixed_operation_case scope2-early-eof 124 SUPERVISOR_TIMEOUT \
+  "TP-S2-01 HAR-R2 pipe EOF cannot end the independent supervisor wall"
+run_fixed_operation_case scope2-descriptor-descendant 0 OK \
+  "TP-S2-01 HAR-R2 descriptor-holding descendant cannot delay direct-worker completion"
 
 success_shadow_result="$(/bin/bash -c '
   . "$1"
@@ -1633,6 +1721,260 @@ if [[ "$c13_reason" == *"the managed venv ("* ]]; then
 else
   ok "Case 13b: reason claims no venv path when none could be named"
 fi
+
+# ---------------------------------------------------------------------------
+# BUG-039 Scope 2 TDD RED contract.
+#
+# These controls target the authoritative privileged-native-supervision-v2
+# epoch while retaining root-protected-native-python-v1 for the worker. They
+# intentionally fail against clean successor 72bbb987 until production adds
+# privileged entry and native waitpid supervision. Fixture-construction errors
+# use a distinct SETUP label and never masquerade as a contract RED.
+# ---------------------------------------------------------------------------
+
+scope2_fixed_modern_bash() {
+  local candidate=""
+  local major=""
+  for candidate in /opt/homebrew/bin/bash /opt/local/bin/bash /usr/local/bin/bash /usr/bin/bash /bin/bash; do
+    [[ -x "$candidate" ]] || continue
+    major="$("$candidate" -c 'printf "%s" "${BASH_VERSINFO[0]:-0}"' 2>/dev/null || true)"
+    if [[ "$major" =~ ^[0-9]+$ && "$major" -ge 4 ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+scope2_prepare_entry_fixture() {
+  local fixture_root="$1"
+  local framework_root=""
+  local relative_path=""
+  framework_root="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+  mkdir -p "$fixture_root/specs/001-scope2-entry" "$fixture_root/src"
+  /bin/cp -Rp "$framework_root" "$fixture_root/bubbles" || return 2
+  for relative_path in \
+    scripts/cli.sh \
+    scripts/implementation-reality-scan.sh \
+    scripts/guard-lib.sh \
+    scripts/python-env.sh \
+    scripts/fun-mode.sh \
+    scripts/aliases.sh; do
+    if [[ ! -f "$fixture_root/bubbles/$relative_path" ]] ||
+      ! /usr/bin/cmp -s "$framework_root/$relative_path" "$fixture_root/bubbles/$relative_path" ||
+      { [[ -x "$framework_root/$relative_path" ]] && [[ ! -x "$fixture_root/bubbles/$relative_path" ]]; }; then
+      printf 'TP-S2-01_ENTRY_FIXTURE_SETUP_FAILED path=%s\n' "$relative_path" >&2
+      return 2
+    fi
+  done
+  cat >"$fixture_root/specs/001-scope2-entry/scopes.md" <<'EOF'
+# Scope 1: BUG-039 privileged entry fixture
+
+### Implementation Files
+
+- `src/scope2-entry.js`
+EOF
+  cat >"$fixture_root/src/scope2-entry.js" <<'EOF'
+export function scope2EntryLabel(value) {
+  return String(value);
+}
+EOF
+  return 0
+}
+
+scope2_write_hostile_startup() {
+  local destination="$1"
+  cat >"$destination" <<'EOF'
+source() {
+  case "${0:-}:${1:-}" in
+    */implementation-reality-scan.sh:*/guard-lib.sh)
+      printf '%s\n' SCANNER_GUARD_SOURCE_INTERCEPTED >>"${BUBBLES_SCOPE2_ENTRY_MARKER:?marker required}"
+      builtin source "$@"
+      return 73
+      ;;
+  esac
+  builtin source "$@"
+}
+kill() {
+  printf '%s\n' HOSTILE_KILL_CALLED >>"${BUBBLES_SCOPE2_ENTRY_MARKER:?marker required}"
+  return 73
+}
+wait() {
+  printf '%s\n' HOSTILE_WAIT_CALLED >>"${BUBBLES_SCOPE2_ENTRY_MARKER:?marker required}"
+  return 73
+}
+export -f source kill wait
+EOF
+}
+
+scope2_assert_cli_entry_case() {
+  local mode="$1"
+  local modern_bash="$2"
+  local fixture_root="$TMP_ROOT/scope2-entry-$mode"
+  local hostile_startup="$fixture_root/hostile-startup.sh"
+  local marker_file="$fixture_root/hostile.marker"
+  local output_file="$fixture_root/caller.output"
+  local copied_cli="$fixture_root/bubbles/scripts/cli.sh"
+  local entry_status=0
+  local marker_count=0
+  local fixed_path="/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+  if ! scope2_prepare_entry_fixture "$fixture_root"; then
+    bad "TP-S2-01 SEC-R1 SETUP: $mode copied caller fixture did not preserve every required sibling and mode"
+    return
+  fi
+  scope2_write_hostile_startup "$hostile_startup"
+
+  case "$mode" in
+    bash-env)
+      if /usr/bin/env \
+        PATH="$fixed_path" \
+        DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+        BASH_ENV="$hostile_startup" \
+        BUBBLES_SCOPE2_ENTRY_MARKER="$marker_file" \
+        "$modern_bash" "$copied_cli" scan specs/001-scope2-entry \
+        >"$output_file" 2>&1 </dev/null; then
+        entry_status=0
+      else
+        entry_status=$?
+      fi
+      ;;
+    exported-functions)
+      if /usr/bin/env -u BASH_ENV \
+        PATH="$fixed_path" \
+        DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+        BUBBLES_SCOPE2_ENTRY_MARKER="$marker_file" \
+        /bin/bash -c '
+          . "$1"
+          export -f source kill wait
+          exec "$2" "$3" scan specs/001-scope2-entry
+        ' _ "$hostile_startup" "$modern_bash" "$copied_cli" \
+        >"$output_file" 2>&1 </dev/null; then
+        entry_status=0
+      else
+        entry_status=$?
+      fi
+      ;;
+    *)
+      bad "TP-S2-01 SEC-R1 SETUP: unknown hostile entry mode '$mode'"
+      return
+      ;;
+  esac
+
+  marker_count="$(/usr/bin/grep -cF SCANNER_GUARD_SOURCE_INTERCEPTED "$marker_file" 2>/dev/null || true)"
+  if [[ "$entry_status" -eq 73 && "$marker_count" -eq 1 ]] &&
+    ! /usr/bin/grep -Fq $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' "$output_file"; then
+    printf 'RED: TP-S2-01 SEC-R1 mode=%s callerExit=%s hostileScannerSources=%s missing=BSEC1/direct\n' \
+      "$mode" "$entry_status" "$marker_count"
+    bad "TP-S2-01 SEC-R1: $mode crossed the canonical CLI caller before env -i /bin/bash -p"
+  elif [[ "$entry_status" -eq 0 && "$marker_count" -eq 0 ]] &&
+    /usr/bin/grep -Fq $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' "$output_file"; then
+    ok "TP-S2-01 SEC-R1: $mode is excluded before the direct BSEC1 privileged child"
+  else
+    /bin/cat "$output_file"
+    bad "TP-S2-01 SEC-R1 SETUP/CONTRACT: $mode unexpected caller result exit=$entry_status hostileScannerSources=$marker_count"
+  fi
+}
+
+echo "Scenario: TP-S2-01 SEC-R1 canonical callers exclude hostile Bash startup state."
+scope2_modern_bash="$(scope2_fixed_modern_bash || true)"
+if [[ -n "$scope2_modern_bash" ]]; then
+  scope2_assert_cli_entry_case bash-env "$scope2_modern_bash"
+  scope2_assert_cli_entry_case exported-functions "$scope2_modern_bash"
+else
+  bad "TP-S2-01 SEC-R1 SETUP: no fixed Bash 4+ path is available for the canonical CLI caller"
+fi
+
+scope2_scanner="$SCRIPT_DIR/implementation-reality-scan.sh"
+scope2_compat_line="$(/usr/bin/grep -nF 'BUBBLES_SECURITY_ENTRY_MODE=compat-reexec' "$scope2_scanner" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
+scope2_first_source_line="$(/usr/bin/grep -nE '^[[:space:]]*(source|\.)[[:space:]]+' "$scope2_scanner" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
+if [[ "$scope2_compat_line" =~ ^[1-9][0-9]*$ && "$scope2_first_source_line" =~ ^[1-9][0-9]*$ &&
+  "$scope2_compat_line" -lt "$scope2_first_source_line" ]] &&
+  /usr/bin/grep -Fq '/usr/bin/env -i' "$scope2_scanner" &&
+  /usr/bin/grep -Fq '/bin/bash -p' "$scope2_scanner"; then
+  ok "TP-S2-01 SEC-R1: ordinary direct scanner compatibility re-execs before every framework source"
+else
+  printf 'RED: TP-S2-01 SEC-R1 scannerCompatLine=%s firstSourceLine=%s missing=compat-reexec/env-i/bash-p\n' \
+    "${scope2_compat_line:-absent}" "${scope2_first_source_line:-absent}"
+  bad "TP-S2-01 SEC-R1: scanner lacks first-executable-statement compat-reexec before framework sourcing"
+fi
+
+echo "Scenario: TP-S2-01 SEC-R2 fixed native supervisor owns one worker through waitpid and BPS1."
+scope2_perl_count="$(/usr/bin/grep -cE '/usr/bin/perl[[:space:]].*-T|-T[[:space:]].*/usr/bin/perl' "$ENV_SH" || true)"
+scope2_supervisor_contract_count="$(/usr/bin/grep -cF 'root-protected-perl-supervisor-v1' "$ENV_SH" || true)"
+scope2_waitpid_count="$(/usr/bin/grep -cE 'waitpid[[:space:]]*\(' "$ENV_SH" || true)"
+scope2_bps1_count="$(/usr/bin/grep -cF 'BPS1' "$ENV_SH" || true)"
+scope2_fork_count="$(/usr/bin/grep -cE '(^|[^[:alnum:]_])fork[[:space:]]*\(' "$ENV_SH" || true)"
+scope2_boundary_api_count="$(/usr/bin/grep -cE '^bubbles_python_security_require_boundary\(\)' "$ENV_SH" || true)"
+scope2_waitpid_line="$(/usr/bin/grep -nE 'waitpid[[:space:]]*\(' "$ENV_SH" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
+scope2_bps1_complete_line="$(/usr/bin/grep -nF 'COMPLETE\tBPS1' "$ENV_SH" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
+scope2_unreaped_signal_guard_count="$(/usr/bin/grep -ciE 'unreaped[[:space:]_-]+(direct[[:space:]_-]+)?worker|worker[[:space:]_-]+owned' "$ENV_SH" || true)"
+if [[ "$scope2_perl_count" -gt 0 && "$scope2_supervisor_contract_count" -gt 0 &&
+  "$scope2_waitpid_count" -gt 0 && "$scope2_bps1_count" -gt 0 && "$scope2_fork_count" -eq 1 &&
+  "$scope2_boundary_api_count" -eq 1 && "$scope2_waitpid_line" =~ ^[1-9][0-9]*$ &&
+  "$scope2_bps1_complete_line" =~ ^[1-9][0-9]*$ &&
+  "$scope2_waitpid_line" -lt "$scope2_bps1_complete_line" &&
+  "$scope2_unreaped_signal_guard_count" -gt 0 ]]; then
+  ok "TP-S2-01 SEC-R2: fixed taint-mode Perl, one direct-worker fork, waitpid, BPS1, and boundary API are present"
+else
+  printf 'RED: TP-S2-01 SEC-R2 perl=%s supervisorContract=%s fork=%s waitpid=%s waitpidLine=%s BPS1=%s BPS1CompleteLine=%s unreapedSignalGuard=%s boundaryApi=%s\n' \
+    "$scope2_perl_count" "$scope2_supervisor_contract_count" "$scope2_fork_count" \
+    "$scope2_waitpid_count" "${scope2_waitpid_line:-absent}" "$scope2_bps1_count" \
+    "${scope2_bps1_complete_line:-absent}" "$scope2_unreaped_signal_guard_count" "$scope2_boundary_api_count"
+  bad "TP-S2-01 SEC-R2: fixed /usr/bin/perl waitpid supervision is missing before BPS1 completion"
+fi
+
+scope2_vector_status=0
+bubbles_python_run_security_operation caller-program /bin/true 1 1 >/dev/null 2>&1 || scope2_vector_status=$?
+scope2_extra_status=0
+bubbles_python_run_security_operation runtime-probe /bin/true 1 1 >/dev/null 2>&1 || scope2_extra_status=$?
+if [[ "$scope2_vector_status" -eq 2 && "$scope2_extra_status" -eq 2 &&
+  "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" == ARGUMENT_INVALID ]]; then
+  ok "TP-S2-01 SEC-R2: callers cannot supply a program, helper, wall, grace, or output-limit vector"
+else
+  bad "TP-S2-01 SEC-R2: closed operation API accepted a caller authority vector (program=$scope2_vector_status extra=$scope2_extra_status diagnostic=$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC)"
+fi
+bubbles_python_security_cleanup || true
+
+echo "Scenario: TP-S2-01 HAR-R1 Bash retains only a wait-only supervisor handle."
+scope2_legacy_protocol="$(printf '%s%s' 'BP' 'Y1')"
+scope2_bash_worker_authority_count="$(/usr/bin/grep -cE "BUBBLES_PYTHON_SECURITY_ACTIVE_PID|_bubbles_python_security_stop_active_child|BUBBLES_PYTHON_SECURITY_FIFO_PATH|READY\\\\t$scope2_legacy_protocol|ERROR\\\\t$scope2_legacy_protocol" "$ENV_SH" || true)"
+scope2_supervisor_wait_count="$(/usr/bin/grep -cF 'BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID' "$ENV_SH" || true)"
+scope2_forbidden_lifecycle_count="$(/usr/bin/grep -cE '^[[:space:]]*set -m|builtin kill[[:space:]].*"-\$|kill -0|^[[:space:]]*jobs([[:space:]]|$)|^[[:space:]]*disown([[:space:]]|$)|BUBBLES_PYTHON_.*DESCENDANT.*PID' "$ENV_SH" || true)"
+scope2_supervisor_wait_line="$(/usr/bin/grep -nE 'builtin wait .*BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID' "$ENV_SH" 2>/dev/null | /usr/bin/awk -F: 'NR == 1 { print $1 }' || true)"
+scope2_supervisor_clear_line="$(/usr/bin/grep -nF "BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''" "$ENV_SH" 2>/dev/null | /usr/bin/awk -F: -v wait_line="${scope2_supervisor_wait_line:-0}" '$1 > wait_line { print $1; exit }' || true)"
+scope2_pending_after_reap_line="$(/usr/bin/awk -v clear_line="${scope2_supervisor_clear_line:-0}" '
+  clear_line > 0 && NR > clear_line && /BUBBLES_PYTHON_SECURITY_PENDING_(SIGNAL|STATUS)/ { print NR; exit }
+' "$ENV_SH" || true)"
+scope2_bash_signals_supervisor_count="$(/usr/bin/grep -cE 'builtin kill .*BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID' "$ENV_SH" || true)"
+if [[ "$scope2_bash_worker_authority_count" -eq 0 && "$scope2_supervisor_wait_count" -gt 0 &&
+  "$scope2_forbidden_lifecycle_count" -eq 0 && "$scope2_bash_signals_supervisor_count" -eq 0 &&
+  "$scope2_supervisor_wait_line" =~ ^[1-9][0-9]*$ && "$scope2_supervisor_clear_line" =~ ^[1-9][0-9]*$ &&
+  "$scope2_pending_after_reap_line" =~ ^[1-9][0-9]*$ &&
+  "$scope2_supervisor_wait_line" -lt "$scope2_supervisor_clear_line" &&
+  "$scope2_supervisor_clear_line" -lt "$scope2_pending_after_reap_line" ]]; then
+  ok "TP-S2-01 HAR-R1: Bash has no worker/watchdog signaling, PID probing, process-group, job-control, or descendant-cleanup authority"
+else
+  printf 'RED: TP-S2-01 HAR-R1 bashWorkerAuthority=%s supervisorWaitHandle=%s waitLine=%s clearLine=%s pendingAfterReapLine=%s bashSignalsSupervisor=%s forbiddenLifecycle=%s\n' \
+    "$scope2_bash_worker_authority_count" "$scope2_supervisor_wait_count" \
+    "${scope2_supervisor_wait_line:-absent}" "${scope2_supervisor_clear_line:-absent}" \
+    "${scope2_pending_after_reap_line:-absent}" "$scope2_bash_signals_supervisor_count" \
+    "$scope2_forbidden_lifecycle_count"
+  bad "TP-S2-01 HAR-R1: active Bash lifecycle still stores or signals worker/FIFO authority instead of waiting only for the supervisor"
+fi
+
+echo "Scenario: TP-S2-01 HAR-R2 only supervisor waitpid decides completion."
+scope2_worker_control_count="$(/usr/bin/grep -cE "exec 9>.*FIFO|BUBBLES_PYTHON_SECURITY_FIFO_PATH|READY\\\\t$scope2_legacy_protocol|ERROR\\\\t$scope2_legacy_protocol" "$ENV_SH" || true)"
+if [[ "$scope2_worker_control_count" -eq 0 && "$scope2_waitpid_count" -gt 0 && "$scope2_bps1_count" -gt 0 ]]; then
+  ok "TP-S2-01 HAR-R2: worker-held FIFO, EOF, and text are absent from completion authority"
+else
+  printf 'RED: TP-S2-01 HAR-R2 workerControl=%s waitpid=%s BPS1=%s\n' \
+    "$scope2_worker_control_count" "$scope2_waitpid_count" "$scope2_bps1_count"
+  bad "TP-S2-01 HAR-R2: worker-held FIFO/EOF still participates in completion and no supervisor BPS1 authority exists"
+fi
+
+printf '%s\n' 'TP-S2-01_EPOCH=privileged-native-supervision-v2'
+printf '%s\n' 'TP-S2-01_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
 
 echo
 echo "python-env selftest: $pass passed, $fail failed"

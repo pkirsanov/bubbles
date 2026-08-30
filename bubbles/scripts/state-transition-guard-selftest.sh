@@ -9,6 +9,27 @@ OWNERSHIP_LINT_SCRIPT="$SCRIPT_DIR/agent-ownership-lint.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/guard-lib.sh"
 
+BUG039_SCOPE2_RED_ONLY=0
+case "${1:-}" in
+  '')
+    [[ "$#" -eq 0 ]] || {
+      printf '%s\n' 'state-transition-guard selftest accepts no empty positional arguments' >&2
+      exit 2
+    }
+    ;;
+  --internal-bug039-scope2-red-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != privileged-native-supervision-v2 ]]; then
+      printf '%s\n' 'BUG-039 Scope 2 RED controls require the privileged-native-supervision-v2 token' >&2
+      exit 2
+    fi
+    BUG039_SCOPE2_RED_ONLY=1
+    ;;
+  *)
+    printf 'state-transition-guard selftest argument is invalid: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
+
 # This selftest already exercises the transition guard's own status, artifact,
 # scope, packet, timestamp, lockdown, and deferral checks. The delegated tail
 # gates (G085-G095) each have dedicated selftests in framework-validate, so keep
@@ -21,7 +42,8 @@ tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXX
 failures=0
 
 cleanup() {
-  if [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; then
+  if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 && "${KEEP_SELFTEST_TMP:-0}" != "1" ]] ||
+    { [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; }; then
     rm -rf "$tmp_root"
   else
     echo "Preserving selftest workspace: $tmp_root"
@@ -38,6 +60,136 @@ fail() {
   echo "FAIL: $1"
   failures=$((failures + 1))
 }
+
+bug039_active_contract_stream() {
+  local file="$1"
+  local surface_kind="$2"
+  if [[ "$surface_kind" == report ]]; then
+    /usr/bin/awk '
+      /<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->/ { active=1; next }
+      active { print }
+    ' "$file"
+  else
+    /usr/bin/awk '
+      /BUG-039-HISTORICAL-BEGIN/ { archived=1; next }
+      /BUG-039-HISTORICAL-END/ { archived=0; next }
+      !archived { print }
+    ' "$file"
+  fi
+}
+
+bug039_active_stale_hits() {
+  local file="$1"
+  local surface_kind="$2"
+  local stale_pattern=""
+  stale_pattern='SEC-'"B039-"'[0-9]|SEC-'"OBS-002"'|managed-'"venv-only-v1"'|BP'"Y1"
+  bug039_active_contract_stream "$file" "$surface_kind" |
+    /usr/bin/grep -nE "$stale_pattern" || true
+}
+
+run_bug039_scope2_red_contract() {
+  local repo_root=""
+  local check16_block=""
+  local active_hits=""
+  local active_hit_count=0
+  local current_contract_text=""
+  local required_identifier=""
+  local required_missing=0
+  local fixture="$tmp_root/bug039-har-r3-active-window.txt"
+  local mutant="$tmp_root/bug039-har-r3-active-window-mutant.txt"
+  local fixture_hits=""
+  local mutant_hits=""
+  local expected_mutant=""
+  local file=""
+  local kind=""
+  local file_hits=""
+
+  repo_root="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
+  check16_block="$(/usr/bin/sed -n '/CHECK 16: Implementation Reality Scan/,/CHECK 17: Strict Mode/p' "$GUARD_SCRIPT")"
+
+  echo "Scenario: TP-S2-01 SEC-R1 transition-guard Check 16 enters the privileged child directly."
+  if printf '%s\n' "$check16_block" | /usr/bin/grep -Fq '/usr/bin/env -i' &&
+    printf '%s\n' "$check16_block" | /usr/bin/grep -Fq '/bin/bash -p' &&
+    printf '%s\n' "$check16_block" | /usr/bin/grep -Fq 'BUBBLES_SECURITY_ENTRY_MODE=direct' &&
+    ! printf '%s\n' "$check16_block" | /usr/bin/grep -Eq 'bubbles_run_with_timeout[[:space:]]+[0-9]+[[:space:]]+bash[[:space:]]+"\$reality_scan_script"'; then
+    pass "TP-S2-01 SEC-R1: Check 16 launches env -i /bin/bash -p with direct BSEC1 before scanner sourcing"
+  else
+    printf '%s\n' 'RED: TP-S2-01 SEC-R1 Check16 missing=env-i/bash-p/BSEC1-direct ordinary-bash-caller=present'
+    fail "TP-S2-01 SEC-R1: transition-guard Check 16 still launches the scanner through ordinary Bash"
+  fi
+
+  echo "Scenario: TP-S2-01 HAR-R3 active records use one current identifier and epoch set."
+  while IFS='|' read -r kind file; do
+    [[ -f "$file" ]] || {
+      fail "TP-S2-01 HAR-R3 SETUP: required active surface missing: $file"
+      continue
+    }
+    file_hits="$(bug039_active_stale_hits "$file" "$kind")"
+    if [[ -n "$file_hits" ]]; then
+      active_hits="${active_hits}${active_hits:+$'\n'}${file#$repo_root/}:$file_hits"
+    fi
+    current_contract_text="${current_contract_text}${current_contract_text:+$'\n'}$(bug039_active_contract_stream "$file" "$kind")"
+  done <<EOF
+source|$repo_root/bubbles/scripts/python-env.sh
+source|$repo_root/bubbles/scripts/implementation-reality-scan.sh
+source|$repo_root/bubbles/scripts/python-env-selftest.sh
+source|$repo_root/bubbles/scripts/implementation-reality-scan-selftest.sh
+source|$repo_root/tests/regression/test_24_g028_sensitive_client_storage.sh
+source|$repo_root/bubbles/scripts/state-transition-guard-selftest.sh
+report|$repo_root/bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+EOF
+  if [[ -n "$active_hits" ]]; then
+    active_hit_count="$(printf '%s\n' "$active_hits" | /usr/bin/wc -l | /usr/bin/tr -d '[:space:]')"
+  fi
+  for required_identifier in \
+    SEC-R1 SEC-R2 HAR-R1 HAR-R2 HAR-R3 \
+    privileged-native-supervision-v2 root-protected-native-python-v1; do
+    if ! /usr/bin/grep -Fq "$required_identifier" <<<"$current_contract_text"; then
+      required_missing=$((required_missing + 1))
+    fi
+  done
+  if [[ "$active_hit_count" -eq 0 && "$required_missing" -eq 0 ]]; then
+    pass "TP-S2-01 HAR-R3: active source, tests, and current evidence use only current findings and epoch"
+  else
+    printf 'RED: TP-S2-01 HAR-R3 staleActiveLines=%s missingCurrentIdentifiers=%s epoch=privileged-native-supervision-v2\n' \
+      "$active_hit_count" "$required_missing"
+    fail "TP-S2-01 HAR-R3: active source/tests still carry stale finding, protocol, or epoch identifiers"
+  fi
+
+  {
+    printf '%s\n' '# BUG-039-HISTORICAL-BEGIN'
+    printf '%s%s\n' 'SEC-' 'B039-001'
+    printf '%s%s\n' 'SEC-' 'OBS-002'
+    printf '%s%s\n' 'managed-' 'venv-only-v1'
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' '# BUG-039-HISTORICAL-END'
+    printf '%s\n' 'SEC-R1 SEC-R2 HAR-R1 HAR-R2 HAR-R3'
+    printf '%s\n' 'privileged-native-supervision-v2 root-protected-native-python-v1'
+  } >"$fixture"
+  /bin/cp -p "$fixture" "$mutant"
+  printf '%s%s\n' 'SEC-' 'B039-999' >>"$mutant"
+  fixture_hits="$(bug039_active_stale_hits "$fixture" source)"
+  mutant_hits="$(bug039_active_stale_hits "$mutant" source)"
+  expected_mutant="$(printf '%s%s' 'SEC-' 'B039-999')"
+  if [[ -z "$fixture_hits" ]] &&
+    printf '%s\n' "$mutant_hits" | /usr/bin/grep -Fq "$expected_mutant"; then
+    pass "TP-S2-01 HAR-R3 negative control: archived labels are allowed and one active stale-label mutation is rejected"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: archive-aware stale-label negative control did not discriminate"
+  fi
+
+  printf '%s\n' 'TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2'
+  printf '%s\n' 'TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
+}
+
+run_bug039_scope2_red_contract
+if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 ]]; then
+  echo "state-transition-guard BUG-039 Scope 2 RED summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
 
 run_capture() {
   local log_file="$1"

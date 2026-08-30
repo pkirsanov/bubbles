@@ -43,8 +43,8 @@ Confirms the defect is pre-existing, not introduced by in-flight work.
 **Claim Source:** not-run
 
 Single-variable A/B, reproduced independently rather than taken on trust.
-
 ```
+
 $ env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash \
     bubbles/scripts/implementation-reality-scan-selftest.sh </dev/null
 A_EXIT=1
@@ -1042,3 +1042,302 @@ foreign-owned artifacts or validate-owned certification.
 Certification remains untouched and `in_progress`. No human acceptance or
 terminal completion is claimed. Full `framework-validate` and `release-check`
 were not run because this invocation explicitly excludes them.
+
+<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->
+
+## Scope 2 TP-S2-01 RED Controls — Privileged Native Supervision
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The commands below directly establish candidate identity,
+test exits, and named RED signals. The one-to-one finding mapping follows the
+active Scope 2 contract. This is RED prerequisite evidence, not delivered
+behavior and not a checked Definition of Done item.
+
+### Candidate And Change Boundary
+
+- Planning parent: `39ee0b639c13c8fd798f7a2a3ebf9c99a5438820`.
+- Clean successor source commit: `72bbb987ef6c396ba00b1e6b94b95526d230e1a5`.
+- Active epoch: `privileged-native-supervision-v2`.
+- Retained worker trust: `root-protected-native-python-v1`.
+- Candidate identity: planning parent plus the four test-file hashes recorded
+  in the final static proof below. The immutable commit is recorded after Git
+  creates it, in the result envelope, because a commit cannot contain its own
+  object ID.
+- Production files changed by TP-S2-01: none.
+- Test/evidence files in the candidate: `bubbles/scripts/python-env-selftest.sh`,
+  `bubbles/scripts/implementation-reality-scan-selftest.sh`,
+  `tests/regression/test_24_g028_sensitive_client_storage.sh`,
+  `bubbles/scripts/state-transition-guard-selftest.sh`, and this report.
+
+Pre-edit identity capture:
+
+```text
+# BUG-039 TP-S2-01 pre-edit identity
+exit: 0
+lines: 41
+sha256: 5121c5c795ef90416b21058e63cba7fc626fd67a7ac6d2f71d2e99b07dccf76b
+ROOT=/private/tmp/bubbles-bug039-native-supervisor
+HEAD=39ee0b639c13c8fd798f7a2a3ebf9c99a5438820
+PARENT=72bbb987ef6c396ba00b1e6b94b95526d230e1a5
+BRANCH=fix/bug039-native-supervisor
+STATUS_EXIT=0
+python-env.sh HEAD_BLOB=dec20d81b693d20ad8347fb2d7696553a440aeed
+implementation-reality-scan.sh HEAD_BLOB=2fd7597b95c3ecd1c1d2798c4199f13e414a85e3
+state-transition-guard.sh HEAD_BLOB=2665c6e34ec9a9876e0c48d96897988500a8a742
+Every source blob matched HEAD^.
+```
+
+Immediately before this append, all five production inputs remained byte-equal
+to `HEAD`:
+
+```text
+python-env.sh=78cd93af204a868ad98725104161d00d6d10414c4142bd03597fc1000f222e1e
+implementation-reality-scan.sh=ad76539ffb3f815491cefecc2c76f010cabb02ed620c7d77daf7786061cdc5b8
+cli.sh=a24bd78cb9e1cec772b2b9b4eee8d670dd68d4f2c75ce07e66e2b270b6c8dec8
+state-transition-guard.sh=1f42f6d5a96a464fd622c2d39b341eed07967499a9fb4869b6752d13d75367b0
+sensitive-client-storage-scan.py=77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3
+UNCHANGED_FROM_HEAD=0 for all five paths
+```
+
+### Five-Finding RED Map
+
+| Finding | Scenario | Intended RED signal on source commit `72bbb987` |
+| --- | --- | --- |
+| `SEC-R1` | `SCN-B039-005` | Hostile `BASH_ENV` and exported `source` cross the copied canonical CLI caller. Both runs exit 73 after one scanner-source marker; the scanner has no pre-source `compat-reexec`; Check 16 still invokes ordinary Bash. |
+| `SEC-R2` | `SCN-B039-006` | Production reports zero fixed Perl-supervisor, `fork`, `waitpid`, `BPS1`, unreaped-owner guard, and boundary API signals. The closed operation-vector control remains green. |
+| `HAR-R1` | `SCN-B039-007` | Production carries 32 Bash worker/FIFO-authority references, no supervisor wait handle, no supervisor reap/clear order, and no post-reap pending-signal return point. |
+| `HAR-R2` | `SCN-B039-008` | Forged control becomes `CONTROL_MALFORMED` instead of an independent supervisor timeout; worker-closed control returns `OK` early; a descriptor-holding descendant drives FIFO timeout instead of direct-worker completion. Static control reports 12 worker-held FIFO/EOF references and no `waitpid` or `BPS1`. |
+| `HAR-R3` | `SCN-B039-009` | The active-window scan reports five stale `BPY1` source/test lines while every current identifier and current epoch/trust label is present. Its negative control allows archive-bracketed historical labels and rejects one active stale-label mutation. |
+
+### Intended RED Execution
+
+**Command:** externally bounded `/bin/bash bubbles/scripts/python-env-selftest.sh`
+with fixed `PATH` and `DEVELOPER_DIR=/Library/Developer/CommandLineTools`.
+**Exit Code:** 1
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 immutable python-env RED candidate
+exit: 1
+lines: 172
+sha256: 69bb80f402ecc0a69f9f8e05e39e355370dc7df76dc6a06a566ed0fd063d8c59
+FAIL: TP-S2-01 HAR-R2 worker cannot write supervisor control: scope2-forged-control result '125|CONTROL_MALFORMED|0|yes', expected '124|SUPERVISOR_TIMEOUT|1|yes'
+FAIL: TP-S2-01 HAR-R2 pipe EOF cannot end the independent supervisor wall: scope2-early-eof result '0|OK|0|yes', expected '124|SUPERVISOR_TIMEOUT|1|yes'
+FAIL: TP-S2-01 HAR-R2 descriptor-holding descendant cannot delay direct-worker completion: scope2-descriptor-descendant result '124|CONTROL_TIMEOUT|1|yes', expected '0|OK|0|yes'
+RED: TP-S2-01 SEC-R1 mode=bash-env callerExit=73 hostileScannerSources=1 missing=BSEC1/direct
+RED: TP-S2-01 SEC-R1 mode=exported-functions callerExit=73 hostileScannerSources=1 missing=BSEC1/direct
+RED: TP-S2-01 SEC-R1 scannerCompatLine=absent firstSourceLine=46 missing=compat-reexec/env-i/bash-p
+RED: TP-S2-01 SEC-R2 perl=0 supervisorContract=0 fork=0 waitpid=0 waitpidLine=absent BPS1=0 BPS1CompleteLine=absent unreapedSignalGuard=0 boundaryApi=0
+RED: TP-S2-01 HAR-R1 bashWorkerAuthority=32 supervisorWaitHandle=0 waitLine=absent clearLine=absent pendingAfterReapLine=absent bashSignalsSupervisor=0 forbiddenLifecycle=0
+RED: TP-S2-01 HAR-R2 workerControl=12 waitpid=0 BPS1=0
+TP-S2-01_EPOCH=privileged-native-supervision-v2
+TP-S2-01_RETAINED_WORKER_TRUST=root-protected-native-python-v1
+python-env selftest: 119 passed, 9 failed
+```
+
+The TP-S2-01 failures are the expected RED set: three distinct `HAR-R2`
+worker-channel adversaries plus aggregate failures for `SEC-R1`, `SEC-R2`,
+`HAR-R1`, and `HAR-R2`. The other failure-shaped lines belong to existing
+internal mutation children that the outer selftest expects and records as
+passing negative controls.
+
+**Command:** externally bounded targeted
+`/bin/bash bubbles/scripts/state-transition-guard-selftest.sh --internal-bug039-scope2-red-controls privileged-native-supervision-v2`.
+**Exit Code:** 1
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 immutable Check16 HAR-R3 candidate
+exit: 1
+lines: 10
+sha256: 354915fa613cf5335afc7ec093d44c72091906feafd3a09087fe79156dca9f9f
+RED: TP-S2-01 SEC-R1 Check16 missing=env-i/bash-p/BSEC1-direct ordinary-bash-caller=present
+FAIL: TP-S2-01 SEC-R1: transition-guard Check 16 still launches the scanner through ordinary Bash
+RED: TP-S2-01 HAR-R3 staleActiveLines=5 missingCurrentIdentifiers=0 epoch=privileged-native-supervision-v2
+FAIL: TP-S2-01 HAR-R3: active source/tests still carry stale finding, protocol, or epoch identifiers
+PASS: TP-S2-01 HAR-R3 negative control: archived labels are allowed and one active stale-label mutation is rejected
+TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2
+TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1
+state-transition-guard BUG-039 Scope 2 RED summary: failures=2
+```
+
+### Preserved `SCN-B039-001` Through `SCN-B039-004` Controls
+
+**Command:** externally bounded
+`/bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh` with fixed
+environment.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 immutable scanner control candidate
+exit: 0
+lines: 1708
+sha256: d56f2026467b947db1c60e0a757d48ebea1a5ae07f56b8ad4ef6000b4530b86a
+IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE
+PASS: TEST-B039-001 legacy SELFTEST_TARGET cannot select an ambient subset
+PASS: Premature EXIT preserves fatal exit 1
+PASS: Timeout exit preserves fatal exit 124
+PASS: HUP interruption preserves fatal exit 129
+PASS: TERM interruption preserves fatal exit 143
+implementation-reality-scan selftest summary: failures=0 skips=0
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+implementation-reality-scan selftest passed.
+```
+
+**Command:** externally bounded
+`/bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh` with fixed
+environment.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 immutable test_24 control candidate
+exit: 0
+lines: 4462
+sha256: c35cd8eb51e2773350c67bacf78ddc5e99d8a4b167491c162fd54114be257f76
+RED: NEG-B039-SENTINEL-TO-PASS mutant_exit=1 PASS_COUNT=1 SKIP_COUNT=0
+PASS: NEG-B039-SENTINEL-TO-PASS copied skip-to-pass mutation turns counter accounting RED
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+PASS: authenticated root-protected runtime runs the managed selftest under system-only PATH
+PASS: authenticated runtime removes classifier-unavailable degradation
+PASS: authenticated runtime leaves no skipped scenario group
+PASS: authenticated runtime preserves the authorized classifier mutation control
+test_24_g028_sensitive_client_storage: 98 passed, 0 failed, 1 skipped
+BUG039_DETERMINISTIC_CASCADE_VERIFIED=1
+BUG039_UNAVAILABLE_PATH_VERIFIED=1
+TEST24_FULL_SUITE_COMPLETED=1
+BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
+```
+
+The one skip is the deliberately forced unavailable-prerequisite branch. The
+dedicated sentinel proves it executed, stayed separate from pass accounting,
+and did not prevent the independent authenticated full-path run.
+
+### TP-S2-01 Status
+
+`TP-S2-01` remains unchecked by design. These tests establish the required RED
+prerequisite only. They make no claim that privileged entry or native
+supervision has been implemented. All five findings remain open for
+`bubbles.implement`, with the exact test files above serving as the persistent
+red-to-green contract.
+
+### Test Candidate Identity And Static Proof
+
+**Claim Source:** executed
+
+```text
+TP_S2_01_TEST_IDENTITY_BEGIN
+PARENT=39ee0b639c13c8fd798f7a2a3ebf9c99a5438820
+FILE=bubbles/scripts/python-env-selftest.sh
+MODE=755
+SHA256=9def8a9b221b694d4d893eca39f21840af2a4482214e939fd946b6d3096955bc
+FILE=bubbles/scripts/implementation-reality-scan-selftest.sh
+MODE=755
+SHA256=3db38234b19302b3ff813c2dc2dd633255728fdb090482771502920ece743da7
+FILE=tests/regression/test_24_g028_sensitive_client_storage.sh
+MODE=644
+SHA256=8cf2b8182c530d52cb1f3f8f4c54ef76c1d117459be961665a97b665205cb145
+FILE=bubbles/scripts/state-transition-guard-selftest.sh
+MODE=755
+SHA256=00193b6210351ff71e04f97ee3160faf3ff7691de626351c4862b786bfbcaf53
+TP_S2_01_TEST_IDENTITY_END
+```
+
+**Command:** stock-Bash syntax for all four tests, warning-level shellcheck,
+`git diff --check`, and disabling-marker scan.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 final static proof
+exit: 0
+lines: 10
+sha256: f9db5c1f8774dd4370c4026e1125dbefbfd29739a1d40009bd9b9506ff3452b4
+TP_S2_01_FINAL_STATIC_BEGIN
+BASH_N_FILE=bubbles/scripts/python-env-selftest.sh
+BASH_N_FILE=bubbles/scripts/implementation-reality-scan-selftest.sh
+BASH_N_FILE=tests/regression/test_24_g028_sensitive_client_storage.sh
+BASH_N_FILE=bubbles/scripts/state-transition-guard-selftest.sh
+BASH_N_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+GIT_DIFF_CHECK_EXIT=0
+DISABLING_MARKER_SCAN_EXIT=1
+TP_S2_01_FINAL_STATIC_END
+```
+
+The disabling-marker command uses grep semantics: exit 1 means zero matches.
+The earlier debt-token scan matched only the transition-guard selftest's
+pre-existing Check 14 fixtures. It did not identify an added unfinished marker.
+
+**Command:** `bash bubbles/scripts/regression-quality-guard.sh --bugfix` over
+all four modified test files.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 regression quality guard
+exit: 0
+lines: 21
+sha256: a283d52de43c0a102d7d3f1d5deb63e96e866da9c35c39a543d78dea6e1c6bd5
+Scanning bubbles/scripts/python-env-selftest.sh
+Adversarial signal detected in bubbles/scripts/python-env-selftest.sh
+Scanning bubbles/scripts/implementation-reality-scan-selftest.sh
+Adversarial signal detected in bubbles/scripts/implementation-reality-scan-selftest.sh
+Scanning tests/regression/test_24_g028_sensitive_client_storage.sh
+Adversarial signal detected in tests/regression/test_24_g028_sensitive_client_storage.sh
+Scanning bubbles/scripts/state-transition-guard-selftest.sh
+Adversarial signal detected in bubbles/scripts/state-transition-guard-selftest.sh
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 4
+Files with adversarial signals: 4
+```
+
+**Command:** `bash bubbles/scripts/cli.sh lint` for the BUG-039 packet.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 artifact lint
+exit: 0
+lines: 40
+sha256: 182cf27f7948b167f9fdebccae5bf6994636355face5d8ae0a4d55666dc9b567
+Required artifact exists: spec.md
+Required artifact exists: design.md
+Required artifact exists: uservalidation.md
+Required artifact exists: state.json
+Required artifact exists: scopes.md
+Required artifact exists: report.md
+All checked DoD items in scopes.md have evidence blocks
+No unfilled evidence template placeholders in scopes.md
+No unfilled evidence template placeholders in report.md
+Artifact lint PASSED.
+```
+
+### Residue Proof
+
+**Command:** scan repository and temporary roots created at or after repository
+binding epoch `1788077902`, then scan active test processes.
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+TP_S2_01_CURRENT_RUN_RESIDUE_BEGIN
+REPO_RESIDUE_BEGIN
+REPO_RESIDUE_END
+PROCESS_RESIDUE_BEGIN
+PROCESS_RESIDUE_END
+BINDING_CUTOFF_EPOCH=1788077902
+RECENT_RESIDUE_COUNT=0
+REPO_FIND_EXIT=0
+PROCESS_SCAN_EXIT=1
+TP_S2_01_CURRENT_RUN_RESIDUE_END
+```
+
+The process scan uses grep-style status: exit 1 means no matching test process.
+The repository scan found no FIFO, `__pycache__`, `.pyc`, or `.pyo`. The bounded
+temporary scan found no current-run private root, FIFO, capture directory, or
+mutation fixture. Older global temporary directories predated the authoritative
+binding epoch and were left untouched because they are not owned by this run.
