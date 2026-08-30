@@ -135,22 +135,33 @@ BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL='none'
 BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL='none'
 BUBBLES_PYTHON_SECURITY_DEVELOPER_DIR=''
 
-# Exact-direct-child operation result and cleanup registry. The runner owns one
-# positive PID only. It makes no recursive-descendant containment claim.
+# Privileged entry, native-supervisor result, and cleanup registry. Bash retains
+# only the direct Perl supervisor as a wait handle. The worker PID remains
+# lexical Perl state and is never exported, printed, persisted, or signaled by
+# Bash. This contract makes no recursive-descendant containment claim.
+BUBBLES_PYTHON_SECURITY_ENTRY_STATUS=127
+BUBBLES_PYTHON_SECURITY_ENTRY_DIAGNOSTIC='NOT_RUN'
+BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL='none'
+BUBBLES_PYTHON_SECURITY_ENTRY_MODE='none'
+BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT='none'
+BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL='none'
+BUBBLES_PYTHON_SECURITY_SUPERVISOR_REJECTION='NONE'
 BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
 BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='NOT_RUN'
 BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=0
 BUBBLES_PYTHON_SECURITY_RUN_OPERATION=''
+BUBBLES_PYTHON_SECURITY_RUN_OWNER='supervisor'
+BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND='not-started'
+BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES=0
+BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES=0
 BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT=''
 BUBBLES_PYTHON_SECURITY_STDOUT_PATH=''
 BUBBLES_PYTHON_SECURITY_STDERR_PATH=''
-BUBBLES_PYTHON_SECURITY_FIFO_PATH=''
-BUBBLES_PYTHON_SECURITY_ACTIVE_PID=''
+BUBBLES_PYTHON_SECURITY_CONTROL_PATH=''
+BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
 BUBBLES_PYTHON_SECURITY_STATE='IDLE'
 BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL=''
 BUBBLES_PYTHON_SECURITY_PENDING_STATUS=0
-BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN=0
-BUBBLES_PYTHON_SECURITY_READER_OPEN=0
 BUBBLES_PYTHON_SECURITY_SAVED_TRAP_EXIT=''
 BUBBLES_PYTHON_SECURITY_SAVED_TRAP_HUP=''
 BUBBLES_PYTHON_SECURITY_SAVED_TRAP_INT=''
@@ -508,9 +519,73 @@ _bubbles_python_security_validate_search_root() {
   _bubbles_python_security_authenticate_path "$parent" directory 0
 }
 
+bubbles_python_security_require_boundary() {
+  local function_name=""
+  local environment_line=""
+  local environment_name=""
+
+  BUBBLES_PYTHON_SECURITY_ENTRY_STATUS=127
+  BUBBLES_PYTHON_SECURITY_ENTRY_DIAGNOSTIC='SECURITY_BOUNDARY_REQUIRED'
+  BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL='none'
+  BUBBLES_PYTHON_SECURITY_ENTRY_MODE='none'
+
+  case "$-" in
+    *p*) ;;
+    *) return 1 ;;
+  esac
+  case "${BUBBLES_SECURITY_ENTRY_MODE:-}" in
+    direct | compat-reexec)
+      BUBBLES_PYTHON_SECURITY_ENTRY_MODE="$BUBBLES_SECURITY_ENTRY_MODE"
+      ;;
+    *) return 1 ;;
+  esac
+  if [[ -n "${BASH_ENV+x}" || -n "${ENV+x}" || -n "${CDPATH+x}" ||
+    -n "${GLOBIGNORE+x}" || -n "${PYTHONPATH+x}" || -n "${PYTHONHOME+x}" ||
+    -n "${PYTHONSTARTUP+x}" || -n "${PERL5LIB+x}" || -n "${PERLLIB+x}" ||
+    -n "${LD_PRELOAD+x}" || -n "${DYLD_INSERT_LIBRARIES+x}" ]]; then
+    return 1
+  fi
+  for function_name in source builtin return exec /bin/bash /usr/bin/env /usr/bin/perl kill wait; do
+    if declare -F "$function_name" >/dev/null 2>&1; then
+      return 1
+    fi
+  done
+  if ! _bubbles_python_security_authenticate_path /bin/bash executable 1 ||
+    [[ "$BUBBLES_PYTHON_SECURITY_PATH_RESOLVED" != /bin/bash ]]; then
+    return 1
+  fi
+  if ! _bubbles_python_security_authenticate_path /usr/bin/env executable 1 ||
+    [[ "$BUBBLES_PYTHON_SECURITY_PATH_RESOLVED" != /usr/bin/env ]]; then
+    return 1
+  fi
+  while IFS= read -r environment_line || [[ -n "$environment_line" ]]; do
+    environment_name="${environment_line%%=*}"
+    case "$environment_name" in
+      BASH_FUNC_* | BASH_ENV | ENV | CDPATH | GLOBIGNORE | PYTHONPATH | PYTHONHOME | \
+        PYTHONSTARTUP | PERL5LIB | PERLLIB | LD_PRELOAD | DYLD_INSERT_LIBRARIES)
+        return 1
+        ;;
+    esac
+  done < <(/usr/bin/env)
+
+  # The complete BSEC1 result tuple is a sourced-module API consumed by the
+  # privileged scanner after this function returns; it is intentionally not
+  # exported into worker environments.
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_ENTRY_STATUS=0
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_ENTRY_DIAGNOSTIC='OK'
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL='BSEC1'
+  printf 'ENTRY\tBSEC1\tprivileged-bash-entry-v1\t%s\n' "$BUBBLES_PYTHON_SECURITY_ENTRY_MODE"
+  return 0
+}
+
 _bubbles_python_security_record_signal() {
+  [[ -z "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" ]] || return 0
   BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL="$1"
   BUBBLES_PYTHON_SECURITY_PENDING_STATUS="$2"
+  builtin trap '' HUP INT TERM
 }
 
 _bubbles_python_security_install_traps() {
@@ -533,23 +608,9 @@ _bubbles_python_security_restore_trap() {
   fi
 }
 
-_bubbles_python_security_stop_active_child() {
-  local child_status=0
-  if [[ "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" =~ ^[1-9][0-9]*$ ]]; then
-    builtin kill -TERM "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" 2>/dev/null || true
-    builtin kill -KILL "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" 2>/dev/null || true
-    if builtin wait "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" 2>/dev/null; then
-      child_status=0
-    else
-      child_status=$?
-    fi
-    BUBBLES_PYTHON_SECURITY_ACTIVE_PID=''
-  fi
-  return "$child_status"
-}
-
-# Idempotent cleanup for every fixed-operation path. It addresses only the
-# exact positive direct-child PID and never retains or discovers descendants.
+# Idempotent file cleanup. It never signals or waits on a worker. A non-empty
+# supervisor wait handle means the reap boundary has not completed, so cleanup
+# refuses rather than racing the child relationship.
 bubbles_python_security_cleanup() {
   local saved_exit="$BUBBLES_PYTHON_SECURITY_SAVED_TRAP_EXIT"
   local saved_hup="$BUBBLES_PYTHON_SECURITY_SAVED_TRAP_HUP"
@@ -562,24 +623,19 @@ bubbles_python_security_cleanup() {
   if [[ "$BUBBLES_PYTHON_SECURITY_CLEANUP_ACTIVE" -eq 1 ]]; then
     return "$BUBBLES_PYTHON_SECURITY_CLEANUP_STATUS"
   fi
+  if [[ -n "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" ]]; then
+    BUBBLES_PYTHON_SECURITY_CLEANUP_STATUS=1
+    return 1
+  fi
   if [[ "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE &&
-    -z "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID" &&
     -z "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" &&
-    "$BUBBLES_PYTHON_SECURITY_READER_OPEN" -eq 0 &&
-    "$BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN" -eq 0 ]]; then
+    -z "$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" &&
+    -z "$BUBBLES_PYTHON_SECURITY_STDERR_PATH" &&
+    -z "$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" ]]; then
     return "$BUBBLES_PYTHON_SECURITY_CLEANUP_STATUS"
   fi
   BUBBLES_PYTHON_SECURITY_CLEANUP_ACTIVE=1
   builtin trap - EXIT HUP INT TERM
-  _bubbles_python_security_stop_active_child || true
-  if [[ "$BUBBLES_PYTHON_SECURITY_READER_OPEN" -eq 1 ]]; then
-    exec 8>&- || cleanup_status=1
-  fi
-  if [[ "$BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN" -eq 1 ]]; then
-    exec 7>&- || cleanup_status=1
-  fi
-  BUBBLES_PYTHON_SECURITY_READER_OPEN=0
-  BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN=0
   if [[ -n "$private_root" ]]; then
     case "$private_root" in
       /tmp/bubbles-python-security.*) /bin/rm -rf "$private_root" || cleanup_status=1 ;;
@@ -593,8 +649,8 @@ bubbles_python_security_cleanup() {
   BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT=''
   BUBBLES_PYTHON_SECURITY_STDOUT_PATH=''
   BUBBLES_PYTHON_SECURITY_STDERR_PATH=''
-  BUBBLES_PYTHON_SECURITY_FIFO_PATH=''
-  BUBBLES_PYTHON_SECURITY_ACTIVE_PID=''
+  BUBBLES_PYTHON_SECURITY_CONTROL_PATH=''
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
   BUBBLES_PYTHON_SECURITY_STATE='IDLE'
   BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL=''
   BUBBLES_PYTHON_SECURITY_PENDING_STATUS=0
@@ -617,19 +673,12 @@ bubbles_python_security_cleanup() {
 
 _bubbles_python_security_exit_trap() {
   local exit_status=$?
+  if [[ "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    builtin wait "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" 2>/dev/null || true
+    BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
+  fi
   bubbles_python_security_cleanup || true
   builtin exit "$exit_status"
-}
-
-_bubbles_python_security_signal_result() {
-  local signal_name="$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL"
-  local signal_status="$BUBBLES_PYTHON_SECURITY_PENDING_STATUS"
-  BUBBLES_PYTHON_SECURITY_RUN_STATUS=$signal_status
-  BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=0
-  BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC="SIGNAL_$signal_name"
-  _bubbles_python_security_stop_active_child || true
-  bubbles_python_security_cleanup || true
-  return "$signal_status"
 }
 
 _bubbles_python_security_runtime_for_operation() {
@@ -766,19 +815,428 @@ print("COMPLETE\tPYMOD1\t%d" % len(modules))
 PY
 }
 
+_bubbles_python_security_supervisor_program() {
+  /bin/cat <<'PERL'
+open(CONTROL, ">&=3") or exit 125;
+
+sub emit_completion {
+  my ($operation, $status, $owner, $timed_out, $worker_kind, $stdout_bytes, $stderr_bytes) = @_;
+  my $record = join("\t", "COMPLETE", "BPS1", $operation, $status, $owner,
+    $timed_out, $worker_kind, $stdout_bytes, $stderr_bytes) . "\n";
+  return 0 if length($record) > 512;
+  my $offset = 0;
+  while ($offset < length($record)) {
+    my $written = syswrite(CONTROL, $record, length($record) - $offset, $offset);
+    return 0 if !defined($written) || $written <= 0;
+    $offset += $written;
+  }
+  return 1;
+}
+
+sub finish_without_worker {
+  my ($operation, $status) = @_;
+  emit_completion($operation, $status, "supervisor", 0, "not-started", 0, 0);
+  close(CONTROL);
+  exit 0;
+}
+
+sub untaint_blob {
+  my ($raw, $maximum) = @_;
+  return undef if !defined($raw) || length($raw) > $maximum;
+  return $1 if $raw =~ /\A([^\0]*)\z/s;
+  return undef;
+}
+
+sub absolute_path {
+  my ($value) = @_;
+  return defined($value) && $value =~ m{\A/[^\0\r\n\t]{0,4095}\z};
+}
+
+my $raw_operation = shift @ARGV;
+if (!defined($raw_operation) ||
+  $raw_operation !~ /\A(general-probe|apple-select|apple-find-python|runtime-probe|module-probe|scan2b-classify)\z/) {
+  finish_without_worker("invalid", 2);
+}
+my $operation = $1;
+my @arguments = ();
+my $aggregate_bytes = 0;
+for my $raw (@ARGV) {
+  my $value = untaint_blob($raw, 262144);
+  finish_without_worker($operation, 2) if !defined($value);
+  $aggregate_bytes += length($value);
+  finish_without_worker($operation, 2) if $aggregate_bytes > 524288;
+  push @arguments, $value;
+}
+
+my $stdout_limit = 0;
+my $stderr_limit = 0;
+my %worker_environment = ("LC_ALL" => "C");
+my @worker_argv = ();
+
+if ($operation eq "general-probe") {
+  finish_without_worker($operation, 2) unless @arguments == 3 &&
+    length($arguments[0]) > 0 && $arguments[1] eq "-c" &&
+    $arguments[2] eq "import sys; sys.stdout.write('bubbles-python-runs')";
+  @worker_argv = @arguments;
+  $stdout_limit = 16384;
+  $stderr_limit = 16384;
+} elsif ($operation eq "apple-select") {
+  finish_without_worker($operation, 2) unless @arguments == 2 &&
+    $arguments[0] eq "/usr/bin/xcode-select" && $arguments[1] eq "-p";
+  @worker_argv = @arguments;
+  $stdout_limit = 4096;
+  $stderr_limit = 16384;
+} elsif ($operation eq "apple-find-python") {
+  finish_without_worker($operation, 2) unless @arguments == 4 &&
+    absolute_path($arguments[0]) && $arguments[1] eq "/usr/bin/xcrun" &&
+    $arguments[2] eq "--find" && $arguments[3] eq "python3";
+  $worker_environment{"DEVELOPER_DIR"} = $arguments[0];
+  @worker_argv = @arguments[1 .. 3];
+  $stdout_limit = 4096;
+  $stderr_limit = 16384;
+} elsif ($operation eq "runtime-probe") {
+  finish_without_worker($operation, 2) unless @arguments == 6 &&
+    absolute_path($arguments[0]) && $arguments[1] eq "-I" &&
+    $arguments[2] eq "-S" && $arguments[3] eq "-B" &&
+    $arguments[4] eq "-c" && $arguments[5] =~ /RUNTIME\\tPYSEC1/ &&
+    $arguments[5] =~ /COMPLETE\\tPYSEC1/;
+  @worker_argv = @arguments;
+  $stdout_limit = 16384;
+  $stderr_limit = 16384;
+} elsif ($operation eq "module-probe") {
+  finish_without_worker($operation, 2) unless @arguments == 6 &&
+    absolute_path($arguments[0]) && $arguments[1] eq "-I" &&
+    $arguments[2] eq "-S" && $arguments[3] eq "-B" &&
+    $arguments[4] eq "-c" && $arguments[5] =~ /MODULE\\tPYMOD1/ &&
+    $arguments[5] =~ /COMPLETE\\tPYMOD1/;
+  @worker_argv = @arguments;
+  $stdout_limit = 65536;
+  $stderr_limit = 16384;
+} else {
+  finish_without_worker($operation, 2) unless @arguments >= 12 &&
+    absolute_path($arguments[0]) && $arguments[1] eq "-I" &&
+    $arguments[2] eq "-S" && $arguments[3] eq "-B" &&
+    $arguments[4] eq "-c" &&
+    absolute_path($arguments[6]) &&
+    $arguments[6] =~ m{/bubbles/scripts/guards/sensitive-client-storage-scan[.]py\z} &&
+    $arguments[7] eq "77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3" &&
+    $arguments[8] eq "262144" && absolute_path($arguments[9]) &&
+    absolute_path($arguments[10]) && @arguments <= 4107;
+  my $path_bytes = 0;
+  for my $index (9 .. $#arguments) {
+    finish_without_worker($operation, 2) unless absolute_path($arguments[$index]);
+    $path_bytes += length($arguments[$index]);
+  }
+  finish_without_worker($operation, 2) if $path_bytes > 65536;
+  @worker_argv = @arguments;
+  $stdout_limit = 4194304;
+  $stderr_limit = 65536;
+}
+
+my ($stdout_reader, $stdout_writer, $stderr_reader, $stderr_writer);
+finish_without_worker($operation, 125) unless pipe($stdout_reader, $stdout_writer);
+finish_without_worker($operation, 125) unless pipe($stderr_reader, $stderr_writer);
+
+my $worker_pid = fork();
+finish_without_worker($operation, 125) unless defined($worker_pid);
+if ($worker_pid == 0) {
+  close($stdout_reader);
+  close($stderr_reader);
+  close(CONTROL); # close worker BPS control descriptor before exec
+  open(STDIN, "<", "/dev/null") or exit 126;
+  open(STDOUT, ">&", $stdout_writer) or exit 126;
+  open(STDERR, ">&", $stderr_writer) or exit 126;
+  close($stdout_writer);
+  close($stderr_writer);
+  $SIG{"HUP"} = "DEFAULT";
+  $SIG{"INT"} = "DEFAULT";
+  $SIG{"TERM"} = "DEFAULT";
+  $SIG{"PIPE"} = "DEFAULT";
+  %ENV = %worker_environment;
+  exec { $worker_argv[0] } @worker_argv or do {
+    print STDERR "WORKER_EXEC_FAILED\n";
+    exit 126;
+  };
+}
+
+close($stdout_writer);
+close($stderr_writer);
+my $stdout_open = 1;
+my $stderr_open = 1;
+my $stdout_bytes = 0;
+my $stderr_bytes = 0;
+my $output_limit_reached = 0;
+my $stream_failure = 0;
+
+sub write_stdout {
+  my ($data) = @_;
+  my $offset = 0;
+  while ($offset < length($data)) {
+    my $written = syswrite(STDOUT, $data, length($data) - $offset, $offset);
+    return 0 if !defined($written) || $written <= 0;
+    $offset += $written;
+  }
+  return 1;
+}
+
+sub write_stderr {
+  my ($data) = @_;
+  my $offset = 0;
+  while ($offset < length($data)) {
+    my $written = syswrite(STDERR, $data, length($data) - $offset, $offset);
+    return 0 if !defined($written) || $written <= 0;
+    $offset += $written;
+  }
+  return 1;
+}
+
+my $consume_ready_stream = sub {
+  my ($stream_name, $stream_handle) = @_;
+  my $chunk = "";
+  my $read_count = sysread($stream_handle, $chunk, 8192);
+  return if !defined($read_count);
+  if ($read_count == 0) { # Pipe EOF is data state only, never completion authority.
+    if ($stream_name eq "stdout") {
+      $stdout_open = 0;
+    } else {
+      $stderr_open = 0;
+    }
+    close($stream_handle);
+    return;
+  }
+  if ($stream_name eq "stdout") {
+    my $remaining = $stdout_limit - $stdout_bytes;
+    my $captured = $read_count <= $remaining ? $read_count : $remaining;
+    if ($captured > 0) {
+      $stream_failure = 1 unless write_stdout(substr($chunk, 0, $captured));
+      $stdout_bytes += $captured;
+    }
+    $output_limit_reached = 1 if $read_count > $remaining;
+  } else {
+    my $remaining = $stderr_limit - $stderr_bytes;
+    my $captured = $read_count <= $remaining ? $read_count : $remaining;
+    if ($captured > 0) {
+      $stream_failure = 1 unless write_stderr(substr($chunk, 0, $captured));
+      $stderr_bytes += $captured;
+    }
+    $output_limit_reached = 1 if $read_count > $remaining;
+  }
+};
+
+my $worker_is_owned = 1;
+my $raw_wait_status = 0;
+my $wait_failure = 0;
+my $pending_signal = "";
+my $pending_signal_status = 0;
+my $wall_expired = 0;
+my $grace_expired = 0;
+my $alarm_phase = "wall";
+my $termination_reason = "";
+my $term_sent = 0;
+my $kill_sent = 0;
+
+$SIG{"HUP"} = sub { if ($pending_signal eq "") { $pending_signal = "HUP"; $pending_signal_status = 129; } };
+$SIG{"INT"} = sub { if ($pending_signal eq "") { $pending_signal = "INT"; $pending_signal_status = 130; } };
+$SIG{"TERM"} = sub { if ($pending_signal eq "") { $pending_signal = "TERM"; $pending_signal_status = 143; } };
+$SIG{"ALRM"} = sub {
+  if ($alarm_phase eq "wall") { $wall_expired = 1; }
+  else { $grace_expired = 1; }
+};
+$SIG{"PIPE"} = "IGNORE";
+
+my $signal_owned_worker = sub {
+  my ($signal_number) = @_;
+  return 0 unless $worker_is_owned;
+  return kill($signal_number, $worker_pid); # signal only the unreaped direct worker
+};
+
+alarm(30);
+while ($worker_is_owned) {
+  my $waited_pid = waitpid($worker_pid, 1);
+  if ($waited_pid == $worker_pid) {
+    $raw_wait_status = $?;
+    $worker_is_owned = 0;
+    last;
+  }
+  if ($waited_pid == -1) {
+    $wait_failure = 1;
+    $worker_is_owned = 0;
+    last;
+  }
+
+  if ($termination_reason eq "") {
+    if ($pending_signal ne "") {
+      $termination_reason = "caller-signal";
+    } elsif ($wall_expired) {
+      $termination_reason = "timeout";
+    } elsif ($output_limit_reached) {
+      $termination_reason = "output-limit";
+    } elsif ($stream_failure) {
+      $termination_reason = "internal";
+    }
+  }
+  if ($termination_reason ne "" && !$term_sent) {
+    $signal_owned_worker->(15);
+    $term_sent = 1;
+    $alarm_phase = "grace";
+    $grace_expired = 0;
+    alarm(2);
+  } elsif ($term_sent && $grace_expired && !$kill_sent) {
+    $signal_owned_worker->(9);
+    $kill_sent = 1;
+  }
+
+  my $read_mask = "";
+  vec($read_mask, fileno($stdout_reader), 1) = 1 if $stdout_open;
+  vec($read_mask, fileno($stderr_reader), 1) = 1 if $stderr_open;
+  if ($stdout_open || $stderr_open) {
+    my $ready_mask = $read_mask;
+    my $selected = select($ready_mask, undef, undef, 0.05);
+    if (defined($selected) && $selected > 0) {
+      $consume_ready_stream->("stdout", $stdout_reader)
+        if $stdout_open && vec($ready_mask, fileno($stdout_reader), 1);
+      $consume_ready_stream->("stderr", $stderr_reader)
+        if $stderr_open && vec($ready_mask, fileno($stderr_reader), 1);
+    }
+  } else {
+    select(undef, undef, undef, 0.05);
+  }
+}
+alarm(0);
+
+# Drain only bytes already ready after reap. Descendant-held descriptors and
+# later worker text cannot delay or authorize completion.
+for my $drain_round (1 .. 600) {
+  last unless $stdout_open || $stderr_open;
+  my $read_mask = "";
+  vec($read_mask, fileno($stdout_reader), 1) = 1 if $stdout_open;
+  vec($read_mask, fileno($stderr_reader), 1) = 1 if $stderr_open;
+  my $ready_mask = $read_mask;
+  my $selected = select($ready_mask, undef, undef, 0);
+  last if !defined($selected) || $selected <= 0;
+  $consume_ready_stream->("stdout", $stdout_reader)
+    if $stdout_open && vec($ready_mask, fileno($stdout_reader), 1);
+  $consume_ready_stream->("stderr", $stderr_reader)
+    if $stderr_open && vec($ready_mask, fileno($stderr_reader), 1);
+}
+close($stdout_reader) if $stdout_open;
+close($stderr_reader) if $stderr_open;
+
+if ($termination_reason eq "" && $pending_signal ne "") {
+  $termination_reason = "caller-signal";
+}
+if ($termination_reason eq "" && $output_limit_reached) {
+  $termination_reason = "output-limit";
+}
+if ($termination_reason eq "" && ($stream_failure || $wait_failure)) {
+  $termination_reason = "internal";
+}
+
+my $final_status = 0;
+my $final_owner = "worker";
+my $timed_out = 0;
+my $worker_kind = "exit";
+if ($termination_reason eq "caller-signal") {
+  $final_status = $pending_signal_status;
+  $final_owner = "caller-signal";
+  $worker_kind = ($raw_wait_status & 127) ? "signal" : "exit";
+} elsif ($termination_reason eq "timeout") {
+  $final_status = 124;
+  $final_owner = "supervisor";
+  $timed_out = 1;
+  $worker_kind = ($raw_wait_status & 127) ? "signal" : "exit";
+} elsif ($termination_reason eq "output-limit" || $termination_reason eq "internal") {
+  $final_status = 125;
+  $final_owner = "supervisor";
+  $worker_kind = ($raw_wait_status & 127) ? "signal" : "exit";
+} elsif ($raw_wait_status & 127) {
+  $final_status = 128 + ($raw_wait_status & 127);
+  $worker_kind = "signal";
+} else {
+  $final_status = ($raw_wait_status >> 8) & 255;
+}
+
+my $completion_anchor = "COMPLETE\tBPS1";
+if ($completion_anchor ne join("\t", "COMPLETE", "BPS1")) {
+  $final_status = 125;
+  $final_owner = "supervisor";
+}
+emit_completion($operation, $final_status, $final_owner, $timed_out,
+  $worker_kind, $stdout_bytes, $stderr_bytes) or exit 125;
+close(CONTROL);
+exit 0;
+PERL
+}
+
+_bubbles_python_security_validate_supervisor_protocol() {
+  local path="$1"
+  local expected_operation="$2"
+  local stdout_limit="$3"
+  local stderr_limit="$4"
+  local record="" record_type="" protocol="" operation="" status=""
+  local owner="" timed_out="" worker_kind="" stdout_bytes="" stderr_bytes="" extra=""
+  local byte_count="" line_count=0
+
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL='none'
+  [[ -f "$path" ]] || return 1
+  byte_count="$(/usr/bin/wc -c <"$path" 2>/dev/null)" || return 1
+  byte_count="${byte_count//[[:space:]]/}"
+  [[ "$byte_count" =~ ^[1-9][0-9]*$ && "$byte_count" -le 512 ]] || return 1
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    line_count=$((line_count + 1))
+  done <"$path"
+  [[ "$line_count" -eq 1 ]] || return 1
+  record="$(/bin/cat "$path")" || return 1
+  IFS=$'\t' read -r record_type protocol operation status owner timed_out \
+    worker_kind stdout_bytes stderr_bytes extra <<<"$record"
+  [[ -z "$extra" && "$record_type" == COMPLETE && "$protocol" == BPS1 &&
+    "$operation" == "$expected_operation" && "$status" =~ ^[0-9]+$ && "$status" -le 255 &&
+    "$timed_out" =~ ^[01]$ && "$stdout_bytes" =~ ^[0-9]+$ &&
+    "$stderr_bytes" =~ ^[0-9]+$ && "$stdout_bytes" -le "$stdout_limit" &&
+    "$stderr_bytes" -le "$stderr_limit" ]] || return 1
+  case "$owner" in worker | supervisor | caller-signal) ;; *) return 1 ;; esac
+  case "$worker_kind" in exit | signal | not-started) ;; *) return 1 ;; esac
+
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL='BPS1'
+  BUBBLES_PYTHON_SECURITY_RUN_STATUS=$status
+  BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=$timed_out
+  BUBBLES_PYTHON_SECURITY_RUN_OWNER="$owner"
+  BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND="$worker_kind"
+  BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES=$stdout_bytes
+  BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES=$stderr_bytes
+  case "$owner:$status:$timed_out:$worker_kind" in
+    worker:0:0:exit) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='OK' ;;
+    worker:126:0:exit) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='WORKER_EXEC_FAILED' ;;
+    worker:*:*:signal) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='WORKER_SIGNAL' ;;
+    worker:*:*:*) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='WORKER_EXIT_NONZERO' ;;
+    supervisor:2:0:not-started) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='ARGUMENT_INVALID' ;;
+    supervisor:124:1:*) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_TIMEOUT' ;;
+    supervisor:125:0:not-started) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_SETUP_FAILED' ;;
+    supervisor:125:0:*)
+      if [[ "$stdout_bytes" -eq "$stdout_limit" || "$stderr_bytes" -eq "$stderr_limit" ]]; then
+        BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='OUTPUT_LIMIT'
+      else
+        BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'
+      fi
+      ;;
+    caller-signal:129:*:*) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SIGNAL_HUP' ;;
+    caller-signal:130:*:*) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SIGNAL_INT' ;;
+    caller-signal:143:*:*) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SIGNAL_TERM' ;;
+    *) BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_PROTOCOL_INVALID'; return 1 ;;
+  esac
+  return 0
+}
+
 # Internal fixed-operation dispatcher. It accepts a closed operation enum, not
 # an executable vector. Only general-probe accepts an interpreter path, and that
 # operation is never exposed by the security API below.
 _bubbles_python_run_closed_operation() {
   local operation="${1:-}"
-  local wall_seconds=30
-  local stdout_limit=0 stderr_limit=0 file_blocks=0
+  local stdout_limit=0 stderr_limit=0
   local runtime="" developer_dir="" module_source="" module_dir="" helper_path=""
   local runtime_program="" module_program="" scan_driver=""
-  local control_record="" second_record="" read_status=0 remaining=0 elapsed=0 started_at=0
-  local child_status=0 stdout_bytes="" stderr_bytes=""
-  local old_umask=""
-  local -a command_args=()
+  local supervisor_program="" supervisor_status=0 wait_status=0 old_umask=""
+  local -a security_command_args=()
   shift 2>/dev/null || true
 
   BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
@@ -787,6 +1245,19 @@ _bubbles_python_run_closed_operation() {
   # Sourced callers inspect the operation associated with the run result.
   # shellcheck disable=SC2034
   BUBBLES_PYTHON_SECURITY_RUN_OPERATION="$operation"
+  BUBBLES_PYTHON_SECURITY_RUN_OWNER='supervisor'
+  # These native-supervisor result fields form a sourced-module API. They stay
+  # in the caller shell and are not exported to the supervisor or worker.
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND='not-started'
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES=0
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES=0
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT='none'
+  # shellcheck disable=SC2034
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL='none'
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_REJECTION='NONE'
   BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL=''
   BUBBLES_PYTHON_SECURITY_PENDING_STATUS=0
   BUBBLES_PYTHON_SECURITY_CLEANUP_ACTIVE=0
@@ -799,7 +1270,7 @@ _bubbles_python_run_closed_operation() {
         BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='ARGUMENT_INVALID'
         return 2
       }
-      command_args=("$1" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')")
+      security_command_args=("$1" -c "import sys; sys.stdout.write('$BUBBLES_PYTHON_RUN_SENTINEL')")
       stdout_limit=16384
       stderr_limit=16384
       ;;
@@ -815,7 +1286,7 @@ _bubbles_python_run_closed_operation() {
       _bubbles_python_security_authenticate_path /usr/bin/xcode-select executable 1 || {
         BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'; return 125;
       }
-      command_args=(/usr/bin/env -i LC_ALL=C /usr/bin/xcode-select -p)
+      security_command_args=(/usr/bin/xcode-select -p)
       stdout_limit=4096
       stderr_limit=16384
       ;;
@@ -838,7 +1309,7 @@ _bubbles_python_run_closed_operation() {
         return 2
       }
       developer_dir="$BUBBLES_PYTHON_SECURITY_PATH_RESOLVED"
-      command_args=(/usr/bin/env -i LC_ALL=C "DEVELOPER_DIR=$developer_dir" /usr/bin/xcrun --find python3)
+      security_command_args=("$developer_dir" /usr/bin/xcrun --find python3)
       stdout_limit=4096
       stderr_limit=16384
       ;;
@@ -861,7 +1332,7 @@ print("PREFIX\tPYSEC1\texec\t" + sys.exec_prefix)
 for value in sys.path:
     print("PATH\tPYSEC1\t" + value)
 print("COMPLETE\tPYSEC1\t%d" % len(sys.path))'
-      command_args=(/usr/bin/env -i LC_ALL=C "$runtime" -I -S -B -c "$runtime_program")
+      security_command_args=("$runtime" -I -S -B -c "$runtime_program")
       stdout_limit=16384
       stderr_limit=16384
       ;;
@@ -878,7 +1349,7 @@ print("COMPLETE\tPYSEC1\t%d" % len(sys.path))'
       module_program="$(_bubbles_python_security_module_probe)" || {
         BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'; return 125;
       }
-      command_args=(/usr/bin/env -i LC_ALL=C "$runtime" -I -S -B -c "$module_program")
+      security_command_args=("$runtime" -I -S -B -c "$module_program")
       stdout_limit=65536
       stderr_limit=16384
       ;;
@@ -909,7 +1380,7 @@ print("COMPLETE\tPYSEC1\t%d" % len(sys.path))'
       scan_driver="$(_bubbles_python_security_scan_driver)" || {
         BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'; return 125;
       }
-      command_args=(/usr/bin/env -i LC_ALL=C "$runtime" -I -S -B -c "$scan_driver" \
+      security_command_args=("$runtime" -I -S -B -c "$scan_driver" \
         "$helper_path" 77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3 262144 "$@")
       stdout_limit=4194304
       stderr_limit=65536
@@ -921,17 +1392,32 @@ print("COMPLETE\tPYSEC1\t%d" % len(sys.path))'
       ;;
   esac
 
-  if [[ "$operation" != general-probe ]]; then
-    _bubbles_python_security_authenticate_path /usr/bin/env executable 1 || {
-      BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'
-      return 125
-    }
+  if ! _bubbles_python_security_authenticate_path /usr/bin/env executable 1 ||
+    [[ "$BUBBLES_PYTHON_SECURITY_PATH_RESOLVED" != /usr/bin/env ]]; then
+    # shellcheck disable=SC2034  # sourced-module rejection detail
+    BUBBLES_PYTHON_SECURITY_SUPERVISOR_REJECTION="$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
+    BUBBLES_PYTHON_SECURITY_RUN_STATUS=127
+    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_UNTRUSTED'
+    return 127
   fi
-  if [[ "$stdout_limit" -ge "$stderr_limit" ]]; then
-    file_blocks=$(((stdout_limit + 512) / 512))
-  else
-    file_blocks=$(((stderr_limit + 512) / 512))
+  if ! _bubbles_python_security_authenticate_path /usr/bin/perl executable 1 ||
+    [[ "$BUBBLES_PYTHON_SECURITY_PATH_RESOLVED" != /usr/bin/perl ]]; then
+    # shellcheck disable=SC2034  # sourced-module rejection detail
+    BUBBLES_PYTHON_SECURITY_SUPERVISOR_REJECTION="$BUBBLES_PYTHON_SECURITY_PATH_REJECTION"
+    BUBBLES_PYTHON_SECURITY_RUN_STATUS=127
+    if [[ "$BUBBLES_PYTHON_SECURITY_PATH_REJECTION" == ABSENT ]]; then
+      BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_UNAVAILABLE'
+    else
+      BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_UNTRUSTED'
+    fi
+    return 127
   fi
+  # shellcheck disable=SC2034  # sourced-module supervisor identity
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT='root-protected-perl-supervisor-v1'
+  supervisor_program="$(_bubbles_python_security_supervisor_program)" || {
+    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'
+    return 125
+  }
 
   old_umask="$(umask)"
   BUBBLES_PYTHON_SECURITY_SAVED_UMASK="$old_umask"
@@ -950,156 +1436,66 @@ print("COMPLETE\tPYSEC1\t%d" % len(sys.path))'
   }
   BUBBLES_PYTHON_SECURITY_STDOUT_PATH="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT/stdout.capture"
   BUBBLES_PYTHON_SECURITY_STDERR_PATH="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT/stderr.capture"
-  BUBBLES_PYTHON_SECURITY_FIFO_PATH="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT/lifecycle.fifo"
+  BUBBLES_PYTHON_SECURITY_CONTROL_PATH="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT/supervisor.control"
   : >"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" || {
     BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'; bubbles_python_security_cleanup || true; return 125;
   }
   : >"$BUBBLES_PYTHON_SECURITY_STDERR_PATH" || {
     BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'; bubbles_python_security_cleanup || true; return 125;
   }
-  /usr/bin/mkfifo "$BUBBLES_PYTHON_SECURITY_FIFO_PATH" || {
+  : >"$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" || {
     BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'; bubbles_python_security_cleanup || true; return 125;
   }
-  /bin/chmod 600 "$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" "$BUBBLES_PYTHON_SECURITY_STDERR_PATH" "$BUBBLES_PYTHON_SECURITY_FIFO_PATH" || {
+  /bin/chmod 600 "$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" \
+    "$BUBBLES_PYTHON_SECURITY_STDERR_PATH" "$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" || {
     BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'; bubbles_python_security_cleanup || true; return 125;
   }
-  if ! exec 7<>"$BUBBLES_PYTHON_SECURITY_FIFO_PATH"; then
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'
-    bubbles_python_security_cleanup || true
-    return 125
-  fi
-  BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN=1
-  if ! exec 8<"$BUBBLES_PYTHON_SECURITY_FIFO_PATH"; then
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'
-    bubbles_python_security_cleanup || true
-    return 125
-  fi
-  BUBBLES_PYTHON_SECURITY_READER_OPEN=1
-  if [[ -n "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" ]]; then
-    _bubbles_python_security_signal_result
-    return $?
-  fi
 
-  BUBBLES_PYTHON_SECURITY_STATE='LAUNCHING'
-  started_at=$SECONDS
-  (
-    builtin trap - EXIT HUP INT TERM
-    exec 7>&- 8>&-
-    exec 9>"$BUBBLES_PYTHON_SECURITY_FIFO_PATH" || exit 125
-    if ! ulimit -f "$file_blocks"; then
-      printf 'ERROR\tBPY1\t%s\tLIMIT_SETUP_FAILED\n' "$operation" >&9
-      exit 125
+  BUBBLES_PYTHON_SECURITY_STATE='SUPERVISOR_LAUNCHING'
+  /usr/bin/env -i LC_ALL=C /usr/bin/perl -T -w -e "$supervisor_program" \
+    "$operation" "${security_command_args[@]}" \
+    >"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" \
+    2>"$BUBBLES_PYTHON_SECURITY_STDERR_PATH" \
+    3>"$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" </dev/null &
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=$!
+  BUBBLES_PYTHON_SECURITY_STATE='SUPERVISOR_WAITING'
+
+  while :; do
+    if builtin wait "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID"; then
+      supervisor_status=0
+      break
     fi
-    printf 'READY\tBPY1\t%s\n' "$operation" >&9 || exit 125
-    exec "${command_args[@]}"
-  ) >"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" 2>"$BUBBLES_PYTHON_SECURITY_STDERR_PATH" </dev/null &
-  BUBBLES_PYTHON_SECURITY_ACTIVE_PID=$!
-  BUBBLES_PYTHON_SECURITY_STATE='REGISTERED'
-  if [[ -n "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" ]]; then
-    _bubbles_python_security_signal_result
-    return $?
-  fi
+    wait_status=$?
+    if [[ -n "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" &&
+      "$wait_status" -eq "$BUBBLES_PYTHON_SECURITY_PENDING_STATUS" ]]; then
+      continue
+    fi
+    supervisor_status=$wait_status
+    break
+  done
+  BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
+  BUBBLES_PYTHON_SECURITY_STATE='SUPERVISOR_REAPED'
 
-  elapsed=$((SECONDS - started_at))
-  remaining=$((wall_seconds - elapsed))
-  if [[ "$remaining" -le 0 ]]; then
-    read_status=142
-  elif builtin read -r -t "$remaining" control_record <&8; then
-    read_status=0
-  else
-    read_status=$?
-  fi
-  if [[ -n "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" ]]; then
-    _bubbles_python_security_signal_result
-    return $?
-  fi
-  if [[ "$read_status" -ne 0 ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=124
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CONTROL_TIMEOUT'
-    BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=1
-    _bubbles_python_security_stop_active_child || true
-    return 124
-  fi
-  if [[ "$control_record" == $'ERROR\tBPY1\t'"$operation"$'\tLIMIT_SETUP_FAILED' ]]; then
+  if [[ "$supervisor_status" -ne 0 ]] ||
+    ! _bubbles_python_security_validate_supervisor_protocol \
+      "$BUBBLES_PYTHON_SECURITY_CONTROL_PATH" "$operation" "$stdout_limit" "$stderr_limit"; then
     BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='LIMIT_SETUP_FAILED'
-    _bubbles_python_security_stop_active_child || true
-    return 125
-  fi
-  if [[ "$control_record" != $'READY\tBPY1\t'"$operation" ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CONTROL_MALFORMED'
-    _bubbles_python_security_stop_active_child || true
-    return 125
-  fi
-  BUBBLES_PYTHON_SECURITY_STATE='READY'
-
-  if ! exec 7>&-; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='INTERNAL'
-    _bubbles_python_security_stop_active_child || true
+    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='SUPERVISOR_PROTOCOL_INVALID'
     bubbles_python_security_cleanup || true
     return 125
   fi
-  BUBBLES_PYTHON_SECURITY_ANCHOR_OPEN=0
-  elapsed=$((SECONDS - started_at))
-  remaining=$((wall_seconds - elapsed))
-  # A successful read detects a forbidden second record; its payload is irrelevant.
-  # shellcheck disable=SC2034
-  if [[ "$remaining" -le 0 ]]; then
-    read_status=142
-  elif builtin read -r -t "$remaining" second_record <&8; then
-    read_status=0
-  else
-    read_status=$?
-  fi
   if [[ -n "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" ]]; then
-    _bubbles_python_security_signal_result
-    return $?
+    BUBBLES_PYTHON_SECURITY_RUN_STATUS=$BUBBLES_PYTHON_SECURITY_PENDING_STATUS
+    # shellcheck disable=SC2034  # sourced-module completion tuple
+    BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=0
+    # shellcheck disable=SC2034  # sourced-module completion tuple
+    BUBBLES_PYTHON_SECURITY_RUN_OWNER='caller-signal'
+    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC="SIGNAL_$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL"
+    wait_status=$BUBBLES_PYTHON_SECURITY_PENDING_STATUS
+    bubbles_python_security_cleanup || true
+    return "$wait_status"
   fi
-  if [[ "$read_status" -eq 0 ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CONTROL_MALFORMED'
-    _bubbles_python_security_stop_active_child || true
-    return 125
-  fi
-  elapsed=$((SECONDS - started_at))
-  if [[ "$read_status" -ge 128 || "$elapsed" -ge "$wall_seconds" ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=124
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CONTROL_TIMEOUT'
-    # Sourced callers distinguish runner timeouts from other failures.
-    # shellcheck disable=SC2034
-    BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT=1
-    _bubbles_python_security_stop_active_child || true
-    return 124
-  fi
-  exec 8>&-
-  BUBBLES_PYTHON_SECURITY_READER_OPEN=0
-  if builtin wait "$BUBBLES_PYTHON_SECURITY_ACTIVE_PID"; then
-    child_status=0
-  else
-    child_status=$?
-  fi
-  BUBBLES_PYTHON_SECURITY_ACTIVE_PID=''
-  BUBBLES_PYTHON_SECURITY_STATE='REAPED'
-
-  stdout_bytes="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDOUT_PATH" 2>/dev/null)" || stdout_bytes='invalid'
-  stderr_bytes="$(/usr/bin/wc -c <"$BUBBLES_PYTHON_SECURITY_STDERR_PATH" 2>/dev/null)" || stderr_bytes='invalid'
-  stdout_bytes="${stdout_bytes//[[:space:]]/}"
-  stderr_bytes="${stderr_bytes//[[:space:]]/}"
-  if [[ ! "$stdout_bytes" =~ ^[0-9]+$ || ! "$stderr_bytes" =~ ^[0-9]+$ ||
-    "$stdout_bytes" -gt "$stdout_limit" || "$stderr_bytes" -gt "$stderr_limit" ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_STATUS=125
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='OUTPUT_LIMIT'
-    return 125
-  fi
-  BUBBLES_PYTHON_SECURITY_RUN_STATUS=$child_status
-  if [[ "$child_status" -ne 0 ]]; then
-    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='CHILD_EXIT_NONZERO'
-    return "$child_status"
-  fi
-  BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC='OK'
-  return 0
+  return "$BUBBLES_PYTHON_SECURITY_RUN_STATUS"
 }
 
 # Security API: closed operations only. No executable, module, helper path,
@@ -1165,17 +1561,18 @@ bubbles_python_runs() {
   stderr_path="$BUBBLES_PYTHON_SECURITY_STDERR_PATH"
   BUBBLES_PYTHON_RUN_STATUS=$run_status
   case "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" in
-    CONTROL_TIMEOUT)
+    SUPERVISOR_TIMEOUT)
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_TIMEOUT'
       ;;
     OUTPUT_LIMIT)
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='PROBE_OUTPUT_LIMIT'
       ;;
-    CAPTURE_UNAVAILABLE | LIMIT_SETUP_FAILED | CONTROL_MALFORMED | INTERNAL | ARGUMENT_INVALID)
+    CAPTURE_UNAVAILABLE | SUPERVISOR_UNAVAILABLE | SUPERVISOR_UNTRUSTED | \
+      SUPERVISOR_SETUP_FAILED | SUPERVISOR_PROTOCOL_INVALID | INTERNAL | ARGUMENT_INVALID)
       BUBBLES_PYTHON_RUN_STATUS=125
       BUBBLES_PYTHON_RUN_DIAGNOSTIC='CAPTURE_UNAVAILABLE'
       ;;
-    CHILD_EXIT_NONZERO)
+    WORKER_EXIT_NONZERO | WORKER_EXEC_FAILED | WORKER_SIGNAL)
       if [[ -f "$stderr_path" ]] && /usr/bin/grep -Eiq 'Xcode (license|licence)|license agreements' "$stderr_path" 2>/dev/null; then
         BUBBLES_PYTHON_RUN_DIAGNOSTIC='XCODE_LICENSE_UNACCEPTED'
       else
@@ -1557,7 +1954,10 @@ bubbles_python_resolve_security_runtime() {
     if [[ "$run_status" -ne 0 ]]; then
       BUBBLES_PYTHON_SECURITY_STATUS=$run_status
       case "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" in
-        CONTROL_TIMEOUT) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_TIMEOUT' ;;
+        SUPERVISOR_TIMEOUT) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_TIMEOUT' ;;
+        SUPERVISOR_UNAVAILABLE | SUPERVISOR_UNTRUSTED)
+          BUBBLES_PYTHON_SECURITY_DIAGNOSTIC="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC"
+          ;;
         SIGNAL_HUP | SIGNAL_INT | SIGNAL_TERM) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" ;;
         *) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_EXIT_NONZERO' ;;
       esac
@@ -1587,7 +1987,10 @@ bubbles_python_resolve_security_runtime() {
     if [[ "$run_status" -ne 0 ]]; then
       BUBBLES_PYTHON_SECURITY_STATUS=$run_status
       case "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" in
-        CONTROL_TIMEOUT) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_TIMEOUT' ;;
+        SUPERVISOR_TIMEOUT) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_TIMEOUT' ;;
+        SUPERVISOR_UNAVAILABLE | SUPERVISOR_UNTRUSTED)
+          BUBBLES_PYTHON_SECURITY_DIAGNOSTIC="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC"
+          ;;
         SIGNAL_HUP | SIGNAL_INT | SIGNAL_TERM) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC="$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" ;;
         *) BUBBLES_PYTHON_SECURITY_DIAGNOSTIC='PROBE_EXIT_NONZERO' ;;
       esac

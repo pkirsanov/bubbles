@@ -1842,10 +1842,36 @@ cmd_runtime_selftest() {
 cmd_scan() {
   [[ $# -lt 1 ]] && die "Usage: bubbles scan <spec>"
   local spec_dir
-  spec_dir="$(resolve_spec "$1")"
+  if [[ -d "$REPO_ROOT/$1" ]]; then
+    spec_dir="$REPO_ROOT/$1"
+  else
+    spec_dir="$(resolve_spec "$1")"
+  fi
   local verbose=""
+  local -a security_entry_environment=(
+    LC_ALL=C
+    PATH=/usr/bin:/bin
+    BUBBLES_SECURITY_ENTRY_MODE=direct
+  )
   [[ "${2:-}" == "--verbose" || "${2:-}" == "-v" ]] && verbose="--verbose"
-  bash "$SCRIPT_DIR/implementation-reality-scan.sh" "$spec_dir" $verbose
+  if [[ -n "${DEVELOPER_DIR:-}" ]]; then
+    if [[ "$DEVELOPER_DIR" == *$'\n'* || "$DEVELOPER_DIR" == *$'\r'* || "$DEVELOPER_DIR" == *$'\t'* ]]; then
+      die "DEVELOPER_DIR contains forbidden control bytes"
+    fi
+    security_entry_environment+=("DEVELOPER_DIR=$DEVELOPER_DIR")
+  fi
+  # The scanner resolves repository-relative implementation paths from its
+  # working tree. Anchor copied and installed CLI callers before privileged
+  # exec so an ambient caller directory cannot select a different repository.
+  cd "$REPO_ROOT" || die "Cannot enter repository root: $REPO_ROOT"
+  if [[ -n "$verbose" ]]; then
+    POSIXLY_CORRECT=y exec /usr/bin/env -i \
+      "${security_entry_environment[@]}" \
+      /bin/bash -p -- "$SCRIPT_DIR/implementation-reality-scan.sh" "$spec_dir" "$verbose"
+  fi
+  POSIXLY_CORRECT=y exec /usr/bin/env -i \
+    "${security_entry_environment[@]}" \
+    /bin/bash -p -- "$SCRIPT_DIR/implementation-reality-scan.sh" "$spec_dir"
 }
 
 cmd_regression_quality() {

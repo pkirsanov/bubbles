@@ -32,6 +32,57 @@
 # Called automatically by state-transition-guard.sh (Check 15).
 # Can also be run standalone for pre-completion self-audit.
 # =============================================================================
+
+# An ordinary direct invocation is compatibility-only. POSIXLY_CORRECT makes
+# exec a POSIX special builtin before function lookup, then the fixed empty
+# environment and privileged shell establish the first attestable boundary.
+case "$-" in
+  *p*) ;;
+  *)
+    if [[ -n "${DEVELOPER_DIR:-}" ]]; then
+      if [[ "$DEVELOPER_DIR" == *$'\n'* || "$DEVELOPER_DIR" == *$'\r'* || "$DEVELOPER_DIR" == *$'\t'* ]]; then
+        printf '%s\n' 'implementation-reality-scan: DEVELOPER_DIR contains forbidden control bytes' >&2
+        exit 2
+      fi
+      POSIXLY_CORRECT=y exec /usr/bin/env -i \
+        LC_ALL=C \
+        PATH=/usr/bin:/bin \
+        BUBBLES_SECURITY_ENTRY_MODE=compat-reexec \
+        "DEVELOPER_DIR=$DEVELOPER_DIR" \
+        /bin/bash -p -- "$0" "$@"
+    fi
+    POSIXLY_CORRECT=y exec /usr/bin/env -i \
+      LC_ALL=C \
+      PATH=/usr/bin:/bin \
+      BUBBLES_SECURITY_ENTRY_MODE=compat-reexec \
+      /bin/bash -p -- "$0" "$@"
+    ;;
+esac
+
+# A privileged flag alone is not the direct-entry contract. Validate the entry
+# label and hostile startup state before sourcing any framework module.
+case "${BUBBLES_SECURITY_ENTRY_MODE:-}" in
+  direct | compat-reexec) ;;
+  *)
+    printf '%s\n' 'implementation-reality-scan: privileged security boundary is invalid' >&2
+    exit 2
+    ;;
+esac
+if [[ -n "${BASH_ENV+x}" || -n "${ENV+x}" || -n "${CDPATH+x}" ||
+  -n "${GLOBIGNORE+x}" || -n "${PYTHONPATH+x}" || -n "${PYTHONHOME+x}" ||
+  -n "${PYTHONSTARTUP+x}" || -n "${PERL5LIB+x}" || -n "${PERLLIB+x}" ||
+  -n "${LD_PRELOAD+x}" || -n "${DYLD_INSERT_LIBRARIES+x}" ]]; then
+  printf '%s\n' 'implementation-reality-scan: privileged startup state is not empty' >&2
+  exit 2
+fi
+for _bubbles_entry_function in source builtin return exec /bin/bash /usr/bin/env /usr/bin/perl kill wait; do
+  if declare -F "$_bubbles_entry_function" >/dev/null 2>&1; then
+    printf '%s\n' 'implementation-reality-scan: privileged startup function state is not empty' >&2
+    exit 2
+  fi
+done
+unset _bubbles_entry_function
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,6 +115,14 @@ fi
 source "$SCRIPT_DIR/guard-lib.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/python-env.sh"
+
+if ! bubbles_python_security_require_boundary; then
+  printf 'implementation-reality-scan: security entry unavailable: status=%s diagnostic=%s mode=%s\n' \
+    "$BUBBLES_PYTHON_SECURITY_ENTRY_STATUS" \
+    "$BUBBLES_PYTHON_SECURITY_ENTRY_DIAGNOSTIC" \
+    "$BUBBLES_PYTHON_SECURITY_ENTRY_MODE" >&2
+  exit 2
+fi
 
 implementation_reality_scan_cleanup() {
   local status=$?
@@ -861,7 +920,7 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
       ;;
   esac
   if [[ "$sensitive_storage_runtime_status" -ne 0 ]]; then
-    echo "   sensitive-storage classifier unavailable: status=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=SECURITY_RUNTIME_UNAVAILABLE runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
+    echo "   sensitive-storage classifier unavailable: status=$BUBBLES_PYTHON_SECURITY_STATUS diagnostic=SECURITY_RUNTIME_UNAVAILABLE entry=$BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL entryMode=$BUBBLES_PYTHON_SECURITY_ENTRY_MODE supervisor=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT supervisorProtocol=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
     sensitive_storage_fail_closed
   else
     sensitive_storage_output=""
@@ -898,16 +957,17 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
           fi
         fi
         ;;
-      CONTROL_TIMEOUT) sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT' ;;
+      SUPERVISOR_TIMEOUT) sensitive_storage_diagnostic='CLASSIFIER_TIMEOUT' ;;
       OUTPUT_LIMIT) sensitive_storage_diagnostic='CLASSIFIER_OUTPUT_LIMIT' ;;
-      CAPTURE_UNAVAILABLE | LIMIT_SETUP_FAILED | CONTROL_MALFORMED | INTERNAL | ARGUMENT_INVALID)
+      CAPTURE_UNAVAILABLE | SUPERVISOR_UNAVAILABLE | SUPERVISOR_UNTRUSTED | \
+        SUPERVISOR_SETUP_FAILED | SUPERVISOR_PROTOCOL_INVALID | INTERNAL | ARGUMENT_INVALID)
         sensitive_storage_diagnostic='RUNNER_INTERNAL'
         ;;
       SIGNAL_HUP | SIGNAL_INT | SIGNAL_TERM)
         bubbles_python_security_cleanup || true
         exit "$sensitive_storage_status"
         ;;
-      CHILD_EXIT_NONZERO)
+      WORKER_EXIT_NONZERO | WORKER_EXEC_FAILED | WORKER_SIGNAL)
         if [[ -f "$sensitive_storage_stderr_path" ]]; then
           sensitive_storage_driver_token="$(/usr/bin/sed -n '1p' "$sensitive_storage_stderr_path" 2>/dev/null || true)"
         fi
@@ -929,10 +989,10 @@ if [[ ${#sensitive_storage_files[@]} -gt 0 ]]; then
     fi
 
     if [[ "$sensitive_storage_diagnostic" != 'OK' ]]; then
-      echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
+      echo "   sensitive-storage classifier failed: status=$sensitive_storage_status diagnostic=$sensitive_storage_diagnostic entry=$BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL entryMode=$BUBBLES_PYTHON_SECURITY_ENTRY_MODE supervisor=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT supervisorProtocol=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=none"
       sensitive_storage_fail_closed
     else
-      echo "   sensitive-storage classifier protocol complete: version=$SENSITIVE_STORAGE_PROTOCOL_VERSION scanned=$SENSITIVE_STORAGE_PROTOCOL_SCANNED findings=$SENSITIVE_STORAGE_PROTOCOL_FINDINGS status=0 diagnostic=OK runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"
+      echo "   sensitive-storage classifier protocol complete: version=$SENSITIVE_STORAGE_PROTOCOL_VERSION scanned=$SENSITIVE_STORAGE_PROTOCOL_SCANNED findings=$SENSITIVE_STORAGE_PROTOCOL_FINDINGS status=0 diagnostic=OK entry=$BUBBLES_PYTHON_SECURITY_ENTRY_PROTOCOL entryMode=$BUBBLES_PYTHON_SECURITY_ENTRY_MODE supervisor=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_CONTRACT supervisorProtocol=$BUBBLES_PYTHON_SECURITY_SUPERVISOR_PROTOCOL runtimeDiagnostic=$BUBBLES_PYTHON_SECURITY_DIAGNOSTIC rejection=$BUBBLES_PYTHON_SECURITY_REJECTION candidates=$BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT trust=$BUBBLES_PYTHON_SECURITY_TRUST_CONTRACT provenance=$BUBBLES_PYTHON_SECURITY_PROVENANCE pathProtocol=$BUBBLES_PYTHON_SECURITY_PATH_PROTOCOL moduleProtocol=$BUBBLES_PYTHON_SECURITY_MODULE_PROTOCOL classifierProtocol=$SENSITIVE_STORAGE_PROTOCOL_VERSION"
       while IFS=$'\t' read -r record_type finding_path finding_line finding_reason finding_storage finding_operation finding_key finding_provider finding_config_match; do
         [[ "$record_type" == "FINDING" ]] || continue
         violation "$finding_path" "$finding_line" "SENSITIVE_CLIENT_STORAGE" "reason=$finding_reason storage=$finding_storage operation=$finding_operation key=$finding_key provider=$finding_provider configMatch=$finding_config_match"
