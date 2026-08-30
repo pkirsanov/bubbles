@@ -2,69 +2,86 @@
 
 ## Planning Basis
 
-This plan derives from [spec.md](spec.md) and the committed secure redesign in
+This plan derives from [spec.md](spec.md) and the newly authoritative redesign in
 [design.md](design.md). Execution evidence belongs in [report.md](report.md).
 Human acceptance belongs in [uservalidation.md](uservalidation.md).
 
-Scope 1 records the delivered `managed-venv-only-v1` epoch. Its checked items
-remain historical facts about that candidate. They do not prove, unlock, or
-transfer into the `root-protected-native-python-v1` epoch.
+Scope 1 is a superseded historical record for the delivered
+`managed-venv-only-v1` epoch. Its checked receipts remain historical facts.
+They do not prove, unlock, or transfer into the active Scope 2 epoch.
 
-Scope 2 is the active remediation plan. It preserves `SCN-B039-001` through
-`SCN-B039-004` and adds one scenario for each secure-redesign finding. The
-five-file implementation must land atomically because mixed authority and
-supervision contracts cannot produce an accepted Scan 2B verdict.
+Scope 2 is the only active execution scope. It preserves stable identifiers
+`SCN-B039-001` through `SCN-B039-009` and implements the authoritative
+`privileged-native-supervision-v2` design. The retained worker trust contract
+is `root-protected-native-python-v1`. Privileged entry, native supervision,
+caller integration, governance guidance, and evidence closure must land as one
+coherent epoch because a mixed contract cannot earn Scan 2B authority.
 
 ## Execution Outline
 
 ### Phase Order
 
-1. **Scope 1: Historical usability repair.** Preserve the already delivered
-   skip and cascade behavior as evidence from the superseded implementation
-   epoch.
-2. **Scope 2: Authenticated Scan 2B runtime.** Replace caller-owned authority
-  with the root-protected runtime. Replace process-group supervision with fixed
-  operations, exact-child lifecycle, private cleanup, and one-epoch closure.
+1. **Superseded Scope 1: Historical usability repair.** Preserve the prior
+   receipts as archive-only context and execute none of its plan.
+2. **Scope 2 red controls.** Make each `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`,
+   and `HAR-R3` regression fail against the clean successor before source work.
+3. **Scope 2 privileged entry and native supervision.** Add direct
+   `privileged-bash-entry-v1`, fixed `root-protected-perl-supervisor-v1`, and
+   retained `root-protected-native-python-v1` worker authority.
+4. **Scope 2 caller and guidance integration.** Route the CLI and transition
+   guard through the direct entry and align framework guidance with the same
+   non-fallback contract.
+5. **Scope 2 platform and repetition proof.** Run focused stock macOS Bash 3.2,
+   supported Linux, and 30-consecutive lifecycle matrices on one candidate.
+6. **Scope 2 closure.** Run complete framework and release gates, then obtain
+   fresh security review, human acceptance, and validate-only certification.
 
 ### New Types And Signatures
 
 - `bubbles_python_runs(interpreter)` remains a general usability probe only.
 - `bubbles_python_resolve_runnable()` remains general resolution only.
+- `bubbles_python_security_require_boundary()` accepts no caller authority and
+  requires `BSEC1` plus actual privileged Bash mode.
 - `bubbles_python_resolve_security_runtime()` accepts no candidate and returns
-  authenticated runtime identity plus closed diagnostics.
-- `bubbles_python_run_security_operation(operation, registered captures,
-  operation data)` accepts only closed operations and no executable vector.
-- `bubbles_python_security_cleanup()` closes descriptors, reaps the exact
-  direct child, removes private resources, and restores caller traps.
-- `PYSEC1`, `PYMOD1`, `BPY1`, and `SCS1` remain closed protocols.
-- `bubbles_python_run_bounded()`, process-group cleanup helpers, trusted-runtime
-  globals, and managed-runtime security authority are removed.
+  authenticated `root-protected-native-python-v1` identity.
+- `bubbles_python_run_security_operation(operation, operation_data)` accepts a
+  closed operation and bounded data only; it exposes no executable vector.
+- `bubbles_python_security_cleanup()` removes registered files only after the
+  native supervisor has been reaped; it never signals or waits on a worker.
+- `BSEC1` identifies privileged entry and `BPS1` records supervisor-owned
+  completion after `waitpid`.
+- `PYSEC1`, `PYMOD1`, and `SCS1` retain their current semantics and versions.
+- `BPY1`, worker-held lifecycle FIFOs, Bash worker/watchdog PIDs, and Bash
+  worker signaling are archive-only and absent from active execution.
 
 ### Validation Checkpoints
 
-- Scope 1 is a historical checkpoint only. No Scope 1 evidence satisfies a
-  Scope 2 item.
-- Scope 2 first runs focused trust, helper-identity, lifecycle, cleanup, and
-  cascade checks with their paired negative controls.
-- The same immutable candidate then runs the macOS Bash 3.2 and Linux matrices
-  without deadline increases or retry substitution.
-- Full `framework-validate` and `release-check` execute only after focused
-  checks are green on that candidate.
-- A fresh security review accounts for every listed finding before planner
-  reconciliation and validate-owned certification are requested.
-- Existing checked human-acceptance content is historical and cannot accept
-  the redesigned implementation.
+- Scope 1 is archive-only. No Scope 1 evidence satisfies a Scope 2 item.
+- The five finding-specific red controls must fail for the intended reason
+  before any Scope 2 implementation edit begins.
+- Focused entry, supervisor, helper, cleanup, and skip-accounting checks gate
+  the stock macOS Bash 3.2 lane.
+- The macOS lane gates the supported Linux lane. Both lanes must authenticate
+  fixed Perl and Python paths without a PATH or Bash supervisor fallback.
+- Both platform lanes gate the 30-consecutive lifecycle matrix. A failed run is
+  retained and is never replaced by a retry or wider deadline.
+- The focused matrix gates caller integration and guidance validation.
+- Caller integration gates complete `framework-validate`; that gate in turn
+  gates `release-check` on the same immutable candidate.
+- Framework and release success gate fresh independent security review.
+- Security review gates fresh human acceptance. Human acceptance gates the
+  final validate-only certification request.
 
 ## Plan Inventory
 
 | Scope | Epoch | Surfaces | Primary validation | Status |
 | --- | --- | --- | --- | --- |
-| 1. Interpreter Usability Probe, Named Skip, And Honest Cascade | `managed-venv-only-v1` | Scanner selftest, regression cascade | Historical focused evidence | Done, historical and superseded |
-| 2. Root-Protected Scan 2B Authority And Exact-Child Supervision | `root-protected-native-python-v1` | Five-file implementation boundary | Focused adversarial checks, both-platform matrix, full gates, security review | Not started |
+| 1. Interpreter Usability Probe, Named Skip, And Honest Cascade | `managed-venv-only-v1` | Scanner selftest, regression cascade | Historical receipts only | Superseded; do not execute |
+| 2. Privileged Scan 2B Entry And Native Supervisor | `privileged-native-supervision-v2` | Entry, supervisor, scanner, callers, governance, docs, tests | Red controls, focused and platform matrices, full gates, independent closure | Not started |
 
-## Scope 1: Interpreter Usability Probe, Named Skip, And Honest Cascade
+## Superseded Scope 1 (Do Not Execute): Interpreter Usability Probe, Named Skip, And Honest Cascade
 
-**Status:** [x] Done
+**Status:** Superseded historical record; not active execution inventory
 **Depends On:** None
 **Epoch:** `managed-venv-only-v1` (historical and superseded for security closure)
 **Consumer Surface:** CLI command output from the scanner selftest and `test_24`.
@@ -75,15 +92,15 @@ This scope remains intelligible as the delivery record for the original
 presence-versus-usability repair. Its implementation plan and checked DoD
 describe that candidate only. The secure redesign does not reopen or rewrite
 those observations. Every security-redesign claim is owned by Scope 2 and must
-receive fresh evidence from one immutable `root-protected-native-python-v1`
-candidate.
+receive fresh evidence from one immutable `privileged-native-supervision-v2`
+candidate whose worker trust remains `root-protected-native-python-v1`.
 
-### Gherkin Scenarios (Regression)
+### Historical Scenario Records
 
 ```gherkin
 Feature: A missing prerequisite is named, not misattributed
 
-  Scenario: SCN-B039-001 - Unusable interpreter produces a named skip, not classification failures
+  Historical record: SCN-B039-001 - Unusable interpreter produces a named skip, not classification failures
     Given the active developer directory has an unaccepted Xcode licence
       And python3 resolves on PATH but exits 69 without running
     When the managed selftest runs under the sanitized system-only PATH
@@ -92,19 +109,19 @@ Feature: A missing prerequisite is named, not misattributed
       And it emits zero FAIL lines
       And it exits 0
 
-  Scenario: SCN-B039-002 - A usable interpreter under the same PATH runs everything
+  Historical record: SCN-B039-002 - A usable interpreter under the same PATH runs everything
     Given DEVELOPER_DIR points at an accepted toolchain
     When the managed selftest runs under the sanitized system-only PATH
     Then no skip is emitted
       And every Scan 2B semantic and config-integrity assertion executes
 
-  Scenario: SCN-B039-003 - The assertions still catch a real classifier regression
+  Historical record: SCN-B039-003 - The assertions still catch a real classifier regression
     Given a usable interpreter
       And the classifier's classification ladder is mutated
     When the managed selftest runs
     Then it exits 1 and reports the mismatched semantic tuples
 
-  Scenario: SCN-B039-004 - A skipped coverage claim is never counted as a pass
+  Historical record: SCN-B039-004 - A skipped coverage claim is never counted as a pass
     Given the managed selftest emitted the unavailable sentinel
     When test_24 evaluates the managed selftest run
     Then it records a SKIP rather than the coverage PASS label
@@ -166,216 +183,239 @@ Feature: A missing prerequisite is named, not misattributed
   and belong to the parent runner. No framework-wide certification is claimed.
 - Human acceptance is not recorded.
 
-## Scope 2: Root-Protected Scan 2B Authority And Exact-Child Supervision
+## Scope 2: Privileged Scan 2B Entry And Native Supervisor
 
 **Status:** Not Started
-**Depends On:** Scope 1 as historical behavior only. No Scope 1 evidence transfers.
-**Epoch:** `root-protected-native-python-v1`
+**Depends On:** None. Superseded Scope 1 is historical context, not an execution dependency.
+**Epoch:** `privileged-native-supervision-v2`
+**Retained Worker Trust:** `root-protected-native-python-v1`
 **Foundation:** true
-**Consumer Surface:** CLI command output from the scanner, both selftests, and `test_24`.
+**Consumer Surface:** Direct scanner invocation, `cli.sh scan`, transition-guard Check 16, both owning selftests, `test_24`, framework guidance, security review, human acceptance, and validate-only certification.
 
 ### Scope Outcome
 
-Scan 2B accepts a clean contribution only from an authenticated native Python.
-The caller cannot replace or modify that runtime path.
+Every canonical Scan 2B caller enters `privileged-bash-entry-v1` before sourcing
+framework modules. A fixed root-protected `/usr/bin/perl` supervisor owns,
+signals, and reaps one direct authenticated Python worker with `waitpid`.
 
-The runtime executes a pinned helper through a closed operation. The runner
-supervises and reaps one exact direct child. Every exit path removes its private
-resources. Final closure evidence names one immutable candidate epoch.
+Bash retains only a wait handle for the Perl supervisor. It never stores or
+signals a worker or watchdog PID. Worker output, EOF, readiness text, and
+worker-held descriptors cannot decide completion. The final accepted evidence
+set names one immutable `privileged-native-supervision-v2` candidate.
 
-These scenarios stay in one scope because the design requires an atomic
-five-file change. Separate source deliveries would create a mixed security
-contract.
+All active work remains in one foundation scope. Splitting entry, supervisor,
+callers, or guidance would temporarily create conflicting authority contracts.
 
 ### Finding-To-Scenario Contract
 
-| Finding | Scenario | Required closure |
-| --- | --- | --- |
-| `SEC-B039-001` | `SCN-B039-005` | Caller-owned, fake, PATH-selected, and managed runtimes cannot authorize a clean Scan 2B result. |
-| `SEC-B039-002` | `SCN-B039-006` | Security execution exposes fixed operations, pins helper bytes, treats repository content as data, and states only direct-child containment. |
-| `SEC-B039-003` | `SCN-B039-007` | Fixed-wall exact-child lifecycle preserves status and signal ownership without process-group or stale-PID mechanisms. |
-| `SEC-OBS-001` | `SCN-B039-008` | Normal, setup-failure, child-failure, timeout, signal, and EXIT paths remove every private resource. |
-| `SEC-B039-004` | `SCN-B039-009` | Closure accepts evidence from one immutable candidate epoch only. |
+| Finding | Stable scenario | Required closure | Owner |
+| --- | --- | --- | --- |
+| `SEC-R1` | `SCN-B039-005` | Canonical callers enter `/bin/bash -p` through an empty environment before any module source. | `bubbles.implement`; adversarial proof by `bubbles.test` |
+| `SEC-R2` | `SCN-B039-006` | Fixed root-protected `/usr/bin/perl` owns one direct worker and reaps it with `waitpid` before completion. | `bubbles.implement`; lifecycle proof by `bubbles.test` |
+| `HAR-R1` | `SCN-B039-007` | Bash carries no worker/watchdog signaling authority and propagates pending parent signals only after supervisor reap. | `bubbles.implement`; signal-window proof by `bubbles.test` |
+| `HAR-R2` | `SCN-B039-008` | Only supervisor-owned `waitpid` determines completion; target-controlled output, EOF, and descriptors cannot do so. | `bubbles.implement`; forged-control proof by `bubbles.test` |
+| `HAR-R3` | `SCN-B039-009` | Active artifacts use current finding identifiers and one immutable epoch. Historical identifiers remain archive-only. | `bubbles.plan`, `bubbles.test`, `bubbles.security`, and `bubbles.validate` within their owned artifacts |
 
-### Gherkin Scenarios (Security Regression)
+### Gherkin Scenarios
 
 ```gherkin
-Feature: Scan 2B accepts only authenticated execution from one candidate epoch
+Feature: Scan 2B earns authority through privileged native supervision
 
-  Scenario: SCN-B039-005 - Caller-owned Python output cannot authorize a clean verdict
-    Given caller-owned PATH and managed Python executables emit the expected probe, PYSEC1, PYMOD1, and clean SCS1 strings
-    When the production Scan 2B path resolves and executes its classifier authority
-    Then neither caller-owned executable is accepted as the security runtime
-      And neither caller-owned executable marker is created
-      And Scan 2B uses an independently authenticated native runtime or fails closed without an earned clean verdict
+  Scenario: SCN-B039-001 - An unavailable prerequisite is named without a false verdict
+    Given the privileged entry, native supervisor, authenticated runtime, or pinned helper cannot execute
+    When the managed Scan 2B selftest evaluates the classifier-dependent group
+    Then it emits SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1
+      And it emits one actionable SKIP with numeric status and a closed diagnostic
+      And it emits no classifier-attributed PASS or FAIL
+      And the scanner preserves fail-closed unresolved findings
 
-  Scenario: SCN-B039-006 - Fixed operations execute pinned helper bytes with repository content treated as data
-    Given the security runtime is authenticated
-      And project paths, source bytes, and configuration contain shell-shaped and Python-shaped hostile content
-    When Scan 2B invokes the fixed scan2b-classify operation
-    Then no caller can select an executable, module, helper path, Python program, or generic command vector
-      And helper bytes are size-bounded and digest-verified before the same byte buffer is compiled and executed
-      And altered or path-replaced helper content cannot execute
-      And project content enters only as validated data paths within the repository
-      And diagnostics claim termination and reaping only for the exact direct child
+  Scenario: SCN-B039-002 - A complete privileged path executes every classifier assertion
+    Given privileged entry, the native supervisor, the authenticated Python worker, and the pinned helper all validate
+    When the managed Scan 2B selftest runs
+    Then every semantic and configuration assertion executes
+      And no unavailable sentinel is emitted
+      And BSEC1, BPS1, PYSEC1, PYMOD1, and SCS1 are each complete
 
-  Scenario: SCN-B039-007 - Exact-child supervision preserves lifecycle and status on macOS and Linux
-    Given the fixed operation runs under stock macOS Bash 3.2 and Linux Bash
-    When it succeeds, exits nonzero, exceeds its wall, reports malformed control, returns a signal-shaped status, or receives HUP, INT, or TERM
-    Then the runner registers, signals with a positive PID, and waits for exactly its direct child
-      And it preserves runner-owned, child-owned, and caller-signal status distinctions
-      And it uses no Bash job control, negative process-group signal, caller-shadowable kill or wait, kill-zero polling, or descendant PID retention
-      And it performs no destructive stale-PID cleanup
-      And no signal in the launch registration window leaves an unowned direct child
+  Scenario: SCN-B039-003 - The authorized classifier mutation remains fatal
+    Given one copied candidate carries the authorized one-token classifier mutation and its reviewed helper digest
+    When normal and sanitized privileged Scan 2B paths execute that candidate
+    Then both runs exit nonzero on the exact semantic tuple mismatch
+      And restoring the candidate restores byte identity
 
-  Scenario: SCN-B039-008 - Every lifecycle path removes private execution resources
-    Given a security operation registered its private directory, captures, FIFO, descriptors, traps, and direct-child state
-    When the operation completes normally or leaves through partial setup failure, child failure, timeout, HUP, INT, TERM, or EXIT cleanup
-    Then the exact child is reaped when present
-      And every registered descriptor is closed
-      And every capture, FIFO, path, and temporary directory is absent
-      And prior caller traps are restored without replaying child output or environment values
+  Scenario: SCN-B039-004 - A skipped coverage claim remains distinct from a pass
+    Given the managed selftest emitted the unavailable sentinel
+    When test_24 accounts for the managed Scan 2B result
+    Then it increments SKIP_COUNT only
+      And it withholds the coverage PASS label
+      And FAIL_COUNT remains the suite exit authority
 
-  Scenario: SCN-B039-009 - Final closure accepts one immutable candidate epoch only
-    Given historical BUG-039 evidence and a stabilized root-protected implementation candidate exist
-    When focused checks, platform matrices, full gates, security review, planner reconciliation, human acceptance, and certification are evaluated
-    Then every accepted evidence record names the same immutable candidate commit
-      And evidence from a prior commit or managed-runtime epoch satisfies no redesigned DoD item
-      And any implementation change invalidates affected evidence
-      And no pass-count literal substitutes for named scenario, finding, and command evidence
-      And only bubbles.validate may write certification or terminal status
+  Scenario: SCN-B039-005 - SEC-R1 privileged entry excludes hostile Bash startup state
+    Given exported functions and BASH_ENV attempt marker writes and status changes
+    When a canonical caller launches Scan 2B
+    Then env -i and /bin/bash -p establish BSEC1 before any module source
+      And no hostile marker enters the privileged child
+      And an ordinary direct scanner invocation is labeled compat-reexec without claiming pre-boundary cleanliness
+
+  Scenario: SCN-B039-006 - SEC-R2 native supervision owns one direct worker through reap
+    Given a fixed root-protected /usr/bin/perl and authenticated Python are available
+    When a closed security operation starts, exits, fails, times out, floods output, or receives a signal
+    Then the Perl supervisor remains the direct worker parent until waitpid reaps that worker
+      And it signals only while that unreaped ownership exists
+      And it emits one valid BPS1 completion after reap
+      And no caller selects a program, helper path, wall, grace period, or output limit
+
+  Scenario: SCN-B039-007 - HAR-R1 Bash never signals a worker or watchdog PID
+    Given parent HUP, INT, or TERM can arrive during launch, collection, termination, or cleanup
+    When Bash waits for the Perl supervisor
+    Then Bash retains only the supervisor wait handle
+      And no Bash path stores or signals a worker or watchdog PID
+      And pending parent status is returned only after the supervisor has been reaped
+      And no stale PID, process-group, job-control, kill-zero, or descendant cleanup path exists
+
+  Scenario: SCN-B039-008 - HAR-R2 target-controlled channels cannot determine completion
+    Given a worker closes descriptors, forges BPS1 text, hangs after output, or leaves a descriptor-holding descendant
+    When the native supervisor collects bounded output
+    Then only supervisor-owned waitpid determines worker completion
+      And the worker cannot write the supervisor control descriptor
+      And pipe EOF and worker text are data rather than completion authority
+      And cleanup starts only after the supervisor is reaped
+
+  Scenario: SCN-B039-009 - HAR-R3 current identifiers bind one immutable evidence epoch
+    Given historical evidence and the active privileged-native-supervision-v2 candidate both exist
+    When focused, platform, caller, documentation, framework, release, security, acceptance, and validation records are evaluated
+    Then active records use SEC-R1, SEC-R2, HAR-R1, HAR-R2, and HAR-R3 only
+      And every accepted record names the same immutable candidate commit and protocol epoch
+      And earlier evidence satisfies no active Scope 2 item
+      And only bubbles.validate writes certification or terminal status
 ```
 
-### Implementation Files
+### Owner Assignments
 
-1. `bubbles/scripts/python-env.sh`
-2. `bubbles/scripts/python-env-selftest.sh`
-3. `bubbles/scripts/implementation-reality-scan.sh`
-4. `bubbles/scripts/implementation-reality-scan-selftest.sh`
-5. `tests/regression/test_24_g028_sensitive_client_storage.sh`
+| Surface | Allowed responsibility | Owner |
+| --- | --- | --- |
+| `scopes.md`, `scenario-manifest.json`, planning and work-boundary routing in `state.json` | Preserve scenario contracts, parity, epoch, path boundary, and next-owner routing. | `bubbles.plan` |
+| `python-env.sh`, scanner, CLI, and transition guard | Implement privileged entry, fixed native supervision, protocol validation, and caller status propagation. | `bubbles.implement` |
+| Owning selftests, `test_24`, red mutations, platform lanes, repetition, and full executable gates | Add and execute persistent scenario-specific proof without weakening existing assertions. | `bubbles.test` |
+| Framework instruction, template, shared requirement, validation-agent guidance, and security recipe | Align operator and agent guidance after runtime behavior is stable. | `bubbles.docs` for prose; code-owning specialists review executable snippets |
+| One-to-one review of `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3` | Inspect the exact immutable candidate and return a fresh security result. | `bubbles.security` |
+| Acceptance checklist decisions | Review current behavior and explicitly accept or reject each current item. | Human owner |
+| Certification and terminal state | Re-resolve the transition, verify exact-candidate evidence, and own all `certification.*`, `certifiedAt`, and terminal-status writes. | `bubbles.validate` |
 
 ### Change Boundary
 
-Implementation and test edits may touch only the five files above. Planner
-reconciliation may update `scopes.md` and `scenario-manifest.json`. Those
-planning files do not widen the implementation boundary.
+`workBoundary.allowedPaths` must contain exactly this set:
 
-The classifier helper is a read-only, digest-pinned input. Unrelated Python
-callers, CI workflows, managed docs, `spec.md`, `design.md`, `state.json`,
-`report.md`, and `uservalidation.md` remain unchanged by implementation work.
+1. `bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/**`
+2. `bubbles/scripts/python-env.sh`
+3. `bubbles/scripts/python-env-selftest.sh`
+4. `bubbles/scripts/implementation-reality-scan.sh`
+5. `bubbles/scripts/implementation-reality-scan-selftest.sh`
+6. `tests/regression/test_24_g028_sensitive_client_storage.sh`
+7. `bubbles/scripts/cli.sh`
+8. `bubbles/scripts/state-transition-guard.sh`
+9. `bubbles/scripts/state-transition-guard-selftest.sh`
+10. `.github/copilot-instructions.md`
+11. `templates/copilot-instructions.md.tmpl`
+12. `agents/bubbles_shared/critical-requirements.md`
+13. `agents/bubbles.validate.agent.md`
+14. `docs/recipes/security-review.md`
 
-Route a measured need outside this boundary to the owning specialist before
-editing it. Do not include collateral cleanup.
+Artifact ownership still limits writes inside the BUG-039 folder. The widened
+path set is not permission for one specialist to edit another owner's file.
+
+Every dependency manifest, workflow, classifier-helper byte, `guard-lib.sh`,
+release manifest, datastore, network, browser, deployment, cross-repository,
+and unrelated Python call site is excluded. Collateral cleanup is prohibited.
 
 ### Consumer And Shared-Infrastructure Impact Sweep
 
-- Treat `python-env.sh` as protected shared infrastructure.
-- Preserve general interpreter usability and activation for non-security
-  consumers.
-- Remove superseded runner and trust APIs only after a repository-wide consumer
-  trace confirms that active consumers stay inside the five-file boundary.
-- Search source, tests, scripts, configuration, and docs for stale references
-  to removed APIs and `BUBBLES_PYTHON_TRUSTED*`.
-- Keep historical references only when their surrounding section labels the old
-  epoch as historical.
-- Run `python-env-selftest.sh` as the independent canary before scanner tests.
-- Make the safe rollback state fail Scan 2B closed.
-- Never restore managed self-attestation or generic process-group supervision as
-  a rollback.
-- Stop and route a boundary finding when the canary exposes a changed contract
-  in an unapproved consumer.
+- Treat `python-env.sh`, the scanner entry, `cli.sh scan`, and transition-guard
+  Check 16 as protected shared infrastructure.
+- Inventory direct callers of the scanner, security APIs, `BSEC1`, `BPS1`,
+  `PYSEC1`, `PYMOD1`, `SCS1`, `BPY1`, worker/watchdog PID state, and old active
+  finding labels before removal.
+- Preserve general Python usability consumers. General resolver success never
+  becomes Scan 2B authority.
+- Run `python-env-selftest.sh` as the independent canary before scanner,
+  transition-guard, framework, or release suites.
+- Verify `cli.sh scan` and transition-guard Check 16 enter the direct privileged
+  boundary and preserve the scanner's real status.
+- Keep the classifier helper read-only and digest-pinned. Update no helper byte.
+- The rollback state fails Scan 2B closed. It never restores ordinary Bash
+  authority, a Bash watchdog, a worker-held completion channel, or a PATH
+  supervisor fallback.
+- Before broad validation, prove zero changed path outside the exact boundary
+  and zero active stale consumer reference outside an explicitly archived
+  section.
 
 <!-- markdownlint-disable-next-line MD024 -->
 ### Implementation Plan
 
-1. Add pre-execution path, symlink, ancestor, native-format, caller-write, and
-   Apple launcher validation to `python-env.sh`.
-2. Add isolated posture, search-root, and module-origin validation under
-   `root-protected-native-python-v1`.
-3. Keep general usability separate from security authority.
-4. Ignore general overrides and managed-venv locators during security
-   resolution.
-5. Add only the closed security operations from `design.md`.
-6. Pin the helper size and digest before compiling the same byte buffer.
-7. Validate every project, config, and source path as repository-contained
-   data.
-8. Replace process-group control with `BPY1` readiness, FIFO EOF, exact
-   `builtin wait`, positive-PID signaling, and fixed status mapping.
-9. Close the launch registration window without job control or PID polling.
-10. Use one idempotent cleanup path for every return, signal, and EXIT path.
-11. Route Scan 2B only through authenticated fixed execution.
-12. Preserve `SCS1`, fail-closed findings, the unavailable sentinel, and honest
-    cascade accounting.
-13. Add persistent positive and adversarial coverage in the three boundary test
-    files.
-14. Stabilize one clean candidate before collecting final evidence.
-15. Obtain fresh security review, planner reconciliation, human acceptance, and
-    validate-owned certification against that candidate.
+1. `bubbles.test` adds persistent red controls for all five current findings.
+   Each control must fail on clean successor `72bbb987ef6c396ba00b1e6b94b95526d230e1a5`
+   for the intended missing contract before implementation starts.
+2. `bubbles.implement` adds the first-executable-statement compatibility entry
+   to the scanner and direct privileged entry to `cli.sh` and transition-guard
+   Check 16.
+3. `bubbles.implement` authenticates fixed `/usr/bin/perl` with the retained
+   root-protected path checks and embeds the fixed taint-mode supervisor in
+   `python-env.sh`.
+4. `bubbles.implement` moves wall, output, status, signal, direct-worker
+   ownership, and `waitpid` reaping into the Perl supervisor. Bash retains only
+   a supervisor wait handle.
+5. `bubbles.implement` removes active `BPY1`, completion FIFO, worker/watchdog
+   PID, Bash worker signal, process-group, job-control, and stale-PID cleanup
+   mechanisms from the security path.
+6. `bubbles.implement` preserves `root-protected-native-python-v1`, `PYSEC1`,
+   `PYMOD1`, same-byte helper identity, complete `SCS1`, fail-closed findings,
+   unavailable sentinel behavior, and honest skip accounting.
+7. `bubbles.test` rewrites the owning harnesses around supervisor-owned control
+   and adds the full lifecycle, boundary contamination, helper, caller,
+   platform, and 30-consecutive matrices from the design.
+8. `bubbles.docs` aligns the five admitted guidance surfaces with the direct
+   privileged caller path, Perl prerequisite, diagnostics, remediation, and
+   explicit non-claims.
+9. `bubbles.test` stabilizes one clean immutable candidate, then executes Test
+   Plan rows `TP-S2-01` through `TP-S2-09` in order without evidence reuse.
+10. `bubbles.security`, the human owner, and `bubbles.validate` execute rows
+    `TP-S2-10` through `TP-S2-12` against that unchanged candidate.
 
 <!-- markdownlint-disable-next-line MD024 -->
 ### Test Plan
 
-| Test Type | Scenario / Finding | Concrete Test File | Command | Required Behavior | Negative Control | Platform / Live System |
-| --- | --- | --- | --- | --- | --- | --- |
-| functional | `SCN-B039-001`, `SCN-B039-005` / `SEC-B039-001` | `bubbles/scripts/python-env-selftest.sh` | `bash bubbles/scripts/python-env-selftest.sh` | General usability stays separate while only a fully authenticated runtime receives security identity. | Caller-owned and managed fake executables emit valid probe and protocol text. Mutating one authority predicate must make marker or clean-verdict assertions red. | macOS Bash 3.2 and Linux Bash. Real production module. |
-| functional | `SCN-B039-002`, `SCN-B039-005` / `SEC-B039-001` | `bubbles/scripts/implementation-reality-scan-selftest.sh` | `bash bubbles/scripts/implementation-reality-scan-selftest.sh` | The original unavailable and usable outcomes remain honest through the production scanner. | A fake PATH or managed executable forges clean output. Removing pre-execution authentication must make the production-path regression red. | macOS Bash 3.2 and Linux Bash. Real production scanner. |
-| functional | `SCN-B039-003` | `bubbles/scripts/implementation-reality-scan-selftest.sh` | `bash bubbles/scripts/implementation-reality-scan-selftest.sh` | A copied candidate updates the expected helper digest for a one-token classifier mutation. The mutant executes and exact semantic tuple assertions fail under normal and sanitized authenticated runs. | Replacing the semantic assertions with completion-only checks must make this mutation appear green and fail the test's negative-control assertion. | macOS and Linux. Real scanner with an authorized copied-helper mutation. |
-| functional | `SCN-B039-006` / `SEC-B039-002` | `bubbles/scripts/implementation-reality-scan-selftest.sh` | `bash bubbles/scripts/implementation-reality-scan-selftest.sh` | The fixed driver validates helper identity, same-byte execution, repository containment, and complete `SCS1`. | Altered helpers retain the old digest and attempt marker writes, subprocess launch, `setsid`, double fork, dynamic import, `ctypes`, `eval`, and `exec`. A copied-driver reopen mutation must also turn red. | macOS and Linux. Real scanner with adversarial inputs. |
-| stress | `SCN-B039-007` / `SEC-B039-003` | `bubbles/scripts/python-env-selftest.sh` | `bash bubbles/scripts/python-env-selftest.sh` | The design-defined repeated matrix preserves exact-child lifecycle and status with fixed deadlines and no retry substitution. | Copied-runner mutations add shadowable builtins, negative-PID signaling, job control, polling, a launch gap, or status collapse. | Stock macOS Bash 3.2 and Linux Bash. Real runner. |
-| functional | `SCN-B039-008` / `SEC-OBS-001` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh` | `bash bubbles/scripts/python-env-selftest.sh` and `bash bubbles/scripts/implementation-reality-scan-selftest.sh` | Every normal, setup, child, timeout, signal, and EXIT path removes registered resources and restores traps. | Copied-runner mutations omit one registration, descriptor close, exact wait, private-root removal, or trap restoration. Each matching assertion must turn red. | macOS Bash 3.2 and Linux Bash. Real cleanup path. |
-| functional | `SCN-B039-004` | `tests/regression/test_24_g028_sensitive_client_storage.sh` | `bash tests/regression/test_24_g028_sensitive_client_storage.sh` | An unavailable authority remains a separate skip and never becomes a coverage pass. | A sentinel-to-pass mutation must turn the counter and withheld-label assertions red before byte-identical restoration. | macOS and Linux release lanes. Real scanner cascade. |
-| functional | `SCN-B039-009` / `SEC-B039-004` | `bubbles/scripts/traceability-guard.sh`, `bubbles/scripts/state-transition-guard.sh` | Run the confirmed BUG-039 scenario, traceability, and transition checks against the stabilized commit. | Final evidence, review, planning, acceptance, and validation records identify one candidate commit. Historical evidence satisfies no redesigned item. | Supply an earlier candidate identifier, then change one implementation byte. Acceptance of stale evidence fails the negative control. | Platform-neutral contract check after both lanes. |
-| functional | All scenarios | Five implementation files | Run Bash syntax, warning-level shell lint, consumer-trace, and forbidden-mechanism checks on the exact candidate. | All five files parse. The approved boundary contains every active removed-API consumer. Forbidden supervision constructs are absent from the security path. | Reintroduce one removed API reference or forbidden construct in a copied tree. The matching focused check must turn red. | Platform-neutral static checks. No runtime service. |
-| functional | All scenarios | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh framework-validate` | The complete framework validation succeeds on the same immutable candidate used by focused evidence. | A reduced suite, filtered output, prior run, or different commit cannot satisfy this row. | Full framework execution. |
-| functional | All scenarios | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh release-check` | Release readiness succeeds on the same candidate after focused and full validation. | A changed tree or mismatched commit invalidates this row and downstream closure claims. | Full release execution. |
+| ID | Category | Scenario / finding coverage | Concrete files or surface | Required command or action | Required observable result | Owner | Live |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `TP-S2-01` | adversarial red controls | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh`, `tests/regression/test_24_g028_sensitive_client_storage.sh` | Run `/bin/bash bubbles/scripts/python-env-selftest.sh`, `/bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh`, and `/bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh` with each bounded finding mutation before production edits. | Every finding-specific control is RED for its intended missing invariant. The failed outputs and exact clean-successor identity remain recorded; no old receipt is substituted. | `bubbles.test` | Yes: production shell paths with copied mutations |
+| `TP-S2-02` | functional implementation | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh`, `tests/regression/test_24_g028_sensitive_client_storage.sh` | Run `/bin/bash bubbles/scripts/python-env-selftest.sh`, then `/bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh`, then `/bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh` on the implemented candidate. | Privileged entry, native supervision, retained worker trust, classifier semantics, skip accounting, cleanup, and all red-to-green controls succeed with no skipped required case. | `bubbles.implement` writes source; `bubbles.test` executes proof | Yes: real framework scripts |
+| `TP-S2-03` | platform functional | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh`, `tests/regression/test_24_g028_sensitive_client_storage.sh` | On macOS, run the three focused commands from `TP-S2-02` with stock `/bin/bash` 3.2 and fixed base-system anchors. | The lane authenticates `/usr/bin/perl` and Python, executes all portable positive and negative cases, preserves exact status ownership, and leaves no process or private-file residue. | `bubbles.test` | Yes: stock macOS Bash 3.2 |
+| `TP-S2-04` | platform functional | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh`, `tests/regression/test_24_g028_sensitive_client_storage.sh` | In the supported Linux lane, run the three focused commands from `TP-S2-02` with `/bin/bash` and fixed `/usr/bin/perl`. | The lane proves one authenticated Perl and Python positive plus every portable negative case. Missing or untrusted Perl fails closed and never activates a fallback. | `bubbles.test` | Yes: supported Linux runner |
+| `TP-S2-05` | stress / repeated lifecycle | `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`; `SEC-R2`, `HAR-R1`, `HAR-R2` | `bubbles/scripts/python-env-selftest.sh`, `bubbles/scripts/implementation-reality-scan-selftest.sh` | Run each persistent success, fast-exit, timeout, output-limit, HUP, INT, and TERM matrix for 30 consecutive iterations through the owning selftest commands. | All 30 iterations preserve event order, owner, timeout bit, byte counts, one reap, zero post-reap signals, fixed wall and grace, and zero retry substitution or residue. | `bubbles.test` | Yes: real process lifecycle on macOS and Linux |
+| `TP-S2-06` | caller integration / regression | `SCN-B039-002`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2` | `bubbles/scripts/implementation-reality-scan-selftest.sh`, `bubbles/scripts/state-transition-guard-selftest.sh` | Run `bash bubbles/scripts/cli.sh scan .` and `bash bubbles/scripts/state-transition-guard-selftest.sh` after focused lanes succeed. | CLI scan and Check 16 enter direct `BSEC1`, validate `BPS1`, preserve the scanner's real status, and expose no ordinary-Bash authority or target-controlled completion path. | `bubbles.test` | Yes: canonical caller entrypoints |
+| `TP-S2-07` | documentation and static contract | `SCN-B039-009`; `HAR-R3` | Five admitted guidance paths plus active BUG-039 artifacts | Run `bash bubbles/scripts/cli.sh agnosticity` and `bash bubbles/scripts/cli.sh lint bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure`, then scan active text for current epoch, trust root, protocols, finding identifiers, and forbidden fallback claims. | Source guidance and install template agree on direct privileged entry, Perl preflight, remediation, non-claims, and current identifiers. Historical labels occur only in explicit archives. | `bubbles.docs`; planning parity reviewed by `bubbles.plan` | No: artifact and static contract |
+| `TP-S2-08` | full framework regression | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `bubbles/scripts/framework-validate.sh` | Run `bash bubbles/scripts/cli.sh framework-validate` through bounded evidence capture on the clean immutable candidate. | The complete unfiltered framework validation exits 0 and records the candidate commit, helper digest, protocol epoch, platform evidence references, and no replacement run. | `bubbles.test` | Yes: complete framework validation |
+| `TP-S2-09` | release readiness regression | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `bubbles/scripts/release-check.sh` | Run `bash bubbles/scripts/cli.sh release-check` through bounded evidence capture on the unchanged candidate from `TP-S2-08`. | Release readiness exits 0 with complete output. Its candidate and protocol identities match every accepted focused and framework record. | `bubbles.test` | Yes: complete release validation |
+| `TP-S2-10` | independent security review | `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `docs/recipes/security-review.md` and exact immutable candidate receipts | Invoke `/bubbles.security` for BUG-039 after `TP-S2-09`, with the candidate commit and `privileged-native-supervision-v2` epoch fixed. | A fresh review accounts for all five findings one to one, validates red controls and final proofs, and makes no recursive descendant-containment or pre-boundary cleanliness claim. | `bubbles.security` | Yes: independent review of executed proof |
+| `TP-S2-11` | human acceptance | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `HAR-R3` | `bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/uservalidation.md` | The human owner reviews the unchanged candidate and records fresh decisions in `uservalidation.md`; automation does not alter acceptance boxes. | Every current acceptance item is explicitly accepted by the human owner. Historical checked content alone satisfies nothing in Scope 2. | Human owner | Yes: human review of current behavior |
+| `TP-S2-12` | validate-only certification | `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, `HAR-R3` | `bubbles/scripts/state-transition-guard.sh` | Invoke `/bubbles.validate` in validate-only certification mode after `TP-S2-11`. | Validate re-resolves the current transition, proves Test Plan and DoD parity, rejects stale evidence, and alone writes any certification or terminal status. | `bubbles.validate` | Yes: certification over current execution evidence |
 
-This scope changes no browser UI, HTTP API, mutable datastore, or runtime
-service. Production shell entrypoints provide the end-to-end path. Hostile
-fixtures and copied-runner mutations complement that path and never replace it.
+This scope changes no browser UI, HTTP API, mutable datastore, or network
+service. Production shell entrypoints are the external behavior surface. Copied
+mutations complement those entrypoints and never replace the real path.
 
-### Definition Of Done
+### Definition Of Done — Test Plan Parity
 
-- [ ] The implementation diff contains only the five approved files. An
-  independent diff check finds no collateral source, test, workflow, docs,
-  state, report, or human-acceptance edit.
-- [ ] `SCN-B039-001` through `SCN-B039-004` remain valid under the root-protected
-  epoch. Fresh scenario evidence comes from the stabilized candidate.
-- [ ] `SCN-B039-005` rejects caller-owned, fake, PATH-selected, and managed
-  interpreters despite forged probe and protocol strings. Every paired
-  authority mutation turns red before byte-identical restoration.
-- [ ] `SCN-B039-006` proves the closed operation surface, helper pin, same-byte
-  execution, repository-as-data boundary, complete `SCS1`, and direct-child-only
-  claim. Every helper payload and reopen mutation turns red before restoration.
-- [ ] `SCN-B039-007` proves exact-child supervision for every named outcome on
-  stock macOS Bash 3.2 and Linux Bash. No forbidden supervision mechanism or
-  launch orphan remains.
-- [ ] `SCN-B039-008` proves every named lifecycle path removes all private
-  resources, reaps the exact child, clears lifecycle state, and restores caller
-  traps. Every omitted-cleanup mutation turns red.
-- [ ] The consumer sweep finds zero active consumers of removed runner and
-  trust APIs outside the approved boundary. Every retained old reference is
-  historical text.
-- [ ] The shared-infrastructure canary passes before scanner and broad suites.
-  It preserves general Python behavior and verifies the fail-closed rollback.
-- [ ] Focused syntax, shell lint, trust, helper, lifecycle, cleanup, scanner,
-  cascade, and forbidden-mechanism checks succeed. Required cases remain
-  active. Deadlines remain fixed. Runs use no retries or output filters.
-- [ ] The complete cross-platform matrix succeeds on stock macOS Bash 3.2 and
-  Linux Bash. Both lanes prove an authenticated positive path and every
-  portable negative path.
-- [ ] `framework-validate` and `release-check` both succeed with complete output
-  on the same clean immutable candidate used by all final evidence.
-- [ ] A fresh independent security review accounts for `SEC-B039-001`,
-  `SEC-B039-002`, `SEC-B039-003`, `SEC-B039-004`, and `SEC-OBS-001` one to one.
-  The review makes no recursive containment claim.
-- [ ] After implementation stabilization, `bubbles.plan` reconciles the
-  scenario, Test Plan, DoD, ownership, and evidence-epoch contracts to the exact
-  candidate. It does not convert historical evidence into current evidence.
-- [ ] `SCN-B039-009` proves every focused, platform, framework, release,
-  security, planning, acceptance, and validation record names one candidate
-  commit. No pass total substitutes for named evidence.
-- [ ] The human owner records fresh acceptance for the redesigned behavior.
-  Existing checked `uservalidation.md` content remains historical acceptance.
-- [ ] `bubbles.validate` verifies exact-candidate evidence and owns every
-  certification or terminal-status write. Other specialists leave
-  certification state untouched.
+Each item below matches exactly one Test Plan row. Every item starts unchecked.
+No earlier BUG-039 evidence may check an item.
+
+- [ ] `TP-S2-01` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. Owner: `bubbles.test`. All five finding-specific red controls execute against clean successor `72bbb987ef6c396ba00b1e6b94b95526d230e1a5` and fail for the intended missing invariant before implementation.
+- [ ] `TP-S2-02` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. Owners: `bubbles.implement` and `bubbles.test`. The complete in-boundary implementation turns every focused scenario and mutation control green without a skipped required case. An exact changed-path check reports no collateral edit.
+- [ ] `TP-S2-03` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, and `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, and `HAR-R2`. Owner: `bubbles.test`. Stock macOS `/bin/bash` 3.2 executes the complete focused positive and negative matrix with authenticated Perl and Python, exact status ownership, and zero process or private-file residue.
+- [ ] `TP-S2-04` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, and `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, and `HAR-R2`. Owner: `bubbles.test`. The supported Linux lane executes the complete portable matrix. It proves authenticated Perl and Python positives. It also proves absent or untrusted Perl fails closed without a fallback.
+- [ ] `TP-S2-05` — `SCN-B039-006`, `SCN-B039-007`, and `SCN-B039-008`; `SEC-R2`, `HAR-R1`, and `HAR-R2`. Owner: `bubbles.test`. Thirty consecutive iterations of every required lifecycle class preserve event order, status owner, timeout bit, byte counts, one reap, zero post-reap signals, fixed timing, and zero retries or residue.
+- [ ] `TP-S2-06` — `SCN-B039-002`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, and `SCN-B039-008`; `SEC-R1`, `SEC-R2`, `HAR-R1`, and `HAR-R2`. Owner: `bubbles.test`. `cli.sh scan` and transition-guard Check 16 both enter direct `BSEC1`, validate `BPS1`, and preserve the scanner's real status under positive and adversarial caller integration cases.
+- [ ] `TP-S2-07` — `SCN-B039-009`; `HAR-R3`. Owners: `bubbles.docs` and `bubbles.plan`. All admitted guidance and active planning artifacts agree on epoch `privileged-native-supervision-v2`, worker trust `root-protected-native-python-v1`, current identifiers, Perl prerequisite, remediation, and explicit non-claims. Lint and static contract checks pass.
+- [ ] `TP-S2-08` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. Owner: `bubbles.test`. Complete bounded `framework-validate` exits 0 on the clean immutable candidate and records the exact candidate, helper digest, protocols, and platform-proof identities without filtered output or replacement evidence.
+- [ ] `TP-S2-09` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. Owner: `bubbles.test`. Complete bounded `release-check` exits 0 on the unchanged `TP-S2-08` candidate and matches every accepted focused, platform, caller, and framework identity.
+- [ ] `TP-S2-10` — `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`. Owner: `bubbles.security`. A fresh independent security review accounts one to one for `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. It validates current red and green proof and records every explicit non-claim.
+- [ ] `TP-S2-11` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `HAR-R3`. Owner: Human owner. Fresh human acceptance is recorded for the current immutable candidate without automation changing `uservalidation.md`. Historical acceptance satisfies no item.
+- [ ] `TP-S2-12` — `SCN-B039-001`, `SCN-B039-002`, `SCN-B039-003`, `SCN-B039-004`, `SCN-B039-005`, `SCN-B039-006`, `SCN-B039-007`, `SCN-B039-008`, and `SCN-B039-009`; `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`. Owner: `bubbles.validate`. Validate-only certification re-resolves the transition, verifies current-candidate evidence and 12-row parity, rejects every stale epoch, and owns all certification or terminal-status writes.

@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
   "spec": "BUG-039-interpreter-unusable-misreported-as-classification-failure",
-  "implementationEpoch": "root-protected-native-python-v1",
+  "implementationEpoch": "privileged-native-supervision-v2",
+  "retainedWorkerTrust": "root-protected-native-python-v1",
   "implementationStatus": "planned",
-  "evidencePolicy": "Current evidenceRefs stay empty until every accepted run names one stabilized immutable candidate. Historical managed-runtime evidence cannot satisfy this manifest.",
+  "evidencePolicy": "Every active evidenceRefs array stays empty until fresh proof names one unchanged privileged-native-supervision-v2 candidate. Historical managed-runtime, root-protected exact-child, and prior-session evidence cannot satisfy this manifest.",
   "scenarios": [
     {
       "id": "SCN-B039-001",
-      "title": "Unusable interpreter produces a named skip, not classification failures",
+      "title": "An unavailable privileged execution prerequisite is named without a false verdict",
       "requiredTestType": "functional",
       "requiredTestTypes": ["functional"],
       "scopeRef": "Scope 2",
@@ -16,7 +17,7 @@
       "obligations": [
         {
           "trait": "degraded-state",
-          "requiredProof": "The production selftest names unavailable authenticated execution and withholds every classifier-dependent verdict.",
+          "requiredProof": "The production selftest names an unavailable entry, supervisor, runtime, or helper prerequisite and withholds every classifier-dependent verdict.",
           "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
         },
         {
@@ -40,7 +41,9 @@
         "bubbles/scripts/python-env.sh",
         "bubbles/scripts/implementation-reality-scan.sh",
         "bubbles/scripts/implementation-reality-scan-selftest.sh",
-        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+        "tests/regression/test_24_g028_sensitive_client_storage.sh",
+        "bubbles/scripts/cli.sh",
+        "bubbles/scripts/state-transition-guard.sh"
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -49,15 +52,17 @@
         "dependencyPath": "same-origin-real",
         "productionOwners": [
           "bubbles/scripts/python-env.sh",
-          "bubbles/scripts/implementation-reality-scan.sh"
+          "bubbles/scripts/implementation-reality-scan.sh",
+          "bubbles/scripts/cli.sh",
+          "bubbles/scripts/state-transition-guard.sh"
         ],
-        "negativeControl": "Mutate the unavailable branch to emit classifier PASS labels or omit the sentinel. The selftest or cascade must fail through the production path.",
+        "negativeControl": "Mutate the unavailable branch to emit classifier PASS labels, omit the sentinel, or accept an incomplete BSEC1 or BPS1 path. The selftest or cascade must fail through the production path.",
         "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-002",
-      "title": "A usable authenticated interpreter under the same sanitized PATH runs everything",
+      "title": "A complete privileged path executes every classifier assertion",
       "requiredTestType": "functional",
       "requiredTestTypes": ["functional"],
       "scopeRef": "Scope 2",
@@ -66,7 +71,7 @@
       "obligations": [
         {
           "trait": "shared-consumer",
-          "requiredProof": "The authenticated runtime, production scanner, and cascade execute the same semantic and configuration assertions.",
+          "requiredProof": "The privileged entry, native supervisor, authenticated worker, production scanner, and cascade execute the same semantic and configuration assertions.",
           "satisfiedBy": [
             "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
             "consumer-surface:tests/regression/test_24_g028_sensitive_client_storage.sh"
@@ -74,7 +79,7 @@
         },
         {
           "trait": "dependency-path",
-          "requiredProof": "The test crosses the authenticated runtime boundary and observes complete classifier execution without a skip.",
+          "requiredProof": "The test crosses BSEC1, BPS1, PYSEC1, PYMOD1, helper identity, and SCS1 boundaries and observes complete classifier execution without a skip.",
           "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
         }
       ],
@@ -90,7 +95,9 @@
         "bubbles/scripts/python-env.sh",
         "bubbles/scripts/implementation-reality-scan.sh",
         "bubbles/scripts/implementation-reality-scan-selftest.sh",
-        "tests/regression/test_24_g028_sensitive_client_storage.sh"
+        "tests/regression/test_24_g028_sensitive_client_storage.sh",
+        "bubbles/scripts/cli.sh",
+        "bubbles/scripts/state-transition-guard.sh"
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -99,9 +106,11 @@
         "dependencyPath": "same-origin-real",
         "productionOwners": [
           "bubbles/scripts/python-env.sh",
-          "bubbles/scripts/implementation-reality-scan.sh"
+          "bubbles/scripts/implementation-reality-scan.sh",
+          "bubbles/scripts/cli.sh",
+          "bubbles/scripts/state-transition-guard.sh"
         ],
-        "negativeControl": "Mutate authenticated success to take the unavailable branch. The no-skip and complete semantic matrix assertions must fail.",
+        "negativeControl": "Mutate privileged success to omit or corrupt one BSEC1, BPS1, PYSEC1, PYMOD1, or SCS1 contract. The no-skip and complete semantic matrix assertions must fail.",
         "negativeControlMechanism": "mutation"
       }
     },
@@ -203,28 +212,37 @@
     },
     {
       "id": "SCN-B039-005",
-      "title": "Caller-owned Python output cannot authorize a clean verdict",
+      "title": "SEC-R1 privileged entry excludes hostile Bash startup state",
+      "finding": "SEC-R1",
       "requiredTestType": "functional",
-      "requiredTestTypes": ["functional"],
+      "requiredTestTypes": ["functional", "integration"],
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["degraded-state", "dependency-path", "runtime-config"],
+      "behaviorTraits": ["degraded-state", "shared-consumer", "dependency-path", "runtime-config"],
       "obligations": [
         {
           "trait": "degraded-state",
-          "requiredProof": "A rejected caller-owned runtime produces a named fail-closed outcome and no earned clean verdict.",
+          "requiredProof": "An unavailable or invalid privileged entry yields a named fail-closed result and no clean Scan 2B verdict.",
           "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
         },
         {
-          "trait": "dependency-path",
-          "requiredProof": "The production scanner exercises candidate discovery, path authentication, isolated probes, and classifier execution boundaries.",
+          "trait": "shared-consumer",
+          "requiredProof": "The scanner, CLI scan caller, and transition-guard Check 16 use the same direct privileged entry contract.",
           "satisfiedBy": [
-            "bubbles/scripts/python-env-selftest.sh",
-            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+            "parity:bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Canonical production callers cross env -i and /bin/bash -p before any framework module is sourced.",
+          "satisfiedBy": [
+            "bubbles/scripts/implementation-reality-scan-selftest.sh",
+            "bubbles/scripts/state-transition-guard-selftest.sh"
           ]
         },
         {
           "trait": "runtime-config",
-          "requiredProof": "Hostile BUBBLES_PYTHON, managed-venv, HOME, and PATH values execute through production resolution but cannot grant security authority.",
+          "requiredProof": "Hostile exported functions, BASH_ENV, SHELLOPTS, BASHOPTS, CDPATH, GLOBIGNORE, PATH, loader, locale, Python, and Perl variables cannot enter the privileged child.",
           "satisfiedBy": [
             "bubbles/scripts/python-env-selftest.sh",
             "bubbles/scripts/implementation-reality-scan-selftest.sh"
@@ -232,17 +250,21 @@
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "forged-runtime"],
+      "tags": ["persistent-regression", "security", "SEC-R1", "privileged-entry", "BSEC1"],
       "linkedTests": [
         "bubbles/scripts/python-env-selftest.sh",
-        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
       ],
       "evidenceRefs": [],
       "implementationRefs": [
         "bubbles/scripts/python-env.sh",
-        "bubbles/scripts/python-env-selftest.sh",
         "bubbles/scripts/implementation-reality-scan.sh",
-        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+        "bubbles/scripts/cli.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -250,24 +272,26 @@
         "assertionSurface": "returned-value",
         "dependencyPath": "same-origin-real",
         "productionOwners": [
-          "bubbles/scripts/python-env.sh",
-          "bubbles/scripts/implementation-reality-scan.sh"
+          "bubbles/scripts/implementation-reality-scan.sh",
+          "bubbles/scripts/cli.sh",
+          "bubbles/scripts/state-transition-guard.sh"
         ],
-        "negativeControl": "Caller-owned PATH and managed executables forge the expected probe, PYSEC1, PYMOD1, and clean SCS1 records plus a marker. Mutating one trust predicate to accept them must make the production-path assertions red.",
+        "negativeControl": "Remove env -i, remove -p, or source one framework file before the boundary while hostile exported functions and BASH_ENV write markers. The direct-entry assertions must fail.",
         "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-006",
-      "title": "Fixed operations execute pinned helper bytes with repository content treated as data",
-      "requiredTestType": "functional",
-      "requiredTestTypes": ["functional"],
+      "title": "SEC-R2 native supervisor owns one direct worker through waitpid",
+      "finding": "SEC-R2",
+      "requiredTestType": "stress",
+      "requiredTestTypes": ["functional", "stress"],
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["shared-consumer", "dependency-path"],
+      "behaviorTraits": ["shared-consumer", "dependency-path", "sla-sensitive"],
       "obligations": [
         {
           "trait": "shared-consumer",
-          "requiredProof": "The runtime driver and production scanner agree on the fixed operation, helper identity, source count, and complete SCS1 result.",
+          "requiredProof": "The Python module and production scanner agree on closed operation, BPS1 ownership, helper identity, and complete SCS1 acceptance.",
           "satisfiedBy": [
             "parity:bubbles/scripts/python-env-selftest.sh",
             "consumer-surface:bubbles/scripts/implementation-reality-scan-selftest.sh"
@@ -275,12 +299,20 @@
         },
         {
           "trait": "dependency-path",
-          "requiredProof": "Tests cross helper read, digest, compile, execution, repository-containment, and protocol boundaries through the production scanner.",
-          "satisfiedBy": ["bubbles/scripts/implementation-reality-scan-selftest.sh"]
+          "requiredProof": "Tests execute the fixed root-protected Perl supervisor, its forked direct worker, ownership-checked signaling, waitpid reap, and final BPS1 record.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        },
+        {
+          "trait": "sla-sensitive",
+          "requiredProof": "The supervisor enforces the fixed 30-second wall, two-second TERM grace, output bounds, and signal latency without worker cooperation or retry substitution.",
+          "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "helper-identity", "fixed-operation"],
+      "tags": ["persistent-regression", "security", "SEC-R2", "native-supervisor", "BPS1", "waitpid"],
       "linkedTests": [
         "bubbles/scripts/python-env-selftest.sh",
         "bubbles/scripts/implementation-reality-scan-selftest.sh"
@@ -300,16 +332,16 @@
         "dependencyPath": "same-origin-real",
         "productionOwners": [
           "bubbles/scripts/python-env.sh",
-          "bubbles/scripts/implementation-reality-scan.sh",
-          "bubbles/scripts/guards/sensitive-client-storage-scan.py"
+          "bubbles/scripts/implementation-reality-scan.sh"
         ],
-        "negativeControl": "Altered helpers attempt marker writes, subprocess launch, setsid, double fork, dynamic import, ctypes, eval, and exec with the original digest. A separate copied-driver mutation reopens the path after validation. Each must make its owning assertion red without executing replacement bytes.",
+        "negativeControl": "Signal after reap, clear ownership after the signal decision, omit waitpid, accept worker-authored BPS1, or expose a caller program vector. Each mutation must fail its owner, ordering, or protocol assertion.",
         "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-007",
-      "title": "Exact-child supervision preserves lifecycle and status on macOS and Linux",
+      "title": "HAR-R1 Bash carries no worker or watchdog PID signaling authority",
+      "finding": "HAR-R1",
       "requiredTestType": "stress",
       "requiredTestTypes": ["functional", "stress"],
       "scopeRef": "Scope 2",
@@ -317,27 +349,35 @@
       "obligations": [
         {
           "trait": "degraded-state",
-          "requiredProof": "Every child, control, timeout, and caller-signal path retains its specified status and diagnostic owner.",
+          "requiredProof": "Parent HUP, INT, and TERM remain pending results until the Perl supervisor is reaped, then return exact status 129, 130, or 143.",
           "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
         },
         {
           "trait": "dependency-path",
-          "requiredProof": "Tests execute readiness, FIFO EOF, signal, exact wait, and cleanup through the production runner.",
-          "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
+          "requiredProof": "Bash retains only a wait-only supervisor handle and executes no worker/watchdog PID signal, stale-PID probe, job-control, process-group, or descendant cleanup path.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
         },
         {
           "trait": "sla-sensitive",
-          "requiredProof": "The repeated fixed-wall matrix completes with fixed deadlines, one recorded result per iteration, and no retry substitution.",
+          "requiredProof": "Repeated signal-window tests complete within the design bounds with fixed timing and no replacement run.",
           "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "exact-child", "cross-platform"],
-      "linkedTests": ["bubbles/scripts/python-env-selftest.sh"],
+      "tags": ["persistent-regression", "security", "HAR-R1", "wait-only-handle", "signal-window"],
+      "linkedTests": [
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
+      ],
       "evidenceRefs": [],
       "implementationRefs": [
         "bubbles/scripts/python-env.sh",
-        "bubbles/scripts/python-env-selftest.sh"
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh"
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -345,38 +385,47 @@
         "assertionSurface": "returned-value",
         "dependencyPath": "same-origin-real",
         "productionOwners": ["bubbles/scripts/python-env.sh"],
-        "negativeControl": "Copied-runner mutations add unqualified kill or wait, negative-PID signaling, job control, kill-zero polling, descendant PID retention, a command in the launch registration window, or collapsed status ownership. Every matching lifecycle assertion must fail on macOS and Linux.",
+        "negativeControl": "Restore a Bash worker or watchdog PID, signal a PID from Bash, add kill -0, job control, process-group signaling, or return a pending signal before supervisor reap. The paired lifecycle mutation must fail.",
         "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-008",
-      "title": "Every lifecycle path removes private execution resources",
+      "title": "HAR-R2 target-controlled channels cannot determine completion",
+      "finding": "HAR-R2",
       "requiredTestType": "functional",
-      "requiredTestTypes": ["functional"],
+      "requiredTestTypes": ["functional", "integration"],
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["degraded-state", "dependency-path"],
+      "behaviorTraits": ["degraded-state", "shared-consumer", "dependency-path"],
       "obligations": [
         {
           "trait": "degraded-state",
-          "requiredProof": "Partial setup, child failure, timeout, signals, and EXIT all leave no registered private resource behind.",
+          "requiredProof": "Closed descriptors, forged BPS1 text, output followed by a hang, and descriptor-holding descendants cannot produce early success or an unbounded wait.",
+          "satisfiedBy": [
+            "bubbles/scripts/python-env-selftest.sh",
+            "bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The supervisor and scanner agree that only supervisor-authored BPS1 after waitpid can authorize classifier parsing and cleanup.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/python-env-selftest.sh",
+            "consumer-surface:bubbles/scripts/implementation-reality-scan-selftest.sh"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Tests traverse real worker output pipes, a supervisor-only control descriptor, bounded collection, waitpid, post-reap drain, and private-file cleanup.",
           "satisfiedBy": [
             "bubbles/scripts/python-env-selftest.sh",
             "bubbles/scripts/implementation-reality-scan-selftest.sh",
             "tests/regression/test_24_g028_sensitive_client_storage.sh"
           ]
-        },
-        {
-          "trait": "dependency-path",
-          "requiredProof": "Tests inspect real descriptors, FIFOs, captures, temporary roots, traps, and exact-child wait state around the production cleanup path.",
-          "satisfiedBy": [
-            "bubbles/scripts/python-env-selftest.sh",
-            "bubbles/scripts/implementation-reality-scan-selftest.sh"
-          ]
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "cleanup", "signal-path"],
+      "tags": ["persistent-regression", "security", "HAR-R2", "completion-authority", "forged-control"],
       "linkedTests": [
         "bubbles/scripts/python-env-selftest.sh",
         "bubbles/scripts/implementation-reality-scan-selftest.sh",
@@ -399,13 +448,14 @@
           "bubbles/scripts/python-env.sh",
           "bubbles/scripts/implementation-reality-scan.sh"
         ],
-        "negativeControl": "Copied-runner mutations omit one cleanup registration, descriptor close, exact wait, private-root removal, lifecycle clear, or trap restoration. The corresponding leak assertion must fail on normal, setup, child, timeout, signal, or EXIT paths.",
+        "negativeControl": "Give the worker the control descriptor, accept worker-authored BPS1, treat pipe EOF as completion, or start cleanup before supervisor reap. The forged-control or early-completion assertion must fail.",
         "negativeControlMechanism": "mutation"
       }
     },
     {
       "id": "SCN-B039-009",
-      "title": "Final closure accepts one immutable candidate epoch only",
+      "title": "HAR-R3 current identifiers bind one immutable evidence epoch",
+      "finding": "HAR-R3",
       "requiredTestType": "functional",
       "requiredTestTypes": ["functional"],
       "scopeRef": "Scope 2",
@@ -413,25 +463,38 @@
       "obligations": [
         {
           "trait": "static-metadata",
-          "requiredProof": "Artifact and validation records identify one candidate commit, reject historical evidence, and invalidate affected proof after any implementation change.",
+          "requiredProof": "Active artifacts use SEC-R1, SEC-R2, HAR-R1, HAR-R2, HAR-R3, privileged-native-supervision-v2, and root-protected-native-python-v1; accepted records identify one candidate and reject every prior epoch.",
           "satisfiedBy": [
+            "bubbles/scripts/artifact-lint.sh",
             "bubbles/scripts/traceability-guard.sh",
             "bubbles/scripts/state-transition-guard.sh"
           ]
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "evidence-epoch", "certification-boundary"],
+      "tags": ["persistent-regression", "security", "HAR-R3", "evidence-epoch", "certification-boundary"],
       "linkedTests": [
+        "bubbles/scripts/artifact-lint.sh",
         "bubbles/scripts/traceability-guard.sh",
         "bubbles/scripts/state-transition-guard.sh"
       ],
       "evidenceRefs": [],
       "implementationRefs": [
-        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md",
-        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scenario-manifest.json",
-        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json",
-        "bubbles/scripts/state-transition-guard.sh"
+        "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/",
+        "bubbles/scripts/python-env.sh",
+        "bubbles/scripts/python-env-selftest.sh",
+        "bubbles/scripts/implementation-reality-scan.sh",
+        "bubbles/scripts/implementation-reality-scan-selftest.sh",
+        "bubbles/scripts/guards/sensitive-client-storage-scan.py",
+        "tests/regression/test_24_g028_sensitive_client_storage.sh",
+        "bubbles/scripts/cli.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh",
+        ".github/copilot-instructions.md",
+        "templates/copilot-instructions.md.tmpl",
+        "agents/bubbles_shared/critical-requirements.md",
+        "agents/bubbles.validate.agent.md",
+        "docs/recipes/security-review.md"
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
@@ -441,9 +504,10 @@
         "productionOwners": [
           "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md",
           "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scenario-manifest.json",
+          "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json",
           "bubbles/scripts/state-transition-guard.sh"
         ],
-        "negativeControl": "Present a prior candidate identifier as current evidence, then change one implementation byte after capture. Planning, security review, or validation must reject both stale-evidence shapes.",
+        "negativeControl": "Reintroduce an active historical finding label, present a prior candidate as current evidence, or change one implementation, test, protocol, digest, or planning byte after capture. Planning and validation must reject each stale-epoch shape.",
         "negativeControlMechanism": "mutation"
       }
     }

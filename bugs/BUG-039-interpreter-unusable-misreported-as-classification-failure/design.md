@@ -1,6 +1,958 @@
-# Design: BUG-039 Root-Protected Scan 2B Authority
+# Design: BUG-039 Privileged Entry And Native Scan 2B Supervision
+
+> **Authoritative design epoch:** `privileged-native-supervision-v2`
+>
+> This section is the sole active architecture. The later
+> `## Archive: Superseded Design Decisions` section preserves earlier designs.
+> Historical contracts, labels, and evidence cannot guide implementation or
+> certification for this epoch.
 
 ## Design Brief
+
+### Current State
+
+The clean successor still enters Scan 2B through ordinary Bash. Its security
+runner stores a Bash child PID, uses a worker-held `BPY1` FIFO, and signals that
+PID during cleanup.
+
+The mutation harness also stores worker and watchdog PIDs. Its interrupt fixture
+lets the target retain descriptor 9 and influence completion behavior.
+
+### Target State
+
+Canonical callers launch Scan 2B through `privileged-bash-entry-v1`. The new
+Bash process imports no exported functions and evaluates no `BASH_ENV`.
+
+A root-protected `/usr/bin/perl` process owns each fixed operation. It forks,
+signals, and reaps one direct worker with `waitpid` under a fixed wall.
+
+### Patterns To Follow
+
+- Retain `root-protected-native-python-v1` for Python authority.
+- Retain `PYSEC1`, `PYMOD1`, and `SCS1` without semantic weakening.
+- Retain the helper digest and one-read, same-byte execution contract.
+- Keep general Python usability separate from Scan 2B authority.
+- Preserve fail-closed findings and honest unavailable-prerequisite accounting.
+- Derive worker completion only from supervisor-owned `waitpid`.
+
+### Patterns To Avoid
+
+- Do not use Bash builtin qualification as the authority boundary.
+- Do not claim that re-exec reverses earlier hostile `BASH_ENV` activity.
+- Do not retain a Bash worker or watchdog PID for signaling.
+- Do not let the worker inherit the supervisor control descriptor.
+- Do not treat FIFO EOF, readiness output, or worker text as completion.
+- Do not add a Bash or PATH-selected supervisor fallback.
+- Do not claim recursive descendant containment.
+
+### Resolved Decisions
+
+- The aggregate epoch is `privileged-native-supervision-v2`.
+- The entry contract is `privileged-bash-entry-v1` with protocol `BSEC1`.
+- The supervisor is fixed `root-protected-perl-supervisor-v1` with protocol `BPS1`.
+- The worker trust contract remains `root-protected-native-python-v1`.
+- `/bin/bash`, `/usr/bin/env`, and `/usr/bin/perl` are fixed path anchors.
+- The supervisor program is fixed source embedded in `python-env.sh`.
+- The supervisor owns the 30-second wall and the two-second TERM grace.
+- Parent Bash may retain one supervisor wait handle and may only wait on it.
+- Parent signals become pending results until the supervisor has been reaped.
+- Active labels use `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`.
+- Scope 2 requires the widened source, test, governance, and documentation boundary.
+
+### Open Questions
+
+None. This design does not claim implementation or verification.
+
+## Purpose And Scope
+
+This design supersedes the Bash exact-child and watchdog architecture. It also
+closes the ordinary-shell startup gap at canonical Scan 2B production callers.
+
+Requirements 1 through 6 in `spec.md` remain unchanged. Scenario identifiers
+`SCN-B039-001` through `SCN-B039-009` remain stable.
+
+The active architecture has four layers:
+
+1. A privileged Bash entry process.
+2. Root-protected fixed-path authentication.
+3. A native Perl supervisor with direct-worker ownership.
+4. An authenticated Python worker that executes pinned classifier bytes.
+
+The security guarantee begins inside the privileged child. It makes no claim
+about code that an ordinary caller ran before that boundary.
+
+This design changes no source, tests, state, evidence, or acceptance record.
+
+## Requirement And Finding Reconciliation
+
+### Existing Outcome Requirements
+
+| Requirement | Active technical realization |
+| --- | --- |
+| Requirement 1 | An unavailable entry, supervisor, runtime, or helper withholds the entire classifier-dependent group. It emits no classifier-attributed pass or failure. |
+| Requirement 2 | The skip reports a numeric status, a closed diagnostic, validated context, and an actionable remediation. Xcode licence status `69` remains distinct. |
+| Requirement 3 | `SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1` appears only when classifier-dependent scenarios did not execute. |
+| Requirement 4 | A complete privileged path executes every semantic and configuration assertion. The authorized classifier mutation remains fatal. |
+| Requirement 5 | All 23 classifier-dependent assertions remain one atomic verdict group. Partial supervision cannot earn a verdict. |
+| Requirement 6 | `test_24` increments only `SKIP_COUNT` for the sentinel. `FAIL_COUNT` still owns suite failure. |
+
+Usable Python is necessary but not sufficient. A clean verdict also requires
+the privileged entry, authenticated supervisor, complete runtime closure,
+same-byte helper identity, and valid `SCS1` output.
+
+### Current Review Findings
+
+| Finding | Scenario | Design closure | Remaining proof owner |
+| --- | --- | --- | --- |
+| `SEC-R1` | `SCN-B039-005` | Enter `/bin/bash -p` through an empty environment before any module source. | Implementation and hostile-startup tests on macOS and Linux. |
+| `SEC-R2` | `SCN-B039-006` | Authenticate fixed `/usr/bin/perl`. Let its supervisor own and reap one direct worker with `waitpid`. | Implementation and lifecycle mutation tests. |
+| `HAR-R1` | `SCN-B039-007` | Remove Bash worker and watchdog signaling. Propagate pending parent signals only after the supervisor wait completes. | Harness rewrite and signal-window proof. |
+| `HAR-R2` | `SCN-B039-008` | Remove worker-held completion channels. Enforce wall and output limits without worker cooperation. | Harness rewrite and forged-control proof. |
+| `HAR-R3` | `SCN-B039-009` | Reserve `SEC-OBS-002` for historical quotations. Use current BUG-039 labels in every active artifact and result. | Planning, test, report, and identifier checks. |
+
+The clean successor has no active `SEC-OBS-002` occurrence outside design
+history. This epoch prevents that historical label from returning as an active
+test, planning, or evidence identifier.
+
+## Clean Successor Reconciliation
+
+The following source facts define the replacement boundary:
+
+| Surface | Current clean-successor fact | Design consequence |
+| --- | --- | --- |
+| `python-env.sh` | Security cleanup stores `BUBBLES_PYTHON_SECURITY_ACTIVE_PID`, sends TERM and KILL, and then calls Bash `wait`. | Remove worker PID ownership from Bash. |
+| `python-env.sh` | `BPY1` readiness and FIFO EOF control the operation lifecycle. | Replace target-influenced completion with supervisor `waitpid`. |
+| Scanner | The script sources `guard-lib.sh` and `python-env.sh` in its ordinary Bash process. | Add privileged entry before either source. |
+| Scanner selftest | The harness stores active-child and watchdog PIDs. Its interrupt target retains descriptor 9. | Replace the harness wall with the native supervisor. |
+| CLI | `cmd_scan()` invokes the scanner with ordinary `bash`. | Launch the privileged boundary directly. |
+| Transition guard | Check 16 wraps ordinary `bash` around the scanner. | Launch the same privileged boundary and preserve its real status. |
+| Scope 2 | Active planning still prescribes the earlier five-file exact-child design. | `bubbles.plan` must reconcile the scope before implementation. |
+| State | `workBoundary.allowedPaths` contains only the earlier five implementation and test paths. | The work boundary must widen to every required path below. |
+
+The earlier root-protected Python work remains valuable. Only its Bash startup,
+worker lifecycle, deadline, completion, and active identifier contracts are
+superseded.
+
+## Security Objective And Threat Model
+
+### Security Objective
+
+A clean Scan 2B contribution requires all conditions below:
+
+1. The scanner starts inside `privileged-bash-entry-v1`.
+2. That process imports no caller function and evaluates no `BASH_ENV`.
+3. Every bootstrap executable passes root-protected native-path checks.
+4. `/usr/bin/perl` starts in taint mode with an empty environment.
+5. The supervisor accepts one closed operation and bounded arguments.
+6. The supervisor forks exactly one direct worker.
+7. The supervisor remains that worker's parent until `waitpid` reaps it.
+8. The supervisor enforces wall and output limits without worker cooperation.
+9. Python satisfies `root-protected-native-python-v1`, `PYSEC1`, and `PYMOD1`.
+10. The classifier helper passes the size and digest checks before same-byte use.
+11. Classifier output satisfies complete `SCS1` validation.
+12. The supervisor emits one valid `BPS1` completion after reaping the worker.
+
+Any failed condition withholds an earned clean result. Scan 2B then preserves
+its existing fail-closed unresolved findings.
+
+### Hostile Inputs
+
+The boundary treats these inputs as hostile:
+
+- exported functions, including slash-named functions
+- `BASH_ENV`, `SHELLOPTS`, `BASHOPTS`, `CDPATH`, and `GLOBIGNORE`
+- PATH, home, cache, Python, Perl, loader, and locale variables
+- caller-selected runtimes and managed virtual environments
+- project source, project configuration, and classifier output
+- malformed operation names, paths, counts, and protocol records
+- workers that exit, hang, flood output, close descriptors, or fork
+- signals during entry, launch, collection, termination, and cleanup
+- stale numeric PID values retained by Bash or a test harness
+
+### Trusted Computing Base
+
+The active TCB contains:
+
+- the checked-out scanner and `python-env.sh`
+- the fixed embedded Perl supervisor program
+- fixed `/bin/bash`, `/usr/bin/env`, and `/usr/bin/perl`
+- fixed metadata utilities used by path authentication
+- the authenticated native Python and validated module closure
+- the digest-matched classifier helper bytes
+- kernel fork, pipe, signal, alarm, zombie, and wait semantics
+- kernel-reported ownership, mode, and executable format
+
+The TCB excludes Bash PID-liveness reasoning, `read -t`, FIFO EOF, job control,
+a watchdog process, and target-authored completion.
+
+### Explicit Non-Claims
+
+The design makes no recursive containment claim. A compromised worker may fork,
+double-fork, or call `setsid`.
+
+The supervisor does not enumerate or signal descendants. It uses no process
+group, session, cgroup, pidfd, or `/proc` containment claim.
+
+A compatibility re-exec cannot undo hostile `BASH_ENV` activity that already
+happened. The design also cannot protect against compromised root, kernel,
+filesystem metadata, or checked-out framework source.
+
+## Architecture Overview
+
+```text
+ordinary framework caller
+  -> cli.sh or state-transition-guard.sh
+    -> fixed child launcher
+      -> POSIX special-builtin exec
+        -> env -i /bin/bash -p
+          -> BSEC1 boundary checks
+          -> implementation-reality-scan.sh
+            -> root-protected path authentication
+            -> fixed /usr/bin/perl -T supervisor
+              -> pipe setup and 30-second alarm
+              -> fork one direct worker
+                -> close supervisor-only descriptors
+                -> exec one fixed operation
+              -> bound stdout and stderr
+              -> signal only an unreaped direct worker
+              -> waitpid the direct worker
+              -> emit one BPS1 completion
+            -> validate PYSEC1, PYMOD1, and SCS1
+            -> emit findings or fail-closed unresolved findings
+```
+
+Parent Bash stores only the Perl supervisor PID. It uses that value only as a
+`wait` handle and clears it immediately after reaping the supervisor.
+
+## Data Model
+
+No lifecycle state persists across runs.
+
+| Record | Required fields | Invariant |
+| --- | --- | --- |
+| `EntryBoundary` | protocol, contract, mode, privileged flag | The record is valid only when actual Bash mode contains `p`. |
+| `SupervisorIdentity` | fixed path, resolved target, trust contract, native format | Identity completes only after full path authentication. |
+| `SecurityRuntimeIdentity` | runtime path, `PYSEC1`, `PYMOD1`, trust contract | Identity completes only after path and module closure. |
+| `OperationRequest` | closed operation, bounded scalars, bounded data paths | It contains no caller executable vector, program, helper path, wall, or output limit. |
+| `SupervisorRun` | operation, status, owner, timed-out bit, worker kind, byte counts | It contains no PID and follows one valid `BPS1` record. |
+| `SupervisorWaitHandle` | direct supervisor PID, wait state, pending signal | Bash may only wait on this value. |
+| `CaptureRegistry` | private root and three capture paths | It contains no worker or watchdog PID. |
+| `ClassifierVerdict` | status, diagnostic, scanned count, findings, protocol | `OK` requires valid `BPS1` and complete `SCS1`. |
+
+The worker PID remains lexical Perl state. It never enters output, Bash state,
+the environment, or cleanup files.
+
+## API And Protocol Contracts
+
+### Shell APIs
+
+| API | Inputs | Outputs | Authority |
+| --- | --- | --- | --- |
+| `bubbles_python_runs()` | one general interpreter path | usability status and closed diagnostic | General only |
+| `bubbles_python_resolve_runnable()` | none | existing ordered general resolution | General only |
+| `bubbles_python_security_require_boundary()` | none | `BSEC1` status and closed diagnostic | Security entry |
+| `bubbles_python_resolve_security_runtime()` | none | authenticated Python identity | Security runtime |
+| `bubbles_python_run_security_operation()` | closed operation and operation data | status, ownership, and bounded capture paths | Security execution |
+| `bubbles_python_security_cleanup()` | registered file resources | file cleanup status | File cleanup only |
+
+`bubbles_python_security_cleanup()` contains no process signal or worker wait.
+The operation wrapper reaps the supervisor before file cleanup begins.
+
+### `BSEC1` Entry Protocol
+
+After validating actual privileged mode and startup state, the scanner records:
+
+```text
+ENTRY\tBSEC1\tprivileged-bash-entry-v1\t<direct|compat-reexec>
+```
+
+The record is diagnostic. It is not a bearer token and cannot replace the
+actual `$-` privileged-mode check.
+
+`direct` means a canonical caller created the privileged process directly.
+`compat-reexec` means an ordinary scanner process existed first and remains
+unattested.
+
+### `BPS1` Supervisor Protocol
+
+The supervisor writes exactly one final control record after `waitpid`:
+
+```text
+COMPLETE\tBPS1\t<operation>\t<status>\t<owner>\t<timedOut>\t<workerKind>\t<stdoutBytes>\t<stderrBytes>
+```
+
+The record is at most 512 bytes. Its grammar is closed.
+
+- `owner` is `worker`, `supervisor`, or `caller-signal`.
+- `timedOut` is `0` or `1`.
+- `workerKind` is `exit`, `signal`, or `not-started`.
+- byte counts are unsigned decimal values within operation limits.
+
+No path, environment value, output byte, or PID appears in `BPS1`.
+Missing, duplicate, malformed, oversized, or trailing control data produces
+status `125` and `SUPERVISOR_PROTOCOL_INVALID`.
+
+`BPY1`, its readiness record, and its lifecycle FIFO are archive-only. They
+have no completion or deadline authority in this epoch.
+
+### Retained Python And Classifier Protocols
+
+`PYSEC1`, `PYMOD1`, and `SCS1` retain their current fields and validation.
+The Perl supervisor does not parse them.
+
+Parent Bash parses Python and classifier captures only after a valid `BPS1`.
+A successful worker status cannot compensate for malformed protocol output.
+
+## Capability Foundation
+
+### Foundation Contracts
+
+| Contract | Responsibility | Consumers |
+| --- | --- | --- |
+| `privileged-bash-entry-v1` | Enter a shell that imports no caller functions and evaluates no `BASH_ENV`. | CLI scan, transition guard Check 16, direct scanner compatibility |
+| `root-protected-path-v1` | Authenticate fixed paths, links, ancestors, modes, caller access, and native format. | Entry anchors, Perl, Python, Apple tools |
+| `root-protected-perl-supervisor-v1` | Own wall, output, status, signal, and direct-worker reaping. | Every bounded fixed operation and mutation wall |
+| `root-protected-native-python-v1` | Validate isolated Python posture and module closure. | Runtime probe, module probe, classifier |
+| `fixed-security-operation-v2` | Map a closed operation to fixed worker arguments and limits. | General probe, Apple resolution, Python probes, Scan 2B |
+
+### Extension Points
+
+There is no caller command, provider, or plugin extension. A new operation
+requires a reviewed enum entry, fixed limits, protocol updates, and mutations.
+
+An alternate supervisor requires a new trust contract and full parity proof.
+Missing Perl never activates another provider.
+
+### Foundation-Owned Behavior
+
+The foundation owns entry, path authentication, empty environments, operation
+closure, deadlines, output limits, status ownership, signals, direct-worker
+reaping, file cleanup, and bounded diagnostics.
+
+The Python helper continues to own classifier semantics.
+
+## Concrete Implementations
+
+### Privileged Bash Entry
+
+Canonical callers create a child and execute this fixed shape inside it:
+
+```text
+POSIXLY_CORRECT=y exec /usr/bin/env -i \
+  LC_ALL=C PATH=/usr/bin:/bin \
+  BUBBLES_SECURITY_ENTRY_MODE=direct \
+  /bin/bash -p -- <implementation-reality-scan.sh> <validated-arguments>
+```
+
+The assignment gives the POSIX special `exec` builtin precedence over an
+imported function. The pathname argument prevents PATH selection.
+
+`env -i` removes exported-function encodings and `BASH_ENV`. `bash -p` also
+suppresses function import and startup environment evaluation.
+
+The scanner verifies privileged mode before sourcing any file. It rejects a
+forbidden startup variable or function encoding before Scan 2B work.
+
+`cli.sh` and `state-transition-guard.sh` must launch this boundary directly.
+They must not invoke ordinary `bash` and rely on scanner recovery.
+
+### Ordinary Direct Scanner Compatibility
+
+The scanner keeps a first-executable-statement compatibility re-exec:
+
+```text
+POSIXLY_CORRECT=y exec /usr/bin/env -i \
+  LC_ALL=C PATH=/usr/bin:/bin \
+  BUBBLES_SECURITY_ENTRY_MODE=compat-reexec \
+  /bin/bash -p -- "$0" "$@"
+```
+
+This path preserves an ordinary direct invocation. It cannot undo, detect, or
+clean hostile `BASH_ENV` activity that occurred before the first statement.
+
+The inner process may earn authority after all checks pass. The earlier process
+must remain labeled `compat-reexec` and unattested.
+
+### Root-Protected Path Authentication
+
+The existing algorithm remains active. It checks every ancestor, symlink, and
+final target for UID 0 ownership, protected mode, caller writability, type, and
+native ELF or Mach-O format.
+
+Apple Python resolution still authenticates `xcode-select`, `xcrun`, the
+developer directory, and the resolved Python before Python executes.
+
+### Native Perl Supervisor
+
+`python-env.sh` embeds one fixed Perl program and invokes only:
+
+```text
+/usr/bin/env -i LC_ALL=C /usr/bin/perl -T -w -e <fixed-program> <closed-arguments>
+```
+
+The program loads no Perl module. It uses Perl builtins for `fork`, `pipe`,
+`select`, `alarm`, `kill`, `waitpid`, `sysread`, `syswrite`, and `exec`.
+
+Every argument is untainted through a closed grammar. The program performs no
+PATH lookup and accepts no caller program text.
+
+### Authenticated Python Worker
+
+The worker closes the supervisor control descriptor and every unused pipe end.
+It receives only `/dev/null` stdin plus stdout and stderr pipe writers.
+
+It executes one authenticated Python path with `-I -S -B` under `LC_ALL=C`.
+It cannot write `BPS1` because it never inherits that descriptor.
+
+### Scan 2B Adapter
+
+The scanner requests `scan2b-classify` only after entry, supervisor, and runtime
+authentication. It validates `BPS1` before it parses `SCS1`.
+
+An unavailable supervisor has the same fail-closed effect as an unavailable
+authenticated Python. It cannot become a zero-finding success.
+
+### Variation Axes
+
+| Axis | General usability | Scan 2B authority | Owner |
+| --- | --- | --- | --- |
+| Entry | Ordinary caller allowed | Privileged Bash required | Entry foundation |
+| Runtime source | Override, managed environment, PATH | Fixed authenticated paths only | Runtime foundation |
+| Operation | Fixed general probe | Closed security operation | Operation foundation |
+| Completion | Supervisor `waitpid` | Supervisor `waitpid` plus protocol validation | Supervisor foundation |
+| Failure effect | Candidate declines | Scanner fails closed | Scan adapter |
+| Evidence value | Usability only | Full epoch evidence | Planning and validation |
+
+## Native Supervisor Lifecycle
+
+### Launch And Ownership
+
+Parent Bash creates private captures and starts one Perl supervisor. It stores
+`$!` only in `BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID`.
+
+Bash never signals that value. It never stores a worker or watchdog PID.
+
+The supervisor follows this state machine:
+
+```text
+START -> VALIDATED -> PIPES_OPEN -> FORKED -> OWNED
+OWNED -> REAPED -> RECORDED -> EXITED
+OWNED -> TERMINATING -> REAPED -> RECORDED -> EXITED
+START..FORKED -> SETUP_FAILED -> RECORDED -> EXITED
+```
+
+Only Perl knows the worker PID. The supervisor installs no `SIGCHLD` handler
+and never ignores `SIGCHLD`.
+
+The event loop serializes `waitpid` and signal decisions. Once
+`waitpid(worker, WNOHANG)` returns the worker PID, it clears ownership before
+any later signal branch.
+
+An exited but unreaped worker remains a child zombie. Its PID cannot be reused
+while the supervisor owns that wait relationship.
+
+### Independent Deadline And Output Collection
+
+The supervisor arms a 30-second real-time alarm immediately before `fork`.
+No worker descriptor or output record can extend or shorten that wall.
+
+The supervisor reads stdout and stderr through separate pipes. It counts every
+byte before writing the private captures.
+
+Crossing a limit enters termination. A quiet worker receives the same absolute
+wall as a chatty worker.
+
+Worker pipe EOF is data state only. It never means process completion.
+
+After `waitpid`, the supervisor drains currently buffered bytes without waiting
+for descendant-held pipe EOF. It then closes its read ends.
+
+### Termination
+
+On deadline or output breach, the supervisor sends TERM only while ownership is
+`OWNED`. It allows a fixed two-second grace.
+
+It then sends KILL only if `waitpid` has not reaped the direct worker. It calls
+`waitpid` for that same child and emits no completion before reaping.
+
+Kernel-uninterruptible process state remains outside the userspace guarantee.
+
+### Parent Signal Contract
+
+Parent Bash traps HUP, INT, and TERM. The first trap records status `129`, `130`,
+or `143`, then ignores later instances until the supervisor is reaped.
+
+The trap never signals a PID and never removes capture files. If the signal
+interrupts Bash `wait`, Bash resumes `wait` on the same supervisor child.
+
+After a definitive supervisor wait, Bash clears the wait handle. It then cleans
+files and returns the first pending signal status.
+
+The Perl supervisor also uses deferred HUP, INT, and TERM handlers. Each handler
+sets a flag. The event loop performs ownership-checked termination.
+
+If only Bash receives the signal, it still waits for the supervisor's bounded
+wall. If Perl also receives it, `BPS1.owner` is `caller-signal`.
+
+### Signal Latency
+
+The supervisor event-loop interval is at most 50 milliseconds. It dispatches
+TERM within 100 milliseconds after its handler records a signal.
+
+It returns within 2.25 seconds after receiving that signal, subject to kernel
+scheduling and the stated KILL assumption.
+
+If only Bash receives the signal, its maximum designed wait is the remaining
+30-second wall plus the two-second grace and 250 milliseconds of cleanup.
+
+## Fixed Operations, Limits, And Status Ownership
+
+### Closed Operations And Limits
+
+Every operation has a 30-second wall and a two-second TERM grace.
+
+| Operation | stdout | stderr | Argument contract |
+| --- | ---: | ---: | --- |
+| `general-probe` | 16 KiB | 16 KiB | one interpreter path |
+| `apple-select` | 4 KiB | 16 KiB | none |
+| `apple-find-python` | 4 KiB | 16 KiB | one validated directory |
+| `runtime-probe` | 16 KiB | 16 KiB | none |
+| `module-probe` | 64 KiB | 16 KiB | none |
+| `scan2b-classify` | 4 MiB | 64 KiB | at most 4,096 paths and 64 KiB aggregate text |
+
+Each path is at most 4,096 bytes and contains no NUL or control byte. Operation
+names are at most 32 ASCII bytes.
+
+No environment variable or caller argument changes a wall, grace, output limit,
+path count, text count, protocol size, helper size, or helper digest.
+
+### Numeric Status Ownership
+
+| Condition | Status | Diagnostic | Owner |
+| --- | ---: | --- | --- |
+| Complete operation | `0` | `OK` | `worker` |
+| Invalid operation or argument | `2` | `ARGUMENT_INVALID` | `supervisor` |
+| Xcode licence refusal | `69` | `XCODE_LICENSE_UNACCEPTED` | `worker` |
+| Worker exec failure | `126` | `WORKER_EXEC_FAILED` | `worker` |
+| Missing or untrusted supervisor or runtime | `127` | closed unavailable diagnostic | `supervisor` |
+| Supervisor wall expiry | `124` | `SUPERVISOR_TIMEOUT` | `supervisor` |
+| Supervisor setup or protocol failure | `125` | closed supervisor diagnostic | `supervisor` |
+| Worker nonzero exit | exact worker exit | `WORKER_EXIT_NONZERO` | `worker` |
+| Worker signal | `128 + signal` | `WORKER_SIGNAL` | `worker` |
+| Caller HUP, INT, or TERM | `129`, `130`, or `143` | matching signal diagnostic | `caller-signal` |
+| Output limit | `125` | `OUTPUT_LIMIT` | `supervisor` |
+
+A worker-owned `124`, `125`, or `143` retains its number. `owner` and
+`timedOut` distinguish it from supervisor and caller ownership.
+
+The closed supervisor diagnostics are:
+
+- `NOT_RUN`
+- `OK`
+- `SECURITY_BOUNDARY_REQUIRED`
+- `SUPERVISOR_UNAVAILABLE`
+- `SUPERVISOR_UNTRUSTED`
+- `ARGUMENT_INVALID`
+- `SUPERVISOR_SETUP_FAILED`
+- `SUPERVISOR_FORK_FAILED`
+- `SUPERVISOR_PROTOCOL_INVALID`
+- `SUPERVISOR_TIMEOUT`
+- `WORKER_EXEC_FAILED`
+- `WORKER_EXIT_NONZERO`
+- `WORKER_SIGNAL`
+- `OUTPUT_LIMIT`
+- `SIGNAL_HUP`
+- `SIGNAL_INT`
+- `SIGNAL_TERM`
+- `INTERNAL`
+
+Raw worker or supervisor output never enters a diagnostic line.
+
+## Capture, Cleanup, Runtime, And Helper Identity
+
+### Capture And Cleanup
+
+The privileged Bash process sets `umask 077`. It creates one private directory
+with mode `0700` and three capture files with mode `0600`.
+
+The supervisor receives pre-opened worker-output and control descriptors. The
+worker closes the control descriptor before `exec`.
+
+Cleanup starts only after Bash reaps the supervisor. It closes descriptors,
+parses bounded captures, removes the private directory, clears paths, and
+restores traps.
+
+Cleanup performs no `kill`, worker `wait`, PID probe, process-group operation,
+or descendant discovery. An EXIT trap may remove files only after the
+supervisor wait handle is clear.
+
+Unexpected supervisor death cannot authorize success because valid `BPS1` is
+absent. SIGKILL and host termination may leave private files.
+
+### Python Runtime Identity
+
+`root-protected-native-python-v1` remains active. `PYSEC1` still validates
+isolated posture, version, executable, prefixes, and search roots.
+
+`PYMOD1` still validates every required loaded module origin. Direct Python
+operations retain `env -i`, `LC_ALL=C`, and `-I -S -B`.
+
+### Classifier Helper Identity
+
+The helper path remains fixed relative to the scanner. The driver reads at most
+256 KiB plus one detection byte.
+
+It requires SHA-256
+`77a02ff179d529812d75cfa223bef5f9f171a9169dce050ab46fb2f1f0834df3`.
+
+The driver decodes, compiles, and executes the same byte buffer. It never
+reopens or imports the helper path after validation.
+
+The digest binds reviewed bytes. It is not a Python sandbox and creates no
+recursive containment claim.
+
+## Failure Handling And Observability
+
+The scanner emits one bounded status line:
+
+```text
+sensitive-storage classifier <state>: status=<n> diagnostic=<enum> entry=<BSEC1|none> entryMode=<direct|compat-reexec|none> supervisor=<root-protected-perl-supervisor-v1|none> supervisorProtocol=<BPS1|none> runtime=<root-protected-native-python-v1|none> pathProtocol=<PYSEC1|none> moduleProtocol=<PYMOD1|none> classifierProtocol=<SCS1|none>
+```
+
+Output may contain validated paths, counts, numeric statuses, and closed enums.
+It must not contain environment values, source bytes, worker output, or PIDs.
+
+| Failure | Scanner effect | Required test observation |
+| --- | --- | --- |
+| Ordinary direct entry | Compatibility re-exec | `compat-reexec` appears without a pre-boundary cleanliness claim. |
+| Imported function or `BASH_ENV` | No marker enters the privileged child | Removing `-p` or `env -i` turns the paired test red. |
+| Missing or untrusted Perl | Fail-closed unavailable authority | One named prerequisite and no classifier verdict. |
+| Supervisor setup or fork failure | Fail closed with status `125` | No successful `BPS1`. |
+| Fast worker exit | Reap before any signal branch | Exact worker status and zero post-reap signals. |
+| Worker hang | TERM, grace, KILL, and `waitpid` | Status `124`, owner `supervisor`, timedOut `1`. |
+| Worker closes descriptors | Continue until `waitpid` | No early success and no unbounded wait. |
+| Worker forges `BPS1` text | Treat text as worker output | Control parser sees only supervisor output. |
+| Output flood | Stop at exact byte crossing | `OUTPUT_LIMIT` without raw replay. |
+| Parent HUP, INT, or TERM | Wait for bounded supervisor | Exact pending signal after supervisor reap. |
+| Malformed or incomplete `SCS1` | Preserve unresolved findings | Closed classifier diagnostic. |
+
+## Platform And Dependency Contract
+
+### macOS
+
+The supported path requires root-protected native `/bin/bash`, `/usr/bin/env`,
+and `/usr/bin/perl`. Apple Python resolution retains authenticated
+`xcode-select` and `xcrun` handling.
+
+Stock macOS Bash 3.2 must execute every entry and supervisor regression case.
+
+### Linux
+
+The supported path requires the same fixed anchors. The design does not assume
+that every distribution installs `/usr/bin/perl`.
+
+An absent, script-backed, writable, or untrusted Perl fails closed. PATH Perl,
+Python supervision, Bash watchdogs, and external `timeout` are not substitutes.
+
+The supported Linux lane must prove one authenticated Perl and Python positive.
+
+### Dependency Posture
+
+This design adds no package-manager or network dependency. It promotes a fixed
+host primitive into the Scan 2B authority preflight.
+
+A release image without acceptable `/usr/bin/perl` cannot earn Scan 2B
+authority. The result remains visible and non-authoritative.
+
+## Required Path Widening
+
+The earlier five-file boundary cannot update production entry sites or their
+governance consumers. Scope 2 must widen before implementation begins.
+
+### Source And Test Paths
+
+| Path | Required responsibility |
+| --- | --- |
+| `bubbles/scripts/python-env.sh` | Embed the fixed supervisor. Remove Bash worker signaling and target-held completion. |
+| `bubbles/scripts/python-env-selftest.sh` | Prove entry, supervisor, status, signal, output, cleanup, and mutation contracts. |
+| `bubbles/scripts/implementation-reality-scan.sh` | Require `BSEC1`, consume `BPS1`, and retain fail-closed `SCS1` handling. |
+| `bubbles/scripts/implementation-reality-scan-selftest.sh` | Remove worker and watchdog PID cleanup, descriptor 9, FIFO completion, and old active labels. |
+| `tests/regression/test_24_g028_sensitive_client_storage.sh` | Preserve honest skip accounting and assert current supervisor contracts. |
+| `bubbles/scripts/cli.sh` | Launch the scanner through the direct privileged boundary and preserve its exit. |
+| `bubbles/scripts/state-transition-guard.sh` | Launch Check 16 through the same boundary and preserve its real status. |
+| `bubbles/scripts/state-transition-guard-selftest.sh` | Prove direct entry and status propagation at the certification call site. |
+
+No new supervisor file is required. The fixed Perl source remains embedded in
+`python-env.sh` to avoid another mutable helper identity.
+
+### Governance And Documentation Paths
+
+| Path | Required responsibility |
+| --- | --- |
+| `.github/copilot-instructions.md` | Replace raw ordinary scanner guidance with the canonical boundary and state the direct-call limitation. |
+| `templates/copilot-instructions.md.tmpl` | Keep installed downstream guidance aligned with the source instruction. |
+| `agents/bubbles_shared/critical-requirements.md` | Name the required privileged reality-scan boundary without weakening the gate. |
+| `agents/bubbles.validate.agent.md` | Require evidence to identify `BSEC1`, `BPS1`, and the exact candidate epoch. |
+| `docs/recipes/security-review.md` | Document Perl preflight, diagnostics, remediation, and explicit non-claims. |
+
+Canonical guidance must route ordinary users through `cli.sh scan` or the
+transition guard. Raw scanner invocation remains compatibility-only.
+
+### BUG-039 Artifact Family
+
+The boundary must admit
+`bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/**`.
+Artifact ownership still controls each file.
+
+- `design.md` holds this architecture.
+- `scopes.md` and `scenario-manifest.json` require planner reconciliation.
+- `state.json.workBoundary.allowedPaths` requires the widened path set.
+- `report.md` may receive only current execution-owner evidence.
+- `uservalidation.md` remains human-owned.
+- `bug.md` and `spec.md` retain the bug and outcome contracts unless their owners
+  identify a real requirement conflict.
+
+### Explicitly Unchanged Surfaces
+
+The classifier helper stays a read-only digest-pinned input. `guard-lib.sh` may
+not become a timeout or lifecycle fallback for this boundary.
+
+No dependency manifest, workflow, datastore, network, browser, deployment, or
+cross-repository surface changes under this design.
+
+## Testing And Validation Strategy
+
+No test result is claimed here. Every item below is a required implementation
+proof on the final immutable candidate.
+
+### Scenario Mapping
+
+| Scenario | Primary surfaces | Required observable behavior |
+| --- | --- | --- |
+| `SCN-B039-001` | scanner selftest and `test_24` | One unavailable prerequisite, sentinel, zero false failures, and no false pass. |
+| `SCN-B039-002` | Python and scanner selftests | A direct privileged entry executes every classifier assertion. |
+| `SCN-B039-003` | scanner selftest | The authorized classifier mutation executes and remains fatal. |
+| `SCN-B039-004` | `test_24` | Skip and pass counters remain distinct. |
+| `SCN-B039-005` | Python and scanner selftests | Hostile shell startup cannot enter privileged authority. |
+| `SCN-B039-006` | Python and scanner selftests | Native supervision, fixed operation, helper, and repository-as-data boundaries hold. |
+| `SCN-B039-007` | Python and scanner selftests | `waitpid`, wall, status ownership, signals, and no Bash signaling hold. |
+| `SCN-B039-008` | scanner selftest and `test_24` | Target control cannot end supervision and private files are removed. |
+| `SCN-B039-009` | artifact guards and identifier scan | One epoch uses only current BUG-039 identifiers. |
+
+### Finding Negative Controls
+
+| Finding | Positive proof | Required red mutation |
+| --- | --- | --- |
+| `SEC-R1` | Hostile exported functions and `BASH_ENV` create no marker inside direct entry. | Remove `-p`, remove `env -i`, or source one file before the boundary. |
+| `SEC-R2` | Perl signals only while it owns an unreaped worker and calls `waitpid` exactly once. | Signal after reap, clear ownership late, or add Bash worker signaling. |
+| `HAR-R1` | Bash holds only a wait-only supervisor PID and propagates pending signals after reaping it. | Restore worker or watchdog PID cleanup and trigger the post-reap signal window. |
+| `HAR-R2` | Descriptor closure and forged text cannot end supervision. | Give the worker the control descriptor or let EOF select success. |
+| `HAR-R3` | Active artifacts contain only current finding identifiers. | Reintroduce active `SEC-OBS-002` while archived quotations remain allowed. |
+
+### Boundary Contamination Matrix
+
+Tests must export hostile functions named `source`, `builtin`, `return`, `exec`,
+`/bin/bash`, `/usr/bin/env`, `/usr/bin/perl`, `kill`, and `wait`.
+
+A hostile `BASH_ENV` must write a marker and alter a return status. Direct entry
+must execute none of that content.
+
+The compatibility test may observe an outer marker. It must prove the marker
+does not execute again inside the privileged child.
+
+### Supervisor Lifecycle Matrix
+
+Persistent tests must cover:
+
+- worker exits `0`, `73`, `124`, `125`, and `143`
+- worker termination by a real signal
+- supervisor timeout `124`
+- caller HUP `129`, INT `130`, and TERM `143`
+- setup, fork, and exec failures
+- exact-limit and one-byte-over-limit output
+- worker exit before the first nonblocking `waitpid`
+- worker exit between a poll and TERM decision
+- immediate closure of every nonstandard worker descriptor
+- forged `BPS1` in worker output
+- a descriptor-holding descendant
+- repeated fast-exit and timeout runs under PID churn
+
+Assertions must prove event order, status owner, timeout bit, byte counts, one
+reap, and zero post-reap signal events. They must not require real PID reuse.
+
+### Retained Helper And Classifier Matrix
+
+The existing helper controls remain required:
+
+- digest mismatch blocks marker writes
+- subprocess, `setsid`, double-fork, dynamic import, `ctypes`, `eval`, and
+  `exec` payloads cannot execute under the old digest
+- path replacement after one read cannot replace executed bytes
+- reopening the helper path turns the same-byte negative control red
+- an authorized one-token classifier mutation executes and breaks exact tuples
+
+### Caller And Platform Matrix
+
+CLI tests must prove `scan` enters direct `BSEC1` and preserves scanner status.
+The transition-guard selftest must prove Check 16 does the same.
+
+Direct scanner tests must cover direct privileged entry and `compat-reexec`.
+Matching inputs must produce matching Scan 2B semantics.
+
+Run the focused matrix on stock macOS Bash 3.2 and supported Linux Bash. Each
+lane must prove authenticated Perl and Python positives.
+
+Repeat success, fast exit, timeout, output limit, and signals 30 consecutive
+times. Preserve every result without retrying or widening a deadline.
+
+Static checks permit one `$!` assignment for the supervisor wait handle. They
+must reject Bash worker or watchdog PIDs, PID signals, `kill -0`, job control,
+process groups, completion FIFOs, and target-held control descriptors.
+
+## Immutable Evidence Epoch And Ownership
+
+Only `privileged-native-supervision-v2` evidence may close the redesigned Scope
+2. Earlier managed-runtime and Bash exact-child evidence remains historical.
+
+One evidence epoch binds all of these values:
+
+- clean immutable commit
+- helper digest
+- `BSEC1`, `BPS1`, `PYSEC1`, `PYMOD1`, and `SCS1` protocol versions
+- macOS and Linux platform identities
+- focused scenario and mutation results
+- complete `framework-validate` and `release-check` results
+- independent security review
+- fresh human acceptance
+- validate-owned certification
+
+Changing any implementation, test, protocol, digest, or active planning byte
+invalidates the affected evidence. Pass totals never replace named scenario,
+finding, command, and candidate identities.
+
+Planner-owned reconciliation must happen before implementation. It must replace
+the old exact-child Scope 2 contract, update the path boundary, and preserve all
+nine scenario IDs.
+
+Implementation and test owners may record only current-epoch evidence. Only
+`bubbles.validate` may write certification or terminal status.
+
+## Migration, Rollout, And Safe Rollback
+
+The implementation must land as one coherent security epoch. A mixed entry,
+supervisor, runtime, or planning contract cannot earn authority.
+
+The required order is:
+
+1. Reconcile Scope 2 and widen the approved paths.
+2. Add red tests for all five current findings.
+3. Add direct privileged entry to the scanner and both production callers.
+4. Replace Bash lifecycle logic with the fixed native supervisor.
+5. Remove watchdog, FIFO, worker PID, and stale cleanup mechanisms.
+6. Retain Python trust, helper identity, `SCS1`, and skip behavior.
+7. Update active identifiers and required guidance.
+8. Execute focused macOS and Linux matrices on one immutable candidate.
+9. Execute complete framework and release gates on that candidate.
+10. Obtain independent security review, human acceptance, and certification.
+
+Safe rollback means fail closed. It disables authoritative Scan 2B acceptance
+when privileged entry or native supervision is unavailable.
+
+Rollback must not restore ordinary Bash authority, a Bash watchdog,
+target-controlled completion, positive worker-PID cleanup, managed-runtime
+self-attestation, or a shell timeout fallback.
+
+## Alternatives And Tradeoffs
+
+### Keep Builtin-Qualified Bash Cleanup
+
+Rejected. Imported functions can affect shell control before qualification.
+Bash PID text also does not prove an unreaped parent-child relationship.
+
+### Rely Only On Scanner Re-Exec
+
+Rejected for canonical callers. Re-exec preserves compatibility but cannot undo
+earlier `BASH_ENV` activity.
+
+### Keep FIFO Completion And A Bash Watchdog
+
+Rejected. A target can close inherited descriptors. A second Bash PID also
+recreates stale signaling and status-ownership problems.
+
+### Use Process Groups Or Descendant Enumeration
+
+Rejected. `setsid`, double-fork, reparenting, exit, and PID reuse defeat the
+portable claim.
+
+### Use Linux-Only Process Facilities
+
+Rejected. pidfds, cgroups, and `/proc` do not provide the required macOS
+contract.
+
+### Use External `timeout`
+
+Rejected. It is not a macOS base primitive and loses exact status ownership.
+
+### Use Python As Its Own Supervisor
+
+Rejected. The Python runtime and module closure are subjects of authentication.
+Self-supervision would create circular authority.
+
+### Add A Compiled Supervisor
+
+Rejected. It adds a build, signing, architecture, and installation pipeline.
+Fixed Perl supplies the required Unix process primitives.
+
+### Add A Separate Perl File
+
+Rejected. Another mutable helper creates a new identity and packaging edge.
+
+### Select Perl From PATH Or Add A Bash Fallback
+
+Rejected. Either choice reopens caller executable authority or restores the
+invalidated lifecycle.
+
+## Complexity Tracking
+
+| Decision | Simpler alternative | Why rejected |
+| --- | --- | --- |
+| Direct privileged entry | Qualify Bash builtins | Qualification does not stop exported functions or `BASH_ENV`. |
+| Native `fork` and `waitpid` | Bash worker and watchdog | Bash may retain recyclable PID text after child reaping. |
+| Streaming output limits | Check file size afterward | A worker can exceed the bound before inspection. |
+| Closed `BPS1` ownership | Numeric status only | The same status can belong to worker, supervisor, or caller signal. |
+| Widened caller boundary | Keep five files | Production callers currently create ordinary Bash scanner processes. |
+| Embedded Perl source | Separate helper | A new file adds identity and packaging obligations. |
+| Fail closed without Perl | Shell fallback | A fallback restores the rejected security path. |
+
+## Risks And Open Questions
+
+### Accepted Risks
+
+- A host without authenticated `/usr/bin/perl` cannot earn Scan 2B authority.
+- An ordinary direct caller may execute hostile `BASH_ENV` before re-exec.
+- Compromised root, kernel, filesystem, Perl, Python, or framework source
+  invalidates the trust anchor.
+- A compromised worker may create descendants that outlive it.
+- Kernel-uninterruptible worker state may exceed userspace timing.
+- SIGKILL or host termination may leave private capture files.
+- The embedded supervisor expands the reviewed TCB in `python-env.sh`.
+
+### Remaining Architecture Questions
+
+None. Platform availability is an explicit prerequisite, not an implicit
+fallback decision.
+
+## Archive: Superseded Design Decisions
+
+Everything below this heading is historical and non-authoritative. The content
+remains in its original order so reviewers can trace the prior
+`root-protected-native-python-v1` direct-child design and its managed-runtime
+predecessor. Its headings are archival even when their original wording uses
+the present tense.
+
+### Archived Epoch: Root-Protected Scan 2B Authority
+
+### Archived Section: Design Brief
 
 ### Current State
 
@@ -61,7 +1013,7 @@ The supervisor will track, signal, and reap one exact direct child.
 
 None. Source changes, tests, security review, and certification remain unexecuted.
 
-## Purpose And Scope
+### Archived Section: Purpose And Scope
 
 This design replaces the candidate's self-attested managed-runtime authority.
 It also replaces the generic process-group runner used by the security path.
@@ -91,7 +1043,7 @@ It is explicitly excluded from BUG-039 and receives no design change here.
 This document contains design decisions only.
 It does not claim that source, tests, or evidence implement these decisions.
 
-## Requirement Reconciliation
+### Archived Section: Requirement Reconciliation
 
 | Existing requirement | Active technical realization |
 | --- | --- |
@@ -106,7 +1058,7 @@ The term "usable interpreter" retains its observable meaning.
 Security authority adds a prerequisite before Scan 2B can accept that interpreter's output.
 An executable that runs but lacks authority cannot produce an earned verdict.
 
-## Current Source Facts
+### Archived Section: Current Source Facts
 
 The following facts were read from the exact combined candidate before this edit:
 
@@ -125,7 +1077,7 @@ The five superseded runner and trust APIs have no source consumer outside the
 five-file boundary in this candidate.
 That inventory permits replacement without silently widening implementation scope.
 
-## Security Objective And Threat Model
+### Archived Section: Security Objective And Threat Model
 
 ### Security Objective
 
@@ -192,7 +1144,7 @@ The design removes untrusted executable launch from the security path.
 It also rejects changed helper bytes before compilation.
 These controls prevent the known escape fixtures from becoming executable input.
 
-## Finding Accounting
+### Archived Section: Finding Accounting
 
 | Finding | Design accounting | Closure state after this design |
 | --- | --- | --- |
@@ -205,7 +1157,7 @@ These controls prevent the known escape fixtures from becoming executable input.
 
 No finding above is claimed fixed in source.
 
-## Architecture Overview
+### Archived Section: Architecture Overview
 
 ```text
 implementation-reality-scan.sh
@@ -230,7 +1182,7 @@ implementation-reality-scan.sh
 The general Python resolver remains available for non-security consumers.
 Its success has no path into the security runtime globals or Scan 2B acceptance.
 
-## Data Model
+### Archived Section: Data Model
 
 No state persists across scanner runs.
 The following records exist only in shell variables and private captures:
@@ -246,7 +1198,7 @@ The following records exist only in shell variables and private captures:
 No record contains raw child output or environment values.
 Capture paths never leave the current process tree.
 
-## API And Contracts
+### Archived Section: API And Contracts
 
 | API | Inputs | Outputs | Authority |
 | --- | --- | --- | --- |
@@ -261,7 +1213,7 @@ Capture paths never leave the current process tree.
 
 No new scanner flag, environment override, or executable-selection API is introduced.
 
-## Capability Foundation
+### Archived Section: Capability Foundation
 
 `python-env.sh` owns two separate capability classes.
 It must never promote a general usability result into security authority.
@@ -326,7 +1278,7 @@ The following candidate APIs are removed:
 
 Their current in-repository consumers all live inside the approved boundary.
 
-## Concrete Implementations
+### Archived Section: Concrete Implementations
 
 ### `general-python-usability-v2`
 
@@ -372,7 +1324,7 @@ It never falls through to `general-python-usability-v2`.
 | Execution surface | Fixed general probe | Closed authenticated operations only |
 | Failure effect | Candidate declines | Scan 2B fails closed |
 
-## Runtime Trust Contract
+### Archived Section: Runtime Trust Contract
 
 ### Candidate Discovery
 
@@ -565,7 +1517,7 @@ The digest is not a Python sandbox.
 It binds one reviewed framework helper to the scanner's reviewed trust boundary.
 A helper change requires a matching digest review and negative-control update.
 
-## Fixed-Wall Supervision Contract
+### Archived Section: Fixed-Wall Supervision Contract
 
 ### Closed Operations
 
@@ -724,7 +1676,7 @@ Their traps remove those roots after the security runner completes cleanup.
 No cleanup path reads a saved descendant PID.
 No failed assertion sends a destructive signal to an observed PID number.
 
-## Protocol And Error Model
+### Archived Section: Protocol And Error Model
 
 ### Security Runtime Diagnostics
 
@@ -842,7 +1794,7 @@ A valid zero-finding completion remains distinct from empty output.
 Existing finding fields, allowlists, path checks, and completion checks remain active.
 Only the authority allowed to produce the stream changes.
 
-## Failure Handling
+### Archived Section: Failure Handling
 
 | Condition | Execution effect | Scan 2B effect | Selftest effect |
 | --- | --- | --- | --- |
@@ -861,7 +1813,7 @@ Only the authority allowed to produce the stream changes.
 | Valid `SCS1`, findings | Checked helper executes | Blocking findings | Exact tuple assertions |
 | HUP, INT, or TERM | Exact child is killed and reaped | Scanner exits with signal status | Private paths are absent |
 
-## Observability And Security-Safe Operator Output
+### Archived Section: Observability And Security-Safe Operator Output
 
 The scanner emits one bounded status line for Scan 2B:
 
@@ -884,7 +1836,7 @@ The Xcode remediation names the validated developer directory and offers:
 Generic remediation requests a root-protected native Python 3.9 or newer.
 It never recommends the managed virtualenv as Scan 2B authority.
 
-## Configuration, Migration, And Portability
+### Archived Section: Configuration, Migration, And Portability
 
 The security path adds no configurable default or fallback.
 Its wall limits, output limits, protocol versions, helper path, and digest are constants.
@@ -916,7 +1868,7 @@ The implementation may not use associative arrays, `wait -n`, `readlink -f`,
 GNU-only `stat`, `setsid`, `/proc`, cgroups, or platform-name branching.
 BSD and GNU metadata forms are selected by validated tool behavior.
 
-## Testing And Validation Strategy
+### Archived Section: Testing And Validation Strategy
 
 No test result is claimed by this design.
 Every row below is a required implementation proof.
@@ -1023,7 +1975,7 @@ The final immutable candidate must then pass `framework-validate` and `release-c
 Output above 40 lines must use the repository evidence-capture helper.
 No evidence from the managed-runtime candidate can satisfy these checks.
 
-## Packet Epoch And Ownership Reconciliation
+### Archived Section: Packet Epoch And Ownership Reconciliation
 
 The packet has three distinct epochs:
 
@@ -1052,7 +2004,7 @@ Only `bubbles.validate` may write certification or terminal status.
 An implementation change after evidence capture starts a new epoch.
 Every affected proof must run again on the new tree.
 
-## Migration And Safe Rollback
+### Archived Section: Migration And Safe Rollback
 
 The five-file source change must land atomically.
 A mixed trust contract cannot produce an authoritative Scan 2B result.
@@ -1076,7 +2028,7 @@ That state preserves candidate collection and unresolved findings.
 It disables every clean classifier acceptance until authenticated execution returns.
 No runtime flag may activate or bypass that state.
 
-## Alternatives And Tradeoffs
+### Archived Section: Alternatives And Tradeoffs
 
 ### Keep The Managed Virtualenv With A Stronger Challenge
 
@@ -1143,7 +2095,7 @@ A second implementation would create policy drift and exceed the five-file bound
 Rejected. A sound allowlist needs name binding, receiver typing, and alias analysis.
 Exact reviewed helper identity is narrower and testable.
 
-## Complexity Tracking
+### Archived Section: Complexity Tracking
 
 | Decision | Simpler alternative considered | Why rejected |
 | --- | --- | --- |
@@ -1155,7 +2107,7 @@ Exact reviewed helper identity is narrower and testable.
 | Separate general and security capabilities | Reuse one ordered resolver | Usability and authority answer different questions. |
 | Fixed security operations | Keep an arbitrary command vector | Generic launch lets caller-selected code enter the trust path. |
 
-## Risks And Open Questions
+### Archived Section: Risks And Open Questions
 
 ### Accepted Risks
 
@@ -1172,7 +2124,7 @@ Exact reviewed helper identity is narrower and testable.
 None. Supporting caller-owned runtimes requires a signed runtime distribution contract.
 That contract is not implicit in BUG-039.
 
-## Superseded Design Decisions
+### Archived Section: Managed-Venv Design Decisions
 
 Everything below this heading documents the `managed-venv-only-v1` epoch.
 It remains historical context and must not guide implementation or certification.
