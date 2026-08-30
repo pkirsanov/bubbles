@@ -296,6 +296,14 @@ skip() {
   skips=$((skips + 1))
 }
 
+selftest_fixture_absolute_path_safe() {
+  local value="${1:-}"
+  [[ "$value" == /* ]] || return 1
+  [[ ${#value} -le 4096 ]] || return 1
+  [[ "$value" != *$'\n'* && "$value" != *$'\r'* && "$value" != *$'\t'* ]] || return 1
+  return 0
+}
+
 assert_legacy_target_environment_is_inert() {
   local output_file="$TMPDIR/legacy-target-dispatch-probe.output"
   local probe_status=0
@@ -1258,18 +1266,41 @@ authority_source_hash=""
 authority_mutant_hash=""
 authority_auth_marker_count=0
 authority_candidate_marker_count=0
+authority_fixture_path_status=0
+authority_fake_literal=""
+authority_marker_literal=""
+authority_trace_literal=""
 mkdir -p "$authority_scripts/guards" "$authority_fake_bin" "$authority_untrusted_developer"
 /bin/cp "$SCRIPT_DIR/python-env.sh" "$authority_env"
 /bin/cp "$GUARD_LIB" "$authority_scripts/guard-lib.sh"
 /bin/cp "$SCAN_SCRIPT" "$authority_scanner"
 /bin/cp "$SCRIPT_DIR/fun-mode.sh" "$authority_scripts/fun-mode.sh"
 /bin/cp "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py" "$authority_scripts/guards/sensitive-client-storage-scan.py"
+if selftest_fixture_absolute_path_safe "$authority_fake" &&
+  selftest_fixture_absolute_path_safe "$authority_marker" &&
+  selftest_fixture_absolute_path_safe "$authority_trace"; then
+  printf -v authority_fake_literal '%q' "$authority_fake"
+  printf -v authority_marker_literal '%q' "$authority_marker"
+  printf -v authority_trace_literal '%q' "$authority_trace"
+  pass "SCN-B039-005 authority mutation fixture paths satisfy the closed absolute path grammar"
+else
+  authority_fixture_path_status=1
+  fail "SCN-B039-005 authority mutation fixture paths satisfy the closed absolute path grammar"
+fi
 authority_source_hash="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" | /usr/bin/awk '{print $1}')"
-if /usr/bin/awk '
+if [[ "$authority_fixture_path_status" -eq 0 ]] &&
+  B039_AUTHORITY_FAKE_LITERAL="$authority_fake_literal" \
+  B039_AUTHORITY_TRACE_LITERAL="$authority_trace_literal" \
+  /usr/bin/awk '
   /^_bubbles_python_security_authenticate_path\(\) \{/ {
     print
     print "  # B039-NEG-AUTHENTICATION-BYPASS"
-    print "  printf \"%s|%s|%s|%s\\n\" B039_AUTH_BYPASS \"${1:-}\" \"${2:-}\" \"${3:-}\" >>\"${BUBBLES_AUTHORITY_BYPASS_TRACE:?trace required}\""
+    print "  if [[ -n \"${BUBBLES_AUTHORITY_BYPASS_CANDIDATE+x}\" || -n \"${BUBBLES_AUTHORITY_BYPASS_TRACE+x}\" ]]; then"
+    print "    printf \"%s\\n\" B039_AUTH_ENV_PRESENT >>" ENVIRON["B039_AUTHORITY_TRACE_LITERAL"]
+    print "    return 97"
+    print "  fi"
+    print "  printf \"%s\\n\" B039_AUTH_ENV_ABSENT >>" ENVIRON["B039_AUTHORITY_TRACE_LITERAL"]
+    print "  printf \"%s|%s|%s|%s\\n\" B039_AUTH_BYPASS \"${1:-}\" \"${2:-}\" \"${3:-}\" >>" ENVIRON["B039_AUTHORITY_TRACE_LITERAL"]
     print "  BUBBLES_PYTHON_SECURITY_PATH_RESOLVED=\"$1\""
     print "  BUBBLES_PYTHON_SECURITY_PATH_REJECTION=NONE"
     print "  BUBBLES_PYTHON_SECURITY_PATH_DIAGNOSTIC=OK"
@@ -1282,7 +1313,7 @@ if /usr/bin/awk '
   skipping && /^}/ { skipping=0; next }
   !skipping && index($0, "for candidate in \"${candidates[@]}\"; do") {
     print "  # B039-NEG-FORCE-CALLER-CANDIDATE"
-    print "  candidates=(\"${BUBBLES_AUTHORITY_BYPASS_CANDIDATE:?candidate required}\")"
+    print "  candidates=(" ENVIRON["B039_AUTHORITY_FAKE_LITERAL"] ")"
     print "  BUBBLES_PYTHON_SECURITY_CANDIDATE_COUNT=1"
     candidate_force=candidate_force + 1
   }
@@ -1319,7 +1350,7 @@ case "\$program" in
   *'RUNTIME\tPYSEC1'*)
     printf 'RUNTIME\tPYSEC1\t3\t9\n'
     printf 'FLAGS\tPYSEC1\t1\t1\t1\t1\n'
-    printf 'EXECUTABLE\tPYSEC1\t%s\n' '$authority_fake'
+    printf 'EXECUTABLE\tPYSEC1\t%s\n' $authority_fake_literal
     printf 'PREFIX\tPYSEC1\tbase\t/\nPREFIX\tPYSEC1\texec\t/\n'
     printf 'PATH\tPYSEC1\t/\nCOMPLETE\tPYSEC1\t1\n'
     ;;
@@ -1330,19 +1361,18 @@ case "\$program" in
     printf 'COMPLETE\tPYMOD1\t9\n'
     ;;
   *)
-    printf '%s\n' 'forged caller-owned runtime executed' >'$authority_marker'
+    printf '%s\n' 'forged caller-owned runtime executed' >$authority_marker_literal
     printf 'COMPLETE\tSCS1\t1\n'
     ;;
 esac
 exit 0
 EOF
 chmod +x "$authority_fake"
+unset BUBBLES_AUTHORITY_BYPASS_CANDIDATE BUBBLES_AUTHORITY_BYPASS_TRACE
 RUN_OUTPUT=""
 RUN_STATUS=0
 if [[ "$authority_mutation_preconditions" -eq 1 ]]; then
   if selftest_run_mutation_bounded "$authority_output" 180 /usr/bin/env \
-    BUBBLES_AUTHORITY_BYPASS_CANDIDATE="$authority_fake" \
-    BUBBLES_AUTHORITY_BYPASS_TRACE="$authority_trace" \
     PATH="$authority_fake_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
     DEVELOPER_DIR="$authority_untrusted_developer" \
     "$BASH" -c 'repo_root="$1"; shift; cd "$repo_root" || exit 2; exec "$@"' \
@@ -1367,6 +1397,13 @@ if [[ "$SELFTEST_ENTRYPOINT" == authority-bypass ]]; then
   fi
 fi
 authority_after_hashes="$(/usr/bin/shasum -a 256 "$SCRIPT_DIR/python-env.sh" "$SCAN_SCRIPT" "$SCRIPT_DIR/fun-mode.sh" "$SCRIPT_DIR/guards/sensitive-client-storage-scan.py")"
+if [[ -f "$authority_trace" ]] &&
+  /usr/bin/grep -Fqx 'B039_AUTH_ENV_ABSENT' "$authority_trace" &&
+  ! /usr/bin/grep -Fq 'B039_AUTH_ENV_PRESENT' "$authority_trace"; then
+  pass "SCN-B039-005 privileged copied scanner receives no authority-bypass path variables"
+else
+  fail "SCN-B039-005 privileged copied scanner received an authority-bypass path variable"
+fi
 if [[ -f "$authority_trace" ]] &&
   /usr/bin/grep -Fq "B039_AUTH_BYPASS|$authority_fake|executable|1" "$authority_trace"; then
   pass "SCN-B039-005 forced caller-owned runtime reaches the copied authentication bypass"

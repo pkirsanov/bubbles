@@ -1535,3 +1535,193 @@ the production implementation or close its owner-controlled change set.
 The remaining production-owned findings are exactly `SEC-R1`, `SEC-R2`,
 `HAR-R1`, `HAR-R2`, and `HAR-R3`. Their disposition remains with
 `bubbles.implement`.
+
+## TP-S2-01 self-contained SEC-R1 mutant correction
+
+### Prior red receipt preservation
+
+**Phase:** test
+**Claim Source:** not-run
+
+The two prior receipts were supplied by the operator as diagnostic input. This
+invocation did not relabel them as current execution evidence:
+
+- Full scanner selftest: exit 1, 1,743 lines, SHA-256
+  `c90f44cf3e8e25ed713d82120baa40239169dedc84b259a51897484bec072e1a`.
+- Focused authority diagnostic: exit 1, 107 lines, SHA-256
+  `65d5483c9643c350e7460f2bf0865c2ff389e58d7d9ca2d47ae21e10f199b206`.
+
+Both receipts identified the copied SEC-R1 mutant aborting after privileged
+`env -i` removed its two ambient fixture-path variables. They remain the RED
+side of this test-fixture correction.
+
+### Test-owned correction and mechanism
+
+**Phase:** test
+**Claim Source:** executed
+
+The changed selftest SHA-256 is
+`884c52cd70b1289769c21ec93ca57290ac28f9e65bc18e770d789c4b6e848464`.
+The harness now validates each embedded fixture path as absolute, no longer than
+4,096 bytes, and free of tab, carriage return, and newline. Stock Bash 3.2
+`printf -v ... %q` creates shell-safe literal words. The construction-only AWK
+environment carries those quoted words into the copied file. The copied mutant
+does not read either path from its runtime environment.
+
+**Test mechanism:** the copied `python-env.sh` replaces exactly one path
+authentication branch, forces exactly one caller-owned candidate branch, and
+runs through the copied production scanner's real compatibility re-entry. The
+mutant writes `B039_AUTH_ENV_ABSENT` through its embedded trace path before it
+forges clean `SCS1` output.
+
+**Negative control:** requiring either fixture path from the ambient environment
+would abort after production `env -i`, leaving no compromise marker or clean
+classifier result. Preserving path authentication would reject the caller-owned
+candidate and keep the real sensitive-storage finding.
+
+### Static validation
+
+**Phase:** test
+**Command:** `/bin/bash -n bubbles/scripts/implementation-reality-scan-selftest.sh`; `/opt/homebrew/bin/bash -n bubbles/scripts/implementation-reality-scan-selftest.sh`; `/opt/homebrew/bin/shellcheck -S warning -x bubbles/scripts/implementation-reality-scan-selftest.sh`; `git diff --check -- bubbles/scripts/implementation-reality-scan-selftest.sh bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md`; `/opt/homebrew/bin/bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/implementation-reality-scan-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 self-contained SEC-R1 mutant static validation
+exit: 0
+lines: 24
+sha256: de306e8a5521b74b50d4d052f1d0998f57972bdad1813cd3cf7d74945a21adab
+STATIC_VALIDATION_BEGIN
+STOCK_BASH_SYNTAX_EXIT=0
+MODERN_BASH_SYNTAX_EXIT=0
+SHELLCHECK_WARNING_EXIT=0
+DIFF_CHECK_EXIT=0
+============================================================
+  BUBBLES REGRESSION QUALITY GUARD
+  Repo: /private/tmp/bubbles-bug039-native-supervisor
+  Timestamp: 2026-08-30T11:41:34Z
+  Bugfix mode: true
+============================================================
+
+ℹ️  Scanning bubbles/scripts/implementation-reality-scan-selftest.sh
+✅ Adversarial signal detected in bubbles/scripts/implementation-reality-scan-selftest.sh
+
+============================================================
+  REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+  Files scanned: 1
+  Files with adversarial signals: 1
+============================================================
+REGRESSION_QUALITY_EXIT=0
+884c52cd70b1289769c21ec93ca57290ac28f9e65bc18e770d789c4b6e848464  bubbles/scripts/implementation-reality-scan-selftest.sh
+STATIC_VALIDATION_FAILURES=0
+STATIC_VALIDATION_END
+```
+
+### Full stock-Bash verification
+
+**Phase:** test
+**Command:** `/usr/bin/env -u BUBBLES_AUTHORITY_BYPASS_CANDIDATE -u BUBBLES_AUTHORITY_BYPASS_TRACE -u BUBBLES_PYTHON_SELFTEST_CHILD_MODE -u BUBBLES_PYTHON_SELFTEST_READY_FILE -u BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL -u BUBBLES_PYTHON_LATE_SIGNAL_NAME -u BUBBLES_PYTHON_SELFTEST_LATE_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_WINDOW_READY -u BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE -u BUBBLES_PYTHON_MUTANT_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_TRACE -u BUBBLES_SELFTEST_REAL_PYTHON -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD -u BUBBLES_TEST24_CHILD_MODE -u BUBBLES_TEST24_NEGATIVE_CONTROL -u BUBBLES_TEST24_LIFECYCLE_CHILD_MODE -u BUBBLES_TEST24_READY_FILE PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=300s 7200 /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+
+The full stock macOS Bash 3.2 selftest ran exactly once after the test byte
+change. The bounded capture covered every one of its 1,742 output lines. The
+block below retains selected exact signals from the returned first and last
+capture windows; the SHA-256 covers the complete output.
+
+```text
+# BUG-039 TP-S2-01 self-contained SEC-R1 mutant full stock Bash
+exit: 0
+lines: 1742
+sha256: ead4155f7e08874c7e3f4f9e8820cf980c1b90fa3926f505c721bdfed8f7ac74
+Scenario: TEST-B039-001 inherited subset selectors cannot replace the full-suite entrypoint.
+IMPLEMENTATION_REALITY_SELFTEST_ZERO_ARGUMENT_ENTRY=FULL_SUITE
+PASS: TEST-B039-001 legacy SELFTEST_TARGET cannot select an ambient subset
+Scenario: premature and interrupted selftest exits fail closed while cleaning up.
+PASS: Premature EXIT preserves fatal exit 1
+PASS: Premature EXIT removes its temporary tree
+PASS: Premature EXIT emits no success summary
+PASS: Timeout exit preserves fatal exit 124
+PASS: Timeout exit removes its temporary tree
+PASS: Timeout exit emits no success summary
+PASS: Classifier remains reusable after both watchdog timeouts
+PASS: Post-timeout classifier completes its protocol
+PASS: Post-timeout real producer leaves the helper directory clean
+implementation-reality-scan selftest summary: failures=0 skips=0
+BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+IMPLEMENTATION_REALITY_SELFTEST_FULL_SUITE_COMPLETED=1
+implementation-reality-scan selftest passed.
+```
+
+### Exact SEC-R1 authority proof
+
+**Phase:** test
+**Command:** `/usr/bin/env -u BUBBLES_AUTHORITY_BYPASS_CANDIDATE -u BUBBLES_AUTHORITY_BYPASS_TRACE -u BUBBLES_PYTHON_SELFTEST_CHILD_MODE -u BUBBLES_PYTHON_SELFTEST_READY_FILE -u BUBBLES_PYTHON_SELFTEST_NEGATIVE_CONTROL -u BUBBLES_PYTHON_LATE_SIGNAL_NAME -u BUBBLES_PYTHON_LATE_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_WINDOW_READY -u BUBBLES_PYTHON_MUTANT_WINDOW_RELEASE -u BUBBLES_PYTHON_MUTANT_ROOT_RECORD -u BUBBLES_PYTHON_MUTANT_TRACE -u BUBBLES_SELFTEST_REAL_PYTHON -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_TARGET -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_CHILD_MODE -u BUBBLES_IMPLEMENTATION_REALITY_SELFTEST_READY_FILE -u BUBBLES_MUTATION_RUNNER_ROOT_RECORD PATH=/opt/local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin DEVELOPER_DIR=/Library/Developer/CommandLineTools /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 780 /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh --internal-authority-bypass-control b039-authority-bypass-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+The diagnostic capture emitted 173 lines with SHA-256
+`893eb4a99bbdbff5a5c607596507a6f66d6ac7ff202f78968e45a0993a907287`.
+These selected proof signals preserve the exact compromise and setup results:
+
+```text
+PASS: SCN-B039-005 authority mutation fixture paths satisfy the closed absolute path grammar
+PASS: SCN-B039-005 authority mutation changes exactly one authentication branch and forces one caller-owned candidate branch
+  sensitive-storage classifier protocol complete: version=SCS1 scanned=1 findings=0 status=0 diagnostic=OK entry=BSEC1 entryMode=compat-reexec supervisor=root-protected-perl-supervisor-v1 supervisorProtocol=BPS1 runtimeDiagnostic=OK rejection=NONE candidates=1 trust=root-protected-native-python-v1 provenance=root-protected-path pathProtocol=PYSEC1 moduleProtocol=PYMOD1 classifierProtocol=SCS1
+B039_AUTH_ENV_ABSENT
+B039_AUTH_BYPASS|/bin/bash|executable|1
+B039_AUTH_ENV_ABSENT
+B039_AUTH_BYPASS|/usr/bin/env|executable|1
+B039_AUTH_ENV_ABSENT
+B039_AUTH_BYPASS|/usr/bin/perl|executable|1
+PASS: SCN-B039-005 privileged copied scanner receives no authority-bypass path variables
+PASS: SCN-B039-005 forced caller-owned runtime reaches the copied authentication bypass
+PASS: SCN-B039-005 authority-bypass mutation makes forged clean output and marker assertions red
+PASS: SCN-B039-005 authority mutation leaves live production bytes identical
+implementation-reality-scan authority-bypass control summary: failures=0 skips=0
+```
+
+### Residue and protected-byte proof
+
+**Phase:** test
+**Claim Source:** executed
+
+The first broad temporary-directory sweep exited 1 with SHA-256
+`1e88569c58945b4a5bdf45043c9b2595dc4b47ecccfdc11244a901821fa6c68f`.
+It encountered protected macOS service directories and identified five old
+selftest roots. Each root was owned by UID 501, had mode 0700, was between
+55,611 and 97,028 seconds old, and returned `lsof +D` exit 1. Their bounded
+cleanup removed all five roots. The corrected direct-root sweep then passed.
+
+**Command:** bounded direct-root signature scan, repository FIFO/cache scan, untracked-path scan, and SHA-256 comparison against the four protected production baselines
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+# BUG-039 TP-S2-01 SEC-R1 clean residue and production integrity
+exit: 0
+lines: 12
+sha256: 5023981fef699fcc50f203c7f83b33f2b10c9dcef3d9d2a65e3d31d401a687c5
+CLEAN_RESIDUE_INTEGRITY_BEGIN
+PROCESS_RESIDUE_COUNT=0
+PRIVATE_ROOT_FIFO_MUTATION_RESIDUE_COUNT=0
+REPOSITORY_FIFO_COUNT=0
+REPOSITORY_PYTHON_CACHE_COUNT=0
+UNTRACKED_PATH_COUNT=0
+PRODUCTION_HASH_UNCHANGED=64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a bubbles/scripts/python-env.sh
+PRODUCTION_HASH_UNCHANGED=4eb25cbb959c37caaf4f835742128d837e08935b59cba793359ca2fd78a5e9fb bubbles/scripts/implementation-reality-scan.sh
+PRODUCTION_HASH_UNCHANGED=00ec96982dbfc19d5e0616496c094cd642b9d7eae7353c45cc9b618c57df30e4 bubbles/scripts/cli.sh
+PRODUCTION_HASH_UNCHANGED=cabce8c9d223dc4a3637dab649fe293867466b7c95fd28192e37820ddf83d07e bubbles/scripts/state-transition-guard.sh
+CLEAN_RESIDUE_INTEGRITY_FAILURES=0
+CLEAN_RESIDUE_INTEGRITY_END
+```
+
+### Ownership boundary
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The executed evidence addresses the SEC-R1 test-fixture
+defect and proves the copied bypass can compromise classification without either
+ambient fixture-path variable. It does not certify the four implementation-owned
+production edits or close the production findings. Production disposition stays
+with `bubbles.implement`.
