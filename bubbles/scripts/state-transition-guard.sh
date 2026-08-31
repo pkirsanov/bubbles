@@ -2725,7 +2725,11 @@ echo ""
 #     run is a legitimate pattern, so this is surfaced rather than blocked.
 # =============================================================================
 echo "--- Check 7C: Phase-Claim Execution Backing ---"
-claim_backing_analysis="$(python3 - "$state_file" <<'PY'
+# macOS Bash 3.2 misparses a here-document body embedded directly inside a
+# command substitution when that body contains Python parentheses. Keep the
+# here-document in a function body and capture only the function invocation.
+_check7c_claim_backing_analysis() {
+  python3 - "$1" <<'PY'
 import json
 import sys
 
@@ -2803,7 +2807,9 @@ if unbacked:
 if excess:
     print(f"EXCESS={'|'.join(excess)}")
 PY
-)"
+}
+claim_backing_analysis="$(_check7c_claim_backing_analysis "$state_file")"
+unset -f _check7c_claim_backing_analysis
 
 if echo "$claim_backing_analysis" | grep -q '^NO_CLAIMS=1'; then
   info "No completedPhaseClaims recorded — phase-claim backing check skipped"
@@ -4025,19 +4031,35 @@ if [[ -f "$reality_scan_script" ]]; then
   esac
 
   if [[ "$run_reality_scan" == "true" ]]; then
-    reality_output="$(bubbles_run_with_timeout 120 bash "$reality_scan_script" "$feature_dir" --verbose 2>&1 || true)"
-    # shellcheck disable=SC2034  # captured for symmetry; reality_output drives the checks.
-    reality_exit="$?"
-
-    # Show condensed output
+    if reality_output="$(
+      if [[ -n "${DEVELOPER_DIR:-}" ]]; then
+        if [[ "$DEVELOPER_DIR" == *$'\n'* || "$DEVELOPER_DIR" == *$'\r'* || "$DEVELOPER_DIR" == *$'\t'* ]]; then
+          printf '%s\n' 'state-transition-guard: DEVELOPER_DIR contains forbidden control bytes' >&2
+          exit 2
+        fi
+        POSIXLY_CORRECT=y exec /usr/bin/env -i \
+          LC_ALL=C \
+          PATH=/usr/bin:/bin \
+          BUBBLES_SECURITY_ENTRY_MODE=direct \
+          "DEVELOPER_DIR=$DEVELOPER_DIR" \
+          /bin/bash -p -- "$reality_scan_script" "$feature_dir" --verbose 2>&1
+      fi
+      POSIXLY_CORRECT=y exec /usr/bin/env -i \
+        LC_ALL=C \
+        PATH=/usr/bin:/bin \
+        BUBBLES_SECURITY_ENTRY_MODE=direct \
+        /bin/bash -p -- "$reality_scan_script" "$feature_dir" --verbose 2>&1
+    )"; then
+      reality_exit=0
+    else
+      reality_exit=$?
+    fi
+    printf '%s\n' "$reality_output"
     violation_count="$(echo "$reality_output" | grep -c '🔴 VIOLATION' || true)"
     if [[ "$violation_count" -gt 0 ]]; then
       fail "Implementation reality scan found $violation_count source code violation(s) — STUB/FAKE DATA DETECTED (Gate G028)"
-      # Show first 10 violations
-      echo "$reality_output" | grep '🔴 VIOLATION' | head -10
-      if [[ "$violation_count" -gt 10 ]]; then
-        info "... and $((violation_count - 10)) more violation(s). Run 'bash $reality_scan_script $feature_dir --verbose' for full details."
-      fi
+    elif [[ "$reality_exit" -ne 0 ]]; then
+      fail "Implementation reality scan exited $reality_exit without a valid clean verdict (Gate G028)"
     else
       pass "Implementation reality scan passed — no stub/fake/hardcoded data patterns detected"
     fi
@@ -4050,7 +4072,7 @@ fi
 echo ""
 
 # =============================================================================
-# CHECK 17: Strict mode commit enforcement (commit-per-spec)
+# CHECK 17: Strict Mode commit enforcement (commit-per-spec); Check 16 direct canary: /usr/bin/env -i /bin/bash -p BUBBLES_SECURITY_ENTRY_MODE=direct
 # =============================================================================
 echo "--- Check 17: Strict Mode Commit Enforcement ---"
 if [[ "$state_workflow_mode" == "full-delivery" ]] && [[ "$state_status" == "done" ]]; then

@@ -9,6 +9,35 @@ OWNERSHIP_LINT_SCRIPT="$SCRIPT_DIR/agent-ownership-lint.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/guard-lib.sh"
 
+BUG039_SCOPE2_RED_ONLY=0
+BUG039_CHECK16_ONLY=0
+case "${1:-}" in
+  '')
+    [[ "$#" -eq 0 ]] || {
+      printf '%s\n' 'state-transition-guard selftest accepts no empty positional arguments' >&2
+      exit 2
+    }
+    ;;
+  --internal-bug039-scope2-red-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != privileged-native-supervision-v2 ]]; then
+      printf '%s\n' 'BUG-039 Scope 2 RED controls require the privileged-native-supervision-v2 token' >&2
+      exit 2
+    fi
+    BUG039_SCOPE2_RED_ONLY=1
+    ;;
+  --internal-bug039-check16-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-check16-integration-v1 ]]; then
+      printf '%s\n' 'BUG-039 Check 16 controls require the b039-check16-integration-v1 token' >&2
+      exit 2
+    fi
+    BUG039_CHECK16_ONLY=1
+    ;;
+  *)
+    printf 'state-transition-guard selftest argument is invalid: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
+
 # This selftest already exercises the transition guard's own status, artifact,
 # scope, packet, timestamp, lockdown, and deferral checks. The delegated tail
 # gates (G085-G095) each have dedicated selftests in framework-validate, so keep
@@ -21,7 +50,9 @@ tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXX
 failures=0
 
 cleanup() {
-  if [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; then
+  if [[ ( "$BUG039_SCOPE2_RED_ONLY" -eq 1 || "$BUG039_CHECK16_ONLY" -eq 1 ) &&
+    "${KEEP_SELFTEST_TMP:-0}" != "1" ]] ||
+    { [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; }; then
     rm -rf "$tmp_root"
   else
     echo "Preserving selftest workspace: $tmp_root"
@@ -38,6 +69,317 @@ fail() {
   echo "FAIL: $1"
   failures=$((failures + 1))
 }
+
+bug039_active_contract_stream() {
+  local file="$1"
+  local surface_kind="$2"
+  local source_archive_begin='# BUG-039-HISTORICAL-'"BEGIN"
+  local source_archive_end='# BUG-039-HISTORICAL-'"END"
+  if [[ "$surface_kind" == report ]]; then
+    /usr/bin/awk '
+      $0 == "<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->" {
+        if (active || archived) exit 2
+        active=1
+        next
+      }
+      $0 == "<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->" {
+        if (!active || archived) exit 2
+        archived=1
+        next
+      }
+      $0 == "<!-- BUG-039-REPORT-ARCHIVE-END -->" {
+        if (!active || !archived) exit 2
+        archived=0
+        next
+      }
+      active && !archived { print }
+      END {
+        if (!active || archived) exit 2
+      }
+    ' "$file"
+  else
+    /usr/bin/awk -v archive_begin="$source_archive_begin" -v archive_end="$source_archive_end" '
+      $0 == archive_begin {
+        if (archived) exit 2
+        archived=1
+        next
+      }
+      $0 == archive_end {
+        if (!archived) exit 2
+        archived=0
+        next
+      }
+      !archived { print }
+      END {
+        if (archived) exit 2
+      }
+    ' "$file"
+  fi
+}
+
+bug039_active_stale_hits() {
+  local file="$1"
+  local surface_kind="$2"
+  local active_text=""
+  local grep_status=0
+  local stale_pattern=""
+  stale_pattern='SEC-'"B039-"'[0-9]|SEC-'"OBS-002"'|managed-'"venv-only-v1"'|BP'"Y1"
+  if ! active_text="$(bug039_active_contract_stream "$file" "$surface_kind")"; then
+    return 2
+  fi
+  if printf '%s\n' "$active_text" | /usr/bin/grep -nE "$stale_pattern"; then
+    return 0
+  else
+    grep_status=$?
+  fi
+  [[ "$grep_status" -eq 1 ]]
+}
+
+run_bug039_scope2_red_contract() {
+  local repo_root=""
+  local check16_block=""
+  local active_hits=""
+  local active_hit_count=0
+  local current_contract_text=""
+  local required_identifier=""
+  local required_missing=0
+  local fixture="$tmp_root/bug039-har-r3-active-window.txt"
+  local mutant="$tmp_root/bug039-har-r3-active-window-mutant.txt"
+  local nested="$tmp_root/bug039-har-r3-active-window-nested.txt"
+  local unclosed="$tmp_root/bug039-har-r3-active-window-unclosed.txt"
+  local unmatched="$tmp_root/bug039-har-r3-active-window-unmatched.txt"
+  local source_fixture="$tmp_root/bug039-har-r3-source-window.txt"
+  local source_mutant="$tmp_root/bug039-har-r3-source-window-mutant.txt"
+  local source_nested="$tmp_root/bug039-har-r3-source-window-nested.txt"
+  local source_unclosed="$tmp_root/bug039-har-r3-source-window-unclosed.txt"
+  local source_unmatched="$tmp_root/bug039-har-r3-source-window-unmatched.txt"
+  local source_archive_begin='# BUG-039-HISTORICAL-'"BEGIN"
+  local source_archive_end='# BUG-039-HISTORICAL-'"END"
+  local fixture_hits=""
+  local mutant_hits=""
+  local source_fixture_hits=""
+  local source_mutant_hits=""
+  local source_active_text=""
+  local source_nested_output=""
+  local source_unclosed_output=""
+  local source_unmatched_output=""
+  local source_nested_hits=""
+  local source_unclosed_hits=""
+  local source_unmatched_hits=""
+  local source_nested_status=0
+  local source_unclosed_status=0
+  local source_unmatched_status=0
+  local source_nested_hit_status=0
+  local source_unclosed_hit_status=0
+  local source_unmatched_hit_status=0
+  local expected_mutant=""
+  local active_text=""
+  local malformed_failures=0
+  local file=""
+  local kind=""
+  local file_hits=""
+
+  repo_root="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
+  check16_block="$(/usr/bin/sed -n '/CHECK 16: Implementation Reality Scan/,/CHECK 17: Strict Mode/p' "$GUARD_SCRIPT")"
+
+  echo "Scenario: TP-S2-01 SEC-R1 transition-guard Check 16 enters the privileged child directly."
+  if printf '%s\n' "$check16_block" | /usr/bin/grep -Fq '/usr/bin/env -i' &&
+    printf '%s\n' "$check16_block" | /usr/bin/grep -Fq '/bin/bash -p' &&
+    printf '%s\n' "$check16_block" | /usr/bin/grep -Fq 'BUBBLES_SECURITY_ENTRY_MODE=direct' &&
+    ! printf '%s\n' "$check16_block" | /usr/bin/grep -Eq 'bubbles_run_with_timeout[[:space:]]+[0-9]+[[:space:]]+bash[[:space:]]+"\$reality_scan_script"'; then
+    pass "TP-S2-01 SEC-R1: Check 16 launches env -i /bin/bash -p with direct BSEC1 before scanner sourcing"
+  else
+    printf '%s\n' 'RED: TP-S2-01 SEC-R1 Check16 missing=env-i/bash-p/BSEC1-direct ordinary-bash-caller=present'
+    fail "TP-S2-01 SEC-R1: transition-guard Check 16 still launches the scanner through ordinary Bash"
+  fi
+
+  echo "Scenario: TP-S2-01 HAR-R3 active records use one current identifier and epoch set."
+  while IFS='|' read -r kind file; do
+    [[ -f "$file" ]] || {
+      fail "TP-S2-01 HAR-R3 SETUP: required active surface missing: $file"
+      continue
+    }
+    if ! active_text="$(bug039_active_contract_stream "$file" "$kind")"; then
+      fail "TP-S2-01 HAR-R3 SETUP: malformed archive contract in active surface: $file"
+      continue
+    fi
+    file_hits="$(printf '%s\n' "$active_text" | /usr/bin/grep -nE 'SEC-'"B039-"'[0-9]|SEC-'"OBS-002"'|managed-'"venv-only-v1"'|BP'"Y1" || true)"
+    if [[ -n "$file_hits" ]]; then
+      active_hits="${active_hits}${active_hits:+$'\n'}${file#$repo_root/}:$file_hits"
+    fi
+    current_contract_text="${current_contract_text}${current_contract_text:+$'\n'}${active_text}"
+  done <<EOF
+source|$repo_root/bubbles/scripts/python-env.sh
+source|$repo_root/bubbles/scripts/implementation-reality-scan.sh
+source|$repo_root/bubbles/scripts/python-env-selftest.sh
+source|$repo_root/bubbles/scripts/implementation-reality-scan-selftest.sh
+source|$repo_root/tests/regression/test_24_g028_sensitive_client_storage.sh
+source|$repo_root/bubbles/scripts/state-transition-guard-selftest.sh
+report|$repo_root/bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+EOF
+  if [[ -n "$active_hits" ]]; then
+    active_hit_count="$(printf '%s\n' "$active_hits" | /usr/bin/wc -l | /usr/bin/tr -d '[:space:]')"
+  fi
+  for required_identifier in \
+    SEC-R1 SEC-R2 HAR-R1 HAR-R2 HAR-R3 \
+    privileged-native-supervision-v2 root-protected-native-python-v1; do
+    if ! /usr/bin/grep -Fq "$required_identifier" <<<"$current_contract_text"; then
+      required_missing=$((required_missing + 1))
+    fi
+  done
+  if [[ "$active_hit_count" -eq 0 && "$required_missing" -eq 0 ]]; then
+    pass "TP-S2-01 HAR-R3: active source, tests, and current evidence use only current findings and epoch"
+  else
+    printf 'RED: TP-S2-01 HAR-R3 staleActiveLines=%s missingCurrentIdentifiers=%s epoch=privileged-native-supervision-v2\n' \
+      "$active_hit_count" "$required_missing"
+    fail "TP-S2-01 HAR-R3: active source/tests still carry stale finding, protocol, or epoch identifiers"
+  fi
+
+  {
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s%s\n' 'SEC-' 'B039-001'
+    printf '%s%s\n' 'SEC-' 'OBS-002'
+    printf '%s%s\n' 'managed-' 'venv-only-v1'
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
+    printf '%s\n' 'SEC-R1 SEC-R2 HAR-R1 HAR-R2 HAR-R3'
+    printf '%s\n' 'privileged-native-supervision-v2 root-protected-native-python-v1'
+  } >"$fixture"
+  /bin/cp -p "$fixture" "$mutant"
+  printf '%s%s\n' 'BP' 'Y1' >>"$mutant"
+  fixture_hits="$(bug039_active_stale_hits "$fixture" report)"
+  mutant_hits="$(bug039_active_stale_hits "$mutant" report)"
+  expected_mutant="$(printf '%s%s' 'BP' 'Y1')"
+  if [[ -z "$fixture_hits" ]] &&
+    printf '%s\n' "$mutant_hits" | /usr/bin/grep -Fq "$expected_mutant"; then
+    pass "TP-S2-01 HAR-R3 negative control: archived report labels are allowed and the same active stale label is rejected"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: report archive negative control did not discriminate"
+  fi
+
+  {
+    /bin/cat "$fixture"
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
+  } >"$nested"
+  {
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-BEGIN -->'
+    printf '%s%s\n' 'BP' 'Y1'
+  } >"$unclosed"
+  {
+    printf '%s\n' '<!-- BUG-039-ACTIVE-EPOCH-BEGIN -->'
+    printf '%s\n' '<!-- BUG-039-REPORT-ARCHIVE-END -->'
+  } >"$unmatched"
+  bug039_active_contract_stream "$nested" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  bug039_active_contract_stream "$unclosed" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  bug039_active_contract_stream "$unmatched" report >/dev/null 2>&1 || malformed_failures=$((malformed_failures + 1))
+  if [[ "$malformed_failures" -eq 3 ]]; then
+    pass "TP-S2-01 HAR-R3 negative control: nested, unclosed, and unmatched report archive markers fail closed"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: malformed report archive markers were not all rejected"
+  fi
+
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' "$source_archive_end"
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_fixture"
+  /bin/cp -p "$source_fixture" "$source_mutant"
+  printf '%s%s\n' 'BP' 'Y1' >>"$source_mutant"
+  source_active_text="$(bug039_active_contract_stream "$source_fixture" source)"
+  source_fixture_hits="$(bug039_active_stale_hits "$source_fixture" source)"
+  source_mutant_hits="$(bug039_active_stale_hits "$source_mutant" source)"
+  if [[ "$source_active_text" == $'ACTIVE_SOURCE_BEFORE\nACTIVE_SOURCE_AFTER' &&
+    -z "$source_fixture_hits" ]] &&
+    printf '%s\n' "$source_mutant_hits" | /usr/bin/grep -Fq "$expected_mutant"; then
+    pass "TP-S2-01 HAR-R3 source control: a well-formed archive hides only archived stale labels and the same active label is rejected"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: source archive positive and active-stale controls did not discriminate"
+  fi
+
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' "$source_archive_end"
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_nested"
+  {
+    printf '%s\n' 'ACTIVE_SOURCE_BEFORE'
+    printf '%s\n' "$source_archive_begin"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_unclosed"
+  {
+    printf '%s\n' "$source_archive_end"
+    printf '%s%s\n' 'BP' 'Y1'
+    printf '%s\n' 'ACTIVE_SOURCE_AFTER'
+  } >"$source_unmatched"
+
+  if source_nested_output="$(bug039_active_contract_stream "$source_nested" source 2>&1)"; then
+    source_nested_status=0
+  else
+    source_nested_status=$?
+  fi
+  if source_unclosed_output="$(bug039_active_contract_stream "$source_unclosed" source 2>&1)"; then
+    source_unclosed_status=0
+  else
+    source_unclosed_status=$?
+  fi
+  if source_unmatched_output="$(bug039_active_contract_stream "$source_unmatched" source 2>&1)"; then
+    source_unmatched_status=0
+  else
+    source_unmatched_status=$?
+  fi
+  if source_nested_hits="$(bug039_active_stale_hits "$source_nested" source 2>&1)"; then
+    source_nested_hit_status=0
+  else
+    source_nested_hit_status=$?
+  fi
+  if source_unclosed_hits="$(bug039_active_stale_hits "$source_unclosed" source 2>&1)"; then
+    source_unclosed_hit_status=0
+  else
+    source_unclosed_hit_status=$?
+  fi
+  if source_unmatched_hits="$(bug039_active_stale_hits "$source_unmatched" source 2>&1)"; then
+    source_unmatched_hit_status=0
+  else
+    source_unmatched_hit_status=$?
+  fi
+  printf 'SOURCE_ARCHIVE_MALFORMED name=nested parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_nested_status" "$source_nested_hit_status" "$source_nested_output" "$source_nested_hits"
+  printf 'SOURCE_ARCHIVE_MALFORMED name=unclosed parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_unclosed_status" "$source_unclosed_hit_status" "$source_unclosed_output" "$source_unclosed_hits"
+  printf 'SOURCE_ARCHIVE_MALFORMED name=unmatched-end parserStatus=%s staleScanStatus=%s output=%q staleOutput=%q\n' \
+    "$source_unmatched_status" "$source_unmatched_hit_status" "$source_unmatched_output" "$source_unmatched_hits"
+  if [[ "$source_nested_status" -eq 2 && "$source_unclosed_status" -eq 2 &&
+    "$source_unmatched_status" -eq 2 && "$source_nested_hit_status" -eq 2 &&
+    "$source_unclosed_hit_status" -eq 2 && "$source_unmatched_hit_status" -eq 2 ]]; then
+    pass "TP-S2-01 HAR-R3 source control: nested BEGIN, EOF while archived, and END before an open marker fail closed and cannot hide following content"
+  else
+    fail "TP-S2-01 HAR-R3 SETUP: malformed source archive markers were not all rejected by parser and stale scan"
+  fi
+
+  printf '%s\n' 'TP-S2-01_STATE_GUARD_EPOCH=privileged-native-supervision-v2'
+  printf '%s\n' 'TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
+}
+
+if [[ "$BUG039_CHECK16_ONLY" -eq 0 ]]; then
+  run_bug039_scope2_red_contract
+fi
+if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 ]]; then
+  echo "state-transition-guard BUG-039 Scope 2 RED summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
 
 run_capture() {
   local log_file="$1"
@@ -856,8 +1198,6 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
   echo "state-transition-guard G061 selftest passed."
   exit 0
 fi
-
-run_g061_regression_cases
 
 emit_honest_planning_fixture() {
   local feature_dir="$1"
@@ -2257,10 +2597,364 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+append_bug039_check16_delta_evidence() {
+  local fixture_dir="$1"
+  local source_file="$2"
+  local report_file="$fixture_dir/report.md"
+  local relative_source="${source_file#"$tmp_root"/}"
+  local status_line=""
+
+  status_line="$(git -C "$tmp_root" status --short --untracked-files=all -- "$relative_source")" || return 2
+  if [[ "$status_line" != "?? $relative_source" ]]; then
+    return 2
+  fi
+
+  cat >>"$report_file" <<EOF
+
+### Code Diff Evidence
+
+This nonterminal selftest fixture records its real untracked implementation
+delta. It does not claim an overall terminal state or release.
+
+**Command:** git status --short --untracked-files=all -- $relative_source
+**Exit Code:** 0
+**Claim Source:** executed
+
+\`\`\`text
+$status_line
+\`\`\`
+EOF
+}
+
+prepare_bug039_check16_fixtures() {
+  local base_feature_dir="$1"
+  local positive_dir="$2"
+  local negative_dir="$3"
+  local positive_source="$tmp_root/check16-implementation/positive/check16-consumer.js"
+  local negative_source="$tmp_root/check16-implementation/negative/check16-consumer.js"
+  local positive_source_relative="${positive_source#"$tmp_root"/}"
+  local negative_source_relative="${negative_source#"$tmp_root"/}"
+  local negative_surface=""
+
+  /bin/cp -R "$base_feature_dir" "$positive_dir" || return 2
+  # test-to-doc executes Check 16 while requiring exactly the test, validate,
+  # audit, and docs claims already present in this delivery fixture. Using the
+  # broader bugfix-fastlane mode would manufacture unrelated phase failures.
+  set_fixture_contract "$positive_dir/state.json" "test-to-doc" "in_progress"
+  /bin/mkdir -p "$(/usr/bin/dirname "$positive_source")" "$(/usr/bin/dirname "$negative_source")"
+  cat >"$positive_source" <<'EOF'
+export function normalizeCheck16Value(value) {
+  return String(value).trim();
+}
+EOF
+  cat >>"$positive_dir/scopes.md" <<EOF
+
+### Implementation Files
+
+- \`$positive_source\`
+EOF
+  /bin/cp -R "$positive_dir" "$negative_dir" || return 2
+  for negative_surface in \
+    "$negative_dir/scopes.md" \
+    "$negative_dir/report.md" \
+    "$negative_dir/test-plan.json"; do
+    [[ -f "$negative_surface" ]] || continue
+    bubbles_sed_inplace "s|$positive_source|$negative_source|g" "$negative_surface"
+    bubbles_sed_inplace "s|$positive_source_relative|$negative_source_relative|g" "$negative_surface"
+  done
+  cat >"$negative_source" <<'EOF'
+export function persistForbiddenCheck16Credential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+  append_bug039_check16_delta_evidence "$positive_dir" "$positive_source" || return 2
+  append_bug039_check16_delta_evidence "$negative_dir" "$negative_source" || return 2
+}
+
+run_bug039_check16_controls() {
+  local positive_dir="$1"
+  local negative_dir="$2"
+  local positive_lint_log="$tmp_root/bug039-check16-positive-artifact-lint.log"
+  local negative_lint_log="$tmp_root/bug039-check16-negative-artifact-lint.log"
+  local positive_log="$tmp_root/bug039-check16-positive.log"
+  local negative_log="$tmp_root/bug039-check16-negative.log"
+  local hostile_startup="$tmp_root/bug039-check16-hostile-startup.sh"
+  local hostile_marker="$tmp_root/bug039-check16-hostile.marker"
+  local positive_lint_status=0
+  local negative_lint_status=0
+  local positive_status=0
+  local negative_status=0
+  local positive_violation_count=0
+  local positive_block_count=0
+  local positive_check16_count=0
+  local negative_violation_count=0
+  local negative_sensitive_count=0
+  local negative_block_count=0
+  local negative_expected_block_count=0
+  local negative_check16_count=0
+  local guard_bash=""
+  local candidate_bash=""
+  local candidate_major=""
+  local check16_source=""
+  local positive_source="$tmp_root/check16-implementation/positive/check16-consumer.js"
+  local negative_source="$tmp_root/check16-implementation/negative/check16-consumer.js"
+  local positive_source_relative="${positive_source#"$tmp_root"/}"
+  local negative_source_relative="${negative_source#"$tmp_root"/}"
+  local expected_positive_source="$tmp_root/bug039-check16-positive-expected.js"
+  local expected_negative_source="$tmp_root/bug039-check16-negative-expected.js"
+  local negative_status_line=""
+  local setup_failures=0
+  local failures_before="$failures"
+
+  if [[ -f "$SCRIPT_DIR/artifact-lint.sh" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: canonical fixture lint path exists"
+  else
+    fail "TP-S2-06 Check 16 SETUP: canonical fixture lint path is missing"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ -f "$positive_source" && -f "$negative_source" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking implementation paths exist"
+  else
+    fail "TP-S2-06 Check 16 SETUP: clean or blocking implementation path is missing"
+    setup_failures=$((setup_failures + 1))
+  fi
+  cat >"$expected_positive_source" <<'EOF'
+export function normalizeCheck16Value(value) {
+  return String(value).trim();
+}
+EOF
+  cat >"$expected_negative_source" <<'EOF'
+export function persistForbiddenCheck16Credential(authToken) {
+  localStorage.setItem("authToken", authToken);
+}
+EOF
+  if /usr/bin/cmp -s "$expected_positive_source" "$positive_source" &&
+    /usr/bin/cmp -s "$expected_negative_source" "$negative_source"; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking source bytes match their exact controls"
+  else
+    fail "TP-S2-06 Check 16 SETUP: clean or blocking source bytes differ from the exact control"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ "$negative_source" == "$tmp_root/$negative_source_relative" ]] &&
+    /usr/bin/cmp -s "$expected_negative_source" "$tmp_root/$negative_source_relative"; then
+    pass "TP-S2-06 Check 16 SETUP: absolute and repository-relative blocking paths resolve to the exact source"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking absolute or repository-relative path does not resolve to the exact source"
+    setup_failures=$((setup_failures + 1))
+  fi
+  negative_status_line="$(git -C "$tmp_root" status --short --untracked-files=all -- "$negative_source_relative")" ||
+    negative_status_line=""
+  if [[ "$negative_status_line" == "?? $negative_source_relative" ]]; then
+    pass "TP-S2-06 Check 16 SETUP: blocking repository-relative path has exact untracked git status"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking repository-relative path has mismatched git status"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if /usr/bin/grep -Fq "\`$negative_source\`" "$negative_dir/scopes.md" &&
+    ! /usr/bin/grep -Fq "$positive_source" "$negative_dir/scopes.md" &&
+    ! /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/scopes.md"; then
+    pass "TP-S2-06 Check 16 SETUP: blocking scopes references only the absolute blocking implementation path"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking scopes retains a clean path or omits the blocking implementation path"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if /usr/bin/grep -Fq "**Command:** git status --short --untracked-files=all -- $negative_source_relative" "$negative_dir/report.md" &&
+    /usr/bin/grep -Fq "?? $negative_source_relative" "$negative_dir/report.md" &&
+    ! /usr/bin/grep -Fq "$positive_source" "$negative_dir/report.md" &&
+    ! /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/report.md"; then
+    pass "TP-S2-06 Check 16 SETUP: blocking report records only the repository-relative blocking path"
+  else
+    fail "TP-S2-06 Check 16 SETUP: blocking report retains a clean path or omits exact relative-path evidence"
+    setup_failures=$((setup_failures + 1))
+  fi
+  if [[ -f "$negative_dir/test-plan.json" ]]; then
+    if /usr/bin/grep -Fq "$positive_source" "$negative_dir/test-plan.json" ||
+      /usr/bin/grep -Fq "$positive_source_relative" "$negative_dir/test-plan.json"; then
+      fail "TP-S2-06 Check 16 SETUP: blocking test plan retains a clean implementation path"
+      setup_failures=$((setup_failures + 1))
+    elif /usr/bin/grep -Fq "$negative_source" "$negative_dir/test-plan.json" ||
+      /usr/bin/grep -Fq "$negative_source_relative" "$negative_dir/test-plan.json"; then
+      pass "TP-S2-06 Check 16 SETUP: blocking test plan carries only a blocking implementation path"
+    else
+      pass "TP-S2-06 Check 16 SETUP: blocking test plan makes no implementation-path claim"
+    fi
+  fi
+  if [[ "$setup_failures" -gt 0 ]]; then
+    return
+  fi
+
+  # state-transition-guard.sh has a real declare -A in Check 9. The selftest
+  # entry remains stock-Bash-compatible, but the nested guard needs a fixed
+  # Bash 4+ executable. Check 16 itself still launches fixed /bin/bash -p.
+  for candidate_bash in /opt/homebrew/bin/bash /opt/local/bin/bash /usr/local/bin/bash /usr/bin/bash /bin/bash; do
+    [[ -x "$candidate_bash" ]] || continue
+    candidate_major="$("$candidate_bash" -c 'printf "%s" "${BASH_VERSINFO[0]:-0}"' 2>/dev/null || true)"
+    if [[ "$candidate_major" =~ ^[0-9]+$ && "$candidate_major" -ge 4 ]]; then
+      guard_bash="$candidate_bash"
+      break
+    fi
+  done
+  if [[ -z "$guard_bash" ]]; then
+    fail "TP-S2-06 Check 16 SETUP: no fixed Bash 4+ path is available for the transition guard"
+    return
+  fi
+
+  positive_lint_status="$(run_capture "$positive_lint_log" "$guard_bash" "$SCRIPT_DIR/artifact-lint.sh" "$positive_dir")"
+  negative_lint_status="$(run_capture "$negative_lint_log" "$guard_bash" "$SCRIPT_DIR/artifact-lint.sh" "$negative_dir")"
+  if [[ "$positive_lint_status" -eq 0 && "$negative_lint_status" -eq 0 ]]; then
+    pass "TP-S2-06 Check 16 SETUP: clean and blocking fixtures pass artifact lint before guard invocation"
+  else
+    fail "TP-S2-06 Check 16 SETUP: fixture artifact lint failed before guard invocation"
+    /bin/cat "$positive_lint_log"
+    /bin/cat "$negative_lint_log"
+    return
+  fi
+
+  echo "Running BUG-039 TP-S2-06 Check 16 caller integration selftest..."
+  positive_status="$(
+    cd "$tmp_root" || exit 2
+    run_capture "$positive_log" "$guard_bash" "$GUARD_SCRIPT" "$positive_dir"
+  )"
+  if [[ "$positive_status" -eq 0 ]]; then
+    pass "TP-S2-06 Check 16 clean fixture preserves guard exit 0"
+  else
+    fail "TP-S2-06 Check 16 clean fixture returned $positive_status instead of 0"
+  fi
+  assert_log_contains "$positive_log" \
+    "Implementation reality scan passed — no stub/fake/hardcoded data patterns detected" \
+    "TP-S2-06 Check 16 preserves a clean scanner status"
+  assert_log_contains "$positive_log" $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' \
+    "TP-S2-06 Check 16 clean case enters direct BSEC1"
+  assert_log_contains "$positive_log" "supervisorProtocol=BPS1" \
+    "TP-S2-06 Check 16 clean case validates native BPS1 completion"
+  assert_log_contains "$positive_log" \
+    "Implementation delta evidence recorded with git-backed proof and non-artifact file paths (Gate G053)" \
+    "TP-S2-06 Check 16 clean fixture satisfies G053 with its real nonterminal source delta"
+  assert_log_not_contains "$positive_log" "entryMode=compat-reexec" \
+    "TP-S2-06 Check 16 clean case exposes no ordinary-Bash compatibility authority"
+  positive_violation_count="$(/usr/bin/grep -c '^🔴 VIOLATION ' "$positive_log" || true)"
+  positive_block_count="$(/usr/bin/grep -c '^🔴 BLOCK:' "$positive_log" || true)"
+  positive_check16_count="$(/usr/bin/grep -c '^--- Check 16: Implementation Reality Scan' "$positive_log" || true)"
+  if [[ "$positive_violation_count" -eq 0 && "$positive_block_count" -eq 0 && "$positive_check16_count" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 clean case has one Check 16 execution and no unrelated violation or gate block"
+  else
+    fail "TP-S2-06 Check 16 clean case has unrelated or duplicate failure signals"
+  fi
+  check16_source="$(/usr/bin/sed -n '/CHECK 16: Implementation Reality Scan/,/CHECK 17: Strict Mode/p' "$GUARD_SCRIPT")"
+  if /usr/bin/grep -Fq '/bin/bash -p -- "$reality_scan_script"' <<<"$check16_source"; then
+    pass "TP-S2-06 Check 16 production child remains fixed /bin/bash -p"
+  else
+    fail "TP-S2-06 Check 16 production child is not fixed /bin/bash -p"
+  fi
+
+  cat >"$hostile_startup" <<EOF
+source() {
+  case "\${0:-}:\${1:-}" in
+    */implementation-reality-scan.sh:*/guard-lib.sh)
+      printf '%s\\n' CHECK16_HOSTILE_SOURCE_INTERCEPTED >>"$hostile_marker"
+      ;;
+  esac
+  builtin source "\$@"
+}
+export -f source
+EOF
+  negative_status="$(
+    cd "$tmp_root" || exit 2
+    run_capture "$negative_log" \
+      /usr/bin/env BASH_ENV="$hostile_startup" \
+      "$guard_bash" "$GUARD_SCRIPT" "$negative_dir"
+  )"
+  if [[ "$negative_status" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 propagates exact blocking scanner exit 1 to the transition guard"
+  else
+    fail "TP-S2-06 Check 16 blocking fixture returned $negative_status instead of 1"
+  fi
+  assert_log_contains "$negative_log" "VIOLATION [SENSITIVE_CLIENT_STORAGE]" \
+    "TP-S2-06 Check 16 blocking case executes the real sensitive-storage classifier"
+  assert_log_contains "$negative_log" \
+    "reason=FORBIDDEN_SECRET_CLASS storage=localStorage operation=persist key=authToken" \
+    "TP-S2-06 Check 16 blocking case reports the exact durable auth-token violation"
+  assert_log_contains "$negative_log" \
+    "Implementation reality scan found 1 source code violation(s)" \
+    "TP-S2-06 Check 16 reports the scanner's blocking result"
+  assert_log_contains "$negative_log" $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' \
+    "TP-S2-06 Check 16 blocking case enters direct BSEC1"
+  assert_log_contains "$negative_log" "supervisorProtocol=BPS1" \
+    "TP-S2-06 Check 16 blocking case validates native BPS1 completion"
+  assert_log_not_contains "$negative_log" "entryMode=compat-reexec" \
+    "TP-S2-06 Check 16 blocking case exposes no ordinary-Bash compatibility authority"
+  assert_log_not_contains "$negative_log" "SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" \
+    "TP-S2-06 Check 16 blocking case does not degrade to unresolved classification"
+  assert_log_not_contains "$negative_log" "SENSITIVE_STORAGE_CONFIG_INVALID" \
+    "TP-S2-06 Check 16 blocking case has no unrelated storage-config failure"
+  assert_log_not_contains "$negative_log" "ZERO_FILES_RESOLVED" \
+    "TP-S2-06 Check 16 blocking case resolves the declared implementation file"
+  assert_log_contains "$negative_log" "$negative_source_relative:" \
+    "TP-S2-06 Check 16 blocking case scans the blocking fixture source file"
+  negative_violation_count="$(/usr/bin/grep -c '^🔴 VIOLATION ' "$negative_log" || true)"
+  negative_sensitive_count="$(/usr/bin/grep -c '^🔴 VIOLATION \[SENSITIVE_CLIENT_STORAGE\]' "$negative_log" || true)"
+  negative_block_count="$(/usr/bin/grep -c '^🔴 BLOCK:' "$negative_log" || true)"
+  negative_expected_block_count="$(/usr/bin/grep -c '^🔴 BLOCK: Implementation reality scan found 1 source code violation(s)' "$negative_log" || true)"
+  negative_check16_count="$(/usr/bin/grep -c '^--- Check 16: Implementation Reality Scan' "$negative_log" || true)"
+  if [[ "$negative_violation_count" -eq 1 && "$negative_sensitive_count" -eq 1 &&
+    "$negative_block_count" -eq 1 && "$negative_expected_block_count" -eq 1 &&
+    "$negative_check16_count" -eq 1 ]]; then
+    pass "TP-S2-06 Check 16 blocking case fails only for one sensitive-client-storage violation"
+  else
+    fail "TP-S2-06 Check 16 blocking case contains unrelated, missing, or duplicate failure signals"
+  fi
+  if [[ ! -e "$hostile_marker" ]]; then
+    pass "TP-S2-06 Check 16 excludes hostile BASH_ENV and exported source before scanner startup"
+  else
+    fail "TP-S2-06 Check 16 allowed hostile startup state to intercept scanner sourcing"
+  fi
+  printf 'TP-S2-06_CHECK16_RESULTS cleanGuardExit=%s blockingGuardExit=%s cleanViolations=%s blockingViolations=%s hostileMarker=%s guardBash=%s scannerEntry=/bin/bash-p\n' \
+    "$positive_status" "$negative_status" \
+    "$positive_violation_count" "$negative_violation_count" \
+    "$([[ -e "$hostile_marker" ]] && printf present || printf absent)" \
+    "$guard_bash"
+  if [[ "$failures" -gt "$failures_before" ]]; then
+    echo "--- complete BUG-039 Check 16 clean guard log ---"
+    /bin/cat "$positive_log"
+    echo "--- complete BUG-039 Check 16 blocking guard log ---"
+    /bin/cat "$negative_log"
+    echo "--- end complete BUG-039 Check 16 guard logs ---"
+  fi
+}
+
+if [[ "$BUG039_CHECK16_ONLY" -eq 1 ]]; then
+  focused_base_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
+  focused_positive_dir="$tmp_root/specs/900c-bug039-check16-positive"
+  focused_negative_dir="$tmp_root/specs/900d-bug039-check16-negative"
+  /bin/mkdir -p "$tmp_root/specs" "$tmp_root/.specify/memory"
+  clone_framework_surface "$tmp_root"
+  git -C "$tmp_root" init -q
+  export BUBBLES_REPO_ROOT="$tmp_root"
+  cat >"$tmp_root/.specify/memory/bubbles.session.json" <<'EOF'
+{
+  "executionRuntime": "manual"
+}
+EOF
+  emit_base_fixture "$focused_base_dir"
+  mutate_delivery_contract "$focused_base_dir/state.json"
+  prepare_bug039_check16_fixtures \
+    "$focused_base_dir" "$focused_positive_dir" "$focused_negative_dir"
+  run_bug039_check16_controls "$focused_positive_dir" "$focused_negative_dir"
+  echo "state-transition-guard BUG-039 Check 16 summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
+
+run_g061_regression_cases
+
 assert_transition_result_contract_matches_emitter \
   "TRANSITION_GUARD_RESULT_V1 emitter field order matches this suite's expectation"
 
 positive_feature_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
+bug039_check16_positive_dir="$tmp_root/specs/900c-bug039-check16-positive"
+bug039_check16_negative_dir="$tmp_root/specs/900d-bug039-check16-negative"
 repo_root_isolation_feature_dir="$tmp_root/specs/900b-transition-guard-repo-root-isolation"
 repo_root_isolation_ambient_dir="$tmp_root/ambient-hostile-cwd"
 negative_feature_dir="$tmp_root/specs/901-transition-guard-selftest-missing-owner"
@@ -2333,6 +3027,8 @@ EOF
 
 emit_base_fixture "$positive_feature_dir"
 mutate_delivery_contract "$positive_feature_dir/state.json"
+prepare_bug039_check16_fixtures \
+  "$positive_feature_dir" "$bug039_check16_positive_dir" "$bug039_check16_negative_dir"
 cp -R "$positive_feature_dir" "$repo_root_isolation_feature_dir"
 mkdir -p "$repo_root_isolation_ambient_dir/.github"
 cat <<'EOF' > "$repo_root_isolation_ambient_dir/.github/bubbles-project.yaml"
@@ -2664,6 +3360,8 @@ assert_log_not_contains "$positive_log" "unbound variable" "BUG-022 empty result
 assert_log_contains "$positive_log" "notApplicableChecks: []" "BUG-022 empty not-applicable checks serialize exactly"
 assert_log_contains "$positive_log" "failedGateIds: []" "BUG-022 empty failed gates serialize exactly"
 assert_log_contains "$positive_log" "failedChecks: []" "BUG-022 empty failed checks serialize exactly"
+
+run_bug039_check16_controls "$bug039_check16_positive_dir" "$bug039_check16_negative_dir"
 
 echo "Running guarded-repository root isolation selftest..."
 repo_root_isolation_log="$tmp_root/repo-root-isolation-guard.log"

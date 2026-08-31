@@ -7,37 +7,12 @@ set -uo pipefail
 # distinguish. Every assertion executes the canonical scanner; no classifier
 # behavior is reproduced in this test.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SCANNER="$REPO_ROOT/bubbles/scripts/implementation-reality-scan.sh"
-SELFTEST="$REPO_ROOT/bubbles/scripts/implementation-reality-scan-selftest.sh"
-GUARD_LIB="$REPO_ROOT/bubbles/scripts/guard-lib.sh"
-
-for required_file in "$SCANNER" "$SELFTEST" "$GUARD_LIB"; do
-  if [[ ! -f "$required_file" ]]; then
-    printf 'test_24_g028_sensitive_client_storage: required canonical surface missing: %s\n' "$required_file" >&2
-    exit 2
-  fi
-done
-
-# shellcheck source=/dev/null
-source "$GUARD_LIB"
-
-WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug013-XXXXXXXX")"
-FIXTURE_REPO="$WORKSPACE/repo"
-FEATURE_DIR="$FIXTURE_REPO/specs/001-sensitive-storage"
-SOURCE_FILE="$FIXTURE_REPO/src/provider-client.js"
-DART_SOURCE_FILE="$FIXTURE_REPO/src/provider-preferences.dart"
-CONFIG_FILE="$FIXTURE_REPO/.github/bubbles-project.yaml"
-RUN_OUTPUT=""
-RUN_STATUS=0
 PASS_COUNT=0
 FAIL_COUNT=0
-
-cleanup() {
-  rm -rf "$WORKSPACE"
-}
-trap cleanup EXIT INT TERM
+SKIP_COUNT=0
+BUG039_CASCADE_VERIFIED=0
+BUG039_UNAVAILABLE_PATH_VERIFIED=0
+TEST24_MUTATION_ROOT=''
 
 pass() {
   PASS_COUNT=$((PASS_COUNT + 1))
@@ -47,6 +22,345 @@ pass() {
 fail() {
   FAIL_COUNT=$((FAIL_COUNT + 1))
   printf 'FAIL: %s\n' "$1" >&2
+}
+
+# A skip is not a pass. It is counted and reported separately so an unmet
+# coverage claim can never be scraped out of this transcript as a satisfied one.
+skip() {
+  SKIP_COUNT=$((SKIP_COUNT + 1))
+  printf 'SKIP: %s\n' "$1"
+}
+
+bug039_record_unavailable_cascade() {
+  local pass_before_sentinel=$PASS_COUNT
+  local skip_before_sentinel=$SKIP_COUNT
+
+  skip "managed selftest Scan 2B coverage (classifier interpreter unusable; selftest reported the cause and remediation)"
+  if [[ "$PASS_COUNT" -eq "$pass_before_sentinel" && "$SKIP_COUNT" -eq $((skip_before_sentinel + 1)) ]]; then
+    pass "unavailable sentinel increments only the skip counter"
+    BUG039_CASCADE_VERIFIED=1
+  else
+    fail "unavailable sentinel must increment skip, never pass"
+  fi
+}
+
+test24_cleanup_mutation_root() {
+  case "$TEST24_MUTATION_ROOT" in
+    /tmp/bubbles-test24-sentinel.*) /bin/rm -rf "$TEST24_MUTATION_ROOT" ;;
+  esac
+  TEST24_MUTATION_ROOT=''
+}
+
+test24_mutation_signal() {
+  local signal_status="$1"
+  builtin trap - EXIT HUP INT TERM
+  test24_cleanup_mutation_root
+  exit "$signal_status"
+}
+
+test24_make_sentinel_mutant() {
+  local source_script="$1"
+  local mutant_script="$2"
+  /usr/bin/awk '
+    /^bug039_record_unavailable_cascade\(\)/ { in_accounting=1 }
+    in_accounting && /^[[:space:]]*skip "managed selftest Scan 2B coverage/ {
+      sub(/skip /, "pass ")
+      changed=changed + 1
+    }
+    { print }
+    in_accounting && /^}/ { in_accounting=0 }
+    END { if (changed != 1) exit 42 }
+  ' "$source_script" >"$mutant_script"
+}
+
+test24_run_sentinel_to_pass_negative_control() {
+  local source_script="${BASH_SOURCE[0]}"
+  local mutant_script=""
+  local mutant_output=""
+  local mutant_status=0
+  local old_umask=""
+
+  old_umask="$(umask)"
+  umask 077
+  TEST24_MUTATION_ROOT="$(/usr/bin/mktemp -d /tmp/bubbles-test24-sentinel.XXXXXXXX 2>/dev/null)" || {
+    umask "$old_umask"
+    printf '%s\n' 'NEG-B039-SENTINEL-TO-PASS setup failed: private root unavailable' >&2
+    return 2
+  }
+  umask "$old_umask"
+  /bin/chmod 700 "$TEST24_MUTATION_ROOT"
+  mutant_script="$TEST24_MUTATION_ROOT/test_24_mutant.sh"
+  mutant_output="$TEST24_MUTATION_ROOT/mutant.output"
+  builtin trap test24_cleanup_mutation_root EXIT
+  builtin trap 'test24_mutation_signal 129' HUP
+  builtin trap 'test24_mutation_signal 130' INT
+  builtin trap 'test24_mutation_signal 143' TERM
+
+  if ! test24_make_sentinel_mutant "$source_script" "$mutant_script"; then
+    printf '%s\n' 'NEG-B039-SENTINEL-TO-PASS setup failed: exact skip call was not mutated once' >&2
+    test24_cleanup_mutation_root
+    builtin trap - EXIT HUP INT TERM
+    return 2
+  fi
+  if env -u BUBBLES_TEST24_NEGATIVE_CONTROL \
+    "$BASH" "$mutant_script" \
+    --internal-sentinel-accounting b039-sentinel-accounting-v1 \
+    >"$mutant_output" 2>&1 </dev/null; then
+    mutant_status=0
+  else
+    mutant_status=$?
+  fi
+  /bin/cat "$mutant_output"
+
+  if [[ "$mutant_status" -eq 1 ]] &&
+    /usr/bin/grep -Fq 'FAIL: unavailable sentinel must increment skip, never pass' "$mutant_output" &&
+    /usr/bin/grep -Fq 'test_24 sentinel child: 1 passed, 1 failed, 0 skipped' "$mutant_output" &&
+    /usr/bin/grep -Fq 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=0' "$mutant_output"; then
+    printf '%s\n' 'RED: NEG-B039-SENTINEL-TO-PASS mutant_exit=1 PASS_COUNT=1 SKIP_COUNT=0 exact_assertion=FAIL: unavailable sentinel must increment skip, never pass'
+    test24_cleanup_mutation_root
+    builtin trap - EXIT HUP INT TERM
+    return 1
+  fi
+
+  printf 'NEG-B039-SENTINEL-TO-PASS control failed unexpectedly: mutant_exit=%s\n' "$mutant_status" >&2
+  test24_cleanup_mutation_root
+  builtin trap - EXIT HUP INT TERM
+  return 2
+}
+
+case "${1:-}" in
+  '')
+    if [[ "$#" -ne 0 ]]; then
+      printf '%s\n' 'test_24 accepts no empty positional arguments' >&2
+      exit 2
+    fi
+    ;;
+  --internal-sentinel-accounting)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-sentinel-accounting-v1 ]]; then
+      printf '%s\n' 'test_24 sentinel accounting requires its explicit internal token' >&2
+      exit 2
+    fi
+    printf '%s\n' '=== NEG-B039-SENTINEL-TO-PASS bounded accounting child ==='
+    bug039_record_unavailable_cascade
+    printf 'test_24 sentinel child: %s passed, %s failed, %s skipped\n' \
+      "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
+    printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
+    if [[ "$FAIL_COUNT" -eq 0 && "$PASS_COUNT" -eq 1 && "$SKIP_COUNT" -eq 1 &&
+      "$BUG039_CASCADE_VERIFIED" -eq 1 ]]; then
+      exit 0
+    fi
+    exit 1
+    ;;
+  --internal-dispatch-probe)
+    if [[ "$#" -ne 1 ]]; then
+      printf '%s\n' 'test_24 dispatch probe accepts no additional arguments' >&2
+      exit 2
+    fi
+    printf '%s\n' 'TEST24_ZERO_ARGUMENT_ENTRY=FULL_SUITE'
+    exit 0
+    ;;
+  *)
+    printf 'test_24 argument is invalid: %s\n' "$1" >&2
+    exit 2
+    ;;
+esac
+
+if [[ -n "${BUBBLES_TEST24_NEGATIVE_CONTROL:-}" ]]; then
+  negative_control_status=0
+  case "$BUBBLES_TEST24_NEGATIVE_CONTROL" in
+    sentinel-to-pass)
+      if test24_run_sentinel_to_pass_negative_control; then
+        negative_control_status=0
+      else
+        negative_control_status=$?
+      fi
+      ;;
+    *)
+      printf 'test_24 negative control is invalid: %s\n' "$BUBBLES_TEST24_NEGATIVE_CONTROL" >&2
+      negative_control_status=2
+      ;;
+  esac
+  exit "$negative_control_status"
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TEST_SCRIPT="$SCRIPT_DIR/test_24_g028_sensitive_client_storage.sh"
+SCANNER="$REPO_ROOT/bubbles/scripts/implementation-reality-scan.sh"
+SELFTEST="$REPO_ROOT/bubbles/scripts/implementation-reality-scan-selftest.sh"
+GUARD_LIB="$REPO_ROOT/bubbles/scripts/guard-lib.sh"
+PYTHON_ENV="$REPO_ROOT/bubbles/scripts/python-env.sh"
+
+for required_file in "$SCANNER" "$SELFTEST" "$GUARD_LIB" "$PYTHON_ENV"; do
+  if [[ ! -f "$required_file" ]]; then
+    printf 'test_24_g028_sensitive_client_storage: required canonical surface missing: %s\n' "$required_file" >&2
+    exit 2
+  fi
+done
+
+# shellcheck source=/dev/null
+source "$GUARD_LIB"
+
+# The managed-interpreter scenario below decides its own reachability with the
+# SAME resolver the scan uses, so it can never skip coverage the scan would have
+# run. python-env.sh is listed as a required surface above rather than probed
+# for here: an unsourced resolver made every call to it a `command not found`,
+# the scenario skipped under EVERY environment, and the skip line then reported
+# the absent function as a statement about where the venv lives. Refusing loudly
+# on a missing module is the only outcome that cannot be misread as that again.
+# shellcheck source=/dev/null
+source "$PYTHON_ENV"
+
+# The managed selftest's successful producer contract always executes real
+# Python. Resolve that prerequisite through the production API before entering
+# sanitized fixtures, then pass the exact executable explicitly. A host with no
+# runnable Python cannot satisfy this persistent regression and fails loudly.
+SELFTEST_REAL_PYTHON=""
+if bubbles_python_resolve_runnable >/dev/null; then
+  SELFTEST_REAL_PYTHON="$BUBBLES_PYTHON_RUNNABLE"
+else
+  printf 'test_24_g028_sensitive_client_storage: runnable Python prerequisite failed: %s\n' \
+    "$BUBBLES_PYTHON_RUNNABLE_REASON" >&2
+  exit 2
+fi
+
+WORKSPACE="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-bug013-XXXXXXXX")"
+FIXTURE_REPO="$WORKSPACE/repo"
+FEATURE_DIR="$FIXTURE_REPO/specs/001-sensitive-storage"
+SOURCE_FILE="$FIXTURE_REPO/src/provider-client.js"
+DART_SOURCE_FILE="$FIXTURE_REPO/src/provider-preferences.dart"
+CONFIG_FILE="$FIXTURE_REPO/.github/bubbles-project.yaml"
+RUN_OUTPUT=""
+RUN_STATUS=0
+TEST_COMPLETED=0
+TEST_LIFECYCLE_PID=''
+TEST_ACTIVE_CHILD=''
+
+stop_test_exact_child() {
+  if [[ "$TEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin kill -KILL "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+    builtin wait "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  TEST_LIFECYCLE_PID=''
+}
+
+stop_test_active_child() {
+  if [[ "$TEST_ACTIVE_CHILD" =~ ^[1-9][0-9]*$ ]]; then
+    builtin kill -TERM "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin kill -KILL "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+    builtin wait "$TEST_ACTIVE_CHILD" 2>/dev/null || true
+  fi
+  TEST_ACTIVE_CHILD=''
+}
+
+cleanup() {
+  local status=$?
+  builtin trap - EXIT HUP INT TERM
+  bubbles_python_security_cleanup || true
+  stop_test_active_child
+  stop_test_exact_child
+  /bin/rm -rf "$WORKSPACE"
+  if [[ "$TEST_COMPLETED" -ne 1 && "$status" -eq 0 ]]; then
+    printf '%s\n' 'FAIL: test_24 exited before its completion verdict' >&2
+    status=1
+  fi
+  exit "$status"
+}
+
+test_signal() {
+  local status="$1"
+  trap - HUP INT TERM
+  exit "$status"
+}
+
+trap cleanup EXIT
+trap 'test_signal 129' HUP
+trap 'test_signal 130' INT
+trap 'test_signal 143' TERM
+
+if [[ -n "${BUBBLES_TEST24_LIFECYCLE_CHILD_MODE:-}" ]]; then
+  if [[ -z "${BUBBLES_TEST24_READY_FILE:-}" ]]; then
+    echo "test_24 child mode requires a ready file" >&2
+    exit 2
+  fi
+  case "$BUBBLES_TEST24_LIFECYCLE_CHILD_MODE" in
+    premature-exit)
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      exit 0
+      ;;
+    timeout-exit)
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      exit 124
+      ;;
+    interrupt-hold)
+      /usr/bin/mkfifo "$WORKSPACE/interrupt-hold.fifo"
+      exec 9<>"$WORKSPACE/interrupt-hold.fifo"
+      printf '%s\n' "$WORKSPACE" >"$BUBBLES_TEST24_READY_FILE"
+      builtin read -r -t 300 _test_hold <&9
+      ;;
+    *)
+      echo "test_24 child mode is invalid" >&2
+      exit 2
+      ;;
+  esac
+fi
+
+assert_test_lifecycle_fails_closed() {
+  local mode="$1"
+  local signal_name="$2"
+  local expected_status="$3"
+  local label="$4"
+  local ready_fifo="$WORKSPACE/lifecycle-$mode-$signal_name.ready.fifo"
+  local output_file="$WORKSPACE/lifecycle-$mode-$signal_name.log"
+  local child_pid=""
+  local child_workspace=""
+  local child_status=0
+  local read_status=0
+
+  /usr/bin/mkfifo "$ready_fifo"
+  BUBBLES_TEST24_LIFECYCLE_CHILD_MODE="$mode" \
+    BUBBLES_TEST24_READY_FILE="$ready_fifo" \
+    /bin/bash "$TEST_SCRIPT" >"$output_file" 2>&1 </dev/null &
+  child_pid=$!
+  TEST_LIFECYCLE_PID="$child_pid"
+  exec 6<"$ready_fifo"
+  if builtin read -r -t 10 child_workspace <&6; then read_status=0; else read_status=$?; fi
+  exec 6>&-
+  if [[ "$read_status" -ne 0 || -z "$child_workspace" ]]; then
+    stop_test_exact_child
+    fail "$label reaches its bounded ready point"
+    return
+  fi
+
+  if [[ ! "$TEST_LIFECYCLE_PID" =~ ^[1-9][0-9]*$ ||
+    "$TEST_LIFECYCLE_PID" != "$child_pid" ]]; then
+    fail "$label exact direct-child registration is invalid before builtin wait"
+    TEST_LIFECYCLE_PID="$child_pid"
+    stop_test_exact_child
+    return
+  fi
+  if [[ "$signal_name" != "NONE" ]]; then
+    builtin kill -"$signal_name" "$TEST_LIFECYCLE_PID" 2>/dev/null || true
+  fi
+  if builtin wait "$TEST_LIFECYCLE_PID" 2>/dev/null; then child_status=0; else child_status=$?; fi
+  TEST_LIFECYCLE_PID=''
+  if [[ "$child_status" -eq "$expected_status" ]]; then
+    pass "$label preserves fatal exit $expected_status"
+  else
+    fail "$label expected exit $expected_status, got wait=$child_status"
+  fi
+  if [[ -n "$child_workspace" && ! -e "$child_workspace" ]]; then
+    pass "$label removes its temporary tree"
+  else
+    fail "$label removes its temporary tree (still present: $child_workspace)"
+    [[ -z "$child_workspace" ]] || rm -rf "$child_workspace"
+  fi
+  if /usr/bin/grep -Fq 'test_24_g028_sensitive_client_storage: ' "$output_file"; then
+    fail "$label must not emit a success summary"
+  else
+    pass "$label emits no success summary"
+  fi
 }
 
 assert_status() {
@@ -125,6 +439,47 @@ assert_no_finding() {
     fail "$label (unexpected finding at line $line_number)"
   else
     pass "$label"
+  fi
+}
+
+assert_bug039_sentinel_negative_control() {
+  local output_file="$WORKSPACE/neg-b039-sentinel-to-pass.output"
+  local control_status=0
+
+  if env -u BUBBLES_TEST24_CHILD_MODE \
+    BUBBLES_TEST24_NEGATIVE_CONTROL=sentinel-to-pass \
+    "$BASH" "$TEST_SCRIPT" >"$output_file" 2>&1 </dev/null; then
+    control_status=0
+  else
+    control_status=$?
+  fi
+  /bin/cat "$output_file"
+  if [[ "$control_status" -eq 1 ]] &&
+    /usr/bin/grep -Fq 'FAIL: unavailable sentinel must increment skip, never pass' "$output_file" &&
+    /usr/bin/grep -Fq 'RED: NEG-B039-SENTINEL-TO-PASS mutant_exit=1 PASS_COUNT=1 SKIP_COUNT=0' "$output_file"; then
+    pass "NEG-B039-SENTINEL-TO-PASS copied skip-to-pass mutation turns counter accounting RED"
+  else
+    fail "NEG-B039-SENTINEL-TO-PASS expected copied mutant exit 1 with PASS_COUNT=1 and SKIP_COUNT=0, got exit $control_status"
+  fi
+}
+
+assert_test24_legacy_child_environment_is_inert() {
+  local output_file="$WORKSPACE/legacy-child-dispatch-probe.output"
+  local probe_status=0
+
+  if bubbles_run_with_timeout 10 env \
+    BUBBLES_TEST24_CHILD_MODE=sentinel-accounting \
+    "$BASH" "$TEST_SCRIPT" --internal-dispatch-probe >"$output_file" 2>&1 </dev/null; then
+    probe_status=0
+  else
+    probe_status=$?
+  fi
+  /bin/cat "$output_file"
+  if [[ "$probe_status" -eq 0 ]] &&
+    /usr/bin/grep -Fqx 'TEST24_ZERO_ARGUMENT_ENTRY=FULL_SUITE' "$output_file"; then
+    pass "TEST-B039-001 legacy TEST24_CHILD_MODE cannot select sentinel accounting"
+  else
+    fail "TEST-B039-001 legacy TEST24_CHILD_MODE changed dispatch (exit=$probe_status)"
   fi
 }
 
@@ -361,6 +716,61 @@ assert_invalid_config() {
 
 write_fixture
 
+printf '%s\n' '=== TEST-B039-001 inherited selector dispatch control ==='
+assert_test24_legacy_child_environment_is_inert
+
+printf '%s\n' '=== BUG-039 sentinel-accounting mutation control ==='
+assert_bug039_sentinel_negative_control
+
+printf '%s\n' '=== BUG-039 Scope 2 forged-runtime authority regression ==='
+SCOPE2_FORGED_HOME="$WORKSPACE/scope2-forged-runtime"
+SCOPE2_FORGED_PATH="$WORKSPACE/scope2-forged-path"
+SCOPE2_FORGED_MARKER="$WORKSPACE/scope2-forged-runtime.marker"
+SCOPE2_FORGED_OUTPUT="$WORKSPACE/scope2-forged-runtime.output"
+mkdir -p "$SCOPE2_FORGED_HOME/bin" "$SCOPE2_FORGED_PATH"
+cat >"$SCOPE2_FORGED_HOME/bin/python3" <<'SH'
+#!/bin/bash
+printf '%s\n' 'forged managed runtime executed' >"${BUBBLES_SCOPE2_FORGED_MARKER:?marker required}"
+if [[ "${1:-}" == "-c" && "${2:-}" == *bubbles-python-runs* ]]; then
+  printf '%s' 'bubbles-python-runs'
+else
+  printf 'COMPLETE\tSCS1\t2\n'
+fi
+exit 0
+SH
+chmod +x "$SCOPE2_FORGED_HOME/bin/python3"
+ln -s "$SCOPE2_FORGED_HOME/bin/python3" "$SCOPE2_FORGED_PATH/python3"
+if (
+  cd "$FIXTURE_REPO" || exit 2
+  env \
+    PATH="$SCOPE2_FORGED_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
+    BUBBLES_PYTHON="$SCOPE2_FORGED_HOME/bin/python3" \
+    BUBBLES_PYTHON_HOME="$SCOPE2_FORGED_HOME" \
+    BUBBLES_SCOPE2_FORGED_MARKER="$SCOPE2_FORGED_MARKER" \
+    DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+    /bin/bash "$SCANNER" "$FEATURE_DIR" --verbose
+) >"$SCOPE2_FORGED_OUTPUT" 2>&1; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
+RUN_OUTPUT="$(cat "$SCOPE2_FORGED_OUTPUT")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 1 "SCN-B039-005 forged caller-owned runtimes cannot earn a clean Scan 2B verdict"
+if [[ ! -e "$SCOPE2_FORGED_MARKER" ]]; then
+  pass "SCN-B039-005 forged caller-owned runtime marker remains absent"
+else
+  fail "SCN-B039-005 forged caller-owned runtime executed before authentication"
+fi
+assert_contains "trust=root-protected-native-python-v1" "SCN-B039-005 cascade reports the root-protected trust contract"
+assert_not_contains "classifier protocol complete: version=SCS1 scanned=2 findings=0" "SCN-B039-005 forged clean SCS1 is withheld from cascade accounting"
+
+printf '%s\n' '=== BUG-039 cascade lifecycle fail-closed matrix ==='
+assert_test_lifecycle_fails_closed premature-exit NONE 1 "test_24 premature EXIT"
+assert_test_lifecycle_fails_closed timeout-exit NONE 124 "test_24 timeout exit"
+assert_test_lifecycle_fails_closed interrupt-hold HUP 129 "test_24 HUP interruption"
+assert_test_lifecycle_fails_closed interrupt-hold TERM 143 "test_24 TERM interruption"
+
 printf '%s\n' '=== BUG-013 production scanner semantic matrix ==='
 run_scanner
 assert_status 1 "semantic matrix retains blocking findings"
@@ -560,21 +970,121 @@ printf '%s\n' "$RUN_OUTPUT"
 assert_status 1 "parser-unavailable config fails closed"
 assert_contains "reason=SENSITIVE_STORAGE_CONFIG_INVALID" "parser-unavailable config reports integrity reason"
 
-printf '%s\n' '=== BUG-013 managed selftest sanitized macOS path ==='
+printf '%s\n' '=== BUG-039 managed selftest deterministic unavailable interpreter ==='
+# An untrusted developer directory fails before Python execution. Caller-owned
+# managed/PATH shims still forge the old probe and SCS1 strings, but neither can
+# become security authority or create its marker.
+FORCED_UNAVAILABLE_HOME="$WORKSPACE/forced-unavailable-python"
+FORCED_FALLTHROUGH_PATH="$WORKSPACE/forced-fallthrough-path"
+FORCED_UNTRUSTED_DEVELOPER_DIR="$WORKSPACE/untrusted-developer-dir"
+FORCED_UNAVAILABLE_MARKER="$WORKSPACE/forced-unavailable.marker"
+mkdir -p "$FORCED_UNAVAILABLE_HOME/bin" "$FORCED_FALLTHROUGH_PATH" "$FORCED_UNTRUSTED_DEVELOPER_DIR"
+cat > "$FORCED_UNAVAILABLE_HOME/bin/python3" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' 'forged managed runtime executed' >"${BUBBLES_FORCED_UNAVAILABLE_MARKER:?marker required}"
+printf '%s' 'bubbles-python-runs'
+printf '\nCOMPLETE\tSCS1\t1\n'
+exit 0
+SH
+chmod +x "$FORCED_UNAVAILABLE_HOME/bin/python3"
+ln -s "$FORCED_UNAVAILABLE_HOME/bin/python3" "$FORCED_FALLTHROUGH_PATH/python3"
+
 SELFTEST_OUTPUT_FILE="$WORKSPACE/selftest-output.txt"
-if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1; then
+if env -i PATH="$FORCED_FALLTHROUGH_PATH:/usr/bin:/bin:/usr/sbin:/sbin" \
+  BUBBLES_PYTHON="$SELFTEST_REAL_PYTHON" \
+  BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  BUBBLES_SELFTEST_REAL_PYTHON="$SELFTEST_REAL_PYTHON" \
+  BUBBLES_FORCED_UNAVAILABLE_MARKER="$FORCED_UNAVAILABLE_MARKER" \
+  DEVELOPER_DIR="$FORCED_UNTRUSTED_DEVELOPER_DIR" \
+  /bin/bash "$SELFTEST" >"$SELFTEST_OUTPUT_FILE" 2>&1 </dev/null; then
   RUN_STATUS=0
 else
   RUN_STATUS=$?
 fi
 RUN_OUTPUT="$(cat "$SELFTEST_OUTPUT_FILE")"
 printf '%s\n' "$RUN_OUTPUT"
-assert_status 0 "managed selftest runs with the system-only PATH"
+
+# BUG-039. The managed selftest's Scan 2B scenarios need a python3 that can
+# actually execute, and under the sanitized PATH that is not guaranteed: on
+# macOS /usr/bin/python3 dispatches through the active developer directory, so
+# an unaccepted Xcode licence makes it resolve and then exit 69. The selftest
+# now says so explicitly instead of reporting the missing prerequisite as
+# classification failures. Branch on its sentinel: coverage that did not run is
+# recorded as a SKIP, never as a PASS. Exit 0 is still required either way,
+# because a selftest that skips must not also be failing.
+assert_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "deterministic unavailable interpreter emits the machine sentinel"
+assert_contains "diagnostic=DEVELOPER_DIR_UNTRUSTED" "deterministic unavailable authority reports the pre-execution trust failure"
+if [[ ! -e "$FORCED_UNAVAILABLE_MARKER" ]]; then
+  pass "deterministic unavailable authority executes neither managed nor PATH forgery"
+else
+  fail "deterministic unavailable authority executed a caller-owned Python forgery"
+fi
+if grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT"; then
+  bug039_record_unavailable_cascade
+  assert_status 0 "managed selftest exits cleanly when it skips an absent prerequisite"
+else
+  fail "deterministic unavailable interpreter did not reach the sentinel branch"
+fi
 assert_contains "PORTABLE_WATCHDOG_FALLBACK=124" "managed selftest preserves watchdog exit 124"
+assert_contains "PASS: Real zero-finding producer executes the production driver and helper" "managed selftest executes the real zero-finding producer"
+assert_contains "PASS: Real classifier emits the exact durable-credential finding tuple" "managed selftest executes real classifier classification"
+assert_contains "PASS: Deleting production completion emission makes the real-finding contract red" "managed selftest proves completion-emission teeth"
+assert_contains "PASS: Corrupting production classification makes the real-finding contract red" "managed selftest proves classification teeth"
+assert_contains "BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "managed selftest records the authorized classifier mutation as executed and fatal"
+assert_contains "PASS: Real finding producer creates no helper-side bytecode cache" "managed selftest proves helper bytecode suppression"
+assert_contains "PASS: Trusted classifier launch never executes hostile PATH env" "managed selftest proves PATH env cannot replace the trusted launch"
+assert_contains "PASS: Premature EXIT preserves fatal exit 1" "managed selftest proves premature exit fails closed"
+assert_contains "PASS: Timeout exit preserves fatal exit 124" "managed selftest proves timeout exit fails closed"
+assert_contains "PASS: HUP interruption preserves fatal exit 129" "managed selftest proves HUP interruption fails closed"
+assert_contains "PASS: TERM interruption preserves fatal exit 143" "managed selftest proves TERM interruption fails closed"
+if [[ ! -e "$REPO_ROOT/bubbles/scripts/guards/__pycache__" ]]; then
+  pass "canonical selftest leaves the helper bytecode cache absent"
+else
+  fail "canonical selftest leaves the helper bytecode cache absent"
+fi
+if [[ "$RUN_STATUS" -eq 0 && "$BUG039_CASCADE_VERIFIED" -eq 1 &&
+  ! -e "$FORCED_UNAVAILABLE_MARKER" ]] &&
+  grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT" &&
+  grep -Fq 'diagnostic=DEVELOPER_DIR_UNTRUSTED' <<<"$RUN_OUTPUT"; then
+  BUG039_UNAVAILABLE_PATH_VERIFIED=1
+fi
+
+printf '%s\n' '=== BUG-039 authenticated selftest sanitized PATH ==='
+AUTHENTICATED_OUTPUT_FILE="$WORKSPACE/selftest-authenticated-output.txt"
+if env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+  BUBBLES_PYTHON="$FORCED_UNAVAILABLE_HOME/bin/python3" \
+  BUBBLES_PYTHON_HOME="$FORCED_UNAVAILABLE_HOME" \
+  BUBBLES_SELFTEST_REAL_PYTHON="$SELFTEST_REAL_PYTHON" \
+  DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+  /bin/bash "$SELFTEST" >"$AUTHENTICATED_OUTPUT_FILE" 2>&1 </dev/null; then
+  RUN_STATUS=0
+else
+  RUN_STATUS=$?
+fi
+RUN_OUTPUT="$(cat "$AUTHENTICATED_OUTPUT_FILE")"
+printf '%s\n' "$RUN_OUTPUT"
+assert_status 0 "authenticated root-protected runtime runs the managed selftest under system-only PATH"
+assert_not_contains "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1" "authenticated runtime removes classifier-unavailable degradation"
+assert_not_contains "SKIP:" "authenticated runtime leaves no skipped scenario group"
+if [[ ! -e "$FORCED_UNAVAILABLE_MARKER" ]]; then
+  pass "authenticated root-protected runtime leaves the poisoned Python marker absent"
+else
+  fail "authenticated root-protected runtime executed the poisoned Python marker"
+fi
+assert_contains "entry=BSEC1" "authenticated runtime executes the privileged BSEC1 path"
+assert_contains "supervisorProtocol=BPS1" "authenticated runtime executes the native BPS1 supervisor path"
+assert_contains "PASS: Exact configured session credential is allowed" "authenticated runtime runs the exact-approval semantic assertion"
+assert_contains "PASS: Unknown session provider is blocked distinctly" "authenticated runtime runs the unknown-provider semantic assertion"
+assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "authenticated runtime runs the config-integrity assertion"
+assert_contains "BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "authenticated runtime preserves the authorized classifier mutation control"
 
 printf '%s\n' '=== BUG-013 regression summary ==='
-printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed\n' "$PASS_COUNT" "$FAIL_COUNT"
+printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
+printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
+printf 'BUG039_UNAVAILABLE_PATH_VERIFIED=%s\n' "$BUG039_UNAVAILABLE_PATH_VERIFIED"
+TEST_COMPLETED=1
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1
 fi
+printf '%s\n' 'TEST24_FULL_SUITE_COMPLETED=1'
 printf '%s\n' 'BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED'
