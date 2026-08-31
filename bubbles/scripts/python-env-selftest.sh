@@ -28,6 +28,14 @@ RUN_SECURITY=0
 RUN_STRESS=0
 RUN_FIXED_PERL=0
 RUN_CLI_INTEGRATION=0
+RUN_SIGNAL_READINESS=0
+RUN_SIGNAL_TARGET=0
+RUN_STRESS_COMPLETENESS_CONTROL=0
+SIGNAL_TARGET_NAME=''
+SIGNAL_TARGET_WORKER=''
+SIGNAL_TARGET_READY_FIFO=''
+SIGNAL_TARGET_HOLD_FIFO=''
+SIGNAL_TARGET_RESULT_FILE=''
 case "${1:-}" in
   '')
     if [[ "$#" -ne 0 ]]; then
@@ -51,6 +59,41 @@ case "${1:-}" in
     RUN_GENERAL=0
     RUN_SECURITY=1
     RUN_STRESS=1
+    ;;
+  --internal-signal-readiness-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-signal-readiness-v1 ]]; then
+      printf '%s\n' 'python-env signal-readiness mode requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_SIGNAL_READINESS=1
+    ;;
+  --internal-signal-target)
+    if [[ "$#" -ne 7 || "${2:-}" != b039-signal-target-v1 ]]; then
+      printf '%s\n' 'python-env signal-target mode requires its explicit internal token and five target fields' >&2
+      exit 2
+    fi
+    case "${3:-}" in HUP | INT | TERM) ;; *) exit 2 ;; esac
+    if [[ "${4:-}" != /* || ! -x "${4:-}" || "${5:-}" != /* ||
+      "${6:-}" != /* || "${7:-}" != /* ]]; then
+      printf '%s\n' 'python-env signal-target mode requires absolute owned paths and an executable worker' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_SIGNAL_TARGET=1
+    SIGNAL_TARGET_NAME="$3"
+    SIGNAL_TARGET_WORKER="$4"
+    SIGNAL_TARGET_READY_FIFO="$5"
+    SIGNAL_TARGET_HOLD_FIFO="$6"
+    SIGNAL_TARGET_RESULT_FILE="$7"
+    ;;
+  --internal-stress-completeness-control)
+    if [[ "$#" -ne 2 || "${2:-}" != b039-stress-completeness-v1 ]]; then
+      printf '%s\n' 'python-env stress-completeness control requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_STRESS_COMPLETENESS_CONTROL=1
     ;;
   --internal-fixed-perl-negative-controls)
     if [[ "$#" -ne 2 || "${2:-}" != b039-fixed-perl-negative-controls-v1 ]]; then
@@ -79,7 +122,8 @@ if [[ ! -f "$ENV_SH" || ! -f "$GUARD_LIB" ]]; then
   exit 2
 fi
 
-if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ]]; then
+if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ||
+  "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1 ]]; then
   case "$-" in
     *p*) ;;
     *)
@@ -106,6 +150,10 @@ pass=0
 fail=0
 TMP_ROOT="$(cd "$(mktemp -d)" && pwd -P)"
 SELFTEST_COMPLETED=0
+SCOPE2_SIGNAL_READINESS_COMPLETED=0
+SCOPE2_STRESS_COMPLETED=0
+SCOPE2_STRESS_ATTEMPT_COUNT=0
+SCOPE2_STRESS_CLASS_COUNT=0
 SELFTEST_ROOT_SUBSHELL=$BASH_SUBSHELL
 SELFTEST_LIFECYCLE_PID=''
 SECURITY_BOUNDARY_READY=0
@@ -126,7 +174,8 @@ selftest_cleanup() {
     return "$exit_status"
   fi
   builtin trap - EXIT HUP INT TERM
-  if [[ ( "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ) &&
+  if [[ ("$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ||
+    "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1) &&
     "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
     bubbles_python_security_cleanup || true
   fi
@@ -679,7 +728,8 @@ EOF
   fi
 }
 
-if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ]]; then
+if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ||
+  "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1 ]]; then
   if ! declare -F bubbles_python_security_require_boundary >/dev/null 2>&1; then
     printf '%s\n' 'RED: TP-S2-01 SEC-R1 privilegedChild=ready BSEC1=missing boundaryApi=absent'
     bad "TP-S2-01 SEC-R1: actual privileged child cannot establish production BSEC1"
@@ -773,6 +823,524 @@ scope2_native_contract_structurally_valid() {
   ' "$source_file"
 }
 
+SCOPE2_SIGNAL_BOUNDARY_TOKEN='supervisor-wait-trap-ready-v1'
+SCOPE2_SIGNAL_READY_FIFO=''
+SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT=0
+SCOPE2_SIGNAL_BOUNDARY_INVALID=0
+SCOPE2_SIGNAL_BOUNDARY_TRAP_READY=0
+SCOPE2_SIGNAL_BOUNDARY_WAIT_READY=0
+SCOPE2_SIGNAL_ARM_STATUS=125
+SCOPE2_SIGNAL_SENDER_STATUS=125
+SCOPE2_SIGNAL_RUN_STATUS=125
+SCOPE2_SIGNAL_TARGET_STATUS=125
+SCOPE2_SIGNAL_RESULT_COMPLETE=0
+SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED=0
+SCOPE2_SIGNAL_OUTER_TRAP_COUNT=0
+SCOPE2_SIGNAL_HOLD_FIFO=''
+SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED=0
+SCOPE2_SIGNAL_RELEASE_STATUS=125
+
+scope2_signal_sender() {
+  local signal_name="$1"
+  local target_pid="$2"
+  local readiness_timeout="$3"
+  local readiness_fifo="$4"
+  local readiness_record=""
+  local readiness_status=0
+
+  # This descriptor opens only in the already-forked harness sender. Neither
+  # the Perl supervisor nor its worker can inherit the readiness channel.
+  exec 7<>"$readiness_fifo" || return 125
+  builtin printf '%s\n' 'SENDER_ARMED'
+  if builtin read -r -t "$readiness_timeout" readiness_record <&7; then
+    readiness_status=0
+  else
+    readiness_status=$?
+  fi
+  exec 7>&-
+  if [[ "$readiness_status" -ne 0 ||
+    "$readiness_record" != "$SCOPE2_SIGNAL_BOUNDARY_TOKEN" ]]; then
+    return 124
+  fi
+  builtin kill -"$signal_name" "$target_pid"
+}
+
+scope2_signal_wait_boundary_debug() {
+  local command_text="$1"
+  local active_signal_trap=""
+  local expected_status=0
+  local hold_record=""
+  local hold_status=0
+
+  # Observe the production wait command itself. This says nothing about shell
+  # cleanliness before the privileged boundary and grants no worker authority.
+  [[ "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" -eq 0 ]] || return 0
+  [[ "$command_text" == "builtin wait \"\$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID\"" ]] || return 0
+  SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT=1
+  case "$SCOPE2_SIGNAL_EXPECTED_NAME" in
+    HUP) expected_status=129 ;;
+    INT) expected_status=130 ;;
+    TERM) expected_status=143 ;;
+    *)
+      SCOPE2_SIGNAL_BOUNDARY_INVALID=1
+      return 0
+      ;;
+  esac
+  active_signal_trap="$(builtin trap -p "$SCOPE2_SIGNAL_EXPECTED_NAME")"
+  if [[ "$BUBBLES_PYTHON_SECURITY_STATE" == SUPERVISOR_WAITING &&
+    "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    SCOPE2_SIGNAL_BOUNDARY_WAIT_READY=1
+  fi
+  if [[ "$active_signal_trap" == *"_bubbles_python_security_record_signal $SCOPE2_SIGNAL_EXPECTED_NAME $expected_status"* ]]; then
+    SCOPE2_SIGNAL_BOUNDARY_TRAP_READY=1
+  fi
+  if [[ "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" -ne 1 ||
+    "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" -ne 1 ||
+    -z "$SCOPE2_SIGNAL_READY_FIFO" || -z "$SCOPE2_SIGNAL_HOLD_FIFO" ]]; then
+    SCOPE2_SIGNAL_BOUNDARY_INVALID=1
+    return 0
+  fi
+  exec 8<>"$SCOPE2_SIGNAL_HOLD_FIFO" || {
+    SCOPE2_SIGNAL_BOUNDARY_INVALID=1
+    return 0
+  }
+  if ! builtin printf '%s\n' "$SCOPE2_SIGNAL_BOUNDARY_TOKEN" >"$SCOPE2_SIGNAL_READY_FIFO"; then
+    SCOPE2_SIGNAL_BOUNDARY_INVALID=1
+    exec 8>&-
+    return 0
+  fi
+  if builtin read -r -t 10 hold_record <&8; then
+    hold_status=0
+  else
+    hold_status=$?
+  fi
+  exec 8>&-
+  if [[ ("$hold_status" -eq "$expected_status" ||
+    "$hold_record" == SIGNAL_SENT) &&
+    "$BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL" == "$SCOPE2_SIGNAL_EXPECTED_NAME" &&
+    "$BUBBLES_PYTHON_SECURITY_PENDING_STATUS" -eq "$expected_status" ]]; then
+    SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED=1
+  else
+    SCOPE2_SIGNAL_BOUNDARY_INVALID=1
+  fi
+}
+
+scope2_signal_target_outer_trap() {
+  SCOPE2_SIGNAL_TARGET_OUTER_TRAP_COUNT=$((SCOPE2_SIGNAL_TARGET_OUTER_TRAP_COUNT + 1))
+  return 0
+}
+
+SCOPE2_SIGNAL_TARGET_FINALIZED=0
+SCOPE2_SIGNAL_TARGET_FINALIZE_STATUS=125
+SCOPE2_SIGNAL_TARGET_RESULT_PATH=''
+SCOPE2_SIGNAL_TARGET_PRIVATE_BEFORE=0
+SCOPE2_SIGNAL_TARGET_SAVED_DEBUG_TRAP=''
+SCOPE2_SIGNAL_TARGET_HAD_FUNCTRACE=0
+SCOPE2_SIGNAL_TARGET_BEFORE_HUP=''
+SCOPE2_SIGNAL_TARGET_BEFORE_INT=''
+SCOPE2_SIGNAL_TARGET_BEFORE_TERM=''
+
+scope2_signal_target_finalize() {
+  local cleanup_status=0
+  local private_after=0
+  local after_hup=""
+  local after_int=""
+  local after_term=""
+  local outer_traps_restored=0
+  local wait_pid_clear=0
+  local state_idle=0
+
+  if [[ "$SCOPE2_SIGNAL_TARGET_FINALIZED" -eq 1 ]]; then
+    return "$SCOPE2_SIGNAL_TARGET_FINALIZE_STATUS"
+  fi
+
+  builtin trap - DEBUG
+  if [[ -n "$SCOPE2_SIGNAL_TARGET_SAVED_DEBUG_TRAP" ]]; then
+    builtin eval "$SCOPE2_SIGNAL_TARGET_SAVED_DEBUG_TRAP"
+  fi
+  if [[ "$SCOPE2_SIGNAL_TARGET_HAD_FUNCTRACE" -eq 0 ]]; then
+    set +T
+  fi
+
+  bubbles_python_security_cleanup || cleanup_status=$?
+  private_after="$(scope2_security_private_root_count)"
+  after_hup="$(builtin trap -p HUP)"
+  after_int="$(builtin trap -p INT)"
+  after_term="$(builtin trap -p TERM)"
+  if [[ "$SCOPE2_SIGNAL_TARGET_BEFORE_HUP" == "$after_hup" &&
+    "$SCOPE2_SIGNAL_TARGET_BEFORE_INT" == "$after_int" &&
+    "$SCOPE2_SIGNAL_TARGET_BEFORE_TERM" == "$after_term" ]]; then
+    outer_traps_restored=1
+  fi
+  if [[ -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" ]]; then
+    wait_pid_clear=1
+  fi
+  if [[ "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE ]]; then
+    state_idle=1
+  fi
+
+  [[ "$SCOPE2_SIGNAL_TARGET_RESULT_PATH" == /* ]] || return 125
+  : >"$SCOPE2_SIGNAL_TARGET_RESULT_PATH" || return 125
+  /bin/chmod 600 "$SCOPE2_SIGNAL_TARGET_RESULT_PATH" || return 125
+  printf 'S2SIG1|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
+    "$BUBBLES_PYTHON_SECURITY_RUN_STATUS" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" "$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES" \
+    "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" "$SCOPE2_SIGNAL_BOUNDARY_INVALID" \
+    "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" \
+    "$SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED" "$cleanup_status" \
+    "$SCOPE2_SIGNAL_TARGET_PRIVATE_BEFORE" "$private_after" \
+    "$outer_traps_restored" "$SCOPE2_SIGNAL_TARGET_OUTER_TRAP_COUNT" \
+    "$wait_pid_clear" "$state_idle" \
+    >"$SCOPE2_SIGNAL_TARGET_RESULT_PATH" || return 125
+  SCOPE2_SIGNAL_TARGET_FINALIZED=1
+  SCOPE2_SIGNAL_TARGET_FINALIZE_STATUS=0
+  return 0
+}
+
+scope2_signal_target() {
+  local signal_name="$1"
+  local worker_program="$2"
+  local readiness_fifo="$3"
+  local hold_fifo="$4"
+  local result_file="$5"
+
+  SCOPE2_SIGNAL_EXPECTED_NAME="$signal_name"
+  SCOPE2_SIGNAL_READY_FIFO="$readiness_fifo"
+  SCOPE2_SIGNAL_HOLD_FIFO="$hold_fifo"
+  SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT=0
+  SCOPE2_SIGNAL_BOUNDARY_INVALID=0
+  SCOPE2_SIGNAL_BOUNDARY_TRAP_READY=0
+  SCOPE2_SIGNAL_BOUNDARY_WAIT_READY=0
+  SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED=0
+  SCOPE2_SIGNAL_TARGET_OUTER_TRAP_COUNT=0
+  SCOPE2_SIGNAL_TARGET_FINALIZED=0
+  SCOPE2_SIGNAL_TARGET_FINALIZE_STATUS=125
+  SCOPE2_SIGNAL_TARGET_RESULT_PATH="$result_file"
+  SCOPE2_SIGNAL_TARGET_PRIVATE_BEFORE=0
+  SCOPE2_SIGNAL_TARGET_SAVED_DEBUG_TRAP=''
+  SCOPE2_SIGNAL_TARGET_HAD_FUNCTRACE=0
+  SCOPE2_SIGNAL_TARGET_BEFORE_HUP=''
+  SCOPE2_SIGNAL_TARGET_BEFORE_INT=''
+  SCOPE2_SIGNAL_TARGET_BEFORE_TERM=''
+
+  builtin trap 'scope2_signal_target_outer_trap' HUP
+  builtin trap 'scope2_signal_target_outer_trap' INT
+  builtin trap 'scope2_signal_target_outer_trap' TERM
+  SCOPE2_SIGNAL_TARGET_BEFORE_HUP="$(builtin trap -p HUP)"
+  SCOPE2_SIGNAL_TARGET_BEFORE_INT="$(builtin trap -p INT)"
+  SCOPE2_SIGNAL_TARGET_BEFORE_TERM="$(builtin trap -p TERM)"
+  SCOPE2_SIGNAL_TARGET_PRIVATE_BEFORE="$(scope2_security_private_root_count)"
+
+  SCOPE2_SIGNAL_TARGET_SAVED_DEBUG_TRAP="$(builtin trap -p DEBUG)"
+  case "$-" in *T*) SCOPE2_SIGNAL_TARGET_HAD_FUNCTRACE=1 ;; esac
+  set -T
+  # BASH_COMMAND expands when the DEBUG trap runs.
+  # shellcheck disable=SC2016
+  builtin trap 'scope2_signal_wait_boundary_debug "$BASH_COMMAND"' DEBUG
+  if _bubbles_python_run_closed_operation general-probe "$worker_program"; then
+    :
+  else
+    :
+  fi
+  scope2_signal_target_finalize
+}
+
+scope2_run_synchronized_parent_signal() {
+  local signal_name="$1"
+  local worker_program="$2"
+  local case_id="$3"
+  local readiness_fifo="$TMP_ROOT/$case_id.readiness.fifo"
+  local hold_fifo="$TMP_ROOT/$case_id.signal-hold.fifo"
+  local result_file="$TMP_ROOT/$case_id.signal-result"
+  local readiness_record=""
+  local target_pid=""
+  local read_status=0
+  local send_status=0
+  local release_status=0
+  local target_status=0
+  local protocol=""
+  local result_status=125
+  local result_diagnostic="NOT_RUN"
+  local result_owner="supervisor"
+  local result_timed_out=0
+  local result_worker_kind="not-started"
+  local result_stdout_bytes=0
+  local result_stderr_bytes=0
+  local result_boundary_count=0
+  local result_boundary_invalid=1
+  local result_trap_ready=0
+  local result_wait_ready=0
+  local result_hold_acknowledged=0
+  local result_cleanup=1
+  local result_private_before=0
+  local result_private_after=0
+  local result_outer_restored=0
+  local result_outer_count=0
+  local result_wait_clear=0
+  local result_state_idle=0
+
+  SCOPE2_SIGNAL_READY_FIFO="$readiness_fifo"
+  SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT=0
+  SCOPE2_SIGNAL_BOUNDARY_INVALID=0
+  SCOPE2_SIGNAL_BOUNDARY_TRAP_READY=0
+  SCOPE2_SIGNAL_BOUNDARY_WAIT_READY=0
+  SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED=0
+  SCOPE2_SIGNAL_RELEASE_STATUS=125
+  SCOPE2_SIGNAL_ARM_STATUS=125
+  SCOPE2_SIGNAL_SENDER_STATUS=125
+  SCOPE2_SIGNAL_RUN_STATUS=125
+  SCOPE2_SIGNAL_TARGET_STATUS=125
+  SCOPE2_SIGNAL_RESULT_COMPLETE=0
+  SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED=0
+  SCOPE2_SIGNAL_OUTER_TRAP_COUNT=0
+
+  case "$signal_name" in HUP | INT | TERM) ;; *) return 2 ;; esac
+  [[ "$case_id" =~ ^[a-z0-9-]+$ && -x "$worker_program" ]] || return 2
+  /usr/bin/mkfifo "$readiness_fifo" "$hold_fifo" || return 125
+  # shellcheck disable=SC2016
+  /usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin BUBBLES_SECURITY_ENTRY_MODE=direct \
+    /usr/bin/perl -e \
+    '$SIG{HUP}="DEFAULT"; $SIG{INT}="DEFAULT"; $SIG{TERM}="DEFAULT"; exec @ARGV or die "signal target exec failed: $!\n"' \
+    /bin/bash -p "$SELFTEST_SCRIPT" --internal-signal-target \
+    b039-signal-target-v1 "$signal_name" "$worker_program" \
+    "$readiness_fifo" "$hold_fifo" "$result_file" &
+  target_pid=$!
+  SELFTEST_LIFECYCLE_PID="$target_pid"
+  exec 7<>"$readiness_fifo" || return 125
+  exec 9<>"$hold_fifo" || {
+    exec 7>&-
+    selftest_stop_exact_child
+    /bin/rm -f "$readiness_fifo" "$hold_fifo" "$result_file"
+    return 125
+  }
+  if builtin read -r -t 10 readiness_record <&7; then
+    read_status=0
+  else
+    read_status=$?
+  fi
+  exec 7>&-
+  if [[ "$read_status" -ne 0 ||
+    "$readiness_record" != "$SCOPE2_SIGNAL_BOUNDARY_TOKEN" ]]; then
+    exec 9>&-
+    SCOPE2_SIGNAL_ARM_STATUS="$read_status"
+    selftest_stop_exact_child
+    /bin/rm -f "$readiness_fifo"
+    /bin/rm -f "$hold_fifo"
+    /bin/rm -f "$result_file"
+    SCOPE2_SIGNAL_READY_FIFO=''
+    return 1
+  fi
+  SCOPE2_SIGNAL_ARM_STATUS=0
+
+  if builtin kill -"$signal_name" "$target_pid"; then
+    send_status=0
+  else
+    send_status=$?
+  fi
+  SCOPE2_SIGNAL_SENDER_STATUS="$send_status"
+  if builtin printf '%s\n' SIGNAL_SENT >&9; then
+    release_status=0
+  else
+    release_status=$?
+  fi
+  exec 9>&-
+  SCOPE2_SIGNAL_RELEASE_STATUS="$release_status"
+  if builtin wait "$target_pid"; then
+    target_status=0
+  else
+    target_status=$?
+  fi
+  SCOPE2_SIGNAL_TARGET_STATUS="$target_status"
+  SELFTEST_LIFECYCLE_PID=''
+  /bin/rm -f "$readiness_fifo"
+  /bin/rm -f "$hold_fifo"
+  SCOPE2_SIGNAL_READY_FIFO=''
+  SCOPE2_SIGNAL_HOLD_FIFO=''
+
+  if [[ "$target_status" -eq 0 && -f "$result_file" ]] \
+    && IFS='|' builtin read -r protocol result_status result_diagnostic result_owner \
+      result_timed_out result_worker_kind result_stdout_bytes result_stderr_bytes \
+      result_boundary_count result_boundary_invalid result_trap_ready result_wait_ready \
+      result_hold_acknowledged result_cleanup result_private_before result_private_after result_outer_restored \
+      result_outer_count result_wait_clear result_state_idle <"$result_file" \
+    && [[ "$protocol" == S2SIG1 ]]; then
+    SCOPE2_SIGNAL_RESULT_COMPLETE=1
+    SCOPE2_SIGNAL_RUN_STATUS="$result_status"
+    BUBBLES_PYTHON_SECURITY_RUN_STATUS="$result_status"
+    BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC="$result_diagnostic"
+    BUBBLES_PYTHON_SECURITY_RUN_OWNER="$result_owner"
+    BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT="$result_timed_out"
+    BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND="$result_worker_kind"
+    BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES="$result_stdout_bytes"
+    BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES="$result_stderr_bytes"
+    BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
+    BUBBLES_PYTHON_SECURITY_STATE='IDLE'
+    BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT=''
+    BUBBLES_PYTHON_SECURITY_STDOUT_PATH=''
+    BUBBLES_PYTHON_SECURITY_STDERR_PATH=''
+    BUBBLES_PYTHON_SECURITY_CONTROL_PATH=''
+    SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT="$result_boundary_count"
+    SCOPE2_SIGNAL_BOUNDARY_INVALID="$result_boundary_invalid"
+    SCOPE2_SIGNAL_BOUNDARY_TRAP_READY="$result_trap_ready"
+    SCOPE2_SIGNAL_BOUNDARY_WAIT_READY="$result_wait_ready"
+    SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED="$result_hold_acknowledged"
+    SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED="$result_outer_restored"
+    SCOPE2_SIGNAL_OUTER_TRAP_COUNT="$result_outer_count"
+  fi
+  /bin/rm -f "$result_file"
+  [[ "$SCOPE2_SIGNAL_ARM_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_SENDER_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_RELEASE_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_TARGET_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_RESULT_COMPLETE" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_INVALID" -eq 0 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" -eq 1 &&
+    "$SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED" -eq 1 &&
+    "$result_cleanup" -eq 0 && "$result_private_before" -eq "$result_private_after" &&
+    "$SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED" -eq 1 &&
+    "$SCOPE2_SIGNAL_OUTER_TRAP_COUNT" -eq 0 &&
+    "$result_wait_clear" -eq 1 && "$result_state_idle" -eq 1 ]]
+}
+
+scope2_assert_signal_sender_requires_readiness() {
+  local readiness_fifo="$TMP_ROOT/missing-readiness.fifo"
+  local armed_fifo="$TMP_ROOT/missing-readiness.armed.fifo"
+  local armed_record=""
+  local read_status=0
+  local sender_pid=""
+  local sender_status=0
+  local target_pid=""
+  local target_status=0
+
+  (
+    builtin trap 'builtin exit 88' HUP
+    /bin/sleep 2
+  ) &
+  target_pid=$!
+  /usr/bin/mkfifo "$readiness_fifo" "$armed_fifo"
+  scope2_signal_sender HUP "$target_pid" 1 "$readiness_fifo" >"$armed_fifo" &
+  sender_pid=$!
+  SELFTEST_LIFECYCLE_PID="$sender_pid"
+  if builtin read -r -t 5 armed_record <"$armed_fifo"; then
+    read_status=0
+  else
+    read_status=$?
+  fi
+  /bin/rm -f "$armed_fifo"
+  if [[ "$read_status" -ne 0 || "$armed_record" != SENDER_ARMED ]]; then
+    selftest_stop_exact_child
+    builtin kill -TERM "$target_pid" 2>/dev/null || true
+    builtin wait "$target_pid" 2>/dev/null || true
+    /bin/rm -f "$readiness_fifo"
+    bad "TP-S2-05 signal sender reaches its bounded armed state"
+    return
+  fi
+  if builtin wait "$sender_pid"; then sender_status=0; else sender_status=$?; fi
+  SELFTEST_LIFECYCLE_PID=''
+  /bin/rm -f "$readiness_fifo"
+  if builtin wait "$target_pid"; then target_status=0; else target_status=$?; fi
+  printf 'TP-S2-05_SIGNAL_READINESS readiness=missing senderStatus=%s targetStatus=%s signalSent=0 timeoutSeconds=1 retries=0 scope=direct-harness-target\n' \
+    "$sender_status" "$target_status"
+  if [[ "$sender_status" -eq 124 && "$target_status" -eq 0 ]]; then
+    ok "TP-S2-05 missing wait-boundary readiness fails boundedly without signaling its direct harness target"
+  else
+    bad "TP-S2-05 missing wait-boundary readiness expected sender=124 target=0, observed sender=$sender_status target=$target_status"
+  fi
+}
+
+scope2_assert_focused_parent_signal() {
+  local signal_name="$1"
+  local signal_slug=""
+  local expected_status=0
+  local expected_diagnostic=""
+  local worker_path=""
+  local private_before=0
+  local private_after=0
+  local synchronization_status=0
+  local ordering_status=0
+  local cleanup_status=0
+
+  case "$signal_name" in
+    HUP)
+      signal_slug=hup
+      expected_status=129
+      expected_diagnostic=SIGNAL_HUP
+      ;;
+    INT)
+      signal_slug=int
+      expected_status=130
+      expected_diagnostic=SIGNAL_INT
+      ;;
+    TERM)
+      signal_slug=term
+      expected_status=143
+      expected_diagnostic=SIGNAL_TERM
+      ;;
+    *)
+      bad "TP-S2-05 focused signal name '$signal_name' is invalid"
+      return
+      ;;
+  esac
+  worker_path="$TMP_ROOT/focused-signal-$signal_slug.worker"
+  cat >"$worker_path" <<'EOF'
+#!/bin/bash
+printf '%s' 'bubbles-python-runs'
+exec /bin/sleep 3
+EOF
+  /bin/chmod 700 "$worker_path"
+  private_before="$(scope2_security_private_root_count)"
+  if scope2_run_synchronized_parent_signal \
+    "$signal_name" "$worker_path" "focused-signal-$signal_slug"; then
+    synchronization_status=0
+  else
+    synchronization_status=$?
+  fi
+  scope2_native_contract_structurally_valid "$ENV_SH" || ordering_status=$?
+  bubbles_python_security_cleanup || cleanup_status=$?
+  private_after="$(scope2_security_private_root_count)"
+  printf 'TP-S2-05_FOCUSED_SIGNAL signal=%s status=%s diagnostic=%s owner=%s workerKind=%s stdoutBytes=%s senderStatus=%s releaseStatus=%s targetStatus=%s resultComplete=%s armedStatus=%s boundaryNotifications=%s trapReady=%s waitHandleReady=%s holdAcknowledged=%s boundaryInvalid=%s outerTrapsRestored=%s outerTrapCount=%s ordering=%s cleanup=%s privateRoots=%s/%s retries=0\n' \
+    "$signal_name" "$SCOPE2_SIGNAL_RUN_STATUS" "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" \
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" "$SCOPE2_SIGNAL_SENDER_STATUS" \
+    "$SCOPE2_SIGNAL_RELEASE_STATUS" \
+    "$SCOPE2_SIGNAL_TARGET_STATUS" "$SCOPE2_SIGNAL_RESULT_COMPLETE" \
+    "$SCOPE2_SIGNAL_ARM_STATUS" "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" \
+    "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" \
+    "$SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED" "$SCOPE2_SIGNAL_BOUNDARY_INVALID" \
+    "$SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED" \
+    "$SCOPE2_SIGNAL_OUTER_TRAP_COUNT" "$ordering_status" "$cleanup_status" \
+    "$private_before" "$private_after"
+  if [[ "$synchronization_status" -eq 0 &&
+    "$SCOPE2_SIGNAL_RUN_STATUS" -eq "$expected_status" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC" == "$expected_diagnostic" &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_OWNER" == caller-signal &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND" == exit &&
+    "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" -eq 19 &&
+    "$SCOPE2_SIGNAL_SENDER_STATUS" -eq 0 && "$SCOPE2_SIGNAL_ARM_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_RELEASE_STATUS" -eq 0 &&
+    "$SCOPE2_SIGNAL_TARGET_STATUS" -eq 0 && "$SCOPE2_SIGNAL_RESULT_COMPLETE" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" -eq 1 &&
+    "$SCOPE2_SIGNAL_HOLD_ACKNOWLEDGED" -eq 1 &&
+    "$SCOPE2_SIGNAL_BOUNDARY_INVALID" -eq 0 &&
+    "$SCOPE2_SIGNAL_OUTER_TRAPS_RESTORED" -eq 1 &&
+    "$SCOPE2_SIGNAL_OUTER_TRAP_COUNT" -eq 0 && "$ordering_status" -eq 0 &&
+    "$cleanup_status" -eq 0 && "$private_before" -eq "$private_after" &&
+    -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" &&
+    "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE ]]; then
+    ok "TP-S2-05 real parent $signal_name is delivered only at the production supervisor wait with production traps installed"
+  else
+    bad "TP-S2-05 focused synchronized parent $signal_name did not preserve the native-supervisor signal contract"
+  fi
+}
+
 assert_native_supervisor_negative_control() {
   local finding="$1"
   local mode="$2"
@@ -831,6 +1399,29 @@ if [[ "$RUN_SECURITY" -eq 1 ]]; then
   assert_native_supervisor_negative_control HAR-R1 cleanup-before-reap \
     "TP-S2-01 HAR-R1 cleanup-before-reap"
   printf '%s\n' 'TP-S2-01_NATIVE_MUTATION_MATRIX_COMPLETED=1'
+fi
+
+if [[ "$RUN_SIGNAL_TARGET" -eq 1 && "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
+  signal_target_status=0
+  if scope2_signal_target "$SIGNAL_TARGET_NAME" "$SIGNAL_TARGET_WORKER" \
+    "$SIGNAL_TARGET_READY_FIFO" "$SIGNAL_TARGET_HOLD_FIFO" \
+    "$SIGNAL_TARGET_RESULT_FILE"; then
+    signal_target_status=0
+  else
+    signal_target_status=$?
+  fi
+  SELFTEST_COMPLETED=1
+  exit "$signal_target_status"
+fi
+
+if [[ "$RUN_SIGNAL_READINESS" -eq 1 && "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
+  echo "Scenario: TP-S2-05 parent signals wait for the production supervisor boundary."
+  scope2_assert_signal_sender_requires_readiness
+  scope2_assert_focused_parent_signal HUP
+  scope2_assert_focused_parent_signal INT
+  scope2_assert_focused_parent_signal TERM
+  printf '%s\n' 'TP-S2-05_SIGNAL_READINESS_CONTROLS_COMPLETED=1 cases=4 signals=HUP,INT,TERM retries=0'
+  SCOPE2_SIGNAL_READINESS_COMPLETED=1
 fi
 
 assert_selftest_lifecycle_fails_closed() {
@@ -1761,7 +2352,9 @@ scope2_control_line_count() {
 
 matrix_iteration=1
 matrix_failures=0
+matrix_attempts=0
 while [[ "$matrix_iteration" -le 30 ]]; do
+  matrix_attempts=$((matrix_attempts + 1))
   matrix_private_before="$(scope2_private_root_count)"
   matrix_status=0
   bubbles_python_run_security_operation runtime-probe || matrix_status=$?
@@ -1800,6 +2393,10 @@ while [[ "$matrix_iteration" -le 30 ]]; do
   fi
   matrix_iteration=$((matrix_iteration + 1))
 done
+if [[ "$RUN_STRESS" -eq 1 && "$matrix_attempts" -eq 30 ]]; then
+  SCOPE2_STRESS_ATTEMPT_COUNT=$matrix_attempts
+  SCOPE2_STRESS_CLASS_COUNT=1
+fi
 if [[ "$matrix_failures" -eq 0 ]]; then
   ok "TP-S2-05 success matrix completed 30/30 with exact BPS1 bytes, one reap, zero post-reap signals, no residue, and no retry substitution"
 else
@@ -1847,10 +2444,10 @@ scope2_run_lifecycle_iteration() {
   local expected_worker_kind=""
   local expected_stdout_bytes=0
   local signal_name=""
-  local parent_pid="$$"
-  local sender_pid=""
   local sender_status=0
   local run_status=0
+  local synchronization_status=0
+  local signal_sync_valid=1
   local private_before=0
   local private_after=0
   local root=""
@@ -1910,15 +2507,23 @@ scope2_run_lifecycle_iteration() {
 
   private_before="$(scope2_private_root_count)"
   if [[ -n "$signal_name" ]]; then
-    (
-      /bin/sleep 1
-      builtin kill -"$signal_name" "$parent_pid"
-    ) &
-    sender_pid=$!
-  fi
-  _bubbles_python_run_closed_operation general-probe "$worker_program" || run_status=$?
-  if [[ -n "$sender_pid" ]]; then
-    if builtin wait "$sender_pid"; then sender_status=0; else sender_status=$?; fi
+    if scope2_run_synchronized_parent_signal \
+      "$signal_name" "$worker_program" "$lifecycle_class-$iteration"; then
+      synchronization_status=0
+    else
+      synchronization_status=$?
+    fi
+    run_status="$SCOPE2_SIGNAL_RUN_STATUS"
+    sender_status="$SCOPE2_SIGNAL_SENDER_STATUS"
+    if [[ "$synchronization_status" -ne 0 ||
+      "$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT" -ne 1 ||
+      "$SCOPE2_SIGNAL_BOUNDARY_INVALID" -ne 0 ||
+      "$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY" -ne 1 ||
+      "$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY" -ne 1 ]]; then
+      signal_sync_valid=0
+    fi
+  else
+    _bubbles_python_run_closed_operation general-probe "$worker_program" || run_status=$?
   fi
 
   root="$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT"
@@ -1950,7 +2555,8 @@ scope2_run_lifecycle_iteration() {
     "$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES" -eq "$stdout_actual" &&
     "$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES" -eq "$stderr_actual" &&
     "$control_lines" -eq 1 && "$ordering_status" -eq 0 && "$cleanup_status" -eq 0 &&
-    "$sender_status" -eq 0 && -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" &&
+    "$sender_status" -eq 0 && "$signal_sync_valid" -eq 1 &&
+    -z "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" &&
     "$BUBBLES_PYTHON_SECURITY_STATE" == IDLE && "$private_before" -eq "$private_after" &&
     "$root_removed" -eq 1 ]]; then
     printf 'TP-S2-05_MATRIX class=%s iteration=%s/30 status=%s owner=%s timedOut=%s workerKind=%s stdoutBytes=%s stderrBytes=%s completionRecords=1 ordering=waitpid-owner-clear-bps1 oneReap=1 postReapSignals=0 residue=0 retry=0\n' \
@@ -1962,16 +2568,19 @@ scope2_run_lifecycle_iteration() {
     return 0
   fi
 
-  bad "TP-S2-05 $lifecycle_class iteration $iteration/30 observed status=$run_status diagnostic=$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC owner=$BUBBLES_PYTHON_SECURITY_RUN_OWNER timedOut=$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT workerKind=$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND stdout=$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES/$stdout_actual stderr=$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES/$stderr_actual completionRecords=$control_lines ordering=$ordering_status cleanup=$cleanup_status sender=$sender_status roots=$private_before/$private_after"
+  bad "TP-S2-05 $lifecycle_class iteration $iteration/30 observed status=$run_status diagnostic=$BUBBLES_PYTHON_SECURITY_RUN_DIAGNOSTIC owner=$BUBBLES_PYTHON_SECURITY_RUN_OWNER timedOut=$BUBBLES_PYTHON_SECURITY_RUN_TIMED_OUT workerKind=$BUBBLES_PYTHON_SECURITY_RUN_WORKER_KIND stdout=$BUBBLES_PYTHON_SECURITY_RUN_STDOUT_BYTES/$stdout_actual stderr=$BUBBLES_PYTHON_SECURITY_RUN_STDERR_BYTES/$stderr_actual completionRecords=$control_lines ordering=$ordering_status cleanup=$cleanup_status sender=$sender_status synchronization=$synchronization_status boundaryNotifications=$SCOPE2_SIGNAL_BOUNDARY_NOTIFY_COUNT trapReady=$SCOPE2_SIGNAL_BOUNDARY_TRAP_READY waitHandleReady=$SCOPE2_SIGNAL_BOUNDARY_WAIT_READY boundaryInvalid=$SCOPE2_SIGNAL_BOUNDARY_INVALID roots=$private_before/$private_after"
   return 1
 }
 
 if [[ "$RUN_STRESS" -eq 1 ]]; then
+  scope2_assert_signal_sender_requires_readiness
   printf '%s\n' 'TP-S2-05_STRESS_MATRIX_BEGIN classes=success,fast-exit,timeout,output-limit,HUP,INT,TERM iterations=30 retry=forbidden'
   for lifecycle_class in fast-exit timeout output-limit signal-hup signal-int signal-term; do
     lifecycle_iteration=1
     lifecycle_failures=0
+    lifecycle_attempts=0
     while [[ "$lifecycle_iteration" -le 30 ]]; do
+      lifecycle_attempts=$((lifecycle_attempts + 1))
       if scope2_run_lifecycle_iteration "$lifecycle_class" "$lifecycle_iteration"; then
         :
       else
@@ -1979,6 +2588,12 @@ if [[ "$RUN_STRESS" -eq 1 ]]; then
       fi
       lifecycle_iteration=$((lifecycle_iteration + 1))
     done
+    SCOPE2_STRESS_ATTEMPT_COUNT=$((SCOPE2_STRESS_ATTEMPT_COUNT + lifecycle_attempts))
+    if [[ "$lifecycle_attempts" -eq 30 ]]; then
+      SCOPE2_STRESS_CLASS_COUNT=$((SCOPE2_STRESS_CLASS_COUNT + 1))
+    else
+      bad "TP-S2-05 $lifecycle_class matrix attempted $lifecycle_attempts/30 iterations"
+    fi
     if [[ "$lifecycle_failures" -eq 0 ]]; then
       ok "TP-S2-05 $lifecycle_class matrix completed 30/30 with fixed production limits and no retry substitution"
     else
@@ -1986,6 +2601,14 @@ if [[ "$RUN_STRESS" -eq 1 ]]; then
     fi
   done
   printf '%s\n' 'TP-S2-05_STRESS_MATRIX_END attemptedPerClass=30 retries=0'
+  if [[ "$SCOPE2_STRESS_ATTEMPT_COUNT" -eq 210 &&
+    "$SCOPE2_STRESS_CLASS_COUNT" -eq 7 ]]; then
+    printf 'TP-S2-05_STRESS_COMPLETENESS=PASS classes=%s/7 iterations=%s/210 endMarker=1 retries=0\n' \
+      "$SCOPE2_STRESS_CLASS_COUNT" "$SCOPE2_STRESS_ATTEMPT_COUNT"
+    SCOPE2_STRESS_COMPLETED=1
+  else
+    bad "TP-S2-05 stress matrix incomplete classes=$SCOPE2_STRESS_CLASS_COUNT/7 iterations=$SCOPE2_STRESS_ATTEMPT_COUNT/210"
+  fi
 fi
 
 # Structural assertions are scoped to the production security module. Strings
@@ -2380,6 +3003,23 @@ printf '%s\n' 'TP-S2-01_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
 run_scope2_privileged_security_suite
 fi
 
+if [[ "$RUN_SIGNAL_TARGET" -eq 1 ]]; then
+  signal_target_status=0
+  scope2_signal_target_finalize || signal_target_status=$?
+  SELFTEST_COMPLETED=1
+  exit "$signal_target_status"
+fi
+if [[ "$RUN_STRESS_COMPLETENESS_CONTROL" -eq 1 ]]; then
+  printf '%s\n' 'TP-S2-05_STRESS_COMPLETENESS_NEGATIVE_CONTROL classes=0/7 iterations=0/210 endMarker=0 retries=0'
+  RUN_STRESS=1
+fi
+if [[ "$RUN_SIGNAL_READINESS" -eq 1 &&
+  "$SCOPE2_SIGNAL_READINESS_COMPLETED" -ne 1 ]]; then
+  bad "TP-S2-05 focused signal controls exited before HUP, INT, TERM, and the completion sentinel"
+fi
+if [[ "$RUN_STRESS" -eq 1 && "$SCOPE2_STRESS_COMPLETED" -ne 1 ]]; then
+  bad "TP-S2-05 stress lifecycle exited before all seven classes, 210 iterations, and the end sentinel"
+fi
 echo
 echo "python-env selftest: $pass passed, $fail failed"
 SELFTEST_COMPLETED=1

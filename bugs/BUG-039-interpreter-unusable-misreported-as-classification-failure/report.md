@@ -3131,3 +3131,781 @@ BUG013_GREEN_REGRESSION=SEMANTIC_STORAGE_CLASSIFICATION_SATISFIED
 `B039-TEST24-INCOMPLETE` is addressed for this implement retry. The one skip is
 the deliberately unavailable classifier prerequisite. The persistent
 negative control proves that converting the skip into a pass remains fatal.
+
+## Test Phase Retry 2: TP-S2-05 Signal-Readiness Harness Repair
+
+The failed full qualification remains part of the current evidence set. Its
+structured receipt records exit `129`, duration `1052720` ms, and stdout hash
+`ac3a18d0a1ca84c23b6d53754385786eac07cc5ab9f926cbe5ffd3ad779dbff0` for
+`TP-S2-05 exact 30-consecutive lifecycle matrix`. This retry did not classify
+that run as passing and did not execute an identical replacement.
+
+A bounded pre-repair probe delayed the first pre-trap path-authentication call.
+The existing one-second sender reached the outer selftest HUP handler while the
+production state was `IDLE`. The pending-signal field, supervisor wait handle,
+and private-root field were all empty. The probe exited `129` after 2033 ms.
+Its tool-log stdout hash is
+`97c1fe9bf90adfd2347993e8d9f9af94bce2615d25b17d097bae2ccdce517cc1`.
+This confirms that the harness scheduled delivery before production installed
+its traps or entered the native-supervisor wait boundary.
+
+The harness now arms a separate sender and releases it through a private FIFO
+only from a DEBUG observation of the exact production `builtin wait` command.
+The observation requires `SUPERVISOR_WAITING`, a numeric supervisor wait
+handle, and the production HUP trap. Only the already-forked sender opens the
+readiness descriptor, so the Perl supervisor and worker inherit no completion
+channel. A missing readiness record returns `124` after one second and leaves
+the direct harness target unsignaled. The same synchronization helper now owns
+all HUP, INT, and TERM iterations in the full matrix. No retry loop or ordinary
+Bash production fallback was added.
+
+### Final-Byte Focused Green
+
+**Phase:** test
+**Command:** `/usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin DEVELOPER_DIR=/Library/Developer/CommandLineTools BUBBLES_SECURITY_ENTRY_MODE=direct /bin/bash -p bubbles/scripts/python-env-selftest.sh --internal-signal-readiness-controls b039-signal-readiness-v1`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+TP-S2-01_PRIVILEGED_CHILD_SETUP=PASS mode=env-i-/bin/bash-p hostileState=excluded
+PASS: TP-S2-01 SEC-R1: production boundary establishes direct BSEC1 inside env -i /bin/bash -p
+Scenario: TP-S2-05 parent signals wait for the production supervisor boundary.
+TP-S2-05_SIGNAL_READINESS readiness=missing senderStatus=124 targetStatus=0 signalSent=0 timeoutSeconds=1 retries=0 scope=direct-harness-target
+PASS: TP-S2-05 missing wait-boundary readiness fails boundedly without signaling its direct harness target
+TP-S2-05_FOCUSED_SIGNAL signal=HUP status=129 diagnostic=SIGNAL_HUP owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 boundaryInvalid=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+PASS: TP-S2-05 real parent HUP is delivered only at the production supervisor wait with production traps installed
+TP-S2-05_SIGNAL_READINESS_CONTROLS_COMPLETED=1 cases=2 retries=0
+
+python-env selftest: 3 passed, 0 failed
+```
+
+The focused run's evidence-capture output hash is
+`66e920ff57090c4b865001b9abf0830ecded6abcd53719bec69540b26546b47e`.
+The corresponding tool-log stdout hash is
+`eb57bc1cc8f49795cc613ddce6f4d42277ae33b77f607cb916638b8db7c7d42d`.
+
+### Static And Boundary Results
+
+- Stock Bash 3.2 syntax: exit `0`.
+- Homebrew Bash syntax: exit `0`.
+- ShellCheck diagnostic multiset: 31 baseline, 31 current, zero new kinds,
+  command exit `0`, stdout hash
+  `0616cdf0804ab754a8773d81b58cf8a504b0eec8f774fd8ff6c4d0156d26b16d`.
+- Precise skip-marker scan: zero markers. The mandated broad expression matched
+  only the pre-existing helper declaration `assert_exit()`.
+- `git diff --check`: exit `0`.
+- Final harness SHA-256:
+  `e208b32331d22de3f0ec32a2492d4287aa2d317caae5929d235c48caf300b3eb`.
+- Production `python-env.sh` SHA-256:
+  `64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a`.
+  Its diff against `HEAD` is empty.
+
+`TP-S2-05` remains unchecked. The changed harness bytes require one fresh full
+30-iteration run of success, fast-exit, timeout, output-limit, HUP, INT, and TERM
+before that row can receive completion evidence. The retained exit-129 receipt
+remains visible and cannot satisfy the row.
+
+## Test Phase Post-Run Reconciliation: TP-S2-05 Structured Receipt
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** One exact command-success receipt proves that the repaired
+harness reached its final zero-failure exit over the fixed seven-class matrix.
+It does not close `TP-S2-05` because the independent post-run audit found eight
+harness worker files in two surviving selftest roots. No raw matrix transcript
+remains in the standard capture roots, so no omitted output line or
+per-iteration hash is reconstructed here.
+
+### Exact Command-Success Receipt
+
+**Command:** `/opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label BUG-039 convergence-2 TP-S2-05 exact repaired-harness 30x7 qualification -- /usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin DEVELOPER_DIR=/Library/Developer/CommandLineTools BUBBLES_SECURITY_ENTRY_MODE=direct /bin/bash -p bubbles/scripts/python-env-selftest.sh --internal-stress-lifecycle b039-native-supervisor-stress-v1`
+**Exit Code:** 0
+**Duration:** 1138338 ms
+**Structured receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T05:30:02Z`, session
+`vscode-cb9298c391fa376a27c57a9ea0109ae3`
+**Structured stdout hash:**
+`8eb351eda490e1e65b58d366360747cca4182b310e308c19367f02692090a734`
+**Structured stderr hash:**
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
+**Structured byte counts:** stdout 6848; stderr 0
+**Verified exact matching passed receipt count:** 1
+
+| Input closure path | SHA-256 at execution and reconciliation |
+| --- | --- |
+| `bubbles/scripts/python-env.sh` | `64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a` |
+| `bubbles/scripts/python-env-selftest.sh` | `e208b32331d22de3f0ec32a2492d4287aa2d317caae5929d235c48caf300b3eb` |
+| `bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md` | `46b29873eb1c35c8e3ed72231d5f74901fee8acbc4ac7bd7b03ac5d1acb9d5ae` |
+| `bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scenario-manifest.json` | `462a18bede92a08c11141adade27982afe9d6b9f00a56742e5e7d740520b5b9d` |
+
+The exact entry token selects `RUN_SECURITY=1` and `RUN_STRESS=1`. The harness
+runs success separately, then fast-exit, timeout, output-limit, HUP, INT, and
+TERM for 30 iterations each. Each failed iteration increments its matrix
+accumulator. Any non-zero matrix accumulator calls `bad()`, which increments the
+global `fail` counter. The final command status is the result of
+`[[ "$fail" -eq 0 ]]`. The exit-0 receipt therefore establishes a zero harness
+failure accumulator for that execution and the iteration predicates encoded in
+the reconciled harness bytes. It does not establish post-process cleanup beyond
+those predicates.
+
+The receipt tags include `no-retry`. Its command uses one direct privileged
+entry and contains no retry wrapper. The earlier failed receipt remains failed
+evidence: exit 129, duration 1052720 ms, and stdout hash
+`ac3a18d0a1ca84c23b6d53754385786eac07cc5ab9f926cbe5ffd3ad779dbff0`.
+It remains preserved in the preceding harness-repair section and is not
+reinterpreted or replaced by the exit-0 receipt.
+
+### Independent Post-Run Boundary And Residue Audit
+
+**Audit receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T05:53:23Z`, exit 1, duration 634 ms, stdout 1896 bytes, stderr 0
+bytes, structured stdout hash
+`9a55cb879044bf2a9a80b207c2ae9b45921bb3bfb3b46ae145bdd1897b4ba84e`,
+and bounded underlying-output hash
+`5358957986d7fd43b56ab4d33d39451875ab339053f638bd15d3e36e9ac88942`.
+
+The audit re-read all four input-closure hashes as exact matches. It confirmed
+HEAD `22ba8756df67a8c02913d89f5a45bc08332b2bd4`, an empty production
+`python-env.sh` diff against HEAD, one source/test worktree modification at
+`bubbles/scripts/python-env-selftest.sh`, zero private security roots, zero
+matrix processes, zero raw matrix capture matches, and `git diff --check` exit
+0. It failed because eight unique `tp-s2-05-*.worker` files remained in two
+selftest roots. The residue classes are timeout, output-limit, signal-HUP, and
+signal-INT.
+
+`TP-S2-05` therefore remains open. Current-session candidate-local passing
+receipt counts for both required `TP-S2-06` commands are zero. At residue-audit
+time, both `TP-S2-07` command counts were also zero. Post-edit artifact
+validation then ran the bug lint once; the required agnosticity command and
+static-contract scan remain unexecuted. That out-of-row lint is not accepted as
+`TP-S2-07` completion evidence. Dependency order keeps `TP-S2-06` ineligible
+until the test-owned `TP-S2-05` cleanup defect is repaired and the row receives
+one clean qualification.
+
+## Test Phase Retry 3: B039-TP-S2-05-MATRIX-RESIDUE
+
+**Phase:** test
+**Claim Source:** executed
+
+The prior exit-129 and exit-0 stress receipts remain historical facts. Neither
+receipt satisfies `TP-S2-05`. The exit-0 run stopped during signal-INT iteration
+one. It emitted no signal-TERM record, stress-end marker, or final selftest
+summary.
+
+The repaired harness sends real HUP, INT, and TERM only to a dedicated direct
+child. The child enters privileged stock Bash through an empty environment. A
+fixed Perl exec shim resets inherited signal dispositions before that entry.
+
+The child's DEBUG observer reaches the exact production supervisor wait. It
+verifies the matching production trap and the numeric supervisor wait handle.
+The observer then publishes readiness and waits for a parent acknowledgment.
+The child proceeds only after the production pending-signal tuple matches the
+delivered signal.
+
+The child writes one closed `S2SIG1` result after cleanup. The top-level runner
+requires that record before continuing. Real signals cannot terminate the
+top-level runner or bypass its final summary and EXIT cleanup.
+
+### Focused RED
+
+**Command:** focused stock-Bash HUP, INT, and TERM completeness wrapper before
+the dedicated-child repair
+**Exit Code:** 1
+**Claim Source:** executed
+**Structured receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T06:15:10Z`, stdout hash
+`0fe30c5372d3d3c27479ea6a0262fcce3f3033cd667b734989b208d5d9309bff`
+**Input selftest SHA-256:**
+`cfeadd540d90dcf8b5f5ddcb990f6115069f3dc15702a42684199f2e0e17aada`
+
+```text
+BUG039_FOCUSED_SIGNAL_RED_BEGIN
+TP-S2-01_PRIVILEGED_CHILD_SETUP=PASS mode=env-i-/bin/bash-p hostileState=excluded
+PASS: TP-S2-01 SEC-R1: production boundary establishes direct BSEC1 inside env -i /bin/bash -p
+Scenario: TP-S2-05 parent signals wait for the production supervisor boundary.
+TP-S2-05_SIGNAL_READINESS readiness=missing senderStatus=124 targetStatus=0 signalSent=0 timeoutSeconds=1 retries=0 scope=direct-harness-target
+PASS: TP-S2-05 missing wait-boundary readiness fails boundedly without signaling its direct harness target
+TP-S2-05_FOCUSED_SIGNAL signal=HUP status=129 diagnostic=SIGNAL_HUP owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 boundaryInvalid=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+PASS: TP-S2-05 real parent HUP is delivered only at the production supervisor wait with production traps installed
+python-env selftest: 3 passed, 0 failed
+FOCUSED_SUBJECT_EXIT=0 HUP_RECORDS=1 INT_RECORDS=0 TERM_RECORDS=0 END_SENTINELS=0 FINAL_SUMMARIES=1
+BUG039_FOCUSED_SIGNAL_COMPLETENESS=RED
+BUG039_FOCUSED_SIGNAL_RED_END
+```
+
+### Final-Byte Focused Green
+
+**Command:** focused HUP, INT, and TERM completeness wrapper over stock
+`/bin/bash` and Homebrew `/opt/homebrew/bin/bash`
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T06:31:19Z`, stdout hash
+`65a213ab2d0131775931ab4cbe20486bd8afd8c7a1ff911041c7ca371406f001`
+**Input selftest SHA-256:**
+`94676d3b80b3d7afa9079291f57cc1a32ac05a712bbef35953522fafa27ccb08`
+**Input production SHA-256:**
+`64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a`
+
+```text
+BUG039_FINAL_FOCUSED_SIGNAL_PROOF_BEGIN
+FOCUSED_LANE_BEGIN=stock-bash-3.2 shell=/bin/bash
+TP-S2-05_FOCUSED_SIGNAL signal=HUP status=129 diagnostic=SIGNAL_HUP owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+PASS: TP-S2-05 real parent HUP is delivered only at the production supervisor wait with production traps installed
+TP-S2-05_FOCUSED_SIGNAL signal=INT status=130 diagnostic=SIGNAL_INT owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+PASS: TP-S2-05 real parent INT is delivered only at the production supervisor wait with production traps installed
+TP-S2-05_FOCUSED_SIGNAL signal=TERM status=143 diagnostic=SIGNAL_TERM owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+PASS: TP-S2-05 real parent TERM is delivered only at the production supervisor wait with production traps installed
+TP-S2-05_SIGNAL_READINESS_CONTROLS_COMPLETED=1 cases=4 signals=HUP,INT,TERM retries=0
+python-env selftest: 5 passed, 0 failed
+FOCUSED_LANE_RESULT lane=stock-bash-3.2 exit=0 HUP=1 INT=1 TERM=1 completeTuples=3 endSentinels=1 finalSummaries=1 result=PASS
+FOCUSED_LANE_END=stock-bash-3.2
+FOCUSED_LANE_BEGIN=homebrew-bash shell=/opt/homebrew/bin/bash
+FOCUSED_LANE_RESULT lane=homebrew-bash exit=0 HUP=1 INT=1 TERM=1 completeTuples=3 endSentinels=1 finalSummaries=1 result=PASS
+FOCUSED_LANE_END=homebrew-bash
+FOCUSED_LANE_FAILURES=0
+BUG039_FINAL_FOCUSED_SIGNAL_PROOF=PASS
+BUG039_FINAL_FOCUSED_SIGNAL_PROOF_END
+```
+
+### Incomplete-Stress Negative Control
+
+**Command:** stock Bash internal stress-completeness control without the 30x7
+matrix
+**Exit Code:** 0 for the wrapper, with expected subject exit 1
+**Claim Source:** executed
+**Structured receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T06:31:45Z`, stdout hash
+`9cfaa25bd2ac088e851b74816d3f2a3cd66b2a0c66a20a06b3401c9b7d1bd795`
+
+```text
+BUG039_STRESS_COMPLETENESS_CONTROL_BEGIN
+TP-S2-05_STRESS_COMPLETENESS_NEGATIVE_CONTROL classes=0/7 iterations=0/210 endMarker=0 retries=0
+FAIL: TP-S2-05 stress lifecycle exited before all seven classes, 210 iterations, and the end sentinel
+
+python-env selftest: 0 passed, 1 failed
+SUBJECT_EXIT=1 CONTROL_MARKERS=1 REFUSALS=1 FAILURE_SUMMARIES=1 FALSE_PASS_MARKERS=0 STRESS_END_MARKERS=0
+BUG039_STRESS_COMPLETENESS_NEGATIVE_CONTROL=PASS
+BUG039_STRESS_COMPLETENESS_CONTROL_END
+```
+
+The full stress path now counts all 210 required iterations across seven
+classes. It emits `TP-S2-05_STRESS_COMPLETENESS=PASS` only after the stress-end
+marker. A later final guard calls `bad()` unless that completeness state exists.
+
+### Root Cleanup And Residue
+
+**Command:** focused stock-Bash run in a unique `TMPDIR`, followed by a bounded
+root audit
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-08-31T06:32:12Z`, stdout hash
+`41c9f164838c9b767cf392d05c8e20f5a504dd44971dbe627172bafe43cb1e37`
+
+```text
+BUG039_TOP_LEVEL_ROOT_CLEANUP_BEGIN
+SANDBOX=/private/tmp/bug039-focused-root.tSVrc7uD
+TP-S2-05_FOCUSED_SIGNAL signal=HUP status=129 diagnostic=SIGNAL_HUP owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+TP-S2-05_FOCUSED_SIGNAL signal=INT status=130 diagnostic=SIGNAL_INT owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+TP-S2-05_FOCUSED_SIGNAL signal=TERM status=143 diagnostic=SIGNAL_TERM owner=caller-signal workerKind=exit stdoutBytes=19 senderStatus=0 releaseStatus=0 targetStatus=0 resultComplete=1 armedStatus=0 boundaryNotifications=1 trapReady=1 waitHandleReady=1 holdAcknowledged=1 boundaryInvalid=0 outerTrapsRestored=1 outerTrapCount=0 ordering=0 cleanup=0 privateRoots=0/0 retries=0
+TP-S2-05_SIGNAL_READINESS_CONTROLS_COMPLETED=1 cases=4 signals=HUP,INT,TERM retries=0
+python-env selftest: 5 passed, 0 failed
+SUBJECT_EXIT=0 FINAL_SUMMARY_COUNT=1 SELFTEST_ROOT_RESIDUE_COUNT=0
+SANDBOX_ABSENT_AFTER_OWNED_CLEANUP=true
+BUG039_TOP_LEVEL_ROOT_CLEANUP=PASS
+BUG039_TOP_LEVEL_ROOT_CLEANUP_END
+```
+
+The two historical roots passed exact birth-time, open-file, and process
+checks before removal. The removal receipt timestamp is
+`2026-08-31T06:33:13Z`. Its stdout hash is
+`d9055646440443f74cbb4b6c0e0d8cc5e69ea2daef4f827c5a7962ce8b24b6e0`.
+
+One failed focused probe from this retry left
+`tmp.dRa0krXDfR`. A separate audit tied it to the current failed probe. It had
+two focused worker files, one readiness FIFO, no open files, and no process
+references. Its exact removal receipt timestamp is `2026-08-31T06:34:31Z`.
+
+The final bounded residue audit exited 0 at `2026-08-31T06:34:47Z`. Its stdout
+hash is
+`c12f3aa9fe2a0acca2d16ca709d6b05a520db5290e81e9b59fa6a7634503a745`.
+
+```text
+BUG039_FINAL_RESIDUE_AUDIT_BEGIN
+EXACT_ROOT_ABSENT=true path=/var/folders/m_/25mnb8mx4ng1sb7lwd8cl9jw0000gn/T/tmp.KF4gwLo94U
+EXACT_ROOT_ABSENT=true path=/var/folders/m_/25mnb8mx4ng1sb7lwd8cl9jw0000gn/T/tmp.kEhku8wtrn
+EXACT_ROOT_ABSENT=true path=/var/folders/m_/25mnb8mx4ng1sb7lwd8cl9jw0000gn/T/tmp.dRa0krXDfR
+BOUNDED_TMP_ROOT_COUNT=320
+TP_S2_05_WORKER_RESIDUE_COUNT=0
+SIGNAL_CHANNEL_RESIDUE_COUNT=0
+PRIVATE_PRODUCTION_ROOT_COUNT=0
+RELATED_PROCESS_COUNT=0
+FINAL_RESIDUE_FAILURES=0
+BUG039_FINAL_RESIDUE_AUDIT_RESULT=PASS
+BUG039_FINAL_RESIDUE_AUDIT_END
+```
+
+### Current Disposition
+
+`B039-TP-S2-05-MATRIX-RESIDUE` is addressed in the focused candidate. The
+production `python-env.sh` remains unchanged at SHA-256
+`64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a`.
+
+`TP-S2-05` remains unchecked. This retry did not run the 30x7 qualification.
+The next authorized test action is Test Plan reconciliation followed by one
+expensive qualification over the exact repaired candidate.
+
+## Independent Test Verification: Signal Harness Exact-Zero Repair
+
+**Phase:** test
+**Claim Source:** executed
+
+The independent review found one focused harness defect. Both result predicates
+accepted `outerTrapCount <= 1`. The design requires the signal to reach only the
+dedicated child. One outer-harness trap invocation is therefore a failure, not a
+permitted race. The pre-fix control failed at `2026-08-31T06:48:07Z` with
+structured stdout hash
+`035b89ba082f08df589cff50237191c6a239714e5239206085f8c30e052417d6`.
+The two predicates now require exact zero.
+
+The repaired harness SHA-256 is
+`7716e25ff3753040f68b0a0c6d85346ac1c6c37c848bdd1401c144c57bef58e4`.
+The production `python-env.sh` SHA-256 remains
+`64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a`.
+The certification state remained unchanged at SHA-256
+`65c43eaf017300be2377e4dbb28ca9c26d3e000629ed0815db0cc1a40fd3ba8e`.
+
+### Focused Signal Proof
+
+**Command:** focused HUP, INT, and TERM wrapper over stock `/bin/bash` and
+Homebrew `/opt/homebrew/bin/bash`
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T06:50:34Z`, stdout hash
+`bfbff9f74a093b1bc03b40ee54bd5339ebb3a081ff963ada4bfd0fa7f60b9f2c`, stderr
+hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+```text
+BUG039_INDEPENDENT_FOCUSED_SIGNALS_BEGIN
+LANE_RESULT=stock subjectExit=0 HUP=1 INT=1 TERM=1 completeRecords=3 completionSentinels=1 finalSuccessSummaries=1 failureLines=0 result=PASS
+LANE_RESULT=homebrew subjectExit=0 HUP=1 INT=1 TERM=1 completeRecords=3 completionSentinels=1 finalSuccessSummaries=1 failureLines=0 result=PASS
+FOCUSED_SIGNAL_FAILURES=0
+BUG039_INDEPENDENT_FOCUSED_SIGNALS_RESULT=PASS
+BUG039_INDEPENDENT_FOCUSED_SIGNALS_END
+```
+
+Each of the six signal records reported the matching `129`, `130`, or `143`
+status, `caller-signal` ownership, one complete `S2SIG1` tuple, one exact
+production-wait observation, restored traps, `outerTrapCount=0`, cleanup zero,
+and equal zero private-root counts.
+
+### Completeness And Cleanup Controls
+
+**Command:** incomplete-stress control on both Bash variants
+**Exit Code:** 0 for the wrapper; subject exit `1` in both lanes
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T06:50:58Z`, stdout hash
+`7abd13d265820c915948ca217e0a6241c25325dcd2968025e15118ae5957520a`.
+
+```text
+LANE_RESULT=stock subjectExit=1 controls=1 refusals=1 failureSummaries=1 falsePassMarkers=0 stressEndMarkers=0 result=PASS
+LANE_RESULT=homebrew subjectExit=1 controls=1 refusals=1 failureSummaries=1 falsePassMarkers=0 stressEndMarkers=0 result=PASS
+CONTROL_FAILURES=0
+BUG039_INCOMPLETE_STRESS_NEGATIVE_CONTROL=PASS
+```
+
+**Command:** focused signal mode under unique per-lane `TMPDIR` roots
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T06:51:38Z`, stdout hash
+`774121e9c0de7f69c985b2cb8e8dd771f53ea02612443129f9168dcf7c19a1b0`.
+
+```text
+LANE_RESULT=stock subjectExit=0 tmpdirResidue=0 finalSuccessSummaries=1 result=PASS
+LANE_RESULT=homebrew subjectExit=0 tmpdirResidue=0 finalSuccessSummaries=1 result=PASS
+SANDBOX_ABSENT=true
+TMPDIR_CLEANUP_FAILURES=0
+BUG039_ISOLATED_TMPDIR_RESULT=PASS
+```
+
+The final residue check found zero owned temporary roots, zero production
+private roots, and zero related processes. `git diff --check` exited zero.
+
+### Static Check Disposition
+
+Stock Bash 3.2 and Homebrew Bash syntax both exited zero. Exact-zero source
+contract audit passed at `2026-08-31T06:54:06Z` with stdout hash
+`b0538aaf6cdd0cdedacfe5e7d95ced5ce8b449a3c06d40886cda57b22e3ba07e`.
+Full-file ShellCheck and shfmt remained nonzero. Their output is inherited
+file-wide debt, including pre-existing SC2086, SC2016, SC2329 diagnostics and
+formatting differences outside this focused patch. Those commands are reported
+as failures, not reclassified as passing checks. The combined static receipt at
+`2026-08-31T06:48:58Z` has exit `2` and stdout hash
+`dd237822c6223bf5584f0ef8a2487273c115686250e17276a7319d837fdf894a`.
+
+### Prior Exit-Zero Receipt And Routing
+
+The prior `2026-08-31T05:30:02Z` receipt exists once with exit zero, stdout hash
+`8eb351eda490e1e65b58d366360747cca4182b310e308c19367f02692090a734`, and
+input harness SHA-256
+`e208b32331d22de3f0ec32a2492d4287aa2d317caae5929d235c48caf300b3eb`.
+It contains no raw output field. It proves its recorded exit, hashes, byte
+counts, and input closure. It cannot prove the last emitted matrix record and
+does not satisfy `TP-S2-05`. The corrected provenance audit passed at
+`2026-08-31T06:53:12Z` with stdout hash
+`d26616feddae5c1703cb185541a17c386e7dc4aedc8c16cec2e1eb8ce5792acf`.
+The earlier statement that this run stopped during signal-INT iteration one is
+not independently supported by the retained receipt and is not accepted as an
+executed fact.
+
+`B039-TP-S2-05-MATRIX-RESIDUE` is addressed on the repaired focused path. The
+30x7 matrix was not run. `TP-S2-05` remains unchecked. Test Plan order requires
+the supported Linux `TP-S2-04` proof before one immutable-candidate
+`TP-S2-05` qualification.
+
+## Test Disposition: B039-HARNESS-STATIC-CONFORMANCE
+
+**Phase:** test
+**Claim Source:** executed
+**Disposition:** addressed
+
+The entry baseline verified harness SHA-256
+`7716e25ff3753040f68b0a0c6d85346ac1c6c37c848bdd1401c144c57bef58e4`.
+It verified production SHA-256
+`64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a`.
+The pre-repair harness matched `HEAD` at SHA-256
+`7696b39d7714bd5a9803e59a1024e80e7180486d2d4a7ae845b1c4b08a349376`.
+
+The first differential shfmt audit exposed repair-local formatting changes.
+Those local hunks were normalized without formatting the inherited block.
+The final harness SHA-256 is
+`74f67cea0f216e6f272a57b3b0fa4f3e49afcb50b2a0e41c37df9daf93ae680a`.
+Production remained byte-identical.
+
+### Full-File Static Comparison
+
+**Command:** full ShellCheck and shfmt comparison against the pre-repair bytes
+**Exit Code:** 0 for the comparison wrapper
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T07:17:13Z`, stdout hash
+`63debedcd78d16025b89a47f1ace1cfbc3465edf01074fec07b32c719a45a203`, stderr
+hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+**Bounded capture:** 5,380 lines, SHA-256
+`93a4b02f9de8f8bb55ddd16527797f216c1ae6deed042eec86c4723ae6713f2c`.
+
+Full ShellCheck remained nonzero on both files. The final harness reported
+`SC2016` 17 times, `SC2086` four times, and `SC2329` nine times. The baseline
+reported the same diagnostics plus one `SC2153`. No final diagnostic belonged
+to a repair-added line.
+
+Full shfmt remained nonzero on both files. The final file had 21 formatter
+hunks, compared with 22 baseline hunks. Every final hunk mapped to a baseline
+hunk. One touched baseline hunk was normalized, and no final hunk was unmatched.
+The full-file nonzero results remain baseline debt and are not reported as
+passing checks.
+
+```text
+SHFMT_HUNK_PROVENANCE current=14 baseline=15 relation=inherited-expanded-same-transform currentShape=597/620 baselineShape=565/588 matched=1
+SHFMT_HUNK_PROVENANCE current=15 baseline=16 relation=exact-shape currentShape=9/9 baselineShape=9/9 matched=1
+SHFMT_HUNK_PROVENANCE current=16 baseline=17 relation=exact-shape currentShape=13/13 baselineShape=13/13 matched=1
+SHFMT_HUNK_PROVENANCE current=17 baseline=18 relation=exact-shape currentShape=27/27 baselineShape=27/27 matched=1
+SHFMT_HUNK_PROVENANCE current=18 baseline=19 relation=exact-shape currentShape=9/9 baselineShape=9/9 matched=1
+SHFMT_HUNK_PROVENANCE current=19 baseline=20 relation=exact-shape currentShape=13/13 baselineShape=13/13 matched=1
+SHFMT_HUNK_PROVENANCE current=20 baseline=21 relation=exact-shape currentShape=11/11 baselineShape=11/11 matched=1
+SHFMT_HUNK_PROVENANCE current=21 baseline=22 relation=exact-shape currentShape=86/86 baselineShape=86/86 matched=1
+BASELINE_REMOVED_HUNK index=2 shape=7/7 reason=touched-condition-normalized
+CURRENT_SHFMT_HUNK_COUNT=21
+BASELINE_SHFMT_HUNK_COUNT=22
+UNMATCHED_CURRENT_SHFMT_HUNK_COUNT=0
+FINAL_STATIC_AUDIT_FAILURES=0
+BUG039_FINAL_STATIC_NO_REGRESSION=PASS
+BUG039_FINAL_STATIC_AUDIT_END
+```
+
+### Syntax And Regression Quality
+
+**Command:** dual-Bash syntax, `git diff --check`, skip classification, and
+bug-fix regression-quality guard
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T07:18:02Z`, stdout hash
+`ceaec9674d179df916f58c1b364c0a46b04e173e46ddc18368ed8ef41a20ad6d`, stderr
+hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+**Bounded capture:** 38 lines, SHA-256
+`9a074c95efd1990aec3a7d87eb49e5687dc4988f5d7e634e246c16c41c6b2bb2`.
+
+Stock Bash 3.2 syntax, Homebrew Bash syntax, and `git diff --check` exited zero.
+The regression-quality guard reported zero violations and zero warnings. The
+literal skip scan matched only `assert_exit()`. A boundary-aware scan found
+zero actual skip markers.
+
+### Focused Dual-Shell Signal Proof
+
+**Command:** focused signal-readiness mode under stock Bash 3.2 and Homebrew
+Bash with isolated temporary roots
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T07:18:54Z`, stdout hash
+`d7f6dc3214de3b49ad365babe45e1ae441acc2b717d3048cbd01ed6371827f47`, stderr
+hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+**Bounded capture:** 54 lines, SHA-256
+`a0239c04e786718ef50be9a05fe3de3d8a8fcd81738ae8a0439f417cf5c4d84d`.
+
+Both lanes exited zero. Each lane observed exactly one HUP, INT, and TERM
+result with status 129, 130, and 143. Each result retained `caller-signal`
+ownership, exact-zero outer traps, restored traps, and zero cleanup residue.
+The wrapper observed no stress marker and removed its isolated sandbox.
+
+`B039-HARNESS-STATIC-CONFORMANCE` has no remaining changed-line defect. No
+unresolved finding remains from this test-owned review. This invocation did not
+run `TP-S2-04` or the 30x7 `TP-S2-05` matrix. Test Plan order still requires
+the supported Linux `TP-S2-04` proof next.
+
+## Convergence Iteration 4: TP-S2-04 Linux Lane Reconciliation
+
+**Phase:** test
+**Claim Source:** interpreted
+**Interpretation:** The accepted inventory command directly proves the declared
+command surfaces, tracked runner artifacts, workflow trigger, Ubuntu job, and
+absence of manual dispatch. The conclusion that publication is required joins
+those observations with the current modified working tree and the Test Plan's
+immutable-candidate requirement. No Linux process executed in this invocation.
+
+### Accepted Supported-Lane Inventory
+
+**Command:** Candidate-local `tool-log.sh` and `evidence-capture.sh`, label
+`BUG-039 final supported Linux lane determination`.
+**Exit Code:** 0
+**Claim Source:** executed
+**Structured receipt:** timestamp `2026-08-31T16:36:52Z`, stdout hash
+`374745c66a48061aa2226ebab65fc0f2c0dec80df558b8cf840c1c6b9ebbf48e`, stderr
+hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+**Bounded capture:** 35 lines, SHA-256
+`470fcc16f5bd1eeddaa4e34b49f7b2f554543c65668190491f399c97d233a2f6`.
+
+```text
+BUG039_FINAL_LINUX_LANE_BEGIN
+LOCAL_EXECUTOR_SEARCH_EXIT=1
+LOCAL_EXECUTOR_HIT_COUNT=0
+LOCAL_ARTIFACT_SEARCH_EXIT=0
+LOCAL_ARTIFACT_HIT_COUNT=0
+AGNOSTICITY_LINUX_JOB_BEGIN
+4:  pull_request:
+5:  push:
+7:      - main
+18:      - name: Checkout
+24:  release-hygiene:
+25:    runs-on: ubuntu-latest
+30:      - name: Checkout
+33:          fetch-depth: 0
+35:      - name: Install validation dependencies
+36:        run: bash bubbles/scripts/python-env.sh --provision
+38:      - name: Run release hygiene
+39:        run: bash bubbles/scripts/cli.sh release-check
+50:      - name: Checkout
+53:          fetch-depth: 0
+88:      - name: Install validation dependencies
+96:      - name: Run release hygiene
+97:        run: bash bubbles/scripts/cli.sh release-check
+AGNOSTICITY_JOB_SEARCH_EXIT=0
+AGNOSTICITY_WORKFLOW_DISPATCH_SEARCH_EXIT=1
+AGNOSTICITY_LINUX_JOB_END
+47:FULL_VALIDATION=bash bubbles/scripts/cli.sh release-check
+48:BUILD_COMMAND=bash bubbles/scripts/cli.sh framework-validate
+66:E2E_TEST_COMMAND=bash bubbles/scripts/cli.sh release-check
+74:FUNCTIONAL_TEST_COMMAND=bash bubbles/scripts/cli.sh framework-validate
+80:STRESS_TEST_COMMAND=N/A - no stress test suite is defined for the framework repo
+COMMAND_REGISTRY_EXIT=0
+LINUX_LANE_DETERMINATION_FAILURES=0
+BUG039_LINUX_LANE_VERDICT=GITHUB_ACTIONS_AGNOSTICITY_RELEASE_HYGIENE_ONLY
+BUG039_FINAL_LINUX_LANE_END
+```
+
+The grep-style local-executor exit `1` means zero matching executable launch
+commands. The tracked-artifact search exited zero and returned zero Dockerfile,
+Compose, Linux-runner, or Linux-container paths. The active command registry
+names only the canonical CLI validation surfaces. It declares no framework
+stress command.
+
+### Committed Execution Chain
+
+**Command:** Bounded `evidence-capture.sh` source-reference scan from the
+Ubuntu workflow through CLI dispatch, release check, framework validation, and
+the BUG-039 owning tests.
+**Exit Code:** 0
+**Claim Source:** executed
+**Bounded capture:** 16 lines, SHA-256
+`1e7da7e95d7f58bdabe69f014d5411da34bc0e00cc582e2ad6e64bbed4aa5d8d`.
+
+```text
+BUG039_LINUX_EXECUTION_CHAIN_BEGIN
+WORKFLOW_TO_RELEASE_CHECK
+39:        run: bash bubbles/scripts/cli.sh release-check
+97:        run: bash bubbles/scripts/cli.sh release-check
+RELEASE_CHECK_TO_FRAMEWORK_VALIDATE
+138:check_framework_validation() {
+167:run_check "Framework validation" check_framework_validation
+FRAMEWORK_VALIDATE_TO_REQUIRED_TESTS
+1080:run_check_self_only "BUG-013 sensitive client storage regression" bash "$REPO_ROOT/tests/regression/test_24_g028_sensitive_client_storage.sh"
+1152:  run_check "Implementation reality scan selftest" bash "$SCRIPT_DIR/implementation-reality-scan-selftest.sh"
+CLI_DISPATCH_TO_RELEASE_CHECK
+2011:  if [[ ! -f "$SCRIPT_DIR/release-check.sh" ]]; then
+2016:  bash "$SCRIPT_DIR/release-check.sh" "$@"
+4554:    release-check)      cmd_release_check "$@" ;;
+BUG039_LINUX_EXECUTION_CHAIN_END
+```
+
+`framework-validate.sh` also discovers every `*-selftest.sh` under its script
+directory. Its committed sweep includes `python-env-selftest.sh`. Therefore the
+Ubuntu `release-hygiene` job is the existing supported Linux path through all
+three owning test surfaces.
+
+### Nonqualifying Discovery Attempts Preserved
+
+**Phase:** test
+**Claim Source:** executed
+
+Two narrower-search candidates remain failed receipts. The first exited `1`
+with capture SHA-256
+`860648fff67670304c8c8073d8cd2d424eff3dddd80bca5d2c561ebe816be5cf`.
+It treated unrelated `workflow_dispatch` and `container:` resource labels as
+local executors. The second exited `1` with capture SHA-256
+`833e0c9b7366ff8fe543678226b74e56c27d3668d3c896d34d1449967afb8a55`.
+It matched the prose word `act`. Neither receipt supports the lane verdict. The
+accepted command above corrected both predicates rather than replacing those
+failed observations.
+
+### Linux Proof Disposition And Required Publication
+
+**Phase:** test
+**Claim Source:** not-run
+
+> **Uncertainty Declaration**
+> **What was attempted:** Repository-owned workflows, scripts, command registry,
+> tracked container artifacts, and exact call chains were inspected through
+> bounded commands. No Linux test command was launched.
+> **What was observed:** The only declared Linux lane capable of executing the
+> owning tests is `.github/workflows/agnosticity.yml`, job `release-hygiene`, on
+> `ubuntu-latest`. It runs for pull requests and pushes to `main`. It has no
+> `workflow_dispatch` trigger. The local repository declares no container,
+> local Linux runner, `act`, VM, SSH, or equivalent execution command.
+> **Why this is uncertain:** The current candidate consists of modified working
+> bytes at HEAD `22ba8756df67a8c02913d89f5a45bc08332b2bd4`. GitHub Actions can
+> check out only a published commit, so no Linux result exists for these exact
+> bytes.
+> **What would resolve this:** The human owner must create one immutable
+> non-main branch commit from the exact reconciled bytes and open a pull request.
+> The `release-hygiene` job must return complete evidence for that exact head
+> commit. `bubbles.test` must then verify runner identity, fixed
+> `/usr/bin/perl`, authenticated Python success, every portable negative case,
+> exact input hashes, and zero residue before qualifying `TP-S2-04`.
+
+No commit, push, pull request, workflow dispatch, or remote mutation occurred.
+Branch publication alone is insufficient because the workflow's `push` trigger
+is restricted to `main`; a non-main publication requires the pull-request
+event. `TP-S2-04` remains unchecked. Test Plan order continues to prohibit a
+new `TP-S2-05` matrix qualification before the Linux row qualifies. Every
+historical exit-129, incomplete exit-zero, and prior matrix receipt remains
+diagnostic and unchanged.
+
+### Reconciliation Integrity Checks
+
+**Phase:** test
+**Claim Source:** executed
+
+The pre-closeout boundary and hash command exited zero. Its structured receipt
+timestamp is `2026-08-31T16:45:45Z`, with stdout hash
+`c6289706f7c66868c2c4091093ffdd20cac00ef3dfa8849cf5a3414d9dc1e5d3`.
+
+```text
+BUG039_FINAL_BOUNDARY_HASH_BEGIN
+ROOT=/private/tmp/bubbles-bug039-native-supervisor-r2
+HEAD=22ba8756df67a8c02913d89f5a45bc08332b2bd4
+TREE=31a98edd4e3f5f3e696eefcf64958e0986bf7c0f
+BRANCH=fix/bug039-native-supervisor-r2
+STATUS_COUNT=3
+STAGED_COUNT=0
+UNTRACKED_COUNT=0
+FILE_SHA256=64e37a7299b28513fc8fab78ce0e686dad6630d04a65827fc79f30419003853a PATH=bubbles/scripts/python-env.sh
+FILE_SHA256=74f67cea0f216e6f272a57b3b0fa4f3e49afcb50b2a0e41c37df9daf93ae680a PATH=bubbles/scripts/python-env-selftest.sh
+FILE_SHA256=91a229018ddf308d7c6e826f3bd7388ac25126108ae1339fa689702871848f8a PATH=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+FILE_SHA256=aa814cd289b2b4dfb3e0f327bdfa0189947af78f56ebd44885cc3e2c8323a134 PATH=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json
+FILE_SHA256=46b29873eb1c35c8e3ed72231d5f74901fee8acbc4ac7bd7b03ac5d1acb9d5ae PATH=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md
+FILE_SHA256=094c861c0080bebcfa4cea83dc8d0a3f03a7387ee1178acd6874021f9010401c PATH=.github/workflows/agnosticity.yml
+CERTIFICATION_UNCHANGED=true
+POLICY_SNAPSHOT_UNCHANGED=true
+EXECUTION_ROUTE_ASSERTION_EXIT=0
+SCOPE2_DOD_COUNTS=12|0
+GIT_DIFF_CHECK_EXIT=0
+BOUNDARY_HASH_FAILURES=0
+BUG039_FINAL_BOUNDARY_HASH_RESULT=PASS
+BUG039_FINAL_BOUNDARY_HASH_END
+```
+
+The report hash in that block records the file before this evidence append. The
+final report hash is therefore captured outside the report by the final
+candidate-local boundary receipt. A report cannot contain its own final hash
+without changing that hash.
+
+The exact work-boundary resolver accepted all three changed paths. Its
+structured receipt timestamp is `2026-08-31T16:45:58Z`, with stdout hash
+`cb2cb984020644073f263b7a626d3622fa342346ca5ef50d932d886762dc654f`.
+
+```text
+BUG039_WORK_BOUNDARY_BEGIN
+disposition=in-boundary
+repoMatch=true
+WORK_BOUNDARY_EXIT=0 PATH=bubbles/scripts/python-env-selftest.sh
+disposition=in-boundary
+repoMatch=true
+WORK_BOUNDARY_EXIT=0 PATH=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/report.md
+disposition=in-boundary
+repoMatch=true
+WORK_BOUNDARY_EXIT=0 PATH=bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json
+WORK_BOUNDARY_FAILURES=0
+BUG039_WORK_BOUNDARY_RESULT=PASS
+BUG039_WORK_BOUNDARY_END
+```
+
+The residue command exited zero. Its structured receipt timestamp is
+`2026-08-31T16:46:17Z`, with stdout hash
+`f257a290b8ef58f43bea48afae9830eb7bcdca8b21a2c325df9baea89403a2fb`.
+
+```text
+BUG039_FINAL_RESIDUE_BEGIN
+REPOSITORY_RESIDUE_COUNT=0
+PRIVATE_ROOT_RESIDUE_COUNT=0
+RELATED_PROCESS_COUNT=0
+RESIDUE_FAILURES=0
+BUG039_FINAL_RESIDUE_RESULT=PASS
+BUG039_FINAL_RESIDUE_END
+```
+
+The canonical artifact lint then exited zero. Its structured receipt timestamp
+is `2026-08-31T16:46:28Z`, with stdout hash
+`e42cebb34aa45144620a7c02d1c71dcb34e24142d4db5e10620114792c83fe18`.
+Its bounded capture contains 40 lines with SHA-256
+`182cf27f7948b167f9fdebccae5bf6994636355face5d8ae0a4d55666dc9b567`.
+
+```text
+Required artifact exists: spec.md
+Required artifact exists: design.md
+Required artifact exists: uservalidation.md
+Required artifact exists: state.json
+Required artifact exists: scopes.md
+Required artifact exists: report.md
+No forbidden sidecar artifacts present
+Detected state.json status: in_progress
+Top-level status matches certification.status
+All checked DoD items in scopes.md have evidence blocks
+No unfilled evidence template placeholders in scopes.md
+No unfilled evidence template placeholders in report.md
+Artifact lint PASSED.
+```
+
+`execution-substate-guard.sh` exited zero at
+`2026-08-31T16:46:42Z`, with stdout hash
+`8b3a84d812f63e532bf1e3b148a2e53684c00f4f129f8a37dc7d5fc3fe37102f`.
+It accepted `needs_reverification` and confirmed its separation from
+certification. Certification and terminal status remain untouched.

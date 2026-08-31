@@ -86,13 +86,13 @@
   "requiresRevalidation": false,
   "execution": {
     "substate": "needs_reverification",
-    "activeAgent": "bubbles.plan",
+    "activeAgent": "bubbles.test",
     "currentPhase": "test",
     "currentScope": 2,
     "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.test",
-    "nextRequiredAction": "Execute TP-S2-01 for SEC-R1, SEC-R2, HAR-R1, HAR-R2, and HAR-R3 against clean successor 72bbb987ef6c396ba00b1e6b94b95526d230e1a5 before any Scope 2 implementation edit. Preserve every intended RED result and do not reuse earlier evidence.",
+    "nextRequiredOwner": "human",
+    "nextRequiredAction": "Publish the exact reconciled BUG-039 Scope 2 working tree as one immutable non-main branch commit and open a pull request without changing those bytes. The existing .github/workflows/agnosticity.yml release-hygiene job must check out that pull-request head on ubuntu-latest, provision through bubbles/scripts/python-env.sh --provision, and run bash bubbles/scripts/cli.sh release-check. Return the immutable commit SHA and complete job evidence to bubbles.test for TP-S2-04 reconciliation. Do not execute TP-S2-05 before TP-S2-04 qualifies.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
