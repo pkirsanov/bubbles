@@ -61,6 +61,57 @@ else
   bad "failing command evidence" "rc=$rc $(printf '%s' "$fail_out" | tr '\n' '|')"
 fi
 
+# --- 4a. BUG-046 RED: successful empty output is one canonical zero count ---
+# BSD grep prints 0 and exits 1 for an empty input. The capture wrapper must
+# consume the count as data rather than append a fallback zero based on grep's
+# status. This assertion intentionally checks the complete receipt shape so the
+# current duplicate-zero/arithmetic-diagnostic defect cannot pass.
+set +e
+empty_success_out="$(bash "$TARGET" -- true 2>&1)"
+empty_success_rc=$?
+set -e
+empty_success_line_fields="$(printf '%s\n' "$empty_success_out" | grep -c '^lines: 0$' || true)"
+empty_success_standalone_zeros="$(printf '%s\n' "$empty_success_out" | grep -c '^0$' || true)"
+empty_success_diagnostics="$(printf '%s\n' "$empty_success_out" | grep -Ec 'arithmetic syntax error|error token is' || true)"
+empty_success_output_markers="$(printf '%s\n' "$empty_success_out" | grep -c '^--- output ---$' || true)"
+empty_success_fences="$(printf '%s\n' "$empty_success_out" | grep -c '^```$' || true)"
+if [[ "$empty_success_rc" -eq 0 ]] \
+  && [[ "$empty_success_line_fields" -eq 1 ]] \
+  && [[ "$empty_success_standalone_zeros" -eq 0 ]] \
+  && [[ "$empty_success_diagnostics" -eq 0 ]] \
+  && [[ "$empty_success_output_markers" -eq 1 ]] \
+  && [[ "$empty_success_fences" -eq 2 ]] \
+  && printf '%s\n' "$empty_success_out" | grep -q '^sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855$'; then
+  ok "successful zero-output capture emits one canonical empty receipt"
+else
+  bad "successful zero-output capture emits one canonical empty receipt" \
+    "rc=$empty_success_rc lineFields=$empty_success_line_fields standaloneZeros=$empty_success_standalone_zeros arithmeticDiagnostics=$empty_success_diagnostics outputMarkers=$empty_success_output_markers fences=$empty_success_fences $(printf '%s' "$empty_success_out" | tr '\n' '|')"
+fi
+
+# --- 4b. ADVERSARIAL: empty output must not overwrite a nonzero child status -
+# A repair that special-cases `true` or forces every empty capture to exit zero
+# would satisfy 4a while corrupting failure evidence. Exercise the same empty
+# stream with a distinct child status and require the identical receipt shape.
+set +e
+empty_failure_out="$(bash "$TARGET" -- bash -c 'exit 9' 2>&1)"
+empty_failure_rc=$?
+set -e
+empty_failure_line_fields="$(printf '%s\n' "$empty_failure_out" | grep -c '^lines: 0$' || true)"
+empty_failure_standalone_zeros="$(printf '%s\n' "$empty_failure_out" | grep -c '^0$' || true)"
+empty_failure_diagnostics="$(printf '%s\n' "$empty_failure_out" | grep -Ec 'arithmetic syntax error|error token is' || true)"
+empty_failure_output_markers="$(printf '%s\n' "$empty_failure_out" | grep -c '^--- output ---$' || true)"
+if [[ "$empty_failure_rc" -eq 9 ]] \
+  && printf '%s\n' "$empty_failure_out" | grep -q '^exit: 9$' \
+  && [[ "$empty_failure_line_fields" -eq 1 ]] \
+  && [[ "$empty_failure_standalone_zeros" -eq 0 ]] \
+  && [[ "$empty_failure_diagnostics" -eq 0 ]] \
+  && [[ "$empty_failure_output_markers" -eq 1 ]]; then
+  ok "zero-output failure preserves the child status and canonical receipt"
+else
+  bad "zero-output failure preserves the child status and canonical receipt" \
+    "rc=$empty_failure_rc lineFields=$empty_failure_line_fields standaloneZeros=$empty_failure_standalone_zeros arithmeticDiagnostics=$empty_failure_diagnostics outputMarkers=$empty_failure_output_markers $(printf '%s' "$empty_failure_out" | tr '\n' '|')"
+fi
+
 # --- 5. ADVERSARIAL: --verify must DETECT changed output ---------------------
 # Without this, the hash is decoration and the compact form would be weaker than
 # a transcript.

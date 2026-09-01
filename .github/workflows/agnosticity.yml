@@ -23,6 +23,9 @@ jobs:
 
   release-hygiene:
     runs-on: ubuntu-latest
+    # A measured full run took about 3743 seconds. This three-hour ceiling is a
+    # generous fail-safe for a real hang, not a substitute for a passing gate.
+    timeout-minutes: 180
     steps:
       # fetch-depth: 0 is REQUIRED — evidence-admission-hardening-selftest resolves
       # the pre-fix guard commit to prove its fixtures are non-tautological, and a
@@ -45,6 +48,8 @@ jobs:
   release-hygiene-macos:
     if: github.event_name == 'push'
     runs-on: macos-latest
+    # Keep the same finite safety net on the slower portable release lane.
+    timeout-minutes: 180
     steps:
       # fetch-depth: 0 is REQUIRED — see the ubuntu job above.
       - name: Checkout

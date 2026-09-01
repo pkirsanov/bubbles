@@ -2439,3 +2439,368 @@ Escalates, on the same two answers as BUG-033: `no-new-behavior` fails because a
 refused transition becomes an accepted one, and `no-cross-product-effect` fails
 because the resolver ships into every consuming repository.
 
+---
+
+## BUG-045 — the tier selftest returns OK while an orphaned `flock` deadlocks the CI capture pipeline
+
+- **Filed:** 2026-08-31
+- **Disposition (Gate G095):** OPEN in-repo framework-source defect. This entry
+  is the authoritative `single-file` bug packet. The filing task changed no
+  implementation, test, workflow, or release-manifest file. Route the first
+  persistent RED to `bubbles.test`.
+- **Severity:** high. The defect blocks source-repository release hygiene until
+  an operator cancels the job. It does not create a false pass.
+- **Reproduced against:** `8682b7a3a6eceb6659d72bba8954b185ea6e06cf`.
+- **Affects:** `bubbles/scripts/framework-validate-tier-selftest.sh` and the
+  CI-only capture branch in `bubbles/scripts/framework-validate.sh::run_check`.
+- **Observed CI attempt:** workflow run `33416545993`, job `99568442568`.
+
+### BUG-045 confirmed behavior
+
+An isolated harness held the validator lock on file descriptor 9. It ran the
+unchanged tier selftest through a FIFO and `tee`, matching the CI capture shape.
+The harness wrote only under `/private/tmp` and removed its fixture.
+
+The selftest printed its OK marker and returned 0. A child `flock 9` remained
+blocked after its parent shell exited. That child held the FIFO writer. The
+`tee` reader held the inherited validator lock and waited for FIFO EOF.
+
+The harness returns 1 only when it observes the complete deadlock signature.
+It then terminates the leaked child and confirms that the reader stops.
+
+**Phase:** bug
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 90 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label 'BUG-045 unchanged tier selftest CI capture lock-cycle reproduction' -- /opt/homebrew/bin/bash /private/tmp/bug045-framework-tier-lock-repro.sh bubbles/scripts/framework-validate-tier-selftest.sh`
+**Exit Code:** 1
+**Claim Source:** executed
+
+````text
+```
+# BUG-045 unchanged tier selftest CI capture lock-cycle reproduction
+$ /opt/homebrew/bin/bash /private/tmp/bug045-framework-tier-lock-repro.sh bubbles/scripts/framework-validate-tier-selftest.sh
+exit: 1
+lines: 37
+sha256: db064607a42af77761728635591db6d4c39a31f36d6aeda415e371beecb4497c
+--- output ---
+BUG045_REPRODUCTION_BEGIN
+SELFTEST=bubbles/scripts/framework-validate-tier-selftest.sh
+REPRO_ROOT=/private/tmp/bug045-framework-tier-lock-repro.kdMTSl0i
+CI_CAPTURE_BEGIN
+PASS: --list-tier=core exits 0 without executing checks
+PASS: core tier WOULD-RUN a fast structural check (Registry consistency)
+PASS: core tier WOULD-RUN the scan-lib selftest
+PASS: core tier WOULD-SKIP a non-core check (Finding closure selftest)
+PASS: full tier WOULD-RUN every check (no WOULD-SKIP lines)
+PASS: an unknown framework-validate flag exits 2
+PASS: --help answers while another run holds the lock
+PASS: --list-tier dry-lists while another run holds the lock
+PASS: an EXECUTING run still contends for the lock
+PASS: lock pre-scan lists exactly the parser's executing flags
+[framework-validate-tier-selftest] OK
+SELFTEST_DIRECT_EXIT=0
+CI_CAPTURE_OBSERVATION
+SELFTEST_WAIT_EXIT=0
+SELFTEST_PROCESS_ALIVE_AFTER_WAIT=no
+OK_MARKER_COUNT=1
+CAPTURE_READER_PID=18085
+CAPTURE_READER_ALIVE_AFTER_SELFTEST=yes
+CAPTURE_READER_HOLDS_OUTER_LOCK_FD=yes
+BLOCKED_FLOCK_PID=19224
+BLOCKED_FLOCK_ALIVE_AFTER_SELFTEST=yes
+BLOCKED_FLOCK_HOLDS_LOCK_FD=yes
+BLOCKED_FLOCK_HOLDS_CAPTURE_PIPE_FD=yes
+BLOCKED_FLOCK_AND_READER_SHARE_CAPTURE_PIPE=yes
+BLOCKED_FLOCK_PS=19224     1 S    flock 9
+BLOCKED_FLOCK_LOCK_LSOF=$'COMMAND   PID      USER   FD   TYPE DEVICE SIZE/OFF   NODE NAME\nflock   19224 pkirsanov    9w   REG   1,14        0 262163933 /private/tmp/bug045-framework-tier-lock-repro.kdMTSl0i/bubbles-framework-validate.lock'
+BLOCKED_FLOCK_PIPE_LSOF=$'p19224\nf1\ntFIFO\ni262163932\nn/private/tmp/bug045-framework-tier-lock-repro.kdMTSl0i/ci-capture.pipe'
+CAPTURE_READER_PIPE_LSOF=$'p18085\nf0\ntFIFO\ni262163932\nn/private/tmp/bug045-framework-tier-lock-repro.kdMTSl0i/ci-capture.pipe'
+CAPTURE_READER_LOCK_LSOF=$'COMMAND   PID      USER   FD   TYPE DEVICE SIZE/OFF    NODE NAME\ntee     18085 pkirsanov    9w   REG   1,14        0 262163933 /private/tmp/bug045-framework-tier-lock-repro.kdMTSl0i/bubbles-framework-validate.lock'
+BUG045_DEFECT_REPRODUCED=yes
+CAPTURE_READER_AFTER_DESCENDANT_CLEANUP=stopped
+CI_CAPTURE_END
+BUG045_REPRODUCTION_END
+```
+<!-- verify: bash bubbles/scripts/evidence-capture.sh --verify db064607a42af77761728635591db6d4c39a31f36d6aeda415e371beecb4497c -- /opt/homebrew/bin/bash /private/tmp/bug045-framework-tier-lock-repro.sh bubbles/scripts/framework-validate-tier-selftest.sh -->
+````
+
+### BUG-045 CI diagnostic
+
+GitHub recorded run `33416545993` for the same source SHA. The run started at
+`2026-08-31T16:53:08Z` and ended as `cancelled` at `2026-08-31T20:29:23Z`.
+
+Job `99568442568`, `release-hygiene`, started at `2026-08-31T16:53:10Z`.
+Its `Run release hygiene` step ran from `2026-08-31T16:53:36Z` until
+`2026-08-31T20:29:20Z`, when it was cancelled. The job completed at
+`2026-08-31T20:29:23Z` with conclusion `cancelled`.
+
+The sibling jobs completed normally. Job `99568442726`, macOS portable
+surfaces, succeeded at `2026-08-31T16:53:44Z`. Job `99568442740`, Ubuntu
+portable surfaces, succeeded at `2026-08-31T16:53:28Z`.
+
+**Command:** `gh run view 33416545993 --repo pkirsanov/bubbles --json databaseId,name,event,status,conclusion,headBranch,headSha,createdAt,startedAt,updatedAt,url,jobs`
+**Exit Code:** 0
+**Claim Source:** executed
+
+### BUG-045 root cause
+
+The outer validator owns the machine lock on file descriptor 9. CI captures
+each check with `command 2>&1 | tee capture`, so both pipeline processes inherit
+that descriptor.
+
+The tier selftest always launches `( flock 9; sleep 20 ) 9>lock &`. During a
+nested full validation, `flock 9` blocks on the outer validator's lock.
+
+The selftest stores the background shell PID in `lock_holder`. It sends a
+signal only to that shell, then waits only for that PID. The external `flock`
+child survives as an orphan and retains its inherited standard output.
+
+The orphan holds the capture FIFO writer while waiting for the lock. The `tee`
+reader holds the inherited lock while waiting for FIFO EOF. The validator waits
+for the pipeline, which closes the cycle.
+
+The local `run_check` branch has no `tee` capture pipeline. The orphan therefore
+does not delay local parent completion, which hid the defect from direct runs.
+
+### BUG-045 blast radius
+
+- The defect affects framework-source full validation under GitHub Actions when
+  `flock` is available. The tier selftest is source-only.
+- `release-check.sh` runs full framework validation as its first check. The
+  remaining release checks never start after this deadlock.
+- The PR remains blocked while the Linux `release-hygiene` runner stays active.
+  The observed attempt consumed more than three hours before cancellation.
+- Downstream installed validation skips this source-only selftest. The two
+  portable-surface jobs also avoid the affected release-hygiene path.
+
+### BUG-045 accepted repair scope
+
+1. Remove the asynchronous lock-holder process from the tier selftest.
+2. Reuse the inherited outer lock when the lock-held marker is present.
+3. In standalone mode, acquire the same lock synchronously around the probes.
+4. Preserve the three current assertions for help, dry-list, and contention.
+5. Add a persistent complete-tree lifecycle regression before changing behavior.
+6. Do not weaken the outer lock or add a timeout-based success path.
+
+### BUG-045 RED and GREEN plan
+
+**RED owner: `bubbles.test`.** Run the real selftest with an isolated `TMPDIR`,
+an outer descriptor-9 lock, and a CI-shaped FIFO plus `tee`. Require a bounded
+failure when OK and direct exit 0 coexist with a live reader or `flock` child.
+The negative control must restore the background-holder pattern and reproduce
+the failure.
+
+**GREEN owner: `bubbles.implement`.** Replace the background-holder lifecycle
+with synchronous lock ownership. Preserve the lock-contention semantics.
+
+**GREEN verification owner: `bubbles.test`.** Re-run the same regression. It
+must observe EOF, no descendant, no residual lock holder, and exit 0. Then run
+the tier selftest, full framework validation, and release check.
+
+**Certification owner: `bubbles.validate`.** Accept closure only after the
+GitHub `release-hygiene` job also completes successfully for the repaired SHA.
+
+---
+
+## BUG-046 — `evidence-capture.sh` turns successful empty output into a malformed two-zero receipt with arithmetic diagnostics
+
+- **Filed:** 2026-08-31
+- **Discovery finding:** `B045-NFI-001`
+- **Disposition (Gate G095):** `bug-filed` — OPEN in-repo framework-source
+  defect. This entry is the canonical `single-file` bug packet. The filing task
+  changed no implementation, selftest, workflow, release-manifest,
+  certification, BUG-039 artifact, or BUG-045 content. Route the first
+  persistent RED to `bubbles.test`.
+- **Severity:** high for evidence integrity. A successful wrapped command
+  returns success while the emitted receipt contains an invalid line-count
+  value, Bash arithmetic diagnostics, and an incomplete short-output branch.
+- **Reproduced against:** `8682b7a3a6eceb6659d72bba8954b185ea6e06cf` on macOS
+  with `/opt/homebrew/bin/bash` and `/usr/bin/grep`.
+- **Affects:** `bubbles/scripts/evidence-capture.sh`, specifically the `total`
+  assignment and both later arithmetic consumers. The focused
+  `bubbles/scripts/evidence-capture-selftest.sh` lacks an empty-output capture
+  case.
+
+### BUG-046 confirmed behavior
+
+The exact user-facing case is a successful command that emits zero bytes. The
+inner capture wrapped portable `true`. A second capture wrapped the inner
+capture so the malformed receipt itself had an exact line count and SHA-256.
+
+The inner command exited 0. The inner capture also exited 0. Its receipt
+reported `lines: 0` followed by a second standalone `0`, emitted arithmetic
+diagnostics at both arithmetic consumers, selected the long-output branch for
+an empty stream, and omitted the normal complete short-output rendering. The
+outer receipt hashed all 13 lines of that defective inner output.
+
+**Phase:** bug
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 30 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label 'B045-NFI-001 exact empty-output wrapper reproduction' -- /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh -- true`
+**Exit Code:** 0
+**Claim Source:** executed
+**Reproduction output SHA-256:** `a49b4a0b37222d1208e31484cf198da8bd466cdc8a8d15ac1821a29a7eb49835`
+
+````text
+```
+# B045-NFI-001 exact empty-output wrapper reproduction
+$ /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh -- true
+exit: 0
+lines: 13
+sha256: a49b4a0b37222d1208e31484cf198da8bd466cdc8a8d15ac1821a29a7eb49835
+--- output ---
+```
+$ true
+exit: 0
+lines: 0
+0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+bubbles/scripts/evidence-capture.sh: line 201: [[: 0
+0: arithmetic syntax error in expression (error token is "0")
+--- first 20 ---
+bubbles/scripts/evidence-capture.sh: line 213: 0
+0: arithmetic syntax error in expression (error token is "0")
+```
+<!-- verify: bash bubbles/scripts/evidence-capture.sh --verify e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 -- true -->
+```
+<!-- verify: bash bubbles/scripts/evidence-capture.sh --verify a49b4a0b37222d1208e31484cf198da8bd466cdc8a8d15ac1821a29a7eb49835 -- /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh -- true -->
+````
+
+### BUG-046 causal proof
+
+The source computes the line count with this compound command:
+
+```bash
+total="$(grep -c '' <"$tmp" 2>/dev/null || printf '0')"
+```
+
+On an empty input, BSD `grep -c ''` writes `0` and exits 1. The fallback assumes
+that a non-zero `grep` emitted no usable count and writes another `0`. Command
+substitution therefore assigns the two-line value `$'0\n0'`, not the scalar
+integer `0`.
+
+**Phase:** bug
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 30 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label 'B045-NFI-001 line-count causal probe' -- /opt/homebrew/bin/bash -c 'set +e; grep_count="$(/usr/bin/grep -c "" </dev/null)"; grep_rc=$?; set -e; total="$(/usr/bin/grep -c "" </dev/null 2>/dev/null || printf "0")"; printf "GREP_COUNT=%s\n" "$grep_count"; printf "GREP_EXIT=%s\n" "$grep_rc"; printf "TOTAL_QUOTED=%q\n" "$total"; printf "TOTAL_RENDER_BEGIN\n%s\nTOTAL_RENDER_END\n" "$total"'`
+**Exit Code:** 0
+**Claim Source:** executed
+**Causal-probe output SHA-256:** `2c6f1ea32894ec4307934b68678faa8820c7a7be02965e2f7de90441e91355dc`
+
+```text
+GREP_COUNT=0
+GREP_EXIT=1
+TOTAL_QUOTED=$'0\n0'
+TOTAL_RENDER_BEGIN
+0
+0
+TOTAL_RENDER_END
+```
+
+`evidence-capture.sh` later evaluates this non-integer at the short-output
+comparison and omitted-line arithmetic expansion. Bash emits both diagnostics.
+The script does not use `set -e`, retains the wrapped command's earlier `rc=0`,
+and ends with `exit "$rc"`. Its own receipt-construction failure therefore
+does not change the successful exit status.
+
+### BUG-046 existing selftest gap
+
+The focused selftest currently has 17 checks. They cover non-empty short and
+long output, failure-code propagation, verification mismatch, stderr capture,
+bypass refusal, usage errors, omission lifting, diagnostic bounds, signal and
+descendant cleanup, and capture-file loss. None invokes a valid capture whose
+wrapped command emits no output. The only `-- true` match is the bypass-refusal
+case, `--fake -- true`, whose output is redirected away and whose subject is
+argument validation rather than empty-output receipt construction.
+
+The focused selftest consequently returns OK while the exact empty-output case
+above is broken:
+
+**Phase:** bug
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 90 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label 'B045-NFI-001 focused evidence-capture selftest baseline' -- /opt/homebrew/bin/bash bubbles/scripts/evidence-capture-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Focused-selftest output SHA-256:** `85a35e177110c888402b905ec75b4ed3e7110da61b40b267d54e018e848f2ad4`
+
+```text
+  ok   records command, exit code, line count and a sha256
+  ok   short output is emitted in full, not truncated
+  ok   long output is trimmed and states how many lines were omitted
+  ok   failing command still emits evidence and propagates exit 7
+  ok   --verify passes on identical output and FAILS (3) when it changes
+  ok   stderr is interleaved into the evidence, not discarded
+  ok   bypass-shaped flag refused with exit 2
+  ok   no command after -- is a usage error
+  ok   block carries a re-runnable verify command
+  ok   a failure line in the omitted region is lifted out, not swallowed
+  ok   clean output emits no failure section
+  ok   --diagnostic emits the full output and stamps the escalation
+  ok   a normal capture carries no escalation stamp
+  ok   --diagnostic remains bounded by a stated ceiling
+  ok   TERM stops the child process group and emits preserved interrupted evidence
+  ok   completed commands leave no background descendant behind
+  ok   capture-file loss fails loud without emitting an empty evidence hash
+
+evidence-capture-selftest: 17/17 checks passed
+evidence-capture-selftest: OK
+```
+
+### BUG-046 root cause
+
+The line-count command conflates two independent signals from `grep -c`: its
+printed numeric count and its match/no-match exit status. A no-match result is
+valid count data for this caller, but the `|| printf '0'` branch treats exit 1
+as absence of count data and appends a second count.
+
+That two-line value crosses a type boundary unchecked. Receipt rendering first
+prints it as text and then uses it as an arithmetic operand. The arithmetic
+diagnostics are therefore downstream effects of the malformed assignment, not
+independent failures.
+
+The final status contract compounds the defect. The wrapper returns the child
+status even when its own receipt construction fails. A caller sees exit 0 and
+can accept a receipt that the wrapper did not construct cleanly.
+
+### BUG-046 impact
+
+- Every command with zero captured stdout and stderr reaches this path. The
+  successful `true` case proves the exact reported scenario.
+- The recorded empty-stream digest is correct, but the `lines` field is not a
+  scalar and the receipt includes tool-internal diagnostics. Consumers cannot
+  rely on exact receipt shape.
+- The focused selftest gives a false sense of coverage because its short-output
+  case begins at three lines. It never reaches the zero-line boundary.
+- This filing does not claim a downstream certification was wrongly accepted or
+  rejected. No such consumer outcome was executed in this investigation.
+
+### BUG-046 acceptance criteria
+
+1. A valid capture of portable `true` exits 0 and emits exactly one scalar
+   `lines: 0` field, the SHA-256 of the empty stream, a complete short-output
+   receipt, and no arithmetic or tool-internal diagnostic.
+2. An empty-output command that exits non-zero preserves that exact child exit
+   code while emitting the same structurally valid zero-line receipt.
+3. `--verify` continues to accept the empty-stream digest for unchanged empty
+   output and continues to reject changed output with exit 3.
+4. The focused selftest gains a persistent regression for the successful
+   zero-output boundary. It asserts the exact line field, absence of a second
+   standalone zero, absence of arithmetic diagnostics, complete receipt
+   delimiters, and exit 0.
+5. The regression includes an adversarial empty-output non-zero command so a
+   repair cannot hardcode the successful case or replace the child status.
+6. The line-count implementation and regression run under GNU and BSD userland
+   without relying on a GNU-only flag or an OS-name branch.
+7. All existing focused evidence-capture checks remain green after the targeted
+   RED turns GREEN. Broader suites are not part of the initial repair loop.
+
+### BUG-046 work boundary and owner route
+
+- **First owner — `bubbles.test`:** add and execute the smallest persistent RED
+  in `bubbles/scripts/evidence-capture-selftest.sh` for acceptance criteria 1,
+  2, 4, and 5. Preserve the pre-fix failure output.
+- **Second owner — `bubbles.implement`:** repair only the zero-line count and
+  receipt-construction path in `bubbles/scripts/evidence-capture.sh`. Do not
+  weaken hashing, verification, child-status propagation, bounds, or complete
+  process-tree cleanup.
+- **GREEN owner — `bubbles.test`:** re-run the same focused regression and the
+  existing focused selftest. Expand validation only when a focused result names
+  a concrete dependency.
+- **Excluded from this filing:** BUG-039 artifacts; the BUG-045 entry and its
+  implementation/regression files; workflows; release manifests; generated
+  registries; full framework or release suites; commits; pushes; and all
+  certification state.
+

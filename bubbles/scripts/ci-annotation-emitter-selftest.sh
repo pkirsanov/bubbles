@@ -32,6 +32,7 @@
 # NOTE ON OUTPUT: this selftest never prints a raw `::error::` line. Doing so
 # would make GitHub attach a bogus annotation to a PASSING run. Diagnostics are
 # emitted with the `::` masked.
+# shellcheck disable=SC2016 # Single-quoted printf/grep text intentionally emits or matches literal shell source.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,7 +42,10 @@ FRAMEWORK_VALIDATE="$SCRIPT_DIR/framework-validate.sh"
 
 failures=0
 pass() { printf '  PASS  %s\n' "$1"; }
-fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
+fail() {
+  printf '  FAIL  %s\n' "$1"
+  failures=$((failures + 1))
+}
 
 # Mask `::` so diagnostics can quote captured output without GitHub parsing it
 # as a real workflow command.
@@ -53,6 +57,9 @@ for required in "$GUARD_LIB" "$RELEASE_CHECK" "$FRAMEWORK_VALIDATE"; do
     exit 1
   fi
 done
+
+# shellcheck source=/dev/null
+source "$GUARD_LIB"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT INT TERM
@@ -330,27 +337,343 @@ else
   fail "failure_detail: missing file misbehaved (rc=$DETAIL_RC, lines=$lines)"
 fi
 
-# --- Case I7/I8: run_check actually WIRES the detail into the annotation ------
-# Generalizing static guard. I1-I6 prove the helper works; these prove
-# framework-validate.sh still USES it. A future edit that drops the capture or
-# the detail call would leave I1-I6 green while silently restoring the
-# label-only annotation this work exists to replace.
+# --- Case J1-J7: run_check capture and complete-process-group semantics --------
+# I1-I6 prove the detail helper in isolation. J1-J7 execute the REAL shipped
+# run_check body instead of matching an implementation token or replacing it
+# with a test double. The probe deliberately does NOT call setpgid or enable job
+# control. The shipped runner must create the distinct process group, then own
+# the direct probe and its TERM-resistant descendant through bounded KILL.
+#
+# The contract is strict on both axes: run_check must return promptly without
+# waiting for the descendant-held output descriptor, AND it must terminate that
+# descendant before returning. The selftest cleans a surviving descendant only
+# after recording a contract failure, solely to prevent test residue.
+# The probe's numeric exit marker is fixture output used to show that replay is
+# ordered and complete. The production runner's durable public result is the
+# PASS/FAIL classification and aggregate failure count; it does not expose the
+# direct command's numeric status as a separate contract.
 sed -n '/^run_check() {/,/^}/p' "$FRAMEWORK_VALIDATE" >"$TMP/fv_run_check.body"
 
 if [[ ! -s "$TMP/fv_run_check.body" ]]; then
   fail "could not extract run_check() from framework-validate.sh (shape changed?)"
 else
-  if grep -Fq 'bubbles_ci_failure_detail' "$TMP/fv_run_check.body"; then
-    pass "framework-validate.sh run_check feeds bubbles_ci_failure_detail into the annotation"
+  fv_capture_tmp="$TMP/fv-capture"
+  fv_descendant_pid_file="$TMP/fv-capture-descendant.pid"
+  fv_process_group_file="$TMP/fv-capture-process-group.txt"
+  fv_harness_pgid_file="$TMP/fv-capture-harness.pgid"
+  fv_descendant_ready_file="$TMP/fv-capture-descendant.ready"
+  fv_descendant_term_file="$TMP/fv-capture-descendant.term"
+  fv_descendant_hold_fifo="$TMP/fv-capture-descendant.hold"
+  mkdir -p "$fv_capture_tmp"
+  cat >"$TMP/fv-capture-probe.sh" <<'PROBE'
+#!/usr/bin/env bash
+set -uo pipefail
+descendant_pid_file="$1"
+process_group_file="$2"
+descendant_ready_file="$3"
+descendant_term_file="$4"
+descendant_hold_fifo="$5"
+mkfifo "$descendant_hold_fifo"
+(
+  exec 7<>"$descendant_hold_fifo"
+  trap 'printf "TERM_RECEIVED\n" >"$descendant_term_file"' TERM
+  printf '%s\n' 'READY' >"$descendant_ready_file"
+  while :; do
+    read -r _hold <&7 || true
+  done
+) &
+descendant_pid=$!
+ready_wait=0
+while [[ ! -f "$descendant_ready_file" && "$ready_wait" -lt 50 ]]; do
+  sleep 0.1
+  ready_wait=$((ready_wait + 1))
+done
+probe_pgid="$(/bin/ps -o pgid= -p "$$")"
+probe_pgid="${probe_pgid//[[:space:]]/}"
+descendant_pgid="$(/bin/ps -o pgid= -p "$descendant_pid")"
+descendant_pgid="${descendant_pgid//[[:space:]]/}"
+printf '%s\n' "$descendant_pid" >"$descendant_pid_file"
+printf '%s|%s|%s|%s\n' "$$" "$probe_pgid" "$descendant_pid" "$descendant_pgid" >"$process_group_file"
+printf 'CAPTURE_STDOUT_SENTINEL\n'
+printf 'CAPTURE_STDERR_SENTINEL\n' >&2
+printf 'ERROR: CAPTURE_DETAIL_SENTINEL\n' >&2
+if [[ -f /dev/fd/1 ]]; then
+  printf 'CAPTURE_STDOUT_IS_REGULAR=yes\n'
+else
+  printf 'CAPTURE_STDOUT_IS_REGULAR=no\n'
+fi
+(exit 37)
+direct_rc=$?
+printf 'CAPTURE_DIRECT_EXIT=%s\n' "$direct_rc"
+exit "$direct_rc"
+PROBE
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'set -euo pipefail\n'
+    printf 'source "%s"\n' "$GUARD_LIB"
+    printf 'VALIDATE_TIER=full\n'
+    printf 'LIST_TIER_ONLY=false\n'
+    printf 'CHANGED_ONLY=false\n'
+    printf 'CACHE_ENABLED=false\n'
+    printf 'RECORD_DEBT=false\n'
+    printf 'failures=0\n'
+    printf 'declare -a failed_check_labels=()\n'
+    printf 'declare -a check_durations=()\n'
+    cat "$TMP/fv_run_check.body"
+    printf 'fv_harness_pgid="$(/bin/ps -o pgid= -p "$$")"\n'
+    printf 'fv_harness_pgid="${fv_harness_pgid//[[:space:]]/}"\n'
+    printf 'printf "%%s\\n" "$fv_harness_pgid" >"%s"\n' "$fv_harness_pgid_file"
+    printf 'run_check "Framework capture probe" bash "%s" "%s" "%s" "%s" "%s" "%s"\n' \
+      "$TMP/fv-capture-probe.sh" "$fv_descendant_pid_file" \
+      "$fv_process_group_file" "$fv_descendant_ready_file" "$fv_descendant_term_file" \
+      "$fv_descendant_hold_fifo"
+    printf 'printf "HARNESS_FAILURES=%%s\\n" "$failures"\n'
+    printf 'printf "HARNESS_FAILED_LABELS=%%s\\n" "${failed_check_labels[*]-}"\n'
+    printf 'exit 0\n'
+  } >"$TMP/fv-capture-harness.sh"
+
+  fv_capture_started=$SECONDS
+  if bubbles_run_with_timeout 20 env GITHUB_ACTIONS=true TMPDIR="$fv_capture_tmp" \
+    bash "$TMP/fv-capture-harness.sh" >"$OUT" 2>&1; then
+    fv_capture_rc=0
   else
-    fail "framework-validate.sh run_check no longer calls bubbles_ci_failure_detail"
+    fv_capture_rc=$?
+  fi
+  fv_capture_elapsed=$((SECONDS - fv_capture_started))
+  fv_descendant_pid="$(cat "$fv_descendant_pid_file" 2>/dev/null || true)"
+  fv_harness_pgid="$(cat "$fv_harness_pgid_file" 2>/dev/null || true)"
+  fv_probe_pid=""
+  fv_probe_pgid=""
+  fv_recorded_descendant_pid=""
+  fv_descendant_pgid=""
+  if [[ -f "$fv_process_group_file" ]]; then
+    IFS='|' read -r fv_probe_pid fv_probe_pgid fv_recorded_descendant_pid fv_descendant_pgid <"$fv_process_group_file"
+  fi
+  fv_process_group_integrity="no"
+  if [[ "$fv_harness_pgid" =~ ^[0-9]+$ ]] \
+    && [[ "$fv_probe_pid" =~ ^[0-9]+$ ]] \
+    && [[ "$fv_probe_pgid" =~ ^[0-9]+$ ]] \
+    && [[ "$fv_descendant_pid" =~ ^[0-9]+$ ]] \
+    && [[ "$fv_recorded_descendant_pid" == "$fv_descendant_pid" ]] \
+    && [[ "$fv_descendant_pgid" =~ ^[0-9]+$ ]] \
+    && [[ "$fv_probe_pid" == "$fv_probe_pgid" ]] \
+    && [[ "$fv_descendant_pgid" == "$fv_probe_pgid" ]] \
+    && [[ "$fv_harness_pgid" != "$fv_probe_pgid" ]]; then
+    fv_process_group_integrity="yes"
+  fi
+  if [[ "$fv_process_group_integrity" == "yes" ]]; then
+    pass "framework capture probe and descendant share one distinct, runner-ownable process group"
+  else
+    fail "framework capture probe did not establish an ownable process group (harness=$fv_harness_pgid probe=$fv_probe_pid probeGroup=$fv_probe_pgid descendant=$fv_descendant_pid recordedDescendant=$fv_recorded_descendant_pid descendantGroup=$fv_descendant_pgid)"
   fi
 
-  if grep -Fq 'GITHUB_ACTIONS' "$TMP/fv_run_check.body" &&
-    grep -Fq 'tee "$_cap"' "$TMP/fv_run_check.body"; then
-    pass "framework-validate.sh run_check captures output behind a GITHUB_ACTIONS gate"
+  fv_descendant_alive_after_run_check="no"
+  if [[ "$fv_descendant_pid" =~ ^[0-9]+$ ]] && kill -0 "$fv_descendant_pid" 2>/dev/null; then
+    fv_descendant_alive_after_run_check="yes"
+  fi
+  fv_stdout_count="$(grep -Fc 'CAPTURE_STDOUT_SENTINEL' "$OUT" 2>/dev/null || true)"
+  fv_stderr_count="$(grep -Fc 'CAPTURE_STDERR_SENTINEL' "$OUT" 2>/dev/null || true)"
+  fv_probe_exit_marker_count="$(grep -Fc 'CAPTURE_DIRECT_EXIT=37' "$OUT" 2>/dev/null || true)"
+  fv_expected_failure_output="$(
+    cat <<'EXPECTED_FAILURE_TRANSCRIPT'
+==> Framework capture probe
+CAPTURE_STDOUT_SENTINEL
+CAPTURE_STDERR_SENTINEL
+ERROR: CAPTURE_DETAIL_SENTINEL
+CAPTURE_STDOUT_IS_REGULAR=yes
+CAPTURE_DIRECT_EXIT=37
+FAIL: Framework capture probe
+::error::FAIL: Framework capture probe%0AERROR: CAPTURE_DETAIL_SENTINEL
+
+HARNESS_FAILURES=1
+HARNESS_FAILED_LABELS=Framework capture probe
+EXPECTED_FAILURE_TRANSCRIPT
+  )"
+  fv_actual_failure_output="$(cat "$OUT")"
+  if [[ "$fv_capture_rc" -eq 0 ]] \
+    && [[ "$fv_capture_elapsed" -lt 10 ]] \
+    && [[ "$fv_stdout_count" -eq 1 ]] \
+    && [[ "$fv_stderr_count" -eq 1 ]] \
+    && [[ "$fv_probe_exit_marker_count" -eq 1 ]] \
+    && [[ "$fv_actual_failure_output" == "$fv_expected_failure_output" ]]; then
+    pass "framework-validate.sh run_check preserves ordered probe output and classifies its nonzero direct exit as FAIL"
   else
-    fail "framework-validate.sh run_check lost the GITHUB_ACTIONS-gated 'tee \"\$_cap\"' capture"
+    fail "framework-validate.sh run_check failure transcript drifted (rc=$fv_capture_rc elapsed=$fv_capture_elapsed stdout=$fv_stdout_count stderr=$fv_stderr_count probeExitMarker=$fv_probe_exit_marker_count actual=$(printf '%q' "$(masked "$fv_actual_failure_output")"))"
+  fi
+
+  fv_annotation_count="$(annotation_count)"
+  fv_annotation_line="$(annotation_line)"
+  if [[ "$fv_annotation_count" -eq 1 ]] \
+    && printf '%s' "$fv_annotation_line" | grep -Fq 'Framework capture probe' \
+    && printf '%s' "$fv_annotation_line" | grep -Fq 'ERROR: CAPTURE_DETAIL_SENTINEL'; then
+    pass "framework-validate.sh run_check annotates with failure detail from the captured output"
+  else
+    fail "framework-validate.sh capture annotation lost its label or failure detail"
+  fi
+
+  fv_term_observed="$(cat "$fv_descendant_term_file" 2>/dev/null || true)"
+  if [[ "$fv_term_observed" == "TERM_RECEIVED" ]] \
+    && [[ "$fv_capture_elapsed" -ge 3 ]] \
+    && [[ "$fv_capture_elapsed" -lt 10 ]]; then
+    pass "framework-validate.sh run_check exhausts bounded TERM grace before KILL removes a TERM-resistant descendant"
+  else
+    fail "framework-validate.sh run_check did not exercise TERM-to-KILL escalation (term=$fv_term_observed elapsed=$fv_capture_elapsed)"
+  fi
+
+  fv_selftest_cleanup_required="no"
+  if [[ "$fv_descendant_alive_after_run_check" == "no" ]]; then
+    pass "framework-validate.sh run_check terminates the adversarial descendant before returning"
+  else
+    fv_selftest_cleanup_required="yes"
+    fail "framework-validate.sh run_check returned while the adversarial descendant was alive; selftest cleanup required"
+  fi
+
+  if [[ "$fv_selftest_cleanup_required" == "yes" ]]; then
+    if [[ "$fv_process_group_integrity" == "yes" ]]; then
+      kill -KILL -- "-$fv_probe_pgid" 2>/dev/null || true
+    else
+      kill -KILL "$fv_descendant_pid" 2>/dev/null || true
+    fi
+  fi
+
+  fv_success_output="$TMP/fv-success.output"
+  cat >"$TMP/fv-success-probe.sh" <<'SUCCESS_PROBE'
+#!/usr/bin/env bash
+set -uo pipefail
+printf 'SUCCESS_STDOUT_SENTINEL\n'
+printf 'SUCCESS_STDERR_SENTINEL\n' >&2
+exit 0
+SUCCESS_PROBE
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'set -euo pipefail\n'
+    printf 'source "%s"\n' "$GUARD_LIB"
+    printf 'VALIDATE_TIER=full\n'
+    printf 'LIST_TIER_ONLY=false\n'
+    printf 'CHANGED_ONLY=false\n'
+    printf 'CACHE_ENABLED=false\n'
+    printf 'RECORD_DEBT=false\n'
+    printf 'failures=0\n'
+    printf 'declare -a failed_check_labels=()\n'
+    printf 'declare -a check_durations=()\n'
+    cat "$TMP/fv_run_check.body"
+    printf 'run_check "Framework success probe" bash "%s"\n' "$TMP/fv-success-probe.sh"
+    printf 'printf "SUCCESS_HARNESS_FAILURES=%%s\\n" "$failures"\n'
+    printf 'printf "SUCCESS_HARNESS_FAILED_LABELS=%%s\\n" "${failed_check_labels[*]-}"\n'
+    printf 'exit 0\n'
+  } >"$TMP/fv-success-harness.sh"
+
+  if bubbles_run_with_timeout 10 env GITHUB_ACTIONS=true TMPDIR="$fv_capture_tmp" \
+    bash "$TMP/fv-success-harness.sh" >"$fv_success_output" 2>&1; then
+    fv_success_rc=0
+  else
+    fv_success_rc=$?
+  fi
+  fv_expected_success_output="$(
+    cat <<'EXPECTED_SUCCESS_TRANSCRIPT'
+==> Framework success probe
+SUCCESS_STDOUT_SENTINEL
+SUCCESS_STDERR_SENTINEL
+PASS: Framework success probe
+
+SUCCESS_HARNESS_FAILURES=0
+SUCCESS_HARNESS_FAILED_LABELS=
+EXPECTED_SUCCESS_TRANSCRIPT
+  )"
+  fv_actual_success_output="$(cat "$fv_success_output")"
+  fv_success_annotation_count="$(grep -c '^::error::' "$fv_success_output" 2>/dev/null || true)"
+  if [[ "$fv_success_rc" -eq 0 ]] \
+    && [[ "$fv_success_annotation_count" -eq 0 ]] \
+    && [[ "$fv_actual_success_output" == "$fv_expected_success_output" ]]; then
+    pass "framework-validate.sh run_check preserves the exact ordered success transcript and emits no annotation"
+  else
+    fail "framework-validate.sh run_check success transcript drifted (rc=$fv_success_rc annotations=$fv_success_annotation_count actual=[$(masked "$fv_actual_success_output")])"
+  fi
+
+  # A direct command may exit zero while the CI runner fails to replay or
+  # clean up its owned tree. Force the replay command itself to return nonzero
+  # after emitting the captured bytes. The real run_check body must classify
+  # that independent tree status as FAIL; removing `_ci_tree_rc` from the PASS
+  # predicate makes this control go red while the direct probe remains green.
+  fv_tree_status_output="$TMP/fv-tree-status.output"
+  cat >"$TMP/fv-tree-status-probe.sh" <<'TREE_STATUS_PROBE'
+#!/usr/bin/env bash
+set -uo pipefail
+printf 'TREE_STATUS_DIRECT_ZERO\n'
+exit 0
+TREE_STATUS_PROBE
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'set -euo pipefail\n'
+    printf 'source "%s"\n' "$GUARD_LIB"
+    printf 'VALIDATE_TIER=full\n'
+    printf 'LIST_TIER_ONLY=false\n'
+    printf 'CHANGED_ONLY=false\n'
+    printf 'CACHE_ENABLED=false\n'
+    printf 'RECORD_DEBT=false\n'
+    printf 'failures=0\n'
+    printf 'declare -a failed_check_labels=()\n'
+    printf 'declare -a check_durations=()\n'
+    cat "$TMP/fv_run_check.body"
+    printf 'cat() { command cat "$@"; return 41; }\n'
+    printf 'run_check "Framework tree-status probe" bash "%s"\n' "$TMP/fv-tree-status-probe.sh"
+    printf 'printf "TREE_STATUS_HARNESS_FAILURES=%%s\\n" "$failures"\n'
+    printf 'printf "TREE_STATUS_HARNESS_FAILED_LABELS=%%s\\n" "${failed_check_labels[*]-}"\n'
+    printf 'exit 0\n'
+  } >"$TMP/fv-tree-status-harness.sh"
+
+  if bubbles_run_with_timeout 10 env GITHUB_ACTIONS=true TMPDIR="$fv_capture_tmp" \
+    bash "$TMP/fv-tree-status-harness.sh" >"$fv_tree_status_output" 2>&1; then
+    fv_tree_status_rc=0
+  else
+    fv_tree_status_rc=$?
+  fi
+  fv_tree_direct_zero_count="$(grep -Fc 'TREE_STATUS_DIRECT_ZERO' "$fv_tree_status_output" 2>/dev/null || true)"
+  fv_tree_replay_error_count="$(grep -Fc 'ERROR: could not replay the captured output for Framework tree-status probe' "$fv_tree_status_output" 2>/dev/null || true)"
+  fv_tree_fail_count="$(grep -c '^FAIL: Framework tree-status probe$' "$fv_tree_status_output" 2>/dev/null || true)"
+  fv_tree_pass_count="$(grep -c '^PASS: Framework tree-status probe$' "$fv_tree_status_output" 2>/dev/null || true)"
+  if [[ "$fv_tree_status_rc" -eq 0 ]] \
+    && [[ "$fv_tree_direct_zero_count" -eq 1 ]] \
+    && [[ "$fv_tree_replay_error_count" -eq 1 ]] \
+    && [[ "$fv_tree_fail_count" -eq 1 ]] \
+    && [[ "$fv_tree_pass_count" -eq 0 ]] \
+    && grep -Fq 'TREE_STATUS_HARNESS_FAILURES=1' "$fv_tree_status_output" \
+    && grep -Fq 'TREE_STATUS_HARNESS_FAILED_LABELS=Framework tree-status probe' "$fv_tree_status_output"; then
+    pass "framework-validate.sh run_check rejects replay failure independently of a zero direct exit"
+  else
+    fail "framework-validate.sh ignored or misclassified replay failure (rc=$fv_tree_status_rc directZero=$fv_tree_direct_zero_count replayError=$fv_tree_replay_error_count fail=$fv_tree_fail_count pass=$fv_tree_pass_count actual=[$(masked "$(cat "$fv_tree_status_output")")])"
+  fi
+
+  fv_capture_residue=0
+  while IFS= read -r fv_capture_path; do
+    [[ -n "$fv_capture_path" ]] || continue
+    fv_capture_residue=$((fv_capture_residue + 1))
+  done < <(find "$fv_capture_tmp" -mindepth 1 -print)
+  fv_descendant_residue="no"
+  if [[ "$fv_descendant_pid" =~ ^[0-9]+$ ]]; then
+    for _ in 1 2 3 4 5; do
+      kill -0 "$fv_descendant_pid" 2>/dev/null || break
+      sleep 1
+    done
+    if kill -0 "$fv_descendant_pid" 2>/dev/null; then
+      fv_descendant_residue="yes"
+      if [[ "$fv_process_group_integrity" == "yes" ]]; then
+        kill -KILL -- "-$fv_probe_pgid" 2>/dev/null || true
+      else
+        kill -KILL "$fv_descendant_pid" 2>/dev/null || true
+      fi
+    fi
+  fi
+  fv_process_group_residue="no"
+  if [[ "$fv_probe_pgid" =~ ^[0-9]+$ ]] && kill -0 -- "-$fv_probe_pgid" 2>/dev/null; then
+    fv_process_group_residue="yes"
+  fi
+  if [[ "$fv_capture_residue" -eq 0 ]] \
+    && [[ "$fv_descendant_residue" == "no" ]] \
+    && [[ "$fv_process_group_residue" == "no" ]]; then
+    pass "framework capture leaves no private-file or process-group residue (selftestCleanupRequired=$fv_selftest_cleanup_required)"
+  else
+    fail "framework capture residue remained (captureFiles=$fv_capture_residue descendant=$fv_descendant_residue processGroup=$fv_process_group_residue selftestCleanupRequired=$fv_selftest_cleanup_required)"
   fi
 fi
 
@@ -507,5 +830,5 @@ if [[ "$failures" -ne 0 ]]; then
   printf 'ci-annotation-emitter selftest: %d failure(s)\n' "$failures"
   exit 1
 fi
-printf 'ci-annotation-emitter selftest: OK (31 assertions)\n'
+printf 'ci-annotation-emitter selftest: OK (37 assertions)\n'
 exit 0

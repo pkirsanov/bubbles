@@ -9,7 +9,7 @@ set -euo pipefail
 # stock macOS bash 3.2 these constructs fail; the shipped command surface must
 # fail LOUDLY and EARLY (before sourcing any helper or running any declare -A
 # selftest) instead of silently masking the breakage from installers/doctor/CI.
-if [[ -z "${BASH_VERSINFO:-}" ]] || (( ${BASH_VERSINFO[0]:-0} < 4 )); then
+if [[ -z "${BASH_VERSINFO:-}" ]] || ((${BASH_VERSINFO[0]:-0} < 4)); then
   printf 'ERROR: Bubbles requires bash 4.0+ (found %s). Install a newer bash (e.g. `brew install bash` on macOS) and re-run.\n' "${BASH_VERSION:-unknown}" >&2
   exit 1
 fi
@@ -385,8 +385,8 @@ done
 # tree whose verdict has just changed. Removing it first is what makes a receipt
 # describe only runs that reached an end.
 _fv_receipt_ready=false
-if [[ "$_fv_outermost" == "true" && "$_fv_executes_checks" == "true" && "$LIST_TIER_ONLY" == "false" ]] &&
-  [[ -f "$SCRIPT_DIR/validation-receipt.sh" ]]; then
+if [[ "$_fv_outermost" == "true" && "$_fv_executes_checks" == "true" && "$LIST_TIER_ONLY" == "false" ]] \
+  && [[ -f "$SCRIPT_DIR/validation-receipt.sh" ]]; then
   # Same defence as the validate-cache source above, and for the same reason:
   # `source` runs in THIS shell, so a sibling that merely exits would terminate
   # framework-validate mid-run — and because it exits 0, the run would look like
@@ -520,8 +520,8 @@ run_check() {
       # weaker claim, and printing the stronger word for the weaker claim is how
       # a suite reports work it did not do.
       local _receipt="unknown"
-      declare -F validate_cache_receipt >/dev/null 2>&1 &&
-        _receipt="$(validate_cache_receipt "$_cache_key" 2>/dev/null || echo unknown)"
+      declare -F validate_cache_receipt >/dev/null 2>&1 \
+        && _receipt="$(validate_cache_receipt "$_cache_key" 2>/dev/null || echo unknown)"
       echo "==> $label"
       echo "REUSED: $label (receipt $_receipt — every declared closure input unchanged)"
       cache_hits=$((cache_hits + 1))
@@ -532,16 +532,81 @@ run_check() {
 
   echo "==> $label"
   local _started="$SECONDS"
-  local _rc=0 _cap=""
-  # Only CI captures output. Locally the invocation stays exactly as it was, so
-  # stdout/stderr separation and byte-for-byte output are preserved.
+  local _rc=0 _cap="" _ci_tree_rc=0
+  # Only CI captures output. A private regular file is deliberate: a pipeline
+  # reader waits for EOF from every inherited writer, so an arbitrary orphaned
+  # descendant can deadlock the validator after the direct check has returned.
+  # The regular file lets us wait for the direct command, preserve its exact
+  # status, then replay every line captured by that point without making
+  # completion depend on descendant-held descriptors. Locally the invocation
+  # stays exactly as it was, preserving stdout/stderr separation.
   if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-    _cap="$(mktemp)"
-    if "$@" 2>&1 | tee "$_cap"; then _rc=0; else _rc=$?; fi
+    if _cap="$(mktemp "${TMPDIR:-/tmp}/bubbles-framework-validate-capture.XXXXXXXX")"; then
+      # Force the direct check into its own process group. Do not depend on the
+      # caller's job-control state: enable monitor mode for the launch, then
+      # restore it immediately. With a single-command background job, $! is
+      # both the direct child PID and the owned process-group ID, so negative
+      # signals below can never target this validator's process group.
+      local _monitor_was_enabled=0 _check_pid="" _termination_waited=0
+      [[ "$-" == *m* ]] && _monitor_was_enabled=1
+      if set -m; then
+        "$@" >"$_cap" 2>&1 &
+        _check_pid=$!
+        if [[ "$_monitor_was_enabled" -eq 0 ]] && ! set +m; then
+          printf 'ERROR: could not restore job-control state after launching %s\n' "$label" >&2
+          _ci_tree_rc=1
+        fi
+
+        # Wait for the direct command first and retain its exact status. A
+        # completed parent can leave descendants alive in the same owned group,
+        # so close that tree before replaying the regular-file capture.
+        if wait "$_check_pid" 2>/dev/null; then _rc=0; else _rc=$?; fi
+        if [[ "$_check_pid" =~ ^[1-9][0-9]*$ ]] \
+          && [[ "$_check_pid" != "$$" ]] \
+          && kill -0 -- "-$_check_pid" 2>/dev/null; then
+          kill -TERM -- "-$_check_pid" 2>/dev/null || true
+          _termination_waited=0
+          while kill -0 -- "-$_check_pid" 2>/dev/null \
+            && [[ "$_termination_waited" -lt 3 ]]; do
+            sleep 1
+            _termination_waited=$((_termination_waited + 1))
+          done
+          if kill -0 -- "-$_check_pid" 2>/dev/null; then
+            kill -KILL -- "-$_check_pid" 2>/dev/null || true
+            _termination_waited=0
+            while kill -0 -- "-$_check_pid" 2>/dev/null \
+              && [[ "$_termination_waited" -lt 3 ]]; do
+              sleep 1
+              _termination_waited=$((_termination_waited + 1))
+            done
+          fi
+          # The direct child was already reaped above. A second wait is the
+          # only portable reap available if Bash still retained job state.
+          wait "$_check_pid" 2>/dev/null || true
+          if kill -0 -- "-$_check_pid" 2>/dev/null; then
+            printf 'ERROR: process group %s for %s survived bounded TERM/KILL cleanup\n' \
+              "$_check_pid" "$label" >&2
+            _ci_tree_rc=1
+          fi
+        fi
+      else
+        printf 'ERROR: could not create a distinct process group for %s\n' "$label" >&2
+        _rc=1
+        _ci_tree_rc=1
+      fi
+      if ! cat "$_cap"; then
+        echo "ERROR: could not replay the captured output for $label" >&2
+        _ci_tree_rc=1
+      fi
+    else
+      echo "ERROR: could not create a private CI capture file for $label" >&2
+      _rc=1
+      _ci_tree_rc=1
+    fi
   else
     if "$@"; then _rc=0; else _rc=$?; fi
   fi
-  if [[ "$_rc" -eq 0 ]]; then
+  if [[ "$_rc" -eq 0 && "$_ci_tree_rc" -eq 0 ]]; then
     echo "PASS: $label"
     [[ -n "$_cache_key" ]] && validate_cache_put "$_cache_key" 0
   else
@@ -613,8 +678,8 @@ echo
 # never displaced. The import list duplicates dependency-posture.sh's declared
 # set; that is a deliberate two-line duplication rather than a second source of
 # truth, because resolving it through the helper would mean sourcing it.
-if [[ -f "$SCRIPT_DIR/python-env.sh" ]] &&
-  ! python3 -c 'import yaml, jsonschema' >/dev/null 2>&1; then
+if [[ -f "$SCRIPT_DIR/python-env.sh" ]] \
+  && ! python3 -c 'import yaml, jsonschema' >/dev/null 2>&1; then
   bubbles_managed_python="$(bash "$SCRIPT_DIR/python-env.sh" --path 2>/dev/null || true)"
   if [[ -n "$bubbles_managed_python" && -x "$bubbles_managed_python" ]]; then
     PATH="$(dirname "$bubbles_managed_python"):$PATH"
@@ -1082,6 +1147,7 @@ run_check_self_only "BUG-018 traceability Test Plan heading-depth regression" ba
 run_check_self_only "BUG-019 state-transition compound MJS test-path regression" bash "$REPO_ROOT/tests/regression/test_26_state_transition_spec_mjs_path.sh"
 run_check_self_only "BUG-021 portable framework deadline regression" bash "$REPO_ROOT/tests/regression/test_28_framework_validate_portable_timeout.sh"
 run_check_self_only "BUG-029 human acceptance terminal regression (G136)" bash "$REPO_ROOT/tests/regression/test_35_human_acceptance_terminal.sh"
+run_check_self_only "BUG-045 framework-validate tier-lock lifecycle regression" bash "$REPO_ROOT/tests/regression/test_36_framework_validate_tier_lock_lifecycle.sh"
 run_check "Convergence cap guard selftest" bash "$SCRIPT_DIR/convergence-cap-guard-selftest.sh"
 run_check "Session cap guard selftest (G128)" bash "$SCRIPT_DIR/session-cap-guard-selftest.sh"
 run_check "Session cap guard (live, G128)" env BUBBLES_REPO_ROOT="$REPO_ROOT" bash "$SCRIPT_DIR/session-cap-guard.sh" --quiet
@@ -1759,8 +1825,8 @@ if [[ "$RECORD_DEBT" == "true" && "${#deferred_check_ids[@]}" -gt 0 ]]; then
     deferred_label="${deferred_check_labels[$debt_idx]}"
     deferred_cmd="${deferred_check_cmds[$debt_idx]}"
     debt_idx=$((debt_idx + 1))
-    if [[ -x "$debt_tool" || -f "$debt_tool" ]] &&
-      bash "$debt_tool" record \
+    if [[ -x "$debt_tool" || -f "$debt_tool" ]] \
+      && bash "$debt_tool" record \
         --check "$deferred_id" \
         --class heavy-selftest \
         --source-revision "$source_revision" \

@@ -9,8 +9,10 @@ OWNERSHIP_LINT_SCRIPT="$SCRIPT_DIR/agent-ownership-lint.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/guard-lib.sh"
 
-BUG039_SCOPE2_RED_ONLY=0
-BUG039_CHECK16_ONLY=0
+B039_SCOPE2_RED_ONLY=0
+B039_CHECK16_ONLY=0
+CHECK7C_ONLY=0
+GATE_ID_BOUNDARY_ONLY=0
 case "${1:-}" in
   '')
     [[ "$#" -eq 0 ]] || {
@@ -23,14 +25,28 @@ case "${1:-}" in
       printf '%s\n' 'BUG-039 Scope 2 RED controls require the privileged-native-supervision-v2 token' >&2
       exit 2
     fi
-    BUG039_SCOPE2_RED_ONLY=1
+    B039_SCOPE2_RED_ONLY=1
     ;;
   --internal-bug039-check16-controls)
     if [[ "$#" -ne 2 || "${2:-}" != b039-check16-integration-v1 ]]; then
       printf '%s\n' 'BUG-039 Check 16 controls require the b039-check16-integration-v1 token' >&2
       exit 2
     fi
-    BUG039_CHECK16_ONLY=1
+    B039_CHECK16_ONLY=1
+    ;;
+  --internal-check7c-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != check7c-source-extraction-v1 ]]; then
+      printf '%s\n' 'Check 7C controls require the check7c-source-extraction-v1 token' >&2
+      exit 2
+    fi
+    CHECK7C_ONLY=1
+    ;;
+  --internal-gate-id-boundary-controls)
+    if [[ "$#" -ne 2 || "${2:-}" != gate-id-boundary-v1 ]]; then
+      printf '%s\n' 'Gate-id boundary controls require the gate-id-boundary-v1 token' >&2
+      exit 2
+    fi
+    GATE_ID_BOUNDARY_ONLY=1
     ;;
   *)
     printf 'state-transition-guard selftest argument is invalid: %s\n' "$1" >&2
@@ -50,7 +66,8 @@ tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXX
 failures=0
 
 cleanup() {
-  if [[ ( "$BUG039_SCOPE2_RED_ONLY" -eq 1 || "$BUG039_CHECK16_ONLY" -eq 1 ) &&
+  if [[ ( "$B039_SCOPE2_RED_ONLY" -eq 1 || "$B039_CHECK16_ONLY" -eq 1 ||
+    "$CHECK7C_ONLY" -eq 1 || "$GATE_ID_BOUNDARY_ONLY" -eq 1 ) &&
     "${KEEP_SELFTEST_TMP:-0}" != "1" ]] ||
     { [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; }; then
     rm -rf "$tmp_root"
@@ -69,6 +86,360 @@ fail() {
   echo "FAIL: $1"
   failures=$((failures + 1))
 }
+
+extract_record_gate_ids_from_message() {
+  local guard_source="$1"
+  local function_output="$2"
+
+  [[ -f "$guard_source" ]] || return 1
+  /usr/bin/awk '
+    /^record_gate_ids_from_message\(\)[[:space:]]*\{[[:space:]]*$/ {
+      function_count++
+      in_function=1
+    }
+    in_function {
+      print
+      if ($0 ~ /^}[[:space:]]*$/) {
+        in_function=0
+        closed_count++
+      }
+    }
+    END {
+      if (function_count != 1 || closed_count != 1 || in_function) exit 1
+    }
+  ' "$guard_source" >"$function_output"
+}
+
+run_gate_id_boundary_controls() {
+  local boundary_dir
+  local parser_body
+  local embedded_output=""
+  local embedded_status=0
+  local standalone_output=""
+  local standalone_status=0
+  local undefined_gate_id
+
+  printf -v undefined_gate_id 'G%03d' 39
+
+  boundary_dir="$(mktemp -d "$tmp_root/gate-id-boundary.XXXXXX")"
+  parser_body="$boundary_dir/record-gate-ids.sh"
+  if ! extract_record_gate_ids_from_message "$GUARD_SCRIPT" "$parser_body"; then
+    fail "Gate-id boundary: production record_gate_ids_from_message() could not be extracted exactly once"
+    rm -rf "$boundary_dir"
+    return
+  fi
+  pass "Gate-id boundary: production record_gate_ids_from_message() is the exercised parser"
+
+  if embedded_output="$({
+    passed_gate_ids=()
+    failed_gate_ids=()
+    record_passed_gate() { passed_gate_ids+=("$1"); }
+    record_failed_gate() { failed_gate_ids+=("$1"); }
+    # shellcheck source=/dev/null
+    source "$parser_body"
+    record_gate_ids_from_message fail \
+      "BU${undefined_gate_id}_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1 B${undefined_gate_id#G}_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1 PREFIX${undefined_gate_id}_SUFFIX _${undefined_gate_id} ${undefined_gate_id}_"
+    printf 'EMBEDDED_FAILED_COUNT=%s\n' "${#failed_gate_ids[@]}"
+    printf 'EMBEDDED_FAILED_IDS=%s\n' "${failed_gate_ids[*]-}"
+  } 2>&1)"; then
+    embedded_status=0
+  else
+    embedded_status=$?
+  fi
+  if [[ "$embedded_status" -eq 0 ]] &&
+    grep -Fxq 'EMBEDDED_FAILED_COUNT=0' <<<"$embedded_output" &&
+    grep -Fxq 'EMBEDDED_FAILED_IDS=' <<<"$embedded_output"; then
+    pass "Gate-id boundary: BU${undefined_gate_id}_* and identifier-embedded ${undefined_gate_id} strings register no gate"
+  else
+    fail "Gate-id boundary: an embedded ${undefined_gate_id} string polluted failedGateIds (status=$embedded_status output=$embedded_output)"
+  fi
+
+  if standalone_output="$({
+    passed_gate_ids=()
+    failed_gate_ids=()
+    record_passed_gate() { passed_gate_ids+=("$1"); }
+    record_failed_gate() { failed_gate_ids+=("$1"); }
+    # shellcheck source=/dev/null
+    source "$parser_body"
+    record_gate_ids_from_message pass "standalone ${undefined_gate_id}; bracketed [G040]"
+    printf 'STANDALONE_PASSED_COUNT=%s\n' "${#passed_gate_ids[@]}"
+    printf 'STANDALONE_PASSED_IDS=%s\n' "${passed_gate_ids[*]-}"
+  } 2>&1)"; then
+    standalone_status=0
+  else
+    standalone_status=$?
+  fi
+  if [[ "$standalone_status" -eq 0 ]] &&
+    grep -Fxq 'STANDALONE_PASSED_COUNT=2' <<<"$standalone_output" &&
+    grep -Fxq "STANDALONE_PASSED_IDS=${undefined_gate_id} G040" <<<"$standalone_output"; then
+    pass "Gate-id boundary: standalone and punctuation-delimited gate identifiers still register in order"
+  else
+    fail "Gate-id boundary: a real standalone gate identifier was lost (status=$standalone_status output=$standalone_output)"
+  fi
+
+  rm -rf "$boundary_dir"
+}
+
+extract_check7c_analyzer() {
+  local guard_source="$1"
+  local analyzer_output="$2"
+
+  [[ -f "$guard_source" ]] || return 1
+
+  /usr/bin/awk '
+    BEGIN {
+      quote = sprintf("%c", 39)
+      heredoc_open = "python3 - \"$1\" <<" quote "PY" quote
+      invocation = "claim_backing_analysis=\"$(_check7c_claim_backing_analysis \"$state_file\")\""
+      function_count = 0
+      heredoc_count = 0
+      invocation_count = 0
+      body_lines = 0
+      in_function = 0
+      in_body = 0
+      body_done = 0
+      function_closed = 0
+      invalid = 0
+    }
+    {
+      normalized = $0
+      sub(/^[[:space:]]*/, "", normalized)
+      sub(/[[:space:]]*$/, "", normalized)
+      if (normalized == invocation) invocation_count++
+    }
+    /^_check7c_claim_backing_analysis\(\)[[:space:]]*\{[[:space:]]*$/ {
+      function_count++
+      if (function_count != 1 || in_function || function_closed) invalid = 1
+      in_function = 1
+      next
+    }
+    in_function && !in_body && !body_done {
+      if (normalized == heredoc_open) {
+        heredoc_count++
+        in_body = 1
+        next
+      }
+      if (normalized == "}") {
+        invalid = 1
+        in_function = 0
+      }
+      next
+    }
+    in_body {
+      if ($0 == "PY") {
+        in_body = 0
+        body_done = 1
+        next
+      }
+      print
+      body_lines++
+      next
+    }
+    in_function && body_done {
+      if (normalized == "") next
+      if (normalized == "}") {
+        function_closed = 1
+        in_function = 0
+        next
+      }
+      invalid = 1
+      in_function = 0
+    }
+    END {
+      if (invalid || function_count != 1 || heredoc_count != 1 ||
+          invocation_count != 1 || in_body || !body_done ||
+          !function_closed || body_lines == 0) exit 1
+    }
+  ' "$guard_source" >"$analyzer_output"
+}
+
+run_check7c_phase_claim_backing() {
+  # ----------------------------------------------------------------------------
+  # Check 7C — phase-claim execution backing (audit finding A-017-08)
+  #
+  # Check 7A reads executionHistory only, so a completedPhaseClaims entry with NO
+  # backing history entry was structurally invisible: the phase looked claimed and
+  # nothing measured it. These cases drive the REAL analyzer extracted from guard
+  # source — not a restatement of it — so the test cannot pass while the guard's
+  # own logic drifts away from it.
+  # ----------------------------------------------------------------------------
+  echo "Running Check 7C phase-claim execution backing (A-017-08)..."
+
+  local c7c_dir
+  local c7c_analyzer
+  local c7c_renamed_guard
+  local c7c_renamed_analyzer
+  local c7c_backed
+  local c7c_unbacked
+  local c7c_excess
+  local c7c_toplevel
+  local c7c_str_unbacked
+  local c7c_str_backed
+  local c7c_no_history
+
+  c7c_dir="$(mktemp -d "$tmp_root/check7c.XXXXXX")"
+  c7c_analyzer="$c7c_dir/analyzer.py"
+  if ! extract_check7c_analyzer "$GUARD_SCRIPT" "$c7c_analyzer"; then
+    fail "Check 7C: analyzer block absent from guard source — the check was removed or renamed"
+    rm -rf "$c7c_dir"
+    return
+  fi
+  pass "Check 7C: analyzer block located in guard source (no test/source drift)"
+
+  c7c_renamed_guard="$c7c_dir/state-transition-guard-renamed.sh"
+  c7c_renamed_analyzer="$c7c_dir/renamed-analyzer.py"
+  /usr/bin/awk '{
+    gsub(/_check7c_claim_backing_analysis/, "_check7c_claim_backing_analysis_renamed")
+    print
+  }' "$GUARD_SCRIPT" >"$c7c_renamed_guard"
+  if extract_check7c_analyzer "$c7c_renamed_guard" "$c7c_renamed_analyzer"; then
+    fail "Check 7C adversarial extraction: a renamed analyzer function was accepted as the live guard analyzer"
+  else
+    pass "Check 7C adversarial extraction: a renamed analyzer function fails closed"
+  fi
+
+  # A: every claim has a run behind it.
+  cat >"$c7c_dir/backed.json" <<'JSON'
+{"execution":{"completedPhaseClaims":[{"phase":"test","agent":"bubbles.test"}],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  # B: a claim with NO backing run — the invisible case A-017-08 named.
+  cat >"$c7c_dir/unbacked.json" <<'JSON'
+{"execution":{"completedPhaseClaims":[{"phase":"test","agent":"bubbles.test"},
+ {"phase":"audit","agent":"bubbles.audit"}],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  # C: more claims than runs — suspicious, not provably false.
+  cat >"$c7c_dir/excess.json" <<'JSON'
+{"execution":{"completedPhaseClaims":[{"phase":"test"},{"phase":"test"}],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  # D: history at the TOP level, which is where most agents write it.
+  cat >"$c7c_dir/toplevel.json" <<'JSON'
+{"execution":{"completedPhaseClaims":[{"phase":"docs","agent":"bubbles.docs"}]},
+ "executionHistory":[{"agent":"bubbles.docs","phasesExecuted":["docs"]}]}
+JSON
+
+  # E/F: the PLAIN-STRING claim shape. Cases A-D above all use the dict form
+  # {"phase":"test"}, but real packets — including this selftest's own
+  # emit_base_fixture — write completedPhaseClaims as bare strings. The analyzer
+  # used to `continue` past every non-dict element, so `claimed` stayed empty and
+  # the gate reported NO_CLAIMS and passed on precisely the shape production
+  # emits. The dict-only fixtures could never see it. E is the regression case;
+  # F is its adversarial twin.
+  cat >"$c7c_dir/str_unbacked.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["test","audit"],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  cat >"$c7c_dir/str_backed.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["test"],
+ "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
+JSON
+
+  # G: claims but NO executionHistory at all. Planning-only and legacy packets
+  # routinely omit the array. An absent record is not evidence of an unbacked
+  # claim, so the check must ABSTAIN here — otherwise widening claim parsing
+  # (cases E/F) turns every history-less planning packet into a false block.
+  cat >"$c7c_dir/no_history.json" <<'JSON'
+{"execution":{"completedPhaseClaims":["analyze","bootstrap"]}}
+JSON
+
+  c7c_backed="$(python3 "$c7c_analyzer" "$c7c_dir/backed.json" 2>&1 || true)"
+  c7c_unbacked="$(python3 "$c7c_analyzer" "$c7c_dir/unbacked.json" 2>&1 || true)"
+  c7c_excess="$(python3 "$c7c_analyzer" "$c7c_dir/excess.json" 2>&1 || true)"
+  c7c_toplevel="$(python3 "$c7c_analyzer" "$c7c_dir/toplevel.json" 2>&1 || true)"
+
+  if echo "$c7c_unbacked" | grep -q '^UNBACKED=audit$'; then
+    pass "Check 7C: a claimed phase with no executionHistory entry is reported UNBACKED"
+  else
+    fail "Check 7C: an unbacked phase claim went undetected — this is the A-017-08 blind spot (observed: $(echo "$c7c_unbacked" | tr '\n' ' '))"
+  fi
+
+  # Adversarial twin: a detector that flagged everything would satisfy the case
+  # above while proving nothing. The backed fixture must come back clean.
+  if echo "$c7c_backed" | grep -q '^UNBACKED='; then
+    fail "Check 7C: a properly backed claim was reported UNBACKED — the detector fires indiscriminately and proves nothing"
+  else
+    pass "Check 7C adversarial: a properly backed claim is NOT reported (detector discriminates)"
+  fi
+
+  if echo "$c7c_excess" | grep -q '^EXCESS=test(2 claim/1 run)$'; then
+    pass "Check 7C: more claims than runs is reported as EXCESS, with its counts"
+  else
+    fail "Check 7C: claim/run count mismatch went undetected (observed: $(echo "$c7c_excess" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7c_backed" | grep -q '^EXCESS='; then
+    fail "Check 7C adversarial: a 1-claim/1-run packet was reported as EXCESS — the count comparison is wrong"
+  else
+    pass "Check 7C adversarial: a matched claim/run count is NOT reported as EXCESS"
+  fi
+
+  if echo "$c7c_toplevel" | grep -q '^UNBACKED='; then
+    fail "Check 7C: a TOP-level executionHistory was not read — same container bug as BUG-012, every such packet would false-block"
+  else
+    pass "Check 7C: reads a TOP-level executionHistory (BUG-012 container fallback honored)"
+  fi
+
+  c7c_str_unbacked="$(python3 "$c7c_analyzer" "$c7c_dir/str_unbacked.json" 2>&1 || true)"
+  c7c_str_backed="$(python3 "$c7c_analyzer" "$c7c_dir/str_backed.json" 2>&1 || true)"
+
+  if echo "$c7c_str_unbacked" | grep -q '^UNBACKED=audit$'; then
+    pass "Check 7C: an unbacked PLAIN-STRING claim is reported (the shape real packets write)"
+  else
+    fail "Check 7C: a plain-string claim shape left the gate INERT — every element skipped, claimed empty, NO_CLAIMS reported while an unbacked phase passed (observed: $(echo "$c7c_str_unbacked" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7c_str_unbacked" | grep -q '^NO_CLAIMS=1$'; then
+    fail "Check 7C: string-shape claims produced NO_CLAIMS — the analyzer is not normalising them and the gate is looking at nothing"
+  else
+    pass "Check 7C: string-shape claims are normalised, not discarded as NO_CLAIMS"
+  fi
+
+  if echo "$c7c_str_backed" | grep -q '^UNBACKED='; then
+    fail "Check 7C adversarial: a backed plain-string claim was reported UNBACKED — string normalisation over-fires"
+  else
+    pass "Check 7C adversarial: a backed plain-string claim is NOT reported (string path discriminates)"
+  fi
+
+  c7c_no_history="$(python3 "$c7c_analyzer" "$c7c_dir/no_history.json" 2>&1 || true)"
+
+  if echo "$c7c_no_history" | grep -q '^NO_HISTORY=1$'; then
+    pass "Check 7C: abstains when executionHistory is absent entirely (planning-only packets are not false-blocked)"
+  else
+    fail "Check 7C: a packet with NO executionHistory was adjudicated instead of abstaining — every history-less planning packet would false-block (observed: $(echo "$c7c_no_history" | tr '\n' ' '))"
+  fi
+
+  if echo "$c7c_no_history" | grep -q '^UNBACKED='; then
+    fail "Check 7C: an absent executionHistory was reported as unbacked claims — absence of a record is not evidence of fabrication"
+  else
+    pass "Check 7C adversarial: an absent executionHistory yields no UNBACKED finding"
+  fi
+
+  rm -rf "$c7c_dir"
+}
+
+if [[ "$CHECK7C_ONLY" -eq 1 ]]; then
+  run_check7c_phase_claim_backing
+  echo "state-transition-guard Check 7C summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
+
+if [[ "$GATE_ID_BOUNDARY_ONLY" -eq 1 ]]; then
+  run_gate_id_boundary_controls
+  echo "state-transition-guard gate-id boundary summary: failures=$failures"
+  if [[ "$failures" -gt 0 ]]; then
+    exit 1
+  fi
+  exit 0
+fi
 
 bug039_active_contract_stream() {
   local file="$1"
@@ -370,10 +741,10 @@ EOF
   printf '%s\n' 'TP-S2-01_STATE_GUARD_RETAINED_WORKER_TRUST=root-protected-native-python-v1'
 }
 
-if [[ "$BUG039_CHECK16_ONLY" -eq 0 ]]; then
+if [[ "$B039_CHECK16_ONLY" -eq 0 ]]; then
   run_bug039_scope2_red_contract
 fi
-if [[ "$BUG039_SCOPE2_RED_ONLY" -eq 1 ]]; then
+if [[ "$B039_SCOPE2_RED_ONLY" -eq 1 ]]; then
   echo "state-transition-guard BUG-039 Scope 2 RED summary: failures=$failures"
   if [[ "$failures" -gt 0 ]]; then
     exit 1
@@ -2922,7 +3293,7 @@ EOF
   fi
 }
 
-if [[ "$BUG039_CHECK16_ONLY" -eq 1 ]]; then
+if [[ "$B039_CHECK16_ONLY" -eq 1 ]]; then
   focused_base_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
   focused_positive_dir="$tmp_root/specs/900c-bug039-check16-positive"
   focused_negative_dir="$tmp_root/specs/900d-bug039-check16-negative"
@@ -5652,151 +6023,8 @@ JSON
   rm -rf "$c7a_dir"
 fi
 
-# ----------------------------------------------------------------------------
-# Check 7C — phase-claim execution backing (audit finding A-017-08)
-#
-# Check 7A reads executionHistory only, so a completedPhaseClaims entry with NO
-# backing history entry was structurally invisible: the phase looked claimed and
-# nothing measured it. These cases drive the REAL analyzer extracted from guard
-# source — not a restatement of it — so the test cannot pass while the guard's
-# own logic drifts away from it.
-# ----------------------------------------------------------------------------
-echo "Running Check 7C phase-claim execution backing (A-017-08)..."
-
-c7c_start="$(grep -n 'claim_backing_analysis="\$(python3' "$GUARD_SCRIPT" | head -n 1 | cut -d: -f1 || true)"
-if [[ -z "$c7c_start" ]]; then
-  fail "Check 7C: analyzer block absent from guard source — the check was removed or renamed"
-else
-  pass "Check 7C: analyzer block located in guard source (no test/source drift)"
-
-  c7c_dir="$(mktemp -d)"
-  c7c_end="$(awk -v s="$c7c_start" 'NR>s && $0=="PY"{print NR; exit}' "$GUARD_SCRIPT")"
-  sed -n "$((c7c_start + 1)),$((c7c_end - 1))p" "$GUARD_SCRIPT" >"$c7c_dir/analyzer.py"
-
-  # A: every claim has a run behind it.
-  cat >"$c7c_dir/backed.json" <<'JSON'
-{"execution":{"completedPhaseClaims":[{"phase":"test","agent":"bubbles.test"}],
- "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
-JSON
-
-  # B: a claim with NO backing run — the invisible case A-017-08 named.
-  cat >"$c7c_dir/unbacked.json" <<'JSON'
-{"execution":{"completedPhaseClaims":[{"phase":"test","agent":"bubbles.test"},
- {"phase":"audit","agent":"bubbles.audit"}],
- "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
-JSON
-
-  # C: more claims than runs — suspicious, not provably false.
-  cat >"$c7c_dir/excess.json" <<'JSON'
-{"execution":{"completedPhaseClaims":[{"phase":"test"},{"phase":"test"}],
- "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
-JSON
-
-  # D: history at the TOP level, which is where most agents write it.
-  cat >"$c7c_dir/toplevel.json" <<'JSON'
-{"execution":{"completedPhaseClaims":[{"phase":"docs","agent":"bubbles.docs"}]},
- "executionHistory":[{"agent":"bubbles.docs","phasesExecuted":["docs"]}]}
-JSON
-
-  # E/F: the PLAIN-STRING claim shape. Cases A-D above all use the dict form
-  # {"phase":"test"}, but real packets — including this selftest's own
-  # emit_base_fixture — write completedPhaseClaims as bare strings. The analyzer
-  # used to `continue` past every non-dict element, so `claimed` stayed empty and
-  # the gate reported NO_CLAIMS and passed on precisely the shape production
-  # emits. The dict-only fixtures could never see it. E is the regression case;
-  # F is its adversarial twin.
-  cat >"$c7c_dir/str_unbacked.json" <<'JSON'
-{"execution":{"completedPhaseClaims":["test","audit"],
- "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
-JSON
-
-  cat >"$c7c_dir/str_backed.json" <<'JSON'
-{"execution":{"completedPhaseClaims":["test"],
- "executionHistory":[{"agent":"bubbles.test","phasesExecuted":["test"]}]}}
-JSON
-
-  # G: claims but NO executionHistory at all. Planning-only and legacy packets
-  # routinely omit the array. An absent record is not evidence of an unbacked
-  # claim, so the check must ABSTAIN here — otherwise widening claim parsing
-  # (cases E/F) turns every history-less planning packet into a false block.
-  cat >"$c7c_dir/no_history.json" <<'JSON'
-{"execution":{"completedPhaseClaims":["analyze","bootstrap"]}}
-JSON
-
-  c7c_backed="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/backed.json" 2>&1 || true)"
-  c7c_unbacked="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/unbacked.json" 2>&1 || true)"
-  c7c_excess="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/excess.json" 2>&1 || true)"
-  c7c_toplevel="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/toplevel.json" 2>&1 || true)"
-
-  if echo "$c7c_unbacked" | grep -q '^UNBACKED=audit$'; then
-    pass "Check 7C: a claimed phase with no executionHistory entry is reported UNBACKED"
-  else
-    fail "Check 7C: an unbacked phase claim went undetected — this is the A-017-08 blind spot (observed: $(echo "$c7c_unbacked" | tr '\n' ' '))"
-  fi
-
-  # Adversarial twin: a detector that flagged everything would satisfy the case
-  # above while proving nothing. The backed fixture must come back clean.
-  if echo "$c7c_backed" | grep -q '^UNBACKED='; then
-    fail "Check 7C: a properly backed claim was reported UNBACKED — the detector fires indiscriminately and proves nothing"
-  else
-    pass "Check 7C adversarial: a properly backed claim is NOT reported (detector discriminates)"
-  fi
-
-  if echo "$c7c_excess" | grep -q '^EXCESS=test(2 claim/1 run)$'; then
-    pass "Check 7C: more claims than runs is reported as EXCESS, with its counts"
-  else
-    fail "Check 7C: claim/run count mismatch went undetected (observed: $(echo "$c7c_excess" | tr '\n' ' '))"
-  fi
-
-  if echo "$c7c_backed" | grep -q '^EXCESS='; then
-    fail "Check 7C adversarial: a 1-claim/1-run packet was reported as EXCESS — the count comparison is wrong"
-  else
-    pass "Check 7C adversarial: a matched claim/run count is NOT reported as EXCESS"
-  fi
-
-  if echo "$c7c_toplevel" | grep -q '^UNBACKED='; then
-    fail "Check 7C: a TOP-level executionHistory was not read — same container bug as BUG-012, every such packet would false-block"
-  else
-    pass "Check 7C: reads a TOP-level executionHistory (BUG-012 container fallback honored)"
-  fi
-
-  c7c_str_unbacked="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/str_unbacked.json" 2>&1 || true)"
-  c7c_str_backed="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/str_backed.json" 2>&1 || true)"
-
-  if echo "$c7c_str_unbacked" | grep -q '^UNBACKED=audit$'; then
-    pass "Check 7C: an unbacked PLAIN-STRING claim is reported (the shape real packets write)"
-  else
-    fail "Check 7C: a plain-string claim shape left the gate INERT — every element skipped, claimed empty, NO_CLAIMS reported while an unbacked phase passed (observed: $(echo "$c7c_str_unbacked" | tr '\n' ' '))"
-  fi
-
-  if echo "$c7c_str_unbacked" | grep -q '^NO_CLAIMS=1$'; then
-    fail "Check 7C: string-shape claims produced NO_CLAIMS — the analyzer is not normalising them and the gate is looking at nothing"
-  else
-    pass "Check 7C: string-shape claims are normalised, not discarded as NO_CLAIMS"
-  fi
-
-  if echo "$c7c_str_backed" | grep -q '^UNBACKED='; then
-    fail "Check 7C adversarial: a backed plain-string claim was reported UNBACKED — string normalisation over-fires"
-  else
-    pass "Check 7C adversarial: a backed plain-string claim is NOT reported (string path discriminates)"
-  fi
-
-  c7c_no_history="$(python3 "$c7c_dir/analyzer.py" "$c7c_dir/no_history.json" 2>&1 || true)"
-
-  if echo "$c7c_no_history" | grep -q '^NO_HISTORY=1$'; then
-    pass "Check 7C: abstains when executionHistory is absent entirely (planning-only packets are not false-blocked)"
-  else
-    fail "Check 7C: a packet with NO executionHistory was adjudicated instead of abstaining — every history-less planning packet would false-block (observed: $(echo "$c7c_no_history" | tr '\n' ' '))"
-  fi
-
-  if echo "$c7c_no_history" | grep -q '^UNBACKED='; then
-    fail "Check 7C: an absent executionHistory was reported as unbacked claims — absence of a record is not evidence of fabrication"
-  else
-    pass "Check 7C adversarial: an absent executionHistory yields no UNBACKED finding"
-  fi
-
-  rm -rf "$c7c_dir"
-fi
+run_check7c_phase_claim_backing
+run_gate_id_boundary_controls
 
 # =============================================================================
 # Check 43: Human Acceptance Terminal Gate (Gate G136)  [IMP-040 SCOPE-10]

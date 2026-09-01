@@ -18,6 +18,26 @@ fail() {
   failures=$((failures + 1))
 }
 
+# The contention fixture belongs to this selftest, not to whichever outer
+# validator or evidence harness invoked it. Keep the EXIT cleanup armed before
+# the fixture can be created; INT/TERM convert to an exit status and therefore
+# take the same source-owned cleanup path.
+lock_root=""
+lock_fd_open="no"
+cleanup_tier_selftest() {
+  if [[ "$lock_fd_open" == "yes" ]]; then
+    exec 8>&-
+    lock_fd_open="no"
+  fi
+  if [[ -n "$lock_root" ]]; then
+    rm -rf "$lock_root"
+    lock_root=""
+  fi
+}
+trap cleanup_tier_selftest EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # Force source mode so the self-only checks list rather than emit their
 # install-mode SKIP, keeping the listing deterministic.
 export BUBBLES_FRAMEWORK_VALIDATE_MODE=source
@@ -80,37 +100,44 @@ set -e
 # a hole. It is gated on flock because without it the lock degrades to a no-op
 # and `--tier=core` would really execute (~260s) instead of refusing.
 if command -v flock >/dev/null 2>&1; then
-  lock_file="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"
+  # Own a private contention lock synchronously in this shell. The private
+  # namespace keeps a nested selftest independent from an outer validator's
+  # global lock, while closing descriptors 8 and 9 in each probe prevents the
+  # child from inheriting either lock and making its own contention vacuous.
+  lock_root="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-framework-validate-tier.XXXXXXXX")"
+  lock_file="$lock_root/bubbles-framework-validate.lock"
   : >"$lock_file"
-  ( flock 9; sleep 20 ) 9>"$lock_file" &
-  lock_holder=$!
-  sleep 2
+  exec 8>"$lock_file"
+  lock_fd_open="yes"
+  if flock -n 8; then
+    set +e
+    # A nested run inherits the outer validator's marker and bypasses the lock
+    # legitimately, which would make these assertions vacuous. Clear it and
+    # point the probes at the private namespace so only this synchronous lock
+    # decides the contention result.
+    held_help_out="$(TMPDIR="$lock_root" env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --help 8>&- 9>&- 2>&1)"
+    held_help_rc=$?
+    held_list_out="$(TMPDIR="$lock_root" env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --list-tier=core 8>&- 9>&- 2>&1)"
+    held_list_rc=$?
+    TMPDIR="$lock_root" env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --tier=core 8>&- 9>&- >/dev/null 2>&1
+    held_exec_rc=$?
+    set -e
 
-  set +e
-  # A nested run inherits the holder's marker and bypasses the lock legitimately,
-  # which would make these assertions vacuous. Clear it so the probes contend.
-  held_help_out="$(env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --help 2>&1)"
-  held_help_rc=$?
-  held_list_out="$(env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --list-tier=core 2>&1)"
-  held_list_rc=$?
-  env -u BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD bash "$FV" --tier=core >/dev/null 2>&1
-  held_exec_rc=$?
-  set -e
+    [[ "$held_help_rc" -eq 0 && "$held_help_out" == *"Usage: framework-validate.sh"* ]] \
+      && pass "--help answers while another run holds the lock" \
+      || fail "--help should not block on the lock (got $held_help_rc)"
 
-  kill "$lock_holder" 2>/dev/null || true
-  wait "$lock_holder" 2>/dev/null || true
+    [[ "$held_list_rc" -eq 0 && "$held_list_out" == *"WOULD-"* ]] \
+      && pass "--list-tier dry-lists while another run holds the lock" \
+      || fail "--list-tier should not block on the lock (got $held_list_rc)"
 
-  [[ "$held_help_rc" -eq 0 && "$held_help_out" == *"Usage: framework-validate.sh"* ]] \
-    && pass "--help answers while another run holds the lock" \
-    || fail "--help should not block on the lock (got $held_help_rc)"
-
-  [[ "$held_list_rc" -eq 0 && "$held_list_out" == *"WOULD-"* ]] \
-    && pass "--list-tier dry-lists while another run holds the lock" \
-    || fail "--list-tier should not block on the lock (got $held_list_rc)"
-
-  [[ "$held_exec_rc" -eq 1 ]] \
-    && pass "an EXECUTING run still contends for the lock" \
-    || fail "executing run must still be refused while the lock is held (got $held_exec_rc)"
+    [[ "$held_exec_rc" -eq 1 ]] \
+      && pass "an EXECUTING run still contends for the lock" \
+      || fail "executing run must still be refused while the lock is held (got $held_exec_rc)"
+  else
+    fail "tier selftest should acquire its private contention lock"
+  fi
+  cleanup_tier_selftest
 else
   pass "flock absent — lock-bypass assertions skipped (protection is a no-op here)"
 fi
