@@ -80,6 +80,24 @@ else
   fail "Managed checksum inventory includes shared CLI surface"
 fi
 
+for scenario_contract_file in \
+  'bubbles/schemas/scenario-manifest.schema.json' \
+  'bubbles/schemas/scenario-manifest-v2.schema.json' \
+  'bubbles/scripts/scenario-manifest-v2-schema-selftest.sh' \
+  'bubbles/scripts/scenario-manifest-migrate.py' \
+  'bubbles/scripts/scenario-manifest-migrate-selftest.sh' \
+  'bubbles/scripts/scenario-reference-reader.py' \
+  'bubbles/scripts/scenario-reference-reader-selftest.sh' \
+  'bubbles/scripts/framework-validation-wiring-selftest.sh' \
+  'bubbles/scripts/yaml-schema-validate.sh' \
+  'bubbles/scripts/yaml-schema-validate-selftest.sh'; do
+  if manifest_section_has_path managedFileChecksums "$scenario_contract_file"; then
+    pass "Managed checksum inventory includes scenario contract surface: $scenario_contract_file"
+  else
+    fail "Managed checksum inventory includes scenario contract surface: $scenario_contract_file"
+  fi
+done
+
 git -C "$fixture_root" init --quiet
 mkdir -p "$fixture_root/bubbles/scripts"
 printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/new-managed.sh"

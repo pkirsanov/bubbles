@@ -34,11 +34,10 @@ fi
 # 8-failure measurement predates the mktemp fixes and is not evidence about the
 # state of the tree today.
 #
-# `flock` holds the lock on fd 9 and the kernel releases it when the process
-# dies, so this cannot leave a stale lock behind and needs no bypass flag. Where
-# `flock` is absent (stock macOS), the guard degrades to a no-op rather than
-# risking a lock we cannot reliably reap — matching how the optional-dependency
-# selftests degrade elsewhere in this suite.
+# Atomic `mkdir` is available on both GNU and stock macOS userlands. The owner
+# record makes a dead holder reclaimable, while a missing/malformed record fails
+# closed instead of guessing. Cleanup removes a lock only when its token still
+# matches, so a stale process cannot remove a replacement owner's lock.
 #
 # The guard MUST be re-entrant. Several selftests legitimately run a NESTED
 # framework-validate as part of their fixture (v5.3-selftest runs one against a
@@ -47,8 +46,9 @@ fi
 # so a naive guard refuses them and fails the very suite it is protecting —
 # measured: 3 red checks (v5.3 G1, tiering IMP-012, repo-drift IMP-027). The
 # exported marker below is inherited only by descendants of a holding run, so
-# nested invocations pass through while two INDEPENDENT top-level runs still
-# contend.
+# nested invocations pass through only when the recorded owner is a real process
+# ancestor and the inherited token matches. A copied environment marker alone
+# cannot bypass contention.
 #
 # IMP-049 SCOPE-3. The lock protects the SHARED SCRATCH FIXTURES that executing
 # checks build. An invocation that executes no check touches none of them, so
@@ -72,11 +72,139 @@ fi
 # Several selftests run a NESTED framework-validate as part of their fixture, and
 # a nested run that wrote a receipt would describe a synthesized fixture while
 # appearing to describe this tree. The marker is deliberately separate from the
-# lock marker, which is never set when `flock` is absent (stock macOS) and would
-# therefore report every nested run on a Mac as outermost.
+# lock marker because lock ownership and receipt ownership are different claims.
 _fv_outermost=false
 [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_DEPTH:-}" ]] && _fv_outermost=true
 export BUBBLES_FRAMEWORK_VALIDATE_DEPTH=$((${BUBBLES_FRAMEWORK_VALIDATE_DEPTH:-0} + 1))
+
+_fv_lock_dir=""
+_fv_lock_token=""
+_fv_lock_identity=""
+_bubbles_compat_dir=""
+_fv_cleanup() {
+  if [[ -n "$_fv_lock_dir" && -n "$_fv_lock_token" && -f "$_fv_lock_dir/owner" ]]; then
+    local _fv_cleanup_pid="" _fv_cleanup_token="" _fv_cleanup_identity="" _fv_cleanup_extra=""
+    read -r _fv_cleanup_pid _fv_cleanup_token _fv_cleanup_identity _fv_cleanup_extra <"$_fv_lock_dir/owner" || true
+    if [[ -z "$_fv_cleanup_extra" && "$_fv_cleanup_pid" == "$$" &&
+      "$_fv_cleanup_token" == "$_fv_lock_token" &&
+      "$_fv_cleanup_identity" == "$_fv_lock_identity" ]]; then
+      rm -rf "$_fv_lock_dir"
+    fi
+  fi
+  [[ -z "$_bubbles_compat_dir" ]] || rm -rf "$_bubbles_compat_dir"
+}
+trap _fv_cleanup EXIT
+
+_fv_process_identity() {
+  local pid="$1" stat_line="" stat_tail="" start_ticks="" started=""
+  [[ "$pid" =~ ^[1-9][0-9]*$ ]] || return 1
+
+  # Linux exposes a kernel-assigned start tick in field 22. Split after the
+  # final ") " because the comm field itself may contain spaces or parentheses.
+  if [[ -r "/proc/$pid/stat" ]]; then
+    stat_line="$(cat "/proc/$pid/stat" 2>/dev/null)" || return 1
+    [[ "$stat_line" == *") "* ]] || return 1
+    stat_tail="${stat_line##*) }"
+    read -r -a _fv_stat_fields <<<"$stat_tail"
+    start_ticks="${_fv_stat_fields[19]:-}"
+    [[ "$start_ticks" =~ ^[0-9]+$ ]] || return 1
+    printf 'proc:%s\n' "$start_ticks"
+    return 0
+  fi
+
+  # BSD/macOS has no /proc. `ps -o lstart=` is capability-probed instead of
+  # OS-detected. Its normalized creation timestamp distinguishes incarnations.
+  # If the capability is absent or ambiguous, fail closed rather than minting a
+  # weak identity that could make PID reuse look like the original owner.
+  started="$(ps -o lstart= -p "$pid" 2>/dev/null)" || return 1
+  started="${started#${started%%[![:space:]]*}}"
+  started="${started%${started##*[![:space:]]}}"
+  [[ -n "$started" ]] || return 1
+  started="${started//[[:space:]]/_}"
+  [[ "$started" =~ ^[A-Za-z0-9_.:+-]+$ ]] || return 1
+  printf 'ps:%s\n' "$started"
+}
+
+_fv_pid_is_ancestor() {
+  local candidate="$1" current="$$" parent=""
+  [[ "$candidate" =~ ^[1-9][0-9]*$ ]] || return 1
+  while [[ "$current" =~ ^[1-9][0-9]*$ && "$current" -gt 1 ]]; do
+    [[ "$current" == "$candidate" ]] && return 0
+    parent="$(ps -o ppid= -p "$current" 2>/dev/null)" || return 1
+    parent="${parent//[[:space:]]/}"
+    [[ "$parent" =~ ^[1-9][0-9]*$ ]] || return 1
+    current="$parent"
+  done
+  return 1
+}
+
+_fv_lock_refuse() {
+  printf 'ERROR: another framework-validate run is already in progress on this machine.\n' >&2
+  printf '       Concurrent runs corrupt each other'"'"'s shared scratch fixtures and produce\n' >&2
+  printf '       false failures. Wait for the other run to finish, then re-run.\n' >&2
+  exit 1
+}
+
+_fv_lock_acquire() {
+  _fv_lock_dir="${TMPDIR:-/tmp}/bubbles-framework-validate.lock.d"
+  _fv_lock_token="$$.$RANDOM.$SECONDS"
+  _fv_lock_identity="$(_fv_process_identity "$$")" || {
+    printf 'ERROR: framework-validate could not establish process-incarnation identity.\n' >&2
+    exit 1
+  }
+  local owner_pid="" owner_token="" owner_identity="" owner_extra="" live_identity=""
+
+  if mkdir "$_fv_lock_dir" 2>/dev/null; then
+    printf '%s %s %s\n' "$$" "$_fv_lock_token" "$_fv_lock_identity" >"$_fv_lock_dir/owner" || {
+      rm -rf "$_fv_lock_dir"
+      printf 'ERROR: framework-validate could not create its lock owner record.\n' >&2
+      exit 1
+    }
+    export BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD="$_fv_lock_token"
+    return 0
+  fi
+
+  [[ -f "$_fv_lock_dir/owner" ]] || _fv_lock_refuse
+  read -r owner_pid owner_token owner_identity owner_extra <"$_fv_lock_dir/owner" || _fv_lock_refuse
+  [[ -z "$owner_extra" && "$owner_pid" =~ ^[1-9][0-9]*$ && -n "$owner_token" &&
+    "$owner_identity" =~ ^(proc:[0-9]+|ps:[A-Za-z0-9_.:+-]+)$ ]] || _fv_lock_refuse
+
+  if kill -0 "$owner_pid" 2>/dev/null; then
+    live_identity="$(_fv_process_identity "$owner_pid")" || _fv_lock_refuse
+    if [[ "$live_identity" == "$owner_identity" &&
+      "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" == "$owner_token" ]] &&
+      _fv_pid_is_ancestor "$owner_pid"; then
+      _fv_lock_dir=""
+      _fv_lock_token=""
+      _fv_lock_identity=""
+      return 0
+    fi
+    [[ "$live_identity" != "$owner_identity" ]] || _fv_lock_refuse
+  fi
+
+  # Re-read before atomically claiming a dead owner's directory. If either field
+  # changed, another process repaired/replaced it and this invocation fails
+  # closed. The unique rename has no unlocked deletion window: exactly one
+  # contender can move this inode, then exactly one contender can mkdir the
+  # canonical path.
+  local confirm_pid="" confirm_token="" confirm_identity="" confirm_extra=""
+  read -r confirm_pid confirm_token confirm_identity confirm_extra <"$_fv_lock_dir/owner" || _fv_lock_refuse
+  [[ -z "$confirm_extra" && "$confirm_pid" == "$owner_pid" &&
+    "$confirm_token" == "$owner_token" && "$confirm_identity" == "$owner_identity" ]] || _fv_lock_refuse
+  local stale_dir="${_fv_lock_dir}.stale.${_fv_lock_token}"
+  mv "$_fv_lock_dir" "$stale_dir" 2>/dev/null || _fv_lock_refuse
+  if ! mkdir "$_fv_lock_dir" 2>/dev/null; then
+    rm -rf "$stale_dir"
+    _fv_lock_refuse
+  fi
+  printf '%s %s %s\n' "$$" "$_fv_lock_token" "$_fv_lock_identity" >"$_fv_lock_dir/owner" || {
+    rm -rf "$_fv_lock_dir"
+    printf 'ERROR: framework-validate could not replace a stale lock owner record.\n' >&2
+    exit 1
+  }
+  rm -rf "$stale_dir"
+  export BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD="$_fv_lock_token"
+}
 
 _fv_executes_checks=true
 if [[ $# -gt 0 ]]; then
@@ -94,29 +222,8 @@ if [[ $# -gt 0 ]]; then
     esac
   done
 fi
-if [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]] && command -v flock >/dev/null 2>&1; then
-  _fv_lockfile="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"
-  # Probe writability on a THROWAWAY command first. `exec 9>file` with no command
-  # applies its redirections to the shell PERMANENTLY, so appending an error
-  # suppressor there (`exec 9>file 2>/dev/null`) silences stderr for the entire
-  # run — every selftest's diagnostics included. Keep the exec line bare.
-  if : >"$_fv_lockfile" 2>/dev/null; then
-    exec 9>"$_fv_lockfile"
-    if ! flock -n 9; then
-      printf 'ERROR: another framework-validate run is already in progress on this machine.\n' >&2
-      printf '       Concurrent runs corrupt each other'"'"'s shared scratch fixtures and produce\n' >&2
-      printf '       false failures. Wait for the other run to finish, then re-run.\n' >&2
-      exit 1
-    fi
-    export BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD=1
-  fi
-elif [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
-  # flock absent (stock macOS ships none). The guard degrades to a no-op, so say
-  # so — a silent degrade lets an operator believe concurrent-run protection is
-  # active when it is not.
-  printf 'NOTE: flock not found — concurrent-run protection is OFF for this run.\n' >&2
-  printf '      Two independent framework-validate runs would corrupt each other'"'"'s\n' >&2
-  printf '      shared scratch fixtures. Run only one at a time on this machine.\n' >&2
+if [[ "$_fv_executes_checks" == "true" ]]; then
+  _fv_lock_acquire
 fi
 
 # macOS portability shim. BSD userland diverges from GNU coreutils on `sed -i`
@@ -126,7 +233,6 @@ fi
 # / `timeout` on PATH for THIS process and every selftest subprocess it spawns,
 # so the whole validation runs unchanged on Linux + macOS. On Linux (unprefixed
 # GNU tools already present) every probe short-circuits and this is a no-op.
-_bubbles_compat_dir=""
 if ! sed --version >/dev/null 2>&1 && command -v gsed >/dev/null 2>&1; then
   _bubbles_compat_dir="$(mktemp -d)"
   ln -sf "$(command -v gsed)" "$_bubbles_compat_dir/sed"
@@ -138,7 +244,6 @@ fi
 if [[ -n "$_bubbles_compat_dir" ]]; then
   PATH="$_bubbles_compat_dir:$PATH"
   export PATH
-  trap 'rm -rf "$_bubbles_compat_dir"' EXIT
 fi
 
 # v5.3 / G1: install-mode detection. Many selftests below were authored
@@ -472,6 +577,7 @@ run_check() {
   if [[ "${1:-}" == "bash" && "$#" -eq 2 ]]; then
     case "$(basename "${2:-}")" in
       *-selftest.sh) _script="$2" ;;
+      test_33_traceability_current_scope_universe.sh) _script="$2" ;;
     esac
   fi
 
@@ -513,6 +619,15 @@ run_check() {
   local _cache_key=""
   if [[ -n "$_script" && "$CACHE_ENABLED" == "true" ]] && declare -F validate_cache_key >/dev/null 2>&1; then
     _cache_key="$(validate_cache_key "$_script" "$FRAMEWORK_VERSION" 2>/dev/null || true)"
+    if [[ -z "$_cache_key" && "$(basename "$_script")" == "test_33_traceability_current_scope_universe.sh" ]] \
+      && declare -F vclosure_digest >/dev/null 2>&1; then
+      [[ -n "${VCLOSURE_LOADED:-}" ]] || vclosure_load >/dev/null 2>&1 || true
+      _cr02_check_id="$(validation_check_id_for "$_script")"
+      if [[ -n "$_cr02_check_id" ]]; then
+        _cr02_digest="$(vclosure_digest "$_cr02_check_id" "$FRAMEWORK_VERSION" 2>/dev/null || true)"
+        [[ -n "$_cr02_digest" ]] && _cache_key="$FRAMEWORK_VERSION-$_cr02_digest"
+      fi
+    fi
     if [[ -n "$_cache_key" ]] && validate_cache_get "$_cache_key"; then
       # IMP-047 S-E: REUSED is its own result, and it NEVER prints PASS. PASS
       # means this run executed the check and watched it succeed. Reuse means
@@ -565,6 +680,23 @@ run_check() {
   echo
 }
 
+# Focused, internal harness for the framework-validation wiring selftest. This
+# deliberately enters through the production run_check implementation above,
+# including its cache lookup/write behavior, but exits before the normal
+# schedule so the wiring selftest can prove fail-closed and cache semantics
+# without recursively scheduling itself or running the full framework suite.
+if [[ -n "${BUBBLES_FRAMEWORK_VALIDATE_READER_PROBE:-}" ]]; then
+  _reader_probe_script="$SCRIPT_DIR/scenario-reference-reader-"'selftest.sh'
+  run_check "Scenario reference reader selftest (IMP-040 / COV-8)" \
+    bash "$_reader_probe_script"
+  if [[ "$failures" -ne 0 ]]; then
+    printf 'framework-validate reader probe: FAILED (%s failure(s))\n' "$failures" >&2
+    exit 1
+  fi
+  printf 'framework-validate reader probe: PASSED\n'
+  exit 0
+fi
+
 # Wrapper for selftests that only make sense when run inside the framework
 # source tree (those that invoke install.sh, walk VERSION, or assert the
 # framework's own README/docs layout). When INSTALL_MODE != "source", emit
@@ -585,6 +717,22 @@ run_check_self_only() {
   fi
   run_check "$label" "$@"
 }
+
+# Focused CR-02 harness. Like the reader probe above, this enters through the
+# production source-only wrapper and run_check/cache implementation, then exits
+# before the normal schedule. The wiring selftest can therefore prove blocking
+# and cache behavior without recursively invoking itself or the full suite.
+if [[ -n "${BUBBLES_FRAMEWORK_VALIDATE_CR02_PROBE:-}" ]]; then
+  _cr02_probe_script="$REPO_ROOT/tests/regression/test_33_traceability_current_scope_"'universe.sh'
+  run_check_self_only "CR-02 traceability current-scope universe regression" \
+    bash "$_cr02_probe_script"
+  if [[ "$failures" -ne 0 ]]; then
+    printf 'framework-validate CR-02 probe: FAILED (%s failure(s))\n' "$failures" >&2
+    exit 1
+  fi
+  printf 'framework-validate CR-02 probe: PASSED\n'
+  exit 0
+fi
 
 echo "Bubbles Framework Validation"
 echo "Repository: $REPO_ROOT"
@@ -992,6 +1140,11 @@ run_check "Output-policy coherence selftest (IMP-039 / EV-7)" bash "$SCRIPT_DIR/
 run_check "Usage-adapter contract selftest (IMP-039 / COST-4)" bash "$SCRIPT_DIR/usage-adapter-contract-selftest.sh"
 run_check "Test-inventory adapter contract selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/test-inventory-adapter-contract-selftest.sh"
 run_check "Scenario linked-test resolution selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-test-resolve-selftest.sh"
+run_check "Scenario reference reader selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-reference-reader-selftest.sh"
+run_check "Scenario manifest v2 schema selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-v2-schema-selftest.sh"
+run_check "Scenario manifest migration selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-migrate-selftest.sh"
+run_check "YAML schema dispatch selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/yaml-schema-validate-selftest.sh"
+run_check "Framework validation wiring selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/framework-validation-wiring-selftest.sh"
 run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/report-sections-selftest.sh"
 # Framework-source-only: check P3 requires the repo-root BUGS.md, which the
 # release manifest classifies as neither managed nor source-only-shipped, so it
@@ -1079,6 +1232,7 @@ run_check "Required-specialists registry selftest (IMP-042 SCOPE-13)" bash "$SCR
 run_check_self_only "BUG-009 planning audit contract regression" bash "$REPO_ROOT/tests/regression/test_23_planning_audit_contract.sh"
 run_check_self_only "BUG-013 sensitive client storage regression" bash "$REPO_ROOT/tests/regression/test_24_g028_sensitive_client_storage.sh"
 run_check_self_only "BUG-018 traceability Test Plan heading-depth regression" bash "$REPO_ROOT/tests/regression/test_25_traceability_test_plan_heading_depth.sh"
+run_check_self_only "CR-02 traceability current-scope universe regression" bash "$REPO_ROOT/tests/regression/test_33_traceability_current_scope_universe.sh"
 run_check_self_only "BUG-019 state-transition compound MJS test-path regression" bash "$REPO_ROOT/tests/regression/test_26_state_transition_spec_mjs_path.sh"
 run_check_self_only "BUG-021 portable framework deadline regression" bash "$REPO_ROOT/tests/regression/test_28_framework_validate_portable_timeout.sh"
 run_check_self_only "BUG-029 human acceptance terminal regression (G136)" bash "$REPO_ROOT/tests/regression/test_35_human_acceptance_terminal.sh"

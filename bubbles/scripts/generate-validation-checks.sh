@@ -105,7 +105,7 @@ extract_refs() {
       line = $0
       if (line ~ /^[ \t]*#/) next
       rest = line
-      while (match(rest, /([$][{]?SCRIPT_DIR[}]?|[$][{]?REPO_ROOT[}]?|[$][{]?repo_root[}]?|bubbles|agents|skills|instructions|tests|templates|docs|[.]specify)[A-Za-z0-9_.\/-]*[.](sh|yaml|yml|json|txt|md|mjs)/)) {
+      while (match(rest, /([$][{]?SCRIPT_DIR[}]?|[$][{]?REPO_ROOT[}]?|[$][{]?repo_root[}]?|bubbles|agents|skills|instructions|tests|templates|docs|[.]specify)[A-Za-z0-9_.\/-]*[.](sh|py|yaml|yml|json|txt|md|mjs)/)) {
         emit(substr(rest, RSTART, RLENGTH))
         rest = substr(rest, RSTART + RLENGTH)
       }
@@ -128,12 +128,13 @@ extractor_probe() {
   # The probe tests the SCANNER, so any path of the right shape proves it.
   {
     printf 'source "$SCRIPT_DIR/guard-lib.sh"\n'
+    printf 'READER="$SCRIPT_DIR/scenario-reference-reader.py"\n'
     printf 'REG="$SCRIPT_DIR/../registry/gates.yaml"\n'
     printf 'bash "$REPO_ROOT/tests/regression/probe_extractor_fixture.sh"\n'
   } >"$probe_file"
   out="$(extract_refs "$probe_file")"
   rm -rf "$probe_dir"
-  if [[ "$out" != *'guard-lib.sh'* || "$out" != *'gates.yaml'* || "$out" != *'probe_extractor_fixture.sh'* ]]; then
+  if [[ "$out" != *'guard-lib.sh'* || "$out" != *'scenario-reference-reader.py'* || "$out" != *'gates.yaml'* || "$out" != *'probe_extractor_fixture.sh'* ]]; then
     printf '%s: the reference extractor matched nothing on its own probe.\n' "$NAME" >&2
     printf '%s: refusing to write a closure map derived by a scanner that is not working.\n' "$NAME" >&2
     return 1
