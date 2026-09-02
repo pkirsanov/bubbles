@@ -2,7 +2,25 @@
 # Capability: dod-gherkin-fidelity-threshold
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_source="${BASH_SOURCE[0]}"
+script_source_hops=0
+while [[ -L "$script_source" ]]; do
+  script_source_hops=$((script_source_hops + 1))
+  if [[ "$script_source_hops" -gt 40 ]]; then
+    echo "ERROR: traceability guard script path exceeds the symlink limit" >&2
+    exit 2
+  fi
+  if ! script_link="$(readlink "$script_source")"; then
+    echo "ERROR: traceability guard script path cannot be resolved" >&2
+    exit 2
+  fi
+  if [[ "$script_link" == /* ]]; then
+    script_source="$script_link"
+  else
+    script_source="$(dirname "$script_source")/$script_link"
+  fi
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$script_source")" && pwd -P)"
 
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/dod-section-lib.sh"
@@ -53,23 +71,49 @@ fi
 
 detect_repo_root() {
   if [[ "$SCRIPT_DIR" == */.github/bubbles/scripts ]]; then
-    (cd "$SCRIPT_DIR/../../.." && pwd)
+    (cd -P "$SCRIPT_DIR/../../.." && pwd -P)
   else
-    (cd "$SCRIPT_DIR/../.." && pwd)
+    (cd -P "$SCRIPT_DIR/../.." && pwd -P)
   fi
 }
 
-repo_root="$(detect_repo_root)"
+canonical_path_is_within() {
+  local candidate_path="$1"
+  local canonical_root="$2"
+
+  if [[ "$canonical_root" == "/" ]]; then
+    [[ "$candidate_path" == /* ]]
+  else
+    [[ "$candidate_path" == "$canonical_root" || "$candidate_path" == "$canonical_root/"* ]]
+  fi
+}
+
+if ! repo_root="$(detect_repo_root)"; then
+  echo "ERROR: repository root cannot be canonicalized" >&2
+  exit 2
+fi
 
 if [[ "$feature_dir" != /* ]]; then
   if [[ -d "$PWD/$feature_dir" ]]; then
-    repo_root="$PWD"
+    if ! repo_root="$(cd -P "$PWD" && pwd -P)"; then
+      echo "ERROR: caller repository root cannot be canonicalized" >&2
+      exit 2
+    fi
   fi
   feature_dir="$repo_root/$feature_dir"
 fi
 
 if [[ ! -d "$feature_dir" ]]; then
   echo "ERROR: feature directory not found: $feature_dir"
+  exit 2
+fi
+
+if ! feature_dir="$(cd -P "$feature_dir" && pwd -P)"; then
+  echo "ERROR: feature directory cannot be canonicalized" >&2
+  exit 2
+fi
+if ! canonical_path_is_within "$feature_dir" "$repo_root"; then
+  echo "ERROR: feature directory resolves outside the repository root" >&2
   exit 2
 fi
 
@@ -389,19 +433,299 @@ extract_path_candidates() {
   printf '%s\n' "$value" | grep -Eo '([A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.[A-Za-z0-9_.-]+' || true
 }
 
-path_exists() {
-  local candidate="$1"
-  local scope_dir="$2"
+normalize_absolute_path_lexically() {
+  local input_path="$1"
+  local component
+  local last_index
+  local normalized=""
+  local -a input_components=()
+  local -a normalized_components=()
 
-  if [[ -f "$repo_root/$candidate" ]]; then
-    return 0
+  IFS='/' read -r -a input_components <<< "$input_path"
+  if [[ ${#input_components[@]} -gt 0 ]]; then
+    for component in "${input_components[@]}"; do
+      case "$component" in
+        ""|.) continue ;;
+        ..)
+          if [[ ${#normalized_components[@]} -gt 0 ]]; then
+            last_index=$((${#normalized_components[@]} - 1))
+            unset "normalized_components[$last_index]"
+          fi
+          ;;
+        *) normalized_components+=("$component") ;;
+      esac
+    done
   fi
 
-  if [[ -f "$scope_dir/$candidate" ]]; then
-    return 0
+  if [[ ${#normalized_components[@]} -gt 0 ]]; then
+    for component in "${normalized_components[@]}"; do
+      normalized="$normalized/$component"
+    done
   fi
+  normalized_absolute_path="${normalized:-/}"
+}
 
+resolve_linked_test_candidate_once() {
+  local canonical_base="$1"
+  local relative_path="$2"
+  local resolved_path="$canonical_base"
+  local component
+  local candidate_path
+  local link_target
+  local target_relative
+  local symlink_hops=0
+  local -a pending_components=()
+  local -a link_components=()
+
+  resolved_candidate_path=""
+  resolved_candidate_status="missing-target"
+  IFS='/' read -r -a pending_components <<< "$relative_path"
+
+  while [[ ${#pending_components[@]} -gt 0 ]]; do
+    component="${pending_components[0]}"
+    if [[ ${#pending_components[@]} -gt 1 ]]; then
+      pending_components=("${pending_components[@]:1}")
+    else
+      pending_components=()
+    fi
+
+    case "$component" in
+      ""|.) continue ;;
+      ..)
+        resolved_path="$(dirname "$resolved_path")"
+        if ! canonical_path_is_within "$resolved_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+        continue
+        ;;
+    esac
+
+    candidate_path="$resolved_path/$component"
+    if [[ -L "$candidate_path" ]]; then
+      symlink_hops=$((symlink_hops + 1))
+      if [[ "$symlink_hops" -gt 40 ]]; then
+        resolved_candidate_status="unstable-target"
+        return 1
+      fi
+      if ! link_target="$(readlink "$candidate_path")"; then
+        resolved_candidate_status="unstable-target"
+        return 1
+      fi
+      link_components=()
+
+      if [[ "$link_target" == /* ]]; then
+        normalize_absolute_path_lexically "$link_target"
+        if ! canonical_path_is_within "$normalized_absolute_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+        resolved_path="$repo_root"
+        if [[ "$normalized_absolute_path" == "$repo_root" ]]; then
+          link_components=()
+        else
+          target_relative="${normalized_absolute_path#"$repo_root"/}"
+          IFS='/' read -r -a link_components <<< "$target_relative"
+        fi
+      else
+        IFS='/' read -r -a link_components <<< "$link_target"
+      fi
+      if [[ ${#link_components[@]} -gt 0 ]]; then
+        if [[ ${#pending_components[@]} -gt 0 ]]; then
+          pending_components=("${link_components[@]}" "${pending_components[@]}")
+        else
+          pending_components=("${link_components[@]}")
+        fi
+      fi
+      continue
+    fi
+
+    if [[ ${#pending_components[@]} -gt 0 ]]; then
+      if [[ -d "$candidate_path" ]]; then
+        if ! resolved_path="$(cd -P "$candidate_path" && pwd -P)"; then
+          resolved_candidate_status="unstable-target"
+          return 1
+        fi
+        if ! canonical_path_is_within "$resolved_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+      elif [[ -e "$candidate_path" ]]; then
+        resolved_candidate_status="non-regular-target"
+        return 1
+      else
+        resolved_candidate_status="missing-target"
+        return 1
+      fi
+      continue
+    fi
+
+    if ! canonical_path_is_within "$candidate_path" "$repo_root"; then
+      resolved_candidate_status="outside-repository"
+      return 1
+    fi
+    if [[ -f "$candidate_path" ]]; then
+      resolved_candidate_path="$candidate_path"
+      resolved_candidate_status="ok"
+      return 0
+    fi
+    if [[ -e "$candidate_path" ]]; then
+      resolved_candidate_status="non-regular-target"
+    else
+      resolved_candidate_status="missing-target"
+    fi
+    return 1
+  done
+
+  resolved_candidate_status="non-regular-target"
   return 1
+}
+
+resolve_linked_test_path() {
+  local relative_path="$1"
+  local scope_dir="$2"
+  local base
+  local canonical_base
+  local first_path
+  local first_status
+  local second_path
+  local second_status
+  local duplicate
+  local first_seen_base=""
+  local saw_unstable=0
+  local saw_outside=0
+  local saw_nonregular=0
+  local -a candidate_bases=("$repo_root" "$scope_dir")
+
+  linked_test_resolution_status="missing-target"
+
+  for base in "${candidate_bases[@]}"; do
+    if ! canonical_base="$(cd -P "$base" && pwd -P)"; then
+      continue
+    fi
+    if ! canonical_path_is_within "$canonical_base" "$repo_root"; then
+      saw_outside=1
+      continue
+    fi
+
+    duplicate=0
+    if [[ -n "$first_seen_base" && "$canonical_base" == "$first_seen_base" ]]; then
+      duplicate=1
+    fi
+    if [[ "$duplicate" -eq 1 ]]; then
+      continue
+    fi
+    if [[ -z "$first_seen_base" ]]; then
+      first_seen_base="$canonical_base"
+    fi
+
+    if resolve_linked_test_candidate_once "$canonical_base" "$relative_path"; then
+      first_path="$resolved_candidate_path"
+      first_status="$resolved_candidate_status"
+    else
+      first_path="$resolved_candidate_path"
+      first_status="$resolved_candidate_status"
+    fi
+
+    if [[ "$first_status" == "ok" ]]; then
+      if resolve_linked_test_candidate_once "$canonical_base" "$relative_path"; then
+        second_path="$resolved_candidate_path"
+        second_status="$resolved_candidate_status"
+      else
+        second_path="$resolved_candidate_path"
+        second_status="$resolved_candidate_status"
+      fi
+      if [[ "$second_status" == "ok" && "$second_path" == "$first_path" && -f "$second_path" ]]; then
+        linked_test_resolution_status="ok"
+        return 0
+      fi
+      saw_unstable=1
+      continue
+    fi
+
+    case "$first_status" in
+      unstable-target) saw_unstable=1 ;;
+      outside-repository) saw_outside=1 ;;
+      non-regular-target) saw_nonregular=1 ;;
+    esac
+  done
+
+  if [[ "$saw_unstable" -eq 1 ]]; then
+    linked_test_resolution_status="unstable-target"
+  elif [[ "$saw_outside" -eq 1 ]]; then
+    linked_test_resolution_status="outside-repository"
+  elif [[ "$saw_nonregular" -eq 1 ]]; then
+    linked_test_resolution_status="non-regular-target"
+  else
+    linked_test_resolution_status="missing-target"
+  fi
+  return 1
+}
+
+classify_linked_test_record() {
+  local record="$1"
+
+  jq -r '
+    if ((.ordinal | type) != "number") or ((.path | type) != "string") then
+      error("invalid linked-test projection record")
+    else
+      .path as $path
+      | if ($path | explode | any(. < 32 or . == 127)) then "control-character"
+        elif ($path | test("^[[:space:]]*$")) then "empty-reference"
+        elif ($path | startswith("/"))
+          or ($path | startswith("\\\\"))
+          or ($path | test("^[A-Za-z]:")) then "absolute-reference"
+        elif ($path | split("/") | any(. == "..")) then "parent-traversal"
+        else "lexically-safe-relative"
+        end
+    end
+  ' <<< "$record" 2>/dev/null
+}
+
+linked_test_reference_is_acceptable() {
+  local record="$1"
+  local scope_dir="$2"
+  local lexical_status
+  local candidate_path
+
+  linked_test_reference_ordinal=""
+  linked_test_reference_path=""
+  linked_test_reference_status="projection-error"
+
+  if ! linked_test_reference_ordinal="$(jq -r '.ordinal | select(type == "number")' <<< "$record" 2>/dev/null)" \
+    || [[ -z "$linked_test_reference_ordinal" ]]; then
+    return 1
+  fi
+  if ! lexical_status="$(classify_linked_test_record "$record")" || [[ -z "$lexical_status" ]]; then
+    return 1
+  fi
+  if [[ "$lexical_status" != "lexically-safe-relative" ]]; then
+    linked_test_reference_status="$lexical_status"
+    return 1
+  fi
+  if ! candidate_path="$(jq -er '.path | select(type == "string")' <<< "$record" 2>/dev/null)"; then
+    return 1
+  fi
+
+  linked_test_reference_path="$candidate_path"
+  if resolve_linked_test_path "$candidate_path" "$scope_dir"; then
+    linked_test_reference_status="ok"
+    return 0
+  fi
+  linked_test_reference_status="$linked_test_resolution_status"
+  return 1
+}
+
+concrete_test_path_is_acceptable() {
+  local candidate_path="$1"
+  local scope_dir="$2"
+  local record
+
+  if ! record="$(jq -cn --arg path "$candidate_path" \
+    '{ordinal: 0, field: "testPlan", form: "path", path: $path}')"; then
+    return 1
+  fi
+  linked_test_reference_is_acceptable "$record" "$scope_dir"
 }
 
 report_mentions_path() {
@@ -534,14 +858,38 @@ fi
 # the current scope could not become Done until a later scope authored its test,
 # while the later scope could not start until the current scope was Done.
 #
-# Default --all-scopes behavior remains byte-for-byte strict. The structured
+# Default --all-scopes selection remains strict. The structured
 # projection exists only in --current-scope, which already requires Python for
 # the fail-closed scope-universe resolver. Every scenario must resolve to one
 # physical scope directory; an unknown/ambiguous scope reference is a refusal,
 # never a silently skipped manifest row.
 manifest_linked_test_projection() {
   if [[ "$scope_mode" != "--current-scope" ]]; then
-    jq -r "($manifest_scenarios_filter)[] | [(.linkedTests // [])[], (.linkedTestContracts // [])[]] | .[]? | if type == \"string\" then split(\"#\")[0] elif type == \"object\" then (.file // .path // empty) else empty end" "$scenario_manifest_file"
+    jq -c '
+      def scenarios:
+        if type == "array" then .
+        elif type == "object" and (.scenarios | type == "array") then .scenarios
+        else error("expected object.scenarios[] or legacy top-level array")
+        end;
+      [
+        scenarios[] as $scenario
+        | ["linkedTests", "linkedTestContracts"][] as $field
+        | ($scenario[$field] // [])[]?
+        | . as $reference
+        | if ($reference | type) == "string" then
+          {field: $field, form: "string", path: (($reference | split("#")[0]) // "")}
+          elif (($reference | type) == "object") and (($reference.file? | type) == "string") then
+            {field: $field, form: "file", path: $reference.file}
+          elif (($reference | type) == "object")
+            and (($reference.file? == null))
+            and (($reference.path? | type) == "string") then
+            {field: $field, form: "path", path: $reference.path}
+          else empty
+          end
+      ]
+      | to_entries[]
+      | .value + {ordinal: (.key + 1)}
+    ' "$scenario_manifest_file"
     return $?
   fi
 
@@ -614,22 +962,30 @@ def resolve_scope(scenario, scenario_id):
     raise SystemExit(2)
   return next(iter(matches))
 
-def linked_files(scenario):
-  files = []
+def linked_records(scenario):
+  records = []
+  seen_paths = set()
   for field in ("linkedTests", "linkedTestContracts"):
     references = scenario.get(field)
     if not isinstance(references, list):
       continue
     for reference in references:
       path = None
+      form = None
       if isinstance(reference, str):
         path = reference.split("#", 1)[0].strip()
+        form = "string"
       elif isinstance(reference, dict):
-        value = reference.get("file") or reference.get("path")
-        path = value.strip() if isinstance(value, str) else None
-      if path and path not in files:
-        files.append(path)
-  return files
+        if isinstance(reference.get("file"), str):
+          path = reference["file"].strip()
+          form = "file"
+        elif reference.get("file") is None and isinstance(reference.get("path"), str):
+          path = reference["path"].strip()
+          form = "path"
+      if path is not None and path not in seen_paths:
+        records.append({"field": field, "form": form, "path": path})
+        seen_paths.add(path)
+  return records
 
 scenarios = document.get("scenarios") if isinstance(document, dict) else document
 if not isinstance(scenarios, list):
@@ -637,6 +993,7 @@ if not isinstance(scenarios, list):
   raise SystemExit(2)
 
 projected = []
+projected_paths = set()
 for scenario in scenarios:
   if not isinstance(scenario, dict):
     continue
@@ -644,12 +1001,14 @@ for scenario in scenarios:
   scope_dir = resolve_scope(scenario, scenario_id)
   if scope_dir not in applicable_dirs:
     continue
-  for path in linked_files(scenario):
-    if path not in projected:
-      projected.append(path)
+  for record in linked_records(scenario):
+    if record["path"] not in projected_paths:
+      projected.append(record)
+      projected_paths.add(record["path"])
 
-for path in projected:
-  print(path)
+for ordinal, record in enumerate(projected, 1):
+  record["ordinal"] = ordinal
+  print(json.dumps(record, ensure_ascii=True, separators=(",", ":")))
 PY
 }
 
@@ -702,18 +1061,32 @@ if [[ "$scope_defined_scenarios" -gt 0 ]]; then
         fail "scenario-manifest.json linked-test scope projection failed: $manifest_test_projection"
         manifest_missing_files=$((manifest_missing_files + 1))
       else
-        while IFS= read -r manifest_test_file; do
-          [[ -n "$manifest_test_file" ]] || continue
-          if path_exists "$manifest_test_file" "$feature_dir"; then
-            pass "scenario-manifest.json linked test exists: $manifest_test_file"
-          else
-            fail "scenario-manifest.json references missing linked test file: $manifest_test_file"
-            manifest_missing_files=$((manifest_missing_files + 1))
+        while IFS= read -r manifest_test_record; do
+          [[ -n "$manifest_test_record" ]] || continue
+          if linked_test_reference_is_acceptable "$manifest_test_record" "$feature_dir"; then
+            pass "scenario-manifest.json linked test exists: $linked_test_reference_path"
+            continue
           fi
+
+          case "$linked_test_reference_status" in
+            control-character|empty-reference|absolute-reference|parent-traversal)
+              fail "scenario-manifest.json rejects linked test reference #$linked_test_reference_ordinal: $linked_test_reference_status"
+              ;;
+            outside-repository|non-regular-target|unstable-target)
+              fail "scenario-manifest.json rejects linked test file: $linked_test_reference_path ($linked_test_reference_status)"
+              ;;
+            missing-target)
+              fail "scenario-manifest.json references missing linked test file: $linked_test_reference_path (missing-target)"
+              ;;
+            *)
+              fail "scenario-manifest.json linked-test projection record is invalid"
+              ;;
+          esac
+          manifest_missing_files=$((manifest_missing_files + 1))
         done <<< "$manifest_test_projection"
       fi
 
-      manifest_evidence_refs="$(jq -r "($manifest_scenarios_filter) | map(select((.evidenceRefs | type) == \"array\")) | length" "$scenario_manifest_file")"
+      manifest_evidence_refs="$(jq -r "($manifest_scenarios_filter) | map(select((.evidenceRefs | type) == \"array\" and (.evidenceRefs | length) > 0)) | length" "$scenario_manifest_file")"
       if [[ "$manifest_evidence_refs" -eq "$scenario_manifest_total" ]]; then
         pass "scenario-manifest.json records evidenceRefs for all $scenario_manifest_total scenario contract(s)"
       else
@@ -898,7 +1271,7 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     existing_path=""
     while IFS= read -r candidate; do
       [[ -n "$candidate" ]] || continue
-      if path_exists "$candidate" "$scope_dir"; then
+      if concrete_test_path_is_acceptable "$candidate" "$scope_dir"; then
         existing_path="$candidate"
         break
       fi

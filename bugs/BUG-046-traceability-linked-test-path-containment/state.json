@@ -1,0 +1,318 @@
+{
+  "version": 3,
+  "featureDir": "bugs/BUG-046-traceability-linked-test-path-containment",
+  "featureName": "Traceability Linked-Test Path Containment",
+  "packet": "full",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "specTargets": [
+      "bugs/BUG-046-traceability-linked-test-path-containment"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-046-traceability-linked-test-path-containment/**",
+      "bubbles/scripts/traceability-guard.sh",
+      "bubbles/scripts/traceability-guard-selftest.sh"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "independently_verified",
+    "goalContractRef": "spec.md#outcome-contract",
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentPhaseStatus": "complete",
+    "currentScope": "01-atomic-linked-test-path-validation",
+    "runStartedAt": "2026-09-02T17:53:14Z",
+    "runCompletedAt": "2026-09-02T18:03:58Z",
+    "completedPhaseClaims": [
+      "analyze",
+      "design",
+      "plan",
+      "implement",
+      "test"
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.regression",
+    "nextRequiredTarget": "bugs/BUG-046-traceability-linked-test-path-containment",
+    "nextRequiredScope": "01-atomic-linked-test-path-validation",
+    "findingAccounting": {
+      "addressedFindings": [
+        {
+          "id": "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001",
+          "status": "verified-ready-for-parent-consumption",
+          "evidenceRef": "report.md#independent-test-verification---2026-09-02"
+        }
+      ],
+      "unresolvedFindings": []
+    },
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "source": "repo-default"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "lockdown": {
+      "mode": "off",
+      "source": "repo-default"
+    },
+    "regression": {
+      "mode": "protected-scenarios",
+      "source": "repo-default"
+    },
+    "validation": {
+      "mode": "certification-required",
+      "source": "repo-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "event": "analyst-specification-completed",
+      "phase": "analyze",
+      "agent": "bubbles.analyst",
+      "phasesExecuted": [
+        "analyze"
+      ],
+      "startedAt": "2026-09-02T15:58:01Z",
+      "completedAt": "2026-09-02T16:00:36Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "outcome": "route_required",
+      "summary": "Authored the linked-test containment specification and routed technical design to bubbles.design. Design, scopes, scenario manifest, and user validation remain with their canonical owners.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "evidence": [
+        "spec.md#outcome-contract",
+        "spec.md#user-scenarios-gherkin",
+        "spec.md#acceptance-criteria"
+      ]
+    },
+    {
+      "event": "design-completed",
+      "phase": "design",
+      "agent": "bubbles.design",
+      "phasesExecuted": [
+        "design"
+      ],
+      "startedAt": "2026-09-02T16:06:03Z",
+      "completedAt": "2026-09-02T16:08:17Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "outcome": "route_required",
+      "summary": "Authored the technical containment design, mapped all nine scenarios, and routed plan-owned artifacts to bubbles.plan.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "evidence": [
+        "design.md#canonical-root-selection",
+        "design.md#portable-canonical-resolution",
+        "design.md#scenario-to-test-mapping"
+      ]
+    },
+    {
+      "event": "planning-completed",
+      "phase": "plan",
+      "agent": "bubbles.plan",
+      "phasesExecuted": [
+        "plan"
+      ],
+      "startedAt": "2026-09-02T16:12:35Z",
+      "completedAt": "2026-09-02T16:15:19Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "outcome": "route_required",
+      "summary": "Created one atomic scope, nine scenario contracts, eleven synchronized test rows, and the checked opt-out acceptance template before routing implementation.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "evidence": [
+        "scopes.md#scope-01-atomic-linked-test-path-validation",
+        "scenario-manifest.json",
+        "test-plan.json",
+        "uservalidation.md#checklist",
+        "report.md#planning-artifact-validation-2026-09-02"
+      ]
+    },
+    {
+      "event": "implementation-completed",
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "startedAt": "2026-09-02T16:23:07Z",
+      "completedAt": "2026-09-02T17:37:51Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "outcome": "route_required",
+      "summary": "Implemented canonical linked-test path containment and completed the owned focused checks. Independent test ownership retains the unresolved finding.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "evidence": [
+        "report.md#focused-red-and-green-evidence",
+        "report.md#interrupted-implementation-finalization-2026-09-02",
+        "tool-log:621",
+        "tool-log:622"
+      ]
+    },
+    {
+      "event": "independent-test-verified",
+      "phase": "test",
+      "agent": "bubbles.test",
+      "phasesExecuted": [
+        "test"
+      ],
+      "startedAt": "2026-09-02T17:53:14Z",
+      "completedAt": "2026-09-02T18:03:58Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "outcome": "route_required",
+      "summary": "Independently verified the final implementation epoch under stock and Homebrew Bash, including all eleven planned rows and the selective containment mutation. The remaining broad framework regression routes to bubbles.regression.",
+      "addressedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "unresolvedFindings": [],
+      "evidence": [
+        "report.md#independent-test-verification---2026-09-02",
+        "tool-log:636",
+        "tool-log:637",
+        "tool-log:638",
+        "tool-log:639",
+        "tool-log:640",
+        "tool-log:641",
+        "tool-log:642",
+        "tool-log:643",
+        "tool-log:644",
+        "tool-log:645",
+        "tool-log:646",
+        "tool-log:647",
+        "tool-log:648",
+        "tool-log:649",
+        "tool-log:650",
+        "tool-log:651",
+        "tool-log:652",
+        "tool-log:653",
+        "tool-log:654",
+        "tool-log:655",
+        "tool-log:656",
+        "tool-log:657",
+        "tool-log:659",
+        "tool-log:660",
+        "tool-log:661",
+        "tool-log:662",
+        "tool-log:663",
+        "tool-log:664",
+        "tool-log:665",
+        "tool-log:666",
+        "tool-log:667",
+        "tool-log:668"
+      ]
+    }
+  ],
+  "activeBugs": [
+    "BUG-046"
+  ],
+  "resolvedBugs": [],
+  "failures": [
+    {
+      "id": "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001",
+      "severity": "high",
+      "status": "resolved",
+      "source": "bugs/BUG-045-traceability-empty-evidence-refs/report.md",
+      "resolvedAt": "2026-09-02T18:03:58Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "The implementation final epoch passed independent stock-Bash and Homebrew-Bash execution, all eleven planned rows, and the regular-file-preserving containment mutation.",
+      "resolutionEvidence": "report.md#independent-test-verification---2026-09-02; tool-log rows 636-654",
+      "independentVerification": {
+        "status": "verified",
+        "verifiedBy": "bubbles.test",
+        "verifiedAt": "2026-09-02T18:03:58Z",
+        "evidence": "report.md#independent-test-verification---2026-09-02; tool-log rows 640-646"
+      }
+    }
+  ],
+  "lastUpdatedAt": "2026-09-02T18:03:58Z",
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "specs_hardened",
+      "docs_updated",
+      "validated",
+      "done"
+    ],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "scopeDoneGates": [
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061"
+    ],
+    "specDoneRequires": "All scopes done. certification.completedScopes contains all scope IDs and bubbles.validate has certified promotion."
+  },
+  "notes": "Independent test verification passed for the implementation final epoch. The inherited High finding is verified-ready-for-parent-consumption inside BUG-046, while BUG-045 remains untouched. Broad framework regression routes to bubbles.regression. Certification and top-level status remain in_progress."
+}

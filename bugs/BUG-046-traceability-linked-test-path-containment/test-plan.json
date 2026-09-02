@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "specId": "BUG-046",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-02T16:12:35Z",
+  "scopes": [
+    {
+      "scopeId": "01-atomic-linked-test-path-validation",
+      "scopeName": "Atomic linked-test path validation",
+      "tests": [
+        {
+          "testId": "TP-B046-001",
+          "dodId": "DOD-B046-T01",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-001",
+          "description": "Repository-relative and feature-relative regular files remain accepted without manifest rewrites.",
+          "expectedIdentity": "BUG-046 accepts repository-relative and feature-relative regular files without rewrites",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-002",
+          "dodId": "DOD-B046-T02",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-002",
+          "description": "Present and absent parent traversal targets receive the same non-disclosing rejection class.",
+          "expectedIdentity": "BUG-046 rejects present and absent parent traversal with one non-disclosing class",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-003",
+          "dodId": "DOD-B046-T03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-003",
+          "description": "POSIX, drive-qualified, and UNC absolute forms reject identically under supported Bash paths.",
+          "expectedIdentity": "BUG-046 rejects POSIX drive-qualified and UNC absolute forms under both Bash paths",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-004",
+          "dodId": "DOD-B046-T04",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-004",
+          "description": "Present and absent external symlink targets reject without revealing target state.",
+          "expectedIdentity": "BUG-046 rejects present and absent external symlink targets without target disclosure",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-005",
+          "dodId": "DOD-B046-T05",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-005",
+          "description": "A contained regular-file symlink counts while an internal directory symlink does not.",
+          "expectedIdentity": "BUG-046 accepts a contained regular-file symlink and rejects an internal directory link",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-006",
+          "dodId": "DOD-B046-T06",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-006",
+          "description": "Empty, whitespace-only, and control-bearing references reject without active terminal control output.",
+          "expectedIdentity": "BUG-046 rejects empty whitespace and control-bearing references without terminal control output",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-007",
+          "dodId": "DOD-B046-T07",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-007",
+          "description": "Missing, directory, FIFO, and Unix-socket candidates cannot satisfy linked-test traceability.",
+          "expectedIdentity": "BUG-046 rejects missing directory FIFO and Unix-socket targets",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-008",
+          "dodId": "DOD-B046-T08",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-008",
+          "description": "Command-shaped references remain inert and create no named side effect.",
+          "expectedIdentity": "BUG-046 keeps substitution backtick variable wildcard and separator text inert",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-009",
+          "dodId": "DOD-B046-T09",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-009",
+          "description": "Both candidate roots and projection modes preserve supported reference forms and fragment behavior.",
+          "expectedIdentity": "BUG-046 preserves candidate-root form fragment envelope and scope-mode compatibility",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-010",
+          "dodId": "DOD-B046-T10",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-002",
+          "scenarioIds": [
+            "SCN-B046-002",
+            "SCN-B046-004",
+            "SCN-B046-006"
+          ],
+          "description": "Invalid references reveal no external existence, path, metadata, contents, or active control bytes.",
+          "expectedIdentity": "BUG-046 diagnostics disclose no external existence path metadata contents or control bytes",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "TP-B046-011",
+          "dodId": "DOD-B046-T11",
+          "type": "mutation",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B046-002",
+          "scenarioIds": [
+            "SCN-B046-002",
+            "SCN-B046-004"
+          ],
+          "description": "A guard copy with containment disabled and regular-file checks retained is killed by traversal and symlink cases.",
+          "expectedIdentity": "BUG-046 containment-disabled regular-file-preserving mutation is killed",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        }
+      ]
+    }
+  ]
+}
