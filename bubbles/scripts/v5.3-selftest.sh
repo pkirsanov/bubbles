@@ -116,7 +116,18 @@ fi
 # that can support asserting the downstream exit code, and it exercises the
 # installer on the same path a downstream repository uses.
 tmp_root="$(mktemp -d -t bubbles-v5.3-selftest.XXXXXX)"
-trap 'rm -rf "$tmp_root"' EXIT INT TERM
+ds_log=""
+cleanup() {
+  rm -rf "$tmp_root"
+  [[ -z "$ds_log" ]] || rm -f "$ds_log"
+}
+trap cleanup EXIT
+# A cleanup-only signal trap swallows the signal and resumes execution against
+# the resources it just deleted. Preserve cleanup through EXIT, but terminate
+# with the conventional shell status so a parent deadline produces one honest
+# interrupted check instead of cascading missing-log and missing-root failures.
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 run_in_downstream_root() {
   (cd "$tmp_root" && "$@")
@@ -196,7 +207,6 @@ fi
 # hang FAILS LOUD at the correct bound instead of truncating healthy progress.
 ds_rc=0
 ds_log="$(mktemp "${TMPDIR:-/tmp}/bubbles-v5.3-downstream.XXXXXX")"
-trap 'rm -rf "$tmp_root"; rm -f "$ds_log"' EXIT INT TERM
 bubbles_run_with_progress_timeout \
   "$downstream_validate_idle_timeout_seconds" \
   "$downstream_validate_absolute_timeout_seconds" \

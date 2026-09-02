@@ -31,22 +31,26 @@
       "bubbles/scripts/state-transition-guard.sh",
       "bubbles/scripts/state-transition-guard-selftest.sh",
       "bubbles/scripts/receipt-identity-selftest.sh",
+      "bubbles/scripts/state-snapshot-selftest.sh",
       "bubbles/scripts/framework-validate.sh"
     ]
   },
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
-    "substate": "requirements_ready",
-    "activeAgent": "bubbles.bug",
-    "currentPhase": "bug",
+    "goalContractRef": {
+      "goalId": "gc:vscode-ddcadf12da845e696b1170714b10e13b:1",
+      "revision": 1,
+      "sourceRequestDigest": "sha256:38d0707d2f0aa8ab35f867d708243076c2eb2ebd32996db45b6b4a84a7098583"
+    },
+    "substate": "planning_coherence_repaired_pending_test",
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
     "currentScope": 2,
-    "completedPhaseClaims": [
-      "implement"
-    ],
+    "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.implement",
-    "nextRequiredAction": "Capture the timeout red stage, narrow timeout and gtimeout normalization to the closed grammar in spec.md, correct the focused and whole-guard fixtures, and preserve Scope 1 evidence.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Re-verify the final BUG-033 planning metadata, scenario mappings, and focused regression contracts before routing the still-uncertified packet to bubbles.validate.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -62,7 +66,7 @@
       {
         "scope": 1,
         "name": "Receipt Target Grouping And Wrapper Normalization",
-        "status": "implemented",
+        "status": "in_progress",
         "certified": false
       },
       {
@@ -105,5 +109,117 @@
   },
   "transitionRequests": [],
   "reworkQueue": [],
-  "executionHistory": []
+  "executionHistory": [
+    {
+      "agent": "bubbles.analyst",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 G070 Outcome Contract repair",
+      "phasesExecuted": [
+        "analyze"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:20:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/spec.md#outcome-contract",
+      "addressedFindings": [
+        "BUG033-G070-OUTCOME-CONTRACT-FIELDS"
+      ],
+      "unresolvedFindings": [
+        "BUG033-VALIDATE-CERTIFICATION"
+      ]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 independent test rerun after planning metadata correction",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:07:31Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#independent-test-rerun-after-planning-correction",
+      "addressedFindings": [
+        "BUG033-TEST-REVERIFY-CORRECTED-METADATA"
+      ],
+      "unresolvedFindings": [
+        "BUG033-VALIDATE-CERTIFICATION"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 scenario obligation and test mechanism metadata correction",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:00:44Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#planning-metadata-correction",
+      "addressedFindings": [
+        "BUG033-PLAN-SCENARIO-OBLIGATION-MATRIX",
+        "BUG033-PLAN-TEST-MECHANISM-VOCABULARY"
+      ],
+      "unresolvedFindings": [
+        "BUG033-TEST-REVERIFY-CORRECTED-METADATA"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 Scope 2 linked-test and lock-boundary planning repair",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T03:47:23Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/scopes.md#scope-2--timeout-wrapper-grammar-and-session-lock-boundary",
+      "addressedFindings": [
+        "BUG033-PLAN-SCN-B033-009-LINK"
+      ],
+      "unresolvedFindings": [
+        "BUG033-IMPLEMENT-SCN-B033-009-HERMETIC-IGNORE-CONTRACT"
+      ]
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 Scope 2 SCN-B033-009 hermetic ignore-contract regression",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T03:51:46Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#scn-b033-009-green",
+      "addressedFindings": [
+        "BUG033-IMPLEMENT-SCN-B033-009-HERMETIC-IGNORE-CONTRACT"
+      ],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "SEC-004 Path-Qualified Timeout Impersonation",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T05:12:43Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#sec-004-path-qualified-timeout-impersonation--2026-09-02",
+      "addressedFindings": [
+        "SEC-004"
+      ],
+      "unresolvedFindings": []
+    }
+  ]
 }

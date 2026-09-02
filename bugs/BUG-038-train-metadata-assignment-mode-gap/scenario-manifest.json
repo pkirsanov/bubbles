@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-038-train-metadata-assignment-mode-gap",
+  "bugId": "BUG-038",
+  "scenarios": [
+    {
+      "id": "SCN-B038-001",
+      "title": "Direct bubbles.train apply succeeds",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-001", "FR-B038-002", "FR-B038-003", "FR-B038-004", "FR-B038-005", "FR-B038-006", "FR-B038-007"],
+      "testPlanIds": ["TP-B038-01", "TP-B038-14"],
+      "behaviorTraits": ["mutable-state", "runtime-config"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh", "bubbles/agent-capabilities.yaml", "bubbles/agent-ownership.yaml", "bubbles/workflows/modes.yaml"],
+      "obligations": [
+        {
+          "trait": "mutable-state",
+          "requiredProof": "Apply through the production CLI helper, read state.json again, and prove persistence plus semantic equality outside the two owned fields.",
+          "satisfiedBy": ["TP-B038-01", "TP-B038-14"]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "The exact admission grant, ownership authority, and owned-field authority all resolve before the direct apply succeeds.",
+          "satisfiedBy": ["TP-B038-01"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Remove the releaseTrain write or alter an unrelated field; the round-trip and projection assertions fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-002",
+      "title": "Wildcard admission does not grant mutation",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-004", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-02"],
+      "behaviorTraits": ["runtime-config", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/workflow-runner-grants-lint.sh", "bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Wildcard admission is proven independently from the direct-only apply refusal.",
+          "satisfiedBy": ["TP-B038-02"]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "The existing wildcard evaluator admits the mode without granting mutation ownership.",
+          "satisfiedBy": ["TP-B038-02"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/scripts/workflow-runner-grants-lint.sh", "bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Allow the wildcard-admitted non-train runner to mutate state; the byte-identity assertion fails.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-003",
+      "title": "Explicit exclusion wins over wildcard",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-004", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-03"],
+      "behaviorTraits": ["runtime-config", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/workflow-runner-grants-lint-selftest.sh", "bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#runner-grant-compatibility", "report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/workflow-runner-grants-lint.sh", "bubbles/scripts/release-train-metadata-assign.sh", "bubbles/agent-capabilities.yaml"],
+      "obligations": [
+        {
+          "trait": "runtime-config",
+          "requiredProof": "A wildcard fixture with an explicit assignment-mode exclusion is denied by the existing evaluator.",
+          "satisfiedBy": ["TP-B038-03"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The exclusion-specific refusal occurs without mutation.",
+          "satisfiedBy": ["TP-B038-03"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/scripts/workflow-runner-grants-lint.sh", "bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Ignore the explicit exclusion or mutate state after refusal; the evaluator or byte-identity assertion fails.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-004",
+      "title": "Environment declaration cannot impersonate the runner",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-004", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-04"],
+      "behaviorTraits": ["runtime-config", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Authenticated active-runner context, not BUBBLES_AGENT_NAME, controls direct apply authority.",
+          "satisfiedBy": ["TP-B038-04"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "A contradictory environment declaration cannot prevent refusal or cause a write.",
+          "satisfiedBy": ["TP-B038-04"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Authorize from BUBBLES_AGENT_NAME despite a wrong authenticated runner; the refusal assertion fails.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-005",
+      "title": "Missing active runner refuses",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-004", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-05"],
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Absent authenticated active-runner context fails closed before mutation.",
+          "satisfiedBy": ["TP-B038-05"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Permit apply without active-runner context; the refusal and byte assertions fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-006",
+      "title": "Ownership registry mismatch refuses",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-004", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-06"],
+      "behaviorTraits": ["runtime-config", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/agent-ownership.yaml", "bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [
+        {
+          "trait": "runtime-config",
+          "requiredProof": "The helper reads the ownership authority and requires bubbles.train as the sole release-train-state owner.",
+          "satisfiedBy": ["TP-B038-06"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Missing, duplicate, or mismatched ownership refuses without mutation.",
+          "satisfiedBy": ["TP-B038-06"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": ["bubbles/agent-ownership.yaml", "bubbles/scripts/release-train-metadata-assign.sh"],
+        "negativeControl": "Accept a missing or transferred ownership declaration; the authority assertion fails.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B038-007",
+      "title": "Mode owned-field mismatch refuses",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-006", "FR-B038-012"],
+      "testPlanIds": ["TP-B038-07"],
+      "behaviorTraits": ["runtime-config", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/workflows/modes.yaml", "bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [
+        {"trait": "runtime-config", "requiredProof": "The mode-owned-field authority is read before mutation.", "satisfiedBy": ["TP-B038-07"]},
+        {"trait": "degraded-state", "requiredProof": "A requested field absent from ownedStateFields refuses without mutation.", "satisfiedBy": ["TP-B038-07"]}
+      ],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "returned-value", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/workflows/modes.yaml", "bubbles/scripts/release-train-metadata-assign.sh"], "negativeControl": "Remove one canonical field from ownedStateFields and allow mutation; the refusal assertion fails.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-008",
+      "title": "Dry-run reports without mutation",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-003", "FR-B038-011"],
+      "testPlanIds": ["TP-B038-08"],
+      "behaviorTraits": ["static-metadata"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [{"trait": "static-metadata", "requiredProof": "Default and explicit dry-run report candidate and authorization findings while destination bytes and sibling paths remain unchanged.", "satisfiedBy": ["TP-B038-08"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "returned-value", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"], "negativeControl": "Write the destination or leave a candidate during dry-run; byte or residue assertions fail.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-009",
+      "title": "Train aliases remain compatible",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-001", "FR-B038-013"],
+      "testPlanIds": ["TP-B038-09"],
+      "behaviorTraits": ["static-metadata"],
+      "riskTier": "medium",
+      "linkedTests": ["bubbles/scripts/mode-alias-selftest.sh"],
+      "evidenceRefs": ["report.md#alias-compatibility"],
+      "implementationRefs": ["bubbles/workflows/aliases.yaml"],
+      "obligations": [{"trait": "static-metadata", "requiredProof": "The assignment tuple and every existing train alias resolve to their registered modes.", "satisfiedBy": ["TP-B038-09"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "recorded-fixture", "assertionSurface": "returned-value", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/workflows/aliases.yaml"], "negativeControl": "Change the assignment tuple or an existing train alias target; exact resolution fails.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-010",
+      "title": "Unknown train refuses",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-005", "FR-B038-010"],
+      "testPlanIds": ["TP-B038-10"],
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [{"trait": "degraded-state", "requiredProof": "An unknown train produces a named nonzero refusal with byte-identical state and no candidate residue.", "satisfiedBy": ["TP-B038-10"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "returned-value", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"], "negativeControl": "Accept an absent train or create a candidate before validation; refusal, byte, or residue assertions fail.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-011",
+      "title": "Flags metadata remains bounded",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-006", "FR-B038-007", "FR-B038-008"],
+      "testPlanIds": ["TP-B038-11"],
+      "behaviorTraits": ["mutable-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [{"trait": "mutable-state", "requiredProof": "Round trips distinguish omitted flags, explicit empty flags, valid replacement, malformed input, and duplicates while preserving non-owned state.", "satisfiedBy": ["TP-B038-11"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "persisted-state", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"], "negativeControl": "Conflate omitted flags with empty flags or accept malformed duplicates; round-trip assertions fail.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-012",
+      "title": "Assignment has no lifecycle side effects",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-008", "FR-B038-009", "FR-B038-013"],
+      "testPlanIds": ["TP-B038-12"],
+      "behaviorTraits": ["static-metadata"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh", "bubbles/workflows/modes.yaml"],
+      "obligations": [{"trait": "static-metadata", "requiredProof": "Sentinel bytes and forbidden-command instrumentation prove no lifecycle, build, pointer, bundle, manifest, or deployment side effect or claim.", "satisfiedBy": ["TP-B038-12"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "returned-value", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh", "bubbles/workflows/modes.yaml"], "negativeControl": "Invoke or claim one forbidden lifecycle operation; sentinel or vocabulary assertions fail.", "negativeControlMechanism": "mutation"}
+    },
+    {
+      "id": "SCN-B038-013",
+      "title": "Identical apply is an atomic no-op",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "requirementIds": ["FR-B038-007"],
+      "testPlanIds": ["TP-B038-13"],
+      "behaviorTraits": ["mutable-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "evidenceRefs": ["report.md#focused-metadata-assignment-regression"],
+      "implementationRefs": ["bubbles/scripts/release-train-metadata-assign.sh"],
+      "obligations": [{"trait": "mutable-state", "requiredProof": "Repeating an identical authorized apply preserves bytes, file mode, and modification time.", "satisfiedBy": ["TP-B038-13"]}],
+      "testMechanism": {"entrypoint": "production-cli", "inputOrigin": "synthetic-fixture", "assertionSurface": "persisted-state", "dependencyPath": "ephemeral-real", "productionOwners": ["bubbles/scripts/release-train-metadata-assign.sh"], "negativeControl": "Replace the file on an identical apply; byte, mode, or modification-time assertions fail.", "negativeControlMechanism": "mutation"}
+    }
+  ]
+}

@@ -162,6 +162,20 @@ The registry is responsible for:
 
 This keeps source-level parallelism (`gitIsolation`, worktrees, parallel scopes) from accidentally colliding at the container/runtime layer.
 
+### 2.5.1. Measured Dispatch Admission And Research Evidence
+
+Runtime leases and measured dispatch admission solve different control-plane problems. A lease coordinates ownership and capacity for a shared runtime stack. Dispatch admission evaluates one resource-consuming model, subagent, web, browser, or tool action against an exact goal budget, reservation state, retry identity, and verified session epoch.
+
+The shared dependency direction is `ECF -> IMP-055 -> IMP-054`:
+
+1. the evidence-control foundation owns immutable typed records and content-addressed storage;
+2. IMP-055 owns goal budgets, reservations, debits, releases, holds, permits, usage reconciliation, retries, and session epochs;
+3. IMP-054 owns question validation, research planning, staged execution, inspection, validation, publication, bridging, and cancellation.
+
+Neither layer grants consequential-action authority. A budget permit cannot authorize deployment, transactions, messaging, or infrastructure mutation. Research publication emits evidence artifacts and a result envelope; it does not certify product delivery.
+
+The repository-controlled reference implementations are opt-in and default off. Missing usage remains `unmeasured`, never zero or free. Hosted research providers, downstream bridges, native host interception, live checkpoints, rollout, and causal savings proof remain external activation work.
+
 ### 2.6. Workflow Run-State
 
 The framework already records execution and certification state, but long-running or resumed work also needs a typed run-state surface that answers simpler operational questions:

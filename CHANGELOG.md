@@ -193,6 +193,16 @@ status.
 Selftest goes 11 to 15 cases, and the binding is proven falsifiable: replacing
 the comparison with `false` turns the drift case red.
 
+## [7.29.0] - 2026-09-02
+
+### Provider-Neutral Research And Measured Admission Runtimes
+
+IMP-054 ships a default-off research lifecycle that validates explicit questions and produces typed, content-addressed evidence through plan, run or resume, inspect, validate, publish or bridge, and cancel stages. IMP-055 ships exact goal-budget accounting, one-time dispatch permits, usage reconciliation, retry identities, verified session epochs, a reference broker, and frozen-corpus evaluation.
+
+The source CLI now exposes `research` and `admission` command families. Missing adapter configuration resolves to `none`, and missing usage remains `unmeasured` rather than becoming zero or free. Admission permits remain separate from runtime leases and consequential-action authorization.
+
+This release publishes the focused operator recipe, six aligned framework guides, live Super discovery, controlled vocabulary, capability-ledger entries, durable improvement records, and synchronized proposal statuses. Hosted research providers, downstream bridge activation, native host interception, live checkpoints, production rollout, and causal savings proof remain parked.
+
 ## [7.28.0] - 2026-08-15
 
 ### The Suite Was Measured Before It Was Parallelized (IMP-042 SCOPE-4)

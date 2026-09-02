@@ -94,7 +94,7 @@ command() {
 bubbles_run_with_timeout 10 bash -c '
   trap "exit 130" INT
   printf "%s\n" "$$" > "$1"
-  while :; do :; done
+  while :; do sleep 1; done
 ' bash "$signal_fifo" >/dev/null 2>&1
 rc=$?
 elapsed=$(($(date +%s) - start))

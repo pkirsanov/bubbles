@@ -2195,12 +2195,15 @@ reconciliation, and exact validation commands.
 ## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
 
 - **Filed:** 2026-08-16
-- **Disposition:** **FIXED**, before 2026-08-17. The fix described below is
+- **Disposition:** **IN PROGRESS (reopened)**. The original target-grouping and
+  shell-wrapper facets were fixed before 2026-08-17. The fix described below is
   present in `bubbles/scripts/state-transition-guard.sh`: Check 43 binds
   `$targets` with `group_by(.cmd | cmd_identity) | map(.[0] | target_identity)`
   (line 4457), together with the facet-2 wrapper normalisation.
   `bash bubbles/scripts/receipt-identity-selftest.sh` reports 15 passed, 0 failed.
-  The packet's own `state.json` remains `in_progress`: on 2026-08-17
+  The reopened Scope 2 owns the third, timeout-wrapper facet and remains in
+  progress and uncertified. The packet's own `state.json` and certification
+  both remain `in_progress`, with no certified scopes. On 2026-08-17,
   `state-transition-guard.sh` refused the `done` transition for
   `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization` with 28
   failures (`blockingCode: DELIVERY_COMPLETION_FAILED`), so the status was left
@@ -2461,9 +2464,11 @@ because the resolver ships into every consuming repository.
 ## BUG-037 — evidence capture can duplicate the zero line count and feed a non-canonical scalar into arithmetic
 
 - **Filed:** 2026-09-02
-- **Disposition:** open framework defect; artifact and root-cause packet created
-  at `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. No implementation,
-  red-stage execution, or certification is claimed.
+- **Disposition:** in progress. The focused fix, red-stage reproduction, and
+  focused checks are recorded at
+  `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. Aggregate framework
+  validation, release readiness, and validate-owned certification remain
+  pending.
 - **Severity:** high. Evidence formatting can emit an arithmetic diagnostic
   while the child and helper still return success.
 - **Affects:** `bubbles/scripts/evidence-capture.sh` zero-output metadata.
@@ -2488,4 +2493,32 @@ contract. Preserve non-empty, bounded, signal, cleanup, and verify behavior.
 
 The packet routes implementation to `bubbles.implement`. Full framework and
 release validation remain mandatory before validate-owned certification.
+
+---
+
+## BUG-038 — train metadata assignment has no authorized workflow route
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress. The bounded metadata-only fix and focused checks
+  are recorded at `bugs/BUG-038-train-metadata-assignment-mode-gap/`. Aggregate
+  framework validation, release readiness, and validate-owned certification
+  remain pending.
+- **Severity:** high. Grounded release-train classification cannot be persisted
+  through an authorized workflow route.
+- **Affects:** train metadata workflow resolution, sole-owner authorization,
+  aliases, and the bounded assignment helper.
+
+### Root cause
+
+The workflow registry exposed train lifecycle operations but no metadata
+assignment mode. The capability registry and train agent therefore had no
+authorized route to persist the two train-owned state fields.
+
+### Bounded fix
+
+The fix adds one metadata-assignment mode, its exact alias tuple, a sole
+`bubbles.train` runner grant, and a metadata-only helper. Focused helper,
+authorization, alias compatibility, syntax, portability, and artifact checks
+are recorded as passing. The bug remains `in_progress` until aggregate checks
+and validate-owned certification complete.
 

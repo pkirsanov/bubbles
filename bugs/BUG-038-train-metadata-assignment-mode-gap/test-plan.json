@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-038-train-metadata-assignment-mode-gap",
+  "scope": "Scope 1",
+  "tests": [
+    {
+      "id": "TP-B038-01",
+      "scenarioIds": ["SCN-B038-001"],
+      "type": "adversarial-regression-red-green",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Pre-fix failure and post-fix success prove direct bubbles.train apply and semantic isolation outside the owned fields."
+    },
+    {
+      "id": "TP-B038-02",
+      "scenarioIds": ["SCN-B038-002"],
+      "type": "authorization-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Wildcard mode admission is recognized while apply from a non-train top-level runner refuses without mutation."
+    },
+    {
+      "id": "TP-B038-03",
+      "scenarioIds": ["SCN-B038-003"],
+      "type": "composite-admission-no-mutation-regression",
+      "paths": ["bubbles/scripts/workflow-runner-grants-lint-selftest.sh", "bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "command": "timeout 180 bash bubbles/scripts/workflow-runner-grants-lint-selftest.sh && timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "The production admission evaluator refuses an explicit assignment-mode exclusion after matching a wildcard grant, and the production assignment path reports the exclusion while preserving state.json bytes. Both selftests are required."
+    },
+    {
+      "id": "TP-B038-04",
+      "scenarioIds": ["SCN-B038-004"],
+      "type": "adversarial-authorization-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "A wrong authenticated top-level runner refuses even when BUBBLES_AGENT_NAME declares bubbles.train."
+    },
+    {
+      "id": "TP-B038-05",
+      "scenarioIds": ["SCN-B038-005"],
+      "type": "adversarial-authorization-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Missing authenticated active-runner context refuses before mutation."
+    },
+    {
+      "id": "TP-B038-06",
+      "scenarioIds": ["SCN-B038-006"],
+      "type": "ownership-contract-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Missing, duplicate, or mismatched release-train-state ownership refuses without mutation."
+    },
+    {
+      "id": "TP-B038-07",
+      "scenarioIds": ["SCN-B038-007"],
+      "type": "mode-policy-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "A requested canonical field absent from ownedStateFields refuses without mutation."
+    },
+    {
+      "id": "TP-B038-08",
+      "scenarioIds": ["SCN-B038-008"],
+      "type": "dry-run-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Default and explicit dry-run report the candidate and authorization findings while preserving destination bytes and sibling paths."
+    },
+    {
+      "id": "TP-B038-09",
+      "scenarioIds": ["SCN-B038-009"],
+      "type": "workflow-compatibility-contract",
+      "path": "bubbles/scripts/mode-alias-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/mode-alias-selftest.sh",
+      "expectedProof": "The assignment tuple and every existing train alias resolve without drift."
+    },
+    {
+      "id": "TP-B038-10",
+      "scenarioIds": ["SCN-B038-010"],
+      "type": "validation-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Unknown train names the requested ID, preserves state bytes, and leaves no candidate residue."
+    },
+    {
+      "id": "TP-B038-11",
+      "scenarioIds": ["SCN-B038-011"],
+      "type": "boundary-round-trip-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Omitted, empty, valid, malformed, and duplicate flags follow the canonical field contract."
+    },
+    {
+      "id": "TP-B038-12",
+      "scenarioIds": ["SCN-B038-012"],
+      "type": "side-effect-boundary-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Sentinel digests remain unchanged and no lifecycle, build, pointer, or deployment operation occurs or is claimed."
+    },
+    {
+      "id": "TP-B038-13",
+      "scenarioIds": ["SCN-B038-013"],
+      "type": "atomicity-idempotence-regression",
+      "path": "bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "command": "timeout 180 bash bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Repeated identical apply preserves state bytes, file mode, and modification time."
+    },
+    {
+      "id": "TP-B038-14",
+      "scenarioIds": ["SCN-B038-001", "SCN-B038-002", "SCN-B038-003", "SCN-B038-004", "SCN-B038-005", "SCN-B038-006", "SCN-B038-007", "SCN-B038-008", "SCN-B038-009", "SCN-B038-010", "SCN-B038-011", "SCN-B038-012", "SCN-B038-013"],
+      "type": "portability-syntax",
+      "paths": ["bubbles/scripts/release-train-metadata-assign.sh", "bubbles/scripts/release-train-metadata-assign-selftest.sh"],
+      "command": "timeout 30 bash -n bubbles/scripts/release-train-metadata-assign.sh && timeout 30 bash -n bubbles/scripts/release-train-metadata-assign-selftest.sh",
+      "expectedProof": "Changed shell files parse in the active shell and static portability review finds no Bash 4-only or GNU/BSD-specific construct; native Bash 3.2 execution is recorded as environment-unavailable unless it is actually executed."
+    }
+  ]
+}

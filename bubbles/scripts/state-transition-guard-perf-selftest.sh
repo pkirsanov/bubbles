@@ -263,7 +263,7 @@ EOF
 
     TIMEFORMAT='%3R %3U %3S'
     {
-      time env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 \
+      time BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 \
         bash "$GUARD" "$b5_feature" > "$sample_log" 2>&1 || true
     } 2> "$timing_log"
     if ! read -r real_seconds user_seconds system_seconds < "$timing_log"; then

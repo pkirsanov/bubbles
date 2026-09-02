@@ -33,11 +33,20 @@ bubbles_execution_control_read() {
 }
 
 bubbles_execution_control_verify() {
-  local store_root="$1"
-  bubbles_execution_control verify --store-root "$store_root"
+  local store_root="$1" checkpoint="${2:-}"
+  if [[ -n "$checkpoint" ]]; then
+    bubbles_execution_control verify --store-root "$store_root" --checkpoint "$checkpoint"
+  else
+    bubbles_execution_control verify --store-root "$store_root"
+  fi
 }
 
 bubbles_execution_control_project() {
-  local store_root="$1" output="$2"
-  bubbles_execution_control project --store-root "$store_root" --output "$output"
+  local store_root="$1"
+  bubbles_execution_control project --store-root "$store_root"
+}
+
+bubbles_execution_control_checkpoint() {
+  local store_root="$1"
+  bubbles_execution_control checkpoint --store-root "$store_root"
 }

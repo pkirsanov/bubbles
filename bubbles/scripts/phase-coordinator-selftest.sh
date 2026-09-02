@@ -90,6 +90,37 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# IMP-055 MBE-3 — absent/off/shadow/advisory are byte- and order-compatible.
+# Only reference-enforce may interpose on dispatch.
+# ---------------------------------------------------------------------------
+COMPAT_CURSOR="$TMP_DIR/compat-cursor.json"
+compat_command() {
+  bash "$COORDINATOR" --spec-dir "$SPEC" --cursor "$COMPAT_CURSOR" --format json --dry-run \
+    "$@" --phase "validate=$RUN_CMD" --phase "implement=$RUN_CMD" 2>&1
+}
+compat_absent="$(compat_command)"
+compat_off="$(compat_command --mbe-posture off)"
+compat_shadow="$(compat_command --mbe-posture shadow)"
+compat_advisory="$(compat_command --mbe-posture advisory)"
+if [[ "$compat_absent" == "$compat_off" && "$compat_absent" == "$compat_shadow" && "$compat_absent" == "$compat_advisory" ]]; then
+  pass "MBE-3: absent, off, shadow, and advisory preserve coordinator output bytes and phase order"
+else
+  fail "MBE-3: a non-enforcing MBE posture changed coordinator output or phase order"
+fi
+
+: > "$RAN"
+REF_CURSOR="$TMP_DIR/reference-cursor.json"
+ref_out="$(bash "$COORDINATOR" --spec-dir "$SPEC" --cursor "$REF_CURSOR" --format json \
+  --mbe-posture reference-enforce --mbe-store-root "$TMP_DIR" --phase "validate=$RUN_CMD" 2>/dev/null)"
+ref_rc=$?
+if [[ "$ref_rc" -ne 0 && "$(ran_count 'validate#1')" -eq 0 ]] &&
+  [[ "$(jget "$ref_out" '[o["exitCode"] for o in d["occurrences"] if o["occurrenceId"]=="validate#1"][0]')" == "3" ]]; then
+  pass "MBE-3: reference-enforce refuses missing admitted references before the child starts"
+else
+  fail "MBE-3: reference-enforce did not fail closed before child execution"
+fi
+
+# ---------------------------------------------------------------------------
 # AC11 — the INTERRUPTION. `implement` fails, so the dependent `validate#2` is
 # BLOCKED_NOT_RUN while the independent check still executes.
 # ---------------------------------------------------------------------------

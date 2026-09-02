@@ -290,23 +290,111 @@ def cells(line):
     return out
 
 header = None
-for line in visible[start:]:
+path_header = None
+table_kind = None
+state = "SEEK_HEADER"
+row_count = 0
+path_headers = ("file/location", "file/surface", "persistentfileandexacttitle")
+
+def fail_structure(message, line_number):
+    print(f"ERROR: {message} at visible line {line_number}", file=sys.stderr)
+    raise SystemExit(4)
+
+def is_separator(row):
+    return bool(row) and all(
+        bool(value) and re.fullmatch(r":?-{3,}:?", value.replace(" ", ""))
+        for value in row
+    )
+
+section = []
+section_end_line = len(visible) + 1
+for line_number, line in enumerate(visible[start:], start=start + 1):
     heading = re.match(r"^(#{1,6})(?:\s|$)", line)
-    if heading and len(heading.group(1)) <= depth: break
+    if heading and len(heading.group(1)) <= depth: section_end_line = line_number; break
+    section.append((line_number, line, heading))
+
+index = 0
+while index < len(section):
+    line_number, line, heading = section[index]
     row = cells(line)
-    if row is None:
-        header = None; continue
-    if all(re.fullmatch(r":?-{3,}:?", value.replace(" ", "")) for value in row if value): continue
-    if header is None:
-        normalized = [re.sub(r"\s+", "", value).lower() for value in row]
-        if "testtype" not in normalized and "file/location" not in normalized: continue
-        if normalized.count("testtype") != 1 or normalized.count("file/location") != 1: raise SystemExit(4)
-        header = normalized
+
+    if state == "DONE":
+        next_row = cells(section[index + 1][1]) if index + 1 < len(section) else None
+        if row is not None and next_row is not None and len(next_row) == len(row) and is_separator(next_row):
+            fail_structure("second Markdown table in Test Plan section", line_number)
+        index += 1
         continue
-    if len(row) < len(header): row += [""] * (len(header) - len(row))
-    file_value = row[header.index("file/location")]
-    semantic = [value for i, value in enumerate(row[:len(header)]) if header[i] not in ("file/location", "command") and value]
+
+    if state == "SEEK_HEADER":
+        if row is None:
+            index += 1
+            continue
+        normalized = [re.sub(r"\s+", "", value).lower() for value in row]
+        matched_paths = [value for value in path_headers if value in normalized]
+        reserved_candidate = any(value in normalized for value in ("id", "type", "testtype") + path_headers)
+        if not reserved_candidate:
+            index += 1
+            continue
+        if normalized.count("testtype") == 1 and len(matched_paths) == 1:
+            if (normalized.count("id") != 0 or normalized.count("type") != 0
+              or any(normalized.count(value) != 1 for value in matched_paths)): fail_structure("malformed Test Plan header", line_number)
+            table_kind = "legacy"
+        elif normalized.count("id") == 1 and normalized.count("type") == 1 and len(matched_paths) == 1:
+            if (normalized.count("testtype") != 0
+              or any(normalized.count(value) != 1 for value in matched_paths)): fail_structure("malformed Test Plan header", line_number)
+            table_kind = "canonical"
+        else: fail_structure("malformed Test Plan header", line_number)
+        header = normalized
+        path_header = matched_paths[0]
+        state = "EXPECT_SEPARATOR"
+        index += 1
+        continue
+
+    if state == "EXPECT_SEPARATOR":
+        if row is None:
+            fail_structure("missing or delayed Test Plan separator", line_number)
+        if len(row) != len(header):
+            fail_structure(
+                f"wrong-width Test Plan separator: expected {len(header)} cells, got {len(row)}",
+                line_number,
+            )
+        if not is_separator(row):
+            fail_structure("invalid or empty Test Plan separator cell", line_number)
+        state = "READ_ROWS"
+        index += 1
+        continue
+
+    if row is None or heading:
+        if row_count == 0:
+            fail_structure("rowless recognized Test Plan table", line_number)
+        state = "DONE"
+        index += 1
+        continue
+
+    next_row = cells(section[index + 1][1]) if index + 1 < len(section) else None
+    if next_row is not None and len(next_row) == len(row) and is_separator(next_row):
+        fail_structure("second Markdown table in Test Plan section", line_number)
+    if is_separator(row):
+        fail_structure("unexpected separator inside Test Plan data rows", line_number)
+    if len(row) != len(header):
+        fail_structure(
+            f"malformed Test Plan row: expected {len(header)} cells, got {len(row)}",
+            line_number,
+        )
+    required_headers = ("testtype", path_header) if table_kind == "legacy" else ("id", "type", path_header)
+    if any(not row[header.index(required)] for required in required_headers):
+        fail_structure("required Test Plan cell is empty", line_number)
+    file_value = row[header.index(path_header)]
+    semantic = [value for position, value in enumerate(row)
+                if header[position] not in path_headers + ("command",) and value]
     print(file_value + "\t" + " | ".join(semantic))
+    row_count += 1
+    index += 1
+
+if state == "EXPECT_SEPARATOR":
+    fail_structure("missing or delayed Test Plan separator", section_end_line)
+if state == "READ_ROWS" and row_count == 0:
+    fail_structure("rowless recognized Test Plan table", section_end_line)
 PY
 }
 

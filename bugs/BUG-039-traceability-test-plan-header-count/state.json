@@ -1,0 +1,109 @@
+{
+  "version": 3,
+  "bugId": "BUG-039",
+  "featureDir": "bugs/BUG-039-traceability-test-plan-header-count",
+  "featureName": "Traceability Test Plan Header Count",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full packet required because the shared parser needs adversarial compatibility and malformed-input regression coverage",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-039-traceability-test-plan-header-count"],
+    "allowedPaths": [
+      "bugs/BUG-039-traceability-test-plan-header-count/**",
+      "bubbles/scripts/traceability-guard.sh",
+      "bubbles/scripts/traceability-guard-selftest.sh"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "plan",
+    "currentScope": 1,
+    "substate": "planning_reconciled",
+    "runStartedAt": "2026-09-02T07:54:38Z",
+    "completedPhaseClaims": ["bug", "analyze", "design", "plan"],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently execute the six Test Plan rows, preserve the genuine G060 red-green record, and report any source or test defect without advancing certification.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Deterministic contiguous Test Plan extraction",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "focused-only", "provenance": "operator-request"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.plan",
+      "phasesExecuted": ["plan"],
+      "startedAt": "2026-09-02T07:54:38Z",
+      "completedAt": "2026-09-02T07:57:46Z",
+      "summary": "Reconciled the single active scope, five stable scenario contracts, six-row structured Test Plan, and implementation handoff to the revised deterministic parser design. Seven bounded planning checks passed; source tests, Code Diff Evidence, aggregate validation, human acceptance, control advancement, and certification remained untouched."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "phasesExecuted": ["bootstrap", "plan"],
+      "runStartedAt": "2026-09-02T13:11:53Z",
+      "runCompletedAt": "2026-09-02T13:14:28Z",
+      "summary": "Reconciled canonical active-scope progress, scenario evidence references, and the nonterminal bubbles.test handoff under repository control revision 9 while preserving the genuine G060 red-green record."
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
+    "state": "state.json"
+  },
+  "notes": "Planning artifacts were reconciled without source or test edits, delivery evidence, global validation, human acceptance, or certification claims. Focused G060 red-before-green proof, implementation, source verification, Code Diff Evidence, and certification remain unclaimed."
+}

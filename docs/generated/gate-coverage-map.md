@@ -36,18 +36,18 @@ Corroborating (grep-derived, advisory) numbers:
 
 | Gate | Name | Enforced By (declared) | # Modes | state-transition-guard | framework-validate scripts | CI |
 | --- | --- | --- | --- | --- | --- | --- |
-| G001 | artifact_gate | `mode-required` | 55 | — | 18 | — |
+| G001 | artifact_gate | `mode-required` | 56 | — | 18 | — |
 | G002 | scope_definition_gate | `mode-required` | 23 | — | 10 | — |
 | G003 | test_integrity_gate | `mode-required` | 25 | — | 8 | — |
 | G004 | test_execution_gate | `mode-required` | 25 | — | 4 | — |
 | G005 | evidence_gate | `mode-required` | 25 | — | 3 | — |
-| G006 | docs_sync_gate | `mode-required` | 46 | — | 1 | — |
-| G007 | validation_gate | `mode-required` | 48 | — | 2 | — |
+| G006 | docs_sync_gate | `mode-required` | 47 | — | 1 | — |
+| G007 | validation_gate | `mode-required` | 49 | — | 2 | — |
 | G008 | audit_gate | `mode-required` | 42 | — | 1 | — |
 | G009 | chaos_gate | `mode-required` | 26 | — | 4 | — |
 | G010 | user_validation_gate | `mode-required` | 31 | — | 2 | — |
-| G011 | session_gate | `mode-required` | 55 | — | 1 | — |
-| G012 | final_promotion_gate | `mode-required` | 55 | — | — | — |
+| G011 | session_gate | `mode-required` | 56 | — | 1 | — |
+| G012 | final_promotion_gate | `mode-required` | 56 | — | — | — |
 | G013 | priority_selection_gate | `behavioral:bubbles.workflow` | 3 | — | — | — |
 | G014 | bootstrap_readiness_gate | `mode-required` | 18 | — | — | — |
 | G015 | scenario_depth_gate | `mode-required` | 24 | — | — | — |
@@ -84,7 +84,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G053 | implementation_delta_evidence_gate | `guard-check:13B` | 0 | Check 13B | 4 | guard |
 | G055 | policy_provenance_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3A | 4 | guard |
 | G056 | validate_certification_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3H | 1 | guard |
-| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 4 | guard |
+| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 5 | guard |
 | G058 | lockdown_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 1 | Check 3D | — | guard |
 | G059 | regression_contract_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3D | 1 | guard |
 | G060 | scenario_tdd_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 3 | Check 3E | 5 | guard |
@@ -98,7 +98,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G070 | outcome_contract_gate | `script:bubbles/scripts/goal-fidelity-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 4 | — |
 | G071 | execution_only_validation_gate | `unbound` | 0 | — | 3 | — |
 | G072 | evidence_provenance_gate | `guard-check:12` | 0 | Check 40 | 4 | guard |
-| G073 | planning_only_source_edit_lockout_gate | `guard-check:3B` | 30 | Check 3B | 6 | guard |
+| G073 | planning_only_source_edit_lockout_gate | `guard-check:3B` | 31 | Check 3B | 6 | guard |
 | G074 | workflow_mode_consistency_gate | `guard-check:2B` | 3 | ref | — | guard |
 | G075 | scope_index_parity_gate | `guard-check:5B` | 0 | ref | — | guard |
 | G076 | phantom_scope_detection_gate | `guard-check:5C` | 0 | ref | — | guard |
@@ -126,7 +126,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G099 | observability_opt_out_freshness_gate | `script:bubbles/scripts/observability-opt-out-guard-selftest.sh`, `script:bubbles/scripts/observability-opt-out-guard.sh` | 0 | Check 38 | 10 | guard |
 | G100 | observability_slo_evidence_gate | `script:bubbles/scripts/observability-slo-guard-selftest.sh`, `script:bubbles/scripts/observability-slo-guard.sh` | 0 | Check 39 | 7 | guard |
 | G101 | release_delivery_reconciliation_gate | `script:bubbles/scripts/is-terminal-for-mode.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 10 | — |
-| G110 | release_train_discipline_gate | `script:bubbles/scripts/release-train-guard.sh` | 8 | — | 5 | — |
+| G110 | release_train_discipline_gate | `script:bubbles/scripts/release-train-guard.sh` | 9 | — | 5 | — |
 | G111 | flag_default_off_on_other_trains_gate | `script:bubbles/scripts/release-train-guard.sh` | 5 | — | 2 | — |
 | G112 | backup_evidence_required_gate | `mode-required` | 2 | — | — | — |
 | G113 | restore_drill_evidence_gate | `mode-required` | 2 | — | — | — |

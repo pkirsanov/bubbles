@@ -89,8 +89,13 @@ run_harness() {
   else
     # Explicitly REMOVE the variable. This selftest itself runs inside GitHub
     # Actions, where GITHUB_ACTIONS is already true, so inheriting it would
-    # silently invert Case B.
-    env -u GITHUB_ACTIONS bash "$TMP/harness.sh" "$label" "$rc" >"$OUT" 2>&1
+    # silently invert Case B. Use a subshell rather than external `env`: the
+    # portability harness deliberately supplies a minimal PATH whose `env` may
+    # be absent or non-functional, but Bash itself can always unset the value.
+    (
+      unset GITHUB_ACTIONS
+      bash "$TMP/harness.sh" "$label" "$rc"
+    ) >"$OUT" 2>&1
   fi
 }
 
