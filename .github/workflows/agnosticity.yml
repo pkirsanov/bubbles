@@ -5,9 +5,19 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact full source commit SHA to qualify
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   portable-surfaces:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
     strategy:
       matrix:
         os:
@@ -22,6 +32,7 @@ jobs:
         run: bash bubbles/scripts/agnosticity-lint.sh --verbose
 
   release-hygiene:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     # A measured full run took about 3743 seconds. This three-hour ceiling is a
     # generous fail-safe for a real hang, not a substitute for a passing gate.
@@ -100,3 +111,129 @@ jobs:
 
       - name: Run release hygiene
         run: bash bubbles/scripts/cli.sh release-check
+
+  release-hygiene-exact-head:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    steps:
+      # Reject malformed input before checkout or any repository code runs.
+      - name: Validate exact source SHA input
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::source_sha must be exactly one lowercase 40-hex Git commit SHA"
+            exit 2
+          fi
+
+      - name: Checkout exact source commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Do not execute source-controlled provisioning until Git proves that the
+      # checkout is the requested commit served by this repository's origin.
+      - name: Verify exact source commit provenance
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::source_sha must be exactly one lowercase 40-hex Git commit SHA"
+            exit 2
+          fi
+          expected_origin="https://github.com/${SOURCE_REPOSITORY}.git"
+          actual_origin="$(git remote get-url origin)"
+          case "$actual_origin" in
+            "https://github.com/${SOURCE_REPOSITORY}") actual_origin="${actual_origin}.git" ;;
+          esac
+          if [[ "$actual_origin" == "$expected_origin" ]]; then
+            echo "origin verified: $SOURCE_REPOSITORY"
+          else
+            echo "::error::checkout origin does not match the current repository"
+            exit 1
+          fi
+          git fetch --no-tags origin "$SOURCE_SHA"
+          fetched_sha="$(git rev-parse FETCH_HEAD)"
+          head_sha="$(git rev-parse HEAD)"
+          if [[ "$fetched_sha" == "$SOURCE_SHA" ]]; then
+            echo "origin fetch verified: $fetched_sha"
+          else
+            echo "::error::origin did not return the requested source_sha"
+            exit 1
+          fi
+          if [[ "$head_sha" == "$SOURCE_SHA" ]]; then
+            echo "checked-out HEAD verified: $head_sha"
+          else
+            echo "::error::checked-out HEAD does not equal source_sha"
+            exit 1
+          fi
+          git cat-file -e "${SOURCE_SHA}^{commit}"
+
+      # Match the existing macOS release lane: establish one validated
+      # Homebrew prefix before installing Bash or provisioning Python.
+      - name: Resolve Homebrew prefix
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew_prefix_raw="$(brew --prefix 2>/dev/null || true)"
+          brew_prefix=""
+          case "$brew_prefix_raw" in
+            /*) brew_prefix="$brew_prefix_raw" ;;
+          esac
+          if [ -z "$brew_prefix" ] \
+            || [ "$(printf '%s' "$brew_prefix" | wc -l | tr -d ' ')" != "0" ] \
+            || [ ! -d "$brew_prefix/bin" ]; then
+            echo "::error::'brew --prefix' did not yield one absolute existing prefix directory; refusing to build PATH from it"
+            echo "received from 'brew --prefix': >>>${brew_prefix_raw}<<<"
+            exit 1
+          fi
+          echo "brew prefix : $brew_prefix"
+          echo "BREW_PREFIX=$brew_prefix" >> "$GITHUB_ENV"
+          echo "$brew_prefix/bin" >> "$GITHUB_PATH"
+
+      - name: Install bash 4+
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew list bash >/dev/null 2>&1 || brew install bash
+          "$BREW_PREFIX/bin/bash" --version
+
+      - name: Install validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+            echo "::error::release-check requires Bash 4 or newer"
+            exit 1
+          fi
+          echo "bash    : $(command -v bash)"
+          echo "python3 : $(command -v python3) ($(python3 -V 2>&1))"
+          bash bubbles/scripts/python-env.sh --provision
+
+      - name: Run exact-head release hygiene
+        shell: bash
+        env:
+          BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT: "0"
+        run: |
+          set -euo pipefail
+          if [[ "$BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT" != "0" ]]; then
+            echo "::error::exact-head qualification forbids release-check receipt reuse"
+            exit 1
+          fi
+          BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT=0 bash bubbles/scripts/cli.sh release-check

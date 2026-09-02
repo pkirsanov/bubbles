@@ -2598,6 +2598,196 @@ the tier selftest, full framework validation, and release check.
 **Certification owner: `bubbles.validate`.** Accept closure only after the
 GitHub `release-hygiene` job also completes successfully for the repaired SHA.
 
+### 2026-09-01 tests-first extension — PRE-FV-01 and PRE-FV-02
+
+- **Finding set:** `PRE-FV-01` and `PRE-FV-02`.
+- **Disposition (Gate G095):** OPEN as one coupled BUG-045 finding set. No
+  production repair or GREEN result is claimed here.
+- **Coupling:** `PRE-FV-01` defines authenticated lock entry. `PRE-FV-02`
+  defines complete lock release before a successful return.
+
+The pair protects one lifecycle boundary. A marker-only repair could still
+leave a lock holder alive. An over-broad cleanup could terminate an unrelated
+process. The implementation and verification plan must retain both controls.
+
+#### PRE-FV-01 — a marker does not prove lock ownership
+
+The current preamble skips lock acquisition whenever
+`BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD` is non-empty. It does not authenticate
+descriptor 9 against the validator lock.
+
+The RED control holds the real lock on another descriptor. It then tests four
+states: no marker, marker only, marker plus unrelated descriptor 9, and marker
+plus the inherited lock descriptor. Only the final state may execute checks.
+
+Current-session receipt row 81 records exit 1 for the final-current-byte
+control. Its stdout hash is
+`67c1d6fef0d2c7a655a528e74865b1619337b4568a1dfbb26aabf8c6bab27c17`.
+The receipt binds the test file at SHA-256
+`34b99e58f11f8729146159adf0c0dc6fbb9398f1246ca353ab19154ec6d1cec9`.
+
+**Claim Source:** executed — `.specify/runtime/tool-calls.jsonl` row 81.
+
+#### PRE-FV-02 — process-group cleanup does not prove descriptor release
+
+The current CI branch owns the direct check's process group. It signals that
+group after the direct child returns. It does not inspect escaped descendants
+that still hold descriptor 9 or the private capture file.
+
+The RED control creates three subjects. One child remains in the owned group.
+One child escapes with `setsid` while retaining the descriptors. One unrelated
+process starts before validation. A valid return must reap the owned group and
+the escaped holder while preserving the unrelated process.
+
+Current-session receipt row 82 records exit 1 for this complete control. Its
+stdout hash is
+`2610af11b4fb28a64a7e6ca1ee11cdf6cf0d35d18b7a47494514abe4a305f3ce`.
+The receipt binds the same test-file SHA-256 as `PRE-FV-01`.
+
+**Claim Source:** executed — `.specify/runtime/tool-calls.jsonl` row 82.
+
+#### Coupled acceptance boundary
+
+1. Authenticate reentry against the inherited validator lock descriptor.
+2. Reject a marker without the required descriptor identity.
+3. Reject a marker paired with an unrelated descriptor 9.
+4. Revoke every validator-owned lock and capture descriptor before reporting
+   success, including descriptors held by an escaped descendant.
+5. Preserve same-group cleanup and leave the unrelated negative control alive.
+6. Turn both current RED controls GREEN without a timeout-based success path.
+
+`bubbles.plan` owns the corresponding planning-boundary update. This
+artifact-only pass does not modify planning files.
+
+### 2026-09-01 regression finding - REG-FV-OBSERVER-01
+
+- **Reproduction observation:** The fresh `bubbles.regression` result reports
+  that `framework-validate` treats an unavailable or failing descriptor
+  observer as an empty holder set.
+- **Root cause hypothesis:** The CI cleanup branch skips observation when
+  `lsof` is unavailable. It also normalizes a nonzero initial `lsof` status
+  through `|| true`, so observer failure and an observed empty set share the
+  same downstream value.
+- **Owner:** BUG-045 owns the defect lineage. `bubbles.test` owns the required
+  RED control. `bubbles.implement` owns any later source repair.
+- **Required RED control:** Exercise one unavailable-observer case and one
+  nonzero-observer case against the CI cleanup branch. Require both cases to
+  fail loud before validation can report success. Keep a successful empty-set
+  observer as the adversarial positive control.
+- **Disposition (Gate G095):** OPEN under BUG-045. This extends the existing
+  descriptor-lifecycle boundary. It does not create a new bug ID, and this
+  record claims no source repair or GREEN result.
+
+**Claim Source:** interpreted from the fresh `bubbles.regression` result
+supplied for this persistence pass, then grounded against the current
+`framework-validate.sh` observer branch.
+
+### 2026-09-02 precommit security findings - SEC-PRECOMMIT-LOCK-01 and SEC-PRECOMMIT-PID-01
+
+These are two distinct controls under BUG-045's existing lock and descriptor
+lifecycle boundary. The current precommit security review supplied both
+observations. This persistence pass read the controlling source at bound HEAD
+`6078124c639b848ff146825f20cae74b4e4c7199`; it did not execute either
+reproduction.
+
+#### SEC-PRECOMMIT-LOCK-01 - predictable symlink-following lock identity
+
+- **Observed input (diagnostic only):** the operator-supplied current-session
+  security review reports a "predictable symlink-following lock path plus
+  Darwin inode-only fallback."
+- **Claim Source:** interpreted - the current-session source read found
+  `_fv_lockfile="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"`, followed by
+  `: >"$_fv_lockfile"` and `exec 9>"$_fv_lockfile"`. Both redirections follow
+  an existing symlink. `_fv_lock_identity` compares GNU identities as device
+  plus inode but reduces the Darwin path and descriptor identity to inode only.
+- **Severity:** high for local integrity and availability. A pre-created lock
+  pathname can redirect the truncating open, and inode-only authentication
+  does not uniquely identify an object across devices. No destructive target
+  write or false validation result was executed in this persistence pass.
+- **Root cause:** lock acquisition authenticates a predictable pathname only
+  after opening it with symlink-following redirections. The Darwin fallback
+  then drops the device component needed to distinguish equal inode numbers on
+  different devices.
+- **Bounded reproduction/control requirement:** in an isolated temporary root,
+  pre-create the predictable lock pathname as a symlink to a sentinel and run
+  lock acquisition under a finite 30-second supervisor. Require a fail-loud
+  result before checks execute and prove the sentinel bytes remain unchanged.
+  Add a deterministic Darwin identity fixture in which path and descriptor
+  observations share an inode number but identify different objects, and
+  require rejection while a genuine inherited descriptor remains the positive
+  control.
+- **Owner:** BUG-045 owns the finding. `bubbles.test` owns the persistent RED
+  controls. `bubbles.implement` owns any later lock creation and identity
+  repair.
+- **Disposition (Gate G095):** OPEN as `SEC-PRECOMMIT-LOCK-01`. No source or
+  test repair, GREEN result, DoD closure, or certification is claimed.
+
+##### Convergence 9 final bypass addendum
+
+- **Final bypass detail:** a `flock` function imported from the ambient shell
+  can report successful acquisition without taking a kernel lock. Checking only
+  the command status therefore does not establish exclusive ownership.
+- **Required control extension:** invoke lock acquisition with a trusted
+  external binary whose identity cannot be replaced by an imported function or
+  a `PATH` shadow. If that trusted binary cannot be resolved and invoked, fail
+  closed before validation work begins. The RED control must exercise both an
+  imported `flock` function and a hostile earlier-`PATH` executable, require
+  rejection in both cases, and retain real kernel contention as the positive
+  control.
+- **Claim Source:** interpreted from the operator-supplied convergence-9 final
+  precommit review. **Executed provenance:** not-run in this artifact-only
+  invocation; no ambient-function or `PATH`-shadow lock reproducer was run.
+- **Open disposition:** remains OPEN under `SEC-PRECOMMIT-LOCK-01`. This
+  addendum records a stronger acquisition-authority requirement and claims no
+  source repair, test repair, or GREEN result.
+
+#### SEC-PRECOMMIT-PID-01 - descriptor observation can signal a reused PID
+
+- **Observed input (diagnostic only):** the operator-supplied current-session
+  security review reports a "descriptor-observer-to-signal PID reuse race."
+- **Claim Source:** interpreted - the current-session source read found that
+  `_fv_observe_capture_holders` returns numeric PIDs from `lsof`. The cleanup
+  branch re-observes each PID and capture path, returns from that observation,
+  and then sends `TERM` or `KILL` to the numeric PID without retaining or
+  revalidating a process birth identity.
+- **Severity:** high for local process integrity. If the observed holder exits
+  and the operating system reuses its PID in the check-to-signal interval, the
+  signal can target an unrelated process. This persistence pass did not force
+  PID reuse or signal a replacement process.
+- **Root cause:** the private capture path proves descriptor ownership only at
+  observation time. A bare PID is not a durable process identity, and the
+  later signal has no start-time, birth-token, or equivalent identity check
+  that remains coupled to the observation.
+- **Bounded reproduction/control requirement:** use a deterministic test seam,
+  not probabilistic PID churn, to replace an observed holder between the final
+  descriptor observation and each TERM/KILL action. Under a finite 30-second
+  supervisor, require the unrelated replacement to remain alive and validation
+  to fail loud. Keep a stable holder with the same capture descriptor as the
+  positive cleanup control, and exercise both TERM and KILL phases.
+- **Owner:** BUG-045 owns the finding. `bubbles.test` owns the deterministic
+  RED controls. `bubbles.implement` owns any later durable process-identity
+  repair.
+- **Disposition (Gate G095):** OPEN as `SEC-PRECOMMIT-PID-01`. No source or
+  test repair, GREEN result, DoD closure, or certification is claimed.
+
+##### Convergence 9 final bypass addendum
+
+- **Final bypass detail:** checking an observer-discovered numeric PID and then
+  signaling that PID remains non-atomic. The target can exit and the PID can be
+  reused between the identity check and the numeric signal.
+- **Required architecture extension:** never send TERM or KILL to detached PIDs
+  discovered through `lsof` or another observer. Fail closed and wait boundedly
+  for those holders to release the resource, or signal only through an actually
+  owned atomic process handle whose identity remains coupled to the signal.
+  Check-then-kill, including a start-time recheck followed by a numeric kill,
+  must not be accepted as a PID-reuse solution.
+- **Claim Source:** interpreted from the operator-supplied convergence-9 final
+  precommit review. **Executed provenance:** not-run in this artifact-only
+  invocation; no detached-holder replacement or signal action was run.
+- **Open disposition:** remains OPEN under `SEC-PRECOMMIT-PID-01`. This
+  addendum narrows the acceptable architecture and claims no source repair,
+  test repair, or GREEN result.
+
 ---
 
 ## BUG-046 — `evidence-capture.sh` turns successful empty output into a malformed two-zero receipt with arithmetic diagnostics
@@ -2803,4 +2993,224 @@ can accept a receipt that the wrapper did not construct cleanly.
   implementation/regression files; workflows; release manifests; generated
   registries; full framework or release suites; commits; pushes; and all
   certification state.
+
+### 2026-09-01 tests-first extension — PRE-EC-01
+
+- **Finding:** `PRE-EC-01`.
+- **Disposition (Gate G095):** OPEN under BUG-046. It extends the same
+  line-count and receipt-construction boundary. No repair is claimed.
+- **One-to-one assignment:** BUG-046 owns `PRE-EC-01`. BUG-047 owns
+  `PRE-EC-02`.
+
+The RED control exports a failing `grep` only into the capture process. Its
+wrapped child still succeeds and creates a marker. The capture must fail loud
+without a blank `lines:` field or a runnable verification hint.
+
+Current source assigns `total` with `grep -c ... || true`. This suppresses the
+counter failure and permits an empty scalar to enter receipt rendering. The
+wrapper can then emit evidence-shaped output and return the successful child
+status even though cardinality was never established.
+
+Current-session receipt row 71 records exit 1 for the combined `PRE-EC-01` and
+`PRE-EC-02` RED run. Its stdout hash is
+`33330203c517734429fb60d52f357adb30a373ce5ea6991733ea72846570799c`.
+The receipt binds the selftest at SHA-256
+`f6a6cddc310c5cd0ecc3319bbcf9797e0f13a607b877d655f14ab8ab07f89333`.
+The aggregate receipt does not identify an individual failed assertion.
+
+**Claim Source:** executed — `.specify/runtime/tool-calls.jsonl` row 71.
+
+#### PRE-EC-01 acceptance boundary
+
+1. Treat a failed line-count operation as receipt-construction failure.
+2. Reject empty, multi-line, or non-numeric cardinality before rendering.
+3. Emit no valid-looking receipt or verification hint after that failure.
+4. Preserve the child status only when receipt construction succeeds.
+5. Keep the current child-ran marker as the adversarial control.
+
+`bubbles.plan` owns any planning-file update for this extension.
+
+### 2026-09-01 regression finding - REG-EC-STATUS-01
+
+- **Reproduction observation:** The fresh `bubbles.regression` result reports
+  that `evidence-capture` accepts plausible numeric counter output even when
+  the counter command returns nonzero.
+- **Root cause hypothesis:** The current assignment retains the counter text
+  but does not preserve and validate the counter status. The numeric-shape
+  check can therefore accept output from a failed counter invocation.
+- **Owner:** BUG-046 owns the defect lineage. `bubbles.test` owns the required
+  RED control. `bubbles.implement` owns any later source repair.
+- **Required RED control:** Inject a counter that prints one plausible
+  non-negative integer and then exits nonzero. Require capture to fail loud,
+  emit no valid-looking receipt, and emit no runnable verification hint. Keep
+  a zero-status counter with the same text as the adversarial positive control.
+- **Disposition (Gate G095):** OPEN under BUG-046. This extends `PRE-EC-01` and
+  the existing receipt-construction boundary. It does not create a new bug ID,
+  and this record claims no source repair or GREEN result.
+
+**Claim Source:** interpreted from the fresh `bubbles.regression` result
+supplied for this persistence pass, then grounded against the current
+`evidence-capture.sh` line-count branch.
+
+### 2026-09-02 precommit security finding - SEC-PRECOMMIT-HELPER-01
+
+- **Umbrella relation:** `SEC-PRECOMMIT-HELPER-01` is a distinct one-to-one
+  control under `REG-EC-STATUS-01` and BUG-046's receipt-construction lineage.
+  It is not a new bug packet.
+- **Observed input (diagnostic only):** the operator-supplied current-session
+  security review reports that "exported function shadows for grep/hash
+  helpers can forge line count/digest while exiting 0."
+- **Claim Source:** interpreted - the current-session source read at bound HEAD
+  `6078124c639b848ff146825f20cae74b4e4c7199` found that
+  `count_output_lines` invokes shell-resolved `grep`, while `hash_of` uses
+  `command -v` and shell-resolved `sha256sum` or `shasum` plus `awk`. A
+  function imported through the environment can therefore satisfy those
+  lookups. Numeric count output is accepted when the shadow returns 0, and the
+  digest assignment has no helper-status or digest-shape validation.
+- **Severity:** high for evidence integrity. A caller-controlled shell
+  environment can supply plausible forged cardinality and digest metadata
+  while the wrapped child and capture wrapper both return 0. This persistence
+  pass did not execute a forged receipt against a downstream consumer.
+- **Root cause:** receipt metadata trusts ambient shell command identity. The
+  count path validates value shape and status but not the implementation that
+  produced them. The hash path additionally accepts unchecked command output.
+  The wrapper later returns the wrapped child's successful status.
+- **Bounded reproduction/control requirement:** under a finite 30-second
+  supervisor, export count and hash command shadows only into the capture
+  process. Give each shadow a marker, plausible forged output, and exit 0 while
+  a real wrapped child emits known bytes. Require capture to reject the count
+  case, the digest case, and the combined case before emitting a valid-looking
+  receipt or verification hint. Keep the same child under a sanitized helper
+  environment as the positive control.
+- **Owner:** BUG-046 owns this receipt-integrity finding. `bubbles.test` owns
+  the persistent RED controls. `bubbles.implement` owns any later helper
+  resolution and metadata-validation repair.
+- **Disposition (Gate G095):** OPEN as `SEC-PRECOMMIT-HELPER-01` under
+  `REG-EC-STATUS-01`. No source or test repair, GREEN result, DoD closure, or
+  certification is claimed.
+
+#### Convergence 9 final bypass addendum
+
+- **Final bypass detail:** hostile noninteractive Bash startup through
+  `BASH_ENV` can define helpers whose names look like absolute hash-command
+  paths, and can install or import `wait` and `kill` functions. Those bindings
+  can forge digest metadata or wrapped-child status before defenses inside the
+  script establish trusted parent-side evidence authority.
+- **Required control extension:** invoke the real `evidence-capture.sh` entry
+  point from a hostile noninteractive Bash startup. Exercise absolute-path-named
+  hash helpers and imported `wait`/`kill` functions separately and together.
+  Require the parent capture authority to be sanitized or established through
+  privileged startup before receipt construction, while preserving the
+  intended environment semantics of the wrapped child. The child must still
+  receive its contractually supplied environment; sanitizing the parent by
+  silently stripping intended child inputs is not an acceptable pass.
+- **Claim Source:** interpreted from the operator-supplied convergence-9 final
+  precommit review. **Executed provenance:** not-run in this artifact-only
+  invocation; no hostile-`BASH_ENV` real-entry-point reproducer was run.
+- **Open disposition:** remains OPEN under `SEC-PRECOMMIT-HELPER-01` and
+  `REG-EC-STATUS-01`. This addendum claims no source repair, test repair, or
+  GREEN result.
+
+---
+
+## BUG-047 — `evidence-capture.sh` flattens argv into executable-looking text that changes replay semantics
+
+- **Filed:** 2026-09-01
+- **Discovery finding:** `PRE-EC-02`
+- **Disposition (Gate G095):** OPEN in-repo framework-source defect. This entry
+  is the canonical `single-file` bug packet. No production repair or GREEN
+  result is claimed.
+- **Severity:** high for evidence integrity and operator safety. A copied
+  verification hint can change arguments or execute argument text as shell
+  syntax.
+- **Affects:** `bubbles/scripts/evidence-capture.sh` command display and
+  verification-hint rendering.
+
+### BUG-047 confirmed tests-first behavior
+
+The persistent RED passes each argument safely to the capture first. It then
+replays the displayed command and verification hint. An argv helper records
+argument count and each argument's hexadecimal bytes.
+
+The five cases cover an empty argument, whitespace plus a semicolon, mixed
+quotes, an embedded newline, and command-substitution text. Marker files detect
+whether replay executed the semicolon or substitution payload.
+
+The control requires byte-identical argv, successful digest verification, and
+zero marker side effects. Current-session receipt row 71 records exit 1 for the
+combined `PRE-EC-01` and `PRE-EC-02` run. Its stdout hash is
+`33330203c517734429fb60d52f357adb30a373ce5ea6991733ea72846570799c`.
+The aggregate receipt does not identify an individual failed assertion.
+
+**Claim Source:** executed — `.specify/runtime/tool-calls.jsonl` row 71.
+
+### BUG-047 root cause
+
+Both renderers interpolate `"$*"` into executable-looking shell text. That
+operation joins argv with spaces and removes argument boundaries. It does not
+encode empty strings, whitespace, quotes, newlines, metacharacters, or command
+substitution as inert argument data.
+
+The display and verification hint therefore cannot represent arbitrary argv.
+Replaying either string reparses argument data as shell grammar. The receipt
+hash still covers child output, but the displayed reproduction contract is not
+authoritative.
+
+### BUG-047 impact
+
+- Empty and whitespace-bearing arguments can be dropped or split.
+- Quotes and newlines can produce different argument bytes.
+- Semicolons and command substitutions can become replay side effects.
+- This pass does not claim that an operator executed a harmful hint outside the
+  controlled marker cases.
+
+### BUG-047 acceptance boundary
+
+1. Serialize each argv element as one replayable shell word.
+2. Preserve empty arguments and exact argument order.
+3. Keep metacharacters and command substitutions inert during replay.
+4. Use one serializer for the display and verification hint.
+5. Make all five cases pass with zero marker side effects.
+6. Preserve the child status, digest, output bounds, and verification mismatch
+   contract.
+
+### BUG-047 owner route
+
+`bubbles.plan` must first reconcile the planning boundary because the RED was
+introduced under BUG-039 Scope 2. After that route, `bubbles.implement` owns the
+production repair and `bubbles.test` owns the same-control GREEN proof.
+
+### 2026-09-02 precommit security finding - SEC-PRECOMMIT-LABEL-01
+
+- **Umbrella relation:** `SEC-PRECOMMIT-LABEL-01` is a distinct one-to-one
+  control under `REG-EC-STATUS-01` and BUG-047's untrusted-rendering lineage.
+  It is not a new bug packet.
+- **Observed input (diagnostic only):** the operator-supplied current-session
+  security review reports that a "multiline --label can inject evidence-shaped
+  metadata ahead of genuine fields."
+- **Claim Source:** interpreted - the current-session source read at bound HEAD
+  `6078124c639b848ff146825f20cae74b4e4c7199` found that `--label` accepts an
+  arbitrary string and renders it with `printf '# %s\n' "$LABEL"` immediately
+  before the genuine command, exit, line-count, and digest fields. Only the
+  first physical label line receives the comment prefix, so later label lines
+  can have the exact shape of canonical receipt fields.
+- **Severity:** high for evidence attribution and parser integrity. A consumer
+  that accepts the first matching metadata field can consume attacker-chosen
+  values before the genuine fields. This persistence pass did not demonstrate
+  acceptance by a downstream parser or certification gate.
+- **Root cause:** the receipt mixes untrusted multiline display text and
+  canonical metadata in one undelimited namespace. It neither constrains the
+  label to one line nor encodes every physical line as inert label data.
+- **Bounded reproduction/control requirement:** under a finite 30-second
+  supervisor, capture known child output with a label whose later lines spell
+  plausible `exit:`, `lines:`, and `sha256:` fields. Require either explicit
+  rejection of multiline labels or an encoding that leaves exactly one
+  canonical metadata set, preserves the genuine values, and cannot be parsed
+  as injected fields. Keep an ordinary one-line label as the positive control.
+- **Owner:** BUG-047 owns this receipt-rendering finding. `bubbles.test` owns
+  the persistent RED control. `bubbles.implement` owns any later label framing
+  repair.
+- **Disposition (Gate G095):** OPEN as `SEC-PRECOMMIT-LABEL-01` under
+  `REG-EC-STATUS-01`. No source or test repair, GREEN result, DoD closure, or
+  certification is claimed.
 

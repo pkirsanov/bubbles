@@ -1,0 +1,369 @@
+{
+  "version": 1,
+  "specId": "BUG-039",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-02T04:25:47Z",
+  "scopes": [
+    {
+      "scopeId": "2",
+      "scopeName": "Privileged Scan 2B Entry And Native Supervisor",
+      "tests": [
+        {
+          "id": "TP-S2-01",
+          "type": "adversarial red controls",
+          "category": "adversarial red controls",
+          "file": "bubbles/scripts/python-env-selftest.sh, bubbles/scripts/implementation-reality-scan-selftest.sh, bubbles/scripts/ci-annotation-emitter-selftest.sh, tests/regression/test_24_g028_sensitive_client_storage.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "PRE-HAR-01",
+            "HAR-R2",
+            "HAR-R3",
+            "REG-EC-STATUS-01",
+            "REG-FV-OBSERVER-01",
+            "REG-PY-REAP-01",
+            "REG-PY-BASH32-01",
+            "REG-CI-NONVACUITY-01"
+          ],
+          "description": "Every epoch and named regression control is RED for its intended missing invariant. Receipt row 73 remains RED-only traceability for PRE-HAR-01; it is not completion evidence.",
+          "command": "Run the owning selftests with each bounded epoch mutation. Run python-env-selftest.sh --internal-exit-trap-interruption pre-har-01-exit-trap-v1 for PRE-HAR-01 before production edits.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "production shell paths and workflow contract with copied mutations"
+        },
+        {
+          "id": "TP-S2-02",
+          "type": "functional implementation",
+          "category": "functional implementation",
+          "file": "bubbles/scripts/python-env-selftest.sh, bubbles/scripts/implementation-reality-scan-selftest.sh, tests/regression/test_24_g028_sensitive_client_storage.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "PRE-HAR-01",
+            "HAR-R2",
+            "HAR-R3"
+          ],
+          "description": "All controls turn GREEN. PRE-HAR-01 proves an interrupted EXIT wait preserves the handle, private root, original owner status, and zero residue until supervisor reap.",
+          "command": "Run /bin/bash bubbles/scripts/python-env-selftest.sh, then /bin/bash bubbles/scripts/implementation-reality-scan-selftest.sh, then /bin/bash tests/regression/test_24_g028_sensitive_client_storage.sh on the implemented candidate.",
+          "owner": "bubbles.implement writes source; bubbles.test executes proof",
+          "liveSystem": true,
+          "liveSystemDescription": "real framework scripts"
+        },
+        {
+          "id": "TP-S2-03",
+          "type": "platform functional",
+          "category": "platform functional",
+          "file": "bubbles/scripts/python-env-selftest.sh, bubbles/scripts/implementation-reality-scan-selftest.sh, tests/regression/test_24_g028_sensitive_client_storage.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2"
+          ],
+          "description": "The lane authenticates /usr/bin/perl and Python, executes all portable positive and negative cases, preserves exact status ownership, and leaves no process or private-file residue.",
+          "command": "On macOS, run the three focused commands from TP-S2-02 with stock /bin/bash 3.2 and fixed base-system anchors.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "stock macOS Bash 3.2"
+        },
+        {
+          "id": "TP-S2-04",
+          "type": "platform functional",
+          "category": "platform functional",
+          "file": "bubbles/scripts/python-env-selftest.sh, bubbles/scripts/implementation-reality-scan-selftest.sh, tests/regression/test_24_g028_sensitive_client_storage.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2"
+          ],
+          "description": "The lane proves one authenticated Perl and Python positive plus every portable negative case. Missing or untrusted Perl fails closed and never activates a fallback.",
+          "command": "In the supported Linux lane, run the three focused commands from TP-S2-02 with /bin/bash and fixed /usr/bin/perl.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "supported Linux runner"
+        },
+        {
+          "id": "TP-S2-05",
+          "type": "stress / repeated lifecycle",
+          "category": "stress / repeated lifecycle",
+          "file": "bubbles/scripts/python-env-selftest.sh, bubbles/scripts/implementation-reality-scan-selftest.sh",
+          "scenarioId": "SCN-B039-006",
+          "scenarioIds": [
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008"
+          ],
+          "findingIds": [
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2"
+          ],
+          "description": "All 30 iterations preserve event order, owner, timeout bit, byte counts, one reap, zero post-reap signals, fixed wall and grace, and zero retry substitution or residue.",
+          "command": "Run each persistent success, fast-exit, timeout, output-limit, HUP, INT, and TERM matrix for 30 consecutive iterations through the owning selftest commands.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "real process lifecycle on macOS and Linux"
+        },
+        {
+          "id": "TP-S2-06",
+          "type": "caller integration / regression",
+          "category": "caller integration / regression",
+          "file": "bubbles/scripts/implementation-reality-scan-selftest.sh, bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B039-002",
+          "scenarioIds": [
+            "SCN-B039-002",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2"
+          ],
+          "description": "CLI scan and Check 16 enter direct BSEC1, validate BPS1, preserve the scanner's real status, and expose no ordinary-Bash authority or target-controlled completion path.",
+          "command": "Run bash bubbles/scripts/cli.sh scan . and bash bubbles/scripts/state-transition-guard-selftest.sh after focused lanes succeed.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "canonical caller entrypoints"
+        },
+        {
+          "id": "TP-S2-07",
+          "type": "documentation and static contract",
+          "category": "documentation and static contract",
+          "file": "Five admitted guidance paths plus active BUG-039 artifacts",
+          "scenarioId": "SCN-B039-009",
+          "scenarioIds": [
+            "SCN-B039-009"
+          ],
+          "findingIds": [
+            "HAR-R3"
+          ],
+          "description": "Source guidance and install template agree on direct privileged entry, Perl preflight, remediation, non-claims, and current identifiers. Historical labels occur only in explicit archives.",
+          "command": "Run bash bubbles/scripts/cli.sh agnosticity and bash bubbles/scripts/cli.sh lint bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure, then scan active text for current epoch, trust root, protocols, finding identifiers, and forbidden fallback claims.",
+          "owner": "bubbles.docs; planning parity reviewed by bubbles.plan",
+          "liveSystem": false,
+          "liveSystemDescription": "artifact and static contract"
+        },
+        {
+          "id": "TP-S2-08",
+          "type": "CI contract / live exact-head regression",
+          "category": "CI contract / live exact-head regression",
+          "file": "bubbles/scripts/ci-annotation-emitter-selftest.sh, .github/workflows/agnosticity.yml",
+          "scenarioId": "SCN-B039-010",
+          "scenarioIds": [
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "REG-PLAN-EXACTHEAD-01",
+            "REG-CI-NONVACUITY-01"
+          ],
+          "description": "Only release-hygiene-exact-head runs for the dispatch under contents: read. The immutable pinned checkout disables credentials and uses full history. Each leg proves same-repository origin reachability, fetches the supplied commit without tags, requires a commit object, and asserts FETCH_HEAD, HEAD, and source_sha are identical. Ubuntu and macOS each provision Bash 4 or newer and Python, finish inside 180 minutes, and run release-check only after asserting BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT=0. Any malformed input, isolation leak, provenance or HEAD mismatch, missing platform, timeout, provisioning failure, receipt reuse, or nonzero release check withholds qualification.",
+          "command": "First run /bin/bash bubbles/scripts/ci-annotation-emitter-selftest.sh with the exact-head negative controls. Then manually dispatch .github/workflows/agnosticity.yml once with the unchanged candidate's exact lowercase 40-hex full SHA and inspect both matrix legs.",
+          "owner": "bubbles.test; workflow bytes owned by bubbles.devops",
+          "liveSystem": true,
+          "liveSystemDescription": "real GitHub Actions Ubuntu and macOS matrix plus persistent local controls"
+        },
+        {
+          "id": "TP-S2-09",
+          "type": "full framework regression",
+          "category": "full framework regression",
+          "file": "bubbles/scripts/framework-validate.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2",
+            "HAR-R3"
+          ],
+          "description": "The complete unfiltered framework validation exits 0 and records the candidate commit, helper digest, protocol epoch, exact-head platform evidence references, and no replacement run.",
+          "command": "Run bash bubbles/scripts/cli.sh framework-validate through bounded evidence capture on the clean immutable candidate after both exact-head legs succeed.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "complete framework validation"
+        },
+        {
+          "id": "TP-S2-10",
+          "type": "release readiness regression",
+          "category": "release readiness regression",
+          "file": "bubbles/scripts/release-check.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2",
+            "HAR-R3"
+          ],
+          "description": "Release readiness exits 0 with complete output. Its candidate and protocol identities match every accepted focused, exact-head platform, caller, and framework record.",
+          "command": "Run bash bubbles/scripts/cli.sh release-check through bounded evidence capture on the unchanged candidate from TP-S2-09.",
+          "owner": "bubbles.test",
+          "liveSystem": true,
+          "liveSystemDescription": "complete release validation"
+        },
+        {
+          "id": "TP-S2-11",
+          "type": "independent security review",
+          "category": "independent security review",
+          "file": "docs/recipes/security-review.md and exact immutable candidate receipts",
+          "scenarioId": "SCN-B039-005",
+          "scenarioIds": [
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2",
+            "HAR-R3"
+          ],
+          "description": "A fresh review accounts for all five security findings one to one, validates red controls and final proofs, verifies exact-head identity boundaries, and makes no recursive descendant-containment or pre-boundary cleanliness claim.",
+          "command": "Invoke /bubbles.security for BUG-039 after TP-S2-10, with the candidate commit and privileged-native-supervision-v2 epoch fixed.",
+          "owner": "bubbles.security",
+          "liveSystem": true,
+          "liveSystemDescription": "independent review of executed proof"
+        },
+        {
+          "id": "TP-S2-12",
+          "type": "human acceptance",
+          "category": "human acceptance",
+          "file": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/uservalidation.md",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "HAR-R3"
+          ],
+          "description": "Every current acceptance item is explicitly accepted by the human owner. Historical checked content alone satisfies nothing in Scope 2.",
+          "command": "The human owner reviews the unchanged candidate and records fresh decisions in uservalidation.md; automation does not alter acceptance boxes.",
+          "owner": "Human owner",
+          "liveSystem": true,
+          "liveSystemDescription": "human review of current behavior"
+        },
+        {
+          "id": "TP-S2-13",
+          "type": "validate-only certification",
+          "category": "validate-only certification",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "scenarioId": "SCN-B039-001",
+          "scenarioIds": [
+            "SCN-B039-001",
+            "SCN-B039-002",
+            "SCN-B039-003",
+            "SCN-B039-004",
+            "SCN-B039-005",
+            "SCN-B039-006",
+            "SCN-B039-007",
+            "SCN-B039-008",
+            "SCN-B039-009",
+            "SCN-B039-010"
+          ],
+          "findingIds": [
+            "SEC-R1",
+            "SEC-R2",
+            "HAR-R1",
+            "HAR-R2",
+            "HAR-R3"
+          ],
+          "description": "Validate re-resolves the current transition, proves Test Plan and DoD parity across all 13 rows, rejects stale evidence, and alone writes any certification or terminal status.",
+          "command": "Invoke /bubbles.validate in validate-only certification mode after TP-S2-12.",
+          "owner": "bubbles.validate",
+          "liveSystem": true,
+          "liveSystemDescription": "certification over current execution evidence"
+        }
+      ]
+    }
+  ]
+}

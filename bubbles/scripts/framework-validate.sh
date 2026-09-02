@@ -94,15 +94,159 @@ if [[ $# -gt 0 ]]; then
     esac
   done
 fi
-if [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]] && command -v flock >/dev/null 2>&1; then
-  _fv_lockfile="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"
-  # Probe writability on a THROWAWAY command first. `exec 9>file` with no command
-  # applies its redirections to the shell PERMANENTLY, so appending an error
-  # suppressor there (`exec 9>file 2>/dev/null`) silences stderr for the entire
-  # run — every selftest's diagnostics included. Keep the exec line bare.
-  if : >"$_fv_lockfile" 2>/dev/null; then
-    exec 9>"$_fv_lockfile"
-    if ! flock -n 9; then
+
+_fv_lockfile="${TMPDIR:-/tmp}/bubbles-framework-validate.lock"
+_fv_flock_path=""
+_fv_resolve_flock() {
+  local candidate=""
+
+  for candidate in \
+    /usr/bin/flock \
+    /bin/flock \
+    /usr/local/bin/flock \
+    /opt/homebrew/bin/flock \
+    /opt/local/bin/flock; do
+    if [[ -f "$candidate" && -x "$candidate" ]]; then
+      _fv_flock_path="$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [[ "$_fv_executes_checks" == "true" ]]; then
+  _fv_resolve_flock || true
+fi
+
+_fv_flock() {
+  local flock_status=0
+  local restore_errexit=false
+
+  [[ -n "$_fv_flock_path" ]] || return 127
+  [[ "$-" == *e* ]] && restore_errexit=true
+  builtin set +e
+  builtin command "$_fv_flock_path" "$@"
+  flock_status=$?
+  [[ "$restore_errexit" == "false" ]] || builtin set -e
+  return "$flock_status"
+}
+
+_fv_lock_identity() {
+  local path="$1" identity=""
+  [[ -f "$path" ]] || return 1
+  if identity="$(/usr/bin/stat -Lc '%d:%i' "$path" 2>/dev/null)" \
+    && [[ "$identity" =~ ^[0-9]+:[0-9]+$ ]]; then
+    printf 'device-inode:%s\n' "$identity"
+    return 0
+  fi
+  if identity="$(/usr/bin/stat -f '%d:%i' "$path" 2>/dev/null)" \
+    && [[ "$identity" =~ ^[0-9]+:[0-9]+$ ]]; then
+    printf 'device-inode:%s\n' "$identity"
+    return 0
+  fi
+  return 1
+}
+
+_fv_darwin_descriptor_identity() {
+  local lsof_path="" lsof_output="" field="" device="" inode=""
+  local device_digits="" device_decimal=""
+
+  if [[ -x /usr/sbin/lsof ]]; then
+    lsof_path=/usr/sbin/lsof
+  elif [[ -x /usr/bin/lsof ]]; then
+    lsof_path=/usr/bin/lsof
+  else
+    return 1
+  fi
+  lsof_output="$("$lsof_path" -a -p "$$" -d 9 -FDi 2>/dev/null)" || return 1
+  while IFS= read -r field; do
+    case "$field" in
+      D*) device="${field#D}" ;;
+      i*) inode="${field#i}" ;;
+    esac
+  done <<<"$lsof_output"
+  if [[ "$device" =~ ^0[xX][0-9a-fA-F]+$ ]]; then
+    device_digits="${device#0x}"
+    device_digits="${device_digits#0X}"
+    printf -v device_decimal '%u' "$((16#$device_digits))" || return 1
+  elif [[ "$device" =~ ^[0-9]+$ ]]; then
+    device_decimal="$device"
+  else
+    return 1
+  fi
+  [[ "$inode" =~ ^[0-9]+$ ]] || return 1
+  printf 'device-inode:%s:%s\n' "$device_decimal" "$inode"
+}
+
+_fv_lock_descriptor_matches_path() {
+  local descriptor_path="$1" lock_identity="" descriptor_identity=""
+  local opened_identity=""
+
+  lock_identity="$(_fv_lock_identity "$_fv_lockfile")" || return 1
+  descriptor_identity="$(_fv_lock_identity "$descriptor_path")" || return 1
+  [[ "$descriptor_identity" == "$lock_identity" ]] && return 0
+  [[ "$descriptor_path" == /dev/fd/9 ]] || return 1
+  opened_identity="$(_fv_darwin_descriptor_identity)" || return 1
+  [[ "$opened_identity" == "$lock_identity" ]]
+}
+
+_fv_open_lock_descriptor() {
+  local descriptor_path=""
+
+  [[ ! -L "$_fv_lockfile" ]] || return 1
+  if [[ ! -e "$_fv_lockfile" ]]; then
+    if ! (set -o noclobber; : >"$_fv_lockfile") 2>/dev/null; then
+      [[ -e "$_fv_lockfile" ]] || return 1
+    fi
+  fi
+  [[ -f "$_fv_lockfile" && ! -L "$_fv_lockfile" ]] || return 1
+  exec 9<"$_fv_lockfile" || return 1
+  if [[ -L "$_fv_lockfile" ]]; then
+    exec 9<&-
+    return 1
+  fi
+  if [[ -e "/proc/$$/fd/9" ]]; then
+    descriptor_path="/proc/$$/fd/9"
+  elif [[ -e /dev/fd/9 ]]; then
+    descriptor_path=/dev/fd/9
+  else
+    exec 9<&-
+    return 1
+  fi
+  if ! _fv_lock_descriptor_matches_path "$descriptor_path" \
+    || [[ -L "$_fv_lockfile" ]]; then
+    exec 9<&-
+    return 1
+  fi
+}
+
+_fv_inherited_lock_is_owned() {
+  local descriptor_path=""
+  [[ "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" == 1 ]] || return 1
+  if [[ -e "/proc/$$/fd/9" ]]; then
+    descriptor_path="/proc/$$/fd/9"
+  elif [[ -e /dev/fd/9 ]]; then
+    descriptor_path=/dev/fd/9
+  else
+    return 1
+  fi
+  _fv_lock_descriptor_matches_path "$descriptor_path" || return 1
+  [[ ! -L "$_fv_lockfile" ]] || return 1
+  _fv_flock -n 9 >/dev/null 2>&1
+}
+
+if [[ "$_fv_executes_checks" == "true" && -n "$_fv_flock_path" ]]; then
+  if [[ -n "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
+    if ! _fv_inherited_lock_is_owned; then
+      printf 'ERROR: inherited framework-validate lock marker is not backed by the owned lock descriptor.\n' >&2
+      exit 1
+    fi
+  else
+    if ! _fv_open_lock_descriptor; then
+      printf 'ERROR: framework-validate lock path is not a stable regular file; refusing unsafe acquisition.\n' >&2
+      exit 1
+    fi
+    if ! _fv_flock -n 9; then
       printf 'ERROR: another framework-validate run is already in progress on this machine.\n' >&2
       printf '       Concurrent runs corrupt each other'"'"'s shared scratch fixtures and produce\n' >&2
       printf '       false failures. Wait for the other run to finish, then re-run.\n' >&2
@@ -110,7 +254,10 @@ if [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE
     fi
     export BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD=1
   fi
-elif [[ "$_fv_executes_checks" == "true" ]] && [[ -z "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
+elif [[ "$_fv_executes_checks" == "true" ]] && [[ -n "${BUBBLES_FRAMEWORK_VALIDATE_LOCK_HELD:-}" ]]; then
+  printf 'ERROR: inherited framework-validate lock ownership cannot be authenticated because flock is unavailable.\n' >&2
+  exit 1
+elif [[ "$_fv_executes_checks" == "true" ]]; then
   # flock absent (stock macOS ships none). The guard degrades to a no-op, so say
   # so — a silent degrade lets an operator believe concurrent-run protection is
   # active when it is not.
@@ -446,6 +593,18 @@ core_check_label() {
   esac
 }
 
+_fv_resolve_lsof_path() {
+  local _candidate=""
+
+  for _candidate in /usr/bin/lsof /usr/sbin/lsof; do
+    if [[ -x "$_candidate" ]]; then
+      printf '%s\n' "$_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
 run_check() {
   local label="$1"
   shift
@@ -532,7 +691,108 @@ run_check() {
 
   echo "==> $label"
   local _started="$SECONDS"
-  local _rc=0 _cap="" _ci_tree_rc=0
+  local _rc=0 _cap="" _ci_tree_rc=0 _ci_escape_detected=0
+  _fv_process_identity() {
+    local _identity_pid="$1" _proc_stat="" _proc_tail="" _proc_start=""
+    local _ps_path="" _ps_output="" _observed_pid="" _weekday=""
+    local _month="" _day="" _started_at="" _year="" _extra=""
+    local -a _proc_fields=()
+
+    [[ "$_identity_pid" =~ ^[1-9][0-9]*$ ]] || return 1
+    if [[ -r "/proc/$_identity_pid/stat" ]]; then
+      IFS= builtin read -r _proc_stat <"/proc/$_identity_pid/stat" || return 1
+      _proc_tail="${_proc_stat##*) }"
+      [[ "$_proc_tail" != "$_proc_stat" ]] || return 1
+      IFS=' ' builtin read -r -a _proc_fields <<<"$_proc_tail"
+      [[ "${#_proc_fields[@]}" -gt 19 ]] || return 1
+      _proc_start="${_proc_fields[19]}"
+      [[ "$_proc_start" =~ ^[0-9]+$ ]] || return 1
+      printf 'proc-start:%s:%s\n' "$_identity_pid" "$_proc_start"
+      return 0
+    fi
+    if [[ -x /bin/ps ]]; then
+      _ps_path=/bin/ps
+    elif [[ -x /usr/bin/ps ]]; then
+      _ps_path=/usr/bin/ps
+    else
+      return 1
+    fi
+    _ps_output="$(LC_ALL=C "$_ps_path" -o pid= -o lstart= -p "$_identity_pid" 2>/dev/null)" || return 1
+    [[ -n "$_ps_output" && "$_ps_output" != *$'\n'* ]] || return 1
+    IFS=' ' builtin read -r _observed_pid _weekday _month _day _started_at _year _extra <<<"$_ps_output"
+    [[ "$_observed_pid" == "$_identity_pid" && -n "$_weekday" \
+      && -n "$_month" && -n "$_day" && -n "$_started_at" \
+      && -n "$_year" && -z "$_extra" ]] || return 1
+    printf 'ps-lstart:%s:%s:%s:%s:%s:%s\n' \
+      "$_observed_pid" "$_weekday" "$_month" "$_day" "$_started_at" "$_year"
+  }
+  _fv_observe_capture_holders() {
+    local _observer_label="$1"
+    local _observer_path="" _observer_output="" _observer_status=0 _observer_pid=""
+    shift
+
+    if ! _observer_path="$(_fv_resolve_lsof_path)"; then
+      printf 'ERROR: detached descriptor observer lsof is unavailable for %s\n' \
+        "$_observer_label" >&2
+      return 2
+    fi
+    if _observer_output="$(builtin command "$_observer_path" -t "$@" 2>&1)"; then
+      _observer_status=0
+    else
+      _observer_status=$?
+    fi
+    # lsof reports a clean no-match as status 1 with no output on BSD and GNU
+    # implementations. Any output in that state is an observation failure.
+    if [[ "$_observer_status" -eq 1 && -z "$_observer_output" ]]; then
+      return 0
+    fi
+    if [[ "$_observer_status" -ne 0 ]]; then
+      printf 'ERROR: detached descriptor observer lsof failed with status %s for %s\n' \
+        "$_observer_status" "$_observer_label" >&2
+      return 2
+    fi
+    [[ -n "$_observer_output" ]] || return 0
+    while IFS= read -r _observer_pid; do
+      if [[ ! "$_observer_pid" =~ ^[1-9][0-9]*$ ]]; then
+        printf 'ERROR: detached descriptor observer lsof returned malformed output for %s\n' \
+          "$_observer_label" >&2
+        return 2
+      fi
+    done <<<"$_observer_output"
+    printf '%s' "$_observer_output"
+  }
+  _fv_capture_holder_matches() {
+    local _holder_label="$1" _holder_pid="$2" _holder_cap="$3"
+    local _expected_identity="${4:-}" _identity_before="" _identity_after=""
+    local _holder_observation=""
+
+    _capture_holder_verified_identity=""
+    if ! _identity_before="$(_fv_process_identity "$_holder_pid")"; then
+      if builtin kill -0 "$_holder_pid" 2>/dev/null; then
+        printf 'ERROR: could not establish stable process identity for detached holder %s in %s\n' \
+          "$_holder_pid" "$_holder_label" >&2
+        return 2
+      fi
+      return 1
+    fi
+    [[ -z "$_expected_identity" || "$_identity_before" == "$_expected_identity" ]] || return 1
+    if ! _holder_observation="$(_fv_observe_capture_holders \
+      "$_holder_label" -a -p "$_holder_pid" "$_holder_cap")"; then
+      return 2
+    fi
+    [[ "$_holder_observation" == "$_holder_pid" ]] || return 1
+    if ! _identity_after="$(_fv_process_identity "$_holder_pid")"; then
+      if builtin kill -0 "$_holder_pid" 2>/dev/null; then
+        printf 'ERROR: could not revalidate stable process identity for detached holder %s in %s\n' \
+          "$_holder_pid" "$_holder_label" >&2
+        return 2
+      fi
+      return 1
+    fi
+    [[ "$_identity_after" == "$_identity_before" ]] || return 1
+    [[ -z "$_expected_identity" || "$_identity_after" == "$_expected_identity" ]] || return 1
+    _capture_holder_verified_identity="$_identity_after"
+  }
   # Only CI captures output. A private regular file is deliberate: a pipeline
   # reader waits for EOF from every inherited writer, so an arbitrary orphaned
   # descendant can deadlock the validator after the direct check has returned.
@@ -548,6 +808,11 @@ run_check() {
       # both the direct child PID and the owned process-group ID, so negative
       # signals below can never target this validator's process group.
       local _monitor_was_enabled=0 _check_pid="" _termination_waited=0
+      local _capture_holders="" _capture_holder_pid="" _capture_holder_count=0
+      local _capture_observer_failed=0 _capture_holder_match_status=0
+      local _capture_cleanup_round=0 _capture_cleanup_pending=0
+      local _capture_holder_verified_identity=""
+      local -A _capture_holder_identities=()
       [[ "$-" == *m* ]] && _monitor_was_enabled=1
       if set -m; then
         "$@" >"$_cap" 2>&1 &
@@ -589,6 +854,129 @@ run_check() {
             _ci_tree_rc=1
           fi
         fi
+
+        # A descendant can call setsid(2) and leave the owned process group
+        # while retaining both the validator lock and this check's private
+        # capture descriptor. The random capture path is a per-check ownership
+        # witness. Bind each observed PID to its process start identity, then
+        # revalidate that identity around a targeted descriptor observation
+        # immediately before bounded TERM and KILL attempts.
+        if _capture_holders="$(_fv_observe_capture_holders "$label" "$_cap")"; then
+          while IFS= read -r _capture_holder_pid; do
+            [[ "$_capture_holder_pid" =~ ^[1-9][0-9]*$ ]] || continue
+            [[ "$_capture_holder_pid" != "$$" && "$_capture_holder_pid" != "$_check_pid" ]] || continue
+            _capture_holder_match_status=0
+            if _fv_capture_holder_matches "$label" "$_capture_holder_pid" "$_cap"; then
+              _capture_holder_identities["$_capture_holder_pid"]="$_capture_holder_verified_identity"
+              _capture_holder_count=$((_capture_holder_count + 1))
+              if _fv_capture_holder_matches "$label" "$_capture_holder_pid" "$_cap" \
+                "${_capture_holder_identities[$_capture_holder_pid]}"; then
+                kill -TERM "$_capture_holder_pid" 2>/dev/null || true
+              else
+                _capture_holder_match_status=$?
+                if [[ "$_capture_holder_match_status" -eq 2 ]]; then
+                  _capture_observer_failed=1
+                  _ci_tree_rc=1
+                  break
+                fi
+              fi
+            else
+              _capture_holder_match_status=$?
+              if [[ "$_capture_holder_match_status" -eq 2 ]]; then
+                _capture_observer_failed=1
+                _ci_tree_rc=1
+                break
+              fi
+            fi
+          done <<<"$_capture_holders"
+          if [[ "$_capture_observer_failed" -eq 0 && "$_capture_holder_count" -gt 0 ]]; then
+            _ci_escape_detected=1
+            _ci_tree_rc=1
+            _capture_cleanup_round=0
+            while [[ "$_capture_cleanup_round" -lt 30 ]]; do
+              _capture_cleanup_pending=0
+              while IFS= read -r _capture_holder_pid; do
+                [[ "$_capture_holder_pid" =~ ^[1-9][0-9]*$ ]] || continue
+                [[ -n "${_capture_holder_identities[$_capture_holder_pid]:-}" ]] || continue
+                _capture_holder_match_status=0
+                if _fv_capture_holder_matches "$label" "$_capture_holder_pid" "$_cap" \
+                  "${_capture_holder_identities[$_capture_holder_pid]}"; then
+                  _capture_cleanup_pending=1
+                else
+                  _capture_holder_match_status=$?
+                  if [[ "$_capture_holder_match_status" -eq 2 ]]; then
+                    _capture_observer_failed=1
+                    _capture_cleanup_pending=1
+                    _ci_tree_rc=1
+                    break
+                  fi
+                fi
+              done <<<"$_capture_holders"
+              [[ "$_capture_observer_failed" -eq 0 ]] || break
+              [[ "$_capture_cleanup_pending" -eq 1 ]] || break
+              sleep 0.1
+              _capture_cleanup_round=$((_capture_cleanup_round + 1))
+            done
+            if [[ "$_capture_observer_failed" -eq 0 ]]; then
+              while IFS= read -r _capture_holder_pid; do
+                [[ "$_capture_holder_pid" =~ ^[1-9][0-9]*$ ]] || continue
+                [[ -n "${_capture_holder_identities[$_capture_holder_pid]:-}" ]] || continue
+                _capture_holder_match_status=0
+                if _fv_capture_holder_matches "$label" "$_capture_holder_pid" "$_cap" \
+                  "${_capture_holder_identities[$_capture_holder_pid]}"; then
+                  kill -KILL "$_capture_holder_pid" 2>/dev/null || true
+                else
+                  _capture_holder_match_status=$?
+                  if [[ "$_capture_holder_match_status" -eq 2 ]]; then
+                    _capture_observer_failed=1
+                    _ci_tree_rc=1
+                    break
+                  fi
+                fi
+              done <<<"$_capture_holders"
+            fi
+            if [[ "$_capture_observer_failed" -eq 0 ]]; then
+              _capture_cleanup_round=0
+              while [[ "$_capture_cleanup_round" -lt 30 ]]; do
+                _capture_cleanup_pending=0
+                while IFS= read -r _capture_holder_pid; do
+                  [[ "$_capture_holder_pid" =~ ^[1-9][0-9]*$ ]] || continue
+                  [[ -n "${_capture_holder_identities[$_capture_holder_pid]:-}" ]] || continue
+                  _capture_holder_match_status=0
+                  if _fv_capture_holder_matches "$label" "$_capture_holder_pid" "$_cap" \
+                    "${_capture_holder_identities[$_capture_holder_pid]}"; then
+                    _capture_cleanup_pending=1
+                  else
+                    _capture_holder_match_status=$?
+                    if [[ "$_capture_holder_match_status" -eq 2 ]]; then
+                      _capture_observer_failed=1
+                      _capture_cleanup_pending=1
+                      _ci_tree_rc=1
+                      break
+                    fi
+                  fi
+                done <<<"$_capture_holders"
+                [[ "$_capture_observer_failed" -eq 0 ]] || break
+                [[ "$_capture_cleanup_pending" -eq 1 ]] || break
+                sleep 0.1
+                _capture_cleanup_round=$((_capture_cleanup_round + 1))
+              done
+            fi
+            if [[ "$_capture_observer_failed" -eq 1 ]]; then
+              printf 'ERROR: detached descriptor observation failed during bounded cleanup for %s\n' \
+                "$label" >&2
+            elif [[ "$_capture_cleanup_pending" -eq 1 ]]; then
+              printf 'ERROR: %s detached process(es) for %s retained the private CI capture after bounded cleanup\n' \
+                "$_capture_holder_count" "$label" >&2
+            else
+              printf 'ERROR: %s detached process(es) escaped %s; bounded cleanup completed and validation is refused\n' \
+                "$_capture_holder_count" "$label" >&2
+            fi
+          fi
+        else
+          _capture_observer_failed=1
+          _ci_tree_rc=1
+        fi
       else
         printf 'ERROR: could not create a distinct process group for %s\n' "$label" >&2
         _rc=1
@@ -628,6 +1016,9 @@ run_check() {
   [[ -n "$_cap" ]] && rm -f "$_cap"
   check_durations+=("$((SECONDS - _started))|$label")
   echo
+  if [[ "$_ci_escape_detected" -eq 1 ]]; then
+    return 1
+  fi
 }
 
 # Wrapper for selftests that only make sense when run inside the framework

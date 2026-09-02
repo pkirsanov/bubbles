@@ -11,31 +11,30 @@
   "planningOnly": false,
   "planningOnlyJustification": null,
   "specDependsOn": [],
-  "relatedBugs": ["BUG-013"],
+  "relatedBugs": ["BUG-013", "BUG-045", "BUG-046", "BUG-047"],
   "workBoundary": {
     "repositoryRoots": ["bubbles"],
     "crossRepoPolicy": "forbidden",
     "specTargets": ["bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure"],
     "allowedPaths": [
+      "BUGS.md",
       "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/**",
+      "bubbles/scripts/evidence-capture.sh",
+      "bubbles/scripts/evidence-capture-selftest.sh",
       "bubbles/scripts/python-env.sh",
       "bubbles/scripts/python-env-selftest.sh",
-      "bubbles/scripts/implementation-reality-scan.sh",
-      "bubbles/scripts/implementation-reality-scan-selftest.sh",
-      "tests/regression/test_24_g028_sensitive_client_storage.sh",
-      "bubbles/scripts/cli.sh",
-      "bubbles/scripts/state-transition-guard.sh",
-      "bubbles/scripts/state-transition-guard-selftest.sh",
-      ".github/copilot-instructions.md",
-      "templates/copilot-instructions.md.tmpl",
-      "agents/bubbles_shared/critical-requirements.md",
-      "agents/bubbles.validate.agent.md",
-      "docs/recipes/security-review.md"
+      "bubbles/scripts/framework-validate.sh",
+      "bubbles/scripts/framework-validate-tier-selftest.sh",
+      "bubbles/scripts/ci-annotation-emitter-selftest.sh",
+      "tests/regression/test_36_framework_validate_tier_lock_lifecycle.sh",
+      ".github/workflows/agnosticity.yml",
+      "bubbles/registry/validation-checks.yaml",
+      "bubbles/release-manifest.json"
     ]
   },
   "planning": {
     "activeScope": 2,
-    "activeScopeStatus": "not_started",
+    "activeScopeStatus": "in_progress",
     "implementationEpoch": "privileged-native-supervision-v2",
     "retainedWorkerTrust": "root-protected-native-python-v1",
     "cleanSuccessorHead": "72bbb987ef6c396ba00b1e6b94b95526d230e1a5",
@@ -48,14 +47,87 @@
       "SCN-B039-006",
       "SCN-B039-007",
       "SCN-B039-008",
-      "SCN-B039-009"
+      "SCN-B039-009",
+      "SCN-B039-010"
     ],
     "findingScenarioMap": {
       "SEC-R1": "SCN-B039-005",
       "SEC-R2": "SCN-B039-006",
       "HAR-R1": "SCN-B039-007",
+      "PRE-HAR-01": "SCN-B039-007",
       "HAR-R2": "SCN-B039-008",
-      "HAR-R3": "SCN-B039-009"
+      "HAR-R3": "SCN-B039-009",
+      "REG-PLAN-EXACTHEAD-01": "SCN-B039-010"
+    },
+    "testsFirstControls": [
+      "REG-EC-STATUS-01",
+      "REG-FV-OBSERVER-01",
+      "REG-PY-REAP-01",
+      "REG-PY-BASH32-01",
+      "REG-CI-NONVACUITY-01"
+    ],
+    "testsFirstControlProgress": [
+      {
+        "finding": "REG-EC-STATUS-01",
+        "redControlOccurred": true,
+        "repairOccurred": true,
+        "certified": false,
+        "evidenceStatus": "pending"
+      },
+      {
+        "finding": "REG-FV-OBSERVER-01",
+        "redControlOccurred": true,
+        "repairOccurred": true,
+        "certified": false,
+        "evidenceStatus": "pending"
+      },
+      {
+        "finding": "REG-PY-REAP-01",
+        "redControlOccurred": true,
+        "repairOccurred": true,
+        "certified": false,
+        "evidenceStatus": "pending"
+      },
+      {
+        "finding": "REG-PY-BASH32-01",
+        "redControlOccurred": true,
+        "repairOccurred": true,
+        "certified": false,
+        "evidenceStatus": "pending"
+      },
+      {
+        "finding": "REG-CI-NONVACUITY-01",
+        "redControlOccurred": true,
+        "repairOccurred": true,
+        "certified": false,
+        "evidenceStatus": "pending"
+      }
+    ],
+    "currentRoutingFinding": {
+      "finding": "REG-CI-PROOF-GAP-01",
+      "status": "addressed",
+      "owner": "bubbles.test",
+      "iteration": 7,
+      "requiredControls": [
+        "commit-object assertion",
+        "Bash 4+ provisioning",
+        "python-env.sh --provision"
+      ],
+      "executionReceiptRows": [234, 235, 236, 237],
+      "certified": false,
+      "evidenceStatus": "pending"
+    },
+    "finalGeneratedMetadataRegeneration": {
+      "finding": "REG-MANIFEST-STALE-01",
+      "status": "addressed",
+      "owner": "bubbles.devops",
+      "sequence": "after_source_bytes_settle",
+      "regenerationOccurred": true,
+      "addressed": true,
+      "resolved": true,
+      "certified": false,
+      "evidenceStatus": "pending",
+      "requiredAction": "Create and publish one immutable non-main candidate commit from the settled BUG-039 bytes, then manually dispatch exact-head Ubuntu and macOS CI qualification for that candidate without certifying or closing BUG-039."
     },
     "supersededScopes": [
       {
@@ -77,27 +149,33 @@
       "TP-S2-09",
       "TP-S2-10",
       "TP-S2-11",
-      "TP-S2-12"
+      "TP-S2-12",
+      "TP-S2-13"
     ],
-    "nextRequiredOwner": "bubbles.test",
-    "nextRequiredAction": "execute-scope-2-finding-red-controls-against-clean-successor-before-implementation"
+    "nextRequiredOwner": "bubbles.devops",
+    "nextRequiredAction": "Create and publish one immutable non-main candidate commit from the settled BUG-039 bytes, then manually dispatch exact-head Ubuntu and macOS CI qualification for that candidate without certifying or closing BUG-039."
   },
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
     "substate": "needs_reverification",
-    "activeAgent": "bubbles.test",
-    "currentPhase": "test",
+    "activeAgent": "bubbles.devops",
+    "currentPhase": "devops",
     "currentScope": 2,
     "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "human",
-    "nextRequiredAction": "Publish the exact reconciled BUG-039 Scope 2 working tree as one immutable non-main branch commit and open a pull request without changing those bytes. The existing .github/workflows/agnosticity.yml release-hygiene job must check out that pull-request head on ubuntu-latest, provision through bubbles/scripts/python-env.sh --provision, and run bash bubbles/scripts/cli.sh release-check. Return the immutable commit SHA and complete job evidence to bubbles.test for TP-S2-04 reconciliation. Do not execute TP-S2-05 before TP-S2-04 qualifies.",
+    "nextRequiredOwner": "bubbles.devops",
+    "nextRequiredAction": "Create and publish one immutable non-main candidate commit from the settled BUG-039 bytes, then manually dispatch exact-head Ubuntu and macOS CI qualification for that candidate without certifying or closing BUG-039.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
       "currentAttemptId": null,
       "attempts": []
+    },
+    "goalContractRef": {
+      "goalId": "gc:vscode-b04b2b2b11eb29d5d403f0e46ab32a39:2",
+      "revision": 2,
+      "sourceRequestDigest": "sha256:b6793925c15ec5aec25dd90ddccaf06ca8e4cd180260adcf25fe692a8760e2e1"
     }
   },
   "certification": {
@@ -139,6 +217,66 @@
       "statusAfter": "in_progress",
       "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md#scope-2-privileged-scan-2b-entry-and-native-supervisor",
       "summary": "Replaced the superseded exact-child Scope 2 plan with privileged-native-supervision-v2, preserved SCN-B039-001 through SCN-B039-009, widened the exact work boundary, kept all 12 active DoD items unchecked, and routed finding-specific red controls to bubbles.test."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "PLANNING-BOUNDARY-UPDATE",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T22:11:08Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md#scope-2-privileged-scan-2b-entry-and-native-supervisor",
+      "summary": "Mapped PRE-HAR-01 to HAR-R1 and narrowed Goal Contract revision 2 to the approved source-only repair boundary. Production repair routes to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "REG-PLAN-EXACTHEAD-01",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T01:39:46Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/scopes.md#scope-2-privileged-scan-2b-entry-and-native-supervisor",
+      "summary": "Added SCN-B039-010 with exact Test Plan and unchecked DoD parity for manual exact-head CI qualification. Preserved the privileged-native-supervision-v2 epoch and existing finding mappings, routed five named RED controls to bubbles.test, and kept REG-MANIFEST-STALE-01 open for final generated-metadata regeneration after source bytes settle."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-039 SCOPE-02 planning-only handoff repair",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:25:47Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/test-plan.json",
+      "summary": "Created the 13-row structured Test Plan handoff, marked Scope 2 in progress, recorded the five prior RED controls and corresponding repairs as occurred but uncertified with pending evidence, routed REG-CI-PROOF-GAP-01 to bubbles.test for three persistent controls, and retained REG-MANIFEST-STALE-01 as pending."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-039 SCOPE-02 execution-routing reconciliation",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:24:27Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json",
+      "summary": "Recorded receipt rows 234 through 237 as the execution-routing basis for addressing REG-CI-PROOF-GAP-01 without certification, preserved pending evidence controls, and routed unresolved REG-MANIFEST-STALE-01 to bubbles.devops for final generated metadata regeneration."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "REG-STATE-ROUTE-01",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:42:45Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-039-interpreter-unusable-misreported-as-classification-failure/state.json",
+      "summary": "Recorded final generated metadata regeneration as occurred and byte-level addressed but uncertified with pending evidence, then routed bubbles.devops to create and publish one immutable non-main candidate commit before manual exact-head Ubuntu and macOS CI dispatch. No remote qualification, acceptance, or certification is claimed."
     }
   ],
   "activeBugs": [],
@@ -153,6 +291,7 @@
     "report": "report.md",
     "uservalidation": "uservalidation.md",
     "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
     "state": "state.json"
   },
   "statusDiscipline": {
