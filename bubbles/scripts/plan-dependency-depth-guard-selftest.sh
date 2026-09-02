@@ -1071,8 +1071,8 @@ mk_block "$d"
 mkdir -p "$d/fake-bin"
 real_grep="$(command -v grep)"
 printf '%s\n' '#!/usr/bin/env bash' \
-  'if [[ "${LC_ALL:-}" != "C" ]]; then exit 97; fi' \
-  'exec "${REAL_GREP:?}" "$@"' > "$d/fake-bin/grep"
+  "if [[ \"\${LC_ALL:-}\" != \"C\" ]]; then exit 97; fi" \
+  "exec \"\${REAL_GREP:?}\" \"\$@\"" > "$d/fake-bin/grep"
 chmod +x "$d/fake-bin/grep"
 locale_output=""
 locale_rc=0
