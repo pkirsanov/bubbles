@@ -369,7 +369,10 @@ fi
 # ordered and complete. The production runner's durable public result is the
 # PASS/FAIL classification and aggregate failure count; it does not expose the
 # direct command's numeric status as a separate contract.
-sed -n '/^run_check() {/,/^}/p' "$FRAMEWORK_VALIDATE" >"$TMP/fv_run_check.body"
+sed -n \
+  -e '/^_fv_resolve_lsof_path() {/,/^}/p' \
+  -e '/^run_check() {/,/^}/p' \
+  "$FRAMEWORK_VALIDATE" >"$TMP/fv_run_check.body"
 
 if [[ ! -s "$TMP/fv_run_check.body" ]]; then
   fail "could not extract run_check() from framework-validate.sh (shape changed?)"
