@@ -202,11 +202,11 @@
       "statusAfter": "in_progress",
       "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#final-independent-focused-verification-at-2658ec7",
       "addressedFindings": [
-        "B052-FINAL-INDEPENDENT-FOCUSED-VERIFICATION",
+        "B052-BEHAVIORAL-SELFTEST-NOT-RUN-BY-PLANNING-BOUNDARY",
         "B052-SC2016-SHELLCHECK-REVERIFICATION"
       ],
       "unresolvedFindings": [
-        "B052-T6-RESERVED-FOR-COMBINED-POST-BUG-050",
+        "B052-T6-NOT-RUN-BY-INSTRUCTION",
         "B052-CERTIFICATION-REMAINS-VALIDATE-OWNED"
       ]
     }
