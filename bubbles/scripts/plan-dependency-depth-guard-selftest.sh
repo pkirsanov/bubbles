@@ -226,6 +226,106 @@ printf '%s\n' '{"scopeProgress":[
 mk_block "$d"
 run "T15 real horizontal chain still BLOCKS under block posture (exit 1)" 1 "$d"
 
+# T16 / SCN-B052-001: a deprecated empty top-level array must not shadow the
+# canonical certification graph. The canonical chain is horizontal and must
+# therefore block under block posture.
+d="$TMP_ROOT/t16"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{
+  "scopeProgress": [],
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph (exit 1)" 1 "$d"
+
+# T17 / SCN-B052-002: canonical shallow data wins over a deprecated deep graph.
+d="$TMP_ROOT/t17"
+mk_scope "$d" 01-a consumer
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d foundation
+printf '%s\n' '{
+  "scopeProgress": [
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2,3,4]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ],
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)" 0 "$d"
+
+# T18 / SCN-B052-003: a legacy-only deep graph remains supported.
+d="$TMP_ROOT/t18"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{"scopeProgress":[
+  {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+  {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+  {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+  {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+]}' > "$d/state.json"
+mk_block "$d"
+run "T18 SCN-B052-003 legacy-only deep graph remains blocking (exit 1)" 1 "$d"
+
+# T19 / SCN-B052-004: execution metadata cannot replace canonical authority.
+d="$TMP_ROOT/t19"
+mk_scope "$d" 01-a consumer
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d foundation
+printf '%s\n' '{
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]},
+  "execution": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2,3,4]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T19 SCN-B052-004 canonical graph wins over execution deep graph (exit 0)" 0 "$d"
+
+# T20: a present canonical empty array is authoritative; only absent or null
+# canonical data may select the deprecated top-level fallback.
+d="$TMP_ROOT/t20"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{
+  "scopeProgress": [
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+  ],
+  "certification": {"scopeProgress":[]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T20 canonical empty array remains authoritative over legacy deep graph (exit 0)" 0 "$d"
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "plan-dependency-depth-guard-selftest FAILED with $FAILURES issue(s)."

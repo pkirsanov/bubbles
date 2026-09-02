@@ -2439,3 +2439,233 @@ Escalates, on the same two answers as BUG-033: `no-new-behavior` fails because a
 refused transition becomes an accepted one, and `no-cross-product-effect` fails
 because the resolver ships into every consuming repository.
 
+---
+
+## BUG-047 — canonical reasoned skips are simultaneously missing phase work and fabricated zero-duration execution
+
+- **Filed:** 2026-09-01
+- **Source finding:** `F-B001-HARDEN-010`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No implementation,
+  RED, GREEN, validation, commit, or push occurred in this filing invocation.
+- **Requested ID:** BUG-046. The complete local and remote branch namespace
+  check found BUG-046 on `fix/bug045-framework-tier-lock-leak`, so collision-safe
+  filing starts at BUG-047.
+- **Severity:** high. A valid phase relevance decision cannot satisfy the
+  transition guard without being rewritten as execution.
+- **Packet:** [`bugs/BUG-047-reasoned-skip-phase-accounting/`](bugs/BUG-047-reasoned-skip-phase-accounting/bug.md)
+- **Affects:** `bubbles/workflows/modes.yaml`,
+  `bubbles/scripts/state-transition-guard.sh`, and
+  `bubbles/scripts/state-transition-guard-selftest.sh`.
+
+### Reproduction and root cause
+
+The mode registry requires a skipped phase to appear only in `executionHistory`
+with `outcome: skipped` and a reason. Check 6 builds required-phase accounting
+from certification, completion claims, legacy phases, and phase stubs. It does
+not consume canonical skipped history. Check 7A reads that history, but classifies
+equal timestamps for every non-exempt phase as fabricated execution.
+
+The complete packet specifies one registry-bound skip classifier. A valid skip
+must satisfy required-phase accounting without entering a completion claim.
+Authorized decision records may be instantaneous. Executed nontrivial
+zero-duration phases and malformed skips must remain blocked.
+
+**Claim Source:** source-grounded analysis from this filing invocation. The
+downstream transition failure is operator-provided diagnostic input. No RED
+execution is claimed.
+
+---
+
+## BUG-048 — Check 8 misclassifies `bubbles.test` Finding Accounting owner labels as basename-only test files
+
+- **Filed:** 2026-09-01
+- **Source finding:** `F-B001-HARDEN-011`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No implementation or
+  test execution occurred.
+- **Severity:** high. Unrelated metadata can block a valid transition as a
+  nonexistent test path.
+- **Packet:** [`bugs/BUG-048-test-plan-owner-label-path/`](bugs/BUG-048-test-plan-owner-label-path/bug.md)
+- **Affects:** `bubbles/scripts/state-transition-guard.sh` and
+  `bubbles/scripts/state-transition-guard-selftest.sh`.
+
+### Reproduction and root cause
+
+Check 8 scans every broadly shaped Markdown table row. It tests every backticked
+cell value as a possible path. Its supported suffixes include bare `.test`, so
+five `bubbles.test` owner cells in a Finding Accounting table become five
+missing basename paths.
+
+The complete packet requires section-aware, header-derived Test Plan path
+extraction. A legitimate basename-only file such as `smoke.test` must remain
+supported. Missing paths in actual Test Plan path cells must still block.
+
+**Claim Source:** source-grounded analysis from this filing invocation. The
+downstream five-owner observation is diagnostic input, not current-session test
+evidence.
+
+---
+
+## BUG-049 — G040 `separate PR` matches the prefix of `separate process`
+
+- **Filed:** 2026-09-01
+- **Source finding:** `F-B001-HARDEN-012`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No implementation or
+  test execution occurred.
+- **Severity:** high. Legitimate completed-work prose can be blocked as a
+  deferral admission.
+- **Packet:** [`bugs/BUG-049-separate-process-g040-prefix/`](bugs/BUG-049-separate-process-g040-prefix/bug.md)
+- **Affects:** `bubbles/scripts/state-transition-guard.sh` and
+  `bubbles/scripts/state-transition-guard-selftest.sh`.
+
+### Reproduction and root cause
+
+Check 18 scans with a case-insensitive extended regular expression. The
+alternative `separate PR` has no trailing token boundary. Its `PR` fragment
+therefore matches the first two letters of `process`.
+
+The complete packet requires a portable complete `PR` token and complete
+`pull request` phrase. Negative `separate process` fixtures and positive genuine
+deferral fixtures prevent either false blocking or enforcement loss.
+
+**Claim Source:** source-grounded analysis from this filing invocation. The
+reported downstream block remains operator-provided diagnostic input.
+
+---
+
+## BUG-050 — Check 43 adjudicates repository-global receipt history instead of transition-local admitted evidence
+
+- **Filed:** 2026-09-01
+- **Source finding:** `F-B001-HARDEN-013`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No implementation,
+  receipt deletion, RED execution, or GREEN claim occurred.
+- **Severity:** high. Unrelated immutable evidence history can permanently block
+  a transition whose active receipts are fresh and compatible.
+- **Packet:** [`bugs/BUG-050-transition-local-receipt-admission/`](bugs/BUG-050-transition-local-receipt-admission/bug.md)
+- **Affects:** semantic receipt admission, `evidence-receipt-check.sh`, Check 43,
+  scenario-state derivation, mutation receipt validation, and BUG-033 identity
+  protections.
+
+### Reproduction and root cause
+
+Check 43 passes the complete repository tool log to strict freshness analysis.
+It also runs clone grouping over that complete log. Supersession removes older
+rows only within one evidence identity. It cannot decide whether a current
+identity supports this transition.
+
+The complete packet requires one explicit admitted-evidence projection for both
+freshness and clone consumers. Unrelated history remains append-only and inert.
+Actively admitted stale or incompatible clone evidence still blocks. Historical
+RED and killed-mutant receipts retain their phase-specific proof without
+requiring captured source hashes to equal current production bytes. Current
+post-fix evidence retains current-candidate compatibility. BUG-033 protections
+must remain green.
+
+**Claim Source:** source-grounded analysis from this filing invocation. The
+Ozhiva receipt counts are operator-provided diagnostic input and are not
+restated as current-session execution evidence.
+
+---
+
+## BUG-051 — installed YAML validator scans `.github/specs` instead of repository `specs`
+
+- **Filed:** 2026-09-01
+- **Source finding:** `FP-YAML-DOWNSTREAM-ROOT`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No production edit,
+  selftest edit, RED execution, or GREEN claim occurred.
+- **Severity:** high. Downstream scenario manifests can silently escape schema
+  validation while the validator reports that none exist.
+- **Packet:** [`bugs/BUG-051-yaml-validator-downstream-root/`](bugs/BUG-051-yaml-validator-downstream-root/bug.md)
+- **Affects:** `bubbles/scripts/yaml-schema-validate.sh` and
+  `bubbles/scripts/install-provenance-selftest.sh`.
+
+### Reproduction and root-cause hypothesis
+
+The validator derives `REPO_ROOT` two parents above its script. That is the
+repository root for `bubbles/scripts`, but it is `.github` for an installed
+`.github/bubbles/scripts` copy. The recursive Python glob therefore scans
+`.github/specs/**/scenario-manifest.json` downstream.
+
+The complete packet requires the install provenance selftest to execute the
+installed validator with both top-level and nested manifests. A malformed
+nested manifest remains the adversarial blocking case. Source and installed
+layouts must report equivalent discovery.
+
+**Claim Source:** source-grounded hypothesis from this filing invocation. The
+reported downstream no-files result is diagnostic input, not current-session
+RED evidence.
+
+---
+
+## BUG-052 — deprecated top-level scope progress shadows canonical certification data
+
+- **Filed:** 2026-09-01
+- **Source finding:** `FP-PLAN-SP-PRECEDENCE`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No production edit,
+  selftest edit, RED execution, or GREEN claim occurred.
+- **Severity:** high. A horizontal plan can avoid block posture because valid
+  canonical dependency data is ignored.
+- **Packet:** [`bugs/BUG-052-plan-scope-progress-precedence/`](bugs/BUG-052-plan-scope-progress-precedence/bug.md)
+- **Affects:** `bubbles/scripts/plan-dependency-depth-guard.sh` and
+  `bubbles/scripts/plan-dependency-depth-guard-selftest.sh`.
+
+### Reproduction and root-cause hypothesis
+
+The guard resolves `(.scopeProgress // .certification.scopeProgress // [])`.
+jq treats top-level `[]` as present, so it shadows a valid deep canonical array
+and sends the guard through its no-op path.
+
+The complete packet requires certification-first selection and legacy
+top-level fallback only when canonical data is absent. It explicitly excludes
+`execution.scopeProgress` from authority. The primary RED fixture combines
+top-level `[]` with a canonical over-depth graph and expects a block.
+
+**Claim Source:** source-grounded hypothesis from this filing invocation. The
+reported downstream finding is diagnostic input, not current-session RED
+evidence.
+
+---
+
+## BUG-053 — evidence capture duplicates the zero line count for valid empty output and emits arithmetic diagnostics
+
+- **Filed:** 2026-09-01
+- **Source finding:** `F-B051-EVIDENCE-EMPTY-OUTPUT-002`
+- **Disposition:** OPEN in-repository framework defect. Filed and routed to
+  `bubbles.implement` under persisted `bugfix-fastlane`. No production edit,
+  selftest edit, RED execution, GREEN claim, or certification occurred in this
+  filing invocation.
+- **Severity:** high. The canonical evidence formatter emits invalid numeric
+  diagnostics for a valid child result while returning the child's success.
+- **Packet:** [`bugs/BUG-053-evidence-capture-empty-output/`](bugs/BUG-053-evidence-capture-empty-output/bug.md)
+- **Affects:** `bubbles/scripts/evidence-capture.sh` and
+  `bubbles/scripts/evidence-capture-selftest.sh`.
+
+### Reproduction and root-cause hypothesis
+
+The BUG-051 report records a child command that produced empty output and exited
+zero. Evidence capture printed one valid `lines: 0` line, one stray `0`, the
+SHA-256 empty digest, and arithmetic syntax errors at both numeric comparisons.
+A direct structured replacement diff check then exited zero with empty stdout.
+
+The formatter computes
+`total="$(grep -c '' <"$tmp" 2>/dev/null || printf '0')"`. On an empty file,
+GNU and BSD grep print `0` but return 1 because no line matched. The fallback
+therefore appends another `0`. The multiline value `0\n0` later reaches numeric
+comparisons and triggers the diagnostics.
+
+This defect is distinct from BUG-035 D14. That defect covers a capture file that
+disappears and cannot produce a valid hash. BUG-053 covers a valid, present,
+zero-byte capture whose empty digest is correct.
+
+The packet requires persistent empty-stdout cases for child exits zero and
+nonzero. Each case must emit exactly one numeric `lines: 0`, the SHA-256 empty
+digest, no arithmetic diagnostic, and the original child exit.
+
+**Claim Source:** interpreted from the current BUG-051 report and direct source
+inspection in this filing invocation. No RED command was run here.
+

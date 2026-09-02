@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-047",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-01T07:58:36Z",
+  "scopes": [
+    {
+      "scopeId": "01-canonical-reasoned-skip-accounting",
+      "scopeName": "Canonical Reasoned Skip Accounting",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B047-001","description":"Required reasoned skip is accounted without a completed claim","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B047-002","description":"Canonical zero-duration decision is not treated as executed work","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B047-003","description":"Executed zero-duration stabilize remains blocking","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B047-004","description":"Malformed and never-skip records gain no exemption","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/phase-relevance-resolve-selftest.sh","scenarioId":"SCN-B047-001","description":"Broader phase-relevance and transition regressions remain green","command":"bash bubbles/scripts/phase-relevance-resolve-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B047-001","description":"Full framework validation preserves phase relevance and transition behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

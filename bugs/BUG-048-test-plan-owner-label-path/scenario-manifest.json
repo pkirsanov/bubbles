@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-048-test-plan-owner-label-path",
+  "scenarios": [
+    {
+      "id": "SCN-B048-001",
+      "title": "Finding Accounting owner labels are inert",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command path-extraction assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Restore broad table scanning. Five bubbles.test labels must become false missing paths.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Check 8 is a command-line artifact validation result."}
+    },
+    {
+      "id": "SCN-B048-002",
+      "title": "Legitimate basename-only dot-test file resolves",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "medium",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command path-resolution assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Remove the unique smoke.test file. The same path cell must become unresolved.","negativeControlMechanism":"perturbed-input"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Basename resolution is a repository guard behavior."}
+    },
+    {
+      "id": "SCN-B048-003",
+      "title": "Missing actual Test Plan path remains blocking",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named missing-path refusal assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Disable actual path-cell validation. The missing.test fixture must expose the enforcement hole.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Missing-file enforcement is a transition guard contract."}
+    },
+    {
+      "id": "SCN-B048-004",
+      "title": "File-shaped metadata outside Test Plan is inert",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command table-boundary assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Move the same metadata token into the Test Plan path cell. It must then be evaluated.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Markdown table classification has no rendered product surface."}
+    }
+  ]
+}

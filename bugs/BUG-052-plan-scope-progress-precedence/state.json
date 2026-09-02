@@ -1,0 +1,137 @@
+{
+  "version": 3,
+  "bugId": "BUG-052",
+  "sourceFindings": ["FP-PLAN-SP-PRECEDENCE"],
+  "featureDir": "bugs/BUG-052-plan-scope-progress-precedence",
+  "featureName": "Plan Scope Progress Precedence",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because plan authority and enforcement behavior change across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-052-plan-scope-progress-precedence"],
+    "allowedPaths": [
+      "bugs/BUG-052-plan-scope-progress-precedence/**",
+      "BUGS.md",
+      "bubbles/scripts/plan-dependency-depth-guard.sh",
+      "bubbles/scripts/plan-dependency-depth-guard-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "substate": "independently_verified",
+    "completedPhaseClaims": ["implement", "test"],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Run the combined post-BUG-053 T6/framework validation and validate BUG-052. Preserve certification until validate-owned checks pass.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Certification-First Scope Progress Resolution","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["plan"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:34:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#planner-owned-inventory-reconciliation",
+      "addressedFindings": ["FP-B052-IMPLEMENTATION-FILES"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T06:41:12Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#implementation-closeout-current-byte-checks",
+      "addressedFindings": [],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:56:07Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#independent-focused-test-verification",
+      "addressedFindings": ["B052-MANIFEST-FRESHNESS-TRANSIENT"],
+      "unresolvedFindings": [
+        "B052-TEST-MECHANISM-HIGH-RISK-CONTROL",
+        "B052-T6-NOT-RUN-BY-INSTRUCTION"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["plan"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:24:27Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#planner-owned-high-risk-mechanism-reconciliation",
+      "addressedFindings": ["B052-TEST-MECHANISM-HIGH-RISK-CONTROL"],
+      "unresolvedFindings": ["B052-T6-NOT-RUN-BY-INSTRUCTION"]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:32:20Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#independent-mechanism-reconciliation",
+      "addressedFindings": ["B052-TEST-MECHANISM-HIGH-RISK-CONTROL"],
+      "unresolvedFindings": ["B052-T6-NOT-RUN-BY-INSTRUCTION"]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T07:32:20Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "The planner corrected SCN-B052-002 to the high-risk mutation mechanism. Bubbles.test independently confirmed current-byte identity plus test-mechanism lint, scenario-obligation lint, artifact lint, and JSON parsing. Existing focused T1-T5 evidence remains unchanged, T6 is routed to combined validation, and certification remains untouched."
+}

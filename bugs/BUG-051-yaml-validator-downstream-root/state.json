@@ -1,0 +1,121 @@
+{
+  "version": 3,
+  "bugId": "BUG-051",
+  "sourceFindings": ["FP-YAML-DOWNSTREAM-ROOT"],
+  "featureDir": "bugs/BUG-051-yaml-validator-downstream-root",
+  "featureName": "YAML Validator Downstream Root Misresolution",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because installed schema validation behavior changes across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-051-yaml-validator-downstream-root"],
+    "allowedPaths": [
+      "bugs/BUG-051-yaml-validator-downstream-root/**",
+      "BUGS.md",
+      "bubbles/scripts/yaml-schema-validate.sh",
+      "bubbles/scripts/install-provenance-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
+    "currentScope": 1,
+    "substate": "independently_verified",
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "claimedAt": "2026-09-02T04:18:55Z",
+        "evidenceRef": "bugs/BUG-051-yaml-validator-downstream-root/report.md#post-planning-implementation-closeout"
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.test",
+        "claimedAt": "2026-09-02T04:32:12Z",
+        "evidenceRef": "bugs/BUG-051-yaml-validator-downstream-root/report.md#independent-focused-t1-t5-verification"
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Return upward to scenario node complete-bubbles-bug052. Preserve BUG-051 T6 and validate-owned certification as pending until the combined validation stage.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Installed Validator Root Separation","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-installed-validator-root-separation",
+      "phasesExecuted": ["implement"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:18:55Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-051-yaml-validator-downstream-root/report.md#post-planning-implementation-closeout",
+      "addressedFindings": ["FP-YAML-DOWNSTREAM-ROOT"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-installed-validator-root-separation",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T04:32:12Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-051-yaml-validator-downstream-root/report.md#independent-focused-t1-t5-verification",
+      "addressedFindings": [],
+      "unresolvedFindings": ["F-B051-TEST-MECHANISM-001", "F-B051-EVIDENCE-EMPTY-OUTPUT-002"]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-installed-validator-root-separation",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:34:14Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-051-yaml-validator-downstream-root/report.md#planner-mechanism-repair",
+      "addressedFindings": ["F-B051-TEST-MECHANISM-001"],
+      "unresolvedFindings": ["F-B051-EVIDENCE-EMPTY-OUTPUT-002"]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T06:34:14Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Focused T1-T5 verification remains independently complete on current bytes. bubbles.plan addressed F-B051-TEST-MECHANISM-001 by declaring the supported mutation mechanism for SCN-B051-003 without weakening its negative control. T6 and validate-owned certification remain pending. F-B051-EVIDENCE-EMPTY-OUTPUT-002 remains separately routed to bubbles.bug; the scenario runner proceeds upward to complete-bubbles-bug052 with bubbles.implement."
+}

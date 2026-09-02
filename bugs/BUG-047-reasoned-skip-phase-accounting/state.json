@@ -1,0 +1,108 @@
+{
+  "version": 3,
+  "bugId": "BUG-047",
+  "sourceFindings": ["F-B001-HARDEN-010"],
+  "featureDir": "bugs/BUG-047-reasoned-skip-phase-accounting",
+  "featureName": "Reasoned Skip Phase Accounting",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because the shared transition verdict changes across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-047-reasoned-skip-phase-accounting"],
+    "allowedPaths": [
+      "bugs/BUG-047-reasoned-skip-phase-accounting/**",
+      "BUGS.md",
+      "bubbles/workflows/modes.yaml",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/phase-relevance-resolve.sh",
+      "bubbles/scripts/phase-relevance-resolve-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "needs_reverification",
+    "goalContractRef": null,
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "claimedAt": "2026-09-01T09:06:57Z",
+        "evidenceRef": "bugs/BUG-047-reasoned-skip-phase-accounting/report.md#host-101-current-byte-reconciliation"
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Run Test Plan row T6 with the canonical full framework validation on the current BUG-047 source identities.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Canonical Reasoned Skip Accounting","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-canonical-reasoned-skip-accounting",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-01T09:06:57Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-047-reasoned-skip-phase-accounting/report.md#host-101-current-byte-reconciliation",
+      "addressedFindings": ["F-B001-HARDEN-010"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-canonical-reasoned-skip-accounting",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T15:57:10Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-047-reasoned-skip-phase-accounting/report.md#independent-test-verification-and-aggregate-failure-isolation",
+      "addressedFindings": ["F-B047-AGGREGATE-ATTRIBUTION"],
+      "unresolvedFindings": [
+        "G125-INDEX-ROW-MISSING-IMP-054",
+        "G125-INDEX-ROW-MISSING-IMP-055"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-01T20:00:53Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Independent tests verify T1 through T5 on the current source identities. The previously blocking G125 live lint now passes after its separately owned index repair. T6 requires a fresh full framework validation before test execution can be independently verified."
+}

@@ -71,8 +71,8 @@ if ! jq -e 'type == "object"' "$state_file" >/dev/null 2>&1; then
   exit 2
 fi
 
-# scopeProgress (top-level canonical, or under certification for completed specs).
-sp="$(jq -c '(.scopeProgress // .certification.scopeProgress // [])' "$state_file")"
+# scopeProgress (certification canonical, or deprecated top-level fallback).
+sp="$(jq -c '(.certification.scopeProgress // .scopeProgress // [])' "$state_file")"
 
 # scopeProgress has two legitimate shapes in the wild: the per-scope ARRAY
 # ([{scope,scopeDir,dependsOn}, ...]) this DAG analysis is written for, and the

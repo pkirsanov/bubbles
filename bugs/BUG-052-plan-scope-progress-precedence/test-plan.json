@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-052",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-02T03:23:37Z",
+  "scopes": [
+    {
+      "scopeId": "01-certification-first-scope-progress-resolution",
+      "scopeName": "Certification-First Scope Progress Resolution",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","scenarioId":"SCN-B052-001","description":"Empty top-level array cannot shadow canonical over-depth graph","command":"bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","scenarioId":"SCN-B052-002","description":"Canonical shallow graph wins over legacy deep graph","command":"bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"compatibility","file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","scenarioId":"SCN-B052-003","description":"Legacy top-level-only over-depth graph remains blocking","command":"bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","scenarioId":"SCN-B052-004","description":"Execution graph does not become authority","command":"bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","scenarioId":"SCN-B052-001","description":"Existing dependency depth, type, and no-op cases remain green","command":"bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B052-001","description":"Full framework validation preserves planning guard behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

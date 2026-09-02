@@ -1,0 +1,111 @@
+{
+  "version": 3,
+  "bugId": "BUG-048",
+  "sourceFindings": ["F-B001-HARDEN-011"],
+  "featureDir": "bugs/BUG-048-test-plan-owner-label-path",
+  "featureName": "Test Plan Owner Label Path Misclassification",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because Check 8 behavior changes across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-048-test-plan-owner-label-path"],
+    "allowedPaths": [
+      "bugs/BUG-048-test-plan-owner-label-path/**",
+      "BUGS.md",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "independently_verified",
+    "goalContractRef": null,
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "claimedAt": "2026-09-02T08:21:21Z",
+        "evidenceRef": "bugs/BUG-048-test-plan-owner-label-path/report.md#implementation-validation-receipts"
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.test",
+        "claimedAt": "2026-09-02T14:37:47Z",
+        "evidenceRef": "bugs/BUG-048-test-plan-owner-label-path/report.md#independent-test-verification-t1-t5"
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Return upward to scenario node complete-bubbles-bug049. Preserve BUG-048 T6 for the operator-reserved combined framework validation after BUG-049 and BUG-050, then route BUG-048 to bubbles.validate.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Semantic Test Plan Path Extraction","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-semantic-test-plan-path-extraction",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T08:21:21Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-048-test-plan-owner-label-path/report.md#implementation-validation-receipts",
+      "addressedFindings": ["F-B001-HARDEN-011"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-semantic-test-plan-path-extraction",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T14:37:47Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-048-test-plan-owner-label-path/report.md#independent-test-verification-t1-t5",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B048-T6-NOT-RUN-BY-INSTRUCTION",
+        "F-B048-VALIDATE-CERTIFICATION-PENDING"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T14:37:47Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Independent bubbles.test verification passed T1-T4 with focused capture f2c3a226bc28de5f3b666bfb325e25bb434226c3ef552fcaf4a08ebe1a83baaa and T5 with 507-line capture 6c6f71d9c8b2260c66ef5a1f148e8c3a2f564407d6c8506ce5632a2cfc41f049. Pre-test and post-test source captures both equal dc06f69fe48c2c4b0e2ccecd1546f4fd83466e8d09f061ae945a4ca00ad62fee, preserving guard f655dd0f3ce7c3c0db5d8403b1597debf5c6d59a7aa1ba95e6dfd9f11e0b908b and selftest ec60141255d2838dda2ce1976e256dd2a57f4d0610d123c0966a65eb1caddb1a. T6 remains reserved for the combined framework validation after BUG-049 and BUG-050. Top-level and certification status remain in_progress; validate-owned certification remains unresolved."
+}

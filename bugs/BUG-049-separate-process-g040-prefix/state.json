@@ -1,0 +1,78 @@
+{
+  "version": 3,
+  "bugId": "BUG-049",
+  "sourceFindings": ["F-B001-HARDEN-012"],
+  "featureDir": "bugs/BUG-049-separate-process-g040-prefix",
+  "featureName": "G040 Separate Process Prefix False Match",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because Gate G040 behavior changes across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-049-separate-process-g040-prefix"],
+    "allowedPaths": [
+      "bugs/BUG-049-separate-process-g040-prefix/**",
+      "BUGS.md",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentScope": 1,
+    "substate": "implemented",
+    "completedPhaseClaims": ["implement"],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently verify BUG-049 T1-T5 against the recorded final source bytes; T6 remains unclaimed.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Token-Bounded G040 PR Matching","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "scope": "01-token-bounded-g040-pr-matching",
+      "mode": "bugfix-fastlane",
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T15:08:33Z",
+      "evidence": "bugs/BUG-049-separate-process-g040-prefix/report.md#complete-t1-t5-aggregate"
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T15:08:33Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Implementation closeout is recorded from tool-log row 333. T6 and certification remain unclaimed; bubbles.test owns independent T1-T5 verification."
+}

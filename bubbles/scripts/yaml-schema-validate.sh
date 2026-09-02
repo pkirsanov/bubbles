@@ -13,8 +13,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SCHEMAS_DIR="$REPO_ROOT/bubbles/schemas"
+FRAMEWORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+case "$SCRIPT_DIR" in
+    */.github/bubbles/scripts) PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)" ;;
+    *) PROJECT_ROOT="$FRAMEWORK_ROOT" ;;
+esac
+SCHEMAS_DIR="$FRAMEWORK_ROOT/bubbles/schemas"
 
 # IMP-027 SCOPE-4 / SEC-2: these were `exit 0`. A schema validator that skips
 # reports success for a check that never ran.
@@ -38,7 +42,7 @@ if ! python3 -c "import yaml, jsonschema" >/dev/null 2>&1; then
   exit 0
 fi
 
-python3 - "$REPO_ROOT" "$SCHEMAS_DIR" <<'PY'
+python3 - "$PROJECT_ROOT" "$FRAMEWORK_ROOT" "$SCHEMAS_DIR" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -47,24 +51,25 @@ import yaml
 from jsonschema import Draft7Validator
 from jsonschema.exceptions import SchemaError
 
-repo_root = Path(sys.argv[1])
-schemas_dir = Path(sys.argv[2])
+project_root = Path(sys.argv[1])
+framework_root = Path(sys.argv[2])
+schemas_dir = Path(sys.argv[3])
 
-# (yaml_path_rel, schema_filename, optional)
+# (yaml_root, yaml_path_rel, schema_filename, optional)
 pairs = [
-    ("bubbles/workflows.yaml", "workflows.schema.json", False),
-    ("bubbles/capability-ledger.yaml", "capability-ledger.schema.json", False),
-    ("bubbles/adoption-profiles.yaml", "adoption-profiles.schema.json", False),
+    (framework_root, "bubbles/workflows.yaml", "workflows.schema.json", False),
+    (framework_root, "bubbles/capability-ledger.yaml", "capability-ledger.schema.json", False),
+    (framework_root, "bubbles/adoption-profiles.yaml", "adoption-profiles.schema.json", False),
     # IMP-020 S3 / AF-005 — tool-trust registry.
-    ("bubbles/tool-trust-registry.yaml", "tool-trust-registry.schema.json", False),
+    (framework_root, "bubbles/tool-trust-registry.yaml", "tool-trust-registry.schema.json", False),
     # v5.1 / M9 additions — present only when project uses these surfaces.
-    ("propagation-policy.yaml", "propagation-policy.schema.json", True),
-    ("config/propagation-policy.yaml", "propagation-policy.schema.json", True),
+    (project_root, "propagation-policy.yaml", "propagation-policy.schema.json", True),
+    (project_root, "config/propagation-policy.yaml", "propagation-policy.schema.json", True),
 ]
 
 failures = 0
-for yaml_rel, schema_name, optional in pairs:
-    yaml_path = repo_root / yaml_rel
+for yaml_root, yaml_rel, schema_name, optional in pairs:
+    yaml_path = yaml_root / yaml_rel
     schema_path = schemas_dir / schema_name
     if not yaml_path.exists():
         if not optional:
@@ -111,19 +116,19 @@ if scenario_schema.exists():
     validator = Draft7Validator(schema)
     found = 0
     failed_here = 0
-    for manifest in sorted(repo_root.glob("specs/**/scenario-manifest.json")):
+    for manifest in sorted(project_root.glob("specs/**/scenario-manifest.json")):
         found += 1
         try:
             with open(manifest) as f:
                 data = json.load(f)
         except json.JSONDecodeError as e:
-            print(f"yaml-schema-validate: FAIL  {manifest.relative_to(repo_root)} — JSON parse error: {e}")
+            print(f"yaml-schema-validate: FAIL  {manifest.relative_to(project_root)} — JSON parse error: {e}")
             failures += 1
             failed_here += 1
             continue
         errs = list(validator.iter_errors(data))
         if errs:
-            print(f"yaml-schema-validate: FAIL  {manifest.relative_to(repo_root)} — {len(errs)} validation error(s)")
+            print(f"yaml-schema-validate: FAIL  {manifest.relative_to(project_root)} — {len(errs)} validation error(s)")
             for e in errs[:10]:
                 loc = "/".join(str(p) for p in e.absolute_path) or "<root>"
                 print(f"  {loc}: {e.message[:200]}")

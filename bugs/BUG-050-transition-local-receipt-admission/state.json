@@ -1,0 +1,102 @@
+{
+  "version": 3,
+  "bugId": "BUG-050",
+  "sourceFindings": ["F-B001-HARDEN-013"],
+  "featureDir": "bugs/BUG-050-transition-local-receipt-admission",
+  "featureName": "Transition-Local Receipt Admission",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because shared evidence admission and anti-fabrication behavior change across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-033"],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-050-transition-local-receipt-admission"],
+    "allowedPaths": [
+      "bugs/BUG-050-transition-local-receipt-admission/**",
+      "BUGS.md",
+      "bubbles/scripts/evidence-receipt-check.sh",
+      "bubbles/scripts/evidence-receipt-check-selftest.sh",
+      "bubbles/scripts/evidence-tool-log-bridge.sh",
+      "bubbles/scripts/evidence-tool-log-bridge-selftest.sh",
+      "bubbles/scripts/scenario-state-resolve.sh",
+      "bubbles/scripts/scenario-state-resolve-selftest.sh",
+      "bubbles/scripts/mutation-receipt.sh",
+      "bubbles/scripts/mutation-receipt-selftest.sh",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/receipt-identity-selftest.sh",
+      "bubbles/schemas/tool-call.schema.json",
+      "bubbles/registry/scenario-states.yaml",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
+    "currentScope": 1,
+    "runStartedAt": "2026-09-02T07:39:33Z",
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Execute Scope 1 via bubbles.implement. Capture the four planned admission RED fixtures before production changes; preserve BUG-033 wrapper, target, program, and execution provenance, append-only history, historical RED semantics, mutation restoration integrity, and the documented rollback path.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Transition-Local Receipt Admission","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-transition-local-receipt-admission",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:43:11Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-050-transition-local-receipt-admission/scopes.md#implementation-files",
+      "addressedFindings": [
+        "missing exact implementation inventory",
+        "G057 scenario identifier key mismatch",
+        "test-plan owner label mismatch",
+        "change-boundary label mismatch",
+        "unnamed transition-guard consumer surface"
+      ],
+      "unresolvedFindings": [
+        "Scope 1 implementation and RED/GREEN execution remain owned by bubbles.implement"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T07:43:11Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Planner readiness metadata is reconciled. The exact implementation inventory, G057 scenario identifiers, test-plan ownership, change-boundary labels, and transition-guard CLI consumer surface now align with the planning guards. No implementation, RED execution, GREEN result, audit verdict, or certification claim is recorded."
+}

@@ -1635,6 +1635,143 @@ if [[ "$sla_scope_count" -eq 0 ]]; then
 fi
 echo ""
 
+# Classify canonical phase-relevance decisions once for every consumer below.
+# The registry owns both the skip schema and the authorization policy. A record
+# that cannot be proven complete from that registry is ordinary executionHistory
+# data: it satisfies no required phase and receives no duration exemption.
+classify_canonical_reasoned_skips() {
+  local state_path="$1"
+  local modes_file="$SCRIPT_DIR/../workflows/modes.yaml"
+  local registry_json=""
+
+  if ! command -v yq >/dev/null 2>&1; then
+  printf '%s\n' '[]'
+  return 0
+  fi
+  if ! registry_json="$(yq -o=json -I=0 '.modes.phaseRelevance // {}' "$modes_file" 2>/dev/null)"; then
+  printf '%s\n' '[]'
+  return 0
+  fi
+
+  python3 - "$state_path" "$registry_json" <<'PY'
+import json
+import sys
+
+
+def non_empty_string(value):
+  return isinstance(value, str) and bool(value.strip())
+
+
+def matches_schema(value, descriptor):
+  if descriptor == "string":
+    return non_empty_string(value)
+  if descriptor == "list":
+    return isinstance(value, list)
+  if descriptor == "boolean":
+    return isinstance(value, bool)
+  return value == descriptor
+
+
+def reason_is_registry_authorized(reason, authorized_reasons):
+  if reason in authorized_reasons:
+    return True
+  for registered in authorized_reasons:
+    prefix = f"{registered} (runner: "
+    if reason.startswith(prefix) and reason.endswith(")"):
+      runner = reason[len(prefix):-1].strip()
+      if runner and "\n" not in runner and "\r" not in runner:
+        return True
+  return False
+
+
+try:
+  with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+  registry = json.loads(sys.argv[2])
+except Exception:
+  print("[]")
+  raise SystemExit(0)
+
+if not isinstance(registry, dict) or registry.get("enabled") is not True:
+  print("[]")
+  raise SystemExit(0)
+
+schema = registry.get("skipRecordSchema")
+rules = registry.get("rules")
+never_skip_raw = registry.get("neverSkip")
+triggers_raw = registry.get("reevaluateTriggers")
+if not isinstance(schema, dict) or not isinstance(rules, list):
+  print("[]")
+  raise SystemExit(0)
+if not isinstance(never_skip_raw, list) or not isinstance(triggers_raw, list):
+  print("[]")
+  raise SystemExit(0)
+
+authorized_by_phase = {}
+for rule in rules:
+  if not isinstance(rule, dict):
+    continue
+  phase = rule.get("phase")
+  reason = rule.get("reason")
+  if non_empty_string(phase) and non_empty_string(reason):
+    authorized_by_phase.setdefault(phase.strip(), set()).add(reason.strip())
+
+never_skip = {phase.strip() for phase in never_skip_raw if non_empty_string(phase)}
+reevaluate_triggers = {
+  trigger.strip() for trigger in triggers_raw if non_empty_string(trigger)
+}
+
+execution = data.get("execution") if isinstance(data.get("execution"), dict) else {}
+history = execution.get("executionHistory")
+if not isinstance(history, list):
+  history = data.get("executionHistory")
+if not isinstance(history, list):
+  history = []
+
+canonical = []
+for index, entry in enumerate(history):
+  if not isinstance(entry, dict):
+    continue
+
+  reevaluated = entry.get("reevaluated")
+  schema_valid = True
+  for field, descriptor in schema.items():
+    if field == "reevaluationTrigger" and reevaluated is False:
+      continue
+    if field not in entry or not matches_schema(entry.get(field), descriptor):
+      schema_valid = False
+      break
+  if not schema_valid:
+    continue
+
+  phase = entry.get("phase").strip()
+  reason = entry.get("reason").strip()
+  changed_surface = entry.get("changedSurface")
+  if phase in never_skip or phase not in authorized_by_phase:
+    continue
+  if not reason_is_registry_authorized(reason, authorized_by_phase[phase]):
+    continue
+  if not changed_surface or not all(non_empty_string(path) for path in changed_surface):
+    continue
+
+  trigger = entry.get("reevaluationTrigger")
+  if reevaluated is True:
+    if not non_empty_string(trigger) or trigger.strip() not in reevaluate_triggers:
+      continue
+  elif trigger not in (None, ""):
+    continue
+
+  canonical.append({"index": index, "phase": phase})
+
+print(json.dumps(canonical, separators=(",", ":"), sort_keys=True))
+PY
+}
+
+canonical_reasoned_skips_json="$(classify_canonical_reasoned_skips "$state_file")"
+if [[ -z "$canonical_reasoned_skips_json" ]]; then
+  canonical_reasoned_skips_json='[]'
+fi
+
 # =============================================================================
 # CHECK 6: completedPhases vs required specialists
 # =============================================================================
@@ -1728,6 +1865,26 @@ merged_phases = list(dict.fromkeys(normalized_selected + stubbed_phases))
 for phase in merged_phases:
     if isinstance(phase, str):
         print(f'"{phase}"')
+PY
+} || true)"
+
+state_skipped_phases_block="$({
+  python3 - "$canonical_reasoned_skips_json" <<'PY'
+import json
+import sys
+
+try:
+  records = json.loads(sys.argv[1])
+except Exception:
+  records = []
+
+if isinstance(records, list):
+  for record in records:
+    if not isinstance(record, dict):
+      continue
+    phase = record.get("phase")
+    if isinstance(phase, str):
+      print(f'"{phase}"')
 PY
 } || true)"
 
@@ -1839,6 +1996,8 @@ if [[ -n "$state_workflow_mode" ]]; then
     for specialist_phase in "${required_specialists[@]}"; do
       if grep -qE "\"$specialist_phase\"" <<< "$state_completed_phases_block"; then
         pass "Required phase '$specialist_phase' recorded in execution/certification phase records"
+      elif grep -qE "\"$specialist_phase\"" <<< "$state_skipped_phases_block"; then
+        pass "Required phase '$specialist_phase' accounted by canonical reasoned skip in executionHistory (no completion claim)"
       else
         fail "Required phase '$specialist_phase' NOT in execution/certification phase records (Gate G022 violation)"
         missing_phases=$((missing_phases + 1))
@@ -2337,7 +2496,7 @@ echo ""
 # recovered after the fact. Both demand a substantive reason and both are still
 # reported, so neither is a silent bypass.
 echo "--- Check 7A: executionHistory Timestamp Plausibility ---"
-exec_history_analysis="$(python3 - "$state_file" <<'PY'
+exec_history_analysis="$(python3 - "$state_file" "$canonical_reasoned_skips_json" <<'PY'
 import json
 import sys
 from datetime import datetime
@@ -2400,9 +2559,24 @@ if not isinstance(raw, list):
 if not isinstance(raw, list):
     raw = []
 
+try:
+  canonical_skip_records = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+except Exception:
+  canonical_skip_records = []
+canonical_skip_indices = {
+    record.get("index")
+    for record in canonical_skip_records
+    if isinstance(record, dict) and isinstance(record.get("index"), int)
+}
+
 entries = []
-for entry in raw:
+for entry_index, entry in enumerate(raw):
     if not isinstance(entry, dict):
+        continue
+    # A canonical phase-relevance skip is a decision record, not an execution
+    # span. The shared registry-bound classifier above is the only way into this
+    # set; malformed labels remain in ordinary duration adjudication.
+    if entry_index in canonical_skip_indices:
         continue
     # Entry timestamps are startedAt plus completedAt or finishedAt.
     # runStartedAt is an EXECUTION-level field, not an entry field: across every
@@ -2940,24 +3114,121 @@ _check8_candidate_from_block() {
   return 1
 }
 
+_check8_split_table_row() {
+  local row="$1"
+
+  CHECK8_TABLE_CELLS=()
+  IFS='|' read -r -a CHECK8_TABLE_CELLS <<< "$row"
+}
+
+_check8_table_separator_row() {
+  local row="$1"
+  local cell=""
+  local separator_cells=0
+
+  _check8_split_table_row "$row"
+  for cell in ${CHECK8_TABLE_CELLS[@]+"${CHECK8_TABLE_CELLS[@]}"}; do
+    while [[ "$cell" == [[:blank:]]* ]]; do cell="${cell#?}"; done
+    while [[ "$cell" == *[[:blank:]] ]]; do cell="${cell%?}"; done
+    [[ -n "$cell" ]] || continue
+    [[ "$cell" =~ ^:?-{3,}:?$ ]] || return 1
+    separator_cells=$((separator_cells + 1))
+  done
+  [[ "$separator_cells" -gt 0 ]]
+}
+
+_check8_is_path_column_header() {
+  local header="$1"
+  local normalized=""
+
+  normalized="$(printf '%s' "$header" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')"
+  case "$normalized" in
+    file|files|path|paths|location|locations|filepath|filepaths|filelocation|filelocations|pathlocation|pathlocations|testfile|testfiles|testpath|testpaths|testlocation|testlocations|testfilepath|testfilepaths|testfilelocation|testfilelocations)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 test_files_in_plan=()
 for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
+  check8_in_test_plan=0
+  check8_test_plan_heading_level=0
+  check8_table_state="outside"
+  check8_pending_path_columns=()
+  check8_path_columns=()
   while IFS= read -r line; do
-    path=""
-    backtick_marker='`'
-    while IFS= read -r backtick_block; do
-      block="${backtick_block#"$backtick_marker"}"
-      block="${block%"$backtick_marker"}"
-      if _check8_candidate_from_block "$block"; then
-        path="$CHECK8_CANDIDATE"
-        break
+    if [[ "$line" =~ ^(#{1,6})[[:blank:]]+(.+)$ ]]; then
+      check8_heading_marks="${BASH_REMATCH[1]}"
+      check8_heading_text="${BASH_REMATCH[2]}"
+      check8_heading_level="${#check8_heading_marks}"
+      if [[ "$check8_heading_text" =~ ^[Tt][Ee][Ss][Tt][[:blank:]]+[Pp][Ll][Aa][Nn]([[:blank:]]+#+)?[[:blank:]]*$ ]] && \
+        [[ "$check8_heading_level" -ge 2 ]] && [[ "$check8_heading_level" -le 3 ]]; then
+        check8_in_test_plan=1
+        check8_test_plan_heading_level="$check8_heading_level"
+        check8_table_state="seek-header"
+        check8_pending_path_columns=()
+        check8_path_columns=()
+      elif [[ "$check8_in_test_plan" -eq 1 ]] && [[ "$check8_heading_level" -le "$check8_test_plan_heading_level" ]]; then
+        check8_in_test_plan=0
+        check8_table_state="outside"
+      elif [[ "$check8_in_test_plan" -eq 1 ]] && [[ "$check8_table_state" != "seek-header" ]]; then
+        check8_table_state="done"
       fi
-    done < <(printf '%s\n' "$line" | grep -oE '`[^`]*`' || true)
+      continue
+    fi
+
+    [[ "$check8_in_test_plan" -eq 1 ]] || continue
+    if [[ "$check8_table_state" == "seek-header" ]]; then
+      if [[ "$line" =~ ^[[:blank:]]*\|.*\|[[:blank:]]*$ ]]; then
+        _check8_split_table_row "$line"
+        check8_pending_path_columns=()
+        for check8_column_index in "${!CHECK8_TABLE_CELLS[@]}"; do
+          if _check8_is_path_column_header "${CHECK8_TABLE_CELLS[$check8_column_index]}"; then
+            check8_pending_path_columns+=("$check8_column_index")
+          fi
+        done
+        check8_table_state="expect-separator"
+      fi
+      continue
+    fi
+
+    if [[ "$check8_table_state" == "expect-separator" ]]; then
+      if _check8_table_separator_row "$line"; then
+        check8_path_columns=("${check8_pending_path_columns[@]}")
+        check8_table_state="data"
+      else
+        check8_table_state="done"
+      fi
+      continue
+    fi
+
+    [[ "$check8_table_state" == "data" ]] || continue
+    if [[ ! "$line" =~ ^[[:blank:]]*\|.*\|[[:blank:]]*$ ]]; then
+      check8_table_state="done"
+      continue
+    fi
+
+    _check8_split_table_row "$line"
+    path=""
+    for check8_column_index in ${check8_path_columns[@]+"${check8_path_columns[@]}"}; do
+      check8_cell="${CHECK8_TABLE_CELLS[$check8_column_index]:-}"
+      backtick_marker='`'
+      while IFS= read -r backtick_block; do
+        block="${backtick_block#"$backtick_marker"}"
+        block="${block%"$backtick_marker"}"
+        if _check8_candidate_from_block "$block"; then
+          path="$CHECK8_CANDIDATE"
+          break
+        fi
+      done < <(printf '%s\n' "$check8_cell" | grep -oE '`[^`]*`' || true)
+      [[ -z "$path" ]] || break
+    done
     if [[ -n "$path" ]] && [[ "$path" != "[path]" ]] && [[ ! "$path" =~ ^\[ ]]; then
       test_files_in_plan+=("$path")
     fi
-  done < <(grep -E '^\|.*\|.*\|.*\|' "$scope_path" 2>/dev/null || true)
+  done < "$scope_path"
 done
 
 missing_test_files=0
@@ -4128,7 +4399,7 @@ else
   # merely names an artifact. Guarded by two selftest cases below: a negative
   # (prohibition prose must NOT block) and its adversarial twin (a real
   # admission MUST still block), so the narrowing cannot silently disable it.
-  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|(is|are|was|were|remains?|stays?|left|leaving)[[:space:]]+(still[[:space:]]+)?an?[[:space:]]+placeholder|placeholder[[:space:]]+(value|until|for now)|temporary workaround'
+  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate[[:space:]]+PR([^[:alnum:]_]|$)|separate[[:space:]]+pull[[:space:]]+request([^[:alnum:]_]|$)|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|(is|are|was|were|remains?|stays?|left|leaving)[[:space:]]+(still[[:space:]]+)?an?[[:space:]]+placeholder|placeholder[[:space:]]+(value|until|for now)|temporary workaround'
   # Strategy (i): exclude schema-canonical follow-up field names mandated
   # by completion-governance.md AND the canonical "Follow-Up Narrative"
   # section heading itself. Both are schema-structural usage, not deferred-

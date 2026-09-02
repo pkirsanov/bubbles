@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-051",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-02T03:23:37Z",
+  "scopes": [
+    {
+      "scopeId": "01-installed-validator-root-separation",
+      "scopeName": "Installed Validator Root Separation",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/install-provenance-selftest.sh","scenarioId":"SCN-B051-001","description":"Installed top-level manifest discovery","command":"bash bubbles/scripts/install-provenance-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/install-provenance-selftest.sh","scenarioId":"SCN-B051-002","description":"Installed nested bug manifest discovery","command":"bash bubbles/scripts/install-provenance-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/install-provenance-selftest.sh","scenarioId":"SCN-B051-003","description":"Malformed installed manifest remains blocking","command":"bash bubbles/scripts/install-provenance-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"compatibility","file":"bubbles/scripts/install-provenance-selftest.sh","scenarioId":"SCN-B051-004","description":"Source and installed discovery parity","command":"bash bubbles/scripts/install-provenance-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/install-provenance-selftest.sh","scenarioId":"SCN-B051-001","description":"Existing installer provenance and schema checks remain green","command":"bash bubbles/scripts/install-provenance-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B051-001","description":"Full framework validation preserves source and installed schema behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

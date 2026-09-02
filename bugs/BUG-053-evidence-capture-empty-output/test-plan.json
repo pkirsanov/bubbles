@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-053",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-01",
+  "scopes": [
+    {
+      "scopeId": "01-valid-empty-capture-formatting",
+      "scopeName": "Valid Empty Capture Formatting",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/evidence-capture-selftest.sh","scenarioId":"SCN-B053-001","description":"Empty successful child emits exactly one numeric zero count, the empty digest, no arithmetic diagnostics, and exit zero","command":"bash bubbles/scripts/evidence-capture-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/evidence-capture-selftest.sh","scenarioId":"SCN-B053-002","description":"Empty failing child emits clean empty metadata and preserves exit seven","command":"bash bubbles/scripts/evidence-capture-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"compatibility","file":"bubbles/scripts/evidence-capture-selftest.sh","scenarioId":"SCN-B053-003","description":"One-line output retains one-line count and short rendering","command":"bash bubbles/scripts/evidence-capture-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/evidence-capture-selftest.sh","scenarioId":"SCN-B053-004","description":"BUG-035 D14 missing capture file remains a named exit-two failure","command":"bash bubbles/scripts/evidence-capture-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"portability","file":"bubbles/scripts/macos-portability-guard.sh","scenarioId":"SCN-B053-001","description":"Changed shell surfaces retain GNU and BSD portability","command":"canonical source shell validation commands","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B053-001","description":"Full framework validation preserves evidence capture behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

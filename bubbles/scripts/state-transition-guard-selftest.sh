@@ -857,7 +857,11 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
   exit 0
 fi
 
-run_g061_regression_cases
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG047_ONLY:-0}" != "1" ]] && \
+  [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG048_ONLY:-0}" != "1" ]] && \
+  [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG049_ONLY:-0}" != "1" ]]; then
+  run_g061_regression_cases
+fi
 
 emit_honest_planning_fixture() {
   local feature_dir="$1"
@@ -1880,6 +1884,69 @@ PY
   } >> "$feature_dir/report.md"
 }
 
+run_bug049_regression_cases() {
+  local process_dir="$tmp_root/specs/998e-bug049-separate-process"
+  local process_log="$tmp_root/bug049-separate-process.log"
+  local pr_eol_dir="$tmp_root/specs/998f-bug049-separate-pr-eol"
+  local pr_eol_log="$tmp_root/bug049-separate-pr-eol.log"
+  local pr_punctuation_dir="$tmp_root/specs/998g-bug049-separate-pr-punctuation"
+  local pr_punctuation_log="$tmp_root/bug049-separate-pr-punctuation.log"
+  local pull_request_dir="$tmp_root/specs/998h-bug049-separate-pull-request"
+  local pull_request_log="$tmp_root/bug049-separate-pull-request.log"
+
+  emit_g040_fixture "$process_dir" "done" \
+    "The verifier runs in a separate process. A second verifier runs in a Separate Process. The final verifier runs in a SEPARATE PROCESS." \
+    "no" "no"
+  emit_g040_fixture "$pr_eol_dir" "done" \
+    "Remaining work moves to a separate PR" \
+    "no" "no"
+  emit_g040_fixture "$pr_punctuation_dir" "done" \
+    "Remaining work moves to a SEPARATE PR." \
+    "no" "no"
+  emit_g040_fixture "$pull_request_dir" "done" \
+    "Remaining work moves to a Separate Pull Request." \
+    "no" "no"
+
+  echo "Running BUG-049 negative: separate process case variants remain inert..."
+  run_capture "$process_log" bash "$GUARD_SCRIPT" "$process_dir" >/dev/null
+  assert_log_not_contains "$process_log" \
+    "deferral language hit" \
+    "BUG-049 SCN-B049-001/004: complete process tokens do not match the PR alternative"
+
+  echo "Running BUG-049 positive: separate PR at end of line remains blocking..."
+  run_capture "$pr_eol_log" bash "$GUARD_SCRIPT" "$pr_eol_dir" >/dev/null
+  assert_log_contains "$pr_eol_log" \
+    "deferral language hit" \
+    "BUG-049 SCN-B049-002: a complete PR token at end of line remains blocking"
+
+  echo "Running BUG-049 positive: case-insensitive separate PR with punctuation remains blocking..."
+  run_capture "$pr_punctuation_log" bash "$GUARD_SCRIPT" "$pr_punctuation_dir" >/dev/null
+  assert_log_contains "$pr_punctuation_log" \
+    "deferral language hit" \
+    "BUG-049 SCN-B049-002/004: a case variant followed by punctuation remains blocking"
+
+  echo "Running BUG-049 positive: separate pull request remains blocking..."
+  run_capture "$pull_request_log" bash "$GUARD_SCRIPT" "$pull_request_dir" >/dev/null
+  assert_log_contains "$pull_request_log" \
+    "deferral language hit" \
+    "BUG-049 SCN-B049-003: the complete pull request phrase remains blocking"
+}
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG049_ONLY:-0}" == "1" ]]; then
+  mkdir -p "$tmp_root/specs" "$tmp_root/.specify/memory"
+  clone_framework_surface "$tmp_root"
+  git -C "$tmp_root" init -q
+  export BUBBLES_REPO_ROOT="$tmp_root"
+  run_bug049_regression_cases
+  echo "----------------------------------------"
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard BUG-049 selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard BUG-049 selftest passed."
+  exit 0
+fi
+
 emit_g040_cw_fixture() {
   # G040 / Check 18 certifying-window fixture builder (report.md marker parity
   # with artifact-lint.sh Check 3). Exercises the prior-window suppression added
@@ -1992,6 +2059,469 @@ with open(path, "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 }
+
+# Regression: bugs/BUG-047-reasoned-skip-phase-accounting/
+#
+# Build one composed Check 6 + Check 7A packet, then vary only the skip record.
+# The positive record is deliberately absent from completedPhaseClaims and has
+# equal decision timestamps. The adversarial twins prove that the exemption is
+# unavailable to reasonless, malformed, re-evaluation-incomplete, unknown,
+# never-skip, and genuinely executed records.
+mutate_bug047_reasoned_skip_fixture() {
+  local state_file="$1"
+  local variant="$2"
+
+  python3 - "$state_file" "$variant" <<'PY'
+import json
+import sys
+
+path, variant = sys.argv[1:3]
+with open(path, encoding="utf-8") as handle:
+  data = json.load(handle)
+
+data["status"] = "in_progress"
+data["workflowMode"] = "bugfix-fastlane"
+snapshot = data.get("policySnapshot")
+if isinstance(snapshot, dict):
+  snapshot["workflowMode"] = "bugfix-fastlane"
+
+required = [
+  "implement",
+  "test",
+  "regression",
+  "simplify",
+  "stabilize",
+  "security",
+  "validate",
+  "audit",
+]
+target_phase = "stabilize"
+if variant == "unknown":
+  target_phase = "not-registered-phase"
+elif variant == "never-skip":
+  target_phase = "validate"
+
+claim_phases = [phase for phase in required if phase != target_phase]
+if variant == "unknown":
+  claim_phases = [phase for phase in required if phase != "stabilize"]
+elif variant == "executed":
+  claim_phases = list(required)
+
+execution = data.get("execution")
+if not isinstance(execution, dict):
+  execution = {}
+  data["execution"] = execution
+execution["completedPhaseClaims"] = [
+  {"phase": phase, "agent": f"bubbles.{phase}"}
+  for phase in claim_phases
+]
+
+timings = {
+  "implement": ("2026-08-31T09:00:00Z", "2026-08-31T09:04:00Z"),
+  "test": ("2026-08-31T09:09:00Z", "2026-08-31T09:16:00Z"),
+  "regression": ("2026-08-31T09:23:00Z", "2026-08-31T09:29:00Z"),
+  "simplify": ("2026-08-31T09:38:00Z", "2026-08-31T09:42:00Z"),
+  "stabilize": ("2026-08-31T09:53:00Z", "2026-08-31T10:01:00Z"),
+  "security": ("2026-08-31T10:13:00Z", "2026-08-31T10:18:00Z"),
+  "validate": ("2026-08-31T10:32:00Z", "2026-08-31T10:39:00Z"),
+  "audit": ("2026-08-31T10:55:00Z", "2026-08-31T11:03:00Z"),
+}
+history = []
+for phase in claim_phases:
+  if phase == target_phase:
+    continue
+  started, completed = timings[phase]
+  history.append({
+    "phase": phase,
+    "agent": f"bubbles.{phase}",
+    "phasesExecuted": [phase],
+    "startedAt": started,
+    "completedAt": completed,
+  })
+
+decision = {
+  "phase": target_phase,
+  "agent": "bubbles.workflow",
+  "outcome": "skipped",
+  "reason": "Stability pass skipped — scope defines no latency SLAs or performance targets (runner: bubbles.workflow)",
+  "changedSurface": [
+    "bubbles/scripts/state-transition-guard.sh",
+    "bubbles/scripts/state-transition-guard-selftest.sh",
+  ],
+  "reevaluated": False,
+  "phasesExecuted": [target_phase],
+  "startedAt": "2026-08-31T11:17:00Z",
+  "completedAt": "2026-08-31T11:17:00Z",
+}
+
+if variant == "reasonless":
+  decision["reason"] = ""
+elif variant == "malformed":
+  decision["changedSurface"] = "bubbles/scripts/state-transition-guard.sh"
+elif variant == "reevaluated-without-trigger":
+  decision["reevaluated"] = True
+elif variant == "executed":
+  decision = {
+    "phase": "stabilize",
+    "agent": "bubbles.stabilize",
+    "outcome": "executed",
+    "phasesExecuted": ["stabilize"],
+    "startedAt": "2026-08-31T11:17:00Z",
+    "completedAt": "2026-08-31T11:17:00Z",
+  }
+
+history.append(decision)
+execution["executionHistory"] = history
+data.pop("executionHistory", None)
+
+certification = data.get("certification")
+if isinstance(certification, dict):
+  certification["status"] = "in_progress"
+  certification["certifiedCompletedPhases"] = []
+
+with open(path, "w", encoding="utf-8") as handle:
+  json.dump(data, handle, indent=2)
+  handle.write("\n")
+PY
+}
+
+run_bug047_regression_cases() {
+  local base_dir="$tmp_root/specs/952-bug047-base"
+  local canonical_dir="$tmp_root/specs/953-bug047-canonical-reasoned-skip"
+  local reasonless_dir="$tmp_root/specs/954-bug047-reasonless-skip"
+  local malformed_dir="$tmp_root/specs/955-bug047-malformed-skip"
+  local reevaluated_dir="$tmp_root/specs/956-bug047-reevaluated-skip"
+  local unknown_dir="$tmp_root/specs/957-bug047-unknown-skip"
+  local never_skip_dir="$tmp_root/specs/958-bug047-never-skip"
+  local executed_dir="$tmp_root/specs/959-bug047-executed-zero-duration"
+  local canonical_log="$tmp_root/bug047-canonical-reasoned-skip.log"
+  local reasonless_log="$tmp_root/bug047-reasonless-skip.log"
+  local malformed_log="$tmp_root/bug047-malformed-skip.log"
+  local reevaluated_log="$tmp_root/bug047-reevaluated-skip.log"
+  local unknown_log="$tmp_root/bug047-unknown-skip.log"
+  local never_skip_log="$tmp_root/bug047-never-skip.log"
+  local executed_log="$tmp_root/bug047-executed-zero-duration.log"
+
+  emit_base_fixture "$base_dir"
+  mutate_delivery_contract "$base_dir/state.json"
+  cp -R "$base_dir" "$canonical_dir"
+  mutate_bug047_reasoned_skip_fixture "$canonical_dir/state.json" "canonical"
+  cp -R "$base_dir" "$reasonless_dir"
+  mutate_bug047_reasoned_skip_fixture "$reasonless_dir/state.json" "reasonless"
+  cp -R "$base_dir" "$malformed_dir"
+  mutate_bug047_reasoned_skip_fixture "$malformed_dir/state.json" "malformed"
+  cp -R "$base_dir" "$reevaluated_dir"
+  mutate_bug047_reasoned_skip_fixture "$reevaluated_dir/state.json" "reevaluated-without-trigger"
+  cp -R "$base_dir" "$unknown_dir"
+  mutate_bug047_reasoned_skip_fixture "$unknown_dir/state.json" "unknown"
+  cp -R "$base_dir" "$never_skip_dir"
+  mutate_bug047_reasoned_skip_fixture "$never_skip_dir/state.json" "never-skip"
+  cp -R "$base_dir" "$executed_dir"
+  mutate_bug047_reasoned_skip_fixture "$executed_dir/state.json" "executed"
+
+  echo "Running BUG-047 canonical reasoned-skip accounting selftest..."
+  run_capture "$canonical_log" bash "$GUARD_SCRIPT" "$canonical_dir" >/dev/null
+  assert_log_contains "$canonical_log" \
+    "Required phase 'stabilize' accounted by canonical reasoned skip in executionHistory (no completion claim)" \
+    "BUG-047 SCN-B047-001: a registry-authorized reasoned skip satisfies Check 6 without a completion claim"
+  assert_log_not_contains "$canonical_log" \
+    "Required phase 'stabilize' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-001: Check 6 no longer reports the canonical skip missing"
+  assert_log_not_contains "$canonical_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:stabilize" \
+    "BUG-047 SCN-B047-002: Check 7A does not adjudicate the zero-duration skip decision as executed work"
+  if python3 - "$canonical_dir/state.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+claims = (data.get("execution") or {}).get("completedPhaseClaims") or []
+names = [entry if isinstance(entry, str) else entry.get("phase") for entry in claims]
+raise SystemExit(0 if "stabilize" not in names else 1)
+PY
+  then
+    pass "BUG-047 SCN-B047-001: the canonical skipped phase is absent from completedPhaseClaims"
+  else
+    fail "BUG-047 SCN-B047-001: the canonical skipped phase must never enter completedPhaseClaims"
+  fi
+
+  echo "Running BUG-047 reasonless-skip adversarial selftest..."
+  run_capture "$reasonless_log" bash "$GUARD_SCRIPT" "$reasonless_dir" >/dev/null
+  assert_log_contains "$reasonless_log" \
+    "Required phase 'stabilize' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-004: a reasonless skip remains missing in Check 6"
+  assert_log_contains "$reasonless_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:stabilize" \
+    "BUG-047 SCN-B047-004: a reasonless skip gains no Check 7A duration exemption"
+
+  echo "Running BUG-047 malformed-skip adversarial selftest..."
+  run_capture "$malformed_log" bash "$GUARD_SCRIPT" "$malformed_dir" >/dev/null
+  assert_log_contains "$malformed_log" \
+    "Required phase 'stabilize' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-004: a non-list changedSurface keeps the skip invalid in Check 6"
+  assert_log_contains "$malformed_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:stabilize" \
+    "BUG-047 SCN-B047-004: a malformed skip gains no Check 7A duration exemption"
+
+  echo "Running BUG-047 incomplete re-evaluation adversarial selftest..."
+  run_capture "$reevaluated_log" bash "$GUARD_SCRIPT" "$reevaluated_dir" >/dev/null
+  assert_log_contains "$reevaluated_log" \
+    "Required phase 'stabilize' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-004: a re-evaluated skip without a trigger remains invalid"
+  assert_log_contains "$reevaluated_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:stabilize" \
+    "BUG-047 SCN-B047-004: an incomplete re-evaluation gains no Check 7A exemption"
+
+  echo "Running BUG-047 unknown-phase skip adversarial selftest..."
+  run_capture "$unknown_log" bash "$GUARD_SCRIPT" "$unknown_dir" >/dev/null
+  assert_log_contains "$unknown_log" \
+    "Required phase 'stabilize' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-004: an unknown skip phase cannot account for the required stabilize phase"
+  assert_log_contains "$unknown_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:not-registered-phase" \
+    "BUG-047 SCN-B047-004: an unknown skip phase gains no Check 7A exemption"
+
+  echo "Running BUG-047 never-skip adversarial selftest..."
+  run_capture "$never_skip_log" bash "$GUARD_SCRIPT" "$never_skip_dir" >/dev/null
+  assert_log_contains "$never_skip_log" \
+    "Required phase 'validate' NOT in execution/certification phase records" \
+    "BUG-047 SCN-B047-004: a registry neverSkip phase cannot be accounted as skipped"
+  assert_log_contains "$never_skip_log" \
+    "zero-duration entries for non-trivial phases: bubbles.workflow:validate" \
+    "BUG-047 SCN-B047-004: a neverSkip record gains no Check 7A exemption"
+
+  echo "Running BUG-047 executed zero-duration control selftest..."
+  run_capture "$executed_log" bash "$GUARD_SCRIPT" "$executed_dir" >/dev/null
+  assert_log_contains "$executed_log" \
+    "Required phase 'stabilize' recorded in execution/certification phase records" \
+    "BUG-047 SCN-B047-003: the executed control remains a completion claim for Check 6"
+  assert_log_contains "$executed_log" \
+    "zero-duration entries for non-trivial phases: bubbles.stabilize:stabilize" \
+    "BUG-047 SCN-B047-003: genuine zero-duration stabilize execution remains blocked by Check 7A"
+}
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG047_ONLY:-0}" == "1" ]]; then
+  mkdir -p "$tmp_root/specs" "$tmp_root/.specify/memory"
+  clone_framework_surface "$tmp_root"
+  git -C "$tmp_root" init -q
+  export BUBBLES_REPO_ROOT="$tmp_root"
+  cat <<'EOF' > "$tmp_root/.specify/memory/bubbles.session.json"
+{
+  "executionRuntime": "manual"
+}
+EOF
+  run_bug047_regression_cases
+  echo "----------------------------------------"
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard BUG-047 selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard BUG-047 selftest passed."
+  exit 0
+fi
+
+run_bug048_regression_cases() {
+  local owner_feature_dir="$tmp_root/specs/998-bug048-check8-owner-label-path"
+  local owner_scope_file="$owner_feature_dir/scopes/01-index-parity-proof/scope.md"
+  local owner_scenario_test="$owner_feature_dir/tests/per-scope-regression.e2e.spec.ts"
+  local owner_log="$tmp_root/bug048-check8-owner-label-path.log"
+  local basename_feature_dir="$tmp_root/specs/998b-bug048-check8-basename-path"
+  local basename_scope_file="$basename_feature_dir/scopes/01-index-parity-proof/scope.md"
+  local basename_test="$basename_feature_dir/tests/smoke.test"
+  local basename_log="$tmp_root/bug048-check8-basename-path.log"
+  local missing_feature_dir="$tmp_root/specs/998c-bug048-check8-missing-path"
+  local missing_scope_file="$missing_feature_dir/scopes/01-index-parity-proof/scope.md"
+  local missing_log="$tmp_root/bug048-check8-missing-path.log"
+  local unrelated_feature_dir="$tmp_root/specs/998d-bug048-check8-unrelated-table"
+  local unrelated_scope_file="$unrelated_feature_dir/scopes/01-index-parity-proof/scope.md"
+  local unrelated_scenario_test="$unrelated_feature_dir/tests/per-scope-regression.e2e.spec.ts"
+  local unrelated_log="$tmp_root/bug048-check8-unrelated-table.log"
+  local guard_status
+
+  emit_per_scope_fixture "$owner_feature_dir" "Done" "scope-1-index-parity-proof"
+  mutate_delivery_contract "$owner_feature_dir/state.json"
+  cat <<'EOF' > "$owner_scope_file"
+# Scope 01: BUG-048 Owner Label Path
+
+**Status:** Done
+
+### Goal
+
+Prove Finding Accounting owner labels are inert during Test Plan path extraction.
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Regression E2E | `e2e-ui` | `__SCENARIO_TEST__` | Existing scenario test remains the only planned file. | `selftest:bug048-owner-label` | No |
+
+### Finding Accounting
+
+| Finding | Owner | Status |
+| --- | --- | --- |
+| `F-B048-001` | `bubbles.test` | Addressed |
+| `F-B048-002` | `bubbles.test` | Addressed |
+| `F-B048-003` | `bubbles.test` | Addressed |
+| `F-B048-004` | `bubbles.test` | Addressed |
+| `F-B048-005` | `bubbles.test` | Addressed |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] Finding Accounting owner labels remain metadata -> Evidence: report.md#summary
+EOF
+  bubbles_sed_inplace "s|__SCENARIO_TEST__|$owner_scenario_test|g" "$owner_scope_file"
+
+  echo "Running BUG-048 Finding Accounting owner-label path selftest..."
+  guard_status="$(run_capture "$owner_log" bash "$GUARD_SCRIPT" "$owner_feature_dir")"
+  if [[ "$guard_status" -eq 0 ]]; then
+    pass "BUG-048 SCN-B048-001: Finding Accounting owner labels do not block Check 8"
+  else
+    fail "BUG-048 SCN-B048-001: Finding Accounting owner labels must not block Check 8"
+  fi
+  assert_log_contains "$owner_log" \
+    "Test file exists: $owner_scenario_test" \
+    "BUG-048 SCN-B048-001: Check 8 still validates the real Test Plan file"
+  assert_log_not_contains "$owner_log" \
+    "Test Plan references non-existent or non-resolvable file: bubbles.test" \
+    "BUG-048 SCN-B048-001: bubbles.test owner labels are never interpreted as paths"
+
+  emit_per_scope_fixture "$basename_feature_dir" "Done" "scope-1-index-parity-proof"
+  mutate_delivery_contract "$basename_feature_dir/state.json"
+  printf '%s\n' 'BUG-048 basename-only smoke test fixture.' > "$basename_test"
+  cat <<'EOF' > "$basename_scope_file"
+# Scope 01: BUG-048 Basename Path
+
+**Status:** Done
+
+### Goal
+
+Prove a basename-only dot-test file in a Test Plan path column resolves uniquely.
+
+### Test Plan
+
+| ID | Scenario | Test | Type | File/Location | Command | Live System |
+| --- | --- | --- | --- | --- | --- | --- |
+| T1 | SCN-B048-002 | Regression E2E: basename smoke test | functional | `smoke.test` | `selftest:bug048-basename` | No |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] Basename-only dot-test resolution is preserved -> Evidence: report.md#summary
+EOF
+
+  echo "Running BUG-048 basename-only smoke.test selftest..."
+  guard_status="$(run_capture "$basename_log" bash "$GUARD_SCRIPT" "$basename_feature_dir")"
+  if [[ "$guard_status" -eq 0 ]]; then
+    pass "BUG-048 SCN-B048-002: a unique basename-only smoke.test remains valid"
+  else
+    fail "BUG-048 SCN-B048-002: a unique basename-only smoke.test must remain valid"
+  fi
+  assert_log_contains "$basename_log" \
+    "Test Plan uses basename-only path 'smoke.test'; uniquely resolved to" \
+    "BUG-048 SCN-B048-002: Check 8 resolves smoke.test through existing basename logic"
+  assert_log_not_contains "$basename_log" \
+    "Test Plan references non-existent or non-resolvable file: smoke.test" \
+    "BUG-048 SCN-B048-002: the resolved smoke.test is not reported missing"
+
+  emit_per_scope_fixture "$missing_feature_dir" "Done" "scope-1-index-parity-proof"
+  mutate_delivery_contract "$missing_feature_dir/state.json"
+  cat <<'EOF' > "$missing_scope_file"
+# Scope 01: BUG-048 Missing Path
+
+**Status:** Done
+
+### Goal
+
+Prove a missing dot-test file in a real Test Plan path column remains blocking.
+
+### Test Plan
+
+| ID | Scenario | Test | Type | Path | Command | Live System |
+| --- | --- | --- | --- | --- | --- | --- |
+| T1 | SCN-B048-003 | Regression E2E: missing path adversary | functional | `missing.test` | `selftest:bug048-missing` | No |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] Real missing Test Plan paths remain blocking -> Evidence: report.md#summary
+EOF
+
+  echo "Running BUG-048 missing.test adversarial selftest..."
+  guard_status="$(run_capture "$missing_log" bash "$GUARD_SCRIPT" "$missing_feature_dir")"
+  if [[ "$guard_status" -ne 0 ]]; then
+    pass "BUG-048 SCN-B048-003: missing.test in a real path column remains blocking"
+  else
+    fail "BUG-048 SCN-B048-003: missing.test in a real path column must block"
+  fi
+  assert_log_contains "$missing_log" \
+    "Test Plan references non-existent or non-resolvable file: missing.test" \
+    "BUG-048 SCN-B048-003: Check 8 retains existing missing-basename enforcement"
+
+  emit_per_scope_fixture "$unrelated_feature_dir" "Done" "scope-1-index-parity-proof"
+  mutate_delivery_contract "$unrelated_feature_dir/state.json"
+  cat <<'EOF' > "$unrelated_scope_file"
+# Scope 01: BUG-048 Unrelated Table
+
+**Status:** Done
+
+### Goal
+
+Prove supported test suffixes outside Test Plan sections remain inert.
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Regression E2E | `e2e-ui` | `__SCENARIO_TEST__` | Existing scenario test remains the only planned file. | `selftest:bug048-unrelated-table` | No |
+
+### Release Metadata
+
+| File/Location | Meaning |
+| --- | --- |
+| `unrelated-metadata.test` | A file-shaped metadata value outside the Test Plan. |
+
+### Definition of Done
+
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior -> Evidence: report.md#test-evidence
+- [x] Broader E2E regression suite passes -> Evidence: report.md#test-evidence
+- [x] File-shaped metadata remains inert -> Evidence: report.md#summary
+EOF
+  bubbles_sed_inplace "s|__SCENARIO_TEST__|$unrelated_scenario_test|g" "$unrelated_scope_file"
+
+  echo "Running BUG-048 unrelated-table suffix adversarial selftest..."
+  guard_status="$(run_capture "$unrelated_log" bash "$GUARD_SCRIPT" "$unrelated_feature_dir")"
+  if [[ "$guard_status" -eq 0 ]]; then
+    pass "BUG-048 SCN-B048-004: a supported suffix in another table remains inert"
+  else
+    fail "BUG-048 SCN-B048-004: a supported suffix in another table must remain inert"
+  fi
+  assert_log_contains "$unrelated_log" \
+    "Test file exists: $unrelated_scenario_test" \
+    "BUG-048 SCN-B048-004: Check 8 still validates the real Test Plan file"
+  assert_log_not_contains "$unrelated_log" \
+    "unrelated-metadata.test" \
+    "BUG-048 SCN-B048-004: unrelated-table metadata never enters Check 8 path handling"
+}
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG048_ONLY:-0}" == "1" ]]; then
+  mkdir -p "$tmp_root/specs" "$tmp_root/.specify/memory"
+  clone_framework_surface "$tmp_root"
+  git -C "$tmp_root" init -q
+  export BUBBLES_REPO_ROOT="$tmp_root"
+  run_bug048_regression_cases
+  echo "----------------------------------------"
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard BUG-048 selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard BUG-048 selftest passed."
+  exit 0
+fi
 
 mutate_lockdown_round_mismatch() {
   local state_file="$1"
@@ -2842,6 +3372,8 @@ assert_log_not_contains "$c13_default_log" \
   "this is a TIMEOUT, not a lint failure" \
   "Check 13 does not take the timeout path with the real lint at the default cap" # portable-ok: assertion prose, not a timeout invocation
 
+run_bug048_regression_cases
+
 # --- Check 8: shell (.sh) test-path recognition (Test File Existence) ---
 # Regression guard for the Check 8 extension-alternation parity fix. Check 8's
 # test-path extraction regex historically recognized only
@@ -3191,6 +3723,8 @@ assert_log_not_contains "$partial_certified_log" "unhashable type: 'dict'" "Chec
 # the Check 6 needle asserted above, kept adjacent so both halves sit together.
 assert_log_contains "$partial_certified_log" "Phase 'audit' has specialist provenance from bubbles.audit" "Check 6B: the 'audit' claim record carries specialist provenance from bubbles.audit"
 assert_log_not_contains "$partial_certified_log" "Required phase 'audit' NOT in execution/certification phase records" "Check 6 emits no BLOCK for the same 'audit' record Check 6B accepted above (the two checks agree)"
+
+run_bug047_regression_cases
 
 # Check 6B — a phase whose owning agent is NOT named "bubbles.<phase>" must be
 # resolved through the owner table. Asserting on Check 6B log content only, per
@@ -3887,6 +4421,8 @@ echo "Running G040 Check 18 — positive: status=done with mixed schema tokens A
 g040_pos_mixed_log="$tmp_root/g040-pos-mixed.log"
 run_capture "$g040_pos_mixed_log" bash "$GUARD_SCRIPT" "$g040_pos_strict_done_mixed_dir" >/dev/null
 assert_log_contains "$g040_pos_mixed_log" "deferral language hit" "G040 Check 18 BLOCKs under status=done when real deferral prose ('punted to Phase 3') accompanies schema followUp* tokens"
+
+run_bug049_regression_cases
 
 # ----------------------------------------------------------------------------
 # G040 / Check 18 — certifying-window boundary (report.md marker parity with
