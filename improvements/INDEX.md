@@ -44,6 +44,8 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
+| IMP-054 | Hybrid Evidence Research Runtime | IN PROGRESS — ECF-01 foundation landed; research-runtime scopes remain pending | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |
+| IMP-055 | Measured Budget and Session Epoch Runtime | IN PROGRESS — ECF-01 foundation landed; admission, budget, and epoch scopes remain pending | framework-health | COST-12, HO-6, EV-16, REG-20 | 2026-08-27 |
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
 | IMP-030 | Controlled Technical Prose: term registry enforcement + prose-form governance | APPLIED 2026-08-01 — SCOPE-1/2/3/4 landed; SCOPE-5 (Gate G132) DEFERRED under its own entry condition, no gate registered | framework-health (G125) | REG-3, DOC-2 | 2026-08-01 |
 | IMP-031 | Feature Reachability: close the orphaned-implementation hole | APPLIED 2026-08-01 — SCOPE-1/2/3/4/5/6/8/9 landed; SCOPE-7 (gate registration) DEFERRED under its own entry condition, no gate registered | framework-health (G125) | COV-3, REG-4, DOC-3 | 2026-08-01 |

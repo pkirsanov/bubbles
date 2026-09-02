@@ -58,6 +58,7 @@ scenario manifest v2 schema selftest|run_check "Scenario manifest v2 schema self
 scenario manifest migration selftest|run_check "Scenario manifest migration selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-migrate-selftest.sh"
 YAML schema dispatch selftest|run_check "YAML schema dispatch selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/yaml-schema-validate-selftest.sh"
 framework validation wiring selftest|run_check "Framework validation wiring selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/framework-validation-wiring-selftest.sh"
+execution-control store selftest|run_check "Execution-control store selftest (IMP-054/055 / ECF-01)" bash "$SCRIPT_DIR/execution-control-selftest.sh"
 EOF
 
 resolver_line="$(grep -nFx 'run_check "Scenario linked-test resolution selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-test-resolve-selftest.sh"' "$VALIDATOR" | cut -d: -f1)"

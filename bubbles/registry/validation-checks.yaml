@@ -375,6 +375,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -861,6 +863,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -869,6 +872,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -1159,6 +1163,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -1645,6 +1651,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -1653,6 +1660,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -1861,6 +1869,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -2347,6 +2357,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -2355,6 +2366,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -2580,6 +2592,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -3066,6 +3080,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -3074,6 +3089,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -3282,6 +3298,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -3768,6 +3786,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -3776,6 +3795,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -4025,6 +4045,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -4511,6 +4533,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -4519,6 +4542,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -4727,6 +4751,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -5213,6 +5239,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -5221,6 +5248,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -5444,6 +5472,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -5930,6 +5960,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -5938,6 +5969,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -6146,6 +6178,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -6632,6 +6666,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -6640,6 +6675,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -6878,6 +6914,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -7364,6 +7402,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -7372,6 +7411,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -7580,6 +7620,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -8066,6 +8108,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -8074,6 +8117,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -8282,6 +8326,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -8768,6 +8814,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -8776,6 +8823,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -9094,6 +9142,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -9580,6 +9630,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -9588,6 +9639,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -9929,6 +9981,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -10415,6 +10469,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -10423,6 +10478,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -10631,6 +10687,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -11117,6 +11175,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -11125,6 +11184,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -11382,6 +11442,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -11868,6 +11930,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -11876,6 +11939,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -12097,6 +12161,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -12583,6 +12649,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -12591,6 +12658,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -12799,6 +12867,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -13285,6 +13355,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -13293,6 +13364,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -13537,6 +13609,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -14023,6 +14097,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -14031,6 +14106,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -14415,6 +14491,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -14901,6 +14979,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -14909,6 +14988,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -15117,6 +15197,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -15603,6 +15685,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -15611,6 +15694,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -15910,6 +15994,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -16396,6 +16482,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -16404,6 +16491,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -16703,6 +16791,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -17189,6 +17279,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -17197,6 +17288,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -17414,6 +17506,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -17900,6 +17994,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -17908,6 +18003,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -18170,6 +18266,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -18656,6 +18754,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -18664,6 +18763,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -18872,6 +18972,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -19358,6 +19460,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -19366,6 +19469,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -19574,6 +19678,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -20060,6 +20166,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -20068,6 +20175,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -20276,6 +20384,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -20762,6 +20872,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -20770,6 +20881,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -20978,6 +21090,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -21464,6 +21578,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -21472,6 +21587,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -21680,6 +21796,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -22166,6 +22284,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -22174,6 +22293,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -22382,6 +22502,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -22868,6 +22990,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -22876,6 +22999,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -23113,6 +23237,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -23599,6 +23725,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -23607,6 +23734,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -23815,6 +23943,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -24301,6 +24431,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -24309,6 +24440,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -24682,6 +24814,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -25168,6 +25302,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -25176,6 +25311,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -25242,6 +25378,18 @@ checks:
     - shellcheck
     - shfmt
     - yq
+  vc-bubbles-scripts-execution-control-selftest:
+    script: bubbles/scripts/execution-control-selftest.sh
+    label: "Execution-control store selftest (IMP-054/055 / ECF-01)"
+    closureComplete: true
+    inputs:
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
+    - bubbles/schemas/execution-control-event.schema.json
+    - bubbles/scripts/execution-control-store.py
+    commands:
+    - python3
+    - shellcheck
   vc-bubbles-scripts-report-sections-selftest:
     script: bubbles/scripts/report-sections-selftest.sh
     label: "Report-section contract selftest (IMP-047 / S-B)"
@@ -25421,6 +25569,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -25907,6 +26057,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -25915,6 +26066,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -26123,6 +26275,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -26609,6 +26763,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -26617,6 +26772,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -26833,6 +26989,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -27319,6 +27477,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -27327,6 +27486,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -27721,6 +27881,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -28207,6 +28369,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -28215,6 +28378,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -28477,6 +28641,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -28963,6 +29129,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -28971,6 +29138,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -29189,6 +29357,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -29675,6 +29845,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -29683,6 +29854,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -29891,6 +30063,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -30377,6 +30551,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -30385,6 +30560,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -30593,6 +30769,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -31079,6 +31257,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -31087,6 +31266,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -31295,6 +31475,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -31781,6 +31963,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -31789,6 +31972,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -31997,6 +32181,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -32483,6 +32669,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -32491,6 +32678,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -32699,6 +32887,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -33185,6 +33375,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -33193,6 +33384,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -33412,6 +33604,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -33898,6 +34092,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -33906,6 +34101,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -34114,6 +34310,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -34600,6 +34798,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -34608,6 +34807,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -34816,6 +35016,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -35302,6 +35504,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -35310,6 +35513,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -35582,6 +35786,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -36068,6 +36274,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -36076,6 +36283,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -36284,6 +36492,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -36770,6 +36980,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -36778,6 +36989,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -36986,6 +37198,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -37472,6 +37686,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -37480,6 +37695,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -37688,6 +37904,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -38174,6 +38392,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -38182,6 +38401,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -38390,6 +38610,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -38876,6 +39098,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -38884,6 +39107,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -39143,6 +39367,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -39629,6 +39855,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -39637,6 +39864,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -39845,6 +40073,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -40331,6 +40561,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -40339,6 +40570,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -40547,6 +40779,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -41033,6 +41267,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -41041,6 +41276,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -41286,6 +41522,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -41772,6 +42010,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -41780,6 +42019,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -42032,6 +42272,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -42518,6 +42760,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -42526,6 +42769,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -42849,6 +43093,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -43335,6 +43581,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -43343,6 +43590,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -43571,6 +43819,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -44057,6 +44307,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -44065,6 +44316,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -44273,6 +44525,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -44759,6 +45013,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -44767,6 +45022,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -45027,6 +45283,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -45513,6 +45771,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -45521,6 +45780,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -45729,6 +45989,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -46215,6 +46477,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -46223,6 +46486,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -46431,6 +46695,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -46917,6 +47183,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -46925,6 +47192,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -47170,6 +47438,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -47656,6 +47926,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -47664,6 +47935,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -47872,6 +48144,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -48358,6 +48632,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -48366,6 +48641,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -48574,6 +48850,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -49060,6 +49338,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -49068,6 +49347,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -49276,6 +49556,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -49762,6 +50044,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -49770,6 +50053,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -49978,6 +50262,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -50464,6 +50750,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -50472,6 +50759,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -50798,6 +51086,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -51284,6 +51574,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -51292,6 +51583,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -51520,6 +51812,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -52006,6 +52300,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -52014,6 +52309,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -52222,6 +52518,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -52708,6 +53006,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -52716,6 +53015,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -52924,6 +53224,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -53410,6 +53712,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -53418,6 +53721,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -53626,6 +53930,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -54112,6 +54418,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -54120,6 +54427,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -54454,6 +54762,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -54940,6 +55250,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -54948,6 +55259,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -55575,6 +55887,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -56061,6 +56375,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -56069,6 +56384,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -56277,6 +56593,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -56763,6 +57081,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -56771,6 +57090,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -56979,6 +57299,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -57465,6 +57787,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -57473,6 +57796,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -57698,6 +58022,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -58184,6 +58510,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -58192,6 +58519,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -58400,6 +58728,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -58886,6 +59216,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -58894,6 +59225,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -59221,6 +59553,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -59707,6 +60041,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -59715,6 +60050,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -59923,6 +60259,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -60409,6 +60747,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -60417,6 +60756,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -60688,6 +61028,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -61174,6 +61516,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -61182,6 +61525,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -61420,6 +61764,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -61906,6 +62252,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -61914,6 +62261,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -62122,6 +62470,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -62608,6 +62958,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -62616,6 +62967,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -62976,6 +63328,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -63463,6 +63817,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -63471,6 +63826,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -63702,6 +64058,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -64189,6 +64547,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -64197,6 +64556,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -64443,6 +64803,8 @@ checks:
     - bubbles/scripts/evidence-receipt-check.sh
     - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
     - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lib.sh
+    - bubbles/scripts/execution-control-selftest.sh
     - bubbles/scripts/execution-substate-guard-selftest.sh
     - bubbles/scripts/execution-substate-guard.sh
     - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
@@ -64930,6 +65292,7 @@ checks:
     - bubbles/registry/validation-checks.yaml
     - bubbles/release-manifest.json
     - bubbles/requirements.txt
+    - bubbles/schemas/execution-control-event.schema.json
     - bubbles/schemas/experience-recall.schema.json
     - bubbles/schemas/goal-contract.schema.json
     - bubbles/schemas/repository-binding.schema.json
@@ -64938,6 +65301,7 @@ checks:
     - bubbles/schemas/scenario-manifest.schema.json
     - bubbles/schemas/tool-call.schema.json
     - bubbles/schemas/workflows.schema.json
+    - bubbles/scripts/execution-control-store.py
     - bubbles/scripts/experience-recall-index.py
     - bubbles/scripts/experience-recall-lifecycle.py
     - bubbles/scripts/guards/sensitive-client-storage-scan.py
@@ -65014,4 +65378,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: 830883f
+derivedAt: 734666c

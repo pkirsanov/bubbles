@@ -1145,6 +1145,7 @@ run_check "Scenario manifest v2 schema selftest (IMP-040 / COV-8)" bash "$SCRIPT
 run_check "Scenario manifest migration selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-migrate-selftest.sh"
 run_check "YAML schema dispatch selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/yaml-schema-validate-selftest.sh"
 run_check "Framework validation wiring selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/framework-validation-wiring-selftest.sh"
+run_check "Execution-control store selftest (IMP-054/055 / ECF-01)" bash "$SCRIPT_DIR/execution-control-selftest.sh"
 run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/report-sections-selftest.sh"
 # Framework-source-only: check P3 requires the repo-root BUGS.md, which the
 # release manifest classifies as neither managed nor source-only-shipped, so it
