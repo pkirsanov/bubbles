@@ -716,3 +716,96 @@ diagnostic. T17 and repurposed T49 preserve canonical precedence. T50 preserves
 semantically equal migration copies. Identity, path, alias, duplicate-edge,
 malformed-DAG, cycle, locale, and deterministic tie-break cases remain green.
 The full framework validation was not run in this invocation.
+
+## Final Independent Focused Verification At 2658ec7
+
+**Executed:** YES
+**Phase:** test
+**Claim Source:** executed
+**Captured at:** 2026-09-02T20:15:42Z
+**Source revision:** `2658ec70e9def56ba4c38f38cbde0b8fb3e44231`
+**Repository binding:** decision
+`rb:vscode-2913ac96e8446707d06d7b480573b88f:2`, control revision `2`.
+
+The tracked worktree and index were clean at entry. Local HEAD, the local
+tracking ref, and the live remote branch all resolved to the source revision
+above. The sole entry-time untracked path was
+`.specify/memory/bubbles.session.json`; current-session tool logs remain under
+`.specify/runtime/` and are excluded from the commit.
+
+### Current-session command ledger
+
+| Check | Exact command | Exit | Full-output SHA-256 |
+| --- | --- | ---: | --- |
+| Baseline | `git rev-parse`, `git ls-remote`, `git diff --quiet`, `git diff --cached --quiet`, and `git status --short --branch --untracked-files=all` in one bounded capture | 0 | `cbdb0fe7168cf474b4425441e5e237afad2cf8e9dd4cc2dfa1e1b648351e7ac1` |
+| Linked tests, ambient Python attempt | `bash bubbles/scripts/scenario-test-resolve.sh bugs/BUG-052-plan-scope-progress-precedence --repo-root /private/tmp/bubbles-ozhiva-transition-unblock-ca550392` | 2 | `a7c12c78fd7fbaacd481b74d201ef9667d7a1f9f44775b66c6139a6bf0045531` |
+| Linked tests, canonical managed Python | `python_bin="$(bash bubbles/scripts/python-env.sh --path)"; PATH="${python_bin%/python3}:$PATH" bash bubbles/scripts/scenario-test-resolve.sh bugs/BUG-052-plan-scope-progress-precedence --repo-root /private/tmp/bubbles-ozhiva-transition-unblock-ca550392` | 0 | `dd3ca9761248ce3f79cc15063f3d7323e9f32d30151874be56fa2d47a1919cfb` |
+| Authored traceability | `bash bubbles/scripts/traceability-guard.sh bugs/BUG-052-plan-scope-progress-precedence --all-scopes --coverage-policy=authored` | 0 | `98f29ee7de4ca1166745d435b9693a32beb3674165ea40b041220628d8915a9b` |
+| Scenario obligations | `bash bubbles/scripts/scenario-obligation-lint.sh bugs/BUG-052-plan-scope-progress-precedence` | 0 | `53528a05bf298246c39c7a990ed9675a86155f96f4ff0137b87026e5401a0d73` |
+| Test mechanisms | `bash bubbles/scripts/test-mechanism-lint.sh bugs/BUG-052-plan-scope-progress-precedence --repo-root /private/tmp/bubbles-ozhiva-transition-unblock-ca550392` | 0 | `afddf00438401a7653f395771efe028117bee5fcec5f799fa2d6e0ebcb181727` |
+| Artifact lint, pre-edit | `bash bubbles/scripts/artifact-lint.sh bugs/BUG-052-plan-scope-progress-precedence` | 0 | `182cf27f7948b167f9fdebccae5bf6994636355face5d8ae0a4d55666dc9b567` |
+| Complete focused selftest | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | 0 | `182379eb22dc73d0ec522e1c60246c91e74601a772f79b57be1a4e2673800d93` |
+| Adversarial regression quality | `bash bubbles/scripts/regression-quality-guard.sh --bugfix --verbose bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | 0 | `e12b53337e394cca43225836367d431cd9e94d30f56cf6b65abcdbd1b89f5074` |
+| ShellCheck | `shellcheck -x bubbles/scripts/plan-dependency-depth-guard.sh bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| Bash syntax | `bash -n bubbles/scripts/plan-dependency-depth-guard.sh bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| Source/certification identities | `shasum -a 256` over the focused source inputs plus a canonical hash of `.certification` and manifest-coverage lookups | 0 | `b818fcf85e7eef739d43865ec751c8560ba44f6894d214464e24a60fb531b490` |
+
+The first linked-test attempt did not execute the version 2 manifest check: its
+ambient interpreter lacked `jsonschema`. The repository's committed
+`python-env.sh --path` adapter selected the satisfying managed interpreter, and
+the canonical rerun resolved all seven authored references. The failed setup
+attempt remains recorded above and is not represented as behavioral evidence.
+
+### Exact focused outcomes
+
+```text
+[scenario-test-resolve] OK — 7 reference(s) resolved via literal-scan
+RESULT: PASSED (0 warnings)
+[scenario-obligation-lint] OK — 7 scenario(s) with a coherent derived obligation matrix
+[test-mechanism-lint] OK — 7 declared mechanism(s) coherent with their scenario traits
+[mutation-receipt] OK — mutationExecution adapter is none (inert)
+Artifact lint PASSED.
+PASS: T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph
+PASS: T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)
+PASS: T18 SCN-B052-003 legacy-only deep graph remains blocking (exit 1)
+PASS: T19 SCN-B052-004 canonical graph wins over execution deep graph (exit 0)
+PASS: T20 canonical empty array remains authoritative over legacy deep graph (exit 0)
+PASS: T20B SCN-B052-005 canonical null falls back to legacy deep graph
+PASS: T49 divergent legacy data cannot veto canonical scopeProgress (exit 0)
+PASS: T50 semantically equal scopeProgress authorities remain valid
+PASS: T55 inherited locale cannot alter classification or posture
+plan-dependency-depth-guard-selftest: all cases passed.
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 1
+Files with adversarial signals: 1
+# BUG-052 final independent ShellCheck
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 180 /opt/homebrew/bin/shellcheck -x bubbles/scripts/plan-dependency-depth-guard.sh bubbles/scripts/plan-dependency-depth-guard-selftest.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- output ---
+# BUG-052 final independent bash syntax
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 180 /opt/homebrew/bin/bash -n bubbles/scripts/plan-dependency-depth-guard.sh bubbles/scripts/plan-dependency-depth-guard-selftest.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- output ---
+```
+
+SCN-B052-006 is the T20 canonical-empty case. SCN-B052-007 is the T50
+semantic-equality case. T16 and T20B use the focused diagnostic helper, which
+requires guard exit `1`, the horizontal-plan diagnostic, and absence of the
+authority-conflict or incomplete-DAG substitute. The complete selftest also
+proves T49 and the locale-sensitive T55 on these exact source bytes.
+
+The production guard, focused selftest, scenario manifest, and test plan hash
+to `5949a923cbe8559ff6fcff1b483fb96c23d33ddb607087939e26b6b96f89b3b3`,
+`efe64a934e53c5a53bee62f0f59bdf7deebffb1f9287255acf99bd8bc3fd196f`,
+`63699e7e37c52e73dfe379dd6a885f9a6fd68cadd1ce5a0ccc95372b95e98984`,
+and `a5b4babb8892588d35ea999e5861224ae736b38729c13630ab26917944ff5fb2`.
+
+Full framework Test Plan item T6 was not run. It remains reserved for the one
+combined post-BUG-050 validation, so the broader-regression DoD item and the
+validate-owned certification item remain unchecked. The certification subtree
+pre-edit SHA-256 is
+`8a394402801d76dc0411e51304be63950c0f0d5e2fe618f6fcf718c8c826282a`.
