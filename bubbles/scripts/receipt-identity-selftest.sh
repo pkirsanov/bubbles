@@ -175,6 +175,12 @@ fi
 family_of() {
   printf '%s' "$1" | jq -Rr "$DEFS"' command_family' 2>&1
 }
+program_of() {
+  printf '%s' "$1" | jq -Rr "$DEFS"' program_identity' 2>&1
+}
+identity_of() {
+  printf '%s' "$1" | jq -Rr "$DEFS"' cmd_identity' 2>&1
+}
 
 for probe in \
   "node scripts/check-page.mjs alpha" \
@@ -227,6 +233,146 @@ if printf '%s' "$wrapper_adv_out" | grep -qF 'family=cargo' &&
 else
   fail "facet 2 bound: the diagnostic did not name both unwrapped identities"
   printf '  analysis: %s\n' "$wrapper_adv_out"
+fi
+
+# ---------------------------------------------------------------------------
+# Check 43 timeout transparency — GNU `timeout` and macOS coreutils
+# `gtimeout` are execution bounds, not underlying programs. Only bare canonical
+# wrapper tokens are transparent after their known options and mandatory
+# duration are consumed. A receipt cannot authenticate the executable behind a
+# path-qualified token, so system paths and attacker-controlled paths remain
+# opaque alongside unknown options, malformed durations, and near-miss names.
+# ---------------------------------------------------------------------------
+timeout_program="scenario-test-resolve-selftest.sh"
+timeout_identity="scenario-test-resolve-selftest.sh"
+for probe in \
+  "bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout -k 5 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --kill-after=5 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --kill-after 5 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout -s TERM 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --signal=TERM 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --signal TERM 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout -v 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --verbose 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --foreground 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --preserve-status 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --kill-after=inf 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout --signal TERM --kill-after=5 --foreground --verbose --preserve-status 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "gtimeout -k 5 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "gtimeout -- 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "timeout 540 /usr/bin/env bash bubbles/scripts/scenario-test-resolve-selftest.sh" \
+  "env CHECK=1 bash -c gtimeout --verbose 150 sh bubbles/scripts/scenario-test-resolve-selftest.sh"; do
+  observed_family="$(family_of "$probe")"
+  observed_program="$(program_of "$probe")"
+  observed_identity="$(identity_of "$probe")"
+  if [[ "$observed_family" == "$timeout_program" &&
+    "$observed_program" == "$timeout_program" &&
+    "$observed_identity" == "$timeout_identity" ]]; then
+    pass "timeout transparency: '$probe' has the bare script family/program/identity"
+  else
+    fail "timeout transparency: '$probe' resolved family='$observed_family' program='$observed_program' identity='$observed_identity'"
+  fi
+done
+
+for probe in \
+  "mytimeout 150 cargo test" \
+  "timeout-wrapper 150 cargo test" \
+  "/tmp/timeout 150 cargo test" \
+  "/usr/bin/timeout 150 cargo test" \
+  "/usr/local/bin/gtimeout 150 cargo test" \
+  "timeout --unknown 150 cargo test" \
+  "timeout -x 150 cargo test" \
+  "timeout --help 150 cargo test" \
+  "timeout --version 150 cargo test" \
+  "timeout -f 150 cargo test" \
+  "timeout -p 150 cargo test" \
+  "timeout -vfp 150 cargo test" \
+  "timeout -k.5 150 cargo test" \
+  "timeout -sTERM 150 cargo test" \
+  "timeout -s9 150 cargo test" \
+  "timeout -sv 150 cargo test" \
+  "timeout -k --verbose 150 cargo test" \
+  "timeout -k invalid 150 cargo test" \
+  "timeout --kill-after=invalid 150 cargo test" \
+  "timeout -s --verbose 150 cargo test" \
+  "timeout -s BOGUS 150 cargo test" \
+  "timeout --signal= 150 cargo test" \
+  "timeout --signal 150" \
+  "timeout -k" \
+  "timeout -s" \
+  "timeout -v" \
+  "timeout 1S cargo test" \
+  "timeout not-a-duration cargo test" \
+  "timeout 150"; do
+  observed_family="$(family_of "$probe")"
+  if [[ "$observed_family" != "cargo" ]]; then
+    pass "timeout transparency bound: '$probe' remains opaque"
+  else
+    fail "timeout transparency bound: '$probe' was incorrectly unwrapped as cargo"
+  fi
+done
+
+timeout_sibling_log="$TMP_DIR/timeout-siblings.jsonl"
+write_log "$timeout_sibling_log" \
+  "{\"ts\":\"2026-08-16T09:34:01Z\",\"sessionId\":\"tn-a\",\"cmd\":\"bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha\",\"exitCode\":0,\"durationMs\":441,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"],\"inputClosure\":[{\"path\":\"alpha\",\"sha256\":\"aaa\"}]}" \
+  "{\"ts\":\"2026-08-16T09:34:03Z\",\"sessionId\":\"tn-b\",\"cmd\":\"gtimeout --kill-after 5 150 /usr/bin/env CHECK=1 sh bubbles/scripts/scenario-test-resolve-selftest.sh beta\",\"exitCode\":0,\"durationMs\":443,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"],\"inputClosure\":[{\"path\":\"beta\",\"sha256\":\"bbb\"}]}"
+
+timeout_sibling_out="$(analyze "$timeout_sibling_log")"
+if [[ "$(clone_count "$timeout_sibling_out")" == "0" &&
+  "$(sibling_count "$timeout_sibling_out")" == "1" ]]; then
+  pass "timeout transparency: bare child and bare canonical gtimeout wrapper normalize to deterministic siblings"
+else
+  fail "timeout transparency: expected 0 clones and 1 sibling group for bare-versus-wrapped executions"
+  printf '  analysis: %s\n' "$timeout_sibling_out"
+fi
+
+timeout_path_impersonation_log="$TMP_DIR/timeout-path-impersonation.jsonl"
+write_log "$timeout_path_impersonation_log" \
+  "{\"ts\":\"2026-08-16T09:34:11Z\",\"sessionId\":\"tp-a\",\"spec\":\"specs/alpha\",\"cmd\":\"bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha\",\"exitCode\":0,\"durationMs\":445,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}" \
+  "{\"ts\":\"2026-08-16T09:34:13Z\",\"sessionId\":\"tp-b\",\"spec\":\"specs/beta\",\"cmd\":\"/tmp/timeout 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh beta\",\"exitCode\":0,\"durationMs\":447,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}" \
+  "{\"ts\":\"2026-08-16T09:34:15Z\",\"sessionId\":\"tp-c\",\"spec\":\"specs/gamma\",\"cmd\":\"/usr/bin/timeout 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh gamma\",\"exitCode\":0,\"durationMs\":449,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}"
+
+timeout_path_impersonation_out="$(analyze "$timeout_path_impersonation_log")"
+if [[ "$(clone_count "$timeout_path_impersonation_out")" == "1" ]]; then
+  pass "timeout trust bound: path-qualified timeout tokens do not collapse to the nested child identity"
+else
+  fail "timeout trust bound: expected path-qualified timeout tokens to remain distinct from the child"
+  printf '  analysis: %s\n' "$timeout_path_impersonation_out"
+fi
+if printf '%s' "$timeout_path_impersonation_out" | grep -qF 'family=timeout' &&
+  printf '%s' "$timeout_path_impersonation_out" | grep -qF "family=$timeout_program"; then
+  pass "timeout trust bound: diagnostics preserve wrapper and child families"
+else
+  fail "timeout trust bound: diagnostics did not preserve both wrapper and child families"
+  printf '  analysis: %s\n' "$timeout_path_impersonation_out"
+fi
+
+timeout_adv_log="$TMP_DIR/timeout-adversarial.jsonl"
+write_log "$timeout_adv_log" \
+  "{\"ts\":\"2026-08-16T09:35:01Z\",\"sessionId\":\"tw-a\",\"spec\":\"specs/alpha\",\"cmd\":\"timeout 150 cargo test\",\"exitCode\":0,\"durationMs\":451,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}" \
+  "{\"ts\":\"2026-08-16T09:35:03Z\",\"sessionId\":\"tw-b\",\"spec\":\"specs/beta\",\"cmd\":\"gtimeout --preserve-status 150 npm run test\",\"exitCode\":0,\"durationMs\":453,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}"
+
+timeout_adv_out="$(analyze "$timeout_adv_log")"
+if [[ "$(clone_count "$timeout_adv_out")" == "1" ]]; then
+  pass "timeout transparency bound: timeout-wrapped cargo and npm sharing stdout are still refused"
+else
+  fail "timeout transparency bound: expected 1 clone group for timeout-wrapped cargo-vs-npm, observed $(clone_count "$timeout_adv_out")"
+  printf '  analysis: %s\n' "$timeout_adv_out"
+fi
+
+timeout_script_adv_log="$TMP_DIR/timeout-distinct-scripts.jsonl"
+write_log "$timeout_script_adv_log" \
+  "{\"ts\":\"2026-08-16T09:36:01Z\",\"sessionId\":\"ts-a\",\"spec\":\"specs/alpha\",\"cmd\":\"timeout 150 bash bubbles/scripts/alpha-selftest.sh\",\"exitCode\":0,\"durationMs\":461,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}" \
+  "{\"ts\":\"2026-08-16T09:36:03Z\",\"sessionId\":\"ts-b\",\"spec\":\"specs/beta\",\"cmd\":\"gtimeout -s TERM 150 sh bubbles/scripts/beta-selftest.sh\",\"exitCode\":0,\"durationMs\":463,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"test\"]}"
+
+timeout_script_adv_out="$(analyze "$timeout_script_adv_log")"
+if [[ "$(clone_count "$timeout_script_adv_out")" == "1" ]]; then
+  pass "timeout transparency bound: two distinct timeout-wrapped scripts sharing stdout are still refused"
+else
+  fail "timeout transparency bound: expected 1 clone group for distinct scripts, observed $(clone_count "$timeout_script_adv_out")"
+  printf '  analysis: %s\n' "$timeout_script_adv_out"
 fi
 
 # ---------------------------------------------------------------------------

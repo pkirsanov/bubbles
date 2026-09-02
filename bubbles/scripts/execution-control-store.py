@@ -1,36 +1,70 @@
 #!/usr/bin/env python3
-"""Local, provider-neutral execution-control content and event store.
+"""Durable, provider-neutral Execution-Control Foundation store.
 
-The store is deliberately small: immutable canonical JSON objects, one
-append-only event chain, a compare-and-append head, deterministic recovery, and
-one sanitized integrity projection. It has no network or service dependency.
+ECF v2 is a pre-release hardening cut. It rejects v1 store/event bytes rather
+than silently attributing v2 guarantees to them. Local verification proves
+consistency, not rollback resistance. Rollback resistance requires a checkpoint
+retained outside this writable store. Filesystem checks mitigate ordinary
+aliases and races, not a malicious process running as the same UID.
 """
-
 from __future__ import annotations
 
 import argparse
 import contextlib
 import datetime as dt
-import errno
 import hashlib
+import importlib.util
 import json
-import math
 import os
+import re
 import secrets
 import stat
 import sys
 import time
+import unicodedata
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator, NamedTuple, NoReturn
 
-CONTRACT = "execution-control-event"
-SCHEMA_VERSION = 1
-OBJECT_CONTRACT = "execution-control-object"
-PROJECTION_CONTRACT = "execution-control-integrity-projection"
+try:
+    import fcntl
+except ImportError:
+    fcntl = None  # type: ignore[assignment]
+
+VERSION = 2
+CANONICAL_PROFILE = "bubbles-canonical-json-v1"
+LIMITS_PROFILE = "execution-control-limits-v2"
 GENESIS = "sha256:" + hashlib.sha256(b"").hexdigest()
+DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+EVENT_ID = re.compile(r"^evt:[A-Za-z0-9][A-Za-z0-9._-]*$")
+OCCURRENCE_ID = re.compile(r"^occ:[A-Za-z0-9][A-Za-z0-9._-]*$")
+ATTEMPT_ID = re.compile(r"^att:[A-Za-z0-9][A-Za-z0-9._-]*$")
+TRANSACTION_ID = re.compile(r"^txn:sha256:[0-9a-f]{64}$")
+SUBJECT_KIND = re.compile(r"^(?:command|phase|run|stage|budget|session|x\.[a-z0-9]+(?:\.[a-z0-9][a-z0-9-]*){2,})$")
+EXTENSION_NS = re.compile(r"^[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){2,}$")
+TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
+MAX_OBJECT_BYTES = 1_048_576
+MAX_INPUT_BYTES = 1_048_576
+MAX_EVENT_BYTES = 65_536
+MAX_PENDING_BYTES = 131_072
+MAX_LEDGER_BYTES = 16_777_216
+MAX_EVENT_COUNT = 10_000
+MAX_OBJECT_COUNT = 10_000
+MAX_OBJECT_TOTAL_BYTES = 67_108_864
+MAX_OBJECT_PREFIX_ENTRIES = 256
+MAX_OBJECT_FILES_PER_PREFIX = 10_000
+MAX_CREATE_ONLY_TEMP_ENTRIES = 128
+MAX_DEPTH = 32
+MAX_MEMBERS = 256
+MAX_ARRAY_ITEMS = 1_024
+MAX_STRING_BYTES = 16_384
+MAX_EXTENSIONS = 32
+MAX_IDENTIFIER_BYTES = 128
+MAX_READ_LIMIT = 1_000
+MAX_INTEGER = 9_007_199_254_740_991
+LOCK_WAIT_SECONDS = 10.0
 EVENT_TYPES = frozenset(("RECORD", "CORRECT", "SUPERSEDE"))
 POSTURES = frozenset(("off", "shadow", "reference-enforce", "unsupported"))
-DIGEST_PREFIX = "sha256:"
 EVENT_FIELDS = frozenset(
     (
         "contractType",
@@ -38,6 +72,7 @@ EVENT_FIELDS = frozenset(
         "sequence",
         "eventType",
         "eventId",
+        "transactionId",
         "previousEventDigest",
         "eventDigest",
         "recordedAt",
@@ -50,799 +85,1138 @@ EVENT_FIELDS = frozenset(
         "extensions",
     )
 )
-PROPOSAL_FIELDS = EVENT_FIELDS - frozenset(("sequence", "previousEventDigest", "eventDigest"))
-EXTENSION_FIELDS = frozenset(("namespace", "schemaVersion", "payloadDigest"))
+PROPOSAL_FIELDS = EVENT_FIELDS - frozenset(("sequence", "transactionId", "previousEventDigest", "eventDigest"))
 SUBJECT_FIELDS = frozenset(("kind", "id"))
-PENDING_FIELDS = frozenset(("contractType", "schemaVersion", "expectedSequence", "expectedHeadDigest", "event"))
-HEAD_FIELDS = frozenset(("contractType", "schemaVersion", "sequence", "eventDigest"))
-LOCK_WAIT_SECONDS = 10.0
+EXTENSION_FIELDS = frozenset(("namespace", "schemaVersion", "payloadDigest"))
+STORE_FIELDS = frozenset(("contractType", "schemaVersion", "storeId", "canonicalProfile", "limitsProfile"))
+HEAD_FIELDS = frozenset(("contractType", "schemaVersion", "storeId", "sequence", "eventDigest", "canonicalProfile"))
+PENDING_FIELDS = frozenset(("contractType", "schemaVersion", "storeId", "transactionId", "expectedSequence", "expectedHeadDigest", "expectedLedgerOffset", "expectedPrefixDigest", "eventLineDigest", "event"))
+CHECKPOINT_FIELDS = frozenset(("contractType", "schemaVersion", "storeId", "sequence", "eventDigest", "canonicalProfile"))
+AUTHENTICATED_CHECKPOINT_FIELDS = CHECKPOINT_FIELDS | frozenset(("authorityId", "trustRootId", "checkpointAt", "expiresAt", "authenticator"))
+CHECKPOINT_AUTHORITY_PURPOSE = "execution-control-checkpoint"
+CHECKPOINT_LIFETIME = dt.timedelta(minutes=5)
 
 
-class StoreError(RuntimeError):
-    """Fail-closed contract or integrity error."""
+def load_security_authority() -> Any:
+    path = Path(__file__).with_name("security-authority.py")
+    spec = importlib.util.spec_from_file_location("execution_control_security_authority", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("unable to load security authority")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+security = load_security_authority()
+
+
+class ExternalAuthority(NamedTuple):
+    file_identity: tuple[int, int]
+    ancestor_identities: frozenset[tuple[int, int]]
+
+
+class VerificationResult(NamedTuple):
+    report: dict[str, Any]
+    events: list[dict[str, Any]]
+    ledger: bytes
+    head: dict[str, Any]
+    object_count: int
+    object_bytes: int
+
+
+_injected_fault_hook: Callable[[str, Path], None] | None = None
+
+
+def install_imported_test_fault_hook(hook: Callable[[str, Path], None]) -> None:
+    """Install a test-process-only fault hook; the executable CLI never calls this."""
+    global _injected_fault_hook
+    if __name__ == "__main__":
+        invalid("fault hooks are unavailable in executable CLI mode")
+    _injected_fault_hook = hook
+
+
+def injected_fault(point: str, path: Path) -> None:
+    if _injected_fault_hook is not None:
+        _injected_fault_hook(point, path)
+
+
+class EcfError(RuntimeError):
+    def __init__(self, code: str, kind: str, message: str, exit_code: int) -> None:
+        super().__init__(message)
+        self.code, self.kind, self.exit_code = code, kind, exit_code
+
+
+def error(code: str, kind: str, message: str, exit_code: int) -> NoReturn:
+    raise EcfError(code, kind, message, exit_code)
+
+
+def invalid(message: str) -> NoReturn:
+    error("ECF-INPUT-INVALID", "input", message, 2)
+
+
+def limited(message: str) -> NoReturn:
+    error("ECF-LIMIT-EXCEEDED", "limit", message, 3)
+
+
+def conflict(message: str) -> NoReturn:
+    error("ECF-CONFLICT", "conflict", message, 4)
+
+
+def corrupt(message: str) -> NoReturn:
+    error("ECF-INTEGRITY", "integrity", message, 5)
+
+
+def digest_bytes(data: bytes) -> str:
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def validate_value(value: Any, depth: int = 0) -> None:
+    if depth > MAX_DEPTH:
+        limited(f"JSON depth exceeds {MAX_DEPTH}")
+    if value is None or isinstance(value, bool):
+        return
+    if isinstance(value, int):
+        if abs(value) > MAX_INTEGER:
+            limited("integer exceeds interoperable JSON range")
+        return
+    if isinstance(value, float):
+        invalid("floating-point JSON numbers are forbidden")
+    if isinstance(value, str):
+        if unicodedata.normalize("NFC", value) != value:
+            invalid("JSON strings and keys must be NFC-normalized")
+        if len(value.encode("utf-8")) > MAX_STRING_BYTES:
+            limited(f"JSON string exceeds {MAX_STRING_BYTES} bytes")
+        return
+    if isinstance(value, list):
+        if len(value) > MAX_ARRAY_ITEMS:
+            limited(f"JSON array exceeds {MAX_ARRAY_ITEMS} items")
+        for item in value:
+            validate_value(item, depth + 1)
+        return
+    if isinstance(value, dict):
+        if len(value) > MAX_MEMBERS:
+            limited(f"JSON object exceeds {MAX_MEMBERS} members")
+        for key, item in value.items():
+            if not isinstance(key, str):
+                invalid("JSON object keys must be strings")
+            validate_value(key, depth + 1)
+            validate_value(item, depth + 1)
+        return
+    invalid("value is outside Bubbles Canonical JSON v1")
 
 
 def canonical_bytes(value: Any) -> bytes:
-    try:
-        text = json.dumps(
-            value,
-            ensure_ascii=False,
-            allow_nan=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-    except (TypeError, ValueError) as exc:
-        raise StoreError(f"value is not canonical JSON: {exc}") from exc
-    return text.encode("utf-8")
+    validate_value(value)
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 def canonical_line(value: Any) -> bytes:
     return canonical_bytes(value) + b"\n"
 
 
-def reject_constant(token: str) -> None:
-    raise StoreError(f"non-finite JSON number is forbidden: {token}")
-
-
 def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
         if key in result:
-            raise StoreError(f"duplicate JSON member is forbidden: {key}")
+            invalid(f"duplicate JSON member is forbidden: {key}")
         result[key] = value
     return result
 
 
-def parse_json_bytes(data: bytes, source: str) -> Any:
+def reject_excessive_nesting(text: str, label: str) -> None:
+    """Bound JSON nesting before the recursive standard-library decoder runs."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+        if character == '"':
+            in_string = True
+        elif character in "[{":
+            depth += 1
+            if depth > MAX_DEPTH + 1:
+                limited(f"{label} JSON depth exceeds {MAX_DEPTH}")
+        elif character in "]}":
+            depth -= 1
+
+
+def parse_json(data: bytes, label: str, canonical: bool = True) -> Any:
+    if data.startswith(b"\xef\xbb\xbf"):
+        invalid(f"{label} contains a forbidden UTF-8 BOM")
     try:
         text = data.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise StoreError(f"{source} is not UTF-8") from exc
+    except UnicodeDecodeError:
+        invalid(f"{label} is not UTF-8")
+    reject_excessive_nesting(text, label)
     try:
         value = json.loads(
             text,
             object_pairs_hook=unique_object,
-            parse_constant=reject_constant,
+            parse_float=lambda _value: invalid("floating-point JSON numbers are forbidden"),
+            parse_constant=lambda value: invalid(f"non-finite JSON number is forbidden: {value}"),
         )
-    except (json.JSONDecodeError, StoreError) as exc:
-        if isinstance(exc, StoreError):
-            raise
-        raise StoreError(f"{source} is not valid JSON: {exc.msg}") from exc
-    validate_numbers(value)
+    except json.JSONDecodeError as exc:
+        invalid(f"{label} is not valid JSON: {exc.msg}")
+    validate_value(value)
+    if canonical and data != canonical_line(value):
+        invalid(f"{label} is not Bubbles Canonical JSON v1 plus one LF")
     return value
 
 
-def validate_numbers(value: Any) -> None:
-    if isinstance(value, float) and not math.isfinite(value):
-        raise StoreError("non-finite JSON numbers are forbidden")
-    if isinstance(value, dict):
-        for member in value.values():
-            validate_numbers(member)
-    elif isinstance(value, list):
-        for member in value:
-            validate_numbers(member)
+def typed_digest(kind: str, payload: Any) -> str:
+    return digest_bytes(canonical_bytes({"contractType": kind, "schemaVersion": VERSION, "payload": payload}))
 
 
-def strict_read_json(path: Path) -> Any:
-    return parse_json_bytes(read_regular(path), str(path.name))
-
-
-def typed_digest(contract_type: str, schema_version: int, payload: Any) -> str:
-    material = {
-        "contractType": contract_type,
-        "schemaVersion": schema_version,
-        "payload": payload,
-    }
-    return DIGEST_PREFIX + hashlib.sha256(canonical_bytes(material)).hexdigest()
-
-
-def is_digest(value: Any) -> bool:
-    if not isinstance(value, str) or not value.startswith(DIGEST_PREFIX):
-        return False
-    body = value[len(DIGEST_PREFIX) :]
-    return len(body) == 64 and all(character in "0123456789abcdef" for character in body)
-
-
-def require_exact_fields(value: Any, fields: frozenset[str], label: str) -> dict[str, Any]:
+def fields(value: Any, expected: frozenset[str], label: str) -> dict[str, Any]:
     if not isinstance(value, dict):
-        raise StoreError(f"{label} must be an object")
+        invalid(f"{label} must be an object")
     actual = frozenset(value)
-    if actual != fields:
-        missing = sorted(fields - actual)
-        unknown = sorted(actual - fields)
-        raise StoreError(f"{label} field mismatch; missing={missing}, unknown={unknown}")
+    if actual != expected:
+        invalid(f"{label} field mismatch; missing={sorted(expected - actual)}, unknown={sorted(actual - expected)}")
     return value
 
 
-def require_text(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not value:
-        raise StoreError(f"{label} must be a non-empty string")
-    if "\x00" in value:
-        raise StoreError(f"{label} contains NUL")
+def identifier(value: Any, label: str, pattern: re.Pattern[str] = ID) -> str:
+    if not isinstance(value, str):
+        invalid(f"{label} must be a string")
+    if not value.isascii() or len(value.encode("ascii")) > MAX_IDENTIFIER_BYTES or not pattern.fullmatch(value):
+        invalid(f"{label} violates its ASCII grammar or byte limit")
     return value
 
 
-def validate_timestamp(value: Any) -> str:
-    text = require_text(value, "recordedAt")
-    normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
+def digest(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not DIGEST.fullmatch(value):
+        invalid(f"{label} must be a lowercase typed sha256 digest")
+    return value
+
+
+def enum(value: Any, allowed: frozenset[str], label: str) -> str:
+    if not isinstance(value, str) or value not in allowed:
+        invalid(f"{label} is outside its closed vocabulary")
+    return value
+
+
+def timestamp(value: Any) -> str:
+    if not isinstance(value, str) or not TIMESTAMP.fullmatch(value):
+        invalid("recordedAt must use canonical UTC YYYY-MM-DDTHH:MM:SS.mmmZ")
     try:
-        parsed = dt.datetime.fromisoformat(normalized)
-    except ValueError as exc:
-        raise StoreError("recordedAt must be an ISO-8601 date-time") from exc
-    if parsed.tzinfo is None:
-        raise StoreError("recordedAt must include a timezone")
-    return text
+        dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    except ValueError:
+        invalid("recordedAt is not a valid UTC timestamp")
+    return value
+
+
+def calculate_event_digest(event: dict[str, Any]) -> str:
+    material = dict(event)
+    material.pop("eventDigest", None)
+    return typed_digest("execution-control-event", material)
+
+
+def calculate_transaction(sequence: int, head_digest: str, proposal: dict[str, Any]) -> str:
+    material = {"expectedSequence": sequence, "expectedHeadDigest": head_digest, "proposal": proposal}
+    return "txn:" + typed_digest("execution-control-transaction", material)
 
 
 def validate_event(event: Any, proposal: bool = False) -> dict[str, Any]:
-    fields = PROPOSAL_FIELDS if proposal else EVENT_FIELDS
-    value = require_exact_fields(event, fields, "event proposal" if proposal else "event")
-    if value["contractType"] != CONTRACT or value["schemaVersion"] != SCHEMA_VERSION:
-        raise StoreError("event contractType/schemaVersion is unsupported")
-    if value["eventType"] not in EVENT_TYPES:
-        raise StoreError("eventType is outside the closed foundation vocabulary")
-    if value["posture"] not in POSTURES:
-        raise StoreError("posture is outside the closed foundation vocabulary")
-    require_text(value["eventId"], "eventId")
-    require_text(value["occurrenceId"], "occurrenceId")
-    if value["attemptId"] is not None:
-        require_text(value["attemptId"], "attemptId")
-    validate_timestamp(value["recordedAt"])
-    subject = require_exact_fields(value["subject"], SUBJECT_FIELDS, "subject")
-    require_text(subject["kind"], "subject.kind")
-    require_text(subject["id"], "subject.id")
-    if not is_digest(value["objectDigest"]):
-        raise StoreError("objectDigest must be a typed sha256 digest")
+    value = fields(event, PROPOSAL_FIELDS if proposal else EVENT_FIELDS, "event")
+    if value["contractType"] != "execution-control-event" or value["schemaVersion"] != VERSION:
+        invalid("event version is unsupported; ECF v1 requires explicit migration")
+    enum(value["eventType"], EVENT_TYPES, "eventType")
+    enum(value["posture"], POSTURES, "posture")
+    identifier(value["eventId"], "eventId", EVENT_ID)
+    identifier(value["occurrenceId"], "occurrenceId", OCCURRENCE_ID)
+    identifier(value["attemptId"], "attemptId", ATTEMPT_ID)
+    timestamp(value["recordedAt"])
+    subject = fields(value["subject"], SUBJECT_FIELDS, "subject")
+    identifier(subject["kind"], "subject.kind", SUBJECT_KIND)
+    identifier(subject["id"], "subject.id")
+    digest(value["objectDigest"], "objectDigest")
     supersedes = value["supersedesEventId"]
     if supersedes is not None:
-        require_text(supersedes, "supersedesEventId")
+        identifier(supersedes, "supersedesEventId", EVENT_ID)
     if value["eventType"] == "RECORD" and supersedes is not None:
-        raise StoreError("RECORD must not supersede an event")
+        invalid("RECORD must not supersede an event")
     if value["eventType"] != "RECORD" and supersedes is None:
-        raise StoreError("CORRECT and SUPERSEDE must name supersedesEventId")
-    if not isinstance(value["extensions"], list):
-        raise StoreError("extensions must be an array")
-    for index, extension in enumerate(value["extensions"]):
-        item = require_exact_fields(extension, EXTENSION_FIELDS, f"extensions[{index}]")
-        require_text(item["namespace"], f"extensions[{index}].namespace")
+        invalid("CORRECT and SUPERSEDE must supersede an event")
+    extensions = value["extensions"]
+    if not isinstance(extensions, list):
+        invalid("extensions must be an array")
+    if len(extensions) > MAX_EXTENSIONS:
+        limited(f"extensions exceeds {MAX_EXTENSIONS} items")
+    seen: set[str] = set()
+    for index, extension in enumerate(extensions):
+        item = fields(extension, EXTENSION_FIELDS, f"extensions[{index}]")
+        namespace = identifier(item["namespace"], f"extensions[{index}].namespace", EXTENSION_NS)
+        if namespace in seen:
+            invalid("extension namespaces must be unique")
+        seen.add(namespace)
         if not isinstance(item["schemaVersion"], int) or isinstance(item["schemaVersion"], bool) or item["schemaVersion"] < 1:
-            raise StoreError(f"extensions[{index}].schemaVersion must be a positive integer")
-        if not is_digest(item["payloadDigest"]):
-            raise StoreError(f"extensions[{index}].payloadDigest must be a typed sha256 digest")
+            invalid("extension schemaVersion must be a positive integer")
+        digest(item["payloadDigest"], "extension payloadDigest")
     if not proposal:
         if not isinstance(value["sequence"], int) or isinstance(value["sequence"], bool) or value["sequence"] < 1:
-            raise StoreError("sequence must be a positive integer")
-        if not is_digest(value["previousEventDigest"]) or not is_digest(value["eventDigest"]):
-            raise StoreError("event chain digests must be typed sha256 digests")
-        expected = event_digest(value)
-        if value["eventDigest"] != expected:
-            raise StoreError("eventDigest does not match canonical typed event material")
+            invalid("sequence must be a positive integer")
+        identifier(value["transactionId"], "transactionId", TRANSACTION_ID)
+        digest(value["previousEventDigest"], "previousEventDigest")
+        digest(value["eventDigest"], "eventDigest")
+        if value["eventDigest"] != calculate_event_digest(value):
+            corrupt("eventDigest does not match canonical event material")
     return value
 
 
-def event_digest(event: dict[str, Any]) -> str:
-    material = dict(event)
-    material.pop("eventDigest", None)
-    return typed_digest(CONTRACT, SCHEMA_VERSION, material)
-
-
-def lexical_absolute(path_text: str, label: str) -> Path:
-    require_text(path_text, label)
-    path = Path(path_text)
-    if not path.is_absolute():
-        raise StoreError(f"{label} must be absolute")
-    if ".." in path.parts:
-        raise StoreError(f"{label} must not contain parent traversal")
+def absolute_path(text: Any, label: str) -> Path:
+    if not isinstance(text, str) or not text or "\x00" in text:
+        invalid(f"{label} must be a non-empty path")
+    path = Path(text)
+    if not path.is_absolute() or ".." in path.parts:
+        invalid(f"{label} must be lexical absolute without parent traversal")
     return path
 
 
-def reject_symlink_chain(path: Path, allow_missing_tail: bool) -> None:
-    parts = path.parts
-    current = Path(parts[0])
-    for part in parts[1:]:
-        current = current / part
+def reject_symlinks(path: Path, allow_missing: bool) -> None:
+    current = Path(path.parts[0])
+    for part in path.parts[1:]:
+        current /= part
         try:
             metadata = os.lstat(current)
         except FileNotFoundError:
-            if allow_missing_tail:
+            if allow_missing:
                 return
-            raise StoreError(f"required path is missing: {current.name}")
+            error("ECF-IO", "io", f"required path is missing: {current.name}", 7)
         if stat.S_ISLNK(metadata.st_mode):
-            raise StoreError(f"symlink path component is forbidden: {current.name}")
+            corrupt(f"symlink path component is forbidden: {current.name}")
 
 
-def require_owned_private(path: Path, directory: bool) -> os.stat_result:
-    metadata = os.lstat(path)
-    if stat.S_ISLNK(metadata.st_mode):
-        raise StoreError(f"symlink is forbidden: {path.name}")
-    expected_kind = stat.S_ISDIR if directory else stat.S_ISREG
-    if not expected_kind(metadata.st_mode):
-        raise StoreError(f"special or wrong-kind filesystem node is forbidden: {path.name}")
-    if metadata.st_uid != os.geteuid():
-        raise StoreError(f"filesystem node has wrong owner: {path.name}")
+def validate_metadata(metadata: os.stat_result, label: str, directory: bool) -> None:
     expected_mode = 0o700 if directory else 0o600
-    if stat.S_IMODE(metadata.st_mode) != expected_mode:
-        raise StoreError(f"filesystem node has non-private mode: {path.name}")
-    return metadata
+    if (directory and not stat.S_ISDIR(metadata.st_mode)) or (not directory and not stat.S_ISREG(metadata.st_mode)):
+        corrupt(f"{label} has the wrong file type")
+    if metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) != expected_mode:
+        corrupt(f"{label} has the wrong owner or private mode")
+    if not directory and metadata.st_nlink != 1:
+        corrupt(f"{label} must have exactly one hardlink")
+
+
+def open_directory(path: Path) -> tuple[int, os.stat_result]:
+    before = os.lstat(path)
+    validate_metadata(before, path.name or "/", True)
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    after = os.fstat(descriptor)
+    if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+        os.close(descriptor)
+        corrupt(f"directory changed while opening: {path.name}")
+    validate_metadata(after, path.name or "/", True)
+    return descriptor, after
+
+
+def open_directory_at(parent: int, name: str, label: str) -> tuple[int, os.stat_result]:
+    before = os.stat(name, dir_fd=parent, follow_symlinks=False)
+    validate_metadata(before, label, True)
+    descriptor = os.open(name, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent)
+    after = os.fstat(descriptor)
+    if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+        os.close(descriptor)
+        corrupt(f"directory changed while opening: {label}")
+    validate_metadata(after, label, True)
+    return descriptor, after
+
+
+def open_regular(path: Path, flags: int = os.O_RDONLY) -> tuple[int, os.stat_result]:
+    parent, parent_before = open_directory(path.parent)
+    try:
+        recover_create_only_hardlink_at(parent, path.name)
+        before = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+        validate_metadata(before, path.name, False)
+        descriptor = os.open(path.name, flags | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent)
+        after = os.fstat(descriptor)
+        parent_after = os.fstat(parent)
+        if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+            os.close(descriptor)
+            corrupt(f"path changed while opening: {path.name}")
+        if (parent_before.st_dev, parent_before.st_ino) != (parent_after.st_dev, parent_after.st_ino):
+            os.close(descriptor)
+            corrupt(f"parent changed while opening: {path.name}")
+        validate_metadata(after, path.name, False)
+        return descriptor, after
+    finally:
+        os.close(parent)
+
+
+def bounded_read(descriptor: int, maximum: int, label: str) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = os.read(descriptor, min(65_536, maximum + 1 - total))
+        if not chunk:
+            return b"".join(chunks)
+        total += len(chunk)
+        if total > maximum:
+            limited(f"{label} exceeds {maximum} bytes")
+        chunks.append(chunk)
+
+
+def read_regular(path: Path, maximum: int, label: str) -> bytes:
+    descriptor, metadata = open_regular(path)
+    try:
+        if metadata.st_size > maximum:
+            limited(f"{label} exceeds {maximum} bytes")
+        return bounded_read(descriptor, maximum, label)
+    finally:
+        os.close(descriptor)
+
+
+def read_external(path: Path, maximum: int, label: str) -> tuple[bytes, ExternalAuthority]:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    parent = os.open(path.anchor, flags)
+    ancestors: set[tuple[int, int]] = set()
+    try:
+        root_metadata = os.fstat(parent)
+        ancestors.add((root_metadata.st_dev, root_metadata.st_ino))
+        for part in path.parent.parts[1:]:
+            before_parent = os.stat(part, dir_fd=parent, follow_symlinks=False)
+            if not stat.S_ISDIR(before_parent.st_mode):
+                corrupt(f"{label} parent component is not a directory")
+            child = os.open(part, flags, dir_fd=parent)
+            metadata_parent = os.fstat(child)
+            if (before_parent.st_dev, before_parent.st_ino) != (metadata_parent.st_dev, metadata_parent.st_ino):
+                os.close(child)
+                corrupt(f"{label} parent changed while opening")
+            os.close(parent)
+            parent = child
+            ancestors.add((metadata_parent.st_dev, metadata_parent.st_ino))
+        before = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+        if not stat.S_ISREG(before.st_mode) or before.st_uid != os.geteuid() or before.st_nlink != 1:
+            corrupt(f"{label} must be an owner-owned regular file with one hardlink")
+        descriptor = os.open(path.name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent)
+        metadata = os.fstat(descriptor)
+        if (before.st_dev, before.st_ino) != (metadata.st_dev, metadata.st_ino):
+            os.close(descriptor)
+            corrupt(f"{label} changed while opening")
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid() or metadata.st_nlink != 1:
+            os.close(descriptor)
+            corrupt(f"{label} failed descriptor identity checks")
+        if metadata.st_size > maximum:
+            os.close(descriptor)
+            limited(f"{label} exceeds {maximum} bytes")
+        try:
+            data = bounded_read(descriptor, maximum, label)
+        finally:
+            os.close(descriptor)
+        return data, ExternalAuthority((metadata.st_dev, metadata.st_ino), frozenset(ancestors))
+    finally:
+        os.close(parent)
 
 
 def ensure_directory(path: Path) -> None:
     if path.exists() or path.is_symlink():
-        require_owned_private(path, True)
+        descriptor, _ = open_directory(path)
+        os.close(descriptor)
         return
-    path.mkdir(mode=0o700)
-    os.chmod(path, 0o700)
-    require_owned_private(path, True)
-    fsync_directory(path.parent)
-
-
-def fsync_directory(path: Path) -> None:
-    flags = os.O_RDONLY
-    if hasattr(os, "O_DIRECTORY"):
-        flags |= os.O_DIRECTORY
-    descriptor = os.open(path, flags)
+    parent, _ = open_directory(path.parent)
     try:
-        os.fsync(descriptor)
+        try:
+            os.mkdir(path.name, 0o700, dir_fd=parent)
+            os.fsync(parent)
+        except FileExistsError:
+            pass
     finally:
-        os.close(descriptor)
-
-
-def nofollow_flag() -> int:
-    return getattr(os, "O_NOFOLLOW", 0)
-
-
-def read_regular(path: Path) -> bytes:
-    require_owned_private(path, False)
-    descriptor = os.open(path, os.O_RDONLY | nofollow_flag())
-    try:
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) != 0o600:
-            raise StoreError(f"opened file failed private regular-file checks: {path.name}")
-        chunks: list[bytes] = []
-        while True:
-            chunk = os.read(descriptor, 1024 * 1024)
-            if not chunk:
-                return b"".join(chunks)
-            chunks.append(chunk)
-    finally:
-        os.close(descriptor)
-
-
-def atomic_write(path: Path, data: bytes) -> None:
-    reject_symlink_chain(path.parent, allow_missing_tail=False)
-    require_owned_private(path.parent, True)
-    if path.exists() or path.is_symlink():
-        require_owned_private(path, False)
-    temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{secrets.token_hex(8)}"
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow_flag()
-    descriptor = os.open(temporary, flags, 0o600)
-    try:
-        os.fchmod(descriptor, 0o600)
-        write_all(descriptor, data)
-        os.fsync(descriptor)
-    except BaseException:
-        with contextlib.suppress(FileNotFoundError):
-            temporary.unlink()
-        raise
-    finally:
-        os.close(descriptor)
-    os.replace(temporary, path)
-    fsync_directory(path.parent)
-    require_owned_private(path, False)
+        os.close(parent)
+    descriptor, _ = open_directory(path)
+    os.close(descriptor)
 
 
 def write_all(descriptor: int, data: bytes) -> None:
     offset = 0
     while offset < len(data):
-        written = os.write(descriptor, data[offset:])
-        if written < 1:
-            raise StoreError("file write made no progress")
-        offset += written
+        count = os.write(descriptor, data[offset:])
+        if count < 1:
+            error("ECF-IO", "io", "write made no progress", 7)
+        offset += count
+
+
+def atomic_write(path: Path, data: bytes, create_only: bool = False) -> None:
+    parent, parent_identity = open_directory(path.parent)
+    temporary = f".{path.name}.tmp.{os.getpid()}.{secrets.token_hex(8)}"
+    descriptor = -1
+    try:
+        if create_only:
+            try:
+                os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            else:
+                conflict(f"create-only target exists: {path.name}")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(temporary, flags, 0o600, dir_fd=parent)
+        os.fchmod(descriptor, 0o600)
+        write_all(descriptor, data)
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = -1
+        current = os.fstat(parent)
+        if (parent_identity.st_dev, parent_identity.st_ino) != (current.st_dev, current.st_ino):
+            corrupt(f"parent changed during write: {path.name}")
+        if create_only:
+            try:
+                os.link(temporary, path.name, src_dir_fd=parent, dst_dir_fd=parent, follow_symlinks=False)
+            except FileExistsError:
+                conflict(f"create-only target exists: {path.name}")
+            injected_fault("create-only-after-link", path)
+            os.unlink(temporary, dir_fd=parent)
+        else:
+            os.replace(temporary, path.name, src_dir_fd=parent, dst_dir_fd=parent)
+        os.fsync(parent)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(temporary, dir_fd=parent)
+        os.close(parent)
+    descriptor, _ = open_regular(path)
+    os.close(descriptor)
 
 
 def unlink_synced(path: Path) -> None:
-    require_owned_private(path, False)
-    path.unlink()
-    fsync_directory(path.parent)
+    descriptor, _ = open_regular(path)
+    os.close(descriptor)
+    parent, _ = open_directory(path.parent)
+    try:
+        os.unlink(path.name, dir_fd=parent)
+        os.fsync(parent)
+    finally:
+        os.close(parent)
+
+
+def create_or_validate(path: Path, data: bytes) -> None:
+    """Create a protected file or accept a concurrent valid winner."""
+    try:
+        atomic_write(path, data, True)
+    except EcfError as exc:
+        if exc.code != "ECF-CONFLICT":
+            raise
+        recover_create_only_hardlink(path)
+        descriptor, _ = open_regular(path)
+        os.close(descriptor)
+
+
+def recover_create_only_hardlink(path: Path) -> None:
+    """Remove a same-inode temp link left by a crash after create-only publish."""
+    parent, _ = open_directory(path.parent)
+    try:
+        recover_create_only_hardlink_at(parent, path.name)
+    finally:
+        os.close(parent)
+
+
+def recover_create_only_hardlink_at(parent: int, target_name: str) -> None:
+    """Recover only recognized, same-inode links while retaining parent authority."""
+    try:
+        target = os.stat(target_name, dir_fd=parent, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if not stat.S_ISREG(target.st_mode) or target.st_uid != os.geteuid():
+        corrupt(f"create-only winner has invalid identity: {target_name}")
+    pattern = re.compile(rf"^[.]{re.escape(target_name)}[.]tmp[.][0-9]+[.][0-9a-f]{{16}}$")
+    matched = 0
+    removed = False
+    with os.scandir(parent) as entries:
+        for entry in entries:
+            if not pattern.fullmatch(entry.name):
+                continue
+            matched += 1
+            if matched > MAX_CREATE_ONLY_TEMP_ENTRIES:
+                limited(f"create-only temporary entries exceed {MAX_CREATE_ONLY_TEMP_ENTRIES}")
+            metadata = entry.stat(follow_symlinks=False)
+            if stat.S_ISREG(metadata.st_mode) and (metadata.st_dev, metadata.st_ino) == (target.st_dev, target.st_ino):
+                os.unlink(entry.name, dir_fd=parent)
+                removed = True
+    if removed:
+        os.fsync(parent)
 
 
 class Store:
-    def __init__(self, root_text: str) -> None:
-        self.root = lexical_absolute(root_text, "store-root")
+    def __init__(self, root: str) -> None:
+        self.root = absolute_path(root, "store-root")
+        self.metadata = self.root / "store.json"
         self.events = self.root / "events.jsonl"
         self.head = self.root / "head.json"
         self.pending = self.root / "pending.json"
         self.objects = self.root / "objects"
         self.projections = self.root / "projections"
         self.lock_file = self.root / "lock"
-        self.lock_dir = self.root / "lock.d"
+
+    def protected_identities(self) -> set[tuple[int, int]]:
+        result: set[tuple[int, int]] = set()
+        for path in (self.metadata, self.events, self.head, self.pending, self.lock_file):
+            try:
+                metadata = os.lstat(path)
+            except FileNotFoundError:
+                continue
+            result.add((metadata.st_dev, metadata.st_ino))
+        return result
+
+    def contains_external(self, authority: ExternalAuthority) -> bool:
+        descriptor, metadata = open_directory(self.root)
+        os.close(descriptor)
+        return (metadata.st_dev, metadata.st_ino) in authority.ancestor_identities
 
     def prepare_root(self) -> None:
-        reject_symlink_chain(self.root, allow_missing_tail=True)
-        if not self.root.exists():
-            self.root.mkdir(mode=0o700)
-            os.chmod(self.root, 0o700)
-            fsync_directory(self.root.parent)
-        reject_symlink_chain(self.root, allow_missing_tail=False)
-        require_owned_private(self.root, True)
+        reject_symlinks(self.root, True)
+        ensure_directory(self.root)
         ensure_directory(self.objects)
         ensure_directory(self.projections)
 
-    def ensure_layout_locked(self) -> None:
-        for path in (self.root, self.objects, self.projections):
-            require_owned_private(path, True)
+    def initialize(self) -> None:
+        if not self.metadata.exists() and not self.metadata.is_symlink():
+            metadata = {
+                "canonicalProfile": CANONICAL_PROFILE,
+                "contractType": "execution-control-store",
+                "limitsProfile": LIMITS_PROFILE,
+                "schemaVersion": VERSION,
+                "storeId": "store:" + secrets.token_hex(24),
+            }
+            create_or_validate(self.metadata, canonical_line(metadata))
+        metadata = self.load_metadata()
         if not self.events.exists() and not self.events.is_symlink():
-            atomic_write(self.events, b"")
-        else:
-            require_owned_private(self.events, False)
+            create_or_validate(self.events, b"")
         if not self.head.exists() and not self.head.is_symlink():
-            atomic_write(self.head, canonical_line(self.genesis_head()))
-        else:
-            require_owned_private(self.head, False)
+            create_or_validate(self.head, canonical_line(self.genesis_head(metadata["storeId"])))
+
+    def load_metadata(self) -> dict[str, Any]:
+        raw = read_regular(self.metadata, MAX_PENDING_BYTES, "store metadata")
+        value = fields(parse_json(raw, "store metadata"), STORE_FIELDS, "store metadata")
+        if value["contractType"] != "execution-control-store" or value["schemaVersion"] != VERSION:
+            corrupt("store metadata version is unsupported; ECF v1 requires explicit migration")
+        if value["canonicalProfile"] != CANONICAL_PROFILE or value["limitsProfile"] != LIMITS_PROFILE:
+            corrupt("store metadata profile is unsupported")
+        identifier(value["storeId"], "storeId")
+        return value
 
     @staticmethod
-    def genesis_head() -> dict[str, Any]:
-        return {
-            "contractType": "execution-control-head",
-            "schemaVersion": 1,
-            "sequence": 0,
-            "eventDigest": GENESIS,
-        }
+    def genesis_head(store_id: str) -> dict[str, Any]:
+        return {"canonicalProfile": CANONICAL_PROFILE, "contractType": "execution-control-head", "eventDigest": GENESIS, "schemaVersion": VERSION, "sequence": 0, "storeId": store_id}
 
     @contextlib.contextmanager
     def locked(self) -> Iterator[None]:
+        if fcntl is None:
+            error("ECF-UNSUPPORTED-LOCK", "unsupported", "POSIX fcntl locking is required", 8)
         self.prepare_root()
-        try:
-            import fcntl  # POSIX: Linux and macOS
-        except ImportError:
-            fcntl = None  # type: ignore[assignment]
-        if fcntl is not None:
-            if self.lock_file.exists() or self.lock_file.is_symlink():
-                require_owned_private(self.lock_file, False)
-            descriptor = os.open(self.lock_file, os.O_RDWR | os.O_CREAT | nofollow_flag(), 0o600)
-            os.fchmod(descriptor, 0o600)
-            deadline = time.monotonic() + LOCK_WAIT_SECONDS
-            try:
-                while True:
-                    try:
-                        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                        break
-                    except BlockingIOError:
-                        if time.monotonic() >= deadline:
-                            raise StoreError("timed out acquiring execution-control lock")
-                        time.sleep(0.02)
-                self.ensure_layout_locked()
-                yield
-            finally:
-                with contextlib.suppress(OSError):
-                    fcntl.flock(descriptor, fcntl.LOCK_UN)
-                os.close(descriptor)
-            return
-        with self.mkdir_lock():
-            self.ensure_layout_locked()
-            yield
-
-    @contextlib.contextmanager
-    def mkdir_lock(self) -> Iterator[None]:
+        if not self.lock_file.exists() and not self.lock_file.is_symlink():
+            create_or_validate(self.lock_file, b"")
+        descriptor, _ = open_regular(self.lock_file, os.O_RDWR)
         deadline = time.monotonic() + LOCK_WAIT_SECONDS
-        token = secrets.token_hex(16)
-        owner_path = self.lock_dir / "owner.json"
-        while True:
-            try:
-                self.lock_dir.mkdir(mode=0o700)
-                os.chmod(self.lock_dir, 0o700)
-                atomic_write(owner_path, canonical_line({"pid": os.getpid(), "token": token}))
-                break
-            except FileExistsError:
-                require_owned_private(self.lock_dir, True)
-                judged = self.lock_identity(owner_path)
-                if judged is not None and not process_alive(judged[1]):
-                    current = self.lock_identity(owner_path)
-                    if current == judged:
-                        claim = self.root / f"lock.stale.{os.getpid()}.{secrets.token_hex(8)}"
-                        try:
-                            os.replace(self.lock_dir, claim)
-                        except OSError:
-                            pass
-                        else:
-                            remove_lock_claim(claim)
-                            continue
-                if time.monotonic() >= deadline:
-                    raise StoreError("timed out acquiring mkdir execution-control lock")
-                time.sleep(0.02)
         try:
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        error("ECF-LOCK-TIMEOUT", "lock", "timed out acquiring execution-control lock", 6)
+                    time.sleep(0.02)
+            self.initialize()
             yield
         finally:
-            current = self.lock_identity(owner_path)
-            if current is not None and current[2] == token:
-                unlink_synced(owner_path)
-                self.lock_dir.rmdir()
-                fsync_directory(self.root)
-
-    def lock_identity(self, owner_path: Path) -> tuple[int, int, str] | None:
-        try:
-            inode = require_owned_private(self.lock_dir, True).st_ino
-            owner = strict_read_json(owner_path)
-        except (FileNotFoundError, StoreError):
-            return None
-        if not isinstance(owner, dict) or set(owner) != {"pid", "token"}:
-            raise StoreError("mkdir lock owner record is malformed")
-        pid = owner["pid"]
-        token = owner["token"]
-        if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1 or not isinstance(token, str) or not token:
-            raise StoreError("mkdir lock owner identity is malformed")
-        return inode, pid, token
+            with contextlib.suppress(OSError):
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+            os.close(descriptor)
 
     def load_head(self) -> dict[str, Any]:
-        value = require_exact_fields(strict_read_json(self.head), HEAD_FIELDS, "head")
-        if value["contractType"] != "execution-control-head" or value["schemaVersion"] != 1:
-            raise StoreError("head contract is unsupported")
+        value = fields(parse_json(read_regular(self.head, MAX_PENDING_BYTES, "head"), "head"), HEAD_FIELDS, "head")
+        metadata = self.load_metadata()
+        if value["contractType"] != "execution-control-head" or value["schemaVersion"] != VERSION:
+            corrupt("head contract or version is invalid")
+        if value["storeId"] != metadata["storeId"] or value["canonicalProfile"] != CANONICAL_PROFILE:
+            corrupt("head store identity or canonical profile is invalid")
         if not isinstance(value["sequence"], int) or isinstance(value["sequence"], bool) or value["sequence"] < 0:
-            raise StoreError("head sequence is invalid")
-        if not is_digest(value["eventDigest"]):
-            raise StoreError("head digest is invalid")
+            corrupt("head sequence is invalid")
+        digest(value["eventDigest"], "head eventDigest")
         return value
 
+    def raw_events(self) -> bytes:
+        return read_regular(self.events, MAX_LEDGER_BYTES, "events ledger")
+
     def load_events(self) -> list[dict[str, Any]]:
-        raw = read_regular(self.events)
+        return self.validate_ledger_bytes(self.raw_events(), "events ledger")
+
+    def validate_ledger_bytes(self, raw: bytes, label: str) -> list[dict[str, Any]]:
         if raw and not raw.endswith(b"\n"):
-            raise StoreError("events ledger has a torn final line")
-        events: list[dict[str, Any]] = []
-        for line_number, line in enumerate(raw.splitlines(), 1):
+            corrupt(f"{label} has a torn final line")
+        lines = raw.splitlines()
+        if len(lines) > MAX_EVENT_COUNT:
+            limited(f"{label} exceeds {MAX_EVENT_COUNT} events")
+        result = []
+        for number, line in enumerate(lines, 1):
             if not line:
-                raise StoreError(f"events ledger has an empty line at {line_number}")
-            events.append(validate_event(parse_json_bytes(line, f"events line {line_number}")))
-        return events
+                corrupt(f"{label} contains empty line {number}")
+            if len(line) + 1 > MAX_EVENT_BYTES:
+                limited(f"event line {number} exceeds {MAX_EVENT_BYTES} bytes")
+            result.append(validate_event(parse_json(line + b"\n", f"event line {number}")))
+        return result
 
-    def recover_pending(self) -> None:
-        if not self.pending.exists() and not self.pending.is_symlink():
-            return
-        pending = require_exact_fields(strict_read_json(self.pending), PENDING_FIELDS, "pending")
-        if pending["contractType"] != "execution-control-pending" or pending["schemaVersion"] != 1:
-            raise StoreError("pending contract is unsupported")
-        expected_sequence = pending["expectedSequence"]
-        expected_digest = pending["expectedHeadDigest"]
-        event = validate_event(pending["event"])
-        if not isinstance(expected_sequence, int) or isinstance(expected_sequence, bool) or expected_sequence < 0 or not is_digest(expected_digest):
-            raise StoreError("pending predecessor is invalid")
-        if event["sequence"] != expected_sequence + 1 or event["previousEventDigest"] != expected_digest:
-            raise StoreError("pending event does not match its predecessor")
-        events = self.load_events()
-        head = self.load_head()
-        tip_sequence = events[-1]["sequence"] if events else 0
-        tip_digest = events[-1]["eventDigest"] if events else GENESIS
-        if tip_sequence == expected_sequence and tip_digest == expected_digest and head == {
-            "contractType": "execution-control-head",
-            "schemaVersion": 1,
-            "sequence": expected_sequence,
-            "eventDigest": expected_digest,
-        }:
-            unlink_synced(self.pending)
-            return
-        exact_tip = bool(events) and canonical_bytes(events[-1]) == canonical_bytes(event)
-        if exact_tip and tip_sequence == event["sequence"] and tip_digest == event["eventDigest"]:
-            expected_old_head = {
-                "contractType": "execution-control-head",
-                "schemaVersion": 1,
-                "sequence": expected_sequence,
-                "eventDigest": expected_digest,
-            }
-            new_head = {
-                "contractType": "execution-control-head",
-                "schemaVersion": 1,
-                "sequence": event["sequence"],
-                "eventDigest": event["eventDigest"],
-            }
-            if head == expected_old_head:
-                atomic_write(self.head, canonical_line(new_head))
-            elif head != new_head:
-                raise StoreError("pending recovery found a conflicting head")
-            unlink_synced(self.pending)
-            return
-        raise StoreError("pending recovery found an impossible ledger/head combination")
+    def object_path(self, object_digest: str) -> Path:
+        digest(object_digest, "objectDigest")
+        hexadecimal = object_digest[7:]
+        return self.objects / hexadecimal[:2] / hexadecimal
 
-    def verify_locked(self) -> dict[str, Any]:
-        self.recover_pending()
-        events = self.load_events()
+    def require_object(self, object_digest: str) -> Any:
+        path = self.object_path(object_digest)
+        prefix, _ = open_directory(path.parent)
+        try:
+            value = self.require_object_at(prefix, path.name)
+        finally:
+            os.close(prefix)
+        return value
+
+    def require_object_at(self, prefix: int, name: str) -> Any:
+        recover_create_only_hardlink_at(prefix, name)
+        before = os.stat(name, dir_fd=prefix, follow_symlinks=False)
+        validate_metadata(before, name, False)
+        descriptor = os.open(name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=prefix)
+        try:
+            metadata = os.fstat(descriptor)
+            if (before.st_dev, before.st_ino) != (metadata.st_dev, metadata.st_ino):
+                corrupt("object changed while opening")
+            validate_metadata(metadata, name, False)
+            if metadata.st_size > MAX_OBJECT_BYTES:
+                limited(f"object exceeds {MAX_OBJECT_BYTES} bytes")
+            value = parse_json(bounded_read(descriptor, MAX_OBJECT_BYTES, "object"), "object")
+        finally:
+            os.close(descriptor)
+        object_digest = "sha256:" + name
+        if typed_digest("execution-control-object", value) != object_digest:
+            corrupt("object content address is invalid")
+        return value
+
+    def verify_objects(self) -> tuple[int, int]:
+        count = total = 0
+        objects, _ = open_directory(self.objects)
+        try:
+            prefix_names: list[str] = []
+            with os.scandir(objects) as prefixes:
+                for prefix_entry in prefixes:
+                    if len(prefix_names) >= MAX_OBJECT_PREFIX_ENTRIES:
+                        limited(f"object prefix entries exceed {MAX_OBJECT_PREFIX_ENTRIES}")
+                    prefix_names.append(prefix_entry.name)
+            for prefix_name in prefix_names:
+                if not re.fullmatch(r"[0-9a-f]{2}", prefix_name):
+                    corrupt("object prefix directory is invalid")
+                prefix, _ = open_directory_at(objects, prefix_name, prefix_name)
+                try:
+                    initial_names: list[str] = []
+                    with os.scandir(prefix) as paths:
+                        for entry in paths:
+                            if len(initial_names) >= MAX_OBJECT_FILES_PER_PREFIX + MAX_CREATE_ONLY_TEMP_ENTRIES:
+                                limited("object prefix entries exceed file and recovery bounds")
+                            initial_names.append(entry.name)
+                    temporary_pattern = re.compile(r"^[.]([0-9a-f]{64})[.]tmp[.][0-9]+[.][0-9a-f]{16}$")
+                    for initial_name in initial_names:
+                        temporary_match = temporary_pattern.fullmatch(initial_name)
+                        if temporary_match is None:
+                            continue
+                        recover_create_only_hardlink_at(prefix, temporary_match.group(1))
+                        try:
+                            os.stat(initial_name, dir_fd=prefix, follow_symlinks=False)
+                        except FileNotFoundError:
+                            continue
+                        corrupt("object temporary entry is not a recoverable publication link")
+                    object_names: list[str] = []
+                    with os.scandir(prefix) as paths:
+                        for entry in paths:
+                            if len(object_names) >= MAX_OBJECT_FILES_PER_PREFIX:
+                                limited(f"object files per prefix exceed {MAX_OBJECT_FILES_PER_PREFIX}")
+                            object_names.append(entry.name)
+                    for object_name in object_names:
+                        metadata = os.stat(object_name, dir_fd=prefix, follow_symlinks=False)
+                        object_digest = "sha256:" + object_name
+                        if object_name[:2] != prefix_name or not DIGEST.fullmatch(object_digest):
+                            corrupt("object filename is invalid")
+                        validate_metadata(metadata, object_name, False)
+                        count += 1
+                        total += metadata.st_size
+                        if count > MAX_OBJECT_COUNT or total > MAX_OBJECT_TOTAL_BYTES:
+                            limited("object store exceeds count or total-byte limit")
+                        self.require_object_at(prefix, object_name)
+                finally:
+                    os.close(prefix)
+        finally:
+            os.close(objects)
+        return count, total
+
+    def validate_lineage(self, events: list[dict[str, Any]]) -> None:
+        by_id: dict[str, dict[str, Any]] = {}
+        active: dict[tuple[str, str, str], str | None] = {}
+        for event in events:
+            key = (event["subject"]["kind"], event["subject"]["id"], event["occurrenceId"])
+            if event["eventType"] == "RECORD":
+                if key in active:
+                    corrupt("duplicate or revived lineage root is forbidden")
+                active[key] = event["eventId"]
+            else:
+                target_id = event["supersedesEventId"]
+                target = by_id.get(target_id)
+                if target is None:
+                    corrupt("lineage target is unknown")
+                target_key = (target["subject"]["kind"], target["subject"]["id"], target["occurrenceId"])
+                if target_key != key or active.get(key) != target_id:
+                    corrupt("lineage target crosses identity or branches from an inactive event")
+                active[key] = event["eventId"] if event["eventType"] == "CORRECT" else None
+            by_id[event["eventId"]] = event
+
+    def verify_event_prefix(self, raw: bytes, expected_head: dict[str, Any], label: str) -> list[dict[str, Any]]:
+        events = self.validate_ledger_bytes(raw, label)
         previous = GENESIS
         event_ids: set[str] = set()
         attempt_ids: set[str] = set()
-        known_event_ids: set[str] = set()
+        transaction_ids: set[str] = set()
         for index, event in enumerate(events, 1):
-            if event["sequence"] != index:
-                raise StoreError("events ledger has a sequence gap or reorder")
-            if event["previousEventDigest"] != previous:
-                raise StoreError("events ledger predecessor chain is invalid")
-            if event["eventId"] in event_ids:
-                raise StoreError("eventId is not unique")
+            if event["sequence"] != index or event["previousEventDigest"] != previous:
+                corrupt(f"{label} sequence or predecessor chain is invalid")
+            if event["eventId"] in event_ids or event["attemptId"] in attempt_ids or event["transactionId"] in transaction_ids:
+                corrupt("event, attempt, and transaction identities must be unique")
             event_ids.add(event["eventId"])
-            attempt = event["attemptId"]
-            if attempt is not None:
-                if attempt in attempt_ids:
-                    raise StoreError("attemptId is not distinct per physical execution")
-                attempt_ids.add(attempt)
-            supersedes = event["supersedesEventId"]
-            if supersedes is not None and supersedes not in known_event_ids:
-                raise StoreError("supersedesEventId does not name an earlier event")
+            attempt_ids.add(event["attemptId"])
+            transaction_ids.add(event["transactionId"])
             self.require_object(event["objectDigest"])
             for extension in event["extensions"]:
                 self.require_object(extension["payloadDigest"])
-            known_event_ids.add(event["eventId"])
             previous = event["eventDigest"]
-        head = self.load_head()
-        expected_head = {
-            "contractType": "execution-control-head",
-            "schemaVersion": 1,
-            "sequence": len(events),
-            "eventDigest": previous,
-        }
-        if head != expected_head:
-            raise StoreError("head is rolled back, ahead, or inconsistent with ledger tip")
-        object_count = self.verify_all_objects()
-        return {
-            "contractType": "execution-control-verification",
-            "schemaVersion": 1,
-            "eventCount": len(events),
-            "headDigest": previous,
-            "objectCount": object_count,
-            "verified": True,
-        }
+        self.validate_lineage(events)
+        if expected_head["sequence"] != len(events) or expected_head["eventDigest"] != previous:
+            corrupt(f"head does not match the {label} tip")
+        return events
 
-    def object_path(self, digest: str) -> Path:
-        if not is_digest(digest):
-            raise StoreError("object digest is invalid")
-        hexadecimal = digest[len(DIGEST_PREFIX) :]
-        return self.objects / hexadecimal[:2] / hexadecimal
-
-    def require_object(self, digest: str) -> Any:
-        path = self.object_path(digest)
-        value = strict_read_json(path)
-        if typed_digest(OBJECT_CONTRACT, 1, value) != digest:
-            raise StoreError("object bytes do not match content address")
-        if canonical_line(value) != read_regular(path):
-            raise StoreError("object is not persisted as canonical JSON plus LF")
-        return value
-
-    def verify_all_objects(self) -> int:
-        count = 0
-        for prefix in sorted(self.objects.iterdir(), key=lambda item: item.name):
-            require_owned_private(prefix, True)
-            if len(prefix.name) != 2 or any(character not in "0123456789abcdef" for character in prefix.name):
-                raise StoreError("object prefix directory is invalid")
-            for path in sorted(prefix.iterdir(), key=lambda item: item.name):
-                require_owned_private(path, False)
-                digest = DIGEST_PREFIX + path.name
-                if path.name[:2] != prefix.name or not is_digest(digest):
-                    raise StoreError("object filename is not a valid content address")
-                self.require_object(digest)
-                count += 1
-        return count
-
-    def put_object_locked(self, input_path: Path) -> dict[str, Any]:
-        value = parse_json_bytes(read_external_regular(input_path), "object input")
-        digest = typed_digest(OBJECT_CONTRACT, 1, value)
-        path = self.object_path(digest)
-        ensure_directory(path.parent)
-        stored = False
-        if path.exists() or path.is_symlink():
-            existing = self.require_object(digest)
-            if canonical_bytes(existing) != canonical_bytes(value):
-                raise StoreError("content-address collision or substitution")
-        else:
-            atomic_write(path, canonical_line(value))
-            stored = True
-        return {"objectDigest": digest, "stored": stored}
-
-    def append_locked(self, expected_sequence: int, expected_digest: str, event_path: Path) -> dict[str, Any]:
-        self.recover_pending()
-        self.verify_locked()
-        head = self.load_head()
-        if head["sequence"] != expected_sequence or head["eventDigest"] != expected_digest:
-            raise StoreError("compare-and-append predecessor is stale")
-        proposal = validate_event(parse_json_bytes(read_external_regular(event_path), "event proposal"), proposal=True)
-        events = self.load_events()
-        if proposal["eventId"] in {event["eventId"] for event in events}:
-            raise StoreError("eventId already exists")
-        if proposal["attemptId"] is not None and proposal["attemptId"] in {event["attemptId"] for event in events}:
-            raise StoreError("attemptId already exists")
-        supersedes = proposal["supersedesEventId"]
-        if supersedes is not None and supersedes not in {event["eventId"] for event in events}:
-            raise StoreError("supersedesEventId does not name an earlier event")
-        self.require_object(proposal["objectDigest"])
-        for extension in proposal["extensions"]:
-            self.require_object(extension["payloadDigest"])
-        event = dict(proposal)
-        event["sequence"] = expected_sequence + 1
-        event["previousEventDigest"] = expected_digest
-        event["eventDigest"] = event_digest(event)
-        event = validate_event(event)
-        pending = {
-            "contractType": "execution-control-pending",
-            "schemaVersion": 1,
-            "expectedSequence": expected_sequence,
-            "expectedHeadDigest": expected_digest,
-            "event": event,
-        }
-        atomic_write(self.pending, canonical_line(pending))
-        descriptor = os.open(self.events, os.O_WRONLY | os.O_APPEND | nofollow_flag())
+    def recover(self) -> None:
+        if not self.pending.exists() and not self.pending.is_symlink():
+            return
+        pending = fields(parse_json(read_regular(self.pending, MAX_PENDING_BYTES, "pending"), "pending"), PENDING_FIELDS, "pending")
+        metadata = self.load_metadata()
+        event = validate_event(pending["event"])
+        if pending["contractType"] != "execution-control-pending" or pending["schemaVersion"] != VERSION:
+            corrupt("pending contract or version is invalid")
+        identifier(pending["storeId"], "pending storeId")
+        transaction_id = identifier(pending["transactionId"], "pending transactionId", TRANSACTION_ID)
+        if pending["storeId"] != metadata["storeId"] or transaction_id != event["transactionId"]:
+            corrupt("pending store or transaction identity mismatch")
+        expected_offset = pending["expectedLedgerOffset"]
+        expected_sequence = pending["expectedSequence"]
+        if not isinstance(expected_offset, int) or isinstance(expected_offset, bool) or expected_offset < 0:
+            corrupt("pending offset is invalid")
+        if not isinstance(expected_sequence, int) or isinstance(expected_sequence, bool) or expected_sequence < 0:
+            corrupt("pending sequence is invalid")
+        expected_head = digest(pending["expectedHeadDigest"], "expectedHeadDigest")
+        prefix_digest = digest(pending["expectedPrefixDigest"], "expectedPrefixDigest")
+        line_digest = digest(pending["eventLineDigest"], "eventLineDigest")
+        event_line = canonical_line(event)
+        if digest_bytes(event_line) != line_digest:
+            corrupt("pending event line digest mismatch")
+        if event["sequence"] != expected_sequence + 1 or event["previousEventDigest"] != expected_head:
+            corrupt("pending event sequence or predecessor mismatch")
+        proposal = {key: event[key] for key in PROPOSAL_FIELDS}
+        recomputed_transaction = calculate_transaction(expected_sequence, expected_head, proposal)
+        if transaction_id != recomputed_transaction or event["transactionId"] != recomputed_transaction:
+            corrupt("pending transaction digest does not match canonical proposal")
+        descriptor, _ = open_regular(self.events, os.O_RDWR)
         try:
-            write_all(descriptor, canonical_line(event))
-            os.fsync(descriptor)
+            raw = bounded_read(descriptor, MAX_LEDGER_BYTES, "events ledger")
+            if len(raw) < expected_offset or digest_bytes(raw[:expected_offset]) != prefix_digest:
+                conflict("pending ledger prefix does not match")
+            suffix = raw[expected_offset:]
+            if not event_line.startswith(suffix):
+                conflict("pending ledger suffix diverges")
+            old_head = self.genesis_head(metadata["storeId"])
+            old_head.update(sequence=expected_sequence, eventDigest=expected_head)
+            new_head = dict(old_head)
+            new_head.update(sequence=event["sequence"], eventDigest=event["eventDigest"])
+            self.verify_event_prefix(raw[:expected_offset], old_head, "pending ledger prefix")
+            self.verify_objects()
+            self.verify_event_prefix(raw[:expected_offset] + event_line, new_head, "pending recovery candidate")
+            head = self.load_head()
+            if head != old_head and head != new_head:
+                conflict("pending recovery found a conflicting head")
+            if head == new_head and suffix != event_line:
+                conflict("pending recovery found an advanced head with an incomplete ledger")
+            if suffix != event_line:
+                os.ftruncate(descriptor, expected_offset)
+                os.fsync(descriptor)
+                os.lseek(descriptor, expected_offset, os.SEEK_SET)
+                write_all(descriptor, event_line)
+                os.fsync(descriptor)
         finally:
             os.close(descriptor)
-        new_head = {
-            "contractType": "execution-control-head",
-            "schemaVersion": 1,
-            "sequence": event["sequence"],
-            "eventDigest": event["eventDigest"],
-        }
+        if head == old_head:
+            atomic_write(self.head, canonical_line(new_head))
+        unlink_synced(self.pending)
+
+    def checkpoint(self, authority_path: str | None = None) -> dict[str, Any]:
+        head = self.load_head()
+        result = {"canonicalProfile": CANONICAL_PROFILE, "contractType": "execution-control-checkpoint", "eventDigest": head["eventDigest"], "schemaVersion": VERSION, "sequence": head["sequence"], "storeId": head["storeId"]}
+        if authority_path is not None:
+            authority = security.load(authority_path, CHECKPOINT_AUTHORITY_PURPOSE)
+            now = dt.datetime.now(dt.timezone.utc)
+            result.update(authorityId=authority["authorityId"], trustRootId=authority["trustRootId"], checkpointAt=now.isoformat(timespec="milliseconds").replace("+00:00", "Z"), expiresAt=(now + CHECKPOINT_LIFETIME).isoformat(timespec="milliseconds").replace("+00:00", "Z"))
+            result["authenticator"] = security.authenticator(authority, result)
+        return result
+
+    def validate_checkpoint(self, checkpoint: Any, authority_path: str | None = None) -> tuple[dict[str, Any], str]:
+        expected_fields = AUTHENTICATED_CHECKPOINT_FIELDS if authority_path is not None else CHECKPOINT_FIELDS
+        value = fields(checkpoint, expected_fields, "checkpoint")
+        if value["contractType"] != "execution-control-checkpoint":
+            invalid("checkpoint contractType is invalid")
+        if value["schemaVersion"] != VERSION:
+            invalid("checkpoint version is unsupported")
+        store_id = identifier(value["storeId"], "checkpoint storeId")
+        if value["canonicalProfile"] != CANONICAL_PROFILE:
+            invalid("checkpoint canonicalProfile is invalid")
+        sequence = value["sequence"]
+        if not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 0 or sequence > MAX_EVENT_COUNT:
+            invalid("checkpoint sequence is outside the supported range")
+        digest(value["eventDigest"], "checkpoint eventDigest")
+        if store_id != self.load_metadata()["storeId"]:
+            error("ECF-ANCHOR-MISMATCH", "anchor", "caller checkpoint belongs to a different store", 9)
+        if authority_path is None:
+            return value, "not-evaluated"
+        try:
+            authority = security.load(authority_path, CHECKPOINT_AUTHORITY_PURPOSE)
+        except (security.AuthorityError, OSError) as exc:
+            error("ECF-AUTHORITY-INVALID", "authority", f"checkpoint authority is invalid: {exc}", 10)
+        if value["authorityId"] != authority["authorityId"] or value["trustRootId"] != authority["trustRootId"]:
+            error("ECF-AUTHORITY-INVALID", "authority", "checkpoint authority or trust root does not match configured authority", 10)
+        checkpoint_at = timestamp(value["checkpointAt"])
+        expires_at = timestamp(value["expiresAt"])
+        checkpoint_time = dt.datetime.strptime(checkpoint_at, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=dt.timezone.utc)
+        expiry_time = dt.datetime.strptime(expires_at, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=dt.timezone.utc)
+        now = dt.datetime.now(dt.timezone.utc)
+        if expiry_time <= checkpoint_time or expiry_time - checkpoint_time > CHECKPOINT_LIFETIME or now < checkpoint_time or now > expiry_time:
+            error("ECF-CHECKPOINT-STALE", "freshness", "checkpoint freshness window is invalid or expired", 11)
+        unsigned = dict(value)
+        supplied = unsigned.pop("authenticator")
+        if not security.verify(authority, unsigned, supplied):
+            error("ECF-AUTHORITY-INVALID", "authority", "checkpoint authenticator is invalid", 10)
+        return value, "satisfied"
+
+    def verified(self, checkpoint: dict[str, Any] | None = None, authority_path: str | None = None, require_rollback_resistance: bool = False) -> VerificationResult:
+        self.recover()
+        ledger = self.raw_events()
+        head = self.load_head()
+        events = self.verify_event_prefix(ledger, head, "events ledger")
+        object_count, object_bytes = self.verify_objects()
+        anchor_status = "not-provided"
+        rollback_resistance = "not-evaluated"
+        if checkpoint is not None:
+            validated_checkpoint, rollback_resistance = self.validate_checkpoint(checkpoint, authority_path)
+            local_checkpoint = self.checkpoint()
+            compared_checkpoint = {key: validated_checkpoint[key] for key in CHECKPOINT_FIELDS}
+            if compared_checkpoint != local_checkpoint:
+                error("ECF-ANCHOR-MISMATCH", "anchor", "caller checkpoint does not match local head", 9)
+            anchor_status = "authenticated" if rollback_resistance == "satisfied" else "local-match"
+        if require_rollback_resistance and rollback_resistance != "satisfied":
+            error("ECF-ROLLBACK-NOT-EVALUATED", "authority", "rollback resistance requires an authenticated fresh checkpoint and configured authority", 10)
+        report = {"anchorStatus": anchor_status, "canonicalProfile": CANONICAL_PROFILE, "contractType": "execution-control-verification", "eventCount": len(events), "headDigest": head["eventDigest"], "limitsProfile": LIMITS_PROFILE, "localConsistency": True, "objectBytes": object_bytes, "objectCount": object_count, "rollbackResistance": rollback_resistance, "schemaVersion": VERSION, "storeId": head["storeId"]}
+        return VerificationResult(report, events, ledger, head, object_count, object_bytes)
+
+    def verify(self, checkpoint: dict[str, Any] | None = None, authority_path: str | None = None, require_rollback_resistance: bool = False) -> dict[str, Any]:
+        return self.verified(checkpoint, authority_path, require_rollback_resistance).report
+
+    def put_object(self, value: Any) -> dict[str, Any]:
+        verification = self.verified()
+        payload = canonical_line(value)
+        if len(payload) > MAX_OBJECT_BYTES:
+            limited(f"object exceeds {MAX_OBJECT_BYTES} bytes")
+        object_digest = typed_digest("execution-control-object", value)
+        path = self.object_path(object_digest)
+        ensure_directory(path.parent)
+        if path.exists() or path.is_symlink():
+            self.require_object(object_digest)
+            return {"objectDigest": object_digest, "stored": False}
+        if verification.object_count + 1 > MAX_OBJECT_COUNT or verification.object_bytes + len(payload) > MAX_OBJECT_TOTAL_BYTES:
+            limited("object insertion exceeds store limit")
+        atomic_write(path, payload, True)
+        return {"objectDigest": object_digest, "stored": True}
+
+    def append(self, expected_sequence: int, expected_digest: str, proposal: dict[str, Any]) -> dict[str, Any]:
+        verification = self.verified()
+        events = verification.events
+        transaction = calculate_transaction(expected_sequence, expected_digest, proposal)
+        for existing in events:
+            if existing["transactionId"] == transaction:
+                reconstructed = {key: existing[key] for key in PROPOSAL_FIELDS}
+                if reconstructed == proposal and existing["sequence"] == expected_sequence + 1 and existing["previousEventDigest"] == expected_digest:
+                    return existing
+                conflict("transaction identity is ambiguous")
+        head = verification.head
+        if head["sequence"] != expected_sequence or head["eventDigest"] != expected_digest:
+            conflict("compare-and-append predecessor is stale")
+        if len(events) >= MAX_EVENT_COUNT:
+            limited(f"events ledger exceeds {MAX_EVENT_COUNT} events")
+        if proposal["eventId"] in {event["eventId"] for event in events} or proposal["attemptId"] in {event["attemptId"] for event in events}:
+            conflict("eventId or attemptId already exists")
+        event = dict(proposal)
+        event.update(sequence=expected_sequence + 1, transactionId=transaction, previousEventDigest=expected_digest)
+        event["eventDigest"] = calculate_event_digest(event)
+        validate_event(event)
+        self.validate_lineage(events + [event])
+        self.require_object(event["objectDigest"])
+        for extension in event["extensions"]:
+            self.require_object(extension["payloadDigest"])
+        event_line = canonical_line(event)
+        ledger = verification.ledger
+        if len(event_line) > MAX_EVENT_BYTES or len(ledger) + len(event_line) > MAX_LEDGER_BYTES:
+            limited("event or ledger byte limit exceeded")
+        pending = {"contractType": "execution-control-pending", "event": event, "eventLineDigest": digest_bytes(event_line), "expectedHeadDigest": expected_digest, "expectedLedgerOffset": len(ledger), "expectedPrefixDigest": digest_bytes(ledger), "expectedSequence": expected_sequence, "schemaVersion": VERSION, "storeId": head["storeId"], "transactionId": transaction}
+        pending_line = canonical_line(pending)
+        if len(pending_line) > MAX_PENDING_BYTES:
+            limited("pending transaction byte limit exceeded")
+        atomic_write(self.pending, pending_line, True)
+        injected_fault("after-pending", self.pending)
+        descriptor, _ = open_regular(self.events, os.O_WRONLY | os.O_APPEND)
+        try:
+            injected_fault("before-ledger-write", self.events)
+            write_all(descriptor, event_line)
+            injected_fault("after-ledger-write", self.events)
+            os.fsync(descriptor)
+            injected_fault("after-ledger-fsync", self.events)
+        finally:
+            os.close(descriptor)
+        new_head = dict(head)
+        new_head.update(sequence=event["sequence"], eventDigest=event["eventDigest"])
         atomic_write(self.head, canonical_line(new_head))
+        injected_fault("after-head", self.head)
         unlink_synced(self.pending)
         return event
 
-    def projection_locked(self) -> dict[str, Any]:
-        verification = self.verify_locked()
-        events = self.load_events()
-        event_type_counts = {name: 0 for name in sorted(EVENT_TYPES)}
-        posture_counts = {name: 0 for name in sorted(POSTURES)}
-        for event in events:
-            event_type_counts[event["eventType"]] += 1
-            posture_counts[event["posture"]] += 1
-        projection = {
-            "contractType": PROJECTION_CONTRACT,
-            "schemaVersion": 1,
-            "eventCount": verification["eventCount"],
-            "eventTypeCounts": event_type_counts,
-            "headDigest": verification["headDigest"],
-            "objectCount": verification["objectCount"],
-            "postureCounts": posture_counts,
-        }
+    def project(self) -> dict[str, Any]:
+        verification = self.verified()
+        events = verification.events
+        projection = {"anchorStatus": "not-provided", "canonicalProfile": CANONICAL_PROFILE, "contractType": "execution-control-integrity-projection", "eventCount": len(events), "eventTypeCounts": {name: sum(event["eventType"] == name for event in events) for name in sorted(EVENT_TYPES)}, "headDigest": verification.report["headDigest"], "limitsProfile": LIMITS_PROFILE, "localConsistency": True, "objectBytes": verification.object_bytes, "objectCount": verification.object_count, "postureCounts": {name: sum(event["posture"] == name for event in events) for name in sorted(POSTURES)}, "schemaVersion": VERSION, "storeId": verification.report["storeId"]}
         atomic_write(self.projections / "integrity.json", canonical_line(projection))
         return projection
 
 
-def read_external_regular(path: Path) -> bytes:
-    reject_symlink_chain(path, allow_missing_tail=False)
-    metadata = os.lstat(path)
-    if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-        raise StoreError(f"input must be a regular non-symlink file: {path.name}")
-    descriptor = os.open(path, os.O_RDONLY | nofollow_flag())
-    try:
-        chunks: list[bytes] = []
-        while True:
-            chunk = os.read(descriptor, 1024 * 1024)
-            if not chunk:
-                return b"".join(chunks)
-            chunks.append(chunk)
-    finally:
-        os.close(descriptor)
+class Parser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        error("ECF-USAGE-INVALID", "usage", message, 2)
 
 
-def process_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return True
-
-
-def remove_lock_claim(claim: Path) -> None:
-    owner = claim / "owner.json"
-    if owner.exists():
-        require_owned_private(owner, False)
-        owner.unlink()
-    require_owned_private(claim, True)
-    claim.rmdir()
-    fsync_directory(claim.parent)
-
-
-def safe_output(path_text: str, data: bytes) -> None:
-    path = lexical_absolute(path_text, "output")
-    reject_symlink_chain(path.parent, allow_missing_tail=False)
-    if path.exists() or path.is_symlink():
-        metadata = os.lstat(path)
-        if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-            raise StoreError("projection output must be a regular non-symlink file")
-        if metadata.st_uid != os.geteuid():
-            raise StoreError("projection output has wrong owner")
-    temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{secrets.token_hex(8)}"
-    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow_flag(), 0o600)
-    try:
-        os.fchmod(descriptor, 0o600)
-        write_all(descriptor, data)
-        os.fsync(descriptor)
-    except BaseException:
-        with contextlib.suppress(FileNotFoundError):
-            temporary.unlink()
-        raise
-    finally:
-        os.close(descriptor)
-    os.replace(temporary, path)
-    fsync_directory(path.parent)
-    os.chmod(path, 0o600)
-
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Bubbles execution-control store")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    object_put = subparsers.add_parser("object-put")
-    object_put.add_argument("--store-root", required=True)
-    object_put.add_argument("--input", required=True)
-
-    append = subparsers.add_parser("append")
+def parser() -> Parser:
+    result = Parser(description="Bubbles Execution-Control Foundation store")
+    subs = result.add_subparsers(dest="command", required=True, parser_class=Parser)
+    put = subs.add_parser("object-put")
+    put.add_argument("--store-root", required=True)
+    put.add_argument("--input", required=True)
+    append = subs.add_parser("append")
     append.add_argument("--store-root", required=True)
-    append.add_argument("--expected-sequence", required=True, type=int)
+    append.add_argument("--expected-sequence", required=True)
     append.add_argument("--expected-head-digest", required=True)
     append.add_argument("--event-file", required=True)
-
-    read = subparsers.add_parser("read")
+    read = subs.add_parser("read")
     read.add_argument("--store-root", required=True)
-    read.add_argument("--from-sequence", required=True, type=int)
-    read.add_argument("--limit", required=True, type=int)
-
-    verify = subparsers.add_parser("verify")
+    read.add_argument("--from-sequence", required=True)
+    read.add_argument("--limit", required=True)
+    verify = subs.add_parser("verify")
     verify.add_argument("--store-root", required=True)
-
-    project = subparsers.add_parser("project")
+    verify.add_argument("--checkpoint")
+    verify.add_argument("--checkpoint-authority")
+    verify.add_argument("--require-rollback-resistance", action="store_true")
+    checkpoint = subs.add_parser("checkpoint")
+    checkpoint.add_argument("--store-root", required=True)
+    checkpoint.add_argument("--checkpoint-authority")
+    project = subs.add_parser("project")
     project.add_argument("--store-root", required=True)
-    project.add_argument("--output", required=True)
-    return parser
+    return result
 
 
-def execute(arguments: argparse.Namespace) -> dict[str, Any]:
-    store = Store(arguments.store_root)
-    if arguments.command == "object-put":
+def decimal(value: Any, label: str, minimum: int, maximum: int) -> int:
+    if not isinstance(value, str) or not re.fullmatch(r"0|[1-9][0-9]*", value):
+        invalid(f"{label} must be a canonical non-negative decimal integer")
+    result = int(value)
+    if result < minimum or result > maximum:
+        limited(f"{label} is outside [{minimum}, {maximum}]")
+    return result
+
+
+def execute(args: argparse.Namespace) -> dict[str, Any]:
+    store = Store(args.store_root)
+    if args.command == "object-put":
+        raw, input_authority = read_external(absolute_path(args.input, "input"), MAX_INPUT_BYTES, "object input")
+        value = parse_json(raw, "object input", canonical=False)
         with store.locked():
-            store.recover_pending()
-            store.verify_locked()
-            return store.put_object_locked(lexical_absolute(arguments.input, "input"))
-    if arguments.command == "append":
-        if arguments.expected_sequence < 0:
-            raise StoreError("expected-sequence must be non-negative")
-        if not is_digest(arguments.expected_head_digest):
-            raise StoreError("expected-head-digest must be a typed sha256 digest")
+            if input_authority.file_identity in store.protected_identities() or store.contains_external(input_authority):
+                corrupt("object input aliases store internals")
+            return store.put_object(value)
+    if args.command == "append":
+        sequence = decimal(args.expected_sequence, "expected-sequence", 0, MAX_EVENT_COUNT)
+        head_digest = digest(args.expected_head_digest, "expected-head-digest")
+        raw, input_authority = read_external(absolute_path(args.event_file, "event-file"), MAX_EVENT_BYTES, "event proposal")
+        proposal = validate_event(parse_json(raw, "event proposal"), True)
         with store.locked():
-            return store.append_locked(
-                arguments.expected_sequence,
-                arguments.expected_head_digest,
-                lexical_absolute(arguments.event_file, "event-file"),
-            )
-    if arguments.command == "read":
-        if arguments.from_sequence < 1 or arguments.limit < 1:
-            raise StoreError("from-sequence and limit must be positive")
+            if input_authority.file_identity in store.protected_identities() or store.contains_external(input_authority):
+                corrupt("event input aliases store internals")
+            return store.append(sequence, head_digest, proposal)
+    if args.command == "read":
+        start = decimal(args.from_sequence, "from-sequence", 1, MAX_EVENT_COUNT)
+        limit = decimal(args.limit, "limit", 1, MAX_READ_LIMIT)
         with store.locked():
-            verification = store.verify_locked()
-            selected = [event for event in store.load_events() if event["sequence"] >= arguments.from_sequence][: arguments.limit]
-            return {
-                "contractType": "execution-control-read",
-                "schemaVersion": 1,
-                "events": selected,
-                "headDigest": verification["headDigest"],
-            }
-    if arguments.command == "verify":
+            verification = store.verify()
+            events = [event for event in store.load_events() if event["sequence"] >= start][:limit]
+            return {"anchorStatus": "not-provided", "contractType": "execution-control-read", "events": events, "headDigest": verification["headDigest"], "schemaVersion": VERSION, "storeId": verification["storeId"]}
+    if args.command == "verify":
+        checkpoint = None
+        checkpoint_authority = None
+        trust_authority = None
+        if args.checkpoint:
+            raw, checkpoint_authority = read_external(absolute_path(args.checkpoint, "checkpoint"), MAX_PENDING_BYTES, "checkpoint")
+            checkpoint = parse_json(raw, "checkpoint")
+        if args.checkpoint_authority and not args.checkpoint:
+            invalid("checkpoint-authority requires checkpoint")
+        if args.checkpoint_authority:
+            _, trust_authority = read_external(absolute_path(args.checkpoint_authority, "checkpoint-authority"), 16_384, "checkpoint authority")
         with store.locked():
-            return store.verify_locked()
-    if arguments.command == "project":
+            if checkpoint_authority is not None and store.contains_external(checkpoint_authority):
+                corrupt("checkpoint must be retained outside the writable store hierarchy")
+            if trust_authority is not None and store.contains_external(trust_authority):
+                corrupt("checkpoint authority must be retained outside the writable store hierarchy")
+            return store.verify(checkpoint, args.checkpoint_authority, args.require_rollback_resistance)
+    if args.command == "checkpoint":
+        trust_authority = None
+        if args.checkpoint_authority:
+            _, trust_authority = read_external(absolute_path(args.checkpoint_authority, "checkpoint-authority"), 16_384, "checkpoint authority")
         with store.locked():
-            projection = store.projection_locked()
-        safe_output(arguments.output, canonical_line(projection))
-        return projection
-    raise StoreError("unsupported command")
+            if trust_authority is not None and store.contains_external(trust_authority):
+                corrupt("checkpoint authority must be retained outside the writable store hierarchy")
+            store.verify()
+            return store.checkpoint(args.checkpoint_authority)
+    if args.command == "project":
+        with store.locked():
+            return store.project()
+    invalid("unsupported command")
+
+
+def emit_error(exc: EcfError) -> int:
+    envelope = {"code": exc.code, "contractType": "execution-control-error", "errorClass": exc.kind, "message": str(exc)[:512], "schemaVersion": VERSION}
+    sys.stderr.buffer.write(canonical_line(envelope))
+    sys.stderr.buffer.flush()
+    return exc.exit_code
 
 
 def main() -> int:
-    parser = build_parser()
     try:
-        result = execute(parser.parse_args())
+        result = execute(parser().parse_args())
         sys.stdout.buffer.write(canonical_line(result))
         sys.stdout.buffer.flush()
         return 0
-    except (StoreError, OSError) as exc:
-        print(f"execution-control-store: {exc}", file=sys.stderr)
-        return 1
+    except EcfError as exc:
+        return emit_error(exc)
+    except (OSError, ValueError, TypeError) as exc:
+        return emit_error(EcfError("ECF-IO", "io", f"operation failed: {exc}", 7))
 
 
 if __name__ == "__main__":

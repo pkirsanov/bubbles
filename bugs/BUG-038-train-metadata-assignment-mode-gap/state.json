@@ -1,0 +1,133 @@
+{
+  "version": 3,
+  "bugId": "BUG-038",
+  "featureDir": "bugs/BUG-038-train-metadata-assignment-mode-gap",
+  "featureName": "Train Metadata Assignment Mode Gap",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "reconciled direct-only planning packet: wildcard-aware admission remains separate from authenticated bubbles.train mutation ownership",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-038-train-metadata-assignment-mode-gap"],
+    "allowedPaths": [
+      "bugs/BUG-038-train-metadata-assignment-mode-gap/**",
+      "bubbles/workflows/modes.yaml",
+      "bubbles/workflows/aliases.yaml",
+      "bubbles/agent-capabilities.yaml",
+      "bubbles/agent-ownership.yaml",
+      "agents/bubbles.train.agent.md",
+      "docs/recipes/release-train-lifecycle.md",
+      "docs/guides/WORKFLOW_MODES.md",
+      "bubbles/scripts/*train*metadata*.sh",
+      "bubbles/scripts/*train*metadata*selftest.sh",
+      "bubbles/scripts/workflow-runner-grants-lint.sh",
+      "bubbles/scripts/mode-alias-selftest.sh",
+      "bubbles/scripts/workflow-runner-grants-lint-selftest.sh",
+      "bubbles/release-manifest.json"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": {
+      "goalId": "gc:vscode-ddcadf12da845e696b1170714b10e13b:1",
+      "revision": 1,
+      "sourceRequestDigest": "sha256:38d0707d2f0aa8ab35f867d708243076c2eb2ebd32996db45b6b4a84a7098583"
+    },
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "plan",
+    "currentScope": 1,
+    "substate": "planning_reconciled",
+    "runStartedAt": null,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently execute the 14 Test Plan rows, including both persistent selftests required by TP-B038-03, preserve genuine red-green evidence, and report any source or test defect without advancing certification.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Direct-Only Train Metadata Assignment",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "required", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "phasesExecuted": ["bootstrap", "plan"],
+      "runStartedAt": "2026-09-02T13:11:53Z",
+      "runCompletedAt": "2026-09-02T13:13:59Z",
+      "summary": "Reconciled the direct-only authorization plan, canonical scope status, scenario-to-test obligations, honest portability claim, and nonterminal handoff to bubbles.test under repository control revision 9."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "phasesExecuted": ["plan"],
+      "runStartedAt": "2026-09-02T15:21:44Z",
+      "runCompletedAt": "2026-09-02T15:21:44Z",
+      "summary": "Corrected SCN-B038-003 inside full-delivery convergence iteration 10 so one composite Test Plan and DoD binding requires both evaluator exclusion-precedence and integrated no-mutation proofs; next owner remains bubbles.test."
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "All 13 scenarios pass their focused adversarial regressions, direct-only authorization is proven, human acceptance is recorded, and the owning validation workflow certifies promotion."
+  },
+  "notes": "Planning was reconciled to direct-only mutation. Historical focused evidence predates this architecture and does not satisfy the new authorization scenarios. Wildcard admission remains valid, but wildcard mutation success is not supported by the current runtime. Status remains in_progress."
+}

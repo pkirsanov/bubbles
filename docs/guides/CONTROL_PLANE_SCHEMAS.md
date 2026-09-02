@@ -576,6 +576,28 @@ bubbles runtime reclaim-stale
 - `doctor` must surface stale leases and active compose/fingerprint conflicts
 - status and doctor surfaces may summarize the registry, but the registry itself is the runtime source of truth
 
+## 10.1. Research And Measured-Admission Records
+
+IMP-054 and IMP-055 add a provider-neutral execution-control layer on top of immutable evidence-control records. The checked-in schemas and runtime `schema` surfaces are authoritative; this guide does not duplicate their fields.
+
+```bash
+bash bubbles/scripts/cli.sh research schema
+bash bubbles/scripts/cli.sh research capabilities
+bash bubbles/scripts/cli.sh admission adapter
+bash bubbles/scripts/cli.sh admission usage
+```
+
+The contract preserves these distinctions:
+
+- a runtime lease controls shared stack ownership and capacity;
+- an admission decision controls one measured resource-consuming dispatch;
+- a one-time permit is not consequential-action authorization;
+- a session epoch is valid only when its recorded evidence verifies;
+- `unmeasured` usage is unknown and cannot satisfy a zero-cost or within-budget assertion;
+- research publication produces immutable evidence and an envelope, not certification.
+
+Configured adapters are validated and fail loudly when invalid. Missing dispatch and usage adapter configuration resolves to `none`. The repository reference broker and frozen-corpus evaluator exercise the contracts without claiming native host interception or causal savings.
+
 ## 3. Scenario Contract Manifest
 
 Runtime file: `specs/<feature>/scenario-manifest.json`

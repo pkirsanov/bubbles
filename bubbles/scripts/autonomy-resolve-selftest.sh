@@ -45,7 +45,7 @@ TMPS+=("$CONF_ROOT")
 mkdir -p "$CONF_ROOT/.github"
 printf 'autonomy: interactive\n' >"$CONF_ROOT/.github/bubbles-project.yaml"
 
-resolve() { env -u BUBBLES_AUTONOMY bash "$RESOLVE" "$@" 2>/dev/null; }
+resolve() { (unset BUBBLES_AUTONOMY; bash "$RESOLVE" "$@") 2>/dev/null; }
 posture() { resolve "$@" | sed -n 's/^BUBBLES_RESOLVED_AUTONOMY=//p'; }
 layer() { resolve "$@" | sed -n 's/^BUBBLES_RESOLVED_AUTONOMY_SOURCE=//p'; }
 
@@ -143,7 +143,10 @@ check "unattended with a bounded budget exits 0" "0" "$?"
 resolve --autonomy unattended --session-budget unbounded >/dev/null 2>&1
 check "unattended with an unbounded budget is refused (exit 3)" "3" "$?"
 
-unbounded_err="$(env -u BUBBLES_AUTONOMY bash "$RESOLVE" --autonomy unattended --session-budget unbounded 2>&1 >/dev/null)"
+unbounded_err="$(
+  (unset BUBBLES_AUTONOMY
+    bash "$RESOLVE" --autonomy unattended --session-budget unbounded) 2>&1 >/dev/null
+)"
 if printf '%s' "$unbounded_err" | grep -q 'E039-UNATTENDED-UNBOUNDED'; then
   pass "The unbounded refusal names its code (E039-UNATTENDED-UNBOUNDED)"
 else

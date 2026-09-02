@@ -163,7 +163,7 @@ if [[ ! -f "$tmp" ]]; then
   exit 2
 fi
 
-total="$(grep -c '' <"$tmp" 2>/dev/null || printf '0')"
+total="$(awk 'END { print NR + 0 }' "$tmp")"
 digest="$(hash_of <"$tmp")"
 
 if [[ -n "$VERIFY" ]]; then

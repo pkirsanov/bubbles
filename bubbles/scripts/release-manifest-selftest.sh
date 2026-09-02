@@ -98,6 +98,16 @@ for scenario_contract_file in \
   fi
 done
 
+for security_authority_file in \
+  'bubbles/scripts/security-authority.py' \
+  'bubbles/scripts/security-authority-selftest.py'; do
+  if manifest_section_has_path managedFileChecksums "$security_authority_file"; then
+    pass "Managed checksum inventory includes security authority surface: $security_authority_file"
+  else
+    fail "Managed checksum inventory includes security authority surface: $security_authority_file"
+  fi
+done
+
 git -C "$fixture_root" init --quiet
 mkdir -p "$fixture_root/bubbles/scripts"
 printf '%s\n' '#!/usr/bin/env bash' > "$fixture_root/bubbles/scripts/new-managed.sh"

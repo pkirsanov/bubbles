@@ -110,6 +110,93 @@ EOF
 EOF
 }
 
+build_bug039_feature028_shape() {
+  local feature_dir="$1"
+  local scope_number row_number row_id scenario_id scenario_title
+
+  mkdir -p "$feature_dir/tests"
+  cat > "$feature_dir/tests/traceability.spec.ts" <<'EOF'
+export const traceabilityFixture = true;
+EOF
+  cat > "$feature_dir/spec.md" <<'EOF'
+# Spec — Feature 028 Shape
+EOF
+  cat > "$feature_dir/design.md" <<'EOF'
+# Design — Feature 028 Shape
+EOF
+  cat > "$feature_dir/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+tests/traceability.spec.ts is the persistent regression surface.
+EOF
+  cat > "$feature_dir/state.json" <<'EOF'
+{
+  "version": 3,
+  "status": "in_progress",
+  "scopeLayout": "single-file"
+}
+EOF
+  cat > "$feature_dir/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {"id":"SCN-028-A-01","title":"Scope 1 primary behavior","linkedTests":["tests/traceability.spec.ts"],"evidenceRefs":["report.md#test-evidence"]},
+    {"id":"SCN-028-B-01","title":"Scope 2 primary behavior","linkedTests":["tests/traceability.spec.ts"],"evidenceRefs":["report.md#test-evidence"]},
+    {"id":"SCN-028-C-01","title":"Scope 3 primary behavior","linkedTests":["tests/traceability.spec.ts"],"evidenceRefs":["report.md#test-evidence"]},
+    {"id":"SCN-028-D-01","title":"Scope 4 primary behavior","linkedTests":["tests/traceability.spec.ts"],"evidenceRefs":["report.md#test-evidence"]}
+  ]
+}
+EOF
+
+  : > "$feature_dir/scopes.md"
+  printf '# Scopes — Feature 028 Shape\n\n' >> "$feature_dir/scopes.md"
+  scope_number=1
+  while [[ "$scope_number" -le 4 ]]; do
+    case "$scope_number" in
+      1) scenario_id="SCN-028-A-01" ;;
+      2) scenario_id="SCN-028-B-01" ;;
+      3) scenario_id="SCN-028-C-01" ;;
+      *) scenario_id="SCN-028-D-01" ;;
+    esac
+    scenario_title="Scope $scope_number primary behavior"
+    cat >> "$feature_dir/scopes.md" <<EOF
+## Scope $scope_number: Exact Table $scope_number
+
+**Status:** Not Started
+
+### $scenario_id
+  Scenario: $scenario_title
+
+### Test Plan
+
+| ID | Type | Scenario | Persistent file and exact title | Command | Required behavior |
+| --- | --- | --- | --- | --- | --- |
+EOF
+    row_number=1
+    while [[ "$row_number" -le 6 ]]; do
+      row_id=$(((scope_number - 1) * 6 + row_number))
+      if [[ "$row_number" -eq 1 ]]; then
+        printf '| TP-028-%02d | regression | %s | `tests/traceability.spec.ts` — %s | selftest:traceability | Maps the primary behavior |\n' \
+          "$row_id" "$scenario_id" "$scenario_title" >> "$feature_dir/scopes.md"
+      else
+        printf '| TP-028-%02d | unit | SCN-028-%d%02d | `tests/traceability.spec.ts` — Auxiliary behavior %d | selftest:traceability | Covers one auxiliary path |\n' \
+          "$row_id" "$scope_number" "$row_number" "$row_id" >> "$feature_dir/scopes.md"
+      fi
+      row_number=$((row_number + 1))
+    done
+    cat >> "$feature_dir/scopes.md" <<EOF
+
+### Definition of Done
+
+- [ ] $scenario_id $scenario_title -> Evidence: report.md#test-evidence
+
+EOF
+    scope_number=$((scope_number + 1))
+  done
+}
+
 CASE_OUTPUT=""
 CASE_STATUS=0
 CASE_INDEX=0
@@ -176,6 +263,59 @@ SHIM
   CASE_STATUS=0
   if PATH="$shim_dir:$PATH" BUG018_REAL_PYTHON="$real_python" \
     bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
+    CASE_STATUS=0
+  else
+    CASE_STATUS=$?
+  fi
+  CASE_OUTPUT="$(cat "$case_log")"
+  echo "[selftest traceability-guard] $case_label (exit $CASE_STATUS)"
+}
+
+run_trace_case_with_parser_status() {
+  local feature_dir="$1"
+  local case_label="$2"
+  local case_log
+  local shim_dir="$TMPDIR/bug039-parser-status-bin"
+  local real_python
+  shift 2
+
+  real_python="$(command -v python3)"
+  mkdir -p "$shim_dir"
+  cat > "$shim_dir/python3" <<'SHIM'
+#!/usr/bin/env bash
+set -u
+
+: "${TRACEABILITY_REAL_PYTHON:?missing real python path}"
+stdout_capture="$(mktemp)"
+stderr_capture="$(mktemp)"
+  script_capture="$(mktemp)"
+  trap 'rm -f "$stdout_capture" "$stderr_capture" "$script_capture"' EXIT INT TERM
+status=0
+  parser_invocation=0
+  if [[ "${1:-}" == "-" ]]; then
+    cat >"$script_capture"
+    shift
+    if grep -Fq 'def fail_structure(message, line_number):' "$script_capture"; then
+      parser_invocation=1
+    fi
+    "$TRACEABILITY_REAL_PYTHON" "$script_capture" "$@" >"$stdout_capture" 2>"$stderr_capture" || status=$?
+  else
+    "$TRACEABILITY_REAL_PYTHON" "$@" >"$stdout_capture" 2>"$stderr_capture" || status=$?
+  fi
+cat "$stdout_capture"
+cat "$stderr_capture" >&2
+  if [[ "$parser_invocation" -eq 1 ]]; then
+  printf 'SELFTEST_PARSER_STATUS=%s\n' "$status" >&2
+fi
+exit "$status"
+SHIM
+  chmod +x "$shim_dir/python3"
+
+  CASE_INDEX=$((CASE_INDEX + 1))
+  case_log="$TMPDIR/bug039-parser-status-${CASE_INDEX}.log"
+  CASE_STATUS=0
+  if PATH="$shim_dir:$PATH" TRACEABILITY_REAL_PYTHON="$real_python" \
+    bash "$GUARD" "$feature_dir" "$@" >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -973,6 +1113,209 @@ assert_case_status 0 "Unrelated table is ignored and the valid Test Plan table e
 assert_case_contains "summary: scenarios=1 test_rows=1" \
   "Unrelated table contributes no test rows"
 
+# --- BUG-039: structural rows never inflate canonical ID/Type tables -------
+bug039_feature="$TMPDIR/specs/108-bug039-feature028-shape"
+build_bug039_feature028_shape "$bug039_feature"
+run_trace_case "$bug039_feature" "BUG-039 four canonical ID/Type Test Plan tables" --all-scopes
+assert_case_status 0 "BUG-039 canonical ID/Type tables remain fully traceable"
+assert_case_occurrences 4 "summary: scenarios=1 test_rows=6" \
+  "BUG-039 each six-row table excludes its header and separator"
+assert_case_contains "Test rows checked: 24" \
+  "BUG-039 four Test Plan tables aggregate exactly 24 genuine rows"
+assert_case_not_contains "Test Plan extraction failed" \
+  "BUG-039 canonical table extraction has no hidden parser failure"
+
+bug039_malformed_feature="$TMPDIR/specs/109-bug039-malformed-row"
+cp -R "$bug039_feature" "$bug039_malformed_feature"
+python3 - "$bug039_malformed_feature/scopes.md" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+needle = "| TP-028-24 | unit | SCN-028-406 | `tests/traceability.spec.ts` — Auxiliary behavior 24 | selftest:traceability | Covers one auxiliary path |"
+replacement = "| TP-028-24 | unit |"
+if needle not in text:
+    raise SystemExit("BUG-039 selftest fixture row not found")
+path.write_text(text.replace(needle, replacement, 1), encoding="utf-8")
+PY
+run_trace_case "$bug039_malformed_feature" "BUG-039 malformed canonical data row" --all-scopes
+assert_case_status 1 "BUG-039 malformed canonical row fails closed"
+assert_case_contains "malformed Test Plan row" \
+  "BUG-039 malformed row emits an explicit parser diagnostic"
+assert_case_contains "Test Plan extraction failed" \
+  "BUG-039 malformed row propagates extraction failure to the guard"
+
+make_bug039_variant() {
+  local destination="$1"
+  local variant="$2"
+  cp -R "$bug039_feature" "$destination"
+  python3 - "$destination/scopes.md" "$variant" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+variant = sys.argv[2]
+text = path.read_text(encoding="utf-8")
+header = "| ID | Type | Scenario | Persistent file and exact title | Command | Required behavior |"
+separator = "| --- | --- | --- | --- | --- | --- |"
+first_row = "| TP-028-01 | regression | SCN-028-A-01 | `tests/traceability.spec.ts` — Scope 1 primary behavior | selftest:traceability | Maps the primary behavior |"
+sixth_row = "| TP-028-06 | unit | SCN-028-106 | `tests/traceability.spec.ts` — Auxiliary behavior 6 | selftest:traceability | Covers one auxiliary path |"
+
+if variant == "rowless-legacy":
+  legacy_header = "| Test Type | Scenario | File/Location | Command | Required behavior | Notes |"
+  text = text.replace(header, legacy_header, 1)
+  header = legacy_header
+
+if variant in ("rowless", "rowless-legacy", "rowless-prose", "rowless-deeper-heading", "rowless-section-boundary"):
+  table_start = text.index(header)
+  data_start = text.index("\n", text.index(separator, table_start)) + 1
+  data_end = text.index("\n\n", data_start)
+  replacement = {
+      "rowless": text[data_end:],
+      "rowless-legacy": text[data_end:],
+      "rowless-prose": "Boundary prose" + text[data_end:],
+      "rowless-deeper-heading": "#### Nested boundary" + text[data_end:],
+      "rowless-section-boundary": "### Later Section" + text[data_end:],
+  }[variant]
+  path.write_text(text[:data_start] + replacement, encoding="utf-8")
+  raise SystemExit(0)
+
+if variant == "rowless-eof":
+  table_start = text.index(header)
+  separator_end = text.index("\n", text.index(separator, table_start)) + 1
+  path.write_text(text[:separator_end], encoding="utf-8")
+  raise SystemExit(0)
+
+replacements = {
+    "missing-separator": (separator + "\n", "", 1),
+    "empty-separator-cell": (separator, "| --- | --- | --- |  | --- | --- |", 1),
+    "invalid-separator-cell": (separator, "| --- | --- | -- | --- | --- | --- |", 1),
+    "narrow-separator": (separator, "| --- | --- | --- | --- | --- |", 1),
+    "wide-separator": (separator, "| --- | --- | --- | --- | --- | --- | --- |", 1),
+    "delayed-separator": (header + "\n" + separator, header + "\nprose delay\n" + separator, 1),
+    "unsupported-path": ("Persistent file and exact title", "Test Path", 1),
+    "duplicate-path": (header, "| ID | Type | Scenario | File / Surface | File/Location | Required behavior |", 1),
+    "duplicate-canonical-header": (header, "| ID | ID | Type | Persistent file and exact title | Command | Required behavior |", 1),
+    "duplicate-legacy-header": (header, "| Test Type | Test Type | Scenario | File/Location | Command | Required behavior |", 1),
+    "partial-header": (header, "| ID | Category | Scenario | Persistent file and exact title | Command | Required behavior |", 1),
+    "mixed-family": (header, "| ID | Type | Test Type | Persistent file and exact title | Command | Required behavior |", 1),
+    "empty-required-cell": (first_row, "|  | regression | SCN-028-A-01 | `tests/traceability.spec.ts` — Scope 1 primary behavior | selftest:traceability | Maps the primary behavior |", 1),
+    "narrow-data-row": (first_row, "| TP-028-01 | regression |", 1),
+    "wide-data-row": (first_row, first_row[:-1] + "| Extra cell |", 1),
+    "second-table-done": (
+        sixth_row,
+        sixth_row + "\n\nBoundary prose\n\n| Test Type | File/Location | Description |\n| --- | --- | --- |\n| E2E | tests/second.spec.ts | Must be refused |",
+        1,
+    ),
+    "second-table-read-rows": (
+      sixth_row,
+      sixth_row + "\n| Test Type | File/Location | Description |\n| --- | --- | --- |\n| E2E | tests/second.spec.ts | Must be refused |",
+      1,
+    ),
+}
+
+if variant not in replacements:
+    raise SystemExit(f"unknown BUG-039 fixture variant: {variant}")
+needle, replacement, count = replacements[variant]
+if needle not in text:
+    raise SystemExit(f"BUG-039 fixture needle not found for {variant}")
+path.write_text(text.replace(needle, replacement, count), encoding="utf-8")
+PY
+}
+
+for bug039_variant in \
+  missing-separator empty-separator-cell invalid-separator-cell delayed-separator \
+  narrow-separator wide-separator unsupported-path duplicate-path \
+  duplicate-canonical-header duplicate-legacy-header partial-header mixed-family \
+  empty-required-cell narrow-data-row wide-data-row rowless rowless-legacy \
+  rowless-prose rowless-deeper-heading \
+  rowless-section-boundary rowless-eof second-table-read-rows second-table-done; do
+  bug039_variant_feature="$TMPDIR/specs/109-bug039-${bug039_variant}"
+  make_bug039_variant "$bug039_variant_feature" "$bug039_variant"
+  run_trace_case_with_parser_status "$bug039_variant_feature" \
+    "BUG-039 ${bug039_variant}" --all-scopes
+  assert_case_status 1 "BUG-039 ${bug039_variant} fails closed"
+  assert_case_contains "SELFTEST_PARSER_STATUS=4" \
+    "BUG-039 ${bug039_variant} returns parser status 4"
+done
+
+assert_bug039_diagnostic() {
+  local variant="$1"
+  local expected="$2"
+
+  run_trace_case_with_parser_status "$TMPDIR/specs/109-bug039-${variant}" \
+    "BUG-039 ${variant} exact diagnostic" --all-scopes
+  assert_case_contains "$expected" "BUG-039 ${variant} emits its exact parser diagnostic"
+  assert_case_contains "Test Plan extraction failed" \
+    "BUG-039 ${variant} remains distinct from its outer extraction failure"
+  assert_case_not_contains "has no concrete Test Plan rows to trace" \
+    "BUG-039 ${variant} never falls through to the absent-header row message"
+}
+
+assert_bug039_diagnostic "missing-separator" \
+  "ERROR: invalid or empty Test Plan separator cell at visible line 11"
+assert_bug039_diagnostic "empty-separator-cell" \
+  "ERROR: invalid or empty Test Plan separator cell at visible line 11"
+assert_bug039_diagnostic "invalid-separator-cell" \
+  "ERROR: invalid or empty Test Plan separator cell at visible line 11"
+assert_bug039_diagnostic "delayed-separator" \
+  "ERROR: missing or delayed Test Plan separator at visible line 11"
+assert_bug039_diagnostic "narrow-separator" \
+  "ERROR: wrong-width Test Plan separator: expected 6 cells, got 5 at visible line 11"
+assert_bug039_diagnostic "wide-separator" \
+  "ERROR: wrong-width Test Plan separator: expected 6 cells, got 7 at visible line 11"
+for bug039_header_variant in \
+  unsupported-path duplicate-path duplicate-canonical-header duplicate-legacy-header \
+  partial-header mixed-family; do
+  assert_bug039_diagnostic "$bug039_header_variant" \
+    "ERROR: malformed Test Plan header at visible line 10"
+done
+assert_bug039_diagnostic "empty-required-cell" \
+  "ERROR: required Test Plan cell is empty at visible line 12"
+assert_bug039_diagnostic "narrow-data-row" \
+  "ERROR: malformed Test Plan row: expected 6 cells, got 2 at visible line 12"
+assert_bug039_diagnostic "wide-data-row" \
+  "ERROR: malformed Test Plan row: expected 6 cells, got 7 at visible line 12"
+for bug039_rowless_variant in \
+  rowless rowless-legacy rowless-prose rowless-deeper-heading rowless-section-boundary rowless-eof; do
+  assert_bug039_diagnostic "$bug039_rowless_variant" \
+    "ERROR: rowless recognized Test Plan table at visible line 12"
+done
+assert_bug039_diagnostic "second-table-read-rows" \
+  "ERROR: second Markdown table in Test Plan section at visible line 18"
+assert_bug039_diagnostic "second-table-done" \
+  "ERROR: second Markdown table in Test Plan section at visible line 21"
+
+run_trace_case_with_parser_status "$TMPDIR/specs/109-bug039-rowless" \
+  "BUG-039 rowless table caller diagnostic" --all-scopes
+assert_case_contains "SELFTEST_PARSER_STATUS=4" \
+  "BUG-039 rowless recognized table returns parser status 4"
+assert_case_contains "ERROR: rowless recognized Test Plan table at visible line 12" \
+  "BUG-039 rowless recognized table reports its exact boundary line"
+assert_case_not_contains "has no concrete Test Plan rows to trace" \
+  "BUG-039 rowless recognized table is distinct from an absent supported header"
+
+bug039_surface_alias_feature="$TMPDIR/specs/109-bug039-file-surface-alias"
+cp -R "$bug039_feature" "$bug039_surface_alias_feature"
+bubbles_sed_inplace '0,/Persistent file and exact title/s//File \/ Surface/' \
+  "$bug039_surface_alias_feature/scopes.md"
+run_trace_case "$bug039_surface_alias_feature" \
+  "BUG-039 canonical File / Surface compatibility" --all-scopes
+assert_case_status 0 "BUG-039 canonical File / Surface alias remains accepted"
+assert_case_contains "summary: scenarios=1 test_rows=6" \
+  "BUG-039 File / Surface table emits its six genuine rows"
+
+bug039_status4_occurrences=0
+if bug039_status4_occurrences="$(grep -Fc 'raise SystemExit(4)' "$GUARD")"; then
+  :
+fi
+if [[ "$bug039_status4_occurrences" -eq 1 ]]; then
+  pass "BUG-039 structural parser has one status-4 exit in the diagnostic helper"
+else
+  fail "BUG-039 structural parser must have exactly one status-4 exit in the diagnostic helper (got $bug039_status4_occurrences)"
+fi
+
 # --- Case 2: scenario without matching Test Plan row → exit non-zero ---
 broken_feature="$TMPDIR/specs/200-broken-feature"
 build_clean_feature "$broken_feature"
@@ -1243,9 +1586,15 @@ assert_case_contains 'RESULT: FAILED (1 failures, 0 warnings)' "Case 7 separator
 header_feature="$TMPDIR/specs/720-header-test-plan"
 build_clean_feature "$header_feature"
 write_invalid_scope "$header_feature" $'### Test Plan\n\n| Test Type | File/Location | Description |\n| --- | --- | --- |'
-run_trace_case "$header_feature" "Case 7: header-only Test Plan"
+run_trace_case_with_parser_status "$header_feature" "Case 7: header-only Test Plan"
 assert_case_status 1 "Case 7 header-only section exits 1"
-assert_case_occurrences 1 'has no concrete Test Plan rows to trace' "Case 7 header-only section reports rowless once"
+assert_case_contains 'SELFTEST_PARSER_STATUS=4' "Case 7 header-only section returns parser status 4"
+assert_case_contains 'ERROR: rowless recognized Test Plan table at visible line 16' \
+  "Case 7 header-only section reports the EOF line"
+assert_case_occurrences 1 'Test Plan extraction failed' \
+  "Case 7 header-only section reports outer extraction failure once"
+assert_case_not_contains 'has no concrete Test Plan rows to trace' \
+  "Case 7 header-only section does not use absent-supported-header diagnostics"
 assert_case_contains 'RESULT: FAILED (1 failures, 0 warnings)' "Case 7 header-only section reaches final summary"
 
 run_trace_case_parser_failure "$clean_feature" "Case 7: Test Plan extractor failure"

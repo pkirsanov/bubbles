@@ -1144,8 +1144,14 @@ run_check "Scenario reference reader selftest (IMP-040 / COV-8)" bash "$SCRIPT_D
 run_check "Scenario manifest v2 schema selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-v2-schema-selftest.sh"
 run_check "Scenario manifest migration selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/scenario-manifest-migrate-selftest.sh"
 run_check "YAML schema dispatch selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/yaml-schema-validate-selftest.sh"
-run_check "Framework validation wiring selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/framework-validation-wiring-selftest.sh"
 run_check "Execution-control store selftest (IMP-054/055 / ECF-01)" bash "$SCRIPT_DIR/execution-control-selftest.sh"
+run_check "Measured-budget runtime selftest (IMP-055 / MBE-01)" python3 "$SCRIPT_DIR/measured-budget-runtime-selftest.py"
+run_check "Research runtime selftest (IMP-054 / RESEARCH-01)" python3 "$SCRIPT_DIR/research-runtime-selftest.py"
+run_check "Research adapter contract selftest (IMP-054 / RESEARCH-02)" python3 "$SCRIPT_DIR/research-adapter-contract-selftest.py"
+run_check "Usage adapter v2 selftest (IMP-055 / USAGE-02)" bash "$SCRIPT_DIR/usage-adapter-v2-selftest.sh"
+run_check "Admission contract selftest (IMP-055 / ADMISSION-01)" bash "$SCRIPT_DIR/admission-contract-selftest.sh"
+run_check "Research and admission CLI integration selftest (IMP-054/055)" bash "$SCRIPT_DIR/research-admission-cli-selftest.sh"
+run_check "Framework validation wiring selftest (IMP-040 / COV-8)" bash "$SCRIPT_DIR/framework-validation-wiring-selftest.sh"
 run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/report-sections-selftest.sh"
 # Framework-source-only: check P3 requires the repo-root BUGS.md, which the
 # release manifest classifies as neither managed nor source-only-shipped, so it

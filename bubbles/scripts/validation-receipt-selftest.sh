@@ -125,8 +125,8 @@ rc_exit=0
 run_release_check() {
   rm -f "$MARKER"
   if [[ "${1:-}" == "--no-opt-in" ]]; then
-    env -u BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT \
-      bash "$FIXTURE/bubbles/scripts/release-check.sh" >"$WORK/rc.out" 2>&1
+    (unset BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT
+      bash "$FIXTURE/bubbles/scripts/release-check.sh") >"$WORK/rc.out" 2>&1
   else
     BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT=1 \
       bash "$FIXTURE/bubbles/scripts/release-check.sh" >"$WORK/rc.out" 2>&1

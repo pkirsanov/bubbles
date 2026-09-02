@@ -27,14 +27,19 @@
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
-    "substate": "requirements_ready",
-    "activeAgent": "bubbles.bug",
-    "currentPhase": "bug",
+    "goalContractRef": {
+      "goalId": "gc:vscode-ddcadf12da845e696b1170714b10e13b:1",
+      "revision": 1,
+      "sourceRequestDigest": "sha256:38d0707d2f0aa8ab35f867d708243076c2eb2ebd32996db45b6b4a84a7098583"
+    },
+    "substate": "planning_coherence_repaired_pending_test",
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
     "currentScope": 1,
     "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.implement",
-    "nextRequiredAction": "Capture the exact zero-output red stage, implement one canonical line-count producer, add focused regressions, and preserve existing helper behavior.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Re-verify the repaired planning metadata, scenario-to-test mapping, and focused helper regression contract before routing aggregate and certification work to bubbles.validate.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -92,5 +97,5 @@
     "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
     "bugDoneRequires": "All four scenarios pass adversarial regression, framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
   },
-  "notes": "Artifact and root-cause reconciliation only. No exact red diagnostic, implementation, green evidence, aggregate validation, or certification is claimed."
+  "notes": "Implementation and independent focused test evidence are recorded. Aggregate framework validation, release readiness, manifest work, and certification are not claimed."
 }

@@ -7,10 +7,18 @@
       "title": "Repeated honest re-runs are not cloned evidence",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T1", "T7"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed target-grouping classification output for repeated receipts with independent provenance.",
+          "satisfiedBy": ["T1", "T7"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -19,10 +27,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Restore per-receipt target distinctness; the 9-re-run fixture is reported as one clone group.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
@@ -30,10 +34,18 @@
       "title": "Two identities over one target are still refused",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T2", "T7"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed clone-classification output for distinct command identities that share one target.",
+          "satisfiedBy": ["T2", "T7"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -42,10 +54,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Drop the target-distinctness condition entirely; the single-target fixture stops being refused.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
@@ -53,10 +61,18 @@
       "title": "Wrapper spellings resolve to one command family",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T3", "T4", "T7"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertions over Check 43's transformed command-family and collision-classification outputs for equivalent wrapper spellings.",
+          "satisfiedBy": ["T3", "T4", "T7"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -65,10 +81,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Restore the single-token bash/sh strip; `bash -c node X` resolves to family `-c`.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
@@ -76,10 +88,18 @@
       "title": "Wrappers do not hide a genuine identity difference",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T5", "T7"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed identity and clone-classification output for distinct wrapped child programs.",
+          "satisfiedBy": ["T5", "T7"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -88,10 +108,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Strip the program token as well as the wrappers; cargo and npm collapse into one family and the clone stops being reported.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
@@ -99,10 +115,18 @@
       "title": "Valid timeout and gtimeout wrappers are transparent",
       "requiredTestType": "unit",
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T8", "T12"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed command identity for bare, timeout-wrapped, and gtimeout-wrapped spellings.",
+          "satisfiedBy": ["T8", "T12"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -111,10 +135,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Remove timeout recognition; bare and timeout-wrapped receipts resolve to different families.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a receipt classifier with no rendered surface."
       }
     },
     {
@@ -122,10 +142,18 @@
       "title": "The short verbose option is transparent",
       "requiredTestType": "unit",
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T9", "T12"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed command identity for the accepted short verbose timeout option.",
+          "satisfiedBy": ["T9", "T12"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -134,10 +162,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Remove `-v` from the accepted option set; the fixture remains family timeout.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a receipt classifier with no rendered surface."
       }
     },
     {
@@ -145,10 +169,18 @@
       "title": "Unknown and malformed timeout syntax remains opaque",
       "requiredTestType": "unit",
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T10", "T12"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed opaque identity for every rejected timeout grammar boundary.",
+          "satisfiedBy": ["T10", "T12"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -157,10 +189,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Accept attached or unknown options; malformed timeout syntax is incorrectly attributed to cargo.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a receipt classifier with no rendered surface."
       }
     },
     {
@@ -168,10 +196,18 @@
       "title": "Timeout wrappers preserve distinct child programs",
       "requiredTestType": "unit",
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["T11", "T12"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over Check 43's transformed child identities and clone-classification output for distinct timeout-wrapped programs.",
+          "satisfiedBy": ["T11", "T12"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -180,10 +216,6 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Strip the child program with the timeout wrapper; cargo and npm cease to be distinguishable.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a receipt classifier with no rendered surface."
       }
     },
     {
@@ -191,22 +223,26 @@
       "title": "Only the persistent session lock path is ignored",
       "requiredTestType": "functional",
       "scopeRef": "Scope 2",
-      "behaviorTraits": ["filesystem-state", "shared-consumer"],
+      "testPlanIds": ["T13"],
+      "behaviorTraits": ["static-metadata"],
       "riskTier": "medium",
-      "linkedTests": ["repository ignore check"],
-      "implementationRefs": [".specify/memory/.gitignore"],
+      "linkedTests": ["bubbles/scripts/state-snapshot-selftest.sh"],
+      "implementationRefs": [".specify/memory/.gitignore", "bubbles/scripts/state-snapshot.sh"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "A hermetic Git artifact assertion proves the exact persistent flock ignore declaration while the session JSON and neighboring memory-state paths remain visible.",
+          "satisfiedBy": ["T13"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "repository-state",
-        "assertionSurface": "process-output-and-exit",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
-        "productionOwners": [".specify/memory/.gitignore"],
-        "negativeControl": "Add a wildcard for bubbles.session.json; the visible-session assertion fails.",
+        "productionOwners": [".specify/memory/.gitignore", "bubbles/scripts/state-snapshot.sh"],
+        "negativeControl": "Broaden the fixture's exact flock ignore rule to a wildcard that also matches bubbles.session.json or a neighboring memory-state file; the visibility assertion fails.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "The behavior is Git ignore classification with no rendered surface."
       }
     }
   ]

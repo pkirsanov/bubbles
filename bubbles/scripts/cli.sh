@@ -694,6 +694,25 @@ command_effective_risk_class() {
         *) printf '%s' "$default_risk" ;;
       esac
       ;;
+    research)
+      case "${command_args%% *}" in
+        plan|run|resume|validate|publish|cancel) printf '%s' 'owned_mutation' ;;
+        adapter-local-command) printf '%s' 'external_side_effect' ;;
+        *) printf '%s' 'read_only' ;;
+      esac
+      ;;
+    admission)
+      case "${command_args%% *}" in
+        adapter|usage) printf '%s' 'read_only' ;;
+        *)
+          if [[ "$command_args" == 'budget snapshot'* ]]; then
+            printf '%s' 'read_only'
+          else
+            printf '%s' 'owned_mutation'
+          fi
+          ;;
+      esac
+      ;;
     *)
       printf '%s' "$default_risk"
       ;;
@@ -1452,6 +1471,8 @@ Commands:
   dod <spec>                    Show unchecked DoD items for a spec
   policy <subcommand>           Manage control-plane defaults (status|get|set|reset)
   runtime <subcommand>          Manage runtime leases and coordination
+  research <subcommand>         Run the optional research runtime (status|capabilities|schema|validate-question|plan|run|resume|inspect|validate|publish|bridge|cancel|adapter-disabled|adapter-local-command)
+  admission <subcommand>        Use optional reference admission surfaces (adapter|usage|evaluate|issue-permit|record-usage|record-intent|record-fact|consume-permit|budget|epoch|corpus)
   session                       Show current session state
   lint <spec>                   Run artifact lint on a spec
   agnosticity [--staged]        Check portable Bubbles surfaces for drift
@@ -4181,6 +4202,52 @@ cmd_recall() {
   bash "$SCRIPT_DIR/experience-recall.sh" "$@"
 }
 
+cmd_research() {
+  [[ $# -gt 0 ]] || die "research requires a subcommand. Try: status, capabilities, schema, validate-question, plan, run, resume, inspect, validate, publish, bridge, cancel, adapter-disabled, or adapter-local-command"
+  local operation="$1"
+  shift
+  case "$operation" in
+    status) operation="check" ;;
+    capabilities)
+      bash "$SCRIPT_DIR/research-run.sh" capabilities --project-root "$(project_root)" "$@"
+      return
+      ;;
+    check|schema|validate-question|plan|run|resume|inspect|validate|publish|bridge|cancel|adapter-disabled|adapter-local-command) ;;
+    *) die "Unknown research subcommand: $operation" ;;
+  esac
+  bash "$SCRIPT_DIR/research-run.sh" "$operation" "$@"
+}
+
+cmd_admission() {
+  [[ $# -gt 0 ]] || die "admission requires a subcommand. Try: adapter, usage, evaluate, issue-permit, record-usage, record-intent, record-fact, consume-permit, budget, epoch, or corpus"
+  local operation="$1"
+  shift
+  case "$operation" in
+    adapter)
+      bash "$SCRIPT_DIR/dispatch-adapter-resolve.sh" --repo-root "$(project_root)" "$@"
+      ;;
+    usage)
+      bash "$SCRIPT_DIR/usage-resolve.sh" --repo-root "$(project_root)" "$@"
+      ;;
+    evaluate|issue-permit|record-usage|record-intent|record-fact|consume-permit)
+      bash "$SCRIPT_DIR/dispatch-admission.sh" "$operation" "$@"
+      ;;
+    budget)
+      bash "$SCRIPT_DIR/goal-budget-ledger.sh" "$@"
+      ;;
+    epoch)
+      bash "$SCRIPT_DIR/session-epoch-authority.sh" "$@"
+      ;;
+    corpus)
+      bash "$SCRIPT_DIR/cost-corpus-evaluate.sh" "$@"
+      ;;
+    enforce|host-enforce)
+      die "admission host-native enforcement is unavailable; use a configured dispatch adapter or the repository-reference admission surface"
+      ;;
+    *) die "Unknown admission subcommand: $operation" ;;
+  esac
+}
+
 cmd_profile() {
   if [[ $# -eq 0 ]]; then
     bash "$SCRIPT_DIR/developer-profile.sh" show
@@ -4505,6 +4572,8 @@ main() {
     dod)                cmd_dod "$@" ;;
     policy)             cmd_policy "$@" ;;
     runtime)            cmd_runtime "$@" ;;
+    research)           cmd_research "$@" ;;
+    admission)          cmd_admission "$@" ;;
     session)            cmd_session "$@" ;;
     lint)               cmd_lint "$@" ;;
     agnosticity)        cmd_agnosticity "$@" ;;

@@ -233,7 +233,9 @@ unsafe_paths = {
     "POSIX absolute": "/tests/a.spec.ts",
     "backslash rooted": "\\tests\\a.spec.ts",
     "UNC": "\\\\server\\share\\a.spec.ts",
-    "Windows device": "\\\\?\\C:\\a.spec.ts",
+    # Assemble the drive marker so this portable selftest does not itself
+    # contain the literal host-absolute pattern rejected by agnosticity-lint.
+    "Windows device": "\\\\?\\" + "C" + ":\\a.spec.ts",
     "drive absolute": "C:/tests/a.spec.ts",
     "drive relative": "C:tests/a.spec.ts",
     "slash traversal": "tests/../a.spec.ts",

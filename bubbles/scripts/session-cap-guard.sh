@@ -499,6 +499,7 @@ if [[ "${#BREACHES[@]}" -gt 0 ]]; then
     echo "    max prompt tokens/request:  $(fmt_obs "$REQ_TOKENS_OBSERVED") (cap $(fmt_cap "$CAP_REQ_TOKENS"))"
     echo "    prompt tokens total:        $(fmt_obs "$CUM_TOKENS_OBSERVED") (cap $(fmt_cap "$CAP_CUM_TOKENS"))"
     echo "  distinction from G082:        G082 caps iterations PER (specDir, agent); G128 caps the AGGREGATE across the whole session"
+    echo "  enforcement stage:            post-hoc aggregate audit; this verdict is not MBE pre-dispatch admission"
     echo "  remediation:                  orchestrator MUST emit a 'blocked' RESULT-ENVELOPE referencing Gate G128 and STOP the session (no further specs/scopes)"
   } >&2
   exit 1
@@ -569,6 +570,7 @@ if [[ "${#CONSUMPTION[@]}" -gt 0 ]]; then
     echo "  owed response:                persist state, emit a continuation envelope, open a bubbles.handoff packet"
     echo "  specStatus:                   UNCHANGED — the work is not blocked, the session is full"
     echo "  handoffRecommendation:        $HANDOFF_STATUS"
+    echo "  enforcementStage=post-hoc preDispatchAdmission=false"
     echo "  softBoundary=crossed dimension=$TOP_LABEL consumedPct=$TOP_PCT rollover=recommended specBlocked=false"
   fi
 fi
@@ -576,4 +578,5 @@ fi
 info "aggregate convergence=$CONV_OBSERVED (cap $(fmt_cap "$CAP_CONV")), wall-clock=$(fmt_min)min (cap $(fmt_cap "$CAP_MINS")), toolCalls=$(fmt_tool) (cap $(fmt_cap "$CAP_TOOLS"))"
 info "context volume: largestToolResult=$(fmt_obs "$SINGLE_BYTES_OBSERVED")B (cap $(fmt_cap "$CAP_SINGLE_BYTES")), toolResultTotal=$(fmt_obs "$CUM_BYTES_OBSERVED")B (cap $(fmt_cap "$CAP_CUM_BYTES")), maxPromptTokens=$(fmt_obs "$REQ_TOKENS_OBSERVED") (cap $(fmt_cap "$CAP_REQ_TOKENS")), promptTokensTotal=$(fmt_obs "$CUM_TOKENS_OBSERVED") (cap $(fmt_cap "$CAP_CUM_TOKENS"))"
 echo "PASS Gate G128 (session_cap_enforcement_gate) — no aggregate cap exceeded (conv=$CONV_OBSERVED/$(fmt_cap "$CAP_CONV"), mins=$(fmt_min)/$(fmt_cap "$CAP_MINS"), tools=$(fmt_tool)/$(fmt_cap "$CAP_TOOLS"), toolBytesMax=$(fmt_obs "$SINGLE_BYTES_OBSERVED")/$(fmt_cap "$CAP_SINGLE_BYTES"), toolBytesSum=$(fmt_obs "$CUM_BYTES_OBSERVED")/$(fmt_cap "$CAP_CUM_BYTES"), promptTokensMax=$(fmt_obs "$REQ_TOKENS_OBSERVED")/$(fmt_cap "$CAP_REQ_TOKENS"), promptTokensSum=$(fmt_obs "$CUM_TOKENS_OBSERVED")/$(fmt_cap "$CAP_CUM_TOKENS"))"
+echo "G128-METADATA enforcementStage=post-hoc preDispatchAdmission=false"
 exit 0

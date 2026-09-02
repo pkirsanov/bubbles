@@ -67,7 +67,7 @@ run() {
   if [[ -n "${MODEL:-}" ]]; then
     BUBBLES_ACTIVE_MODEL="$MODEL" bash "$TARGET" "$@" >/dev/null 2>&1 || rc=$?
   else
-    env -u BUBBLES_ACTIVE_MODEL bash "$TARGET" "$@" >/dev/null 2>&1 || rc=$?
+    (unset BUBBLES_ACTIVE_MODEL; bash "$TARGET" "$@") >/dev/null 2>&1 || rc=$?
   fi
   if [[ "$rc" -eq "$expected" ]]; then
     pass "$desc (exit $rc)"
@@ -138,8 +138,8 @@ retire_out() {
   if [[ -n "${1:-}" ]]; then
     BUBBLES_WORKFLOWS_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement --tier "$1" 2>&1
   else
-    BUBBLES_WORKFLOWS_FILE="$RETIRE_FIXTURE" env -u BUBBLES_ACTIVE_MODEL \
-      bash "$TARGET" retirement 2>&1
+    (unset BUBBLES_ACTIVE_MODEL
+      BUBBLES_WORKFLOWS_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement) 2>&1
   fi
 }
 

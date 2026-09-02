@@ -41,7 +41,11 @@ _bubbles_run_with_native_timeout() {
     state_file="$1"
     shift
     trap '\''printf "%s\n" deadline >> "$state_file"'\'' TERM
-    "$@" &
+    run_child() {
+      trap - INT QUIT
+      exec "$@"
+    }
+    run_child "$@" &
     child_pid=$!
     child_rc=0
     while kill -0 "$child_pid" 2>/dev/null; do

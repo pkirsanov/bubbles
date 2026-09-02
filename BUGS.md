@@ -2195,12 +2195,15 @@ reconciliation, and exact validation commands.
 ## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
 
 - **Filed:** 2026-08-16
-- **Disposition:** **FIXED**, before 2026-08-17. The fix described below is
+- **Disposition:** **IN PROGRESS (reopened)**. The original target-grouping and
+  shell-wrapper facets were fixed before 2026-08-17. The fix described below is
   present in `bubbles/scripts/state-transition-guard.sh`: Check 43 binds
   `$targets` with `group_by(.cmd | cmd_identity) | map(.[0] | target_identity)`
   (line 4457), together with the facet-2 wrapper normalisation.
   `bash bubbles/scripts/receipt-identity-selftest.sh` reports 15 passed, 0 failed.
-  The packet's own `state.json` remains `in_progress`: on 2026-08-17
+  The reopened Scope 2 owns the third, timeout-wrapper facet and remains in
+  progress and uncertified. The packet's own `state.json` and certification
+  both remain `in_progress`, with no certified scopes. On 2026-08-17,
   `state-transition-guard.sh` refused the `done` transition for
   `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization` with 28
   failures (`blockingCode: DELIVERY_COMPLETION_FAILED`), so the status was left
@@ -2322,11 +2325,14 @@ script matches no category heuristic. That is conservative and was left alone �
 once the wrappers normalize, the receipts share one identity and the category
 never has to carry the decision.
 
-### Disposition — FIXED, packet opened (2026-08-17)
+### Historical disposition — first two facets fixed, packet opened (2026-08-17)
 
 Both facets are fixed in `bubbles/scripts/state-transition-guard.sh`. This entry
 is retained as the filing record; the working artifacts live in the full packet
 at `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/`.
+This historical disposition applies only to the first two facets. BUG-033 is
+currently `in_progress` after reopening for the timeout-wrapper facet, with
+human acceptance and validate-owned certification still pending.
 
 The packet form was resolved mechanically rather than chosen. The compact
 micro-fix packet is the DEFAULT route since IMP-047 S-D, and
@@ -2461,9 +2467,11 @@ because the resolver ships into every consuming repository.
 ## BUG-037 — evidence capture can duplicate the zero line count and feed a non-canonical scalar into arithmetic
 
 - **Filed:** 2026-09-02
-- **Disposition:** open framework defect; artifact and root-cause packet created
-  at `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. No implementation,
-  red-stage execution, or certification is claimed.
+- **Disposition:** in progress. The focused fix, red-stage reproduction, and
+  focused checks are recorded at
+  `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. Aggregate framework
+  validation, release readiness, and validate-owned certification remain
+  pending.
 - **Severity:** high. Evidence formatting can emit an arithmetic diagnostic
   while the child and helper still return success.
 - **Affects:** `bubbles/scripts/evidence-capture.sh` zero-output metadata.
@@ -2488,4 +2496,61 @@ contract. Preserve non-empty, bounded, signal, cleanup, and verify behavior.
 
 The packet routes implementation to `bubbles.implement`. Full framework and
 release validation remain mandatory before validate-owned certification.
+
+---
+
+## BUG-038 — train metadata assignment has no authorized workflow route
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress. The bounded metadata-only fix and focused checks
+  are recorded at `bugs/BUG-038-train-metadata-assignment-mode-gap/`. Aggregate
+  framework validation, release readiness, and validate-owned certification
+  remain pending.
+- **Severity:** high. Grounded release-train classification cannot be persisted
+  through an authorized workflow route.
+- **Affects:** train metadata workflow resolution, sole-owner authorization,
+  aliases, and the bounded assignment helper.
+
+### Root cause
+
+The workflow registry exposed train lifecycle operations but no metadata
+assignment mode. The capability registry and train agent therefore had no
+authorized route to persist the two train-owned state fields.
+
+### Bounded fix
+
+The fix adds one metadata-assignment mode, its exact alias tuple, a sole
+`bubbles.train` runner grant, and a metadata-only helper. Focused helper,
+authorization, alias compatibility, syntax, portability, and artifact checks
+are recorded as passing. The bug remains `in_progress` until aggregate checks
+and validate-owned certification complete.
+
+---
+
+## BUG-039 — traceability Test Plan headers are counted as data rows
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress, pending human acceptance. The parser fix,
+  adversarial regression coverage, and focused checks are recorded at
+  `bugs/BUG-039-traceability-test-plan-header-count/`. Its `state.json` and
+  certification status remain `in_progress`, and no human acceptance decision
+  has been recorded.
+- **Severity:** medium. Incorrect row totals can mislead traceability audit
+  accounting.
+- **Affects:** standalone traceability Test Plan extraction and summary
+  accounting.
+
+### Root cause
+
+The extractor skipped Markdown separators but recognized only the legacy
+`Test Type` header shape. It therefore emitted an `ID | Type` header as data,
+and the summary correctly counted that extra emitted record.
+
+### Bounded fix
+
+The parser now recognizes the closed canonical and legacy header families,
+requires their separator, emits only contiguous valid data rows, and rejects
+malformed or duplicate table structure explicitly. Focused evidence includes
+the four-table case with 24 genuine rows. Aggregate framework validation,
+human acceptance, and validate-owned certification remain unclaimed.
 

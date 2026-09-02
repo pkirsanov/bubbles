@@ -49,6 +49,11 @@
 #   --max-iterations <N>   Exhaust after N iterations (default 10)
 #   --format text|json     Output format (default: text)
 #   --dry-run              Resolve the plan and the cursor; execute NOTHING
+#   --mbe-posture <mode>   off (default), shadow, advisory, or reference-enforce
+#   --mbe-store-root PATH  Required only for reference-enforce
+#   --mbe-action ID=PATH   Exact broker action file for one occurrence
+#   --mbe-permit-consumption ID=PATH
+#                          Exact one-use permit consumption for one occurrence
 #
 # There is no --skip, --force, --ignore or --replay flag. An occurrence is
 # resolved by running it, never by asserting it.
@@ -82,6 +87,10 @@ PLAN_NAMES=()
 PLAN_COMMANDS=()
 PLAN_KINDS=()
 CHANGED_FILES=()
+MBE_POSTURE="off"
+MBE_STORE_ROOT=""
+MBE_ACTION_BINDINGS=()
+MBE_CONSUMPTION_BINDINGS=()
 
 usage() {
   sed -n '38,60p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -114,6 +123,10 @@ while [[ $# -gt 0 ]]; do
     --max-iterations) MAX_ITERATIONS="${2:-}"; shift 2 ;;
     --format) FORMAT="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN="true"; shift ;;
+    --mbe-posture) MBE_POSTURE="${2:-}"; shift 2 ;;
+    --mbe-store-root) MBE_STORE_ROOT="${2:-}"; shift 2 ;;
+    --mbe-action) MBE_ACTION_BINDINGS+=("${2:-}"); shift 2 ;;
+    --mbe-permit-consumption) MBE_CONSUMPTION_BINDINGS+=("${2:-}"); shift 2 ;;
     -h | --help) usage; exit 0 ;;
     --skip* | --force* | --ignore* | --replay* | --assume*)
       printf '%s: "%s" does not exist. An occurrence is resolved by running it.\n' "$NAME" "$1" >&2
@@ -131,6 +144,13 @@ case "$FORMAT" in
   text | json) ;;
   *) die_usage "--format must be text or json (got: $FORMAT)" ;;
 esac
+case "$MBE_POSTURE" in
+  off | shadow | advisory | reference-enforce) ;;
+  *) die_usage "--mbe-posture must be off, shadow, advisory, or reference-enforce (got: $MBE_POSTURE)" ;;
+esac
+if [[ "$MBE_POSTURE" == "reference-enforce" ]]; then
+  [[ -n "$MBE_STORE_ROOT" && -d "$MBE_STORE_ROOT" ]] || die_usage "reference-enforce requires an existing --mbe-store-root"
+fi
 
 command -v python3 >/dev/null 2>&1 || {
   printf '%s: python3 is required\n' "$NAME" >&2
@@ -215,6 +235,19 @@ RESULT_OUTCOMES=()
 RESULT_REASONS=()
 RESULT_EXITS=()
 
+binding_path() {
+  local occurrence="$1"
+  shift
+  local binding
+  for binding in "$@"; do
+    if [[ "${binding%%=*}" == "$occurrence" ]]; then
+      printf '%s' "${binding#*=}"
+      return 0
+    fi
+  done
+  return 1
+}
+
 chained_failed=""
 
 for i in "${!OCCURRENCE_IDS[@]}"; do
@@ -286,9 +319,26 @@ for i in "${!OCCURRENCE_IDS[@]}"; do
     continue
   fi
 
-  # ACTUAL EXECUTION.
-  BUBBLES_PHASE_OCCURRENCE="$occ" bash -c "$command_line"
-  rc=$?
+  # ACTUAL EXECUTION. Absent/off, shadow, and advisory retain the exact legacy
+  # path. Only the explicit repository-reference posture can interpose, and it
+  # consumes action/permit files created by admission rather than minting its
+  # own authority. Native host interception remains unsupported.
+  rc=0
+  if [[ "$MBE_POSTURE" == "reference-enforce" ]]; then
+    action_file="$(binding_path "$occ" "${MBE_ACTION_BINDINGS[@]}" || true)"
+    consumption_file="$(binding_path "$occ" "${MBE_CONSUMPTION_BINDINGS[@]}" || true)"
+    if [[ -z "$action_file" || ! -f "$action_file" || -z "$consumption_file" || ! -f "$consumption_file" ]]; then
+      printf '%s: reference-enforce occurrence %s requires existing action and permit-consumption files\n' "$NAME" "$occ" >&2
+      rc=3
+    else
+      bash "$SCRIPT_DIR/../adapters/dispatch/reference-broker.sh" dispatch \
+        --store-root "$MBE_STORE_ROOT" \
+        --permit-consumption "$consumption_file" \
+        --action "$action_file" || rc=$?
+    fi
+  else
+    BUBBLES_PHASE_OCCURRENCE="$occ" bash -c "$command_line" || rc=$?
+  fi
   RESULT_IDS+=("$occ")
   RESULT_EXITS+=("$rc")
   if [[ "$rc" -eq 0 ]]; then

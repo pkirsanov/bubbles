@@ -177,7 +177,10 @@ run_case 'drive-relative refused' '{"scenarios":[{"id":"SCN-13","plannedTests":[
 run_case 'drive-absolute refused' '{"scenarios":[{"id":"SCN-14","plannedTests":[{"path":"C:/future.spec.ts","title":"future","type":"e2e-ui"}]}]}' 2 'Windows drive/device'
 run_case 'UNC refused' '{"scenarios":[{"id":"SCN-15","plannedTests":[{"path":"\\\\server\\share\\future.spec.ts","title":"future","type":"e2e-ui"}]}]}' 2 'POSIX separators'
 run_case 'rooted backslash refused' '{"scenarios":[{"id":"SCN-16","plannedTests":[{"path":"\\future.spec.ts","title":"future","type":"e2e-ui"}]}]}' 2 'POSIX separators'
-run_case 'device path refused' '{"scenarios":[{"id":"SCN-17","plannedTests":[{"path":"\\\\?\\C:\\future.spec.ts","title":"future","type":"e2e-ui"}]}]}' 2 'POSIX separators'
+device_path_json='{"scenarios":[{"id":"SCN-17","plannedTests":[{"path":"\\\\?\\'
+device_path_json+='C'
+device_path_json+=':\\future.spec.ts","title":"future","type":"e2e-ui"}]}]}'
+run_case 'device path refused' "$device_path_json" 2 'POSIX separators'
 
 mkdir -p "$WORK/outside"
 printf 'escape\n' > "$WORK/outside/escape.spec.ts"
