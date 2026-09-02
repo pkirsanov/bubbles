@@ -44,6 +44,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
+| IMP-056 | Fail-Closed Cross-Repository Dispatch Authorization | PROPOSED | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
 | IMP-054 | Hybrid Evidence Research Runtime | IN PROGRESS — ECF-01 foundation landed; research-runtime scopes remain pending | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |
 | IMP-055 | Measured Budget and Session Epoch Runtime | IN PROGRESS — ECF-01 foundation landed; admission, budget, and epoch scopes remain pending | framework-health | COST-12, HO-6, EV-16, REG-20 | 2026-08-27 |
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
