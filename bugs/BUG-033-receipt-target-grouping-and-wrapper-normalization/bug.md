@@ -46,7 +46,7 @@ each carry a distinct `sessionId`/`ts` pair.
 
 ## Root Cause
 
-Two independent identity-normalization defects in one check. Both make Check 43
+Three independent identity-normalization defects in one check. All make Check 43
 allege forgery against honest work, which is the exact false positive the
 check's own comments promise it will never produce.
 
@@ -96,15 +96,38 @@ refused — again the re-spelling case the check promises to tolerate.
 `bash -c <script>` is affected too: the current strip removes `bash` and leaves
 `-c` as the family, so the family is a flag.
 
-The two facets are separable but not independently sufficient: fixing only
+The first two facets are separable but not independently sufficient: fixing only
 facet 1 leaves the wrapper case blocking, and fixing only facet 2 leaves the
 re-run case blocking.
 
+### Facet 3 — timeout wrappers are not normalized through a closed grammar
+
+Repository commands are routinely bounded with GNU `timeout` on Linux and
+`gtimeout` on macOS. These wrappers do not change which child program produced
+the receipt. Check 43 must therefore normalize an exact-basename timeout wrapper
+when, and only when, its complete prefix is structurally valid.
+
+The current dirty implementation attempts this normalization, but its accepted
+syntax is broader than the required contract. In particular, clustered and
+attached short forms such as `-vfp`, `-k.5`, and `-sTERM` are treated as
+transparent even though the bounded grammar admits only `-v`, `-k D`, and
+`-s S`. Over-accepting shell syntax is unsafe because a malformed or unknown
+wrapper can be attributed to a child that the parser did not establish.
+
+The accepted grammar is closed: `-k D`, `--kill-after=D`, `--kill-after D`,
+`-s S`, `--signal=S`, `--signal S`, `-v`, `--verbose`, `--foreground`,
+`--preserve-status`, and `--`, followed by one valid duration and at least one
+child argument. Every unknown, malformed, attached, or unsupported clustered
+form remains opaque as `timeout` or `gtimeout`.
+
 ## Reproduction
 
-Both facets reproduce against the real guard through a hermetic fixture log.
-See `report.md` for the executed reproduction, its exit code, and the raw
-output.
+The first two facets reproduce against the real guard through a hermetic fixture
+log. See `report.md` for their executed reproduction, exit code, and raw output.
+
+The timeout facet has not been executed by this artifact owner. The dirty source
+and selftests establish the proposed grammar and its over-broad cases, but they
+are not red or green execution evidence. Scope 2 remains in progress.
 
 ## Fix
 
@@ -130,6 +153,11 @@ def strip_wrappers:
   else . end;
 ```
 
+Facet 3 — recognize only exact-basename `timeout` and `gtimeout`, parse only the
+closed option grammar above, require a valid duration and a non-empty child, and
+then recurse into the existing transparent-wrapper parser. Return the original
+timeout token sequence unchanged if any parse obligation fails.
+
 ## Why This Is Not A Widening
 
 The relaxation is bounded on both facets and the bound is tested:
@@ -142,5 +170,15 @@ The relaxation is bounded on both facets and the bound is tested:
   shell invoked with `-c`, `env`, and leading environment assignments do not
   change WHICH program ran. `cargo test` and `npm run lint` remain different
   families.
+- Facet 3 is fail-opaque. It unwraps only an exact `timeout` or `gtimeout`
+  basename and only after the complete accepted prefix has parsed. Unknown or
+  malformed syntax cannot be guessed into a child identity.
 
-Both bounds carry an adversarial regression case that must still REFUSE.
+Every bound carries an adversarial regression case that must still REFUSE.
+
+## Artifact Boundary Reconciliation
+
+The pre-existing `.specify/memory/.gitignore` change is admitted narrowly
+because it ignores exactly `bubbles.session.json.flock`. It does not admit the
+session JSON or any broad memory-state pattern. This is a supporting artifact
+for the persistent session lock and is not timeout runtime implementation.

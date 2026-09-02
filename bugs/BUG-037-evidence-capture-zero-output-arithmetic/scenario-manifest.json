@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-037-evidence-capture-zero-output-arithmetic",
+  "scenarios": [
+    {
+      "id": "SCN-B037-001",
+      "title": "Successful zero-output child",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-output-and-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
+        "negativeControl": "Restore the two-producer grep fallback expression; the empty capture produces a non-canonical count or diagnostic.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The helper formats local command evidence and has no rendered application surface."
+      }
+    },
+    {
+      "id": "SCN-B037-002",
+      "title": "Failing zero-output child",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-output-and-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
+        "negativeControl": "Force the helper to exit zero after a failing silent child; the exit-propagation assertion fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The helper formats local command evidence and has no rendered application surface."
+      }
+    },
+    {
+      "id": "SCN-B037-003",
+      "title": "Empty-output verification",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-output-and-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
+        "negativeControl": "Return zero on an empty-digest mismatch; the mismatch exit assertion fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The helper formats local command evidence and has no rendered application surface."
+      }
+    },
+    {
+      "id": "SCN-B037-004",
+      "title": "Non-empty behavior is unchanged",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-output-and-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
+        "negativeControl": "Replace the count with a constant zero; existing three-line and bounded-output assertions fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The helper formats local command evidence and has no rendered application surface."
+      }
+    }
+  ]
+}

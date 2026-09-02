@@ -76,3 +76,74 @@ Scenario: SCN-B033-004 Wrappers do not hide a genuine identity difference
       → Evidence: [report.md](report.md#regression)
 - [x] Broader E2E regression suite passes
       → Evidence: [report.md](report.md#regression)
+
+## Scope 2 — Timeout Wrapper Grammar And Session Lock Boundary
+
+**Status:** In Progress
+
+### Gherkin Scenarios
+
+```gherkin
+Scenario: SCN-B033-005 Valid timeout and gtimeout wrappers are transparent
+  Given a bare validator receipt and equivalent receipts behind exact-basename timeout and gtimeout wrappers
+  When Check 43 computes their command identities
+  Then every receipt resolves to the validator child identity
+
+Scenario: SCN-B033-006 The short verbose option is transparent
+  Given a receipt spelled `timeout -v 150 cargo test`
+  When Check 43 computes its command identity
+  Then it resolves to family cargo
+
+Scenario: SCN-B033-007 Unknown and malformed timeout syntax remains opaque
+  Given an unknown option, malformed option value, missing duration, missing child, attached short value, unsupported short cluster, or near-miss basename
+  When Check 43 computes the command identity
+  Then the timeout invocation is not attributed to its apparent child
+
+Scenario: SCN-B033-008 Timeout wrappers preserve distinct child programs
+  Given timeout-wrapped cargo and npm receipts share substantive stdout
+  When Check 43 classifies the collision
+  Then an evidence receipt CLONE is reported
+    And the diagnostic names both child families
+
+Scenario: SCN-B033-009 Only the persistent session lock path is ignored
+  Given `.specify/memory/.gitignore` contains the persistent lock entry
+  When repository state is inspected
+  Then `bubbles.session.json.flock` is ignored
+    And `bubbles.session.json` remains visible
+```
+
+### Implementation Plan
+
+- Narrow the dirty timeout parser in `bubbles/scripts/state-transition-guard.sh` to the exact grammar in `spec.md`.
+- Narrow focused and whole-guard fixtures so they do not certify attached short values or unsupported clusters.
+- Preserve the existing Scope 1 implementation and evidence.
+- Keep the exact `.specify/memory/bubbles.session.json.flock` ignore entry without broadening it.
+
+### Test Plan
+
+| ID | Test | Type | Surface |
+| --- | --- | --- | --- |
+| T8 | Bare, valid timeout, and valid gtimeout spellings normalize to one identity | unit | `bubbles/scripts/receipt-identity-selftest.sh` |
+| T9 | `timeout -v` normalizes to the child identity | unit | `bubbles/scripts/receipt-identity-selftest.sh` |
+| T10 | Unknown, malformed, attached, clustered, incomplete, and near-miss forms stay opaque | unit | `bubbles/scripts/receipt-identity-selftest.sh` |
+| T11 | Different timeout-wrapped children sharing output still refuse | unit | `bubbles/scripts/receipt-identity-selftest.sh` |
+| T12 | Regression E2E — whole guard exercises accepted and opaque timeout forms | functional | `bubbles/scripts/state-transition-guard-selftest.sh` |
+| T13 | Exact lock file is ignored while session JSON remains visible | functional | repository ignore check |
+
+### Definition of Done
+
+- [ ] Timeout and gtimeout accept only the closed option grammar in `spec.md`.
+- [ ] The short `-v` option is covered by focused and whole-guard acceptance tests.
+- [ ] Unknown, malformed, attached short, unsupported clustered, incomplete, and near-miss forms remain opaque.
+- [ ] Different timeout-wrapped children sharing substantive output remain a clone finding.
+- [ ] The exact persistent flock path is ignored without hiding session JSON.
+- [ ] Pre-fix timeout regression test fails with current-session evidence.
+  > **Uncertainty Declaration**
+  > **What was attempted:** Artifact reconciliation inspected the dirty parser and fixtures without executing them.
+  > **What was observed:** The dirty tests certify forms outside the required grammar.
+  > **Why this is uncertain:** Source inspection is not a red-stage execution.
+  > **What would resolve this:** Run the corrected focused regression against the over-broad parser before narrowing it.
+- [ ] Post-fix timeout regression test passes with current-session evidence.
+- [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior
+- [ ] Broader E2E regression suite passes
+- [ ] `bubbles.validate` certifies both scopes on the final source revision.

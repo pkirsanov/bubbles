@@ -87,6 +87,44 @@ single-pass strip would collapse one of them and stop.
   provenance requirement, the category compatibility rule and the family
   compatibility rule are untouched, and each keeps a pin in the regression set.
 
+## Facet 3 — Timeout And Gtimeout Normalization
+
+### Closed Grammar
+
+Only an executable whose basename is exactly `timeout` or `gtimeout` is a
+candidate. The parser consumes zero or more options from this set before the
+required duration:
+
+| Form | Arity |
+| --- | --- |
+| `-v`, `--verbose`, `--foreground`, `--preserve-status` | zero |
+| `-k D`, `--kill-after D`, `--kill-after=D` | one duration |
+| `-s S`, `--signal S`, `--signal=S` | one signal |
+| `--` | terminates option parsing |
+
+After options, exactly one valid duration and at least one child token are
+required. The child tokens then re-enter `strip_wrappers`, so timeout composes
+with shell, `env`, and assignment wrappers.
+
+### Fail-Opaque Rule
+
+Any unknown option, missing value, malformed value, missing duration, missing
+child, attached short value, or unsupported short-option cluster returns the
+original timeout token sequence. The family therefore stays `timeout` or
+`gtimeout`. The parser never scans forward after an error to guess where the
+child begins.
+
+This deliberately excludes forms such as `-vfp`, `-k.5`, and `-sTERM`. GNU
+timeout may accept more spellings than the identity parser. Identity
+normalization needs a smaller auditable grammar because a false unwrap can
+attribute evidence to the wrong program.
+
+### Lock-File Boundary
+
+The exact `.specify/memory/bubbles.session.json.flock` ignore entry belongs to
+this packet as a narrow supporting path. A wildcard or a session-JSON ignore
+would hide control state and is outside the approved boundary.
+
 ## Alternatives Considered
 
 1. **Drop target distinctness entirely.** Rejected: one target vouching for two
@@ -98,12 +136,21 @@ single-pass strip would collapse one of them and stop.
    inside a guard.
 4. **Strip any leading token containing `/` or `=`.** Rejected: over-broad. It
    would strip `./run.sh` and make the family the first argument.
+5. **Mirror every GNU timeout spelling.** Rejected: the identity parser would
+  become a second command-line implementation and widen silently as syntax is
+  guessed.
+6. **Strip any token named like `*timeout*`.** Rejected: `mytimeout` and
+  `timeout-wrapper` are real child identities, not transparent wrappers.
 
 ## Fix Design
 
 Two edits inside the single Check 43 jq program in
 `bubbles/scripts/state-transition-guard.sh`. No new script, no new flag, no
 change to the check's exit contract or its diagnostic format.
+
+The timeout facet is a third bounded edit in the same jq program. Its dirty
+implementation and tests must be narrowed to the closed grammar before any
+green claim. The artifact owner does not modify those runtime files.
 
 ## Test Design
 
@@ -121,3 +168,10 @@ direct probe of `command_family` over six spellings.
 The end-to-end cases run the WHOLE guard and live in
 `bubbles/scripts/state-transition-guard-selftest.sh` beside the BUG-032 receipt
 matrix.
+
+For timeout normalization, the focused extractor and whole-guard suite both
+need acceptance cases for bare versus valid timeout wrappers and `-v`. They
+also need opaque cases for malformed values, unknown options, near-miss
+basenames, attached short values, unsupported clusters, missing duration, and
+missing child. A final adversarial pair must prove that timeout-wrapped `cargo`
+and `npm` remain distinct.

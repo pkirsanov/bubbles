@@ -27,6 +27,7 @@
     "allowedPaths": [
       "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/**",
       "BUGS.md",
+      ".specify/memory/.gitignore",
       "bubbles/scripts/state-transition-guard.sh",
       "bubbles/scripts/state-transition-guard-selftest.sh",
       "bubbles/scripts/receipt-identity-selftest.sh",
@@ -36,16 +37,16 @@
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
-    "substate": "implemented",
-    "activeAgent": "bubbles.implement",
-    "currentPhase": "implement",
-    "currentScope": 1,
+    "substate": "requirements_ready",
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "bug",
+    "currentScope": 2,
     "completedPhaseClaims": [
       "implement"
     ],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.validate",
-    "nextRequiredAction": "Run validate-owned certification over this packet. Implementation and its red/green evidence are recorded in report.md; certification is not claimed here.",
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Capture the timeout red stage, narrow timeout and gtimeout normalization to the closed grammar in spec.md, correct the focused and whole-guard fixtures, and preserve Scope 1 evidence.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -63,6 +64,15 @@
         "name": "Receipt Target Grouping And Wrapper Normalization",
         "status": "implemented",
         "certified": false
+      },
+      {
+        "scope": 2,
+        "name": "Timeout Wrapper Grammar And Session Lock Boundary",
+        "status": "in_progress",
+        "dependsOn": [1],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
       }
     ],
     "lockdownState": "unlocked"
@@ -94,5 +104,6 @@
     }
   },
   "transitionRequests": [],
-  "reworkQueue": []
+  "reworkQueue": [],
+  "executionHistory": []
 }

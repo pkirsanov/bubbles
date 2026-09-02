@@ -2347,6 +2347,23 @@ one acceptance and one adversarial bound per facet, plus the BUG-007 and BUG-032
 pins. End-to-end cases run the whole guard in
 `bubbles/scripts/state-transition-guard-selftest.sh`.
 
+### Third facet — timeout wrapper grammar (2026-09-02)
+
+The packet was reopened for a distinct normalization case. Repository commands
+are routinely wrapped by exact-basename `timeout` or `gtimeout`. Those wrappers
+are transparent only when their complete prefix matches the packet's closed
+grammar. Unknown, malformed, attached short-option, unsupported clustered,
+missing-duration, missing-child, and near-miss forms remain opaque.
+
+The concurrent dirty implementation accepts broader forms, including `-vfp`,
+`-k.5`, and `-sTERM`. That source is not certified by this entry. Scope 2 in the
+BUG-033 packet owns narrowing the parser and its fixtures. No timeout red or
+green execution is claimed here.
+
+The packet boundary also admits the exact
+`.specify/memory/bubbles.session.json.flock` ignore entry. The session JSON and
+all other memory-state paths remain outside that ignore rule.
+
 ---
 
 ## BUG-034 — a superseded receipt blocks certification forever, so any spec that records receipts and then commits can never certify
@@ -2438,4 +2455,37 @@ MEANS, not a bypass of it.
 Escalates, on the same two answers as BUG-033: `no-new-behavior` fails because a
 refused transition becomes an accepted one, and `no-cross-product-effect` fails
 because the resolver ships into every consuming repository.
+
+---
+
+## BUG-037 — evidence capture can duplicate the zero line count and feed a non-canonical scalar into arithmetic
+
+- **Filed:** 2026-09-02
+- **Disposition:** open framework defect; artifact and root-cause packet created
+  at `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. No implementation,
+  red-stage execution, or certification is claimed.
+- **Severity:** high. Evidence formatting can emit an arithmetic diagnostic
+  while the child and helper still return success.
+- **Affects:** `bubbles/scripts/evidence-capture.sh` zero-output metadata.
+
+### Root cause
+
+The helper derives its line count with `grep -c` followed by a fallback printer.
+For an empty file, `grep -c ''` prints `0` and returns a no-match status. The
+fallback prints another `0`, so command substitution produces `00`. Later
+conditions consume that value arithmetically.
+
+The duplicated-zero source defect is confirmed by inspection. The operator's
+exact arithmetic diagnostic was not durably captured in this session and is not
+restated as execution evidence.
+
+### Required fix
+
+Use one canonical line-count producer for every readable capture file. Add
+focused successful and failing zero-output regressions that assert `lines: 0`,
+the empty-stream hash, no arithmetic diagnostic, and the existing child exit
+contract. Preserve non-empty, bounded, signal, cleanup, and verify behavior.
+
+The packet routes implementation to `bubbles.implement`. Full framework and
+release validation remain mandatory before validate-owned certification.
 

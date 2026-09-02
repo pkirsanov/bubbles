@@ -10,6 +10,9 @@ acceptance obligation.
 - [x] Facet 2 acceptance and its adversarial bound both executed with real exit codes
 - [x] The BUG-007 and BUG-032 pins still hold after the relaxation
 - [x] The regression surface extracts the guard's own program rather than re-implementing it
+- [ ] Valid timeout and gtimeout wrappers normalize to the child identity
+- [ ] Unknown or malformed timeout syntax remains opaque
+- [ ] Only the persistent session lock path is ignored
 
 ## Checklist
 
@@ -20,6 +23,8 @@ Automation MUST NOT check one.
 - [ ] One command spelled through shell, `env` and assignment wrappers is treated as one command
 - [ ] Two different commands sharing one captured result are still refused
 - [ ] The relaxation did not widen Check 43 into a hole
+- [ ] Timeout normalization accepts the documented grammar and no broader short-option forms
+- [ ] The session JSON remains visible while its persistent flock is ignored
 
 ## Human Acceptance Record
 
