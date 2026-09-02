@@ -48,7 +48,7 @@
           "type": "mutation",
           "category": "functional",
           "file": "bubbles/scripts/traceability-guard-selftest.sh",
-          "scenarioId": "SCN-B045-001",
+          "scenarioId": "Mutation control",
           "description": "Restoring the type-only predicate makes the empty and mixed adversarial assertions fail while the non-empty control remains green.",
           "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
           "liveSystem": false,

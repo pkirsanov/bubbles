@@ -94,8 +94,10 @@ assert_exit "S9 missing target refuses" 2 "$(run_lint "$WORK/no-such-dir" "$EMPT
 # S10: NO environment variable may suppress a finding. The claim under test is
 # "this variable cannot make the lint PASS", so the assertion is exit != 0.
 for escape in BUBBLES_SKIP_PHASE_LINT SKIP_PHASE_NAME_LINT BUBBLES_PHASE_ALLOW_UNKNOWN BUBBLES_LINT_SKIP; do
-  got="$(env "$escape=1" BUBBLES_PHASE_NAME_BASELINE_FILE="$EMPTY_BASELINE" \
-    BUBBLES_WORKFLOWS_FILE="$REG" bash "$LINT" "$T2" >/dev/null 2>&1; printf '%s' "$?")"
+  got="$(
+    export "$escape=1"
+    run_lint "$T2" "$EMPTY_BASELINE" "$REG"
+  )"
   if [[ "$got" != "0" ]]; then ok "S10 $escape cannot suppress a finding (exit $got)"; else no "S10 $escape SUPPRESSED a finding (exit 0) — bypass present"; fi
 done
 

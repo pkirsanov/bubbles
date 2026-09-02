@@ -158,6 +158,32 @@ bubbles_run_with_timeout() {
 # invalid invocation. The caller owns the log file; this function truncates it.
 # `BUBBLES_PROGRESS_TIMEOUT_REASON` is empty on command completion and is set to
 # `idle` or `absolute` for the corresponding timeout.
+_bubbles_terminate_process_group() {
+  local group_leader_pid="$1"
+  local termination_waited=0
+
+  kill -TERM -- "-$group_leader_pid" 2>/dev/null || kill -TERM "$group_leader_pid" 2>/dev/null || true
+  while kill -0 -- "-$group_leader_pid" 2>/dev/null && [[ "$termination_waited" -lt 5 ]]; do
+    sleep 1
+    termination_waited=$((termination_waited + 1))
+  done
+  if kill -0 -- "-$group_leader_pid" 2>/dev/null; then
+    kill -KILL -- "-$group_leader_pid" 2>/dev/null || true
+  fi
+  wait "$group_leader_pid" 2>/dev/null || true
+}
+
+_bubbles_restore_signal_trap() {
+  local saved_trap="$1"
+  local signal_name="$2"
+
+  if [[ -n "$saved_trap" ]]; then
+    eval "$saved_trap"
+  else
+    trap - "$signal_name"
+  fi
+}
+
 bubbles_run_with_progress_timeout() {
   local idle_secs="${1:-}"
   local absolute_secs="${2:-}"
@@ -183,6 +209,14 @@ bubbles_run_with_progress_timeout() {
   "$@" > "$log_file" 2>&1 </dev/null &
   local cmd_pid=$!
   [[ "$monitor_was_enabled" -eq 1 ]] || set +m
+  local saved_hup_trap saved_int_trap saved_term_trap
+  saved_hup_trap="$(trap -p HUP)"
+  saved_int_trap="$(trap -p INT)"
+  saved_term_trap="$(trap -p TERM)"
+  local interrupted_signal=""
+  trap 'interrupted_signal=HUP; _bubbles_terminate_process_group "$cmd_pid"' HUP
+  trap 'interrupted_signal=INT; _bubbles_terminate_process_group "$cmd_pid"' INT
+  trap 'interrupted_signal=TERM; _bubbles_terminate_process_group "$cmd_pid"' TERM
   local started_at=$SECONDS
   local last_progress_at=$started_at
   local last_size=0
@@ -224,16 +258,10 @@ bubbles_run_with_progress_timeout() {
   done
 
   if [[ "$timeout_rc" -ne 0 ]]; then
-    kill -TERM -- "-$cmd_pid" 2>/dev/null || kill -TERM "$cmd_pid" 2>/dev/null || true
-    local termination_waited=0
-    while kill -0 "$cmd_pid" 2>/dev/null && [[ "$termination_waited" -lt 5 ]]; do
-      sleep 1
-      termination_waited=$((termination_waited + 1))
-    done
-    if kill -0 -- "-$cmd_pid" 2>/dev/null; then
-      kill -KILL -- "-$cmd_pid" 2>/dev/null || true
-    fi
-    wait "$cmd_pid" 2>/dev/null || true
+    _bubbles_terminate_process_group "$cmd_pid"
+    _bubbles_restore_signal_trap "$saved_hup_trap" HUP
+    _bubbles_restore_signal_trap "$saved_int_trap" INT
+    _bubbles_restore_signal_trap "$saved_term_trap" TERM
     return "$timeout_rc"
   fi
 
@@ -244,6 +272,17 @@ bubbles_run_with_progress_timeout() {
   if kill -0 -- "-$cmd_pid" 2>/dev/null; then
     kill -TERM -- "-$cmd_pid" 2>/dev/null || true
     kill -KILL -- "-$cmd_pid" 2>/dev/null || true
+  fi
+  _bubbles_restore_signal_trap "$saved_hup_trap" HUP
+  _bubbles_restore_signal_trap "$saved_int_trap" INT
+  _bubbles_restore_signal_trap "$saved_term_trap" TERM
+  if [[ -n "$interrupted_signal" ]]; then
+    kill -s "$interrupted_signal" "$BASHPID"
+    case "$interrupted_signal" in
+      HUP) return 129 ;;
+      INT) return 130 ;;
+      TERM) return 143 ;;
+    esac
   fi
   return "$rc"
 }

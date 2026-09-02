@@ -131,12 +131,7 @@
           "type": "functional",
           "category": "functional",
           "file": "bubbles/scripts/traceability-guard-selftest.sh",
-          "scenarioId": "SCN-B046-002",
-          "scenarioIds": [
-            "SCN-B046-002",
-            "SCN-B046-004",
-            "SCN-B046-006"
-          ],
+          "scenarioId": "Cross-cutting diagnostics",
           "description": "Invalid references reveal no external existence, path, metadata, contents, or active control bytes.",
           "expectedIdentity": "BUG-046 diagnostics disclose no external existence path metadata contents or control bytes",
           "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
@@ -149,11 +144,7 @@
           "type": "mutation",
           "category": "functional",
           "file": "bubbles/scripts/traceability-guard-selftest.sh",
-          "scenarioId": "SCN-B046-002",
-          "scenarioIds": [
-            "SCN-B046-002",
-            "SCN-B046-004"
-          ],
+          "scenarioId": "Containment mutation",
           "description": "A guard copy with containment disabled and regular-file checks retained is killed by traversal and symlink cases.",
           "expectedIdentity": "BUG-046 containment-disabled regular-file-preserving mutation is killed",
           "command": "bash bubbles/scripts/traceability-guard-selftest.sh",

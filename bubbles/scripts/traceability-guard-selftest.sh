@@ -18,6 +18,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUARD="$SCRIPT_DIR/traceability-guard.sh"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=guard-lib.sh
 source "$SCRIPT_DIR/guard-lib.sh"
 
@@ -27,7 +28,8 @@ if [[ ! -f "$GUARD" ]]; then
 fi
 
 TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT INT TERM
+REPO_FIXTURE_ROOT="$(mktemp -d "$REPO_ROOT/.traceability-guard-selftest.XXXXXX")"
+trap 'rm -rf "$TMPDIR" "$REPO_FIXTURE_ROOT"' EXIT INT TERM
 
 failures=0
 pass() { echo "  PASS: $1"; }
@@ -115,6 +117,7 @@ build_bug039_feature028_shape() {
   local scope_number row_number row_id scenario_id scenario_title
 
   mkdir -p "$feature_dir/tests"
+  git init -q "$feature_dir"
   cat > "$feature_dir/tests/traceability.spec.ts" <<'EOF'
 export const traceabilityFixture = true;
 EOF
@@ -209,7 +212,7 @@ run_trace_case() {
   local run_root="$PWD"
   shift 2
 
-  if [[ "$feature_dir" == "$TMPDIR/"* ]]; then
+  if [[ "$feature_dir" == "$TMPDIR/"* || "$feature_dir" == "$REPO_FIXTURE_ROOT/"* ]]; then
     feature_arg="."
     run_root="$feature_dir"
   fi
@@ -298,7 +301,14 @@ run_trace_case_with_parser_status() {
   local case_log
   local shim_dir="$TMPDIR/bug039-parser-status-bin"
   local real_python
+  local feature_arg="$feature_dir"
+  local run_root="$PWD"
   shift 2
+
+  if [[ "$feature_dir" == "$TMPDIR/"* || "$feature_dir" == "$REPO_FIXTURE_ROOT/"* ]]; then
+    feature_arg="."
+    run_root="$feature_dir"
+  fi
 
   real_python="$(command -v python3)"
   mkdir -p "$shim_dir"
@@ -335,8 +345,8 @@ SHIM
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug039-parser-status-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if PATH="$shim_dir:$PATH" TRACEABILITY_REAL_PYTHON="$real_python" \
-    bash "$GUARD" "$feature_dir" "$@" >"$case_log" 2>&1; then
+  if (cd "$run_root" && PATH="$shim_dir:$PATH" TRACEABILITY_REAL_PYTHON="$real_python" \
+    bash "$GUARD" "$feature_arg" "$@") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -590,8 +600,7 @@ run_b046_trace_case_system_bash() {
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/b046-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if (cd "$repo_dir" && env -i HOME="$HOME" PATH="$PATH" \
-    /bin/bash "$GUARD" "$feature_rel") >"$case_log" 2>&1; then
+  if (cd "$repo_dir" && /bin/bash "$GUARD" "$feature_rel") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -1354,7 +1363,7 @@ assert_case_contains "summary: scenarios=1 test_rows=1" \
   "Unrelated table contributes no test rows"
 
 # --- BUG-039: structural rows never inflate canonical ID/Type tables -------
-bug039_feature="$TMPDIR/specs/108-bug039-feature028-shape"
+bug039_feature="$REPO_FIXTURE_ROOT/specs/108-bug039-feature028-shape"
 build_bug039_feature028_shape "$bug039_feature"
 run_trace_case "$bug039_feature" "BUG-039 four canonical ID/Type Test Plan tables" --all-scopes
 assert_case_status 0 "BUG-039 canonical ID/Type tables remain fully traceable"
@@ -1365,7 +1374,7 @@ assert_case_contains "Test rows checked: 24" \
 assert_case_not_contains "Test Plan extraction failed" \
   "BUG-039 canonical table extraction has no hidden parser failure"
 
-bug039_malformed_feature="$TMPDIR/specs/109-bug039-malformed-row"
+bug039_malformed_feature="$REPO_FIXTURE_ROOT/specs/109-bug039-malformed-row"
 cp -R "$bug039_feature" "$bug039_malformed_feature"
 python3 - "$bug039_malformed_feature/scopes.md" <<'PY'
 from pathlib import Path
@@ -1471,7 +1480,7 @@ for bug039_variant in \
   empty-required-cell narrow-data-row wide-data-row rowless rowless-legacy \
   rowless-prose rowless-deeper-heading \
   rowless-section-boundary rowless-eof second-table-read-rows second-table-done; do
-  bug039_variant_feature="$TMPDIR/specs/109-bug039-${bug039_variant}"
+  bug039_variant_feature="$REPO_FIXTURE_ROOT/specs/109-bug039-${bug039_variant}"
   make_bug039_variant "$bug039_variant_feature" "$bug039_variant"
   run_trace_case_with_parser_status "$bug039_variant_feature" \
     "BUG-039 ${bug039_variant}" --all-scopes
@@ -1484,7 +1493,7 @@ assert_bug039_diagnostic() {
   local variant="$1"
   local expected="$2"
 
-  run_trace_case_with_parser_status "$TMPDIR/specs/109-bug039-${variant}" \
+  run_trace_case_with_parser_status "$REPO_FIXTURE_ROOT/specs/109-bug039-${variant}" \
     "BUG-039 ${variant} exact diagnostic" --all-scopes
   assert_case_contains "$expected" "BUG-039 ${variant} emits its exact parser diagnostic"
   assert_case_contains "Test Plan extraction failed" \
@@ -1527,7 +1536,7 @@ assert_bug039_diagnostic "second-table-read-rows" \
 assert_bug039_diagnostic "second-table-done" \
   "ERROR: second Markdown table in Test Plan section at visible line 21"
 
-run_trace_case_with_parser_status "$TMPDIR/specs/109-bug039-rowless" \
+run_trace_case_with_parser_status "$REPO_FIXTURE_ROOT/specs/109-bug039-rowless" \
   "BUG-039 rowless table caller diagnostic" --all-scopes
 assert_case_contains "SELFTEST_PARSER_STATUS=4" \
   "BUG-039 rowless recognized table returns parser status 4"
@@ -1536,7 +1545,7 @@ assert_case_contains "ERROR: rowless recognized Test Plan table at visible line 
 assert_case_not_contains "has no concrete Test Plan rows to trace" \
   "BUG-039 rowless recognized table is distinct from an absent supported header"
 
-bug039_surface_alias_feature="$TMPDIR/specs/109-bug039-file-surface-alias"
+bug039_surface_alias_feature="$REPO_FIXTURE_ROOT/specs/109-bug039-file-surface-alias"
 cp -R "$bug039_feature" "$bug039_surface_alias_feature"
 bubbles_sed_inplace '0,/Persistent file and exact title/s//File \/ Surface/' \
   "$bug039_surface_alias_feature/scopes.md"
@@ -2622,7 +2631,8 @@ mkdir -p "$b046_absolute_repo/etc"
 cat > "$b046_absolute_repo/etc/hosts" <<'EOF'
 fixture hosts content must remain unread
 EOF
-b046_drive_name='C:\fixture.spec.ts'
+b046_drive_prefix='C:'
+b046_drive_name="${b046_drive_prefix}"'\fixture.spec.ts'
 b046_unc_name='\\server\share.spec.ts'
 cat > "$b046_absolute_repo/$b046_drive_name" <<'EOF'
 export const driveQualifiedFixture = true;
@@ -2630,7 +2640,10 @@ EOF
 cat > "$b046_absolute_repo/$b046_unc_name" <<'EOF'
 export const uncFixture = true;
 EOF
-cat > "$b046_absolute_repo/specs/046-absolute/scenario-manifest.json" <<'EOF'
+b046_drive_json_prefix='C:'
+b046_drive_json="${b046_drive_json_prefix}"'\\fixture.spec.ts'
+b046_unc_json='\\\\server\\share.spec.ts'
+cat > "$b046_absolute_repo/specs/046-absolute/scenario-manifest.json" <<EOF
 {
   "scenarios": [
     {
@@ -2638,8 +2651,8 @@ cat > "$b046_absolute_repo/specs/046-absolute/scenario-manifest.json" <<'EOF'
       "title": "Linked test reference validation remains contained",
       "linkedTests": [
         "/etc/hosts",
-        "C:\\fixture.spec.ts",
-        "\\\\server\\share.spec.ts"
+        "${b046_drive_json}",
+        "${b046_unc_json}"
       ],
       "evidenceRefs": ["report.md#test-evidence"]
     }
