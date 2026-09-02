@@ -28,14 +28,14 @@
   "requiresRevalidation": false,
   "execution": {
     "goalContractRef": null,
-    "activeAgent": "bubbles.test",
-    "currentPhase": "test",
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
     "currentScope": 1,
     "substate": "independently_verified",
     "completedPhaseClaims": ["implement", "test"],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.validate",
-    "nextRequiredAction": "Run the combined post-BUG-053 T6/framework validation and validate BUG-052. Preserve certification until validate-owned checks pass.",
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Reconcile the mainline authority-conflict drift to canonical-wins behavior, strengthen SCN-B052-001 diagnostic assertions, and add canonical-null fallback coverage. Then route the focused and framework verification to bubbles.test; preserve certification until validate-owned checks pass.",
     "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
   },
   "certification": {
@@ -125,13 +125,35 @@
       "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#independent-mechanism-reconciliation",
       "addressedFindings": ["B052-TEST-MECHANISM-HIGH-RISK-CONTROL"],
       "unresolvedFindings": ["B052-T6-NOT-RUN-BY-INSTRUCTION"]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T18:43:15Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": null,
+      "addressedFindings": [
+        "SCN-B052-001 planning contract now discriminates the required horizontal-plan diagnostic from the forbidden authority-conflict diagnostic",
+        "FR-B052-002 canonical-null fallback coverage is explicit in SCN-B052-005",
+        "scenario-manifest.json conforms to the strict version 2 producer contract"
+      ],
+      "unresolvedFindings": [
+        "origin/main T49 authority-conflict drift remains for bubbles.implement to reconcile",
+        "SCN-B052-001 exact diagnostic assertions remain for bubbles.implement and bubbles.test",
+        "SCN-B052-005 canonical-null fixture remains for bubbles.implement and bubbles.test",
+        "T6 full framework validation remains for bubbles.test"
+      ]
     }
   ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-09-02T07:32:20Z",
+  "lastUpdatedAt": "2026-09-02T18:43:15Z",
   "scopeLayout": "single-file",
   "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
-  "notes": "The planner corrected SCN-B052-002 to the high-risk mutation mechanism. Bubbles.test independently confirmed current-byte identity plus test-mechanism lint, scenario-obligation lint, artifact lint, and JSON parsing. Existing focused T1-T5 evidence remains unchanged, T6 is routed to combined validation, and certification remains untouched."
+  "notes": "Planning reconciliation preserves SCN-B052-002/T17 canonical-precedence exit 0 and the legacy-only, execution-non-authority, canonical-empty, and semantically equal migration-copy obligations. SCN-B052-001 now requires the horizontal-plan diagnostic and rejects the incomplete-DAG conflict diagnostic. Canonical-null fallback coverage is explicit. Implementation and test execution remain required, and certification remains untouched."
 }

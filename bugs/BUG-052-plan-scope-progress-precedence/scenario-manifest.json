@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "spec": "BUG-052-plan-scope-progress-precedence",
   "scenarios": [
     {
@@ -9,11 +9,12 @@
       "scopeRef": "Scope 1",
       "behaviorTraits": ["degraded-state"],
       "riskTier": "high",
-      "obligations": [{"trait":"degraded-state","requiredProof":"production command simultaneous-field blocking assertion","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
-      "linkedTests": ["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"],
+      "obligations": [{"trait":"degraded-state","requiredProof":"production command exits 1 with DEPENDENCY-GRAPH HORIZONTAL PLAN and without deprecated top-level scopeProgress conflicts with certification.scopeProgress","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
+      "linkedTests": [{"file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","type":"functional","testId":"T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph (exit 1)"}],
+      "plannedTests": [{"path":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","title":"T16 asserts DEPENDENCY-GRAPH HORIZONTAL PLAN and rejects deprecated top-level scopeProgress conflicts with certification.scopeProgress","type":"functional"}],
       "evidenceRefs": [],
       "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
-      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Restore top-level-first selection. The canonical over-depth fixture must return to a false no-op.","negativeControlMechanism":"mutation"},
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Replace canonical-wins evaluation with top-level-first selection or a divergent-authority conflict refusal. The fixture must either no-op or emit the forbidden conflict diagnostic instead of the required horizontal-plan diagnostic.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Plan depth is a command-line artifact guard result."}
     },
     {
@@ -24,7 +25,7 @@
       "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "obligations": [{"trait":"pure-calculation","requiredProof":"production command canonical precedence assertion","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
-      "linkedTests": ["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"],
+      "linkedTests": [{"file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","type":"functional","testId":"T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)"}],
       "evidenceRefs": [],
       "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Swap the canonical and legacy arrays. The verdict must follow the new canonical graph.","negativeControlMechanism":"mutation"},
@@ -38,7 +39,7 @@
       "behaviorTraits": ["degraded-state"],
       "riskTier": "medium",
       "obligations": [{"trait":"degraded-state","requiredProof":"production command legacy fallback blocking assertion","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
-      "linkedTests": ["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"],
+      "linkedTests": [{"file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","type":"functional","testId":"T18 SCN-B052-003 legacy-only deep graph remains blocking (exit 1)"}],
       "evidenceRefs": [],
       "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Remove the top-level fallback. The legacy over-depth fixture must expose the compatibility loss.","negativeControlMechanism":"mutation"},
@@ -52,11 +53,55 @@
       "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "obligations": [{"trait":"pure-calculation","requiredProof":"production command authority-source assertion","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
-      "linkedTests": ["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"],
+      "linkedTests": [{"file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","type":"functional","testId":"T19 SCN-B052-004 canonical graph wins over execution deep graph (exit 0)"}],
       "evidenceRefs": [],
       "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Insert execution.scopeProgress before certification in the authority chain. The conflicting execution graph must change the verdict and fail the regression.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Control-plane authority selection is a command-line contract."}
+    },
+    {
+      "id": "SCN-B052-005",
+      "scopeRef": "Scope 1",
+      "title": "Null canonical scope progress uses the legacy fallback",
+      "requiredTestType": "functional",
+      "linkedTests": [],
+      "plannedTests": [{"path":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","title":"Canonical null plus a legacy deep graph uses the fallback and emits DEPENDENCY-GRAPH HORIZONTAL PLAN","type":"functional"}],
+      "evidenceRefs": [],
+      "riskTier": "high",
+      "behaviorTraits": ["degraded-state"],
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Null fallback selection is a command-line artifact guard result."},
+      "obligations": [{"trait":"degraded-state","requiredProof":"production command canonical-null fallback exits 1 with DEPENDENCY-GRAPH HORIZONTAL PLAN","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
+      "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Treat canonical null as an authoritative empty array. The legacy over-depth graph must incorrectly no-op and fail the blocking assertion.","negativeControlMechanism":"mutation"}
+    },
+    {
+      "id": "SCN-B052-006",
+      "scopeRef": "Scope 1",
+      "title": "Present canonical empty scope progress remains authoritative",
+      "requiredTestType": "functional",
+      "linkedTests": [{"file":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","type":"functional","testId":"T20 canonical empty array remains authoritative over legacy deep graph (exit 0)"}],
+      "evidenceRefs": [],
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation"],
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Canonical empty-array authority has no rendered product surface."},
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command canonical-empty precedence assertion with exit 0","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
+      "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Treat the present canonical empty array as absent. The deprecated deep graph must then block and fail the exit-0 regression.","negativeControlMechanism":"mutation"}
+    },
+    {
+      "id": "SCN-B052-007",
+      "scopeRef": "Scope 1",
+      "title": "Semantically equal migration copies can coexist",
+      "requiredTestType": "functional",
+      "linkedTests": [],
+      "plannedTests": [{"path":"bubbles/scripts/plan-dependency-depth-guard-selftest.sh","title":"Semantically equal canonical and legacy migration copies remain valid despite representation-order differences","type":"functional"}],
+      "evidenceRefs": [],
+      "riskTier": "medium",
+      "behaviorTraits": ["pure-calculation"],
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Migration-copy semantic equality has no rendered product surface."},
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command accepts semantically equal canonical and legacy migration copies with exit 0","satisfiedBy":["bubbles/scripts/plan-dependency-depth-guard-selftest.sh"]}],
+      "implementationRefs": ["bubbles/scripts/plan-dependency-depth-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/plan-dependency-depth-guard.sh"],"negativeControl":"Compare migration copies by serialized object, record, or dependency order. The reordered but equivalent graph must falsely conflict and fail the regression.","negativeControlMechanism":"perturbed-input"}
     }
   ]
 }
