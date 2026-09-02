@@ -124,23 +124,28 @@ Scenario: SCN-B052-007 Semantically equal migration copies can coexist
 
 **Excluded paths:** state schemas, other state readers, dependency-depth algorithms, downstream artifacts, and other bug packets.
 
+**Planning reconciliation boundary:** This invocation may change only this
+`scopes.md`, `scenario-manifest.json`, `test-plan.json`, and `state.json.execution`.
+It must not change the guard, its selftest, release-manifest bytes, report
+evidence, `state.json.certification`, BUG-049, or BUG-050.
+
 ### Test Plan
 
-| ID | Scenario | Test | Type | File/Location | Command | Live System |
-| --- | --- | --- | --- | --- | --- | --- |
-| T1 | SCN-B052-001 | T16 exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` and without `deprecated top-level scopeProgress conflicts with certification.scopeProgress` | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T2 | SCN-B052-002 | T17 canonical shallow graph wins over legacy deep graph (exit 0) | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T3 | SCN-B052-003 | T18 legacy top-level-only deep graph remains blocking (exit 1) | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T4 | SCN-B052-004 | T19 canonical graph wins over execution deep graph (exit 0) | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T5 | Aggregate | Existing dependency depth, type, and no-op cases remain green | regression | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T6 | Aggregate | Full source framework regression | Regression E2E | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh framework-validate` | No |
-| T7 | SCN-B052-005 | Canonical `null` plus a legacy deep graph uses the fallback, emits `DEPENDENCY-GRAPH HORIZONTAL PLAN`, and exits 1 | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T8 | SCN-B052-006 | T20 canonical empty array remains authoritative over a legacy deep graph (exit 0) | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
-| T9 | SCN-B052-007 | Semantically equal canonical and legacy migration copies remain valid despite object, record, and dependency order differences (exit 0) | functional | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| Test ID | Scenario ID | Description | Test Type | Category | File/Location | Command | Live System |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T1 | SCN-B052-001 | Regression: `T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph`; exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` and without `deprecated top-level scopeProgress conflicts with certification.scopeProgress` | functional | regression | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T2 | SCN-B052-002 | `T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)` | functional | adversarial | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T3 | SCN-B052-003 | `T18 SCN-B052-003 legacy-only deep graph remains blocking (exit 1)` | functional | compatibility | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T4 | SCN-B052-004 | `T19 SCN-B052-004 canonical graph wins over execution deep graph (exit 0)` | functional | adversarial | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T5 | — | Regression: existing dependency depth, type, and no-op cases remain green | functional | regression | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T6 | — | Regression: full source framework validation; do not run in this planning invocation | functional | regression | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh framework-validate` | No |
+| T7 | SCN-B052-005 | `T20B SCN-B052-005 canonical null falls back to legacy deep graph`; exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` and without the authority-conflict diagnostic | functional | compatibility | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T8 | SCN-B052-006 | Regression: `T20 canonical empty array remains authoritative over legacy deep graph (exit 0)` | functional | regression | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
+| T9 | SCN-B052-007 | `T50 semantically equal scopeProgress authorities remain valid` despite object, record, and dependency order differences (exit 0) | functional | compatibility | `bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | `bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh` | No |
 
 ### Definition of Done
 
-- [x] Root cause is confirmed by the simultaneous-field RED result. → Evidence: [SCN-B052-001 RED reproduction](report.md#scn-b052-001-red-reproduction) (**Phase:** implement; **Claim Source:** executed)
+- [x] Root cause is confirmed by the simultaneous-field RED result. → Evidence: [RED reproduction](report.md) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-001 canonical over-depth data exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` despite top-level `[]`, and the output does not contain `deprecated top-level scopeProgress conflicts with certification.scopeProgress`. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-002 canonical shallow data wins over deprecated deep data. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-003 top-level-only compatibility remains blocking. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
@@ -149,7 +154,7 @@ Scenario: SCN-B052-007 Semantically equal migration copies can coexist
 - [x] SCN-B052-006 canonical empty scope progress remains authoritative over a deprecated deep graph and exits 0. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-007 semantically equal canonical and deprecated migration copies remain valid despite representation-order differences and exit 0. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] Existing object, malformed-array, edge, and missing-body behavior remains unchanged. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
-- [x] The pre-fix regression test fails for the expected precedence reason. → Evidence: [SCN-B052-001 RED reproduction](report.md#scn-b052-001-red-reproduction) (**Phase:** implement; **Claim Source:** executed)
+- [x] The pre-fix regression test fails for the expected precedence reason. → Evidence: [Pre-fix RED reproduction](report.md) (**Phase:** implement; **Claim Source:** executed)
 - [x] The adversarial regressions fail if legacy or execution data gains authority. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [ ] Broader E2E regression suite passes
