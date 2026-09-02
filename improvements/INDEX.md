@@ -44,6 +44,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
+| IMP-057 | Native Host Budget Interception | PROPOSED | framework-health (G125) | COST-13, HO-8, EV-18, COV-23, REG-21 | 2026-09-02 |
 | IMP-056 | Fail-Closed Cross-Repository Dispatch Authorization | PROPOSED | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
 | IMP-054 | Hybrid Evidence Research Runtime | IN PROGRESS — ECF-01 foundation landed; research-runtime scopes remain pending | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |
 | IMP-055 | Measured Budget and Session Epoch Runtime | IN PROGRESS — ECF-01 foundation landed; admission, budget, and epoch scopes remain pending | framework-health | COST-12, HO-6, EV-16, REG-20 | 2026-08-27 |
