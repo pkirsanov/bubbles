@@ -141,37 +141,17 @@ Scenario: SCN-B052-007 Semantically equal migration copies can coexist
 ### Definition of Done
 
 - [x] Root cause is confirmed by the simultaneous-field RED result. → Evidence: [SCN-B052-001 RED reproduction](report.md#scn-b052-001-red-reproduction) (**Phase:** implement; **Claim Source:** executed)
-- [ ] SCN-B052-001 canonical over-depth data exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` despite top-level `[]`, and the output does not contain `deprecated top-level scopeProgress conflicts with certification.scopeProgress`.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No behavior command was run during planning reconciliation; the prior DoD wording and T1 row required only a blocking verdict.
-  > **What was observed:** The prior planning contract did not distinguish the intended horizontal-plan diagnostic from a conflicting-authority or incomplete-DAG refusal with the same exit status.
-  > **Why this is uncertain:** Existing evidence was captured against the weaker exit-status contract and cannot prove diagnostic identity.
-  > **What would resolve this:** The implementation and test owner adds positive and negative output assertions to the SCN-B052-001 fixture and reruns T1.
+- [x] SCN-B052-001 canonical over-depth data exits 1 with `DEPENDENCY-GRAPH HORIZONTAL PLAN` despite top-level `[]`, and the output does not contain `deprecated top-level scopeProgress conflicts with certification.scopeProgress`. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-002 canonical shallow data wins over deprecated deep data. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-003 top-level-only compatibility remains blocking. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] SCN-B052-004 execution scope progress never selects the enforcement graph. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
-- [ ] SCN-B052-005 canonical `null` falls back to the legacy over-depth graph and emits `DEPENDENCY-GRAPH HORIZONTAL PLAN`.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No behavior command was run during planning reconciliation because this is a newly explicit FR-B052-002 handoff obligation.
-  > **What was observed:** The existing plan covered an absent canonical field but did not separately cover a present canonical field with a null value.
-  > **Why this is uncertain:** No scenario-specific fixture or execution evidence is yet linked for the null branch.
-  > **What would resolve this:** The implementation and test owner adds the SCN-B052-005 fixture and reruns T7 through the focused selftest.
-- [ ] SCN-B052-006 canonical empty scope progress remains authoritative over a deprecated deep graph and exits 0.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No behavior command was run during planning reconciliation; the existing T20 fixture was identified as the required authored test target.
-  > **What was observed:** The prior BUG-052 handoff did not expose canonical-empty authority as its own scenario or DoD item.
-  > **Why this is uncertain:** The historical focused evidence is not relabeled as proof for this newly explicit scenario contract.
-  > **What would resolve this:** The test owner reruns T8 and records scenario-specific evidence for SCN-B052-006.
-- [ ] SCN-B052-007 semantically equal canonical and deprecated migration copies remain valid despite representation-order differences and exit 0.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No behavior command was run during planning reconciliation; the local mainline T50 case was inspected as the migration-copy contract.
-  > **What was observed:** That case exists on local `origin/main` but is not present in this checkpoint's focused selftest.
-  > **Why this is uncertain:** The branch reconciliation and a current execution of the preserved case have not occurred in this planning phase.
-  > **What would resolve this:** The implementation owner preserves the semantic-equality case while removing conflict-veto behavior, then the test owner reruns T9.
+- [x] SCN-B052-005 canonical `null` falls back to the legacy over-depth graph and emits `DEPENDENCY-GRAPH HORIZONTAL PLAN`. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B052-006 canonical empty scope progress remains authoritative over a deprecated deep graph and exits 0. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B052-007 semantically equal canonical and deprecated migration copies remain valid despite representation-order differences and exit 0. → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] Existing object, malformed-array, edge, and missing-body behavior remains unchanged. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [x] The pre-fix regression test fails for the expected precedence reason. → Evidence: [SCN-B052-001 RED reproduction](report.md#scn-b052-001-red-reproduction) (**Phase:** implement; **Claim Source:** executed)
 - [x] The adversarial regressions fail if legacy or execution data gains authority. → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
-- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior → Evidence: [BUG-052 focused GREEN](report.md#bug-052-focused-green) (**Phase:** implement; **Claim Source:** executed)
+- [x] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior → Evidence: [Origin/main reconciliation focused GREEN](report.md#originmain-reconciliation-focused-green) (**Phase:** implement; **Claim Source:** executed)
 - [ ] Broader E2E regression suite passes
   > **Uncertainty Declaration**
   > **What was attempted:** Test Plan T1-T5, linked-test resolution, scenario obligations, test-mechanism lint, regression quality, shell checks, portability, implementation reality, artifact lint, manifest freshness, and neighboring-byte verification were executed independently. T6 was not run by explicit operator instruction.

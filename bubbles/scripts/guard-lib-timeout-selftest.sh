@@ -19,8 +19,10 @@
 #   2. `kill -TERM "$watch_pid"` kills the SUBSHELL, not its `sleep` grandchild,
 #      so a single long sleep survives as an orphan for its whole duration.
 #
-# Cases A-D pin the portable fixed-timeout fallback, including trappable SIGINT.
-# Cases E-J pin the progress-aware runner used by nested downstream validation:
+# Cases A-E pin ordinary fixed-timeout behavior. Cases F-H independently pin
+# timeout, gtimeout, and fallback timeout cleanup. Case I pins fallback cleanup
+# after a successful direct-child exit. Cases J-O pin the
+# progress-aware runner:
 # active output extends the idle window, silence and endless output stay bounded,
 # command status is preserved, and timeout/error descendants are reaped.
 set -uo pipefail
@@ -28,15 +30,6 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/guard-lib.sh"
-
-# Force the fallback path regardless of what the host actually has installed, so
-# this test exercises the macOS-shaped branch on every platform including CI.
-command() {
-  if [ "${1:-}" = "-v" ] && { [ "${2:-}" = "timeout" ] || [ "${2:-}" = "gtimeout" ]; }; then
-    return 1
-  fi
-  builtin command "$@"
-}
 
 failures=0
 pass() { printf '  PASS  %s\n' "$1"; }
@@ -92,6 +85,12 @@ mkfifo "$signal_fifo"
 ) &
 signaler_pid=$!
 start=$(date +%s)
+command() {
+  if [ "${1:-}" = "-v" ] && { [ "${2:-}" = "timeout" ] || [ "${2:-}" = "gtimeout" ]; }; then
+    return 1
+  fi
+  builtin command "$@"
+}
 bubbles_run_with_timeout 10 bash -c '
   trap "exit 130" INT
   printf "%s\n" "$$" > "$1"
@@ -99,6 +98,7 @@ bubbles_run_with_timeout 10 bash -c '
 ' bash "$signal_fifo" >/dev/null 2>&1
 rc=$?
 elapsed=$(($(date +%s) - start))
+unset -f command
 wait "$signaler_pid" 2>/dev/null || true
 if [ "$rc" -eq 130 ] && [ "$elapsed" -le 3 ]; then
   pass "fallback child can trap SIGINT (rc=$rc, ${elapsed}s)"
@@ -106,10 +106,121 @@ else
   fail "fallback child SIGINT returned rc=$rc after ${elapsed}s (expected rc=130 within 3s)"
 fi
 
+# --- Case E: a normal signal exit is not misclassified as a timeout ----------
+bubbles_run_with_timeout 10 bash -c 'kill -TERM "$$"' >/dev/null 2>&1
+rc=$?
+if [ "$rc" -eq 143 ]; then
+  pass "ordinary command SIGTERM status is preserved (rc=$rc)"
+else
+  fail "ordinary command SIGTERM should return 143, got rc=$rc"
+fi
+
+trusted_timeout=""
+for timeout_candidate in \
+  /usr/bin/timeout \
+  /bin/timeout \
+  /opt/homebrew/bin/gtimeout \
+  /usr/local/bin/gtimeout \
+  /opt/local/bin/gtimeout; do
+  if [ -x "$timeout_candidate" ]; then
+    trusted_timeout="$timeout_candidate"
+    break
+  fi
+done
+
+exercise_term_resistant_tree() {
+  local branch="$1"
+  local tools_dir="$tmp_root/tools-$branch"
+  local descendant_pid_file="$tmp_root/$branch-descendant.pid"
+  local descendant_pid=""
+  local start elapsed rc
+  mkdir -p "$tools_dir"
+
+  case "$branch" in
+    timeout)
+      [ -n "$trusted_timeout" ] || {
+        pass "primary native branch skipped because no compatible tool is installed"
+        return
+      }
+      ln -s "$trusted_timeout" "$tools_dir/timeout"
+      ;;
+    gtimeout)
+      [ -n "$trusted_timeout" ] || {
+        pass "gtimeout branch skipped because no compatible native tool is installed"
+        return
+      }
+      ln -s "$trusted_timeout" "$tools_dir/gtimeout"
+      ;;
+    fallback) ;;
+  esac
+
+  command() {
+    if [ "${1:-}" = "-v" ] && { [ "${2:-}" = "timeout" ] || [ "${2:-}" = "gtimeout" ]; }; then
+      if [ -x "$tools_dir/${2:-}" ]; then
+        printf '%s\n' "$tools_dir/${2:-}"
+        return 0
+      fi
+      return 1
+    fi
+    builtin command "$@"
+  }
+
+  start=$(date +%s)
+  bubbles_run_with_timeout 2 bash -c '
+    trap "" TERM
+    (trap "" TERM; while :; do sleep 1; done) &
+    printf "%s\n" "$!" > "$1"
+    while :; do sleep 1; done
+  ' _ "$descendant_pid_file" >/dev/null 2>&1
+  rc=$?
+  elapsed=$(($(date +%s) - start))
+  descendant_pid="$(cat "$descendant_pid_file" 2>/dev/null || true)"
+  unset -f command
+
+  if [ "$rc" -eq 124 ] && [ -n "$descendant_pid" ] &&
+    ! kill -0 "$descendant_pid" 2>/dev/null && [ "$elapsed" -le 10 ]; then
+    pass "$branch branch force-terminates its TERM-resistant process tree (${elapsed}s)"
+  else
+    fail "$branch branch leaked or blocked: pid=${descendant_pid:-missing} rc=$rc elapsed=${elapsed}s"
+    [ -z "$descendant_pid" ] || kill -KILL "$descendant_pid" 2>/dev/null || true
+  fi
+}
+
+# --- Cases F-H: each selection branch owns a bounded kill-after ceiling ------
+exercise_term_resistant_tree timeout
+exercise_term_resistant_tree gtimeout
+exercise_term_resistant_tree fallback
+
+# --- Case I: fallback cleans descendants after a successful parent exit ------
+successful_descendant_pid_file="$tmp_root/fallback-success-descendant.pid"
+command() {
+  if [ "${1:-}" = "-v" ] && { [ "${2:-}" = "timeout" ] || [ "${2:-}" = "gtimeout" ]; }; then
+    return 1
+  fi
+  builtin command "$@"
+}
+start=$(date +%s)
+bubbles_run_with_timeout 20 bash -c '
+  (trap "" TERM; while :; do sleep 1; done) &
+  printf "%s\n" "$!" > "$1"
+  exit 0
+' _ "$successful_descendant_pid_file" >/dev/null 2>&1
+rc=$?
+elapsed=$(($(date +%s) - start))
+successful_descendant_pid="$(cat "$successful_descendant_pid_file" 2>/dev/null || true)"
+unset -f command
+if [ "$rc" -eq 0 ] && [ "$elapsed" -le 3 ] &&
+  [ -n "$successful_descendant_pid" ] && ! kill -0 "$successful_descendant_pid" 2>/dev/null; then
+  pass "fallback preserves successful parent status and promptly reaps its descendant (${elapsed}s)"
+else
+  fail "fallback successful-parent cleanup failed: pid=${successful_descendant_pid:-missing} rc=$rc elapsed=${elapsed}s"
+  [ -z "$successful_descendant_pid" ] || kill -KILL "$successful_descendant_pid" 2>/dev/null || true
+fi
+
 progress_root="$tmp_root/progress"
 mkdir -p "$progress_root"
 
-# --- Case E: regular output resets the idle deadline -------------------------
+# --- Case J: regular output resets the idle deadline -------------------------
 progress_log="$progress_root/progress.log"
 start=$(date +%s)
 bubbles_run_with_progress_timeout 2 8 "$progress_log" \
@@ -123,7 +234,7 @@ else
   fail "progress-aware command returned rc=$rc after ${elapsed}s"
 fi
 
-# --- Case F: a silent command is stopped by the idle deadline ----------------
+# --- Case K: a silent command is stopped by the idle deadline ----------------
 idle_log="$progress_root/idle.log"
 start=$(date +%s)
 bubbles_run_with_progress_timeout 2 8 "$idle_log" bash -c 'sleep 30'
@@ -137,7 +248,7 @@ else
   fail "idle timeout returned rc=$rc reason=${BUBBLES_PROGRESS_TIMEOUT_REASON:-none} after ${elapsed}s"
 fi
 
-# --- Case G: endless progress is stopped by the absolute deadline ------------
+# --- Case L: endless progress is stopped by the absolute deadline ------------
 absolute_log="$progress_root/absolute.log"
 start=$(date +%s)
 bubbles_run_with_progress_timeout 2 4 "$absolute_log" \
@@ -152,7 +263,7 @@ else
   fail "absolute timeout returned rc=$rc reason=${BUBBLES_PROGRESS_TIMEOUT_REASON:-none} after ${elapsed}s"
 fi
 
-# --- Case H: progress runner preserves a non-zero command exit ----------------
+# --- Case M: progress runner preserves a non-zero command exit ----------------
 exit_log="$progress_root/exit.log"
 bubbles_run_with_progress_timeout 2 8 "$exit_log" bash -c 'echo failing; exit 9'
 rc=$?
@@ -163,7 +274,7 @@ else
   fail "progress runner expected rc=9 with no timeout reason, got rc=$rc reason=${BUBBLES_PROGRESS_TIMEOUT_REASON:-none}"
 fi
 
-# --- Case I: timeout terminates the complete validator process group ---------
+# --- Case N: timeout terminates the complete validator process group ---------
 group_log="$progress_root/group.log"
 descendant_pid_file="$progress_root/descendant.pid"
 start=$(date +%s)
@@ -183,7 +294,7 @@ else
   [ -z "$descendant_pid" ] || kill -KILL "$descendant_pid" 2>/dev/null || true
 fi
 
-# --- Case J: a lost progress log fails loud through the same cleanup path ----
+# --- Case O: a lost progress log fails loud through the same cleanup path ----
 lost_log="$progress_root/lost.log"
 start=$(date +%s)
 bubbles_run_with_progress_timeout 2 8 "$lost_log" \
@@ -202,5 +313,5 @@ if [ "$failures" -ne 0 ]; then
   exit 1
 fi
 # portable-ok: selftest verdict label only; no raw timeout command is invoked here.
-printf 'guard-lib timeout selftest: OK (10 cases)\n'
+printf 'guard-lib timeout selftest: OK (15 cases)\n'
 exit 0

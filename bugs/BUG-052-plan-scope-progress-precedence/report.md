@@ -648,3 +648,71 @@ empty stdout; structured tool-log recorded the successful parse
 The corrected SCN-B052-002 mutation declaration is independently coherent on
 the current planning bytes. The packet remains `in_progress`; combined T6 and
 certification remain owned by `bubbles.validate`.
+
+## Origin/main reconciliation focused GREEN
+
+**Executed:** YES
+**Phase:** implement
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 180 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label 'BUG-052 focused post-merge attempt 1' -- /opt/homebrew/bin/bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `182379eb22dc73d0ec522e1c60246c91e74601a772f79b57be1a4e2673800d93`
+
+```text
+# BUG-052 focused post-merge attempt 1
+$ /opt/homebrew/bin/bash bubbles/scripts/plan-dependency-depth-guard-selftest.sh
+exit: 0
+lines: 74
+sha256: 182379eb22dc73d0ec522e1c60246c91e74601a772f79b57be1a4e2673800d93
+--- first 20 ---
+Running plan-dependency-depth-guard selftest...
+PASS: T1 no state.json → exit 0
+PASS: T2 no dependsOn edges → no-op (exit 0)
+PASS: T3 missing scope body refuses under block posture
+PASS: T4 early-numbered DAG-deep consumer, block → exit 1
+PASS: T5 DAG-deep consumer, advisory → exit 0
+PASS: T6 transitive-chain deep consumer, block → exit 1
+PASS: T7 early usable consumer exists (min 1 foundation), block → exit 0
+PASS: T8 no consumer scope → no-op (exit 0)
+PASS: T9 consumer needs 2 foundations (below threshold), block → exit 0
+PASS: T10 missing feature dir → exit 2
+PASS: T11 malformed state.json → exit 2
+PASS: T12 counts-summary object scopeProgress, block → no-op (exit 0)
+PASS: T13 counts-summary under certification, block → no-op (exit 0)
+PASS: T14 non-object scopeProgress entries refuse in block posture
+PASS: T15 real horizontal chain still BLOCKS under block posture (exit 1)
+PASS: T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph
+PASS: T16A symbolic horizontal chain deliberately BLOCKS
+PASS: T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)
+PASS: T17A symbolic early usable increment, block → exit 0
+--- omitted 34 line(s); sha256 above covers the full output ---
+--- last 20 ---
+PASS: T43.5 closed alias '01-foundation' resolves
+PASS: T43.6 closed alias 'scopes/01-foundation/scope.md' resolves
+PASS: T44 traversal scopeDir refuses
+PASS: T45 symlink scopeDir escape refuses
+PASS: T46 unknown edge refuses
+PASS: T47 malformed identity reports under report posture
+PASS: T47 malformed identity blocks under block posture
+PASS: T47 missing body reports under report posture
+PASS: T47 missing body blocks under block posture
+PASS: T48 duplicate physical body claim refuses
+PASS: T49 divergent legacy data cannot veto canonical scopeProgress (exit 0)
+PASS: T50 semantically equal scopeProgress authorities remain valid
+PASS: T51 self-loop refuses
+PASS: T52 two-node cycle refuses
+PASS: T53 three-node cycle refuses
+PASS: T54 mixed valid aliases still form a horizontal chain
+PASS: T55 inherited locale cannot alter classification or posture
+PASS: T56 equal-cost permutation has a stable canonical winner
+
+plan-dependency-depth-guard-selftest: all cases passed.
+```
+
+**Result:** PASS. The full-output hash covers T18, T19, canonical-empty T20,
+canonical-null T20B, and numeric-alias T20A in the bounded middle. T16 rejects
+an authority-conflict or incomplete-DAG substitute for the required horizontal
+diagnostic. T17 and repurposed T49 preserve canonical precedence. T50 preserves
+semantically equal migration copies. Identity, path, alias, duplicate-edge,
+malformed-DAG, cycle, locale, and deterministic tie-break cases remain green.
+The full framework validation was not run in this invocation.

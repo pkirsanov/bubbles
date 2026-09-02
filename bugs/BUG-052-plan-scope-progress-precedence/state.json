@@ -28,14 +28,14 @@
   "requiresRevalidation": false,
   "execution": {
     "goalContractRef": null,
-    "activeAgent": "bubbles.plan",
-    "currentPhase": "bootstrap",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
     "currentScope": 1,
-    "substate": "independently_verified",
-    "completedPhaseClaims": ["implement", "test"],
+    "substate": "implemented",
+    "completedPhaseClaims": ["implement"],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.implement",
-    "nextRequiredAction": "Reconcile the mainline authority-conflict drift to canonical-wins behavior, strengthen SCN-B052-001 diagnostic assertions, and add canonical-null fallback coverage. Then route the focused and framework verification to bubbles.test; preserve certification until validate-owned checks pass.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently verify the reconciled canonical-first contract and run the BUG-052 full framework validation. Preserve certification until validate-owned checks pass.",
     "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
   },
   "certification": {
@@ -147,13 +147,33 @@
         "SCN-B052-005 canonical-null fixture remains for bubbles.implement and bubbles.test",
         "T6 full framework validation remains for bubbles.test"
       ]
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["implement"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T19:11:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#originmain-reconciliation-focused-green",
+      "addressedFindings": [
+        "origin/main T49 authority-conflict drift was repurposed to canonical-wins exit 0",
+        "SCN-B052-001 now asserts the horizontal-plan diagnostic and rejects authority-conflict or incomplete-DAG diagnostics",
+        "SCN-B052-005 now covers canonical-null fallback",
+        "SCN-B052-006 and SCN-B052-007 preserve canonical-empty and semantically equal migration-copy behavior"
+      ],
+      "unresolvedFindings": [
+        "Independent BUG-052 verification and T6 full framework validation remain for bubbles.test"
+      ]
     }
   ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-09-02T18:43:15Z",
+  "lastUpdatedAt": "2026-09-02T19:11:00Z",
   "scopeLayout": "single-file",
   "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
-  "notes": "Planning reconciliation preserves SCN-B052-002/T17 canonical-precedence exit 0 and the legacy-only, execution-non-authority, canonical-empty, and semantically equal migration-copy obligations. SCN-B052-001 now requires the horizontal-plan diagnostic and rejects the incomplete-DAG conflict diagnostic. Canonical-null fallback coverage is explicit. Implementation and test execution remain required, and certification remains untouched."
+  "notes": "The normal origin/main merge preserves mainline identity, path, alias, malformed-DAG, and cycle hardening while enforcing non-null certification.scopeProgress authority. Absent or null canonical data falls back to top-level compatibility data, divergent legacy data cannot veto canonical evaluation, and execution.scopeProgress remains non-authoritative. Focused implementation evidence is current; independent test verification and full framework validation remain, and certification is untouched."
 }

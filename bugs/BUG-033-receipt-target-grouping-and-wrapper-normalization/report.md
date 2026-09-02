@@ -179,6 +179,34 @@ Non-artifact runtime paths changed:
 
 Validate-owned certification has not run. This packet stays `in_progress`.
 
+## Timeout Wrapper Facet
+
+**Executed:** NO
+**Command:** n/a
+**Phase Agent:** bubbles.bug
+**Claim Source:** not-run
+
+The timeout facet was reconciled as requirements and design only. Inspection of
+the dirty parser and tests found accepted forms broader than the closed grammar:
+`-vfp`, `-k.5`, and `-sTERM`. No focused or whole-guard timeout command ran in
+this artifact invocation. These observations are source-grounded design input,
+not red or green execution evidence.
+
+The implementation owner must first run corrected tests against the current
+over-broad parser to capture a red stage. It must then narrow the parser and run
+the same focused and whole-guard cases for green evidence.
+
+## Session Lock Ignore Boundary
+
+**Executed:** NO
+**Command:** n/a
+**Phase Agent:** bubbles.bug
+**Claim Source:** interpreted
+
+Editor inspection found the exact `.specify/memory/bubbles.session.json.flock`
+entry in `.specify/memory/.gitignore`. No command-backed ignore check ran. The
+boundary admits that one path and does not admit the untracked session JSON.
+
 ## Audit Evidence
 
 **Executed:** NO

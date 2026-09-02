@@ -19,6 +19,7 @@ selftest_tmp_base="${TMPDIR:-$HOME/.cache}"
 mkdir -p "$selftest_tmp_base"
 tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXXXX")"
 failures=0
+assertions=0
 
 cleanup() {
   if [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; then
@@ -31,10 +32,12 @@ cleanup() {
 trap cleanup EXIT
 
 pass() {
+  assertions=$((assertions + 1))
   echo "PASS: $1"
 }
 
 fail() {
+  assertions=$((assertions + 1))
   echo "FAIL: $1"
   failures=$((failures + 1))
 }
@@ -45,6 +48,19 @@ run_capture() {
 
   set +e
   "$@" >"$log_file" 2>&1
+  local status=$?
+  set -e
+
+  echo "$status"
+}
+
+run_capture_from() {
+  local working_directory="$1"
+  local log_file="$2"
+  shift 2
+
+  set +e
+  (cd "$working_directory" && "$@") >"$log_file" 2>&1
   local status=$?
   set -e
 
@@ -68,6 +84,107 @@ clone_framework_surface() {
   mkdir -p "$destination_root"
   cp -R "$SCRIPT_DIR/.." "$destination_root/bubbles"
   cp -R "$SCRIPT_DIR/../../agents" "$destination_root/agents"
+}
+
+run_strict_manifest_containment_regressions() {
+  local focused_root="$tmp_root/strict-containment-focused"
+  local g064_root="$focused_root/g064"
+  local planning_root="$focused_root/planning-gates"
+  local basename_root="$focused_root/basename"
+  local g064_dir="$g064_root/specs/001-g064-negative"
+  local g087_dir="$planning_root/specs/001-g087-negative"
+  local g091_dir="$planning_root/specs/002-g091-negative"
+  local basename_planning_dir="$basename_root/specs/001-basename-planning"
+  local basename_delivery_dir="$basename_root/specs/002-basename-delivery"
+  local feature_dir log_file status
+
+  echo "Running focused strict manifest-containment regressions..."
+
+  clone_framework_surface "$g064_root"
+  emit_base_fixture "$g064_dir"
+  mutate_delivery_contract "$g064_dir/state.json"
+  inject_unauthorized_workflow_runner "$g064_root/bubbles/agent-capabilities.yaml"
+  git -C "$g064_root" init -q
+  log_file="$focused_root/g064.log"
+  status="$(BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    run_capture_from "$g064_root" "$log_file" \
+    bash "$g064_root/bubbles/scripts/state-transition-guard.sh" "$g064_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "Focused containment: G064 adversary exits exactly 1"
+  else
+    fail "Focused containment: G064 adversary must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" "enables workflow execution without a grant" \
+    "Focused containment: G064 diagnostic remains isolated"
+
+  clone_framework_surface "$planning_root"
+  emit_honest_planning_fixture "$g087_dir"
+  emit_honest_planning_fixture "$g091_dir"
+  remove_planning_only_linkage "$g087_dir/state.json"
+  git -C "$planning_root" init -q
+  git -C "$planning_root" add -f bubbles agents specs
+  git -C "$planning_root" -c user.name='Bubbles Selftest' -c user.email='bubbles-selftest@example.invalid' \
+    commit -q -m 'test: seed focused planning gate fixtures'
+
+  log_file="$focused_root/g087.log"
+  status="$(BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    run_capture_from "$planning_root" "$log_file" \
+    bash "$planning_root/bubbles/scripts/state-transition-guard.sh" "$g087_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "Focused containment: G087 adversary exits exactly 1"
+  else
+    fail "Focused containment: G087 adversary must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" "Planning packet implementation linkage failed — Gate G087" \
+    "Focused containment: G087 diagnostic remains isolated"
+
+  printf '%s\n' 'Fallback route: invoke bubbles.design -> bubbles.plan when planning artifacts are missing.' \
+    >> "$planning_root/agents/bubbles.workflow.agent.md"
+  git -C "$planning_root" add -f agents/bubbles.workflow.agent.md
+  git -C "$planning_root" -c user.name='Bubbles Selftest' -c user.email='bubbles-selftest@example.invalid' \
+    commit -q -m 'test: inject focused G091 planning-chain adversary'
+  log_file="$focused_root/g091.log"
+  status="$(BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    run_capture_from "$planning_root" "$log_file" \
+    bash "$planning_root/bubbles/scripts/state-transition-guard.sh" "$g091_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "Focused containment: G091 adversary exits exactly 1"
+  else
+    fail "Focused containment: G091 adversary must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" "Planning workflow chain guard failed — Gate G091" \
+    "Focused containment: G091 diagnostic remains isolated"
+
+  clone_framework_surface "$basename_root"
+  emit_honest_planning_fixture "$basename_planning_dir"
+  emit_honest_planning_fixture "$basename_delivery_dir"
+  for feature_dir in "$basename_planning_dir" "$basename_delivery_dir"; do
+    bubbles_sed_inplace \
+      's;^| Broader regression |.*$;| Broader regression | `regression` | `rlbasenameonlyfixture.js` | Preserve planning and delivery profile isolation. | `bash rlbasenameonlyfixture.js` | No |;' \
+      "$feature_dir/scopes.md"
+  done
+  set_fixture_contract "$basename_delivery_dir/state.json" "autonomous-goal" "done"
+  git -C "$basename_root" init -q
+
+  log_file="$focused_root/basename-planning.log"
+  status="$(run_capture_from "$basename_root" "$log_file" bash "$basename_root/bubbles/scripts/state-transition-guard.sh" "$basename_planning_dir")"
+  if [[ "$status" -eq 0 ]]; then
+    pass "Focused containment: basename-only planning fixture exits 0"
+  else
+    fail "Focused containment: basename-only planning fixture must exit 0 (observed $status)"
+  fi
+  assert_log_contains "$log_file" "planning maturity: rlbasenameonlyfixture.js" \
+    "Focused containment: basename-only planning exemption is reached"
+
+  log_file="$focused_root/basename-delivery.log"
+  status="$(run_capture_from "$basename_root" "$log_file" bash "$basename_root/bubbles/scripts/state-transition-guard.sh" "$basename_delivery_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "Focused containment: basename-only delivery adversary exits exactly 1"
+  else
+    fail "Focused containment: basename-only delivery adversary must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" "non-existent or non-resolvable file: rlbasenameonlyfixture.js" \
+    "Focused containment: basename-only delivery enforcement remains active"
 }
 
 inject_unauthorized_workflow_runner() {
@@ -400,7 +517,7 @@ emit_base_fixture() {
   mkdir -p "$feature_dir/tests"
 
   cat <<'EOF' > "$scenario_test"
-export const docsScenarioRegression = true;
+test('docsScenarioRegression', () => {});
 EOF
 
   cat <<'EOF' > "$broader_test"
@@ -997,22 +1114,24 @@ EOF
 
   cat <<'EOF' > "$feature_dir/scenario-manifest.json"
 {
-  "version": 1,
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-009-S03-001",
+      "id": "SCN-009-S03-001",
       "title": "Planning maturity preserves honest incomplete delivery",
       "status": "planned",
       "scope": "Scope 01",
       "requirements": ["FR-009-S03-001"],
-      "requiredTestType": "e2e",
+      "requiredTestType": "e2e-ui",
       "linkedTests": ["__FUTURE_TEST__"],
       "evidenceRefs": []
     }
   ]
 }
 EOF
-  bubbles_sed_inplace "s|__FUTURE_TEST__|$future_test|g" "$feature_dir/scenario-manifest.json"
+  # Keep the manifest sentinel intact. It is the v1 compatibility spelling for
+  # a classified planned reference; replacing it with an absolute fixture path
+  # would violate the reader's repository-relative path contract.
 
   cat <<'EOF' > "$feature_dir/state.json"
 {
@@ -1178,6 +1297,288 @@ break_gherkin_dod_fidelity() {
   bubbles_sed_inplace \
     's/^Scenario: Planning maturity preserves honest incomplete delivery$/Scenario: Rotating archived credentials deletes obsolete transport records/' \
     "$scope_file"
+}
+
+write_g057_manifest() {
+  local feature_dir="$1"
+  local document="$2"
+  printf '%s\n' "$document" > "$feature_dir/scenario-manifest.json"
+}
+
+append_g057_scenario() {
+  local feature_dir="$1"
+  local scenario_id="$2"
+
+  cat <<EOF >> "$feature_dir/spec.md"
+
+## G057 Scenario
+
+### $scenario_id - G057 profile classification
+
+\`\`\`gherkin
+Scenario: G057 classifies each scenario independently
+Given one transition-profile-bound scenario
+When Check 3C evaluates its normalized references
+Then the scenario is classified without borrowing another scenario's counts
+\`\`\`
+EOF
+
+  cat <<EOF >> "$feature_dir/scopes.md"
+
+## G057 Scenario
+
+### $scenario_id - G057 profile classification
+
+\`\`\`gherkin
+Scenario: G057 classifies each scenario independently
+Given one transition-profile-bound scenario
+When Check 3C evaluates its normalized references
+Then the scenario is classified without borrowing another scenario's counts
+\`\`\`
+EOF
+
+  bubbles_sed_inplace \
+    's/Documentation route metadata is recorded consistently across artifacts/G057 classifies each scenario independently without borrowing another scenario count/' \
+    "$feature_dir/scopes.md"
+}
+
+append_g057_delivery_receipts() {
+  local scenario_id="$1"
+  local receipt_log="$tmp_root/.specify/runtime/tool-calls.jsonl"
+  local source_revision="0000000000000000000000000000000000000001"
+  local test_identity="tests/docs-scenario-regression.e2e.spec.ts::docsScenarioRegression"
+  local negative_control="remove the scenario-specific assertion; the regression no longer discriminates G057 behavior"
+  local phase exit_code timestamp
+
+  mkdir -p "$(dirname "$receipt_log")"
+  for phase in red implement green regression; do
+    exit_code=0
+    case "$phase" in
+      red)
+        exit_code=1
+        timestamp="2026-08-31T20:00:00Z"
+        ;;
+      implement) timestamp="2026-08-31T20:01:00Z" ;;
+      green) timestamp="2026-08-31T20:02:00Z" ;;
+      regression) timestamp="2026-08-31T20:03:00Z" ;;
+    esac
+    printf '{"schemaVersion":2,"ts":"%s","sessionId":"g057-%s-%s","cmd":"bash bubbles/scripts/state-transition-guard-selftest.sh","exitCode":%s,"stdoutHash":"9f2c1a77b3e45d6081ca2be7f4d0913ac5e8b26df1074a3c9e5b0d8f6a271c43","scenarioBinding":{"scenarioId":"%s","phase":"%s","testIdentity":"%s","sourceRevision":"%s","negativeControl":"%s","claim":"G057 classifies each scenario independently","implementationRefs":["bubbles/scripts/guards/control-plane-checks.sh"]}}\n' \
+      "$timestamp" "$scenario_id" "$phase" "$exit_code" "$scenario_id" "$phase" \
+      "$test_identity" "$source_revision" "$negative_control" >> "$receipt_log"
+  done
+}
+
+assert_g057_valid_case() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local expected_message="$3"
+  local require_clean_exit="${4:-true}"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$require_clean_exit" == "false" ]]; then
+    pass "G057 $case_name fixture completed for G057 assertions"
+  elif [[ "$status" -eq 0 ]]; then
+    pass "G057 $case_name fixture exits 0"
+  else
+    fail "G057 $case_name fixture must exit 0 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "$expected_message" \
+    "G057 $case_name satisfies its per-scenario profile contract"
+  assert_log_not_contains "$log_file" "scenario-manifest.json violates the per-scenario" \
+    "G057 $case_name emits no G057 policy failure"
+  assert_log_not_contains "$log_file" "scenario-manifest.json is malformed or has an unsupported projection (Gate G057)" \
+    "G057 $case_name emits no G057 projection failure"
+  assert_log_contains "$log_file" "every linked test resolves to a real file and title (Gate G057)" \
+    "G057 $case_name reaches linked-test resolution"
+  assert_log_contains "$log_file" "scenario obligation matrix is coherent (Gate G057)" \
+    "G057 $case_name reaches obligation checks"
+  assert_log_contains "$log_file" "declared test mechanisms support their claims (Gate G057)" \
+    "G057 $case_name reaches mechanism checks"
+}
+
+assert_g057_policy_failure() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "G057 $case_name fixture exits exactly 1"
+  else
+    fail "G057 $case_name fixture must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "scenario-manifest.json violates the per-scenario" \
+    "G057 $case_name fails its per-scenario profile contract"
+  assert_log_contains "$log_file" "failureCount: 1" \
+    "G057 $case_name records exactly one failure"
+  assert_log_contains "$log_file" "failedGateIds: [G057]" \
+    "G057 $case_name isolates the failed gate list to G057"
+  assert_log_not_contains "$log_file" "every linked test resolves to a real file and title (Gate G057)" \
+    "G057 $case_name suppresses child resolution after policy failure"
+  assert_log_not_contains "$log_file" "scenario obligation matrix is coherent (Gate G057)" \
+    "G057 $case_name suppresses child obligation checks after policy failure"
+  assert_log_not_contains "$log_file" "declared test mechanisms support their claims (Gate G057)" \
+    "G057 $case_name suppresses child mechanism checks after policy failure"
+}
+
+assert_g057_malformed_once() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "G057 $case_name fixture exits exactly 1"
+  else
+    fail "G057 $case_name fixture must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "scenario-manifest.json is malformed or has an unsupported projection (Gate G057)" \
+    "G057 $case_name reports the isolated projection failure"
+  assert_log_contains "$log_file" "failureCount: 1" \
+    "G057 $case_name records exactly one failure"
+  assert_log_contains "$log_file" "failedGateIds: [G057]" \
+    "G057 $case_name isolates the failed gate list to G057"
+  assert_log_not_contains "$log_file" "scenario-manifest.json violates the per-scenario" \
+    "G057 $case_name does not cascade into policy validation"
+  assert_log_not_contains "$log_file" "every linked test resolves to a real file and title (Gate G057)" \
+    "G057 $case_name suppresses child resolution after malformed projection"
+  assert_log_not_contains "$log_file" "scenario obligation matrix is coherent (Gate G057)" \
+    "G057 $case_name suppresses child obligation checks after malformed projection"
+  assert_log_not_contains "$log_file" "declared test mechanisms support their claims (Gate G057)" \
+    "G057 $case_name suppresses child mechanism checks after malformed projection"
+}
+
+assert_g057_known_id_reconciliation_failure() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local missing_id="$3"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "G057 $case_name fixture exits exactly 1"
+  else
+    fail "G057 $case_name fixture must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "identified-subset exact matching failed: scenario-manifest.json does not contain every known resolved Gherkin scenario ID (Gate G057)" \
+    "G057 $case_name rejects the missing known stable ID"
+  assert_log_contains "$log_file" "Missing known scenario ID(s): $missing_id" \
+    "G057 $case_name identifies the missing known stable ID"
+  assert_log_contains "$log_file" "failureCount: 1" \
+    "G057 $case_name records exactly one failure"
+  assert_log_contains "$log_file" "failedGateIds: [G057]" \
+    "G057 $case_name isolates the failed gate list to G057"
+  assert_log_not_contains "$log_file" "every linked test resolves to a real file and title (Gate G057)" \
+    "G057 $case_name suppresses child resolution after reconciliation failure"
+  assert_log_not_contains "$log_file" "scenario obligation matrix is coherent (Gate G057)" \
+    "G057 $case_name suppresses child obligation checks after reconciliation failure"
+  assert_log_not_contains "$log_file" "declared test mechanisms support their claims (Gate G057)" \
+    "G057 $case_name suppresses child mechanism checks after reconciliation failure"
+}
+
+assert_g057_count_mismatch() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local manifest_count="$3"
+  local scope_count="$4"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "G057 $case_name fixture exits exactly 1"
+  else
+    fail "G057 $case_name fixture must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "legacy residual cardinality cannot match because scenario-manifest.json tracks $manifest_count scenarios but resolved scopes define exactly $scope_count Gherkin scenarios (Gate G057)" \
+    "G057 $case_name rejects unequal total scenario counts"
+  assert_log_contains "$log_file" "failureCount: 1" \
+    "G057 $case_name records exactly one failure"
+  assert_log_contains "$log_file" "failedGateIds: [G057]" \
+    "G057 $case_name isolates the failed gate list to G057"
+  assert_log_not_contains "$log_file" "every linked test resolves to a real file and title (Gate G057)" \
+    "G057 $case_name suppresses child resolution after count mismatch"
+  assert_log_not_contains "$log_file" "scenario obligation matrix is coherent (Gate G057)" \
+    "G057 $case_name suppresses child obligation checks after count mismatch"
+  assert_log_not_contains "$log_file" "declared test mechanisms support their claims (Gate G057)" \
+    "G057 $case_name suppresses child mechanism checks after count mismatch"
+}
+
+assert_g057_duplicate_scope_id_failure() {
+  local feature_dir="$1"
+  local case_name="$2"
+  local log_file="$tmp_root/g057-$case_name.log"
+  local status
+
+  status="$(run_capture "$log_file" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 1 ]]; then
+    pass "G057 $case_name fixture exits exactly 1"
+  else
+    fail "G057 $case_name fixture must exit exactly 1 (observed $status)"
+  fi
+  assert_log_contains "$log_file" \
+    "resolved scope artifacts contain duplicate Gherkin scenario IDs (Gate G057)" \
+    "G057 $case_name rejects duplicate identified scope multiplicity"
+  assert_log_contains "$log_file" "failureCount: 1" \
+    "G057 $case_name records exactly one failure"
+  assert_log_contains "$log_file" "failedGateIds: [G057]" \
+    "G057 $case_name isolates the failed gate list to G057"
+}
+
+run_focused_g057_assertions() {
+  local assertion_start="$assertions"
+
+  echo "Running focused G057 profile-aware scenario manifest regressions..."
+  assert_g057_valid_case "$g057_planning_planned_dir" "planning planned-only" "PLANNED/NA: SCN-G057-101"
+  assert_g057_valid_case "$g057_planning_authored_dir" "planning authored" "SCN-G057-102 has authored scenario coverage"
+  assert_g057_policy_failure "$g057_planning_neither_dir" "planning neither"
+  assert_g057_valid_case "$g057_delivery_valid_dir" "delivery authored plus evidence" "SCN-G057-104 has authored scenario coverage"
+  assert_g057_policy_failure "$g057_delivery_planned_dir" "delivery planned-only"
+  assert_g057_policy_failure "$g057_delivery_no_evidence_dir" "delivery authored without evidence"
+  assert_g057_policy_failure "$g057_delivery_mixed_dir" "delivery mixed planned and authored"
+  assert_g057_malformed_once "$g057_delivery_missing_file_dir" "delivery missing authored file"
+  assert_g057_policy_failure "$g057_delivery_wrong_type_dir" "delivery incompatible type"
+  assert_g057_policy_failure "$g057_delivery_string_untyped_dir" "delivery authored string without type"
+  assert_g057_policy_failure "$g057_delivery_object_untyped_dir" "delivery authored object without type"
+  assert_g057_policy_failure "$g057_delivery_null_evidence_member_dir" "delivery null evidence member"
+  assert_g057_policy_failure "$g057_delivery_numeric_evidence_member_dir" "delivery numeric evidence member"
+  assert_g057_policy_failure "$g057_delivery_blank_evidence_member_dir" "delivery blank evidence member"
+  assert_g057_policy_failure "$g057_delivery_whitespace_evidence_member_dir" "delivery whitespace evidence member"
+  assert_g057_valid_case "$g057_v2_dir" "strict v2 positive" "identified-subset exact matching covers every resolved Gherkin scenario ID; legacy residual cardinality is 0 = 0"
+  assert_g057_valid_case "$g057_scoped_id_dir" "arbitrary-segment cross-surface ID positive" "identified-subset exact matching covers every resolved Gherkin scenario ID; legacy residual cardinality is 0 = 0"
+  assert_g057_malformed_once "$g057_unknown_version_dir" "unknown version"
+  assert_g057_policy_failure "$g057_missing_title_dir" "missing title"
+  assert_g057_malformed_once "$g057_null_links_dir" "null linked tests"
+  assert_g057_policy_failure "$g057_scalar_evidence_dir" "scalar evidence refs"
+  assert_g057_malformed_once "$g057_null_planned_dir" "null planned tests"
+  assert_g057_malformed_once "$g057_invalid_link_member_dir" "invalid linked-test member object"
+  assert_g057_malformed_once "$g057_invalid_planned_member_dir" "invalid planned-test member object"
+  assert_g057_malformed_once "$g057_malformed_scoped_id_dir" "malformed scoped ID"
+  assert_g057_malformed_once "$g057_duplicate_effective_id_dir" "duplicate effective ID"
+  assert_g057_valid_case "$g057_legacy_count_only_dir" "all-unidentified equal count" "identified-subset exact matching covers all 0 known Gherkin scenario ID(s); legacy residual cardinality matches 1 unidentified scope heading(s) without inferring identity (1 total = 1 total)"
+  assert_g057_valid_case "$g057_mixed_heading_valid_dir" "positive mixed stable and legacy" "identified-subset exact matching covers all 1 known Gherkin scenario ID(s); legacy residual cardinality matches 1 unidentified scope heading(s) without inferring identity (2 total = 2 total)"
+  assert_g057_known_id_reconciliation_failure "$g057_mixed_heading_wrong_id_dir" \
+    "mixed stable and legacy heading with wrong known ID" "SCN-009-S03-001"
+  assert_g057_duplicate_scope_id_failure "$g057_duplicate_scope_known_id_dir" \
+    "duplicate scope known ID"
+  assert_g057_malformed_once "$g057_duplicate_effective_id_dir" "duplicate manifest known ID"
+
+  assert_g057_count_mismatch "$g057_undercount_dir" "undercount" 1 2
+  assert_g057_count_mismatch "$g057_mixed_heading_overcount_dir" \
+    "mixed stable and legacy heading overcount" 3 2
+  assert_g057_count_mismatch "$g057_all_identified_surplus_dir" \
+    "all-identified surplus" 2 1
+  echo "Focused G057 selector completed $((assertions - assertion_start)) assertion(s)."
 }
 
 remove_planning_only_linkage() {
@@ -2790,6 +3191,16 @@ PY
 assert_transition_result_contract_matches_emitter \
   "TRANSITION_GUARD_RESULT_V1 emitter field order matches this suite's expectation"
 
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_CONTAINMENT_ONLY:-0}" == "1" ]]; then
+  run_strict_manifest_containment_regressions
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard strict-containment selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard strict-containment selftest passed."
+  exit 0
+fi
+
 positive_feature_dir="$tmp_root/specs/900-transition-guard-selftest-pass"
 repo_root_isolation_feature_dir="$tmp_root/specs/900b-transition-guard-repo-root-isolation"
 repo_root_isolation_ambient_dir="$tmp_root/ambient-hostile-cwd"
@@ -2813,6 +3224,68 @@ s03_checked_evidence_dir="$tmp_root/specs/916-bug009-s03-checked-evidence"
 s03_done_honesty_dir="$tmp_root/specs/917-bug009-s03-done-honesty"
 s03_g068_dir="$tmp_root/specs/918-bug009-s03-g068-negative"
 s03_delivery_checked_dir="$tmp_root/specs/919-bug009-s03-delivery-checked-evidence"
+g057_id_only_dir="$tmp_root/specs/960-g057-id-only"
+g057_scenario_id_only_dir="$tmp_root/specs/961-g057-scenario-id-only"
+g057_mixed_aliases_dir="$tmp_root/specs/962-g057-mixed-aliases"
+g057_both_aliases_dir="$tmp_root/specs/963-g057-both-aliases"
+g057_blank_id_fallback_dir="$tmp_root/specs/964-g057-blank-id-fallback"
+g057_invalid_id_fallback_dir="$tmp_root/specs/964b-g057-invalid-id-fallback"
+g057_top_level_array_dir="$tmp_root/specs/965-g057-top-level-array"
+g057_planned_tests_dir="$tmp_root/specs/965b-g057-planned-tests"
+g057_duplicate_id_dir="$tmp_root/specs/966-g057-duplicate-id"
+g057_duplicate_scenario_id_dir="$tmp_root/specs/966b-g057-duplicate-scenario-id"
+g057_cross_alias_duplicate_dir="$tmp_root/specs/967-g057-cross-alias-duplicate"
+g057_whitespace_duplicate_id_dir="$tmp_root/specs/967b-g057-whitespace-duplicate-id"
+g057_whitespace_cross_alias_dir="$tmp_root/specs/967c-g057-whitespace-cross-alias"
+g057_non_object_dir="$tmp_root/specs/968-g057-non-object"
+g057_blank_identity_dir="$tmp_root/specs/969-g057-blank-identity"
+g057_wrong_type_id_fallback_dir="$tmp_root/specs/970-g057-wrong-type-id-fallback"
+g057_wrong_type_legacy_ignored_dir="$tmp_root/specs/970b-g057-wrong-type-legacy-ignored"
+g057_wrong_type_legacy_id_dir="$tmp_root/specs/971-g057-wrong-type-legacy-id"
+g057_wrong_type_both_dir="$tmp_root/specs/971b-g057-wrong-type-both"
+g057_malformed_dir="$tmp_root/specs/972-g057-malformed"
+g057_unsupported_dir="$tmp_root/specs/973-g057-unsupported"
+g057_undercount_dir="$tmp_root/specs/974-g057-undercount"
+g057_blank_title_dir="$tmp_root/specs/975-g057-blank-title"
+g057_wrong_type_title_dir="$tmp_root/specs/976-g057-wrong-type-title"
+g057_invalid_test_type_dir="$tmp_root/specs/977-g057-invalid-test-type"
+g057_scalar_links_dir="$tmp_root/specs/978-g057-scalar-links"
+g057_null_evidence_dir="$tmp_root/specs/979-g057-null-evidence"
+g057_scalar_planned_tests_dir="$tmp_root/specs/980-g057-scalar-planned-tests"
+g057_invalid_planned_test_dir="$tmp_root/specs/981-g057-invalid-planned-test"
+g057_invalid_string_identity_dir="$tmp_root/specs/982-g057-invalid-string-identity"
+g057_planning_planned_dir="$tmp_root/specs/983-g057-planning-planned"
+g057_planning_authored_dir="$tmp_root/specs/984-g057-planning-authored"
+g057_planning_neither_dir="$tmp_root/specs/985-g057-planning-neither"
+g057_delivery_valid_dir="$tmp_root/specs/986-g057-delivery-valid"
+g057_delivery_planned_dir="$tmp_root/specs/987-g057-delivery-planned"
+g057_delivery_no_evidence_dir="$tmp_root/specs/988-g057-delivery-no-evidence"
+g057_delivery_mixed_dir="$tmp_root/specs/989-g057-delivery-mixed"
+g057_delivery_missing_file_dir="$tmp_root/specs/990-g057-delivery-missing-file"
+g057_delivery_wrong_type_dir="$tmp_root/specs/991-g057-delivery-wrong-type"
+g057_delivery_string_untyped_dir="$tmp_root/specs/991b-g057-delivery-string-untyped"
+g057_delivery_object_untyped_dir="$tmp_root/specs/991c-g057-delivery-object-untyped"
+g057_delivery_null_evidence_member_dir="$tmp_root/specs/991d-g057-delivery-null-evidence-member"
+g057_delivery_numeric_evidence_member_dir="$tmp_root/specs/991e-g057-delivery-numeric-evidence-member"
+g057_delivery_blank_evidence_member_dir="$tmp_root/specs/991f-g057-delivery-blank-evidence-member"
+g057_delivery_whitespace_evidence_member_dir="$tmp_root/specs/991g-g057-delivery-whitespace-evidence-member"
+g057_v2_dir="$tmp_root/specs/992-g057-v2"
+g057_scoped_id_dir="$tmp_root/specs/993-g057-scoped-id"
+g057_unknown_version_dir="$tmp_root/specs/994-g057-unknown-version"
+g057_malformed_scoped_id_dir="$tmp_root/specs/995-g057-malformed-scoped-id"
+g057_duplicate_effective_id_dir="$tmp_root/specs/996-g057-duplicate-effective-id"
+g057_missing_title_dir="$tmp_root/specs/997-g057-missing-title"
+g057_null_links_dir="$tmp_root/specs/998-g057-null-links"
+g057_scalar_evidence_dir="$tmp_root/specs/999-g057-scalar-evidence"
+g057_null_planned_dir="$tmp_root/specs/1000-g057-null-planned"
+g057_invalid_link_member_dir="$tmp_root/specs/1001-g057-invalid-link-member"
+g057_invalid_planned_member_dir="$tmp_root/specs/1002-g057-invalid-planned-member"
+g057_legacy_count_only_dir="$tmp_root/specs/1003-g057-legacy-count-only"
+g057_mixed_heading_wrong_id_dir="$tmp_root/specs/1004-g057-mixed-heading-wrong-id"
+g057_mixed_heading_overcount_dir="$tmp_root/specs/1005-g057-mixed-heading-overcount"
+g057_mixed_heading_valid_dir="$tmp_root/specs/1006-g057-mixed-heading-valid"
+g057_duplicate_scope_known_id_dir="$tmp_root/specs/1007-g057-duplicate-scope-known-id"
+g057_all_identified_surplus_dir="$tmp_root/specs/1008-g057-all-identified-surplus"
 g060_planning_na_dir="$tmp_root/specs/928-bug026-g060-planning-not-applicable"
 g060_delivery_enforced_dir="$tmp_root/specs/929-bug026-g060-delivery-enforced"
 g040_planning_na_dir="$tmp_root/specs/930-g040-planning-not-applicable"
@@ -2852,6 +3325,8 @@ mkdir -p "$tmp_root/specs"
 clone_framework_surface "$tmp_root"
 git -C "$tmp_root" init -q
 export BUBBLES_REPO_ROOT="$tmp_root"
+GUARD_SCRIPT="$tmp_root/bubbles/scripts/state-transition-guard.sh"
+cd "$tmp_root"
 
 dogfood_done_dir="$tmp_root/specs/899-transition-guard-selftest-dogfood-done"
 mkdir -p "$dogfood_done_dir"
@@ -2917,6 +3392,246 @@ cp -R "$s03_planning_feature_dir" "$s03_g068_dir"
 break_gherkin_dod_fidelity "$s03_g068_dir/scopes.md"
 cp -R "$s03_delivery_negative_dir" "$s03_delivery_checked_dir"
 mark_first_dod_checked "$s03_delivery_checked_dir/scopes.md"
+# Canonical positive: this document conforms to scenario-manifest.schema.json.
+cp -R "$s03_planning_feature_dir" "$g057_id_only_dir"
+write_g057_manifest "$g057_id_only_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-001","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+# Compatibility positives: legacy scenarioId and the legacy top-level array are
+# accepted read formats but are not canonical documents for new producers.
+cp -R "$s03_planning_feature_dir" "$g057_scenario_id_only_dir"
+write_g057_manifest "$g057_scenario_id_only_dir" '{"schemaVersion":1,"scenarios":[{"scenarioId":"SCN-G057-002","title":"Legacy identity compatibility","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_mixed_aliases_dir"
+write_g057_manifest "$g057_mixed_aliases_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-003","title":"Canonical identity record","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]},{"scenarioId":"SCN-G057-004","title":"Legacy identity record","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_both_aliases_dir"
+write_g057_manifest "$g057_both_aliases_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-005","scenarioId":"SCN-G057-999","title":"Canonical identity wins","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_blank_id_fallback_dir"
+write_g057_manifest "$g057_blank_id_fallback_dir" '{"schemaVersion":1,"scenarios":[{"id":"   ","scenarioId":"SCN-G057-006","title":"Blank canonical identity falls back","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_invalid_id_fallback_dir"
+write_g057_manifest "$g057_invalid_id_fallback_dir" '{"schemaVersion":1,"scenarios":[{"id":"not-a-scenario-id","scenarioId":"SCN-G057-016","title":"Invalid canonical identity falls back","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_top_level_array_dir"
+write_g057_manifest "$g057_top_level_array_dir" '[{"scenarioId":"SCN-G057-007","title":"Legacy array compatibility","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]'
+cp -R "$s03_planning_feature_dir" "$g057_planned_tests_dir"
+write_g057_manifest "$g057_planned_tests_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-017","title":"Canonical planned test metadata","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_duplicate_id_dir"
+write_g057_manifest "$g057_duplicate_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-008","title":"First duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},{"id":"SCN-G057-008","title":"Second duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_duplicate_scenario_id_dir"
+write_g057_manifest "$g057_duplicate_scenario_id_dir" '{"schemaVersion":1,"scenarios":[{"scenarioId":"SCN-G057-018","title":"First legacy duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},{"scenarioId":"SCN-G057-018","title":"Second legacy duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_cross_alias_duplicate_dir"
+write_g057_manifest "$g057_cross_alias_duplicate_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-009","title":"Canonical duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},{"scenarioId":"SCN-G057-009","title":"Cross alias duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_whitespace_duplicate_id_dir"
+write_g057_manifest "$g057_whitespace_duplicate_id_dir" '{"schemaVersion":1,"scenarios":[{"id":" SCN-G057-019","title":"Whitespace duplicate first","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},{"id":"SCN-G057-019 ","title":"Whitespace duplicate second","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_whitespace_cross_alias_dir"
+write_g057_manifest "$g057_whitespace_cross_alias_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-020","title":"Canonical whitespace duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},{"scenarioId":"  SCN-G057-020  ","title":"Legacy whitespace duplicate","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_non_object_dir"
+write_g057_manifest "$g057_non_object_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-010","title":"Valid neighbor","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]},"SCN-G057-011"]}'
+cp -R "$s03_planning_feature_dir" "$g057_blank_identity_dir"
+write_g057_manifest "$g057_blank_identity_dir" '{"schemaVersion":1,"scenarios":[{"id":" ","scenarioId":"\t","title":"Blank identities","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_wrong_type_id_fallback_dir"
+write_g057_manifest "$g057_wrong_type_id_fallback_dir" '{"schemaVersion":1,"scenarios":[{"id":57,"scenarioId":"SCN-G057-012","title":"Invalid canonical identity falls back","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_wrong_type_legacy_ignored_dir"
+write_g057_manifest "$g057_wrong_type_legacy_ignored_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-015","scenarioId":57,"title":"Canonical identity ignores invalid legacy alias","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_wrong_type_legacy_id_dir"
+write_g057_manifest "$g057_wrong_type_legacy_id_dir" '{"schemaVersion":1,"scenarios":[{"scenarioId":57,"title":"Wrong legacy identity type","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_wrong_type_both_dir"
+write_g057_manifest "$g057_wrong_type_both_dir" '{"schemaVersion":1,"scenarios":[{"id":57,"scenarioId":58,"title":"Both identities have wrong types","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_malformed_dir"
+write_g057_manifest "$g057_malformed_dir" '{"schemaVersion":1,"scenarios":['
+cp -R "$s03_planning_feature_dir" "$g057_unsupported_dir"
+write_g057_manifest "$g057_unsupported_dir" '{"schemaVersion":2,"scenarios":[{"id":"SCN-G057-013"}]}'
+cp -R "$s03_planning_feature_dir" "$g057_undercount_dir"
+cat <<'EOF' >> "$g057_undercount_dir/scopes.md"
+
+```gherkin
+Scenario: A second scope contract remains represented
+Given two resolved scope scenarios
+When the scenario manifest tracks only one record
+Then G057 reports a real undercount
+```
+
+- [ ] A second scope contract remains represented when G057 checks the manifest count.
+EOF
+write_g057_manifest "$g057_undercount_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-014","title":"Only one represented scenario","requiredTestType":"e2e-ui","linkedTests":["__FUTURE_TEST__"],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_blank_title_dir"
+write_g057_manifest "$g057_blank_title_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-021","title":"   ","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_wrong_type_title_dir"
+write_g057_manifest "$g057_wrong_type_title_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-022","title":57,"requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_invalid_test_type_dir"
+write_g057_manifest "$g057_invalid_test_type_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-023","title":"Unknown test taxonomy","requiredTestType":"e2e","linkedTests":[],"evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_scalar_links_dir"
+write_g057_manifest "$g057_scalar_links_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-024","title":"Scalar linked tests","requiredTestType":"e2e-ui","linkedTests":"tests/demo.spec.ts","evidenceRefs":[]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_null_evidence_dir"
+write_g057_manifest "$g057_null_evidence_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-025","title":"Null evidence refs","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":null}]}'
+cp -R "$s03_planning_feature_dir" "$g057_scalar_planned_tests_dir"
+write_g057_manifest "$g057_scalar_planned_tests_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-026","title":"Scalar planned tests","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[],"plannedTests":"tests/future.spec.ts"}]}'
+cp -R "$s03_planning_feature_dir" "$g057_invalid_planned_test_dir"
+write_g057_manifest "$g057_invalid_planned_test_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-027","title":"Invalid planned test member","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[],"plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior"}]}]}'
+cp -R "$s03_planning_feature_dir" "$g057_invalid_string_identity_dir"
+write_g057_manifest "$g057_invalid_string_identity_dir" '{"schemaVersion":1,"scenarios":[{"id":"not-a-scenario-id","title":"Invalid string identity","requiredTestType":"e2e-ui","linkedTests":[],"evidenceRefs":[]}]}'
+
+# Binding G057 profile matrix. These fixtures use the reader's normalized
+# authored/planned projection and keep every path repository-relative.
+cp -R "$s03_planning_feature_dir" "$g057_planning_planned_dir"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-101/g' "$g057_planning_planned_dir/spec.md"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-101/g' "$g057_planning_planned_dir/scopes.md"
+write_g057_manifest "$g057_planning_planned_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-101","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_planning_authored_dir"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-102/g' "$g057_planning_authored_dir/spec.md"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-102/g' "$g057_planning_authored_dir/scopes.md"
+mkdir -p "$g057_planning_authored_dir/tests"
+printf '%s\n' "test('g057 planning authored behavior', () => {});" > "$g057_planning_authored_dir/tests/g057-planning-authored.e2e.spec.ts"
+write_g057_manifest "$g057_planning_authored_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-102","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/984-g057-planning-authored/tests/g057-planning-authored.e2e.spec.ts","title":"g057 planning authored behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_planning_neither_dir"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-103/g' "$g057_planning_neither_dir/spec.md"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-G057-103/g' "$g057_planning_neither_dir/scopes.md"
+write_g057_manifest "$g057_planning_neither_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-103","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","linkedTests":[],"plannedTests":[],"evidenceRefs":[]}]}'
+
+cp -R "$positive_feature_dir" "$g057_delivery_valid_dir"
+append_g057_scenario "$g057_delivery_valid_dir" "SCN-G057-104"
+write_g057_manifest "$g057_delivery_valid_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/986-g057-delivery-valid/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_planned_dir"
+write_g057_manifest "$g057_delivery_planned_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_no_evidence_dir"
+write_g057_manifest "$g057_delivery_no_evidence_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/988-g057-delivery-no-evidence/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_mixed_dir"
+write_g057_manifest "$g057_delivery_mixed_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/989-g057-delivery-mixed/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_missing_file_dir"
+write_g057_manifest "$g057_delivery_missing_file_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/990-g057-delivery-missing-file/tests/absent.e2e.spec.ts","title":"absent behavior","type":"e2e-ui"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_wrong_type_dir"
+write_g057_manifest "$g057_delivery_wrong_type_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991-g057-delivery-wrong-type/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"unit"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_string_untyped_dir"
+write_g057_manifest "$g057_delivery_string_untyped_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":["specs/991b-g057-delivery-string-untyped/tests/docs-scenario-regression.e2e.spec.ts"],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_object_untyped_dir"
+write_g057_manifest "$g057_delivery_object_untyped_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991c-g057-delivery-object-untyped/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_null_evidence_member_dir"
+write_g057_manifest "$g057_delivery_null_evidence_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991d-g057-delivery-null-evidence-member/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":[null]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_numeric_evidence_member_dir"
+write_g057_manifest "$g057_delivery_numeric_evidence_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991e-g057-delivery-numeric-evidence-member/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":[57]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_blank_evidence_member_dir"
+write_g057_manifest "$g057_delivery_blank_evidence_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991f-g057-delivery-blank-evidence-member/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":[""]}]}'
+
+cp -R "$g057_delivery_valid_dir" "$g057_delivery_whitespace_evidence_member_dir"
+write_g057_manifest "$g057_delivery_whitespace_evidence_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-104","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/991g-g057-delivery-whitespace-evidence-member/tests/docs-scenario-regression.e2e.spec.ts","title":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":["  \t  "]}]}'
+
+cp -R "$positive_feature_dir" "$g057_v2_dir"
+append_g057_scenario "$g057_v2_dir" "SCN-G057-105"
+write_g057_manifest "$g057_v2_dir" '{"schemaVersion":2,"scenarios":[{"id":"SCN-G057-105","title":"G057 profile classification","requiredTestType":"e2e-ui","linkedTests":[{"file":"specs/992-g057-v2/tests/docs-scenario-regression.e2e.spec.ts","testId":"docsScenarioRegression","type":"e2e-ui"}],"evidenceRefs":["report.md#test-evidence"]}]}'
+append_g057_delivery_receipts "SCN-G057-104"
+append_g057_delivery_receipts "SCN-G057-105"
+
+cp -R "$s03_planning_feature_dir" "$g057_scoped_id_dir"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-WEB-API-MOBILE-42/g' "$g057_scoped_id_dir/spec.md"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-WEB-API-MOBILE-42/g' "$g057_scoped_id_dir/scopes.md"
+write_g057_manifest "$g057_scoped_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-WEB-API-MOBILE-42","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_unknown_version_dir"
+write_g057_manifest "$g057_unknown_version_dir" '{"schemaVersion":99,"scenarios":[{"id":"SCN-009-S03-001","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_malformed_scoped_id_dir"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-009-001-X/g' "$g057_malformed_scoped_id_dir/spec.md"
+bubbles_sed_inplace 's/SCN-009-S03-001/SCN-009-001-X/g' "$g057_malformed_scoped_id_dir/scopes.md"
+write_g057_manifest "$g057_malformed_scoped_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-001-X","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_duplicate_effective_id_dir"
+write_g057_manifest "$g057_duplicate_effective_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"First duplicate","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/first.spec.ts","title":"first","type":"e2e-ui"}],"evidenceRefs":[]},{"scenarioId":"SCN-009-S03-001","title":"Second duplicate","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/second.spec.ts","title":"second","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_missing_title_dir"
+write_g057_manifest "$g057_missing_title_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_null_links_dir"
+write_g057_manifest "$g057_null_links_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Null linked tests","requiredTestType":"e2e-ui","linkedTests":null,"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_scalar_evidence_dir"
+write_g057_manifest "$g057_scalar_evidence_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Scalar evidence refs","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":"report.md#test-evidence"}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_null_planned_dir"
+write_g057_manifest "$g057_null_planned_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Null planned tests","requiredTestType":"e2e-ui","plannedTests":null,"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_invalid_link_member_dir"
+write_g057_manifest "$g057_invalid_link_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Invalid linked-test member","requiredTestType":"e2e-ui","linkedTests":[{}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_invalid_planned_member_dir"
+write_g057_manifest "$g057_invalid_planned_member_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Invalid planned-test member","requiredTestType":"e2e-ui","plannedTests":[{}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_legacy_count_only_dir"
+bubbles_sed_inplace 's/^### SCN-009-S03-001/### Legacy scenario without stable ID/' "$g057_legacy_count_only_dir/scopes.md"
+write_g057_manifest "$g057_legacy_count_only_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-G057-106","title":"Legacy count-only compatibility","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_mixed_heading_wrong_id_dir"
+cat <<'EOF' >> "$g057_mixed_heading_wrong_id_dir/scopes.md"
+
+## Legacy Compatibility Scenario
+
+```gherkin
+Scenario: A residual legacy heading remains count-compatible
+Given one stable scenario and one legacy scenario
+When G057 reconciles identities
+Then the stable identity still matches exactly
+```
+
+## Definition of Done
+
+- [ ] Given one stable scenario and one legacy scenario, when G057 reconciles identities, then the stable identity still matches exactly and the residual legacy heading remains count-compatible.
+EOF
+write_g057_manifest "$g057_mixed_heading_wrong_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-WRONG-900","title":"Wrong known identity","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/wrong.spec.ts","title":"wrong known identity","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-LEGACY-901","title":"Legacy count representative","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/legacy.spec.ts","title":"legacy representative","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$g057_mixed_heading_wrong_id_dir" "$g057_mixed_heading_overcount_dir"
+write_g057_manifest "$g057_mixed_heading_overcount_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Known stable identity","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/known.spec.ts","title":"known stable identity","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-LEGACY-901","title":"Legacy count representative","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/legacy.spec.ts","title":"legacy representative","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-EXTRA-902","title":"Overcount must fail","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/extra.spec.ts","title":"extra overcount","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$g057_mixed_heading_wrong_id_dir" "$g057_mixed_heading_valid_dir"
+write_g057_manifest "$g057_mixed_heading_valid_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Known stable identity","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/known.spec.ts","title":"known stable identity","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-LEGACY-901","title":"Unidentified residual cardinality representative","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/legacy.spec.ts","title":"legacy residual","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_duplicate_scope_known_id_dir"
+cat <<'EOF' >> "$g057_duplicate_scope_known_id_dir/scopes.md"
+
+### SCN-009-S03-001 - Duplicate stable identity
+
+```gherkin
+Scenario: A duplicate stable identity is rejected
+Given two scope scenarios carry one stable ID
+When G057 reconciles identified multiplicity
+Then the duplicate is rejected
+```
+
+## Definition of Done
+
+- [ ] Given two scope scenarios carry one stable ID, when G057 reconciles identified multiplicity, then the duplicate stable identity is rejected.
+EOF
+write_g057_manifest "$g057_duplicate_scope_known_id_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Planning maturity preserves honest incomplete delivery","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/future.spec.ts","title":"future behavior","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-LEGACY-902","title":"Cardinality peer","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/peer.spec.ts","title":"peer","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+
+cp -R "$s03_planning_feature_dir" "$g057_all_identified_surplus_dir"
+write_g057_manifest "$g057_all_identified_surplus_dir" '{"schemaVersion":1,"scenarios":[{"id":"SCN-009-S03-001","title":"Known stable identity","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/known.spec.ts","title":"known","type":"e2e-ui"}],"evidenceRefs":[]},{"id":"SCN-SURPLUS-902","title":"Surplus identified manifest record","requiredTestType":"e2e-ui","plannedTests":[{"path":"tests/surplus.spec.ts","title":"surplus","type":"e2e-ui"}],"evidenceRefs":[]}]}'
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G057_ONLY:-0}" == "1" ]]; then
+  run_focused_g057_assertions
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard G057 selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard G057 selftest passed."
+  exit 0
+fi
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
+  run_g061_regression_cases
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard G061 selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard G061 selftest passed."
+  exit 0
+fi
+
+run_g061_regression_cases
 # The other two profiles transition-contract-resolver.sh supports. Both were
 # unreachable through the guard until the contract validator's auditProfile
 # allow-list was widened to the resolver's full four-profile set, so neither had
@@ -3890,6 +4605,8 @@ fi
 assert_log_contains "$planning_positive_log" "Workflow mode 'product-to-planning' permits current status 'specs_hardened'" "Planning-only mode permits specs_hardened status"
 assert_log_contains "$planning_positive_log" "planMaturityOnly=true is not claiming delivery-done status" "planMaturityOnly is allowed below done"
 
+run_focused_g057_assertions
+
 echo "Running BUG-009 S03 guard profile activation matrix..."
 s03_not_applicable='[Check-4-completion,Check-5-all-done,Check-8-file-existence,Check-11-execution-evidence]'
 
@@ -4344,7 +5061,7 @@ assert_log_contains "$lockdown_round_log" "lockdownState.round=3" "Negative fixt
 echo "Running negative workflow-runner-authorization selftest..."
 g064_log="$tmp_root/g064-guard.log"
 g064_timeout_seconds="${BUBBLES_G064_SELFTEST_TIMEOUT_SECONDS:-120}"
-g064_status="$(run_capture "$g064_log" bubbles_run_with_timeout "$g064_timeout_seconds" env BUBBLES_REPO_ROOT="$g064_framework_root" bash "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
+g064_status="$(run_capture "$g064_log" bubbles_run_with_timeout "$g064_timeout_seconds" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 bash "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
 if [[ "$g064_status" -ne 0 ]]; then
   pass "Unauthorized workflow runner fixture fails the transition guard as expected"
 else

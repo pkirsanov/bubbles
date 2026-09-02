@@ -93,6 +93,121 @@
         "absentTrait": "user-visible-ui",
         "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
+    },
+    {
+      "id": "SCN-B033-005",
+      "title": "Valid timeout and gtimeout wrappers are transparent",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Remove timeout recognition; bare and timeout-wrapped receipts resolve to different families.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a receipt classifier with no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-006",
+      "title": "The short verbose option is transparent",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Remove `-v` from the accepted option set; the fixture remains family timeout.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a receipt classifier with no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-007",
+      "title": "Unknown and malformed timeout syntax remains opaque",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Accept attached or unknown options; malformed timeout syntax is incorrectly attributed to cargo.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a receipt classifier with no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-008",
+      "title": "Timeout wrappers preserve distinct child programs",
+      "requiredTestType": "unit",
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh", "bubbles/scripts/state-transition-guard-selftest.sh"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Strip the child program with the timeout wrapper; cargo and npm cease to be distinguishable.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 43 is a receipt classifier with no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-009",
+      "title": "Only the persistent session lock path is ignored",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["filesystem-state", "shared-consumer"],
+      "riskTier": "medium",
+      "linkedTests": ["repository ignore check"],
+      "implementationRefs": [".specify/memory/.gitignore"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "repository-state",
+        "assertionSurface": "process-output-and-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [".specify/memory/.gitignore"],
+        "negativeControl": "Add a wildcard for bubbles.session.json; the visible-session assertion fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The behavior is Git ignore classification with no rendered surface."
+      }
     }
   ]
 }

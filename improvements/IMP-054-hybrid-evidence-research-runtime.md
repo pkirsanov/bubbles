@@ -1,6 +1,6 @@
 # IMP-054 - Hybrid Evidence Research Runtime
 
-**Status:** PROPOSED (not yet applied) - awaiting owner review.
+**Status:** IN PROGRESS - ECF-01 shared execution-control foundation landed; research-runtime scopes remain pending.
 
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of bubbles/* until approved.
 
@@ -139,15 +139,15 @@ A current-source search under `bubbles/**` found no `ResearchRun`, `ResearchQues
 
 ## Shared Framework Consumption Boundary
 
-One product-neutral execution framework lives in a separate repository. Its design is at `execution-ledger/docs/DESIGN.md`. That framework owns the semantics, identity, and truth states this proposal shares with other consumers.
+The product-neutral execution-control foundation lives in this Bubbles repository. Its canonical core is `bubbles/scripts/execution-control-store.py`, `bubbles/scripts/execution-control-lib.sh`, and `bubbles/schemas/execution-control-event.schema.json`. Bubbles owns the shared canonical JSON identity, content-addressed object storage, append-only event chain, secure local persistence, recovery, and sanitized integrity projection.
 
-The framework sits outside this repository on purpose. Three separate designs each re-specified the same capability. A foundation hosted inside any one consumer would make that consumer the hidden owner of the others.
+The foundation sits in Bubbles because Bubbles is the shared framework rather than a product consumer. Research Lab and other products consume it through later bridges; no downstream product becomes the hidden owner of the others.
 
 On approval this proposal consumes rather than defines the shared run, stage, route, budget, measurement, materiality, occurrence, evidence-projection, and shadow-evaluation contracts. The closed budget dimension set, the reserve and debit and release lifecycle, and the four measurement states come from that framework.
 
 This proposal keeps its own domain ownership. The research question contract and the claim and evidence and conflict ledger stay here. The ten-stage research graph, coverage and citation validation, and the immutable publication contract also stay here.
 
-On approval the duplicated definitions named in the framework consumer binding table are replaced by references to that framework. No consumer is bound today. Until both owners approve, the text in this file stays authoritative and this file remains readable on its own.
+As later scopes land, duplicated definitions named in the framework consumer binding table are replaced by references to the Bubbles-local foundation. ECF-01 establishes storage and identity only; no research consumer bridge is bound by this slice.
 
 ## Capability Foundation
 

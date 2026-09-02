@@ -1,6 +1,6 @@
 # IMP-055 - Design 2: Measured Budget and Session Epoch Runtime
 
-**Status:** PROPOSED (not yet applied) - awaiting owner review.
+**Status:** IN PROGRESS - ECF-01 shared execution-control foundation landed; admission, budget, and epoch scopes remain pending.
 **Surface:** framework-health (G125) - human-reviewed. NO auto-mutation of bubbles/* until approved.
 **Motivation:** A current-session source review found measured usage, session caps, risk resolution, model floors, tool-grant advice, compaction, and phase occurrence primitives. It also found that no host-enforced admission plane composes them before paid dispatch.
 **Verified gaps addressed:**
@@ -221,15 +221,15 @@ These measurements motivate the proposal. They do not prove that this design red
 
 ## Shared Framework Consumption Boundary
 
-One product-neutral execution framework lives in a separate repository. Its design is at `execution-ledger/docs/DESIGN.md`. That framework owns the semantics, identity, and truth states this proposal shares with other consumers.
+The product-neutral execution-control foundation lives in this Bubbles repository. Its canonical core is `bubbles/scripts/execution-control-store.py`, `bubbles/scripts/execution-control-lib.sh`, and `bubbles/schemas/execution-control-event.schema.json`. Bubbles owns the shared canonical JSON identity, content-addressed object storage, append-only event chain, secure local persistence, recovery, and sanitized integrity projection.
 
-The framework sits outside this repository on purpose. Three separate designs each re-specified the same capability. A foundation hosted inside any one consumer would make that consumer the hidden owner of the others.
+The foundation sits in Bubbles because Bubbles is the shared framework rather than a product consumer. Admission and budget integrations consume the core through later Bubbles-owned surfaces; no downstream product becomes the hidden owner of the others.
 
 On approval this proposal consumes rather than defines the shared budget, reservation, budget-event, usage-adapter, usage-receipt, occurrence, route-capability, route-decision, frozen-corpus, and shadow-evaluation contracts. The closed dimension set, the reserve and debit and release lifecycle, and the four measurement states come from that framework.
 
 This proposal keeps its own domain ownership. Host dispatch admission, the one-time permit boundary, and verified session epochs stay here. Rollover proof, risk resolution, abstract model classes, per-agent tool grants, and the four runner integration surfaces also stay here.
 
-On approval the duplicated definitions named in the framework consumer binding table are replaced by references to that framework. No consumer is bound today. Until both owners approve, the text in this file stays authoritative and this file remains readable on its own.
+As later scopes land, duplicated definitions named in the framework consumer binding table are replaced by references to the Bubbles-local foundation. ECF-01 establishes storage and identity only; no admission, budget, or session-epoch authority is delivered by this slice.
 
 ## Capability Foundation
 
