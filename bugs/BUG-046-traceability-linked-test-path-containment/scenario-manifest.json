@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 1,
+  "spec": "bugs/BUG-046-traceability-linked-test-path-containment",
+  "generatedAt": "2026-09-02T16:12:35Z",
+  "scenarios": [
+    {
+      "id": "SCN-B046-001",
+      "title": "Valid relative references remain accepted",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Resolve repository and feature candidates through the production CLI and accept only the contained regular target.",
+          "satisfiedBy": [
+            "TP-B046-001"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Replace each contained regular target with a missing sibling and require the accepted edge count to disappear.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-002",
+      "title": "Parent traversal is rejected without an existence oracle",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "high",
+      "behaviorTraits": [
+        "degraded-state",
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Reject paired present and absent traversal targets with the same class and no existence-sensitive detail.",
+          "satisfiedBy": [
+            "TP-B046-002",
+            "TP-B046-010"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Prove external filesystem state cannot satisfy the linked-test edge.",
+          "satisfiedBy": [
+            "TP-B046-002",
+            "TP-B046-011"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Disable canonical containment while preserving the final regular-file check and require the traversal case to false-pass.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B046-003",
+      "title": "Absolute path forms are rejected on every supported host",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Classify POSIX, drive-qualified, and UNC forms identically under supported Bash environments.",
+          "satisfiedBy": [
+            "TP-B046-003"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Reject every absolute form before it can become an acceptance candidate.",
+          "satisfiedBy": [
+            "TP-B046-003"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Create matching drive-qualified and UNC-named fixture files and require the lexical class to remain rejected.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-004",
+      "title": "A symlink escape cannot satisfy a linked-test edge",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "high",
+      "behaviorTraits": [
+        "degraded-state",
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Return one outside-repository class for present and absent external symlink targets.",
+          "satisfiedBy": [
+            "TP-B046-004",
+            "TP-B046-010"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Follow the symlink physically and reject its external canonical target before regular-file acceptance.",
+          "satisfiedBy": [
+            "TP-B046-004",
+            "TP-B046-011"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Disable canonical containment while preserving the final regular-file check and require the external symlink case to false-pass.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B046-005",
+      "title": "An internal symlink retains contained behavior",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Resolve an internal symlink to a contained regular file while refusing an internal directory link.",
+          "satisfiedBy": [
+            "TP-B046-005"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Retarget the accepted internal symlink to an external file and require the verdict to change to outside-repository.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-006",
+      "title": "Empty and control-bearing references fail closed",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Classify empty, whitespace-only, and control-bearing JSON text before raw shell extraction.",
+          "satisfiedBy": [
+            "TP-B046-006"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Reject each lexical class without emitting active control bytes or unsafe raw text.",
+          "satisfiedBy": [
+            "TP-B046-006",
+            "TP-B046-010"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Replace each rejected value with a printable contained path and require a different accepted outcome.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-007",
+      "title": "Non-regular and missing targets do not count",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "degraded-state",
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Reject missing, directory, FIFO, and Unix-socket targets with a failing verdict.",
+          "satisfiedBy": [
+            "TP-B046-007"
+          ]
+        },
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Apply the regular-file predicate only after physical containment succeeds.",
+          "satisfiedBy": [
+            "TP-B046-007"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Replace each missing or non-regular candidate with a contained regular file and require the edge count to change.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-008",
+      "title": "Command-shaped reference text remains inert",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Treat command-shaped values as inert path data and preserve the named side-effect sentinel.",
+          "satisfiedBy": [
+            "TP-B046-008"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Change the command-shaped fixture to name a fresh sentinel and prove the sentinel remains absent after the CLI returns.",
+        "negativeControlMechanism": "perturbed-input"
+      }
+    },
+    {
+      "id": "SCN-B046-009",
+      "title": "Existing projection modes retain one path contract",
+      "requiredTestType": "functional",
+      "scopeRef": "01-atomic-linked-test-path-validation",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#planning-artifact-validation-2026-09-02"
+      ],
+      "lockdown": {
+        "state": "unlocked"
+      },
+      "riskTier": "low",
+      "behaviorTraits": [
+        "dependency-path"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Apply one validator to repository-first and feature-second candidates across supported forms and projection modes.",
+          "satisfiedBy": [
+            "TP-B046-009"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Switch each accepted fixture among string, file, path, fragment, object-envelope, legacy-envelope, and scope-mode forms and compare verdicts.",
+        "negativeControlMechanism": "adversarial-input"
+      }
+    }
+  ]
+}

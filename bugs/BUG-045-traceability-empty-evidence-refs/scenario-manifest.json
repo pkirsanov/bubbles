@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "spec": "bugs/BUG-045-traceability-empty-evidence-refs",
+  "generatedAt": "2026-09-02T04:28:24Z",
+  "scenarios": [
+    {
+      "id": "SCN-B045-001",
+      "title": "Empty evidence reference array is rejected",
+      "requiredTestType": "functional",
+      "scopeRef": "01-reject-empty-evidence-refs",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#pre-fix-minimal-fixture-reproduction",
+        "report.md#independent-direct-scenario-matrix",
+        "report.md#independent-mutation-non-vacuity"
+      ],
+      "riskTier": "high",
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Execute the production guard with an empty evidenceRefs array and assert the non-zero result and exact covered count.",
+          "satisfiedBy": [
+            "B045-T1"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Reject the malformed evidence contract without emitting a complete-coverage result.",
+          "satisfiedBy": [
+            "B045-T1"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Restore the type-only selector; the empty-array fixture returns 0 and emits the all-covered pass line.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The behavior is a deterministic command-line JSON cardinality check with no rendered interface."
+      }
+    },
+    {
+      "id": "SCN-B045-002",
+      "title": "Non-empty evidence reference array remains accepted",
+      "requiredTestType": "unit",
+      "scopeRef": "01-reject-empty-evidence-refs",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#independent-direct-scenario-matrix",
+        "report.md#independent-focused-suite-and-test-quality"
+      ],
+      "riskTier": "medium",
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Run the existing canonical non-empty fixture and preserve its evidence-reference pass verdict.",
+          "satisfiedBy": [
+            "B045-T2"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Replace the one-member evidenceRefs array with an empty array; the control must enter the refusal branch.",
+        "negativeControlMechanism": "perturbed-input"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The behavior is a deterministic command-line JSON cardinality check with no rendered interface."
+      }
+    },
+    {
+      "id": "SCN-B045-003",
+      "title": "Mixed manifest reports the exact covered count",
+      "requiredTestType": "functional",
+      "scopeRef": "01-reject-empty-evidence-refs",
+      "linkedTests": [
+        "bubbles/scripts/traceability-guard-selftest.sh"
+      ],
+      "evidenceRefs": [
+        "report.md#independent-direct-scenario-matrix",
+        "report.md#independent-mutation-non-vacuity"
+      ],
+      "riskTier": "high",
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Assert exact 1-of-2 cardinality through the production CLI.",
+          "satisfiedBy": [
+            "B045-T3"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Return non-zero while naming the exact incomplete evidence count.",
+          "satisfiedBy": [
+            "B045-T3"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/traceability-guard.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/traceability-guard.sh"
+        ],
+        "negativeControl": "Restore the type-only selector; both arrays count as covered and the exact-count refusal disappears.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The behavior is a deterministic command-line JSON cardinality check with no rendered interface."
+      }
+    }
+  ]
+}
