@@ -205,12 +205,19 @@ run_trace_case() {
   local feature_dir="$1"
   local case_label="$2"
   local case_log
+  local feature_arg="$feature_dir"
+  local run_root="$PWD"
   shift 2
+
+  if [[ "$feature_dir" == "$TMPDIR/"* ]]; then
+    feature_arg="."
+    run_root="$feature_dir"
+  fi
 
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug018-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if bash "$GUARD" "$feature_dir" "$@" >"$case_log" 2>&1; then
+  if (cd "$run_root" && bash "$GUARD" "$feature_arg" "$@") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -223,12 +230,19 @@ run_trace_case_system_bash() {
   local feature_dir="$1"
   local case_label="$2"
   local case_log
+  local feature_arg="$feature_dir"
+  local run_root="$PWD"
+
+  if [[ "$feature_dir" == "$TMPDIR/"* ]]; then
+    feature_arg="."
+    run_root="$feature_dir"
+  fi
 
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug018-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if /usr/bin/env -i HOME="$HOME" PATH=/usr/bin:/bin:/usr/sbin:/sbin \
-    /bin/bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
+  if (cd "$run_root" && /usr/bin/env -i HOME="$HOME" PATH="$PATH" \
+    /bin/bash "$GUARD" "$feature_arg") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -243,6 +257,13 @@ run_trace_case_parser_failure() {
   local case_log
   local shim_dir="$TMPDIR/bug018-parser-failure-bin"
   local real_python
+  local feature_arg="$feature_dir"
+  local run_root="$PWD"
+
+  if [[ "$feature_dir" == "$TMPDIR/"* ]]; then
+    feature_arg="."
+    run_root="$feature_dir"
+  fi
 
   real_python="$(command -v python3)"
   mkdir -p "$shim_dir"
@@ -261,8 +282,8 @@ SHIM
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug018-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if PATH="$shim_dir:$PATH" BUG018_REAL_PYTHON="$real_python" \
-    bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
+  if (cd "$run_root" && PATH="$shim_dir:$PATH" BUG018_REAL_PYTHON="$real_python" \
+    bash "$GUARD" "$feature_arg") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -356,9 +377,9 @@ SHIM
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/bug018-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if PATH="$shim_dir:$PATH" IDENTITY_REAL_PYTHON="$real_python" \
+  if (cd "$feature_dir" && PATH="$shim_dir:$PATH" IDENTITY_REAL_PYTHON="$real_python" \
     IDENTITY_TARGET="$feature_dir/tests/widget-render.e2e.spec.ts" \
-    bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then
+    bash "$GUARD" ".") >"$case_log" 2>&1; then
     CASE_STATUS=0
   else
     CASE_STATUS=$?
@@ -399,9 +420,9 @@ SHIM
   CASE_INDEX=$((CASE_INDEX + 1))
   case_log="$TMPDIR/identity-mode-case-${CASE_INDEX}.log"
   CASE_STATUS=0
-  if PATH="$shim_dir:$PATH" IDENTITY_REAL_PYTHON="$real_python" \
+  if (cd "$feature_dir" && PATH="$shim_dir:$PATH" IDENTITY_REAL_PYTHON="$real_python" \
     IDENTITY_TARGET="$feature_dir/tests/widget-render.e2e.spec.ts" IDENTITY_OPERATION="$operation" \
-    bash "$GUARD" "$feature_dir" >"$case_log" 2>&1; then CASE_STATUS=0; else CASE_STATUS=$?; fi
+    bash "$GUARD" ".") >"$case_log" 2>&1; then CASE_STATUS=0; else CASE_STATUS=$?; fi
   CASE_OUTPUT="$(cat "$case_log")"
   echo "[selftest traceability-guard] $case_label (exit $CASE_STATUS)"
 }
@@ -456,6 +477,145 @@ assert_case_occurrences() {
   else
     fail "$label (expected $expected occurrence(s), got $actual: $needle)"
     sed -n '1,200p' <<< "$CASE_OUTPUT"
+  fi
+}
+
+B046_CASE_LOG=""
+
+build_b046_feature() {
+  local repo_dir="$1"
+  local feature_rel="$2"
+  local feature_dir="$repo_dir/$feature_rel"
+
+  mkdir -p "$repo_dir/tests" "$feature_dir/tests"
+
+  cat > "$repo_dir/tests/repository-control.spec.ts" <<'EOF'
+export const repositoryControl = true;
+EOF
+  cat > "$feature_dir/tests/feature-control.spec.ts" <<'EOF'
+export const featureControl = true;
+EOF
+  cat > "$feature_dir/spec.md" <<'EOF'
+# Spec - Contained Linked Test Fixture
+EOF
+  cat > "$feature_dir/design.md" <<'EOF'
+# Design - Contained Linked Test Fixture
+EOF
+  cat > "$feature_dir/scopes.md" <<'EOF'
+# Scope 01: Contained Linked Test Fixture
+
+**Status:** In Progress
+
+### Gherkin
+
+#### SCN-B046-FIXTURE-001
+
+Scenario: Linked test reference validation remains contained
+  Given a repository-controlled linked test reference
+  When the traceability guard evaluates the reference
+  Then only a contained regular test file can satisfy the edge
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Functional | functional | tests/feature-control.spec.ts | SCN-B046-FIXTURE-001 linked test reference validation remains contained | selftest:contained-reference | No |
+
+### Definition of Done
+
+- [x] SCN-B046-FIXTURE-001 only a contained regular test file satisfies the linked-test edge -> Evidence: report.md#test-evidence
+EOF
+  cat > "$feature_dir/report.md" <<'EOF'
+# Report
+
+### Test Evidence
+
+tests/feature-control.spec.ts passed.
+EOF
+  cat > "$feature_dir/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": ["tests/feature-control.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+  cat > "$feature_dir/state.json" <<'EOF'
+{
+  "version": 3,
+  "status": "in_progress",
+  "scopeLayout": "single-file"
+}
+EOF
+}
+
+run_b046_trace_case() {
+  local repo_dir="$1"
+  local feature_rel="$2"
+  local case_label="$3"
+  local scope_mode="${4:-}"
+  local selected_guard="${5:-$GUARD}"
+  local case_log
+
+  CASE_INDEX=$((CASE_INDEX + 1))
+  case_log="$TMPDIR/b046-case-${CASE_INDEX}.log"
+  CASE_STATUS=0
+  if [[ -n "$scope_mode" ]]; then
+    if (cd "$repo_dir" && bash "$selected_guard" "$feature_rel" "$scope_mode") >"$case_log" 2>&1; then
+      CASE_STATUS=0
+    else
+      CASE_STATUS=$?
+    fi
+  elif (cd "$repo_dir" && bash "$selected_guard" "$feature_rel") >"$case_log" 2>&1; then
+    CASE_STATUS=0
+  else
+    CASE_STATUS=$?
+  fi
+  B046_CASE_LOG="$case_log"
+  CASE_OUTPUT="$(cat "$case_log")"
+  echo "[selftest traceability-guard] $case_label (exit $CASE_STATUS)"
+}
+
+run_b046_trace_case_system_bash() {
+  local repo_dir="$1"
+  local feature_rel="$2"
+  local case_label="$3"
+  local case_log
+
+  CASE_INDEX=$((CASE_INDEX + 1))
+  case_log="$TMPDIR/b046-case-${CASE_INDEX}.log"
+  CASE_STATUS=0
+  if (cd "$repo_dir" && env -i HOME="$HOME" PATH="$PATH" \
+    /bin/bash "$GUARD" "$feature_rel") >"$case_log" 2>&1; then
+    CASE_STATUS=0
+  else
+    CASE_STATUS=$?
+  fi
+  B046_CASE_LOG="$case_log"
+  CASE_OUTPUT="$(cat "$case_log")"
+  echo "[selftest traceability-guard] $case_label (system Bash $(/bin/bash -c 'printf "%s" "$BASH_VERSION"'), exit $CASE_STATUS)"
+}
+
+assert_b046_log_has_no_active_control_bytes() {
+  local label="$1"
+  local bad_bytes
+
+  bad_bytes="$(LC_ALL=C od -An -tu1 "$B046_CASE_LOG" | awk '
+    {
+      for (i = 1; i <= NF; i++) {
+        if ($i ~ /^[0-9]+$/ && (($i < 32 && $i != 10) || $i == 127)) print $i
+      }
+    }
+  ')"
+  if [[ -z "$bad_bytes" ]]; then
+    pass "$label"
+  else
+    fail "$label (captured output contains active control byte(s): ${bad_bytes//$'\n'/,})"
   fi
 }
 
@@ -595,7 +755,7 @@ build_clean_feature "$clean_feature"
 echo "[selftest traceability-guard] Case 1: clean feature → exit 0"
 log1="$TMPDIR/log1.txt"
 set +e
-bash "$GUARD" "$clean_feature" >"$log1" 2>&1
+(cd "$clean_feature" && bash "$GUARD" ".") >"$log1" 2>&1
 status1=$?
 set -e
 if [[ "$status1" -eq 0 ]]; then
@@ -644,6 +804,85 @@ assert_case_contains "All 1 authored linked test reference(s) from scenario-mani
   "canonical authored link emits aggregate success only after one reference resolves"
 assert_case_contains "scenario-manifest.json records evidenceRefs for all 1 scenario contract(s)" \
   "canonical evidenceRefs array is recognized"
+
+# --- BUG-045: evidenceRefs requires positive array cardinality ---------------
+# These assertions are mutation-sensitive: restoring the former type-only jq
+# selector makes both malformed fixtures exit 0 and emit the all-covered line,
+# while the canonical one-member control above remains green.
+empty_evidence_feature="$TMPDIR/specs/101-empty-evidence-refs"
+build_clean_feature "$empty_evidence_feature"
+bubbles_sed_inplace \
+  's/"evidenceRefs": \["report.md#test-evidence"\]/"evidenceRefs": []/' \
+  "$empty_evidence_feature/scenario-manifest.json"
+run_trace_case "$empty_evidence_feature" "BUG-045 empty evidenceRefs array"
+assert_case_status 1 "BUG-045 empty array: guard exits 1"
+assert_case_contains "scenario-manifest.json records evidenceRefs for only 0 of 1 scenario contract(s)" \
+  "BUG-045 empty array: exact uncovered count is reported"
+assert_case_not_contains "scenario-manifest.json records evidenceRefs for all 1 scenario contract(s)" \
+  "BUG-045 empty array: complete coverage is not reported"
+
+mixed_evidence_feature="$TMPDIR/specs/101-mixed-evidence-refs"
+build_clean_feature "$mixed_evidence_feature"
+cat > "$mixed_evidence_feature/scopes.md" <<'EOF'
+# Scope 01: Mixed Evidence References
+
+**Status:** In Progress
+
+### Gherkin
+
+#### SCN-B045-MIXED-001
+
+  Scenario: Primary widget renders with provided label
+    Given a primary widget label
+    When the primary widget mounts
+    Then the primary widget displays the label
+
+#### SCN-B045-MIXED-002
+
+  Scenario: Secondary widget retains its accessible name
+    Given a secondary widget name
+    When the secondary widget mounts
+    Then the secondary widget retains its accessible name
+
+### Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --------- | -------- | ------------- | ----------- | ------- | ----------- |
+| E2E | e2e-ui | tests/widget-render.e2e.spec.ts | SCN-B045-MIXED-001 primary widget renders with provided label | selftest:mixed-primary | Yes |
+| E2E | e2e-ui | tests/widget-render.e2e.spec.ts | SCN-B045-MIXED-002 secondary widget retains its accessible name | selftest:mixed-secondary | Yes |
+
+### Definition of Done
+
+- [x] SCN-B045-MIXED-001 primary widget renders with provided label -> Evidence: report.md#test-evidence
+- [x] SCN-B045-MIXED-002 secondary widget retains its accessible name -> Evidence: report.md#test-evidence
+EOF
+cat > "$mixed_evidence_feature/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-B045-MIXED-001",
+      "title": "Primary widget renders with provided label",
+      "requiredTestType": "e2e-ui",
+      "linkedTests": ["tests/widget-render.e2e.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    },
+    {
+      "id": "SCN-B045-MIXED-002",
+      "title": "Secondary widget retains its accessible name",
+      "requiredTestType": "e2e-ui",
+      "linkedTests": ["tests/widget-render.e2e.spec.ts"],
+      "evidenceRefs": []
+    }
+  ]
+}
+EOF
+run_trace_case "$mixed_evidence_feature" "BUG-045 mixed evidenceRefs arrays"
+assert_case_status 1 "BUG-045 mixed arrays: guard exits 1"
+assert_case_contains "scenario-manifest.json records evidenceRefs for only 1 of 2 scenario contract(s)" \
+  "BUG-045 mixed arrays: exact covered count is reported"
+assert_case_not_contains "scenario-manifest.json records evidenceRefs for all 2 scenario contract(s)" \
+  "BUG-045 mixed arrays: complete coverage is not reported"
 
 # --- Case 1bb: equivalent id aliases still describe one scenario object -----
 dual_id_feature="$TMPDIR/specs/101b-dual-id-manifest"
@@ -797,6 +1036,7 @@ assert_case_contains "scenario-manifest.json covers 1 scenario contract(s)" \
   "all-unidentified equal count passes without inferred identity"
 
 # --- Case 1c: canonical string linkedTests missing path remains blocking ------
+
 canonical_missing_feature="$TMPDIR/specs/102-canonical-missing-test"
 build_clean_feature "$canonical_missing_feature"
 cat > "$canonical_missing_feature/scenario-manifest.json" <<'EOF'
@@ -1366,7 +1606,7 @@ EOF
 echo "[selftest traceability-guard] Case 2: untraceable scenario → exit non-zero"
 log2="$TMPDIR/log2.txt"
 set +e
-bash "$GUARD" "$broken_feature" >"$log2" 2>&1
+(cd "$broken_feature" && bash "$GUARD" ".") >"$log2" 2>&1
 status2=$?
 set -e
 if [[ "$status2" -ne 0 ]]; then
@@ -1425,7 +1665,7 @@ PY
 echo "[selftest traceability-guard] Case 3: shared trace id → declared edge"
 log3="$TMPDIR/log3.txt"
 set +e
-bash "$GUARD" "$declared_feature" >"$log3" 2>&1
+(cd "$declared_feature" && bash "$GUARD" ".") >"$log3" 2>&1
 status3=$?
 set -e
 if [[ "$status3" -eq 0 ]]; then
@@ -1472,7 +1712,7 @@ EOF
 echo "[selftest traceability-guard] Case 4: two fuzzy row matches → ambiguous edge"
 log4="$TMPDIR/log4.txt"
 set +e
-bash "$GUARD" "$ambiguous_feature" >"$log4" 2>&1
+(cd "$ambiguous_feature" && bash "$GUARD" ".") >"$log4" 2>&1
 status4=$?
 set -e
 if [[ "$status4" -eq 1 ]]; then
@@ -2150,12 +2390,18 @@ build_current_scope_projection_feature "$current_scope_feature"
 cat > "$current_scope_feature/tests/future-not-authored.spec.ts" <<'EOF'
 test('future placeholder fixture is outside current-scope projection', () => {});
 EOF
+bubbles_sed_inplace \
+  's#"file": "tests/current.spec.ts"#"file": "  tests/current.spec.ts  "#' \
+  "$current_scope_feature/scenario-manifest.json"
 run_trace_case "$current_scope_feature" "current scope omits a future planned manifest test" "--current-scope"
 assert_case_status 0 "Current-scope projection: a future Not Started test does not block the current scope"
 assert_case_contains 'scenario-manifest.json linked test exists: tests/current.spec.ts' \
   "Current-scope projection: the current manifest binding is still validated"
 assert_case_not_contains 'future-not-authored.spec.ts' \
   "Current-scope projection: the future descendant is absent from the applicable manifest universe"
+bubbles_sed_inplace \
+  's#"file": "  tests/current.spec.ts  "#"file": "tests/current.spec.ts"#' \
+  "$current_scope_feature/scenario-manifest.json"
 
 rm "$current_scope_feature/tests/future-not-authored.spec.ts"
 run_trace_case "$current_scope_feature" "all scopes remain strict about a future missing test" "--all-scopes"
@@ -2172,7 +2418,9 @@ mv "$current_scope_feature/tests/current.spec.ts.saved" "$current_scope_feature/
 
 unknown_scope_feature="$TMPDIR/specs/813-current-scope-unknown-reference"
 build_current_scope_projection_feature "$unknown_scope_feature"
-bubbles_sed_inplace 's#scopes/03-future/scope.md#scopes/99-unknown/scope.md#' "$unknown_scope_feature/scenario-manifest.json"
+bubbles_sed_inplace \
+  's#scopes/03-future/scope.md#scopes/99-unknown/scope.md#' \
+  "$unknown_scope_feature/scenario-manifest.json"
 run_trace_case "$unknown_scope_feature" "current scope fails closed on an unknown manifest scope" "--current-scope"
 assert_case_status 1 "Current-scope fail-closed: an unknown scenario scope reference is refused"
 assert_case_contains 'linked-test scope projection failed' \
@@ -2280,6 +2528,464 @@ run_trace_case "$physical_alias_duplicate_feature" \
 assert_case_status 1 "CR-01 physical-scope aliases cannot hide duplicate scenario records"
 assert_case_contains "scenario SCN-812-002: duplicate effective scenario id" \
   "CR-01 canonical id and legacy scenarioId exact-once semantics reject the duplicate before alias projection"
+
+# Regression: bugs/BUG-046-traceability-linked-test-path-containment/
+# --- BUG-046: linked-test paths are inert, canonical, and repository-bound ---
+
+# SCN-B046-001: preserve both existing candidate roots and fragment behavior.
+b046_valid_repo="$TMPDIR/b046-valid-repo"
+build_b046_feature "$b046_valid_repo" "specs/046-valid"
+cat > "$b046_valid_repo/specs/046-valid/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "tests/repository-control.spec.ts#repository-fragment",
+        {"file": "tests/feature-control.spec.ts"}
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_valid_repo" "specs/046-valid" \
+  "BUG-046 accepts repository-relative and feature-relative regular files without rewrites"
+assert_case_status 0 "BUG-046 valid roots: repository-relative and feature-relative references both remain accepted"
+assert_case_contains 'linked test exists: tests/repository-control.spec.ts' \
+  "BUG-046 valid roots: string fragment extraction preserves the repository candidate"
+assert_case_contains 'linked test exists: tests/feature-control.spec.ts' \
+  "BUG-046 valid roots: object file form preserves the feature candidate"
+
+b046_missing_repo="$TMPDIR/b046-missing-repo"
+build_b046_feature "$b046_missing_repo" "specs/046-missing"
+bubbles_sed_inplace \
+  's#tests/feature-control.spec.ts#tests/missing-sibling.spec.ts#' \
+  "$b046_missing_repo/specs/046-missing/scenario-manifest.json"
+run_b046_trace_case "$b046_missing_repo" "specs/046-missing" \
+  "BUG-046 valid-root negative control uses a missing sibling"
+assert_case_status 1 "BUG-046 valid roots: a missing sibling cannot satisfy the edge"
+
+# SCN-B046-002: present and absent traversal targets share one lexical refusal.
+cat > "$TMPDIR/b046-external-present.spec.ts" <<'EOF'
+export const externalTraversalTarget = true;
+EOF
+b046_traversal_present_repo="$TMPDIR/b046-traversal-present-repo"
+build_b046_feature "$b046_traversal_present_repo" "specs/046-traversal-present"
+cat > "$b046_traversal_present_repo/specs/046-traversal-present/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": ["../b046-external-present.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_traversal_present_repo" "specs/046-traversal-present" \
+  "BUG-046 rejects a present parent traversal target"
+assert_case_status 1 "BUG-046 traversal present: an external regular file cannot satisfy the edge"
+assert_case_contains 'parent-traversal' "BUG-046 traversal present: the lexical rejection class is stable"
+assert_case_not_contains 'b046-external-present.spec.ts' \
+  "BUG-046 traversal present: the unsafe raw reference is not disclosed"
+
+b046_traversal_absent_repo="$TMPDIR/b046-traversal-absent-repo"
+build_b046_feature "$b046_traversal_absent_repo" "specs/046-traversal-absent"
+cat > "$b046_traversal_absent_repo/specs/046-traversal-absent/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": ["../b046-external-absent.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_traversal_absent_repo" "specs/046-traversal-absent" \
+  "BUG-046 rejects an absent parent traversal target"
+assert_case_status 1 "BUG-046 traversal absent: a missing external target cannot satisfy the edge"
+assert_case_contains 'parent-traversal' "BUG-046 traversal absent: the rejection does not depend on existence"
+assert_case_not_contains 'b046-external-absent.spec.ts' \
+  "BUG-046 traversal absent: the unsafe raw reference is not disclosed"
+
+# SCN-B046-003: host-independent absolute forms reject even when matching
+# literal fixture files would make an existence-only check pass.
+b046_absolute_repo="$TMPDIR/b046-absolute-repo"
+build_b046_feature "$b046_absolute_repo" "specs/046-absolute"
+mkdir -p "$b046_absolute_repo/etc"
+cat > "$b046_absolute_repo/etc/hosts" <<'EOF'
+fixture hosts content must remain unread
+EOF
+b046_drive_name='C:\fixture.spec.ts'
+b046_unc_name='\\server\share.spec.ts'
+cat > "$b046_absolute_repo/$b046_drive_name" <<'EOF'
+export const driveQualifiedFixture = true;
+EOF
+cat > "$b046_absolute_repo/$b046_unc_name" <<'EOF'
+export const uncFixture = true;
+EOF
+cat > "$b046_absolute_repo/specs/046-absolute/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "/etc/hosts",
+        "C:\\fixture.spec.ts",
+        "\\\\server\\share.spec.ts"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_absolute_repo" "specs/046-absolute" \
+  "BUG-046 rejects POSIX drive-qualified and UNC absolute forms"
+assert_case_status 1 "BUG-046 absolute forms: every host-independent absolute class fails"
+assert_case_occurrences 3 'absolute-reference' \
+  "BUG-046 absolute forms: POSIX drive-qualified and UNC records share the lexical class"
+assert_case_not_contains 'fixture hosts content must remain unread' \
+  "BUG-046 absolute forms: no candidate content reaches diagnostics"
+
+run_b046_trace_case_system_bash "$b046_absolute_repo" "specs/046-absolute" \
+  "BUG-046 absolute classification under macOS system Bash"
+assert_case_status 1 "BUG-046 portability: system Bash rejects every absolute form"
+assert_case_occurrences 3 'absolute-reference' \
+  "BUG-046 portability: system Bash preserves the host-independent classification"
+
+# SCN-B046-004: present and absent external symlink targets use the same class.
+cat > "$TMPDIR/B046_EXTERNAL_SECRET_PRESENT.spec.ts" <<'EOF'
+EXTERNAL_SECRET_CONTENT_MUST_NOT_APPEAR
+EOF
+b046_symlink_repo="$TMPDIR/b046-symlink-repo"
+build_b046_feature "$b046_symlink_repo" "specs/046-symlink"
+mkdir -p "$b046_symlink_repo-sibling"
+cat > "$b046_symlink_repo-sibling/prefix-target.spec.ts" <<'EOF'
+PREFIX_SIBLING_CONTENT_MUST_NOT_APPEAR
+EOF
+ln -s '../../B046_EXTERNAL_SECRET_PRESENT.spec.ts' "$b046_symlink_repo/tests/external-present-link.spec.ts"
+ln -s '../../B046_EXTERNAL_SECRET_ABSENT.spec.ts' "$b046_symlink_repo/tests/external-absent-link.spec.ts"
+ln -s '../../b046-symlink-repo-sibling/prefix-target.spec.ts' "$b046_symlink_repo/tests/external-prefix-link.spec.ts"
+cat > "$b046_symlink_repo/specs/046-symlink/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "tests/external-present-link.spec.ts",
+        "tests/external-absent-link.spec.ts",
+        "tests/external-prefix-link.spec.ts"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_symlink_repo" "specs/046-symlink" \
+  "BUG-046 rejects present and absent external symlink targets without target disclosure"
+assert_case_status 1 "BUG-046 external symlinks: neither target can satisfy the edge"
+assert_case_occurrences 3 'outside-repository' \
+  "BUG-046 external symlinks: present absent and prefix-sibling targets share one rejection class"
+assert_case_not_contains 'B046_EXTERNAL_SECRET_PRESENT' \
+  "BUG-046 external symlinks: the present external target path is not disclosed"
+assert_case_not_contains 'B046_EXTERNAL_SECRET_ABSENT' \
+  "BUG-046 external symlinks: the absent external target path is not disclosed"
+assert_case_not_contains 'EXTERNAL_SECRET_CONTENT_MUST_NOT_APPEAR' \
+  "BUG-046 external symlinks: external contents are never disclosed"
+assert_case_not_contains 'PREFIX_SIBLING_CONTENT_MUST_NOT_APPEAR' \
+  "BUG-046 external symlinks: a textual repository prefix cannot establish containment"
+
+# SCN-B046-005: an internal regular-file link remains eligible, while an
+# internal directory link reaches the contained non-regular refusal.
+b046_internal_link_repo="$TMPDIR/b046-internal-link-repo"
+build_b046_feature "$b046_internal_link_repo" "specs/046-internal-link"
+cat > "$b046_internal_link_repo/tests/internal-target.spec.ts" <<'EOF'
+export const internalTarget = true;
+EOF
+mkdir -p "$b046_internal_link_repo/tests/internal-directory"
+ln -s 'internal-target.spec.ts' "$b046_internal_link_repo/tests/internal-file-link.spec.ts"
+ln -s 'internal-directory' "$b046_internal_link_repo/tests/internal-directory-link.spec.ts"
+ln -s 'loop-b.spec.ts' "$b046_internal_link_repo/tests/loop-a.spec.ts"
+ln -s 'loop-a.spec.ts' "$b046_internal_link_repo/tests/loop-b.spec.ts"
+cat > "$b046_internal_link_repo/specs/046-internal-link/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "tests/internal-file-link.spec.ts",
+        "tests/internal-directory-link.spec.ts",
+        "tests/loop-a.spec.ts"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_internal_link_repo" "specs/046-internal-link" \
+  "BUG-046 accepts a contained regular-file symlink and rejects an internal directory link"
+assert_case_status 1 "BUG-046 internal symlinks: the non-regular sibling keeps the packet failing"
+assert_case_contains 'linked test exists: tests/internal-file-link.spec.ts' \
+  "BUG-046 internal symlinks: a contained regular-file target remains accepted"
+assert_case_contains 'non-regular-target' \
+  "BUG-046 internal symlinks: the contained directory target is classified as non-regular"
+assert_case_contains 'unstable-target' \
+  "BUG-046 internal symlinks: a cycle fails at the bounded symlink walk"
+
+# SCN-B046-006: unsafe JSON text is classified before raw shell extraction.
+b046_control_repo="$TMPDIR/b046-control-repo"
+build_b046_feature "$b046_control_repo" "specs/046-controls"
+cat > "$b046_control_repo/specs/046-controls/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "",
+        "   ",
+        "nul\u0000reference",
+        "line\nreference",
+        "tab\treference",
+        "escape\u001breference",
+        "delete\u007freference"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_control_repo" "specs/046-controls" \
+  "BUG-046 rejects empty whitespace and control-bearing references without terminal control output"
+assert_case_status 1 "BUG-046 controls: every empty or control-bearing reference fails closed"
+assert_case_occurrences 2 'empty-reference' \
+  "BUG-046 controls: empty and printable-whitespace values share the empty class"
+assert_case_occurrences 5 'control-character' \
+  "BUG-046 controls: NUL newline tab escape and delete stay JSON-escaped until rejection"
+assert_b046_log_has_no_active_control_bytes \
+  "BUG-046 controls: captured diagnostics contain no active control byte"
+
+# SCN-B046-007: final acceptance retains the regular-file predicate.
+b046_nonregular_repo="$TMPDIR/b046-nonregular-repo"
+build_b046_feature "$b046_nonregular_repo" "specs/046-nonregular"
+mkdir -p "$b046_nonregular_repo/tests/nonregular-directory"
+mkfifo "$b046_nonregular_repo/tests/nonregular-fifo"
+python3 - "$b046_nonregular_repo/s" <<'PY'
+import socket
+import sys
+
+server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+server.bind(sys.argv[1])
+server.close()
+PY
+cat > "$b046_nonregular_repo/specs/046-nonregular/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "tests/missing-target.spec.ts",
+        "tests/nonregular-directory",
+        "tests/nonregular-fifo",
+        "s"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_nonregular_repo" "specs/046-nonregular" \
+  "BUG-046 rejects missing directory FIFO and Unix-socket targets"
+assert_case_status 1 "BUG-046 non-regular targets: the packet fails"
+assert_case_occurrences 1 'missing-target' \
+  "BUG-046 non-regular targets: the missing target retains its distinct class"
+assert_case_occurrences 3 'non-regular-target' \
+  "BUG-046 non-regular targets: directory FIFO and socket share the contained non-regular class"
+
+# SCN-B046-008: path-shaped shell syntax remains data and creates no sentinel.
+b046_inert_repo="$TMPDIR/b046-inert-repo"
+build_b046_feature "$b046_inert_repo" "specs/046-inert"
+cat > "$b046_inert_repo/specs/046-inert/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "$(touch b046-command-sentinel)",
+        "`touch b046-backtick-sentinel`",
+        "${B046_INERT_SENTINEL}",
+        "tests/*.spec.ts",
+        "tests/nope;touch b046-separator-sentinel"
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_inert_repo" "specs/046-inert" \
+  "BUG-046 keeps substitution backtick variable wildcard and separator text inert"
+assert_case_status 1 "BUG-046 inert text: command-shaped missing paths keep the packet failing"
+assert_case_occurrences 5 'missing-target' \
+  "BUG-046 inert text: each printable command-shaped value remains an ordinary missing path"
+for b046_sentinel in \
+  b046-command-sentinel \
+  b046-backtick-sentinel \
+  b046-variable-sentinel \
+  b046-separator-sentinel; do
+  if [[ ! -e "$b046_inert_repo/$b046_sentinel" ]] \
+    && [[ ! -e "$b046_inert_repo/specs/046-inert/$b046_sentinel" ]]; then
+    pass "BUG-046 inert text: $b046_sentinel was not created"
+  else
+    fail "BUG-046 inert text: $b046_sentinel was created"
+  fi
+done
+
+# SCN-B046-009: string, file, path, fragment, envelope, candidate-root, and
+# current-scope forms all reach the same validator without manifest rewrites.
+b046_projection_repo="$TMPDIR/b046-projection-repo"
+build_b046_feature "$b046_projection_repo" "specs/046-projection"
+cat > "$b046_projection_repo/specs/046-projection/tests/path-form.spec.ts" <<'EOF'
+export const pathForm = true;
+EOF
+cat > "$b046_projection_repo/specs/046-projection/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": [
+        "tests/repository-control.spec.ts#fragment",
+        {"file": "tests/feature-control.spec.ts"},
+        {"path": "tests/path-form.spec.ts"},
+        {"file": "tests/feature-control.spec.ts", "path": "tests/missing-lower-precedence.spec.ts"}
+      ],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+run_b046_trace_case "$b046_projection_repo" "specs/046-projection" \
+  "BUG-046 preserves object-envelope reference forms and candidate roots"
+assert_case_status 0 "BUG-046 projection: object envelope and supported forms remain accepted"
+assert_case_contains 'linked test exists: tests/repository-control.spec.ts' \
+  "BUG-046 projection: string fragments retain repository-root resolution"
+assert_case_contains 'linked test exists: tests/path-form.spec.ts' \
+  "BUG-046 projection: object path form retains feature-root resolution"
+assert_case_not_contains 'missing-lower-precedence.spec.ts' \
+  "BUG-046 projection: object file retains precedence over path"
+
+cat > "$b046_projection_repo/specs/046-projection/scenario-manifest.json" <<'EOF'
+[
+  {
+    "scenarioId": "SCN-B046-FIXTURE-001",
+    "title": "Linked test reference validation remains contained",
+    "linkedTestContracts": [
+      {"path": "tests/feature-control.spec.ts"}
+    ],
+    "evidenceRefs": ["report.md#test-evidence"]
+  }
+]
+EOF
+run_b046_trace_case "$b046_projection_repo" "specs/046-projection" \
+  "BUG-046 preserves the legacy manifest envelope and linkedTestContracts path form"
+assert_case_status 0 "BUG-046 projection: legacy envelope remains accepted"
+assert_case_contains 'linked test exists: tests/feature-control.spec.ts' \
+  "BUG-046 projection: linkedTestContracts path form reaches the common validator"
+
+run_b046_trace_case "$TMPDIR" "specs/812-current-scope-projection" \
+  "BUG-046 preserves current-scope projection through the common validator" "--current-scope"
+assert_case_status 0 "BUG-046 projection: current-scope mode retains its applicable scenario universe"
+assert_case_contains 'linked test exists: tests/current.spec.ts' \
+  "BUG-046 projection: current-scope object file form remains accepted"
+assert_case_not_contains 'future-not-authored.spec.ts' \
+  "BUG-046 projection: current-scope mode still omits the future descendant"
+
+# TP-B046-011: replace the common acceptance function with the former
+# existence-only decision. Traversal and external-symlink fixtures must then
+# false-pass, while a missing target proves the final regular-file check remains.
+b046_mutation_root="$TMPDIR/b046-containment-mutation"
+mkdir -p "$b046_mutation_root/bubbles/scripts"
+cp \
+  "$SCRIPT_DIR/traceability-guard.sh" \
+  "$SCRIPT_DIR/dod-section-lib.sh" \
+  "$SCRIPT_DIR/scenario-match-lib.sh" \
+  "$SCRIPT_DIR/fun-mode.sh" \
+  "$b046_mutation_root/bubbles/scripts/"
+b046_mutant="$b046_mutation_root/bubbles/scripts/traceability-guard.sh"
+b046_mutant_tmp="$b046_mutant.tmp"
+if awk '
+  BEGIN { replaced = 0; skipping = 0 }
+  /^linked_test_reference_is_acceptable\(\) \{$/ {
+    print "linked_test_reference_is_acceptable() {"
+    print "  local record=\"$1\""
+    print "  local scope_dir=\"$2\""
+    print "  local candidate"
+    print "  linked_test_reference_ordinal=\"$(jq -r '\'' .ordinal '\'' <<< \"$record\")\""
+    print "  candidate=\"$(jq -r '\'' .path '\'' <<< \"$record\")\""
+    print "  linked_test_reference_path=\"$candidate\""
+    print "  if [[ -f \"$repo_root/$candidate\" || -f \"$scope_dir/$candidate\" ]]; then"
+    print "    linked_test_reference_status=\"ok\""
+    print "    return 0"
+    print "  fi"
+    print "  linked_test_reference_status=\"missing-target\""
+    print "  return 1"
+    print "}"
+    replaced = 1
+    skipping = 1
+    next
+  }
+  skipping && /^}$/ { skipping = 0; next }
+  !skipping { print }
+  END { if (replaced != 1) exit 42 }
+' "$b046_mutant" > "$b046_mutant_tmp"; then
+  mv "$b046_mutant_tmp" "$b046_mutant"
+else
+  rm -f "$b046_mutant_tmp"
+  fail "BUG-046 mutation: common acceptance function seam was not found exactly once"
+fi
+
+if [[ -f "$b046_mutant" ]]; then
+  run_b046_trace_case "$b046_traversal_present_repo" "specs/046-traversal-present" \
+    "BUG-046 containment-disabled mutation traversal witness" "" "$b046_mutant"
+  assert_case_status 0 \
+    "BUG-046 mutation: disabling containment restores the present traversal false pass"
+
+  b046_symlink_mutation_repo="$TMPDIR/b046-symlink-mutation-repo"
+  cp -R "$b046_symlink_repo" "$b046_symlink_mutation_repo"
+  cat > "$b046_symlink_mutation_repo/specs/046-symlink/scenario-manifest.json" <<'EOF'
+{
+  "scenarios": [
+    {
+      "id": "SCN-B046-FIXTURE-001",
+      "title": "Linked test reference validation remains contained",
+      "linkedTests": ["tests/external-present-link.spec.ts"],
+      "evidenceRefs": ["report.md#test-evidence"]
+    }
+  ]
+}
+EOF
+  run_b046_trace_case "$b046_symlink_mutation_repo" "specs/046-symlink" \
+    "BUG-046 containment-disabled mutation external-symlink witness" "" "$b046_mutant"
+  assert_case_status 0 \
+    "BUG-046 mutation: disabling containment restores the external-symlink false pass"
+
+  run_b046_trace_case "$b046_traversal_absent_repo" "specs/046-traversal-absent" \
+    "BUG-046 containment-disabled mutation regular-file predicate control" "" "$b046_mutant"
+  assert_case_status 1 \
+    "BUG-046 mutation: the missing target still fails because the regular-file check remains active"
+fi
 
 if [[ "$failures" -eq 0 ]]; then
   echo "[selftest traceability-guard] PASS"

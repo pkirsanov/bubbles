@@ -1,0 +1,626 @@
+{
+  "version": 1,
+  "featureDir": "bugs/BUG-037-uservalidation-opt-out-acceptance",
+  "generatedAt": "2026-08-23T17:36:33Z",
+  "scenarios": [
+    {
+      "scenarioId": "SCN-B037-001",
+      "scope": "01-invert-contract-and-reader",
+      "title": "A satisfied user who unchecks nothing reaches terminal",
+      "gherkin": {
+        "given": "a uservalidation.md whose acceptance items are all checked and which carries no Human Acceptance Record",
+        "when": "the terminal acceptance verdict is evaluated for a done transition",
+        "then": "the verdict returns 0 and emits no PD12-NO-RECORD finding"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T1 SCN-B037-001: a fully checked checklist with no record reaches terminal"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/acceptance-authority-lib.sh",
+        "bubbles/registry/acceptance-authority.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Restore acceptance-record.requiredAtTerminal to true; the fully checked record-less fixture is refused again with PD12-NO-RECORD.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance verdict is a text classification over a markdown file with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#green-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-002",
+      "scope": "01-invert-contract-and-reader",
+      "title": "A user-reported regression still blocks terminal",
+      "gherkin": {
+        "given": "a uservalidation.md with five checked acceptance items and one the user has unchecked",
+        "when": "the terminal acceptance verdict is evaluated for a done transition",
+        "then": "the verdict returns non-zero and names the unchecked item in a PD12-UNCHECKED-ITEM finding"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T2 SCN-B037-002 ADVERSARIAL: one unchecked item refuses terminal and is NAMED"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/acceptance-authority-lib.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Drop the PD12-UNCHECKED-ITEM emission; the one-unchecked fixture stops being refused and the inversion has widened into a hole.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance verdict is a text classification over a markdown file with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-003",
+      "scope": "01-invert-contract-and-reader",
+      "title": "BUG-029 stays closed",
+      "gherkin": {
+        "given": "a uservalidation.md with one checked acceptance item and five unchecked",
+        "when": "the terminal acceptance verdict is evaluated for a done transition",
+        "then": "the verdict returns non-zero and names every one of the five unchecked items"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "tests/regression/test_35_human_acceptance_terminal.sh",
+          "testId": "BUG-029 shape: two unchecked items are detected"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/acceptance-authority-lib.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Relax the terminal verdict to require only one checked item; the BUG-029 fixture passes and BUG-029 has reopened.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance verdict is a text classification over a markdown file with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-004",
+      "scope": "01-invert-contract-and-reader",
+      "title": "An optional acceptance record is still validated when present",
+      "gherkin": {
+        "given": "a uservalidation.md with every acceptance item checked and a Human Acceptance Record naming bubbles.validate as acceptedBy",
+        "when": "the acceptance shape verdict is evaluated",
+        "then": "the verdict returns non-zero and emits PD12-AUTOMATION-ACCEPTOR"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T4 SCN-B037-004 ADVERSARIAL: an agent id as acceptedBy still refuses the shape verdict"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/acceptance-authority-lib.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Delete the forbiddenAcceptedBy check alongside the requiredAtTerminal change; an agent-authored record is accepted and the optionality has been implemented as removal.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance verdict is a text classification over a markdown file with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-005",
+      "scope": "01-invert-contract-and-reader",
+      "title": "Checked automation readiness grants no acceptance",
+      "gherkin": {
+        "given": "a uservalidation.md whose Automation Readiness items are all checked and whose Checklist carries one unchecked item",
+        "when": "the terminal acceptance verdict is evaluated for a done transition",
+        "then": "the verdict returns non-zero on the unchecked checklist item"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T7 SCN-B037-005 ADVERSARIAL: a fully checked readiness block discharges no acceptance obligation"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/acceptance-authority-lib.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Let the readiness section satisfy the checklist; the fixture passes and automation has been granted acceptance authority.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance verdict is a text classification over a markdown file with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-006",
+      "scope": "02-template-lint-and-agents",
+      "title": "A uservalidation.md authored from the template reaches terminal unaided",
+      "gherkin": {
+        "given": "a uservalidation.md materialized verbatim from the feature-templates.md template with placeholder text replaced by real behavior descriptions",
+        "when": "the terminal acceptance verdict is evaluated for a done transition",
+        "then": "the verdict returns 0"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "integration",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S2-T1 SCN-B037-006: a uservalidation.md materialized from the shipped template reaches terminal with no human act"
+        }
+      ],
+      "implementationRefs": [
+        "agents/bubbles_shared/feature-templates.md",
+        "bubbles/registry/acceptance-authority.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "production-artifact",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["agents/bubbles_shared/feature-templates.md"],
+        "negativeControl": "Revert the template to unchecked shipping; the materialized fixture is refused again and the template/contract pair has desynced.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The template is a markdown document consumed by scripts, with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#green-scope-2"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-007",
+      "scope": "02-template-lint-and-agents",
+      "title": "Lint accepts a fully unchecked checklist",
+      "gherkin": {
+        "given": "a packet whose uservalidation.md has every acceptance item unchecked",
+        "when": "artifact-lint.sh runs over the packet",
+        "then": "the uservalidation shape checks pass and no failure demands a checked entry"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "medium",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S2-T3 SCN-B037-007: lint accepts a fully unchecked checklist and demands no checked entry"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/artifact-lint.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/artifact-lint.sh"],
+        "negativeControl": "Re-add the pre-9e41da4 checked requirement; the fully unchecked fixture fails lint and a user who rejected everything can no longer say so.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "artifact-lint.sh is a CLI over markdown artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#green-scope-2"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-008",
+      "scope": "02-template-lint-and-agents",
+      "title": "Lint still rejects a malformed checklist",
+      "gherkin": {
+        "given": "a packet whose uservalidation.md Checklist carries a non-checkbox bullet",
+        "when": "artifact-lint.sh runs over the packet",
+        "then": "lint fails on the non-checkbox bullet"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "medium",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S2-T4 ADVERSARIAL: lint still fails on a non-checkbox checklist bullet"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/artifact-lint.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/artifact-lint.sh"],
+        "negativeControl": "Remove the checklist shape checks entirely; the malformed fixture passes and the lint relaxation has widened into blindness.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "artifact-lint.sh is a CLI over markdown artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-2"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-009",
+      "scope": "03-guard-and-regression",
+      "title": "Check 43 passes a fully checked checklist with no acceptance record",
+      "gherkin": {
+        "given": "a packet whose resolved target status is done and whose uservalidation.md is fully checked with no Human Acceptance Record",
+        "when": "the state transition guard runs Check 43",
+        "then": "Check 43 passes"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "high",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "S3-T1 SCN-B037-009: the REAL guard passes a fully checked, record-less packet at a 'done' target"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+        "negativeControl": "Restore the acceptance-record demand in the library; the guard refuses the fixture and the fix never reached the real enforcement path.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The guard is a CLI over packet artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#green-scope-3"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-010",
+      "scope": "03-guard-and-regression",
+      "title": "Check 43 refuses an unchecked item and names it",
+      "gherkin": {
+        "given": "a packet whose resolved target status is done and whose uservalidation.md carries one unchecked acceptance item",
+        "when": "the state transition guard runs Check 43",
+        "then": "Check 43 fails, names the unchecked item, and describes the opt-out contract rather than an acceptance record"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "S3-T2 SCN-B037-010 adversarial: the REAL guard refuses an unchecked item and NAMES it"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+        "negativeControl": "Make Check 43 unconditionally pass when the target is done; the one-unchecked fixture is accepted and the gate has become decorative.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The guard is a CLI over packet artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-3"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-011",
+      "scope": "03-guard-and-regression",
+      "title": "The guard never edits uservalidation.md",
+      "gherkin": {
+        "given": "a packet that Check 43 will refuse",
+        "when": "the state transition guard runs Check 43",
+        "then": "the sha256 of uservalidation.md is unchanged"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "S3-T4 SCN-B037-011 adversarial: uservalidation.md sha256 is unchanged across a REFUSING guard run (the guard never edits the file)"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+        "negativeControl": "Insert a sed that checks the unchecked box before the verdict; the sha256 changes and the guard has fabricated the acceptance it exists to require.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The guard is a CLI over packet artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-3"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-012",
+      "scope": "03-guard-and-regression",
+      "title": "A ceiling-bound mode is still exempt from the acceptance check",
+      "gherkin": {
+        "given": "a packet whose resolved target status is not done and whose uservalidation.md carries unchecked acceptance items",
+        "when": "the state transition guard runs Check 43",
+        "then": "Check 43 passes without evaluating acceptance"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "medium",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "S3-T5 SCN-B037-012: a ceiling-bound target status is still exempt and acceptance is not evaluated"
+        }
+      ],
+      "implementationRefs": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "process-exit",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
+        "negativeControl": "Remove the target-status scope test; a validate-only packet with an open checklist is refused and every ceiling-bound mode breaks.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The guard is a CLI over packet artifacts with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-3"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-013",
+      "scope": "04-governance-and-generated",
+      "title": "No governance surface describes a lint rule that does not exist",
+      "gherkin": {
+        "given": "the repository at the delivering commit",
+        "when": "every surface describing Gate G136 is compared to artifact-lint.sh",
+        "then": "no surface asserts a lint requirement that artifact-lint.sh does not carry"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "medium",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S4-T1 SCN-B037-013: no governance surface asserts the checked-entry lint rule artifact-lint.sh does not carry"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/registry/gates.yaml",
+        "agents/bubbles_shared/quality-gates.md",
+        "agents/bubbles_shared/test-core.md",
+        "skills/bubbles-quality-gates-catalog/SKILL.md"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "production-artifact",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/registry/gates.yaml"],
+        "negativeControl": "Reintroduce the stale sentence into one surface; the conformance check reports it, proving the check reads the surfaces rather than asserting a constant.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Governance surfaces are markdown and YAML documents with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#scope-4"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-014",
+      "scope": "04-governance-and-generated",
+      "title": "The changelog records the contract change",
+      "gherkin": {
+        "given": "the repository at the delivering commit",
+        "when": "CHANGELOG.md is read",
+        "then": "it carries a PD-12 entry, a BUG-037 entry, and a BUG-029 entry that no longer states the superseded lint contract as current"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": false,
+      "lockdown": false,
+      "riskTier": "low",
+      "behaviorTraits": ["shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S4-T4 SCN-B037-014: CHANGELOG.md carries the BUG-037 entry, the PD-12 entry and the D-1 upgrade note"
+        }
+      ],
+      "implementationRefs": ["CHANGELOG.md"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "production-artifact",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["CHANGELOG.md"],
+        "negativeControl": "Remove the corrected BUG-029 entry; the check reports the stale assertion is back.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The changelog is a markdown document with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#scope-4"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-015",
+      "scope": "04-governance-and-generated",
+      "title": "Generated artifacts were regenerated, not hand-edited",
+      "gherkin": {
+        "given": "the repository at the delivering commit",
+        "when": "each generator for a committed generated artifact is re-run",
+        "then": "its output is byte-identical to the committed artifact"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": false,
+      "riskTier": "medium",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/generate-gate-coverage-map-selftest.sh",
+          "testId": "unimplemented"
+        },
+        {
+          "file": "bubbles/scripts/generate-validation-checks-selftest.sh",
+          "testId": "unimplemented"
+        }
+      ],
+      "implementationRefs": [
+        "docs/generated/gate-coverage-map.md",
+        "bubbles/registry/validation-checks.yaml",
+        "bubbles/release-manifest.json"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "production-artifact",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/generate-gate-coverage-map.sh"],
+        "negativeControl": "Hand-edit one line of a generated artifact; the regeneration diff is non-empty, proving the check compares output rather than merely running the generator.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Generated registries and docs are files with no route and no rendered surface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-4"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    }
+  ]
+}

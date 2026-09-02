@@ -1,0 +1,560 @@
+{
+  "version": 3,
+  "bugId": "BUG-041",
+  "featureDir": "bugs/BUG-041-artifact-lint-ignores-compact-packet-form",
+  "featureName": "Artifact Lint Ignores The Declared Compact Packet Form",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packet": "full",
+  "packetResolution": "full packet required; micro-fix-admission.sh escalated automatically on no-new-behavior, no-schema-change and no-cross-product-effect, recorded in report.md E-11",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-038"],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-041-artifact-lint-ignores-compact-packet-form"],
+    "allowedPaths": [
+      "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/**",
+      "bubbles/registry/bug-packet.yaml",
+      "bubbles/scripts/artifact-lint.sh",
+      "bubbles/scripts/artifact-lint-selftest.sh",
+      "bubbles/scripts/bug-packet-resolve.sh",
+      "bubbles/scripts/bug-packet-resolve-selftest.sh",
+      "bubbles/scripts/bug-packet-selftest.sh",
+      "bubbles/scripts/micro-fix-admission.sh",
+      "bubbles/scripts/micro-fix-admission-selftest.sh",
+      "bubbles/scripts/state-transition-guard.sh"
+    ],
+    "forbiddenPaths": [
+      "bugs/BUG-038-progress-timeout-bsd-wc-padding/**",
+      "bubbles/registry/report-sections.yaml",
+      "bubbles/registry/micro-fix-packet.yaml"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "claim": "partial",
+        "dodChecked": 8,
+        "dodTotal": 13,
+        "evidenceFile": "report.md",
+        "evidenceSections": ["E-I1", "E-I2", "E-I3", "E-I4", "E-I5", "E-I6", "E-I7", "E-I8", "E-I9"],
+        "note": "Implementation landed in a prior session; this session ran design.md section 5 mutations M1 through M6 against it and recorded every real exit code. M1 through M5 behave as designed. M6's byte-identical prediction is measured FALSE and is recorded as finding F-041-01 rather than adjusted. DoD items 7, 10, 11, 12 and 13 are deliberately unchecked, each with a stated reason in scopes.md and report.md E-I9."
+      },
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "claim": "partial",
+        "dodChecked": 9,
+        "dodTotal": 13,
+        "evidenceFile": "report.md",
+        "evidenceSections": ["E-I9"],
+        "note": "Re-measured M6 against the amended expectation recorded in design.md section 5.1 and checked DoD item 7, taking the packet from 8 of 13 to 9 of 13. The baseline was reconstructed non-destructively from HEAD via git archive; the working tree was not reverted. The undeclared population was corrected from seven packets to six, because BUG-041 declares packet=full in state.json and is therefore outside it. Verdicts unchanged on six of six; output differs by exactly the corrected required-artifact set plus one informational form line, with no unaccounted diff residue. Item 7 is checked because the amended expectation measured true, not because it was relaxed to fit a result. Items 10, 11, 12 and 13 remain unchecked with their reasons re-verified."
+      },
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "claim": "partial",
+        "dodChecked": 10,
+        "dodTotal": 13,
+        "evidenceFile": "report.md",
+        "evidenceSections": ["Coverage session evidence — DoD item 11 closed"],
+        "note": "Closed DoD item 11 by giving artifact-lint.sh's packet-form branch committed coverage in its owning selftest, taking the packet from 9 of 13 to 10 of 13. The branch had been proven only on throwaway /tmp fixtures, so its regression would have been silent. bubbles/scripts/artifact-lint-selftest.sh was widened into workBoundary.allowedPaths on the recorded ground that a boundary must cover the change the packet made, not on same-defect-class analogy; the rationale and the refused analogies are in design.md '## Change Boundary'. The widening is verified bounded: the target resolves in-boundary while state-transition-guard-selftest.sh, registry/report-sections.yaml and BUG-038's state.json all still resolve route-same-repo. Twelve assertions were added as T18 through T22, purely additive at 140 insertions and 0 deletions, and the selftest is 43 of 43 at exit 0. Non-vacuity was established with two mutations because one is structurally insufficient: mutation A restored the pre-fix hard-coded list and turned 9 of 12 red, and the 3 that survived are the anti-over-reach controls, which assert behaviour both versions share; mutation B forced the compact form onto every packet and turned exactly those 3 red. No assertion is vacuous. artifact-lint.sh is byte-identical after revert at sha256 cf79a4c1af36c3d7b841f864ffe5f9eb36baa99116a7f0cf2c78bb73dfb232d6 with zero MUTATION residue. Item 11's EVERY was read rather than assumed: state-transition-guard.sh was verified to contain no bug-packet-resolve or bug_packet_form reference, so the fourth site never landed and this packet changed no behaviour there. framework-validate and release-check were forbidden and were not run; state-transition-guard.sh was not edited and F-041-02 stays deferred per design.md section 3.5.1. SUPERSEDED: the fourth site was subsequently repaired, so this claim's premise for item 11 no longer holds and item 11 was un-checked. See the 9-of-13 claim below."
+      },
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "claim": "partial",
+        "dodChecked": 9,
+        "dodTotal": 13,
+        "evidenceFile": "report.md",
+        "evidenceSections": ["E-K1", "E-K2", "E-K3", "E-K4", "E-K5", "E-K6", "E-K7", "E-K8"],
+        "note": "Recorded the resolution of F-041-02 in the packet, after independently re-deriving every claimed result rather than citing it. All six dispatched figures reproduced exactly: 26 compact-aware markers, 0 'No such file or directory', compact BUG-038 at 17 failures / 3 warnings with RESULT_V1, full BUG-037 at 38 failures / 4 warnings with 14 Scope lines and 4 per-scope analysis units, resolver selftest 10 of 10 at exit 0. The pre-fix death was REPRODUCED by mutation Z, not cited: one line, zero verdict lines, one redirection error naming line 582. No regression to full packets is proven and the proof is reported honestly as a NEGATIVE result: mutation X, forcing compact on every packet, leaves BUG-037's verdict UNCHANGED at 38/4 with scope analysis intact, because enrolment is gated on scopes.md existing on disk rather than on form resolution. Because X alone cannot distinguish safe from inert, mutation Y removed that fallback and collapsed BUG-037 from 38 to 18 failures, turning a BLOCK into a FALSE PASS - the branch is emphatically live. Every mutation was reverted BY EDIT to sha256 7d260122dc5107fb9fa9ce1d39f12275299c98fa6562244a711bef5adcae91b3 with zero residue and an EMPTY timestamp-normalised diff against the baseline. DoD moved DOWN, 10 of 13 to 9 of 13: item 11 was checked on the premise that the guard carried no packet-form behaviour, and that premise is falsified by this session's own grep returning 26. Items 10 and 12 stay unchecked because framework-validate and release-check remain forbidden; item 13 stays unchecked because it asserts a completeness those items do not support. New finding F-041-04 records that the guard's form-awareness had no owning coverage; P6 was added in-boundary and proven non-vacuous (P5 green, P6 red under the same mutation), but it pins wiring rather than behaviour, so the finding is narrowed, not closed."
+      }
+    ],
+    "executionHistory": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "outcome": "completed_owned",
+        "dodChecked": 10,
+        "dodTotal": 13,
+        "itemClosed": 11,
+        "durationUnmeasured": true,
+        "boundaryChange": {
+          "kind": "widening",
+          "path": "bubbles/scripts/artifact-lint-selftest.sh",
+          "rationaleLocation": "design.md '## Change Boundary'",
+          "admittingArgument": "a boundary must cover the change the packet made; this packet changed artifact-lint.sh and its DoD demands that change's coverage",
+          "refusedArgument": "same defect class",
+          "verifiedInBoundary": true,
+          "negativeControls": [
+            "bubbles/scripts/state-transition-guard-selftest.sh=route-same-repo",
+            "bubbles/registry/report-sections.yaml=route-same-repo",
+            "bugs/BUG-038-progress-timeout-bsd-wc-padding/state.json=route-same-repo"
+          ]
+        },
+        "commands": [
+          { "command": "bash bubbles/scripts/artifact-lint-selftest.sh", "exitCode": 0, "result": "43/43 assertions passed (31 pre-existing + 12 added)" },
+          { "command": "git diff --numstat -- bubbles/scripts/artifact-lint-selftest.sh", "exitCode": 0, "result": "140 insertions, 0 deletions — purely additive" },
+          { "command": "bash bubbles/scripts/artifact-lint-selftest.sh (under mutation A: pre-fix hard-coded set)", "exitCode": 1, "result": "RED at T18; probe shows 9 of 12 new assertions red" },
+          { "command": "bash bubbles/scripts/artifact-lint-selftest.sh (under mutation B: compact forced on every packet)", "exitCode": 1, "result": "RED at T19; probe shows exactly the 3 anti-over-reach controls red" },
+          { "command": "shasum -a 256 bubbles/scripts/artifact-lint.sh", "exitCode": 0, "result": "cf79a4c1af36c3d7b841f864ffe5f9eb36baa99116a7f0cf2c78bb73dfb232d6 — byte-identical to the pre-mutation baseline" },
+          { "command": "bash bubbles/scripts/artifact-lint.sh bugs/BUG-041-artifact-lint-ignores-compact-packet-form", "exitCode": 0, "result": "Artifact lint PASSED" }
+        ],
+        "notRun": [
+          "framework-validate — forbidden to this session",
+          "release-check — forbidden to this session"
+        ],
+        "notEdited": [
+          "bubbles/scripts/state-transition-guard.sh — F-041-02 deferred per design.md section 3.5.1 on cross-session contention with BUG-033"
+        ]
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "UPDATED. F-041-02 is CLOSED and now RECORDED as closed in every artifact: design.md section 3.5.2 marks it RESOLVED with the deferral text of section 3.5.1 preserved verbatim, the finding entry carries a resolution block with rationale and evidence, and report.md E-K1 through E-K8 hold the re-derived measurements. Routed item (1) from the previous revision - 'design.md still reads deferred and still names line 582' - is DISCHARGED; the operator directed this session to apply it and it was applied, with the ownership deviation declared in report.md E-K7. THREE items remain routed, none of which belong to this agent. (1) DoD 10 and 12 need framework-validate and release-check, forbidden to every session so far, and DoD 13 asserts a completeness strictly stronger than those two support, so it must stay unmarked until they are evidenced. (2) F-041-03 remains OPEN and unchanged: a compact packet is evaluable but not completable, because it has no DoD checkboxes for Check 4 and no scope status markers for Check 5, and micro-fix-packet.yaml's preserved adversarial-regression obligation has its only mechanical expression scoped appliesToForms [full] by bug-packet.yaml. That is a CONTRACT question owned by the two registries, not a code defect, and it was deliberately not waived in the guard. (3) F-041-04 is newly OPEN: the guard's form-awareness has NO behavioural committed pin, which is the same 'no owning coverage' gap that let the original defect survive. P6 in bug-packet-resolve-selftest.sh narrows it and was proven non-vacuous by mutation (P5 stayed green while P6 went red), but P6 pins WIRING, not BEHAVIOUR - mutation Z removed both compact-aware elements while leaving the resolver reference intact, so P6 would have stayed green through the full reintroduction of the defect. The behavioural pin belongs in state-transition-guard-selftest.sh, which is out of boundary and was forbidden to run, so nothing unverifiable was added there. DoD stands at 9 of 13, DOWN from 10 of 13: item 11 was un-checked because this session's own measurement falsified the premise it was checked on.",
+    "supersededNextRequiredAction": "SUPERSEDED by the entry above; preserved verbatim as the previous revision's routing record. The repair landed: bubbles/scripts/state-transition-guard.sh reads a bug packet's artifact set through bug-packet-resolve.sh, so the guard and artifact-lint.sh answer the artifact question from the same authority instead of two private lists. A compact packet is evaluable: BUG-038 goes from one line and NO verdict to 333 lines with failureCount 17 and a gate list. The TRUE failing line was 619, not the 582 that design.md section 3.5.1 and the F-041-02 ledger entry both name; 582 is the function header and bash reports the compound command's opening line in a redirection diagnostic. Non-vacuity is established by two mutations: A removes both compact-aware elements and reproduces the original death exactly (one line, zero verdict lines), B removes only the form resolution and raises failureCount 17 to 21 with four spurious missing-artifact blocks. Both reverted by edit to sha256 7d260122dc5107fb9fa9ce1d39f12275299c98fa6562244a711bef5adcae91b3. Full packets do not move: net of a tree-state stale-receipt gate, BUG-041 is 37 to 37 and BUG-039 is 29 to 29 with identical gate and check sets, and that gate (G033) is proven non-attributable because it still fires at 38 under mutation A with compact-awareness fully removed. The packet stands at 10 of 13; no checkbox moved. THREE items are now routed and none of them belong to this agent. (1) design.md section 3.5.1 still reads 'deferred' and still names line 582; bubbles.design owns that file and must record the repair and the corrected line. (2) DoD 10 and 12 need framework-validate and release-check, forbidden to every session so far. (3) F-041-03 is newly OPEN: a compact packet is now evaluable but still not completable, because it has no DoD checkboxes for Check 4 and no scope status markers for Check 5, and micro-fix-packet.yaml's preserved adversarial-regression obligation has its only mechanical expression scoped appliesToForms [full] by bug-packet.yaml. That is a CONTRACT question owned by the two registries, not a code defect, and it was deliberately not waived in the guard. DoD 13 must stay unmarked until 10, 12 and F-041-03 are resolved.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Registry-driven artifact resolution with fail-closed form detection",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {"active": false, "lockedScenarioIds": []}
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "required", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [
+    {
+      "id": "RQ-B041-1",
+      "finding": "bugs/BUG-038-progress-timeout-bsd-wc-padding/report.md lacks the '### Completion Statement' and '### Test Evidence' sections that report-sections.yaml requires of every report.md. Its evidence exists under '## Reproduction BEFORE fix', '## Reproduction AFTER fix' and '## Lint'.",
+      "determination": "Authoring gap in BUG-038, not a linter defect. No registry grants the compact form a section exemption, and inventing one would drop a preserved obligation of the compact contract.",
+      "owner": "owner of bugs/BUG-038-progress-timeout-bsd-wc-padding",
+      "status": "routed-not-repaired",
+      "reason": "This session was explicitly forbidden to edit BUG-038.",
+      "mustNotBeAbsorbedInto": "Scope 1. Absorbing it would mean relaxing the section contract to make one packet pass."
+    }
+  ],
+  "executionHistory": [
+    {
+      "phase": "bootstrap",
+      "agent": "bubbles.design",
+      "scope": 1,
+      "outcome": "completed_owned",
+      "phasesExecuted": ["bootstrap"],
+      "durationUnmeasured": true,
+      "summary": "Adjudicated finding F-041-01 as a design decision. Confirmed, and strengthened, the reading that BUG-041 corrected a pre-existing artifact-lint.sh defect rather than introducing a widening. Amended design.md section 5.1 (M6 expectation) and the DoD item 7 wording in scopes.md. Recorded F-041-02's fourth site precisely in design.md section 3.5.1 as deferred on cross-session file contention. Checked no DoD item and edited no script or registry.",
+      "verified": [
+        "bubbles/registry/bug-packet.yaml forms: -> form: full -> artifacts: declares bug.md, design.md, scopes.md, report.md, uservalidation.md, scenario-manifest.json (conditional), state.json. spec.md is ABSENT; bug.md is present.",
+        "agents/bubbles_shared/bug-templates.md mentions spec.md zero times; micro-fix-packet.yaml names no spec.md and delegates artifacts to bug-packet.yaml.",
+        "Only spec.md reference to a bug packet across bubbles/scripts/** is a prose comment at guards/tail-delegated-gates.sh:522. No mechanical consumer.",
+        "Census of all 8 packets under bugs/: 8 of 8 carry bug.md; the 7 that resolve to the full form all carry spec.md; BUG-038 is the only one without spec.md and it declares packet=micro.",
+        "Corrected .packet probe: the declaration lives in state.json, not a .packet file. BUG-038 declares packet=micro, BUG-041 declares packet=full, the other six are undeclared. An earlier probe in this session tested for a .packet FILE and was wrong; the M5/M6-contradiction claim built on it is retracted in design.md section 5.1.",
+        "bubbles/scripts/state-transition-guard.sh build_scope_analysis_units confirmed at line 582, invoked at line 704, reading scopes.md unconditionally (read-only inspection of lines 575-590).",
+        "artifact-lint.sh and state-transition-guard.sh both dirty in the working tree, corroborating the cross-session contention that defers F-041-02."
+      ],
+      "notDone": [
+        "No DoD item checked.",
+        "bubbles/registry/bug-packet.yaml, bubbles/scripts/artifact-lint.sh and bubbles/scripts/state-transition-guard.sh NOT edited.",
+        "framework-validate and release-check NOT run (forbidden to this session).",
+        "F-041-02 NOT repaired, deliberately, on cross-session file contention."
+      ]
+    },
+    {
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "scope": 1,
+      "outcome": "partial",
+      "durationUnmeasured": true,
+      "summary": "Ran design.md section 5's non-vacuity plan (M1-M6) against the already-landed eight-file implementation and recorded every real exit code. Checked 8 of 13 DoD items; left 5 unchecked with a stated reason each.",
+      "verified": [
+        "All eight files in design.md section 6 exist and carry the change.",
+        "M1 undeclared full packet missing design.md: exit 1, names design.md, resolved 'full (absent-default)'.",
+        "M2 forged compact declaration failing admission: exit 1, --resolve-form answers form=full, full artifact set applied.",
+        "M3 registry absent in a copied scripts tree: exit 2, names the registry, no PASS line emitted.",
+        "M4 compact form declaring zero artifacts: exit 2, stdout empty (0 lines).",
+        "M5 BUG-038 pre-condition reconstructed in /tmp: HEAD linter exit 1 with 6 issues, working linter exit 1 with exactly 2, both report-section. Not 0.",
+        "Neighbour lints all exit 0: BUG-037, BUG-038, BUG-039, BUG-041.",
+        "bug-packet-selftest.sh exit 0 (9 checks), bug-packet-resolve-selftest.sh exit 0 (10 checks), micro-fix-admission-selftest.sh exit 0 (23/23).",
+        "Probes re-derived independently: control exit 0, A exit 1, B exit 1 (3 missing), C exit 1 resolved 'full (absent-default)', D emits no packet-form line.",
+        "shellcheck attributed against HEAD: bug-packet-resolve.sh has zero findings; artifact-lint.sh went 22 to 23, the one new finding being SC2001 (style) at line 439, the seventh instance of a form the file already used six times at HEAD."
+      ],
+      "findings": [
+        {
+          "id": "F-041-01",
+          "severity": "medium",
+          "statement": "design.md section 5's M6 acceptance gate predicts byte-identical lint output for every packet whose .packet is absent. Measured FALSE. All seven control packets differ by the same two lines: an added informational form line, and the required artifact changing from spec.md to bug.md. Routing bug packets through bug-packet.yaml therefore stopped requiring spec.md of a full bug packet.",
+          "evidence": "report.md E-I6",
+          "impact": "No verdict moved, because every packet in the repository carries both spec.md and bug.md, so the widening is currently unobservable in outcomes. It is nonetheless a real widening of what a full bug packet may omit, and M6 exists to catch exactly this class.",
+          "disposition": "RESOLVED by bubbles.design. Adjudicated in favour of the FIX, against the expectation. The measurement stands; the expectation was wrong. Amended design.md section 5.1 and the DoD item 7 wording in scopes.md. Did NOT re-add spec.md to the registry, and did NOT check the DoD item.",
+          "resolution": {
+            "status": "resolved",
+            "resolvedBy": "bubbles.design",
+            "verdict": "expectation-was-wrong",
+            "rationale": "The move of the required artifact from spec.md to bug.md is not a widening BUG-041 introduced. It is the correction of a PRE-EXISTING defect in artifact-lint.sh, which applied a literal feature-shaped required list to bug packets. Verified on four independent pieces of evidence, each re-derived in this session rather than taken on trust.",
+            "evidenceVerified": [
+              "bubbles/registry/bug-packet.yaml, forms: -> form: full -> artifacts: declares exactly bug.md, design.md, scopes.md, report.md, uservalidation.md, scenario-manifest.json (conditional), state.json. spec.md is ABSENT from that list; bug.md is IN it. Requiring spec.md was never contract.",
+              "The prose restatements agree with the registry: agents/bubbles_shared/bug-templates.md mentions spec.md zero times, and micro-fix-packet.yaml delegates artifacts to bug-packet.yaml. No second authority points the other way.",
+              "Nothing mechanically consumes spec.md from a bug packet. The only hit across bubbles/scripts/** is a prose comment at guards/tail-delegated-gates.sh:522 citing BUG-037's file by path. No guard, lint or resolver reads it, so dropping the requirement orphans no consumer.",
+              "Census of all 8 packets under bugs/: every one carries bug.md, so the corrected requirement refuses nothing that exists. All 7 packets that resolve to the full form also carry spec.md, so dropping that requirement refuses nothing either. No verdict moves in either direction, so the choice between the two sets is settled purely by which one is the contract, and that is the registry.",
+              "Decisive argument is this design's own section 4, which rejects hard-coding an artifact branch inside artifact-lint.sh because it 'creates a third private copy of the contract. The defect, relocated.' The hard-coded spec.md requirement WAS such a private copy, disagreeing with the registry IMP-047 S-B made the single bug-artifact authority."
+            ],
+            "retraction": "An earlier draft of this amendment asserted that M6-as-written contradicted M5, on the ground that all eight packets were undeclared and BUG-038 therefore sat inside M6's undeclared population. That is FALSE and is retracted. The .packet declaration lives in state.json, not in a .packet file, and the earlier probe tested for the file. Re-probed correctly: BUG-038 declares packet=micro and BUG-041 declares packet=full; the other six are undeclared. BUG-038 is DECLARED, so it is outside M6's population and M5 and M6 do not contradict. Recorded rather than deleted because the claim reached a written draft. The adjudication does not depend on it.",
+            "scopeCorrection": "BUG-038's pre-fix 'Missing required artifact: spec.md' is evidence of the COMPACT-form defect, the lint ignoring the declared form entirely, which is this packet's primary target. It is NOT evidence about the full form's artifact set. No full bug packet in this repository lacks spec.md, so the full-form correction is currently unobservable in verdicts, exactly as F-041-01 states. It is justified by contract authority, not by an observed refusal.",
+            "alternativeTestedAndRejected": "Tightening bubbles/registry/bug-packet.yaml to re-add spec.md to the full form so M6-as-written passes. Rejected: it would re-introduce the exact defect, refusing BUG-038 again for lacking an artifact its contract never required, and would put the registry in conflict with bug-templates.md, micro-fix-packet.yaml and design.md section 6.",
+            "amendedExpectation": "For every packet whose .packet is absent, the lint VERDICT (exit code) is unchanged before and after the fix. The lint OUTPUT may differ in exactly one respect: the required-artifact set is corrected to the set bug-packet.yaml declares for the resolved form, so spec.md ceases to be required and bug.md becomes required, plus one informational line naming the resolved form. Any other output difference, and any verdict difference, is a defect in the fix.",
+            "artifactsAmended": [
+              "design.md section 5.1 (new amendment subsection; original M6 wording preserved verbatim, not silently rewritten)",
+              "scopes.md DoD item 7 (wording amended, item left UNCHECKED)"
+            ],
+            "notDone": [
+              "DoD item 7 NOT checked. bubbles.design amended the expectation only; verifying the measurement against the corrected expectation is the implementer's act.",
+              "bubbles/registry/bug-packet.yaml NOT edited.",
+              "bubbles/scripts/artifact-lint.sh NOT edited."
+            ]
+          }
+        },
+        {
+          "id": "F-041-02",
+          "severity": "medium",
+          "statement": "design.md section 3.5 asserts that replacing the literal artifact checks at state-transition-guard.sh lines 759, 799 and 805 makes the guard agree with artifact-lint.sh on a compact packet. A FOURTH site exists: build_scope_analysis_units at line 582 reads scopes.md unconditionally, and the compact form does not require it, so the guard dies with a shell redirection error before producing any verdict.",
+          "evidence": "report.md E-I8",
+          "impact": "The guard surface still rejects a packet the linter admits, which is the drift the design exists to end. The Test Plan row 'state-transition-guard.sh agrees with artifact-lint.sh' cannot be marked satisfied.",
+          "attribution": "PRE-EXISTING at HEAD. The HEAD guard fails identically at the same line 582, so this is not a regression introduced by BUG-041; it is a site the design's three-site list did not find.",
+          "disposition": "RESOLVED by repair. The entry is PRESERVED, not deleted: its statement, evidence, attribution and deferral reason all remain the record of why the site stayed open. The deferral was correct on the information available then; the blocker later cleared and the site was repaired. Recorded resolved rather than removed.",
+          "recordedAt": "design.md section 3.5.1 (original deferral, preserved verbatim) and section 3.5.2 (resolution)",
+          "resolution": {
+            "status": "resolved",
+            "resolvedBy": "bubbles.implement",
+            "verdict": "repaired-in-place",
+            "rationale": "The deferral reason was cross-session contention on bubbles/scripts/state-transition-guard.sh with the BUG-033 session. That file is inside this packet's workBoundary.allowedPaths and the contention cleared, so the fourth site was repaired. The guard now reads a bug packet's artifact set through bug-packet-resolve.sh, the sole production reader of bug-packet.yaml, so the guard and artifact-lint.sh answer the artifact question from ONE authority instead of two private lists. No list is restated in the guard, so design.md section 4's rejected 'third private copy of the contract' is not created. BUG-033's uncommitted changes in the file were not reverted, not staged and not restructured.",
+            "evidence": "report.md E-K1 through E-K5, and design.md section 3.5.2",
+            "evidenceVerified": [
+              "Re-derived independently in this session, not cited from the dispatching brief. Compact-aware markers in the guard: grep -cE 'bug_packet_form|bug-packet-resolve|bug_packet_artifacts|compact' = 26 (bug_packet_form 20, bug-packet-resolve 3, bug_packet_artifacts 0, compact 4).",
+              "COMPACT packet BUG-038: guard exit 1, 333 lines, 'TRANSITION BLOCKED: 17 failure(s), 3 warning(s)', BEGIN/END TRANSITION_GUARD_RESULT_V1 present with failureCount 17, and ZERO 'No such file or directory' occurrences in the output.",
+              "FULL packet BUG-037: guard exit 1, 579 lines, 'TRANSITION BLOCKED: 38 failure(s), 4 warning(s)', RESULT_V1 emitted, 14 'Scope' lines including 4 real per-scope analysis units, zero redirection errors. No regression.",
+              "bug-packet-resolve-selftest.sh exit 0, 10 of 10 as dispatched, including 'P5 2 non-selftest surface(s) call bug-packet-resolve.sh'. Widened to 12 of 12 later in the session by the P6 addition.",
+              "Both guard runs proven READ-ONLY by before/after hashes: BUG-038 state.json e2aa996c13ae0501 and report.md 63adbedef1d736c4 unchanged; BUG-037 state.json abb12da92e323f77 unchanged.",
+              "shellcheck attributed against HEAD before claiming anything: working tree and HEAD have an IDENTICAL code-and-count profile (10 SC1091, 3 SC2001, 4 SC2015, 5 SC2016, 3 SC2126, 1 SC2129, 18 SC2295, 4 SC2329). ZERO new findings attributable to this change; all 48 pre-exist at HEAD.",
+              "artifact-lint.sh on this packet: exit 0, 'Artifact lint PASSED.'"
+            ],
+            "defectReproducedNotCited": "The pre-fix death was reproduced rather than taken on trust. Mutation Z removed BOTH compact-aware elements (the form resolution, and the '[[ -f \"$scope_path\" ]] || return 0' read guard inside build_scope_analysis_units) and reproduced it exactly: exit 1, output ONE line, ZERO verdict lines, one 'No such file or directory' naming line 582. A first attempt that removed only ONE element did NOT reproduce the death (334 lines, verdict present), which is recorded because it reached a measurement: the fix has two independent elements and either alone keeps the guard alive.",
+            "noRegressionProof": {
+              "risk": "that making the guard form-aware caused it to skip scope analysis for FULL packets",
+              "mutationX": "Force 'compact' for every packet. FULL packet BUG-037 verdict UNCHANGED at 38 failures / 4 warnings, scope analysis intact at 4 units, and the entire 13-line diff is the required-artifact set (spec.md/design.md/uservalidation.md out, bug.md/report.md in). Reported as a NEGATIVE result, as measured.",
+              "whyXIsNotInertness": "A full packet's scope-analysis enrolment is gated on scopes.md EXISTING ON DISK, not on form resolution succeeding: `if [[ \"$bug_packet_requires_scopes_md\" == true ]] || [[ -f \"$feature_dir/scopes.md\" ]]`. That '||' clause IS the no-regression guarantee.",
+              "mutationY": "Mutation X plus removal of that fallback. FULL packet BUG-037 collapses 38 to 18 failures, 4 to 2 warnings, 579 to 359 lines. A BLOCK becomes a FALSE PASS: 'Resolved scope artifacts report 3 Done scope(s) but state.json completedScopes is EMPTY' becomes 'completedScopes count matches artifact Done scope count (0)'. Three regression-DoD BLOCKs vanish. The branch is emphatically NOT inert.",
+              "conclusion": "X and Y together establish the claim properly. X alone could not distinguish 'safe' from 'inert', which is why Y was required rather than optional."
+            },
+            "revertResidue": {
+              "method": "every mutation reverted by EDITING the file; no git command that discards changes was run at any point",
+              "sha256": "7d260122dc5107fb9fa9ce1d39f12275299c98fa6562244a711bef5adcae91b3",
+              "mutationResidueCount": 0,
+              "bashSyntaxCheck": 0,
+              "behaviouralRestoration": "not only byte-identical but behaviourally identical: BUG-037 back to 38/4 at 579 lines with a timestamp-normalised diff against the pre-mutation baseline that is EMPTY (exit 0), and BUG-038 back to 17/3 at 333 lines."
+            },
+            "correctionToTheFindingsOwnText": "The finding statement and design.md section 3.5.1 both name line 582 as the failing site. 582 is the 'build_scope_analysis_units() {' header; the failing read is the 'done < \"$scope_path\"' redirection later in the function. Bash names the compound command's OPENING line in a redirection diagnostic. The statement is preserved as written and corrected here rather than edited in place.",
+            "lessonRecorded": "design.md section 3.5 named THREE sites and there were FOUR. The enumeration searched for literal artifact EXISTENCE checks; the fourth site was a CONSUMER that assumes existence. The rule this packet leaves behind, now demonstrated rather than asserted: sweep the CLASS of scopes.md consumers, not the enumerated lines. An enumeration of line numbers is evidence of where someone looked, never evidence of where the class ends. Recorded in design.md section 3.5.2.",
+            "artifactsAmended": [
+              "design.md section 3.5.2 (new; section 3.5.1's deferral text preserved verbatim, nothing deleted)",
+              "design.md section 3.6.1 (new; records the P6 assertion and the residual behavioural gap)"
+            ],
+            "ownershipDeviation": "design.md is owned by bubbles.design and the previous session correctly ROUTED this correction rather than applying it. This session was directed by the operator to apply it directly and did so. Declared in report.md E-K7 rather than left implicit."
+          },
+          "siteConfirmedThisSession": "bubbles/scripts/state-transition-guard.sh: build_scope_analysis_units defined at line 582, invoked at line 704. Read-only verification of lines 575-590 in this session. The design's three-site enumeration searched for literal artifact EXISTENCE checks; line 582 is a CONSUMER that assumes existence, which is why the enumeration missed it. The class to sweep is consumers of form-optional artifacts, not this one line."
+        }
+      ],
+      "notRun": [
+        "framework-validate and release-check: explicitly forbidden to this session. DoD items 10 and 12 therefore have no evidence and are unchecked."
+      ],
+      "methodCaveat": "design.md section 5 requires the M6 baseline to be captured BEFORE the first edit and states it cannot be reconstructed afterwards. That capture was not carried forward from the session that landed the change. This session reconstructed the baseline from HEAD via a read-only 'git archive HEAD bubbles bugs' extraction into /tmp, rather than reverting the working tree, because other sessions are concurrently editing it. The reconstruction compares the two LINTERS against today's packets, so a packet whose own content changed since HEAD could confound the result; E-I6 shows this did not occur, because the diff is byte-for-byte the same two lines on all seven control packets including the one another session has dirty.",
+      "artifactsTouched": [
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/scopes.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/report.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/state.json"
+      ],
+      "noProductionCodeChanged": "This session recorded evidence only. No framework script, registry or neighbouring packet was modified."
+    },
+    {
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "scope": 1,
+      "outcome": "partial",
+      "durationUnmeasured": true,
+      "summary": "Re-measured M6 against the AMENDED expectation that bubbles.design recorded in design.md section 5.1, and checked DoD item 7 because every clause of the amended wording measured true. DoD moves 8 of 13 to 9 of 13. No other DoD item became satisfiable; items 10, 11, 12 and 13 keep the reasons the implementation session recorded, each re-checked rather than assumed.",
+      "verified": [
+        "Baseline is still valid: git status shows bug-packet.yaml and artifact-lint.sh modified and bug-packet-resolve.sh untracked, so HEAD (ce2c5ed) carries none of the fix.",
+        "Baseline reconstructed non-destructively with 'git archive HEAD bubbles | tar -x -C /tmp/al41head'. The working tree was NOT reverted, because other sessions are editing it.",
+        "Both linters were pointed at the SAME working-tree packet by the SAME absolute path, so the linter is the only variable. This is sound because artifact-lint.sh resolves script_repo_root and artifact_repo_root separately at lines 65-95.",
+        "Population corrected from seven to six. Read from state.json, not from a .packet file: BUG-032, 033, 035, 036, 037 and 039 are undeclared; BUG-038 declares packet=micro and BUG-041 declares packet=full, so both are DECLARED and both sit outside M6's population. This makes the test narrower, not easier: it removes a packet that had agreed with the expectation.",
+        "Amended clause 1, verdict unchanged: six of six undeclared packets measured head=0 work=0. No exit code moved in either direction. The amendment relaxed only the OUTPUT clause; the VERDICT clause is as strict as it was.",
+        "Amended clause 2, output differs in exactly one respect: difflines=5 on all six, and the diff content is identical on all six. One line removed ('Required artifact exists: spec.md'), two added (the informational form line, and 'Required artifact exists: bug.md'). The remaining two of the five are diff's own '1c1,2' and '---' markers, so there is no unaccounted residue.",
+        "Item 11 re-checked rather than assumed: git status shows artifact-lint-selftest.sh unmodified, and grep finds bug-packet-resolve references only in bug-packet-resolve-selftest.sh and bug-packet-selftest.sh. No committed test exercises artifact-lint.sh's packet-form path, so Gherkin scenarios 1, 2 and 3 remain uncovered."
+      ],
+      "findings": [],
+      "findingsResolved": [
+        {
+          "id": "F-041-01",
+          "disposition": "CLOSED. Adjudicated by bubbles.design in design.md section 5.1, and the amended expectation verified by measurement in this session (report.md E-I9). No longer blocks any DoD item."
+        }
+      ],
+      "dodTransition": {
+        "before": 8,
+        "after": 9,
+        "total": 13,
+        "checked": ["item 7 - M6 against the amended expectation"],
+        "stillUnchecked": {
+          "10": "framework-validate and release-check remain forbidden to this session. Nothing measured supports the broader suite claim.",
+          "11": "Gherkin scenarios 1, 2 and 3 are still covered only by throwaway /tmp fixtures. Re-verified in this session: artifact-lint-selftest.sh is unmodified and no committed test exercises the packet-form path.",
+          "12": "Same forbidden command as item 10.",
+          "13": "Marking the bug Fixed asserts a completeness this session did not measure. F-041-02 is still open and deferred, and items 10, 11 and 12 remain unevidenced. F-041-01 closing removes one blocker but not the others."
+        }
+      },
+      "notDone": [
+        "bubbles/scripts/artifact-lint.sh, bubbles/registry/bug-packet.yaml and bubbles/scripts/state-transition-guard.sh NOT edited.",
+        "framework-validate and release-check NOT run (forbidden to this session).",
+        "F-041-02 NOT repaired, deliberately, on the cross-session file contention recorded in design.md section 3.5.1.",
+        "status NOT set to done and no terminal certification.status written."
+      ],
+      "artifactsTouched": [
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/scopes.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/report.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/state.json"
+      ],
+      "noProductionCodeChanged": "This session recorded evidence only. No framework script, registry or neighbouring packet was modified."
+    },
+    {
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "scope": 1,
+      "outcome": "partial",
+      "durationUnmeasured": true,
+      "summary": "Closed F-041-02 by repairing the fourth site in bubbles/scripts/state-transition-guard.sh. The deferral reason was cross-session contention on that file; its mtime was Aug 23 18:15:37 2026 on entry with no process holding it, so the contention had cleared. A compact packet is now evaluable by the guard: BUG-038 goes from one line and no verdict to 333 lines with failureCount 17 and a gate list. No DoD checkbox moved; DoD stays 10 of 13.",
+      "verified": [
+        "Defect reproduced before any edit: guard on BUG-038 exit 1, output ONE line, zero verdict lines. This is worse than a hard failure - no failureCount, no failedGateIds, no gate lines, so a compact packet was structurally un-evaluable.",
+        "TRUE failing line is 619, not 582. design.md section 3.5.1 names 582 as the failing site; 582 is the 'build_scope_analysis_units() {' header and the read is 'done < \"$scope_path\"' at 619. Bash names the compound command's opening line in a redirection diagnostic. Confirmed by awk on 575-586 and grep -n on the redirection. The 'set -euo pipefail' at line 29 is what converts the failed redirection into process death.",
+        "Fix reads the artifact set through bubbles/scripts/bug-packet-resolve.sh, the sole production reader of bug-packet.yaml. No list is restated in the guard, so no fourth private copy of the contract is created - the alternative design.md section 4 rejects.",
+        "Fix is fail-closed in the strict direction. Non-bug directory, missing resolver, unreadable registry, absent declaration, word outside the declared vocabulary, admission refusal, or a form resolving to zero artifacts all keep the pre-existing unreduced behaviour. Reduction happens only on a positive, admitted declaration.",
+        "Declaring the reduced form stays a REQUEST, not a grant: it must survive micro-fix-admission.sh --resolve-form, which is what bug-packet.yaml's escalation.overrideFlag: none requires.",
+        "Compact packet now produces a real verdict: bash -n exit 0; guard on BUG-038 exit 1, 333 lines, failureCount 17, failedGateIds [G055,G060,G022,G053,G040,G033,G095], failedChecks [Check-4-structure,Check-5-structure]. Check 1 resolves the deprecated 'micro' alias to 'compact' through the registry vocabulary and requires exactly bug.md, report.md and state.json.",
+        "No preserved obligation silently waived. reproduce-before-fix is evaluated and FAILS (Check 3E reads 'the scope/report artifacts' and blocked on missing RED to GREEN ordering in report.md). evidence-is-execution is evaluated and FAILS twice (G053 code-diff evidence, G033 stale receipt). root-cause-stated has no mechanical check on ANY form, so it is not a compact-form reduction. adversarial-regression is covered by the same Check 3E RED to GREEN block; its other mechanical expression is regressionExpectations, which bug-packet.yaml scopes appliesToForms [full].",
+        "Scope-derived checks report loudly rather than skipping: Check 4 blocks with 'Resolved scope artifacts have ZERO DoD checkbox items - cannot verify completion' and Check 5 blocks with 'Resolved scope artifacts have no scope status markers'.",
+        "Mutation A removed BOTH compact-aware elements and reproduced the original death exactly: bash -n exit 0, guard exit 1, output ONE line naming line 582, zero verdict lines.",
+        "Mutation B removed ONLY the form resolution and kept the defensive read guard, isolating the two edits. Guard survived but Check 1 demanded four artifacts the compact form does not declare; failureCount rose 17 to 21.",
+        "Both mutations reverted by edit, never by a git command. sha256 after each revert is 7d260122dc5107fb9fa9ce1d39f12275299c98fa6562244a711bef5adcae91b3, byte-identical to the fixed state, with bash -n exit 0.",
+        "Full-packet no-regression, two packets. BUG-041 before: exit 1, failureCount 37, gates [G055,G057,G061,G041,G022,G053,G027,G040,G068,G084]. After: exit 1, failureCount 38, same gates plus G033. BUG-039 before: exit 1, failureCount 29, gates [G055,G057,G060,G041,G022,G053,G068]. After: exit 1, failureCount 30, same gates plus G033. Both moved by exactly +1 and the diff shows the delta is one gate.",
+        "G033 attributed by execution, not argument. Under Mutation A, with compact-awareness fully removed, BUG-041 STILL reports failureCount 38 with G033 present, so G033 tracks the guard file changing at all, not the packet-form logic. The stale receipt is dated 2026-08-24T14:56:55Z and names state-transition-guard-selftest.sh; the guard's mtime on entry was Aug 23 18:15:37 2026, before that timestamp, which is why the BUG-033 edits already in the tree had not made it stale and this session's edit did.",
+        "Net of that tree-state effect, BUG-041 is 37 to 37 and BUG-039 is 29 to 29 with identical gate and check sets. The only other non-timestamp difference on either packet is one new INFO line, which does not enter the count.",
+        "artifact-lint.sh on BUG-041 exit 0, 'Artifact lint PASSED.'",
+        "shellcheck attributed against HEAD before claiming anything: both revisions fed to shellcheck on stdin, identical methodology on both sides. Code and count profile identical (10 SC1091, 3 SC2001, 4 SC2015, 5 SC2016, 3 SC2126, 1 SC2129, 18 SC2295, 4 SC2329). This change introduces ZERO new shellcheck findings; all 44 findings from the -x run pre-exist at HEAD.",
+        "BUG-033's uncommitted changes in the guard were not reverted, not staged and not restructured. All four edits are additive."
+      ],
+      "findingsResolved": [
+        {
+          "id": "F-041-02",
+          "disposition": "CLOSED by repair in this session. The fourth site is fixed and the guard produces a real verdict for a compact packet. Two corrections to the finding's own text, both established by execution: the TRUE failing line is 619, not the 582 the finding and design.md section 3.5.1 both name, because bash reports the compound command's opening line in a redirection diagnostic; and the site class was swept rather than the single line, per design.md section 3.5.1's own sweep guidance.",
+          "evidence": "report.md E-J1 through E-J8"
+        }
+      ],
+      "findings": [
+        {
+          "id": "F-041-03",
+          "severity": "medium",
+          "statement": "A compact packet still cannot reach done through the transition guard. bug-packet.yaml's compact form has no scopes.md, so there are no DoD checkboxes for Check 4 and no scope status markers for Check 5; both block with 'cannot verify completion' and 'no scope status markers'. micro-fix-packet.yaml preserves adversarial-regression as an obligation, but bug-packet.yaml scopes its mechanical expression (regressionExpectations, the Regression E2E Test Plan row and the two DoD checkboxes) to appliesToForms [full], so on a compact packet the guard has no artifact in which to look for it.",
+          "evidence": "report.md E-J5",
+          "impact": "The compact route is evaluable but not completable. Some obligation carrier would have to be relocated to report.md for the compact form before a compact packet could legitimately certify.",
+          "attribution": "NOT introduced by this session. Before this session the guard died before reaching Check 4 or Check 5 at all, so the gap was invisible rather than absent. Making the packet evaluable is what exposed it.",
+          "disposition": "ADJUDICATED, and ROUTED OUT of this packet to a NEW packet. bubbles.implement's refusal to repair it is UPHELD: it is a contract question owned by the registries, not a code defect in the guard. The adjudication is recorded in design.md section 8. DECISION: (1) CARRIER - two carriers, not one. micro-fix-packet.yaml's preservedObligations requirement text already names where each obligation is DISCHARGED: report.md for reproduce-before-fix, adversarial-regression and evidence-is-execution, bug.md for root-cause-stated. Where completion is ATTESTED is a separate question and the answer is uniformly report.md, because report.md's declared purpose is evidence and a completion claim is an evidence claim, whereas bug.md's declared purpose is analysis. state.json was considered and rejected: an agent-writable control-plane field that grants completion is the self-certification shape escalation.overrideFlag none exists to prevent. The implementer's report.md hypothesis is CONFIRMED for the attestation and for three of four discharge sites, and is WRONG for root-cause-stated. (2) MECHANISM - reuse obligationsRetained rather than invent a field, adding per-entry dischargedIn and attestedIn keys, and deliberately OMITTING requirement on the compact entries because micro-fix-packet.yaml owns that text and copying it would fork a single authority. (3) BOUNDARY - NEW PACKET, ruled against widening BUG-041. (4) micro-fix-packet.yaml does NOT change; report-sections.yaml does NOT change; only bug-packet.yaml changes normatively.",
+          "adjudication": {
+            "adjudicatedBy": "bubbles.design",
+            "recordedIn": "design.md section 8",
+            "verdict": "Finding is VALID and its severity is understated. The registry declares adversarial-regression preserved on the compact form and, in the same file, scopes its only mechanical expression (regressionExpectations) to appliesToForms [full]. That is sharper than 'there are no checkboxes'.",
+            "framingCorrections": [
+              "obligationsRetained on the single-file form is STRUCTURED but is NOT machine-read. bug-packet-resolve.sh parses only the artifacts: key inside a form and the top-level declaration: block; obligationsRetained sets in_artifacts FALSE and its entries are skipped. Running the resolver emits 22 lines of form=/default=/field=/location=/vocab=/alias=/artifact= and ZERO obligation facts. The single-file precedent supplies VOCABULARY, not a working mechanism, so the resolver must learn a new emission kind either way.",
+              "bug-packet-resolve.sh has NO --resolve-form verb. That verb is on micro-fix-admission.sh (consumed at state-transition-guard.sh line ~782). bug-packet-resolve.sh accepts only --registry FILE and emits stable one-fact-per-line output. The seam is therefore a NEW OUTPUT LINE KIND, not a new verb, which adds no argument surface and lets existing consumers ignore an unrecognised kind for free.",
+              "The compact form declares its three artifact ids with NO purpose: field, unlike full (all seven) and single-file (its one). The form does not say what its artifacts are FOR, which is why the carrier had to be derived from the sibling registry. Folded into the same change list as a secondary gap."
+            ],
+            "optionsRejected": [
+              "Add scopes.md to compact - erases the form's reason to exist; four artifacts is not a reduced packet.",
+              "Waive Check 4 on a form without scopes.md - converts proportionality into the loophole preservedObligations forbids.",
+              "Use scenario-manifest.json as the compact basis - IMPOSSIBLE, not merely undesirable: admission condition no-new-behavior means a compact bug has no observable behaviour change and therefore no scenarios, so the scenario basis is definitionally unreachable on this form.",
+              "Relocate a free-authored DoD list to report.md (the implementer's hypothesis, taken literally) - works, but the author writes the list so the guard can only count unchecked items and never knows the list is COMPLETE. Reproduces full's weakness in a form that need not inherit it."
+            ],
+            "boundaryCall": "NEW PACKET: BUG-042-compact-packet-has-no-completion-basis, on the FULL form. Ruled AGAINST widening BUG-041. F-041-02 COMPLETED this packet's fix - leaving it made the fix self-contradictory (lint passes, guard dies). F-041-03 does NOT: once F-041-02 closed, BUG-041's stated defect (surfaces carrying private artifact lists) is fully repaired, and what remains is an under-specified CONTRACT for a form activated by IMP-047 S-D. The finding's own attribution says the gap predates this session; exposure is not ownership. Two further facts settle it: the change is the same magnitude as BUG-041's own (new registry key, new resolver output kind, third Check-4 basis, Check-5 disposition, lint check, non-vacuity coverage), and widening would make a 9/13 packet whose items 10/12/13 are blocked on forbidden commands ALSO hostage to certifying a brand-new completion basis. BUG-042 must use the full form because micro-fix admission returns NO on no-schema-change (it alters the compact report.md artifact shape) and NO on no-new-behavior (a new resolver output kind and a new completion basis are caller-observable); two failed conditions escalate with no discretion.",
+            "mechanicalChangeList": {
+              "registry": "bug-packet.yaml: obligationsRetained on compact with 4 entries {id, dischargedIn, attestedIn} and NO requirement:; a comment recording why compact omits requirement while single-file carries it; purpose: added to compact's three artifacts; a note: under regressionExpectations pointing at obligationsRetained[adversarial-regression] as the compact expression of the same obligation, leaving appliesToForms [full] unchanged.",
+              "resolver": "bug-packet-resolve.sh: new documented output kind obligation=<form>|<id>|<dischargedIn>|<attestedIn>; parse obligationsRetained by extending the existing in_artifacts flag into a block selector; fail-closed refusal (exit 2) when a form declaring fewer artifacts than the absent: default declares ZERO obligations, mirroring the existing zero-artifact refusal. No new flag.",
+              "guardConsumptionPoint": "state-transition-guard.sh Check 4 gains a THIRD completion basis, ranked below scenario-states and above the legacy checkbox count, selected when the resolved form emits obligation= facts: every obligation id needs a '- [x]' line containing that id in its attestedIn artifact. Zero-unchecked preserved verbatim; the required SET becomes registry-derived so the author cannot shorten it, which is STRICTLY STRONGER than full's basis. Reuses the bug_packet_form / bug_packet_facts resolution already at lines ~717-790; no second resolver invocation. Check 4A (G041) and Check 22 (G068) must scan the attestedIn artifact on a reduced form or the relocation reopens the reformatting bypass. Check 5 emits NOT_APPLICABLE and ASSERTS certification.completedScopes is EMPTY - an added check, not a waiver.",
+              "lint": "artifact-lint.sh: on a reduced form, require the attestation line for every emitted obligation id to be PRESENT in attestedIn (present, not checked - checked is Check 4's question at done, and lint runs before that).",
+              "coverage": "bug-packet-resolve-selftest.sh: assert the obligation= emission for compact, the zero-obligation refusal on a reduced form, and that single-file still resolves. state-transition-guard-selftest.sh: a BEHAVIOURAL pin - a synthetic compact packet with all four obligations attested reaches the Check 4 pass, and the same packet with one unattested is REFUSED. This is the same gap F-041-04 records: a wiring pin is not a behavioural pin, and a mutation removing the basis while leaving the resolver reference intact must go RED."
+            },
+            "obligationsPreserved": "NO obligation is weakened. A compact packet after BUG-042 must prove the same four things micro-fix-packet.yaml preserves today, in the same artifacts its own requirement text already names. What changes is that the requirement becomes readable by the surfaces that enforce it and the required set becomes closed rather than author-chosen. scopes.md is NOT added to compact. The full form is untouched."
+          },
+          "recordedAt": "report.md E-J5; adjudicated in design.md section 8",
+          "resolution": {
+            "state": "RESOLVED-BY-ROUTING",
+            "resolvedAt": "2026-08-25",
+            "resolvedBy": "bubbles.implement (artifact reconciliation session)",
+            "deliveringPacket": "bugs/BUG-042-compact-packet-has-no-completion-basis",
+            "adjudicationReference": "design.md section 8 (bubbles.design) — boundaryCall: NEW PACKET BUG-042-compact-packet-has-no-completion-basis, ruled AGAINST widening BUG-041",
+            "statementNowFalse": "The finding's statement is PRESERVED VERBATIM above and is now FALSE as written. BUG-042 delivered the mechanicalChangeList recorded in this finding's own adjudication: bug-packet.yaml's compact form gained an obligationsRetained block, bug-packet-resolve.sh gained the obligation=<form>|<id>|<dischargedIn>|<attestedIn> output kind, and Check 4 gained a third completion basis selected when the resolved form emits obligation= facts.",
+            "reDerivedEvidence": [
+              "bash bubbles/scripts/bug-packet-resolve.sh --registry bubbles/registry/bug-packet.yaml — exit 0. Emits 8 obligation= facts where the finding recorded ZERO. Four for compact: obligation=compact|reproduce-before-fix|report.md|report.md, obligation=compact|adversarial-regression|report.md|report.md, obligation=compact|root-cause-stated|bug.md|report.md, obligation=compact|evidence-is-execution|report.md|report.md. The dischargedIn column matches micro-fix-packet.yaml's requirement text exactly as the adjudication predicted, including root-cause-stated discharging in bug.md rather than report.md.",
+              "bash bubbles/scripts/state-transition-guard.sh bugs/BUG-038-progress-timeout-bsd-wc-padding — exit 1, 5 failure(s), 2 warning(s). The same compact packet was at 17 failures with NO completion basis when this finding was recorded, and at 20 failures before the guard could reach Check 4 at all.",
+              "Check 4 no longer blocks with 'cannot verify completion'. It prints: 'Completion basis: REGISTRY-DECLARED OBLIGATIONS (bug-packet.yaml compact form declares 4; the required set is not author-chosen)' followed by four PASS lines — one per obligation, each naming the artifact in which it is attested and the artifact in which it is discharged — and 'All 4 registry-declared obligation(s) are attested [x] for the compact packet form'.",
+              "Check 5 no longer blocks with 'no scope status markers'. It emits the adjudication's prescribed disposition: 'NOT_APPLICABLE: Check-5-all-done — the compact packet form declares no scopes.md, so there is no scope decomposition to cross-reference' and then the ASSERTION the adjudication required rather than a waiver: 'PASS: completedScopes is EMPTY, as the compact form requires'.",
+              "adversarial-regression, the obligation this finding's adjudication called the sharpest expression of the gap, is one of the four now mechanically evaluated on the compact form, discharged and attested in report.md. regressionExpectations remains scoped appliesToForms [full], exactly as the mechanicalChangeList specified."
+            ],
+            "impactNowClosed": "The compact route is no longer 'evaluable but not completable'. An obligation carrier WAS relocated to report.md for the compact form, as the finding's impact statement said would be required, and the required set is registry-derived rather than author-chosen — strictly stronger than the full form's checkbox basis.",
+            "notClosedByThisPacket": "BUG-041 did NOT repair this. The repair was performed by BUG-042 under the adjudicated boundary call. BUG-042 itself is in_progress at 24/30 DoD; this resolution records that the MECHANISM F-041-03 named as missing now exists and is exercised, not that BUG-042 is certified.",
+            "dodImpact": "Closing this finding moves no DoD checkbox in BUG-041. Items 10 and 12 remain blocked on framework-validate and release-check, which were forbidden to every session that has touched this packet."
+          }
+        }
+      ],
+      "notDone": [
+        "framework-validate and release-check NOT run (forbidden to this session). DoD items 10 and 12 therefore remain unevidenced.",
+        "No DoD checkbox moved. DoD stays 10 of 13. Closing a finding is not the same act as closing a DoD item, and this session performed only the first.",
+        "design.md section 3.5.1 still says the fix is deferred and still names line 582 as the failing site. design.md is owned by bubbles.design, so the correction to 619 and the deferred-to-repaired status change are ROUTED, not applied here.",
+        "bugs/BUG-032-, BUG-033-, BUG-037-, BUG-038- and BUG-039- NOT edited. BUG-038 and BUG-039 were read and had the guard run against them read-only; no file in either was modified.",
+        "status NOT set to done and no terminal certification.status written."
+      ],
+      "artifactsTouched": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/report.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/state.json"
+      ]
+    },
+    {
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "scope": 1,
+      "outcome": "partial",
+      "durationUnmeasured": true,
+      "summary": "Recorded the resolution of F-041-02 in the packet after independently re-deriving every claimed result rather than citing it. Applied the design.md correction the previous session had routed, marked F-041-02 resolved with rationale and evidence while PRESERVING the entry, proved no regression to full packets, proved the form branch non-vacuous by mutation, and closed the guard-side coverage gap as far as the boundary allows. DoD moves 10 of 13 DOWN to 9 of 13, because item 11 was checked on a premise this session's own measurement falsifies.",
+      "verified": [
+        "Every figure in the dispatching table reproduced exactly; nothing was found to be wrong. Compact-aware markers 26. Compact packet BUG-038: exit 1, 333 lines, 17 failures / 3 warnings, RESULT_V1 emitted, ZERO 'No such file or directory'. Full packet BUG-037: exit 1, 579 lines, 38 failures / 4 warnings, RESULT_V1 emitted, 14 'Scope' lines incl. 4 per-scope analysis units. bug-packet-resolve-selftest.sh exit 0, 10 of 10 incl. P5.",
+        "Both guard runs proven READ-ONLY by before/after sha256: BUG-038 state.json and report.md unchanged, BUG-037 state.json unchanged.",
+        "PRE-FIX DEFECT REPRODUCED, not cited. Mutation Z removed BOTH compact-aware elements and reproduced the death exactly: exit 1, ONE line, ZERO verdict lines, one 'No such file or directory' naming line 582.",
+        "METHOD CORRECTION recorded because it reached a measurement: a first single-element mutation did NOT reproduce the death (334 lines, verdict present). The fix has two independent elements (form resolution, and the defensive '[[ -f \"$scope_path\" ]] || return 0' read guard) and either one alone keeps the guard alive.",
+        "NO-REGRESSION, mutation X: forcing 'compact' on every packet leaves BUG-037's verdict UNCHANGED at 38/4 with scope analysis intact at 4 units; the whole 13-line diff is the required-artifact set. Reported as the NEGATIVE result it is.",
+        "The reason X cannot move a full packet is structural and is the safety property itself: enrolment is gated on scopes.md EXISTING ON DISK via '|| [[ -f \"$feature_dir/scopes.md\" ]]', not on form resolution succeeding.",
+        "NON-VACUITY, mutation Y: X plus removal of that fallback collapses BUG-037 from 38 to 18 failures and 4 to 2 warnings, 579 to 359 lines, turns a BLOCK ('reports 3 Done scope(s) but completedScopes is EMPTY') into a FALSE PASS, and deletes three regression-DoD BLOCKs. The branch is NOT inert.",
+        "RESTORATION verified twice over: sha256 7d260122dc5107fb9fa9ce1d39f12275299c98fa6562244a711bef5adcae91b3 with 0 MUTATION residue and bash -n exit 0, AND behaviourally, with a timestamp-normalised diff against the pre-mutation BUG-037 baseline that is EMPTY (exit 0) and BUG-038 back to 17/3 at 333 lines.",
+        "GUARD COVERAGE GAP MEASURED: state-transition-guard-selftest.sh contains ZERO references to bug-packet-resolve or bug_packet_form, at HEAD and in the working tree. The guard's form-awareness had no owning coverage at all - the same gap that let the original defect survive.",
+        "COVERAGE ADDED in-boundary and proven non-vacuous: P6 in bug-packet-resolve-selftest.sh names both consumers individually. Under mutation, P5 stayed GREEN at '1 non-selftest surface(s)' while P6 went RED on state-transition-guard.sh, exit 1. That is exactly the blind spot P6 closes, established by measurement rather than argument. Reverted by edit; selftest 12 of 12 at exit 0; shellcheck on the selftest exit 0.",
+        "shellcheck attributed against HEAD: identical code-and-count profile on both sides. ZERO new findings attributable to this change.",
+        "artifact-lint.sh on this packet: exit 0, 'Artifact lint PASSED.'"
+      ],
+      "findings": [
+        {
+          "id": "F-041-04",
+          "severity": "medium",
+          "statement": "The guard's form-awareness has no BEHAVIOURAL committed pin. state-transition-guard-selftest.sh contains zero references to bug-packet-resolve or bug_packet_form, at HEAD and in the working tree. artifact-lint-selftest.sh gained T18-T22 for the lint side; the guard side had nothing. That is the same 'no owning coverage' gap that let the original defect survive undetected.",
+          "evidence": "report.md E-K4",
+          "impact": "A regression of the guard's compact-awareness would be silent. P6 narrows this but does not close it: P6 pins the WIRING (the guard reads the resolver), not the BEHAVIOUR (a compact packet produces a verdict; a full packet keeps its scope analysis). Mutation Z demonstrates the gap concretely - it removed both compact-aware elements while LEAVING the resolver reference intact, so P6 would have stayed green through the full reintroduction of the original defect.",
+          "attribution": "NOT introduced by this session. The gap predates it; repairing the fourth site is what gave it something to cover.",
+          "disposition": "CLOSED (later session), AT A DIFFERENT SITE THAN PREDICTED. The behavioural pin is bubbles/scripts/compact-obligation-basis-selftest.sh, created by BUG-042: 16 checks, exit 0, auto-discovered by framework-validate's *-selftest.sh glob, and bounded to a few guard invocations rather than the 25+ minute suite this finding assumed was the only home for it. Non-vacuity PROVEN by mutation: reverting BOTH F-041-02 elements (the [[ -f $scope_path ]] read guard AND the conditional scopes.md enrolment), with BUG-042's obligation machinery left intact so the experiment isolates F-041-02, turned 10 of 16 assertions RED including B4 ('the guard never reported it; every assertion below would be vacuous') and B8. Reverting only ONE element left 16/0 green, confirming the earlier measurement that both are required. Reverted by edit; guard byte-identical at sha256 dd87eee6271e74c1f06a584cce94c708a9d5f9370042433132672ffccb76e783 and the selftest green at baseline counts. THREE QUALIFICATIONS RECORDED SO THIS IS NOT OVERREAD: (1) B1b stayed GREEN under the mutation - it is a negative assertion and a dead guard emits no strings, so it passes vacuously and is NOT load-bearing; B4 and B8 carry the claim. (2) The predicted site is still empty: grep -cE 'bug_packet_form|bug-packet|packet form|obligation' state-transition-guard-selftest.sh returns 0, so a reader tracing this coverage from the guard's own selftest finds nothing and must be pointed at compact-obligation-basis-selftest.sh; the 19 'compact' hits there are the unrelated compact JSON-array shape of completedScopes. (3) Coverage and fix are in identical commit state (F-041-02 markers: 0 in HEAD, 4 in working tree), so they land together. Routed to bubbles.validate for confirmation under a full framework-validate.",
+          "recordedAt": "report.md E-K4 and design.md section 3.6.1"
+        }
+      ],
+      "findingsResolved": [
+        {
+          "id": "F-041-02",
+          "disposition": "RECORDED RESOLVED in this session. The repair landed in the previous session; this session independently re-derived the evidence, proved no regression to full packets, proved non-vacuity by mutation, applied the design.md correction that had been routed, and wrote the resolution into the finding entry without deleting it.",
+          "evidence": "report.md E-K1 through E-K5; design.md sections 3.5.2 and 3.6.1"
+        }
+      ],
+      "dodTransition": {
+        "before": 10,
+        "after": 9,
+        "total": 13,
+        "direction": "DOWN",
+        "unchecked": ["item 11 - Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior"],
+        "whyACountWentDown": "Item 11 was CHECKED by a previous session on a stated, mechanical premise recorded in its own evidence block: that state-transition-guard.sh carried no packet-form behaviour, 'grep -c = 0', so 'this packet changed no behaviour there'. That premise is now FALSE - the same grep returns 26 - because the fourth site was subsequently repaired. New behaviour exists in the guard, so it enters the scope of item 11's EVERY, and its coverage is only PARTIAL (P6 pins wiring, not behaviour). The item is therefore un-checked, with its original evidence PRESERVED VERBATIM and an amendment recording the falsification. A DoD item describes the state of the packet now, not the moment it was ticked; leaving [x] above evidence this session proved false would be the fabrication the policy forbids.",
+        "stillUnchecked": {
+          "10": "framework-validate remains forbidden to every session so far. Unchanged by this session.",
+          "11": "NOW CHECKED (later session). The behavioural gap that un-checked it is closed by compact-obligation-basis-selftest.sh, proven non-vacuous by a two-element mutation that turned B4 and B8 RED (10 of 16 failures) and was reverted by edit to a byte-identical guard. See F-041-04's updated disposition and report.md E-K4's UPDATE section.",
+          "12": "release-check remains forbidden to every session so far. Unchanged by this session.",
+          "13": "STILL UNCHECKED, and re-evaluated 2026-08-25 rather than assumed. The FINDING half of its blocker list is now fully discharged: F-041-01 and F-041-02 were already closed, F-041-04 is closed at compact-obligation-basis-selftest.sh (re-run this session: 16 check(s), 0 failure(s), exit 0), and F-041-03 is closed RESOLVED-BY-ROUTING to BUG-042 on re-derived evidence (bug-packet-resolve.sh emits 4 obligation= facts for compact, exit 0; state-transition-guard.sh on BUG-038 exit 1 at 5 failures with Check 4 printing 'Completion basis: REGISTRY-DECLARED OBLIGATIONS'). Item 11 is checked. What remains is the DoD half and it is untouched: items 10 and 12 require framework-validate and release-check, forbidden to every session that has touched this packet, so NO session has produced their evidence. Item 13 asserts the bug is Fixed, which is a completeness claim strictly stronger than 11 of 13 items support. Checking it now would rest on the two items that were never measured. It therefore remains [ ]; the honest state is 10 of 13."
+        }
+      },
+      "notDone": [
+        "framework-validate, release-check and state-transition-guard-selftest.sh NOT run (forbidden to this session). DoD items 10 and 12 therefore remain unevidenced.",
+        "No behavioural assertion added to state-transition-guard-selftest.sh: out of boundary AND unexecutable in this session, so non-vacuity could not be proven. Recorded as F-041-04 instead.",
+        "bugs/BUG-032-, BUG-033-, BUG-037-, BUG-038- and BUG-039- NOT edited. BUG-037 and BUG-038 were read and had the guard run against them read-only, with before/after hashes proving no mutation.",
+        "No existing guard check weakened. Every guard edit in this session was a mutation subsequently reverted to a byte-identical file.",
+        "No git command that discards changes was run. All reverts were edits.",
+        "status NOT set to done and no terminal certification.status written."
+      ],
+      "ownershipDeviation": "design.md is owned by bubbles.design and the previous session correctly ROUTED the section 3.5.1 correction rather than applying it. This session was directed by the operator to apply it directly and did so, preserving the deferral text verbatim. Declared rather than left implicit.",
+      "artifactsTouched": [
+        "bubbles/scripts/bug-packet-resolve-selftest.sh",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/design.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/scopes.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/report.md",
+        "bugs/BUG-041-artifact-lint-ignores-compact-packet-form/state.json"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "Scope 1 is implemented, mutations M1 through M6 each record a real exit code, M6 shows byte-identical verdicts for every undeclared packet, BUG-038 fails with exactly two report-section issues rather than zero, full framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
+  },
+  "notes": "INVESTIGATION, PACKET AND DESIGN ONLY. No framework script was edited, because bash bubbles/scripts/cli.sh framework-validate was executing at pid 15125 throughout this session and state-transition-guard-selftest.sh references artifact-lint 53 times. The defect is reproduced with real exit codes in report.md: micro-fix-admission.sh admits bugs/BUG-038-progress-timeout-bsd-wc-padding at exit 0 while artifact-lint.sh rejects the same packet at exit 1 with 6 issues. Root cause is that bubbles/registry/bug-packet.yaml, the declared single bug-artifact authority, has NO production reader; both artifact-lint.sh (lines 401-406, 447, 453) and state-transition-guard.sh (lines 759, 799, 805) carry byte-identical hard-coded copies of the full form's set. TWO CORRECTIONS TO THE DISPATCHING BRIEF, both measured. First, the brief reported no machine-readable declaration; state.json field .packet exists, holds \"micro\", and is consumed at micro-fix-admission.sh:144, so the real faults are that no registry declares the field and that \"micro\" is outside bug-packet.yaml's declared vocabulary of full/compact/single-file. Second, the brief framed all six lint failures as one defect; four are, and two are an authoring gap in BUG-038 whose report.md carries its evidence under non-registry headings. That second finding is ROUTED, not repaired, and is recorded in reworkQueue RQ-B041-1. A THIRD SURFACE was discovered that the brief did not mention: state-transition-guard.sh carries the same duplicate list, so repairing only artifact-lint.sh would leave the guard rejecting the packet the lint accepts. The chosen design follows the framework's own IMP-047 S-B precedent, one registry plus one shared reader, rather than a hard-coded branch, because a branch inside artifact-lint.sh would be a third private copy of the contract. Non-vacuity rests on three structural properties and six mutations: an absent declaration fails closed to full, a declared compact form must additionally survive admission so declaring is never a bypass, and a missing or empty registry exits non-zero rather than degrading to an empty requirement set. The load-bearing measurement is that six of the seven bug packets carry no .packet declaration at all, so their verdict cannot change by construction. M6 diffs every packet's verdict before and after and is the acceptance gate. The fix is deliberately NOT expected to make BUG-038 pass: the correct post-fix result is 6 issues into 2, and a result of 0 means the evidence contract was relaxed and the fix over-reached."
+}
