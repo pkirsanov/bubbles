@@ -300,6 +300,16 @@ Every row has one matching test-related Definition of Done item with the same ID
 
 - [ ] All 13 active scenario contracts have durable evidence, all 14 Test Plan rows have one-to-one parity items, no required check is skipped, and the owning validation agent accepts the final transition.
 
+### Test-Owned Routed Remediation Record
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The BUG-050 regression findings `B050-REG-SHELLCHECK-05`, `B050-REG-SHELLCHECK-06`, and `B050-REG-SHELLCHECK-07` were remediated in the allowed BUG-038 selftest. The focused warning-level ShellCheck moved from exactly three `SC2034` diagnostics to zero diagnostics. The complete assignment selftest, linked runner-grant selftest, linked alias selftest, scenario resolution, traceability, syntax, portability, regression-quality guard, and repository ShellCheck lint all passed after the final test edit. See [Routed ShellCheck Test Remediation](report.md#routed-shellcheck-test-remediation---current-session).
+
+This record changes no Test Plan row, scenario, DoD checkbox, scope status, or certification field. It does not claim a complete independent run of all 14 Test Plan rows. Scope 1 remains `In Progress`, and complete independent Test Plan execution remains assigned to `bubbles.test`.
+
 ## Superseded Scopes (Do Not Execute)
 
 The prior authorization plan expected a wildcard top-level runner to reach mutation by presenting `bubbles.train` as a separate actor. The current runtime cannot dispatch `bubbles.train` from that runner. That expectation is superseded and must not be implemented or tested as success. Wildcard admission remains valid, followed by direct-only mutation refusal.
