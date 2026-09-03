@@ -4804,7 +4804,7 @@ else
     else
       c43_out=""
       c43_rc=0
-      c43_out="$(bash "$c43_checker" --log "$c43_admitted_log" --repo-root "$c43_repo_root" --strict 2>&1)" || c43_rc=$?
+      c43_out="$(bash "$c43_checker" --log "$c43_admitted_log" --repo-root "$c43_repo_root" --transition-admitted --strict 2>&1)" || c43_rc=$?
       case "$c43_rc" in
         0)
           pass "Evidence receipts consulted; no stale receipt backs this transition"

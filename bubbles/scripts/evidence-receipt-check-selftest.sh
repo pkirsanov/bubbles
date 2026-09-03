@@ -6,6 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHECK="$SCRIPT_DIR/evidence-receipt-check.sh"
 TOOL_LOG="$SCRIPT_DIR/tool-log.sh"
+GUARD="$SCRIPT_DIR/state-transition-guard.sh"
 FAILURES=0
 pass() { echo "PASS: $1"; }
 fail() {
@@ -199,6 +200,25 @@ if [[ "$rc" -eq 0 && "$(field "$out" historical)" -eq 1 && "$(field "$out" stale
   pass "SCN-B050-005 admitted historical RED survives current-byte drift after matching IMPLEMENT"
 else
   fail "SCN-B050-005 admitted historical RED was not preserved (rc=$rc, out=$out)"
+fi
+
+if awk '
+  /^# CHECK 43:/ { in_check_43 = 1 }
+  in_check_43 && /c43_out=.*c43_checker/ && /--log "\$c43_admitted_log"/ && /--transition-admitted/ && /--strict/ {
+    freshness_uses_admitted_projection = 1
+  }
+  in_check_43 && /c43_analysis=.*jq -rs/ { clone_analysis_started = 1 }
+  in_check_43 && clone_analysis_started && /"\$c43_admitted_log"/ {
+    clone_uses_admitted_projection = 1
+  }
+  /^# CHECKS 23-25/ { in_check_43 = 0 }
+  END {
+    exit !(freshness_uses_admitted_projection && clone_uses_admitted_projection)
+  }
+' "$GUARD"; then
+  pass "SCN-B050-001 Check 43 shares transition-admitted receipts across freshness and clone consumers"
+else
+  fail "SCN-B050-001 Check 43 must pass one transition-admitted projection to freshness and clone consumers"
 fi
 
 echo
