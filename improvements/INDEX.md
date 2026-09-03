@@ -45,7 +45,7 @@ where a new proposal addresses the same surface.
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
 | IMP-057 | Native Host Budget Interception | PROPOSED | framework-health (G125) | COST-13, HO-8, EV-18, COV-23, REG-21 | 2026-09-02 |
-| IMP-056 | Fail-Closed Cross-Repository Dispatch Authorization | PROPOSED | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
+| IMP-056 | Fail-Closed Repository Mutable-Dispatch Authorization | IN PROGRESS | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
 | IMP-054 | Hybrid Evidence Research Runtime | APPLIED 2026-09-02 — runtime, contracts, and focused selftests delivered across four repository scopes; temporary packet removed; hosted providers and downstream bridge activation remain outside this delivery | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |
 | IMP-055 | Measured Budget and Session Epoch Runtime | APPLIED 2026-09-02 — runtime, contracts, and focused selftests delivered across six repository scopes; temporary packet removed; native host activation and causal savings proof remain outside this delivery | framework-health | COST-12, HO-6, EV-16, REG-20 | 2026-08-27 |
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
