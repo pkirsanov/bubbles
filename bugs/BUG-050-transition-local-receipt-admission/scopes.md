@@ -116,7 +116,7 @@ the projection additive until every consumer uses the same admitted set.
 
 | Test ID | Scenario ID | Description | Test Type | Category | File/Location | Command | Live System |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 | SCN-B050-001 | Regression E2E: unrelated stale receipts remain present but inert | functional | regression | `bubbles/scripts/state-transition-guard-selftest.sh` | `bash bubbles/scripts/state-transition-guard-selftest.sh` | No |
+| T1 | SCN-B050-001 | Regression E2E: unrelated stale receipts remain present but inert | functional | regression | `bubbles/scripts/state-transition-guard-selftest.sh` | `BUBBLES_STATE_TRANSITION_GUARD_BUG050_ONLY=1 bash bubbles/scripts/state-transition-guard-selftest.sh` | No |
 | T2 | SCN-B050-002 | Adversarial actively admitted stale receipt still blocks | functional | adversarial | `bubbles/scripts/evidence-receipt-check-selftest.sh` | `bash bubbles/scripts/evidence-receipt-check-selftest.sh` | No |
 | T3 | SCN-B050-003 | Unrelated incompatible clone group remains inert | functional | regression | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
 | T4 | SCN-B050-004 | Adversarial admitted incompatible clone preserves BUG-033 refusal | functional | adversarial | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
